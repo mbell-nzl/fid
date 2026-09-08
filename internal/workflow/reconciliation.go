@@ -114,7 +114,7 @@ func validateReconciliationAdoption(reconciliation Reconciliation, adoptedPaths 
 	}
 	want := make([]string, 0, len(reconciliation.Paths))
 	for _, change := range reconciliation.Paths {
-		if change.Classification != "in-scope" && !(allowOutsideScope && change.Classification == "outside-scope") {
+		if change.Classification != "in-scope" && (!allowOutsideScope || change.Classification != "outside-scope") {
 			return recoveryConflict([]string{change.Path}, "repository contains non-adoptable change")
 		}
 		want = append(want, change.Path)
