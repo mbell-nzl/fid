@@ -105,6 +105,8 @@ func p22RecoveryFreshnessJourney(t *testing.T, dirty bool) {
 	digest := p21PathString(t, inspected, "result", "reconciliation", "digest")
 	checkpointed := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "checkpoint", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-checkpoint", map[string]any{"run_id": runID, "expected_version": 3, "reconciliation_digest": digest}), "--idempotency-key", "p22-checkpoint")
 	runVersion := int(p21Path(t, checkpointed, "result", "run", "version").(float64))
+	inspected = p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "inspect", runID)
+	digest = p21PathString(t, inspected, "result", "reconciliation", "digest")
 	expired := p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "expire", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-expire", map[string]any{"claim_id": claimID, "expected_version": 1}), "--idempotency-key", "p22-expire")
 	claimVersion := int(p21Path(t, expired, "result", "claim", "version").(float64))
 

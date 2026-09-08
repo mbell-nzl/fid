@@ -472,6 +472,11 @@ func (adapter *p22FIDRecoveryAdapter) p22Advance(t *testing.T, operation, stdout
 		adapter.digest = p21PathString(t, envelope, "result", "reconciliation", "digest")
 	case "run.checkpoint":
 		adapter.runVersion = int(p21Path(t, envelope, "result", "run", "version").(float64))
+		inspection := adapter.p22Run(t, "run", "inspect", adapter.runID)
+		if inspection.ExitCode != 0 {
+			t.Fatalf("inspect accepted checkpoint: %#v", inspection)
+		}
+		adapter.p22Advance(t, "run.inspect", inspection.Stdout)
 	case "claim.expire":
 		adapter.claimVersion = int(p21Path(t, envelope, "result", "claim", "version").(float64))
 	case "run.recover":
