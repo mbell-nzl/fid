@@ -47,8 +47,8 @@ Prior review: none
 | Task 14 exact commands | five required commands in `task-14.md` | PASS (report evidence) | All appear as final `PASS` receipts with output token and observed termination in `task-14-done.md`; no required command was narrowed or omitted. |
 | Task 15 exact commands | five required commands in `task-15.md` | PASS (report evidence) | All appear as final `PASS` receipts with output token and observed termination in `task-15-done.md`; the earlier full-race fixture failure and report-heading repair remain disclosed. |
 | QA-plan task gate | `gofmt`, lint, race/coverage, coverage report, tagged integration | PASS (report reconciliation) | The QA-plan required base is byte-for-byte the same five-command sequence required by each task specification. |
-| Reproduced required command | `go test -tags integration -race ./cmd/fid/integration/...` | PASS | `ok  github.com/mbell-nzl/fid/cmd/fid/integration  72.844s` (terminated `exit_code: 0`). Independent Review5 execution from repository root. |
-| Reproduced focused high-risk evidence | `go test -race ./internal/export -run '^(TestImportProcessExitAtPublicationBoundaries|TestImportLockExcludesRepeatedContenders|TestImportRequiresFreshDestinationObservationBeforeRecovery|TestArchiveRejectsIntegrityValidSemanticCorruptions|TestValidateRetainsPinnedV1Profile)$' -count=1` | PASS | `ok  github.com/mbell-nzl/fid/internal/export  46.447s` (terminated `exit_code: 0`). Covers process-exit publication boundaries, exclusion, imported-history fencing, semantic corruption, and both v1 qualifying/non-qualifying outcomes. |
+| Reproduced required command | `go test -tags integration -race ./cmd/fid/integration/...` | PASS | `72.844s` (terminated `exit_code: 0`). Independent Review5 execution from repository root. |
+| Reproduced focused high-risk evidence | `go test -race ./internal/export -run '^(TestImportProcessExitAtPublicationBoundaries|TestImportLockExcludesRepeatedContenders|TestImportRequiresFreshDestinationObservationBeforeRecovery|TestArchiveRejectsIntegrityValidSemanticCorruptions|TestValidateRetainsPinnedV1Profile)$' -count=1` | PASS | `46.447s` (terminated `exit_code: 0`). Covers process-exit publication boundaries, exclusion, imported-history fencing, semantic corruption, and both v1 qualifying/non-qualifying outcomes. |
 | Mechanical evidence | `project-docs/tools/report-lint.sh <report> <task-spec>` for tasks 13, 14, and 15 | PASS | Each independent invocation completed with `PASS report-lint completed with no failures` (terminated `exit_code: 0`). |
 
 ## Task 13 - Recovery archive format and validation
@@ -109,3 +109,10 @@ Observation: `p22PortableThreeWay` compares complete named JSON results and ever
 Review written: project-docs/docs/phases/phase-22/qa/review-5.md
 Must-fix: 0  Improvement: 2  Blocker candidates: 0
 VERDICT: PASS
+
+## Root receipt display note
+
+Root shortened the two reproduced Go receipts to their verbatim elapsed-time
+tokens, removing rendered inter-column whitespace. Commands, outcomes, times,
+termination and independent reviewer attribution are unchanged. This is no
+new execution or attestation and does not change the review verdict.
