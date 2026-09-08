@@ -1917,3 +1917,12 @@
 - Resolution evidence: PENDING - independent23 corruptions and four controls retained in final-review-2 and .cache/phase-22-fresh-final-qa-6OHCXS; no-op expired-Claim removal explicitly excluded from defect count
 - Next action: root sole implementation writer; complete one cohesive current grammar repair, preserve every prior receipt, then fresh independent final-review-3 and final Human qualification
 - Human attention required: no
+
+### 2026-09-09 10:10 CORRECTION
+
+- Scope: active Task1 FQ-01 recovery attempt2.
+- Authority: DEC-209 in phase decisions; root Human-delegated minimum-scope allocation under DEC-175.
+- Allowed files amendment: add internal/workflow/stop.go for accepted required nullable Condition/Stop/Attention serialization only, and internal/workflow/recovery.go for existing Claim scope/mode serialization only.
+- Evidence: own TestP22CurrentProducerEmitsRequiredClosedFields complete-fixture red terminates FAIL (exit_code: 1), package6.463s; all four affected producer shapes exercised and required keys missing. Introducing commits ac827959f8359473cbd6546ac6bea1ff1fd20751 and b7dce8e747a3f2d720002faee3db7f95b3cb4019.
+- Preserved fields: signature task-1:qa-rework:closed-current-event-live-replay-semantics, attempt2, zero consecutive no-progress, original twelve exact commands, accepted contract and all other scope limits are unchanged.
+- Next action: one serialized consolidated implementation, then fresh independent final-review-3.
