@@ -1112,6 +1112,35 @@
   final gate ran. Only task/decision documentation changes at this checkpoint;
   registry implementation waits for Task 15.
 
+### DEC-204: Allocate Imported Run Close And Abandon Fencing
+
+- **Date:** 2026-09-08.
+- **Status:** ACCEPTED by the root delegate under the Human's explicit
+  authority to resolve bounded workflow allocation and complete Phase22.
+- **Existing requirement:** Contracts section10, VAL062 and DEC202 require
+  imported active work to remain historical until current local liveness and
+  exact destination reconciliation qualify mutation. Import itself grants no
+  takeover or execution authority; imported observations cannot qualify by replay.
+- **Gap and evidence:** Task14 owns recovery.go and its observation helper, but
+  run_close.go also consumes that helper in CloseRun, AbandonRun and
+  requireTerminalObservation. It was omitted from Task14's explicit file list.
+  The Developer correctly avoided changing those consumers implicitly and
+  requested allocation while continuing the owned inspect/recover route.
+- **Resolution:** Add internal/workflow/run_close.go and matching in-package
+  tests to Task14 solely for imported-history/observation/destination fencing
+  required by DEC202, including necessary shared-helper call-site adaptation.
+  Task8 remains the original closure owner of record; retain its report and
+  record Task8/DEC204 provenance in Task14's completion report.
+- **Limits:** Preserve ordinary non-import close/abandon behavior, derived
+  terminal outcomes, live/unknown executor checks, Human force authority,
+  outstanding-Attempt checks, Claim/version checks, grants and Evidence
+  freshness. No new public field, error, Event, Effect, schema, dependency,
+  validation threshold or command. This is allocation of an accepted fence,
+  not a reinterpretation restricting the fence to recovery/execution alone.
+- **Evidence required:** Imported historical observations cannot newly close
+  or abandon a Run; qualified destination successor behavior and all retained
+  ordinary cases execute under Task14's unchanged five-command gate.
+
 ## Planning Spec Impact
 
 | Document | Planning change |

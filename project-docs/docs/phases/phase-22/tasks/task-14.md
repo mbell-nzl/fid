@@ -22,6 +22,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 - Use target-specific exclusive locking and same-filesystem publication; do not replace any existing .fid project.
 - Preserve original Event bytes/order and idempotency results; publication adds no domain Event.
 - Active imported work remains historical until explicit liveness/reconciliation; no automatic authorization or spawn.
+- DEC-204 additionally allocates imported-history fencing at Run close/abandon
+  consumers, preserving all ordinary closure and authority semantics.
 - DEC-202 allocates the import-specific destination reconciliation route. The
   target may contain Git metadata and project source files; empty means no
   existing `.fid` project. Preserve those files and all imported history.
@@ -42,6 +44,9 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `internal/journal/`
 - `internal/db/`
 - `internal/workflow/authority.go`
+- `internal/workflow/run_close.go` and matching in-package tests - DEC-204:
+  imported-history fencing and shared observation-helper integration only;
+  original closure owner is Phase22/task8.
 - `internal/workflow/reconciliation.go`, `internal/workflow/run_inspect.go`,
   `internal/workflow/recovery.go`, `internal/workflow/run_observation.go`,
   `internal/workflow/run.go`, `internal/workflow/evaluation.go` - DEC-202:
