@@ -1272,6 +1272,38 @@
   product decision. Preserve all red receipts, rerun identical focused commands
   and the unchanged eight Task8 gates. Independent final QA judges sufficiency.
 
+### DEC-209: Allocate accepted closed-value serialization to final-QA Task 1 repair
+
+- **Date:** 2026-09-09.
+- **Status:** ACCEPTED by the root delegate under the Human's Phase22
+  completion authority; minimum-scope causal allocation under DEC-175.
+- **Existing requirement:** schema.md section5 requires explicit nullable keys
+  and public-interface.md section2 closed values. Condition includes budget_name
+  and capability_id; Stop includes resolution; Attention includes
+  resolution_event_id. Recovery/abandon results return the complete accepted
+  Claim, including scope and mode. No new field or public contract is proposed.
+- **Evidence:** TestP22CurrentProducerEmitsRequiredClosedFields terminated
+  FAIL (exit_code:1), demonstrating omitted Condition capability_id and Recovery
+  Claim scope/mode. That first fixture also failed its coverage guard because
+  it did not exercise standalone Stop/Attention results; its failed receipt is
+  retained and the complete producer fixture is verified separately.
+- **Cause/allocation:** Task1's active final-QA FQ-01 attempt2 may additionally
+  edit internal/workflow/stop.go only to emit the accepted required nullable
+  Condition/Stop/Attention fields, and internal/workflow/recovery.go only to
+  serialize Claim scope/mode from the existing stored Claim and successor
+  construction. Matching tests are already within the recovery scope.
+- **Provenance:** Stop serialization was introduced by
+  ac827959f8359473cbd6546ac6bea1ff1fd20751 (phase22/task2).
+  RecoveryClaim was introduced by b7dce8e747a3f2d720002faee3db7f95b3cb4019
+  (phase22/task5). Their original reports remain unchanged; Task1 records
+  transferred execution and subject-preserving fixture convergence.
+- **Limits/evidence:** No DDL/migration, accepted wire/Event shape, capability,
+  authorization, dependency, gate/control, VAL or policy change. Preserve all
+  failed receipts and rerun the identical focused test plus Task1's unchanged
+  twelve-command gate. The shared current Event validator must enforce the
+  accepted closed values; admitting omitted required fields is not the repair.
+  Independent final QA judges the complete FQ-01 proof.
+
 ## Planning Spec Impact
 
 | Document | Planning change |
