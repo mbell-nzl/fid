@@ -1,4 +1,160 @@
 {
+  "closed_evidence": {
+    "ActivationRecovery": [
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValueSchemaCases",
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValuesObserveRealResponses"
+    ],
+    "ActivationResource": [
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValueSchemaCases",
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValuesObserveRealResponses"
+    ],
+    "Attention": [
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValueSchemaCases",
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValuesObserveRealResponses"
+    ],
+    "Budget (amend)": [
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValueSchemaCases",
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValuesObserveRealResponses"
+    ],
+    "BudgetSample": [
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValueSchemaCases",
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValuesObserveRealResponses"
+    ],
+    "Claim (amend)": [
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValueSchemaCases",
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValuesObserveRealResponses"
+    ],
+    "Condition": [
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValueSchemaCases",
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValuesObserveRealResponses"
+    ],
+    "Executor": [
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValueSchemaCases",
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValuesObserveRealResponses"
+    ],
+    "Liveness": [
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValueSchemaCases",
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValuesObserveRealResponses"
+    ],
+    "PathChange": [
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValueSchemaCases",
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValuesObserveRealResponses"
+    ],
+    "Reconciliation": [
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValueSchemaCases",
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValuesObserveRealResponses"
+    ],
+    "RecoveryAuthority": [
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValueSchemaCases",
+      "cmd/fid/integration/p22_closed_values_test.go#TestP22ClosedValuesObserveRealResponses"
+    ]
+  },
+  "closed_fields": {
+    "ActivationRecovery": {
+      "direction": [
+        "restore-prior",
+        "complete-forward"
+      ]
+    },
+    "ActivationResource": {
+      "component": [
+        "kit",
+        "overlay",
+        "provider",
+        "project",
+        "backend"
+      ],
+      "state": [
+        "pending",
+        "old",
+        "new",
+        "error"
+      ]
+    },
+    "Attention": {
+      "status": [
+        "open",
+        "resolved"
+      ]
+    },
+    "Budget (amend)": {
+      "state": [
+        "unknown",
+        "available",
+        "warning",
+        "exhausted"
+      ]
+    },
+    "BudgetSample": {
+      "sample_kind": [
+        "delta",
+        "baseline"
+      ],
+      "source": [
+        "fid",
+        "activated-harness"
+      ]
+    },
+    "Claim (amend)": {
+      "effective_status": [
+        "active",
+        "expired",
+        "released",
+        "superseded"
+      ]
+    },
+    "Condition": {
+      "type": [
+        "executor-terminated",
+        "run-recovered",
+        "activation-recovered",
+        "capability-available",
+        "budget-observed",
+        "work-ended"
+      ]
+    },
+    "Executor": {
+      "source": [
+        "activated-harness"
+      ]
+    },
+    "Liveness": {
+      "state": [
+        "live",
+        "terminated",
+        "unknown"
+      ]
+    },
+    "PathChange": {
+      "classification": [
+        "in-scope",
+        "outside-scope",
+        "protected"
+      ]
+    },
+    "Reconciliation": {
+      "ancestry": [
+        "unchanged",
+        "descendant",
+        "conflict",
+        "unknown"
+      ],
+      "operation": [
+        "none",
+        "merge",
+        "rebase",
+        "cherry-pick",
+        "revert",
+        "bisect"
+      ]
+    },
+    "RecoveryAuthority": {
+      "mode": [
+        "ordinary",
+        "force"
+      ]
+    }
+  },
   "closed_values": {
     "ActivationRecovery": [
       "complete-forward",
@@ -242,9 +398,6 @@
     ],
     "claim.expire": [
       "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
-    ],
-    "claim.get": [
-      "cmd/fid/generic_claim_test.go#TestClaimResponseCarriesOnlyContractFields"
     ],
     "claim.list": [
       "cmd/fid/generic_claim_test.go#TestClaimResponseCarriesOnlyContractFields"

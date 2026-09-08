@@ -20,10 +20,12 @@ import (
 var p22AcceptedOperations = strings.Fields(`claim.expire run.start run.observe run.inspect run.checkpoint run.recover stop.raise stop.resolve stop.list attention.list attention.resolve run.observe-budget run.close run.abandon activation.prepare activation.component activation.commit activation.abort activation.finalize activation.resource activation.recover activation.recover-complete export.import`)
 
 type p22WireInventory struct {
-	Operations   map[string][]string `json:"operations"`
-	Failures     map[string][]string `json:"failures"`
-	Frames       map[string][]string `json:"frames"`
-	ClosedValues map[string][]string `json:"closed_values"`
+	Operations     map[string][]string            `json:"operations"`
+	Failures       map[string][]string            `json:"failures"`
+	Frames         map[string][]string            `json:"frames"`
+	ClosedValues   map[string][]string            `json:"closed_values"`
+	ClosedEvidence map[string][]string            `json:"closed_evidence"`
+	ClosedFields   map[string]map[string][]string `json:"closed_fields"`
 }
 
 func TestP22ConformanceCorpusHasEveryAcceptedOperationAndFailure(t *testing.T) {
@@ -68,7 +70,7 @@ func TestP22ConformanceCorpusHasEveryAcceptedOperationAndFailure(t *testing.T) {
 		}
 	}
 	p22SameMembers(t, "documented amended leaves", documented, p22AcceptedOperations)
-	allOperations := append(append([]string{}, p22AcceptedOperations...), strings.Fields("activation.status export.create export.validate projection.resume run.get run.list claim.get claim.list gate.run")...)
+	allOperations := append(append([]string{}, p22AcceptedOperations...), strings.Fields("activation.status export.create export.validate projection.resume run.get run.list claim.list gate.run")...)
 	p22SameMembers(t, "operation fixtures", p22InventoryKeys(inventory.Operations), allOperations)
 	failures := p21Section(t, string(doc), "## 4. Failure And Live Frames", "## 5. Manifest V2 And Availability")
 	var codes []string
@@ -110,11 +112,17 @@ func TestP22ConformanceCorpusHasEveryAcceptedOperationAndFailure(t *testing.T) {
 	if len(wantClosed) != 12 || !reflect.DeepEqual(wantClosed, inventory.ClosedValues) {
 		t.Fatalf("closed-value snapshot differs: doc=%#v fixture=%#v", wantClosed, inventory.ClosedValues)
 	}
+	for domain := range inventory.ClosedValues {
+		if len(inventory.ClosedEvidence[domain]) == 0 {
+			t.Fatalf("closed domain %s has no qualifying/rejecting behavioral evidence", domain)
+		}
+	}
+	p22SameMembers(t, "closed evidence domains", p22InventoryKeys(inventory.ClosedEvidence), p22InventoryKeys(inventory.ClosedValues))
 	// References bind the inventory to real Go test declarations. The required
 	// ordinary/tagged gates execute those tests; this check is not itself a
 	// substitute for their behavioral assertions or successful gate receipts.
 	parsed := map[string]*ast.File{}
-	for kind, entries := range map[string]map[string][]string{"operation": inventory.Operations, "failure": inventory.Failures, "frame": inventory.Frames} {
+	for kind, entries := range map[string]map[string][]string{"operation": inventory.Operations, "failure": inventory.Failures, "frame": inventory.Frames, "closed domain": inventory.ClosedEvidence} {
 		for name, refs := range entries {
 			if len(refs) == 0 {
 				t.Fatalf("%s %s has no behavioral reference", kind, name)
