@@ -1498,3 +1498,25 @@
 - Resolution evidence: PENDING - closed-domain field-specific accepted-member and invalid-member schema/output assertions bound to actual fid corpus, then full exact gates and fresh independent review
 - Next action: root sole Task18 test/report writer; no subagent implementation
 - Human attention required: no
+
+### 2026-09-08 22:59 REPAIR task-18
+
+- Trigger signature: task-18:qa-rework:closed-value-behavioral-conformance
+- Attempt count: 1
+- Starting checkpoint: ea9b83fe9c894c8e7ec36214a238ed0209faaf39
+- Ending checkpoint: e04bfbdd0194393b0bfee200477a14bc6c563fb3 test-only repair; final report3e96018
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Root captured R6-01 inventory red and added field-specific fixtures, independent compiled enum grammar,50 accepted and90 rejected/missing cases plus actual fid responses for all12domains and corrupted-output rejection controls. Corrected invented claim.get entry; accepted23 amended operations unchanged,31 total mapped operations. All seven byte-identical final commands passed, including tagged102.204s and retained manifest checkpoints-4043242815 from clean e04bfbd. Root observed report-lint COMPLETE and route ADVANCE exit0. Prior report/failed receipts preserved. Fresh independent re-review determines finding closure.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-08 23:00 TASK task-18 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-18-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: e04bfbdd0194393b0bfee200477a14bc6c563fb3 - verified, subject matched; continuation report3e96018
+- QA-plan commands beyond the task spec: none required
+- Evidence: Same-task R6-01 test-only continuation and all seven fresh exact gates complete; original receipts retained. Fresh independent Review6b is required before finalQA; Human outcomes remain blank.
