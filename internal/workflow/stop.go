@@ -262,13 +262,17 @@ func ResolveStop(options StopOptions, request StopResolveRequest) (StopResolveRe
 		if err := qualifyingFact(options.WorkspaceRoot, stop, request.FactEventID); err != nil {
 			return &ResolutionInvalidError{Subject: stop.Subject, FactEventIDs: []string{request.FactEventID}, Reasons: []EvaluationReason{evaluationReason("resolution-invalid", err.Error(), stop.ID, "stop")}}
 		}
+		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: stop.ID, Type: "stop"})
+		if err != nil {
+			return err
+		}
 		now := time.Now().UTC().Format(time.RFC3339Nano)
-		event := stopResolvedEvent(stop, options.ActorID, request.FactEventID, now, "")
+		event := stopResolvedEvent(stop, options.ActorID, request.FactEventID, now, "", sequence)
 		prepared, err := journal.PrepareEvent(lock, event)
 		if err != nil {
 			return err
 		}
-		event = stopResolvedEvent(stop, options.ActorID, request.FactEventID, now, prepared.EventID)
+		event = stopResolvedEvent(stop, options.ActorID, request.FactEventID, now, prepared.EventID, sequence)
 		outcome, err := journal.CommitIdempotent(lock, conn, idem, event, func(journal.Event) (journal.IdempotencyMutation, error) {
 			return journal.IdempotencyMutation{EntityID: stop.ID, ResultJSON: `{"replayed":false}`}, nil
 		})
@@ -457,8 +461,8 @@ func stopRaisedEventForDomain(stop Stop, attention Attention, createAttention bo
 	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: "stop.raised", ActorV2: journal.EventActor{ActorID: stop.ActorID, ActorType: "agent", Producer: "fid", ProvenanceRef: "workflow.stop"}, Aggregate: journal.Aggregate{ID: stop.ID, Type: "stop", Sequence: 1}, CommandName: "stop.raise", Effects: effects}
 }
 
-func stopResolvedEvent(stop Stop, actorID, factEventID, resolvedAt, eventID string) journal.Event {
-	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: "stop.resolved", ActorV2: journal.EventActor{ActorID: actorID, ActorType: "agent", Producer: "fid", ProvenanceRef: "workflow.stop"}, Aggregate: journal.Aggregate{ID: stop.ID, Type: "stop", Sequence: 2}, CommandName: "stop.resolve", Effects: []journal.Effect{{Op: "insert", Table: "stop_resolutions", PK: map[string]any{"stop_id": stop.ID}, Values: map[string]any{"actor_id": actorID, "fact_event_id": factEventID, "resolved_at": resolvedAt, "created_event_id": eventID}}}}
+func stopResolvedEvent(stop Stop, actorID, factEventID, resolvedAt, eventID string, sequence int) journal.Event {
+	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: "stop.resolved", ActorV2: journal.EventActor{ActorID: actorID, ActorType: "agent", Producer: "fid", ProvenanceRef: "workflow.stop"}, Aggregate: journal.Aggregate{ID: stop.ID, Type: "stop", Sequence: sequence}, CommandName: "stop.resolve", Effects: []journal.Effect{{Op: "insert", Table: "stop_resolutions", PK: map[string]any{"stop_id": stop.ID}, Values: map[string]any{"actor_id": actorID, "fact_event_id": factEventID, "resolved_at": resolvedAt, "created_event_id": eventID}}}}
 }
 
 func attentionResolvedEvent(attention Attention, actorID, eventID string) journal.Event {
@@ -577,6 +581,9 @@ func loadStop(conn *sql.DB, id string) (Stop, error) {
 	var blocked, details, condition string
 	err := conn.QueryRow(`SELECT id, subject_type, subject_id, code, blocked_actions_json, details_json, resolution_condition_json, resolver_capability, actor_id, raised_at FROM stops WHERE id = ?`, id).Scan(&stop.ID, &stop.Subject.Type, &stop.Subject.ID, &stop.Code, &blocked, &details, &condition, &stop.ResolverCapability, &stop.ActorID, &stop.RaisedAt)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return Stop{}, &StopNotFoundError{ID: id}
+		}
 		return Stop{}, err
 	}
 	if err := json.Unmarshal([]byte(blocked), &stop.BlockedActions); err != nil {

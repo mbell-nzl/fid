@@ -74,6 +74,7 @@ const (
 	CodeGateUnsuccessful            Code = "gate-unsuccessful"
 	CodeBudgetExhausted             Code = "budget-exhausted"
 	CodeBudgetDataUnavailable       Code = "budget-data-unavailable"
+	CodeBudgetSampleConflict        Code = "budget-sample-conflict"
 	CodeStopNotFound                Code = "stop-not-found"
 	CodeAttentionNotFound           Code = "attention-not-found"
 	CodeAttentionVersionConflict    Code = "attention-version-conflict"
@@ -271,6 +272,8 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeBudgetExhausted: definition(CategoryPrecondition, false, []SubjectType{SubjectRun},
 		objectField("budget", stringField("name"), stringField("scope"), stringField("unit"), integerField("maximum"), nullableIntegerField("warning_threshold"), stringField("exhaustion_action"), nullableIntegerField("consumed"), nullableIntegerField("remaining"), stringField("state")),
 		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
+	CodeBudgetSampleConflict: definition(CategoryConflict, false, []SubjectType{SubjectRun},
+		stringField("budget_name"), stringField("source_sample_id"), nullableStringField("expected_previous_sample_id"), nullableStringField("actual_previous_sample_id")),
 	CodeBudgetDataUnavailable: definition(CategoryPrecondition, false, []SubjectType{SubjectRun},
 		objectField("budget", stringField("name"), stringField("scope"), stringField("unit"), integerField("maximum"), nullableIntegerField("warning_threshold"), stringField("exhaustion_action"), nullableIntegerField("consumed"), nullableIntegerField("remaining"), stringField("state")),
 		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
@@ -304,7 +307,7 @@ var registeredCodes = []Code{
 	CodeExecutorLivenessUnknown, CodeExecutorStillLive, CodeRecoveryStateConflict, CodeObservationNotFound, CodeRecoveryAlreadyLinked,
 	CodeReceiptNotFound, CodeEvidenceNotFound,
 	CodeGateUnsuccessful,
-	CodeBudgetExhausted, CodeBudgetDataUnavailable,
+	CodeBudgetExhausted, CodeBudgetDataUnavailable, CodeBudgetSampleConflict,
 	CodeStopNotFound, CodeAttentionNotFound, CodeAttentionVersionConflict, CodeStopUnresolved, CodeResolutionInvalid,
 	CodeObligationUnsatisfied,
 	CodeArchiveInvalid,

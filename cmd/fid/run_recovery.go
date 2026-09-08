@@ -97,6 +97,10 @@ func renderRunRecoveryError(cmd *cobra.Command, operation string, cause error, r
 	if err != nil {
 		return err
 	}
+	var duplicate *workflow.DuplicateRunExecutorError
+	if errors.As(cause, &duplicate) {
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeDuplicateEntity, "executor identity already exists", &cli.Subject{Type: cli.SubjectRun, ID: runID}, map[string]any{"entity_type": "run", "identity": map[string]any{"fields": []string{"executor_id"}, "values": []string{duplicate.ExecutorID}}})
+	}
 	var conflict *workflow.RecoveryStateConflictError
 	if errors.As(cause, &conflict) {
 		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRecoveryStateConflict, "recovery state conflict", &cli.Subject{Type: cli.SubjectRun, ID: runID}, map[string]any{"run_id": runID, "observation_digest": nullableRunDigest(digest), "paths": append([]string{}, conflict.Paths...), "reasons": conflict.Reasons})

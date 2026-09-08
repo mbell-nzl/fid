@@ -1,11 +1,19 @@
 {
   "state": "exhausted-budget",
   "expected": {
+    "activation_statuses": [
+      "finalized"
+    ],
+    "artifact_availability": [],
+    "artifact_body_count": 0,
+    "attention_count": 1,
+    "attention_link_count": 1,
     "run_statuses": [
       "active"
     ],
-    "tokens_state": "exhausted",
+    "stop_count": 1,
     "tokens_consumed": 10,
-    "tokens_remaining": 0
+    "tokens_remaining": 0,
+    "tokens_state": "exhausted"
   }
 }

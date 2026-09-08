@@ -280,8 +280,13 @@ func p22NewFIDRecoveryAdapterWithLease(t *testing.T, actorType string, leaseSeco
 
 func p22NewFIDRecoveryAdapterWithArtifacts(t *testing.T, actorType string, leaseSeconds int, artifactPaths []string) *p22FIDRecoveryAdapter {
 	t.Helper()
-	binary := integrationFIDBinary(t)
-	workspace := t.TempDir()
+	return p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), actorType, leaseSeconds, artifactPaths, nil)
+}
+
+// Explicit locations keep generated fixtures' repository identities durable.
+// A non-nil action set is used by the independent final admission matrix.
+func p22NewFIDRecoveryAdapterAt(t *testing.T, binary, workspace, actorType string, leaseSeconds int, artifactPaths, actions []string) *p22FIDRecoveryAdapter {
+	t.Helper()
 	p22Git(t, workspace, "init", "-q")
 	p22Git(t, workspace, "config", "user.email", "p22-corpus@example.test")
 	p22Git(t, workspace, "config", "user.name", "Phase 22 corpus")
@@ -299,6 +304,12 @@ func p22NewFIDRecoveryAdapterWithArtifacts(t *testing.T, actorType string, lease
 		capabilities = append(capabilities, "run.force-recover")
 		sort.Strings(capabilities)
 	}
+	grantActions := capabilities[1:]
+	if actions != nil {
+		capabilities = append([]string(nil), actions...)
+		sort.Strings(capabilities)
+		grantActions = capabilities
+	}
 	activationID := p21Activation(t, binary, workspace, "prepare", "p22-corpus-activation-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "p22-corpus", "phase": 21})
 	profileDigest := p21Component(t, binary, workspace, activationID, "authority-profile", "p22-corpus-authority", []any{
 		map[string]any{"actor_id": "actor-denied", "actor_type": "agent", "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities},
@@ -314,7 +325,7 @@ func p22NewFIDRecoveryAdapterWithArtifacts(t *testing.T, actorType string, lease
 	registrationID := p21PathString(t, registered, "result", "registration", "id")
 	registrationVersion := p21Path(t, registered, "result", "registration", "version")
 	source := map[string]any{"digest": "sha256:" + p22Zeros(64), "display_label": "Phase 22 corpus", "external_id": nil, "path": "project-docs/p22-corpus.md", "repository": repository, "section": nil, "source_type": "project-file"}
-	envelopeInput := p21Input(t, workspace, "p22-corpus-envelope", map[string]any{"outcome": "Recover one interrupted Run", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "authority_grants": []any{map[string]any{"actions": capabilities[1:], "actor_selector": map[string]any{"actor_id": actor, "required_capabilities": capabilities[1:]}, "scope": map[string]any{"issue_id": issueID}}}, "obligations": []any{map[string]any{"id": "OBL-p22-corpus", "type": "gate-evidence", "applicability": "required", "guarded_actions": []string{"envelope.complete", "issue.transition-terminal-success"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": map[string]any{"id": registrationID, "version": registrationVersion}, "accepted_evidence_types": []string{"receipt"}, "accepted_trust_sources": []string{"fid-executed"}, "freshness_target": "repository-tree", "artifact_policy": "required-available", "independence": "fid-executed", "required_lane": nil, "source": source}}, "budgets": []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}, map[string]any{"name": "tokens", "scope": "envelope", "unit": "input-tokens", "maximum": 10, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}}})
+	envelopeInput := p21Input(t, workspace, "p22-corpus-envelope", map[string]any{"outcome": "Recover one interrupted Run", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "authority_grants": []any{map[string]any{"actions": grantActions, "actor_selector": map[string]any{"actor_id": actor, "required_capabilities": grantActions}, "scope": map[string]any{"issue_id": issueID}}}, "obligations": []any{map[string]any{"id": "OBL-p22-corpus", "type": "gate-evidence", "applicability": "required", "guarded_actions": []string{"envelope.complete", "issue.transition-terminal-success"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": map[string]any{"id": registrationID, "version": registrationVersion}, "accepted_evidence_types": []string{"receipt"}, "accepted_trust_sources": []string{"fid-executed"}, "freshness_target": "repository-tree", "artifact_policy": "required-available", "independence": "fid-executed", "required_lane": nil, "source": source}}, "budgets": []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}, map[string]any{"name": "tokens", "scope": "envelope", "unit": "input-tokens", "maximum": 10, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}}})
 	created := p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "create", "--actor", actor, "--input", envelopeInput, "--idempotency-key", "p22-corpus-envelope-create")
 	envelopeID := p21PathString(t, created, "result", "envelope", "id")
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-envelope-activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1}), "--idempotency-key", "p22-corpus-envelope-activate")

@@ -125,6 +125,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		}},
 		{CodeBudgetExhausted, CategoryPrecondition, false, []SubjectType{SubjectRun}, budgetDenialDetails()},
 		{CodeBudgetDataUnavailable, CategoryPrecondition, false, []SubjectType{SubjectRun}, budgetDenialDetails()},
+		{CodeBudgetSampleConflict, CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("budget_name"), stringDetail("source_sample_id"), nullableStringDetail("expected_previous_sample_id"), nullableStringDetail("actual_previous_sample_id")}},
 		{CodeStopNotFound, CategoryNotFound, false, []SubjectType{SubjectStop}, stringDetails("id")},
 		{CodeAttentionNotFound, CategoryNotFound, false, []SubjectType{SubjectAttention}, stringDetails("id")},
 		{CodeAttentionVersionConflict, CategoryConflict, false, []SubjectType{SubjectAttention}, []detailExpectation{stringDetail("attention_id"), integerDetail("expected_version"), integerDetail("actual_version")}},

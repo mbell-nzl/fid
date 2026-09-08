@@ -164,7 +164,7 @@ func (model *p22PortableModel) table(name string) []map[string]any {
 	return rows
 }
 
-func p22PortableFakeSummary(t *testing.T, entries map[string][]byte) map[string]any {
+func p22PortableFakeSummary(t *testing.T, entries map[string][]byte, runID string) map[string]any {
 	t.Helper()
 	model, err := p22PortableFakeImport(entries)
 	if err != nil {
@@ -181,7 +181,27 @@ func p22PortableFakeSummary(t *testing.T, entries map[string][]byte) map[string]
 		statuses = append(statuses, run["status"].(string))
 	}
 	sort.Strings(statuses)
-	summary := map[string]any{"run_statuses": statuses, "attention_count": len(model.table("attention_items")), "stop_count": len(model.table("stops")), "attention_link_count": len(model.table("attention_stop_links"))}
+	// Match the named read request's explicit Run subject. Historical Stops on
+	// predecessor Runs remain in the model and archive, but are not returned by
+	// stop/attention list --subject run:<successor>.
+	stops, links := 0, 0
+	attention := map[any]bool{}
+	for _, row := range model.table("stops") {
+		if row["subject_type"] == "run" && row["subject_id"] == runID {
+			stops++
+		}
+	}
+	for _, row := range model.table("attention_items") {
+		if row["subject_type"] == "run" && row["subject_id"] == runID {
+			attention[row["id"]] = true
+		}
+	}
+	for _, row := range model.table("attention_stop_links") {
+		if attention[row["attention_id"]] {
+			links++
+		}
+	}
+	summary := map[string]any{"run_statuses": statuses, "attention_count": len(attention), "stop_count": stops, "attention_link_count": links}
 	activationStatuses := []string{}
 	for _, activation := range model.table("kit_activations") {
 		activationStatuses = append(activationStatuses, activation["status"].(string))

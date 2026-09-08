@@ -72,7 +72,7 @@ func newRunObserveBudgetCommand() *cobra.Command {
 		}
 		result, err := workflow.ObserveRunBudget(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
 		if err != nil {
-			return renderRunError(cmd, "run.observe-budget", err)
+			return renderBudgetSampleError(cmd, err, request.RunID)
 		}
 		if jsonMode, err := readJSONMode(cmd); err != nil {
 			return err
@@ -327,4 +327,16 @@ func writeRunFailure(cmd *cobra.Command, jsonMode bool, operation string, cause 
 		return cli.NewFailureError(failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
+}
+
+func renderBudgetSampleError(cmd *cobra.Command, cause error, runID string) error {
+	var conflict *workflow.BudgetSampleConflictError
+	if !errors.As(cause, &conflict) {
+		return renderRunError(cmd, "run.observe-budget", cause)
+	}
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	return writeRunFailure(cmd, jsonMode, "run.observe-budget", cause, cli.CodeBudgetSampleConflict, "budget sample conflict", &cli.Subject{Type: cli.SubjectRun, ID: runID}, map[string]any{"budget_name": conflict.BudgetName, "source_sample_id": conflict.SourceSampleID, "expected_previous_sample_id": optionalString(conflict.ExpectedPreviousSampleID), "actual_previous_sample_id": optionalString(conflict.ActualPreviousSampleID)})
 }

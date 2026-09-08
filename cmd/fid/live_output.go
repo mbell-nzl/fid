@@ -26,6 +26,8 @@ func renderLiveHuman(result evidence.LiveResult, obligationStatus string) string
 
 func renderLiveControl(data map[string]any) string {
 	switch data["kind"] {
+	case "budget-stop":
+		return fmt.Sprintf("[control] budget-stop stop_ids=%v attention_ids=%v", data["stop_ids"], data["attention_ids"])
 	case "redaction-applied":
 		return fmt.Sprintf("[control] redaction-applied replacements=%d", data["replacements"])
 	case "artifact-rejected":

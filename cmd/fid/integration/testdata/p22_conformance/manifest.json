@@ -54,5 +54,6 @@
     "portable/exhausted-budget.json",
     "portable/partial-activation.json",
     "portable/missing-artifact.json"
-  ]
+  ],
+  "wire_inventory": "wire-inventory.json"
 }

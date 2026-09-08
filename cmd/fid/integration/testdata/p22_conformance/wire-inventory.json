@@ -1,0 +1,308 @@
+{
+  "closed_values": {
+    "ActivationRecovery": [
+      "complete-forward",
+      "restore-prior"
+    ],
+    "ActivationResource": [
+      "backend",
+      "error",
+      "kit",
+      "new",
+      "old",
+      "overlay",
+      "pending",
+      "project",
+      "provider"
+    ],
+    "Attention": [
+      "open",
+      "resolved"
+    ],
+    "Budget (amend)": [
+      "available",
+      "exhausted",
+      "unknown",
+      "warning"
+    ],
+    "BudgetSample": [
+      "activated-harness",
+      "baseline",
+      "delta",
+      "fid"
+    ],
+    "Claim (amend)": [
+      "active",
+      "expired",
+      "released",
+      "superseded"
+    ],
+    "Condition": [
+      "activation-recovered",
+      "budget-observed",
+      "capability-available",
+      "executor-terminated",
+      "run-recovered",
+      "work-ended"
+    ],
+    "Executor": [
+      "activated-harness"
+    ],
+    "Liveness": [
+      "live",
+      "terminated",
+      "unknown"
+    ],
+    "PathChange": [
+      "in-scope",
+      "outside-scope",
+      "protected"
+    ],
+    "Reconciliation": [
+      "bisect",
+      "cherry-pick",
+      "conflict",
+      "descendant",
+      "merge",
+      "none",
+      "rebase",
+      "revert",
+      "unchanged",
+      "unknown"
+    ],
+    "RecoveryAuthority": [
+      "force",
+      "ordinary"
+    ]
+  },
+  "failures": {
+    "activation-conflict": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/activation_test.go#TestActivationReplaysAcrossLifecycleWithoutPreemptingLifecycleChecks",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ],
+    "activation-direction-conflict": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_activation_semantics_test.go#TestP22DualAdapterActivationConformance"
+    ],
+    "activation-incomplete": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_activation_semantics_test.go#TestP22DualAdapterActivationConformance"
+    ],
+    "activation-version-conflict": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_activation_semantics_test.go#TestP22DualAdapterActivationConformance"
+    ],
+    "archive-invalid": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_portable_invalid_test.go#TestP22PortableFakeAndFIDRejectUnknownEffects"
+    ],
+    "attention-not-found": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ],
+    "attention-version-conflict": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ],
+    "budget-data-unavailable": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/gate_run_test.go#TestBudgetDenialReportsCommittedStopWithoutStartFrame"
+    ],
+    "budget-exhausted": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/gate_run_test.go#TestBudgetDenialReportsCommittedStopWithoutStartFrame"
+    ],
+    "budget-sample-conflict": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ],
+    "duplicate-entity": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus",
+      "cmd/fid/generic_run_test.go#TestRunStartBindsOptionalObligationAndRejectsReusedExecutor"
+    ],
+    "executor-liveness-unknown": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ],
+    "executor-still-live": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ],
+    "gate-unsuccessful": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/gate_run_test.go#TestGateRunRecordsExactNonSuccessTerminalOutcomes"
+    ],
+    "import-target-conflict": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/export_test.go#TestExportCreateValidateAndImportUsesClosedTargetConflict"
+    ],
+    "observation-not-found": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ],
+    "recovery-already-linked": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ],
+    "recovery-state-conflict": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ],
+    "resolution-invalid": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ],
+    "run-version-conflict": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ],
+    "stop-not-found": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ],
+    "stop-unresolved": [
+      "internal/cli/codes_test.go#TestReasonCodeDetailSchemaIsExactForEveryCode",
+      "cmd/fid/integration/p22_wire_failure_test.go#TestP22AmendedFailureWireCorpus"
+    ]
+  },
+  "frames": {
+    "budget-stop": [
+      "cmd/fid/integration/p22_budget_frames_test.go#TestP22BudgetCrossingFrameOrder",
+      "cmd/fid/live_budget_test.go#TestBudgetStopControlHumanNamesDurableIntervention"
+    ],
+    "fid-error.committed-denial": [
+      "cmd/fid/gate_run_test.go#TestBudgetDenialReportsCommittedStopWithoutStartFrame",
+      "cmd/fid/integration/p22_final_journey_test.go#TestP22CompleteOneIssueRecoveryJourney"
+    ],
+    "fid-error.uncommitted": [
+      "cmd/fid/gate_run_test.go#TestGateRunReceiptAppendFailureEmitsFrameOnlyFidError"
+    ],
+    "output.stdout-stderr": [
+      "cmd/fid/live_output_test.go#TestLiveOutputGoldenFixtures"
+    ],
+    "output.truncated-redacted": [
+      "internal/evidence/live_test.go#TestRunLiveDrainsBothPipesAfterTruncationAndPreservesOutcome"
+    ],
+    "terminal.cancelled": [
+      "cmd/fid/gate_run_test.go#TestGateRunRecordsExactNonSuccessTerminalOutcomes"
+    ],
+    "terminal.failed": [
+      "cmd/fid/gate_run_test.go#TestGateRunRecordsExactNonSuccessTerminalOutcomes"
+    ],
+    "terminal.signaled": [
+      "cmd/fid/gate_run_test.go#TestGateRunRecordsExactNonSuccessTerminalOutcomes"
+    ],
+    "terminal.succeeded": [
+      "cmd/fid/gate_run_test.go#TestGateRunPersistsAttemptAndSuccessfulReceiptBeforeTerminalFrame"
+    ],
+    "terminal.timed-out": [
+      "cmd/fid/gate_run_test.go#TestGateRunRecordsExactNonSuccessTerminalOutcomes"
+    ]
+  },
+  "operations": {
+    "activation.abort": [
+      "cmd/fid/activation_test.go#TestActivationReplaysAcrossLifecycleWithoutPreemptingLifecycleChecks",
+      "cmd/fid/activation_test.go#TestActivationLifecycleRejectsSkippedAndExtraTransitionsWithoutEvents"
+    ],
+    "activation.commit": [
+      "cmd/fid/activation_test.go#TestActivationReplaysAcrossLifecycleWithoutPreemptingLifecycleChecks",
+      "cmd/fid/activation_test.go#TestActivationLifecycleRejectsSkippedAndExtraTransitionsWithoutEvents"
+    ],
+    "activation.component": [
+      "cmd/fid/activation_test.go#TestActivationReplaysAcrossLifecycleWithoutPreemptingLifecycleChecks",
+      "cmd/fid/activation_test.go#TestActivationLifecycleRejectsSkippedAndExtraTransitionsWithoutEvents"
+    ],
+    "activation.finalize": [
+      "cmd/fid/activation_test.go#TestActivationReplaysAcrossLifecycleWithoutPreemptingLifecycleChecks",
+      "cmd/fid/activation_test.go#TestActivationLifecycleRejectsSkippedAndExtraTransitionsWithoutEvents"
+    ],
+    "activation.prepare": [
+      "cmd/fid/activation_test.go#TestActivationReplaysAcrossLifecycleWithoutPreemptingLifecycleChecks",
+      "cmd/fid/activation_test.go#TestActivationLifecycleRejectsSkippedAndExtraTransitionsWithoutEvents"
+    ],
+    "activation.recover": [
+      "cmd/fid/integration/p22_activation_semantics_test.go#TestP22DualAdapterActivationConformance"
+    ],
+    "activation.recover-complete": [
+      "cmd/fid/integration/p22_activation_semantics_test.go#TestP22DualAdapterActivationConformance"
+    ],
+    "activation.resource": [
+      "cmd/fid/integration/p22_activation_semantics_test.go#TestP22DualAdapterActivationConformance"
+    ],
+    "activation.status": [
+      "cmd/fid/integration/p22_activation_semantics_test.go#TestP22DualAdapterActivationConformance"
+    ],
+    "attention.list": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ],
+    "attention.resolve": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ],
+    "claim.expire": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ],
+    "claim.get": [
+      "cmd/fid/generic_claim_test.go#TestClaimResponseCarriesOnlyContractFields"
+    ],
+    "claim.list": [
+      "cmd/fid/generic_claim_test.go#TestClaimResponseCarriesOnlyContractFields"
+    ],
+    "export.create": [
+      "cmd/fid/integration/p22_portable_conformance_test.go#TestP22PortableRecoveryConformance"
+    ],
+    "export.import": [
+      "cmd/fid/export_test.go#TestExportCreateValidateAndImportUsesClosedTargetConflict",
+      "cmd/fid/integration/p22_final_journey_test.go#TestP22CompleteOneIssueRecoveryJourney"
+    ],
+    "export.validate": [
+      "cmd/fid/integration/p22_portable_conformance_test.go#TestP22PortableRecoveryConformance"
+    ],
+    "gate.run": [
+      "cmd/fid/gate_run_test.go#TestGateRunRecordsExactNonSuccessTerminalOutcomes"
+    ],
+    "projection.resume": [
+      "cmd/fid/integration/p22_resume_human_test.go#TestP22ResumeHumanMatchesEligibleAndStoppedRecoveryState"
+    ],
+    "run.abandon": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ],
+    "run.checkpoint": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ],
+    "run.close": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ],
+    "run.get": [
+      "cmd/fid/generic_run_test.go#TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets"
+    ],
+    "run.inspect": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ],
+    "run.list": [
+      "cmd/fid/integration/p22_portable_conformance_test.go#TestP22PortableRecoveryConformance"
+    ],
+    "run.observe": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ],
+    "run.observe-budget": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ],
+    "run.recover": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ],
+    "run.start": [
+      "cmd/fid/generic_run_test.go#TestRunStartBindsOptionalObligationAndRejectsReusedExecutor"
+    ],
+    "stop.list": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ],
+    "stop.raise": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ],
+    "stop.resolve": [
+      "cmd/fid/integration/p22_fake_test.go#TestP22DualAdapterRecoveryConformance"
+    ]
+  }
+}

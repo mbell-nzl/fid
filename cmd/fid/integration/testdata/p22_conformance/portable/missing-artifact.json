@@ -1,12 +1,21 @@
 {
   "state": "missing-artifact",
   "expected": {
-    "run_statuses": [
-      "active"
+    "activation_statuses": [
+      "finalized"
     ],
     "artifact_availability": [
       "missing"
     ],
-    "artifact_body_count": 0
+    "artifact_body_count": 0,
+    "attention_count": 0,
+    "attention_link_count": 0,
+    "run_statuses": [
+      "active"
+    ],
+    "stop_count": 0,
+    "tokens_consumed": 3,
+    "tokens_remaining": 7,
+    "tokens_state": "available"
   }
 }

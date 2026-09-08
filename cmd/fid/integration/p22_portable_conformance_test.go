@@ -43,7 +43,15 @@ func TestP22PortableRecoveryConformance(t *testing.T) {
 		t.Run(fixture.State, func(t *testing.T) {
 			adapter, activations := p22PortableSource(t, fixture.State)
 			entries, live := p22PortableThreeWay(t, adapter, activations)
-			for name, actual := range map[string]map[string]any{"fid": p22PortableNamedSummary(live, entries), "fake": p22PortableFakeSummary(t, entries)} {
+			fid, fake := p22PortableNamedSummary(live, entries), p22PortableFakeSummary(t, entries, adapter.runID)
+			fields := "activation_statuses artifact_availability artifact_body_count attention_count attention_link_count run_statuses stop_count tokens_consumed tokens_remaining tokens_state"
+			p22AssertKeys(t, fid, fields)
+			p22AssertKeys(t, fake, fields)
+			p22AssertKeys(t, fixture.Expected, fields)
+			if !reflect.DeepEqual(fid, fake) {
+				t.Fatalf("complete independent portable summaries differ: fid=%#v fake=%#v", fid, fake)
+			}
+			for name, actual := range map[string]map[string]any{"fid": fid, "fake": fake} {
 				t.Run(name, func(t *testing.T) {
 					for field, expected := range fixture.Expected {
 						if !reflect.DeepEqual(actual[field], expected) {

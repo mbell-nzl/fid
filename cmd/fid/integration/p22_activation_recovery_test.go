@@ -117,7 +117,11 @@ func p22AssertUnchangedSentinel(t *testing.T, path string, want []byte) {
 
 func p22ActivationBoundaryFixture(t *testing.T, binary, boundary string) (string, string) {
 	t.Helper()
-	workspace := t.TempDir()
+	return p22ActivationBoundaryFixtureAt(t, binary, t.TempDir(), boundary)
+}
+
+func p22ActivationBoundaryFixtureAt(t *testing.T, binary, workspace, boundary string) (string, string) {
+	t.Helper()
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "init", "--prefix", "P22A")
 	if err := os.WriteFile(filepath.Join(workspace, "provider-sentinel.txt"), []byte("provider bytes remain untouched\n"), 0o600); err != nil {
 		t.Fatal(err)

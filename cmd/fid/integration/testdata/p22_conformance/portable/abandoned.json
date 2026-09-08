@@ -1,8 +1,19 @@
 {
   "state": "abandoned",
   "expected": {
+    "activation_statuses": [
+      "finalized"
+    ],
+    "artifact_availability": [],
+    "artifact_body_count": 0,
+    "attention_count": 0,
+    "attention_link_count": 0,
     "run_statuses": [
       "abandoned"
-    ]
+    ],
+    "stop_count": 0,
+    "tokens_consumed": null,
+    "tokens_remaining": null,
+    "tokens_state": "unknown"
   }
 }

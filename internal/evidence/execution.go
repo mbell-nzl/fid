@@ -85,6 +85,7 @@ type GateRunResult struct {
 	IdempotencyKey  string
 	Replayed        bool
 	definition      GateDefinition
+	startedEventID  string
 }
 
 // BudgetDenial is the durable pre-spawn rejection produced by a required
@@ -232,7 +233,14 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 		if err != nil {
 			return err
 		}
-		prepared = GateRunResult{Attempt: attempt, IdempotencyKey: options.IdempotencyKey, definition: binding.registration.Policy}
+		started, found, err := journal.ReplayIdempotent(conn, idempotency)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return fmt.Errorf("run gate: committed Attempt binding is missing")
+		}
+		prepared = GateRunResult{Attempt: attempt, IdempotencyKey: options.IdempotencyKey, definition: binding.registration.Policy, startedEventID: started.EventID}
 		return nil
 	})
 	if err != nil || prepared.Replayed {
@@ -264,6 +272,9 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 		}
 		occurredAt, err := gateEventOccurredAt(options.WorkspaceRoot, eventID)
 		if err != nil {
+			return err
+		}
+		if err := appendCommittedBudgetStops(conn, &prepared.Live, receipt.RunID, prepared.startedEventID, eventID); err != nil {
 			return err
 		}
 		prepared.Receipt, prepared.EventID, prepared.EventOccurredAt = &receipt, eventID, occurredAt
