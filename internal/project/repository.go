@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"unicode/utf8"
@@ -48,6 +49,21 @@ type Observation struct {
 
 // ObserveRepository reads a complete Git worktree snapshot without modifying it.
 func ObserveRepository(root string) (Observation, error) {
+	first, err := observeRepository(root)
+	if err != nil {
+		return Observation{}, err
+	}
+	second, err := observeRepository(root)
+	if err != nil {
+		return Observation{}, err
+	}
+	if !reflect.DeepEqual(first, second) {
+		return Observation{}, unsafeRepository("repository changed during capture")
+	}
+	return first, nil
+}
+
+func observeRepository(root string) (Observation, error) {
 	root, err := filepath.Abs(root)
 	if err != nil {
 		return Observation{}, fmt.Errorf("resolve repository root: %w", err)
@@ -72,6 +88,9 @@ func ObserveRepository(root string) (Observation, error) {
 	unmerged, err := unmergedPaths(root)
 	if err != nil {
 		return Observation{}, err
+	}
+	if len(unmerged) != 0 {
+		return Observation{}, unsafeRepository("repository has unmerged paths")
 	}
 	operation, err := operationMarker(root)
 	if err != nil {
@@ -117,7 +136,11 @@ func IsAncestor(root, earlier, later string) (bool, error) {
 }
 
 func changedPaths(root string) ([]string, error) {
-	tracked, err := gitNUL(root, "diff", "--name-only", "-z", "--no-renames", "HEAD", "--")
+	staged, err := gitNUL(root, "diff", "--cached", "--name-only", "-z", "--no-renames", "HEAD", "--")
+	if err != nil {
+		return nil, unsafeRepository("enumerate index changes: %v", err)
+	}
+	tracked, err := gitNUL(root, "diff", "--name-only", "-z", "--no-renames", "--")
 	if err != nil {
 		return nil, unsafeRepository("enumerate tracked changes: %v", err)
 	}
@@ -126,7 +149,7 @@ func changedPaths(root string) ([]string, error) {
 		return nil, unsafeRepository("enumerate untracked changes: %v", err)
 	}
 	paths := map[string]bool{}
-	for _, raw := range append(tracked, untracked...) {
+	for _, raw := range append(append(staged, tracked...), untracked...) {
 		if err := validPath(raw); err != nil {
 			return nil, err
 		}
@@ -272,7 +295,7 @@ func trackedFlags(root string) (bool, error) {
 		return false, unsafeRepository("list tracked flags: %v", err)
 	}
 	for _, record := range records {
-		if len(record) > 0 && record[0] >= 'a' && record[0] <= 'z' {
+		if len(record) > 0 && (record[0] == 'S' || (record[0] >= 'a' && record[0] <= 'z')) {
 			return true, nil
 		}
 	}

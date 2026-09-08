@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -8,6 +9,24 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/project"
 )
+
+func TestReconcileRepositoryRejectsMissingBaseEvenWithUnchangedHead(t *testing.T) {
+	root := reconciliationRepositoryFixture(t)
+	current, err := project.ObserveRepository(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	missing := "0000000000000000000000000000000000000001"
+	for _, base := range []*string{nil, &missing} {
+		start := repositoryFromObservation(current)
+		start.BaseOID = base
+		_, err := ReconcileRepository(start, current, nil, nil)
+		var conflict *RecoveryStateConflictError
+		if !errors.As(err, &conflict) {
+			t.Fatalf("missing base %v: %v, want repository conflict", base, err)
+		}
+	}
+}
 
 func TestReconcileRepositoryRequiresExactDirtyAdoption(t *testing.T) {
 	repository := reconciliationRepositoryFixture(t)

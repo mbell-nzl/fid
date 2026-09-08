@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -102,6 +103,10 @@ func renderRunRecoveryError(cmd *cobra.Command, operation string, cause error, r
 		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeDuplicateEntity, "executor identity already exists", &cli.Subject{Type: cli.SubjectRun, ID: runID}, map[string]any{"entity_type": "run", "identity": map[string]any{"fields": []string{"executor_id"}, "values": []string{duplicate.ExecutorID}}})
 	}
 	var conflict *workflow.RecoveryStateConflictError
+	if errors.Is(cause, project.ErrUnsafeRepository) {
+		conflict = &workflow.RecoveryStateConflictError{Paths: []string{}, Reasons: []string{cause.Error()}}
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRecoveryStateConflict, "recovery state conflict", &cli.Subject{Type: cli.SubjectRun, ID: runID}, map[string]any{"run_id": runID, "observation_digest": nullableRunDigest(digest), "paths": conflict.Paths, "reasons": conflict.Reasons})
+	}
 	if errors.As(cause, &conflict) {
 		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRecoveryStateConflict, "recovery state conflict", &cli.Subject{Type: cli.SubjectRun, ID: runID}, map[string]any{"run_id": runID, "observation_digest": nullableRunDigest(digest), "paths": append([]string{}, conflict.Paths...), "reasons": conflict.Reasons})
 	}

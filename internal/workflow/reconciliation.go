@@ -53,6 +53,9 @@ func reconcileRepository(start Repository, current project.Observation, checkpoi
 	if start.WorktreeID != current.WorktreeID && !allowDestinationWorktree {
 		return Reconciliation{}, recoveryConflict(nil, "repository identity changed")
 	}
+	if exists, err := project.IsAncestor(current.Root, *start.BaseOID, *start.BaseOID); err != nil || !exists {
+		return Reconciliation{}, recoveryConflict(nil, "repository base is unavailable")
+	}
 	if len(current.Unmerged) != 0 {
 		return Reconciliation{}, recoveryConflict(current.Unmerged, "repository has unmerged paths")
 	}
