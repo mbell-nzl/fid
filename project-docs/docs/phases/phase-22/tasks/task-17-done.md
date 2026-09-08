@@ -43,9 +43,9 @@
 
 ## Tests run
 
-- `go test ./internal/maintenance -run '^TestMaintenanceReportsBrokenRecoveryLinkWithoutMutation$' -count=1` - FAIL - `Check().Errors = []maintenance.Finding(nil), want broken recovery link finding` (terminated `exit_code: 1`); initial intended red before recovery integrity implementation.
+- `go test ./internal/maintenance -run '^TestMaintenanceReportsBrokenRecoveryLinkWithoutMutation$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); initial intended red: `Check().Errors = []maintenance.Finding(nil), want broken recovery link finding` before recovery integrity implementation.
 - `go test ./internal/maintenance -run '^TestMaintenanceReportsBrokenRecoveryLinkWithoutMutation$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/maintenance	0.139s` (terminated `exit_code: 0`)
-- `go test ./internal/maintenance -run '^TestMaintenanceRecoveryIntegrityMatrixDoesNotMutate$' -count=1` - FAIL - `Check().Errors = []maintenance.Finding{...activation-recovery-integrity...}, want later supersession accepted` (terminated `exit_code: 1`); root audit revealed that a later accepted activation supersedes a completed complete-forward recovery.
+- `go test ./internal/maintenance -run '^TestMaintenanceRecoveryIntegrityMatrixDoesNotMutate$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); `Check().Errors` contained `activation-recovery-integrity` where later supersession must be accepted. Root audit identified the causal lifecycle condition; the in-scope repair admitted `superseded`, and the later green result is recorded below.
 - `go test ./internal/maintenance -run '^TestMaintenanceRecoveryIntegrityMatrixDoesNotMutate$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/maintenance	0.150s` (terminated `exit_code: 0`)
 - `go test -tags integration ./cmd/fid/integration -run '^TestP22QualifiedCapabilityMatrixMatchesFakeDiscoveryAndExport$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.326s` (terminated `exit_code: 0`)
 - `go test -tags integration ./cmd/fid/integration -run '^TestRecoverySchemaFreshBinaryInitAndRebuild$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	0.641s` (terminated `exit_code: 0`)
