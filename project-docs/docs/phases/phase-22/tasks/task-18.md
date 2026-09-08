@@ -36,6 +36,8 @@ Full sources, pass/fail criteria, and validator ownership are in
   version/direction/competing-prepare error shapes already owned by earlier tasks.
 - DEC-205 assigns the bounded embedded Stop disposition sequence repair in
   internal/workflow/stop.go, with task-2 provenance and unchanged contracts/gates.
+- DEC-206 assigns only the accepted budget-stop control derived from this
+  execution's committed crossing facts; preserve admission and terminal replay.
 - No new domain behavior is assigned to this final assembly task. Return causal findings for minimum-scope amendment per DEC-175.
 - Developer produces runnable Human fixtures; only Human may judge VAL-076..078.
 - DEC-196: deliver a reproducible test-only Human fixture generator, not only
@@ -56,6 +58,10 @@ Full sources, pass/fail criteria, and validator ownership are in
 ## Scope
 
 ### Files To Create Or Modify
+
+- `internal/evidence/execution.go`, `internal/evidence/budget_frames.go`,
+  `internal/evidence/live.go` and matching tests — DEC-206 only: project committed
+  crossing facts into the accepted budget-stop control.
 
 - `internal/workflow/stop.go` and matching Stop tests — DEC-205 only: derive
   canonical next aggregate sequence for explicit/embedded Stop disposition.

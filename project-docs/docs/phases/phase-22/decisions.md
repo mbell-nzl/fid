@@ -1172,6 +1172,39 @@
   This allocates causal repair of already accepted behavior; it does not broaden
   Task18 into general product implementation. Final independent QA audits it.
 
+### DEC-206: Allocate the accepted budget-stop live control to final assembly
+
+- **Date:** 2026-09-08.
+- **Status:** ACCEPTED by the root delegate under the Human's explicit bounded
+  completion authority, using the minimum-scope route required by DEC-175.
+- **Existing requirement:** public-interface.md section4 requires an admitted
+  execution crossing a Budget boundary to emit a budget-stop control carrying
+  exact Stop IDs, Attention IDs and Budget, followed by its normal observed
+  terminal Receipt. Phase21's closed streams and terminal-only successful replay
+  remain retained. No start stream is introduced.
+- **Evidence:** Task18 TestP22BudgetCrossingFrameOrder, through three actual
+  built-binary Gate executions, fails `admitted attempt3 budget-stop frames = 0,
+  want 1` (exit_code1). The final Attempt is admitted, charged and observed;
+  the durable Stop exists but no product source emits budget-stop. The initial
+  test-only start-stream assumption was corrected against Phase21 before this
+  intended behavioral red; it is not a product requirement.
+- **Provenance:** a3766804f1a40ca5e827748f59550e1d72d452aa, phase22/task7,
+  introduced appendFIDBudgetEffects and durable crossing Stop Effects. Task8
+  owned live execution/closure convergence. Their reports stay complete and
+  unchanged; Task18 records both origins and this minimum repair allocation.
+- **Allocation:** internal/evidence/execution.go, a narrow
+  internal/evidence/budget_frames.go helper, internal/evidence/live.go if needed,
+  and matching tests may project committed crossing facts into the already
+  accepted budget-stop control. Bind facts to this execution's Attempt/Receipt
+  Events, retain historical counters and exact IDs, emit nothing for a rejected
+  or uncommitted crossing, and preserve terminal-last/replay behavior.
+- **Limits:** No admission/arithmetic/termination policy, wire field, Event or
+  Effect shape, DDL, dependency, gate, VAL, threshold or control change. This
+  completes an accepted output variant; it is not new domain behavior.
+- **Evidence:** Preserve the exact red and green, prior non-crossing controls,
+  committed/denied execution distinction, terminal-only replay and final seven
+  unchanged Task18 commands. Review6 and independent finalQA audit the repair.
+
 ## Planning Spec Impact
 
 | Document | Planning change |
