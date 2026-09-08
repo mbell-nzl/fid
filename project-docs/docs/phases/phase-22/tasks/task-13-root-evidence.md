@@ -129,3 +129,7 @@ real Recovery history with one missing observation reference.
 
 - Rebuilt `/tmp/fid` with `go build -o /tmp/fid ./cmd/fid` (terminated `exit_code: 0`, no output). From `/tmp`, `/tmp/fid --json export validate /tmp/fid-p22-task13-smoke-1T0ybJ/invalid.zip` now returns the complete `archive-invalid` integrity JSON, check `manifest-invalid`, `entry:null`, and observed `exit_code: 6`. This is the expected negative runtime behavior, not a silently successful command. The same command targeting `recovery.zip` returns `status:valid` and matching v2 digest (terminated `exit_code: 0`).
 - Final-source format and lint again passed (silent exit0 / `0 issues.` exit0), then full race/coverage attempt3 launched. Source remains frozen during gates.
+
+- Full race/coverage attempt3 passed against final product commit `acb569bb9447a3259991520669167fdc819c1706`, final `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 52.9% of statements` (terminated `exit_code: 0`). CLI442.437s/73.2%, export359.532s/78.6%. Coverage summary again returned `total:										(statements)					63.2%` (terminated `exit_code: 0`). Tagged full attempt2 launched afterward.
+
+- Required tagged integration attempt2 passed `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	56.215s` (terminated `exit_code: 0`). All five required final-source commands now passed; earlier timeout, lint and integration failures remain immutable evidence.

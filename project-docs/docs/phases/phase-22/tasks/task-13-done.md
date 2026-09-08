@@ -2,11 +2,11 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: in-scope-implementation
-- Condition: Final exact gates are running; no completion claim yet.
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
 - Recovery attempts: 1
-- Next action: Observe all five exact gates, retain results, commit and verify report.
+- Next action: None.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -56,12 +56,12 @@
 
 ## Validation Contract Coverage
 
-Final outcomes remain pending the full gates. Named evidence is already implemented:
+All five final-source gates passed with observed termination. Assertion evidence:
 
-- VAL-054: `TestCreateRecoveryManifestV2ConfigAndOrdinalJournal`, `TestCreateIsByteIdenticalWithCompleteDeterministicInventory`, `TestCreateAndValidatePreserveUnavailableReceiptArtifactWithoutBody`, `TestJournalWriterChunksAtLineBoundaryPreservingBytes`: configuration/identity, original Event lines, complete Source/Artifact inventory, both availability states, deterministic repeated export, and exact chunk boundary.
-- VAL-055: `TestArchiveWithValidHashesButInvalidRecoveryReferenceRejects` first validates a real recovered-history control then changes only its observation reference with recomputed hashes. `TestArchiveRejectsIntegrityValidSemanticCorruptions` adds unknown family/table/column, wrong scalar/boolean types, unresolved idempotency Event, foreign Recovery aggregate, duplicate immutable Artifact, retired caller outcome and executor rewrite. `TestSemanticValidatorRejectsNestedDuplicateJSONKey` and `TestSemanticValidatorRejectsRecoveryEffectFamilyTampering` cover duplicate nested keys, wrong operations and ordering.
-- VAL-056: 056-a `TestArchiveEntryCountBoundaries` creates 999999/1000000/1000001 actual ZIP records and runs both pre-allocation record counting and directory inspection. 056-b/c `TestArchiveExpandedByteBoundaries` streams valid-CRC ZIPs at 64MiB and 1GiB minus/equal/plus one. 056-d `TestArchiveCumulativeBoundary` streams 8GiB minus/equal/plus one through individually legal members and checks measured counts. 056-e `TestReadEventLinesUsesPerLineLimitAcrossFragments` covers 1MiB minus/equal/plus one, fragmented input and multiple legal lines. 056-f..k `TestArchiveActualZIPPathTypeAndDuplicateMatrix` names real safe, traversal, absolute/drive, symlink, device, directory and duplicate cases. `TestArchiveStopsAtFirstExpandedOverflow` proves exactly L+1 consumed and no later member opened. Large fixtures are generated in fresh disk-backed .cache children and cleaned after each test; no limit was reduced or test skipped.
-- VAL-057: `TestValidateHasNoSourceOrDestinationEffects` snapshots both initialized source and uninitialized destination with operator sentinel for valid/invalid archives. Original negative-check and special-file controls also snapshot source bytes. V1 has a retained read-only control in `TestValidateRetainsPinnedV1Profile`.
+- VAL-054: PASS - `TestCreateRecoveryManifestV2ConfigAndOrdinalJournal`, `TestCreateIsByteIdenticalWithCompleteDeterministicInventory`, `TestCreateAndValidatePreserveUnavailableReceiptArtifactWithoutBody`, `TestJournalWriterChunksAtLineBoundaryPreservingBytes`: configuration/identity, original Event lines, complete Source/Artifact inventory, both availability states, deterministic repeated export, and exact chunk boundary.
+- VAL-055: PASS - `TestArchiveWithValidHashesButInvalidRecoveryReferenceRejects` first validates a real recovered-history control then changes only its observation reference with recomputed hashes. `TestArchiveRejectsIntegrityValidSemanticCorruptions` adds unknown family/table/column, wrong scalar/boolean types, unresolved idempotency Event, foreign Recovery aggregate, duplicate immutable Artifact, retired caller outcome and executor rewrite. `TestSemanticValidatorRejectsNestedDuplicateJSONKey` and `TestSemanticValidatorRejectsRecoveryEffectFamilyTampering` cover duplicate nested keys, wrong operations and ordering.
+- VAL-056: PASS - 056-a `TestArchiveEntryCountBoundaries` creates 999999/1000000/1000001 actual ZIP records and runs both pre-allocation record counting and directory inspection. 056-b/c `TestArchiveExpandedByteBoundaries` streams valid-CRC ZIPs at 64MiB and 1GiB minus/equal/plus one. 056-d `TestArchiveCumulativeBoundary` streams 8GiB minus/equal/plus one through individually legal members and checks measured counts. 056-e `TestReadEventLinesUsesPerLineLimitAcrossFragments` covers 1MiB minus/equal/plus one, fragmented input and multiple legal lines. 056-f..k `TestArchiveActualZIPPathTypeAndDuplicateMatrix` names real safe, traversal, absolute/drive, symlink, device, directory and duplicate cases. `TestArchiveStopsAtFirstExpandedOverflow` proves exactly L+1 consumed and no later member opened. Large fixtures are generated in fresh disk-backed .cache children and cleaned after each test; no limit was reduced or test skipped.
+- VAL-057: PASS - `TestValidateHasNoSourceOrDestinationEffects` snapshots both initialized source and uninitialized destination with operator sentinel for valid/invalid archives. Original negative-check and special-file controls also snapshot source bytes. V1 has a retained read-only control in `TestValidateRetainsPinnedV1Profile`.
 
 ## Tests run
 
@@ -88,11 +88,11 @@ Working directory: `/home/mark/projects/fid`.
 - `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 52.9% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:										(statements)					63.2%` (terminated `exit_code: 0`)
 
-Final tagged integration command is pending observed termination, not skipped.
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	56.215s` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
-- Tagged integration attempt1 failed with `FAIL` (terminated `exit_code: 1`), package55.349s. The retained full CLI journey reached a `run.execution-blocked` idempotency row missing from the new semantic catalog. Added the existing writer's required final stage. Its error also exposed the Phase21 adapter's string-pointer/null conversion bug; new public CLI negative tests captured both missing bodies before repair. Focused journey and error rendering passed afterward. The temporary direct-Validate diagnostic was removed, leaving the original journey assertion intact. Final-source gates are being rerun.
+- Tagged integration attempt1 failed with `FAIL` (terminated `exit_code: 1`), package55.349s. The retained full CLI journey reached a `run.execution-blocked` idempotency row missing from the new semantic catalog. Added the existing writer's required final stage. Its error also exposed the Phase21 adapter's string-pointer/null conversion bug; new public CLI negative tests captured both missing bodies before repair. Focused journey and error rendering passed afterward. The temporary direct-Validate diagnostic was removed, leaving the original journey assertion intact. The final-source full race/coverage rerun passed, and the byte-identical final tagged rerun passed `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	56.215s` (terminated `exit_code: 0`).
 - No product contract, migration, Event schema, gate definition, VAL threshold or dependency changed.
 - Initial test-quality/TDD deviation: the originally named first test only corrupted Source metadata. It is preserved under an accurate Source name. The semantic assistant then captured the genuine public-Validate acceptance red before its semantic replay implementation, after separate scanner/writer edits had begun. Root subsequently strengthened the final test to full real Recovery history. No earlier result is relabeled as stronger proof.
 - Required race/coverage attempt1 failed with `FAIL` (terminated `exit_code: 1`) and `panic: test timed out after 10m0s`; the stack identified repeated zero-fixture compression before the first cumulative-limit assertion. Root changed fixture generation to reuse stdlib-generated byte-aligned non-final DEFLATE blocks, with real full-size expansion and CRC checking unchanged. Every original boundary remains. The byte-identical second full gate passed after the fixture repair: `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 52.9% of statements` (terminated `exit_code: 0`). Export passed at367.930s and the CLI at461.712s; no timeout was raised.
@@ -113,8 +113,8 @@ Final tagged integration command is pending observed termination, not skipped.
 
 ## Commit hash
 
-- Pending commit
+- `acb569bb9447a3259991520669167fdc819c1706`
 
 ## Commit subject
 
-- Pending commit
+- `feat(export): validate bounded v2 recovery archives`
