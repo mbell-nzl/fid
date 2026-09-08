@@ -35,6 +35,7 @@ func TestP22CompleteOneIssueRecoveryJourney(t *testing.T) {
 	p22AcceptedCall(t, a, "journey-terminated", "run.observe", nil)
 	p22AcceptedCall(t, a, "journey-inspect", "run.inspect", nil)
 	p22AcceptedCall(t, a, "journey-checkpoint", "run.checkpoint", nil)
+	p22AcceptedCall(t, a, "journey-inspect-checkpoint", "run.inspect", nil)
 	p22AcceptedCall(t, a, "journey-expire", "claim.expire", nil)
 	recovered := p22AcceptedCall(t, a, "journey-recover", "run.recover", map[string]any{"adopted_paths": []string{"base.txt"}, "ttl_seconds": 3600})
 	if p21PathString(t, recovered, "result", "run", "predecessor_run_id") != prior || a.runID == prior {

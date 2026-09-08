@@ -102,6 +102,10 @@ func reconcileRepository(start Repository, current project.Observation, checkpoi
 
 // ValidateReconciliationAdoption proves the exact current observed dirty set was adopted.
 func ValidateReconciliationAdoption(reconciliation Reconciliation, adoptedPaths []string, digest string) error {
+	return validateReconciliationAdoption(reconciliation, adoptedPaths, digest, false)
+}
+
+func validateReconciliationAdoption(reconciliation Reconciliation, adoptedPaths []string, digest string, allowOutsideScope bool) error {
 	if reconciliation.Digest == "" || digest != reconciliation.Digest {
 		return recoveryConflict(nil, "reconciliation digest is stale or changed")
 	}
@@ -110,7 +114,7 @@ func ValidateReconciliationAdoption(reconciliation Reconciliation, adoptedPaths 
 	}
 	want := make([]string, 0, len(reconciliation.Paths))
 	for _, change := range reconciliation.Paths {
-		if change.Classification != "in-scope" {
+		if change.Classification != "in-scope" && !(allowOutsideScope && change.Classification == "outside-scope") {
 			return recoveryConflict([]string{change.Path}, "repository contains non-adoptable change")
 		}
 		want = append(want, change.Path)

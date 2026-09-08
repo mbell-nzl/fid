@@ -192,11 +192,23 @@ func RecoverRun(options RunOptions, request RunRecoveryRequest) (RunRecoveryResu
 		if err != nil {
 			return fmt.Errorf("run recovery: observe repository: %w", err)
 		}
-		reconciliation, err := reconcileRunRepository(options.WorkspaceRoot, prior.StartRepository, current, nil, request.AdoptedPaths)
+		approvedPaths, err := runClaimPaths(conn, prior.ClaimID)
 		if err != nil {
 			return err
 		}
-		if err := ValidateReconciliationAdoption(reconciliation, request.AdoptedPaths, request.ReconciliationDigest); err != nil {
+		checkpoint, err := latestRunCheckpoint(conn, prior.ID)
+		if err != nil {
+			return err
+		}
+		base, checkpointID := prior.StartRepository, (*string)(nil)
+		if checkpoint != nil {
+			base, checkpointID = checkpoint.Reconciliation.Repository, &checkpoint.ID
+		}
+		reconciliation, err := reconcileRunRepository(options.WorkspaceRoot, base, current, checkpointID, approvedPaths)
+		if err != nil {
+			return err
+		}
+		if err := validateReconciliationAdoption(reconciliation, request.AdoptedPaths, request.ReconciliationDigest, request.Authority.Mode == "force"); err != nil {
 			return err
 		}
 		if err := validateRecoveryExecutor(conn, request.Executor); err != nil {
@@ -301,7 +313,7 @@ func validateRecoveryAuthority(options RunOptions, prior Run, authority Recovery
 		return invalidRun("force recovery grant reference is invalid")
 	}
 	grant := envelope.AuthorityGrants[ref.Ordinal]
-	if grant.ActorSelector.ActorID != options.ActorID || !containsRecoveryAction(grant.Actions, runForceRecoverAction) {
+	if grant.ActorSelector.ActorID != options.ActorID || grant.Scope.IssueID != prior.IssueID || !containsRecoveryAction(grant.ActorSelector.RequiredCapabilities, runForceRecoverAction) || !containsRecoveryAction(grant.Actions, runForceRecoverAction) {
 		return invalidRun("force recovery grant reference is stale")
 	}
 	return nil
