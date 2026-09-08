@@ -1440,3 +1440,11 @@
 - Owning task: none
 - Re-review of: none
 - Must-fix: 0 / Improvement: 2 / blocker candidates: 0; independent commit8125d8d verified. Task17 owns final capability/archive matrix; Task18 owns explicit portable fake/fid summary field inventory. No open ESC or required re-review. Root display note shortens two tokens without changing reviewer evidence/verdict.
+
+### 2026-09-08 20:29 TASK task-16 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-16-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 644f30e332a9e5099f0cb31c77fc6b9699fb5db8 - verified, subject matched; final report1b18b16
+- QA-plan commands beyond the task spec: none required
+- Evidence: Root captured named behavioral red, applied exact0016, converged latest references and retained historical scopes, recorded27 row origins and all21 removal-root dispositions. All12 exact gates passed, including one fresh100k sample27821ms on exact CF024 reference. First-attempt report lint and workflow-route ACTION ADVANCE passed. Task17 owns its separate three samples and final capability/maintenance matrix; Task18 and Review6/finalQA remain.

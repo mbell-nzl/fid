@@ -156,3 +156,18 @@
   active during review. Root prepares Task16 through read-only inspection.
 - Tasks16–18, Review6, full independent QA and retained Human fixtures remain
   authorized and pending. No Human outcome or final readiness is claimed early.
+
+## 2026-09-08 - Review5 And Task16 Complete
+
+- Independent Review5 PASS8125d8d:0 Must-fix,2 improvements assigned within
+  Task17 final capability matrix and Task18 portable field inventory.
+- Root implemented Task16 directly at644f30e, report1b18b16. Exact0016 removes
+  escalation state while historical migration fixtures and later-owned readers
+  remain. Current v2 profile16; retained v1 profile14. All21 removal roots and27
+  changed assertion origins are documented.
+- All12 exact gates passed; reference100k sample27821ms (<30000ms) and all six
+  reference identity commands match CF024. Reportlint passed firstattempt.
+- Task17 is next single Developer owner. Root owns only administrative docs and
+  read-only preparation during implementation. No concurrent benchmark load.
+- Task18, Review6, independent finalQA and runnable Human checklist remain
+  authorized; Human judgments/sign-off remain pending.
