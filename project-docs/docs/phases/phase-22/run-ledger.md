@@ -1464,3 +1464,37 @@
 - Commit: 24e3cbdb22dd9e43b55636da313dcef1ef633b6f - verified, subject matched; final report41abf06
 - QA-plan commands beyond the task spec: none required
 - Evidence: Root completed independent23-action matrix, actual failure-wire corpus, connected one-Issue journey, full ten-field portable fake/fid parity and four retained Human checkpoints. DEC205/206/207 allocated bounded accepted Stop/budget-frame/error repairs. All seven final gates passed with aggregate coverage63.0%; required race inventory failure and report assembly failure are preserved. Retained clean-source manifest .cache/phase-22-human/checkpoints-2335511884/manifest.json, post-exit inspections PASS. Root observed report-lint and route ADVANCE. Review6 is now due; Human judgments and independent finalQA remain pending.
+
+### 2026-09-08 22:41 REVIEW review-6
+
+- Path: project-docs/docs/phases/phase-22/qa/review-6.md
+- Tasks covered: task-16, task-17, task-18
+- Outcome: REPAIR
+- Owning task: task-18
+- Re-review of: none
+- Must-fix: 1 / Improvement: 0 / blocker candidates: 0; R6-01 requires explicit qualifying/rejecting behavioral evidence for all twelve closed-value domains and members. Independent tagged gate PASS101.237s does not replace missing evidence. Review commit ea9b83fe9c894c8e7ec36214a238ed0209faaf39. Root repairs Task18 directly; no product writer overlaps review.
+
+### 2026-09-08 22:42 TASK-RECOVERY task-18
+
+- Source: review-6.md R6-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: task-18.md / review-6.md R6-01
+- Triage disposition: N/A
+- Trigger signature: task-18:qa-rework:closed-value-behavioral-conformance
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: cmd/fid/integration/p22_conformance_test.go,cmd/fid/integration/testdata/p22_conformance/wire-inventory.json,cmd/fid/integration/p22_closed_values_test.go,cmd/fid/integration/p22_fake_test.go,project-docs/docs/phases/phase-22/tasks/task-18-done.md
+- Forbidden changes: product code, accepted closed domains, contracts, VAL semantics, gates, controls, dependencies, other task reports and every unrelated path
+- Originating report: project-docs/docs/phases/phase-22/tasks/task-18-done.md
+- Exact verification: from /home/mark/projects/fid, all seven unchanged task-18 commands in their original order, plus focused closed-domain conformance; preserve original receipts
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: ea9b83fe9c894c8e7ec36214a238ed0209faaf39; initial Task18 complete report41abf06, independent Review6 REPAIR
+- Phase worktree: /home/mark/projects/fid on phase-22
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - closed-domain field-specific accepted-member and invalid-member schema/output assertions bound to actual fid corpus, then full exact gates and fresh independent review
+- Next action: root sole Task18 test/report writer; no subagent implementation
+- Human attention required: no
