@@ -4,9 +4,9 @@
 
 - Task outcome: COMPLETE
 - Category: none
-- Condition: None.
+- Condition: FQ-03 repository safety repair and all six unchanged gates are complete; independent final re-review remains.
 - Recovery attempts: 3
-- Next action: None.
+- Next action: Root continues Task5 FQ-04; final-review-2 follows all seven owners.
 - Human attention required: no
 - Recovery authority: TRG-22-007 / DEC-192 / DEC-193; attempt 3.
 - The bounded continuation admitted the task-4-owned `run.checkpointed` Event to projection and removed calendar dependence from the retained Stop fixture without changing any accepted contract, gate, schema, public interface, or validation row.
@@ -86,11 +86,11 @@
 
 ## Commit hash
 
-- `59c62b9e1d82c5f698d1e173908446d35b64f539`
+- `e4fa84cee9463e8d0159c570ce4a80f18d2d492d`
 
 ## Commit subject
 
-- `fix(recovery): admit checkpoint projection`
+- `fix(recovery): reject unsafe and changing repository captures`
 
 ## Root report display correction — 2026-09-08
 
@@ -99,3 +99,111 @@ receipts following the QA-84 preflight. The original Developer sessions remain
 the source of those receipts, including every recorded outcome, duration,
 coverage value and observed termination. This formatting correction records
 no new execution or attestation. Original encoded text remains in Git history.
+
+## Final-QA FQ-03 same-task continuation — 2026-09-09
+
+Authority: review-7, final-review.md FQ-03, task-4.md and contracts.md §3/3.1.
+Root is the sole writer. Original receipts and prior task/DEC-192/193 history
+remain unchanged. This appendix records the current repair; independent final
+re-review remains required after all seven owners.
+
+### Implementation and direct evidence
+
+- VAL-015: the observer now rejects uppercase skip-worktree as well as
+  assume-unchanged flags and all unmerged stages. It enumerates the union of
+  index-versus-HEAD and worktree-versus-index paths, preserving staged changes
+  even when the worktree matches HEAD; changed gitlinks therefore cannot vanish
+  from observation. Two complete captures must agree, or the operation rejects.
+- Reconciliation verifies that the recorded base still exists, including when
+  HEAD is unchanged. No digest grammar, path classification, adoption policy or
+  imported destination authority changed.
+- Existing public recovery rendering maps wrapped ErrUnsafeRepository to the
+  accepted recovery-state-conflict/conflict/exit 4 envelope, including the
+  original subject, observation digest, paths and reasons. No new wire fields.
+- TestObserveRepositoryRejectsUnsafeImages proves assume-unchanged, skip-worktree,
+  unmerged, missing HEAD, changed gitlink, unreadable file, FIFO and escaping
+  parent rejection. TestObserveRepositoryRejectsChangeDuringCapture uses real Git
+  NUL output and a test-local executable wrapper that creates a source file just
+  after untracked enumeration; it asserts rejection and the external write.
+  Invalid UTF-8, NUL, absolute/traversal paths reject at the path grammar.
+- The retained fixed staged/unstaged/mode/deleted/rename/untracked/symlink and
+  exclusion vectors remain unchanged. A new independently encoded staged-change/
+  restored-worktree vector pins dirty digest
+  sha256:9926607bb8970a8199f50aadbeb618aa94def7c761d00fc86cf3ddf7b2f77b48.
+- VAL-016: TestP22RecoveryPreservesRepositoryOnSuccessAndUnsafeRejection executes
+  the actual built fid binary across 21 cases: clean, exact dirty in-scope,
+  staged/restored, both tracked flags, unmerged, missing HEAD, unrelated history,
+  foreign worktree, gitlink, unreadable, FIFO, escaping parent, protected adoption,
+  and all seven merge/rebase/cherry-pick/revert/bisect markers. Each retains a real
+  stash and additional ref. Complete source bytes/modes/symlink payloads and all
+  Git files/directories (HEAD, complete refs, index, stash, reflogs and objects)
+  are compared before/after the real operation. Only .fid operational state is
+  excluded; caller input is outside the workspace. Unreadable-file mode is
+  compared, then permissions are restored by the test and exact content checked.
+  Success appends exactly one Event; each rejection has the exact typed conflict
+  and appends none. No recovery source/Git mutation was observed.
+- TestReconcileRepositoryRejectsMissingBaseEvenWithUnchangedHead covers null and
+  nonexistent recorded bases with an otherwise real unchanged Git observation.
+  Force/caller scope authority remains Task5's separate FQ-04 repair.
+
+### Provenance and mandatory deviations
+
+- The public recovery renderer originated in
+  69941fc1b6262fdd7efaaeecfe72760390dbd511 (Phase22/Task6), with its non-null paths
+  convergence at f3be616f0587881ee3f5c3716ffbf6167e3f2a20 (Phase22/Task6).
+  FQ-03 explicitly assigns this causal mapping repair; Task6's report is unchanged.
+- Observer red ended `FAIL` (exit_code: 1): skip-worktree, unmerged, gitlink and
+  capture-time changes were accepted. Root repaired the concrete predicates and
+  enumeration; the byte-identical focused command then passed at 1.333s.
+- Actual CLI red ended `FAIL` (exit_code: 1): unsafe errors produced
+  invalid-argument/invalid-input/exit 2 instead of the accepted conflict/exit 4.
+  The existing renderer mapping repaired this; the byte-identical command passed
+  at 24.931s. Its first escaping-parent fixture also lacked a parent directory;
+  creating that directory fixed construction without changing the assertion.
+- Missing-base red ended `FAIL` (exit_code: 1) because a nonexistent base with
+  unchanged HEAD was accepted. The current-base existence check repaired it;
+  the byte-identical command passed at 1.066s.
+- The initial observer test compile command failed with final token `go mod tidy`
+  (exit_code: 1) because the test imported testify, which is not in the actual
+  module despite the high-level stack description. The test now uses the existing
+  standard-library style. No module, dependency or license policy changed.
+- No accepted contract, Event, schema, dependency, gate command, threshold,
+  protected control or product policy changed. All failed attempts remain below.
+
+### Continuation command receipts
+
+Working directory: `/home/mark/projects/fid`. Root captured these tokens and real
+termination results in this recording session. Focused tests supplement the six
+unchanged final commands, which retain their specified order.
+
+
+- `go test -race ./internal/project -run '^(TestObserveRepositoryRejects|TestRepositoryPathGrammar)' -count=1` - FAIL - `	go mod tidy` (terminated `exit_code: 1`)
+  - unsafe observer behavioral red.
+- `go test -race ./internal/project -run '^(TestObserveRepositoryRejects|TestRepositoryPathGrammar)' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - unsafe observer red stdlib fixture.
+- `go test -race ./internal/project -run '^(TestObserveRepositoryRejects|TestRepositoryPathGrammar)' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/project	1.333s` (terminated `exit_code: 0`)
+  - unsafe observer green.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22RecoveryPreservesRepositoryOnSuccessAndUnsafeRejection$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - actual recovery safety and typed mapping red.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22RecoveryPreservesRepositoryOnSuccessAndUnsafeRejection$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	24.931s` (terminated `exit_code: 0`)
+  - actual recovery safety typed mapping green.
+- `go test -race ./internal/workflow -run '^TestReconcileRepositoryRejectsMissingBaseEvenWithUnchangedHead$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - missing base behavioral red.
+- `go test -race ./internal/workflow -run '^TestReconcileRepositoryRejectsMissingBaseEvenWithUnchangedHead$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	1.066s` (terminated `exit_code: 0`)
+  - missing base green.
+- `go test -race ./internal/project` - PASS - `ok  	github.com/mbell-nzl/fid/internal/project	1.827s` (terminated `exit_code: 0`)
+  - complete project canonical and safety regression.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+  - required Task4 post-gate.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+  - required Task4 post-gate.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	236.610s	coverage: 60.7% of statements` (terminated `exit_code: 0`)
+  - required full race coverage.
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					65.1%` (terminated `exit_code: 0`)
+  - required Task4 post-gate.
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	128.972s` (terminated `exit_code: 0`)
+  - required Task4 post-gate.
+- `go test -race ./internal/workflow -run '^TestEquivalentStopsShareAttentionButKeepDistinctFacts$' -count=5` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	9.692s` (terminated `exit_code: 0`)
+  - required repeated Stop regression.
+
+Prior primary binding: 59c62b9e1d82c5f698d1e173908446d35b64f539, `fix(recovery): admit checkpoint projection`. Observer origin: ac5e6f9bec80e06bfe5b7b33e3611a894d16038a, Phase22/Task4. Final ordinary coverage65.1%; all six final commands terminated exit0.
