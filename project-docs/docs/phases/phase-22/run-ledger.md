@@ -1363,3 +1363,24 @@
 - Resolution evidence: PENDING - complete installed-history verification, crash-safe exclusion, acceptance audit and all final exact gates; prior Developer receipts retained with attribution
 - Next action: root directly repairs and verifies Task14 under Human super-delegate authorization; no concurrent product owner
 - Human attention required: no
+
+### 2026-09-08 19:10 REPAIR task-14
+
+- Trigger signature: task-14:in-scope-implementation:import-lock-and-installed-history-binding
+- Attempt count: 1
+- Starting checkpoint: 0a4d00de3581c05f5f1c1b9748da87916e28bc1c
+- Ending checkpoint: 8c322b53c749a2a7f0dd0be3e03dbb5034d70e40 product; 51cc314 final report and root evidence
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: root reproduced repeated contender and altered imported Event identity failures; directory-inode locking and verified immutable journal inventory repair both. Five actual abrupt process-exit boundaries, immutable-snapshot replacement before staging, changed digest/key and corrupted history refusal, preserved source files, historical observation replay denial and destination successor Gate/Receipt pass. Root observed all five exact final gates terminate successfully, report-lint OUTCOME COMPLETE and workflow-route ACTION ADVANCE (both exit_code 0), verified final commit and clean tree. Developer checkpoint evidence and root red/green remain retained with attribution; no contract or gate changed. Initial root append combined REPAIR and TASK events and failed with INVALID append candidate must contain exactly one event heading (exit_code 1); input is now split into the required single-event calls. Current progress docs were committed at d4a2453 before this corrected ledger append; no subsequent task was dispatched during that administrative ordering deviation.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-08 19:10 TASK task-14 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-14-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 8c322b53c749a2a7f0dd0be3e03dbb5034d70e40 - verified, subject matched; final report 51cc314
+- QA-plan commands beyond the task spec: none required
