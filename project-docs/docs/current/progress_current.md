@@ -7,7 +7,7 @@ merged main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 completed
 under DEC-179 on 2026-09-04 (87/87 VAL, 4/4 Human), and its branch has since
 been merged.
 
-Tasks 1-17 are complete; review-1b and review-2b passed. Task 8 completed the
+Tasks 1-18 are complete; review-1b and review-2b passed. Task 8 completed the
 DEC-195 cancellation DDL/filter convergence with task-1 provenance, all eight
 required gates and independent report lint. Task 9 completed DEC-196/197 semantic
 conformance, Human Stop text and actual-operation Stop guards with all five
@@ -17,7 +17,7 @@ coverage, all five final gates and independent report lint. Task 11 completed
 under DEC-199/200 at 30dd780 with independent fake/fid cases, real response-loss
 boundary tests, all five final gates and root report lint. Task 12 completed under DEC-196/201 at c2d8098, with final gate addendum
 833b4fc and preserved report f57b4aa. Review 4 passed at 3addf7d and the independent checkpoint passed at a9bf3bf.
-Task 13 completed at acb569b with final report9ad0585, all five final-source gates, root report lint and route PASS. Task14 completed at 8c322b5 with root report51cc314, all five final exact gates and first-attempt report lint PASS. Task15 completed at 5ec69e6 with final report59d86a3 and closure b9ad453; all five gates and report controls passed. Independent Review5 passed at8125d8d. Task16 completed at644f30e/report1b18b16 with all12 gates, including27821ms fresh100k rebuild. Task17 completed at ccc15f6/report3b0e799 with all17 final gates; fresh100k samples28121/27904/28157ms and both full benchmark runs passed. No escalation is open.
+Task 13 completed at acb569b with final report9ad0585, all five final-source gates, root report lint and route PASS. Task14 completed at 8c322b5 with root report51cc314, all five final exact gates and first-attempt report lint PASS. Task15 completed at 5ec69e6 with final report59d86a3 and closure b9ad453; all five gates and report controls passed. Independent Review5 passed at8125d8d. Task16 completed at644f30e/report1b18b16 with all12 gates, including27821ms fresh100k rebuild. Task17 completed at ccc15f6/report3b0e799 with all17 final gates; fresh100k samples28121/27904/28157ms and both full benchmark runs passed. Task18 completed at24e3cbd/report41abf06 with all7 gates, retained clean-source Human manifest checkpoints-2335511884 and DEC205–207 bounded accepted-behavior repairs. No escalation is open.
 
 The Human delegated completion of tasks 8-18, required reviews, final
 deterministic QA, and runnable Human checklist preparation on 2026-09-07.
@@ -48,7 +48,7 @@ inventory, QA Lead handoff, decisions and triage log are in
 Execution started on 2026-09-05 under DEC-188. QA's plan and consistency
 assessment remain in `qa/qa-plan.md` and `qa/consistency-review.md`; the
 refinement authority is DEC-184..187 and `qa/tl-refinement.md`. The ledger
-records completed tasks 1..17 and the task-8 STOP resolved by DEC-195. Product QA
+records completed tasks 1..18 and the task-8 STOP resolved by DEC-195. Product QA
 receipts retain their original session attribution; the separate maintenance
 report records freshly executed workflow checks only.
 
@@ -56,8 +56,8 @@ report records freshly executed workflow checks only.
 
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
-- Task statuses: 1..17 complete; reviews 1b/2b/3/4/5 and checkpoint passed; 18 next.
-- Next: root-direct task18 conformance and retained Human fixtures, then Review6 and independent final QA.
+- Task statuses: 1..18 complete; reviews 1b/2b/3/4/5 and checkpoint passed; Review6 next.
+- Next: independent Review6, then independent final QA and verified blank Human checklist.
   DEC-202 supplies the imported destination scope; DEC-203 allocates Task15's
   already accepted import failure registry entry. Implementation and review are
   serialized under the renewed Human authorization.

@@ -186,3 +186,20 @@
   appended task completion through the sequence control. No product decision changed.
 - Task18 is now root-owned, with no subagent writer. Review6 and fresh independent
   finalQA follow. Retained fixture generation and blank Human checklist remain required.
+
+## 2026-09-08 - Task18 Complete; Review6 Due
+
+- Root completed Task18 at24e3cbd, final report41abf06. All seven final gates
+  passed; aggregate ordinary coverage63.0%, tagged integration101.661s.
+- DEC205–207 allocated three missed accepted behaviors: embedded Stop sequence,
+  committed budget-stop frame and Human notice, and three typed error mappings.
+  No new policy, contract, schema, Event, dependency or gate definition changed.
+- The first required race failed the exact Attention path inventory; one literal
+  renderer path converged under execution-scope, then the identical gate passed.
+  Report assembly quoting failure and its report-only repair remain preserved.
+- Retained Human manifest: .cache/phase-22-human/checkpoints-2335511884/manifest.json;
+  clean source24e3cbd, own binary/hash, four checkpoints and post-exit inspections.
+  Successor lease expires2026-09-09T10:28:07.849954253Z; regenerate after expiry.
+- Root report-lint COMPLETE and route ADVANCE observed exit0; ledger closure
+  passed. Fresh independent Review6 now owns one artifact only; source frozen.
+  Independent finalQA, exact kit mapping and runnable blank checklist remain.
