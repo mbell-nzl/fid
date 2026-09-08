@@ -1665,3 +1665,50 @@
 - Resolution evidence: PENDING - FQ-04 explicitly assigns existing Claim-scope/reconciliation helper; existing SQLite trigger mechanisms can exercise projection faults without production failure interfaces
 - Next action: root sole Task5 product/test writer; complete owner before Task7; one fresh final re-review after every owner closes
 - Human attention required: no
+
+### 2026-09-09 02:02 REPAIR task-5
+
+- Trigger signature: task-5:qa-rework:claim-scope-force-and-interruption
+- Attempt count: 1
+- Starting checkpoint: dfe2bec
+- Ending checkpoint: 11e8a84a2ec910597e7d152f2105948ecdd2a99f; report 2a4ea22
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Root proved Claim-bound ordinary/force adoption and current checkpoint binding,39case exact authority/observation matrix, valid predecessor fencing, actual preappend/postappend/lost-response recovery with unique catch-up/replay and preserved populated context. All five unchanged final gates PASS, aggregate65.2%, tagged142.025s. Failed attempts and Task6/18 fixture provenance preserved. Report-lint COMPLETE and route ADVANCE observed exit0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-09 02:02 TASK task-5 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-5-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 11e8a84a2ec910597e7d152f2105948ecdd2a99f - verified, subject matched; report 2a4ea22
+- QA-plan commands beyond the task spec: focused scope/authority/fault and actual CLI regression captured
+- Evidence: Same-task FQ-04 complete; original evidence retained. Independent final-review-2 remains required after all queued owners.
+
+### 2026-09-09 02:02 TASK-RECOVERY task-7
+
+- Source: review-7 / final-review.md FQ-05
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: task-7.md / contracts.md section 6 / final-review.md FQ-05
+- Triage disposition: N/A
+- Trigger signature: task-7:qa-rework:budget-boundary-append-and-projection
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/workflow/budget.go,internal/workflow/budget_test.go,internal/workflow/run_budget.go,internal/workflow/run_budget_test.go,internal/workflow/envelope.go,internal/workflow/run_read.go,internal/evidence/execution.go,internal/evidence/execution_test.go,internal/evidence/budget_test.go,internal/workflow/activation.go,internal/journal/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-7-done.md
+- Forbidden changes: accepted maxima/null/charge/authority/wire/Event/schema/policy semantics, gate definitions or commands, workflow controls, dependencies, new failure framework, unrelated product paths and other task reports; existing matching fixture convergence preserves defaults and subject
+- Originating report: project-docs/docs/phases/phase-22/tasks/task-7-done.md
+- Exact verification: from /home/mark/projects/fid task-7 evidence coverage baseline before edits and all six unchanged post-edit commands in original order plus external and fid-owned preappend/postappend boundary faults, complete transaction fresh catch-up/exact replay/no next spawn, below-boundary and final allowed Attempt/Receipt ordering
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: 2a4ea22; Task2/4/5 final-QA owners complete
+- Phase worktree: /home/mark/projects/fid on phase-22
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - existing test-only SQLite fault mechanism can separate dry-run from durable append/projection without production interface
+- Next action: root sole Task7 writer; complete owner before Task8; one independent final re-review follows all owners
+- Human attention required: no

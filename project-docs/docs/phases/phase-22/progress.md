@@ -239,3 +239,24 @@
   `exit_code: 1`). Corrected identity review-7 appended successfully with
   `APPEND_CONFIRMED state=REPAIR_PENDING` (terminated `exit_code: 0`); no control
   definition or accepted evidence changed. Task2 recovery append also passed.
+
+## 2026-09-09 - First Three Final-QA Repair Owners Complete
+
+- Root repaired Task2 FQ-02, Task4 FQ-03 and Task5 FQ-04 serially. Their
+  original reports retain every historical and failed receipt, with new
+  implementation/fixture provenance and complete unchanged command sequences.
+- Task2 now revalidates all six qualifying Stop conditions and exact Attention
+  disposition sets; Task4 rejects unsafe/incomplete repository observations and
+  proves source/Git byte preservation; Task5 binds adoption to immutable Claim
+  scope/current checkpoints and verifies exact force authority, predecessor
+  fencing, real append interruption and response-loss replay.
+- Latest Task5 implementation/fixture checkpoint11e8a84; report2a4ea22.
+  Root observed all five final gates, coverage65.2%, tagged142.025s, report-lint
+  COMPLETE and route ADVANCE, each with actual exit0. Shared fake/real checkpoint
+  fixture corrections and their failed integration attempts remain documented.
+- Task7 FQ-05 is active. Evidence-package baseline23.6% was captured before edits.
+  Root is adding direct external/admission/Receipt budget fault proof with
+  existing test-only SQLite boundaries. Tasks8,10,1 follow in the recorded order.
+- The initial final-review.md remains REPAIR. A fresh independent final-review-2
+  must close all seven findings and finish phase gates after the last repair.
+  Human checklist judgments remain blank; deterministic readiness is pending.
