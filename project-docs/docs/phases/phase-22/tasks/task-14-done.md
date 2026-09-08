@@ -64,8 +64,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `cc73b092bf5ecd3fdba62a1362062a6d543697ab`
 
 ## Commit subject
 
-- Pending commit
+- `feat(export): atomically import validated archives`
