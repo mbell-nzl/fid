@@ -472,6 +472,9 @@ func (adapter *p22FIDRecoveryAdapter) p22Advance(t *testing.T, operation, stdout
 		adapter.digest = p21PathString(t, envelope, "result", "reconciliation", "digest")
 	case "run.checkpoint":
 		adapter.runVersion = int(p21Path(t, envelope, "result", "run", "version").(float64))
+		if adapter.binary == "" {
+			return
+		}
 		inspection := adapter.p22Run(t, "run", "inspect", adapter.runID)
 		if inspection.ExitCode != 0 {
 			t.Fatalf("inspect accepted checkpoint: %#v", inspection)
