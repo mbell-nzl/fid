@@ -14,12 +14,14 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"golang.org/x/sys/unix"
 )
 
 type ImportStage string
 
 const (
+	ImportAfterValidation   ImportStage = "after-validation"
+	ImportBeforeDurability  ImportStage = "before-durability"
+	ImportAfterRename       ImportStage = "after-rename"
 	ImportBeforePublication ImportStage = "before-publication"
 	ImportAfterPublication  ImportStage = "after-publication"
 	importMarkerName                    = "import.marker.json"
@@ -83,6 +85,9 @@ func Import(options ImportOptions) (ImportResult, error) {
 	if validation.ArchiveDigest != digestBefore {
 		return ImportResult{}, fmt.Errorf("import: archive changed during validation")
 	}
+	if err := callImportFault(options.Fault, ImportAfterValidation); err != nil {
+		return ImportResult{}, err
+	}
 	manifest, importedEventIDs, err := importArchive(snapshot)
 	if err != nil {
 		return ImportResult{}, err
@@ -96,7 +101,7 @@ func Import(options ImportOptions) (ImportResult, error) {
 	}
 	result := ImportResult{ProjectID: manifest.ProjectID, ArchiveDigest: digestBefore, EventCount: manifest.EventCount, TerminalEventHash: manifest.TerminalEventHash, ProjectionSchema: manifest.ProjectionSchema, TargetRoot: target}
 	err = withImportLock(target, func() error {
-		if replay, found, err := installedImport(target, digestBefore, options.IdempotencyKey); err != nil {
+		if replay, found, err := installedImport(target, result, options.IdempotencyKey); err != nil {
 			return err
 		} else if found {
 			result = replay
@@ -121,7 +126,15 @@ func Import(options ImportOptions) (ImportResult, error) {
 			return fmt.Errorf("import: rebuild staged projection: %w", err)
 		}
 		binding := config.ImportBinding{ArchiveDigest: digestBefore, IdempotencyKey: options.IdempotencyKey, ProjectID: result.ProjectID, TargetRoot: target, ImportedEventIDs: importedEventIDs}
+		for _, entry := range manifest.Entries {
+			if strings.HasPrefix(entry.Path, "journal/") {
+				binding.JournalEntries = append(binding.JournalEntries, config.ImportJournalEntry{Name: strings.TrimPrefix(entry.Path, "journal/"), Digest: entry.Digest, SizeBytes: entry.SizeBytes})
+			}
+		}
 		if err := writeImportMarker(filepath.Join(stage, config.WorkspaceDirName, importMarkerName), importMarker{ImportBinding: binding, Result: result}); err != nil {
+			return err
+		}
+		if err := callImportFault(options.Fault, ImportBeforeDurability); err != nil {
 			return err
 		}
 		if err := syncTree(filepath.Join(stage, config.WorkspaceDirName)); err != nil {
@@ -133,6 +146,9 @@ func Import(options ImportOptions) (ImportResult, error) {
 		if err := publishImport(filepath.Join(stage, config.WorkspaceDirName), filepath.Join(target, config.WorkspaceDirName)); err != nil {
 			return err
 		}
+		if err := callImportFault(options.Fault, ImportAfterRename); err != nil {
+			return err
+		}
 		if err := syncPath(target); err != nil {
 			return err
 		}
@@ -141,91 +157,7 @@ func Import(options ImportOptions) (ImportResult, error) {
 	return result, err
 }
 
-func safeImportTarget(root string) (string, error) {
-	abs, err := filepath.Abs(root)
-	if err != nil {
-		return "", &ImportTargetConflictError{TargetRoot: root, Reason: "unsafe-path"}
-	}
-	info, err := os.Lstat(abs)
-	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
-		return "", &ImportTargetConflictError{TargetRoot: abs, Reason: "unsafe-path"}
-	}
-	resolved, err := filepath.EvalSymlinks(abs)
-	if err != nil || resolved != abs {
-		return "", &ImportTargetConflictError{TargetRoot: abs, Reason: "unsafe-path"}
-	}
-	return abs, nil
-}
-
-func withImportLock(target string, fn func() error) error {
-	path := filepath.Join(target, ".fid-import.lock")
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
-	if err != nil {
-		return fmt.Errorf("import: open target lock: %w", err)
-	}
-	defer func() { _ = file.Close() }()
-	// The advisory lock is released by the kernel when a process exits. Removing
-	// the pathname on a normal return keeps the destination worktree clean;
-	// a stale pathname after a crash remains safely reusable.
-	defer func() { _ = os.Remove(path) }()
-	if err := unix.Flock(int(file.Fd()), unix.LOCK_EX|unix.LOCK_NB); err != nil {
-		if errors.Is(err, unix.EWOULDBLOCK) {
-			return fmt.Errorf("import: target lock unavailable")
-		}
-		return fmt.Errorf("import: acquire target lock: %w", err)
-	}
-	defer func() { _ = unix.Flock(int(file.Fd()), unix.LOCK_UN) }()
-	return fn()
-}
-
-func snapshotImportInput(target, archivePath, digest string) (string, error) {
-	input, err := os.Open(archivePath)
-	if err != nil {
-		return "", fmt.Errorf("import: open archive: %w", err)
-	}
-	defer func() { _ = input.Close() }()
-	output, err := os.CreateTemp(target, ".fid-import-input-")
-	if err != nil {
-		return "", fmt.Errorf("import: create archive snapshot: %w", err)
-	}
-	path := output.Name()
-	defer func() {
-		if output != nil {
-			_ = output.Close()
-		}
-	}()
-	if _, err := io.Copy(output, input); err != nil {
-		_ = os.Remove(path)
-		return "", fmt.Errorf("import: snapshot archive: %w", err)
-	}
-	if err := output.Close(); err != nil {
-		_ = os.Remove(path)
-		return "", fmt.Errorf("import: close archive snapshot: %w", err)
-	}
-	output = nil
-	got, err := fileDigest(path)
-	if err != nil || got != digest {
-		_ = os.Remove(path)
-		if err != nil {
-			return "", err
-		}
-		return "", fmt.Errorf("import: archive changed while snapshotting")
-	}
-	return path, nil
-}
-
-func ensureEmptyImportTarget(target string) error {
-	info, err := os.Lstat(filepath.Join(target, config.WorkspaceDirName))
-	if os.IsNotExist(err) {
-		return nil
-	}
-	if err != nil || info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
-		return &ImportTargetConflictError{TargetRoot: target, Reason: "unsafe-path"}
-	}
-	return &ImportTargetConflictError{TargetRoot: target, Reason: "populated"}
-}
-
-func installedImport(target, archiveDigest, key string) (ImportResult, bool, error) {
+func installedImport(target string, expected ImportResult, key string) (ImportResult, bool, error) {
 	data, err := os.ReadFile(filepath.Join(target, config.WorkspaceDirName, config.ImportBindingFileName))
 	if os.IsNotExist(err) {
 		return ImportResult{}, false, nil
@@ -240,8 +172,11 @@ func installedImport(target, archiveDigest, key string) (ImportResult, bool, err
 	if _, err := config.ReadImportBinding(target); err != nil {
 		return ImportResult{}, false, &ImportTargetConflictError{TargetRoot: target, Reason: "populated"}
 	}
-	if marker.ArchiveDigest != archiveDigest || marker.IdempotencyKey != key {
+	if marker.ArchiveDigest != expected.ArchiveDigest || marker.IdempotencyKey != key {
 		return ImportResult{}, false, &ImportTargetConflictError{TargetRoot: target, Reason: "different-import"}
+	}
+	if marker.Result != expected {
+		return ImportResult{}, false, &ImportTargetConflictError{TargetRoot: target, Reason: "populated"}
 	}
 	return marker.Result, true, nil
 }
@@ -368,44 +303,4 @@ func writeImportMarker(path string, marker importMarker) error {
 		return fmt.Errorf("import: write publication marker: %w", err)
 	}
 	return nil
-}
-func publishImport(stage, destination string) error {
-	if err := unix.Renameat2(unix.AT_FDCWD, stage, unix.AT_FDCWD, destination, unix.RENAME_NOREPLACE); err != nil {
-		if errors.Is(err, unix.EEXIST) {
-			return &ImportTargetConflictError{TargetRoot: filepath.Dir(destination), Reason: "populated"}
-		}
-		return fmt.Errorf("import: atomically publish staged project: %w", err)
-	}
-	return nil
-}
-func syncTree(root string) error {
-	return filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if entry.Type()&os.ModeSymlink != 0 {
-			return fmt.Errorf("import: staged symlink is unsafe")
-		}
-		if entry.IsDir() || entry.Type().IsRegular() {
-			return syncPath(path)
-		}
-		return fmt.Errorf("import: staged special file is unsafe")
-	})
-}
-func syncPath(path string) error {
-	file, err := os.Open(path)
-	if err != nil {
-		return fmt.Errorf("import: open for sync %q: %w", path, err)
-	}
-	defer func() { _ = file.Close() }()
-	if err := file.Sync(); err != nil {
-		return fmt.Errorf("import: sync %q: %w", path, err)
-	}
-	return nil
-}
-func callImportFault(fault func(ImportStage) error, stage ImportStage) error {
-	if fault == nil {
-		return nil
-	}
-	return fault(stage)
 }

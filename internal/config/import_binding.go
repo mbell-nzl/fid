@@ -10,11 +10,18 @@ import (
 // ImportBinding is private delivery metadata for one atomically installed archive.
 // It is intentionally outside the journal and portable archive content.
 type ImportBinding struct {
-	ArchiveDigest    string   `json:"archive_digest"`
-	IdempotencyKey   string   `json:"idempotency_key"`
-	ProjectID        string   `json:"project_id"`
-	TargetRoot       string   `json:"target_root"`
-	ImportedEventIDs []string `json:"imported_event_ids"`
+	ArchiveDigest    string               `json:"archive_digest"`
+	IdempotencyKey   string               `json:"idempotency_key"`
+	ProjectID        string               `json:"project_id"`
+	TargetRoot       string               `json:"target_root"`
+	ImportedEventIDs []string             `json:"imported_event_ids"`
+	JournalEntries   []ImportJournalEntry `json:"journal_entries"`
+}
+
+type ImportJournalEntry struct {
+	Name      string `json:"name"`
+	Digest    string `json:"digest"`
+	SizeBytes int64  `json:"size_bytes"`
 }
 
 const ImportBindingFileName = "import.marker.json"
@@ -52,6 +59,9 @@ func ReadImportBinding(workspaceRoot string) (ImportBinding, error) {
 	journalInfo, err := os.Lstat(filepath.Join(workspace, JournalDirName))
 	if err != nil || !journalInfo.IsDir() || journalInfo.Mode()&os.ModeSymlink != 0 {
 		return ImportBinding{}, fmt.Errorf("read import binding: journal is unsafe")
+	}
+	if err := verifyImportedHistory(workspace, binding); err != nil {
+		return ImportBinding{}, err
 	}
 	return binding, nil
 }

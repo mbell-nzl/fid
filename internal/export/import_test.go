@@ -129,7 +129,7 @@ func TestImportAfterPublicationFaultReplaysInstalledResult(t *testing.T) {
 	}
 }
 
-func TestImportSnapshotsInputReclaimsStaleLockAndRejectsTamperedMarker(t *testing.T) {
+func TestImportSnapshotsInputPreservesExistingFilesAndRejectsTamperedMarker(t *testing.T) {
 	source := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
@@ -148,7 +148,7 @@ func TestImportSnapshotsInputReclaimsStaleLockAndRejectsTamperedMarker(t *testin
 		t.Fatal(err)
 	}
 	result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "snapshot", Fault: func(stage ImportStage) error {
-		if stage == ImportBeforePublication {
+		if stage == ImportAfterValidation {
 			return os.WriteFile(archive, []byte("pathname replaced after snapshot"), 0o600)
 		}
 		return nil
@@ -156,8 +156,8 @@ func TestImportSnapshotsInputReclaimsStaleLockAndRejectsTamperedMarker(t *testin
 	if err != nil {
 		t.Fatalf("import from snapshot after source replacement: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(target, ".fid-import.lock")); !os.IsNotExist(err) {
-		t.Fatalf("stale lock was not reclaimed: %v", err)
+	if data, err := os.ReadFile(filepath.Join(target, ".fid-import.lock")); err != nil || string(data) != "stale after process exit" {
+		t.Fatalf("preexisting target file was changed: %q, %v", data, err)
 	}
 	tampered, err := json.Marshal(importMarker{ImportBinding: config.ImportBinding{ArchiveDigest: result.ArchiveDigest, IdempotencyKey: "snapshot", ProjectID: "FID-tampered", TargetRoot: target, ImportedEventIDs: []string{"EVT-tampered"}}, Result: ImportResult{ProjectID: "FID-tampered", ArchiveDigest: result.ArchiveDigest, TargetRoot: target}})
 	if err != nil {
@@ -186,7 +186,8 @@ func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
 	if err != nil || len(sourceRuns) != 1 {
 		t.Fatalf("source active Run = %#v, %v", sourceRuns, err)
 	}
-	if _, err := workflow.ObserveRun(workflow.RunOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), ActorID: "actor-harness", IdempotencyKey: "source-imported-observation"}, workflow.RunObserveRequest{RunID: sourceRuns[0].ID, ExpectedVersion: sourceRuns[0].Version, Liveness: workflow.Liveness{ExecutorID: sourceRuns[0].Executor.ID, State: "terminated", SourceRef: "source:historical", ObservedAt: time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)}}); err != nil {
+	sourceRequest := workflow.RunObserveRequest{RunID: sourceRuns[0].ID, ExpectedVersion: sourceRuns[0].Version, Liveness: workflow.Liveness{ExecutorID: sourceRuns[0].Executor.ID, State: "terminated", SourceRef: "source:historical", ObservedAt: time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)}}
+	if _, err := workflow.ObserveRun(workflow.RunOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), ActorID: "actor-harness", IdempotencyKey: "source-imported-observation"}, sourceRequest); err != nil {
 		t.Fatalf("observe source Run: %v", err)
 	}
 	archive := filepath.Join(t.TempDir(), "recovery.zip")
@@ -204,6 +205,10 @@ func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
 	if err != nil || len(runs) != 1 {
 		t.Fatalf("imported active Run = %#v, %v", runs, err)
 	}
+	replayedObservation, err := workflow.ObserveRun(workflow.RunOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), ActorID: "actor-harness", IdempotencyKey: "source-imported-observation"}, sourceRequest)
+	if err != nil || !replayedObservation.Replayed {
+		t.Fatalf("replay imported observation: %#v, %v", replayedObservation, err)
+	}
 	run := runs[0]
 	inspection, err := workflow.InspectRun(target, testMigrationsDir(t), run.ID, target)
 	if err != nil {
@@ -219,6 +224,9 @@ func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
 	var importedObservationID string
 	if err := database.QueryRow(`SELECT id FROM run_observations WHERE run_id = ? AND kind = 'liveness' ORDER BY observed_at DESC, id DESC LIMIT 1`, run.ID).Scan(&importedObservationID); err != nil {
 		t.Fatal(err)
+	}
+	if replayedObservation.Observation.ID != importedObservationID {
+		t.Fatal("replaying historical observation changed its identity")
 	}
 	var registrationID string
 	var registrationVersion int
@@ -266,6 +274,14 @@ func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
 	gate, err := evidence.RunGate(context.Background(), evidence.GateRunOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), ActorID: "actor-builder", IdempotencyKey: "destination-gate", Request: evidence.GateRunRequest{RegistrationID: registrationID, RegistrationVersion: registrationVersion, ObligationID: "OBL-fixture", RunID: recovered.Run.ID, Repository: evidenceRepository(recovered.Run.StartRepository)}})
 	if err != nil || gate.Receipt == nil || gate.Receipt.RunID != recovered.Run.ID {
 		t.Fatalf("execute successor Gate = %#v, %v", gate, err)
+	}
+	beforeRetry := workspaceTreeDigest(t, target)
+	replayedImport, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "destination-install"})
+	if err != nil || !replayedImport.Replayed {
+		t.Fatalf("import replay after new local Events: %#v, %v", replayedImport, err)
+	}
+	if workspaceTreeDigest(t, target) != beforeRetry {
+		t.Fatal("import replay changed successor history")
 	}
 }
 

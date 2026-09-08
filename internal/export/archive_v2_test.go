@@ -1,6 +1,7 @@
 package export
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -89,6 +90,15 @@ func TestValidateRetainsPinnedV1Profile(t *testing.T) {
 	}
 	if workspaceTreeDigest(t, workspace) != before {
 		t.Fatal("v1 validation mutated project")
+	}
+	target := t.TempDir()
+	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "v1-rejected"})
+	var invalid *InvalidArchiveError
+	if !errors.As(err, &invalid) || len(invalid.Checks) != 1 || invalid.Checks[0].Code != "schema-unsupported" {
+		t.Fatalf("v1 import error = %#v, want schema-unsupported archive check", err)
+	}
+	if entries, err := os.ReadDir(target); err != nil || len(entries) != 0 {
+		t.Fatalf("rejected v1 import changed target: %v, %v", entries, err)
 	}
 }
 
