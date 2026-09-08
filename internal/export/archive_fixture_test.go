@@ -124,7 +124,7 @@ func addRecoveredExportFixtureFacts(t *testing.T, workspace string) string {
 		t.Fatalf("observe fixture Run termination: %v", err)
 	}
 	claimVersion := fixtureClaimVersion(t, workspace, prior.ClaimID)
-	if _, err := claims.ReleaseGeneric(claims.MutationOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-claim-release"}, claims.ReleaseRequest{ClaimID: prior.ClaimID, ExpectedVersion: claimVersion, Reason: "interrupted"}); err != nil {
+	if _, err := claims.ReleaseGeneric(claims.MutationOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-claim-release"}, claims.ReleaseRequest{ClaimID: prior.ClaimID, ExpectedVersion: claimVersion, Reason: "operator-released"}); err != nil {
 		t.Fatalf("release fixture predecessor Claim: %v", err)
 	}
 	inspection, err := workflow.InspectRun(workspace, migrationsDir, prior.ID, workspace)

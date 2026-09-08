@@ -1315,3 +1315,18 @@
 - Owning task: none
 - Re-review of: none
 - Must-fix: 0 / Improvement: 1 / blocker candidates: 0; QA minted no ESC; report scanability improvement deferred without altering preserved evidence
+
+### 2026-09-08 17:09 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: task-13 execution interrupted by usage limit; Human approved resumption with serial implementation and review
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: HEAD 0d981ab99ca9112893a148788adb9450daededd7 on phase-22; tasks 1-12 COMPLETE, review-4 PASS and independent checkpoint PASS; Task 13 source work remains dirty and has no completion report; final ledger event was review-4
+- Resolution evidence: Root read current progress, task-13, git status, prior reviews and interrupted files; all subagents remain stopped. Root owns Task 13 directly under renewed Human authorization. Initial interrupted test construction repaired; final gates in progress, with failed receipts retained. This administrative resume is recorded after initial reconciliation and repair, a sequencing deviation, not a claim it preceded those actions.
+- Resolution authority: N/A
+- Continuing task: task-13
+- Next recovery: N/A

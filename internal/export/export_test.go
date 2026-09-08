@@ -26,7 +26,7 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("initialize workspace: %v", err)
 	}
-	artifactEntry := addExportFixtureFacts(t, workspace)
+	artifactEntry := addJournalBackedExportFixtureFacts(t, workspace)
 
 	first := filepath.Join(t.TempDir(), "first.zip")
 	second := filepath.Join(t.TempDir(), "second.zip")
@@ -47,9 +47,9 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 	if !bytes.Equal(firstBytes, secondBytes) {
 		t.Fatal("repeated creates from identical facts produced different archive bytes")
 	}
-	validation, err := Validate(first)
+	validation, err := Validate(ValidateOptions{ArchivePath: first, MigrationsDir: testMigrationsDir(t)})
 	if err != nil {
-		t.Fatalf("validate deterministic archive: %v", err)
+		t.Fatalf("validate deterministic archive: %#v", err)
 	}
 	if validation.Status != "valid" {
 		t.Fatalf("validation status = %q, want valid", validation.Status)
@@ -89,12 +89,33 @@ func TestValidateRejectsJournalAggregateSequenceCollisionWithoutMutation(t *test
 	writeTestArchive(t, archivePath, entries)
 
 	before := workspaceTreeDigest(t, workspace)
-	_, err := Validate(archivePath)
+	_, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)})
 	after := workspaceTreeDigest(t, workspace)
 	if before != after {
 		t.Fatal("validate mutated project state")
 	}
 	assertArchiveCheck(t, err, "journal-invalid")
+}
+
+// This retained negative covers malformed Source metadata; the real Recovery
+// Event-reference regression is separate.
+func TestArchiveRejectsUnresolvedSourceMetadata(t *testing.T) {
+	workspace := t.TempDir()
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+		t.Fatal(err)
+	}
+	archivePath := filepath.Join(t.TempDir(), "reference.zip")
+	if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archivePath}); err != nil {
+		t.Fatal(err)
+	}
+	entries := archiveContents(t, archivePath)
+	manifest := decodeManifestMap(t, entries["manifest.json"])
+	manifest["sources"] = []any{map[string]any{"recovery_id": "REC-missing"}}
+	entries["manifest.json"] = encodeManifestMap(t, manifest)
+	writeTestArchive(t, archivePath, entries)
+	// A Source inventory must match the journal-backed Source facts.
+	_, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)})
+	assertArchiveCheck(t, err, "reference-invalid")
 }
 
 func TestValidateRejectsEveryArchiveInvalidCheckWithoutMutation(t *testing.T) {
@@ -116,7 +137,7 @@ func TestValidateRejectsEveryArchiveInvalidCheckWithoutMutation(t *testing.T) {
 			if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 				t.Fatalf("initialize workspace: %v", err)
 			}
-			addExportFixtureFacts(t, workspace)
+			addJournalBackedExportFixtureFacts(t, workspace)
 			archivePath := filepath.Join(t.TempDir(), "archive.zip")
 			if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archivePath}); err != nil {
 				t.Fatalf("create archive: %v", err)
@@ -124,7 +145,7 @@ func TestValidateRejectsEveryArchiveInvalidCheckWithoutMutation(t *testing.T) {
 			corruptArchiveForCheck(t, corruption, workspace, archivePath)
 
 			before := workspaceTreeDigest(t, workspace)
-			_, err := Validate(archivePath)
+			_, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)})
 			after := workspaceTreeDigest(t, workspace)
 			if before != after {
 				t.Fatal("validate mutated project state")
@@ -175,36 +196,6 @@ func corruptArchiveForCheck(t *testing.T, code, workspace, archivePath string) {
 	}
 	entries["manifest.json"] = encodeManifestMap(t, manifest)
 	writeTestArchive(t, archivePath, entries)
-}
-
-func addExportFixtureFacts(t *testing.T, workspace string) string {
-	t.Helper()
-	artifactData := []byte("artifact bytes\n")
-	artifactDigest := digest(artifactData)
-	artifactName := artifactDigest[len("sha256:"):]
-	artifactPath := filepath.Join(workspace, ".fid", "artifacts", artifactName)
-	if err := os.MkdirAll(filepath.Dir(artifactPath), 0o755); err != nil {
-		t.Fatalf("create artifact directory: %v", err)
-	}
-	if err := os.WriteFile(artifactPath, artifactData, 0o644); err != nil {
-		t.Fatalf("write artifact: %v", err)
-	}
-	database, err := db.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("open projection: %v", err)
-	}
-	defer func() { _ = database.Close() }()
-	for _, statement := range []string{
-		`INSERT INTO work_envelopes (id, current_revision, status, created_at) VALUES ('ENV-1', 1, 'draft', '2026-08-30T00:00:00Z')`,
-		`INSERT INTO envelope_revisions (envelope_id, revision, prior_revision, outcome, non_goals_json, risk_result_json, repository_scope_json, status, created_actor_id, approved_actor_id, created_at, activated_at, completed_at) VALUES ('ENV-1', 1, NULL, 'ship', '[]', '{}', '{}', 'draft', 'actor-builder', NULL, '2026-08-30T00:00:00Z', NULL, NULL)`,
-		`INSERT INTO envelope_sources (envelope_id, revision, ordinal, source_json) VALUES ('ENV-1', 1, 0, '{"digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","display_label":"Gate policy","external_id":null,"path":"project-docs/gates/unit.json","repository":null,"section":null,"source_type":"project-file"}')`,
-		`INSERT INTO referenced_artifacts (id, digest, media_type, size_bytes, retention_class, availability, location_policy, created_at, expires_at) VALUES ('ART-1', '` + artifactDigest + `', 'text/plain', 15, 'evidence', 'available', 'content-addressed', '2026-08-30T00:00:00Z', NULL)`,
-	} {
-		if _, err := database.Exec(statement); err != nil {
-			t.Fatalf("insert export fixture: %v", err)
-		}
-	}
-	return "artifacts/" + artifactName
 }
 
 func archiveManifest(t *testing.T, archivePath string) map[string]any {
@@ -394,18 +385,7 @@ func assertArchiveCheck(t *testing.T, err error, want string) {
 
 func journalEntries(t *testing.T, workspace string) []string {
 	t.Helper()
-	entries, err := os.ReadDir(filepath.Join(workspace, ".fid", "journal"))
-	if err != nil {
-		t.Fatalf("read journal entries: %v", err)
-	}
-	paths := make([]string, 0, len(entries))
-	for _, entry := range entries {
-		if entry.Type().IsRegular() {
-			paths = append(paths, "journal/"+entry.Name())
-		}
-	}
-	sort.Strings(paths)
-	return paths
+	return []string{"journal/00000001.jsonl"}
 }
 
 func archiveEntries(t *testing.T, archivePath string) []string {

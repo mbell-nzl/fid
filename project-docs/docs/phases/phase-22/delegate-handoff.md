@@ -242,3 +242,30 @@ DEC-202 records the imported destination reconciliation allocation found in
 that preflight. It preserves imported history and ordinary foreign-repository
 rejection while requiring new local liveness/reconciliation before successor
 work qualifies. It changes no wire/schema/Event/policy or validation threshold.
+
+## Task 13 Integration Ownership — 2026-09-08 02:43
+
+Root expanded direct implementation to writer, manifest, collector and retained
+fixture integration under the Human's explicit super-delegate authorization.
+The reused task11 thread owns scanner/limit tests; the reused task12 thread's
+Task14 preparation is finished and it now assists Task13 semantic validation.
+Task14 product implementation has not begun. The Review4 thread contributes
+journal-backed Artifact/Recovery fixtures and cannot independently review those
+contributions. Window5's independent review will therefore be assigned to the
+QA Lead thread (which has written no product or implementation test); window6
+may use the Review4 thread for tasks16–18. FinalQA stays independently owned.
+
+Root records fresh final Task13 gates and report after the bounded assistants
+hand back, preserving attributed focused red/green and construction failures.
+No task dependency, protected gate, assertion, budget or product contract was
+changed. Partial scanner subsets were not accepted as full VAL-056 proof.
+
+## Serial resumption approved after usage reset
+
+The Human explicitly approved continued implementation after reviewing the
+progress and orchestration plan. One implementation owner at a time, normally
+at most one active subagent; planned reviews remain serial at their existing
+checkpoints. Root directly completes Task13. Routine repairs are direct; a
+nonconverging repair returns to root diagnosis instead of repeated dispatches.
+Luna xhigh is authorized only for bounded work with stable interfaces/oracles.
+No task is split solely to use a cheaper model. All old subagents remain stopped.

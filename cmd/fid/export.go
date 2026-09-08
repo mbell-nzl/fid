@@ -53,7 +53,7 @@ func newExportCreateCommand() *cobra.Command {
 
 func newExportValidateCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "validate <archive-path>", Short: "Validate an export archive without mutation.", Args: canonicalExactArgs("export.validate", 1), RunE: func(cmd *cobra.Command, args []string) error {
-		result, err := export.Validate(args[0])
+		result, err := export.Validate(export.ValidateOptions{ArchivePath: args[0], MigrationsDir: issueMigrationsDir()})
 		if err != nil {
 			return renderExportError(cmd, "export.validate", args[0], err)
 		}
@@ -78,7 +78,11 @@ func renderExportError(cmd *cobra.Command, operation, archivePath string, cause 
 	if errors.As(cause, &invalid) {
 		checks := make([]map[string]any, 0, len(invalid.Checks))
 		for _, item := range invalid.Checks {
-			checks = append(checks, map[string]any{"code": item.Code, "entry": item.Entry, "detail": item.Detail})
+			var entry any
+			if item.Entry != nil {
+				entry = *item.Entry
+			}
+			checks = append(checks, map[string]any{"code": item.Code, "entry": entry, "detail": item.Detail})
 		}
 		failure, err := cli.NewFailure(cli.CodeArchiveInvalid, "export archive is invalid", &cli.Subject{Type: cli.SubjectExport, ID: archivePath}, map[string]any{"archive_path": archivePath, "checks": checks})
 		if err != nil {
