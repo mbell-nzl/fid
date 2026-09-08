@@ -1563,3 +1563,11 @@
 - Resolution evidence: PENDING - same-task root repair of accepted fact freshness/state checks and unique disposition set, preserving all historical evidence
 - Next action: root sole Task2 product/test writer; complete owner before Task4; one fresh final re-review after every owner closes
 - Human attention required: no
+
+### 2026-09-09 00:13 CORRECTION
+
+- Scope: active task-2 FQ-02 same-task recovery, attempt 1; root delegate execution instruction.
+- Authority: task-2.md Files To Create Or Modify explicitly includes matching in-package tests; final-review.md FQ-02 requires qualifying fixture convergence.
+- Allowed files amendment: add internal/workflow/resume_test.go only. This retained caller of commitActivationRecoveryFact shares Task2's incomplete activation fixture. Preserve its independently-open Attention assertion and record introducing-task provenance.
+- Evidence: deleting the obsolete helper exposed the retained caller at resume_test.go:24; focused Attention command terminated exit_code: 1 with undefined: commitActivationRecoveryFact. The fixture must use the real finalized activation helper, preserving its tested subject. This is existing task-scope fixture work, not a new product allocation or control-conformance repair.
+- Preserved fields: source, category, repair authority, trigger signature, attempt count, exact verification and all forbidden changes are unchanged. No gate/control definition or required test is changed.
