@@ -17,6 +17,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 - APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 10; schema.md section 6.
+- DEC-203 allocates the accepted import failure registry entry; its code,
+  category, exit, retryability and detail semantics remain public-interface section 4.
 - Use named JSON reads and ordered Events, not an opaque SQLite dump, as parity evidence.
 - Add portable recovery cases to the shared semantic runner/fake now; the same
   expectations run against fake and fid before later capability enablement.
@@ -32,6 +34,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 - `cmd/fid/export.go`
 - `cmd/fid/export_test.go`
+- `internal/cli/codes.go`, `internal/cli/codes_test.go` - DEC-203: register and
+  test only the already accepted `import-target-conflict` closed failure shape.
 - `cmd/fid/integration/p22_import_recovery_test.go`
 - `cmd/fid/integration/testdata/p22_conformance/`
 - `internal/export/`

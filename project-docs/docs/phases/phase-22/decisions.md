@@ -1092,6 +1092,26 @@
   Private delivery-metadata representation is an implementation choice under
   the already accepted publication-marker contract, excluded from export.
 
+### DEC-203: Allocate The Accepted Import Failure Registry Entry
+
+- **Date:** 2026-09-08.
+- **Status:** ACCEPTED by the root delegate under the Human's renewed serial
+  execution authorization and explicit permission to resolve workflow friction.
+- **Existing contract:** Public-interface section 4 already fixes
+  `import-target-conflict` as conflict / exit 4, retryable false, with closed
+  `{target_root:text,reason:"populated"|"different-import"|"unsafe-path"}` details.
+  Task 15 owns its built CLI exposure. No product choice remains open.
+- **Allocation gap:** The entry is absent from the closed `internal/cli` registry,
+  and Task 15 lists the command adapter but not the registry or its contract test.
+- **Resolution:** Add `internal/cli/codes.go` and `internal/cli/codes_test.go` to
+  Task 15 solely for this accepted entry and its positive/negative detail tests.
+  Preserve every retained code, exit, retryability and detail assertion. No new
+  code, detail field, subject type, policy, gate, dependency or VAL semantics is
+  authorized. Task 18 retains complete final failure-corpus verification.
+- **Evidence timing:** Discovered during read-only preparation while Task 13's
+  final gate ran. Only task/decision documentation changes at this checkpoint;
+  registry implementation waits for Task 15.
+
 ## Planning Spec Impact
 
 | Document | Planning change |
