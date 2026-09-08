@@ -1618,3 +1618,50 @@
 - Resolution evidence: PENDING - source inspection confirms uppercase skip-worktree hole; FQ-03 authorizes causal existing public error mapping with Task6 provenance
 - Next action: root sole Task4 product/test writer; complete owner before Task5; one fresh final re-review after every owner closes
 - Human attention required: no
+
+### 2026-09-09 01:10 REPAIR task-4
+
+- Trigger signature: task-4:qa-rework:unsafe-repository-and-recovery-byte-inertness
+- Attempt count: 1
+- Starting checkpoint: ead1a04
+- Ending checkpoint: e4fa84cee9463e8d0159c570ce4a80f18d2d492d; report dfe2bec
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Root reproduced and repaired skip-worktree, unmerged, index-only/gitlink, changing capture and missing-base acceptance; existing public unsafe error now has conflict/exit4. Actual binary21case success/rejection matrix compares all source/Git state including real stash/extra ref; no rejected Event. All six exact gates passed, aggregate65.1%, tagged128.972s, repeatedStop9.692s. Failed receipts/provenance retained; report-lint COMPLETE/route ADVANCE observed exit0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-09 01:10 TASK task-4 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-4-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: e4fa84cee9463e8d0159c570ce4a80f18d2d492d - verified, subject matched; report dfe2bec
+- QA-plan commands beyond the task spec: finite unsafe observer and actual binary21case matrix captured
+- Evidence: Same-task FQ-03 complete; original evidence retained. Independent final-review-2 remains required after all queued owners.
+
+### 2026-09-09 01:10 TASK-RECOVERY task-5
+
+- Source: review-7 / final-review.md FQ-04
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: task-5.md / contracts.md sections 3 and 4 / final-review.md FQ-04
+- Triage disposition: N/A
+- Trigger signature: task-5:qa-rework:claim-scope-force-and-interruption
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/workflow/recovery.go,internal/workflow/recovery_test.go,internal/workflow/recovery_scope_test.go,internal/workflow/recovery_authority_test.go,internal/workflow/recovery_fault_test.go,internal/workflow/reconciliation.go,internal/workflow/run_checkpoint.go,internal/workflow/run.go,internal/workflow/run_read.go,internal/workflow/authority.go,internal/workflow/activation.go,internal/claims/,internal/project/,internal/journal/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-5-done.md
+- Forbidden changes: accepted scope/force/authority/wire/Event/schema/policy semantics, gate definitions or commands, workflow controls, dependencies, automatic spawn, new failure framework, unrelated product paths and other task reports; exact Human force must retain accepted outside-scope adoption while protected state remains forbidden
+- Originating report: project-docs/docs/phases/phase-22/tasks/task-5-done.md
+- Exact verification: from /home/mark/projects/fid all five unchanged task-5 commands in original order plus Claim-bound ordinary/force adoption, finite authority/liveness/version matrix, valid predecessor fencing, real lost response and durable append-before-projection catch-up/idempotency with unchanged immutable context
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: dfe2bec; FQ-02 and FQ-03 owners complete
+- Phase worktree: /home/mark/projects/fid on phase-22
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - FQ-04 explicitly assigns existing Claim-scope/reconciliation helper; existing SQLite trigger mechanisms can exercise projection faults without production failure interfaces
+- Next action: root sole Task5 product/test writer; complete owner before Task7; one fresh final re-review after every owner closes
+- Human attention required: no
