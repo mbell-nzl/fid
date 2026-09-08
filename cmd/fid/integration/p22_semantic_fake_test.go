@@ -186,7 +186,11 @@ func (model *p22MemoryModel) execute(t *testing.T, operation, key, actor string,
 	case "stop.raise":
 		model.sequence++
 		model.stop = map[string]any{"id": fmt.Sprintf("STP-%d", model.sequence), "subject": input["subject"], "code": input["code"], "details": input["details"], "blocked_actions": input["blocked_actions"], "resolution_condition": input["resolution_condition"], "resolver_capability": input["resolver_capability"], "actor_id": actor}
-		model.attention = map[string]any{"id": fmt.Sprintf("ATT-%d", model.sequence), "subject": input["subject"], "code": input["code"], "status": "open", "version": 1, "stop_ids": []any{model.stop["id"]}}
+		if model.attention != nil && model.attention["status"] == "open" && reflect.DeepEqual(model.attention["subject"], input["subject"]) && model.attention["code"] == input["code"] {
+			model.attention["stop_ids"] = append(model.attention["stop_ids"].([]any), model.stop["id"])
+		} else {
+			model.attention = map[string]any{"id": fmt.Sprintf("ATT-%d", model.sequence), "subject": input["subject"], "code": input["code"], "status": "open", "version": 1, "stop_ids": []any{model.stop["id"]}}
+		}
 		result = map[string]any{"stop": p22CloneMap(model.stop), "attention": p22CloneMap(model.attention)}
 	case "stop.list", "attention.list":
 		items := []any{}

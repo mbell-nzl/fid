@@ -81,6 +81,7 @@ const (
 	CodeResolutionInvalid           Code = "resolution-invalid"
 	CodeObligationUnsatisfied       Code = "obligation-unsatisfied"
 	CodeArchiveInvalid              Code = "archive-invalid"
+	CodeImportTargetConflict        Code = "import-target-conflict"
 )
 
 type SubjectType string
@@ -282,6 +283,8 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 		objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
 	CodeArchiveInvalid: definition(CategoryIntegrity, false, []SubjectType{SubjectExport},
 		stringField("archive_path"), objectsField("checks", stringField("code"), nullableStringField("entry"), stringField("detail"))),
+	CodeImportTargetConflict: definition(CategoryConflict, false, []SubjectType{SubjectExport},
+		stringField("target_root"), stringField("reason")),
 }
 
 var registeredCodes = []Code{
@@ -305,6 +308,7 @@ var registeredCodes = []Code{
 	CodeStopNotFound, CodeAttentionNotFound, CodeAttentionVersionConflict, CodeStopUnresolved, CodeResolutionInvalid,
 	CodeObligationUnsatisfied,
 	CodeArchiveInvalid,
+	CodeImportTargetConflict,
 }
 
 func findingFields() []detailField {
@@ -353,7 +357,20 @@ func validateFailure(failure Failure, definition reasonDefinition) error {
 	if failure.Code == CodeDuplicateEntity {
 		return validateDuplicateEntityIdentity(failure.Details)
 	}
+	if failure.Code == CodeImportTargetConflict {
+		return validateImportTargetConflictReason(failure.Details)
+	}
 	return nil
+}
+
+func validateImportTargetConflictReason(details map[string]any) error {
+	reason, _ := details["reason"].(string)
+	for _, allowed := range []string{"populated", "different-import", "unsafe-path"} {
+		if reason == allowed {
+			return nil
+		}
+	}
+	return fmt.Errorf("import-target-conflict reason %q is not accepted", reason)
 }
 
 func validateDuplicateEntityIdentity(details map[string]any) error {

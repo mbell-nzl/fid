@@ -81,7 +81,7 @@ func TestP22DualAdapterRecoveryConformance(t *testing.T) {
 						t.Fatal(err)
 					}
 					result := original["result"].(map[string]any)
-					if fixture.Operation == "stop.raise" {
+					if fixture.Operation == "stop.raise" && priorRun != "" {
 						stop := result["stop"].(map[string]any)
 						attention := result["attention"].(map[string]any)
 						if p22ResultPath(stop, "subject.id") != priorRun || !reflect.DeepEqual(attention["stop_ids"], []any{stop["id"]}) {
@@ -134,8 +134,8 @@ func p22RecoveryFixtures(t *testing.T) []p22ConformanceCase {
 	if err := json.Unmarshal(contents, &manifest); err != nil {
 		t.Fatalf("decode Phase 22 recovery conformance manifest: %v", err)
 	}
-	if len(manifest.Cases) != 37 {
-		t.Fatalf("Phase 22 recovery conformance fixture count = %d, want 37", len(manifest.Cases))
+	if len(manifest.Cases) != 41 {
+		t.Fatalf("Phase 22 recovery conformance fixture count = %d, want 41", len(manifest.Cases))
 	}
 	fixtures := make([]p22ConformanceCase, 0, len(manifest.Cases))
 	for _, path := range manifest.Cases {
@@ -240,6 +240,7 @@ type p22FIDRecoveryAdapter struct {
 	binary                                                         string
 	workspace                                                      string
 	projectID                                                      string
+	issueID                                                        string
 	actor                                                          string
 	repository                                                     map[string]any
 	claimID                                                        string
@@ -274,6 +275,11 @@ func p22NewFIDRecoveryAdapterWithActorType(t *testing.T, actorType string) *p22F
 
 func p22NewFIDRecoveryAdapterWithLease(t *testing.T, actorType string, leaseSeconds int) *p22FIDRecoveryAdapter {
 	t.Helper()
+	return p22NewFIDRecoveryAdapterWithArtifacts(t, actorType, leaseSeconds, []string{})
+}
+
+func p22NewFIDRecoveryAdapterWithArtifacts(t *testing.T, actorType string, leaseSeconds int, artifactPaths []string) *p22FIDRecoveryAdapter {
+	t.Helper()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	p22Git(t, workspace, "init", "-q")
@@ -298,7 +304,7 @@ func p22NewFIDRecoveryAdapterWithLease(t *testing.T, actorType string, leaseSeco
 		map[string]any{"actor_id": "actor-denied", "actor_type": "agent", "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities},
 		map[string]any{"actor_id": actor, "actor_type": actorType, "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities},
 	})
-	gateDigest := p21Component(t, binary, workspace, activationID, "gate-definitions", "p22-corpus-gates", []any{map[string]any{"artifact_bytes": 1024, "artifact_paths": []string{}, "argv": []string{"/bin/true"}, "credential_names": []string{}, "cwd": ".", "definition_id": "gate-p22-corpus", "definition_version": 1, "environment": []any{}, "excerpt_bytes": 0, "network": "allowed", "output_bytes": 1024, "redact_literals": []string{}, "sandbox": "none", "shell": false, "success_exit_codes": []int{0}, "timeout_ms": 1000, "write": "allowed"}})
+	gateDigest := p21Component(t, binary, workspace, activationID, "gate-definitions", "p22-corpus-gates", []any{map[string]any{"artifact_bytes": 1024, "artifact_paths": artifactPaths, "argv": []string{"/bin/true"}, "credential_names": []string{}, "cwd": ".", "definition_id": "gate-p22-corpus", "definition_version": 1, "environment": []any{}, "excerpt_bytes": 0, "network": "allowed", "output_bytes": 1024, "redact_literals": []string{}, "sandbox": "none", "shell": false, "success_exit_codes": []int{0}, "timeout_ms": 1000, "write": "allowed"}})
 	digests := []string{gateDigest, profileDigest}
 	sort.Strings(digests)
 	p21Activation(t, binary, workspace, "commit", "p22-corpus-activation-commit", map[string]any{"activation_id": activationID, "expected_status": "staged", "component_digests": digests})
@@ -315,7 +321,7 @@ func p22NewFIDRecoveryAdapterWithLease(t *testing.T, actorType string, leaseSeco
 	claim := p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-claim", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "ttl_seconds": leaseSeconds}), "--idempotency-key", "p22-corpus-claim-acquire")
 	claimID := p21PathString(t, claim, "result", "claim", "id")
 	run := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "start", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-run", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-corpus-prior", "source": "activated-harness"}, "obligation_id": nil, "repository": repository}), "--idempotency-key", "p22-corpus-run-start")
-	return &p22FIDRecoveryAdapter{activation: map[string]any{"id": activationID}, binary: binary, workspace: workspace, projectID: projectID, actor: actor, repository: repository, claimID: claimID, claimVersion: 1, runID: p21PathString(t, run, "result", "run", "id"), runVersion: 1, executorID: "executor-corpus-prior", measurement: source, registrationID: registrationID, registrationVersion: registrationVersion}
+	return &p22FIDRecoveryAdapter{activation: map[string]any{"id": activationID}, binary: binary, workspace: workspace, projectID: projectID, issueID: issueID, actor: actor, repository: repository, claimID: claimID, claimVersion: 1, runID: p21PathString(t, run, "result", "run", "id"), runVersion: 1, executorID: "executor-corpus-prior", measurement: source, registrationID: registrationID, registrationVersion: registrationVersion}
 }
 
 func p22CorpusRepository(t *testing.T, workspace, projectID string) map[string]any {

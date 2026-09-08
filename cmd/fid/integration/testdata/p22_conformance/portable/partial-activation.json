@@ -1,0 +1,12 @@
+{
+  "state": "partial-activation",
+  "expected": {
+    "run_statuses": [
+      "active"
+    ],
+    "activation_statuses": [
+      "finalized",
+      "prepared"
+    ]
+  }
+}

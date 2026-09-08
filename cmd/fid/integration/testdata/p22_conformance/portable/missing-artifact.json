@@ -1,0 +1,12 @@
+{
+  "state": "missing-artifact",
+  "expected": {
+    "run_statuses": [
+      "active"
+    ],
+    "artifact_availability": [
+      "missing"
+    ],
+    "artifact_body_count": 0
+  }
+}

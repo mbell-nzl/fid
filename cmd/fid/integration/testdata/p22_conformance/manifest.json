@@ -36,7 +36,23 @@
     "operations/run-close-accepted.json",
     "operations/gate-committed-denial.json",
     "operations/denial-stop-list.json",
-    "operations/denial-attention-list.json"
+    "operations/denial-attention-list.json",
+    "operations/budget-exhausted.json",
+    "operations/deduplicated-attention-first.json",
+    "operations/deduplicated-attention-second.json",
+    "operations/deduplicated-attention-list.json"
   ],
-  "activation_cases": ["activation-cases.json"]
+  "activation_cases": [
+    "activation-cases.json"
+  ],
+  "portable_cases": [
+    "portable/active.json",
+    "portable/unknown-budget.json",
+    "portable/interrupted.json",
+    "portable/abandoned.json",
+    "portable/deduplicated-attention.json",
+    "portable/exhausted-budget.json",
+    "portable/partial-activation.json",
+    "portable/missing-artifact.json"
+  ]
 }

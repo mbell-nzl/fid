@@ -142,9 +142,9 @@ func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.
 	}{
 		{
 			capabilityID: "export.portable.v1",
-			surface:      "export import absence",
+			surface:      "export import required arguments",
 			args:         []string{"--json", "export", "import"},
-			errorText:    `unknown command "import"`,
+			errorText:    `"code":"invalid-argument"`,
 		},
 		{
 			capabilityID: "reviews.coverage.v1",

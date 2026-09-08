@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestExportCreateValidateAndImportRemainsAbsent(t *testing.T) {
+func TestExportCreateValidateAndImportUsesClosedTargetConflict(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	archivePath := filepath.Join(t.TempDir(), "fid-export.zip")
@@ -24,9 +24,14 @@ func TestExportCreateValidateAndImportRemainsAbsent(t *testing.T) {
 	if validated.err != nil || !strings.Contains(validated.stdout, `"operation":"export.validate"`) {
 		t.Fatalf("export validate = %#v, want JSON success", validated)
 	}
-	imported := executeCommandForTest(workspace, "export", "import", archivePath)
-	if imported.err == nil || !strings.Contains(imported.err.Error(), "unknown command") {
-		t.Fatalf("export import = %#v, want Cobra unknown-command rejection", imported)
+	target := t.TempDir()
+	imported := executeCommandForTest(target, "export", "import", archivePath, "--repository", target, "--idempotency-key", "export-test", "--json")
+	if imported.err != nil || !strings.Contains(imported.stdout, `"operation":"export.import"`) || !strings.Contains(imported.stdout, `"event":null`) {
+		t.Fatalf("export import = %#v, want JSON success with null Event", imported)
+	}
+	conflict := executeCommandForTest(target, "export", "import", archivePath, "--repository", target, "--idempotency-key", "different-key", "--json")
+	if conflict.err == nil || conflict.stdout != "" || !strings.Contains(conflict.stderr, `"code":"import-target-conflict"`) || !strings.Contains(conflict.stderr, `"category":"conflict"`) || !strings.Contains(conflict.stderr, `"retryable":false`) || !strings.Contains(conflict.stderr, `"reason":"different-import"`) {
+		t.Fatalf("export import target conflict = %#v, want closed non-retryable conflict", conflict)
 	}
 	capabilities := executeCommandForTest(workspace, "capabilities", "--json")
 	if capabilities.err != nil || !strings.Contains(capabilities.stdout, `"capability_id":"export.portable.v1","limits":{"create":true,"import":false,"validate":true},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"`) {

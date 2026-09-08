@@ -150,6 +150,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"evidence get",
 		"evidence evaluate",
 		"export create",
+		"export import",
 		"export validate",
 		"claim acquire",
 		"claim expire",
@@ -209,10 +210,11 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	}
 	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 78 || len(legacy) != 2 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 78 and 2", len(retained), len(legacy))
+	if len(retained) != 79 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 79 and 2", len(retained), len(legacy))
 	}
-	want := append(append(append([]string{}, retained...), "export"), legacy...)
+	want := append(append([]string{}, retained...), "export")
+	want = append(want, legacy...)
 	sort.Strings(want)
 	got := liveExecutableLeafCommands(newRootCommandAt(t.TempDir()))
 	if !reflect.DeepEqual(got, want) {
@@ -227,6 +229,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		wantCapabilities[command] = rootFlagCapability{Project: true, JSON: true}
 	}
 	wantCapabilities["export"] = rootFlagCapability{Project: true, JSON: true}
+	wantCapabilities["export import"] = rootFlagCapability{JSON: true}
 	if !reflect.DeepEqual(rootFlagCapabilities, wantCapabilities) {
 		t.Fatalf("root flag capabilities = %#v, want exact retained inventory %#v", rootFlagCapabilities, wantCapabilities)
 	}

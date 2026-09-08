@@ -1,0 +1,11 @@
+{
+  "state": "exhausted-budget",
+  "expected": {
+    "run_statuses": [
+      "active"
+    ],
+    "tokens_state": "exhausted",
+    "tokens_consumed": 10,
+    "tokens_remaining": 0
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "state": "interrupted",
+  "expected": {
+    "run_statuses": [
+      "active",
+      "interrupted"
+    ]
+  }
+}

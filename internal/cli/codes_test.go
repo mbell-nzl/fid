@@ -140,6 +140,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 				stringDetail("code"), nullableStringDetail("entry"), stringDetail("detail"),
 			}},
 		}},
+		{CodeImportTargetConflict, CategoryConflict, false, []SubjectType{SubjectExport}, []detailExpectation{stringDetail("target_root"), stringDetail("reason")}},
 	}
 
 	registered := RegisteredCodes()
@@ -173,6 +174,9 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			}
 
 			validDetails := detailValues(expectation.details)
+			if expectation.code == CodeImportTargetConflict {
+				validDetails["reason"] = "populated"
+			}
 			validSubject := subjectFor(expectation.subjects)
 			failure := mustNewFailure(t, expectation.code, validSubject, validDetails)
 			assertSerializedFailureSchema(t, failure, expectation)
@@ -186,6 +190,20 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		if _, err := NewFailure(code, "message", nil, map[string]any{}); err == nil {
 			t.Errorf("NewFailure(%q) error = nil, want unknown-code rejection", code)
 		}
+	}
+}
+
+func TestImportTargetConflictAcceptsOnlyClosedReasons(t *testing.T) {
+	for _, reason := range []string{"populated", "different-import", "unsafe-path"} {
+		t.Run(reason, func(t *testing.T) {
+			_, err := NewFailure(CodeImportTargetConflict, "conflict", &Subject{Type: SubjectExport, ID: "archive.zip"}, map[string]any{"target_root": "/target", "reason": reason})
+			if err != nil {
+				t.Fatalf("NewFailure(%q) error = %v", reason, err)
+			}
+		})
+	}
+	if _, err := NewFailure(CodeImportTargetConflict, "conflict", &Subject{Type: SubjectExport, ID: "archive.zip"}, map[string]any{"target_root": "/target", "reason": "other"}); err == nil {
+		t.Fatal("NewFailure accepted an open import-target-conflict reason")
 	}
 }
 
