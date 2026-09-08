@@ -134,3 +134,9 @@
   replay are covered. Successor Gate/Receipt remains a positive control.
 - Full exact Task14 gate and report closure remain pending. Review5 still
   follows Task15; all final QA and retained Human fixture work remains in scope.
+
+- Task14 closed at 8c322b5 / report51cc314. Root observed all five final
+  exact gates, first-attempt report lint and route ADVANCE; recovery resolved
+  and task completion were appended through the canonical sequence control.
+- Task15 CLI/parity is the next single-owner implementation. Review5 remains
+  independent and follows its completion.

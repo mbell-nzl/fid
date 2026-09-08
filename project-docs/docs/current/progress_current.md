@@ -7,7 +7,7 @@ merged main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 completed
 under DEC-179 on 2026-09-04 (87/87 VAL, 4/4 Human), and its branch has since
 been merged.
 
-Tasks 1-13 are complete; review-1b and review-2b passed. Task 8 completed the
+Tasks 1-14 are complete; review-1b and review-2b passed. Task 8 completed the
 DEC-195 cancellation DDL/filter convergence with task-1 provenance, all eight
 required gates and independent report lint. Task 9 completed DEC-196/197 semantic
 conformance, Human Stop text and actual-operation Stop guards with all five
@@ -17,7 +17,7 @@ coverage, all five final gates and independent report lint. Task 11 completed
 under DEC-199/200 at 30dd780 with independent fake/fid cases, real response-loss
 boundary tests, all five final gates and root report lint. Task 12 completed under DEC-196/201 at c2d8098, with final gate addendum
 833b4fc and preserved report f57b4aa. Review 4 passed at 3addf7d and the independent checkpoint passed at a9bf3bf.
-Task 13 completed at acb569b with final report9ad0585, all five final-source gates, root report lint and route PASS. Task 14 is in a root-owned same-task continuation after Developer checkpoint 0a4d00d. Root repaired import lock exclusivity and installed-history verification; final gates are running. No escalation is open.
+Task 13 completed at acb569b with final report9ad0585, all five final-source gates, root report lint and route PASS. Task14 completed at 8c322b5 with root report51cc314, all five final exact gates and first-attempt report lint PASS. Task15 CLI/parity is next; no escalation is open.
 
 The Human delegated completion of tasks 8-18, required reviews, final
 deterministic QA, and runnable Human checklist preparation on 2026-09-07.
@@ -48,7 +48,7 @@ inventory, QA Lead handoff, decisions and triage log are in
 Execution started on 2026-09-05 under DEC-188. QA's plan and consistency
 assessment remain in `qa/qa-plan.md` and `qa/consistency-review.md`; the
 refinement authority is DEC-184..187 and `qa/tl-refinement.md`. The ledger
-records completed tasks 1..13 and the task-8 STOP resolved by DEC-195. Product QA
+records completed tasks 1..14 and the task-8 STOP resolved by DEC-195. Product QA
 receipts retain their original session attribution; the separate maintenance
 report records freshly executed workflow checks only.
 
@@ -56,8 +56,8 @@ report records freshly executed workflow checks only.
 
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
-- Task statuses: 1..13 complete; reviews 1b/2b/3 passed; review 4/checkpoint passed; 14 executing; 15..18 pending.
-- Next: task 14 atomic import, then task 15 CLI/parity and independent Review 5.
+- Task statuses: 1..14 complete; reviews 1b/2b/3 passed; review 4/checkpoint passed; 15 executing; 16..18 pending.
+- Next: task15 CLI/parity, then independent Review5.
   DEC-202 supplies the imported destination scope; DEC-203 allocates Task15's
   already accepted import failure registry entry. Implementation and review are
   serialized under the renewed Human authorization.
