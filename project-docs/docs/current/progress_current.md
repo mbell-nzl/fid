@@ -17,7 +17,7 @@ coverage, all five final gates and independent report lint. Task 11 completed
 under DEC-199/200 at 30dd780 with independent fake/fid cases, real response-loss
 boundary tests, all five final gates and root report lint. Task 12 completed under DEC-196/201 at c2d8098, with final gate addendum
 833b4fc and preserved report f57b4aa. Review 4 passed at 3addf7d and the independent checkpoint passed at a9bf3bf.
-Task 13 completed at acb569b with final report9ad0585, all five final-source gates, root report lint and route PASS. Task 14 is dispatched as one complete Developer task; no escalation is open.
+Task 13 completed at acb569b with final report9ad0585, all five final-source gates, root report lint and route PASS. Task 14 is in a root-owned same-task continuation after Developer checkpoint 0a4d00d. Root repaired import lock exclusivity and installed-history verification; final gates are running. No escalation is open.
 
 The Human delegated completion of tasks 8-18, required reviews, final
 deterministic QA, and runnable Human checklist preparation on 2026-09-07.

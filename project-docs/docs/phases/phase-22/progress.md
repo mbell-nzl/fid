@@ -120,3 +120,17 @@
 - Task14 receives one Developer owner and the complete spec/DEC202 plus
   task-14-delegate-notes.md. Root handles orchestration/docs, with no overlapping
   product edits. Tasks15–18, reviews5/6 and final independentQA remain pending.
+
+## 2026-09-08 - Task14 Root Completion Continuation
+
+- Developer handed back clean checkpoint 0a4d00d, with no live commands and
+  RECOVERY_REQUIRED. Root became the sole product owner; no parallel edits.
+- Root reproduced repeated-contender lock failure and altered imported Event
+  identity acceptance. Directory-inode locking and verified immutable journal
+  inventory repair those failures; unchanged focused red/green is recorded.
+- Five actual abrupt process-exit boundaries now cover install/replay. The
+  snapshot test moves source replacement before staging, and preserved source
+  files, changed digests/keys, altered installed history and old observation
+  replay are covered. Successor Gate/Receipt remains a positive control.
+- Full exact Task14 gate and report closure remain pending. Review5 still
+  follows Task15; all final QA and retained Human fixture work remains in scope.

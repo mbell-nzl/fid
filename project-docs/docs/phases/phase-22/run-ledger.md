@@ -1338,3 +1338,28 @@
 - Commit: acb569bb9447a3259991520669167fdc819c1706 - verified, subject matched; final report 9ad0585
 - QA-plan commands beyond the task spec: none required
 - Evidence: Root observed all five final-source gates terminate successfully, including full actual archive boundary tests and the retained full CLI journey. Earlier timeout, lint and integration failures remain in the report/root-evidence with causal repairs. Root observed ACTION ADVANCE (terminated exit_code: 0) on the committed clean worktree. VAL-054..057 PASS; Review 5 remains due after task 15.
+
+### 2026-09-08 18:56 TASK-RECOVERY task-14
+
+- Source: task-14-done.md RECOVERY_REQUIRED at 0a4d00de3581c05f5f1c1b9748da87916e28bc1c; root delegate takeover
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-14.md / DEC-202 / DEC-204
+- Triage disposition: N/A
+- Trigger signature: task-14:in-scope-implementation:import-lock-and-installed-history-binding
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: amended task-14 ordinary implementation/test/report scope; root owns administrative ledger and current-context docs
+- Forbidden changes: protected gates, VAL semantics, schemas, Events, public wire contracts, dependencies, workflow controls and unrelated source; no historical identity rewrite or imported authority bypass
+- Originating report: N/A
+- Exact verification: from /home/mark/projects/fid, in order: gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: clean Developer checkpoint 0a4d00de3581c05f5f1c1b9748da87916e28bc1c with no live command; root captured behavioral red for repeated contender exclusion and altered imported Event identity, exit_code 1
+- Phase worktree: /home/mark/projects/fid on phase-22; ordinary same-task root continuation
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - complete installed-history verification, crash-safe exclusion, acceptance audit and all final exact gates; prior Developer receipts retained with attribution
+- Next action: root directly repairs and verifies Task14 under Human super-delegate authorization; no concurrent product owner
+- Human attention required: no
