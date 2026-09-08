@@ -34,6 +34,8 @@ Full sources, pass/fail criteria, and validator ownership are in
   Include activation bootstrap exclusion, non-null recovery/abandon observations,
   duplicate executor failure, disposition Event sets, and distinct activation
   version/direction/competing-prepare error shapes already owned by earlier tasks.
+- DEC-205 assigns the bounded embedded Stop disposition sequence repair in
+  internal/workflow/stop.go, with task-2 provenance and unchanged contracts/gates.
 - No new domain behavior is assigned to this final assembly task. Return causal findings for minimum-scope amendment per DEC-175.
 - Developer produces runnable Human fixtures; only Human may judge VAL-076..078.
 - DEC-196: deliver a reproducible test-only Human fixture generator, not only
@@ -54,6 +56,9 @@ Full sources, pass/fail criteria, and validator ownership are in
 ## Scope
 
 ### Files To Create Or Modify
+
+- `internal/workflow/stop.go` and matching Stop tests — DEC-205 only: derive
+  canonical next aggregate sequence for explicit/embedded Stop disposition.
 
 - `cmd/fid/integration/p22_conformance_test.go`
 - `cmd/fid/integration/p22_recovery_journey_test.go`

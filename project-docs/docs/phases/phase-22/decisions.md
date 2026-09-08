@@ -1141,6 +1141,37 @@
   or abandon a Run; qualified destination successor behavior and all retained
   ordinary cases execute under Task14's unchanged five-command gate.
 
+### DEC-205: Allocate embedded Stop disposition sequence repair to final conformance
+
+- **Date:** 2026-09-08.
+- **Status:** ACCEPTED by the root delegate under the Human's explicit authority
+  to complete Phase22 and resolve bounded implementation/workflow friction.
+- **Existing requirement:** contracts.md section5 permits explicit stop.resolve
+  for an embedded budget-data-unavailable Stop after a qualifying same-chain
+  run.budget-observed fact. Journal Event-v2 aggregate sequences remain contiguous
+  per aggregate; an embedded Stop's creation belongs to the containing Run Event.
+- **Evidence and provenance:** The Task18 actual-binary connected journey failed
+  stop.resolve with invalid-argument/2. Diagnostic root-cause evidence is
+  `aggregate stop/STP-70ef70 sequence 2, want 1` (focused test exit_code1).
+  internal/workflow/stop.go hardcodes sequence2 in stopResolvedEvent, introduced
+  by ac827959f8359473cbd6546ac6bea1ff1fd20751, phase22/task2. Explicit stop.raise
+  has a Stop aggregate Event1; embedded Stop creation does not. Neither path
+  may invent an Event or bypass the existing sequence validator.
+- **Allocation:** Task18 may edit internal/workflow/stop.go and matching
+  in-package Stop tests only to derive the next Stop aggregate sequence from
+  canonical journal history under the existing write lock. Keep explicit Stop
+  resolution at its proper sequence and embedded first resolution at sequence1;
+  preserve request replay, qualifying facts, exact grants, Event/Effect shape
+  and immutable Stop/Attention identities. Task2 stays COMPLETE and unedited.
+- **Evidence:** The same actual-binary journey must pass through committed
+  denial, qualifying Budget observation, Stop disposition, exact Attention
+  disposition, linked recovery and portable rebuild. Retained explicit Stop
+  cases and all seven unchanged Task18 commands remain mandatory.
+- **Limits:** No product decision, new domain behavior, public field, error,
+  Event family, DDL, dependency, gate, VAL, threshold or workflow control change.
+  This allocates causal repair of already accepted behavior; it does not broaden
+  Task18 into general product implementation. Final independent QA audits it.
+
 ## Planning Spec Impact
 
 | Document | Planning change |
