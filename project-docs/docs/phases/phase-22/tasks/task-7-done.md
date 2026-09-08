@@ -4,9 +4,9 @@
 
 - Task outcome: COMPLETE
 - Category: none
-- Condition: None.
-- Recovery attempts: 5
-- Next action: None.
+- Condition: FQ-05 same-task fault proof complete; independent final review remains due.
+- Recovery attempts: 6
+- Next action: Runner closes this owner and continues Task 8; final QA follows all queued repairs.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -139,11 +139,11 @@
 
 ## Commit hash
 
-- `0cb8acc3674c8f2452e221ebe50309cd32a96f3e`
+- `359434e74d92c74309a9c3b31374854d1060f72d`
 
 ## Commit subject
 
-- `test(budget): converge retained task-7 assertions`
+- `test(budget): prove atomic boundary faults and denied spawn`
 
 ## Root report display correction — 2026-09-08
 
@@ -152,3 +152,108 @@ receipts following the QA-84 preflight. The original Developer sessions remain
 the source of those receipts, including every recorded outcome, duration,
 coverage value and observed termination. This formatting correction records
 no new execution or attestation. Original encoded text remains in Git history.
+
+
+## Final-QA FQ-05 same-task continuation — 2026-09-09
+
+Authority: review-7, final-review.md FQ-05, task-7.md and contracts.md §6.
+Root is the sole writer. All original receipts remain above. This continuation
+adds the missing VAL-028 / QA-29 direct boundary fault proof; it changes no
+product implementation, budget maximum, unit, null semantics, or Event shape.
+
+### Implementation and validation evidence
+
+- New cmd/fid/integration/p22_budget_fault_test.go executes nine cases: external
+  sample, fid-owned Attempt admission and fid-owned failed Receipt charge, each
+  before append, after durable append/before projection, and normal control.
+  Fixtures are created through actual fid activation/registration/Envelope/Run
+  operations. The approved executable appends a process marker, and the failure
+  budget is declared at Envelope creation, never edited after approval.
+- The subprocess calls actual ObserveRunBudget or RunGate. A test-only SQLite
+  scalar/trigger fails its first projection call for pre-append or its second
+  for post-append, allowing the dry-run to pass first. It exits before returning
+  a result. The parent verifies exact exit, journal Event count, projection
+  atomicity and process count. This reuses the narrow Task5 test technique;
+  there is no production failure API or generic fault framework.
+- External and Attempt pre-append failures leave the entire projection unchanged.
+  Receipt pre-append failure retains the already durable Attempt and its charge,
+  while rejecting every partial Receipt/failure-sample/Stop/Attention effect.
+  Post-append failures leave the committed Event available for a fresh actual fid
+  process to catch up. Exact-key replay adds no facts and never spawns.
+- Attempt admission interrupted after append remains receiptless and replay
+  returns the accepted no-observed-terminal-Receipt error. A failed Receipt
+  append cannot invent failure consumption or terminal proof. Normal final
+  allowed admission still completes its Receipt after exhaustion. Explicit
+  ordered Event checks retain Attempt-before-Receipt and absence of a synthetic
+  terminal Event for abandoned Attempts.
+- Each completed boundary joins its sample, budget-exhausted Stop and open
+  Attention through the exact containing Event/Stop identity; sample totals,
+  Attempt/Receipt counts and all linkage tables are checked. Below-boundary
+  external sample and two successful executions create no exhaustion facts.
+- A fresh actual CLI gate request after exhaustion returns the accepted sole
+  live terminal frame, budget-exhausted/precondition/exit4, remaining zero, null
+  Attempt/Receipt IDs and exact Stop/Attention counts. It preserves prior facts and charges, appends one distinct Stop/link to the existing
+  open Attention, and never appends to the process marker. The exact-key denied
+  request replay retains its containing Event and duplicates no facts. Full actual rebuild
+  reproduces every projection table except operational projection_meta.
+- Existing p22_fake_test.go gains an optional test-only execution fixture with
+  argv and extra budgets. All current callers retain their defaults and all
+  41 dual-adapter corpus rows. Introducing commit
+  f3be616f0587881ee3f5c3716ffbf6167e3f2a20, Phase22/Task6. No Task6 report or
+  expected corpus response was edited; the focused command executes both
+  adapters alongside every new fault case.
+- Required before-edit evidence coverage was 23.6% at 2.264s (exit_code: 0).
+  New fault coverage is tagged real-process coverage; the ordinary package
+  baseline/post measure is retained separately without claiming an increase.
+
+### Mandatory deviations and preserved failed attempts
+
+- First focused command ended `FAIL` (exit_code: 1), 27.531s. The new fixture
+  appended an unsorted failure budget, assumed receiptless replay returned nil
+  error, and applied an ordinary stderr failure assertion to a committed live
+  gate denial. Sorted immutable input and the accepted receiptless error fixed
+  those constructions; the budget/sample/Stop/Attention assertions remain.
+- Second identical command ended `FAIL` (exit_code: 1), 32.116s. The reused live
+  denial helper specifically asserted unknown/null budget state; these new
+  cases exercise exhausted/zero state. The dedicated assertion now validates
+  that exact accepted terminal frame and exhausted values. The original unknown
+  helper and its assertions are unchanged. No product fault has been inferred
+  from either failed test construction.
+- Third identical command ended `FAIL` (exit_code: 1), 32.643s, because the
+  new assertion assumed a distinct denied request added no Stop. contracts.md
+  §5 explicitly retains distinct Stops and shares equivalent open Attention.
+  The corrected assertion requires one new Stop/link, preserves every old row
+  and the existing Attention, retains unchanged charges/Attempt/Receipt tables,
+  and checks exact denial replay adds nothing. This corrects an invented test
+  expectation; it does not change accepted behavior or a validation assertion.
+- No product, architecture, schema, wire, Event, dependency, gate/control,
+  threshold, or validation-contract change. Independent final-review-2 remains
+  required after all queued owners; Human judgments remain blank.
+
+### Continuation command receipts
+
+Working directory: `/home/mark/projects/fid`. These receipts were captured by
+Root in this recording session, including real observed nested terminations.
+
+Focused closure: all nine cases and the unchanged dual-adapter corpus passed
+at 35.693s, then again with exact sample/spawn totals at 36.371s, each terminated
+exit_code: 0. Test commit: 359434e74d92c74309a9c3b31374854d1060f72d,
+`test(budget): prove atomic boundary faults and denied spawn`.
+Prior primary report binding retained for provenance:
+0cb8acc3674c8f2452e221ebe50309cd32a96f3e,
+`test(budget): converge retained task-7 assertions`.
+
+- `go test -race -cover ./internal/evidence` - PASS - `ok  	github.com/mbell-nzl/fid/internal/evidence	2.264s	coverage: 23.6% of statements` (terminated `exit_code: 0`). Attempt 1: required Task7 before-edit baseline.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^(TestP22BudgetBoundarySurvivesAppendAndProjectionFaults|TestP22BudgetCrashProcess|TestP22DualAdapterRecoveryConformance)$' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Attempt 2: direct budget fault and retained adapter proof.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^(TestP22BudgetBoundarySurvivesAppendAndProjectionFaults|TestP22BudgetCrashProcess|TestP22DualAdapterRecoveryConformance)$' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Attempt 3: budget proof corrected accepted fixture order and replay responses.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^(TestP22BudgetBoundarySurvivesAppendAndProjectionFaults|TestP22BudgetCrashProcess|TestP22DualAdapterRecoveryConformance)$' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Attempt 4: budget boundary exact exhausted frame and ordering proof.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^(TestP22BudgetBoundarySurvivesAppendAndProjectionFaults|TestP22BudgetCrashProcess|TestP22DualAdapterRecoveryConformance)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	35.693s` (terminated `exit_code: 0`). Attempt 5: budget boundary preserving distinct Stop requests and shared Attention.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^(TestP22BudgetBoundarySurvivesAppendAndProjectionFaults|TestP22BudgetCrashProcess|TestP22DualAdapterRecoveryConformance)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	36.371s` (terminated `exit_code: 0`). Attempt 6: final budget proof with exact sample and spawn totals.
+- `go test -race -cover ./internal/evidence` - PASS - `ok  	github.com/mbell-nzl/fid/internal/evidence	(cached)	coverage: 23.6% of statements` (terminated `exit_code: 0`). Attempt 7: required Task7 post-edit evidence coverage.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Attempt 8: required Task7 final gate.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Attempt 9: required Task7 final gate.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 61.2% of statements` (terminated `exit_code: 0`). Attempt 10: required Task7 final gate.
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					65.2%` (terminated `exit_code: 0`). Attempt 11: required Task7 final gate.
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	170.769s` (terminated `exit_code: 0`). Attempt 12: required Task7 final gate.
+
+Final closure: the six unchanged post-edit commands passed in order, including evidence coverage23.6%, full race CLI426.244s, aggregate65.2%, and tagged integration170.769s, each terminated exit_code: 0. This is FQ-05 recovery attempt1 after the five historical attempts retained above. No product implementation repair was needed.
