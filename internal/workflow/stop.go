@@ -259,7 +259,7 @@ func ResolveStop(options StopOptions, request StopResolveRequest) (StopResolveRe
 		if err := authorizeStop(conn, options, stop.Subject, "stop.resolve", stop.ResolverCapability); err != nil {
 			return err
 		}
-		if err := qualifyingFact(options.WorkspaceRoot, stop, request.FactEventID); err != nil {
+		if err := qualifyingFact(options.WorkspaceRoot, conn, stop, request.FactEventID); err != nil {
 			return &ResolutionInvalidError{Subject: stop.Subject, FactEventIDs: []string{request.FactEventID}, Reasons: []EvaluationReason{evaluationReason("resolution-invalid", err.Error(), stop.ID, "stop")}}
 		}
 		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: stop.ID, Type: "stop"})
@@ -476,6 +476,7 @@ func qualifyingDispositions(workspace string, conn *sql.DB, attention Attention,
 	}
 	defer func() { _ = rows.Close() }()
 	expected := make([]string, 0, len(attention.StopIDs))
+	seenDispositions := make(map[string]bool, len(attention.StopIDs))
 	stops := make([]Stop, 0, len(attention.StopIDs))
 	facts := make([]string, 0, len(attention.StopIDs))
 	for rows.Next() {
@@ -491,7 +492,11 @@ func qualifyingDispositions(workspace string, conn *sql.DB, attention Attention,
 		if err != nil {
 			return err
 		}
-		expected, stops, facts = append(expected, disposition.String), append(stops, stop), append(facts, fact.String)
+		if !seenDispositions[disposition.String] {
+			expected = append(expected, disposition.String)
+			seenDispositions[disposition.String] = true
+		}
+		stops, facts = append(stops, stop), append(facts, fact.String)
 	}
 	if err := rows.Err(); err != nil {
 		return err
@@ -506,14 +511,14 @@ func qualifyingDispositions(workspace string, conn *sql.DB, attention Attention,
 		}
 	}
 	for i, stop := range stops {
-		if err := qualifyingFact(workspace, stop, facts[i]); err != nil {
+		if err := qualifyingFact(workspace, conn, stop, facts[i]); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func qualifyingFact(workspace string, stop Stop, factEventID string) error {
+func qualifyingFact(workspace string, conn *sql.DB, stop Stop, factEventID string) error {
 	found, err := journal.FindEvent(filepath.Join(workspace, config.WorkspaceDirName, "journal"), factEventID)
 	if err != nil {
 		return fmt.Errorf("resolve Stop %q: qualifying fact: %w", stop.ID, err)
@@ -522,33 +527,26 @@ func qualifyingFact(workspace string, stop Stop, factEventID string) error {
 	if !eventMatchesCondition(event, stop.ResolutionCondition) {
 		return fmt.Errorf("resolve Stop %q: fact Event %q does not qualify", stop.ID, factEventID)
 	}
-	return nil
+	switch stop.ResolutionCondition.Type {
+	case "executor-terminated":
+		return qualifyingExecutorTermination(conn, event, stop.ResolutionCondition)
+	case "activation-recovered", "capability-available":
+		return qualifyingActivationCondition(conn, event, stop.ResolutionCondition)
+	case "run-recovered":
+		return qualifyingRecoveryCondition(conn, event, stop.ResolutionCondition)
+	case "budget-observed":
+		return qualifyingBudgetCondition(conn, event, stop.ResolutionCondition)
+	case "work-ended":
+		return qualifyingWorkEnded(conn, event, stop.ResolutionCondition)
+	}
+	return fmt.Errorf("unsupported Stop resolution condition")
 }
 
 func eventMatchesCondition(event journal.Event, condition Condition) bool {
 	want := map[string][]string{"executor-terminated": {"run.observed"}, "run-recovered": {"run.recovered"}, "activation-recovered": {"activation.recovery-completed", "activation.finalized"}, "capability-available": {"activation.finalized", "activation.recovery-completed"}, "budget-observed": {"run.budget-observed"}, "work-ended": {"run.closed", "run.abandoned", "envelope.completed"}}
 	for _, eventType := range want[condition.Type] {
 		if event.EventType == eventType {
-			return eventSubjectMatches(event, condition.Subject)
-		}
-	}
-	return false
-}
-
-func eventSubjectMatches(event journal.Event, subject Subject) bool {
-	if event.Aggregate.ID == subject.ID {
-		return true
-	}
-	for _, effect := range event.Effects {
-		if subject.Type == "run" {
-			if runID, ok := effect.Values["run_id"].(string); ok && runID == subject.ID {
-				return true
-			}
-		}
-		if subject.Type == "envelope" {
-			if envelopeID, ok := effect.Values["envelope_id"].(string); ok && envelopeID == subject.ID {
-				return true
-			}
+			return true
 		}
 	}
 	return false
@@ -651,7 +649,7 @@ func authorizeStop(conn *sql.DB, options StopOptions, subject Subject, action, r
 	if subject.Type == "run" {
 		err = conn.QueryRow(`SELECT envelope_id, issue_id, envelope_revision FROM runs WHERE id = ?`, subject.ID).Scan(&envelopeID, &issueID, &revision)
 	} else {
-		err = conn.QueryRow(`SELECT id, primary_issue_id, current_revision FROM work_envelopes WHERE id = ?`, subject.ID).Scan(&envelopeID, &issueID, &revision)
+		err = conn.QueryRow(`SELECT e.id, s.issue_id, e.current_revision FROM work_envelopes e JOIN envelope_issue_selection s ON s.envelope_id = e.id AND s.revision = e.current_revision AND s.primary_issue = 1 WHERE e.id = ?`, subject.ID).Scan(&envelopeID, &issueID, &revision)
 	}
 	if err != nil {
 		return err

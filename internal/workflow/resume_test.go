@@ -3,15 +3,14 @@ package workflow
 import "testing"
 
 func TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved(t *testing.T) {
-	workspace, migrationsDir := initializedWorkflowWorkspace(t)
+	options, activation, factID := finalizedStopConditionActivation(t)
+	workspace := options.WorkspaceRoot
 	conn, err := openWorkflowDB(workspace)
 	if err != nil {
 		t.Fatalf("open workflow database: %v", err)
 	}
 	defer closeWorkflowDB(conn)
-	installStopTestActor(t, conn)
-	request := StopRaiseRequest{Subject: Subject{Type: "activation", ID: "ACT-stop-test"}, Code: "activation-incomplete", BlockedActions: []string{"gate.run"}, Details: []byte(`{"activation_id":"ACT-stop-test","point_of_no_return":false,"components":["backend"]}`), ResolutionCondition: Condition{Type: "activation-recovered", Subject: Subject{Type: "activation", ID: "ACT-stop-test"}}, ResolverCapability: "stop.resolve"}
-	options := StopOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "agent:stop-test", IdempotencyKey: testIdempotencyKey()}
+	request := StopRaiseRequest{Subject: Subject{Type: "activation", ID: activation.ID}, Code: "activation-incomplete", BlockedActions: []string{"gate.run"}, Details: mustRunJSON(map[string]any{"activation_id": activation.ID, "point_of_no_return": false, "components": []string{"backend"}}), ResolutionCondition: Condition{Type: "activation-recovered", Subject: Subject{Type: "activation", ID: activation.ID}}, ResolverCapability: "stop.resolve"}
 	first, err := RaiseStop(options, request)
 	if err != nil {
 		t.Fatalf("RaiseStop(first) error = %v", err)
@@ -21,7 +20,6 @@ func TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RaiseStop(second) error = %v", err)
 	}
-	factID := commitActivationRecoveryFact(t, workspace, conn)
 	options.IdempotencyKey = testIdempotencyKey()
 	if _, err := ResolveStop(options, StopResolveRequest{StopID: first.Stop.ID, FactEventID: factID}); err != nil {
 		t.Fatalf("ResolveStop() error = %v", err)
