@@ -105,3 +105,18 @@
   retaining original evidence attribution, and independently linted them.
 - Six neutral Human checklist prompts are prepared with blank outcomes;
   task-18 retained fixtures and final QA verification are still pending.
+
+## 2026-09-08 - Serial Task 13 Closure And Task 14 Dispatch
+
+- Root completed Task13 at acb569bb9447a3259991520669167fdc819c1706, report9ad0585.
+  All five final-source gates passed with observed termination; root report lint
+  and route passed on the first attempt. VAL054–057 pass; Review5 waits for15.
+- Preserved race timeout from fixture compression, repaired via valid compressed
+  block reuse without changing limits; full boundary matrix passes. Preserved
+  tagged failure, repaired omitted run.execution-blocked idempotency catalog row
+  and retained CLI pointer/null error conversion; full journey now passes.
+- DEC203 assigns Task15 two registry files for its already accepted import
+  conflict error. No new product behavior, dependency or gate definition.
+- Task14 receives one Developer owner and the complete spec/DEC202 plus
+  task-14-delegate-notes.md. Root handles orchestration/docs, with no overlapping
+  product edits. Tasks15–18, reviews5/6 and final independentQA remain pending.
