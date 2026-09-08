@@ -262,7 +262,10 @@ func sharedActivationDispositionFixture(t *testing.T) (StopOptions, Attention, s
 		if err != nil {
 			return err
 		}
-		_, err = journal.CommitEvent(lock, conn, stopRaisedEventForDomain(stop, attention, false, prepared.EventID))
+		fixture := stopFixtureIdempotency(stopRaisedEventForDomain(stop, attention, false, prepared.EventID))
+		fixture.EventID = prepared.EventID
+		fixture.Effects[len(fixture.Effects)-1].Values["result_event_id"] = prepared.EventID
+		_, err = journal.CommitEvent(lock, conn, fixture)
 		return err
 	}); err != nil {
 		t.Fatal(err)

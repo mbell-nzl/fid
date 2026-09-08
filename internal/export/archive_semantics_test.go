@@ -87,7 +87,7 @@ func replaceRecoveredObservationReference(t *testing.T, data []byte) ([]byte, st
 }
 
 func recoveryEventWithMissingReference() journal.Event {
-	return journal.Event{
+	event := journal.Event{
 		EventID:     "EVT-invalid-recovery-reference",
 		EventSchema: journal.EventSchemaV2,
 		EventType:   "run.recovered",
@@ -116,6 +116,9 @@ func recoveryEventWithMissingReference() journal.Event {
 			}},
 		},
 	}
+	event.Idempotency = &journal.EventIdempotency{Key: "missing-reference", Scope: "run.recover:missing-project", RequestDigest: strings.Repeat("1", 64)}
+	event.Effects = append(event.Effects, journal.Effect{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": event.Idempotency.Scope, "idempotency_key": event.Idempotency.Key}, Values: map[string]any{"request_digest": event.Idempotency.RequestDigest, "result_entity_id": "REC-invalid-reference", "result_event_id": event.EventID, "aggregate_sequence": 1, "result_json": `{"replayed":false}`, "created_at": event.OccurredAt.Format(time.RFC3339Nano)}})
+	return event
 }
 
 func TestSemanticValidatorRejectsNestedDuplicateJSONKey(t *testing.T) {
@@ -143,7 +146,7 @@ func TestSemanticValidatorRejectsMissingRecoveryReference(t *testing.T) {
 		t.Fatalf("encode recovery Event: %v", err)
 	}
 	err = validator.accept(raw)
-	if err == nil || !strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
+	if err == nil || !strings.Contains(err.Error(), "missing reference") {
 		t.Fatalf("accept missing recovery reference error = %v, want foreign-key rejection", err)
 	}
 	if got := semanticCheckCode(err); got != "reference-invalid" {

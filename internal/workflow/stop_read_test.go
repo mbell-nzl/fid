@@ -43,6 +43,7 @@ func TestStopAndAttentionListsFilterLimitAndRemainReadOnly(t *testing.T) {
 
 func commitStopReadFacts(t *testing.T, workspace string, conn *sql.DB) {
 	t.Helper()
+	seedStandaloneStopSubject(t, conn)
 	first := stopRaisedEvent("", "STOP-1", "ATT-1", true)
 	second := stopRaisedEvent("", "STOP-2", "ATT-1", false)
 	if err := journal.WithLock(workspace, journal.LockOwner{Command: "test stop list"}, func(lock *journal.WriteLock) error {

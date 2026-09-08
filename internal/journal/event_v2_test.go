@@ -60,34 +60,9 @@ func TestEventV2RejectsUnknownTopLevelKey(t *testing.T) {
 }
 
 func eventV2ForSequence(sequence int) Event {
-	return Event{
-		EventID:     "EVT-20260822-000001",
-		EventSchema: EventSchemaV2,
-		EventType:   "activation.prepared",
-		OccurredAt:  time.Date(2026, time.August, 22, 0, 0, 0, 0, time.UTC),
-		ActorV2: EventActor{
-			ActorID:       "actor-builder",
-			ActorType:     "agent",
-			Producer:      "kit",
-			ProvenanceRef: "activation:ACT-1/profile:builder",
-		},
-		Aggregate:   Aggregate{ID: "ACT-1", Sequence: sequence, Type: "activation"},
-		CommandName: "activation.prepare",
-		Effects: []Effect{{
-			Op:    "insert",
-			Table: "kit_activations",
-			PK:    map[string]any{"id": "ACT-1"},
-			Values: map[string]any{
-				"prior_activation_id": nil,
-				"kit_identity":        "kit-1",
-				"backend_identity":    "fid-1",
-				"phase":               1,
-				"status":              "prepared",
-				"point_of_no_return":  false,
-				"direction":           "activate",
-				"created_at":          "2026-08-22T00:00:00Z",
-				"updated_at":          "2026-08-22T00:00:00Z",
-			},
-		}},
-	}
+	event := testIdempotentActivationEvent()
+	event.EventID = "EVT-20260822-000001"
+	event.OccurredAt = time.Date(2026, time.August, 22, 0, 0, 0, 0, time.UTC)
+	event.Aggregate.Sequence = sequence
+	return currentProjectionIdempotency(event, "ACT-1")
 }

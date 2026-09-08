@@ -51,6 +51,9 @@ func CommitEvent(lock *WriteLock, conn *sql.DB, event Event) (Event, error) {
 	if err != nil {
 		return Event{}, err
 	}
+	if err := captureCurrentEventPrior(conn, &prepared); err != nil {
+		return Event{}, err
+	}
 	if err := DryRunProjectEvent(conn, prepared); err != nil {
 		return Event{}, err
 	}
@@ -125,6 +128,9 @@ func CommitIdempotent(lock *WriteLock, conn *sql.DB, request IdempotencyRequest,
 	}
 
 	prepared.Effects = append(prepared.Effects, idempotencyResultEffect(request, prepared, mutation.EntityID, resultJSON))
+	if err := captureCurrentEventPrior(conn, &prepared); err != nil {
+		return IdempotencyOutcome{}, err
+	}
 	if err := validateV2Event(prepared); err != nil {
 		return IdempotencyOutcome{}, err
 	}

@@ -56,6 +56,9 @@ func TestTerminalSuccessEvaluationIncludesEnvelopeStop(t *testing.T) {
 func eventWithID(event journal.Event, eventID string) journal.Event {
 	event.EventID = eventID
 	for index := range event.Effects {
+		if event.Effects[index].Table == "idempotency_results" {
+			event.Effects[index].Values["result_event_id"] = eventID
+		}
 		if event.Effects[index].Values["created_event_id"] == "" {
 			event.Effects[index].Values["created_event_id"] = eventID
 		}

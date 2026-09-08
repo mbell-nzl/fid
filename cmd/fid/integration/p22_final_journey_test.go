@@ -9,6 +9,11 @@ import (
 )
 
 func TestP22CompleteOneIssueRecoveryJourney(t *testing.T) {
+	p22CompleteOneIssueRecoveryJourney(t)
+}
+
+func p22CompleteOneIssueRecoveryJourney(t *testing.T) *p22FIDRecoveryAdapter {
+	t.Helper()
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, p22FinalActions)
 	prior := a.runID
 	denial := assertP22LiveDenial(t, a.Execute(t, p22ConformanceCase{Name: "journey-denial", Operation: "gate.run", Kind: "denied"}), false)
@@ -63,6 +68,7 @@ func TestP22CompleteOneIssueRecoveryJourney(t *testing.T) {
 	if p22ResultPath(views["resume"].(map[string]any), "issue.id") != a.issueID {
 		t.Fatal("roundtrip changed the journey Issue")
 	}
+	return a
 }
 
 func p22AcceptedCall(t *testing.T, a *p22FIDRecoveryAdapter, name, operation string, input map[string]any) map[string]any {

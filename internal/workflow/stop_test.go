@@ -2,7 +2,9 @@ package workflow
 
 import (
 	"database/sql"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -15,6 +17,7 @@ func TestEquivalentStopsShareAttentionButKeepDistinctFacts(t *testing.T) {
 	}
 	defer closeWorkflowDB(conn)
 
+	seedStandaloneStopSubject(t, conn)
 	first := stopRaisedEvent("", "STOP-1", "ATT-1", true)
 	second := stopRaisedEvent("", "STOP-2", "ATT-1", false)
 	if err := journal.WithLock(workspace, journal.LockOwner{Command: "test stop raise"}, func(lock *journal.WriteLock) error {
@@ -165,9 +168,31 @@ func stopRaisedEvent(eventID, stopID, attentionID string, createAttention bool) 
 		}})
 	}
 	effects = append(effects, journal.Effect{Op: "insert", Table: "attention_stop_links", PK: map[string]any{"attention_id": attentionID, "stop_id": stopID}})
-	return journal.Event{
+	event := journal.Event{
 		EventID: eventID, EventSchema: journal.EventSchemaV2, EventType: "stop.raised",
 		ActorV2:   journal.EventActor{ActorID: "agent:tl", ActorType: "agent", Producer: "test", ProvenanceRef: "test"},
 		Aggregate: journal.Aggregate{ID: stopID, Type: "stop", Sequence: 1}, CommandName: "stop.raise", Effects: effects,
+	}
+	return stopFixtureIdempotency(event)
+}
+
+func stopFixtureIdempotency(event journal.Event) journal.Event {
+	event.Idempotency = &journal.EventIdempotency{Key: event.Aggregate.ID, Scope: event.CommandName + ":test-project", RequestDigest: strings.Repeat("1", 64)}
+	event.Effects = append(event.Effects, journal.Effect{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": event.Idempotency.Scope, "idempotency_key": event.Idempotency.Key}, Values: map[string]any{"request_digest": event.Idempotency.RequestDigest, "result_entity_id": event.Aggregate.ID, "result_event_id": event.EventID, "aggregate_sequence": event.Aggregate.Sequence, "result_json": `{"replayed":false}`, "created_at": time.Now().UTC().Format(time.RFC3339Nano)}})
+	return event
+}
+
+func seedStandaloneStopSubject(t *testing.T, conn *sql.DB) {
+	t.Helper()
+	// Only Stop/Attention projections are under test; the referenced Run is a
+	// pre-existing fixture, with its unrelated Envelope/Claim graph out of scope.
+	if _, err := conn.Exec(`PRAGMA foreign_keys=OFF`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := conn.Exec(`INSERT INTO runs (id,issue_id,envelope_id,envelope_revision,claim_id,claim_version,actor_id,start_repository_json,status,started_at) VALUES ('RUN-1','ISS-stop','ENV-stop',1,'CLM-stop',1,'agent:tl','{}','active','2026-09-05T00:00:00Z')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := conn.Exec(`PRAGMA foreign_keys=ON`); err != nil {
+		t.Fatal(err)
 	}
 }

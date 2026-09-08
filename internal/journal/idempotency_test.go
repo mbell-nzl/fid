@@ -154,7 +154,7 @@ func testIdempotencyRequest() IdempotencyRequest {
 }
 
 func testIdempotentActivationEvent() Event {
-	return Event{
+	event := Event{
 		EventSchema: EventSchemaV2,
 		EventType:   "activation.prepared",
 		ActorV2: EventActor{
@@ -170,6 +170,7 @@ func testIdempotentActivationEvent() Event {
 			Table: "kit_activations",
 			PK:    map[string]any{"id": "ACT-1"},
 			Values: map[string]any{
+				"version":             1,
 				"prior_activation_id": nil,
 				"kit_identity":        "kit-1",
 				"backend_identity":    "fid-1",
@@ -182,6 +183,10 @@ func testIdempotentActivationEvent() Event {
 			},
 		}},
 	}
+	for _, component := range []string{"backend", "kit", "overlay", "project", "provider"} {
+		event.Effects = append(event.Effects, Effect{Op: "insert", Table: "activation_resources", PK: map[string]any{"activation_id": "ACT-1", "component": component}, Values: map[string]any{"version": 1, "old_identity": nil, "new_identity": component + ":new", "observed_identity": nil, "state": "pending", "evidence_ref": nil, "error_code": nil}})
+	}
+	return event
 }
 
 func newIdempotencyWorkspace(t *testing.T) (string, *sql.DB) {

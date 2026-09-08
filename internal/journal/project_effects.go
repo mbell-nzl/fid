@@ -8,6 +8,9 @@ import (
 )
 
 func applyEventEffects(tx *sql.Tx, input ProjectionInput) error {
+	if err := validateCurrentEvent(tx, input.Event); err != nil {
+		return err
+	}
 	for _, effect := range input.Event.Effects {
 		if err := applyEffect(tx, input, effect); err != nil {
 			return err
