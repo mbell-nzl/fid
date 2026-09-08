@@ -171,3 +171,18 @@
   read-only preparation during implementation. No concurrent benchmark load.
 - Task18, Review6, independent finalQA and runnable Human checklist remain
   authorized; Human judgments/sign-off remain pending.
+
+## 2026-09-08 - Task17 Complete; Task18 Root Implementation
+
+- Task17 product ccc15f6 and final report3b0e799 are clean and complete. All17
+  exact final commands passed; three fresh100k samples28121/27904/28157ms
+  retained the unchanged CF024 reference and threshold. Both full benchmarks passed.
+- Root read-only audit caught a healthy recovered activation later superseded
+  by an upgrade; Developer preserved red/green and repaired the false finding.
+  Late audit additions caused superseded gate runs; Task18 will complete its
+  entire acceptance audit before final gates. Earlier incomplete attempt2 race
+  token remains UNVERIFIED, separate from the final passing receipt.
+- Root independently observed report-lint COMPLETE and route ADVANCE, then
+  appended task completion through the sequence control. No product decision changed.
+- Task18 is now root-owned, with no subagent writer. Review6 and fresh independent
+  finalQA follow. Retained fixture generation and blank Human checklist remain required.
