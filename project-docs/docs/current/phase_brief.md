@@ -9,22 +9,25 @@ import/export the same state, rebuild, resume without contradictory facts.
 
 ## Status
 
-**Executing (DEC-188).** Branch `phase-22` from merged main
+**Final-QA repair (DEC-188).** Branch `phase-22` from merged main
 `89d964a84dbdd297fdf472d6f78b001e2efac702`; Phase 21 is wrapped (DEC-179) and
 merged. Contracts and task pack are refined against QA R-01..14 and all kit
 comparison items (DEC-184..187); Human approved the refined pack on 2026-09-05.
 See `../phases/phase-22/runner-handoff.md`. Status is per-task below.
 
-Tasks 1-10 complete; reviews 1b, 2b and 3 PASS. Task 8 closed under DEC-195 with
-the exact cancelled-Receipt DDL/filter convergence and all eight gates passed;
-its failed history remains in the report. Task 9 completed its final five gates
-and actual-operation Stop matrix; independent review 3 passed. Task 10 completed
-under DEC-198 with final binding, agreement, upgrade and replay tests plus all
-five gates and independent report lint. Task 11 is executing under DEC-199's
-bounded typed-error enrichment and Human activation rendering allocation.
-DEC-196 assigns semantic fake strengthening to task 9, Human resume rendering
-to task 12 and retained Human fixture generation to task 18. Root orchestrates
-under the Human delegation in `delegate-handoff.md`. No open ESC.
+All 18 planned tasks are complete. Reviews 1b, 2b, 3, 4, 5 and 6b and the
+independent task-12 checkpoint passed. The first final review opened seven
+bounded findings; fresh independent final-review-2 closes FQ-02 through FQ-07
+and retains FQ-01, owned by Task 1. Its second final-QA repair continuation
+covers closed current Event values, result bindings and required conditional
+Effects. DEC-209 allocates the consequential required-field serialization.
+
+One Developer is the sole implementation writer under root delegation.
+After its unchanged gates and report close, a different independent QA Lead
+will perform final-review-3, final performance qualification and fresh Human
+fixture verification. Human responses remain blank; checklist readiness is
+pending. See the [run ledger](../phases/phase-22/run-ledger.md) and
+[delegate handoff](../phases/phase-22/delegate-handoff.md). No open ESC.
 
 ## Operating Mode
 
@@ -39,7 +42,7 @@ Tasks are sequential; reviews follow every three tasks.
 
 | Task | Title | Status | Dependency |
 |---|---|---|---|
-| [1](../phases/phase-22/tasks/task-1.md) | Recovery schema and replay foundation | Complete | Runner QA readiness refresh |
+| [1](../phases/phase-22/tasks/task-1.md) | Recovery schema and replay foundation | Planned task complete; FQ-01 repair active | Runner QA readiness refresh |
 | [2](../phases/phase-22/tasks/task-2.md) | Typed Stops and Attention domain | Complete | 1 |
 | [3](../phases/phase-22/tasks/task-3.md) | Lease lifecycle and executor observations | Complete | 2 |
 | [4](../phases/phase-22/tasks/task-4.md) | Read-only repository reconciliation | Complete | 3 |
@@ -49,14 +52,14 @@ Tasks are sequential; reviews follow every three tasks.
 | [8](../phases/phase-22/tasks/task-8.md) | Interrupted Attempts and derived Run closure | Complete (DEC-195) | 7 |
 | [9](../phases/phase-22/tasks/task-9.md) | Stop, budget, and closure commands | Complete (DEC-196/197) | 8 |
 | [10](../phases/phase-22/tasks/task-10.md) | Activation recovery domain | Complete (DEC-198) | 9 |
-| [11](../phases/phase-22/tasks/task-11.md) | Activation CLI and config boundary | Executing (DEC-199) | 10 |
-| [12](../phases/phase-22/tasks/task-12.md) | Recovery freshness and actionable resume | Pending | 11 |
-| [13](../phases/phase-22/tasks/task-13.md) | Recovery archive format and validation | Pending | 12 + independent checkpoint |
-| [14](../phases/phase-22/tasks/task-14.md) | Atomic import into an empty target | Pending | 13 |
-| [15](../phases/phase-22/tasks/task-15.md) | Import CLI and three-way recovery parity | Pending | 14 |
-| [16](../phases/phase-22/tasks/task-16.md) | Retire escalation state and duplicate recovery truth | Pending | 15 |
-| [17](../phases/phase-22/tasks/task-17.md) | Maintenance, capability qualification, and rebuild budget | Pending | 16 |
-| [18](../phases/phase-22/tasks/task-18.md) | Final recovery conformance and Human validation fixture | Pending | 17 |
+| [11](../phases/phase-22/tasks/task-11.md) | Activation CLI and config boundary | Complete (DEC-199/200) | 10 |
+| [12](../phases/phase-22/tasks/task-12.md) | Recovery freshness and actionable resume | Complete | 11 |
+| [13](../phases/phase-22/tasks/task-13.md) | Recovery archive format and validation | Complete | 12 + independent checkpoint |
+| [14](../phases/phase-22/tasks/task-14.md) | Atomic import into an empty target | Complete | 13 |
+| [15](../phases/phase-22/tasks/task-15.md) | Import CLI and three-way recovery parity | Complete | 14 |
+| [16](../phases/phase-22/tasks/task-16.md) | Retire escalation state and duplicate recovery truth | Complete | 15 |
+| [17](../phases/phase-22/tasks/task-17.md) | Maintenance, capability qualification, and rebuild budget | Complete | 16 |
+| [18](../phases/phase-22/tasks/task-18.md) | Final recovery conformance and Human validation fixture | Complete | 17 |
 
 ## Validation Contract
 
@@ -77,9 +80,9 @@ by an owning task. QA Lead owns 77; Human owns VAL-076..078.
 | Artifact | Path under phase-22/ | Status |
 |---|---|---|
 | Handoff / refinement / plan / consistency | qa/qa-lead-handoff.md, qa/tl-refinement.md, qa/qa-plan.md, qa/consistency-review.md | Accepted DEC-188; plan refreshed before task 1 |
-| Mid-phase reviews | qa/review-1.md through qa/review-6.md | After tasks 3,6,9,12,15,18 |
-| Independent checkpoint | qa/checkpoint-after-task-12.md | Required before task 13 |
-| Final review / Human checklist | qa/final-review.md / qa/human-checklist.md | Pending |
+| Mid-phase reviews | qa/review-1b.md, qa/review-2b.md, qa/review-3.md, qa/review-4.md, qa/review-5.md, qa/review-6b.md | PASS |
+| Independent checkpoint | qa/checkpoint-after-task-12.md | PASS |
+| Final review / Human checklist | qa/final-review-2.md / qa/human-checklist.md | FQ-01 repair; fresh review and fixtures pending |
 
 ## Active Constraints
 

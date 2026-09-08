@@ -57,7 +57,15 @@ report records freshly executed workflow checks only.
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
 - Task statuses: original 1..18 complete; all six windows/checkpoint passed. Independent final QA ec4daa9 returned seven bounded findings, reopening owners 2,4,5,7,8,10,1 in that execution order.
-- Next: root serial repairs with original reports/required gates preserved, then fresh independent final-review-2 and refreshed blank Human fixtures. Fresh independent final-review-2 (b55c96b) resolves six findings and returns one consolidated FQ-01 Task1 repair:23 demonstrated nested-value/binding/conditional-Effect corruptions, four controls. Prior implementation7647abc/report5d220aa retains all passing gates and failures. Root is sole writer for Task1 attempt2; fresh final-review-3 and final performance/Human qualification follow. Deterministic Human readiness is not yet established.
+- Next: one consolidated Task1 FQ-01 continuation, then fresh independent
+  final-review-3 and renewed performance/Human fixture qualification.
+  Final-review-2 (b55c96b) independently closes FQ-02 through FQ-07. The root
+  preserved 23 failing current Event corruption cases and four genuine controls
+  in 356b004, plus required-field producer regressions. DEC-209 allocates the
+  existing nullable Stop fields and Claim scope/mode serialization. Scope
+  amendment 2acdb23 retains attempt2 and all twelve required commands. One
+  Developer is the sole code writer; root owns administrative coordination.
+  Deterministic Human readiness is not yet established.
   DEC-202 supplies the imported destination scope; DEC-203 allocates Task15's
   already accepted import failure registry entry. Implementation and review are
   serialized under the renewed Human authorization.

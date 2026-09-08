@@ -260,3 +260,27 @@
 - The initial final-review.md remains REPAIR. A fresh independent final-review-2
   must close all seven findings and finish phase gates after the last repair.
   Human checklist judgments remain blank; deterministic readiness is pending.
+
+## 2026-09-09 - Independent Final Review 2 And Consolidated FQ-01 Repair
+
+- Fresh independent review b55c96b closes six original findings and retains
+  only FQ-01, owned by Task1. Its full ordinary/tagged gates passed, but the
+  reviewer demonstrated 23 invalid current Events accepted by rebuild.
+  Final benchmark, reference samples, build and Human qualification remain due.
+- Root preserved those counterexamples in direct live, replay and actual
+  rebuild regressions, with four valid controls. Red command terminated
+  FAIL/exit_code:1 (13.327s). A separate complete producer fixture terminated
+  FAIL/exit_code:1 (6.463s), proving omitted required Condition, Stop, Attention
+  and Recovery Claim fields. Earlier incomplete fixture coverage is retained.
+- Regression checkpoint356b004 and DEC-209 allocate required serialization
+  from the existing accepted contract. Ledger scope amendment2acdb23 retains
+  Task1 final-QA attempt2, unchanged signature and twelve-command gate.
+  The first administrative append rejected a leading blank line; removing
+  that line produced APPEND_CONFIRMED state=REPAIR_PENDING, exit_code:0.
+  No workflow control or protected contract changed.
+- One Developer owns the complete cohesive repair. Root performs administrative
+  coordination without overlapping product edits or heavy test commands.
+  A different fresh independent QA Lead follows at final-review-3.
+- All18 original tasks remain complete; no Human readiness, response,
+  acceptance, wrap-up, merge or release is claimed. Old fixtures are retained;
+  fresh final-source qualification is still required.
