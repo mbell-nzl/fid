@@ -3,6 +3,7 @@ package export
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
@@ -125,6 +126,53 @@ func TestImportAfterPublicationFaultReplaysInstalledResult(t *testing.T) {
 	replayed, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "lost-response"})
 	if err != nil || !replayed.Replayed {
 		t.Fatalf("response-loss replay = %#v, %v", replayed, err)
+	}
+}
+
+func TestImportSnapshotsInputReclaimsStaleLockAndRejectsTamperedMarker(t *testing.T) {
+	source := t.TempDir()
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+		t.Fatal(err)
+	}
+	addJournalBackedExportFixtureFacts(t, source)
+	archive := filepath.Join(t.TempDir(), "recovery.zip")
+	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archive}); err != nil {
+		t.Fatal(err)
+	}
+	archiveBytes, err := os.ReadFile(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := t.TempDir()
+	if err := os.WriteFile(filepath.Join(target, ".fid-import.lock"), []byte("stale after process exit"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "snapshot", Fault: func(stage ImportStage) error {
+		if stage == ImportBeforePublication {
+			return os.WriteFile(archive, []byte("pathname replaced after snapshot"), 0o600)
+		}
+		return nil
+	}})
+	if err != nil {
+		t.Fatalf("import from snapshot after source replacement: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(target, ".fid-import.lock")); !os.IsNotExist(err) {
+		t.Fatalf("stale lock was not reclaimed: %v", err)
+	}
+	tampered, err := json.Marshal(importMarker{ImportBinding: config.ImportBinding{ArchiveDigest: result.ArchiveDigest, IdempotencyKey: "snapshot", ProjectID: "FID-tampered", TargetRoot: target, ImportedEventIDs: []string{"EVT-tampered"}}, Result: ImportResult{ProjectID: "FID-tampered", ArchiveDigest: result.ArchiveDigest, TargetRoot: target}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(target, ".fid", config.ImportBindingFileName), tampered, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(archive, archiveBytes, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "snapshot"})
+	var conflict *ImportTargetConflictError
+	if !errors.As(err, &conflict) || conflict.Reason != "populated" {
+		t.Fatalf("tampered installed marker error = %#v, want populated conflict", err)
 	}
 }
 

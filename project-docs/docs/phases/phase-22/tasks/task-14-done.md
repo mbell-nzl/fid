@@ -2,7 +2,10 @@
 
 ## Workflow outcome
 
-- Task outcome: COMPLETE
+- Task outcome: RECOVERY_REQUIRED
+- Recovery category: ordinary task-scope implementation repair
+- Condition: the advisory-lock pathname has an unlink race and installed-history verification must bind the recorded imported Event identities before destination fencing or replay can rely on the marker.
+- Next action: repair those two Task 14 import-boundary defects with focused red/green tests, then run the complete exact gate sequence against the repaired commit.
 
 ## Summary of what was implemented
 
@@ -27,7 +30,7 @@
 ## Validation Contract Coverage
 
 - VAL-058: `TestImportPublishesIdentityAndReplaysLostResponse` at `internal/export/import_test.go:38-59` verifies stable Project identity, source preservation, installed binding, ordered Event bytes, and no mutation on replay. `TestArchiveRejectsIntegrityValidSemanticCorruptions` at `internal/export/archive_corruption_test.go:58-77` rejects the valid-hash nested-observation and aggregate identity forgeries.
-- VAL-059: `TestImportCrashBeforePublicationLeavesNoPartialProject` at `internal/export/export_test.go:74` captures the pre-publication fault boundary; `TestImportAfterPublicationFaultReplaysInstalledResult` at `internal/export/import_test.go:105-128` proves the after-publication/lost-response boundary replays the installed result.
+- VAL-059: `TestImportCrashBeforePublicationLeavesNoPartialProject` at `internal/export/export_test.go:74` captures the pre-publication fault boundary; `TestImportAfterPublicationFaultReplaysInstalledResult` at `internal/export/import_test.go:105-128` proves the after-publication/lost-response boundary replays the installed result. `TestImportSnapshotsInputReclaimsStaleLockAndRejectsTamperedMarker` verifies snapshot staging after pathname replacement and that a stale lock path is reusable.
 - VAL-060: `TestImportPublishesIdentityAndReplaysLostResponse` at `internal/export/import_test.go:53-64` proves same digest/key replay with unchanged installed facts and rejects a different key. `TestImportAfterPublicationFaultReplaysInstalledResult` at `internal/export/import_test.go:116-128` proves retry after a publication response loss.
 - VAL-061: `TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem` at `internal/export/import_test.go:68-103` rejects populated and symlink targets and proves the populated marker is unchanged. The identity/replay test preserves an existing target source file at `internal/export/import_test.go:32-52`.
 - VAL-062: `TestImportRequiresFreshDestinationObservationBeforeRecovery` at `internal/export/import_test.go:160-220` proves fresh destination reconciliation, rejects imported old-observation recovery, CloseRun, AbandonRun and historical Gate execution, then binds successor Claim/Run to the destination and executes a real Gate with a successor Receipt.
@@ -39,6 +42,7 @@
 - Staging red: the same focused import test failed while extracting staged artifacts from a closed archive handle (terminated `exit_code: 1`). Reopening the validated input for staging repaired the resource-lifetime fault.
 - Semantic archive reds: `go test ./internal/export -run '^TestArchiveRejectsIntegrityValidSemanticCorruptions' -count=1` - FAIL - `observation_subject_differs_from_its_row` and `issue_aggregate_differs_from_immutable_Effect` accepted (terminated `exit_code: 1`). Archive reference validation now compares the nested observation subject and aggregate Effects.
 - Destination-route green: `go test ./internal/export -run '^TestImportRequiresFreshDestinationObservationBeforeRecovery$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/export\t0.902s` (terminated `exit_code: 0`). It runs `evidence.RunGate` through the production process executor and asserts the Receipt; no CLI import adapter exists in this task by explicit Task 15 allocation.
+- Import hardening green: `go test ./internal/export -run '^TestImportSnapshotsInputReclaimsStaleLockAndRejectsTamperedMarker$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/export\t0.578s` (terminated `exit_code: 0`). It replaces the source pathname after the immutable snapshot, reuses a stale post-exit lock pathname, and rejects marker delivery metadata whose Project binding does not match the installed config.
 - Focused regression green: `go test ./internal/export ./internal/workflow ./internal/evidence ./internal/journal -run '^(TestImport|TestArchiveRejectsIntegrityValidSemanticCorruptions)' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/journal\t0.005s [no tests to run]` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
@@ -56,7 +60,7 @@
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- None.
+- The prior COMPLETE claim is superseded by this recovery checkpoint. Advisory-lock pathname unlinking and marker history verification require Task 14 repair; no final completion claim is valid until the subsequent exact gates terminate against that repair.
 
 ## Dependency-budget note
 
