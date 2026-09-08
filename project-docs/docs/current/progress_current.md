@@ -2,7 +2,7 @@
 
 ## Project State
 
-Phase 22 is **executing** on `phase-22` under DEC-188. The planning base is
+Phase 22 is **in final-QA repair** on `phase-22` under DEC-188. The planning base is
 merged main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 completed
 under DEC-179 on 2026-09-04 (87/87 VAL, 4/4 Human), and its branch has since
 been merged.
@@ -56,8 +56,8 @@ report records freshly executed workflow checks only.
 
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
-- Task statuses: 1..18 complete; reviews 1b/2b/3/4/5/6b and checkpoint passed; independent finalQA next.
-- Next: independent final QA and verified blank Human checklist.
+- Task statuses: original 1..18 complete; all six windows/checkpoint passed. Independent final QA ec4daa9 returned seven bounded findings, reopening owners 2,4,5,7,8,10,1 in that execution order.
+- Next: root serial repairs with original reports/required gates preserved, then fresh independent final-review-2 and refreshed blank Human fixtures. Task2 FQ-02 is active; deterministic Human readiness is not yet established.
   DEC-202 supplies the imported destination scope; DEC-203 allocates Task15's
   already accepted import failure registry entry. Implementation and review are
   serialized under the renewed Human authorization.

@@ -1529,3 +1529,37 @@
 - Owning task: none
 - Re-review of: review-6
 - Must-fix: 0 / Improvement: 0 / blocker candidates: 0; R6-01 independently RESOLVED at7e78b834eac6a81480d9e9b05fdb42f02827b71f. Reviewer reproduced closed50/90cases and actual12domain outputs, affected corpus, maintenance/capability/schema and unchanged tagged race101.464s, each exit0. All36 window command occurrences reconcile; retained manifest/hash verified. Final independent QA now due; Human judgments remain blank.
+
+### 2026-09-08 23:50 REVIEW review-7
+
+- Path: project-docs/docs/phases/phase-22/qa/final-review.md
+- Tasks covered: task-1 through task-18
+- Outcome: REPAIR
+- Owning task: task-2, task-4, task-5, task-7, task-8, task-10, task-1
+- Re-review of: none
+- Must-fix: 7 / Improvement: 0 / blocker candidates: 0; independent review ec4daa9e4bae6da6f3bb224ff92e5fd4d3424af6 verifies all126 original commands and records FQ-01..07. Root repairs owners serially in the listed order, preserving each original report and full required gates. Event grammar repair follows corrected producer/domain fixtures. Fresh final-review-2 must independently close all findings and execute every final gate. Human judgments remain blank; initial checklist preparation is not deterministic readiness.
+
+### 2026-09-08 23:51 TASK-RECOVERY task-2
+
+- Source: review-7 / final-review.md FQ-02
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: task-2.md / contracts.md section 5 / final-review.md FQ-02
+- Triage disposition: N/A
+- Trigger signature: task-2:qa-rework:qualifying-stop-and-attention-facts
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/workflow/stop.go,internal/workflow/stop_conditions.go,internal/workflow/stop_conditions_test.go,internal/workflow/stop_test.go,internal/workflow/attention_test.go,internal/workflow/authority.go,internal/workflow/activation.go,internal/journal/,cmd/fid/stop_test.go,cmd/fid/stop_error_test.go,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-2-done.md
+- Forbidden changes: accepted condition/domain/wire/Event/schema/policy semantics, gate definitions or commands, workflow controls, dependencies, unrelated product paths and other task reports; matching fixture convergence must preserve subject and introducing-task provenance
+- Originating report: project-docs/docs/phases/phase-22/tasks/task-2-done.md
+- Exact verification: from /home/mark/projects/fid, task-2 baseline workflow coverage before edits, all six unchanged post-edit task-2 commands in original order, plus paired six-condition and exact unique disposition-set behavioral tests and actual public Stop resolution rejection
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: ec4daa9e4bae6da6f3bb224ff92e5fd4d3424af6; initial final QA REPAIR, seven owners queued
+- Phase worktree: /home/mark/projects/fid on phase-22
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - same-task root repair of accepted fact freshness/state checks and unique disposition set, preserving all historical evidence
+- Next action: root sole Task2 product/test writer; complete owner before Task4; one fresh final re-review after every owner closes
+- Human attention required: no

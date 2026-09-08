@@ -218,3 +218,24 @@
   is clean-source e04bfbd with own binary/hash; lease expires2026-09-09T10:57:54.448190739Z.
 - All18 tasks and all six review windows are closed. Independent finalQA and
   runnable blank Human checklist remain; Human judgments/sign-off are pending.
+
+## 2026-09-08 - Independent Final QA Requires Seven Bounded Repairs
+
+- Independent review ec4daa9 reconciles all126 original command occurrences,
+  all80 VAL and84 QA entries. Format/lint/full race/coverage report passed;
+  unstarted later phase gates are explicitly pending repair, not PASS.
+- FQ-01..07 reopen owners2,4,5,7,8,10,1 in that serial execution order. Root
+  owns implementation directly; every owner retains its original report and
+  unchanged full gate. One fresh independent final-review-2 follows all repairs.
+- Confirmed defects include family-invalid Event acceptance, nonqualifying
+  Stop facts and caller-derived recovery scope. Other findings require missing
+  authority, no-write and append/projection fault matrices. No protected product
+  decision or assertion/gate change is requested.
+- Initial Human checklist has12 verified neutral commands and six blank
+  responses. Product changes will require refreshed fixtures; it is not yet
+  the completed deterministic handoff.
+- Root's first ledger append used unsupported review identity final-review and
+  failed with `INVALID REVIEW has missing or invalid review ID` (terminated
+  `exit_code: 1`). Corrected identity review-7 appended successfully with
+  `APPEND_CONFIRMED state=REPAIR_PENDING` (terminated `exit_code: 0`); no control
+  definition or accepted evidence changed. Task2 recovery append also passed.
