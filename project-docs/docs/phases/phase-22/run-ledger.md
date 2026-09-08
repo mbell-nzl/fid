@@ -1409,3 +1409,25 @@
 - Resolution evidence: PENDING - eight actual portable state cases through fake/fid, full named JSON/Event parity and final exact gates
 - Next action: root completes Task15 directly; no concurrent product writer
 - Human attention required: no
+
+### 2026-09-08 20:01 REPAIR task-15
+
+- Trigger signature: task-15:in-scope-implementation:complete-portable-state-corpus
+- Attempt count: 1
+- Starting checkpoint: bab537b with incomplete Developer Task15 working changes
+- Ending checkpoint: 5ec69e6ef31dd93229c3d42fc76a4c02d60084ee product; 59d86a3 final report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: root implemented eight actual portable state cases with independent fake/fid expectations, full named JSON and canonical entry-byte parity, shared valid-hash rejection controls and actual destination successor Gate/Receipt. Root observed all five final exact gates terminate exit_code 0, report-lint OUTCOME COMPLETE and workflow-route ACTION ADVANCE exit_code 0 on the committed clean tree. Initial fixture and required race failures, their causal repairs, and missing report heading are preserved in task-15-root-evidence.md and task-15-done.md. No product contract, VAL, dependency or gate changed.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-08 20:02 TASK task-15 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-15-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 5ec69e6ef31dd93229c3d42fc76a4c02d60084ee - verified, subject matched; final report 59d86a3
+- QA-plan commands beyond the task spec: none required
+- Evidence: All final exact commands observed successful by root; Review5 covering tasks13-15 is now due before task16.
