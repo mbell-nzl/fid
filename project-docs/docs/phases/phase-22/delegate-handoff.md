@@ -278,3 +278,9 @@ is preserved in task-13-root-evidence.md. Next is the whole Task14 with a single
 Developer, using task-14.md, DEC202 and task-14-delegate-notes.md. Root does not
 edit product files while that owner runs. Review5 after15; finalQA still pending.
 DEC203/76b4453 only supplies Task15's accepted import error registry scope.
+
+Task14 ownership also includes two confirmed archive consistency repairs under
+its existing export scope: ROOT-SEM-01 (observation JSON/row disagreement) and
+ROOT-SEM-02 (Issue aggregate/Effect identity disagreement). See root's labeled
+append in qa/final-preflight.md. Preserve Task13 original receipts/provenance;
+Review5 must verify these repairs, not infer full coverage from earlier gates.

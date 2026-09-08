@@ -398,3 +398,33 @@ independent QA verdict or a replacement for the QA Lead's retained preflight.
 - No Human fixture location or outcome is filled early. The six neutral
   questions and fresh-session instructions remain as prepared; Task18/finalQA
   must verify the retained binary and actual delivered commands first.
+
+## Root Post-Closure Semantic Findings — 2026-09-08
+
+These are additional defects found after Task13's recorded gates passed. The
+original receipts remain historical; final VAL055/058 readiness additionally
+requires the Task14 repairs and independent Review5. No finalQA PASS is claimed.
+
+- ROOT-SEM-01 (Developer reproduced, root code-read concern): a run.observed
+  Event's observation_json.run_id can disagree with its projected run_id while
+  the original validator accepts it. Task14 Developer reports an actual red,
+  projected-row consistency repair and focused green; its final report must
+  retain the command/termination evidence with Task13 provenance. Root does not
+  attest that child result as a fresh root execution.
+- ROOT-SEM-02 (root directly reproduced): the Task13 built `/tmp/fid` created
+  an Issue `SMK-cc8328` in root-owned scratch, exported identity-control.zip and
+  validated it successfully. Root changed only the issue.created aggregate.id
+  to `SMK-ffffff`, leaving the issues insert PK `SMK-cc8328`, and recomputed
+  canonical journal bytes, entry digest/size and terminal Event hash.
+  `/tmp/fid --json export validate /tmp/fid-p22-task13-smoke-1T0ybJ/identity-tampered.zip`
+  from `/tmp` returned `status:valid` and observed `exit_code: 0`, proving the
+  identity-rejection assertion fails. Tampered archive digest:
+  `sha256:7638baa534099bd7f658e1c23b46639613ffd946bf82c9b5ed790e7f536b5d2c`.
+  Control digest:
+  `sha256:b5fee717b758874b9e62fd0d6500b21f8c23829dc083d15253195e63d94888fe`.
+- Both repairs are assigned to Task14's existing internal/export scope under
+  its validate-before-publication and preserved-identity requirements. Add
+  durable generated-case regressions and inspect affected writer families; no
+  new schema, Event family, product choice, VAL or command is authorized. Root
+  performed no overlapping product/test edit. These scratch archives are
+  diagnostic artifacts, not delivered Human fixtures.
