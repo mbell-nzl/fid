@@ -1384,3 +1384,28 @@
 - report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
 - Commit: 8c322b53c749a2a7f0dd0be3e03dbb5034d70e40 - verified, subject matched; final report 51cc314
 - QA-plan commands beyond the task spec: none required
+
+### 2026-09-08 19:30 TASK-RECOVERY task-15
+
+- Source: Developer incomplete Task15 hand-back to root; CLI/active parity implemented, required full portable corpus and final gates incomplete
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-15.md / DEC-202 / DEC-203
+- Triage disposition: N/A
+- Trigger signature: task-15:in-scope-implementation:complete-portable-state-corpus
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: amended task-15 ordinary implementation/test/report scope and matching integration corpus helpers; root owns administrative ledger/current-context docs
+- Forbidden changes: protected gates, VAL semantics, schemas, Events, public contracts, dependencies, workflow controls and unrelated source; no dropped identity/status/null dimensions or claimed Human judgment
+- Originating report: N/A
+- Exact verification: from /home/mark/projects/fid, in order: gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase HEAD bab537b with scoped Task15 working changes; Developer explicitly handed back without report/commit or final gate. Root preserves that deviation and attribution and owns completion directly. Root captured portable-state inventory red: portable recovery states = [], exit_code 1.
+- Phase worktree: /home/mark/projects/fid on phase-22; ordinary same-task root continuation
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - eight actual portable state cases through fake/fid, full named JSON/Event parity and final exact gates
+- Next action: root completes Task15 directly; no concurrent product writer
+- Human attention required: no
