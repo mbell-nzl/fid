@@ -4,9 +4,9 @@
 
 - Task outcome: COMPLETE
 - Category: none
-- Condition: None.
-- Recovery attempts: 0
-- Next action: None.
+- Condition: FQ-07 test-only repair complete; all five unchanged final gates passed.
+- Recovery attempts: 1
+- Next action: Task1 FQ-01, then independent final-review-2 and refreshed blank Human checklist.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -77,8 +77,69 @@
 
 ## Commit hash
 
-- `03cc6c764412d44d53c526f6244af89f22dd9eca`
+- `e7d5963105fa3a40b8d0d687902def63595ade2f`
 
 ## Commit subject
 
-- `fix(workflow): preserve activation recovery bindings`
+- `test(activation): prove recovery append interruption and trust parity`
+
+## Final-QA FQ-07 same-task continuation — 2026-09-09
+
+Authority: review-7, final-review.md FQ-07, task-10.md and contracts.md §8.
+Root is sole writer. Prior primary binding 03cc6c764412d44d53c526f6244af89f22dd9eca,
+`fix(workflow): preserve activation recovery bindings`. Original evidence
+remains above. This continuation changes tests only, adding
+p22_activation_fault_test.go and p22_activation_fault_assertions_test.go.
+
+VAL-044 / QA-45: eight actual subprocess cases cross both restore-prior and
+complete-forward, recovery-selected and recovery-completed, and dry-run before
+append versus actual projection after durable append. A test-only SQLite
+scalar counts transaction attempts; the first invocation passes only in the
+after-append case, and the second fails. The child confirms exact failure
+count/message then exits23 without returning a response. Every case checks
+the entire projection remains unchanged after rollback and the precise zero/one
+Event append boundary. A fresh actual fid status invocation performs catch-up.
+The exact retry retains the appended Event ID, selected Event ID, activation,
+original result and one Event; competing same-key/different-request, new-key
+selection/completion and opposite direction fail without any state/journal change.
+
+Every fixture begins with a genuinely finalized predecessor and stages an
+upgrade's two immutable internal components. All five frozen old/new resource
+identities, prior activation identity, component digests/content and Actor/Gate
+rows remain. Selection blocks ordinary Actor trust. Restore completion aborts
+new and retains prior trust; forward completion finalizes new and supersedes
+the exact prior version in one Event, selecting only the new Actor provenance.
+The complete Stop/Attention/link transaction retains selection Event provenance;
+completion produces exactly one Stop disposition with its own fact/Event IDs.
+Attention remains an independent open item, as the accepted contract requires.
+All other tables are unchanged. Provider/project files and config are byte
+preserved; a full actual rebuild reproduces the caught-up projection.
+
+Retained TestActivationRecoveryAtEveryDurableBoundary executes alongside the
+new matrix unchanged, preserving Task11's real closed-pipe lifecycle tests.
+No retained source row was converged or deleted. No production code, schema,
+Event/wire/direction/resource semantics, dependency, gate/control or threshold
+changed; no product decision was needed.
+
+Mandatory failed-attempt note: the initial focused command ended FAIL,
+exit_code1 at14.203s, before reaching the new fault points because the fixture
+had not created .claude before writing its sentinel. Added only that temporary
+directory setup. The byte-identical command passed33.541s. Strengthened the
+durable Event/selection identity, complete immutable component comparison and
+typed conflict cases; the identical command passed34.022s. This is a fixture
+repair, not evidence of a product defect. Recovery attempt1, no-progress0/2.
+
+Working directory for all following receipts: /home/mark/projects/fid.
+Root captured each nested command's own token and actual termination in this
+recording session.
+
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^(TestP22ActivationRecoverySurvivesAppendProjectionInterruption|TestP22ActivationCrashProcess|TestActivationRecoveryAtEveryDurableBoundary)$' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Attempt 1: activation interruption matrix initial.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^(TestP22ActivationRecoverySurvivesAppendProjectionInterruption|TestP22ActivationCrashProcess|TestActivationRecoveryAtEveryDurableBoundary)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	33.541s` (terminated `exit_code: 0`). Attempt 2: activation interruption matrix fixture directory repair.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^(TestP22ActivationRecoverySurvivesAppendProjectionInterruption|TestP22ActivationCrashProcess|TestActivationRecoveryAtEveryDurableBoundary)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	34.022s` (terminated `exit_code: 0`). Attempt 3: activation interruption matrix strengthened identity and conflicts.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Attempt 4: full task-10 gate 1.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Attempt 5: full task-10 gate 2.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`). Attempt 6: full task-10 gate 3.
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					65.4%` (terminated `exit_code: 0`). Attempt 7: full task-10 gate 4.
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	250.170s` (terminated `exit_code: 0`). Attempt 8: full task-10 gate 5.
+
+All five required gates passed; aggregate coverage65.4%, dedicated integration250.170s. Independent final-review-2 still owns final sufficiency; Human judgments remain blank.
