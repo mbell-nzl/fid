@@ -1712,3 +1712,58 @@
 - Resolution evidence: PENDING - existing test-only SQLite fault mechanism can separate dry-run from durable append/projection without production interface
 - Next action: root sole Task7 writer; complete owner before Task8; one independent final re-review follows all owners
 - Human attention required: no
+
+### 2026-09-09 02:22 REPAIR task-7
+
+- Trigger signature: task-7:qa-rework:budget-boundary-append-and-projection
+- Attempt count: 1
+- Starting checkpoint: 2a4ea22
+- Ending checkpoint: 359434e74d92c74309a9c3b31374854d1060f72d; report 7bf2165
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Root supplied nine real external/Attempt/Receipt boundary cases with preappend and durable postappend faults, fresh catch-up, exact replay, preserved complete transactions, denied-spawn marker and rebuild parity. No product repair needed. Baseline/post evidence23.6%; all six exact post-gates PASS, aggregate65.2%, tagged170.769s. Failed fixture assumptions preserved with accepted-contract corrections. Root report-lint COMPLETE and route ADVANCE observed exit0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-09 02:22 TASK task-7 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-7-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 359434e74d92c74309a9c3b31374854d1060f72d - verified, subject matched; report 7bf2165
+- QA-plan commands beyond the task spec: nine budget fault/control cases and retained dual-adapter proof captured
+- Evidence: FQ-05 test-only continuation complete. Independent final-review-2 follows all owners; Human judgments remain blank.
+
+### 2026-09-09 02:22 TASK-RECOVERY task-8
+
+- Source: review-7 / final-review.md FQ-06
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: task-8.md / contracts.md sections 3 and 7 / final-review.md FQ-06
+- Triage disposition: N/A
+- Trigger signature: task-8:qa-rework:derived-close-and-exact-abandon-authority
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/workflow/run.go,internal/workflow/run_close.go,internal/workflow/run_close_test.go,internal/workflow/run_close_authority_test.go,internal/workflow/activation.go,internal/evidence/execution.go,internal/evidence/execution_test.go,internal/evidence/executor.go,internal/evidence/executor_test.go,internal/evidence/live.go,internal/evidence/receipt_read.go,cmd/fid/gate_run_test.go,cmd/fid/receipt_test.go,cmd/fid/generic_run_test.go,internal/validation/,internal/journal/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-8-done.md
+- Forbidden changes: accepted outcome/authority/repository/wire/Event/schema/policy semantics, any DDL edit, gate definitions or commands, workflow controls, dependencies, caller-selected success, unrelated product paths and other task reports; matching fixture convergence preserves subject and introducing-task provenance; retain exact signal/cancellation/timeout/no-respawn cases
+- Originating report: project-docs/docs/phases/phase-22/tasks/task-8-done.md
+- Exact verification: from /home/mark/projects/fid all eight unchanged task-8 commands in original order including15repeat exact non-success and both full benchmarks, plus direct qualifying/missing/stale/failed close proof, no-effect rejected observation/version/repository states, exact ordinary/Human-force abandon matrix and distinct release provenance/replay/no new proof
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: 7bf2165; Task2/4/5/7 final-QA owners complete
+- Phase worktree: /home/mark/projects/fid on phase-22
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - FQ-06 assigns direct actual closure proof and causal existing authority/repository helper repair; generic_run_test.go is the retained in-package close caller fixture
+- Next action: root sole Task8 writer; complete owner before Task10; one independent final re-review follows all owners
+- Human attention required: no
+
+### 2026-09-09 02:28 CORRECTION
+
+- Scope: active Task8 FQ-06 recovery attempt1.
+- Authority: DEC-208 in phase decisions; root Human-delegated minimum-scope allocation under DEC-175.
+- Allowed files amendment: add cmd/fid/run.go only for the two close/abandon domain-call error returns, delegating to the existing recovery renderer with request Run ID and empty optional digest.
+- Evidence: actual close red19.394s exit1 shows accepted live/unknown domain errors fall through to invalid-argument/2; Task9 introducing commit a0a93c7 verified by git log -S workflow.CloseRun and workflow.AbandonRun.
+- Preserved fields: trigger signature, attempt count, task scope, exact eight commands and all protected semantics remain unchanged. No registry/renderer implementation, gate, policy or other task report change.

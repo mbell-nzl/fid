@@ -1243,6 +1243,35 @@
   run.start null-subject case, and all seven unchanged Task18 gates must pass.
   Review6 and final independent QA own the final sufficiency judgment.
 
+### DEC-208: Allocate accepted close and abandon failure rendering to Task 8
+
+- **Date:** 2026-09-09.
+- **Status:** ACCEPTED by the root delegate under the Human's bounded Phase22
+  completion authority; minimum-scope causal allocation under DEC-175.
+- **Existing requirement:** contracts.md §§3/7 and public-interface.md §4
+  require current repository assertions and the accepted executor-liveness-
+  unknown, executor-still-live, observation-not-found and recovery-state-conflict
+  responses. Close and abandon consume the same trusted observation/authority
+  domain errors as recovery. No new error member or pass/fail policy is proposed.
+- **Evidence:** FQ-06's direct close proof matrix terminates `FAIL` (exit_code:1),
+  19.394s. An old asserted repository target after a real file change returns
+  succeeded; live and unknown observations return invalid-argument/2 despite
+  the exact domain errors. The domain authority matrix separately demonstrates
+  the missing exact referenced force scope/capability checks in abandonment.
+- **Cause/allocation:** Task9 wired close/abandon to the generic Run renderer,
+  which lacks the existing recovery error branches. Task8 may edit exactly
+  cmd/fid/run.go at those two domain-call error returns to call the existing
+  renderRunRecoveryError with request.RunID and empty optional digest. Domain
+  run_close.go repairs and matching ordinary/tagged tests remain its existing
+  FQ-06 scope. No registry or renderer implementation change is authorized here.
+- **Provenance:** cmd/fid/run.go close/abandon wiring was introduced by
+  a0a93c7ce4dd0c7dfda4eb39a6ba40760068e460, Phase22/Task9. Its report stays
+  COMPLETE and unchanged; Task8 records this causal execution transfer.
+- **Limits/evidence:** No new request/result/Event/DDL field, error/category/
+  exit/retryability/nullability, dependency, gate, control, threshold, VAL or
+  product decision. Preserve all red receipts, rerun identical focused commands
+  and the unchanged eight Task8 gates. Independent final QA judges sufficiency.
+
 ## Planning Spec Impact
 
 | Document | Planning change |
