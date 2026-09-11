@@ -99,6 +99,18 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	if err := validateCurrentStopBundles(tx, event); err != nil {
 		return err
 	}
+	for _, effect := range event.Effects {
+		for column, value := range effect.Values {
+			if strings.HasSuffix(column, "_json") && currentEventValue(value) != nil {
+				if err := validateCurrentJSON(event, effect, column, currentEventValue(value).(string)); err != nil {
+					return fmt.Errorf("current Event %s %s/%s: invalid JSON column %q: %w", event.EventType, effect.Table, effect.Op, column, err)
+				}
+			}
+		}
+	}
+	if err := validateCurrentComponentValues(event); err != nil {
+		return err
+	}
 	if err := validateCurrentReferences(tx, event); err != nil {
 		return err
 	}
@@ -166,8 +178,8 @@ func validateCurrentEffect(event Event, effect Effect) error {
 				return fmt.Errorf("invalid column or scalar %q", column)
 			}
 			if strings.HasSuffix(column, "_json") && value != nil {
-				if !json.Valid([]byte(value.(string))) {
-					return fmt.Errorf("invalid JSON column %q", column)
+				if _, err := decodeCurrentJSON(value.(string)); err != nil {
+					return fmt.Errorf("invalid JSON column %q: %w", column, err)
 				}
 			}
 		}
@@ -200,6 +212,13 @@ func validateCurrentEffect(event Event, effect Effect) error {
 	}
 	if created, found := effect.Values["created_event_id"]; found && created != event.EventID {
 		return fmt.Errorf("created Event identity mismatch")
+	}
+	for _, values := range []map[string]any{effect.PK, effect.Values, effect.Preconditions, effect.Prior} {
+		for column, value := range values {
+			if err := validateCurrentColumnDomain(column, currentEventValue(value)); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

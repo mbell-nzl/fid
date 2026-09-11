@@ -121,6 +121,8 @@ func observeBudgetAuthorize(t *testing.T, workspace, unit string, maximum int64)
 		{`UPDATE envelope_authority_grants SET actor_selector_json = '{"actor_id":"agent:recovery","required_capabilities":["run.observe-budget"]}', actions_json = '["run.observe-budget"]' WHERE envelope_id = 'ENV-recovery' AND ordinal = 0`, nil},
 		{`DELETE FROM envelope_budgets WHERE envelope_id = 'ENV-recovery' AND revision = 1`, nil},
 		{`INSERT INTO envelope_budgets (envelope_id, revision, name, budget_json) VALUES ('ENV-recovery', 1, 'external', ?)`, []any{budgetJSON}},
+		{`DELETE FROM run_budget_bindings WHERE run_id = 'RUN-prior'`, nil},
+		{`INSERT INTO run_budget_bindings (run_id, name, budget_json) VALUES ('RUN-prior', 'external', ?)`, []any{budgetJSON}},
 	}
 	for index, statement := range statements {
 		if _, err := conn.Exec(statement.query, statement.args...); err != nil {

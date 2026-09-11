@@ -2,6 +2,8 @@ package workflow
 
 import (
 	"database/sql"
+	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -69,6 +71,7 @@ func TestRaiseStopUsesOneOpenAttentionAndRejectsRoutineReadsWithoutEffects(t *te
 		ResolutionCondition: Condition{Type: "activation-recovered", Subject: Subject{Type: "activation", ID: "ACT-stop-test"}}, ResolverCapability: "stop.resolve",
 	}
 	options := StopOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "agent:stop-test", IdempotencyKey: testIdempotencyKey()}
+	firstOptions := options
 	first, err := RaiseStop(options, request)
 	if err != nil {
 		t.Fatalf("RaiseStop(first) error = %v", err)
@@ -81,7 +84,19 @@ func TestRaiseStopUsesOneOpenAttentionAndRejectsRoutineReadsWithoutEffects(t *te
 	if first.Stop.ID == second.Stop.ID || first.Attention.ID != second.Attention.ID || len(second.Attention.StopIDs) != 2 {
 		t.Fatalf("RaiseStop identities = %#v / %#v, want distinct Stops linked to one Attention", first, second)
 	}
+	if !strings.HasPrefix(first.Attention.SemanticKey, "sha256:") || len(first.Attention.SemanticKey) != 71 {
+		t.Fatal("Attention semantic_key does not use the accepted digest grammar")
+	}
 	before := readWorkflowTestFile(t, workflowJournalPath(t, workspace))
+	replayed, err := RaiseStop(firstOptions, request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := first
+	expected.Replayed = true
+	if !reflect.DeepEqual(replayed, expected) || len(replayed.Attention.StopIDs) != 1 {
+		t.Fatalf("replay refreshed historical Attention with later links: got %#v, want %#v", replayed, expected)
+	}
 	if _, err := GetStop(workspace, migrationsDir, "missing"); err == nil {
 		t.Fatal("GetStop(missing) error = nil, want rejected read")
 	}
@@ -158,13 +173,13 @@ func stopRaisedEvent(eventID, stopID, attentionID string, createAttention bool) 
 		Values: map[string]any{
 			"subject_type": "run", "subject_id": "RUN-1", "code": "operator-stop",
 			"blocked_actions_json": `["run.recover"]`, "details_json": `{"reason":"operator intervention","reference":"DEC-188"}`,
-			"resolution_condition_json": `{"type":"work-ended","subject":{"type":"run","id":"RUN-1"}}`,
+			"resolution_condition_json": `{"type":"work-ended","subject":{"type":"run","id":"RUN-1"},"budget_name":null,"capability_id":null}`,
 			"resolver_capability":       "stop.resolve", "actor_id": "agent:tl", "raised_at": "2026-09-05T00:00:00Z", "created_event_id": eventID,
 		},
 	}}
 	if createAttention {
 		effects = append(effects, journal.Effect{Op: "insert", Table: "attention_items", PK: map[string]any{"id": attentionID}, Values: map[string]any{
-			"semantic_key": "same-semantic-key", "subject_type": "run", "subject_id": "RUN-1", "code": "operator-stop", "status": "open", "version": 1, "raised_at": "2026-09-05T00:00:00Z", "resolution_event_id": nil,
+			"semantic_key": "sha256:" + strings.Repeat("1", 64), "subject_type": "run", "subject_id": "RUN-1", "code": "operator-stop", "status": "open", "version": 1, "raised_at": "2026-09-05T00:00:00Z", "resolution_event_id": nil,
 		}})
 	}
 	effects = append(effects, journal.Effect{Op: "insert", Table: "attention_stop_links", PK: map[string]any{"attention_id": attentionID, "stop_id": stopID}})
@@ -173,7 +188,20 @@ func stopRaisedEvent(eventID, stopID, attentionID string, createAttention bool) 
 		ActorV2:   journal.EventActor{ActorID: "agent:tl", ActorType: "agent", Producer: "test", ProvenanceRef: "test"},
 		Aggregate: journal.Aggregate{ID: stopID, Type: "stop", Sequence: 1}, CommandName: "stop.raise", Effects: effects,
 	}
-	return stopFixtureIdempotency(event)
+	event = stopFixtureIdempotency(event)
+	condition := map[string]any{"type": "work-ended", "subject": Subject{Type: "run", ID: "RUN-1"}, "budget_name": nil, "capability_id": nil}
+	stop := map[string]any{"id": stopID, "subject": Subject{Type: "run", ID: "RUN-1"}, "code": "operator-stop", "blocked_actions": []string{"run.recover"}, "details": map[string]any{"reason": "operator intervention", "reference": "DEC-188"}, "resolution_condition": condition, "resolver_capability": "stop.resolve", "actor_id": "agent:tl", "raised_at": "2026-09-05T00:00:00Z", "resolution": nil}
+	stopIDs := []string{stopID}
+	if !createAttention {
+		stopIDs = []string{"STOP-1", stopID}
+	}
+	attention := map[string]any{"id": attentionID, "semantic_key": "sha256:" + strings.Repeat("1", 64), "subject": Subject{Type: "run", ID: "RUN-1"}, "code": "operator-stop", "status": "open", "version": 1, "stop_ids": stopIDs, "raised_at": "2026-09-05T00:00:00Z", "resolution_event_id": nil}
+	raw, err := json.Marshal(map[string]any{"stop": stop, "attention": attention, "idempotency_key": event.Idempotency.Key, "replayed": false})
+	if err != nil {
+		panic(err)
+	}
+	event.Effects[len(event.Effects)-1].Values["result_json"] = string(raw)
+	return event
 }
 
 func stopFixtureIdempotency(event journal.Event) journal.Event {
@@ -195,4 +223,31 @@ func seedStandaloneStopSubject(t *testing.T, conn *sql.DB) {
 	if _, err := conn.Exec(`PRAGMA foreign_keys=ON`); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// Adapt the complete hand-authored Stop fixture while retaining its response
+// snapshot; callers deliberately change the subject/actions before commit.
+func refreshStopFixtureResult(event journal.Event) journal.Event {
+	last := &event.Effects[len(event.Effects)-1]
+	var result map[string]any
+	if err := json.Unmarshal([]byte(last.Values["result_json"].(string)), &result); err != nil {
+		panic(err)
+	}
+	stop := result["stop"].(map[string]any)
+	subject := map[string]any{"type": event.Effects[0].Values["subject_type"], "id": event.Effects[0].Values["subject_id"]}
+	stop["subject"] = subject
+	result["attention"].(map[string]any)["subject"] = subject
+	for column, field := range map[string]string{"resolution_condition_json": "resolution_condition", "blocked_actions_json": "blocked_actions"} {
+		var value any
+		if err := json.Unmarshal([]byte(event.Effects[0].Values[column].(string)), &value); err != nil {
+			panic(err)
+		}
+		stop[field] = value
+	}
+	raw, err := json.Marshal(result)
+	if err != nil {
+		panic(err)
+	}
+	last.Values["result_json"] = string(raw)
+	return event
 }

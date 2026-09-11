@@ -30,7 +30,12 @@ accept 1..10000; exceeding a bounded complete projection returns
 `Mutation<T>` means `{record:T,idempotency_key:ID,replayed:boolean}` below;
 the actual key replacing `record` is explicitly named for each leaf. Success
 includes the retained outer EventRef; reads have `event:null`. Same-key replay
-returns the stored result with only `replayed:true` changed. Rejections have
+returns the original result with only `replayed:true` changed. Under DEC-216,
+current-family persistence stores the complete typed snapshot specified in
+schema.md section5; adapters construct the accepted success/failure envelope
+from those original facts. Pending Attempts retain their no-respawn fence;
+unsuccessful Receipts and committed denials retain their failure responses.
+Rejections have
 no effects except the explicitly committed execution denial described below.
 
 ## 2. Closed Values
@@ -247,7 +252,10 @@ exit/signal where none was observed.
 An execution denial that durably raises Stop/Attention still returns `ok:false`
 and exit 4. Its error details contain the committed EventRef and immutable
 Stop/Attention IDs. On a denial that commits nothing, EventRef is null. Store
-and replay a committed denial under its original key. `fid.live.v1` emits one
+and replay a committed denial under its original key using the complete Denial
+snapshot in schema.md section5 (DEC-216), retaining the original Budget,
+Stop/Attention IDs and EventRef without current-state rederivation.
+`fid.live.v1` emits one
 terminal `fid-error` frame carrying that same error; no start/output frame or
 spawn occurs. A budget crossing during an admitted execution is a control frame
 `budget-stop` with `{stop_ids:ID[],attention_ids:ID[],budget:Budget}` followed by

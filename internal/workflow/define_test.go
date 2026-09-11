@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mbell-nzl/fid/internal/bootstrap"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -112,8 +111,8 @@ func initializedWorkflowWorkspace(t *testing.T) (string, string) {
 		t.Fatal("runtime.Caller() failed")
 	}
 	migrationsDir := filepath.Clean(filepath.Join(filepath.Dir(sourceFile), "..", "..", "migrations"))
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir}); err != nil {
-		t.Fatalf("InitializeWorkspace() error = %v", err)
+	if err := cloneWorkflowPristine(workspace); err != nil {
+		t.Fatalf("clone initialized workflow workspace: %v", err)
 	}
 	return workspace, migrationsDir
 }

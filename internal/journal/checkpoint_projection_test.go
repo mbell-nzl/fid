@@ -230,10 +230,13 @@ func seedActivationRecoveryProjection(t *testing.T, conn *sql.DB, eventType stri
 		}
 	}
 	if eventType == "activation.recovery-completed" {
+		if _, err := conn.Exec(`UPDATE activation_resources SET state='old',evidence_ref='test:prior-agreement' WHERE activation_id='ACT-projection'`); err != nil {
+			t.Fatal(err)
+		}
 		if _, err := conn.Exec(`INSERT INTO activation_recoveries (activation_id, direction, actor_attribution, reason, selected_event_id, completed_event_id) VALUES ('ACT-projection','restore-prior','fid-bootstrap','test','EVT-selected',NULL)`); err != nil {
 			t.Fatalf("seed activation recovery: %v", err)
 		}
-		if _, err := conn.Exec(`INSERT INTO stops (id, subject_type, subject_id, code, blocked_actions_json, details_json, resolution_condition_json, resolver_capability, actor_id, raised_at, created_event_id) VALUES ('STP-activation','activation','ACT-projection','activation-incomplete','["claim.acquire"]','{"activation_id":"ACT-projection","components":["kit","overlay","provider","project","backend"],"point_of_no_return":false}','{"subject":{"id":"ACT-projection","type":"activation"},"type":"activation-recovered"}','stop.resolve','fid-bootstrap','2026-09-06T00:00:00Z','EVT-selected')`); err != nil {
+		if _, err := conn.Exec(`INSERT INTO stops (id, subject_type, subject_id, code, blocked_actions_json, details_json, resolution_condition_json, resolver_capability, actor_id, raised_at, created_event_id) VALUES ('STP-activation','activation','ACT-projection','activation-incomplete','["claim.acquire"]','{"activation_id":"ACT-projection","components":["kit","overlay","provider","project","backend"],"point_of_no_return":false}','{"subject":{"id":"ACT-projection","type":"activation"},"type":"activation-recovered","budget_name":null,"capability_id":null}','stop.resolve','fid-bootstrap','2026-09-06T00:00:00Z','EVT-selected')`); err != nil {
 			t.Fatalf("seed activation Stop: %v", err)
 		}
 		if _, err := conn.Exec(`INSERT INTO attention_items (id, semantic_key, subject_type, subject_id, code, status, version, raised_at, resolution_event_id) VALUES ('ATT-activation','activation-incomplete:ACT-projection','activation','ACT-projection','activation-incomplete','open',1,'2026-09-06T00:00:00Z',NULL)`); err != nil {
@@ -257,14 +260,14 @@ func activationRecoveryProjectionState(t *testing.T, conn *sql.DB) string {
 func activationStopEffect(eventID string) Effect {
 	return Effect{Op: "insert", Table: "stops", PK: map[string]any{"id": "STP-activation"}, Values: map[string]any{
 		"subject_type": "activation", "subject_id": "ACT-projection", "code": "activation-incomplete", "blocked_actions_json": `["claim.acquire","envelope.complete","gate.run","issue.transition-terminal-success","run.start"]`,
-		"details_json": `{"activation_id":"ACT-projection","components":["kit","overlay","provider","project","backend"],"point_of_no_return":false}`, "resolution_condition_json": `{"subject":{"id":"ACT-projection","type":"activation"},"type":"activation-recovered"}`,
+		"details_json": `{"activation_id":"ACT-projection","components":["kit","overlay","provider","project","backend"],"point_of_no_return":false}`, "resolution_condition_json": `{"subject":{"id":"ACT-projection","type":"activation"},"type":"activation-recovered","budget_name":null,"capability_id":null}`,
 		"resolver_capability": "stop.resolve", "actor_id": "fid-bootstrap", "raised_at": "2026-09-06T00:01:00Z", "created_event_id": eventID,
 	}}
 }
 
 func activationAttentionEffect() Effect {
 	return Effect{Op: "insert", Table: "attention_items", PK: map[string]any{"id": "ATT-activation"}, Values: map[string]any{
-		"semantic_key": "activation-incomplete:ACT-projection", "subject_type": "activation", "subject_id": "ACT-projection", "code": "activation-incomplete", "status": "open", "version": 1, "raised_at": "2026-09-06T00:01:00Z", "resolution_event_id": nil,
+		"semantic_key": "sha256:" + strings.Repeat("1", 64), "subject_type": "activation", "subject_id": "ACT-projection", "code": "activation-incomplete", "status": "open", "version": 1, "raised_at": "2026-09-06T00:01:00Z", "resolution_event_id": nil,
 	}}
 }
 
@@ -282,7 +285,7 @@ func runClosureProjectionEvent(eventType, status string) Event {
 		Aggregate:   Aggregate{ID: "RUN-closure", Type: "run", Sequence: 1},
 		CommandName: strings.TrimSuffix(eventType, "d"),
 		Effects: []Effect{
-			{Op: "update", Table: "runs", PK: map[string]any{"id": "RUN-closure"}, Values: map[string]any{"status": status, "terminal_repository_json": `{}`, "ended_at": "2026-09-06T00:00:00Z"}, Preconditions: map[string]any{"status": "active"}, Prior: map[string]any{"status": "active", "terminal_repository_json": nil, "ended_at": nil}},
+			{Op: "update", Table: "runs", PK: map[string]any{"id": "RUN-closure"}, Values: map[string]any{"status": status, "terminal_repository_json": projectionRepositoryJSON, "ended_at": "2026-09-06T00:00:00Z"}, Preconditions: map[string]any{"status": "active"}, Prior: map[string]any{"status": "active", "terminal_repository_json": nil, "ended_at": nil}},
 			{Op: "update", Table: "run_runtime", PK: map[string]any{"run_id": "RUN-closure"}, Values: map[string]any{"version": 2}, Preconditions: map[string]any{"version": 1}, Prior: map[string]any{"version": 1}},
 		},
 	}
@@ -299,8 +302,8 @@ func seedRunClosureProjection(t *testing.T, conn *sql.DB) {
 		t.Fatalf("disable foreign keys for closure projection seed: %v", err)
 	}
 	statements := []string{
-		`INSERT INTO claims (id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at) VALUES ('CLM-closure', 'ISS-closure', 'ENV-closure', 1, 'agent:closure', 'WT-closure', '{}', 'mutation', 1, 'active', '2026-09-06T00:00:00Z', '2026-09-07T00:00:00Z')`,
-		`INSERT INTO runs (id, issue_id, envelope_id, envelope_revision, claim_id, claim_version, actor_id, start_repository_json, status, started_at) VALUES ('RUN-closure', 'ISS-closure', 'ENV-closure', 1, 'CLM-closure', 1, 'agent:closure', '{}', 'active', '2026-09-06T00:00:00Z')`,
+		`INSERT INTO claims (id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at) VALUES ('CLM-closure', 'ISS-closure', 'ENV-closure', 1, 'agent:closure', 'WT-closure', '{"paths":[]}', 'mutation', 1, 'active', '2026-09-06T00:00:00Z', '2026-09-07T00:00:00Z')`,
+		`INSERT INTO runs (id, issue_id, envelope_id, envelope_revision, claim_id, claim_version, actor_id, start_repository_json, status, started_at) VALUES ('RUN-closure', 'ISS-closure', 'ENV-closure', 1, 'CLM-closure', 1, 'agent:closure', '{"base_oid":null,"capture_source":"git","dirty":false,"dirty_digest":null,"head_oid":null,"project_id":"PRJ-projection","tree_oid":null,"worktree_id":"WT-projection"}', 'active', '2026-09-06T00:00:00Z')`,
 		`INSERT INTO run_runtime (run_id, version, executor_id, obligation_id) VALUES ('RUN-closure', 1, 'executor-closure', NULL)`,
 	}
 	for _, statement := range statements {
@@ -332,13 +335,13 @@ func runClosureProjectionState(t *testing.T, conn *sql.DB) string {
 func recoveredProjectionEvent() Event {
 	event := Event{EventID: "EVT-20260906-000003", EventSchema: EventSchemaV2, EventType: "run.recovered", OccurredAt: time.Date(2026, time.September, 6, 0, 1, 0, 0, time.UTC), ActorV2: EventActor{ActorID: "agent:recovery", ActorType: "agent", Producer: "activated-harness", ProvenanceRef: "test:recovery"}, Aggregate: Aggregate{ID: "RUN-prior", Type: "run", Sequence: 1}, CommandName: "run.recover"}
 	event.Effects = []Effect{
-		{Op: "update", Table: "runs", PK: map[string]any{"id": "RUN-prior"}, Preconditions: map[string]any{"status": "active"}, Prior: map[string]any{"status": "active", "terminal_repository_json": nil, "ended_at": nil}, Values: map[string]any{"status": "interrupted", "terminal_repository_json": `{}`, "ended_at": "2026-09-06T00:01:00Z"}},
+		{Op: "update", Table: "runs", PK: map[string]any{"id": "RUN-prior"}, Preconditions: map[string]any{"status": "active"}, Prior: map[string]any{"status": "active", "terminal_repository_json": nil, "ended_at": nil}, Values: map[string]any{"status": "interrupted", "terminal_repository_json": projectionRepositoryJSON, "ended_at": "2026-09-06T00:01:00Z"}},
 		{Op: "update", Table: "run_runtime", PK: map[string]any{"run_id": "RUN-prior"}, Preconditions: map[string]any{"version": 1}, Prior: map[string]any{"version": 1}, Values: map[string]any{"version": 2}},
 		{Op: "update", Table: "claims", PK: map[string]any{"id": "CLM-prior"}, Preconditions: map[string]any{"status": "active", "version": 1}, Prior: map[string]any{"version": 1, "status": "active", "released_at": nil, "release_reason": nil}, Values: map[string]any{"version": 2, "status": "superseded", "released_at": "2026-09-06T00:01:00Z", "release_reason": "recovery-superseded"}},
-		{Op: "insert", Table: "claims", PK: map[string]any{"id": "CLM-successor"}, Values: claimProjectionValues("ISS-projection", "ENV-projection", "agent:recovery", "WT-successor")},
+		{Op: "insert", Table: "claims", PK: map[string]any{"id": "CLM-successor"}, Values: claimProjectionValues("ISS-projection", "ENV-projection", "agent:recovery", "WT-projection")},
 		{Op: "insert", Table: "runs", PK: map[string]any{"id": "RUN-successor"}, Values: runProjectionValues("ISS-projection", "ENV-projection", "CLM-successor", "agent:recovery", "active", "2026-09-06T00:01:00Z")},
 		{Op: "insert", Table: "run_runtime", PK: map[string]any{"run_id": "RUN-successor"}, Values: map[string]any{"version": 1, "executor_id": "executor-successor", "obligation_id": nil}},
-		{Op: "insert", Table: "run_recoveries", PK: map[string]any{"id": "REC-projection"}, Values: map[string]any{"prior_run_id": "RUN-prior", "successor_run_id": "RUN-successor", "prior_claim_id": "CLM-prior", "successor_claim_id": "CLM-successor", "observation_id": "OBS-liveness", "reconciliation_json": `{"repository":{}}`, "adopted_paths_json": `[]`, "authority_json": `{"mode":"ordinary","actor_id":"agent:recovery","reason":"test","reference":null,"grant_ref":null}`, "reason": "test", "created_event_id": event.EventID}},
+		{Op: "insert", Table: "run_recoveries", PK: map[string]any{"id": "REC-projection"}, Values: map[string]any{"prior_run_id": "RUN-prior", "successor_run_id": "RUN-successor", "prior_claim_id": "CLM-prior", "successor_claim_id": "CLM-successor", "observation_id": "OBS-liveness", "reconciliation_json": projectionFixtureJSON(projectionReconciliation()), "adopted_paths_json": `[]`, "authority_json": `{"mode":"ordinary","actor_id":"agent:recovery","reason":"test","reference":null,"grant_ref":null}`, "reason": "test", "created_event_id": event.EventID}},
 	}
 	return currentProjectionIdempotency(event, "REC-projection")
 }
@@ -355,8 +358,8 @@ func budgetObservedProjectionEvent() Event {
 func executionBlockedProjectionEvent() Event {
 	event := Event{EventID: "EVT-20260906-000005", EventSchema: EventSchemaV2, EventType: "run.execution-blocked", OccurredAt: time.Date(2026, time.September, 6, 0, 1, 0, 0, time.UTC), ActorV2: EventActor{ActorID: "agent:gate", ActorType: "agent", Producer: "fid", ProvenanceRef: "test:gate"}, Aggregate: Aggregate{ID: "RUN-blocked", Type: "run", Sequence: 1}, CommandName: "gate.run"}
 	event.Effects = []Effect{
-		{Op: "insert", Table: "stops", PK: map[string]any{"id": "STP-blocked"}, Values: map[string]any{"subject_type": "run", "subject_id": "RUN-blocked", "code": "budget-data-unavailable", "blocked_actions_json": `["gate.run"]`, "details_json": `{"envelope_id":"ENV-projection","budget_name":"tokens","unit":"tokens","maximum":10,"consumed":null,"remaining":null}`, "resolution_condition_json": `{"subject":{"id":"RUN-blocked","type":"run"},"type":"budget-observed","budget_name":"tokens","capability_id":null}`, "resolver_capability": "stop.resolve", "actor_id": "agent:gate", "raised_at": "2026-09-06T00:01:00Z", "created_event_id": event.EventID}},
-		{Op: "insert", Table: "attention_items", PK: map[string]any{"id": "ATT-blocked"}, Values: map[string]any{"semantic_key": "budget-data-unavailable:RUN-blocked", "subject_type": "run", "subject_id": "RUN-blocked", "code": "budget-data-unavailable", "status": "open", "version": 1, "raised_at": "2026-09-06T00:01:00Z", "resolution_event_id": nil}},
+		{Op: "insert", Table: "stops", PK: map[string]any{"id": "STP-blocked"}, Values: map[string]any{"subject_type": "run", "subject_id": "RUN-blocked", "code": "budget-data-unavailable", "blocked_actions_json": `["gate.run","run.recover","run.start"]`, "details_json": `{"envelope_id":"ENV-projection","budget_name":"tokens","unit":"input-tokens","maximum":10,"consumed":null,"remaining":null}`, "resolution_condition_json": `{"subject":{"id":"RUN-blocked","type":"run"},"type":"budget-observed","budget_name":"tokens","capability_id":null}`, "resolver_capability": "stop.resolve", "actor_id": "agent:gate", "raised_at": "2026-09-06T00:01:00Z", "created_event_id": event.EventID}},
+		{Op: "insert", Table: "attention_items", PK: map[string]any{"id": "ATT-blocked"}, Values: map[string]any{"semantic_key": "sha256:" + strings.Repeat("2", 64), "subject_type": "run", "subject_id": "RUN-blocked", "code": "budget-data-unavailable", "status": "open", "version": 1, "raised_at": "2026-09-06T00:01:00Z", "resolution_event_id": nil}},
 		{Op: "insert", Table: "attention_stop_links", PK: map[string]any{"attention_id": "ATT-blocked", "stop_id": "STP-blocked"}},
 		{Op: "update", Table: "run_runtime", PK: map[string]any{"run_id": "RUN-blocked"}, Preconditions: map[string]any{"version": 1}, Prior: map[string]any{"version": 1}, Values: map[string]any{"version": 2}},
 	}
@@ -364,18 +367,18 @@ func executionBlockedProjectionEvent() Event {
 }
 
 func claimProjectionValues(issueID, envelopeID, actorID, worktreeID string) map[string]any {
-	return map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "actor_id": actorID, "worktree_id": worktreeID, "scope_json": `{}`, "mode": "mutation", "version": 1, "status": "active", "acquired_at": "2026-09-06T00:01:00Z", "expires_at": "2026-09-07T00:01:00Z", "released_at": nil, "release_reason": nil}
+	return map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "actor_id": actorID, "worktree_id": worktreeID, "scope_json": `{"paths":[]}`, "mode": "mutation", "version": 1, "status": "active", "acquired_at": "2026-09-06T00:01:00Z", "expires_at": "2026-09-07T00:01:00Z", "released_at": nil, "release_reason": nil}
 }
 
 func runProjectionValues(issueID, envelopeID, claimID, actorID, status, startedAt string) map[string]any {
-	return map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "actor_id": actorID, "start_repository_json": `{}`, "terminal_repository_json": nil, "status": status, "started_at": startedAt, "ended_at": nil}
+	return map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "actor_id": actorID, "start_repository_json": projectionRepositoryJSON, "terminal_repository_json": nil, "status": status, "started_at": startedAt, "ended_at": nil}
 }
 
 func seedRecoveredProjection(t *testing.T, conn *sql.DB) {
 	t.Helper()
 	seedProjectionStatements(t, conn, []string{
-		`INSERT INTO claims (id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at) VALUES ('CLM-prior','ISS-projection','ENV-projection',1,'agent:recovery','WT-prior','{}','mutation',1,'active','2026-09-06T00:00:00Z','2026-09-07T00:00:00Z')`,
-		`INSERT INTO runs (id, issue_id, envelope_id, envelope_revision, claim_id, claim_version, actor_id, start_repository_json, status, started_at) VALUES ('RUN-prior','ISS-projection','ENV-projection',1,'CLM-prior',1,'agent:recovery','{}','active','2026-09-06T00:00:00Z')`,
+		`INSERT INTO claims (id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at) VALUES ('CLM-prior','ISS-projection','ENV-projection',1,'agent:recovery','WT-prior','{"paths":[]}','mutation',1,'active','2026-09-06T00:00:00Z','2026-09-07T00:00:00Z')`,
+		`INSERT INTO runs (id, issue_id, envelope_id, envelope_revision, claim_id, claim_version, actor_id, start_repository_json, status, started_at) VALUES ('RUN-prior','ISS-projection','ENV-projection',1,'CLM-prior',1,'agent:recovery','{"base_oid":null,"capture_source":"git","dirty":false,"dirty_digest":null,"head_oid":null,"project_id":"PRJ-projection","tree_oid":null,"worktree_id":"WT-projection"}','active','2026-09-06T00:00:00Z')`,
 		`INSERT INTO run_runtime (run_id, version, executor_id, obligation_id) VALUES ('RUN-prior',1,'executor-prior',NULL)`,
 		`INSERT INTO run_observations (id, run_id, kind, actor_id, observed_at, observation_json, created_event_id) VALUES ('OBS-liveness','RUN-prior','liveness','agent:recovery','2026-09-06T00:00:00Z','{"id":"OBS-liveness","kind":"liveness","run_id":"RUN-prior"}','EVT-liveness')`,
 	})
@@ -384,19 +387,21 @@ func seedRecoveredProjection(t *testing.T, conn *sql.DB) {
 func seedBudgetProjection(t *testing.T, conn *sql.DB) {
 	t.Helper()
 	seedProjectionStatements(t, conn, []string{
-		`INSERT INTO claims (id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at) VALUES ('CLM-budget','ISS-projection','ENV-projection',1,'agent:budget','WT-budget','{}','mutation',1,'active','2026-09-06T00:00:00Z','2026-09-07T00:00:00Z')`,
-		`INSERT INTO runs (id, issue_id, envelope_id, envelope_revision, claim_id, claim_version, actor_id, start_repository_json, status, started_at) VALUES ('RUN-budget','ISS-projection','ENV-projection',1,'CLM-budget',1,'agent:budget','{}','active','2026-09-06T00:00:00Z')`,
+		`INSERT INTO claims (id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at) VALUES ('CLM-budget','ISS-projection','ENV-projection',1,'agent:budget','WT-budget','{"paths":[]}','mutation',1,'active','2026-09-06T00:00:00Z','2026-09-07T00:00:00Z')`,
+		`INSERT INTO runs (id, issue_id, envelope_id, envelope_revision, claim_id, claim_version, actor_id, start_repository_json, status, started_at) VALUES ('RUN-budget','ISS-projection','ENV-projection',1,'CLM-budget',1,'agent:budget','{"base_oid":null,"capture_source":"git","dirty":false,"dirty_digest":null,"head_oid":null,"project_id":"PRJ-projection","tree_oid":null,"worktree_id":"WT-projection"}','active','2026-09-06T00:00:00Z')`,
 		`INSERT INTO run_runtime (run_id, version, executor_id, obligation_id) VALUES ('RUN-budget',1,'executor-budget',NULL)`,
 	})
+	seedProjectionBudget(t, conn, "RUN-budget")
 }
 
 func seedExecutionBlockedProjection(t *testing.T, conn *sql.DB) {
 	t.Helper()
 	seedProjectionStatements(t, conn, []string{
-		`INSERT INTO claims (id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at) VALUES ('CLM-blocked','ISS-projection','ENV-projection',1,'agent:gate','WT-blocked','{}','mutation',1,'active','2026-09-06T00:00:00Z','2026-09-07T00:00:00Z')`,
-		`INSERT INTO runs (id, issue_id, envelope_id, envelope_revision, claim_id, claim_version, actor_id, start_repository_json, status, started_at) VALUES ('RUN-blocked','ISS-projection','ENV-projection',1,'CLM-blocked',1,'agent:gate','{}','active','2026-09-06T00:00:00Z')`,
+		`INSERT INTO claims (id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at) VALUES ('CLM-blocked','ISS-projection','ENV-projection',1,'agent:gate','WT-blocked','{"paths":[]}','mutation',1,'active','2026-09-06T00:00:00Z','2026-09-07T00:00:00Z')`,
+		`INSERT INTO runs (id, issue_id, envelope_id, envelope_revision, claim_id, claim_version, actor_id, start_repository_json, status, started_at) VALUES ('RUN-blocked','ISS-projection','ENV-projection',1,'CLM-blocked',1,'agent:gate','{"base_oid":null,"capture_source":"git","dirty":false,"dirty_digest":null,"head_oid":null,"project_id":"PRJ-projection","tree_oid":null,"worktree_id":"WT-projection"}','active','2026-09-06T00:00:00Z')`,
 		`INSERT INTO run_runtime (run_id, version, executor_id, obligation_id) VALUES ('RUN-blocked',1,'executor-blocked',NULL)`,
 	})
+	seedProjectionBudget(t, conn, "RUN-blocked")
 }
 
 func seedProjectionStatements(t *testing.T, conn *sql.DB, statements []string) {
@@ -448,7 +453,7 @@ func checkpointedProjectionEvent() Event {
 		Aggregate:   Aggregate{ID: "RUN-checkpoint", Type: "run", Sequence: 1},
 		CommandName: "run.checkpoint",
 		Effects: []Effect{
-			{Op: "insert", Table: "run_observations", PK: map[string]any{"id": "OBS-checkpoint"}, Values: map[string]any{"run_id": "RUN-checkpoint", "kind": "checkpoint", "actor_id": "agent:checkpoint", "observed_at": "2026-09-06T00:00:00Z", "observation_json": `{"id":"OBS-checkpoint","kind":"checkpoint","run_id":"RUN-checkpoint"}`, "created_event_id": "EVT-20260906-000001"}},
+			{Op: "insert", Table: "run_observations", PK: map[string]any{"id": "OBS-checkpoint"}, Values: map[string]any{"run_id": "RUN-checkpoint", "kind": "checkpoint", "actor_id": "agent:checkpoint", "observed_at": "2026-09-06T00:00:00Z", "observation_json": projectionFixtureJSON(projectionCheckpoint()), "created_event_id": "EVT-20260906-000001"}},
 			{Op: "update", Table: "run_runtime", PK: map[string]any{"run_id": "RUN-checkpoint"}, Values: map[string]any{"version": 2}, Preconditions: map[string]any{"version": 1}, Prior: map[string]any{"version": 1}},
 		},
 	}
@@ -457,7 +462,7 @@ func checkpointedProjectionEvent() Event {
 
 func currentProjectionIdempotency(event Event, entityID string) Event {
 	event.Idempotency = &EventIdempotency{Key: "projection-fixture", RequestDigest: "sha256:" + strings.Repeat("1", 64), Scope: event.CommandName + ":PRJ-projection"}
-	event.Effects = append(event.Effects, Effect{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": event.Idempotency.Scope, "idempotency_key": event.Idempotency.Key}, Values: map[string]any{"request_digest": event.Idempotency.RequestDigest, "result_entity_id": entityID, "result_event_id": event.EventID, "aggregate_sequence": event.Aggregate.Sequence, "result_json": `{"replayed":false}`, "created_at": event.OccurredAt.Format(time.RFC3339Nano)}})
+	event.Effects = append(event.Effects, Effect{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": event.Idempotency.Scope, "idempotency_key": event.Idempotency.Key}, Values: map[string]any{"request_digest": event.Idempotency.RequestDigest, "result_entity_id": entityID, "result_event_id": event.EventID, "aggregate_sequence": event.Aggregate.Sequence, "result_json": projectionFixtureJSON(projectionResult(event)), "created_at": event.OccurredAt.Format(time.RFC3339Nano)}})
 	return event
 }
 
@@ -466,7 +471,7 @@ func seedCheckpointProjectionRun(t *testing.T, conn *sql.DB) {
 	if _, err := conn.Exec(`PRAGMA foreign_keys = OFF`); err != nil {
 		t.Fatalf("disable foreign keys for projection seed: %v", err)
 	}
-	if _, err := conn.Exec(`INSERT INTO runs (id, issue_id, envelope_id, envelope_revision, claim_id, claim_version, actor_id, start_repository_json, status, started_at) VALUES ('RUN-checkpoint', 'ISS-checkpoint', 'ENV-checkpoint', 1, 'CLM-checkpoint', 1, 'agent:checkpoint', '{}', 'active', '2026-09-06T00:00:00Z')`); err != nil {
+	if _, err := conn.Exec(`INSERT INTO runs (id, issue_id, envelope_id, envelope_revision, claim_id, claim_version, actor_id, start_repository_json, status, started_at) VALUES ('RUN-checkpoint', 'ISS-checkpoint', 'ENV-checkpoint', 1, 'CLM-checkpoint', 1, 'agent:checkpoint', '{"base_oid":null,"capture_source":"git","dirty":false,"dirty_digest":null,"head_oid":null,"project_id":"PRJ-projection","tree_oid":null,"worktree_id":"WT-projection"}', 'active', '2026-09-06T00:00:00Z')`); err != nil {
 		t.Fatalf("seed run: %v", err)
 	}
 	if _, err := conn.Exec(`INSERT INTO run_runtime (run_id, version, executor_id, obligation_id) VALUES ('RUN-checkpoint', 1, 'executor-checkpoint', NULL)`); err != nil {

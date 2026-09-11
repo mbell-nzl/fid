@@ -278,7 +278,8 @@ at Phase 25 consolidation. Latest-schema tests must assert absence instead.
 
 ## 5. Closed Event Fixtures
 
-All top-level fields and Effect grammar are Phase 21 `contracts.md` section 14.
+All top-level fields and Effect grammar are Phase 21 `contracts.md` section 14,
+with the explicit current-family stored-result specialization below (DEC-216).
 Every new payload has required keys, explicit nulls, canonical ordering,
 expected-version preconditions, captured prior update values, trusted Actor,
 correlation to Run/activation where relevant, and operation/project idempotency.
@@ -286,6 +287,60 @@ An Event row below is the equivalent fixture contract: only its listed domain
 Effects, plus the existing idempotency Effect, are allowed. Column keys are
 exactly the DDL columns; JSON values use `public-interface.md` section 2.
 All inserted entity IDs/times are bound consistently across Effects/results.
+
+### Current-family stored result snapshots (DEC-216)
+
+For the finite22 current Event families below, `idempotency_results.result_json`
+stores a canonical, complete, closed operation-result snapshot, rather than the
+full Response Envelope described in the inherited Phase21 storage sentence.
+Each object has exactly the row's fields plus required `idempotency_key:ID`
+and `replayed:false`. Nested values retain the accepted closed public-interface
+domains, required nulls and arrays. Original IDs, times, statuses and derived
+values must agree with the containing Event and its post-Effect facts.
+
+| Current Event | Snapshot fields before the two shared metadata fields |
+|---|---|
+| run.started | `{run:Run}` |
+| claim.expired | `{claim:Claim}` |
+| run.observed | `{observation:Observation,run:Run}` |
+| run.checkpointed | `{checkpoint:Checkpoint,run:Run}` |
+| run.recovered | `{recovery:Recovery,run:Run,claim:Claim}` |
+| stop.raised | `{stop:Stop,attention:Attention}` |
+| stop.resolved | `{stop:Stop}` |
+| attention.resolved | `{attention:Attention}` |
+| run.budget-observed | `{sample:BudgetSample,budget:Budget,stops:Stop[],attention:Attention[]}` |
+| gate.execution-started | `{attempt:Attempt,receipt:null}` |
+| gate.receipt-recorded | `{receipt:Receipt}` |
+| run.execution-blocked | `{denial:Denial}` |
+| run.closed | `{run:Run}` |
+| run.abandoned | `{run:Run,claim:Claim}` |
+| activation.prepared | `{activation:Activation}` |
+| activation.component-staged | `{activation:Activation,component:Component}` |
+| activation.committed | `{activation:Activation}` |
+| activation.finalized | `{activation:Activation}` |
+| activation.aborted | `{activation:Activation}` |
+| activation.resource-observed | `{activation:Activation,resource:ActivationResource}` |
+| activation.recovery-selected | `{activation:Activation}` |
+| activation.recovery-completed | `{activation:Activation}` |
+
+Observation, Checkpoint and Component name the exact nested values already
+declared by run.observe, run.checkpoint and activation.component respectively.
+Denial is `{budget:Budget,stop_ids:ID[],attention_ids:ID[],event_id:ID,
+event_occurred_at:timestamp}`. Its EventRef and control IDs are original facts.
+
+The pending Attempt snapshot durably fences its key; replay never respawns.
+Terminal Receipt storage covers every accepted observed outcome, including
+cancelled. A snapshot does not assert success. CLI adapters deliver the accepted
+SuccessEnvelope or FailureEnvelope, including gate-unsuccessful/exit8 and
+committed-denial ok:false/exit4. Replay preserves original snapshots and Event
+identity, changing only accepted replay metadata; it does not rederive a
+historical result from current budgets or subsequently changed rows.
+
+This specialization changes no Event/Effect column, DDL, public response shape,
+exit mapping or accepted outcome. It authorizes no dual-format reader or journal
+rewrite and does not extend the separately pinned Phase21 archive profile.
+
+### Current Event effect families
 
 | Event type | Aggregate | Ordered domain Effects | Owner |
 |---|---|---|---|

@@ -146,22 +146,34 @@ func catchUpWorkspaceWithOptionalLock(workspaceRoot, migrationsDir string, meta 
 
 func rebuildWorkspaceLocked(lock *WriteLock, migrationsDir string) (ReplayStats, error) {
 	dbPath := filepath.Join(lock.workspaceRoot, ".fid", "fid.sqlite")
-	if err := os.Remove(dbPath); err != nil && !os.IsNotExist(err) {
-		return ReplayStats{}, fmt.Errorf("remove sqlite database %q: %w", dbPath, err)
+	temporary, err := os.CreateTemp(filepath.Dir(dbPath), ".fid-rebuild-*.sqlite")
+	if err != nil {
+		return ReplayStats{}, fmt.Errorf("create rebuild projection: %w", err)
 	}
-	if err := fiddb.MigrateUp(dbPath, migrationsDir); err != nil {
+	temporaryPath := temporary.Name()
+	if err := temporary.Close(); err != nil {
+		return ReplayStats{}, fmt.Errorf("close rebuild projection: %w", err)
+	}
+	if err := os.Remove(temporaryPath); err != nil {
+		return ReplayStats{}, fmt.Errorf("prepare rebuild projection: %w", err)
+	}
+	defer func() { _ = os.Remove(temporaryPath) }()
+	if err := fiddb.MigrateUp(temporaryPath, migrationsDir); err != nil {
 		return ReplayStats{}, err
 	}
 
-	conn, err := fiddb.OpenForRebuild(dbPath)
+	conn, err := fiddb.OpenForRebuild(temporaryPath)
 	if err != nil {
 		return ReplayStats{}, err
 	}
-	defer closeReplayDB(conn)
 
 	replayed, err := ReplayJournal(conn, filepath.Join(lock.workspaceRoot, ".fid", "journal"), nil)
+	closeReplayDB(conn)
 	if err != nil {
 		return ReplayStats{}, err
+	}
+	if err := os.Rename(temporaryPath, dbPath); err != nil {
+		return ReplayStats{}, fmt.Errorf("install rebuilt projection: %w", err)
 	}
 
 	return replayed, nil

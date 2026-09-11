@@ -45,19 +45,21 @@ type RunRecoveryRequest struct {
 }
 
 type RecoveryClaim struct {
-	ID            string  `json:"id"`
-	IssueID       string  `json:"issue_id"`
-	EnvelopeID    string  `json:"envelope_id"`
-	Revision      int     `json:"envelope_revision"`
-	ActorID       string  `json:"actor_id"`
-	WorktreeID    string  `json:"worktree_id"`
-	ScopeJSON     string  `json:"-"`
-	Version       int     `json:"version"`
-	Status        string  `json:"status"`
-	AcquiredAt    string  `json:"acquired_at"`
-	ExpiresAt     string  `json:"expires_at"`
-	ReleasedAt    *string `json:"released_at"`
-	ReleaseReason *string `json:"release_reason"`
+	ID            string          `json:"id"`
+	IssueID       string          `json:"issue_id"`
+	EnvelopeID    string          `json:"envelope_id"`
+	Revision      int             `json:"envelope_revision"`
+	ActorID       string          `json:"actor_id"`
+	WorktreeID    string          `json:"worktree_id"`
+	ScopeJSON     string          `json:"-"`
+	Scope         json.RawMessage `json:"scope"`
+	Mode          string          `json:"mode"`
+	Version       int             `json:"version"`
+	Status        string          `json:"status"`
+	AcquiredAt    string          `json:"acquired_at"`
+	ExpiresAt     string          `json:"expires_at"`
+	ReleasedAt    *string         `json:"released_at"`
+	ReleaseReason *string         `json:"release_reason"`
 }
 
 type Recovery struct {
@@ -231,9 +233,9 @@ func RecoverRun(options RunOptions, request RunRecoveryRequest) (RunRecoveryResu
 		if err != nil {
 			return err
 		}
-		successorClaim := RecoveryClaim{ID: successorClaimID, IssueID: priorClaim.IssueID, EnvelopeID: priorClaim.EnvelopeID, Revision: priorClaim.Revision, ActorID: options.ActorID, WorktreeID: reconciliation.Repository.WorktreeID, ScopeJSON: priorClaim.ScopeJSON, Version: 1, Status: "active", AcquiredAt: now.Format(time.RFC3339Nano), ExpiresAt: now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)}
+		successorClaim := RecoveryClaim{ID: successorClaimID, IssueID: priorClaim.IssueID, EnvelopeID: priorClaim.EnvelopeID, Revision: priorClaim.Revision, ActorID: options.ActorID, WorktreeID: reconciliation.Repository.WorktreeID, ScopeJSON: priorClaim.ScopeJSON, Scope: append(json.RawMessage(nil), priorClaim.Scope...), Mode: priorClaim.Mode, Version: 1, Status: "active", AcquiredAt: now.Format(time.RFC3339Nano), ExpiresAt: now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)}
 		successor := Run{ID: successorRunID, IssueID: prior.IssueID, EnvelopeID: prior.EnvelopeID, EnvelopeRevision: prior.EnvelopeRevision, ClaimID: successorClaim.ID, ClaimVersion: successorClaim.Version, Version: 1, Executor: request.Executor, ObligationID: prior.ObligationID, ActorID: options.ActorID, StartRepository: reconciliation.Repository, Status: "active", Budgets: prior.Budgets, StartedAt: now.Format(time.RFC3339Nano), PredecessorRunID: &prior.ID}
-		recovery := Recovery{ID: recoveryID, PriorRunID: prior.ID, SuccessorRunID: successor.ID, PriorClaimID: priorClaim.ID, SuccessorClaimID: successorClaim.ID, ObservationID: observation.ID, Reconciliation: reconciliation, AdoptedPaths: append([]string(nil), request.AdoptedPaths...), Authority: request.Authority}
+		recovery := Recovery{ID: recoveryID, PriorRunID: prior.ID, SuccessorRunID: successor.ID, PriorClaimID: priorClaim.ID, SuccessorClaimID: successorClaim.ID, ObservationID: observation.ID, Reconciliation: reconciliation, AdoptedPaths: append([]string{}, request.AdoptedPaths...), Authority: request.Authority}
 		effects := recoveryEffects(prior, priorClaim, successor, successorClaim, recovery, now)
 		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: prior.ID, Type: "run"})
 		if err != nil {
@@ -409,16 +411,20 @@ func recoveryEffects(prior Run, priorClaim RecoveryClaim, successor Run, success
 }
 
 func recoveryClaimValues(claim RecoveryClaim) map[string]any {
-	return map[string]any{"issue_id": claim.IssueID, "envelope_id": claim.EnvelopeID, "envelope_revision": claim.Revision, "actor_id": claim.ActorID, "worktree_id": claim.WorktreeID, "scope_json": claim.ScopeJSON, "mode": "mutation", "version": claim.Version, "status": claim.Status, "acquired_at": claim.AcquiredAt, "expires_at": claim.ExpiresAt, "released_at": nil, "release_reason": nil}
+	return map[string]any{"issue_id": claim.IssueID, "envelope_id": claim.EnvelopeID, "envelope_revision": claim.Revision, "actor_id": claim.ActorID, "worktree_id": claim.WorktreeID, "scope_json": claim.ScopeJSON, "mode": claim.Mode, "version": claim.Version, "status": claim.Status, "acquired_at": claim.AcquiredAt, "expires_at": claim.ExpiresAt, "released_at": nil, "release_reason": nil}
 }
 
 func loadRecoveryClaim(conn *sql.DB, id string) (RecoveryClaim, error) {
 	var claim RecoveryClaim
 	var releasedAt, reason sql.NullString
-	err := conn.QueryRow(`SELECT id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, version, status, acquired_at, expires_at, released_at, release_reason FROM claims WHERE id = ?`, id).Scan(&claim.ID, &claim.IssueID, &claim.EnvelopeID, &claim.Revision, &claim.ActorID, &claim.WorktreeID, &claim.ScopeJSON, &claim.Version, &claim.Status, &claim.AcquiredAt, &claim.ExpiresAt, &releasedAt, &reason)
+	err := conn.QueryRow(`SELECT id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at, released_at, release_reason FROM claims WHERE id = ?`, id).Scan(&claim.ID, &claim.IssueID, &claim.EnvelopeID, &claim.Revision, &claim.ActorID, &claim.WorktreeID, &claim.ScopeJSON, &claim.Mode, &claim.Version, &claim.Status, &claim.AcquiredAt, &claim.ExpiresAt, &releasedAt, &reason)
 	if err != nil {
 		return RecoveryClaim{}, err
 	}
+	if !json.Valid([]byte(claim.ScopeJSON)) {
+		return RecoveryClaim{}, fmt.Errorf("decode recovery Claim scope: invalid JSON")
+	}
+	claim.Scope = append(json.RawMessage(nil), claim.ScopeJSON...)
 	if releasedAt.Valid {
 		claim.ReleasedAt = &releasedAt.String
 	}

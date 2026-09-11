@@ -118,6 +118,22 @@ Report lint is a Runner control after the report commit, not a Developer gate.
 
 ## Notes For Developer
 
+### Accepted final-QA continuation amendments (DEC-216/217)
+
+DEC-216 explicitly specializes current-family idempotency storage to the typed
+snapshots in schema.md section5; verify all pending/success/unsuccessful/denied
+branches without changing public responses or replay facts. DEC-217 authorizes
+the archive limiter testability seam and routine/scale split. The twelve
+commands above are unchanged. Because this continuation changes the archive
+limiter, it additionally requires, from /home/mark/projects/fid:
+
+```text
+go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1
+```
+
+All real boundary cases retain their assertions; phase QA must run this same
+additional command. Historical failed attempts and task reports remain intact.
+
 - Start only after the Ready QA plan and Human approval.
 - One task per Developer session; recovery may continue the same task.
 - This task belongs to QA Review window 1.

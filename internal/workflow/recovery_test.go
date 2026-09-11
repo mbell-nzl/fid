@@ -231,9 +231,9 @@ func recoverySuccessorCount(t *testing.T, workspace string) int {
 func recoveryStopEvent(eventID, stopID, attentionID string) journal.Event {
 	event := stopRaisedEvent(eventID, stopID, attentionID, true)
 	event.Effects[0].Values["subject_id"] = "RUN-prior"
-	event.Effects[0].Values["resolution_condition_json"] = `{"type":"work-ended","subject":{"type":"run","id":"RUN-prior"}}`
+	event.Effects[0].Values["resolution_condition_json"] = `{"type":"work-ended","subject":{"type":"run","id":"RUN-prior"},"budget_name":null,"capability_id":null}`
 	event.Effects[1].Values["subject_id"] = "RUN-prior"
-	return event
+	return refreshStopFixtureResult(event)
 }
 
 func TestRecoverRunForceRequiresCurrentHumanAuthorityAndFencesPriorRun(t *testing.T) {

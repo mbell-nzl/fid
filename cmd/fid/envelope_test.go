@@ -148,11 +148,28 @@ func buildFinalizedEnvelopeWorkspace(t *testing.T, definitions []any) (string, s
 
 func buildFinalizedEnvelopeWorkspaceWithRepository(t *testing.T, definitions []any, observeRepository bool) (string, string, gateRegistrationView) {
 	t.Helper()
+	// Reuse only facts produced before any path-bound repository observation.
+	// Registration and every subsequent Envelope/Claim/Run use this clone's root.
+	key := reusableWorkspaceFixtureKey(t, "unregistered-envelope", definitions)
+	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
+		root, issueID := buildUnregisteredEnvelopeWorkspace(t, definitions)
+		return root, []string{issueID}
+	})
+	issueID := values[0]
+	if observeRepository {
+		initializeObservedRepositoryForTest(t, workspace)
+	}
+	registrationInput := gateRegisterInput(t, workspace)
+	registrationInput["scope"] = map[string]any{"issue_id": issueID}
+	registrationPath := filepath.Join(workspace, "gate-register-envelope.json")
+	writeActivationInput(t, registrationPath, registrationInput)
+	return workspace, issueID, registerGateForTest(t, workspace, registrationPath, "gate-register-envelope")
+}
+
+func buildUnregisteredEnvelopeWorkspace(t *testing.T, definitions []any) (string, string) {
+	t.Helper()
 	prepare := func() (string, []string) {
 		workspace := clonePristineWorkspace(t)
-		if observeRepository {
-			initializeObservedRepositoryForTest(t, workspace)
-		}
 		created := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Envelope issue", "--actor", "agent:developer")
 		if created.err != nil {
 			t.Fatalf("create issue: %v; stderr=%q", created.err, created.stderr)
@@ -177,13 +194,7 @@ func buildFinalizedEnvelopeWorkspaceWithRepository(t *testing.T, definitions []a
 		}})
 		return workspace, []string{issue.Result.Issue.ID, activationID, profileDigest}
 	}
-	var workspace string
-	var values []string
-	if observeRepository {
-		workspace, values = prepare()
-	} else {
-		workspace, values = cloneReusableWorkspaceFixture(t, reusableWorkspaceFixtureKey(t, "prepared-envelope", false), prepare)
-	}
+	workspace, values := cloneReusableWorkspaceFixture(t, reusableWorkspaceFixtureKey(t, "prepared-envelope", false), prepare)
 	issueID, activationID, profileDigest := values[0], values[1], values[2]
 	gateDigest := stageActivationComponentForTest(t, workspace, activationID, "gate-definitions", "default-gates", definitions)
 	observeActivationResourcesForTest(t, workspace, activationID, "new")
@@ -199,11 +210,7 @@ func buildFinalizedEnvelopeWorkspaceWithRepository(t *testing.T, definitions []a
 	if result := executeCommandForTest(workspace, "--project", workspace, "--json", "activation", "finalize", "--input", finalizePath, "--idempotency-key", "activation-finalize-envelope"); result.err != nil {
 		t.Fatalf("finalize activation: %v; stderr=%q", result.err, result.stderr)
 	}
-	registrationInput := gateRegisterInput(t, workspace)
-	registrationInput["scope"] = map[string]any{"issue_id": issueID}
-	registrationPath := filepath.Join(workspace, "gate-register-envelope.json")
-	writeActivationInput(t, registrationPath, registrationInput)
-	return workspace, issueID, registerGateForTest(t, workspace, registrationPath, "gate-register-envelope")
+	return workspace, issueID
 }
 
 func gateDefinitionsForTest(modifyDefinition func(map[string]any)) []any {

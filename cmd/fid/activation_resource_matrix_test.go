@@ -85,12 +85,17 @@ func TestActivationCompleteResourceAgreementFinalizesTrust(t *testing.T) {
 
 func activationAgreementFixture(t *testing.T, operation string) activationLifecycleFixture {
 	t.Helper()
-	if operation == "finalize" {
-		return activationLifecycleFixtureAt(t, "committed")
-	}
-	fixture := activationLifecycleFixtureAt(t, "staged")
-	observeActivationResourcesForTest(t, fixture.workspace, fixture.activationID, "new")
-	return fixture
+	workspace, values := cloneReusableWorkspaceFixture(t, "activation-agreement:"+operation, func() (string, []string) {
+		var fixture activationLifecycleFixture
+		if operation == "finalize" {
+			fixture = activationLifecycleFixtureAt(t, "committed")
+		} else {
+			fixture = activationLifecycleFixtureAt(t, "staged")
+			observeActivationResourcesForTest(t, fixture.workspace, fixture.activationID, "new")
+		}
+		return fixture.workspace, append([]string{fixture.activationID}, fixture.componentDigests...)
+	})
+	return activationLifecycleFixture{workspace: workspace, activationID: values[0], componentDigests: append([]string(nil), values[1:]...)}
 }
 
 func setActivationResourceDefect(t *testing.T, fixture activationLifecycleFixture, component, defect string) {

@@ -64,5 +64,7 @@ func eventV2ForSequence(sequence int) Event {
 	event.EventID = "EVT-20260822-000001"
 	event.OccurredAt = time.Date(2026, time.August, 22, 0, 0, 0, 0, time.UTC)
 	event.Aggregate.Sequence = sequence
-	return currentProjectionIdempotency(event, "ACT-1")
+	event = currentProjectionIdempotency(event, "ACT-1")
+	event.Effects[len(event.Effects)-1].Values["result_json"] = testActivationResultJSON("projection-fixture", false)
+	return event
 }

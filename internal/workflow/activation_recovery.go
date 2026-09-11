@@ -123,7 +123,7 @@ func RecoverActivation(options ActivationTransitionOptions, request ActivationRe
 			return nil, &ActivationDirectionConflictError{ActivationID: activation.ID, PointOfNoReturn: activation.PointOfNoReturn, RequiredDirection: required}
 		}
 		updatedAt := time.Now().UTC().Format(time.RFC3339Nano)
-		stopEffects, err := activationIncompleteStopEffects(conn, activation, options.BootstrapActor, updatedAt)
+		stopEffects, err := activationIncompleteStopEffects(conn, activation, "fid-bootstrap", updatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -191,7 +191,7 @@ func CompleteActivationRecovery(options ActivationTransitionOptions, request Act
 			return nil, err
 		}
 		effects = append(effects, activationComponentStatusEffects(activation.ID, components, componentStatus)...)
-		resolutionEffects, err := activationIncompleteStopResolutionEffects(conn, activation.ID, options.BootstrapActor, time.Now().UTC().Format(time.RFC3339Nano))
+		resolutionEffects, err := activationIncompleteStopResolutionEffects(conn, activation.ID, "fid-bootstrap", time.Now().UTC().Format(time.RFC3339Nano))
 		if err != nil {
 			return nil, err
 		}

@@ -946,3 +946,22 @@ reproduced the original QA plan bytes exactly (SHA-256
 the contract and Runner ledger also matched their initial hashes. The
 verification terminated `exit_code: 0` with `write boundary PASS: only
 qa/qa-plan.md changed; runner ledger remains byte-identical`.
+
+
+## Accepted archive qualification cadence — DEC-217 (2026-09-12)
+
+The Human approved keeping all production limits and real boundary cases while
+moving the large byte/count matrices out of routine task/PR execution. The
+ordinary suite retains small tests through the same limiter, production limit
+wiring, first-excess behavior and large-number arithmetic. Existing historical
+receipts and VAL-056 acceptance cases remain unchanged.
+
+Final QA and archive-limiter changes additionally run from /home/mark/projects/fid:
+
+```text
+go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1
+```
+
+Run this locally and serially with other heavy commands. Missing or failing
+production-scale evidence leaves VAL-056 unclosed; ordinary small-case passes
+do not substitute for it. No timeout, product ceiling or error semantics change.

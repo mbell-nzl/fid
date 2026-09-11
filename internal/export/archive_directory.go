@@ -10,6 +10,10 @@ import (
 // standard ZIP reader allocates a File for every entry. Counts from the end
 // record alone are not authoritative (ZIP permits truncated 16-bit counts).
 func inspectArchiveEntryCount(input io.ReaderAt, size int64) error {
+	return inspectArchiveEntryCountWithLimit(input, size, maxArchiveEntries)
+}
+
+func inspectArchiveEntryCountWithLimit(input io.ReaderAt, size int64, limit int) error {
 	start, end, err := archiveDirectoryBounds(input, size)
 	if err != nil {
 		return err
@@ -27,7 +31,7 @@ func inspectArchiveEntryCount(input io.ReaderAt, size int64) error {
 			return zip.ErrFormat
 		}
 		count++
-		if count > maxArchiveEntries {
+		if count > limit {
 			return errArchiveResourceLimit
 		}
 		length := int64(len(header)) + int64(binary.LittleEndian.Uint16(header[28:30])) + int64(binary.LittleEndian.Uint16(header[30:32])) + int64(binary.LittleEndian.Uint16(header[32:34]))

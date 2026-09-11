@@ -26,8 +26,8 @@ type Subject struct {
 type Condition struct {
 	Type         string  `json:"type"`
 	Subject      Subject `json:"subject"`
-	BudgetName   *string `json:"budget_name,omitempty"`
-	CapabilityID *string `json:"capability_id,omitempty"`
+	BudgetName   *string `json:"budget_name"`
+	CapabilityID *string `json:"capability_id"`
 }
 
 type Stop struct {
@@ -40,7 +40,7 @@ type Stop struct {
 	ResolverCapability  string          `json:"resolver_capability"`
 	ActorID             string          `json:"actor_id"`
 	RaisedAt            string          `json:"raised_at"`
-	Resolution          *StopResolution `json:"resolution,omitempty"`
+	Resolution          *StopResolution `json:"resolution"`
 }
 
 type StopResolution struct {
@@ -59,7 +59,7 @@ type Attention struct {
 	Version           int      `json:"version"`
 	StopIDs           []string `json:"stop_ids"`
 	RaisedAt          string   `json:"raised_at"`
-	ResolutionEventID *string  `json:"resolution_event_id,omitempty"`
+	ResolutionEventID *string  `json:"resolution_event_id"`
 }
 
 type StopOptions struct {
@@ -159,7 +159,7 @@ func RaiseStop(options StopOptions, request StopRaiseRequest) (StopRaiseResult, 
 		if replay, found, err := journal.ReplayIdempotent(conn, idem); err != nil {
 			return err
 		} else if found {
-			return loadStopRaiseResult(conn, replay.EntityID, options.IdempotencyKey, true, replay.EventID, &result)
+			return loadStopRaiseResult(replay, &result)
 		}
 		stopID, err := newStopID(conn)
 		if err != nil {
@@ -182,7 +182,11 @@ func RaiseStop(options StopOptions, request StopRaiseRequest) (StopRaiseResult, 
 		}
 		now := time.Now().UTC().Format(time.RFC3339Nano)
 		stop := Stop{ID: stopID, Subject: request.Subject, Code: request.Code, BlockedActions: append([]string(nil), request.BlockedActions...), Details: append(json.RawMessage(nil), request.Details...), ResolutionCondition: request.ResolutionCondition, ResolverCapability: request.ResolverCapability, ActorID: options.ActorID, RaisedAt: now}
-		attention.RaisedAt = now
+		if !found {
+			attention.RaisedAt = now
+		}
+		attention.StopIDs = append(attention.StopIDs, stop.ID)
+		sort.Strings(attention.StopIDs)
 		event := stopRaisedEventForDomain(stop, attention, !found, "")
 		prepared, err := journal.PrepareEvent(lock, event)
 		if err != nil {
@@ -199,7 +203,7 @@ func RaiseStop(options StopOptions, request StopRaiseRequest) (StopRaiseResult, 
 		if err != nil {
 			return err
 		}
-		return loadStopRaiseResult(conn, outcome.EntityID, options.IdempotencyKey, outcome.Replayed, outcome.EventID, &result)
+		return loadStopRaiseResult(outcome, &result)
 	})
 	return result, err
 }
@@ -245,9 +249,7 @@ func ResolveStop(options StopOptions, request StopResolveRequest) (StopResolveRe
 		if replay, found, err := journal.ReplayIdempotent(conn, idem); err != nil {
 			return err
 		} else if found {
-			loaded, err := loadStop(conn, replay.EntityID)
-			result = StopResolveResult{Stop: loaded, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
-			return err
+			return loadStopResolveResult(replay, &result)
 		}
 		stop, err := loadStop(conn, request.StopID)
 		if err != nil {
@@ -273,15 +275,15 @@ func ResolveStop(options StopOptions, request StopResolveRequest) (StopResolveRe
 			return err
 		}
 		event = stopResolvedEvent(stop, options.ActorID, request.FactEventID, now, prepared.EventID, sequence)
-		outcome, err := journal.CommitIdempotent(lock, conn, idem, event, func(journal.Event) (journal.IdempotencyMutation, error) {
-			return journal.IdempotencyMutation{EntityID: stop.ID, ResultJSON: `{"replayed":false}`}, nil
+		outcome, err := journal.CommitIdempotent(lock, conn, idem, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
+			stop.Resolution = &StopResolution{ActorID: options.ActorID, FactEventID: request.FactEventID, ResolvedAt: now, EventID: prepared.EventID}
+			payload, err := journal.MarshalCanonicalJSON(map[string]any{"stop": stop, "idempotency_key": options.IdempotencyKey, "replayed": false})
+			return journal.IdempotencyMutation{EntityID: stop.ID, ResultJSON: string(payload)}, err
 		})
 		if err != nil {
 			return err
 		}
-		loaded, err := loadStop(conn, outcome.EntityID)
-		result = StopResolveResult{Stop: loaded, IdempotencyKey: options.IdempotencyKey, Replayed: outcome.Replayed, EventID: outcome.EventID}
-		return err
+		return loadStopResolveResult(outcome, &result)
 	})
 	return result, err
 }
@@ -312,9 +314,7 @@ func ResolveAttention(options StopOptions, request AttentionResolveRequest) (Att
 		if replay, found, err := journal.ReplayIdempotent(conn, idem); err != nil {
 			return err
 		} else if found {
-			loaded, err := loadAttentionByQuery(conn, `SELECT id, semantic_key, subject_type, subject_id, code, status, version, raised_at, resolution_event_id FROM attention_items WHERE id = ?`, replay.EntityID)
-			result = AttentionResolveResult{Attention: loaded, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
-			return err
+			return loadAttentionResolveResult(replay, &result)
 		}
 		attention, err := loadAttentionByQuery(conn, `SELECT id, semantic_key, subject_type, subject_id, code, status, version, raised_at, resolution_event_id FROM attention_items WHERE id = ?`, request.AttentionID)
 		if err != nil {
@@ -338,15 +338,17 @@ func ResolveAttention(options StopOptions, request AttentionResolveRequest) (Att
 			return err
 		}
 		event = attentionResolvedEvent(attention, options.ActorID, prepared.EventID)
-		outcome, err := journal.CommitIdempotent(lock, conn, idem, event, func(journal.Event) (journal.IdempotencyMutation, error) {
-			return journal.IdempotencyMutation{EntityID: attention.ID, ResultJSON: `{"replayed":false}`}, nil
+		outcome, err := journal.CommitIdempotent(lock, conn, idem, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
+			attention.Status = "resolved"
+			attention.Version++
+			attention.ResolutionEventID = &prepared.EventID
+			payload, err := journal.MarshalCanonicalJSON(map[string]any{"attention": attention, "idempotency_key": options.IdempotencyKey, "replayed": false})
+			return journal.IdempotencyMutation{EntityID: attention.ID, ResultJSON: string(payload)}, err
 		})
 		if err != nil {
 			return err
 		}
-		loaded, err := loadAttentionByQuery(conn, `SELECT id, semantic_key, subject_type, subject_id, code, status, version, raised_at, resolution_event_id FROM attention_items WHERE id = ?`, outcome.EntityID)
-		result = AttentionResolveResult{Attention: loaded, IdempotencyKey: options.IdempotencyKey, Replayed: outcome.Replayed, EventID: outcome.EventID}
-		return err
+		return loadAttentionResolveResult(outcome, &result)
 	})
 	return result, err
 }
@@ -423,7 +425,7 @@ func attentionSemanticKey(subject Subject, code string, condition Condition) (st
 		return "", err
 	}
 	sum := sha256.Sum256(payload)
-	return hex.EncodeToString(sum[:]), nil
+	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func stopDigest(operation, projectID, actorID string, request any) (string, error) {
@@ -561,16 +563,27 @@ func loadOpenAttentionByKey(conn *sql.DB, key string) (Attention, bool, error) {
 	return attention, err == nil, err
 }
 
-func loadStopRaiseResult(conn *sql.DB, stopID, key string, replayed bool, eventID string, result *StopRaiseResult) error {
-	stop, err := loadStop(conn, stopID)
-	if err != nil {
-		return err
+func loadStopRaiseResult(outcome journal.IdempotencyOutcome, result *StopRaiseResult) error {
+	if err := json.Unmarshal([]byte(outcome.ResultJSON), result); err != nil {
+		return fmt.Errorf("decode Stop raise snapshot: %w", err)
 	}
-	attention, err := loadAttentionForStop(conn, stopID)
-	if err != nil {
-		return err
+	result.Replayed, result.EventID = outcome.Replayed, outcome.EventID
+	return nil
+}
+
+func loadStopResolveResult(outcome journal.IdempotencyOutcome, result *StopResolveResult) error {
+	if err := json.Unmarshal([]byte(outcome.ResultJSON), result); err != nil {
+		return fmt.Errorf("decode Stop resolution snapshot: %w", err)
 	}
-	*result = StopRaiseResult{Stop: stop, Attention: attention, IdempotencyKey: key, Replayed: replayed, EventID: eventID}
+	result.Replayed, result.EventID = outcome.Replayed, outcome.EventID
+	return nil
+}
+
+func loadAttentionResolveResult(outcome journal.IdempotencyOutcome, result *AttentionResolveResult) error {
+	if err := json.Unmarshal([]byte(outcome.ResultJSON), result); err != nil {
+		return fmt.Errorf("decode Attention resolution snapshot: %w", err)
+	}
+	result.Replayed, result.EventID = outcome.Replayed, outcome.EventID
 	return nil
 }
 

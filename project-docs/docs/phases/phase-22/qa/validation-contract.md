@@ -127,6 +127,13 @@ actually reaches so an earlier unrelated rejection cannot stand in for proof.
 | 056-j | File versus explicit directory entry | Regular file accepted; directory entry rejected. |
 | 056-k | Unique versus duplicate entry name | Unique accepted; duplicate rejected before extraction/publication. |
 
+DEC-217 cadence: routine tests exercise the same limiter with small internal
+limits and check production wiring/large-number arithmetic. The actual
+056-a..d production-size matrices run under `archive_scale` at phase end and
+on archive-limiter changes, using the exact command in qa-plan.md. Routine
+passes alone cannot close these phase assertions. Product ceilings and every
+matrix result above remain unchanged.
+
 Generate large compressed/count fixtures per run, never commit them or
 materialize expanded gigabytes. Stream while counting/discarding; for the
 cumulative case keep individual entries within their own limits. Metadata

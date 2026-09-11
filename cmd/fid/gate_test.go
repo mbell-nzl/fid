@@ -95,23 +95,29 @@ func TestGateRegisterRejectsUnsupportedPolicyWithoutPersistence(t *testing.T) {
 		{"artifact path", func(definition map[string]any) { definition["artifact_paths"] = []string{"../outside"} }, "artifact_paths"},
 		{"cwd", func(definition map[string]any) { definition["cwd"] = "../outside" }, "cwd"},
 	}
-	definitions := make([]any, 0, len(testCases))
-	definitionIDs := make(map[string]string, len(testCases))
-	for _, testCase := range testCases {
-		definition := gateDefinitionsForTest(nil)[0].(map[string]any)
-		definitionID := "gate-unsupported-" + strings.ReplaceAll(testCase.name, " ", "-")
-		definition["definition_id"] = definitionID
-		testCase.apply(definition)
-		definitions = append(definitions, definition)
-		definitionIDs[testCase.name] = definitionID
-	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			workspace := finalizedGateWorkspaceWithDefinitions(t, definitions)
+			workspace := finalizedGateWorkspace(t, nil)
+			// Stage valid current facts first. This test exercises registration's
+			// defensive rejection of a corrupted stored policy, not staging.
+			definition := gateDefinitionsForTest(nil)[0].(map[string]any)
+			testCase.apply(definition)
+			raw, err := json.Marshal(definition)
+			if err != nil {
+				t.Fatal(err)
+			}
+			conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, updateErr := conn.Exec(`UPDATE activation_gate_definitions SET definition_json = ? WHERE definition_id = 'gate-unit'`, string(raw))
+			closeErr := conn.Close()
+			if updateErr != nil || closeErr != nil {
+				t.Fatalf("corrupt policy fixture: update=%v close=%v", updateErr, closeErr)
+			}
 			inputPath := filepath.Join(workspace, "gate-register.json")
 			request := gateRegisterInput(t, workspace)
-			request["definition_id"] = definitionIDs[testCase.name]
 			writeActivationInput(t, inputPath, request)
 			result := executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "register", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", "gate-register-policy-"+strings.ReplaceAll(testCase.name, " ", "-"))
 			if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"executor-policy-unsupported"`) || !strings.Contains(result.stderr, `"fields":["`+testCase.field+`"]`) {

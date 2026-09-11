@@ -17,7 +17,7 @@ func applyEventEffects(tx *sql.Tx, input ProjectionInput) error {
 		}
 	}
 
-	return nil
+	return validateCurrentAppliedResults(tx, input.Event)
 }
 func applyEffect(tx *sql.Tx, input ProjectionInput, effect Effect) error {
 	table, err := validatedIdentifier(effect.Table)

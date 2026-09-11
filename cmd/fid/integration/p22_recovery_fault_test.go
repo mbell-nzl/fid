@@ -196,6 +196,11 @@ func p22FaultProjection(t *testing.T, root string) map[string][]string {
 	t.Helper()
 	conn := p22FaultDB(t, root)
 	defer conn.Close()
+	return p22FaultProjectionFromDB(t, conn)
+}
+
+func p22FaultProjectionFromDB(t *testing.T, conn *sql.DB) map[string][]string {
+	t.Helper()
 	names, err := conn.Query(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name`)
 	p22FaultOK(t, err)
 	var tables []string

@@ -102,7 +102,7 @@ func p22AssertActivationStopFacts(t *testing.T, workspace string, activation wor
 	conn := p22FaultDB(t, workspace)
 	defer conn.Close()
 	var count int
-	err := conn.QueryRow(`SELECT COUNT(*) FROM stops s JOIN attention_stop_links l ON l.stop_id=s.id JOIN attention_items a ON a.id=l.attention_id WHERE s.subject_type='activation' AND s.subject_id=? AND s.code='activation-incomplete' AND s.actor_id='fq7-bootstrap' AND s.created_event_id=? AND a.subject_type=s.subject_type AND a.subject_id=s.subject_id AND a.code=s.code AND a.status='open' AND a.version=1 AND a.resolution_event_id IS NULL AND s.resolver_capability='stop.resolve'`, activation.ID, activation.Recovery.SelectedEventID).Scan(&count)
+	err := conn.QueryRow(`SELECT COUNT(*) FROM stops s JOIN attention_stop_links l ON l.stop_id=s.id JOIN attention_items a ON a.id=l.attention_id WHERE s.subject_type='activation' AND s.subject_id=? AND s.code='activation-incomplete' AND s.actor_id='fid-bootstrap' AND s.created_event_id=? AND a.subject_type=s.subject_type AND a.subject_id=s.subject_id AND a.code=s.code AND a.status='open' AND a.version=1 AND a.resolution_event_id IS NULL AND s.resolver_capability='stop.resolve'`, activation.ID, activation.Recovery.SelectedEventID).Scan(&count)
 	p22FaultOK(t, err)
 	if count != 1 {
 		t.Fatal("recovery missing exact Stop/Attention/link transaction")
@@ -118,7 +118,7 @@ func p22AssertActivationStopFacts(t *testing.T, workspace string, activation wor
 	if resolutions != 1 {
 		t.Fatal("completion missing unique Stop disposition")
 	}
-	p22FaultOK(t, conn.QueryRow(`SELECT COUNT(*) FROM stop_resolutions r JOIN stops s ON s.id=r.stop_id WHERE s.subject_id=? AND r.actor_id='fq7-bootstrap' AND r.fact_event_id=? AND r.created_event_id=? AND r.resolved_at<>''`, activation.ID, *activation.Recovery.CompletedEventID, *activation.Recovery.CompletedEventID).Scan(&count))
+	p22FaultOK(t, conn.QueryRow(`SELECT COUNT(*) FROM stop_resolutions r JOIN stops s ON s.id=r.stop_id WHERE s.subject_id=? AND r.actor_id='fid-bootstrap' AND r.fact_event_id=? AND r.created_event_id=? AND r.resolved_at<>''`, activation.ID, *activation.Recovery.CompletedEventID, *activation.Recovery.CompletedEventID).Scan(&count))
 	if count != 1 {
 		t.Fatal("completion lost disposition fact/Event provenance")
 	}

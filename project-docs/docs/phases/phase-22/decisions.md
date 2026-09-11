@@ -1292,6 +1292,11 @@
   Condition/Stop/Attention fields, and internal/workflow/recovery.go only to
   serialize Claim scope/mode from the existing stored Claim and successor
   construction. Matching tests are already within the recovery scope.
+- **Consequential serialization:** The same recovery.go allocation includes
+  initializing the copied adopted_paths as an empty array rather than nil.
+  The accepted required-array shape is unchanged; no adopted path, authority,
+  or recovery policy changes. The original producer is the same task-5 commit
+  cited below. This records the contributor's consequential change explicitly.
 - **Provenance:** Stop serialization was introduced by
   ac827959f8359473cbd6546ac6bea1ff1fd20751 (phase22/task2).
   RecoveryClaim was introduced by b7dce8e747a3f2d720002faee3db7f95b3cb4019
@@ -1303,6 +1308,195 @@
   twelve-command gate. The shared current Event validator must enforce the
   accepted closed values; admitting omitted required fields is not the repair.
   Independent final QA judges the complete FQ-01 proof.
+
+### DEC-210: Complete accepted Stop mutation response snapshots
+
+- **Date:** 2026-09-09.
+- **Status:** ACCEPTED by the root delegate under the Human's Phase22
+  completion authority; minimum-scope causal allocation under DEC-175.
+- **Existing requirement:** public-interface.md sections1–3 require the complete
+  typed Stop/Attention result, required arrays, and same-key replay of the
+  original result with only replay metadata changed. schema.md section5 binds
+  closed JSON values and entity identities consistently across Effects/results.
+- **Evidence:** Root's genuine current-family producer corpus fails stop.resolve
+  under the complete result validator (FAIL, exit_code:1, package3.718s).
+  TestRaiseStopUsesOneOpenAttentionAndRejectsRoutineReadsWithoutEffects reports
+  Attention stop_ids is not an array (FAIL, exit_code:1, package2.895s).
+  Source inspection confirms both resolution builders persist only replayed,
+  and raise serializes Attention before adding its new Stop link.
+- **Allocation:** The active Task1 FQ-01 continuation may additionally correct
+  internal/workflow/stop.go's three mutation snapshot builders and replay return
+  paths to store and return the complete original accepted result. Populate
+  the sorted current Stop IDs including the newly linked Stop; preserve the
+  existing Attention raised_at when reusing it. Use the captured resolution
+  Actor/time/Event and existing version transition in resolution snapshots.
+  Matching behavioral tests remain in the existing recovery scope.
+- **Provenance:** The builders were introduced by
+  ac827959f8359473cbd6546ac6bea1ff1fd20751 (phase22/task2); DEC-197 already
+  allocated accepted resolution replay support. Their original reports remain
+  unchanged. Task1 records this consequential execution transfer.
+- **Limits/evidence:** No new field, Event, DDL, response contract, authority,
+  policy, dependency, gate/control, VAL or threshold. Retain qualifying Stop
+  predicates and first-delivery/replay Event identity; later linked facts or
+  dispositions must not replace an earlier cached response. Preserve all red
+  receipts, prove original-result replay after later mutations and run the
+  unchanged Task1 gate. Fresh independent final QA rechecks affected behavior.
+
+### DEC-211: Bind activation transition response time to its Effect
+
+- **Date:** 2026-09-09.
+- **Status:** ACCEPTED by the root delegate under the Human's Phase22
+  completion authority; minimum-scope causal allocation under DEC-175.
+- **Existing requirement/evidence:** schema.md section5 binds times across
+  Effects/results. The direct accepted activation agreement fixture fails:
+  current Event activation.committed: stored result activation.updated_at
+  disagrees with recorded facts (FAIL, exit_code:1, package2.363s).
+- **Cause/allocation:** transitionActivation builds the SQL Effect timestamp,
+  then independently calls time.Now for the cached response. Task1 may edit
+  internal/workflow/activation.go only to copy the primary activation Effect's
+  captured updated_at into the response. Missing captured time is an error,
+  never a substitute clock read. Matching tests remain in Task1 repair scope.
+- **Provenance:** ad9098fac66f2b530a566d87df087fd72fbb584d,
+  phase21/task4. Original ownership/report remains unchanged.
+- **Limits/evidence:** No lifecycle, clock policy, Event/wire field, DDL,
+  authority, dependency, control, gate, VAL or threshold change. Preserve red
+  receipts, verify exact current result facts and unchanged Task1 commands;
+  independent final QA verifies the affected activation family.
+
+### DEC-212: Emit the accepted Attention digest spelling
+
+- **Date:** 2026-09-09.
+- **Status:** ACCEPTED by the root delegate under the Human's Phase22
+  completion authority; minimum-scope causal allocation under DEC-175.
+- **Existing requirement:** public-interface.md section2 types semantic_key as
+  digest and retains Phase21's `sha256:` plus64 lowercase hexadecimal grammar.
+  attentionSemanticKey emitted the bare hexadecimal hash. This is omitted
+  serialization, not authority to admit a second digest domain in the validator.
+- **Allocation:** Task1 FQ-01 attempt2 may change only attentionSemanticKey's
+  return spelling in internal/workflow/stop.go to prepend `sha256:`. Hash input,
+  deduplication predicate, Stop/Attention identity and lifecycle are unchanged.
+  The same helper serves explicit Stops, budget boundaries and activation.
+- **Provenance/evidence:** ac827959f8359473cbd6546ac6bea1ff1fd20751,
+  phase22/task2. Root's existing genuine deduplicated-Attention test now asserts
+  the accepted digest domain and terminates FAIL, exit_code:1. Task2's historical
+  report remains unchanged; Task1 records transferred execution and retained reds.
+- **Limits:** No new schema, DDL, wire field, Event family, policy, capability,
+  dependency, gate, control, VAL or threshold. Current fixture convergence is
+  subject-preserving; retained Phase21 grammar is unchanged. Recheck the shared
+  helper's producers and immutable replay, then all unchanged Task1 commands.
+
+### DEC-213: Canonical order for prepared activation resource outputs
+
+- **Date/status:** 2026-09-09; ACCEPTED by the root delegate under the Human's
+  Phase22 completion authority and DEC-175 minimum causal allocation.
+- **Requirement/evidence:** public-interface.md section1 sorts output resources
+  by component. Valid prepare inputs need the five distinct resources, but the
+  producer preserved input order in its cached response. Existing actual CLI
+  activation tests fail with `activation: array must be sorted and unique`
+  (combined focused command terminated exit_code:1).
+- **Allocation:** Active Task1 FQ-01 attempt2 may additionally sort the freshly
+  constructed slice in internal/workflow/activation.go preparedResources by
+  Component. No input rejection, identity, lifecycle, authority, resource
+  observation, or request-digest behavior changes. Record task10 provenance
+  for this resource constructor; original task/report remains complete.
+- **Limits/evidence:** No new contract, DDL, wire field, dependency, control,
+  gate or VAL. Keep the valid unordered-input fixtures and all their behavioral
+  assertions; rerun the failed exact command and unchanged Task1 gate.
+
+### DEC-214: Attribute automatic activation Stop facts to their service Actor
+
+- **Date/status:** 2026-09-09; ACCEPTED by the root delegate under the Human's
+  Phase22 completion authority and DEC-175 minimum causal allocation.
+- **Requirement/evidence:** Stop and StopResolution actor_id are required IDs.
+  Activation recovery's Event Actor is the existing fid-bootstrap service;
+  optional BootstrapActor is caller attribution text, which can be empty.
+  The real optional-actor activation recovery corpus fails after non-JSON ID
+  validation (FAIL, exit_code:1, package24.297s). The two automatic Stop builders
+  incorrectly received optional attribution instead of the Event's service ID.
+- **Allocation:** Active Task1 FQ-01 attempt2 may edit exactly the two calls in
+  internal/workflow/activation_recovery.go that supply ActorID to automatic
+  Stop creation/disposition, passing the existing `fid-bootstrap` Actor. Keep
+  request identity and activation_recoveries.actor_attribution unchanged.
+- **Provenance:** 33f85bbd6abffd0425a6a446780e8b0a37ce457a,
+  phase22/task10. Its historical report stays complete and unchanged.
+- **Limits/evidence:** No new Actor, capability, trust, authorization, schema,
+  wire field, Event family, gate, control, VAL, dependency or policy. Preserve
+  the failed optional-attribution producer receipt, recheck real recovery and
+  complete disposition, then all unchanged Task1 commands.
+
+
+### DEC-215: Complete budget-boundary Attention snapshots
+
+- **Date/status:** 2026-09-09; ACCEPTED by the root delegate under the Human's
+  completion authority and DEC-175 minimum causal allocation.
+- **Requirement/evidence:** Current Attention responses contain sorted linked
+  stop_ids and retain the original raised_at. The unchanged full race gate
+  failed TestObserveRunBudgetAppendsExternalSampleAndBoundaryEffectsExactlyOnce
+  with `stop_ids: []ID requires a bounded array` (terminated exit_code:1);
+  the ordinary suite independently reproduced the same production failure.
+- **Allocation:** Task1 FQ-01 attempt2 may edit internal/workflow/budget.go only
+  in BudgetStopEffects to include the newly created Stop in returned Attention
+  snapshots and preserve existing Attention raised_at. The same accepted fix
+  already applies to explicit Stop creation under DEC-210. Matching budget
+  response and replay assertions remain in current test scope.
+- **Provenance:** f28ebc7766fc149c72b07a80e3e1bb90f614d3ca,
+  phase22/task6. Original task/report remains complete and unchanged.
+- **Limits:** No budget policy, condition, identity, deduplication predicate,
+  schema, Event, wire field, capability, dependency, VAL, gate or control
+  change. Preserve failed receipts and run the unchanged Task1 commands.
+
+### DEC-216: Accept typed snapshots for current Phase22 idempotency storage
+
+- **Date/status:** 2026-09-12; ACCEPTED directly by the Human: “I approve the
+  recommended typed-snapshot option.”
+- **Decision:** Accept the recommended option in
+  qa/storage-contract-clarification.md. For the finite22 current Phase22 Event
+  families, idempotency_results.result_json stores the complete closed
+  operation snapshot with original idempotency_key and replayed:false,
+  bound to the containing Event and Effects. Explicit variants cover pending
+  Attempt plus null Receipt, terminal Receipt for every accepted outcome,
+  committed denial with original facts/EventRef, and ordinary mutation bodies.
+- **Public behavior:** Accepted SuccessEnvelope/FailureEnvelope delivery,
+  exit codes, original-result replay, no-respawn fencing and historical budget
+  facts remain unchanged. A stored snapshot does not assert execution success.
+- **Allocation:** Incorporate this explicit current-family specialization into
+  Phase22 schema.md section5 and public-interface.md replay/denial storage
+  wording, then verify the existing Task1 FQ-01 candidate against it. No
+  dual-format reader, journal rewrite, DDL change, dependency, gate change or
+  extension of the pinned Phase21 archive grammar is authorized.
+- **State:** Approval removes the storage-choice hold. Spec incorporation and
+  unchanged deterministic gates remain unfinished. The Human requested an
+  explanation of the runtime problem before phase implementation resumes;
+  recording this acceptance does not claim technical completion.
+
+### DEC-217: Separate routine archive checks from production-scale qualification
+
+- **Date/status:** 2026-09-12; ACCEPTED directly by the Human: “Ok, I accept
+  your recommendations. You may proceed now.” This accepts the preceding
+  recommendation to retain product ceilings, use small routine limiter tests,
+  and run actual large boundaries at phase end and on archive-handling changes.
+- **Decision:** Keep 64 MiB/non-Artifact, 1 GiB/Artifact, 8 GiB cumulative and
+  1000000-entry product ceilings unchanged. Move the existing full-size byte
+  and count matrices, with every assertion intact, behind `archive_scale`.
+  Routine tests use small explicit internal limits through the same scanner,
+  directory counter and streaming limiter; retain production-limit wiring,
+  large-number arithmetic, per-entry/cumulative interaction and first-excess
+  coverage. No CLI/config/environment override of product limits is added.
+- **Required phase/affected-change command:** From /home/mark/projects/fid,
+  `go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1`.
+  Run locally, serially with other heavy gates, at final QA and for archive
+  limiter changes. The originating task's twelve command strings remain intact;
+  this affected-change command is additional for the present repair. VAL-056
+  real production boundaries remain mandatory for phase completion.
+- **Allocation:** Active Task1 FQ-01 recovery may make the private testability
+  seam in internal/export/archive_scan.go and archive_directory.go; move the
+  three existing matrices into archive_scale_test.go; add matching small tests
+  and shared test helpers. Update QA contract/plan, quality-plan cadence and
+  the Task1 continuation/report. Existing failed receipts remain immutable.
+- **Limits:** No production threshold, failure classification, supported size,
+  timeout, dependency, import/publication guarantee or other validation
+  assertion changes. No large test is deleted or replaced as phase evidence.
+  This cadence change does not resolve the separate CLI runtime concern.
 
 ## Planning Spec Impact
 

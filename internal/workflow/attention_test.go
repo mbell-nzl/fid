@@ -263,6 +263,14 @@ func sharedActivationDispositionFixture(t *testing.T) (StopOptions, Attention, s
 			return err
 		}
 		fixture := stopFixtureIdempotency(stopRaisedEventForDomain(stop, attention, false, prepared.EventID))
+		snapshot := attention
+		snapshot.StopIDs = append(append([]string{}, attention.StopIDs...), stop.ID)
+		sort.Strings(snapshot.StopIDs)
+		raw, err := journal.MarshalCanonicalJSON(map[string]any{"stop": stop, "attention": snapshot, "idempotency_key": fixture.Idempotency.Key, "replayed": false})
+		if err != nil {
+			return err
+		}
+		fixture.Effects[len(fixture.Effects)-1].Values["result_json"] = string(raw)
 		fixture.EventID = prepared.EventID
 		fixture.Effects[len(fixture.Effects)-1].Values["result_event_id"] = prepared.EventID
 		_, err = journal.CommitEvent(lock, conn, fixture)

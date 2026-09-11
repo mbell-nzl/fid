@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"sort"
 )
 
 // Resolve the immutable bindings, not contemporary authorization policy. Replay
@@ -24,6 +25,7 @@ func sortedMapKeysString(values map[string]string) []string {
 	for name := range values {
 		result = append(result, name)
 	}
+	sort.Strings(result)
 	return result
 }
 func currentInserted(event Event, table string) map[string]any {
@@ -68,7 +70,31 @@ func validateCurrentReferences(tx *sql.Tx, event Event) error {
 		}
 	}
 	for _, effect := range event.Effects {
+		if effect.Table == "run_observations" && effect.Values["kind"] == "liveness" {
+			runtime, err := currentReference(tx, "run_runtime", map[string]any{"run_id": effect.Values["run_id"]})
+			if err != nil {
+				return err
+			}
+			value, err := decodeCurrentJSON(effect.Values["observation_json"].(string))
+			if err != nil {
+				return err
+			}
+			observation, ok := value.(map[string]any)
+			if !ok {
+				return fmt.Errorf("current observation: invalid payload")
+			}
+			liveness, ok := observation["liveness"].(map[string]any)
+			if !ok {
+				return fmt.Errorf("current observation: invalid liveness payload")
+			}
+			if liveness["executor_id"] != runtime["executor_id"] {
+				return fmt.Errorf("current observation: executor binding mismatch")
+			}
+		}
 		if effect.Table == "budget_samples" {
+			if err := validateCurrentBudgetSampleChain(tx, effect); err != nil {
+				return err
+			}
 			run, err := currentReference(tx, "runs", map[string]any{"id": effect.Values["run_id"]})
 			if err != nil {
 				return err
@@ -160,6 +186,95 @@ func validateCurrentRecoveryReferences(tx *sql.Tx, event Event) error {
 	}
 	if authority["mode"] != mode {
 		return fmt.Errorf("current recovery: authority mode mismatch")
+	}
+	if err := validateCurrentRecoverySnapshot(event, recovery, successor, claim); err != nil {
+		return err
+	}
+	if err := validateCurrentRecoveryEffects(tx, event, prior, successor); err != nil {
+		return err
+	}
+	return nil
+}
+
+// A recovery records the state it actually fenced.  Terminal predecessors and
+// already disposed Claims are legitimate omissions; active rows must carry the
+// matching captured mutation in the same Event.
+func validateCurrentRecoveryEffects(tx *sql.Tx, event Event, prior, successor map[string]any) error {
+	updates := map[string]int{}
+	for _, effect := range event.Effects {
+		updates[currentEffectKey(effect.Table, effect.Op)]++
+	}
+	activeRun := prior["status"] == "active"
+	if (updates["runs/update"] == 1) != activeRun || (updates["run_runtime/update"] == 1) != activeRun {
+		return fmt.Errorf("current recovery: predecessor terminalization does not match stored Run state")
+	}
+	claim, err := currentReference(tx, "claims", map[string]any{"id": prior["claim_id"]})
+	if err != nil {
+		return err
+	}
+	var previousScope, nextScope any
+	successorClaim := currentInserted(event, "claims")
+	if json.Unmarshal([]byte(claim["scope_json"].(string)), &previousScope) != nil || json.Unmarshal([]byte(successorClaim["scope_json"].(string)), &nextScope) != nil || !currentValuesEqual(previousScope, nextScope) || successorClaim["mode"] != claim["mode"] {
+		return fmt.Errorf("current recovery: successor Claim changes immutable scope")
+	}
+	if (updates["claims/update"] == 1) != (claim["status"] == "active") {
+		return fmt.Errorf("current recovery: Claim disposal does not match stored Claim state")
+	}
+	var expected int
+	if err := tx.QueryRow(`SELECT COUNT(*) FROM run_budget_bindings WHERE run_id = ?`, prior["id"]).Scan(&expected); err != nil {
+		return err
+	}
+	if updates["run_budget_bindings/insert"] != expected {
+		return fmt.Errorf("current recovery: successor budget bindings are incomplete")
+	}
+	for _, effect := range event.Effects {
+		if effect.Table != "run_budget_bindings" || effect.Op != "insert" {
+			continue
+		}
+		var recorded string
+		if err := tx.QueryRow(`SELECT budget_json FROM run_budget_bindings WHERE run_id = ? AND name = ?`, prior["id"], effect.PK["name"]).Scan(&recorded); err != nil {
+			return err
+		}
+		var previous, inherited any
+		if json.Unmarshal([]byte(recorded), &previous) != nil || json.Unmarshal([]byte(effect.Values["budget_json"].(string)), &inherited) != nil || !currentValuesEqual(previous, inherited) || effect.PK["run_id"] != successor["id"] {
+			return fmt.Errorf("current recovery: successor budget binding does not match predecessor")
+		}
+	}
+	return nil
+}
+
+func validateCurrentRecoverySnapshot(event Event, recovery, successor, claim map[string]any) error {
+	value, err := decodeCurrentJSON(recovery["reconciliation_json"].(string))
+	if err != nil {
+		return err
+	}
+	repository := value.(map[string]any)["repository"].(map[string]any)
+	start, err := decodeCurrentJSON(successor["start_repository_json"].(string))
+	if err != nil {
+		return err
+	}
+	if !currentValuesEqual(start, repository) || claim["worktree_id"] != repository["worktree_id"] {
+		return fmt.Errorf("current recovery: repository/Claim worktree mismatch")
+	}
+	if successor["actor_id"] != event.ActorV2.ActorID || !currentValuesEqual(successor["claim_version"], claim["version"]) || successor["started_at"] != claim["acquired_at"] {
+		return fmt.Errorf("current recovery: successor Actor/version/time mismatch")
+	}
+	for _, effect := range event.Effects {
+		if effect.Op != "update" {
+			continue
+		}
+		if effect.Table == "runs" {
+			terminal, err := decodeCurrentJSON(effect.Values["terminal_repository_json"].(string))
+			if err != nil {
+				return err
+			}
+			if !currentValuesEqual(terminal, repository) || effect.Values["ended_at"] != successor["started_at"] {
+				return fmt.Errorf("current recovery: predecessor terminal snapshot mismatch")
+			}
+		}
+		if effect.Table == "claims" && effect.Values["released_at"] != successor["started_at"] {
+			return fmt.Errorf("current recovery: Claim disposal time mismatch")
+		}
 	}
 	return nil
 }

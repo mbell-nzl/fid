@@ -62,6 +62,10 @@ func p22ValidateActualJournal(t *testing.T, source string, seen map[string]bool)
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	p22FaultOK(t, err)
 	defer conn.Close()
+	// Observe committed state through an independent connection throughout this
+	// workspace's corpus, without reopening and reparsing its schema per case.
+	observer := p22FaultDB(t, workspace)
+	defer observer.Close()
 	dir := t.TempDir()
 	path := filepath.Join(dir, "2026-09-09.jsonl")
 	var prefix []byte
@@ -75,7 +79,7 @@ func p22ValidateActualJournal(t *testing.T, source string, seen map[string]bool)
 			p22FaultOK(t, json.Unmarshal(line, &event))
 			if strings.Contains(" "+p22CurrentFamilies+" ", " "+event.EventType+" ") {
 				seen[event.EventType] = true
-				t.Run(event.EventType+"/"+event.EventID, func(t *testing.T) { p22RejectEventMutations(t, conn, workspace, path, prefix, event) })
+				t.Run(event.EventType+"/"+event.EventID, func(t *testing.T) { p22RejectEventMutations(t, conn, observer, workspace, path, prefix, event) })
 			}
 			hash, err := journal.HashEvent(event)
 			p22FaultOK(t, err)
@@ -99,10 +103,12 @@ func p22ValidateActualJournal(t *testing.T, source string, seen map[string]bool)
 	}
 }
 
-func p22RejectEventMutations(t *testing.T, conn *sql.DB, workspace, path string, prefix []byte, event journal.Event) {
+func p22RejectEventMutations(t *testing.T, conn, observer *sql.DB, workspace, path string, prefix []byte, event journal.Event) {
 	t.Helper()
 	p22FaultOK(t, journal.DryRunProjectEvent(conn, event))
-	before := p22FaultProjection(t, workspace)
+	p22RejectNestedCurrentValues(t, conn, event)
+	p22RejectMissingConditionalFacts(t, conn, event)
+	before := p22FaultProjectionFromDB(t, observer)
 	mutations := map[string]func(*journal.Event){
 		"unrelated-family":      func(e *journal.Event) { e.EventType = "issue.updated"; e.Aggregate.Type = "issue" },
 		"missing-domain-effect": func(e *journal.Event) { e.Effects = e.Effects[1:] },
@@ -202,7 +208,7 @@ func p22RejectEventMutations(t *testing.T, conn *sql.DB, workspace, path string,
 				if err == nil {
 					t.Fatalf("%s accepted %s", mode, name)
 				}
-				if !reflect.DeepEqual(before, p22FaultProjection(t, workspace)) {
+				if !reflect.DeepEqual(before, p22FaultProjectionFromDB(t, observer)) {
 					t.Fatal("invalid Event changed any table")
 				}
 			})

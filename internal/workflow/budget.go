@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"sort"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -260,7 +261,11 @@ func BudgetStopEffects(conn *sql.DB, subject Subject, envelopeID, actorID string
 			item = Attention{ID: item.ID, SemanticKey: key, Subject: subject, Code: block.Code, Status: "open", Version: 1}
 		}
 		stop := Stop{ID: stopID, Subject: subject, Code: block.Code, BlockedActions: request.BlockedActions, Details: details, ResolutionCondition: condition, ResolverCapability: request.ResolverCapability, ActorID: actorID, RaisedAt: raisedAt}
-		item.RaisedAt = raisedAt
+		if !found {
+			item.RaisedAt = raisedAt
+		}
+		item.StopIDs = append(item.StopIDs, stopID)
+		sort.Strings(item.StopIDs)
 		stopEffects := stopRaisedEventForDomain(stop, item, !found, "<event-id>").Effects
 		effects = append(effects, stopEffects...)
 		stops, attention = append(stops, stop), append(attention, item)

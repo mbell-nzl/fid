@@ -29,6 +29,20 @@ func TestArchiveRejectsIntegrityValidSemanticCorruptions(t *testing.T) {
 		mutate                func(*journal.Event)
 	}{
 		{"unknown Event", "effect-invalid", "run.recovered", func(e *journal.Event) { e.EventType = "run.invented" }},
+		{"incomplete nested recovery", "reference-invalid", "run.recovered", func(e *journal.Event) {
+			for i := range e.Effects {
+				if e.Effects[i].Table == "run_recoveries" {
+					e.Effects[i].Values["reconciliation_json"] = `{}`
+				}
+			}
+		}},
+		{"incomplete cached recovery", "reference-invalid", "run.recovered", func(e *journal.Event) {
+			for i := range e.Effects {
+				if e.Effects[i].Table == "idempotency_results" {
+					e.Effects[i].Values["result_json"] = `{"replayed":false}`
+				}
+			}
+		}},
 		{"unknown table", "effect-invalid", "run.recovered", func(e *journal.Event) { e.Effects[0].Table = "untrusted_table" }},
 		{"unknown column", "effect-invalid", "run.recovered", func(e *journal.Event) { e.Effects[0].Values["untrusted_column"] = 1 }},
 		{"wrong scalar type", "effect-invalid", "run.recovered", func(e *journal.Event) { e.Effects[0].Values["status"] = 1 }},

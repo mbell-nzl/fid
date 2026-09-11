@@ -640,7 +640,15 @@ func transitionActivation(options ActivationTransitionOptions, activationID, ope
 		updated.Status = status
 		updated.Version = activation.Version + 1
 		updated.PointOfNoReturn = status == "committed" || activation.PointOfNoReturn
-		updated.UpdatedAt = time.Now().UTC().Format(time.RFC3339Nano)
+		updated.UpdatedAt = ""
+		for _, effect := range effects {
+			if effect.Table == "kit_activations" && effect.PK["id"] == activation.ID {
+				updated.UpdatedAt, _ = effect.Values["updated_at"].(string)
+			}
+		}
+		if updated.UpdatedAt == "" {
+			return fmt.Errorf("activation transition lacks captured update time")
+		}
 		resultJSON, err := activationResultJSON(updated, options.IdempotencyKey)
 		if err != nil {
 			return err
@@ -751,6 +759,7 @@ func preparedResources(inputs []ActivationResourceInput) []ActivationResource {
 	for index, input := range inputs {
 		resources[index] = ActivationResource{Component: input.Component, Version: 1, OldIdentity: input.OldIdentity, NewIdentity: input.NewIdentity, State: "pending"}
 	}
+	sort.Slice(resources, func(i, j int) bool { return resources[i].Component < resources[j].Component })
 	return resources
 }
 

@@ -25,12 +25,32 @@ type archiveScan struct {
 	ExpandedBytes int64
 	EntryCount    int
 }
-type archiveByteBudget struct{ used int64 }
+type archiveLimits struct {
+	nonArtifactBytes int64
+	artifactBytes    int64
+	expandedBytes    int64
+	entries          int
+}
 
-func newArchiveByteBudget() *archiveByteBudget { return &archiveByteBudget{} }
+func productionArchiveLimits() archiveLimits {
+	return archiveLimits{maxArchiveNonArtifactBytes, maxArchiveArtifactBytes, maxArchiveExpandedBytes, maxArchiveEntries}
+}
+
+type archiveByteBudget struct {
+	used   int64
+	limits archiveLimits
+}
+
+func newArchiveByteBudget() *archiveByteBudget {
+	return &archiveByteBudget{limits: productionArchiveLimits()}
+}
 
 func inspectArchiveDirectory(files []*zip.File) ([]archiveMember, []Check) {
-	if len(files) > maxArchiveEntries {
+	return inspectArchiveDirectoryWithLimit(files, maxArchiveEntries)
+}
+
+func inspectArchiveDirectoryWithLimit(files []*zip.File, limit int) ([]archiveMember, []Check) {
+	if len(files) > limit {
 		return nil, []Check{check("resource-limit", nil, "archive entry count exceeds limit")}
 	}
 	seen := map[string]bool{}
@@ -52,11 +72,15 @@ func inspectArchiveDirectory(files []*zip.File) ([]archiveMember, []Check) {
 }
 
 func scanArchive(reader *zip.Reader, consume func(archiveMember, io.Reader) error) (archiveScan, []Check) {
-	members, checks := inspectArchiveDirectory(reader.File)
+	return scanArchiveWithLimits(reader, productionArchiveLimits(), consume)
+}
+
+func scanArchiveWithLimits(reader *zip.Reader, limits archiveLimits, consume func(archiveMember, io.Reader) error) (archiveScan, []Check) {
+	members, checks := inspectArchiveDirectoryWithLimit(reader.File, limits.entries)
 	if len(checks) != 0 {
 		return archiveScan{}, checks
 	}
-	budget := newArchiveByteBudget()
+	budget := &archiveByteBudget{limits: limits}
 	scan := archiveScan{EntryCount: len(members)}
 	for _, member := range members {
 		n, err := streamArchiveMember(member, budget, func(input io.Reader) error { return consume(member, input) })
@@ -79,9 +103,9 @@ func streamArchiveMember(member archiveMember, budget *archiveByteBudget, consum
 		return 0, err
 	}
 	defer func() { _ = input.Close() }()
-	limit := maxArchiveNonArtifactBytes
+	limit := budget.limits.nonArtifactBytes
 	if member.artifact {
-		limit = maxArchiveArtifactBytes
+		limit = budget.limits.artifactBytes
 	}
 	reader := &archiveLimitReader{Reader: input, limit: limit, budget: budget}
 	if err := consume(reader); err != nil {
@@ -100,7 +124,7 @@ type archiveLimitReader struct {
 
 func (r *archiveLimitReader) Read(p []byte) (int, error) {
 	remaining := r.limit - r.n
-	total := maxArchiveExpandedBytes - r.budget.used
+	total := r.budget.limits.expandedBytes - r.budget.used
 	if total < remaining {
 		remaining = total
 	}
@@ -113,7 +137,7 @@ func (r *archiveLimitReader) Read(p []byte) (int, error) {
 	n, err := r.Reader.Read(p)
 	r.n += int64(n)
 	r.budget.used += int64(n)
-	if r.n > r.limit || r.budget.used > maxArchiveExpandedBytes {
+	if r.n > r.limit || r.budget.used > r.budget.limits.expandedBytes {
 		return n, errArchiveResourceLimit
 	}
 	return n, err

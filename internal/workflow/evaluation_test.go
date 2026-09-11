@@ -33,9 +33,10 @@ func TestTerminalSuccessEvaluationIncludesEnvelopeStop(t *testing.T) {
 	event.Effects[0].Values["subject_type"] = "envelope"
 	event.Effects[0].Values["subject_id"] = "ENV-recovery"
 	event.Effects[0].Values["blocked_actions_json"] = `["envelope.complete","issue.transition-terminal-success"]`
-	event.Effects[0].Values["resolution_condition_json"] = `{"type":"work-ended","subject":{"type":"envelope","id":"ENV-recovery"}}`
+	event.Effects[0].Values["resolution_condition_json"] = `{"type":"work-ended","subject":{"type":"envelope","id":"ENV-recovery"},"budget_name":null,"capability_id":null}`
 	event.Effects[1].Values["subject_type"] = "envelope"
 	event.Effects[1].Values["subject_id"] = "ENV-recovery"
+	event = refreshStopFixtureResult(event)
 	if err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "test envelope Stop"}, func(lock *journal.WriteLock) error {
 		prepared, err := journal.PrepareEvent(lock, event)
 		if err != nil {

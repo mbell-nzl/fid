@@ -213,6 +213,19 @@ go test -bench . -benchmem ./...
 go build -o /tmp/fid ./cmd/fid
 ```
 
+Under Phase22 DEC-217, the full-size archive byte/count matrices are an explicit
+phase-end and archive-limiter-change gate, run locally on the qualification
+machine rather than on every routine task/PR:
+
+```bash
+go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1
+```
+
+The ordinary suite retains small tests through the same limiter, production
+ceiling wiring and large-number arithmetic checks. Actual production-scale
+boundary evidence remains required for phase qualification; all product
+ceilings are unchanged. Run heavy gates serially.
+
 Task scope may justify a narrower gate only when the repository instructions or
 accepted task specification says so. Failing tests are fixed by correcting the
 product or accepted contract, never by weakening evidence. Runtime and test
