@@ -5,11 +5,13 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 0
+- Recovery attempts: 2
 - Next action: None.
 - Human attention required: no
 
 ## Summary of what was implemented
+
+- Final-QA FQ-01 attempt2 completes closed current Event values, exact typed snapshots and conditional transaction validation under DEC-209 through DEC-217; detailed evidence and preserved history follow below.
 
 - Replaced the accepted development-baseline CHECK values in migration 0013 and added the exact schema-15 recovery up/down migrations.
 - Added fresh-init, full down/up, constraint, live-apply, and replay coverage for recovery tables and rejected Effects without enabling recovery domain operations.
@@ -56,6 +58,28 @@
 - `/tmp/fid-phase22-task1 --project /tmp/fid-phase22-task1.Sw07ej --json rebuild` - GREEN - `{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"project.rebuild","result":{"events_replayed":1,"files_replayed":1,"schema_version":15,"upgraded_events":0}}` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
+
+### FQ-01 attempt2 closing receipts — 2026-09-12
+
+Working directory: `/home/mark/projects/fid`. Root observed every termination.
+Receipts 24–35 ran the twelve unchanged commands in their required order;
+receipt 3 is DEC-217 additional full-scale qualification.
+
+- `go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	226.390s` (terminated `exit_code: 0`). Receipt 3. 
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 24. 
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Receipt 25. 
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.4% of statements` (terminated `exit_code: 0`). Receipt 26. 
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					65.4%` (terminated `exit_code: 0`). Receipt 27. 
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	517.861s` (terminated `exit_code: 0`). Receipt 28. 
+- `go version` - PASS - `go version go1.26.2 linux/amd64` (terminated `exit_code: 0`). Receipt 29. 
+- `go env GOOS GOARCH` - PASS - `amd64` (terminated `exit_code: 0`). Receipt 30. 
+- `uname -srm` - PASS - `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64` (terminated `exit_code: 0`). Receipt 31. 
+- `nproc` - PASS - `6` (terminated `exit_code: 0`). Receipt 32. 
+- `grep -m1 '^model name' /proc/cpuinfo` - PASS - `model name	: AMD Ryzen 7 5700G with Radeon Graphics` (terminated `exit_code: 0`). Receipt 33. 
+- `grep -m1 '^MemTotal:' /proc/meminfo` - PASS - `MemTotal:        8133232 kB` (terminated `exit_code: 0`). Receipt 34. 
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	29.822s` (terminated `exit_code: 0`). Receipt 35. 
+
+### Preserved prior task and attempt receipts
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
   - Attempt 1.
@@ -119,7 +143,7 @@
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- None.
+- Independent final review and Human judgments remain pending. Root task gates pass; the 100k rebuild measured 27.137s against the unchanged 30s limit. Final QA must collect its own three samples and full phase gates. Test runtime improvements retain all assertions; further performance work is not claimed here.
 
 ## Dependency-budget note
 
@@ -127,11 +151,11 @@
 
 ## Commit hash
 
-- `7647abc66d0e309b7ab056d05e80d1c501d758dd`
+- `c8e0061a11c1405e98fd5e4f09612b4f9099af51`
 
 ## Commit subject
 
-- `fix(journal): validate current recovery Event transactions`
+- `fix(journal): enforce complete current Event value contracts`
 
 ## Final-QA FQ-01 same-task continuation — 2026-09-09
 
@@ -370,3 +394,312 @@ Own raw returned command objects: `.cache/phase-22-fq01-46gqnetx/command-results
 - `internal/workflow/stop_test.go`
 
 FQ-01 implementation and all exact task gates are complete. The fresh independent final QA review must determine finding closure; no Human assertion is marked passed by this report.
+
+
+## Final QA FQ-01 attempt2 continuation — 2026-09-12
+
+All twelve required task commands and the additional DEC-217 scale command passed. Previous primary binding:
+7647abc66d0e309b7ab056d05e80d1c501d758dd. Preserve every previous report and
+failed attempt. Same task-1:qa-rework:closed-current-event-live-replay-semantics
+signature, attempt2; original tasks1–18 are complete, six other FQs independently
+closed by final-review-2/b55c96b. Root is sole writer in this continuation.
+
+### Delivered behavior
+
+Closed current Event validation now checks all22 complete nested value shapes,
+required nullable fields and arrays, unknown/duplicate keys, UTF8/byte bounds,
+integer/timestamp/digest/ID/path domains, exact operation snapshots and Event/
+row bindings. Snapshot reconstruction uses Event-time projected facts within
+its transaction; mismatches roll back the entire Event. DEC-216 records direct
+Human acceptance of typed snapshots and explicitly specializes schema5 and
+public-interface replay/denial wording. Pending Attempt fencing, unsuccessful
+Receipt/denial responses and original historical facts remain unchanged.
+
+Conditional validation covers predecessor Run/runtime state, active versus
+expired/disposed Claims, successor scope/mode/repository/Actor/version/times,
+immutable inherited budgets, automatic charge/sample sources and boundaries,
+activation recovery direction/components/resource agreement and all required
+Stop dispositions. Reconciliation/component digests and profile/policy domains
+are checked. Replay does not reevaluate current liveness, filesystem or grants.
+Rebuild uses a fresh sibling database and publishes only after valid replay,
+preserving the prior projection when history is rejected. Genuine22-family
+controls and23 independent corruptions plus recursive/self-consistent negative
+variants cover live/replay/rebuild; integrity-valid archive negatives preserve
+original state and rejection classifications.
+
+### Consequential allocations
+
+DEC-209 required nullable Stop/Attention fields and Claim scope/mode/empty paths;
+DEC-210 immutable complete Stop/Attention snapshots and original-result replay;
+DEC-211 captured activation updated_at; DEC-212 accepted digest prefix;
+DEC-213 sorted resources; DEC-214 existing service Actor on two automatic Stop
+calls; DEC-215 complete budget-boundary Attention links and original raised_at.
+All are accepted-behavior repairs, with introducing-task provenance below.
+
+DEC-217 is a directly Human-approved QA cadence change: original full archive
+matrices move intact behind archive_scale. Routine tests exercise the same
+private limiter with small sizes/counts, production defaults and64-bit first-
+excess checks. No product ceiling, CLI/config override, gate timeout, dependency
+or failure classification changes. The exact additional scale command passed
+226.390s/exit0 on the final limiter and original full-size tests; later edits
+only complete routine test error handling/production-path coverage. Final QA
+must independently run the explicit scale gate. This change removes the large
+matrices from repeated routine execution, not from phase qualification.
+
+Workflow setup clones a single real pristine bootstrap into independent per-test
+files/DBs; no hardlinks/shared mutable database. Dedicated bootstrap/migration
+assertions remain. CLI already had fixture reuse. Three prior full race attempts
+failed, two solely on timeout in captured output; preserve all receipts. The
+third passed workflow584.519s but CLI603.420s/export600.095s timed out. Earlier
+attribution of export runtime solely to database work was incomplete: real8GiB
+and million-entry matrices also ran routinely. Measured basic fixtures are608KiB
+empty and636KiB/oneIssue/21Events. No timeout or environment workaround used.
+
+### Provenance
+
+Stop/Attention producer and fixtures: ac827959f8359473cbd6546ac6bea1ff1fd20751/task2.
+Recovery Claim: b7dce8e747a3f2d720002faee3db7f95b3cb4019/task5.
+BudgetStopEffects: f28ebc7766fc149c72b07a80e3e1bb90f614d3ca/task6.
+Activation transition timestamp: ad9098fac66f2b530a566d87df087fd72fbb584d/phase21task4.
+Sorted resources/service Actor:33f85bbd6abffd0425a6a446780e8b0a37ce457a/task10.
+Checkpoint fixtures:59c62b9e1d82c5f698d1e173908446d35b64f539/task4, extended
+33f85bbd/task10 and b965b24748f57a0f5e42b8dd3054dfe6fd5dbb74/task8.
+Idempotency fixture:94e752d25809a0e54f827b1872172f8038c0a741/phase21.
+Gate policy fixture:0c4c04ea0c7d0786e2e6cf88a7573d8a3105aef5/phase21.
+Archive semantic fixture:acb569bb9447a3259991520669167fdc819c1706/task13.
+Evaluation fixture:93da8a150d76b10d63bb8330517c508728bbe45f/phase21.
+Run budget fixture:a0a93c7ce4dd0c7dfda4eb39a6ba40760068e460/task9.
+Historical owner reports remain unchanged; matching fixtures preserve their
+behavioral assertions. The gate-policy fixture now stages valid policy then
+explicitly corrupts its stored policy to preserve registration-time rejection.
+
+### Failed evidence / deviations
+
+Earlier root results are retained in .cache/phase-22-fq01-attempt2-lDfSp4/
+command-results.json (160objects), separately attributed from current closing
+gates. They include23red corruptions, required-field/recursive/full-snapshot/
+conditional binding reds, numeric panic, retained fixture convergence, ordinary
+suite failures, profiling attempts and three race timeout failures. Temporary
+root compile errors (missing encoding/json import and misplaced fixture block)
+were repaired sequentially; no overlapping writers caused them. New archive
+negative expectations initially used effect-invalid; the existing classifier
+returned reference-invalid, so only those new expected classifications changed.
+Later byte-identical focused commands passed; no existing assertion weakened.
+
+Current archive seam RED: missing private limits/seam symbols, build failed,
+exit1. Same command GREEN: export0.046s/exit0. First lint: `4 issues:`/exit1
+(three unchecked test Close calls and scanZIP unused without scale tag).
+Repair: normal explicit deferred-close handling plus a tiny production scanner
+control uses the retained helper. Exact lint rerun `0 issues.`/exit0.
+
+Affected validation: VAL-003 primarily; retained VAL-001/002 and transaction/
+recovery/budget/activation/archive/fake-fid coverage VAL-017/029/041/055/056/080.
+Independent final QA decides phase-wide sufficiency. Human-only judgments stay
+pending. No dependency changes. Closing gate receipts and final source hash are recorded above after actual completion.
+
+
+### CLI fixture follow-up (2026-09-12)
+
+The first post-DEC217 full race gate still failed solely in CLI602.564s;
+export381.275s/workflow574.550s passed. No assertion failure appears in captured
+output. Root profiled two small CLI selections before editing. Activation
+agreement preparation accounted for34.32% of sampled CPU in its matrix;
+pre-registration Envelope activation preparation accounted for18.74% in the
+terminal selection. Repository WorktreeID is derived from the actual root, so
+caching already-observed Gate/Envelope/Claim/Run state was explicitly excluded.
+
+Matching CLI fixtures now reuse a complete independent activation agreement
+snapshot, and pre-registration Issue/activation facts. Git initialization and
+registration occur after cloning, so every real observation binds its own root.
+All original matrix and terminal assertions are unchanged. Added regression
+verifies distinct registration Worktree identities and successful actual CLI
+rebuild for both copies:9.188s/exit0. Focused before/after profile selections
+passed24.550→15.112s and46.166→40.397s; output profile paths differ, workload
+and race/coverage flags match. These are measured setup optimizations, not
+proof that the full routine gate passes. No production code change in this
+follow-up. cmd/fid/envelope_test.go latest introducing change2339dc9/task12;
+original lifecycle/fixture reuse ownership must be cited from its history.
+
+Admin sequence lint first failed `INVALID unrecognized or malformed event
+heading`/exit1 because the new root CORRECTION lackedHH:MM. Fixed only that new
+heading; exact rerun `VALID state=REPAIR_PENDING`/exit0. No control edit.
+
+
+Additional fixture provenance verified with git log --reverse -S:
+- buildFinalizedEnvelopeWorkspaceWithRepository:2339dc9ebd8d0e6b5502ca32e1562892cf704ce6, phase22/task12.
+- activationAgreementFixture:33f85bbd6abffd0425a6a446780e8b0a37ce457a, phase22/task10 (latest file change30dd780/task11 is not its introducing owner).
+- initializedWorkflowWorkspace:50533e2b813bf073cd75f75eb70dd09cd15e9040, phase19/task3.
+
+All3 archive production-scale test function bodies were compared against HEAD
+and proved byte-for-byte unchanged after the move (own Python comparison exit0).
+
+
+Final routine gate after measured fixture repair terminated exit0:
+CLI557.747s/73.0%, export370.135s/77.2%, workflow cached62.4%. Full coverage
+report terminated exit0 with total65.4%. This closes the reproduced full-race
+timeout on the current candidate; roughly42seconds CLI headroom is modest and
+should be carried as a follow-up performance concern, not treated as a new
+threshold or a reason to broaden this phase. Required integration/reference
+qualification remains pending at this checkpoint.
+
+
+### Integration continuation (2026-09-12)
+
+The ordinary race/coverage command passed (CLI557.747s, export370.135s,
+workflow cached62.4%; exit0), and coverage total was65.4%. The following exact
+integration gate failed: eight recovery Stop assertions plus cumulative
+package timeout, `FAIL github.com/mbell-nzl/fid/cmd/fid/integration 602.225s`,
+exit1. A focused reproduction failed26.146s/exit1 with verbatim token
+`recovery missing exact Stop/Attention/link transaction`. DEC-214 had already
+corrected automatic Stop/StopResolution Actor to fid-bootstrap; the retained
+fixture still expected optional caller attribution fq7-bootstrap in both SQL
+assertions. Only those two expected Actor IDs were corrected. The separate
+immutable actor_attribution assertion still expects fq7-bootstrap. All eight
+fault/direction/operation cases and full transaction/replay checks then passed
+30.510s/exit0 with the byte-identical focused command. Fixture introducing
+commit: e7d5963105fa3a40b8d0d687902def63595ade2f (FQ-07 repair).
+The integration timeout still requires causal diagnosis and a fresh full gate;
+this focused pass does not close it.
+
+
+Integration runtime measurement: the current-family race corpus passed
+256.785s before and195.350s after retaining a separate observer connection per
+workspace. Full-table snapshot CPU dropped84.84s to40.07s; schema-query CPU
+dropped44.86s to5.43s. Every table is still enumerated and read on each check;
+no snapshot result or table list is cached. Product connections and all
+negative/live/replay assertions remain unchanged. The first profiling command
+after the helper refactor failed compilation (`undefined: workspace`, exit1);
+retaining the helper's existing workspace argument repaired it, and the
+byte-identical profiling command passed195.350s/exit0. The initial function
+source omitted this existing sequence-gap use; this was a root edit error,
+not concurrent editing. Profiles differ only in output paths and therefore
+serve as comparative diagnostics, not required-gate substitutions.
+
+
+The subsequent exact full race gate passed on the final implementation and
+fixture changes: CLI411.093s/export273.017s, cached workflow62.4%, exit0.
+The next coverage command returned65.4%, exit0. These results supersede earlier
+failed attempts for their respective gates, without erasing them. Timing varies
+with workload; the second full pass is not attributed solely to the integration
+helper, which does not run in the ordinary suite.
+
+
+The byte-identical full integration gate subsequently passed517.861s with
+exit0. This closes the earlier602.225s failed attempt after the precise Actor
+expectation and observer-connection repairs. All fault cases and current-family
+mutations remain in the mandatory gate. Reused snapshot-helper provenance:
+edb134f9fcd9a9512047b5f3172d6a9d398cac35 (Task5/FQ-04); actual-family corpus
+7647abc66d0e309b7ab056d05e80d1c501d758dd (Task1/FQ-01 attempt1).
+
+
+### Final implementation binding and current result
+
+Primary implementation: `c8e0061a11c1405e98fd5e4f09612b4f9099af51` — `fix(journal): enforce complete current Event value contracts`.
+Previous primary subject: `fix(journal): validate current recovery Event transactions`.
+The earlier report, first repair, independent rejection and failed gate attempts
+remain historical evidence. This report closes implementation attempt2, not
+independent QA or Human validation. The fresh 100k sample was27137ms/rebuild,
+with benchmark event-count assertion and package exit0. Reference environment:
+Go1.26.2 linux/amd64, WSL2Linux6.6.114.1,6processors, Ryzen75700G,8133232kB RAM.
+
+### Complete own-session command receipts
+
+
+Evidence source: `.cache/phase22-completion-Tg1BjS/command-results.json`
+
+- `go test ./internal/export -run '^TestArchive(Small|ProductionBudget)' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Receipt 1. 
+- `go test ./internal/export -run '^TestArchive(Small|ProductionBudget)' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	0.046s` (terminated `exit_code: 0`). Receipt 2. 
+- `go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	226.390s` (terminated `exit_code: 0`). Receipt 3. 
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 4. 
+- `golangci-lint run ./...` - BLOCKED - `* unused: 1` (terminated `exit_code: 1`). Receipt 5. 
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 6. 
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Receipt 7. 
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Receipt 8. 
+- `go test -race -cover ./cmd/fid -run '^TestActivationRequiresEveryResourceAtCommitAndFinalize$' -count=1 -cpuprofile=.cache/phase22-activation-matrix-before.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	24.550s	coverage: 24.3% of statements` (terminated `exit_code: 0`). Receipt 9. 
+- `go test -race -cover ./cmd/fid -run '^Test(TerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState|EnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease)$' -count=1 -cpuprofile=.cache/phase22-terminal-fixture-before.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	46.166s	coverage: 33.9% of statements` (terminated `exit_code: 0`). Receipt 10. 
+- `go test -race -cover ./cmd/fid -run '^TestActivationRequiresEveryResourceAtCommitAndFinalize$' -count=1 -cpuprofile=.cache/phase22-activation-matrix-after.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	15.112s	coverage: 24.3% of statements` (terminated `exit_code: 0`). Receipt 11. 
+- `go test -race -cover ./cmd/fid -run '^Test(TerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState|EnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease)$' -count=1 -cpuprofile=.cache/phase22-terminal-fixture-after.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	40.397s	coverage: 33.9% of statements` (terminated `exit_code: 0`). Receipt 12. 
+- `go test -race ./cmd/fid -run '^TestObservedEnvelopeFixtureClonesCaptureDistinctRepositories$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	9.188s` (terminated `exit_code: 0`). Receipt 13. 
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 14. 
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Receipt 15. 
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.4% of statements` (terminated `exit_code: 0`). Receipt 16. 
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					65.4%` (terminated `exit_code: 0`). Receipt 17. 
+- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Receipt 18. 
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22ActivationRecoverySurvivesAppendProjectionInterruption$' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Receipt 19. 
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22ActivationRecoverySurvivesAppendProjectionInterruption$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	30.510s` (terminated `exit_code: 0`). Receipt 20. 
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22CurrentEventFamiliesLiveReplayValidation$' -count=1 -cpuprofile=.cache/phase22-integration-values-before.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	256.785s` (terminated `exit_code: 0`). Receipt 21. 
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22CurrentEventFamiliesLiveReplayValidation$' -count=1 -cpuprofile=.cache/phase22-integration-values-after.cpu` - BLOCKED - `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration [build failed]` (terminated `exit_code: 1`). Receipt 22. 
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22CurrentEventFamiliesLiveReplayValidation$' -count=1 -cpuprofile=.cache/phase22-integration-values-after.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	195.350s` (terminated `exit_code: 0`). Receipt 23. 
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 24. 
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Receipt 25. 
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.4% of statements` (terminated `exit_code: 0`). Receipt 26. 
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					65.4%` (terminated `exit_code: 0`). Receipt 27. 
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	517.861s` (terminated `exit_code: 0`). Receipt 28. 
+- `go version` - PASS - `go version go1.26.2 linux/amd64` (terminated `exit_code: 0`). Receipt 29. 
+- `go env GOOS GOARCH` - PASS - `amd64` (terminated `exit_code: 0`). Receipt 30. 
+- `uname -srm` - PASS - `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64` (terminated `exit_code: 0`). Receipt 31. 
+- `nproc` - PASS - `6` (terminated `exit_code: 0`). Receipt 32. 
+- `grep -m1 '^model name' /proc/cpuinfo` - PASS - `model name	: AMD Ryzen 7 5700G with Radeon Graphics` (terminated `exit_code: 0`). Receipt 33. 
+- `grep -m1 '^MemTotal:' /proc/meminfo` - PASS - `MemTotal:        8133232 kB` (terminated `exit_code: 0`). Receipt 34. 
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	29.822s` (terminated `exit_code: 0`). Receipt 35. 
+
+
+### Files delivered in this continuation
+
+- `cmd/fid/activation_resource_matrix_test.go`
+- `cmd/fid/envelope_fixture_test.go`
+- `cmd/fid/envelope_test.go`
+- `cmd/fid/gate_test.go`
+- `cmd/fid/integration/p22_activation_fault_assertions_test.go`
+- `cmd/fid/integration/p22_event_conditional_values_test.go`
+- `cmd/fid/integration/p22_event_nested_values_test.go`
+- `cmd/fid/integration/p22_event_validation_test.go`
+- `cmd/fid/integration/p22_recovery_fault_test.go`
+- `internal/export/archive_corruption_test.go`
+- `internal/export/archive_directory.go`
+- `internal/export/archive_limits_test.go`
+- `internal/export/archive_scale_test.go`
+- `internal/export/archive_scan.go`
+- `internal/export/archive_semantics_test.go`
+- `internal/export/archive_small_limits_test.go`
+- `internal/journal/checkpoint_projection_test.go`
+- `internal/journal/current_event_activation.go`
+- `internal/journal/current_event_budget_values.go`
+- `internal/journal/current_event_closed_values_test.go`
+- `internal/journal/current_event_component_values.go`
+- `internal/journal/current_event_json.go`
+- `internal/journal/current_event_json_decode.go`
+- `internal/journal/current_event_references.go`
+- `internal/journal/current_event_result_budgets.go`
+- `internal/journal/current_event_result_projection.go`
+- `internal/journal/current_event_result_values.go`
+- `internal/journal/current_event_validation.go`
+- `internal/journal/current_event_value_catalog.go`
+- `internal/journal/current_event_value_relations.go`
+- `internal/journal/current_event_value_types.go`
+- `internal/journal/current_projection_fixture_values_test.go`
+- `internal/journal/event_v2_test.go`
+- `internal/journal/idempotency_test.go`
+- `internal/journal/project_effects.go`
+- `internal/journal/projection.go`
+- `internal/workflow/activation.go`
+- `internal/workflow/activation_recovery.go`
+- `internal/workflow/attention_test.go`
+- `internal/workflow/budget.go`
+- `internal/workflow/define_test.go`
+- `internal/workflow/evaluation_test.go`
+- `internal/workflow/recovery.go`
+- `internal/workflow/recovery_current_event_test.go`
+- `internal/workflow/recovery_test.go`
+- `internal/workflow/run_budget_test.go`
+- `internal/workflow/stop.go`
+- `internal/workflow/stop_test.go`
+- `internal/workflow/workspace_fixture_test.go`
+- `project-docs/docs/phases/phase-22/decisions.md`
+- `project-docs/docs/phases/phase-22/public-interface.md`
+- `project-docs/docs/phases/phase-22/qa/qa-plan.md`
+- `project-docs/docs/phases/phase-22/qa/storage-contract-clarification.md`
+- `project-docs/docs/phases/phase-22/qa/validation-contract.md`
+- `project-docs/docs/phases/phase-22/schema.md`
+- `project-docs/docs/phases/phase-22/tasks/task-1.md`
+- `project-docs/specs/08_QUALITY_PLAN.md`
