@@ -16,6 +16,7 @@ func TestP22ForceRecoveryBudgetConditionalEvents(t *testing.T) {
 		a := p22ForceBudgetFixture(t, maximum)
 		p22AcceptedCall(t, a, "force-event", "run.recover", p22ForceBudgetInput(t, a, "force-event"))
 		prefix, control := p22CurrentEventPrefix(t, a.workspace, "run.recovered")
+		check := p22ForceEventChecker(t, a.binary, a.workspace, prefix)
 		cases := []struct {
 			name   string
 			mutate func(*journal.Event)
@@ -106,7 +107,7 @@ func TestP22ForceRecoveryBudgetConditionalEvents(t *testing.T) {
 				}
 				for _, mode := range []string{"live", "replay", "rebuild"} {
 					t.Run(mode, func(t *testing.T) {
-						p22CheckCurrentEventCase(t, a.binary, a.workspace, prefix, event, mode, test.mutate == nil)
+						check(t, event, mode, test.mutate == nil)
 					})
 				}
 			})
