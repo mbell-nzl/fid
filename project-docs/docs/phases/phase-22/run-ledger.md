@@ -2073,3 +2073,25 @@
 - Scope: active Task1 FQ-01 attempt3, DEC-218 consequential helper completion.
 - Allowed files amendment: internal/workflow/budget.go only for same-call prepared Attention reuse; current_event_cardinality.go for validating that earlier same-Event insert reference is already within internal/journal scope.
 - Evidence: configured-two-interventions-budget RED, `UNIQUE constraint failed: attention_items.semantic_key (2067)`, command terminated exit_code:1. Both independent samples and both Stops/links remain required; one shared Attention follows the existing semantic key. No policy, gate, command, threshold or signature change.
+
+### 2026-09-12 11:49 REPAIR task-1
+
+- Trigger signature: task-1:qa-rework:closed-current-event-live-replay-semantics
+- Attempt count: 3
+- Starting checkpoint: 38fbcdf6cbb96cc76cabcf10d58634f05ffe9062
+- Ending checkpoint: 671e4e4eb25b89157949f0de82a5c50cf412c489; report ab3c255169b4c5196539f6a84da16db2e04c02df
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: DEC-218 force-intervention accounting delivered at c361e9ead3a375dfe3af8cbd63f3cdd55ff40007; exact samples, immutable successor chain, original retry snapshot, boundary Stop and guard, multiple-budget Attention reuse, malformed live/replay/rebuild rollback, three subprocess fault points and integrity-valid archive/import rejection. Focused red failures preserved. First integration timeout600.834s preserved; profile isolated repeated migration cost. Fresh physical DB copies of immutable prefix retain every case and full snapshot, focused race89.800s to35.396s. All twelve unchanged closing commands PASS in order: race414.292sCLI/270.522sexport, coverage65.4%, integration557.259s, reference100k27490ms below30000ms. Report-lint OUTCOME COMPLETE/PASS report-lint completed with no failures, exit0; route ACTION ADVANCE, exit0. No command/timeout/assertion/threshold/policy change. Own evidence .cache/phase22-force-repair-MUSz6S/command-results.json.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-12 11:49 TASK task-1 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-1-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 671e4e4eb25b89157949f0de82a5c50cf412c489 - verified, subject matched; producer c361e9ead3a375dfe3af8cbd63f3cdd55ff40007, adjacent report ab3c255169b4c5196539f6a84da16db2e04c02df
+- QA-plan commands beyond the task spec: final-review-3 five force-accounting obligations, focused fault/corruption/portability controls; fresh independent final QA still owes all full phase gates including DEC-217 archive_scale
+- Evidence: All original tasks1–18 and bounded implementation repairs complete. FQ-02 through FQ-07 remain independently closed by final-review-2. Fresh independent final-review-4 must assess FQ-01 closure, full deterministic qualification and late fresh Human fixtures. Human responses remain blank. Root freezes source for one reviewer; no parallel implementers and no Human acceptance claimed.
