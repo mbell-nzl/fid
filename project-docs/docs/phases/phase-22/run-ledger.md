@@ -1926,3 +1926,108 @@
 - Evidence: own TestP22CurrentProducerEmitsRequiredClosedFields complete-fixture red terminates FAIL (exit_code: 1), package6.463s; all four affected producer shapes exercised and required keys missing. Introducing commits ac827959f8359473cbd6546ac6bea1ff1fd20751 and b7dce8e747a3f2d720002faee3db7f95b3cb4019.
 - Preserved fields: signature task-1:qa-rework:closed-current-event-live-replay-semantics, attempt2, zero consecutive no-progress, original twelve exact commands, accepted contract and all other scope limits are unchanged.
 - Next action: one serialized consolidated implementation, then fresh independent final-review-3.
+
+### 2026-09-09 10:52 CORRECTION
+
+- Scope: active Task1 FQ-01 recovery attempt2.
+- Authority: DEC-210; root Human-delegated causal allocation under DEC-175.
+- Allowed files amendment: internal/workflow/stop.go additionally covers complete accepted Stop/Attention mutation snapshots and original-result replay as specified in DEC-210.
+- Ownership: Developer handed back incomplete code after its full race gate terminated exit_code:0; gates4–12 remained unstarted. Root is now sole implementation writer, retaining all intermediate receipts. No agent commands remain live.
+- Preserved fields: original trigger signature, attempt2, zero consecutive no-progress, all twelve exact commands and every other scope/contract limit remain unchanged.
+- Evidence: producer red FAIL exit_code:1 package2.895s, required Attention stop_ids serialized null; resolution builders contain only replayed:false. Root recursive producer-value regression also rejects incomplete handback scope; its actual failed receipt is preserved.
+
+### 2026-09-09 11:03 CORRECTION
+
+- Scope: active Task1 FQ-01 recovery attempt2.
+- Authority: DEC-211; root Human-delegated causal allocation under DEC-175.
+- Allowed files amendment: internal/workflow/activation.go only for transitionActivation's captured Effect-to-result updated_at binding.
+- Evidence: direct genuine activation fixture FAIL exit_code:1 package2.363s names activation.updated_at mismatch; introducing commit ad9098fac66f2b530a566d87df087fd72fbb584d phase21/task4.
+- Preserved fields: signature, attempt2, no-progress0/2, all twelve exact commands and every other accepted scope/contract limit remain unchanged.
+
+### 2026-09-09 11:33 CORRECTION
+
+- Scope: active Task1 FQ-01 recovery attempt2; no new recovery attempt.
+- Authority: DEC-212, DEC-213, DEC-214, plus DEC-209's explicit required-empty-array serialization note.
+- Allowed files amendment: internal/workflow/stop.go additionally covers attentionSemanticKey's accepted digest prefix; internal/workflow/activation.go additionally covers preparedResources output sorting; internal/workflow/activation_recovery.go covers only the two automatic Stop creation/disposition Actor arguments specified by DEC-214.
+- Ownership: root is sole implementation writer. One bounded Luna fixture contributor inspected and reproduced the existing fixture red, then handed back without repository edits; no contributor command remains running. Root completed the fixtures directly. No overlapping product edits occurred in this continuation.
+- Evidence: all23 original corruptions and producer fields PASS18.737s; expanded actual22-family corpus including component digests/transitions, automatic charges and immutable Claim scope PASS45.537s before final resource/capability checks; final direct current-value/transition fixture suite PASS5.277s. Every red and later lint repair remains preserved; these focused results do not replace the unchanged twelve-command gate.
+- Provenance: preparedResources and automatic activation Stop calls originate in 33f85bbd6abffd0425a6a446780e8b0a37ce457a, phase22/task10. Handwritten current checkpoint fixtures originate in 59c62b9e1d82c5f698d1e173908446d35b64f539, phase22/task4, with later family extensions recorded in the Task1 report.
+- Preserved fields: original trigger signature, attempt2, consecutive no-progress0/2, all twelve commands and every other contract/scope limit remain unchanged. Final independent review and Human fixture qualification remain pending.
+
+### 2026-09-09 11:57 CORRECTION
+
+- Scope: active Task1 FQ-01 recovery attempt2; no new recovery attempt.
+- Authority: DEC-215; root delegated causal allocation under DEC-175.
+- Allowed files amendment: internal/workflow/budget.go only for BudgetStopEffects Attention snapshot completion and original raised_at preservation.
+- Evidence: unchanged full race/coverage gate terminated exit_code:1, including incomplete current fixtures and ten-minute timeouts in cmd/fid, export and workflow. Ordinary suite separately terminated exit_code:1 with workflow-only residuals; all other packages PASS. Preserve both attempts. No command/timeout/threshold changes are authorized.
+- Ownership: root remains sole writer. Fixture completion preserves registration policy rejection, missing-reference classification, Event ordering, immutable idempotent replay, budget derivation and Stop-resolution subjects. No original task/report is reopened.
+- Preserved fields: original signature, attempt2, no-progress0/2 and all twelve exact commands remain unchanged. Independent final QA and Human qualification remain pending.
+
+### 2026-09-09 12:22 CORRECTION
+
+- Scope: active Task1 FQ-01 attempt2; independent runtime repair continues, storage normalization is held pending Human clarification.
+- Evidence: second unchanged full race/coverage gate terminated exit_code:1; cmd/fid603.005s, export600.096s and workflow600.106s exceeded the unchanged ten-minute package timeout. No assertion failures appear in the captured output. The prior ordinary full suite was PASS; no failed attempt is promoted to PASS.
+- Contract audit: one read-only Tech Lead confirmed inherited full-Response-Envelope storage plus an unspecified pending-Gate representation and distinct unsuccessful/denied FailureEnvelope branches. Blanket success wrapping would be incorrect. Concrete proposed alternatives are in qa/storage-contract-clarification.md; Human answer is pending, not inferred.
+- Independent work: workflow test setup may clone one real bootstrap into separate per-test files/databases under the existing matching-test scope, following the established cmd/fid fixture pattern. Tests still run all original mutations and assertions. No timeout, gate scope, data policy, product cache or shared mutable database is introduced.
+- Authority clarification: direct Phase22 Human delegation is recorded in delegate-handoff.md. References to Phase21 DEC-175 in DEC-209 through DEC-215 cite its standing first-observing/minimum-causal-scope rule, not generic Phase22 Human authority. Existing allocations and every historical entry remain intact.
+- Preserved fields: original trigger signature, attempt2, no-progress0/2, twelve commands and other accepted scope limits unchanged. Phase22 is not ready for Human verification yet.
+
+### 2026-09-09 12:33 CORRECTION
+
+- Scope: active Task1 FQ-01 attempt2; third exact race/coverage attempt completed, not a new recovery dispatch.
+- Evidence: `go test -race -coverprofile=coverage.out ./...` terminated `exit_code: 1`. Workflow passed (`ok  github.com/mbell-nzl/fid/internal/workflow 584.519s coverage: 62.4% of statements`); cmd/fid timed out (`FAIL github.com/mbell-nzl/fid/cmd/fid 603.420s`) and export timed out (`FAIL github.com/mbell-nzl/fid/internal/export 600.095s`). Verbatim returned output and termination are retained in `.cache/phase-22-fq01-attempt2-lDfSp4/command-results.json`, session28073. No assertion failure appears in the captured output; package timeouts still fail the required gate.
+- Runtime diagnosis: the independent workflow bootstrap clone was insufficient to make the whole gate pass. Remaining CLI/export setup and replay costs need causal diagnosis before another full attempt; do not repeat an unchanged failed candidate in search of a pass. No timeout, command, scope or threshold is changed.
+- Storage clarification: Human choice remains pending; no snapshot specialization or envelope conversion is accepted or applied. The previous conditional45–75minute estimate no longer applies because its passing-gate assumption failed.
+- Preserved fields: original recovery signature and attempt2, all failed evidence, twelve exact commands and independent final QA requirement unchanged. No final QA closure or Human readiness is claimed.
+
+
+### 2026-09-12 09:13 CORRECTION
+
+- Scope: existing Task1 FQ-01 attempt2; Human approved continuation after runtime explanation.
+- Authority: DEC-216 accepts typed snapshots; DEC-217 accepts routine/scale archive test cadence and its private limiter seam. Both decisions are recorded in phase decisions with the Human's explicit acceptance.
+- Resolution: pending storage-choice hold is cleared. schema.md section5 and public-interface.md now state the accepted snapshot specialization; the candidate still requires passing gates and independent final review.
+- Runtime evidence: actual diagnostic fixture sizes are zero issues/608KiB and one issue/21Events/636KiB. The export suite also ran real8GiB and million-entry matrices, so prior attribution of its whole timeout to database setup was incomplete. Saved size evidence: .cache/phase22-fixture-size-hwivoe4x/command-results.json.
+- Allowed files amendment: DEC-217's archive_scan.go/archive_directory.go and matching archive limit tests/helpers plus the recorded task/spec/QA cadence documents. Original full-size assertions move intact to archive_scale_test.go. No product limits change.
+- Verification: retain all twelve exact Task1 commands; additionally run DEC-217's explicit archive_scale command for this affected-change repair and final QA. Keep all previous failed attempts, original recovery signature and attempt2. No other task is reopened.
+- Next action: root sole writer; complete deterministic qualification, committed report and independent final-review-3, then fresh Human checklist. No additional Human decision is pending.
+
+
+### 2026-09-12 09:25 CORRECTION
+
+- Scope: existing Task1 FQ-01 attempt2; matching CLI fixture runtime repair under the unchanged accepted test scope.
+- Evidence: latest exact full race command terminated exit_code:1; CLI602.564s timed out, export381.275s and workflow574.550s passed. Preserve the failed gate. DEC-217's full archive matrices separately passed226.390s.
+- Causal measurement: isolated activation matrix24.550s before/15.112s after; terminal Evidence group46.166s before/40.397s after, all terminated exit_code:0 with the same race/coverage selections (profile output paths differ). Profiles identify repeated location-independent activation preparation. No claim of a passing full gate is made from these focused measurements.
+- Repair: cmd/fid/activation_resource_matrix_test.go caches complete agreement setup using the established independent workspace clone helper. cmd/fid/envelope_test.go caches only pre-registration activation/Issue facts, before any path-bound repository observation. Each observed clone initializes/captures its own Git root before registration; Envelope/Claim/Run execution remains per-clone. All original mutation/rejection assertions remain unchanged. A matching regression checks distinct Worktree IDs before and after real CLI rebuild.
+- Limits: no product code, database lifetime/cache, Gate/VAL definition, timeout, lease, data policy or live observed repository snapshot reuse. Original task18/12 reports remain complete; these matching fixture helpers are repaired under Task1's current scope. Full twelve-command verification still required before final QA.
+
+
+### 2026-09-12 09:59 CORRECTION
+
+- Scope: existing Task1 FQ-01 attempt2; matching integration fixture convergence and measured test-helper runtime repair.
+- Evidence: full race/coverage PASS exit_code:0, CLI557.747s/export370.135s; coverage65.4%. Subsequent integration gate FAIL exit_code:1, package602.225s: eight stale Stop Actor assertions and cumulative timeout. All failed receipts are preserved.
+- Convergence: DEC-214 requires fid-bootstrap for automatic Stop/StopResolution Actor, with caller attribution retained separately. Correct only the two exact SQL Actor expectations in p22_activation_fault_assertions_test.go; immutable attribution and all other transaction assertions remain. Byte-identical focused command failed26.146s then passed30.510s. Introducing fixture commit e7d5963105fa3a40b8d0d687902def63595ade2f, FQ-07 repair; historical task10/report remains unchanged.
+- Runtime diagnosis: current-family race corpus passed256.785s; profile attributes84.84s to full projection snapshots, including44.86s in schema reads on newly opened connections. p22_event_validation_test.go may retain an independent observer connection per workspace, using the same complete-table snapshot implementation factored in p22_recovery_fault_test.go. No table, row, mutation, rejection or parity assertion is removed; no shared database across workspaces or product connection behavior changes.
+- Limits: twelve commands, timeout, scope/thresholds, original signature, attempt2 and no-progress accounting remain unchanged. Root remains sole writer; independent final QA follows completed gates and commits.
+
+
+### 2026-09-12 10:21 REPAIR task-1
+
+- Trigger signature: task-1:qa-rework:closed-current-event-live-replay-semantics
+- Attempt count: 2
+- Starting checkpoint: b55c96b115029fbc1a4b69d8789dbfce1294f294
+- Ending checkpoint: c8e0061a11c1405e98fd5e4f09612b4f9099af51; report f58f2c26db65c0552db5fad173670320f0064dfe
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Complete current values, typed snapshots under DEC-216, conditional transactions and atomic rejected rebuild; causal allocations DEC-209 through DEC-215 and matching fixture convergence. DEC-217 retains full archive matrices behind explicit scale gate, PASS226.390s. Root observed all twelve unchanged task commands PASS in order: race411.093sCLI/273.017sexport, coverage65.4%, integration517.861s, fresh100k27137ms under30000ms, benchmark count assertion. Failed attempts remain preserved. Report-lint initially failed13 formatting checks; receipt labels moved below unchanged observed termination lines, same command then OUTCOME COMPLETE/PASS report-lint completed with no failures, exit0. Route ACTION ADVANCE exit0. Source/report binding verified; no product/gate/control edits during report repair.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-12 10:21 TASK task-1 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-1-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: c8e0061a11c1405e98fd5e4f09612b4f9099af51 - verified, subject matched; initial adjacent report a669541, formatting-only corrections conclude f58f2c26db65c0552db5fad173670320f0064dfe
+- QA-plan commands beyond the task spec: actual22-family recursive/current snapshot and conditional rejection corpus,23 original counterexamples with genuine controls, full rollback/rebuild/archive rejection; explicit DEC-217 production archive scale gate
+- Evidence: Original tasks1–18 and all implementation repair owners complete. FQ-02 through FQ-07 remain independently closed by final-review-2; fresh independent final-review-3 must determine FQ-01 closure and full deterministic Human-checklist readiness. Human judgments remain pending. Root source is frozen for the one reviewer.
