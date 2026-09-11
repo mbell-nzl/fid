@@ -2031,3 +2031,38 @@
 - Commit: c8e0061a11c1405e98fd5e4f09612b4f9099af51 - verified, subject matched; initial adjacent report a669541, formatting-only corrections conclude f58f2c26db65c0552db5fad173670320f0064dfe
 - QA-plan commands beyond the task spec: actual22-family recursive/current snapshot and conditional rejection corpus,23 original counterexamples with genuine controls, full rollback/rebuild/archive rejection; explicit DEC-217 production archive scale gate
 - Evidence: Original tasks1–18 and all implementation repair owners complete. FQ-02 through FQ-07 remain independently closed by final-review-2; fresh independent final-review-3 must determine FQ-01 closure and full deterministic Human-checklist readiness. Human judgments remain pending. Root source is frozen for the one reviewer.
+
+
+### 2026-09-12 10:42 REVIEW review-7c
+
+- Path: project-docs/docs/phases/phase-22/qa/final-review-3.md
+- Tasks covered: task-1 through task-18
+- Outcome: REPAIR
+- Owning task: task-1
+- Re-review of: review-7b
+- Must-fix: 1 / Improvement: 0 / blocker candidates: 0; independent QA3 at38fbcdf6cbb96cc76cabcf10d58634f05ffe9062 proves missing force-recovery intervention accounting and accepted incomplete replay. Its race/coverage/build passed on11821f5; remaining qualification was unstarted after the finding. FQ-02 through FQ-07 remain resolved. Root completed only the mechanical commit of the staged independent review after interrupting its delayed final handoff; no review text or verdict was changed.
+
+### 2026-09-12 10:42 TASK-RECOVERY task-1
+
+- Source: review-7c / final-review-3.md FQ-01 residual
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: task-1.md / contracts.md section6 / schema.md section5 / DEC-218
+- Triage disposition: N/A
+- Trigger signature: task-1:qa-rework:closed-current-event-live-replay-semantics
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/journal/,internal/workflow/recovery.go,internal/workflow/recovery_budget.go,internal/workflow/*_test.go,internal/export/*_test.go,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-1-done.md
+- Forbidden changes: DDL/migrations, Event/Effect/wire shapes, admission/authority/policy semantics, numeric limits, dependencies, protected gates/controls, VAL definitions, unrelated product paths or other task reports; preserve ordinary/no-budget force controls and original idempotent snapshots
+- Originating report: project-docs/docs/phases/phase-22/tasks/task-1-done.md
+- Exact verification: from /home/mark/projects/fid all twelve unchanged task-1 commands in original order; final-review-3 five evidence obligations for configured force charging, immutable chain/idempotency, boundary/no-next-successor, conditional value/Effect rejection with complete rollback, fault/rebuild/archive/import parity; final independent QA retains DEC-217 full scale gate
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: 38fbcdf6cbb96cc76cabcf10d58634f05ffe9062; prior implementation c8e0061/report f58f2c2 passed its gates but independent QA proves one omitted conditional branch
+- Phase worktree: /home/mark/projects/fid on phase-22
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - public max1 force probe and successful incomplete rebuild retained in final-review-3 and .cache/phase22-finalqa3-VBzIPF
+- Next action: root direct focused repair under DEC-218, then fresh final-review-4; no Developer cycle or concurrent source writer
+- Human attention required: no

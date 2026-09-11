@@ -1498,6 +1498,37 @@
   assertion changes. No large test is deleted or replaced as phase evidence.
   This cadence change does not resolve the separate CLI runtime concern.
 
+### DEC-218: Complete required force-recovery intervention accounting
+
+- **Date/status:** 2026-09-12; ACCEPTED root causal allocation under the
+  Human's delegated Phase22 completion authority and direct-repair discretion.
+- **Requirement/evidence:** contracts.md section6 requires fid-owned force
+  intervention samples; schema.md section5 assigns conditional run.recovered
+  budget Effects to owners5/7. Independent final-review-3 at38fbcdf proves two
+  genuine force recoveries with maximum1 both retain consumed0 and omit every
+  sample/Stop. Rebuild also accepts that history. This is undelivered accepted
+  behavior, not a new product choice or permission to weaken validation.
+- **Allocation:** Same Task1 FQ-01 recovery, attempt3, may repair
+  internal/workflow/recovery.go and add the narrow recovery_budget.go helper;
+  update shared current Event charge/reference/boundary/result validation in
+  internal/journal; add matching workflow/journal/export/integration regression
+  and fault/portability fixtures; append task-1-done.md. Task7 is the budget
+  owner of record and Task5 the recovery producer origin
+  b7dce8e747a3f2d720002faee3db7f95b3cb4019. Historical reports stay unchanged.
+- **Derived execution:** One fid delta1 per configured interventions budget,
+  Recovery source identity, null measurement reference, original actor/time,
+  immutable Envelope sample chain and original idempotent snapshot. Bind the
+  charge and boundary Stop to the newly created successor so the existing
+  Stop guard blocks later recovery at exhaustion. Ordinary recovery and force
+  without interventions budgets retain their behavior. All Effects commit in
+  the single accepted run.recovered transaction; no new denial policy.
+- **Verification:** Preserve the independent failure; root performs focused
+  red/green, complete conditional rejection including self-consistent snapshot
+  mutations, boundary/replay/fault/rebuild/archive checks and all twelve
+  unchanged Task1 commands. A fresh independent final reviewer qualifies the
+  final source and Human fixtures. No DDL, Event shape, response shape,
+  command, timeout, threshold, dependency, gate or workflow control change.
+
 ## Planning Spec Impact
 
 | Document | Planning change |
