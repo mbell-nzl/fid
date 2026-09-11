@@ -65,19 +65,19 @@ Working directory: `/home/mark/projects/fid`. Root observed every termination.
 Receipts 24–35 ran the twelve unchanged commands in their required order;
 receipt 3 is DEC-217 additional full-scale qualification.
 
-- `go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	226.390s` (terminated `exit_code: 0`). Receipt 3. 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 24. 
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Receipt 25. 
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.4% of statements` (terminated `exit_code: 0`). Receipt 26. 
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					65.4%` (terminated `exit_code: 0`). Receipt 27. 
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	517.861s` (terminated `exit_code: 0`). Receipt 28. 
-- `go version` - PASS - `go version go1.26.2 linux/amd64` (terminated `exit_code: 0`). Receipt 29. 
-- `go env GOOS GOARCH` - PASS - `amd64` (terminated `exit_code: 0`). Receipt 30. 
-- `uname -srm` - PASS - `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64` (terminated `exit_code: 0`). Receipt 31. 
-- `nproc` - PASS - `6` (terminated `exit_code: 0`). Receipt 32. 
-- `grep -m1 '^model name' /proc/cpuinfo` - PASS - `model name	: AMD Ryzen 7 5700G with Radeon Graphics` (terminated `exit_code: 0`). Receipt 33. 
-- `grep -m1 '^MemTotal:' /proc/meminfo` - PASS - `MemTotal:        8133232 kB` (terminated `exit_code: 0`). Receipt 34. 
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	29.822s` (terminated `exit_code: 0`). Receipt 35. 
+- `go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	226.390s` (terminated `exit_code: 0`). Receipt 3.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 24.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Receipt 25.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.4% of statements` (terminated `exit_code: 0`). Receipt 26.
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					65.4%` (terminated `exit_code: 0`). Receipt 27.
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	517.861s` (terminated `exit_code: 0`). Receipt 28.
+- `go version` - PASS - `go version go1.26.2 linux/amd64` (terminated `exit_code: 0`). Receipt 29.
+- `go env GOOS GOARCH` - PASS - `amd64` (terminated `exit_code: 0`). Receipt 30.
+- `uname -srm` - PASS - `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64` (terminated `exit_code: 0`). Receipt 31.
+- `nproc` - PASS - `6` (terminated `exit_code: 0`). Receipt 32.
+- `grep -m1 '^model name' /proc/cpuinfo` - PASS - `model name	: AMD Ryzen 7 5700G with Radeon Graphics` (terminated `exit_code: 0`). Receipt 33.
+- `grep -m1 '^MemTotal:' /proc/meminfo` - PASS - `MemTotal:        8133232 kB` (terminated `exit_code: 0`). Receipt 34.
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	29.822s` (terminated `exit_code: 0`). Receipt 35.
 
 ### Preserved prior task and attempt receipts
 
@@ -607,41 +607,41 @@ Go1.26.2 linux/amd64, WSL2Linux6.6.114.1,6processors, Ryzen75700G,8133232kB RAM.
 
 Evidence source: `.cache/phase22-completion-Tg1BjS/command-results.json`
 
-- `go test ./internal/export -run '^TestArchive(Small|ProductionBudget)' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Receipt 1. 
-- `go test ./internal/export -run '^TestArchive(Small|ProductionBudget)' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	0.046s` (terminated `exit_code: 0`). Receipt 2. 
-- `go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	226.390s` (terminated `exit_code: 0`). Receipt 3. 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 4. 
-- `golangci-lint run ./...` - BLOCKED - `* unused: 1` (terminated `exit_code: 1`). Receipt 5. 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 6. 
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Receipt 7. 
-- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Receipt 8. 
-- `go test -race -cover ./cmd/fid -run '^TestActivationRequiresEveryResourceAtCommitAndFinalize$' -count=1 -cpuprofile=.cache/phase22-activation-matrix-before.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	24.550s	coverage: 24.3% of statements` (terminated `exit_code: 0`). Receipt 9. 
-- `go test -race -cover ./cmd/fid -run '^Test(TerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState|EnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease)$' -count=1 -cpuprofile=.cache/phase22-terminal-fixture-before.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	46.166s	coverage: 33.9% of statements` (terminated `exit_code: 0`). Receipt 10. 
-- `go test -race -cover ./cmd/fid -run '^TestActivationRequiresEveryResourceAtCommitAndFinalize$' -count=1 -cpuprofile=.cache/phase22-activation-matrix-after.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	15.112s	coverage: 24.3% of statements` (terminated `exit_code: 0`). Receipt 11. 
-- `go test -race -cover ./cmd/fid -run '^Test(TerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState|EnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease)$' -count=1 -cpuprofile=.cache/phase22-terminal-fixture-after.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	40.397s	coverage: 33.9% of statements` (terminated `exit_code: 0`). Receipt 12. 
-- `go test -race ./cmd/fid -run '^TestObservedEnvelopeFixtureClonesCaptureDistinctRepositories$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	9.188s` (terminated `exit_code: 0`). Receipt 13. 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 14. 
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Receipt 15. 
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.4% of statements` (terminated `exit_code: 0`). Receipt 16. 
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					65.4%` (terminated `exit_code: 0`). Receipt 17. 
-- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Receipt 18. 
-- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22ActivationRecoverySurvivesAppendProjectionInterruption$' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Receipt 19. 
-- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22ActivationRecoverySurvivesAppendProjectionInterruption$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	30.510s` (terminated `exit_code: 0`). Receipt 20. 
-- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22CurrentEventFamiliesLiveReplayValidation$' -count=1 -cpuprofile=.cache/phase22-integration-values-before.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	256.785s` (terminated `exit_code: 0`). Receipt 21. 
-- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22CurrentEventFamiliesLiveReplayValidation$' -count=1 -cpuprofile=.cache/phase22-integration-values-after.cpu` - BLOCKED - `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration [build failed]` (terminated `exit_code: 1`). Receipt 22. 
-- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22CurrentEventFamiliesLiveReplayValidation$' -count=1 -cpuprofile=.cache/phase22-integration-values-after.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	195.350s` (terminated `exit_code: 0`). Receipt 23. 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 24. 
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Receipt 25. 
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.4% of statements` (terminated `exit_code: 0`). Receipt 26. 
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					65.4%` (terminated `exit_code: 0`). Receipt 27. 
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	517.861s` (terminated `exit_code: 0`). Receipt 28. 
-- `go version` - PASS - `go version go1.26.2 linux/amd64` (terminated `exit_code: 0`). Receipt 29. 
-- `go env GOOS GOARCH` - PASS - `amd64` (terminated `exit_code: 0`). Receipt 30. 
-- `uname -srm` - PASS - `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64` (terminated `exit_code: 0`). Receipt 31. 
-- `nproc` - PASS - `6` (terminated `exit_code: 0`). Receipt 32. 
-- `grep -m1 '^model name' /proc/cpuinfo` - PASS - `model name	: AMD Ryzen 7 5700G with Radeon Graphics` (terminated `exit_code: 0`). Receipt 33. 
-- `grep -m1 '^MemTotal:' /proc/meminfo` - PASS - `MemTotal:        8133232 kB` (terminated `exit_code: 0`). Receipt 34. 
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	29.822s` (terminated `exit_code: 0`). Receipt 35. 
+- `go test ./internal/export -run '^TestArchive(Small|ProductionBudget)' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Receipt 1.
+- `go test ./internal/export -run '^TestArchive(Small|ProductionBudget)' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	0.046s` (terminated `exit_code: 0`). Receipt 2.
+- `go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	226.390s` (terminated `exit_code: 0`). Receipt 3.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 4.
+- `golangci-lint run ./...` - BLOCKED - `* unused: 1` (terminated `exit_code: 1`). Receipt 5.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 6.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Receipt 7.
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Receipt 8.
+- `go test -race -cover ./cmd/fid -run '^TestActivationRequiresEveryResourceAtCommitAndFinalize$' -count=1 -cpuprofile=.cache/phase22-activation-matrix-before.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	24.550s	coverage: 24.3% of statements` (terminated `exit_code: 0`). Receipt 9.
+- `go test -race -cover ./cmd/fid -run '^Test(TerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState|EnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease)$' -count=1 -cpuprofile=.cache/phase22-terminal-fixture-before.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	46.166s	coverage: 33.9% of statements` (terminated `exit_code: 0`). Receipt 10.
+- `go test -race -cover ./cmd/fid -run '^TestActivationRequiresEveryResourceAtCommitAndFinalize$' -count=1 -cpuprofile=.cache/phase22-activation-matrix-after.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	15.112s	coverage: 24.3% of statements` (terminated `exit_code: 0`). Receipt 11.
+- `go test -race -cover ./cmd/fid -run '^Test(TerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState|EnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease)$' -count=1 -cpuprofile=.cache/phase22-terminal-fixture-after.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	40.397s	coverage: 33.9% of statements` (terminated `exit_code: 0`). Receipt 12.
+- `go test -race ./cmd/fid -run '^TestObservedEnvelopeFixtureClonesCaptureDistinctRepositories$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	9.188s` (terminated `exit_code: 0`). Receipt 13.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 14.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Receipt 15.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.4% of statements` (terminated `exit_code: 0`). Receipt 16.
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					65.4%` (terminated `exit_code: 0`). Receipt 17.
+- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Receipt 18.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22ActivationRecoverySurvivesAppendProjectionInterruption$' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Receipt 19.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22ActivationRecoverySurvivesAppendProjectionInterruption$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	30.510s` (terminated `exit_code: 0`). Receipt 20.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22CurrentEventFamiliesLiveReplayValidation$' -count=1 -cpuprofile=.cache/phase22-integration-values-before.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	256.785s` (terminated `exit_code: 0`). Receipt 21.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22CurrentEventFamiliesLiveReplayValidation$' -count=1 -cpuprofile=.cache/phase22-integration-values-after.cpu` - BLOCKED - `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration [build failed]` (terminated `exit_code: 1`). Receipt 22.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22CurrentEventFamiliesLiveReplayValidation$' -count=1 -cpuprofile=.cache/phase22-integration-values-after.cpu` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	195.350s` (terminated `exit_code: 0`). Receipt 23.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Receipt 24.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Receipt 25.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.4% of statements` (terminated `exit_code: 0`). Receipt 26.
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					65.4%` (terminated `exit_code: 0`). Receipt 27.
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	517.861s` (terminated `exit_code: 0`). Receipt 28.
+- `go version` - PASS - `go version go1.26.2 linux/amd64` (terminated `exit_code: 0`). Receipt 29.
+- `go env GOOS GOARCH` - PASS - `amd64` (terminated `exit_code: 0`). Receipt 30.
+- `uname -srm` - PASS - `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64` (terminated `exit_code: 0`). Receipt 31.
+- `nproc` - PASS - `6` (terminated `exit_code: 0`). Receipt 32.
+- `grep -m1 '^model name' /proc/cpuinfo` - PASS - `model name	: AMD Ryzen 7 5700G with Radeon Graphics` (terminated `exit_code: 0`). Receipt 33.
+- `grep -m1 '^MemTotal:' /proc/meminfo` - PASS - `MemTotal:        8133232 kB` (terminated `exit_code: 0`). Receipt 34.
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	29.822s` (terminated `exit_code: 0`). Receipt 35.
 
 
 ### Files delivered in this continuation
