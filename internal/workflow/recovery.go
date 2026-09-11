@@ -236,7 +236,11 @@ func RecoverRun(options RunOptions, request RunRecoveryRequest) (RunRecoveryResu
 		successorClaim := RecoveryClaim{ID: successorClaimID, IssueID: priorClaim.IssueID, EnvelopeID: priorClaim.EnvelopeID, Revision: priorClaim.Revision, ActorID: options.ActorID, WorktreeID: reconciliation.Repository.WorktreeID, ScopeJSON: priorClaim.ScopeJSON, Scope: append(json.RawMessage(nil), priorClaim.Scope...), Mode: priorClaim.Mode, Version: 1, Status: "active", AcquiredAt: now.Format(time.RFC3339Nano), ExpiresAt: now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)}
 		successor := Run{ID: successorRunID, IssueID: prior.IssueID, EnvelopeID: prior.EnvelopeID, EnvelopeRevision: prior.EnvelopeRevision, ClaimID: successorClaim.ID, ClaimVersion: successorClaim.Version, Version: 1, Executor: request.Executor, ObligationID: prior.ObligationID, ActorID: options.ActorID, StartRepository: reconciliation.Repository, Status: "active", Budgets: prior.Budgets, StartedAt: now.Format(time.RFC3339Nano), PredecessorRunID: &prior.ID}
 		recovery := Recovery{ID: recoveryID, PriorRunID: prior.ID, SuccessorRunID: successor.ID, PriorClaimID: priorClaim.ID, SuccessorClaimID: successorClaim.ID, ObservationID: observation.ID, Reconciliation: reconciliation, AdoptedPaths: append([]string{}, request.AdoptedPaths...), Authority: request.Authority}
-		effects := recoveryEffects(prior, priorClaim, successor, successorClaim, recovery, now)
+		budgetEffects, err := recoveryInterventionEffects(conn, &successor, recovery)
+		if err != nil {
+			return err
+		}
+		effects := append(recoveryEffects(prior, priorClaim, successor, successorClaim, recovery, now), budgetEffects...)
 		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: prior.ID, Type: "run"})
 		if err != nil {
 			return err

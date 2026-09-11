@@ -217,6 +217,7 @@ func BudgetStopEffects(conn *sql.DB, subject Subject, envelopeID, actorID string
 	effects := []journal.Effect{}
 	stops := make([]Stop, 0, len(blocks))
 	attention := make([]Attention, 0, len(blocks))
+	preparedAttention := map[string]Attention{}
 	for _, block := range blocks {
 		if block.Code != "budget-exhausted" && block.Code != "budget-data-unavailable" {
 			return nil, nil, nil, fmt.Errorf("budget Stop code is invalid")
@@ -253,6 +254,9 @@ func BudgetStopEffects(conn *sql.DB, subject Subject, envelopeID, actorID string
 		if err != nil {
 			return nil, nil, nil, err
 		}
+		if prepared, exists := preparedAttention[key]; exists {
+			item, found = prepared, true
+		}
 		if !found {
 			item.ID, err = newAttentionID(conn)
 			if err != nil {
@@ -266,6 +270,7 @@ func BudgetStopEffects(conn *sql.DB, subject Subject, envelopeID, actorID string
 		}
 		item.StopIDs = append(item.StopIDs, stopID)
 		sort.Strings(item.StopIDs)
+		preparedAttention[key] = item
 		stopEffects := stopRaisedEventForDomain(stop, item, !found, "<event-id>").Effects
 		effects = append(effects, stopEffects...)
 		stops, attention = append(stops, stop), append(attention, item)

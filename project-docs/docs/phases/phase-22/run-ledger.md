@@ -2066,3 +2066,10 @@
 - Resolution evidence: PENDING - public max1 force probe and successful incomplete rebuild retained in final-review-3 and .cache/phase22-finalqa3-VBzIPF
 - Next action: root direct focused repair under DEC-218, then fresh final-review-4; no Developer cycle or concurrent source writer
 - Human attention required: no
+
+
+### 2026-09-12 10:48 CORRECTION
+
+- Scope: active Task1 FQ-01 attempt3, DEC-218 consequential helper completion.
+- Allowed files amendment: internal/workflow/budget.go only for same-call prepared Attention reuse; current_event_cardinality.go for validating that earlier same-Event insert reference is already within internal/journal scope.
+- Evidence: configured-two-interventions-budget RED, `UNIQUE constraint failed: attention_items.semantic_key (2067)`, command terminated exit_code:1. Both independent samples and both Stops/links remain required; one shared Attention follows the existing semantic key. No policy, gate, command, threshold or signature change.

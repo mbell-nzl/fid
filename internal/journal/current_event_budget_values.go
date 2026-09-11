@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-func validateCurrentBudgetSampleChain(tx *sql.Tx, effect Effect) error {
-	policy, err := currentPublicRow(tx, "run_budget_bindings", map[string]any{"run_id": effect.Values["run_id"], "name": effect.Values["budget_name"]})
+func validateCurrentBudgetSampleChain(tx *sql.Tx, effect Effect, policyRunID any) error {
+	policy, err := currentPublicRow(tx, "run_budget_bindings", map[string]any{"run_id": policyRunID, "name": effect.Values["budget_name"]})
 	if err != nil {
 		return err
 	}
@@ -35,6 +35,8 @@ func validateCurrentBudgetFacts(tx *sql.Tx, event Event) error {
 	runID := any(event.Aggregate.ID)
 	switch event.EventType {
 	case "run.budget-observed", "run.execution-blocked":
+	case "run.recovered":
+		runID = currentInserted(event, "runs")["id"]
 	case "gate.execution-started":
 		runID = currentInserted(event, "execution_attempts")["run_id"]
 	case "gate.receipt-recorded":
@@ -83,23 +85,35 @@ func validateCurrentBudgetFacts(tx *sql.Tx, event Event) error {
 			required[name.(string)+"/"+code] = after
 		}
 	}
-	return validateCurrentBudgetStops(event, required)
+	return validateCurrentBudgetStops(event, required, runID)
 }
 
 func validateCurrentAutomaticCharge(event Event, name, unit any) error {
-	if event.EventType != "gate.execution-started" && event.EventType != "gate.receipt-recorded" {
+	if event.EventType != "gate.execution-started" && event.EventType != "gate.receipt-recorded" && event.EventType != "run.recovered" {
 		return nil
 	}
 	var charge *int64
 	var sourceID, observedAt any
-	if event.EventType == "gate.execution-started" {
+	switch event.EventType {
+	case "run.recovered":
+		recovery := currentInserted(event, "run_recoveries")
+		authority, err := decodeCurrentJSON(recovery["authority_json"].(string))
+		if err != nil {
+			return err
+		}
+		sourceID, observedAt = recovery["id"], currentInserted(event, "runs")["started_at"]
+		if authority.(map[string]any)["mode"] == "force" && unit == "interventions" {
+			v := int64(1)
+			charge = &v
+		}
+	case "gate.execution-started":
 		attempt := currentInserted(event, "execution_attempts")
 		sourceID, observedAt = attempt["id"], attempt["started_at"]
 		if unit == "attempts" {
 			v := int64(1)
 			charge = &v
 		}
-	} else {
+	default:
 		receipt := currentInserted(event, "execution_receipts")
 		sourceID, observedAt = receipt["id"], receipt["ended_at"]
 		switch unit {
@@ -129,6 +143,9 @@ func validateCurrentAutomaticCharge(event Event, name, unit any) error {
 			continue
 		}
 		count++
+		if event.EventType == "run.recovered" && (effect.Values["actor_id"] != event.ActorV2.ActorID || effect.Values["measurement_ref_json"] != nil) {
+			return fmt.Errorf("current intervention: invalid Actor or measurement reference")
+		}
 		if charge == nil || !currentValuesEqual(effect.Values["value"], *charge) || effect.Values["source"] != "fid" || effect.Values["sample_kind"] != "delta" || effect.Values["source_sample_id"] != sourceID || effect.Values["observed_at"] != observedAt {
 			return fmt.Errorf("current charge: sample differs from captured execution facts")
 		}
@@ -139,10 +156,13 @@ func validateCurrentAutomaticCharge(event Event, name, unit any) error {
 	return nil
 }
 
-func validateCurrentBudgetStops(event Event, required map[string]map[string]any) error {
+func validateCurrentBudgetStops(event Event, required map[string]map[string]any, runID any) error {
 	for _, effect := range event.Effects {
 		if effect.Table != "stops" {
 			continue
+		}
+		if effect.Values["subject_type"] != "run" || effect.Values["subject_id"] != runID {
+			return fmt.Errorf("current budget boundary: Stop Run binding mismatch")
 		}
 		value, err := decodeCurrentJSON(effect.Values["details_json"].(string))
 		if err != nil {

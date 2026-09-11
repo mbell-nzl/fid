@@ -92,11 +92,24 @@ func validateCurrentReferences(tx *sql.Tx, event Event) error {
 			}
 		}
 		if effect.Table == "budget_samples" {
-			if err := validateCurrentBudgetSampleChain(tx, effect); err != nil {
-				return err
+			policyRunID := effect.Values["run_id"]
+			var run map[string]any
+			var err error
+			if event.EventType == "run.recovered" {
+				run = currentInserted(event, "runs")
+				if effect.Values["run_id"] != run["id"] {
+					return fmt.Errorf("current intervention: successor Run binding mismatch")
+				}
+				// Its exact policy inheritance is validated by recovery references;
+				// the successor binding does not exist until Effects are applied.
+				policyRunID = event.Aggregate.ID
+			} else {
+				run, err = currentReference(tx, "runs", map[string]any{"id": effect.Values["run_id"]})
+				if err != nil {
+					return err
+				}
 			}
-			run, err := currentReference(tx, "runs", map[string]any{"id": effect.Values["run_id"]})
-			if err != nil {
+			if err := validateCurrentBudgetSampleChain(tx, effect, policyRunID); err != nil {
 				return err
 			}
 			if event.EventType != "run.recovered" && effect.Values["run_id"] != runID {

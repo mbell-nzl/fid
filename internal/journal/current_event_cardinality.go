@@ -58,6 +58,7 @@ func validateCurrentCardinality(event Event) error {
 // Each automatic budget boundary contributes one ordered Stop/Attention/link
 // bundle. Attention reuse omits only the insert, never the link.
 func validateCurrentStopBundles(tx *sql.Tx, event Event) error {
+	preparedAttention := map[any]map[string]any{}
 	for index := 0; index < len(event.Effects); index++ {
 		stop := event.Effects[index]
 		if stop.Table != "stops" {
@@ -73,12 +74,16 @@ func validateCurrentStopBundles(tx *sql.Tx, event Event) error {
 			if attention["status"] != "open" || !currentValuesEqual(attention["version"], 1) || attention["resolution_event_id"] != nil {
 				return fmt.Errorf("current Event: newly raised Attention must be open")
 			}
+			preparedAttention[attention["id"]] = attention
 		}
 		index++
 		if index >= len(event.Effects) || event.Effects[index].Table != "attention_stop_links" || event.Effects[index].PK["stop_id"] != stop.PK["id"] {
 			return fmt.Errorf("current Event: Stop requires its ordered Attention link")
 		}
 		link := event.Effects[index]
+		if attention == nil {
+			attention = preparedAttention[link.PK["attention_id"]]
+		}
 		if attention == nil {
 			row, found, err := readCurrentEventValues(tx, "attention_items", map[string]any{"id": link.PK["attention_id"]}, []string{"id", "status", "subject_type", "subject_id", "code"})
 			if err != nil {

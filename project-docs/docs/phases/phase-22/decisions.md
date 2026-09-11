@@ -1515,6 +1515,13 @@
   and fault/portability fixtures; append task-1-done.md. Task7 is the budget
   owner of record and Task5 the recovery producer origin
   b7dce8e747a3f2d720002faee3db7f95b3cb4019. Historical reports stay unchanged.
+- **Consequential helper scope:** The configured-two-budget regression fails
+  with `UNIQUE constraint failed: attention_items.semantic_key (2067)` because
+  BudgetStopEffects independently creates the same open semantic Attention
+  twice inside one Event. Include internal/workflow/budget.go only to reuse
+  an Attention already prepared by that call, and current_event_cardinality.go
+  to validate a link to that earlier same-Event insert. Preserve both Stops,
+  both charges and both links; no semantic key or deduplication policy changes.
 - **Derived execution:** One fid delta1 per configured interventions budget,
   Recovery source identity, null measurement reference, original actor/time,
   immutable Envelope sample chain and original idempotent snapshot. Bind the
