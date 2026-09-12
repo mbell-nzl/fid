@@ -115,8 +115,8 @@ Human approval on 2026-09-05 ratifies DEC-180/182/184..187. All 18 planned
 tasks, six review windows and the independent task-12 checkpoint are complete.
 Final-review-2 closed FQ-02 through FQ-07; root completed final-review-3's force
 accounting finding under DEC-218. Independent final-review-4 qualifies technical
-readiness and fresh Human fixtures; FQ-01 is closed. Six Human judgments remain
-pending, and the overall review remains BLOCK solely for VAL-076..078. Delegation
+readiness and fresh Human fixtures; FQ-01 is closed. Human attempt 1 recorded one PASS, two FAIL and three PARTIAL outcomes;
+DEC-219/task-19 repairs the guidance before a fresh VAL-076..078 retest. Delegation
 covers implementation, QA and checklist preparation, not Human acceptance or
 release. See `../phases/phase-22/delegate-handoff.md`. Branch is `phase-22`;
 Phase 21 is merged.
@@ -179,3 +179,8 @@ candidate ledger rather than this register.
 Go/tool caches remain redirected into gitignored repository directories by
 `.codex/config.toml`; changing that configuration requires a fresh session.
 No cache configuration change is planned.
+
+- DEC-219: Human approved one supplemental task-19 guidance repair, serial root
+  implementation and one independent review. Imported observation provenance,
+  adoption versus proof and activation direction are explained without changing
+  JSON or mutation authority. Original Human failures remain; retest required.

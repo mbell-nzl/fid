@@ -2120,7 +2120,7 @@
 
 - Handoff control correction: first sequence check terminated exit1 with `INVALID schema v2 REVIEW must contain each review field exactly once`; root omitted the mandatory Must-fix summary field. Added the actual QA4 counts without changing the scoped verdict, Human pending status or control. The failed receipt is retained in .cache/phase22-force-repair-MUSz6S/admin-results.json.
 
-### 2026-09-12 CORRECTION — Human acceptance repair allocation
+### 2026-09-12 21:50 CORRECTION
 
 - Human result: checklist attempt 1 FAIL (1 PASS, 2 FAIL, 3 PARTIAL).
 - Authority: DEC-219; Human explicitly approved one supplemental repair task,
