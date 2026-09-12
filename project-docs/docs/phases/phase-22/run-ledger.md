@@ -2095,3 +2095,27 @@
 - Commit: 671e4e4eb25b89157949f0de82a5c50cf412c489 - verified, subject matched; producer c361e9ead3a375dfe3af8cbd63f3cdd55ff40007, adjacent report ab3c255169b4c5196539f6a84da16db2e04c02df
 - QA-plan commands beyond the task spec: final-review-3 five force-accounting obligations, focused fault/corruption/portability controls; fresh independent final QA still owes all full phase gates including DEC-217 archive_scale
 - Evidence: All original tasks1–18 and bounded implementation repairs complete. FQ-02 through FQ-07 remain independently closed by final-review-2. Fresh independent final-review-4 must assess FQ-01 closure, full deterministic qualification and late fresh Human fixtures. Human responses remain blank. Root freezes source for one reviewer; no parallel implementers and no Human acceptance claimed.
+
+
+### 2026-09-12 12:30 REVIEW review-7d
+
+- Path: project-docs/docs/phases/phase-22/qa/final-review-4.md
+- Tasks covered: task-1 through task-18
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-7c
+- Must-fix: 0 / Improvement: 0 / Human-only blocker candidates: 1; the six Human judgments remain outside the scoped technical repair closure
+- Scope: the independent review's explicit scoped FQ-01 repair-closure PASS; its overall phase verdict remains BLOCK solely for pending Human validation
+- Evidence: Fresh QA Lead /root/final_qa_4 committed 13a680446a068e815da675fcfda78723b7d7a7ee, reviewed clean3832df1. No technical Must-fix;77 QA-owned VAL and84 deterministic QA items PASS; FQ-02 through FQ-07 retain prior independent closures. Own full phase gates, consecutive benchmark repeat, three fresh100k27603/27493/27441ms, archive_scale189.738s and kit currency passed. Public maximum1/3 force probes prove exact charge/boundary/denial/original snapshot/rebuild. Six Human questions remain blank. This event closes the bounded implementation repair, not Human-owned VAL-076..078 or phase acceptance.
+
+### 2026-09-12 12:30 CORRECTION
+
+- Scope: technical handoff ready for the Human checklist; no source or gate change
+- Current status: all18 planned tasks and all seven final-QA findings are independently closed; fresh Human fixtures and all twelve inspection commands verified by QA4
+- Fixture: .cache/phase-22-human/checkpoints-4132086272/manifest.json; clean source3832df1fbd271d9b868a7feb1d07f48b044efdbb; SHA256 f71a1051d0ab5de6dd17e3d7a2cdd222e14a6260973728f3f24764cecf48337b
+- Lease expiry: 2026-09-13T00:19:09.826096583Z /13 September2026 12:19:09NZST
+- Pending authority: six Human judgments for VAL-076..078, with no new product/spec decision or technical repair requested
+- Handoff: current progress/brief/decision index and archive progress refreshed from actual QA4 results; historical reports, failures, reviews and Human blanks preserved
+- RUN-END: deferred until Human results permit unconditional Tech Lead wrap-up readiness; no phase acceptance, post-Human wrap-up, merge, push or release is claimed
+
+- Handoff control correction: first sequence check terminated exit1 with `INVALID schema v2 REVIEW must contain each review field exactly once`; root omitted the mandatory Must-fix summary field. Added the actual QA4 counts without changing the scoped verdict, Human pending status or control. The failed receipt is retained in .cache/phase22-force-repair-MUSz6S/admin-results.json.

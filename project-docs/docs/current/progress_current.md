@@ -2,22 +2,27 @@
 
 ## Project State
 
-Phase 22 is **in final-QA repair** on `phase-22` under DEC-188. The planning base is
+Phase 22 is **ready for Human verification** on `phase-22` under DEC-188. The planning base is
 merged main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 completed
 under DEC-179 on 2026-09-04 (87/87 VAL, 4/4 Human), and its branch has since
 been merged.
 
-Tasks 1-18 are complete; review-1b and review-2b passed. Task 8 completed the
-DEC-195 cancellation DDL/filter convergence with task-1 provenance, all eight
-required gates and independent report lint. Task 9 completed DEC-196/197 semantic
-conformance, Human Stop text and actual-operation Stop guards with all five
-final gates and independent report lint. Review 3 passed independently. Task 10
-completed under DEC-198 at 03cc6c7 with exact binding/agreement/upgrade/replay
-coverage, all five final gates and independent report lint. Task 11 completed
-under DEC-199/200 at 30dd780 with independent fake/fid cases, real response-loss
-boundary tests, all five final gates and root report lint. Task 12 completed under DEC-196/201 at c2d8098, with final gate addendum
-833b4fc and preserved report f57b4aa. Review 4 passed at 3addf7d and the independent checkpoint passed at a9bf3bf.
-Task 13 completed at acb569b with final report9ad0585, all five final-source gates, root report lint and route PASS. Task14 completed at 8c322b5 with root report51cc314, all five final exact gates and first-attempt report lint PASS. Task15 completed at 5ec69e6 with final report59d86a3 and closure b9ad453; all five gates and report controls passed. Independent Review5 passed at8125d8d. Task16 completed at644f30e/report1b18b16 with all12 gates, including27821ms fresh100k rebuild. Task17 completed at ccc15f6/report3b0e799 with all17 final gates; fresh100k samples28121/27904/28157ms and both full benchmark runs passed. Task18 completed at24e3cbd, followed by test-only R6-01 repair e04bfbd/report3e96018 and fresh independent Review6b PASS7e78b83. All7 continuation gates passed, with latest retained clean-source Human manifest checkpoints-4043242815. DEC205–207 bounded accepted-behavior repairs remain documented. No escalation is open.
+All 18 planned tasks, six review windows and the independent task-12
+checkpoint are complete. Original completion reports and causal allocations
+remain in the phase archive and run ledger. Final-review-2 independently closed
+FQ-02 through FQ-07. Final-review-3 found the remaining accepted force-recovery
+intervention accounting missing; DEC-218 allocated its completion to Task 1.
+
+Root completed that repair at c361e9e and fixture follow-up 671e4e4, with report
+ab3c255 and clean review checkpoint 3832df1. All twelve unchanged task gates
+passed: race CLI 414.292s / export 270.522s, coverage 65.4%, integration 557.259s, and
+100000-event rebuild 27490ms below 30000ms. Every failed attempt is preserved.
+The first integration run timed out at 600.834s; isolated copies of an immutable
+valid prefix reduced the new force test group from 89.800s to 35.396s without removing
+cases or rollback comparisons. Independent final-review-4 closes FQ-01 and
+passes every technical phase check.
+The overall review remains BLOCK solely for the three Human-owned assertions.
+All six checklist responses remain blank. No escalation is open.
 
 The Human delegated completion of tasks 8-18, required reviews, final
 deterministic QA, and runnable Human checklist preparation on 2026-09-07.
@@ -36,7 +41,7 @@ Runner's only recovery route is a same-task continuation, so DEC-194 moves
 execution of exactly four `internal/workflow` files into task 6 with task-4
 provenance recorded. Task 4 stays COMPLETE and unedited. ESC-22-001 (DEC-190/
 191) and ESC-22-002 (DEC-192/193) closed earlier. No escalation is open and no
-Human decision is pending.
+product/spec decision is pending.
 
 ## Phase 22 Pack
 
@@ -56,30 +61,27 @@ report records freshly executed workflow checks only.
 
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
-- Task statuses: original 1..18 complete; all six windows/checkpoint passed. Independent final QA ec4daa9 returned seven bounded findings, reopening owners 2,4,5,7,8,10,1 in that execution order.
-- Next: one consolidated Task1 FQ-01 continuation, then fresh independent
-  final-review-3 and renewed performance/Human fixture qualification.
-  Final-review-2 (b55c96b) independently closes FQ-02 through FQ-07. The root
-  preserved 23 failing current Event corruption cases and four genuine controls
-  in 356b004, plus required-field producer regressions. DEC-209 allocates the
-  existing nullable Stop fields and Claim scope/mode serialization. Scope
-  amendment 2acdb23 retains attempt2 and all twelve required commands. Root is the sole code writer; all implementation contributors have
-  handed back.
-  Task1 FQ-01 attempt2 implementation is complete at c8e0061, with report
-  f58f2c2. All twelve task gates passed: race411.093sCLI/273.017sexport,
-  coverage65.4%, integration517.861s, and fresh100k rebuild27137ms. DEC-216
-  records the Human-approved typed snapshot contract; DEC-217 retains the
-  product archive ceilings with small routine tests and an explicit full-scale
-  gate (PASS226.390s). Failed attempts and causal runtime repairs are preserved
-  in the report. Report-lint and route pass. Source is frozen for one fresh
-  independent final-review-3, required phase benchmarks/reference samples and
-  renewed Human fixtures. Human readiness is not yet established, and no Human
-  decision is outstanding.
-  DEC-202 supplies the imported destination scope; DEC-203 allocates Task15's
-  already accepted import failure registry entry. Implementation and review are
-  serialized under the renewed Human authorization.
+- Task statuses: original 1..18 complete; all six windows/checkpoint passed.
+  The seven initial final-QA findings are independently closed: FQ-02..07
+  by final-review-2 and FQ-01 by final-review-4.
+- Next: the Human runs the [six checklist checks](../phases/phase-22/qa/human-checklist.md)
+  for VAL-076..078, then QA/Human results are recorded before phase acceptance
+  and Tech Lead wrap-up. [Final review](../phases/phase-22/qa/final-review-4.md)
+  records technical qualification and the remaining Human-only block.
+- Fresh fixtures: checkpoints-4132086272, clean source 3832df1, all twelve
+  inspection commands independently verified. Successor lease expires
+  **13 September 2026 at 12:19:09 NZST**; regenerate and requalify if needed.
+- DEC-216 records the Human-approved typed snapshot contract. DEC-217 keeps
+  archive ceilings unchanged while splitting small routine checks from the
+  explicit production-scale phase gate. DEC-218 completes accepted force
+  intervention accounting; it introduces no new product policy or threshold.
+- Implementation and independent technical review are complete. Human judgments
+  remain pending; no product decision or implementation repair is outstanding.
 
 ## Carry-Forward
+
+The register below retains its pre-wrap-up dispositions. The complete trigger
+audit and closure/re-targeting follow Human verification at Tech Lead wrap-up.
 
 CF-024: task 17/final QA, unchanged reference rebuild rule; early samples at 1/16.
 CF-034: direct workflow/evidence branch tests and before/after coverage in

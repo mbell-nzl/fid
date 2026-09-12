@@ -284,3 +284,35 @@
 - All18 original tasks remain complete; no Human readiness, response,
   acceptance, wrap-up, merge or release is claimed. Old fixtures are retained;
   fresh final-source qualification is still required.
+
+
+## 2026-09-12 — Technical qualification complete; Human verification ready
+
+- Final-review-3 identified omitted force-recovery intervention charges under
+  the existing contract. Root completed DEC-218 in the same Task1 FQ-01
+  continuation, retaining Task7 budget and Task5 producer provenance. Product
+  repair c361e9e and isolated-fixture follow-up 671e4e4 are recorded in report
+  ab3c255; all failed attempts remain intact.
+- Exact charges, successor chains, original retry snapshots, boundary Stops,
+  multiple-budget Attention reuse, full rejected-Event rollback, three actual
+  process-fault points and checksum-valid archive rejection are verified.
+  The first full integration gate timed out at 600.834s. Profiling isolated
+  repeated migration setup in the new tests; fresh physical DB copies of an
+  immutable prefix reduced that group from 89.800s to 35.396s with every case and
+  full-table comparison retained. All twelve closing task commands passed;
+  integration 557.259s and 100k rebuild 27490ms. No limit or gate changed.
+- Fresh independent review 13a680446a068e815da675fcfda78723b7d7a7ee closes FQ-01.
+  FQ-02..07 retain review 2's independent closures. All 77 QA-owned assertions
+  and 84 deterministic checklist items PASS. Own phase gates include
+  integration 558.090s, coverage 65.4%, two consecutive full benchmarks,
+  three fresh 100k rebuilds 27603/27493/27441ms and the unchanged production
+  archive-scale matrices 189.738s. Kit currency was verified without upgrade.
+- Fresh Human fixtures checkpoints-4132086272 bind clean source 3832df1.
+  Generator 19.403s and all twelve actual Human/JSON inspection commands pass;
+  binary hash/build metadata and four Project identities are verified. The
+  successor lease expires 2026-09-13T00:19:09.826096583Z, or 13 September 2026
+  at 12:19:09 NZST. Exact paths and neutral questions are in qa/human-checklist.md.
+- Overall final-review-4 remains BLOCK solely for Human-owned VAL-076..078:
+  six responses/outcomes are blank. The Human runs that checklist next; phase
+  acceptance and Tech Lead wrap-up follow the recorded Human results. No
+  technical Must-fix, open escalation, merge, push or release is asserted.

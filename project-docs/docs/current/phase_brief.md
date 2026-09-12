@@ -9,25 +9,28 @@ import/export the same state, rebuild, resume without contradictory facts.
 
 ## Status
 
-**Final-QA repair (DEC-188).** Branch `phase-22` from merged main
+**Ready for Human verification (DEC-188).** Branch `phase-22` from merged main
 `89d964a84dbdd297fdf472d6f78b001e2efac702`; Phase 21 is wrapped (DEC-179) and
 merged. Contracts and task pack are refined against QA R-01..14 and all kit
 comparison items (DEC-184..187); Human approved the refined pack on 2026-09-05.
 See `../phases/phase-22/runner-handoff.md`. Status is per-task below.
 
-All 18 planned tasks are complete. Reviews 1b, 2b, 3, 4, 5 and 6b and the
-independent task-12 checkpoint passed. The first final review opened seven
-bounded findings; fresh independent final-review-2 closes FQ-02 through FQ-07
-and retains FQ-01, owned by Task 1. Its second final-QA repair continuation
-covers closed current Event values, result bindings and required conditional
-Effects. DEC-209 allocates the consequential required-field serialization.
+All 18 planned tasks, reviews 1b/2b/3/4/5/6b and the independent task-12
+checkpoint are complete. Final-review-2 closed FQ-02 through FQ-07.
+Final-review-3 identified omitted force-recovery intervention accounting; root
+completed the accepted behavior under DEC-218 in the same Task 1 continuation.
+Source c361e9e/671e4e4 and report ab3c255 retain all failed evidence and all twelve
+passing task gates, including integration 557.259s and 100k rebuild 27490ms.
 
-One Developer is the sole implementation writer under root delegation.
-After its unchanged gates and report close, a different independent QA Lead
-will perform final-review-3, final performance qualification and fresh Human
-fixture verification. Human responses remain blank; checklist readiness is
-pending. See the [run ledger](../phases/phase-22/run-ledger.md) and
-[delegate handoff](../phases/phase-22/delegate-handoff.md). No open ESC.
+Independent final-review-4 closes FQ-01 and passes all technical qualification
+on clean checkpoint 3832df1. The overall review remains BLOCK solely for
+Human-owned VAL-076..078. Fresh checklist fixtures checkpoints-4132086272 and
+all twelve inspection commands are verified; the successor lease expires
+**13 September 2026 at 12:19:09 NZST**. Six Human responses remain blank.
+Phase acceptance and post-Human Tech Lead wrap-up have not occurred. See the
+[checklist](../phases/phase-22/qa/human-checklist.md),
+[final review](../phases/phase-22/qa/final-review-4.md), and
+[run ledger](../phases/phase-22/run-ledger.md). No open ESC.
 
 ## Operating Mode
 
@@ -42,7 +45,7 @@ Tasks are sequential; reviews follow every three tasks.
 
 | Task | Title | Status | Dependency |
 |---|---|---|---|
-| [1](../phases/phase-22/tasks/task-1.md) | Recovery schema and replay foundation | Planned task complete; FQ-01 repair active | Runner QA readiness refresh |
+| [1](../phases/phase-22/tasks/task-1.md) | Recovery schema and replay foundation | Complete; FQ-01 independently closed | Runner QA readiness refresh |
 | [2](../phases/phase-22/tasks/task-2.md) | Typed Stops and Attention domain | Complete | 1 |
 | [3](../phases/phase-22/tasks/task-3.md) | Lease lifecycle and executor observations | Complete | 2 |
 | [4](../phases/phase-22/tasks/task-4.md) | Read-only repository reconciliation | Complete | 3 |
@@ -82,7 +85,7 @@ by an owning task. QA Lead owns 77; Human owns VAL-076..078.
 | Handoff / refinement / plan / consistency | qa/qa-lead-handoff.md, qa/tl-refinement.md, qa/qa-plan.md, qa/consistency-review.md | Accepted DEC-188; plan refreshed before task 1 |
 | Mid-phase reviews | qa/review-1b.md, qa/review-2b.md, qa/review-3.md, qa/review-4.md, qa/review-5.md, qa/review-6b.md | PASS |
 | Independent checkpoint | qa/checkpoint-after-task-12.md | PASS |
-| Final review / Human checklist | qa/final-review-2.md / qa/human-checklist.md | FQ-01 repair; fresh review and fixtures pending |
+| Final review / Human checklist | qa/final-review-4.md / qa/human-checklist.md | Technical PASS; fresh fixtures verified; six Human judgments pending |
 
 ## Active Constraints
 

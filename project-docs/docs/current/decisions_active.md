@@ -111,12 +111,14 @@ DEC-186 boundary evidence, early rebuild samples and bounded R-14 repair;
 DEC-187 complete kit comparison dispositions and CF-037 qualification work.
 DEC-188 Human acceptance of Heavy mode, the full refined pack and execution.
 
-Human approval on 2026-09-05 ratifies DEC-180/182/184..187; the other planning
-dispositions apply. QA readiness refreshed on 2026-09-05; tasks 1-11 are
-complete and review-1b/review-2b passed. Task 9 completed under DEC-196/197;
-review 3 passed and task 12 is executing before the remaining required QA. The Human delegated remaining execution and
-checklist preparation on 2026-09-07; Human outcomes remain pending. See
-`../phases/phase-22/delegate-handoff.md`. Current branch is `phase-22`;
+Human approval on 2026-09-05 ratifies DEC-180/182/184..187. All 18 planned
+tasks, six review windows and the independent task-12 checkpoint are complete.
+Final-review-2 closed FQ-02 through FQ-07; root completed final-review-3's force
+accounting finding under DEC-218. Independent final-review-4 qualifies technical
+readiness and fresh Human fixtures; FQ-01 is closed. Six Human judgments remain
+pending, and the overall review remains BLOCK solely for VAL-076..078. Delegation
+covers implementation, QA and checklist preparation, not Human acceptance or
+release. See `../phases/phase-22/delegate-handoff.md`. Branch is `phase-22`;
 Phase 21 is merged.
 
 DEC-198 resolves contradictory prepare-time prose in favor of the already
@@ -137,6 +139,16 @@ DEC-201 assigns the omitted derived Budget output state to task 12 with task-7
 provenance, preserving policy/accounting/history. It explicitly adds only
 effective_status to the Resume Claim projection so elapsed leases are visible
 without rewriting durable Claim status.
+
+DEC-216 accepts complete typed current-family idempotency snapshots, including
+pending Attempts, derived terminal Receipts and committed denials. Public
+response behavior is preserved. DEC-217 keeps the 64MiB/1GiB/8GiB/1-million-entry archive
+ceilings unchanged; small routine fixtures exercise the same limiter and the
+original full matrices remain mandatory through the archive_scale phase gate.
+DEC-218 completes already accepted force intervention charges, immutable chain,
+successor boundary Stops and exact replay/import validation. See the phase
+[decisions](../phases/phase-22/decisions.md) and Task 1 report for authority,
+causal provenance and preserved runtime-failure evidence.
 
 ## Carry-Forward Register
 
