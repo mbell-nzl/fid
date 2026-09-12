@@ -53,3 +53,26 @@ func TestHumanActivationTerminalStateDoesNotOfferRecovery(t *testing.T) {
 		}
 	}
 }
+
+func TestHumanImportedFreshObservationDoesNotRequestItAgain(t *testing.T) {
+	context := workflow.RecoveryReadContext{Import: &workflow.ImportedHistoryContext{}, Liveness: &workflow.Liveness{State: "terminated"}}
+	human := strings.Join(recoveryLocalContextLines(context, true), "\n")
+	if strings.Contains(human, "establish fresh destination liveness") {
+		t.Fatalf("existing destination observation described as missing: %s", human)
+	}
+}
+
+func TestHumanImportedInactiveRunDoesNotRequestObservation(t *testing.T) {
+	context := workflow.RecoveryReadContext{Import: &workflow.ImportedHistoryContext{}}
+	for _, run := range []*workflow.Run{nil, {Status: "succeeded"}, {Status: "failed"}, {Status: "abandoned"}} {
+		var out bytes.Buffer
+		cmd := &cobra.Command{}
+		cmd.SetOut(&out)
+		if err := writeResumeHuman(cmd, workflow.Resume{Run: run}, context); err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(out.String(), "Before continuing work here") || strings.Contains(out.String(), "establish fresh destination") {
+			t.Fatalf("inactive or absent Run directs recovery: %s", out.String())
+		}
+	}
+}

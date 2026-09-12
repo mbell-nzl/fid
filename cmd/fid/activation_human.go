@@ -41,7 +41,9 @@ func writeActivationStatusHuman(cmd *cobra.Command, activation workflow.Activati
 		lines = append(lines, "  "+resource.Component, "    Prior: "+prior, "    Target: "+resource.NewIdentity,
 			"    Observed: "+observed, "    State: "+resource.State)
 	}
-	lines = append(lines, "  Restoring an absent prior resource means leaving that resource absent, not restoring an unnamed version.")
+	if !terminal {
+		lines = append(lines, "  Restoring an absent prior resource means leaving that resource absent, not restoring an unnamed version.")
+	}
 	_, err := fmt.Fprintln(cmd.OutOrStdout(), strings.Join(lines, "\n"))
 	return err
 }

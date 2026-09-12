@@ -18,7 +18,7 @@ func resumeNextStepLines(resume workflow.Resume) []string {
 				"  A successful execution can supply Evidence; it does not itself complete the Issue.")
 		}
 	}
-	lines = append(lines, "  Available operations below are candidates, not an execution sequence.",
+	lines = append(lines, "  Candidate operations below are not an execution sequence.",
 		"  Ready means the recorded prerequisites permit a request; supplied inputs and authority are checked when it runs.")
 	for _, action := range resume.NextActions {
 		state := "ready"

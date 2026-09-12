@@ -31,7 +31,7 @@ func TestP22HumanGuidance(t *testing.T) {
 		p22AcceptedCall(t, &imported, "guidance-destination-observe", "run.observe", nil)
 		p22AssertGuidanceOutput(t, &imported, []string{"run", "inspect", a.runID}, "Destination liveness observation", "terminated")
 		human, _, err := closureRunCommand(target, a.binary, "--project", target, "run", "inspect", a.runID)
-		if err != nil || strings.Contains(human, "Historical liveness") {
+		if err != nil || strings.Contains(human, "Historical liveness") || strings.Contains(human, "establish fresh destination liveness") {
 			t.Errorf("fresh observation mislabeled historical: %v %s", err, human)
 		}
 		marker := filepath.Join(target, ".fid", "import.marker.json")
@@ -57,6 +57,22 @@ func TestP22HumanGuidance(t *testing.T) {
 				}
 				p22AssertGuidanceOutput(t, a, []string{"activation", "status", id}, wants...)
 			})
+		}
+	})
+	t.Run("imported terminal Run", func(t *testing.T) {
+		a := p22NewFIDRecoveryAdapter(t)
+		p22AcceptedCall(t, a, "terminal-observe", "run.observe", nil)
+		p22AcceptedCall(t, a, "terminal-close", "run.close", nil)
+		archive := filepath.Join(t.TempDir(), "terminal.zip")
+		p21Run(t, a.binary, a.workspace, "--json", "export", "create", archive)
+		target := filepath.Join(t.TempDir(), "destination")
+		closureRun(t, filepath.Dir(target), "git", "clone", "-q", a.workspace, target)
+		p21Run(t, a.binary, target, "--json", "export", "import", archive, "--repository", target, "--idempotency-key", "terminal-import")
+		for _, args := range [][]string{{"resume", a.issueID}, {"run", "inspect", a.runID}} {
+			human, stderr, err := closureRunCommand(target, a.binary, append([]string{"--project", target}, args...)...)
+			if err != nil || stderr != "" || !strings.Contains(human, "Imported project") || strings.Contains(human, "Before continuing work here") || strings.Contains(human, "establish fresh destination") {
+				t.Fatalf("terminal imported guidance %v: err=%v stderr=%s human=%s", args, err, stderr, human)
+			}
 		}
 	})
 }

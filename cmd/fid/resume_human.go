@@ -17,7 +17,7 @@ func writeRunRecoveryHuman(cmd *cobra.Command, result workflow.RunRecoveryResult
 
 func writeResumeHuman(cmd *cobra.Command, resume workflow.Resume, context workflow.RecoveryReadContext) error {
 	lines := resumeContextHumanLines(resume)
-	lines = append(lines, recoveryLocalContextLines(context)...)
+	lines = append(lines, recoveryLocalContextLines(context, resume.Run != nil && resume.Run.Status == "active")...)
 	if context.Import != nil {
 		lines = append(lines, livenessHumanLines(context)...)
 	}
