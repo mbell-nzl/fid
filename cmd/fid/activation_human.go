@@ -17,7 +17,7 @@ func writeActivationStatusHuman(cmd *cobra.Command, activation workflow.Activati
 		lines = append(lines, "  Lifecycle is terminal; no activation recovery remains to select.")
 	} else if activation.PointOfNoReturn {
 		lines = append(lines, "  Recovery direction: complete-forward; irreversible commit",
-			"  The activation commit has passed the point of no return. Recovery must finish installing the selected resources and finalize activation; rollback is unavailable.")
+			"  The activation commit has passed the point of no return. Recovery must finish installing the selected resources and finalize activation; returning to the prior state is unavailable.")
 	} else {
 		lines = append(lines, "  Recovery direction: restore-prior",
 			"  The activation has not crossed its irreversible commit. Recovery returns resources to their state before this activation.")
@@ -41,7 +41,7 @@ func writeActivationStatusHuman(cmd *cobra.Command, activation workflow.Activati
 		lines = append(lines, "  "+resource.Component, "    Prior: "+prior, "    Target: "+resource.NewIdentity,
 			"    Observed: "+observed, "    State: "+resource.State)
 	}
-	if !terminal {
+	if !terminal && !activation.PointOfNoReturn {
 		lines = append(lines, "  Restoring an absent prior resource means leaving that resource absent, not restoring an unnamed version.")
 	}
 	_, err := fmt.Fprintln(cmd.OutOrStdout(), strings.Join(lines, "\n"))
