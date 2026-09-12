@@ -9,7 +9,7 @@ import/export the same state, rebuild, resume without contradictory facts.
 
 ## Status
 
-**Human acceptance repair in progress (DEC-219/task-19).** Branch `phase-22` from merged main
+**Ready for Human retest (DEC-219/task-19 complete).** Branch `phase-22` from merged main
 `89d964a84dbdd297fdf472d6f78b001e2efac702`; Phase 21 is wrapped (DEC-179) and
 merged. Contracts and task pack are refined against QA R-01..14 and all kit
 comparison items (DEC-184..187); Human approved the refined pack on 2026-09-05.
@@ -22,16 +22,18 @@ completed the accepted behavior under DEC-218 in the same Task 1 continuation.
 Source c361e9e/671e4e4 and report ab3c255 retain all failed evidence and all twelve
 passing task gates, including integration 557.259s and 100k rebuild 27490ms.
 
-Independent final-review-4 closes FQ-01 and passes all technical qualification
-on clean checkpoint 3832df1. The overall review remains BLOCK solely for
-Human-owned VAL-076..078. Fresh checklist fixtures checkpoints-4132086272 and
-all twelve inspection commands are verified; the successor lease expires
-**13 September 2026 at 12:19:09 NZST**. Human attempt 1 recorded 1 PASS, 2 FAIL and 3 PARTIAL; one bounded guidance
-repair and independent review precede a fresh retest.
-Phase acceptance and post-Human Tech Lead wrap-up have not occurred. See the
-[checklist](../phases/phase-22/qa/human-checklist.md),
-[final review](../phases/phase-22/qa/final-review-4.md), and
-[run ledger](../phases/phase-22/run-ledger.md). No open ESC.
+Independent final-review-4 closed FQ-01 and qualified the original technical
+phase. Human attempt1 then recorded 1 PASS, 2 FAIL and 3 PARTIAL outcomes.
+DEC-219/task-19 repairs recovery guidance with one independent reviewer;
+MF-01 and both wording improvements are closed on product source5232d9c.
+All seven task gates pass, including race/coverage65.5% and integration563.279s.
+Fresh clean-source ee7a5ca fixtures and all twelve inspections are verified.
+The current [checklist attempt2](../phases/phase-22/qa/human-checklist-2.md) has
+blank Human responses; lease expiry is **13 September2026,22:18:47NZST**.
+See [task19 report](../phases/phase-22/tasks/task-19-done.md),
+[independent review](../phases/phase-22/qa/task-19-review.md), and
+[run ledger](../phases/phase-22/run-ledger.md). Phase acceptance and post-Human
+wrap-up remain pending; original Human failures are preserved. No open ESC.
 
 ## Operating Mode
 

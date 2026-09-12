@@ -2,10 +2,18 @@
 
 ## Project State
 
-Phase 22 is **in Human acceptance repair (task-19)** on `phase-22` under DEC-188. The planning base is
+Phase 22 is **ready for Human retest (task-19 complete)** on `phase-22` under DEC-188. The planning base is
 merged main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 completed
 under DEC-179 on 2026-09-04 (87/87 VAL, 4/4 Human), and its branch has since
 been merged.
+
+Supplemental task-19 repairs the failed Human guidance under DEC-219. Product
+source 5232d9c and independent task-19-review closure PASS are complete. Final
+race/coverage passed (CLI425.789s; overall65.5%), integration563.279s, build and
+fresh retained-fixture generation18.972s. Root independently verified all twelve
+inspection commands, the binary hash and clean source ee7a5ca. Attempt 2 is
+`../phases/phase-22/qa/human-checklist-2.md`; its lease expires 13 September2026
+at22:18:47NZST. Attempt 1 remains FAIL. No Human assertion is promoted to PASS.
 
 All 18 planned tasks, six review windows and the independent task-12
 checkpoint are complete. Original completion reports and causal allocations

@@ -53,20 +53,20 @@ approval; this supplements the eighteen completed planned tasks.
 
 ## Acceptance Criteria
 
-- [ ] Resume groups immediate actions, recovery context, blockers and completion
+- [x] Resume groups immediate actions, recovery context, blockers and completion
   evidence; labels Actor IDs and explains each candidate operation. (VAL-076)
-- [ ] Adoption explicitly retains existing uncommitted changes for a successor
+- [x] Adoption explicitly retains existing uncommitted changes for a successor
   without establishing testing, review or correctness. (VAL-076)
-- [ ] Run inspection explains paths, reconciliation and observed/unknown or
+- [x] Run inspection explains paths, reconciliation and observed/unknown or
   historical liveness, without claiming it records an observation. (VAL-053/078)
-- [ ] Imported project/history identity and destination are recognizable; source
+- [x] Imported project/history identity and destination are recognizable; source
   and destination worktrees are distinguished. Fresh destination observations
   and checks are explained separately from completion Evidence. (VAL-078)
-- [ ] Activation shows resource identities, explains absent prior resources,
+- [x] Activation shows resource identities, explains absent prior resources,
   both recovery directions and the activation commit versus Git. (VAL-077)
-- [ ] Normal, blocked, expired, historical and fresh observation states retain
+- [x] Normal, blocked, expired, historical and fresh observation states retain
   factual correctness; JSON shapes and mutation behavior remain unchanged.
-- [ ] Independent review and fresh neutral fixtures precede Human retest;
+- [x] Independent review and fresh neutral fixtures precede Human retest;
   original failed judgments remain intact and acceptance is not inferred.
 
 ## First Failing Test
