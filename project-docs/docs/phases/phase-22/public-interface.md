@@ -299,6 +299,18 @@ text identifies the destination and preserved project/history; activation
 recovery text says restore-prior or complete-forward. Never claim that adoption
 is evidence or that post-commit recovery rolled back.
 
+DEC-219 Human guidance adds labeled sections and operation purposes to these
+views. Resume separates immediate recovery checks from completion Evidence;
+adoption retains existing uncommitted changes for the successor and establishes
+no testing/review/correctness proof. Inspection displays paths, repository
+comparison and dated liveness, qualifying imported observations as historical.
+Verified local import metadata identifies the preserved project/history and
+archive digest in the destination; it confers no mutation authority. Activation
+status describes resource prior/target identities and explains both directions,
+including absent prior resources and the activation commit versus Git. Human
+context supplements existing facts without changing any JSON member or mutation
+rule. All Human acceptance judgments remain required.
+
 Task 18's shared conformance fixtures cover every new/replaced leaf, amended
 read shape, failure code, and live frame above, with negative unknown-field,
 authority, stale-version, duplicate-delivery, and interrupted-publication cases.

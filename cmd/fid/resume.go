@@ -32,7 +32,15 @@ func newResumeCommand() *cobra.Command {
 		} else if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), "projection.resume", map[string]any{"resume": resume}, nil)
 		}
-		return writeResumeHuman(cmd, resume)
+		runID := ""
+		if resume.Run != nil {
+			runID = resume.Run.ID
+		}
+		context, err := workflow.ReadRecoveryContext(workspace, runID)
+		if err != nil {
+			return renderEnvelopeError(cmd, "projection.resume", err, "")
+		}
+		return writeResumeHuman(cmd, resume, context)
 	}}
 	cmd.Flags().StringVar(&repository, "repository", "", "Repository path for the durable observation")
 	cmd.SetFlagErrorFunc(canonicalFlagError("projection.resume"))

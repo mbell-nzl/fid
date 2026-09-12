@@ -94,16 +94,7 @@ func newActivationStatusCommand() *cobra.Command {
 		if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), "activation.status", map[string]any{"activation": activation}, nil)
 		}
-		if activation.Recovery == nil {
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", activation.ID, activation.Status)
-			return err
-		}
-		boundary := "restore-prior"
-		if activation.PointOfNoReturn {
-			boundary = "complete-forward; irreversible commit"
-		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%s\n", activation.ID, activation.Status, boundary)
-		return err
+		return writeActivationStatusHuman(cmd, activation)
 	}}
 	cmd.SetFlagErrorFunc(canonicalFlagError("activation.status"))
 	return cmd

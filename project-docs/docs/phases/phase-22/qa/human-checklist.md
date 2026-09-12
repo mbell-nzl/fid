@@ -3,8 +3,8 @@
 > Phase: 22 — Recovery and portability
 > Prepared: 2026-09-12
 > Tester: MBEL
-> Status: **Runnable snapshot independently verified on final reviewed source; Human judgments pending.**
-> Human responses and outcomes have not been recorded.
+> Status: **Attempt 1 completed: FAIL; preserved for task-19 repair and retest.**
+> Human responses and outcomes below are the immutable first-attempt judgments.
 
 ## Before starting
 
@@ -17,8 +17,8 @@ The retained set below was independently inspected after its generator exited.
 All twelve actual Human/JSON commands terminated successfully. Binary hash,
 clean build revision and four Project identities were independently verified.
 This set was generated late on clean final source after deterministic
-qualification. The six Human questions retain their original scope and blank
-responses. No Human judgment is inferred.
+qualification. The six Human questions retain their original scope; the Human
+subsequently recorded the responses below. No agent judgment replaces them.
 
 | Preparation record | Verified value |
 |---|---|
@@ -138,7 +138,7 @@ cd /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/imported
 
 ## Human results
 
-All six outcomes remain blank. Agents may prepare and verify the fixtures;
+All six outcomes are recorded: one PASS, two FAIL and three PARTIAL. Agents may prepare and verify the fixtures;
 only the Human records the judgments above. Deterministic QA evidence belongs
 in the separate final review.
 
@@ -147,7 +147,7 @@ in the separate final review.
 | Recovery view | 2 | 0 | 1 | 1 | 0 |
 | Activation recovery | 2 | 1 | 0 | 1 | 0 |
 | Imported work | 2 | 0 | 1 | 1 | 0 |
-| **Total** | **6** | **1** | **2** | **3** | **6** |
+| **Total** | **6** | **1** | **2** | **3** | **0** |
 
 | Result record | Human entry |
 |---|---|

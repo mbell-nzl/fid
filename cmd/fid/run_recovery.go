@@ -59,8 +59,11 @@ func newRunInspectCommand() *cobra.Command {
 		} else if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), "run.inspect", map[string]any{"run": result.Run, "reconciliation": result.Reconciliation, "liveness": result.Liveness}, nil)
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", result.Run.ID, result.Reconciliation.Digest)
-		return err
+		context, err := workflow.ReadRecoveryContext(workspace, result.Run.ID)
+		if err != nil {
+			return renderRunRecoveryError(cmd, "run.inspect", err, args[0], "")
+		}
+		return writeRunInspectHuman(cmd, result, context)
 	}}
 	cmd.Flags().StringVar(&repository, "repository", "", "Repository worktree path")
 	cmd.SetFlagErrorFunc(canonicalFlagError("run.inspect"))

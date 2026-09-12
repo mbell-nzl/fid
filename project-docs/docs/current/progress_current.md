@@ -2,7 +2,7 @@
 
 ## Project State
 
-Phase 22 is **ready for Human verification** on `phase-22` under DEC-188. The planning base is
+Phase 22 is **in Human acceptance repair (task-19)** on `phase-22` under DEC-188. The planning base is
 merged main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 completed
 under DEC-179 on 2026-09-04 (87/87 VAL, 4/4 Human), and its branch has since
 been merged.
@@ -22,11 +22,13 @@ valid prefix reduced the new force test group from 89.800s to 35.396s without re
 cases or rollback comparisons. Independent final-review-4 closes FQ-01 and
 passes every technical phase check.
 The overall review remains BLOCK solely for the three Human-owned assertions.
-All six checklist responses remain blank. No escalation is open.
+Human attempt 1 recorded 1 PASS, 2 FAIL and 3 PARTIAL outcomes. DEC-219 and
+task-19 allocate one serialized guidance repair and independent review before
+a fresh Human retest. No escalation is open.
 
 The Human delegated completion of tasks 8-18, required reviews, final
 deterministic QA, and runnable Human checklist preparation on 2026-09-07.
-See `../phases/phase-22/delegate-handoff.md`. Human judgments remain pending;
+See `../phases/phase-22/delegate-handoff.md`. Human attempt 1 failed; a retest is required;
 this delegation does not claim phase sign-off or release readiness.
 
 Earlier recovery history: task 6 entered a same-task

@@ -1536,6 +1536,26 @@
   final source and Human fixtures. No DDL, Event shape, response shape,
   command, timeout, threshold, dependency, gate or workflow control change.
 
+### DEC-219: Repair Human recovery guidance before phase closure
+
+- **Authority:** Human accepted one bounded repair task, direct serial root
+  implementation, one independent review and fresh Human verification: “proceed”.
+- **Evidence:** Checklist attempt 1 on 2026-09-12 has one PASS, two FAIL and
+  three PARTIAL outcomes. VAL-076..078 are not fully satisfied. Preserve those
+  judgments; this is accepted behavior left inadequately explained.
+- **Allocation:** Supplemental task-19 owns resume/run-inspect/activation Human
+  renderers, a read-only workflow context helper for existing verified import
+  metadata and historical observations, regression tests and retry artifacts.
+- **Contract:** Explain operation purposes, adoption versus proof, activation
+  resources/directions, preserved history and destination intervention before
+  completion requirements. Keep JSON, schema, Events and mutation rules intact.
+  Import identity comes from verified delivery metadata; no source-path storage
+  or inferred authority is added. Observations are dated facts, not a promise
+  of current executor state. A checkpoint is not mandatory merely because none
+  exists: inspection can compare against Run start under the existing contract.
+- **Verification:** Task-19 commands, independent review and fresh neutral Human
+  fixtures. No automated Human PASS. CLI-wide presentation redesign is deferred.
+
 ## Planning Spec Impact
 
 | Document | Planning change |

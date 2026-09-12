@@ -91,7 +91,7 @@ func TestP22ResumeHumanDistinguishesElapsedLeaseFromRecordedStatus(t *testing.T)
 		t.Fatalf("elapsed lease rewrote durable Claim facts: %#v", claim)
 	}
 	human, stderr, err := closureRunCommand(adapter.workspace, adapter.binary, "--project", adapter.workspace, "resume", issueID)
-	want := fmt.Sprintf("Claim %s: effective expired; recorded active; expires %s", claim["id"], expires)
+	want := fmt.Sprintf("Claim %s\n  Lease status now: expired\n  Recorded status: active\n  Expires: %s", claim["id"], expires)
 	if err != nil || stderr != "" || !strings.Contains(human, want) {
 		t.Fatalf("Human lease differs from JSON: err=%v stderr=%q human=%q want=%q", err, stderr, human, want)
 	}

@@ -2119,3 +2119,16 @@
 - RUN-END: deferred until Human results permit unconditional Tech Lead wrap-up readiness; no phase acceptance, post-Human wrap-up, merge, push or release is claimed
 
 - Handoff control correction: first sequence check terminated exit1 with `INVALID schema v2 REVIEW must contain each review field exactly once`; root omitted the mandatory Must-fix summary field. Added the actual QA4 counts without changing the scoped verdict, Human pending status or control. The failed receipt is retained in .cache/phase22-force-repair-MUSz6S/admin-results.json.
+
+### 2026-09-12 CORRECTION — Human acceptance repair allocation
+
+- Human result: checklist attempt 1 FAIL (1 PASS, 2 FAIL, 3 PARTIAL).
+- Authority: DEC-219; Human explicitly approved one supplemental repair task,
+  serial direct root implementation, one independent review and Human retest.
+- Allocation: task-19; original planned tasks and prior technical QA receipts
+  remain closed and unedited. This supplements the completed canonical sequence
+  under delegated root discretion; no agent-authored Human PASS or RUN-END.
+- Scope: Human recovery guidance and existing read-only provenance; no machine
+  contract, mutation authority, schema, archive limit or gate definition change.
+- Execution: focused red/green retained in .cache/phase22-human-repair. Product
+  implementation is serialized; independent review follows source freeze.
