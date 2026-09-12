@@ -40,30 +40,49 @@
 
 ## Tests run
 
-- `go test ./cmd/fid -run '^TestHumanRecoveryGuidance$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); raw `.cache/phase22-human-repair/red-renderer.log`.
-- `go test ./cmd/fid -run '^TestHumanRecoveryGuidance$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.105s` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/green-renderer.log`.
-- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22HumanGuidance$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); raw `.cache/phase22-human-repair/red-context.log`.
-- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22HumanGuidance$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.695s` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/green-context.log`.
-- `go test ./cmd/fid ./internal/workflow -run 'TestHuman|TestRecoveryReadContext' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); raw `.cache/phase22-human-repair/focused-unit.log`.
-- `go test ./cmd/fid ./internal/workflow -run 'TestHuman|TestRecoveryReadContext' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	0.291s` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/focused-unit-2.log`.
-- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22(HumanGuidance|RecoveryHumanResultMatchesDurableJSON|ResumeHumanMatchesEligibleAndStoppedRecoveryState|ResumeHumanDistinguishesElapsedLeaseFromRecordedStatus)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	11.451s` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/focused-integration.log`.
-- `go test ./cmd/fid -run '^TestHumanImportedFreshObservationDoesNotRequestItAgain$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); raw `.cache/phase22-human-repair/red-review.log`.
-- `go test ./cmd/fid -run '^TestHumanImportedFreshObservationDoesNotRequestItAgain$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.140s` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/green-review.log`.
-- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22(HumanGuidance|RecoveryHumanResultMatchesDurableJSON|ResumeHumanMatchesEligibleAndStoppedRecoveryState|ResumeHumanDistinguishesElapsedLeaseFromRecordedStatus)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	15.337s` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/focused-integration-2.log`.
-- `go test ./cmd/fid ./internal/workflow -run 'TestHuman|TestRecoveryReadContext' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	0.306s` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/focused-unit-3.log`.
-- `go test ./cmd/fid -run '^TestActivationStatusHumanAndJSONDescribeRecoveryDirectionAtCommitBoundary$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.304s` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/green-activation-retained.log`.
+- `go test ./cmd/fid -run '^TestHumanRecoveryGuidance$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  Raw evidence: `.cache/phase22-human-repair/red-renderer.log`.
+- `go test ./cmd/fid -run '^TestHumanRecoveryGuidance$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.105s` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/green-renderer.log`.
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22HumanGuidance$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  Raw evidence: `.cache/phase22-human-repair/red-context.log`.
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22HumanGuidance$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.695s` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/green-context.log`.
+- `go test ./cmd/fid ./internal/workflow -run 'TestHuman|TestRecoveryReadContext' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  Raw evidence: `.cache/phase22-human-repair/focused-unit.log`.
+- `go test ./cmd/fid ./internal/workflow -run 'TestHuman|TestRecoveryReadContext' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	0.291s` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/focused-unit-2.log`.
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22(HumanGuidance|RecoveryHumanResultMatchesDurableJSON|ResumeHumanMatchesEligibleAndStoppedRecoveryState|ResumeHumanDistinguishesElapsedLeaseFromRecordedStatus)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	11.451s` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/focused-integration.log`.
+- `go test ./cmd/fid -run '^TestHumanImportedFreshObservationDoesNotRequestItAgain$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  Raw evidence: `.cache/phase22-human-repair/red-review.log`.
+- `go test ./cmd/fid -run '^TestHumanImportedFreshObservationDoesNotRequestItAgain$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.140s` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/green-review.log`.
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22(HumanGuidance|RecoveryHumanResultMatchesDurableJSON|ResumeHumanMatchesEligibleAndStoppedRecoveryState|ResumeHumanDistinguishesElapsedLeaseFromRecordedStatus)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	15.337s` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/focused-integration-2.log`.
+- `go test ./cmd/fid ./internal/workflow -run 'TestHuman|TestRecoveryReadContext' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	0.306s` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/focused-unit-3.log`.
+- `go test ./cmd/fid -run '^TestActivationStatusHumanAndJSONDescribeRecoveryDirectionAtCommitBoundary$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.304s` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/green-activation-retained.log`.
 
 ## Exact quality-gate results
 
 Working directory: `/home/mark/projects/fid`. Final passing attempts:
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/gate-format-3.log`.
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/gate-lint-3.log`.
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.6% of statements` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/gate-race-2.log`.
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					65.5%` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/gate-coverage.log`.
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	563.279s` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/gate-integration.log`.
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/gate-build.log`.
-- `FID_P22_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/phase-22-human go test -tags integration ./cmd/fid/integration/... -run '^TestP22HumanFixtures$' -count=1 -v` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	18.972s` (terminated `exit_code: 0`); raw `.cache/phase22-human-repair/gate-fixtures.log`.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/gate-format-3.log`.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/gate-lint-3.log`.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.6% of statements` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/gate-race-2.log`.
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					65.5%` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/gate-coverage.log`.
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	563.279s` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/gate-integration.log`.
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/gate-build.log`.
+- `FID_P22_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/phase-22-human go test -tags integration ./cmd/fid/integration/... -run '^TestP22HumanFixtures$' -count=1 -v` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	18.972s` (terminated `exit_code: 0`)
+  Raw evidence: `.cache/phase22-human-repair/gate-fixtures.log`.
 
 ## Deviations from spec
 
@@ -81,6 +100,13 @@ Working directory: `/home/mark/projects/fid`. Final passing attempts:
 - Retained binary SHA-256: `sha256:e2ca68186dc96297705c519fd9849d0a041862522d8b002c96fecf3e1393fbc9`; source `ee7a5cae5fb7b572be1b8032c0ed17cb6a1afa37`, source_dirty:false.
 - Root separately verified the retained binary and all twelve exact post-generation Human/JSON inspections; see `.cache/phase22-human-repair/fixture-verification.json`.
 - [human-checklist-2.md](../qa/human-checklist-2.md) is the current retry. Attempt 1 remains FAIL (1 PASS, 2 FAIL, 3 PARTIAL). No phase acceptance, merge, push, release or unconditional RUN-END is claimed.
+
+Report-control receipt: the first report-lint invocation ended with
+`FAIL report-lint found 15 failure(s)` (terminated `exit_code: 15`) because raw
+log links followed the termination receipt on each PASS line. The control
+requires that receipt at line end. Moved the links to separate lines; all
+command tokens and observed statuses are unchanged. The failed control log is
+`.cache/phase22-human-repair/report-lint.log`.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
