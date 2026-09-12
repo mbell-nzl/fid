@@ -1,9 +1,9 @@
 # Phase 22 Human Verification Checklist
 
 > Phase: 22 — Recovery and portability
-> Prepared: 2026-09-08
+> Prepared: 2026-09-12
 > Tester: _______________
-> Status: **Runnable snapshot independently verified; initial final QA requires repair. Human judgments pending.**
+> Status: **Runnable snapshot independently verified on final reviewed source; Human judgments pending.**
 > Human responses and outcomes have not been recorded.
 
 ## Before starting
@@ -16,22 +16,23 @@ the wording or view that led to your interpretation.
 The retained set below was independently inspected after its generator exited.
 All twelve actual Human/JSON commands terminated successfully. Binary hash,
 clean build revision and four Project identities were independently verified.
-This is the inspected pre-repair snapshot. Product repairs require renewed
-fixture qualification before final acceptance. No Human judgment is inferred.
+This set was generated late on clean final source after deterministic
+qualification. The six Human questions retain their original scope and blank
+responses. No Human judgment is inferred.
 
 | Preparation record | Verified value |
 |---|---|
 | Fixture guide | [human-fixtures.md](human-fixtures.md) |
-| Manifest | [manifest.json](/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/manifest.json) |
-| Binary | `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid` |
-| SHA-256 | `sha256:da111fbdc19a200ff8fe7d263e6fdd7f25915fa3120c83b554649b876dea1d9e` |
-| Clean source revision | `e04bfbdd0194393b0bfee200477a14bc6c563fb3`; source_dirty:false independently matched to go version -m |
-| Generated | `2026-09-08T10:57:49.722794225Z` |
-| Independent evidence | [final-review.md](final-review.md), Command And Feasibility Validation |
-| Successor lease expires | `2026-09-09T10:57:54.448190739Z` / **9 September 2026, 22:57:54 NZST** |
+| Manifest | [manifest.json](/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/manifest.json) |
+| Binary | `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid` |
+| SHA-256 | `sha256:f71a1051d0ab5de6dd17e3d7a2cdd222e14a6260973728f3f24764cecf48337b` |
+| Clean source revision | `3832df1fbd271d9b868a7feb1d07f48b044efdbb`; source_dirty:false independently matched to go version -m |
+| Generated | `2026-09-12T00:19:05.0971514Z` |
+| Independent evidence | [final-review-4.md](final-review-4.md), Command And Feasibility Validation |
+| Successor lease expires | `2026-09-13T00:19:09.826096583Z` / **13 September 2026, 12:19:09 NZST** |
 
 Keep these directories at their recorded paths. If the lease expires before
-this exercise or product repair changes the behavior under review, generate a
+this exercise or product change affects the behavior under review, generate a
 new set with the accepted command below and have QA verify its manifest and
 update the exact paths before recording acceptance. Preserve this original set.
 
@@ -44,22 +45,22 @@ FID_P22_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/phase-22-human go test
 
 **Recovery checkpoint**
 
-Project: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/recovery`.
+Project: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/recovery`.
 
-- `claim_id`: `CLM-de71f4`
-- `issue_id`: `P22-031f58`
-- `prior_run_id`: `RUN-ea4d66`
-- `project_id`: `project-e2fb86770a8a08b265e48fd79e579254`
-- `run_id`: `RUN-853370`
+- `claim_id`: `CLM-2b6d10`
+- `issue_id`: `P22-071060`
+- `prior_run_id`: `RUN-79a072`
+- `project_id`: `project-e329279801dcf616b56fc8a1ddd55e30`
+- `run_id`: `RUN-d433a1`
 
 Copy these inspection commands as a block:
 
 ```bash
-cd /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/recovery
-/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/recovery resume P22-031f58 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/recovery
-/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/recovery --json resume P22-031f58 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/recovery
-/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/recovery run inspect RUN-853370 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/recovery
-/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/recovery --json run inspect RUN-853370 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/recovery
+cd /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/recovery
+/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/recovery resume P22-071060 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/recovery
+/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/recovery --json resume P22-071060 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/recovery
+/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/recovery run inspect RUN-d433a1 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/recovery
+/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/recovery --json run inspect RUN-d433a1 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/recovery
 ```
 
 
@@ -72,32 +73,32 @@ cd /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/recovery
 
 **Activation checkpoint A**
 
-Project: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/prepared`.
+Project: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/prepared`.
 
-- `activation_id`: `ACT-5669eb`
-- `project_id`: `project-055ee1afea8d14b45fa6f6b7b0eac5d3`
+- `activation_id`: `ACT-30a259`
+- `project_id`: `project-4e345f3f38d949d1c0d14543e265543e`
 
 Copy these inspection commands as a block:
 
 ```bash
-cd /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/prepared
-/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/prepared activation status ACT-5669eb
-/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/prepared --json activation status ACT-5669eb
+cd /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/prepared
+/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/prepared activation status ACT-30a259
+/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/prepared --json activation status ACT-30a259
 ```
 
 **Activation checkpoint B**
 
-Project: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/committed`.
+Project: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/committed`.
 
-- `activation_id`: `ACT-ecdc52`
-- `project_id`: `project-64fb8189b9f0e5f1ea91e257bb9e28af`
+- `activation_id`: `ACT-1b512b`
+- `project_id`: `project-38b61ea3997ac2d506587789e408bd43`
 
 Copy these inspection commands as a block:
 
 ```bash
-cd /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/committed
-/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/committed activation status ACT-ecdc52
-/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/committed --json activation status ACT-ecdc52
+cd /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/committed
+/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/committed activation status ACT-1b512b
+/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/committed --json activation status ACT-1b512b
 ```
 
 
@@ -110,23 +111,23 @@ cd /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/committe
 
 **Imported project checkpoint**
 
-Project: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/imported`.
+Project: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/imported`.
 
-- `archive_path`: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/import.zip`
-- `claim_id`: `CLM-a8e739`
-- `issue_id`: `P22-5b8426`
-- `project_id`: `project-50fca5be4933a95c33e7218071e5c47d`
-- `run_id`: `RUN-0d02e8`
-- `source_project_path`: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/import-source`
+- `archive_path`: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/import.zip`
+- `claim_id`: `CLM-20648d`
+- `issue_id`: `P22-2cd612`
+- `project_id`: `project-bcd42e0100d0b70a6f3ece0cb2ab00ee`
+- `run_id`: `RUN-b6d6a1`
+- `source_project_path`: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/import-source`
 
 Copy these inspection commands as a block:
 
 ```bash
-cd /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/imported
-/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/imported resume P22-5b8426 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/imported
-/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/imported --json resume P22-5b8426 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/imported
-/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/imported run inspect RUN-0d02e8 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/imported
-/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/imported --json run inspect RUN-0d02e8 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/imported
+cd /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/imported
+/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/imported resume P22-2cd612 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/imported
+/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/imported --json resume P22-2cd612 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/imported
+/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/imported run inspect RUN-b6d6a1 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/imported
+/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/fid --project /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/imported --json run inspect RUN-b6d6a1 --repository /home/mark/projects/fid/.cache/phase-22-human/checkpoints-4132086272/imported
 ```
 
 
