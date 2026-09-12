@@ -9,7 +9,7 @@ import/export the same state, rebuild, resume without contradictory facts.
 
 ## Status
 
-**Ready for Human verification (DEC-188).** Branch `phase-22` from merged main
+**Human acceptance repair in progress (DEC-219/task-19).** Branch `phase-22` from merged main
 `89d964a84dbdd297fdf472d6f78b001e2efac702`; Phase 21 is wrapped (DEC-179) and
 merged. Contracts and task pack are refined against QA R-01..14 and all kit
 comparison items (DEC-184..187); Human approved the refined pack on 2026-09-05.
@@ -26,7 +26,8 @@ Independent final-review-4 closes FQ-01 and passes all technical qualification
 on clean checkpoint 3832df1. The overall review remains BLOCK solely for
 Human-owned VAL-076..078. Fresh checklist fixtures checkpoints-4132086272 and
 all twelve inspection commands are verified; the successor lease expires
-**13 September 2026 at 12:19:09 NZST**. Six Human responses remain blank.
+**13 September 2026 at 12:19:09 NZST**. Human attempt 1 recorded 1 PASS, 2 FAIL and 3 PARTIAL; one bounded guidance
+repair and independent review precede a fresh retest.
 Phase acceptance and post-Human Tech Lead wrap-up have not occurred. See the
 [checklist](../phases/phase-22/qa/human-checklist.md),
 [final review](../phases/phase-22/qa/final-review-4.md), and

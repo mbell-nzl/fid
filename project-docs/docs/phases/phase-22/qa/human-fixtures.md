@@ -1,9 +1,10 @@
 # Phase 22 Human fixture guide
 
 These disposable checkpoints are generated from the built fid binary. Use the
-independently verified manifest and commands recorded in `human-checklist.md`.
-Human responses and outcomes belong in that checklist and remain blank until
-the Human records them. This guide supplies setup and inspection instructions.
+independently verified manifest and commands recorded in the current retry
+checklist. `human-checklist.md` preserves the failed first attempt; task-19
+prepares `human-checklist-2.md` with new fixtures. Human responses and outcomes
+belong in the relevant attempt and remain blank until the Human records them. This guide supplies setup and inspection instructions.
 
 ## Generate a fresh set
 
