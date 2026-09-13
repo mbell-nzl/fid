@@ -301,28 +301,35 @@ not such an observation. Unknown always blocks takeover; a live takeover needs
 an exact current Human force grant and does not assert process termination.
 Intentional Run abandonment is distinct from interruption and produces no
 trusted execution proof. A budget sample is an append-only observed measurement
-or fid-derived charge, not an editable counter. Detailed proposed value schemas
+or fid-derived charge, not an editable counter. Detailed accepted value schemas
 are in `../docs/phases/phase-22/public-interface.md`.
 
-**Dirty Digest (Phase 22 proposal, DEC-185)**
+**Dirty Digest (Phase 22, DEC-185/188)**
 Definition: The versioned SHA-256 of canonical changed-path HEAD/index/worktree
 images, as specified in Phase 22 contracts section 3.1. It excludes operational
 metadata, branch names, and capture time; clean state uses null.
 Use when: comparing the same source target across caller inputs and observations.
 Avoid: arbitrary caller hashes, raw Git status text, or the reconciliation digest.
 
-**Reconciliation Digest (Phase 22 proposal, DEC-185)**
+**Reconciliation Digest (Phase 22, DEC-185/188)**
 Definition: The canonical hash of the entire reconciliation apart from its own
 digest member, binding repository, checkpoint, paths, classification and safety
 state under Phase 22 contracts section 3.2.
 Use when: binding exact checkpoint/adoption/recovery requests to observed state.
 Avoid: substituting it for a dirty digest or for executor liveness proof.
 
-**Stop Disposition Event (Phase 22 proposal, DEC-184)**
+**Stop Disposition Event (Phase 22, DEC-184/188)**
 Definition: The Event that records a Stop resolution, distinct from the durable
 fact used to justify it. One activation recovery Event may dispose several Stops.
 Use when: naming the exact Event set required by Attention resolution.
 Avoid: passing only the underlying observation/fact IDs to resolve Attention.
+
+**Recovery Adoption**
+Definition: Retaining explicitly reconciled uncommitted changes for a linked
+successor Run under the recorded recovery authority (Phase 22, DEC-219/220).
+Use when: describing which existing repository changes the successor retains.
+Avoid: treating adoption as testing, Review, approval, correctness proof, or an
+executor liveness observation.
 
 **Kit Activation**
 Definition: The durable cross-resource state that aligns one kit version,

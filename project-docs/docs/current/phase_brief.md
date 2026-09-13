@@ -1,161 +1,31 @@
-# Phase Brief - Phase 22 (Approved)
+# Phase Brief — No Active Phase
 
-## Phase Goal
+## Current state
 
-Deliver the one-Issue failure-and-recovery journey: interrupt execution,
-reconcile repository state, start a linked successor Run, enforce budgets and
-typed Stops, dispose Attention, recover activation, stale old proof,
-import/export the same state, rebuild, resume without contradictory facts.
+Phase 22 is complete and Human-accepted under DEC-220 (2026-09-13).
+Branch `phase-22` is ready for PR/merge; Phase 23 has not been planned or started.
 
-## Status
+The Heavy phase delivered recovery, budgets/Stops/Attention, derived execution
+outcomes, activation recovery, portable state and accepted Human guidance.
+All 18 planned tasks plus supplemental task 19 are complete. Final evidence:
+80/80 validation assertions, 84 deterministic QA checks and 6/6 Human checks.
+There is no open technical Must-fix or escalation. Earlier failed attempts are
+preserved; the second Human checklist supplies the accepted final judgments.
 
-**Ready for Human retest (DEC-219/task-19 complete).** Branch `phase-22` from merged main
-`89d964a84dbdd297fdf472d6f78b001e2efac702`; Phase 21 is wrapped (DEC-179) and
-merged. Contracts and task pack are refined against QA R-01..14 and all kit
-comparison items (DEC-184..187); Human approved the refined pack on 2026-09-05.
-See `../phases/phase-22/runner-handoff.md`. Status is per-task below.
+## Authoritative records
 
-All 18 planned tasks, reviews 1b/2b/3/4/5/6b and the independent task-12
-checkpoint are complete. Final-review-2 closed FQ-02 through FQ-07.
-Final-review-3 identified omitted force-recovery intervention accounting; root
-completed the accepted behavior under DEC-218 in the same Task 1 continuation.
-Source c361e9e/671e4e4 and report ab3c255 retain all failed evidence and all twelve
-passing task gates, including integration 557.259s and 100k rebuild 27490ms.
+- [Final acceptance](../phases/phase-22/qa/final-acceptance.md)
+- [Wrap audit](../phases/phase-22/wrap-up-audit.md)
+- [Decisions / DEC-220](../phases/phase-22/decisions.md)
+- [Run ledger](../phases/phase-22/run-ledger.md)
+- [Human checklist 2](../phases/phase-22/qa/human-checklist-2.md)
+- [Open carry-forwards](decisions_active.md)
 
-Independent final-review-4 closed FQ-01 and qualified the original technical
-phase. Human attempt1 then recorded 1 PASS, 2 FAIL and 3 PARTIAL outcomes.
-DEC-219/task-19 repairs recovery guidance with one independent reviewer;
-MF-01 and both wording improvements are closed on product source5232d9c.
-All seven task gates pass, including race/coverage65.5% and integration563.279s.
-Fresh clean-source ee7a5ca fixtures and all twelve inspections are verified.
-The current [checklist attempt2](../phases/phase-22/qa/human-checklist-2.md) has
-blank Human responses; lease expiry is **13 September2026,22:18:47NZST**.
-See [task19 report](../phases/phase-22/tasks/task-19-done.md),
-[independent review](../phases/phase-22/qa/task-19-review.md), and
-[run ledger](../phases/phase-22/run-ledger.md). Phase acceptance and post-Human
-wrap-up remain pending; original Human failures are preserved. No open ESC.
+## Boundaries
 
-## Operating Mode
-
-**Heavy (approved, DEC-188).** Persistence, public JSON, executor authority, and
-import publication change; full artifacts and fresh QA feasibility are required
-under `09_AI_WORKFLOW.md` section 4. Mode and ordered task list are approved.
-
-## Task Index
-
-All specs are under `../phases/phase-22/tasks/`; reports use `task-N-done.md`.
-Tasks are sequential; reviews follow every three tasks.
-
-| Task | Title | Status | Dependency |
-|---|---|---|---|
-| [1](../phases/phase-22/tasks/task-1.md) | Recovery schema and replay foundation | Complete; FQ-01 independently closed | Runner QA readiness refresh |
-| [2](../phases/phase-22/tasks/task-2.md) | Typed Stops and Attention domain | Complete | 1 |
-| [3](../phases/phase-22/tasks/task-3.md) | Lease lifecycle and executor observations | Complete | 2 |
-| [4](../phases/phase-22/tasks/task-4.md) | Read-only repository reconciliation | Complete | 3 |
-| [5](../phases/phase-22/tasks/task-5.md) | Atomic linked Run recovery | Complete | 4 |
-| [6](../phases/phase-22/tasks/task-6.md) | Recovery CLI and early process journey | Complete (DEC-194) | 5 |
-| [7](../phases/phase-22/tasks/task-7.md) | Durable budget accounting and execution admission | Complete | 6 |
-| [8](../phases/phase-22/tasks/task-8.md) | Interrupted Attempts and derived Run closure | Complete (DEC-195) | 7 |
-| [9](../phases/phase-22/tasks/task-9.md) | Stop, budget, and closure commands | Complete (DEC-196/197) | 8 |
-| [10](../phases/phase-22/tasks/task-10.md) | Activation recovery domain | Complete (DEC-198) | 9 |
-| [11](../phases/phase-22/tasks/task-11.md) | Activation CLI and config boundary | Complete (DEC-199/200) | 10 |
-| [12](../phases/phase-22/tasks/task-12.md) | Recovery freshness and actionable resume | Complete | 11 |
-| [13](../phases/phase-22/tasks/task-13.md) | Recovery archive format and validation | Complete | 12 + independent checkpoint |
-| [14](../phases/phase-22/tasks/task-14.md) | Atomic import into an empty target | Complete | 13 |
-| [15](../phases/phase-22/tasks/task-15.md) | Import CLI and three-way recovery parity | Complete | 14 |
-| [16](../phases/phase-22/tasks/task-16.md) | Retire escalation state and duplicate recovery truth | Complete | 15 |
-| [17](../phases/phase-22/tasks/task-17.md) | Maintenance, capability qualification, and rebuild budget | Complete | 16 |
-| [18](../phases/phase-22/tasks/task-18.md) | Final recovery conformance and Human validation fixture | Complete | 17 |
-
-## Validation Contract
-
-`../phases/phase-22/qa/validation-contract.md`: 80 Ready assertions, each cited
-by an owning task. QA Lead owns 77; Human owns VAL-076..078.
-
-| Assertions | Scope / tasks | Final validator |
-|---|---|---|
-| VAL-001..024,079 | Foundation/recovery, tasks 1-6 | QA Lead |
-| VAL-025..039 | Budgets/Stops/closure, tasks 7-9 | QA Lead |
-| VAL-040..052 | Activation/freshness/resume, tasks 10-12 | QA Lead |
-| VAL-054..065 | Portable recovery, tasks 13-15 | QA Lead |
-| VAL-066..072 | Removal/maintenance/performance, tasks 16-17 | QA Lead |
-| VAL-053,073..075,080 / VAL-076..078 | Final conformance, task 18 | QA Lead / Human |
-
-## QA Artifacts
-
-| Artifact | Path under phase-22/ | Status |
-|---|---|---|
-| Handoff / refinement / plan / consistency | qa/qa-lead-handoff.md, qa/tl-refinement.md, qa/qa-plan.md, qa/consistency-review.md | Accepted DEC-188; plan refreshed before task 1 |
-| Mid-phase reviews | qa/review-1b.md, qa/review-2b.md, qa/review-3.md, qa/review-4.md, qa/review-5.md, qa/review-6b.md | PASS |
-| Independent checkpoint | qa/checkpoint-after-task-12.md | PASS |
-| Final review / Human checklist | qa/final-review-4.md / qa/human-checklist.md | Technical PASS; fresh fixtures verified; six Human judgments pending |
-
-## Active Constraints
-
-- Accepted semantic/wire/DDL authority: `../phases/phase-22/contracts.md`,
-  `public-interface.md`, and `schema.md`. DEC-188 ratifies DEC-180/182/184..187.
-- Exact removal and executable ownership: `v1-convergence-inventory.md` and
-  `execution-scope.md` in that phase directory; DEC-181.
-- Every task runs the ordinary full task gate AND tagged integration gate.
-  Cases enter with each wire surface; task 6 is the early real-process journey.
-- Terminated/live/unknown liveness is closed; unknown always blocks. Known-live
-  takeover needs an exact current Human force grant; no automatic respawn. No
-  recovery Git mutation or budget reset. Adoption is not trusted evidence.
-- Claims capability stays false until Phase 24 parallel semantics qualify.
-- CF-024 unchanged three-fresh-sample <30 s rebuild rule, early samples at 1/16;
-  R-14 synchronized fixture repair at task 8 (DEC-186). CF-034 coverage tasks
-  2/7; CF-035 config task 11; CF-033 recorded; CF-018 fires on sqlquery edits.
-- DEC-192: each fenced recovery Event in `internal/journal/project_effects.go` is
-  unfenced by its `schema.md` section 5 owner (4,5,7,8,10); task 10 removes the
-  empty fence; VAL-003 convergence is scheduled for tasks 5 and 10.
-- DEC-193: no test pins an absolute date on a writer-appended Event in a
-  live-clock workspace; that failure is DEC-189 nondeterminism, not convergence.
-- DEC-194: task 6 delivered task 4's `run_{checkpoint,inspect}.go` domain scope
-  with task-4 provenance; QA window 2 audits VAL-013's checkpoint clause with it.
-- DEC-195: `schema.md` section 1 admits `cancelled` in
-  `execution_receipts.terminal_status` plus one composite-CHECK clause. Task 8
-  makes those two exact 0013 edits with task-1 provenance, converges the
-  `internal/db` golden DDL string, and opens the closed receipt outcome filter.
-  VAL-031 stands as written; never substitute an admitted status.
-- Canonical digests: contracts 3.1/3.2; closed 23-action set: interface 2.1.
-- Kit dispositions: `kit-contract-mapping.md`; CF-037 retains adapter
-  obligations for Phase 25.
-- No TL product code/tests, gates, or agent activation; Runner lint unchanged.
-- In scope: existing workflow, claims, evidence, validation, project, journal,
-  db, export, maintenance, CLI boundaries; no new dependency.
-
-## Parity Matrix
-
-| Axis | Live | Rebuild | Import / fake | Evidence |
-|---|---|---|---|---|
-| Identity/history | Original entity/Event IDs | Same IDs/order | Same IDs/order | VAL-058,063,073 |
-| Recovery | Run/Claim/Stop/Attention facts | Same predicates | Same lineage and unresolved work | VAL-017..021,051/052,063 |
-| Evidence/budgets | Observed target and counters | Same derived dimensions | Same proof/counters; local observation explicit | VAL-027..029,048..050,063 |
-| Machine/Human | Closed JSON projection | Same JSON | Same semantic projection | VAL-053,075 |
-| Archive | Manifest v2 | Canonical equivalent | Re-export equivalent | VAL-054,064 |
-
-## Known Risks
-
-- Limited rebuild headroom; retain reference and per-sample failure semantics.
-- Force recovery fences fid authority, not a live process's direct writes.
-- Archive validation/publication and cross-resource agreement need fault proof;
-  DEC-187 records every pinned-kit difference and no production adapter qualifies.
-- Neither a task file scope (DEC-194) nor a contract clause (DEC-195) is
-  self-enforcing: a named path with no failing criterion, or a closed-domain
-  member with no schema row, fails nothing until code reaches it.
-
-## Open Questions / Success / Exit Criteria
-
-No open questions: all 14 QA refinements are dispositioned; runtime evidence and
-the three Human assertion outcomes remain required. Exit criteria: all task gates
-and 80 assertions have evidence-backed outcomes, required reviews and Human
-checks pass, owned legacy state is removed, every exception is dispositioned, and
-Tech Lead records spec sync and sign-off. No release authorization is implied.
-
-## Next Planning Checkpoint
-
-Review 3 passed tasks 7-9, including DEC-196 semantic fake and actual-operation
-Stop evidence. Tasks 10-12 lead to review 4 and the independent task-12
-checkpoint, which must pass before task 13. Final
-deterministic QA and runnable Human fixtures precede tomorrow's Human judgments;
-Human outcomes and full phase sign-off remain pending.
+CF-040 records accepted future CLI polish and verbosity review. Remaining
+workflow maintenance and kit adapter qualification are separately owned.
+Claims parallel semantics remain Phase 24; full baseline qualification remains
+Phase 25. No release or live adoption is authorized by this phase closure.
+The approved roadmap calls Phase 23 “Review and Human judgment”; its exact
+contracts and task pack remain future planning work.

@@ -1556,28 +1556,93 @@
 - **Verification:** Task-19 commands, independent review and fresh neutral Human
   fixtures. No automated Human PASS. CLI-wide presentation redesign is deferred.
 
-## Planning Spec Impact
+### DEC-220: Accept and wrap Phase 22; retain nonblocking CLI polish
 
-| Document | Planning change |
-|---|---|
-| GLOSSARY.md | Flags proposed executor-observation, abandonment, and budget-sample terminology under DEC-180. |
-| 02_TRD.md | Proposed Phase 22 package/contract index and pinned capability boundary. |
-| 03_TRD_SCHEMA.md | Section 8.3 incorporates the proposed exact DDL/Event amendment, without rewriting Phase 21 historical SQL. |
-| 04_TRD_CONFIG.md | Proposed CF-035 consuming-path interpretation, pending acceptance. |
-| 06_DESIGN_PLAN_CLI.md | Proposed Phase 22 wire-contract pointer. |
-| 10_IMPLEMENTATION_ROADMAP.md | Phase 22 planning state and conditional Claims qualification owner. |
+- **Date/status:** 2026-09-13; ACCEPTED. Human stated checklist 2 is done and
+  accepted, then explicitly directed root to complete the wrap and provide a
+  PR creation command. Root acts as the authorized delegate for this close-out.
+- **Acceptance:** 18 planned tasks plus supplemental task 19 complete; all
+  80 VAL assertions and 84 deterministic QA checks pass. Independent final
+  review 4 closes FQ-01; final review 2 closes FQ-02..07. Task 19's independent
+  review closes MF-01 and its improvements. Human checklist 2 supplies six
+  PASS judgments and resolves VAL-076..078. No open ESC or technical Must-fix.
+- **Evidence:** qa/final-acceptance.md attributes every assertion to its actual
+  QA or Human source. Human responses are committed at
+  24cd3e3f2fbe640bccfa26faffb7435dba20a4bb. Failed checklist 1, blocked reviews,
+  failed gates and original task provenance remain intact. Wrap does not claim
+  fresh product gate execution or change their accepted semantics.
+- **Carry-forwards:** Close CF-024/034/035 on delivered evidence. CF-038's wire
+  documentation is clarified under existing DEC-189; same-stream coalescing
+  hardening retains its next-causal-edit trigger. Formally retain existing
+  CF-039 in the register. CF-036 remains dedicated workflow maintenance despite
+  bounded protected repairs during this phase. Other open items remain owned
+  as recorded in wrap-up-audit.md and decisions_active.md.
+- **Human improvement CF-040:** “Make a carry-forward to come back and review
+  view polish and verbosity in the future.” Accepted as nonblocking. Future TL
+  owns review at the next accepted Human-view redesign, due by Phase 25's
+  existing operating-experience qualification. No new command, flag, JSON
+  shape, rendering design or Phase 23 task is chosen by this carry-forward.
+- **Spec sync:** Canonical proposal labels now identify the delivered Phase 22
+  amendment; Recovery Adoption clarifies existing DEC-219 meaning. Complete
+  per-spec, decision, deviation and triage audits are in wrap-up-audit.md.
+- **Boundary:** Phase complete and ready for PR/merge; no active phase. No
+  Phase 23 planning, push, PR creation, merge, release or live adoption is
+  performed or authorized by this record. Claims parallel qualification remains
+  Phase 24; external adapter/all-capability qualification remains Phase 25.
 
-This is not a phase-end per-spec verdict. The complete canonical suite,
-GLOSSARY, every in-phase deviation, and every QA recommendation must be audited
-at wrap-up. No `verified-no-change` assertion is being defaulted during kickoff.
+## Final Spec Sync And Audit
+
+[wrap-up-audit.md](wrap-up-audit.md) records all twelve canonical document
+verdicts (00..10 plus GLOSSARY), all DEC-180..219 dispositions, every task report's
+deviations, immediate QA findings and every carry-forward trigger check.
+[qa/final-acceptance.md](qa/final-acceptance.md) records all 80 final outcomes.
 
 ## Triage-Log Audit
 
-No TRG or ESC has been allocated for this phase. The seeded triage log is the
-allocation source. Audit every actual entry at wrap-up; do not fabricate events
-for pending planning approval or ordinary QA preparation.
+Nine unique TRGs: five REPAIR, four BLOCK, no RESUME. Each BLOCK names its own
+ESC-22-001..004; all four are resolved and archived. Early live-output causal
+classification was wrong until DEC-189/TRG-005; task-4 omission was incorrectly
+called ambiguous ownership until DEC-194. Historical verdicts stay unchanged;
+the per-trigger hindsight audit is in wrap-up-audit.md. No fictional triage is
+backfilled for Human-authorized direct root work. DEC-002 remains permanent.
 
 ## Workflow Notes
 
-Reserved for observed phase execution and final wrap-up. Planning calibration
-and deferred deep retrospective work are recorded in DEC-181/183 above.
+- **What worked:** Connected real-process recovery, shared fake/fid contracts,
+  negative/fault matrices and independent final QA exposed real semantic gaps.
+  A bounded repair plus fresh Human retest resolved the initial usability failure.
+- **Inefficiency:** Repeated narrow directives, cross-cutting ownership omissions,
+  report formatting churn and overlapping edits caused avoidable work. Later
+  serialized implementation, source freeze and one independent reviewer reduced
+  interference; protected decisions remained explicit.
+- **Task sizing:** The shared current-Event validator and typed snapshot work
+  reached many producers, making the original task-1 recovery much larger than
+  its label suggested. Future maintenance should distinguish a coherent causal
+  repair from multiple tiny continuations that repeatedly reload the same state.
+- **QA cadence:** Three-task reviews and the task-12 checkpoint helped, but did
+  not detect every undelivered clause. Final adversarial checks remained necessary;
+  Human-readable guidance deserved a meaningful check earlier than final acceptance.
+- **TL-Lite calls:** Nine durable triages; early mechanism classification was
+  repeatedly wrong despite correct REPAIR routing. Read existing ownership and
+  causal evidence before expanding scope or escalating an allegedly missing owner.
+- **QA versus plan:** 80 assertions and 84 deterministic checks were retained;
+  late FQ repairs and task 19 were additional causal work. No Human assertion was
+  downgraded to automated proof or deferred to permit closure.
+- **Spec drift:** Task scope alone did not enforce checkpoint delivery, and a
+  cancellation clause without a schema row reached implementation unsatisfied.
+  Exact closed-domain/snapshot validation found additional missing producer facts.
+- **Standing guidance:** DEC-189/193 distinguish fixture nondeterminism from
+  convergence; DEC-194/195 distinguish undelivered ownership from contradiction.
+  Current decisions retain these rules; CF-036/039 own executable prevention work.
+- **Token efficiency:** The observed implementation/review churn was less efficient
+  than a clean canonical task-to-review sequence. Repeated context loading and
+  parallel edits increased repair cost; long-running gates also prolonged sessions.
+  Serialized bounded root repair was useful after diagnosis, while independent QA
+  continued to earn its cost by finding omitted behavior. No reliable session-wide
+  token/cost ledger is available, so no numeric savings or model comparison is claimed.
+
+**Deep retrospective: RECOMMENDED**, as dedicated workflow work under CF-036/039,
+not Phase 23 planning. Cover enforceable clause/schema/task/criterion allocation,
+causal triage, shared-validator scope, review effectiveness, report-control friction,
+serial repair ownership and fixture/gate economics. The initial Human result
+(1 PASS, 2 FAIL, 3 PARTIAL) and repeated late semantic omissions justify this review.

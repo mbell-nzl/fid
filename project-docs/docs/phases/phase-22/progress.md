@@ -330,3 +330,16 @@ Fresh manifest checkpoints-386504276 is from clean ee7a5ca; root separately
 verified binary hash and all twelve Human/JSON reads. human-checklist-2.md is
 ready; lease expires13September2026,22:18:47NZST. Original Human outcomes remain
 unchanged. No Human PASS, phase acceptance, merge, push or release is inferred.
+
+## 2026-09-13 — Human acceptance and phase wrap
+
+- Human checklist 2 committed at 24cd3e3 and explicitly accepted: 6/6 checks
+  and overall PASS. VAL-076..078 close; all 80 assertions now PASS.
+- DEC-220 records complete 18+1-task delivery, independent QA closures and
+  nonblocking CF-040 CLI polish/verbosity. First Human failure stays intact.
+- Canonical spec status/terminology synchronized; full decision, task deviation,
+  QA recommendation, TRG/ESC and carry-forward audits recorded in wrap-up-audit.md.
+- CF-024/034/035 closed; CF-038 documentation half closed; CF-039 indexed.
+  Workflow maintenance/retrospective remains separate, as does kit qualification.
+- Current context archived and compressed to no active phase. Phase ready for
+  PR/merge. No Phase 23 planning, push, PR creation, merge or release performed.

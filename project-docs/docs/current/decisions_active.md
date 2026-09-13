@@ -33,7 +33,7 @@
 - Gates C/D1/D2: all twelve port capabilities qualify before live adoption;
   no global role-policy model; no duplicate process aggregate or generic format.
 - Gates D3.1/D3.2: vertical delivery; Phase 21 delivered the one-Issue skeleton;
-  Phase 22 owns failure/recovery and conditional capability completion.
+  Phase 22 delivered failure/recovery and its qualified capabilities (DEC-220).
 - DEC-156: qualifying Evidence guards terminal-success Issue transition;
   Envelope completion reuses the same evaluator after the Issue is terminal.
 - DEC-157/177: Phase 21 delivered wire authority is
@@ -88,99 +88,45 @@
 - Current V1 delivery scaffolding is binding engineering procedure, not forward
   fid product scope. No failed gate authorizes a protected definition change.
 
-## Phase 22 Approval
+## Latest Phase Closure
 
-DEC-196 makes accepted semantic fake behavior, Human resume rendering and
-retained Human fixture generation explicit in tasks 9/12/18 under the Human's
-delegated execution authority. Existing gates and VAL ownership remain;
-task 18 adds a concrete retained-fixture generation command. See phase decisions.
+- DEC-220: Phase 22 complete, Human-accepted; 18+1 tasks, 80/80 VAL,
+  84 deterministic QA items and 6/6 Human checks. No open ESC; ready for PR.
+  See [acceptance](../phases/phase-22/qa/final-acceptance.md) and
+  [wrap audit](../phases/phase-22/wrap-up-audit.md). No phase currently active.
+- Delivered contracts: Phase 22 contracts.md/public-interface.md/schema.md amend
+  the Phase 21 baseline. DEC-195 retains cancelled Receipts as their own outcome.
+  DEC-216 requires typed idempotency snapshots; DEC-217 retains full product
+  archive limits with small routine and real-scale phase/affected-change tests.
+- Recovery retains exact authority, unknown-liveness rejection, immutable budget
+  charges and original replay results. Adoption is not proof; imported history
+  grants no destination authority. DEC-219 Human guidance is accepted.
+- Claims capability remains unavailable until Phase 24 parallel qualification;
+  external adapter/all-twelve-capability qualification remains Phase 25.
 
-DEC-197 assigns task 9 the omitted domain/read/frame support required by its
-accepted leaves and Stop guards, plus causal replay/error/retirement cleanup.
-The task spec names each bounded path; prior task provenance and failed
-receipts remain intact, with no protected contract or gate change.
+## Open Carry-Forward Register
 
-`../phases/phase-22/decisions.md` records:
-DEC-180 proposed Heavy mode/18-task/80-VAL product contract;
-DEC-181 executable ownership and early journey;
-DEC-182 complete CF disposition including proposed CF-035 behavior;
-DEC-183 pinned kit comparison and separate workflow-maintenance recommendation.
-DEC-184 closed wire/authority/observation/Stop refinements;
-DEC-185 canonical dirty/reconciliation digest;
-DEC-186 boundary evidence, early rebuild samples and bounded R-14 repair;
-DEC-187 complete kit comparison dispositions and CF-037 qualification work.
-DEC-188 Human acceptance of Heavy mode, the full refined pack and execution.
-
-Human approval on 2026-09-05 ratifies DEC-180/182/184..187. All 18 planned
-tasks, six review windows and the independent task-12 checkpoint are complete.
-Final-review-2 closed FQ-02 through FQ-07; root completed final-review-3's force
-accounting finding under DEC-218. Independent final-review-4 qualifies technical
-readiness and fresh Human fixtures; FQ-01 is closed. Human attempt 1 recorded one PASS, two FAIL and three PARTIAL outcomes;
-DEC-219/task-19 repairs the guidance before a fresh VAL-076..078 retest. Delegation
-covers implementation, QA and checklist preparation, not Human acceptance or
-release. See `../phases/phase-22/delegate-handoff.md`. Branch is `phase-22`;
-Phase 21 is merged.
-
-DEC-198 resolves contradictory prepare-time prose in favor of the already
-closed activation protocol: prepare freezes the predecessor and five resources;
-component staging supplies immutable internal content; commit selects the exact
-two digests with resource agreement. No new wire/DDL/Event or weakened VAL row.
-
-DEC-199 gives task 11 bounded domain error enrichment for the accepted closed
-activation-incomplete result, preserving task 10's predicates. It also makes
-the existing Human activation direction rendering explicit. No command or VAL
-definition changed.
-
-DEC-200 explicitly adds stop and activation to retained ReasonSubjectType;
-activation disagreement uses activation-incomplete with the Activation ID.
-Component names remain in components/detail, with no private subject/code enum.
-
-DEC-201 assigns the omitted derived Budget output state to task 12 with task-7
-provenance, preserving policy/accounting/history. It explicitly adds only
-effective_status to the Resume Claim projection so elapsed leases are visible
-without rewriting durable Claim status.
-
-DEC-216 accepts complete typed current-family idempotency snapshots, including
-pending Attempts, derived terminal Receipts and committed denials. Public
-response behavior is preserved. DEC-217 keeps the 64MiB/1GiB/8GiB/1-million-entry archive
-ceilings unchanged; small routine fixtures exercise the same limiter and the
-original full matrices remain mandatory through the archive_scale phase gate.
-DEC-218 completes already accepted force intervention charges, immutable chain,
-successor boundary Stops and exact replay/import validation. See the phase
-[decisions](../phases/phase-22/decisions.md) and Task 1 report for authority,
-causal provenance and preserved runtime-failure evidence.
-
-## Carry-Forward Register
-
-| ID | Current disposition |
+| ID | Disposition / trigger / owner |
 |---|---|
-| CF-008 | Re-defer until a retained Issue-cancellation vocabulary use case; Run abandonment does not fire it. |
-| CF-018 | Split production `internal/sqlquery/sqlquery.go` (596 lines) when that file next changes. No planned edit; test-only convergence does not fire it. |
-| CF-023 | Re-defer temporary repository-delivery tooling to dedicated workflow maintenance. |
-| CF-024 | Task 17/final QA, VAL-071: unchanged three-fresh-sample <30 s reference rule; task 1/16 add single early samples (DEC-186). |
-| CF-026a | Candidate inspection projection; not scheduled beyond accepted recovery resume. |
-| CF-026b | Issue lifecycle design requires its own product decision; deferred. |
-| CF-029 | QA review evidence-token validator work deferred to workflow maintenance. |
-| CF-030 | Report-lint rejected-token diagnostics deferred; no new product need. |
-| CF-033 | Kickoff inventory recorded in Phase 22 execution-scope.md/TRD. Separate AGENTS maintenance still owns matching package inventory and correction of its nonexistent quality §5.2 pointer (QA plan incidental finding). |
-| CF-034 | Task 2 workflow and task 7 evidence: direct recovery-branch tests plus before/after package coverage; VAL-079/035, no numeric threshold. |
-| CF-035 | Accepted under DEC-188: whole-config validation on consuming paths, preserving config-independent diagnostics. Task 11/VAL-047. |
-| CF-036 | New from DEC-183: dedicated workflow-maintenance planning for phase/cross-task ledger identities and fail-closed ESC registration; product Phase 22 does not change controls. |
-| CF-037 | DEC-187: kit V2-3 adapter/Phase 25 qualification must prove activation export binding, terminalState expectation mapping, scope/asOf/validate-only, dedup-key agreement and explicit unmapped Stop-code representations. Exact obligations: Phase 22 kit-contract-mapping.md. |
-| CF-038 | New from DEC-189: harden `cmd/fid/live_output_test.go` against remaining same-stream read coalescing when a task next opens it with cause, and qualify the terminal frame's `output_bytes` as a post-truncation lower bound in the next accepted live-output wire revision. Neither item blocks Phase 22. |
+| CF-008 | Future TL: retained Issue-cancellation vocabulary use case; Run abandonment does not trigger it. |
+| CF-018 | Future editor: split production internal/sqlquery/sqlquery.go on its next causal edit; unchanged this phase. |
+| CF-023 | Workflow maintainer: replace/reconcile temporary repository delivery tooling in dedicated maintenance. |
+| CF-026a | Future product design: optional inspection projection beyond accepted recovery resume; unscheduled candidate. |
+| CF-026b | Human/future TL: separate Issue lifecycle product decision; deferred. |
+| CF-029 | Workflow maintainer: QA evidence-token validator improvements in dedicated maintenance. |
+| CF-030 | Workflow maintainer: report-lint rejected-token diagnostics in dedicated maintenance. |
+| CF-033 | Workflow maintainer: AGENTS package inventory and nonexistent quality section locator; execution-scope/TRD part delivered. |
+| CF-036 | Dedicated workflow retrospective/maintenance: cross-phase/task ledger identities, fail-closed ESC registration and observed control friction. DEC-190/191 bounded repairs do not close it. |
+| CF-037 | Phase 25 TL/adapter owner: exact coordinator/port obligations in Phase 22 kit-contract-mapping.md; fid conformance alone is insufficient. |
+| CF-038 | Future causal editor of cmd/fid/live_output_test.go: same-stream coalescing hardening. Post-truncation output_bytes documentation half closed under DEC-189/220. |
+| CF-039 | Dedicated workflow maintainer: executable cross-check of contract clauses, schema, task ownership and acceptance criteria; existing scope-audit item now formally indexed. |
+| CF-040 | Future TL: Human-requested CLI view polish/verbosity review at next accepted Human-view redesign, due by Phase 25 operating-experience qualification; nonblocking, no design selected. |
 
-All rows were dispositioned against the Phase 22 task scope in DEC-182..187;
-check triggers again at task-12 checkpoint and wrap-up. Closed CF IDs remain in
-phase archives and are never reused. Optional product ideas remain in ADR-0011's
-candidate ledger rather than this register.
+CF-024/034/035 closed with Phase 22 evidence; historical dispositions and closed
+IDs remain in the wrap audit and must not be reused. All triggers checked
+against the actual phase diff. No Phase 23 plan or task allocation exists.
 
 ## Environment
 
 Go/tool caches remain redirected into gitignored repository directories by
-`.codex/config.toml`; changing that configuration requires a fresh session.
-No cache configuration change is planned.
-
-- DEC-219: Human approved one supplemental task-19 guidance repair, serial root
-  implementation and one independent review. Imported observation provenance,
-  adoption versus proof and activation direction are explained without changing
-  JSON or mutation authority. Original Human failures remain; retest required.
+.codex/config.toml; configuration changes require a fresh session.

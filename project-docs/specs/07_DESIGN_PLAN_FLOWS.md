@@ -149,10 +149,13 @@ satisfy either guarded action.
    match the source semantics.
 5. Projections are regenerated; project prose is not copied.
 
-Phase 21 implements deterministic export creation and non-mutating validation
-only. Import, identity/history preservation, and full live/rebuild/import
-equivalence enter with Phase 22 recovery; `export.portable.v1` remains
-unavailable until that parity passes.
+Phase 21 delivered deterministic export creation and non-mutating validation.
+Phase 22 now delivers empty-target import, identity/history preservation and
+full scoped live/rebuild/import equivalence; `export.portable.v1` is available
+under DEC-220. Imported history confers no destination mutation authority.
+Continuing an imported Run requires fresh destination observation, repository
+reconciliation and the applicable recovery authority.
+Recovery adoption retains work and never turns it into trusted Evidence.
 
 The Phase 21 rebuild proof mutates once. After projection deletion/rebuild it
 repeats capability/Envelope/Receipt/Evidence reads, evaluation, completion

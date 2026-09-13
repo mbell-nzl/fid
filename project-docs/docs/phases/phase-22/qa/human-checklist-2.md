@@ -1,8 +1,8 @@
 # Phase 22 Human Verification — Attempt 2
 
-> Status: Prepared for Human retest after task-19; outcomes are blank.
-> Tester:
-> Date:
+> Status: PASS — six Human checks accepted; DEC-220.
+> Tester: Human (responses preserved below).
+> Acceptance recorded: 2026-09-13, Pacific/Auckland; exact execution time was not entered.
 
 Attempt 1 remains in [human-checklist.md](human-checklist.md). Judge whether the
 new views themselves explain the situation. If you still need an explanation,

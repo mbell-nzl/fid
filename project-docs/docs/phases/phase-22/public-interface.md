@@ -262,6 +262,13 @@ spawn occurs. A budget crossing during an admitted execution is a control frame
 the normal observed terminal Receipt. Every live variant has deterministic
 frame-order and no-partial-success conformance cases.
 
+DEC-189 clarification, recorded at wrap-up under DEC-220: terminal
+`output_bytes` is exact until the combined output ceiling fires; after
+truncation it is a lower bound dependent on pipe read boundaries. Consumers
+must not infer the complete discarded byte count, and fixtures must not pin
+an exact post-truncation count. This restates DESIGN_PLAN section 5 without
+changing the live frame shape or limits (CF-038 documentation disposition).
+
 ## 5. Manifest V2 And Availability
 
 Manifest v2 retains v1's exact fields and adds
