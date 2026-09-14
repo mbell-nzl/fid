@@ -2164,3 +2164,12 @@
 - Local evidence: all seven task-20 gates PASS with observed exit_code 0; full race coverage 65.5%, all 2653 original run cases retained plus two fixture regressions.
 - Review: qa/task-20-review.md PASS; zero must-fix or lost original assertions. Reviewer-owned lightweight control evidence is attributed separately.
 - Remaining work: push reviewed repair to PR24 and verify hosted CI; no hosted PASS, merge or new phase claimed.
+
+### 2026-09-14 17:08 CORRECTION
+
+- Scope: DEC-221 task20 hosted qualification and completion; documentation only.
+- Verified PR head: 6b8fe50bcd47148572ba841d561b23348f041dad.
+- Hosted evidence: run34805256766 SUCCESS; all six jobs success;724 targets and12967 coverage blocks reconciled;65.5% coverage. Root observed gh retrieval exit_code0 and retained full metadata/logs.
+- Outcome: task20 COMPLETE; original CI failure resolved, phase ready for Human merge.
+- Timing:13m53s elapsed;47m48s summed job time;approximately50 rounded runner minutes, not an account billing receipt.
+- Boundary: qa/task-20-hosted-ci.md binds exact hosted evidence; local closure docs are not a new hosted pass. Human owns push; no merge or next-phase work.

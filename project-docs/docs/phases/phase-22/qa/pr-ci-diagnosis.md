@@ -160,3 +160,12 @@ not establish sufficient hosted headroom; four exhaustive workers therefore
 share the full race/coverage execution under DEC-221. Final local coverage is
 65.5%; independent review and all task gates pass. Hosted timing remains
 unverified until the revised PR run completes. See ../tasks/task-20-done.md.
+
+## Hosted CI closure — 2026-09-14
+
+Task20 is COMPLETE: [hosted qualification](task-20-hosted-ci.md) records run34805256766
+SUCCESS on PR head6b8fe50bcd47148572ba841d561b23348f041dad. All six jobs passed;
+724 targets and12967 statement blocks reconciled;coverage65.5%. Elapsed13m53s,
+summed job time47m48s. The earlier CI hold is cleared; original failures and
+Human acceptance remain preserved. No product or test change in this closure.
+Root records documentation locally; no push or merge performed.

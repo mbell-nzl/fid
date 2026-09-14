@@ -2,11 +2,11 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: session-continuation
-- Condition: Local implementation, required gates and independent review complete; hosted PR verification pending.
+- Task outcome: COMPLETE
+- Category: none
+- Condition: Local gates, independent review and hosted PR verification complete; see additive hosted closure below.
 - Recovery attempts: 0
-- Next action: Publish reviewed repair to PR24 and observe hosted CI termination/runtime.
+- Next action: Human owns merge/push; no further performance repair required.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -104,3 +104,15 @@ command, result, termination or verification control changed.
 ## Commit subject
 
 - `test(phase-22): shorten CI with isolated fixtures and exhaustive shards`
+
+## Hosted closure — 2026-09-14
+
+The earlier pending statements above describe the pre-push checkpoint and are
+superseded by [hosted qualification](../qa/task-20-hosted-ci.md). GitHub run
+34805256766 on6b8fe50bcd47148572ba841d561b23348f041dad succeeded in13m53s. All
+six jobs succeeded;724 targets and12967 statement blocks reconciled;65.5%
+coverage. Root observed exit_code0 for each gh retrieval, with full metadata
+and logs retained. The hosted CI failure is resolved; task20 COMPLETE.
+Combined execution47m48s, approximately50 per-job rounded runner minutes; no
+account billing receipt or cost-saving claim. These closure records change
+documentation only; no extra product gate run is claimed.

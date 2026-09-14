@@ -135,4 +135,4 @@ Go/tool caches remain redirected into gitignored repository directories by
 - DEC-221: Human approved task 20 performance repair instead of extending the
   timeout. Immutable fixture copies, one full race/coverage execution partitioned
   exhaustively across four CI workers, combined coverage and retained quality
-  failure propagation. ESC-22-005 decision resolved; CI verification still pending.
+  failure propagation. ESC-22-005 resolved; hosted run34805256766 PASS on6b8fe50.

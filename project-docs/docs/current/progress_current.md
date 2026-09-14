@@ -1,6 +1,6 @@
 # Progress — Current
 
-Updated 2026-09-14. **Phase 22 Human-accepted; post-wrap performance repair active (DEC-221/task 20).**
+Updated 2026-09-14. **Phase 22 Human-accepted; post-wrap performance repair complete (DEC-221/task 20).**
 Branch: `phase-22`; Human acceptance checkpoint:
 `24cd3e3f2fbe640bccfa26faffb7435dba20a4bb`.
 
@@ -42,4 +42,9 @@ add two isolation regressions. CLI 541.652s -> 483.994s; export 368.615s ->
 Four exhaustive CI shards replace duplicate full runs. Controller tests include
 real Go execution and coverage reconciliation; independent task-20 review PASS.
 See [task 20 report](../phases/phase-22/tasks/task-20-done.md).
-Hosted verification remains pending; merge readiness still awaits a green PR.
+Hosted run34805256766 on6b8fe50 passed all six jobs in13m53s. All724 targets
+and12967 statement blocks reconciled;65.5% coverage. Summed job time47m48s
+(about50 rounded minutes). Task20 and CI repair COMPLETE; PR ready for Human
+merge. [Hosted evidence](../phases/phase-22/qa/task-20-hosted-ci.md) binds the
+verified PR head. Closure records are local documentation only; root does not
+push or merge.

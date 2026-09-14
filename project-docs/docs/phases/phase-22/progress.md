@@ -352,3 +352,12 @@ original executed cases retained plus two isolation regressions. Fixture reuse
 reduces setup cost; four exhaustive CI workers replace duplicate full runs.
 See tasks/task-20-done.md. Hosted verification remains pending; original CI
 failure and all historical Human/QA evidence are preserved.
+
+## Hosted CI closure — 2026-09-14
+
+Task20 is COMPLETE: [hosted qualification](qa/task-20-hosted-ci.md) records run34805256766
+SUCCESS on PR head6b8fe50bcd47148572ba841d561b23348f041dad. All six jobs passed;
+724 targets and12967 statement blocks reconciled;coverage65.5%. Elapsed13m53s,
+summed job time47m48s. The earlier CI hold is cleared; original failures and
+Human acceptance remain preserved. No product or test change in this closure.
+Root records documentation locally; no push or merge performed.

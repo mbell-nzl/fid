@@ -4,9 +4,9 @@
 
 Phase 22 is complete and Human-accepted under DEC-220 (2026-09-13).
 The PR for `phase-22` is open; its test job subsequently timed out. ESC-22-005
-is resolved under DEC-221: task 20 is repairing performance with unchanged
-timeouts and exhaustive race/coverage validation; see
-[diagnosis](../phases/phase-22/qa/pr-ci-diagnosis.md). Merge awaits successful CI.
+is resolved under DEC-221: task20 is complete with unchanged timeouts and
+exhaustive race/coverage validation. [Hosted CI](../phases/phase-22/qa/task-20-hosted-ci.md)
+passed on6b8fe50 in13m53s, coverage65.5%; PR ready for Human merge.
 Phase 23 has not been planned or started.
 
 The Heavy phase delivered recovery, budgets/Stops/Attention, derived execution

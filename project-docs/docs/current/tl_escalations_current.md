@@ -4,7 +4,7 @@
 
 None. ESC-22-005 is resolved by the Human's performance-repair approval under
 DEC-221; its proposed timeout increase was not approved or applied. Task 20 is
-executing the selected repair and verification. See
+complete; hosted run34805256766 passed on6b8fe50. See
 [Phase 22 escalations](../phases/phase-22/tl-escalations.md) for all five records.
 The wrap's per-TRG hindsight audit is in
 [wrap-up-audit.md](../phases/phase-22/wrap-up-audit.md).
