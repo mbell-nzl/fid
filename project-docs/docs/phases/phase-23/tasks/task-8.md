@@ -11,7 +11,8 @@ Neither is Evidence and neither blocks a guarded action.
 - VAL-034: Concerns are generic, never completion-linked, and never block a
   guarded action by themselves.
 - VAL-035: `concern.dispose` is a single irreversible transition with a
-  mandatory reason and a real Finding for `converted-to-finding`.
+  mandatory reason and a resolvable reference for each action that binds one.
+- VAL-074: Self-disposal is permitted and records both Actors distinctly.
 - VAL-036: Deviations are append-only with explicit supersession.
 - VAL-037: Neither a Concern nor a Deviation can be linked as Evidence.
 - VAL-003: task 1's fence assertions for the three judgment Events converge
@@ -28,6 +29,16 @@ Neither is Evidence and neither blocks a guarded action.
 - Blocking work is expressed as a blocking Finding or a Stop, never as a
   deferred Concern (PRD-REV-008). An open Concern of any severity must leave
   both guarded actions unaffected.
+- The three terminal dispositions are exactly `carried-forward`, `rejected`,
+  and `superseded`. `carried-forward` binds an existing Issue ID and is the only
+  route from a Concern to future work, because ADR-0004/0005 makes Issues the
+  only durable work graph. `concern.dispose` never creates an Issue, never
+  creates a Finding, and never writes a link.
+- Self-disposal is permitted and is the ordinary case: a Builder may dispose a
+  Concern it raised. Store the raising and the disposing Actor separately and
+  surface both. Do not add an independence check, a Human Outcome requirement,
+  or any other authority rule to disposal; a Concern disposition is bookkeeping
+  and is never an authority record.
 - A Deviation has no lifecycle and no update path. A changed judgment is a new
   Deviation referencing its predecessor; self-reference is rejected.
 - Concerns and Deviations record only the fields in the accepted contract. Do
@@ -75,8 +86,12 @@ Neither is Evidence and neither blocks a guarded action.
 - [ ] Every closed subject type is accepted, no completion column exists, and an
   open blocking-severity Concern leaves both guarded actions unaffected.
   (VAL-034)
-- [ ] The first disposal succeeds; a second disposal, a missing reason, and an
-  unknown Finding all reject with their exact codes. (VAL-035)
+- [ ] The first disposal succeeds for each of the three actions; a second
+  disposal, a missing reason, a `carried-forward` naming an unknown Issue, and a
+  `superseded` naming an unknown Concern or Finding all reject with their exact
+  codes. (VAL-035)
+- [ ] A Concern disposed by its own raising Actor succeeds and records both
+  Actors distinctly. (VAL-074)
 - [ ] No Deviation update path exists and a superseding Deviation references its
   predecessor with both readable. (VAL-036)
 - [ ] `evidence.link` naming a Concern or a Deviation rejects on the closed
@@ -86,7 +101,7 @@ Neither is Evidence and neither blocks a guarded action.
 
 ## First Failing Test
 
-`TestConcernDisposeIsSingleIrreversibleTransition` fails against the absent
+`TestConcernDisposeCarriedForwardBindsExistingIssue` fails against the absent
 generic Concern writer.
 
 ## Documentation Updates
@@ -94,6 +109,10 @@ generic Concern writer.
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` section 3: add `fid concern
   dispose` and `fid deviation list` to the accepted review-and-judgment block,
   per the accepted contract.
+- `project-docs/specs/03_TRD_SCHEMA.md` section 5: add `Concern disposed` to the
+  Review/Judgment Event families, and section 3.7: record the `concerns`
+  disposition columns. Both are accepted by the slice contract; apply them with
+  this implementation.
 - `project-docs/docs/phases/phase-23/tasks/task-8-done.md` in the full format,
   including the three fence-key deletions and their parity proofs.
 ## Exact Commands To Run

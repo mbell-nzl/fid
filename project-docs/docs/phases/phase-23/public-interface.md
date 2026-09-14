@@ -73,9 +73,9 @@ Review         = {id:ID,run_id:ID,issue_id:ID,envelope_id:ID,envelope_revision:1
                   evidence_refs:Source[0..64],receipt_ids:ID[0..64],
                   findings:Finding[],resolved_finding_ids:ID[],
                   independence:"distinct-actor",recorded_at:timestamp,event_id:ID}
-ConcernDisposition = {action:"accepted"|"rejected"|"superseded"|
-                  "converted-to-finding",finding_id:?ID,reason:text,actor_id:ID,
-                  disposed_at:timestamp,event_id:ID}
+ConcernDisposition = {action:"carried-forward"|"rejected"|"superseded",
+                  issue_id:?ID,supersedes_concern_id:?ID,supersedes_finding_id:?ID,
+                  reason:text,actor_id:ID,disposed_at:timestamp,event_id:ID}
 Concern        = {id:ID,subject:Subject,actor_id:ID,scope:{paths:text[0..256]},
                   severity:Severity,summary:text,reasoning:text,
                   references:Source[0..32],status:"open"|"disposed",
@@ -107,6 +107,12 @@ RequirementLink = {requirement_id:ID,issue_id:ID,
                   created_at:timestamp,event_id:ID}
 ```
 
+Exactly one of `ConcernDisposition.issue_id`, `supersedes_concern_id`, and
+`supersedes_finding_id` is non-null for `carried-forward` and `superseded`, and
+all three are null for `rejected`; `carried-forward` uses `issue_id` only. A
+Concern may not supersede itself. `Concern.actor_id` is the raising Actor and
+`Concern.disposition.actor_id` is the disposing Actor; they may be equal.
+
 `Coverage.items` and `Coverage.exclusions` may not reference the same `Source`
 digest. `Finding.state` is derived from the latest disposition, never supplied.
 `Review.resolved_finding_ids` echoes the accepted `resolves_finding_ids` input.
@@ -126,7 +132,7 @@ the row says read-only.
 | `finding.address` / `fid finding address` | `{finding_id:ID,claim_id:ID,expected_claim_version:int,reason:text}` | Mutation keyed `finding`: Finding | finding.addressed / 5,13 |
 | `finding.list` / `fid finding list` | read; optional `--issue`, `--review`, `--state`, `--severity`, `--limit` | `{items:Finding[]}` | null / 5,13 |
 | `concern.record` / `fid concern record` | `{id:ID,subject:Subject,scope:{paths:text[]},severity:Severity,summary:text,reasoning:text,references:Source[0..32]}` | Mutation keyed `concern`: Concern | concern.recorded / 8,13 |
-| `concern.dispose` / `fid concern dispose` | `{concern_id:ID,action:text,finding_id:?ID,reason:text}` | Mutation keyed `concern`: Concern | concern.disposed / 8,13 |
+| `concern.dispose` / `fid concern dispose` | `{concern_id:ID,action:text,issue_id:?ID,supersedes_concern_id:?ID,supersedes_finding_id:?ID,reason:text}` | Mutation keyed `concern`: Concern | concern.disposed / 8,13 |
 | `concern.list` / `fid concern list` | read; optional `--subject <type>:<id>`, `--status`, `--severity`, `--limit` | `{items:Concern[]}` | null / 8,13 |
 | `deviation.record` / `fid deviation record` | `{id:ID,subject:Subject,expected:text,observed:text,authority:{actor_id:ID,reference:?text},disposition:text,reasoning:text,references:Source[0..32],supersedes_deviation_id:?ID}` | Mutation keyed `deviation`: Deviation | deviation.recorded / 8,13 |
 | `deviation.list` / `fid deviation list` | read; optional `--subject`, `--disposition`, `--limit` | `{items:Deviation[]}` | null / 8,13 |

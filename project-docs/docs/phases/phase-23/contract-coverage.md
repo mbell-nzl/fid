@@ -57,8 +57,9 @@
 | 7: later Outcome supersedes for evaluation, both retained | domain-only plus `human_outcomes` Event order | 7 | VAL-033 |
 | 7: `not-applicable` is a distinct third availability value | domain-only | 2 defines, 7 confirms | VAL-010, VAL-032 |
 | 8: generic Concern subject set | `judgment_concerns.subject_type` CHECK | 8 | VAL-034 |
-| 8: single irreversible disposal with a reason | `judgment_concerns` status and disposition CHECKs | 8 | VAL-035 |
-| 8: `converted-to-finding` requires an existing Finding | `judgment_concerns` disposition CHECK plus FK | 8 | VAL-035 |
+| 8: three terminal dispositions, single and irreversible | `judgment_concerns` status and disposition discriminator CHECKs | 8 | VAL-035 |
+| 8: `carried-forward` binds an existing Issue; `superseded` binds an existing Concern or Finding | `judgment_concerns.disposition_issue_id`, `supersedes_concern_id`, `supersedes_finding_id` FKs | 8 | VAL-035 |
+| 8: self-disposal permitted with both Actors recorded | `judgment_concerns.actor_id` and `disposed_actor_id`; domain-only permission | 8 | VAL-074 |
 | 8: an open Concern never blocks a guarded action | domain-only | 8 | VAL-034 |
 | 8: Deviations append-only with explicit supersession | `deviations` self FK; no update effect rule | 8 | VAL-036 |
 | 8: neither Concern nor Deviation is Evidence | `evidence_records.evidence_type` CHECK | 8 | VAL-037 |
@@ -90,7 +91,7 @@
 | 15: final capability matrix | `system_capabilities` materialization and export profile | 17 | VAL-066, VAL-047 |
 | 15: owned removals proven absent | `0018` plus `v1-convergence-inventory.md` | 15 | VAL-061, VAL-062, VAL-063 |
 | 12: `links` restricted to Issue endpoints, single traceability model | `0018` rebuilt link triggers plus `internal/links` registry | 12 | VAL-054 |
-| 15: accepted spec amendments applied | canonical spec files | 1 (schema 8.4), 12 (schema 3.2 and CLI 3), 9 and 13 (CLI 3 and 5), 17 (TRD 4) | wrap-up spec sync |
+| 15: accepted spec amendments applied | canonical spec files | 1 (schema 8.4), 8 (schema 5 and 3.7, CLI 3), 12 (schema 3.2 and CLI 3), 9 and 13 (CLI 3 and 5), 17 (TRD 4) | wrap-up spec sync |
 | public-interface 4.1: thirty grant actions | `envelope_authority_grants` plus profile validation | each listed owner; 18 audits | VAL-067 |
 | public-interface 5: added failure codes | `internal/cli/codes.go` plus adapters | 13 | VAL-056 |
 | public-interface 6: manifest projection schema | `internal/export` plus manifest fixtures | 1, 15, 16 | VAL-064, VAL-065 |

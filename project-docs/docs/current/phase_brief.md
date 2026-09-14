@@ -63,8 +63,8 @@ Full specs and reports: `../phases/phase-23/tasks/`.
 
 ## Validation Contract
 
-The full contract is `../phases/phase-23/qa/validation-contract.md`: 73
-assertions, VAL-001 to VAL-073, all `Draft` until QA Lead refinement. Index only:
+The full contract is `../phases/phase-23/qa/validation-contract.md`: 74
+assertions, VAL-001 to VAL-074, all `Draft` until QA Lead refinement. Index only:
 
 | Range | Subject | Owning tasks | Validator |
 |---|---|---|---|
@@ -72,7 +72,7 @@ assertions, VAL-001 to VAL-073, all `Draft` until QA Lead refinement. Index only
 | VAL-006..013 | Obligations, evaluation, review Claims | 2, 3 | QA Lead / Reviewer |
 | VAL-014..023 | Review Records, independence, Findings | 4, 5 | QA Lead / Reviewer |
 | VAL-024..033 | Review evidence, cycles, exhaustion, freshness | 6, 7 | QA Lead / Reviewer |
-| VAL-034..046 | Concerns, Deviations, Decisions, Outcomes | 8, 9, 10 | QA Lead / Reviewer |
+| VAL-034..046, 074 | Concerns, Deviations, Decisions, Outcomes | 8, 9, 10 | QA Lead / Reviewer |
 | VAL-047..054 | Attention resolution, requirements, links | 11, 12, 17 | QA Lead / Reviewer |
 | VAL-055..065 | CLI, Human projections, removal, portability | 13-16 | QA Lead / Reviewer |
 | VAL-066..069 | Availability and conformance audit | 17, 18 | QA Lead / Reviewer |
@@ -129,15 +129,13 @@ Heavy mode requires fresh command and feasibility validation.
 
 ## Open Questions
 
-- [ ] Accept `fid concern dispose` as a new accepted CLI leaf, or model Concern
-  disposition differently?
-- [ ] Accept restricting `links` to Issue endpoints so requirement traceability
-  has exactly one authoritative model?
+Both planning questions are resolved by the Human decisions recorded in
+`../phases/phase-23/decisions.md`. None remain open.
 
 ## Success / Exit Criteria
 
 - [ ] All 18 tasks complete with green quality gates.
-- [ ] All 73 `VAL-NNN` outcomes recorded with cited evidence.
+- [ ] All 74 `VAL-NNN` outcomes recorded with cited evidence.
 - [ ] Final QA review has no unresolved blocking finding.
 - [ ] Human checklist accepted, including VAL-070 to VAL-073.
 - [ ] Sign-off recorded and all twelve canonical specs synced.

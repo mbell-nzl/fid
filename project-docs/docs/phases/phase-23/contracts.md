@@ -223,13 +223,48 @@ Finding severity set; a summary; concise reasoning; ordered references; a
 status of `open` or `disposed`; and a created time. A Concern is not linked to
 a completion report, a role, or a triage event.
 
-`concern.dispose` records a disposition of `accepted`, `rejected`,
-`superseded`, or `converted-to-finding`, with a mandatory reason and, for
-`converted-to-finding`, the exact existing Finding ID. Disposition is a single
-irreversible transition from `open` to `disposed`; a second disposal rejects
-`concern-already-disposed`. An open Concern never blocks a guarded action by
-itself. Blocking work is expressed as a blocking Finding or a Stop, never as a
-deferred Concern (PRD-REV-008).
+A Concern has exactly three terminal dispositions, recorded by
+`concern.dispose` with a mandatory reason:
+
+| Action | Binds | Meaning |
+|---|---|---|
+| `carried-forward` | the exact existing Issue ID | The work survives as an Issue. |
+| `rejected` | reason only | Consciously dismissed. |
+| `superseded` | the exact existing Concern or Finding ID | Another record now owns the subject. |
+
+`carried-forward` is the only way a Concern becomes future work, because
+ADR-0004/0005 makes Issues the only durable work graph. The named Issue must
+already exist; `concern.dispose` never creates one, and the new Issue need not
+belong to the current Envelope's selection. A caller that also wants the
+provenance edge in the graph records it explicitly with the existing
+`discovered_from`/`discovered` Issue link relations; disposal writes no link.
+
+`superseded` is the only relationship between a Concern and a Finding, and it
+points from the Concern to the Finding. A Reviewer who judges an open Concern to
+be genuine in-scope rework raises a Finding inside their own Review Record under
+section 5, and the Concern is then disposed `superseded` naming it.
+`concern.dispose` can never create a Finding: Findings are created only with a
+Review Record, and a Finding is rework on the current revision rather than
+carried-forward work.
+
+Disposition is a single irreversible transition from `open` to `disposed`; a
+second disposal rejects `concern-already-disposed`. There is no reopening.
+
+Disposal is operational bookkeeping, not judgment. The disposing Actor may be
+the Actor that raised the Concern: a Builder who later establishes that its own
+observation was not a problem is the ordinary case, and Concerns are
+deliberately off the critical path. Both the raising and the disposing Actor are
+stored and shown in the Human views, so a self-dismissal is legible rather than
+prohibited. Where a rejection is an authorized risk acceptance rather than
+bookkeeping, the Human Outcome is recorded separately under section 10 and
+referenced from the disposal; a Concern disposition never substitutes for
+authorized judgment and is never itself an authority record.
+
+An open Concern never blocks a guarded action, at any severity. It is surfaced
+in the Issue view, `resume`, and `concern.list`, and it is never a precondition
+of `envelope.complete` or `issue.transition-terminal-success`. Blocking work is
+expressed as a blocking Finding or a Stop, never as a deferred Concern
+(PRD-REV-008).
 
 Deviations are append-only and have no lifecycle. A Deviation binds a generic
 subject from the same closed set, the expected contract or control, the
@@ -395,7 +430,9 @@ its JSON, adding no member and no rule (PRD-PROJ-005, DEC-219 pattern).
   current disposition, and says explicitly that `addressed` is a Builder
   assertion, not a resolution.
 - Concern and Deviation text names subject, severity, status or disposition,
-  and references, and never presents either as Evidence.
+  and references, and never presents either as Evidence. Concern text names both
+  the raising and the disposing Actor, and for a `carried-forward` disposition
+  names the Issue that now owns the work.
 - Decision Reference text names the class, the referenced project file path and
   digest, the authority, and the outcome, and never reproduces decision prose.
 - Human Outcome text names the Actor, the activation provenance, the class, the
@@ -456,6 +493,11 @@ tasks apply with their implementation:
 - `03_TRD_SCHEMA.md` section 3.2 records that the `links` closed endpoint
   registry is `issue` only, and that `requirement_issue_links.relation` is the
   closed set `implements`, `verifies`, `relates-to`.
+- `03_TRD_SCHEMA.md` section 5 adds `Concern disposed` to the Review/Judgment
+  Event families. PRD-REV-007 requires a Concern status and disposition, and
+  Design section 4 shows open Concerns, but the canonical family list had no
+  event that could change either. Adding the missing family rather than dropping
+  the clause follows DEC-195.
 - `06_DESIGN_PLAN_CLI.md` section 3 review-and-judgment block gains
   `fid concern dispose`, `fid deviation list`, `fid decision list`,
   `fid human-outcome list`, and replaces `fid requirement sync` with

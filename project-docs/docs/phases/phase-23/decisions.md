@@ -18,8 +18,9 @@
   `contracts.md`, `public-interface.md`, `schema.md`,
   `execution-scope.md`, `v1-convergence-inventory.md`, `contract-coverage.md`,
   `qa/validation-contract.md`, and the ordered 18-task pack; declare the phase
-  Heavy; and accept the four canonical spec amendments listed in
-  `contracts.md` section 15.
+  Heavy; and accept the six canonical spec amendments listed in
+  `contracts.md` section 15. The Human planning decisions below are already
+  folded into those artifacts.
 - **Consequences if accepted:** Implementation may begin at task 1 after the
   Runner's QA readiness check. `reviews.coverage.v1` and `human.outcomes.v1`
   become advertisable at task 17. The named V1 judgment surfaces are removed at
@@ -30,6 +31,38 @@
 - **Refs:** `10_IMPLEMENTATION_ROADMAP.md` sections 4, 5, 5.1, 7; PRD sections
   7 and 8; TRD sections 4, 5.4, and `03_TRD_SCHEMA.md` sections 3.7 and 7;
   Phase 22 DEC-187 kit dispositions C-03, C-04, C-10; DEC-220.
+
+### Human planning decisions, 2026-09-14
+
+Both open planning questions are resolved. They amend the DEC-222 draft in
+place and are folded into the artifacts above; they are not separate DECs.
+
+- **Concern lifecycle.** `fid concern dispose` is accepted as a new accepted CLI
+  leaf with a matching `concern.disposed` Event family, closing the gap between
+  PRD-REV-007 (which requires status and disposition) and the CLI and Event
+  catalogs (which omitted the mechanism). The disposition set is exactly
+  `carried-forward`, `rejected`, and `superseded`. The Tech Lead's original
+  `accepted` and `converted-to-finding` values are withdrawn: `accepted` was
+  vacuous, and `converted-to-finding` was structurally wrong because Findings
+  are created only inside a Review Record (PRD-REV-002) and describe rework on
+  the current revision rather than carried-forward work. `carried-forward` is
+  the only route from a Concern to future work because ADR-0004/0005 makes
+  Issues the only durable work graph.
+- **Concern disposal authority.** Self-disposal is permitted: the Actor that
+  raised a Concern may dispose it. Concerns are deliberately lightweight and off
+  the critical path, and a Builder later establishing that its own observation
+  was not a problem is the ordinary case. The raising and disposing Actors are
+  stored and surfaced separately so a self-dismissal is legible rather than
+  prohibited. No independence rule and no Human Outcome requirement attaches to
+  disposal; where a rejection is an authorized risk acceptance, the Human
+  Outcome is recorded separately and referenced. This also avoids reordering the
+  task pack, since a Human Outcome requirement would have pushed Concern
+  disposal from task 8 to after task 10.
+- **Requirement traceability.** `links` is restricted to Issue endpoints so
+  `requirement_issue_links` is the single authoritative model, as required by
+  the slice acceptance rule in `10_IMPLEMENTATION_ROADMAP.md` section 7. The new
+  `verifies` relation is retained, and `03_TRD_SCHEMA.md` section 3.2 is added
+  to the accepted spec-amendment list to record both changes.
 
 ### Proposed carry-forward dispositions
 

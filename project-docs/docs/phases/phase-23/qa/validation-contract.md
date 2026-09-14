@@ -18,8 +18,10 @@ than weakening it.
 
 ## Numbering
 
-IDs are `VAL-NNN`, sequential from `VAL-001`, scoped to this phase. Retired or
-superseded rows stay in the table with rationale; IDs are never reused.
+IDs are `VAL-NNN`, allocated sequentially from `VAL-001` and scoped to this
+phase. Rows are grouped topically, so a later-allocated ID may appear out of
+numeric order; `VAL-074` sits with the Concern rows. Retired or superseded rows
+stay in the table with rationale; IDs are never reused.
 
 ## Assertions
 
@@ -59,7 +61,8 @@ superseded rows stay in the table with rationale; IDs are never reused.
 | VAL-032 | contracts 7 | `human-outcome` Obligations use `freshness_target:"none"` and are not staled by a target tree change. | Same sequence as VAL-031 against a human-outcome Obligation. | QA Reviewer | task 7 | Freshness stays `fresh` and the Obligation stays satisfied after the tree change. | A Human judgment is staled by a code change. | Draft | Explicit supersession is VAL-033. |
 | VAL-033 | contracts 7 | A later Human Outcome on the same class with a different result supersedes the earlier one for evaluation while both records remain readable. | Record approved, evaluate, record rejected for the same class, evaluate, then read both. | QA Reviewer | task 7 | Evaluation follows the later Outcome with reason `outcome-superseded`; both records are readable and unmodified. | The earlier Outcome still governs, or either record is edited or deleted. | Draft | Ordering uses recorded Event order, not caller timestamps. |
 | VAL-034 | PRD-REV-007; PRD-REV-008 | Concerns are generic, never completion-linked, and never block a guarded action by themselves. | Record Concerns against every closed subject type, then probe both guarded actions with an open blocking-severity Concern. | QA Lead | task 8 | Every subject type is accepted, no completion column exists, and both guarded actions are unaffected. | A Concern blocks an action, or a completion linkage survives. | Draft | Blocking work is expressed as a Finding or a Stop. |
-| VAL-035 | PRD-REV-007 | `concern.dispose` is a single irreversible transition with a mandatory reason, and `converted-to-finding` requires an existing Finding. | Dispose, dispose again, dispose with a missing reason, and convert to an unknown Finding. | QA Reviewer | task 8 | The first disposal succeeds; the other three reject with their exact codes. | A second disposal succeeds or a dangling Finding reference is stored. | Draft | Reopening a disposed Concern is deliberately impossible. |
+| VAL-035 | PRD-REV-007; ADR-0004/0005 | `concern.dispose` is a single irreversible transition over exactly three actions, each binding a resolvable reference where required. | Dispose once per action with valid references; then a second disposal, a missing reason, a `carried-forward` naming an unknown Issue, and a `superseded` naming an unknown Concern and an unknown Finding. | QA Reviewer | task 8 | All three valid dispositions succeed and store their exact reference; all four negatives reject with their exact codes and no Event. | A second disposal succeeds, a dangling reference is stored, or any action outside the three is accepted. | Draft | Reopening is deliberately impossible. `concern.dispose` never creates an Issue, a Finding, or a link. |
+| VAL-074 | contracts 8; Human decision 2026-09-14 | Self-disposal is permitted, and the raising and disposing Actors are stored and reported distinctly. | Dispose a Concern with the Actor that raised it, then with a different Actor; read both back through JSON and Human text. | QA Reviewer | task 8 | Both succeed; each record reports the raising Actor and the disposing Actor as separate values, equal in the self-disposal case. | Self-disposal is rejected, or either Actor is absent, merged, or overwritten. | Draft | No independence or Human Outcome rule applies to disposal; an authorized risk acceptance is a separate Human Outcome referenced from the disposal. |
 | VAL-036 | PRD-REV-007 | Deviations are append-only, with a changed judgment expressed as a new Deviation referencing the earlier one. | Record, attempt any update path, then record a superseding Deviation. | QA Reviewer | task 8 | No update leaf or writer exists; the superseding row references its predecessor and both remain readable. | Any in-place Deviation update exists. | Draft | Self-reference is rejected by the schema. |
 | VAL-037 | PRD-EVID-001 | Neither a Concern nor a Deviation can be linked as Evidence. | `evidence.link` attempts naming a Concern and a Deviation. | QA Reviewer | task 8 | Both reject on the closed evidence-type domain with no Event. | Either becomes Evidence. | Draft | They remain visible governance facts. |
 | VAL-038 | PRD-REV-009 | `decision.record-reference` stores a reference only, with no prose body, and rejects a digest mismatch. | Latest-schema column inspection plus record attempts with a matching and a mismatched digest. | QA Lead | task 9 | No body or prose column exists; the matching digest records and the mismatch rejects `source-digest-mismatch`. | Any prose body is stored, or a mismatched digest is accepted. | Draft | Project files remain the canonical prose. |
@@ -111,7 +114,7 @@ Checked at planning time and re-checked by QA Lead before execution approval:
   PRD-REV-001 (VAL-014); PRD-REV-002 (VAL-014/017/020);
   PRD-REV-003 (VAL-024); PRD-REV-004 (VAL-015/021/022/026/070);
   PRD-REV-005 (VAL-031); PRD-REV-006 (VAL-027/029/072);
-  PRD-REV-007 (VAL-034/035/036); PRD-REV-008 (VAL-034);
+  PRD-REV-007 (VAL-034/035/036/074); PRD-REV-008 (VAL-034);
   PRD-REV-009 (VAL-038/060); PRD-HUM-001 (VAL-044/045/060);
   PRD-HUM-002 (VAL-046/050); PRD-HUM-003 (VAL-041/048/049/050);
   PRD-PROJ-001/002/003 (VAL-059); PRD-PROJ-005 (VAL-058);
@@ -143,3 +146,6 @@ Final review records every `VAL-NNN` as `PASS`, `FAIL`, `BLOCKED`, or
 | Date | Assertion | Change | Reason | Decision reference |
 |---|---|---|---|---|
 | 2026-09-14 | VAL-001..073 | created | Phase 23 planning draft | pending DEC-222 |
+| 2026-09-14 | VAL-035 | refined | Concern dispositions narrowed to `carried-forward`, `rejected`, `superseded` per Human decision | pending DEC-222 |
+| 2026-09-14 | VAL-052 | refined | cover all three `requirement_issue_links` relations including the new `verifies` | pending DEC-222 |
+| 2026-09-14 | VAL-074 | created | record the accepted self-disposal rule and its Actor provenance | pending DEC-222 |

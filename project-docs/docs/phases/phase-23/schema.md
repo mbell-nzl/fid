@@ -114,9 +114,11 @@ CREATE TABLE judgment_concerns (
   references_json TEXT NOT NULL CHECK (json_valid(references_json)),
   status TEXT NOT NULL CHECK (status IN ('open','disposed')),
   disposition_action TEXT CHECK (disposition_action IS NULL OR disposition_action IN (
-    'accepted','rejected','superseded','converted-to-finding'
+    'carried-forward','rejected','superseded'
   )),
-  disposition_finding_id TEXT REFERENCES review_findings(id),
+  disposition_issue_id TEXT REFERENCES issues(id),
+  supersedes_concern_id TEXT REFERENCES judgment_concerns(id),
+  supersedes_finding_id TEXT REFERENCES review_findings(id),
   disposition_reason TEXT,
   disposed_actor_id TEXT,
   disposed_at TEXT,
@@ -124,16 +126,27 @@ CREATE TABLE judgment_concerns (
   created_at TEXT NOT NULL,
   created_event_id TEXT NOT NULL UNIQUE,
   CHECK ((status = 'open'
-          AND disposition_action IS NULL AND disposition_finding_id IS NULL
-          AND disposition_reason IS NULL AND disposed_actor_id IS NULL
-          AND disposed_at IS NULL AND disposed_event_id IS NULL)
+          AND disposition_action IS NULL AND disposition_reason IS NULL
+          AND disposed_actor_id IS NULL AND disposed_at IS NULL
+          AND disposed_event_id IS NULL)
       OR (status = 'disposed'
           AND disposition_action IS NOT NULL AND disposition_reason IS NOT NULL
           AND disposed_actor_id IS NOT NULL AND disposed_at IS NOT NULL
           AND disposed_event_id IS NOT NULL)),
-  CHECK (disposition_action IS NULL
-      OR (disposition_action = 'converted-to-finding' AND disposition_finding_id IS NOT NULL)
-      OR (disposition_action <> 'converted-to-finding' AND disposition_finding_id IS NULL))
+  CHECK ((disposition_action IS NULL
+          AND disposition_issue_id IS NULL AND supersedes_concern_id IS NULL
+          AND supersedes_finding_id IS NULL)
+      OR (disposition_action = 'carried-forward'
+          AND disposition_issue_id IS NOT NULL AND supersedes_concern_id IS NULL
+          AND supersedes_finding_id IS NULL)
+      OR (disposition_action = 'rejected'
+          AND disposition_issue_id IS NULL AND supersedes_concern_id IS NULL
+          AND supersedes_finding_id IS NULL)
+      OR (disposition_action = 'superseded'
+          AND disposition_issue_id IS NULL
+          AND ((supersedes_concern_id IS NOT NULL AND supersedes_finding_id IS NULL)
+            OR (supersedes_concern_id IS NULL AND supersedes_finding_id IS NOT NULL)))),
+  CHECK (supersedes_concern_id IS NULL OR supersedes_concern_id <> id)
 );
 CREATE INDEX judgment_concerns_by_subject
   ON judgment_concerns(subject_type, subject_id, status, created_at, id);
@@ -470,6 +483,10 @@ END;
 
 `agent_runs.completion_id` is dropped because its foreign key targets the
 removed `task_completions`; the rest of `agent_runs` is retained for Phase 25.
+The `judgment_concerns` rename carries its self foreign key
+`supersedes_concern_id` to the renamed `concerns` table; `PRAGMA
+legacy_alter_table` stays at its default so SQLite rewrites that reference, and
+task 15 proves it with `PRAGMA foreign_key_check` plus a real superseding row.
 `triage_events` and its index are untouched: the triage-status projection and
 its Phase 24 removal are not in this slice. `epic_metadata` and
 `acceptance_criteria` are retained; `acceptance_criteria` already has no
