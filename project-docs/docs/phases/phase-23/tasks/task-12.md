@@ -98,6 +98,10 @@ absent requirement reference writer.
 
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` section 3: replace
   `fid requirement sync` with `fid requirement record-reference|link|get|list`.
+- `project-docs/specs/03_TRD_SCHEMA.md` section 3.2: record the `links` closed
+  endpoint registry as `issue` only, and `requirement_issue_links.relation` as
+  the closed set `implements`, `verifies`, `relates-to`. Both are accepted by
+  the slice contract; apply them with this implementation.
 - `project-docs/docs/phases/phase-23/tasks/task-12-done.md` in the full format,
   including the final fence removal and its parity proof.
 ## Exact Commands To Run

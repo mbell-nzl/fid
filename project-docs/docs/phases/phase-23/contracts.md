@@ -346,6 +346,17 @@ not match the observed file rejects `source-digest-mismatch`. Re-recording the
 same requirement ID with a different `Source` supersedes the prior row and
 retains it; it never edits it in place.
 
+`requirement_issue_links` becomes the single authoritative model for
+requirement-to-Issue traceability, so `links` is restricted to Issue endpoints.
+Its closed endpoint registry becomes `issue` only, and the relations
+`implements` and `implemented_by` are removed from it; existing rows with a
+requirement endpoint are deleted by migration 0018. This is required by the
+slice acceptance rule in `10_IMPLEMENTATION_ROADMAP.md` section 7: no two
+authoritative models may remain for one fact. `relates-to` therefore exists in
+both tables with disjoint endpoint types and is not a duplicate model. The
+`verifies` relation is new in `requirement_issue_links` and has no `links`
+equivalent; it is accepted here and recorded in the schema catalog.
+
 ## 13. Evidence Across Three Evidence Types
 
 `evidence_records` widens to exactly three evidence types with exactly one
@@ -442,6 +453,9 @@ Accepting it also accepts these canonical spec amendments, which the owning
 tasks apply with their implementation:
 
 - `03_TRD_SCHEMA.md` gains section 8.4 incorporating `schema.md`.
+- `03_TRD_SCHEMA.md` section 3.2 records that the `links` closed endpoint
+  registry is `issue` only, and that `requirement_issue_links.relation` is the
+  closed set `implements`, `verifies`, `relates-to`.
 - `06_DESIGN_PLAN_CLI.md` section 3 review-and-judgment block gains
   `fid concern dispose`, `fid deviation list`, `fid decision list`,
   `fid human-outcome list`, and replaces `fid requirement sync` with

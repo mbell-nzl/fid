@@ -89,7 +89,8 @@
 | 14: CF-040 guidance applied to new views | domain-only; no schema | 14 | VAL-073 |
 | 15: final capability matrix | `system_capabilities` materialization and export profile | 17 | VAL-066, VAL-047 |
 | 15: owned removals proven absent | `0018` plus `v1-convergence-inventory.md` | 15 | VAL-061, VAL-062, VAL-063 |
-| 15: accepted spec amendments applied | canonical spec files | 1 (schema 8.4), 9 and 12 and 13 (CLI section 3 and 5), 17 (TRD 4) | wrap-up spec sync |
+| 12: `links` restricted to Issue endpoints, single traceability model | `0018` rebuilt link triggers plus `internal/links` registry | 12 | VAL-054 |
+| 15: accepted spec amendments applied | canonical spec files | 1 (schema 8.4), 12 (schema 3.2 and CLI 3), 9 and 13 (CLI 3 and 5), 17 (TRD 4) | wrap-up spec sync |
 | public-interface 4.1: thirty grant actions | `envelope_authority_grants` plus profile validation | each listed owner; 18 audits | VAL-067 |
 | public-interface 5: added failure codes | `internal/cli/codes.go` plus adapters | 13 | VAL-056 |
 | public-interface 6: manifest projection schema | `internal/export` plus manifest fixtures | 1, 15, 16 | VAL-064, VAL-065 |
