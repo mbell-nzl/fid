@@ -1,0 +1,120 @@
+# Phase 23 - Task 18: Conformance assembly and wire-surface audit
+
+## Objective
+
+Assemble the shared fake and fid conformance corpus for every Phase 23
+operation, audit the thirty-name grant action set, and prove no cancelled
+product family reappeared.
+
+## Validation Contract Coverage
+
+- VAL-067: The activated capability and grant action set is exactly thirty
+  names with allow and reject cases.
+- VAL-068: Shared fake and fid adapters pass identical conformance cases for
+  every Phase 23 operation.
+- VAL-069: No product escalation, QA-plan, validation-contract, template,
+  retrospective, or carry-forward table or command exists.
+
+## Binding Constraints
+
+- `public-interface.md` sections 4, 4.1, and 5 are the exact authority. The set
+  is exactly thirty names; an action added before its owning task or missing at
+  this audit both fail.
+- The audit must compare the explicit name set with an independently pinned
+  corpus. Parsing one table to produce both expected and actual values cannot
+  pass (the Phase 22 rule, retained).
+- Conformance cases exist for every new and amended leaf, amended read shape,
+  failure code, and Human view, with negative unknown-field, authority,
+  stale-version, and duplicate-delivery cases. Fixture authorship belongs to the
+  earlier owning tasks; this task assembles and audits completeness, not first
+  behavior. A missing case is a finding against its owning task, recorded with
+  provenance, not silently authored here without recording that fact.
+- New source helpers and fake adapters must be exercised by real assertions.
+  Compiling an unused helper is not behavioral evidence.
+- The cancelled-family absence proof covers tables and the real-process command
+  tree, under any name or alias. `project-docs` delivery artifacts are outside
+  product scope and must not be confused with product state.
+- `execution-scope.md` is incorporated on the usual convergence terms.
+
+## Scope
+
+### Files To Create Or Modify
+
+- `cmd/fid/integration/` - Phase 23 conformance corpus, fake and fid adapters,
+  and the audit tests.
+- `cmd/fid/integration/testdata/` - the Phase 23 operation fixtures.
+- `internal/workflow/authority.go` - audit support only, no new action.
+- `project-docs/docs/phases/phase-23/tasks/task-18-done.md`.
+
+### Files To Read For Context
+
+- `public-interface.md` in full; `contracts.md` sections 13, 14, 15.
+- `project-docs/docs/phases/phase-22/tasks/task-18.md` for the accepted audit
+  pattern.
+- `task-17-done.md`; `execution-scope.md`; `contract-coverage.md`;
+  `v1-convergence-inventory.md`.
+
+### Out Of Scope
+
+- New product behavior, new codes, and any contract change.
+- The production kit adapter, which stays Phase 25 under CF-037.
+
+## Acceptance Criteria
+
+- [ ] Exactly thirty grant actions are accepted, each at or after its owning
+  task, with every unknown action rejected, proven against an independently
+  pinned corpus. (VAL-067)
+- [ ] Fake and fid adapters produce identical accepted results and identical
+  rejections for every Phase 23 case. (VAL-068)
+- [ ] No cancelled product family is present under any name or alias. (VAL-069)
+- [ ] Any missing fixture is recorded as a finding against its owning task with
+  provenance.
+- [ ] Full required commands terminate with preserved red/green evidence.
+- [ ] Every converged retained row records its provenance and executing command.
+
+## First Failing Test
+
+`TestGrantActionSetIsExactlyThirtyNames` fails against the incomplete audit.
+
+## Documentation Updates
+
+- `project-docs/docs/phases/phase-23/tasks/task-18-done.md` in the full format,
+  including the corpus inventory and the per-operation fake and fid comparison.
+## Exact Commands To Run
+
+Working directory: repository root `/home/mark/projects/fid`, or the isolated
+same-task worktree root explicitly recorded by the Runner. No command is a
+placeholder. Apply gofmt and goimports to edited Go files before the final gate.
+
+After implementation, every command below is required before task close.
+The tagged integration gate is mandatory and is never substituted.
+
+```text
+gofmt -l cmd internal
+golangci-lint run ./...
+go test -race -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out
+go test -tags integration -race ./cmd/fid/integration/...
+```
+
+Required-command rules live in `AGENTS.md` (Commands): every required command
+is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or
+narrower substituted commands are failed gates. No exception to the full task
+gate. Focused red/green selections never replace these commands. Report each
+attempt with the command's own output token and observed termination. An
+interrupted or hung command is never `PASS`; preserve all failed attempts and
+rerun the byte-identical command after an authorized causal repair. Report lint
+is a Runner control after the report commit, not a Developer gate.
+
+List any conditional command required by this task and why:
+
+- None.
+
+## Notes For Developer
+
+- This task belongs to QA Review window 6.
+- One task per Developer session; recovery may continue the same task.
+- Commit using Conventional Commits with `Refs: phase-23/task-18`.
+- Never infer ownership from a historical filename or task label. No-progress
+  budgets exclude interruptions and attempts forbidden from repairing the cause.
+- Do not read held-out scenario material or activate another agent.

@@ -1,0 +1,139 @@
+# Phase 23 - Task 2: Typed multi-Obligation Envelope contract
+
+## Objective
+
+Replace the single hard-coded `gate-evidence` Obligation with 1..16 typed
+Obligations of three kinds, add protected-Decision authoring storage, and make
+Obligation evaluation return one independent result per Obligation.
+
+## Validation Contract Coverage
+
+- VAL-006: Envelope accepts 1..16 Obligations and enforces each type's exact
+  field combination.
+- VAL-007: Duplicate IDs, a second `gate-evidence` Obligation, duplicate
+  `review_profile` or `outcome_class`, and a non-primary subject each reject.
+- VAL-008: Evaluation returns one result per Obligation in ID order with
+  independent dimensions and every unsatisfied reason.
+- VAL-009: A guarded action requires every applicable Obligation to be satisfied.
+- VAL-010: `artifact_availability:"not-applicable"` is returned exactly for
+  `metadata-sufficient` Obligations.
+
+Full sources and criteria are in
+`project-docs/docs/phases/phase-23/qa/validation-contract.md`.
+
+## Binding Constraints
+
+- `contracts.md` section 2 is the exact authority for the per-type field
+  combinations; `public-interface.md` section 2 is the exact wire shape.
+- Do not widen `guarded_actions` beyond `envelope.complete` and
+  `issue.transition-terminal-success`. At most one Obligation of each type may
+  guard `issue.transition-terminal-success`.
+- `envelope_obligations.review_profile` and `outcome_class` are typed columns
+  written for their own Obligation type only; the full Obligation value still
+  lives in `obligation_json`.
+- Evaluation must keep absence, record validity and freshness, and Artifact
+  availability serialized as three distinct dimensions (PRD-EVID-002). Never
+  collapse them into one reason code, and always return every unsatisfied
+  reason from every Obligation (PRD-EVID-006).
+- `envelope_protected_decisions` rows are written here as accepted authoring
+  data. Their blocking, Stop, and satisfaction semantics belong to task 9; do
+  not implement or assert them in this task.
+- Do not assert the absence of review, Human Outcome, or review-cycle behavior;
+  those arrive in tasks 4, 6, and 10. Assert only what this task delivers.
+- Envelope revision stays 1 and the primary Issue stays single; multi-revision
+  and multi-Issue remain Phase 24.
+- `execution-scope.md` is incorporated: subject-preserving convergence only for
+  assertions this accepted change displaces.
+
+## Scope
+
+### Files To Create Or Modify
+
+- `internal/workflow/envelope.go`, `evaluation.go`, `resolve.go`, `errors.go`.
+- `internal/evidence/evidence.go`, `policy.go`, `execution.go`.
+- `internal/journal/` - the `envelope.created` effect rule row only.
+- `cmd/fid/envelope.go`, `evidence.go` - request and result shapes only.
+- Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
+  this change.
+- `project-docs/docs/phases/phase-23/tasks/task-2-done.md`.
+
+### Files To Read For Context
+
+- `project-docs/docs/phases/phase-23/contracts.md` sections 1, 2, 13.
+- `project-docs/docs/phases/phase-23/public-interface.md` sections 2, 3, 4.
+- `project-docs/docs/phases/phase-23/schema.md` sections 1, 2, 6.2.
+- `project-docs/docs/phases/phase-23/tasks/task-1-done.md` - the actual
+  predecessor hand-back, including which fence keys remain closed.
+- `execution-scope.md`, `contract-coverage.md`.
+
+### Out Of Scope
+
+- Review, Finding, Concern, Deviation, Decision, and Human Outcome behavior.
+- Protected-Decision blocking, Stops, and satisfaction.
+- Claim modes, budgets, freshness changes, and Human text.
+
+## Acceptance Criteria
+
+- [ ] Every accepted per-type field combination succeeds and every prohibited
+  one rejects with no Event. (VAL-006)
+- [ ] All five negative authoring cases reject with an unchanged projection.
+  (VAL-007)
+- [ ] Evaluation returns one ordered result per Obligation with independent
+  dimensions and the complete reason set. (VAL-008)
+- [ ] A guarded action is permitted only when every applicable Obligation is
+  satisfied. (VAL-009)
+- [ ] `not-applicable` appears exactly for `metadata-sufficient` Obligations
+  and never substitutes for `available` or `missing`. (VAL-010)
+- [ ] Full required commands terminate with preserved red/green evidence.
+- [ ] Every converged retained row records introducing commit, invalidating
+  change, and its executing command.
+
+## First Failing Test
+
+`TestEnvelopeCreateAcceptsTypedObligationSet` fails against the current
+single-Obligation validator. Capture the failure before product edits.
+
+## Documentation Updates
+
+- `project-docs/docs/phases/phase-23/tasks/task-2-done.md` in the full format.
+- Flag spec impact against the named contracts; only Tech Lead accepts a
+  contract or schema change. Record no spec change when implementation conforms.
+## Exact Commands To Run
+
+Working directory: repository root `/home/mark/projects/fid`, or the isolated
+same-task worktree root explicitly recorded by the Runner. No command is a
+placeholder. Apply gofmt and goimports to edited Go files before the final gate.
+
+After implementation, every command below is required before task close.
+The tagged integration gate is mandatory and is never substituted.
+
+```text
+gofmt -l cmd internal
+golangci-lint run ./...
+go test -race -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out
+go test -tags integration -race ./cmd/fid/integration/...
+go test -race -cover ./internal/workflow/
+```
+
+Required-command rules live in `AGENTS.md` (Commands): every required command
+is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or
+narrower substituted commands are failed gates. No exception to the full task
+gate. Focused red/green selections never replace these commands. Report each
+attempt with the command's own output token and observed termination. An
+interrupted or hung command is never `PASS`; preserve all failed attempts and
+rerun the byte-identical command after an authorized causal repair. Report lint
+is a Runner control after the report commit, not a Developer gate.
+
+List any conditional command required by this task and why:
+
+- `go test -race -cover ./internal/workflow/` before and after the edits, because this task adds branch-heavy validation to an existing package.
+
+## Notes For Developer
+
+- This task belongs to QA Review window 1.
+- One task per Developer session; recovery may continue the same task.
+- Commit using Conventional Commits with `Refs: phase-23/task-2`.
+- Never infer ownership from a historical filename or task label. No-progress
+  budgets exclude interruptions and attempts forbidden from repairing the cause.
+- Do not read held-out scenario material or activate another agent.

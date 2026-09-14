@@ -88,6 +88,17 @@
 - Current V1 delivery scaffolding is binding engineering procedure, not forward
   fid product scope. No failed gate authorizes a protected definition change.
 
+## Proposed Next Phase
+
+- DEC-222 (PROPOSED, 2026-09-14): accept the Phase 23 "Review and Human
+  judgment" slice contract, wire amendment, DDL/Event contract, execution scope,
+  V1 convergence inventory, clause coverage matrix, 73-assertion validation
+  contract, and the ordered 18-task pack; declare the phase Heavy. Phase 23 is
+  **planned but not approved**; no product code, migration, or test for the
+  slice may start before acceptance. See
+  [Phase 23 decisions](../phases/phase-23/decisions.md) and
+  [phase brief](phase_brief.md).
+
 ## Latest Phase Closure
 
 - DEC-220: Phase 22 complete, Human-accepted; 18+1 tasks, 80/80 VAL,
@@ -121,11 +132,18 @@
 | CF-037 | Phase 25 TL/adapter owner: exact coordinator/port obligations in Phase 22 kit-contract-mapping.md; fid conformance alone is insufficient. |
 | CF-038 | Future causal editor of cmd/fid/live_output_test.go: same-stream coalescing hardening. Post-truncation output_bytes documentation half closed under DEC-189/220. |
 | CF-039 | Dedicated workflow maintainer: executable cross-check of contract clauses, schema, task ownership and acceptance criteria; existing scope-audit item now formally indexed. |
-| CF-040 | Future TL: Human-requested CLI view polish/verbosity review at next accepted Human-view redesign, due by Phase 25 operating-experience qualification; nonblocking, no design selected. |
+| CF-040 | Partially scheduled in Phase 23 task 14 (VAL-073) for the Human views that phase introduces; polish/verbosity review of pre-existing views stays with Phase 25 operating-experience qualification. |
+| CF-041 | Workflow/CI maintainer: hosted CI runs only format, lint, build, shard verification, and the ordinary race/coverage shards. The tagged integration suite and the rebuild benchmark are local-only gates, so a green PR is not phase-level evidence. Dedicated maintenance. |
 
 CF-024/034/035 closed with Phase 22 evidence; historical dispositions and closed
 IDs remain in the wrap audit and must not be reused. All triggers checked
-against the actual phase diff. No Phase 23 plan or task allocation exists.
+against the actual phase diff.
+
+Phase 23 planning proposes re-deferring CF-008/018/023/026a/026b/029/030/033/
+036/037/038/039 unchanged, partially scheduling CF-040, and registering CF-041.
+The full proposed disposition table is in
+[Phase 23 decisions](../phases/phase-23/decisions.md); it binds only on DEC-222
+acceptance.
 
 ## Environment
 

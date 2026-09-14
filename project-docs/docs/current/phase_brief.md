@@ -1,35 +1,149 @@
-# Phase Brief — No Active Phase
+# Phase Brief - Phase 23 (Planning)
 
-## Current state
+## Phase Goal
 
-Phase 22 is complete and Human-accepted under DEC-220 (2026-09-13).
-The PR for `phase-22` is open; its test job subsequently timed out. ESC-22-005
-is resolved under DEC-221: task20 is complete with unchanged timeouts and
-exhaustive race/coverage validation. [Hosted CI](../phases/phase-22/qa/task-20-hosted-ci.md)
-passed on6b8fe50 in13m53s, coverage65.5%; PR ready for Human merge.
-Phase 23 has not been planned or started.
+Deliver the Review and Human judgment slice: an independent Reviewer records
+coverage and zero or more Findings against an exact Envelope revision and
+repository identity; Builder rework preserves review independence; protected or
+subjective Obligations receive provenanced Human Outcomes; completion is
+re-evaluated from those facts. It also replaces V1 requirement authoring with
+references and removes the role-specific verification columns, QA and TL
+composites, and role-bound completion behavior this slice owns. Success is a
+Human who can tell, from fid output alone, what a Review resolved, what is
+merely addressed, what still blocks, and which judgment unblocked it.
 
-The Heavy phase delivered recovery, budgets/Stops/Attention, derived execution
-outcomes, activation recovery, portable state and accepted Human guidance.
-All 18 planned tasks plus supplemental task 19 are complete. Final evidence:
-80/80 validation assertions, 84 deterministic QA checks and 6/6 Human checks.
-At wrap there was no open technical Must-fix or escalation. Earlier failed attempts are
-preserved; the second Human checklist supplies the accepted final judgments.
+## Status
 
-## Authoritative records
+**Planning; awaiting Human approval.** No branch yet; planning base is
+`0195897a347dfe1872db0f7be3800c5c3ccdefcf` on `main`. Next action: Human accepts
+or amends proposed DEC-222 in `../phases/phase-23/decisions.md`. No product
+code, migration, or test for this slice may start before that acceptance.
 
-- [Final acceptance](../phases/phase-22/qa/final-acceptance.md)
-- [Wrap audit](../phases/phase-22/wrap-up-audit.md)
-- [Decisions / DEC-220](../phases/phase-22/decisions.md)
-- [Run ledger](../phases/phase-22/run-ledger.md)
-- [Human checklist 2](../phases/phase-22/qa/human-checklist-2.md)
-- [Open carry-forwards](decisions_active.md)
+## Operating Mode
 
-## Boundaries
+**Heavy.** Four entry criteria met: persistence-contract and migration change
+(0013/0015 baseline edits, 0017, 0018); public-interface change (eighteen new
+or replaced leaves, seven grant actions, twenty failure codes); an authority
+and trust surface (Human Outcome provenance, protected Decisions); and
+replacement-bound removal of fail-closed V1 behavior. Matrix:
+`../../specs/09_AI_WORKFLOW.md` section 4. Record any promotion here.
 
-CF-040 records accepted future CLI polish and verbosity review. Remaining
-workflow maintenance and kit adapter qualification are separately owned.
-Claims parallel semantics remain Phase 24; full baseline qualification remains
-Phase 25. No release or live adoption is authorized by this phase closure.
-The approved roadmap calls Phase 23 “Review and Human judgment”; its exact
-contracts and task pack remain future planning work.
+## Accepted Contract Set
+
+Accepted together under proposed DEC-222 and the only authority for
+implementation, all under `../phases/phase-23/`: `contracts.md`,
+`public-interface.md`, `schema.md`, `execution-scope.md`,
+`v1-convergence-inventory.md`, and `contract-coverage.md` (clause to schema row
+to task to assertion).
+
+## Task Index
+
+Full specs and reports: `../phases/phase-23/tasks/`.
+
+| Task | Title | Status | Dependencies |
+|---|---|---|---|
+| 1 | Review and judgment schema baseline | Pending | DEC-222 |
+| 2 | Typed multi-Obligation Envelope contract | Pending | 1 |
+| 3 | Non-mutating review Claim mode and Reviewer Run | Pending | 2 |
+| 4 | Immutable Review Records and computed independence | Pending | 3 |
+| 5 | Finding dispositions and resolution authority | Pending | 4 |
+| 6 | Review evidence, review cycles, and rework exhaustion | Pending | 5 |
+| 7 | Review freshness and Human Outcome supersession | Pending | 6 |
+| 8 | Generic Concerns and append-only Deviations | Pending | 7 |
+| 9 | Decision References and protected Decisions | Pending | 8 |
+| 10 | Provenanced Human Outcomes | Pending | 9 |
+| 11 | Attention resolution through Human Outcomes | Pending | 10 |
+| 12 | Requirement references and a single traceability model | Pending | 11, checkpoint |
+| 13 | Phase 23 CLI surface, failure codes, and idempotency | Pending | 12 |
+| 14 | Human review and judgment projections | Pending | 13 |
+| 15 | Migration 0018 and V1 judgment removal | Pending | 14 |
+| 16 | Portable recovery for the review and judgment domain | Pending | 15 |
+| 17 | Final capability matrix and availability audit | Pending | 16 |
+| 18 | Conformance assembly and wire-surface audit | Pending | 17 |
+
+## Validation Contract
+
+The full contract is `../phases/phase-23/qa/validation-contract.md`: 73
+assertions, VAL-001 to VAL-073, all `Draft` until QA Lead refinement. Index only:
+
+| Range | Subject | Owning tasks | Validator |
+|---|---|---|---|
+| VAL-001..005 | Schema baseline, fence, parity | 1, 15, 16 | QA Lead / Reviewer |
+| VAL-006..013 | Obligations, evaluation, review Claims | 2, 3 | QA Lead / Reviewer |
+| VAL-014..023 | Review Records, independence, Findings | 4, 5 | QA Lead / Reviewer |
+| VAL-024..033 | Review evidence, cycles, exhaustion, freshness | 6, 7 | QA Lead / Reviewer |
+| VAL-034..046 | Concerns, Deviations, Decisions, Outcomes | 8, 9, 10 | QA Lead / Reviewer |
+| VAL-047..054 | Attention resolution, requirements, links | 11, 12, 17 | QA Lead / Reviewer |
+| VAL-055..065 | CLI, Human projections, removal, portability | 13-16 | QA Lead / Reviewer |
+| VAL-066..069 | Availability and conformance audit | 17, 18 | QA Lead / Reviewer |
+| VAL-070..073 | Comprehension and product judgment | phase-end | Human |
+
+## QA Artifacts
+
+| Artifact | Path | Status |
+|---|---|---|
+| Validation contract | `../phases/phase-23/qa/validation-contract.md` | Draft |
+| QA plan | `../phases/phase-23/qa/qa-plan.md` | Missing; QA Lead authors before task 1 |
+| Mid-phase reviews | `../phases/phase-23/qa/review-M.md` | Windows 1-3, 4-6, 7-9, 10-12, 13-15, 16-18 |
+| Independent checkpoint | `../phases/phase-23/qa/checkpoint-after-task-11.md` | Must PASS before task 12 |
+| Human fixtures | `../phases/phase-23/qa/human-fixtures.md` | Authored by task 14 |
+| Final review / checklist | `../phases/phase-23/qa/` | Pending |
+
+Heavy mode requires fresh command and feasibility validation.
+
+## Active Constraints
+
+- Nothing in the slice starts before DEC-222 acceptance.
+- Every task runs the tagged integration gate from task 1. Hosted CI does not
+  run it (CF-041), so a green PR is never phase-level evidence.
+- Removal is replacement-bound: task 15 removes nothing whose replacement is not
+  already green, and defers nothing because a test broke.
+- Independence is computed from Claim and Run history; no role string or
+  attribution label may decide it.
+- A Human Outcome is never stored, evaluated, or rendered as deterministic proof.
+- Envelope revision stays 1 and the primary Issue single; parallel Claims,
+  multi-Issue Envelopes, and `retry-exhausted` remain Phase 24.
+
+## Interfaces / Subsystems In Scope
+
+- `internal/review/` (new) - Review, Finding, Concern, Deviation, Decision
+  Reference, and Human Outcome rules.
+- `internal/workflow/`, `internal/evidence/`, `internal/claims/` - Obligations,
+  protected Decisions, budgets, Stops, Attention, freshness, review Claim mode.
+- `internal/journal/`, `internal/db/`, `migrations/` - 0017, 0018, fence,
+  effect rules, parity.
+- `internal/links/` restricted; `internal/requirements/` removed.
+- `internal/export/`, `internal/maintenance/`, `internal/activity/`, `cmd/fid/`
+  - adapters, projections, removal convergence.
+
+## Known Risks
+
+- **Wide-reach change.** Obligation generalization (task 2) and Evidence
+  widening (task 6) touch many producers; each is isolated in its own task.
+- **Clause without a schema row** (Phase 22 DEC-195). Mitigated by
+  `contract-coverage.md`, re-derived independently by QA Lead before approval.
+- **Late Human-readability discovery** (Phase 22). Mitigated by a deterministic
+  Human-text check in the window 13-15 review against task 14's fixtures.
+- **Removal ordering.** Task 15 depends on fourteen replacements; a slip amends
+  the task rather than silently deferring a removal.
+
+## Open Questions
+
+- [ ] Accept `fid concern dispose` as a new accepted CLI leaf, or model Concern
+  disposition differently?
+- [ ] Accept restricting `links` to Issue endpoints so requirement traceability
+  has exactly one authoritative model?
+
+## Success / Exit Criteria
+
+- [ ] All 18 tasks complete with green quality gates.
+- [ ] All 73 `VAL-NNN` outcomes recorded with cited evidence.
+- [ ] Final QA review has no unresolved blocking finding.
+- [ ] Human checklist accepted, including VAL-070 to VAL-073.
+- [ ] Sign-off recorded and all twelve canonical specs synced.
+
+## Next Planning Checkpoint
+
+Phase 24, parallel and evolving work: multi-Issue Envelope revision, scope
+conflict, parallel Claims, partial progress, generic `retry-exhausted`, and the
+`triage_events` and V1 Claim and Run removals.

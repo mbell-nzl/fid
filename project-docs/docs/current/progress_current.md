@@ -1,8 +1,23 @@
 # Progress — Current
 
-Updated 2026-09-14. **Phase 22 Human-accepted; post-wrap performance repair complete (DEC-221/task 20).**
-Branch: `phase-22`; Human acceptance checkpoint:
-`24cd3e3f2fbe640bccfa26faffb7435dba20a4bb`.
+Updated 2026-09-14. **Phase 22 closed; Phase 23 planned and awaiting approval.**
+Branch: `phase-22` (PR open, CI green); planning base for Phase 23 is
+`0195897a347dfe1872db0f7be3800c5c3ccdefcf` on `main`.
+
+## Phase 23 planning — 2026-09-14
+
+Tech Lead drafted the full Heavy-mode plan for the roadmap's "Review and Human
+judgment" slice: slice contract, wire amendment, DDL and Event contract,
+execution scope, V1 convergence inventory, a clause-to-task coverage matrix, a
+73-assertion validation contract, and an ordered 18-task pack. Proposed DEC-222
+requests acceptance of that set as one unit. Nothing is approved; no product
+code, migration, or test for the slice may start yet. Two open questions go to
+the Human: adding `fid concern dispose` to the accepted CLI surface, and
+restricting `links` to Issue endpoints so requirement traceability has one
+authoritative model. New carry-forward CF-041 records that hosted CI does not
+run the tagged integration suite or the rebuild benchmark. See
+[phase brief](phase_brief.md) and
+[Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Completed
 
@@ -23,7 +38,8 @@ outcomes; [wrap audit](../phases/phase-22/wrap-up-audit.md) records dispositions
 [Phase progress](../phases/phase-22/progress.md) retains execution history and
 [decisions](../phases/phase-22/decisions.md) retain all authorities and workflow notes.
 Phase 22's original implementation and Human acceptance remain closed. The
-post-wrap PR CI follow-up is task 20 under DEC-221; no Phase 23 plan exists.
+post-wrap PR CI follow-up is task 20 under DEC-221; the Phase 23 plan above is
+drafted but unapproved.
 Separate workflow retrospective remains CF-036/039. Claims and external adapter
 qualification remain in their approved Phase 24/25 owners.
 
