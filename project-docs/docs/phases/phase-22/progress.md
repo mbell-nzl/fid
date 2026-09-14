@@ -343,3 +343,12 @@ unchanged. No Human PASS, phase acceptance, merge, push or release is inferred.
   Workflow maintenance/retrospective remains separate, as does kit qualification.
 - Current context archived and compressed to no active phase. Phase ready for
   PR/merge. No Phase 23 planning, push, PR creation, merge or release performed.
+
+## 2026-09-14 — Post-wrap task 20 local qualification
+
+DEC-221 authorizes performance repair instead of a timeout increase. All seven
+local gates passed; coverage 65.5%; independent task-20 review PASS. All 2,653
+original executed cases retained plus two isolation regressions. Fixture reuse
+reduces setup cost; four exhaustive CI workers replace duplicate full runs.
+See tasks/task-20-done.md. Hosted verification remains pending; original CI
+failure and all historical Human/QA evidence are preserved.

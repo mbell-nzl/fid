@@ -117,6 +117,7 @@ func TestValidateRetainsPinnedV1Profile(t *testing.T) {
 }
 
 func TestValidateRecoveryManifestClosedConfigurationAndInventory(t *testing.T) {
+	fixture := newExportSourceFixture(t, nil)
 	for _, tc := range []struct {
 		name, code string
 		change     func(map[string]any, map[string][]byte)
@@ -147,14 +148,7 @@ func TestValidateRecoveryManifestClosedConfigurationAndInventory(t *testing.T) {
 		}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			workspace := t.TempDir()
-			if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
-				t.Fatal(err)
-			}
-			archive := filepath.Join(t.TempDir(), "recovery.zip")
-			if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archive}); err != nil {
-				t.Fatal(err)
-			}
+			workspace, archive := fixture.clone(t)
 			contents := archiveContents(t, archive)
 			m := decodeManifestMap(t, contents["manifest.json"])
 			tc.change(m, contents)

@@ -2,8 +2,10 @@
 
 ## Open escalations
 
-None. Phase 22 is complete under DEC-220. ESC-22-001..004 and their resolutions
-are archived in [Phase 22 escalations](../phases/phase-22/tl-escalations.md).
+None. ESC-22-005 is resolved by the Human's performance-repair approval under
+DEC-221; its proposed timeout increase was not approved or applied. Task 20 is
+executing the selected repair and verification. See
+[Phase 22 escalations](../phases/phase-22/tl-escalations.md) for all five records.
 The wrap's per-TRG hindsight audit is in
 [wrap-up-audit.md](../phases/phase-22/wrap-up-audit.md).
 

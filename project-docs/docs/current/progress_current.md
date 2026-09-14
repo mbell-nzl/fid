@@ -1,6 +1,6 @@
 # Progress — Current
 
-Updated 2026-09-13. **No active phase. Phase 22 complete and ready for PR/merge.**
+Updated 2026-09-14. **Phase 22 Human-accepted; post-wrap performance repair active (DEC-221/task 20).**
 Branch: `phase-22`; Human acceptance checkpoint:
 `24cd3e3f2fbe640bccfa26faffb7435dba20a4bb`.
 
@@ -22,7 +22,24 @@ Branch: `phase-22`; Human acceptance checkpoint:
 outcomes; [wrap audit](../phases/phase-22/wrap-up-audit.md) records dispositions.
 [Phase progress](../phases/phase-22/progress.md) retains execution history and
 [decisions](../phases/phase-22/decisions.md) retain all authorities and workflow notes.
-No open ESC or technical repair remains. PR creation/merge is the next repository
-action; no push or PR creation is performed by this wrap. No Phase 23 plan exists.
-Separate workflow retrospective is recommended under CF-036/039. Claims and
-external adapter qualification remain in their approved Phase 24/25 owners.
+Phase 22's original implementation and Human acceptance remain closed. The
+post-wrap PR CI follow-up is task 20 under DEC-221; no Phase 23 plan exists.
+Separate workflow retrospective remains CF-036/039. Claims and external adapter
+qualification remain in their approved Phase 24/25 owners.
+
+## Post-wrap performance repair — 2026-09-14
+
+PR #24's original test step failed after 31m33s, with two package timeouts.
+The supplied failure and earlier unapproved timeout proposal remain in the
+[diagnosis](../phases/phase-22/qa/pr-ci-diagnosis.md). DEC-221/task 20 implements
+the chosen performance repair; ESC-22-005's decision request is resolved with
+no timeout increase.
+
+All seven local gates passed, including full race coverage (65.5%) and build.
+Matching uncached before/after suites retain all 2,653 original run cases and
+add two isolation regressions. CLI 541.652s -> 483.994s; export 368.615s ->
+264.146s; workflow 503.550s -> 464.948s (unchanged tests, less contention).
+Four exhaustive CI shards replace duplicate full runs. Controller tests include
+real Go execution and coverage reconciliation; independent task-20 review PASS.
+See [task 20 report](../phases/phase-22/tasks/task-20-done.md).
+Hosted verification remains pending; merge readiness still awaits a green PR.

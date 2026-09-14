@@ -3,14 +3,12 @@ package export
 import (
 	"archive/zip"
 	"os"
-	"path/filepath"
 	"sort"
 	"testing"
-
-	"github.com/mbell-nzl/fid/internal/bootstrap"
 )
 
 func TestArchiveRejectsSpecialEntriesAndExpandedMember(t *testing.T) {
+	fixture := newExportSourceFixture(t, nil)
 	for _, tc := range []struct {
 		name  string
 		mode  os.FileMode
@@ -24,14 +22,7 @@ func TestArchiveRejectsSpecialEntriesAndExpandedMember(t *testing.T) {
 		{name: "expanded non-Artifact limit plus one", mode: 0o644, large: true, code: "resource-limit"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			workspace := t.TempDir()
-			if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
-				t.Fatal(err)
-			}
-			archivePath := filepath.Join(t.TempDir(), "boundary.zip")
-			if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archivePath}); err != nil {
-				t.Fatal(err)
-			}
+			workspace, archivePath := fixture.clone(t)
 			if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)}); err != nil {
 				t.Fatalf("full valid control: %v", err)
 			}

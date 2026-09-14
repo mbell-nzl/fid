@@ -4,13 +4,17 @@ The implementation replaces the temporary recovery-unavailable and caller-report
 
 Validation is complete: 18 planned tasks plus supplemental Human-guidance task 19; 80/80 validation assertions; 84 deterministic QA checks; and the accepted second Human checklist, 6/6 PASS. Independent final QA and the task-19 review close all technical findings. The first Human attempt and failed gate attempts remain in the evidence history.
 
-Recorded checks include format/lint, the full race/coverage suite (latest total 65.5%), real-process integration, build, consecutive benchmark runs, three fresh 100k rebuild samples (27603/27493/27441ms, each below 30000ms), and production-scale archive boundary matrices. Routine archive fixtures are smaller under the accepted test-cadence decision; the 64MiB/1GiB/8GiB/1-million-entry product limits and required phase-end scale checks are unchanged. The final wrap changes documentation only and attributes these checks to their executing reports.
+Recorded checks include format/lint, the full race/coverage suite (latest total 65.5%), real-process integration, build, consecutive benchmark runs, three fresh 100k rebuild samples (27603/27493/27441ms, each below 30000ms), and production-scale archive boundary matrices. Routine archive fixtures are smaller under the accepted test-cadence decision; the 64MiB/1GiB/8GiB/1-million-entry product limits and required phase-end scale checks are unchanged. The wrap attributes these checks to their executing reports.
+
+Post-wrap CI repair (task 20 / DEC-221) preserves the ten-minute package timeout and every original test case. Repeated setup now creates isolated copies of immutable historical fixtures; CI executes one complete race/coverage suite across four exhaustive shards. A required final `quality` check rejects missing execution, failed workers or incomplete coverage. Local gates and independent review pass; hosted qualification is tracked on this PR. Full-suite local CLI time fell 541.7s -> 484.0s and export 368.6s -> 264.1s; these are not hosted runtime claims.
 
 Acceptance and review trail:
 
 - `project-docs/docs/phases/phase-22/qa/final-acceptance.md`
 - `project-docs/docs/phases/phase-22/qa/final-review-4.md`
 - `project-docs/docs/phases/phase-22/qa/task-19-review.md`
+- `project-docs/docs/phases/phase-22/qa/task-20-review.md`
+- `project-docs/docs/phases/phase-22/tasks/task-20-done.md`
 - `project-docs/docs/phases/phase-22/qa/human-checklist-2.md`
 - `project-docs/docs/phases/phase-22/wrap-up-audit.md`
 - `project-docs/docs/phases/phase-22/decisions.md` (DEC-220 sign-off)

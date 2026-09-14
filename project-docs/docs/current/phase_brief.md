@@ -3,13 +3,17 @@
 ## Current state
 
 Phase 22 is complete and Human-accepted under DEC-220 (2026-09-13).
-Branch `phase-22` is ready for PR/merge; Phase 23 has not been planned or started.
+The PR for `phase-22` is open; its test job subsequently timed out. ESC-22-005
+is resolved under DEC-221: task 20 is repairing performance with unchanged
+timeouts and exhaustive race/coverage validation; see
+[diagnosis](../phases/phase-22/qa/pr-ci-diagnosis.md). Merge awaits successful CI.
+Phase 23 has not been planned or started.
 
 The Heavy phase delivered recovery, budgets/Stops/Attention, derived execution
 outcomes, activation recovery, portable state and accepted Human guidance.
 All 18 planned tasks plus supplemental task 19 are complete. Final evidence:
 80/80 validation assertions, 84 deterministic QA checks and 6/6 Human checks.
-There is no open technical Must-fix or escalation. Earlier failed attempts are
+At wrap there was no open technical Must-fix or escalation. Earlier failed attempts are
 preserved; the second Human checklist supplies the accepted final judgments.
 
 ## Authoritative records

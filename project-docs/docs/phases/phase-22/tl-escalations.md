@@ -223,3 +223,19 @@
   `qa/validation-contract.md` VAL-031; `tasks/task-8.md`; `tasks/task-8-done.md`;
   `qa/qa-plan.md` R-14; `v1-convergence-inventory.md`.
 
+
+## ESC-22-005 — PR test runtime budget / performance disposition
+
+- Raised: 2026-09-13 by root after the Human supplied the PR CI timeout log.
+  No TL-Lite TRG was issued for this post-wrap diagnosis.
+- Original request: explicit 20-minute Makefile test/coverage timeout, a protected
+  gate-budget change. It was never approved or applied.
+- Human response: reduce runtime without compromising quality; subsequently
+  approved the bounded performance-repair task.
+- Resolution: DEC-221/task 20 authorizes fixture optimization, one complete race/
+  coverage execution, and exhaustive sharding if justified by measurements.
+  Default package timeout, all assertions and product thresholds remain intact.
+- Status: decision request RESOLVED. Local/hosted implementation verification is
+  tracked in task-20-done.md; this disposition alone does not claim CI PASS.
+- Evidence: qa/pr-ci-diagnosis.md retains original failure/proposal and the revised
+  recommendation. The archived Human checklist remains accepted.

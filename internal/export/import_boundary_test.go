@@ -13,9 +13,11 @@ import (
 )
 
 func TestImportProcessExitAtPublicationBoundaries(t *testing.T) {
+	fixture := newExportSourceFixture(t, nil)
 	for _, stage := range []ImportStage{ImportAfterValidation, ImportBeforeDurability, ImportBeforePublication, ImportAfterRename, ImportAfterPublication} {
 		t.Run(string(stage), func(t *testing.T) {
-			archive, target := boundaryImportFixture(t)
+			_, archive := fixture.clone(t)
+			target := t.TempDir()
 			cmd := exec.Command(os.Args[0], "-test.run=^TestImportAbruptExitHelper$")
 			cmd.Env = append(os.Environ(), "FID_IMPORT_CRASH_ARCHIVE="+archive, "FID_IMPORT_CRASH_TARGET="+target, "FID_IMPORT_CRASH_STAGE="+string(stage), "FID_IMPORT_CRASH_MIGRATIONS="+testMigrationsDir(t))
 			output, err := cmd.CombinedOutput()
@@ -54,9 +56,11 @@ func TestImportAbruptExitHelper(t *testing.T) {
 }
 
 func TestImportRejectsChangedDigestAndInstalledHistory(t *testing.T) {
+	fixture := newExportSourceFixture(t, nil)
 	for _, corruption := range []string{"changed-digest", "journal-bytes", "journal-missing", "result-count", "symlink-workspace"} {
 		t.Run(corruption, func(t *testing.T) {
-			archive, target := boundaryImportFixture(t)
+			_, archive := fixture.clone(t)
+			target := t.TempDir()
 			options := ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "history"}
 			if _, err := Import(options); err != nil {
 				t.Fatal(err)

@@ -1590,6 +1590,27 @@
   performed or authorized by this record. Claims parallel qualification remains
   Phase 24; external adapter/all-capability qualification remains Phase 25.
 
+### DEC-221: Approve bounded PR test-performance repair
+
+- **Date/status:** 2026-09-13; ACCEPTED. Human: “Ok, go ahead with the
+  performance-repair task now.” This accepts the revised performance-first
+  recommendation in qa/pr-ci-diagnosis.md, not the prior timeout increase.
+- **Allocation:** Supplemental task 20, serial root implementation. Optimize
+  measured repeated fixture setup with isolation regressions; consolidate CI's
+  duplicate full race runs into one complete race-and-coverage execution. Measured
+  exhaustive sharding/coverage union is permitted if needed for feedback time.
+- **Protected CI authority:** Removing the redundant make test step is authorized
+  because make coverage runs the same full suite with race instrumentation.
+  Preserve all ordinary tests, exact behavioral assertions, format/lint/build and
+  race coverage. No unexamined package/test exclusion is allowed. Record each
+  failed attempt; future test discovery must be exhaustive if shards are used.
+- **Limits:** No timeout increase, production code, migration, dependency, product
+  threshold or assertion change. Real migration/import/rebuild tests remain real;
+  setup reuse never shares mutable DB state or suppresses a case's unique input.
+- **Status:** ESC-22-005 decision request resolved by this choice. Original PR CI
+  failure remains open pending repair and verification; Human acceptance stays
+  valid. Local checks do not attest hosted execution. No Phase 23 work begins.
+
 ## Final Spec Sync And Audit
 
 [wrap-up-audit.md](wrap-up-audit.md) records all twelve canonical document

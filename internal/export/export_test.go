@@ -148,6 +148,7 @@ func TestArchiveRejectsUnresolvedSourceMetadata(t *testing.T) {
 }
 
 func TestValidateRejectsEveryArchiveInvalidCheckWithoutMutation(t *testing.T) {
+	fixture := newExportSourceFixture(t, addJournalBackedExportFixtureFacts)
 	for _, corruption := range []string{
 		"artifact-reference-invalid",
 		"capability-snapshot-mismatch",
@@ -162,15 +163,7 @@ func TestValidateRejectsEveryArchiveInvalidCheckWithoutMutation(t *testing.T) {
 		"terminal-hash-mismatch",
 	} {
 		t.Run(corruption, func(t *testing.T) {
-			workspace := t.TempDir()
-			if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
-				t.Fatalf("initialize workspace: %v", err)
-			}
-			addJournalBackedExportFixtureFacts(t, workspace)
-			archivePath := filepath.Join(t.TempDir(), "archive.zip")
-			if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archivePath}); err != nil {
-				t.Fatalf("create archive: %v", err)
-			}
+			workspace, archivePath := fixture.clone(t)
 			corruptArchiveForCheck(t, corruption, workspace, archivePath)
 
 			before := workspaceTreeDigest(t, workspace)

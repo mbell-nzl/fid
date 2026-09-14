@@ -91,7 +91,8 @@
 ## Latest Phase Closure
 
 - DEC-220: Phase 22 complete, Human-accepted; 18+1 tasks, 80/80 VAL,
-  84 deterministic QA items and 6/6 Human checks. No open ESC; ready for PR.
+  84 deterministic QA items and 6/6 Human checks. Post-wrap PR CI timeout
+  follow-up is ESC-22-005; merge awaits its disposition and successful CI.
   See [acceptance](../phases/phase-22/qa/final-acceptance.md) and
   [wrap audit](../phases/phase-22/wrap-up-audit.md). No phase currently active.
 - Delivered contracts: Phase 22 contracts.md/public-interface.md/schema.md amend
@@ -130,3 +131,8 @@ against the actual phase diff. No Phase 23 plan or task allocation exists.
 
 Go/tool caches remain redirected into gitignored repository directories by
 .codex/config.toml; configuration changes require a fresh session.
+
+- DEC-221: Human approved task 20 performance repair instead of extending the
+  timeout. Immutable fixture copies, one full race/coverage execution partitioned
+  exhaustively across four CI workers, combined coverage and retained quality
+  failure propagation. ESC-22-005 decision resolved; CI verification still pending.

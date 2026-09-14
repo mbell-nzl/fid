@@ -97,3 +97,40 @@ project-docs/tools/workflow-lint.sh
 project-docs/tools/report-lint.sh --self-test
 project-docs/tools/drills/run-drills.sh
 ```
+
+## PR test shards (Phase 22 DEC-221)
+
+`ci_tests.py` requires the repository's Go version, Git and Python 3.10+ standard
+library. Run from the repository root. It does not install dependencies or change
+product data. It runs the ordinary Go suite with race and coverage instrumentation,
+using fresh output directories and the unchanged default package timeout.
+
+```bash
+python3 -m unittest discover -s project-docs/tools -p test_ci_tests.py -v
+python3 project-docs/tools/ci_tests.py plan --count 4
+python3 project-docs/tools/ci_tests.py run --count 4 --index 0 --out /tmp/fid-ci-attempt/shard-0
+```
+
+Run indices 0, 1, 2 and 3, each with its own fresh `shard-N` directory. Reusing an
+output directory fails instead of mixing results. CI executes workers on separate
+runners. All discovered top-level Tests, Examples and Fuzz seed targets are
+assigned exactly once; subtests follow their parent. Benchmarks and fuzz campaigns
+retain their separate cadence. Packages without tests are still built and included
+in coverage. Each worker records full Go JSON output and a completed manifest.
+
+After all workers succeed:
+
+```bash
+python3 project-docs/tools/ci_tests.py merge --count 4 --root /tmp/fid-ci-attempt --out coverage.out
+go tool cover -func=coverage.out
+```
+
+Merge rejects missing/duplicate workers, changed source or discovery, unaccounted
+execution and incomplete/inconsistent atomic coverage blocks. It sums execution
+counts for identical statement blocks, retaining uncovered statements. The final
+`quality` CI job also explicitly requires successful lint/build/control checks
+and all matrix workers, including when a dependency is cancelled. Test discovery
+adapts to new tests automatically; no static package/test allowlist is maintained.
+This supplements the existing local make targets; CI does not repeat the full
+suite in a second test/coverage step. Artifact actions retain per-worker evidence
+and combined coverage for seven days.

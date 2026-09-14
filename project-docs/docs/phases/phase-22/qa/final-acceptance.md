@@ -139,3 +139,20 @@ Phase 22 is ready for PR/merge. This acceptance does not qualify all twelve
 capabilities, authorize a supported release or live adoption, or start Phase 23.
 Claims parallel semantics remain Phase 24; external kit adapter qualification
 remains Phase 25/CF-037. No new product decision is needed to close this phase.
+
+## Post-acceptance PR CI status — 2026-09-13
+
+The PR's routine test job subsequently timed out. Earlier local QA and Human
+acceptance are preserved as their original evidence; they do not clear the new
+CI failure. See [PR CI diagnosis](pr-ci-diagnosis.md) for the supplied failure,
+focused profiling and the proposed protected-budget change. Merge readiness is
+on hold pending the repair decision and successful CI verification.
+
+## Task 20 local qualification — 2026-09-14
+
+DEC-221 resolves the repair decision with unchanged timeouts. All seven local
+task gates passed; race coverage remains 65.5%. Independent [task 20 review](task-20-review.md)
+found no must-fix or lost original case/assertion. [Completion evidence](../tasks/task-20-done.md)
+records measured improvements and exhaustive CI sharding. Hosted verification
+remains pending; the original CI failure is not yet closed. Human acceptance
+is retained: this repair changes tests and CI, with no product change.

@@ -19,10 +19,7 @@ func TestStopPredicatesAcrossRunStartAndGateRunCommands(t *testing.T) {
 	for _, surface := range []string{"run-start", "gate-run"} {
 		for _, state := range []string{"applicable", "unrelated-subject", "unrelated-action", "resolved", "multiple"} {
 			t.Run(surface+"/"+state, func(t *testing.T) {
-				marker := filepath.Join(t.TempDir(), "gate-spawned")
-				workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {
-					definition["argv"] = []string{"/usr/bin/touch", marker}
-				})
+				workspace, issueID, envelopeID, marker := stopOperationEnvelopeForTest(t)
 				repository := runRepositoryForTest(t, workspace)
 				claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "stop-operation-"+surface+"-"+state+"-claim")
 
@@ -167,4 +164,42 @@ func stopOperationCounts(t *testing.T, workspace string) (int, int) {
 		t.Fatalf("count Attempts: %v", err)
 	}
 	return runs, attempts
+}
+
+func stopOperationEnvelopeForTest(t *testing.T) (string, string, string, string) {
+	t.Helper()
+	// The definition stays identical across cases; executor cwd is each clone's
+	// root. An absolute temporary path would defeat the definition-keyed cache.
+	workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {
+		definition["argv"] = []string{"/usr/bin/touch", "gate-spawned"}
+	})
+	return workspace, issueID, envelopeID, filepath.Join(workspace, "gate-spawned")
+}
+
+func TestStopOperationFixtureExecutesInEachClonedWorkspace(t *testing.T) {
+	first, issueID, envelopeID, _ := stopOperationEnvelopeForTest(t)
+	second, secondIssue, secondEnvelope, _ := stopOperationEnvelopeForTest(t)
+	for index, row := range []struct{ root, issue, envelope string }{{first, issueID, envelopeID}, {second, secondIssue, secondEnvelope}} {
+		marker := filepath.Join(row.root, "gate-spawned")
+		if _, err := os.Stat(marker); !os.IsNotExist(err) {
+			t.Fatalf("clone starts with another execution's marker: %v", err)
+		}
+		repository := runRepositoryForTest(t, row.root)
+		claim, _ := acquireGenericClaimForTest(t, row.root, row.issue, row.envelope, "fixture-claim")
+		runID := startStopMatrixRun(t, row.root, row.issue, row.envelope, claim["id"], repository, "fixture")
+		input := filepath.Join(row.root, "fixture-gate.json")
+		binding := envelopeBindingForWorkspace(t, row.root)
+		writeActivationInput(t, input, map[string]any{"registration_id": binding.registrationID, "registration_version": binding.registrationVersion, "obligation_id": binding.obligationID, "run_id": runID, "repository": repository})
+		result := executeCommandForTest(row.root, "--project", row.root, "--json", "gate", "run", "--actor", "actor-builder", "--input", input, "--idempotency-key", "fixture-gate")
+		if result.err != nil {
+			t.Fatalf("execute clone %d: %v: %s", index, result.err, result.stderr)
+		}
+		if _, err := os.Stat(marker); err != nil {
+			t.Fatalf("execution did not create marker in its own clone: %v", err)
+		}
+	}
+	third, _, _, _ := stopOperationEnvelopeForTest(t)
+	if _, err := os.Stat(filepath.Join(third, "gate-spawned")); !os.IsNotExist(err) {
+		t.Fatalf("execution contaminated reusable template: %v", err)
+	}
 }

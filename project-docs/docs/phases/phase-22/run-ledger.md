@@ -2156,3 +2156,11 @@
 - Human checklist: `project-docs/docs/phases/phase-22/qa/human-checklist-2.md`
 - Phase ready for Tech Lead wrap-up.
 - Wrap-up completed by the authorized root delegate under DEC-220; no active phase. Ready for PR/merge.
+
+### 2026-09-14 16:10 CORRECTION
+
+- Scope: DEC-221 supplemental post-wrap task-20 performance repair; original RUN-END and Human acceptance remain historical.
+- Authority: Human approved performance repair with serial root implementation and one independent review; ESC-22-005 decision resolved, no timeout increase.
+- Local evidence: all seven task-20 gates PASS with observed exit_code 0; full race coverage 65.5%, all 2653 original run cases retained plus two fixture regressions.
+- Review: qa/task-20-review.md PASS; zero must-fix or lost original assertions. Reviewer-owned lightweight control evidence is attributed separately.
+- Remaining work: push reviewed repair to PR24 and verify hosted CI; no hosted PASS, merge or new phase claimed.

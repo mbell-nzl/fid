@@ -213,6 +213,19 @@ go test -bench . -benchmem ./...
 go build -o /tmp/fid ./cmd/fid
 ```
 
+Under Phase22 DEC-221, PR CI executes the complete ordinary race-and-coverage
+suite once across four exhaustive test shards, rather than running both make
+test and make coverage. Each worker discovers runnable Tests, Examples and Fuzz
+seed targets through Go, and selection is disjoint and complete. The controller
+reconciles actual execution and package completion, then combines atomic coverage
+only when all four source/inventory-bound manifests and all statement blocks
+agree. A missing, failed, cancelled or inconsistent shard fails the retained
+required `quality` job. Format, lint, build and controller regressions remain
+required. Standalone make test/make coverage targets remain available unchanged.
+Package timeouts, product thresholds and assertions are unchanged. Setup reuse
+requires distinct writable copies; migration, rebuild and import tests still
+execute their actual operations. See project-docs/tools/README.md for local usage.
+
 Under Phase22 DEC-217, the full-size archive byte/count matrices are an explicit
 phase-end and archive-limiter-change gate, run locally on the qualification
 machine rather than on every routine task/PR:
