@@ -221,6 +221,13 @@ type storedActor struct {
 }
 
 func loadActiveActor(conn *sql.DB, actorID string) (string, storedActor, error) {
+	var incomplete int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM kit_activations WHERE status IN ('prepared', 'staged', 'committed')`).Scan(&incomplete); err != nil {
+		return "", storedActor{}, fmt.Errorf("load active activation: read incomplete activation: %w", err)
+	}
+	if incomplete != 0 {
+		return "", storedActor{}, &ActiveActivationUnavailableError{}
+	}
 	var activationID string
 	if err := conn.QueryRow(`SELECT id FROM kit_activations WHERE status = 'finalized' LIMIT 1`).Scan(&activationID); err == sql.ErrNoRows {
 		return "", storedActor{}, &ActiveActivationUnavailableError{}

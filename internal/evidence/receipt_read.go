@@ -100,7 +100,7 @@ func validReceiptListOptions(options ReceiptListOptions) bool {
 		return false
 	}
 	switch options.Outcome {
-	case "", "failed", "signaled", "spawn-failed", "succeeded", "timed-out":
+	case "", "cancelled", "failed", "signaled", "spawn-failed", "succeeded", "timed-out":
 		return true
 	default:
 		return false

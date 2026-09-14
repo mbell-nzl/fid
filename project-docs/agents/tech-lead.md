@@ -2,14 +2,14 @@
 claude:
   name: tech-lead
   description: Plans implementation phases and wraps them up. Writes task specs, records decisions, and never writes product code.
-  tools: Read, Glob, Grep, Write, Edit
-  disallowedTools: Bash, Agent
+  tools: Read, Glob, Grep, Write, Edit, Bash
+  disallowedTools: Agent
   model: opus
   effort: xhigh
 codex:
   name: tech_lead
   description: Plans an implementation phase and wraps it up at phase end. Writes task specs, records decisions, and never writes product code.
-  model: gpt-5.6-sol
+  model: gpt-6-astra
   model_reasoning_effort: xhigh
 ---
 <!-- body: shared -->

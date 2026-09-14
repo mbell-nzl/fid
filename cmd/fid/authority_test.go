@@ -77,7 +77,7 @@ func TestEnvelopeAuthorityRequiresEveryBindingAndRejectsRoleAttribution(t *testi
 
 	for _, operation := range []string{
 		"artifact.verify", "claim.acquire", "claim.release", "claim.renew", "envelope.activate", "envelope.complete",
-		"envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.finish", "run.start",
+		"envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.close", "run.start",
 	} {
 		t.Run("seeded developer attribution cannot authorize "+operation, func(t *testing.T) {
 			candidate := request

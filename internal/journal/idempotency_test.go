@@ -23,7 +23,7 @@ func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
 	if first.Replayed {
 		t.Fatal("first idempotency outcome replayed = true, want false")
 	}
-	if got, want := first.ResultJSON, `{"activation":{"id":"ACT-1"},"idempotency_key":"key-1","replayed":false}`; got != want {
+	if got, want := first.ResultJSON, testActivationResultJSON("key-1", false); got != want {
 		t.Fatalf("first result JSON = %s, want %s", got, want)
 	}
 
@@ -47,7 +47,7 @@ func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
 	if replayed.EventID != first.EventID || replayed.AggregateSequence != first.AggregateSequence {
 		t.Fatalf("replay identity = (%s, %d), want (%s, %d)", replayed.EventID, replayed.AggregateSequence, first.EventID, first.AggregateSequence)
 	}
-	if got, want := replayed.ResultJSON, `{"activation":{"id":"ACT-1"},"idempotency_key":"key-1","replayed":true}`; got != want {
+	if got, want := replayed.ResultJSON, testActivationResultJSON("key-1", true); got != want {
 		t.Fatalf("replay result JSON = %s, want %s", got, want)
 	}
 	if got := idempotencyJournalEventCount(t, workspace); got != 1 {
@@ -137,7 +137,7 @@ func commitTestIdempotentActivation(workspace string, conn *sql.DB, request Idem
 		outcome, commitErr = CommitIdempotent(lock, conn, request, testIdempotentActivationEvent(), func(Event) (IdempotencyMutation, error) {
 			return IdempotencyMutation{
 				EntityID:   "ACT-1",
-				ResultJSON: `{"activation":{"id":"ACT-1"},"idempotency_key":"key-1","replayed":false}`,
+				ResultJSON: testActivationResultJSON("key-1", false),
 			}, nil
 		})
 		return commitErr
@@ -154,7 +154,7 @@ func testIdempotencyRequest() IdempotencyRequest {
 }
 
 func testIdempotentActivationEvent() Event {
-	return Event{
+	event := Event{
 		EventSchema: EventSchemaV2,
 		EventType:   "activation.prepared",
 		ActorV2: EventActor{
@@ -170,6 +170,7 @@ func testIdempotentActivationEvent() Event {
 			Table: "kit_activations",
 			PK:    map[string]any{"id": "ACT-1"},
 			Values: map[string]any{
+				"version":             1,
 				"prior_activation_id": nil,
 				"kit_identity":        "kit-1",
 				"backend_identity":    "fid-1",
@@ -182,6 +183,10 @@ func testIdempotentActivationEvent() Event {
 			},
 		}},
 	}
+	for _, component := range []string{"backend", "kit", "overlay", "project", "provider"} {
+		event.Effects = append(event.Effects, Effect{Op: "insert", Table: "activation_resources", PK: map[string]any{"activation_id": "ACT-1", "component": component}, Values: map[string]any{"version": 1, "old_identity": nil, "new_identity": component + ":new", "observed_identity": nil, "state": "pending", "evidence_ref": nil, "error_code": nil}})
+	}
+	return event
 }
 
 func newIdempotencyWorkspace(t *testing.T) (string, *sql.DB) {

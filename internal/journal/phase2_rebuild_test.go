@@ -24,7 +24,17 @@ func TestRebuildWorkspacePreservesFullPhaseTwoProjectionWithRefTriggersActive(t 
 	)
 
 	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
-	conn := openReplayDB(t, dbPath)
+	// This full Phase 2 fixture deliberately includes historical escalation
+	// rows. Pin both projections to that migration boundary; latest-schema
+	// rejection of these Effects is independently covered below.
+	migrationsDir := phaseTwoMigrations(t)
+	if err := fiddb.MigrateUp(dbPath, migrationsDir); err != nil {
+		t.Fatal(err)
+	}
+	conn, err := fiddb.Open(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	stats, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
 	if err != nil {
@@ -41,7 +51,7 @@ func TestRebuildWorkspacePreservesFullPhaseTwoProjectionWithRefTriggersActive(t 
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t))
+	rebuildStats, err := RebuildWorkspace(workspace, migrationsDir)
 	if err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
@@ -59,6 +69,29 @@ func TestRebuildWorkspacePreservesFullPhaseTwoProjectionWithRefTriggersActive(t 
 	if before != after {
 		t.Fatalf("rebuilt phase two state = %q, want %q", after, before)
 	}
+}
+
+func phaseTwoMigrations(t *testing.T) string {
+	t.Helper()
+	source, target := testProjectMigrationsDir(t), t.TempDir()
+	entries, err := os.ReadDir(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		name := entry.Name()
+		if len(name) < 4 || name[:4] > "0005" || !strings.HasSuffix(name, ".sql") {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(source, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(target, name), data, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return target
 }
 
 func phaseTwoFullSchemaEvent() Event {

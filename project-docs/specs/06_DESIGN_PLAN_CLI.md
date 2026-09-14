@@ -322,4 +322,22 @@ failure details/channel/exit, and live frame payload lives in the cited public
 interface. All closed public enum members are lowercase kebab-case; JSON field
 names and opaque workflow-state/entity identifiers are not enum members.
 
-*Last updated: 2026-08-22 (Phase 21 DEC-157 complete interface amendment)*
+### Phase 22 accepted amendment
+
+`../docs/phases/phase-22/public-interface.md` contains the delivered closed
+recovery, liveness, Stop/Attention, budget, derived Run closure, activation
+recovery, and portable-import leaf schemas, errors, exits, and live frames.
+It explicitly replaces caller-controlled `run finish` and the walking-skeleton
+recovery-unavailable response, and updates affected reads and capability rows.
+DEC-184 retains `--project`, pins the 23 activated actions and bootstrap
+exceptions, requires recovery/abandon observation IDs, defines executor reuse
+errors and Attention disposition references, and separates activation version
+conflict from competing prepare. DEC-185 supplies the canonical repository
+digest contract; DEC-187 records external kit port mappings and exclusions.
+Human accepted these leaf contracts and refinements under DEC-188. Later
+accepted amendments are recorded with the exact phase contract. DEC-219 adds
+Human recovery guidance without changing JSON or mutation authority; DEC-220
+records technical qualification and the accepted second Human checklist.
+CLI view polish and verbosity remain nonblocking CF-040.
+
+*Last updated: 2026-09-13 (Phase 22 accepted implementation; DEC-220)*

@@ -1,64 +1,45 @@
-# Progress - Current
+# Progress — Current
 
-> In-flight status only. Historical progress remains in phase archives.
+Updated 2026-09-14. **Phase 22 Human-accepted; post-wrap performance repair active (DEC-221/task 20).**
+Branch: `phase-22`; Human acceptance checkpoint:
+`24cd3e3f2fbe640bccfa26faffb7435dba20a4bb`.
 
-## Project State
+## Completed
 
-**No phase is active.** Phase 21 completed and wrapped on 2026-09-04 under
-DEC-179: 22 tasks, seven review windows, an independent Group 1 checkpoint, and
-a fresh independent final review PASS, with `VAL-001..VAL-087` at 87 PASS / 0
-FAIL / 0 BLOCKED / 0 CARRY-FORWARD, the Human checklist 4/4 PASS, `RUN-END`
-appended, and no open escalation. Phase 20 completed on 2026-08-22.
+- All 18 planned tasks and supplemental Human-guidance task 19.
+- Six review windows, task-12 checkpoint, all seven final-QA findings and the
+  independent task-19 review, including its MF-01 repair.
+- 77 QA-owned assertions plus three Human-owned assertions: 80/80 PASS.
+- 84 deterministic QA items; second Human checklist 6/6 and overall PASS.
+- DEC-220 sign-off, canonical spec sync, decision/deviation/TRG/ESC audit,
+  carry-forward trigger audit and current-context compression.
+- CF-024/034/035 closed; CF-038 documentation half closed. CF-039 formally
+  indexed; CF-040 records the Human's nonblocking CLI polish/verbosity request.
 
-Phase 21 delivered the one-Issue operational walking skeleton through the built
-binary: activation, immutable Gate Registration, one Envelope revision with one
-gate-evidence Obligation, generic Actor/Claim/Run authority, fid-executed
-Attempts and Receipts with live framed output, redaction and Artifact safety,
-guarded terminal-success transition, completion, resume, export create/validate,
-and rebuild parity over an exact 22-Event journey. It also completed the owned
-V1 removal through migrations `0013`/`0014`: the role matrix, `fid policy show`,
-every `--by` attribution, role-bound Claim/Run commands, `fid dev` choreography,
-reported `gate_runs`, and completion-report-as-state writers are gone.
+## Evidence and remaining boundaries
 
-Phase 21 detail lives in `../phases/phase-21/`: `decisions.md` (DEC-152..179),
-`progress.md`, `qa/final-review-2.md`, `qa/human-checklist.md`, `triage-log.md`,
-`tl-escalations.md`, and `run-ledger.md`.
+[Final acceptance](../phases/phase-22/qa/final-acceptance.md) attributes the final
+outcomes; [wrap audit](../phases/phase-22/wrap-up-audit.md) records dispositions.
+[Phase progress](../phases/phase-22/progress.md) retains execution history and
+[decisions](../phases/phase-22/decisions.md) retain all authorities and workflow notes.
+Phase 22's original implementation and Human acceptance remain closed. The
+post-wrap PR CI follow-up is task 20 under DEC-221; no Phase 23 plan exists.
+Separate workflow retrospective remains CF-036/039. Claims and external adapter
+qualification remain in their approved Phase 24/25 owners.
 
-## Planned Boundary
+## Post-wrap performance repair — 2026-09-14
 
-None active. The next planning unit is **Phase 22 - failure and recovery** from
-`../../specs/10_IMPLEMENTATION_ROADMAP.md` §5: typed Stops, Attention
-disposition, budget consumption and exhaustion, lease/liveness rules, explicit
-recovery without automatic respawn, activation recovery, freshness failure,
-export import, and recovery-grade export equivalence. `kit.activation.v1`,
-`work.claims.v1`, `attention.v1`, and `export.portable.v1` stay unavailable
-until they are complete. No implementation is authorized before a Phase 22
-brief, validation contract, Ready QA plan, and Human execution approval.
+PR #24's original test step failed after 31m33s, with two package timeouts.
+The supplied failure and earlier unapproved timeout proposal remain in the
+[diagnosis](../phases/phase-22/qa/pr-ci-diagnosis.md). DEC-221/task 20 implements
+the chosen performance repair; ESC-22-005's decision request is resolved with
+no timeout increase.
 
-## Approval State
-
-- Phase 21 sign-off: **COMPLETE / WRAPPED 2026-09-04 / DEC-179**.
-- Phase 22: **NOT PLANNED**. No task pack, validation contract, QA plan, or
-  execution approval exists.
-- Product implementation: **UNAUTHORIZED** until a Phase 22 pack is approved.
-
-## Carry-Forward
-
-Active into Phase 22 planning: **CF-024** (100k rebuild headroom; keep the
-three-consecutive-fresh-sample rule), **CF-033** (`AGENTS.md` Architecture
-package inventory), **CF-034** (in-package tests when `internal/evidence` or
-`internal/workflow` is reopened), **CF-035** (uniform unknown-config-key
-validation decision), and re-targeted **CF-018**
-(`internal/sqlquery/sqlquery.go`). Closed in Phase 21: CF-020, CF-027, CF-028,
-CF-032. Re-deferred unchanged: CF-008, CF-023, CF-026a, CF-026b, CF-029,
-CF-030.
-
-## Next Work
-
-1. Optional but recommended: a deep delivery-workflow retrospective before
-   Phase 22 planning (DEC-179), focused on scope-versus-reach checking, ledger
-   identity expressiveness, fail-closed escalation registration, and earlier
-   thin end-to-end tasks.
-2. Plan Phase 22: operating mode, validation contract, ordered task pack, and
-   QA Lead handoff; carry CF-024/033/034/035 and re-targeted CF-018.
-3. Merge the `phase-21` branch at the Human's discretion.
+All seven local gates passed, including full race coverage (65.5%) and build.
+Matching uncached before/after suites retain all 2,653 original run cases and
+add two isolation regressions. CLI 541.652s -> 483.994s; export 368.615s ->
+264.146s; workflow 503.550s -> 464.948s (unchanged tests, less contention).
+Four exhaustive CI shards replace duplicate full runs. Controller tests include
+real Go execution and coverage reconciliation; independent task-20 review PASS.
+See [task 20 report](../phases/phase-22/tasks/task-20-done.md).
+Hosted verification remains pending; merge readiness still awaits a green PR.

@@ -1,0 +1,9 @@
+{
+  "name": "deduplicated-attention-list",
+  "operation": "attention.list",
+  "kind": "accepted",
+  "result_fields": ["items"],
+  "event": false,
+  "exit_code": 0,
+  "expected": {"items.#": 1, "items.0.stop_ids.#": 2}
+}

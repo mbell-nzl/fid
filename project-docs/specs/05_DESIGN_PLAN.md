@@ -97,6 +97,10 @@ and only the remaining Human checks or approvals. Omit routine Run narration.
   Redaction precedes framing, excerpting, hashing, retention, errors, and Human
   rendering. A combined output ceiling emits one `output-truncated` control
   frame while fid continues draining and observes process termination.
+  Byte counts are exact until that ceiling fires; afterwards the reported
+  counts are lower bounds that depend on pipe read boundaries and are not
+  reproducible across runs, so no fixture may pin an exact post-truncation
+  count (DEC-189).
 - Human mode prefixes sanitized output by stream, renders no raw control byte,
   and derives its final summary from the same terminal result.
 - The exact stdout/stderr/control/terminal payload union, terminal outcomes,

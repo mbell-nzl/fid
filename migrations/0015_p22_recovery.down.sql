@@ -1,0 +1,11 @@
+DROP TABLE activation_recoveries;
+DROP TABLE activation_resources;
+DROP TABLE attention_stop_links;
+DROP TABLE attention_items;
+DROP TABLE stop_resolutions;
+DROP TABLE stops;
+DROP TABLE budget_samples;
+DROP TABLE run_recoveries;
+DROP TABLE run_observations;
+DROP TABLE run_runtime;
+ALTER TABLE kit_activations DROP COLUMN version;

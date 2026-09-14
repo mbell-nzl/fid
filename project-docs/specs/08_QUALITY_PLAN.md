@@ -213,6 +213,32 @@ go test -bench . -benchmem ./...
 go build -o /tmp/fid ./cmd/fid
 ```
 
+Under Phase22 DEC-221, PR CI executes the complete ordinary race-and-coverage
+suite once across four exhaustive test shards, rather than running both make
+test and make coverage. Each worker discovers runnable Tests, Examples and Fuzz
+seed targets through Go, and selection is disjoint and complete. The controller
+reconciles actual execution and package completion, then combines atomic coverage
+only when all four source/inventory-bound manifests and all statement blocks
+agree. A missing, failed, cancelled or inconsistent shard fails the retained
+required `quality` job. Format, lint, build and controller regressions remain
+required. Standalone make test/make coverage targets remain available unchanged.
+Package timeouts, product thresholds and assertions are unchanged. Setup reuse
+requires distinct writable copies; migration, rebuild and import tests still
+execute their actual operations. See project-docs/tools/README.md for local usage.
+
+Under Phase22 DEC-217, the full-size archive byte/count matrices are an explicit
+phase-end and archive-limiter-change gate, run locally on the qualification
+machine rather than on every routine task/PR:
+
+```bash
+go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1
+```
+
+The ordinary suite retains small tests through the same limiter, production
+ceiling wiring and large-number arithmetic checks. Actual production-scale
+boundary evidence remains required for phase qualification; all product
+ceilings are unchanged. Run heavy gates serially.
+
 Task scope may justify a narrower gate only when the repository instructions or
 accepted task specification says so. Failing tests are fixed by correcting the
 product or accepted contract, never by weakening evidence. Runtime and test
@@ -250,8 +276,8 @@ A slice is not complete if it leaves two authoritative models for the same
 fact. Temporary compilation scaffolding is allowed only inside the slice and
 must not be advertised as a supported capability.
 
-For Heavy Phase 21, three-task QA Review windows apply. A separate independent
-Group 1 checkpoint must PASS after the authority/Activation/Registration/
+For the completed Heavy Phase 21, three-task QA Review windows applied. Its
+separate independent Group 1 checkpoint must PASS after the authority/Activation/Registration/
 Envelope/Claim/Run foundation and before executor implementation begins. That
 checkpoint re-runs fresh feasibility for every non-default verifier, fixture,
 environment assumption, expected non-zero proof, and time budget prescribed
@@ -267,6 +293,16 @@ performs final-schema fresh init, role-free rebuild, maintenance, live/rebuild/
 export parity, and the 100k Event-v2 check. Task 22 performs final wire and
 real-process conformance. The journey mutates once; post-rebuild evidence is
 read/evaluation/export/negative parity, not a second Envelope mutation.
+
+For approved Heavy Phase 22 (DEC-180/186/188), reviews follow tasks 3/6/9/12/15/18;
+the independent task-12 checkpoint precedes archive/import work. Its QA plan
+and TL refinement addendum enumerate the deterministic/Human checks. Tasks 1
+and 16 add one fresh reference rebuild sample each, without replacing task 17
+or final QA's unchanged three-sample rule. Task 8 owns the known terminal-outcome
+fixture repair; earlier failures require the bounded scope amendment in DEC-186.
+The explicit VAL-056 boundary matrix uses real measured decompression at the
+unchanged ceilings. Phase 21's historical checkpoints are not extra Phase 22
+task dependencies; the standing evidence and report-lint rules remain binding.
 
 ## 9. First supported baseline
 

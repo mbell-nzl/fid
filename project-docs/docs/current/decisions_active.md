@@ -1,175 +1,138 @@
 # Decisions - Active
 
-> Live carry-forward constraints and accepted product commitments. Historical
-> reasoning remains in ADRs, phase archives, and the decision-session record.
+> Current commitments and carry-forwards. Historical reasoning stays in ADRs
+> and phase decisions; standing delivery rules also live in decisions_principles.md.
 
-## Durable architecture
+## Durable Architecture
 
-- [ADR-0001](../../../docs/adr/0001-journal-canonical-db-derived.md): the
-  append-only journal is canonical; SQLite is a rebuildable projection.
-- [ADR-0004](../../../docs/adr/0004-operational-work-state-boundary.md): the
-  project and kit own intent and policy; fid owns Issue and operational facts.
-- [ADR-0005](../../../docs/adr/0005-issues-are-the-durable-work-graph.md): Issues
-  are the only durable work graph; there is no persistent Work Item entity.
-- [ADR-0006](../../../docs/adr/0006-isolate-parallel-builder-mutations.md):
-  parallel mutation requires distinct Issues, worktrees, and disjoint scopes.
-- [ADR-0007](../../../docs/adr/0007-recover-interruptions-with-linked-runs.md):
-  interruption recovery creates a linked new Run after reconciliation.
-- [ADR-0010](../../../docs/adr/0010-supersede-phase-20-and-defer-configurable-role-policy.md):
-  the old role-policy Phase 20 is superseded and generic authority belongs to
-  the port.
-- [ADR-0011](../../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md):
-  retain the Issue tracker and durable kernel, remove the pre-dogfood V1
-  compatibility surface, use JSON as the sole machine representation, and gate
-  optional features on observed evidence.
-- [ADR-0012](../../../docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md):
-  deliver convergence through six phase-sized end-to-end scenarios, beginning
-  with a clean standalone Issue journey in a newly planned Phase 20.
+- ADR-0001: journal canonical; SQLite is a rebuildable projection.
+- ADR-0004/0005: project/kit own intent and policy; fid owns operational facts;
+  Issues are the only durable work graph.
+- ADR-0006/0007: parallel Builders need distinct Issues/worktrees/disjoint scope;
+  interruption recovery uses a new linked Run and non-destructive reconciliation.
+- ADR-0010/0011: generic activated Actor/Envelope authority replaces global role
+  policy; no pre-dogfood compatibility surface or old fid-data migration;
+  JSON is the sole machine format; optional products remain evidence-gated.
+- ADR-0012: six vertical scenario phases, 20..25, with explicit removal owners.
+  All ADRs live under `../../../docs/adr/`.
 
-## Ratified fid/V2 gates
+## Ratified Product Commitments
 
-- **Gate A:** fid is the durable operational backend, not the owner of project
-  prose, engineering policy, orchestration, or provider materialization.
-- **Gate B1:** the kit compiles approved policy into an Envelope Revision; fid
-  enforces its generic integrity, authority, evidence, freshness, and lifecycle
-  constraints without recalculating policy.
-- **Gate B2:** fid is the primary local executor for registered gates and
-  creates Receipts from observed execution. Reported outcomes cannot satisfy
-  deterministic Obligations.
-- **Gate B3:** the project owns approved Gate Definition values, the kit owns
-  schema/validation/activation, and fid owns immutable registrations and
-  execution. fid never executes mutable authoring configuration directly.
-- **Gate B4:** Issues are the only durable work units. Envelope Revisions select
-  Issues; Claims and Runs bind exact Issue, revision, Actor, repository, and
-  optional Obligation context.
-- **Gate B4a:** one active Mutation Claim per Issue. Parallel Builders need
-  separate selected Issues, worktrees, and provably disjoint mutation scopes.
-- **Gate B4b:** interrupted Runs are terminal. Continuation requires confirmed
-  liveness resolution, non-destructive reconciliation, and a linked new Run.
-- **Gate B4c:** Builder rework stays on the original Issue; only a new
-  independent Review Record may resolve Findings.
-- **Gate B4d:** partial progress is a projection. Selection or material contract
-  change creates a new Envelope Revision; unfinished removal needs an explicit
-  authorized disposition.
-- **Gate C:** implement and qualify all twelve backend-port capabilities in
-  bounded slices before any live migration.
-- **Gate D1:** do not implement Phase 20's global role-policy model. Generic
-  Actor capability and Envelope authority replace it.
-- **Gate D2:** apply ADR-0011's durability test; retire duplicate process
-  aggregates, role choreography, generic TOON/YAML/Markdown output, and V1
-  compatibility. TUI/dashboard and search lead the candidate ledger.
-- **Gate D3.1:** use vertical scenario phases rather than horizontal subsystem
-  phases. Each phase owns explicit legacy removals and may contain multiple
-  bounded Developer tasks under the current V1 delivery process.
-- **Gate D3.2:** the one-Issue walking skeleton was delivered by Heavy Phase 21
-  in two groups with an independent checkpoint. Phase 22 owns Attention, Stops,
-  recovery, and export import; incomplete capabilities remain unavailable.
-- **Gate D3.2 terminal amendment (DEC-156, delivered):** gate execution,
-  qualifying Receipt linking, and satisfied Evidence precede the
-  terminal-success Issue transition. Envelope completion later re-evaluates the
-  same Obligation and requires that terminal Issue, reusing one shared
-  evaluator.
-- **Delivered wire authority (DEC-157/177, standing):**
-  `../phases/phase-21/public-interface.md` is the delivered public contract and
-  `../phases/phase-21/v1-convergence-inventory.md` the removal record. Public
-  enum members are lowercase kebab-case; bootstrap writes no role Effect.
-- **Delivery controls (DEC-158, standing):** report lint is a two-argument Phase
-  Runner pre-dispatch control, not a Developer task command. The 100k rebuild
-  target is three consecutive self-asserted `<30 s` samples on the recorded
-  reference instance; one failure fails the assertion (CF-024).
-- **Executable ownership (DEC-167, standing):** required commands exercise every
-  owned scope, including tagged suites. Delayed convergence belongs to the first
-  task whose gate runs it, with per-row provenance. No-progress counts only when
-  the directive permitted causal repair. See `08_QUALITY_PLAN.md` §3.
-- **Session liveness and budget accounting (DEC-170, standing):** external
-  interruption without a typed result does not consume no-progress; repeated
-  interruption is session-liveness, not exhaustion. Only declared command
-  budgets apply. Commit before long commands and append results as they
-  terminate. See `08_QUALITY_PLAN.md` §3 and `09_AI_WORKFLOW.md` step 16.
-- **Late execution refinements (DEC-171/172):** polling timeout routes to WAIT;
-  externally interrupted children retain no-progress state. The unavailable
-  `attention.v1` discovery row is required negative metadata, while a paired
-  boundary test proves that no Attention behavior exists.
-- **A control's reach bounds the owning scope (DEC-173, standing):** the
-  converse of DEC-167. Task scope covers every path its required controls walk;
-  an incomplete assignment is amended before dispatch, never narrowed.
-- **First-observing ownership of a latent production defect (DEC-175,
-  standing):** where an accepted contract was implemented wrongly and no earlier
-  required gate could observe it, the defect belongs to the first unit of work
-  whose gate observes it. That unit receives minimum causal source and
-  regression scope; the originating unit is not reopened.
-- **Migration authority (DEC-178, standing):** the shipped migration files are
-  the exact authority for their own SQL; `03_TRD_SCHEMA.md` §8.2 matches
-  `0013`/`0014` byte for byte.
-- **Phase 21 sign-off (DEC-179):** Phase 21 is complete and wrapped with 87
-  PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD and a 4/4 Human checklist. The
-  delivered one-Issue operational walking skeleton and its owned V1 removal are
-  accepted; incomplete capabilities remain unavailable until their owning phase
-  completes them. Phase-local execution decisions DEC-152..178 are archived in
-  `../phases/phase-21/decisions.md`.
+- Gates A/B1: fid is the durable operational backend; kit compiles approved
+  policy into immutable Envelope Revisions and fid enforces generic constraints.
+- Gates B2/B3: immutable activated Gate Registrations drive fid execution.
+  Receipts come from observed termination; reported results cannot satisfy proof.
+- Gates B4/B4a: Issues are durable work units; exact Issue/Envelope/Actor/
+  repository/optional-Obligation context binds Claims and Runs; one mutating
+  Claim per Issue and isolated disjoint parallel work.
+- Gates B4b/B4c: interrupted Runs never reopen; recovery records liveness and
+  reconciliation. Builder rework stays on the same Issue; independent Review
+  alone resolves Findings.
+- Gate B4d: progress is a projection; material contract/selection changes create
+  a revision; removing unfinished work needs an authorized disposition.
+- Gates C/D1/D2: all twelve port capabilities qualify before live adoption;
+  no global role-policy model; no duplicate process aggregate or generic format.
+- Gates D3.1/D3.2: vertical delivery; Phase 21 delivered the one-Issue skeleton;
+  Phase 22 delivered failure/recovery and its qualified capabilities (DEC-220).
+- DEC-156: qualifying Evidence guards terminal-success Issue transition;
+  Envelope completion reuses the same evaluator after the Issue is terminal.
+- DEC-157/177: Phase 21 delivered wire authority is
+  `../phases/phase-21/public-interface.md`; its removal inventory is
+  `v1-convergence-inventory.md`. Public enums are kebab-case; bootstrap has no role.
+- DEC-179: Phase 21 wrapped with 87/87 VAL and 4/4 Human PASS. Its local
+  DEC-152..178 decisions are archived in `../phases/phase-21/decisions.md`.
 
-The detailed scenarios and reasoning are in
-`../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current
-specification suite.
+## Standing Delivery Constraints
 
-## Open decision
+- DEC-158: report lint is a two-argument Runner pre-dispatch control, not a
+  Developer task command; 100k rebuild needs three fresh <30 s samples (CF-024).
+- DEC-162/165/166: retained-test convergence follows the accepted invalidating
+  change; establish introducing commit provenance, never filename/task labels.
+- DEC-167/173: a task's required gates execute every owned scope, and its scope
+  covers every path its gates walk. Amend incomplete assignments before dispatch.
+- DEC-175: a latent implementation defect first observable under a new gate
+  belongs to that task with minimum causal source/regression scope.
+- DEC-189: a nondeterministic retained test that first fails under an existing
+  required gate is neither convergence nor DEC-175. Assign it to the observing
+  task with a scope amendment, repair the nondeterminism at its source, and
+  never re-baseline a golden to a load- or instrumentation-dependent value.
+- DEC-170/171: external interruptions do not consume no-progress budget; polling
+  timeout means wait. Only declared command budgets apply; preserve real outcomes.
+- DEC-172: an unavailable capability row is required negative metadata, not an
+  implementation of that capability. Replace only when owning semantics qualify.
+- DEC-178: shipped migration SQL and canonical slice DDL must agree exactly.
+- DEC-002: autonomous TL-Lite resume remains enabled under the current workflow.
+- DEC-190: separate Human-authorized verifier maintenance resolves ESC-22-001;
+  ordinary pending-triage correction and normal restart retain task/attempt
+  authority, and active owning-review triggers work across recovery boundaries.
+- DEC-191: canonical prompts retain the committed Codex model choices and
+  the TL Bash capability; generated provider copies are synchronized.
+- DEC-192: a progressive availability fence is removed key-by-key by the task
+  that owns the fenced Event; the owning table, not the fence file's author,
+  fixes ownership, and the last owner removes the empty fence and its guard.
+  Fence removal is implementation of an accepted contract, never a boundary
+  change, and the displaced fence assertions are scheduled convergence.
+- DEC-193: a calendar-dependent retained test is DEC-189 nondeterminism, not
+  convergence and not DEC-175. Assign it to the observing task, repair the date
+  binding at its source with recorded introducing-commit provenance, and never
+  pin an absolute date on an Event appended through the journal writer into a
+  live-clock workspace.
+- DEC-194: an accepted allocation that exists but was never delivered is bounded
+  repair, not an ambiguous owner. Read the task spec, schema owner column,
+  public-interface task column, and contract subjects before classifying.
+- DEC-195: an accepted contract clause that adds a closed-domain member requires
+  a matching schema row. Where the row is missing, amend the schema and keep the
+  assertion; never substitute an admitted value or weaken the assertion. Assign
+  execution to the first task that cannot pass without it, with provenance to the
+  original owner recorded rather than relabelled.
+- Current V1 delivery scaffolding is binding engineering procedure, not forward
+  fid product scope. No failed gate authorizes a protected definition change.
 
-None. Phase 21 is signed off under DEC-179 and no phase is active. Phase 22
-planning is the next unit of work and requires its own brief, validation
-contract, Ready QA plan, and Human execution approval before implementation.
+## Latest Phase Closure
 
-## Carry-forward disposition
+- DEC-220: Phase 22 complete, Human-accepted; 18+1 tasks, 80/80 VAL,
+  84 deterministic QA items and 6/6 Human checks. Post-wrap PR CI timeout
+  follow-up is ESC-22-005; merge awaits its disposition and successful CI.
+  See [acceptance](../phases/phase-22/qa/final-acceptance.md) and
+  [wrap audit](../phases/phase-22/wrap-up-audit.md). No phase currently active.
+- Delivered contracts: Phase 22 contracts.md/public-interface.md/schema.md amend
+  the Phase 21 baseline. DEC-195 retains cancelled Receipts as their own outcome.
+  DEC-216 requires typed idempotency snapshots; DEC-217 retains full product
+  archive limits with small routine and real-scale phase/affected-change tests.
+- Recovery retains exact authority, unknown-liveness rejection, immutable budget
+  charges and original replay results. Adoption is not proof; imported history
+  grants no destination authority. DEC-219 Human guidance is accepted.
+- Claims capability remains unavailable until Phase 24 parallel qualification;
+  external adapter/all-twelve-capability qualification remains Phase 25.
 
-Audited against the Phase 21 diff at wrap-up (DEC-179 item 6). A trigger-based
-row states the exact file or condition that fires it.
+## Open Carry-Forward Register
 
-| ID | Disposition after ADR-0011 |
+| ID | Disposition / trigger / owner |
 |---|---|
-| CF-008 | Candidate Issue-tracker vocabulary improvement; schedule only with a retained cancellation use case. Trigger did not fire in Phase 21. |
-| CF-018 | **Re-targeted 2026-09-04.** Behavior-preserving split of `internal/sqlquery/sqlquery.go` (596 lines, over the 400-line target) when that production file next changes. Phase 21 reopened only `sqlquery_test.go` under DEC-162 convergence, which does not fire this row; `fid sql` remains diagnostic only. |
-| CF-023 | Reassess only as temporary repository-delivery tooling while the V1 development procedure remains active; it is not product scope. |
-| CF-024 | **Active into Phase 22.** Phase 21 VAL-083 passed at 27.3-27.5 s against the 30 s target, roughly 2.5-3.0 seconds of headroom. Re-issue the same three-consecutive-fresh-sample rule while recovery and import extend the replay path. |
-| CF-026a | Candidate tracker/workflow inspection projection; no committed slice. |
-| CF-026b | Candidate Issue-workflow lifecycle design; requires a decision before scheduling. |
-| CF-029 | Extend evidence-token validation to QA review artifacts while the V1 delivery workflow remains active. Trigger did not fire in Phase 21. |
-| CF-030 | Improve `report-lint.sh` rejected-token diagnostics so they state the accepted token shape. Phase 21's one rejection (`COMPLETE category must be none: qa-rework`) already stated the accepted shape, so the row stays deferred. |
-| CF-033 | At Phase 22 kickoff, reconcile the `AGENTS.md` Architecture package inventory against the retained live tree and the accepted Phase 22 boundaries. |
-| CF-034 | The first Phase 22 tasks reopening `internal/evidence` and `internal/workflow` add direct in-package recovery-branch tests and record package coverage before/after; no numeric threshold. |
-| CF-035 | At Phase 22 planning, decide whether unknown project-config keys must reject on every command or only on paths that consume config, before broadening config validation. |
+| CF-008 | Future TL: retained Issue-cancellation vocabulary use case; Run abandonment does not trigger it. |
+| CF-018 | Future editor: split production internal/sqlquery/sqlquery.go on its next causal edit; unchanged this phase. |
+| CF-023 | Workflow maintainer: replace/reconcile temporary repository delivery tooling in dedicated maintenance. |
+| CF-026a | Future product design: optional inspection projection beyond accepted recovery resume; unscheduled candidate. |
+| CF-026b | Human/future TL: separate Issue lifecycle product decision; deferred. |
+| CF-029 | Workflow maintainer: QA evidence-token validator improvements in dedicated maintenance. |
+| CF-030 | Workflow maintainer: report-lint rejected-token diagnostics in dedicated maintenance. |
+| CF-033 | Workflow maintainer: AGENTS package inventory and nonexistent quality section locator; execution-scope/TRD part delivered. |
+| CF-036 | Dedicated workflow retrospective/maintenance: cross-phase/task ledger identities, fail-closed ESC registration and observed control friction. DEC-190/191 bounded repairs do not close it. |
+| CF-037 | Phase 25 TL/adapter owner: exact coordinator/port obligations in Phase 22 kit-contract-mapping.md; fid conformance alone is insufficient. |
+| CF-038 | Future causal editor of cmd/fid/live_output_test.go: same-stream coalescing hardening. Post-truncation output_bytes documentation half closed under DEC-189/220. |
+| CF-039 | Dedicated workflow maintainer: executable cross-check of contract clauses, schema, task ownership and acceptance criteria; existing scope-audit item now formally indexed. |
+| CF-040 | Future TL: Human-requested CLI view polish/verbosity review at next accepted Human-view redesign, due by Phase 25 operating-experience qualification; nonblocking, no design selected. |
 
-Closed or cancelled, retained here only so an ID is never reused: CF-017 and
-CF-022 cancelled; CF-031 closed in Phase 20; CF-020, CF-027, CF-028, and CF-032
-closed in Phase 21. Their closing evidence is in
-`../phases/phase-21/decisions.md` DEC-179 item 6 and
-`../phases/phase-21/progress.md`.
-
-Optional product ideas are not carry-forwards. Their evidence triggers live only
-in ADR-0011's concise candidate ledger.
-
-## Temporary delivery constraints
-
-fid still uses the repository's V1 seven-role development procedure until the
-V2 kit and backend port are ready. `AGENTS.md` remains binding for current
-implementation work, including TDD, evidence, command, phase, and hard-stop
-rules. Those requirements are temporary engineering scaffolding, not forward
-fid product requirements.
-
-No implementation phase starts from the historical version roadmap. Phase 20
-completed and wrapped on 2026-08-22 (46/46 VAL PASS, 3/3 Human) and Phase 21
-completed and wrapped on 2026-09-04 (87/87 VAL PASS, 4/4 Human). Their accepted
-and delivered slice contracts are `../phases/phase-20/contracts.md` and
-`../phases/phase-21/contracts.md` with
-`../phases/phase-21/public-interface.md` as the delivered wire contract.
-
-The two remaining Phase 20 execution constraints are now discharged by Phase 21
-delivery: DEC-113's fail-closed V1 authority is replaced by generic activated
-Actor and Envelope authority, and DEC-128's retained legacy `dev` status
-mutations are deleted with the rest of the V1 role choreography. Canonical
-workflow authoring still exposes states and transitions only, never the V1
-role/assurance `--require` grammar, and Gate D3.2 creates no fid Routine entity.
+CF-024/034/035 closed with Phase 22 evidence; historical dispositions and closed
+IDs remain in the wrap audit and must not be reused. All triggers checked
+against the actual phase diff. No Phase 23 plan or task allocation exists.
 
 ## Environment
 
-Go and tool caches remain redirected into gitignored repository directories by
-`.codex/config.toml`. A fresh agent session is needed after changing that
-configuration.
+Go/tool caches remain redirected into gitignored repository directories by
+.codex/config.toml; configuration changes require a fresh session.
+
+- DEC-221: Human approved task 20 performance repair instead of extending the
+  timeout. Immutable fixture copies, one full race/coverage execution partitioned
+  exhaustively across four CI workers, combined coverage and retained quality
+  failure propagation. ESC-22-005 decision resolved; CI verification still pending.

@@ -44,6 +44,49 @@ func TestMigration0013OperationalKernelInventoryAndRoundTrip(t *testing.T) {
 	}
 }
 
+func TestMigration0013CancelledReceiptTerminalConstraint(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
+	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
+	defer closeMigrator(t, migrator, conn)
+
+	if err := migrator.Migrate(13); err != nil {
+		t.Fatalf("Migrate(13) error = %v", err)
+	}
+	if _, err := conn.Exec(`PRAGMA foreign_keys = OFF`); err != nil {
+		t.Fatalf("disable foreign keys for isolated Receipt constraint: %v", err)
+	}
+	insert := func(id string, exitCode any, signal any, timedOut int) error {
+		_, err := conn.Exec(`
+			INSERT INTO execution_receipts
+			(id, attempt_id, trust_source, terminal_status, exit_code, signal, timed_out, started_at, ended_at,
+			 terminal_repository_json, toolchain_json, output_excerpt, output_digest, output_bytes, output_truncated,
+			 redaction_applied, rejected_artifacts_json)
+			VALUES (?, ?, 'fid-executed', 'cancelled', ?, ?, ?, '2026-09-07T00:00:00Z', '2026-09-07T00:00:01Z',
+			        '{}', '{}', '', 'sha256:test', 0, 0, 0, '[]')
+		`, id, "ATT-"+id, exitCode, signal, timedOut)
+		return err
+	}
+	for _, receipt := range []struct {
+		id       string
+		exitCode any
+		signal   any
+	}{
+		{id: "RCP-cancelled-exit", exitCode: 1},
+		{id: "RCP-cancelled-signal", signal: "terminated"},
+		{id: "RCP-cancelled-empty"},
+	} {
+		if err := insert(receipt.id, receipt.exitCode, receipt.signal, 0); err != nil {
+			t.Fatalf("insert valid cancelled Receipt %q: %v", receipt.id, err)
+		}
+	}
+	if err := insert("RCP-cancelled-timeout", nil, nil, 1); err == nil {
+		t.Fatal("cancelled Receipt with timed_out = 1 succeeded, want CHECK rejection")
+	}
+	if err := insert("RCP-cancelled-both", 1, "terminated", 0); err == nil {
+		t.Fatal("cancelled Receipt with exit code and signal succeeded, want CHECK rejection")
+	}
+}
+
 func TestMigration0014RetiresV1AuthorityExecutionWithoutReconstruction(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
@@ -233,7 +276,7 @@ func expectedOperationalKernelSchemaObjects() map[string]string {
   limits_json TEXT NOT NULL CHECK (json_valid(limits_json)),
   trust_source TEXT NOT NULL CHECK (trust_source IN (
     'active-kit-activation','fid-executed','fid-git-observation','fid-journal',
-    'phase-22-unavailable','phase-23-unavailable','phase-25-unavailable'
+    'phase-22-unavailable','phase-23-unavailable','phase-24-unavailable','phase-25-unavailable'
   ))
 )`,
 		"table:idempotency_results": `CREATE TABLE idempotency_results (
@@ -253,7 +296,7 @@ func expectedOperationalKernelSchemaObjects() map[string]string {
   kit_identity TEXT NOT NULL,
   backend_identity TEXT NOT NULL,
   phase INTEGER NOT NULL CHECK (phase > 0),
-  status TEXT NOT NULL CHECK (status IN ('prepared','staged','committed','finalized','aborted')),
+  status TEXT NOT NULL CHECK (status IN ('prepared','staged','committed','finalized','aborted','superseded')),
   point_of_no_return INTEGER NOT NULL DEFAULT 0 CHECK (point_of_no_return IN (0, 1)),
   direction TEXT NOT NULL CHECK (direction = 'activate'),
   created_at DATETIME NOT NULL,
@@ -393,12 +436,12 @@ func expectedOperationalKernelSchemaObjects() map[string]string {
   scope_json TEXT NOT NULL CHECK (json_valid(scope_json)),
   mode TEXT NOT NULL CHECK (mode = 'mutation'),
   version INTEGER NOT NULL CHECK (version > 0),
-  status TEXT NOT NULL CHECK (status IN ('active','released','expired')),
+  status TEXT NOT NULL CHECK (status IN ('active','released','expired','superseded')),
   acquired_at DATETIME NOT NULL,
   expires_at DATETIME NOT NULL,
   released_at DATETIME,
   release_reason TEXT CHECK (release_reason IS NULL OR release_reason IN (
-    'completed','failed','operator-released'
+    'completed','failed','operator-released','interrupted','recovery-superseded','abandoned'
   )),
   FOREIGN KEY (envelope_id, envelope_revision) REFERENCES envelope_revisions(envelope_id, revision)
 )`,
@@ -414,7 +457,7 @@ func expectedOperationalKernelSchemaObjects() map[string]string {
   actor_id TEXT NOT NULL,
   start_repository_json TEXT NOT NULL CHECK (json_valid(start_repository_json)),
   terminal_repository_json TEXT CHECK (terminal_repository_json IS NULL OR json_valid(terminal_repository_json)),
-  status TEXT NOT NULL CHECK (status IN ('active','succeeded','failed','abandoned')),
+  status TEXT NOT NULL CHECK (status IN ('active','succeeded','failed','abandoned','interrupted')),
   started_at DATETIME NOT NULL,
   ended_at DATETIME,
   FOREIGN KEY (envelope_id, envelope_revision) REFERENCES envelope_revisions(envelope_id, revision)
@@ -455,7 +498,7 @@ func expectedOperationalKernelSchemaObjects() map[string]string {
   id TEXT PRIMARY KEY,
   attempt_id TEXT NOT NULL UNIQUE REFERENCES execution_attempts(id),
   trust_source TEXT NOT NULL CHECK (trust_source = 'fid-executed'),
-  terminal_status TEXT NOT NULL CHECK (terminal_status IN ('succeeded','failed','timed-out','signaled','spawn-failed')),
+  terminal_status TEXT NOT NULL CHECK (terminal_status IN ('succeeded','failed','timed-out','signaled','spawn-failed','cancelled')),
   exit_code INTEGER,
   signal TEXT,
   timed_out INTEGER NOT NULL CHECK (timed_out IN (0, 1)),
@@ -473,7 +516,8 @@ func expectedOperationalKernelSchemaObjects() map[string]string {
   CHECK ((terminal_status = 'spawn-failed' AND exit_code IS NULL AND signal IS NULL AND timed_out = 0)
       OR (terminal_status = 'timed-out' AND timed_out = 1)
       OR (terminal_status = 'signaled' AND exit_code IS NULL AND signal IS NOT NULL AND timed_out = 0)
-      OR (terminal_status IN ('succeeded','failed') AND exit_code IS NOT NULL AND signal IS NULL AND timed_out = 0))
+      OR (terminal_status IN ('succeeded','failed') AND exit_code IS NOT NULL AND signal IS NULL AND timed_out = 0)
+      OR (terminal_status = 'cancelled' AND timed_out = 0 AND NOT (exit_code IS NOT NULL AND signal IS NOT NULL)))
 )`,
 		"table:receipt_artifacts": `CREATE TABLE receipt_artifacts (
   receipt_id TEXT NOT NULL REFERENCES execution_receipts(id),

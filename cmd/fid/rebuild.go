@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/spf13/cobra"
@@ -55,7 +56,7 @@ func newRebuildCommand() *cobra.Command {
 					"events_replayed": stats.EventsReplayed,
 					"files_replayed":  stats.FilesReplayed,
 					"upgraded_events": stats.UpgradedEvents,
-					"schema_version":  1,
+					"schema_version":  fiddb.ActiveMigrationVersion,
 				}, nil)
 			}
 
@@ -65,7 +66,7 @@ func newRebuildCommand() *cobra.Command {
 			if err := writeRebuildLine(cmd.OutOrStdout(), "  replayed %d events from %d journal files\n", stats.EventsReplayed, stats.FilesReplayed); err != nil {
 				return err
 			}
-			if err := writeRebuildLine(cmd.OutOrStdout(), "  schema version: %d\n", 1); err != nil {
+			if err := writeRebuildLine(cmd.OutOrStdout(), "  schema version: %d\n", fiddb.ActiveMigrationVersion); err != nil {
 				return err
 			}
 			if verbose || stats.UpgradedEvents > 0 {

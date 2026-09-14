@@ -20,50 +20,69 @@ const (
 )
 
 const (
-	CodeInvalidArgument               Code = "invalid-argument"
-	CodeUnsupportedKind               Code = "unsupported-kind"
-	CodeUnsupportedRelation           Code = "unsupported-relation"
-	CodeProjectNotFound               Code = "project-not-found"
-	CodeProjectAlreadyInit            Code = "project-already-initialized"
-	CodeIssueNotFound                 Code = "issue-not-found"
-	CodeRequirementNotFound           Code = "requirement-not-found"
-	CodeLabelNotFound                 Code = "label-not-found"
-	CodeLinkNotFound                  Code = "link-not-found"
-	CodeWorkflowNotFound              Code = "workflow-not-found"
-	CodeDuplicateEntity               Code = "duplicate-entity"
-	CodeStateConflict                 Code = "state-conflict"
-	CodeLockUnavailable               Code = "lock-unavailable"
-	CodeHierarchyInvalid              Code = "hierarchy-invalid"
-	CodeDependencyCycle               Code = "dependency-cycle"
-	CodeTransitionNotPermitted        Code = "transition-not-permitted"
-	CodeAuthorityMissing              Code = "authority-missing"
-	CodeAuthorityUnknownActor         Code = "authority-unknown-actor"
-	CodeAuthorityDenied               Code = "authority-denied"
-	CodeJournalReplayStopped          Code = "journal-replay-stopped"
-	CodeProjectionDivergence          Code = "projection-divergence"
-	CodeResultLimitExceeded           Code = "result-limit-exceeded"
-	CodeInternalError                 Code = "internal-error"
-	CodeActivationConflict            Code = "activation-conflict"
-	CodeActivationRecoveryUnavailable Code = "activation-recovery-unavailable"
-	CodeAuthorityUnavailable          Code = "authority-unavailable"
-	CodeCapabilityUnavailable         Code = "capability-unavailable"
-	CodeExecutorPolicyUnsupported     Code = "executor-policy-unsupported"
-	CodeRegistrationNotFound          Code = "registration-not-found"
-	CodeEnvelopeNotFound              Code = "envelope-not-found"
-	CodeClaimNotFound                 Code = "claim-not-found"
-	CodeClaimConflict                 Code = "claim-conflict"
-	CodeClaimExpired                  Code = "claim-expired"
-	CodeClaimStale                    Code = "claim-stale"
-	CodeRunNotFound                   Code = "run-not-found"
-	CodeRunInactive                   Code = "run-inactive"
-	CodeReceiptNotFound               Code = "receipt-not-found"
-	CodeEvidenceNotFound              Code = "evidence-not-found"
-	CodeEvidenceInvalid               Code = "evidence-invalid"
-	CodeEvidenceStale                 Code = "evidence-stale"
-	CodeArtifactUnavailable           Code = "artifact-unavailable"
-	CodeGateUnsuccessful              Code = "gate-unsuccessful"
-	CodeObligationUnsatisfied         Code = "obligation-unsatisfied"
-	CodeArchiveInvalid                Code = "archive-invalid"
+	CodeInvalidArgument             Code = "invalid-argument"
+	CodeUnsupportedKind             Code = "unsupported-kind"
+	CodeUnsupportedRelation         Code = "unsupported-relation"
+	CodeProjectNotFound             Code = "project-not-found"
+	CodeProjectAlreadyInit          Code = "project-already-initialized"
+	CodeIssueNotFound               Code = "issue-not-found"
+	CodeRequirementNotFound         Code = "requirement-not-found"
+	CodeLabelNotFound               Code = "label-not-found"
+	CodeLinkNotFound                Code = "link-not-found"
+	CodeWorkflowNotFound            Code = "workflow-not-found"
+	CodeDuplicateEntity             Code = "duplicate-entity"
+	CodeStateConflict               Code = "state-conflict"
+	CodeLockUnavailable             Code = "lock-unavailable"
+	CodeHierarchyInvalid            Code = "hierarchy-invalid"
+	CodeDependencyCycle             Code = "dependency-cycle"
+	CodeTransitionNotPermitted      Code = "transition-not-permitted"
+	CodeAuthorityMissing            Code = "authority-missing"
+	CodeAuthorityUnknownActor       Code = "authority-unknown-actor"
+	CodeAuthorityDenied             Code = "authority-denied"
+	CodeJournalReplayStopped        Code = "journal-replay-stopped"
+	CodeProjectionDivergence        Code = "projection-divergence"
+	CodeResultLimitExceeded         Code = "result-limit-exceeded"
+	CodeInternalError               Code = "internal-error"
+	CodeActivationConflict          Code = "activation-conflict"
+	CodeActivationNotFound          Code = "activation-not-found"
+	CodeActivationInvalid           Code = "activation-invalid"
+	CodeActivationVersionConflict   Code = "activation-version-conflict"
+	CodeActivationDirectionConflict Code = "activation-direction-conflict"
+	CodeActivationIncomplete        Code = "activation-incomplete"
+	CodeAuthorityUnavailable        Code = "authority-unavailable"
+	CodeCapabilityUnavailable       Code = "capability-unavailable"
+	CodeExecutorPolicyUnsupported   Code = "executor-policy-unsupported"
+	CodeRegistrationNotFound        Code = "registration-not-found"
+	CodeEnvelopeNotFound            Code = "envelope-not-found"
+	CodeClaimNotFound               Code = "claim-not-found"
+	CodeClaimConflict               Code = "claim-conflict"
+	CodeClaimExpired                Code = "claim-expired"
+	CodeClaimStale                  Code = "claim-stale"
+	CodeRunNotFound                 Code = "run-not-found"
+	CodeRunInactive                 Code = "run-inactive"
+	CodeRunVersionConflict          Code = "run-version-conflict"
+	CodeExecutorLivenessUnknown     Code = "executor-liveness-unknown"
+	CodeExecutorStillLive           Code = "executor-still-live"
+	CodeRecoveryStateConflict       Code = "recovery-state-conflict"
+	CodeObservationNotFound         Code = "observation-not-found"
+	CodeRecoveryAlreadyLinked       Code = "recovery-already-linked"
+	CodeReceiptNotFound             Code = "receipt-not-found"
+	CodeEvidenceNotFound            Code = "evidence-not-found"
+	CodeEvidenceInvalid             Code = "evidence-invalid"
+	CodeEvidenceStale               Code = "evidence-stale"
+	CodeArtifactUnavailable         Code = "artifact-unavailable"
+	CodeGateUnsuccessful            Code = "gate-unsuccessful"
+	CodeBudgetExhausted             Code = "budget-exhausted"
+	CodeBudgetDataUnavailable       Code = "budget-data-unavailable"
+	CodeBudgetSampleConflict        Code = "budget-sample-conflict"
+	CodeStopNotFound                Code = "stop-not-found"
+	CodeAttentionNotFound           Code = "attention-not-found"
+	CodeAttentionVersionConflict    Code = "attention-version-conflict"
+	CodeStopUnresolved              Code = "stop-unresolved"
+	CodeResolutionInvalid           Code = "resolution-invalid"
+	CodeObligationUnsatisfied       Code = "obligation-unsatisfied"
+	CodeArchiveInvalid              Code = "archive-invalid"
+	CodeImportTargetConflict        Code = "import-target-conflict"
 )
 
 type SubjectType string
@@ -86,11 +105,13 @@ const (
 	SubjectArtifact         SubjectType = "artifact"
 	SubjectCapability       SubjectType = "capability"
 	SubjectExport           SubjectType = "export"
+	SubjectStop             SubjectType = "stop"
+	SubjectAttention        SubjectType = "attention"
 )
 
 type Subject struct {
 	Type SubjectType `json:"type"`
-	ID   string      `json:"id"`
+	ID   any         `json:"id"`
 }
 
 type RedactionPolicy string
@@ -157,6 +178,10 @@ func objectField(name string, fields ...detailField) detailField {
 	return detailField{name: name, typeOf: detailObject, fields: fields}
 }
 
+func nullableObjectField(name string, fields ...detailField) detailField {
+	return detailField{name: name, typeOf: detailObject, nullable: true, fields: fields}
+}
+
 func objectsField(name string, fields ...detailField) detailField {
 	return detailField{name: name, typeOf: detailObjects, fields: fields}
 }
@@ -184,7 +209,7 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeLinkNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectLink},
 		stringField("from_type"), stringField("from_id"), stringField("relation"), stringField("to_type"), stringField("to_id")),
 	CodeWorkflowNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectWorkflow}, stringField("id")),
-	CodeDuplicateEntity: definition(CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink, SubjectWorkflow},
+	CodeDuplicateEntity: definition(CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink, SubjectWorkflow, SubjectRun},
 		stringField("entity_type"), objectField("identity", stringsField("fields"), stringsField("values"))),
 	CodeStateConflict:   definition(CategoryConflict, false, []SubjectType{SubjectIssue}, integerField("expected_revision"), integerField("actual_revision")),
 	CodeLockUnavailable: definition(CategoryConflict, true, nil, stringField("lock_path")),
@@ -204,8 +229,16 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeInternalError:       definition(CategoryInternal, false, nil),
 	CodeActivationConflict: definition(CategoryConflict, false, []SubjectType{SubjectActivation},
 		nullableStringField("active_id"), nullableStringField("nonterminal_id"), stringField("requested_direction")),
-	CodeActivationRecoveryUnavailable: definition(CategoryAuthority, false, []SubjectType{SubjectActivation},
-		stringField("status"), booleanField("point_of_no_return"), integerField("owner_phase")),
+	CodeActivationNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectActivation},
+		stringField("id")),
+	CodeActivationInvalid: definition(CategoryPrecondition, false, []SubjectType{SubjectActivation},
+		stringField("status"), stringsField("expected_statuses"), objectsField("component_errors", stringField("component_id"), stringField("code"))),
+	CodeActivationVersionConflict: definition(CategoryConflict, false, []SubjectType{SubjectActivation},
+		stringField("activation_id"), integerField("expected_version"), integerField("actual_version")),
+	CodeActivationDirectionConflict: definition(CategoryPrecondition, false, []SubjectType{SubjectActivation},
+		stringField("activation_id"), booleanField("point_of_no_return"), stringField("required_direction")),
+	CodeActivationIncomplete: definition(CategoryPrecondition, false, []SubjectType{SubjectActivation},
+		stringField("activation_id"), stringsField("components"), objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
 	CodeAuthorityUnavailable: definition(CategoryAuthority, false, nil,
 		nullableStringField("actor_id"), stringField("operation"), stringsField("required_actions"), stringsField("required_capabilities")),
 	CodeCapabilityUnavailable: definition(CategoryAuthority, false, []SubjectType{SubjectCapability},
@@ -220,17 +253,41 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeClaimStale:           definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
 	CodeRunNotFound:          definition(CategoryNotFound, false, []SubjectType{SubjectRun}, stringField("id")),
 	CodeRunInactive:          definition(CategoryPrecondition, false, []SubjectType{SubjectRun}, stringField("run_id"), stringField("status")),
-	CodeReceiptNotFound:      definition(CategoryNotFound, false, []SubjectType{SubjectReceipt}, stringField("id")),
-	CodeEvidenceNotFound:     definition(CategoryNotFound, false, []SubjectType{SubjectEvidence}, stringField("id")),
-	CodeEvidenceInvalid:      definition(CategoryPrecondition, false, []SubjectType{SubjectEvidence}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
-	CodeEvidenceStale:        definition(CategoryPrecondition, false, []SubjectType{SubjectEvidence}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
-	CodeArtifactUnavailable:  definition(CategoryPrecondition, false, []SubjectType{SubjectArtifact}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeRunVersionConflict:   definition(CategoryConflict, false, []SubjectType{SubjectRun}, stringField("run_id"), integerField("expected_version"), integerField("actual_version")),
+	CodeExecutorLivenessUnknown: definition(CategoryPrecondition, false, []SubjectType{SubjectRun},
+		stringField("run_id"), stringField("executor_id"), nullableStringField("observation_id")),
+	CodeExecutorStillLive: definition(CategoryPrecondition, false, []SubjectType{SubjectRun},
+		stringField("run_id"), stringField("executor_id"), stringField("observation_id")),
+	CodeRecoveryStateConflict: definition(CategoryConflict, false, []SubjectType{SubjectRun},
+		stringField("run_id"), nullableStringField("observation_digest"), stringsField("paths"), stringsField("reasons")),
+	CodeObservationNotFound:   definition(CategoryNotFound, false, []SubjectType{SubjectRun}, stringField("id")),
+	CodeRecoveryAlreadyLinked: definition(CategoryConflict, false, []SubjectType{SubjectRun}, stringField("run_id"), stringField("successor_run_id")),
+	CodeReceiptNotFound:       definition(CategoryNotFound, false, []SubjectType{SubjectReceipt}, stringField("id")),
+	CodeEvidenceNotFound:      definition(CategoryNotFound, false, []SubjectType{SubjectEvidence}, stringField("id")),
+	CodeEvidenceInvalid:       definition(CategoryPrecondition, false, []SubjectType{SubjectEvidence}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeEvidenceStale:         definition(CategoryPrecondition, false, []SubjectType{SubjectEvidence}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeArtifactUnavailable:   definition(CategoryPrecondition, false, []SubjectType{SubjectArtifact}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
 	CodeGateUnsuccessful: definition(CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt},
 		stringField("attempt_id"), stringField("receipt_id"), stringField("outcome"), nullableIntegerField("exit_code"), nullableStringField("signal"), booleanField("timed_out")),
+	CodeBudgetExhausted: definition(CategoryPrecondition, false, []SubjectType{SubjectRun},
+		objectField("budget", stringField("name"), stringField("scope"), stringField("unit"), integerField("maximum"), nullableIntegerField("warning_threshold"), stringField("exhaustion_action"), nullableIntegerField("consumed"), nullableIntegerField("remaining"), stringField("state")),
+		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
+	CodeBudgetSampleConflict: definition(CategoryConflict, false, []SubjectType{SubjectRun},
+		stringField("budget_name"), stringField("source_sample_id"), nullableStringField("expected_previous_sample_id"), nullableStringField("actual_previous_sample_id")),
+	CodeBudgetDataUnavailable: definition(CategoryPrecondition, false, []SubjectType{SubjectRun},
+		objectField("budget", stringField("name"), stringField("scope"), stringField("unit"), integerField("maximum"), nullableIntegerField("warning_threshold"), stringField("exhaustion_action"), nullableIntegerField("consumed"), nullableIntegerField("remaining"), stringField("state")),
+		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
+	CodeStopNotFound:             definition(CategoryNotFound, false, []SubjectType{SubjectStop}, stringField("id")),
+	CodeAttentionNotFound:        definition(CategoryNotFound, false, []SubjectType{SubjectAttention}, stringField("id")),
+	CodeAttentionVersionConflict: definition(CategoryConflict, false, []SubjectType{SubjectAttention}, stringField("attention_id"), integerField("expected_version"), integerField("actual_version")),
+	CodeStopUnresolved:           definition(CategoryPrecondition, false, []SubjectType{SubjectStop}, stringsField("stop_ids"), objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeResolutionInvalid:        definition(CategoryPrecondition, false, []SubjectType{SubjectStop, SubjectAttention}, objectField("subject", stringField("type"), stringField("id")), stringsField("fact_event_ids"), objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
 	CodeObligationUnsatisfied: definition(CategoryPrecondition, false, []SubjectType{SubjectEnvelope},
 		objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
 	CodeArchiveInvalid: definition(CategoryIntegrity, false, []SubjectType{SubjectExport},
 		stringField("archive_path"), objectsField("checks", stringField("code"), nullableStringField("entry"), stringField("detail"))),
+	CodeImportTargetConflict: definition(CategoryConflict, false, []SubjectType{SubjectExport},
+		stringField("target_root"), stringField("reason")),
 }
 
 var registeredCodes = []Code{
@@ -240,13 +297,21 @@ var registeredCodes = []Code{
 	CodeTransitionNotPermitted, CodeAuthorityMissing, CodeAuthorityUnknownActor, CodeAuthorityDenied,
 	CodeJournalReplayStopped, CodeProjectionDivergence, CodeResultLimitExceeded, CodeInternalError,
 	CodeActivationConflict,
-	CodeActivationRecoveryUnavailable,
+	CodeActivationNotFound,
+	CodeActivationInvalid,
+	CodeActivationVersionConflict,
+	CodeActivationDirectionConflict,
+	CodeActivationIncomplete,
 	CodeAuthorityUnavailable, CodeCapabilityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
-	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive,
+	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive, CodeRunVersionConflict,
+	CodeExecutorLivenessUnknown, CodeExecutorStillLive, CodeRecoveryStateConflict, CodeObservationNotFound, CodeRecoveryAlreadyLinked,
 	CodeReceiptNotFound, CodeEvidenceNotFound,
 	CodeGateUnsuccessful,
+	CodeBudgetExhausted, CodeBudgetDataUnavailable, CodeBudgetSampleConflict,
+	CodeStopNotFound, CodeAttentionNotFound, CodeAttentionVersionConflict, CodeStopUnresolved, CodeResolutionInvalid,
 	CodeObligationUnsatisfied,
 	CodeArchiveInvalid,
+	CodeImportTargetConflict,
 }
 
 func findingFields() []detailField {
@@ -295,7 +360,20 @@ func validateFailure(failure Failure, definition reasonDefinition) error {
 	if failure.Code == CodeDuplicateEntity {
 		return validateDuplicateEntityIdentity(failure.Details)
 	}
+	if failure.Code == CodeImportTargetConflict {
+		return validateImportTargetConflictReason(failure.Details)
+	}
 	return nil
+}
+
+func validateImportTargetConflictReason(details map[string]any) error {
+	reason, _ := details["reason"].(string)
+	for _, allowed := range []string{"populated", "different-import", "unsafe-path"} {
+		if reason == allowed {
+			return nil
+		}
+	}
+	return fmt.Errorf("import-target-conflict reason %q is not accepted", reason)
 }
 
 func validateDuplicateEntityIdentity(details map[string]any) error {

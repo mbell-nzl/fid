@@ -75,6 +75,10 @@ For a normal resume that does not reconcile a STOP, set `Governing TRG`,
 and `Next recovery` to `N/A`; `Continuing task` and checkpoint reconciliation
 remain concrete.
 
+A pending ordinary schema-v2 REPAIR TRIAGE permits this normal resume only
+for its same originating task. The resume preserves its pending authority;
+it neither consumes the TRIAGE nor clears the active continuation (DEC-190).
+
 For a STOP resume, use the retained TRG/ESC and concrete trigger, next attempt,
 continuing task, and exact recovery tuple. Those fields bind the next
 `TASK-RECOVERY`; a different task, trigger, mode, category, or attempt is
@@ -173,6 +177,13 @@ If the TRIAGE `REPAIR` classified a blocker candidate returned by an active
 schema-v2 recovery awaiting its REPAIR event, this bound TASK-RECOVERY replaces
 that pending dispatch only for the same task. Other overlap and recovery-stage
 checks remain unchanged.
+An unconsumed ordinary schema-v2 REPAIR TRIAGE may itself be corrected by a
+later ordinary REPAIR TRIAGE for the same task and dispatch attempt (DEC-190).
+The correcting external TRG becomes the exact recovery authority. Any active
+continuation retains its trigger and next attempt; control directives and
+recovery budgets cannot be replaced by this correction. Review-form triggers
+name the active owning review and use `review-M:qa-rework:task-N-<source>`
+(the exact task token may also end the value or be followed by `:`).
 After `MATERIAL-PROGRESS` or the first `NO-PROGRESS`, the next
 control-conformance `TASK-RECOVERY` increments `Attempt count`, records the
 prior integrated HEAD as its new runner-owned `Control repair base`, and keeps

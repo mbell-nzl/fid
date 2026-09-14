@@ -128,6 +128,29 @@ reader/writer disposition is
 
 ## 4. Contract Rules
 
+Phase 22's recovery amendment under DEC-180/184..187 is Human-approved in
+DEC-188: `../docs/phases/phase-22/contracts.md`, `public-interface.md`, and
+`schema.md` in the same directory. The delivered amendment keeps
+Run/Stop/Attention/budget/Activation rules in `internal/workflow`, leases in `internal/claims`, observed
+execution in `internal/evidence`, and shared guards in `internal/validation`.
+Read-only repository observation extends the existing `internal/project`
+adapter. It adds no package or dependency. The live package reconciliation and
+gate reach are recorded in `../docs/phases/phase-22/execution-scope.md`.
+
+DEC-184/185 define the accepted refinement: public-interface section 2.1
+enumerates the 23 activated action names and bootstrap exclusions; contracts sections 3.1/3.2
+define canonical dirty/reconciliation digests. Caller-supplied targets use the
+same digest grammar; replay/import never translate historical digests into
+fresh proof. DEC-187's `kit-contract-mapping.md` records the kit coordinator's
+recovery-export binding and derived-terminal-state adapter obligations, with
+production conformance deferred to Phase 25 qualification.
+
+The delivered matrix enables Attention, activation recovery, and portable
+export/import with complete scoped conformance evidence (DEC-220). Claims
+recovery does not by itself qualify `work.claims.v1`: parallel scope semantics
+remain Phase 24, so that capability remains unavailable. Phase 22 final
+acceptance is recorded in `../docs/phases/phase-22/qa/final-acceptance.md`.
+
 - JSON objects include a schema or contract version at the operation envelope
   or record level.
 - IDs are opaque stable strings. Consumers do not parse prefixes for behavior.

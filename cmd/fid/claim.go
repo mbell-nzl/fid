@@ -15,14 +15,35 @@ import (
 )
 
 func init() {
-	for _, operation := range []string{"claim acquire", "claim renew", "claim release", "claim list"} {
+	for _, operation := range []string{"claim acquire", "claim expire", "claim renew", "claim release", "claim list"} {
 		rootFlagCapabilities[operation] = rootFlagCapability{Project: true, JSON: true}
 	}
 }
 
 func newClaimCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "claim", Short: "Manage generic mutation claims."}
-	cmd.AddCommand(newClaimAcquireCommand(), newClaimRenewCommand(), newClaimReleaseCommand(), newClaimListCommand())
+	cmd.AddCommand(newClaimAcquireCommand(), newClaimExpireCommand(), newClaimRenewCommand(), newClaimReleaseCommand(), newClaimListCommand())
+	return cmd
+}
+
+func newClaimExpireCommand() *cobra.Command {
+	var inputPath, actor, key string
+	cmd := &cobra.Command{Use: "expire", Short: "Record one mutation claim expiry.", Args: canonicalNoArgs("claim.expire"), RunE: func(cmd *cobra.Command, _ []string) error {
+		var request claims.ExpireRequest
+		if err := claimRequest(cmd, "claim.expire", inputPath, actor, key, &request); err != nil {
+			return err
+		}
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderClaimError(cmd, "claim.expire", err)
+		}
+		result, err := claims.ExpireGeneric(claims.MutationOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		if err != nil {
+			return renderClaimError(cmd, "claim.expire", err)
+		}
+		return writeClaimSuccess(cmd, "claim.expire", result)
+	}}
+	claimMutationFlags(cmd, &inputPath, &actor, &key)
 	return cmd
 }
 

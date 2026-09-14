@@ -23,8 +23,8 @@ func TestRegistryEqualsV01Definitions(t *testing.T) {
 	}
 
 	frozen := FrozenDefinitions()
-	if len(registry.workflows) != len(frozen)+1 {
-		t.Fatalf("loaded workflow count = %d, want %d frozen defaults plus escalation-default", len(registry.workflows), len(frozen)+1)
+	if len(registry.workflows) != len(frozen) {
+		t.Fatalf("loaded workflow count = %d, want %d frozen defaults", len(registry.workflows), len(frozen))
 	}
 	for workflowID, want := range frozen {
 		got, ok := registry.Workflow(workflowID)
@@ -99,11 +99,19 @@ func TestLoadSurfacesReservedRulesAsUnimplementedWithoutWriting(t *testing.T) {
 	}
 }
 
-func TestLoadSurfacesEscalationRuleAsUnimplementedWithoutWriting(t *testing.T) {
+func TestLoadRetainsProjectDecisionRuleWithoutRetiredSeed(t *testing.T) {
 	t.Parallel()
 
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
+
+	var retired int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM workflows WHERE id = 'escalation-default'`).Scan(&retired); err != nil || retired != 0 {
+		t.Fatalf("retired seed count = %d, error = %v", retired, err)
+	}
+	if _, err := conn.Exec(`INSERT INTO workflow_transition_requires (workflow_id, from_state, to_state, rule) VALUES ('task-default', 'todo', 'in_progress', 'linked_to_decision')`); err != nil {
+		t.Fatal(err)
+	}
 
 	if _, err := conn.Exec(`PRAGMA query_only = ON`); err != nil {
 		t.Fatalf("set query_only: %v", err)
@@ -113,13 +121,13 @@ func TestLoadSurfacesEscalationRuleAsUnimplementedWithoutWriting(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
-	rules, ok := registry.RulesForEdge("escalation-default", "open", "resolved")
+	rules, ok := registry.RulesForEdge("task-default", "todo", "in_progress")
 	if !ok {
-		t.Fatal("loaded escalation-default open -> resolved edge is missing")
+		t.Fatal("loaded project Decision rule edge is missing")
 	}
 	want := []RuleReference{{Name: RuleLinkedToDecision, Unimplemented: true}}
 	if !reflect.DeepEqual(rules, want) {
-		t.Fatalf("escalation rule = %#v, want %#v", rules, want)
+		t.Fatalf("project Decision rule = %#v, want %#v", rules, want)
 	}
 }
 

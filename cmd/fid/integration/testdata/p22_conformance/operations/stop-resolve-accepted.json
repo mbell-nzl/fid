@@ -1,0 +1,14 @@
+{
+  "name": "stop-resolve-accepted",
+  "operation": "stop.resolve",
+  "kind": "accepted",
+  "result_fields": [
+    "stop",
+    "replayed"
+  ],
+  "event": true,
+  "exit_code": 0,
+  "expected": {
+    "stop.resolution.actor_id": "actor-recovery"
+  }
+}

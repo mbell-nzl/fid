@@ -22,7 +22,7 @@ func GetRun(workspaceRoot, migrationsDir, id string) (Run, error) {
 }
 
 func ListRuns(options RunListOptions) ([]Run, error) {
-	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" || options.Limit < 1 || options.Limit > 10000 || (options.Status != "" && options.Status != "abandoned" && options.Status != "active" && options.Status != "failed" && options.Status != "succeeded") {
+	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" || options.Limit < 1 || options.Limit > 10000 || (options.Status != "" && options.Status != "abandoned" && options.Status != "active" && options.Status != "failed" && options.Status != "interrupted" && options.Status != "succeeded") {
 		return nil, invalidRun("run list input is invalid")
 	}
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
@@ -87,6 +87,14 @@ func loadRun(conn *sql.DB, id string) (Run, error) {
 	if ended.Valid {
 		run.EndedAt = &ended.String
 	}
+	var obligation sql.NullString
+	if err := conn.QueryRow(`SELECT version, executor_id, obligation_id FROM run_runtime WHERE run_id = ?`, run.ID).Scan(&run.Version, &run.Executor.ID, &obligation); err != nil {
+		return Run{}, fmt.Errorf("load run runtime: %w", err)
+	}
+	run.Executor.Source = "activated-harness"
+	if obligation.Valid {
+		run.ObligationID = &obligation.String
+	}
 	rows, err := conn.Query(`SELECT budget_json FROM run_budget_bindings WHERE run_id = ? ORDER BY name`, run.ID)
 	if err != nil {
 		return Run{}, fmt.Errorf("load run budgets: %w", err)
@@ -99,17 +107,47 @@ func loadRun(conn *sql.DB, id string) (Run, error) {
 		if err := rows.Scan(&raw); err != nil || json.Unmarshal([]byte(raw), &budget) != nil {
 			return Run{}, fmt.Errorf("decode run budget")
 		}
-		run.Budgets = append(run.Budgets, budget)
+		samples, err := loadRunBudgetSamples(conn, run.EnvelopeID, run.EnvelopeRevision, budget.Name)
+		if err != nil {
+			return Run{}, err
+		}
+		derived, err := DeriveBudget(budget, samples)
+		if err != nil {
+			return Run{}, fmt.Errorf("derive run budget %q: %w", budget.Name, err)
+		}
+		run.Budgets = append(run.Budgets, derived)
 	}
-	return run, rows.Err()
+	if err := rows.Err(); err != nil {
+		return Run{}, err
+	}
+	if err := conn.QueryRow(`SELECT prior_run_id FROM run_recoveries WHERE successor_run_id = ?`, run.ID).Scan(&run.PredecessorRunID); err != nil && err != sql.ErrNoRows {
+		return Run{}, fmt.Errorf("load run predecessor: %w", err)
+	}
+	if err := conn.QueryRow(`SELECT successor_run_id FROM run_recoveries WHERE prior_run_id = ?`, run.ID).Scan(&run.SuccessorRunID); err != nil && err != sql.ErrNoRows {
+		return Run{}, fmt.Errorf("load run successor: %w", err)
+	}
+	return run, nil
+}
+
+func loadRunBudgetSamples(conn *sql.DB, envelopeID string, revision int, name string) ([]BudgetSample, error) {
+	rows, err := conn.Query(`SELECT id, source, source_sample_id, sample_kind, previous_sample_id, value FROM budget_samples WHERE envelope_id = ? AND envelope_revision = ? AND budget_name = ? ORDER BY observed_at, id`, envelopeID, revision, name)
+	if err != nil {
+		return nil, fmt.Errorf("load run budget samples: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	samples := []BudgetSample{}
+	for rows.Next() {
+		var sample BudgetSample
+		if err := rows.Scan(&sample.ID, &sample.Source, &sample.SourceSampleID, &sample.SampleKind, &sample.PreviousSampleID, &sample.Value); err != nil {
+			return nil, fmt.Errorf("read run budget sample: %w", err)
+		}
+		samples = append(samples, sample)
+	}
+	return samples, rows.Err()
 }
 
 func sameRepository(left, right Repository) bool {
 	return sameStringPointer(left.BaseOID, right.BaseOID) && left.CaptureSource == right.CaptureSource && left.Dirty == right.Dirty && sameStringPointer(left.DirtyDigest, right.DirtyDigest) && left.HeadOID == right.HeadOID && left.ProjectID == right.ProjectID && left.TreeOID == right.TreeOID && left.WorktreeID == right.WorktreeID
-}
-
-func sameRepositoryLocation(left, right Repository) bool {
-	return validEnvelopeRepository(right) && left.ProjectID == right.ProjectID && left.WorktreeID == right.WorktreeID
 }
 
 func sameStringPointer(left, right *string) bool {

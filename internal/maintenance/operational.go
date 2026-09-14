@@ -30,6 +30,10 @@ func checkOperationalIntegrity(db *sql.DB, journalDir string) ([]Finding, error)
 	if err != nil {
 		return nil, err
 	}
+	recovery, err := recoveryIntegrityFindings(db)
+	if err != nil {
+		return nil, err
+	}
 	frozen, err := frozenStateFindings(db)
 	if err != nil {
 		return nil, err
@@ -41,6 +45,7 @@ func checkOperationalIntegrity(db *sql.DB, journalDir string) ([]Finding, error)
 	findings = append(findings, bindings...)
 	findings = append(findings, attempts...)
 	findings = append(findings, artifacts...)
+	findings = append(findings, recovery...)
 	findings = append(findings, frozen...)
 	return append(findings, residue...), nil
 }

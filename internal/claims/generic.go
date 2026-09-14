@@ -18,6 +18,7 @@ import (
 
 const (
 	claimAcquireAction = "claim.acquire"
+	claimExpireAction  = "claim.expire"
 	claimRenewAction   = "claim.renew"
 	claimReleaseAction = "claim.release"
 )
@@ -39,6 +40,11 @@ type RenewRequest struct {
 	ClaimID         string `json:"claim_id"`
 	ExpectedVersion int    `json:"expected_version"`
 	TTLSeconds      int    `json:"ttl_seconds"`
+}
+
+type ExpireRequest struct {
+	ClaimID         string `json:"claim_id"`
+	ExpectedVersion int    `json:"expected_version"`
 }
 
 type ReleaseRequest struct {
@@ -142,6 +148,13 @@ func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationRe
 			}
 			return journal.Event{}, GenericClaim{}, conflictGenericClaim(current)
 		}
+		prior, err := loadUnresolvedRunClaimForIssue(conn, request.IssueID)
+		if err != nil {
+			return journal.Event{}, GenericClaim{}, err
+		}
+		if prior != nil {
+			return journal.Event{}, GenericClaim{}, conflictGenericClaim(prior)
+		}
 		actor, err := workflow.ResolveTrustedActor(options.WorkspaceRoot, options.MigrationsDir, options.ActorID)
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
@@ -191,6 +204,41 @@ func RenewGeneric(options MutationOptions, request RenewRequest) (MutationResult
 		claim.ExpiresAt = now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)
 		event, err := genericClaimEvent(options.WorkspaceRoot, actor, mustClaimEnvelope(options, claim), claim.ID, claim.Version, "claim.renewed", claimRenewAction, []journal.Effect{{
 			Op: "update", Table: "claims", PK: map[string]any{"id": claim.ID}, Values: map[string]any{"version": claim.Version, "expires_at": claim.ExpiresAt}, Preconditions: map[string]any{"version": claim.Version - 1, "status": "active", "actor_id": options.ActorID},
+		}})
+		if err != nil {
+			return journal.Event{}, GenericClaim{}, err
+		}
+		return event, claim, nil
+	})
+}
+
+// ExpireGeneric records an explicit lease expiry. It never changes the stored
+// deadline, so expiry cannot later be revived by renewal.
+func ExpireGeneric(options MutationOptions, request ExpireRequest) (MutationResult, error) {
+	if err := validateMutationOptions(options); err != nil || !validExpireRequest(request) {
+		return MutationResult{}, invalidGenericClaim("claim expire input is invalid")
+	}
+	return mutateGenericClaim(options, claimExpireAction, request, func(conn *sql.DB, _ string, now time.Time) (journal.Event, GenericClaim, error) {
+		claim, err := loadGenericClaim(conn, request.ClaimID)
+		if err != nil {
+			return journal.Event{}, GenericClaim{}, err
+		}
+		if err := validateStoredClaimAuthority(options, claim, claimExpireAction); err != nil {
+			return journal.Event{}, GenericClaim{}, err
+		}
+		if claim.Status != "active" || claim.Version != request.ExpectedVersion || claim.ActorID != options.ActorID {
+			return journal.Event{}, GenericClaim{}, staleGenericClaim(claim, request.ExpectedVersion)
+		}
+		actor, err := workflow.ResolveTrustedActor(options.WorkspaceRoot, options.MigrationsDir, options.ActorID)
+		if err != nil {
+			return journal.Event{}, GenericClaim{}, err
+		}
+		claim.Version++
+		claim.Status = "expired"
+		event, err := genericClaimEvent(options.WorkspaceRoot, actor, mustClaimEnvelope(options, claim), claim.ID, claim.Version, "claim.expired", claimExpireAction, []journal.Effect{{
+			Op: "update", Table: "claims", PK: map[string]any{"id": claim.ID},
+			Values:        map[string]any{"version": claim.Version, "status": claim.Status},
+			Preconditions: map[string]any{"version": claim.Version - 1, "status": "active", "actor_id": options.ActorID},
 		}})
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
@@ -324,10 +372,8 @@ func genericClaimEvent(workspaceRoot string, actor workflow.ActorProfile, reposi
 	if err != nil {
 		return journal.Event{}, err
 	}
-	if next != sequence {
-		return journal.Event{}, fmt.Errorf("claim Event sequence %d, want %d", sequence, next)
-	}
-	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: eventType, ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: claimID, Sequence: sequence, Type: "claim"}, CommandName: command, Repository: &journal.Repository{CaptureSource: repository.CaptureSource, Dirty: repository.Dirty, DirtyDigest: repository.DirtyDigest, HeadOID: repository.HeadOID, ProjectID: repository.ProjectID, TreeOID: repository.TreeOID, WorktreeID: repository.WorktreeID}, Effects: effects}, nil
+	_ = sequence // Claim version and aggregate history diverge after atomic recovery creates the Claim under a Run Event.
+	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: eventType, ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: claimID, Sequence: next, Type: "claim"}, CommandName: command, Repository: &journal.Repository{CaptureSource: repository.CaptureSource, Dirty: repository.Dirty, DirtyDigest: repository.DirtyDigest, HeadOID: repository.HeadOID, ProjectID: repository.ProjectID, TreeOID: repository.TreeOID}, Effects: effects}, nil
 }
 
 func loadGenericClaim(conn *sql.DB, id string) (GenericClaim, error) {
@@ -364,6 +410,22 @@ func loadGenericActiveForIssue(conn *sql.DB, issueID string) (*GenericClaim, err
 	}
 	claim, err := loadGenericClaim(conn, id)
 	return &claim, err
+}
+
+func loadUnresolvedRunClaimForIssue(conn *sql.DB, issueID string) (*GenericClaim, error) {
+	var claimID string
+	err := conn.QueryRow(`SELECT claim_id FROM runs WHERE issue_id = ? AND status = 'active' ORDER BY started_at, id LIMIT 1`, issueID).Scan(&claimID)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("load unresolved run: %w", err)
+	}
+	claim, err := loadGenericClaim(conn, claimID)
+	if err != nil {
+		return nil, err
+	}
+	return &claim, nil
 }
 
 func claimValues(claim GenericClaim) map[string]any {
@@ -414,6 +476,10 @@ func validAcquireRequest(request AcquireRequest) bool {
 
 func validRenewRequest(request RenewRequest) bool {
 	return strings.TrimSpace(request.ClaimID) != "" && request.ExpectedVersion > 0 && request.TTLSeconds >= 1 && request.TTLSeconds <= 86400
+}
+
+func validExpireRequest(request ExpireRequest) bool {
+	return strings.TrimSpace(request.ClaimID) != "" && request.ExpectedVersion > 0
 }
 
 func validReleaseRequest(request ReleaseRequest) bool {

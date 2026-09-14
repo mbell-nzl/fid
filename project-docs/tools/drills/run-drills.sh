@@ -3368,6 +3368,12 @@ EOF
   echo "score with <drill>/DRILL.md. Do not show DRILL.md to the agent."
 fi
 
+if sh "$script_dir/review-recovery.sh"; then
+  drill_pass "drill-18 review recovery correction and restart boundaries"
+else
+  drill_fail "drill-18 review recovery correction and restart boundaries"
+fi
+
 echo ""
 if [ "$failures" -eq 0 ]; then
   echo "DRILLS PASS mechanical drills completed with no misses"

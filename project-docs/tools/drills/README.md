@@ -64,6 +64,15 @@ the miss count:
 project-docs/tools/drills/run-drills.sh
 ```
 
+The suite also runs `review-recovery.sh`, the DEC-190 regression for the
+Phase 22 restart deadlock. It exercises canonical append, same-task triage
+correction, active review identity, STOP/session recovery, rejection without
+mutation, and idempotent receipt retry. Its focused command is:
+
+```sh
+sh project-docs/tools/drills/review-recovery.sh
+```
+
 Full set including agent drills (05-08):
 
 ```sh

@@ -222,7 +222,7 @@ func missingJournalEventFinding(activity activityRow) Finding {
 }
 
 func validActivityType(refType string) bool {
-	return refType == "issue" || refType == "requirement" || refType == "decision" || refType == "escalation"
+	return refType == "issue" || refType == "requirement" || refType == "decision"
 }
 
 func validateActivityJournalEvent(journalDir, eventID string) error {

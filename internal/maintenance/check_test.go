@@ -147,6 +147,133 @@ func TestCheckWorkflowStatesReadsProjectedWorkflowTables(t *testing.T) {
 	}
 }
 
+func TestMaintenanceReportsBrokenRecoveryLinkWithoutMutation(t *testing.T) {
+	fixture := newMaintenanceFixture(t)
+	seedIssue(t, fixture.db, "FID-recovery-link", "task", nil, nil, "task-default", "todo")
+	seedIssue(t, fixture.db, "FID-final-schema", "task", nil, nil, "task-default", "todo")
+	seedTask21CorruptJournal(t, fixture.journalPath)
+	seedTask21CorruptProjection(t, fixture.db)
+	if _, err := fixture.db.Exec(`
+		INSERT INTO run_observations (id, run_id, kind, actor_id, observed_at, observation_json, created_event_id)
+		VALUES ('OBS-recovery-link', 'RUN-1', 'liveness', 'actor-maintenance', '2026-08-22T00:00:00Z', '{}', 'EVT-observation')
+	`); err != nil {
+		t.Fatalf("seed recovery observation: %v", err)
+	}
+	setFixturePragmas(t, fixture.db, false, false)
+	if _, err := fixture.db.Exec(`
+		INSERT INTO run_recoveries (id, prior_run_id, successor_run_id, prior_claim_id, successor_claim_id, observation_id, reconciliation_json, adopted_paths_json, authority_json, reason, created_event_id)
+		VALUES ('REC-broken-link', 'RUN-1', 'RUN-missing', 'CLM-1', 'CLM-missing', 'OBS-recovery-link', '{}', '[]', '{}', 'test', 'EVT-recovery')
+	`); err != nil {
+		t.Fatalf("seed broken recovery link: %v", err)
+	}
+	setFixturePragmas(t, fixture.db, true, false)
+	beforeJournal := fixture.journalBytes(t)
+	beforeChanges := fixture.changeCount(t)
+
+	result, err := Check(CheckOptions{DB: fixture.db, JournalDir: fixture.journalDir})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if !hasFinding(result.Errors, "recovery-link-integrity", "REC-broken-link") {
+		t.Fatalf("Check().Errors = %#v, want broken recovery link finding", result.Errors)
+	}
+	if afterJournal := fixture.journalBytes(t); !reflect.DeepEqual(afterJournal, beforeJournal) {
+		t.Fatal("maintenance Check changed journal bytes")
+	}
+	if afterChanges := fixture.changeCount(t); afterChanges != beforeChanges {
+		t.Fatalf("maintenance Check changed projection rows = %d, want %d", afterChanges, beforeChanges)
+	}
+}
+
+func TestMaintenanceRecoveryIntegrityMatrixDoesNotMutate(t *testing.T) {
+	t.Run("healthy controls", func(t *testing.T) {
+		fixture := newMaintenanceFixture(t)
+		beforeChanges := fixture.changeCount(t)
+		result, err := Check(CheckOptions{DB: fixture.db, JournalDir: fixture.journalDir, Now: time.Date(2026, time.September, 8, 0, 0, 0, 0, time.UTC)})
+		if err != nil {
+			t.Fatalf("Check() error = %v", err)
+		}
+		if len(result.Errors) != 0 || len(result.Warnings) != 0 {
+			t.Fatalf("Check() = %#v, want clean healthy controls", result)
+		}
+		if afterChanges := fixture.changeCount(t); afterChanges != beforeChanges {
+			t.Fatalf("maintenance Check changed healthy projection rows = %d, want %d", afterChanges, beforeChanges)
+		}
+	})
+
+	t.Run("completed complete-forward recovery later superseded", func(t *testing.T) {
+		fixture := newMaintenanceFixture(t)
+		if _, err := fixture.db.Exec(`INSERT INTO kit_activations (id, kit_identity, backend_identity, phase, status, point_of_no_return, direction, created_at, updated_at) VALUES ('ACT-superseded', 'kit', 'fid', 22, 'superseded', 1, 'activate', '2026-09-08T00:00:00Z', '2026-09-08T00:00:00Z')`); err != nil {
+			t.Fatalf("seed superseded activation: %v", err)
+		}
+		if _, err := fixture.db.Exec(`INSERT INTO activation_recoveries (activation_id, direction, actor_attribution, reason, selected_event_id, completed_event_id) VALUES ('ACT-superseded', 'complete-forward', 'actor-maintenance', 'test', 'EVT-selected', 'EVT-completed')`); err != nil {
+			t.Fatalf("seed completed activation recovery: %v", err)
+		}
+		beforeChanges := fixture.changeCount(t)
+		result, err := Check(CheckOptions{DB: fixture.db, JournalDir: fixture.journalDir})
+		if err != nil {
+			t.Fatalf("Check() error = %v", err)
+		}
+		if hasFinding(result.Errors, "activation-recovery-integrity", "ACT-superseded") {
+			t.Fatalf("Check().Errors = %#v, want later supersession accepted", result.Errors)
+		}
+		if afterChanges := fixture.changeCount(t); afterChanges != beforeChanges {
+			t.Fatalf("maintenance Check changed superseded activation rows = %d, want %d", afterChanges, beforeChanges)
+		}
+	})
+
+	t.Run("recovery corruption classes", func(t *testing.T) {
+		fixture := newMaintenanceFixture(t)
+		seedIssue(t, fixture.db, "FID-final-schema", "task", nil, nil, "task-default", "todo")
+		seedTask21CorruptJournal(t, fixture.journalPath)
+		seedTask21CorruptProjection(t, fixture.db)
+		if _, err := fixture.db.Exec(`INSERT INTO envelope_budgets (envelope_id, revision, name, budget_json) VALUES ('ENV-1', 1, 'attempts', '{}')`); err != nil {
+			t.Fatalf("seed budget definition: %v", err)
+		}
+		if _, err := fixture.db.Exec(`INSERT INTO budget_samples (id, envelope_id, envelope_revision, budget_name, run_id, actor_id, source, source_sample_id, sample_kind, previous_sample_id, value, measurement_ref_json, observed_at, created_event_id) VALUES ('BUD-missing-binding', 'ENV-1', 1, 'attempts', 'RUN-1', 'actor-maintenance', 'fid', 'sample-1', 'delta', NULL, 1, NULL, '2026-08-22T00:00:00Z', 'EVT-budget')`); err != nil {
+			t.Fatalf("seed budget sample: %v", err)
+		}
+		if _, err := fixture.db.Exec(`INSERT INTO activation_recoveries (activation_id, direction, actor_attribution, reason, selected_event_id, completed_event_id) VALUES ('ACT-1', 'complete-forward', 'actor-maintenance', 'test', 'EVT-activation', NULL)`); err != nil {
+			t.Fatalf("seed incomplete activation recovery: %v", err)
+		}
+		if _, err := fixture.db.Exec(`INSERT INTO run_observations (id, run_id, kind, actor_id, observed_at, observation_json, created_event_id) VALUES ('OBS-matrix', 'RUN-1', 'liveness', 'actor-maintenance', '2026-08-22T00:00:00Z', '{}', 'EVT-observation-matrix')`); err != nil {
+			t.Fatalf("seed recovery observation: %v", err)
+		}
+		setFixturePragmas(t, fixture.db, false, false)
+		if _, err := fixture.db.Exec(`INSERT INTO run_recoveries (id, prior_run_id, successor_run_id, prior_claim_id, successor_claim_id, observation_id, reconciliation_json, adopted_paths_json, authority_json, reason, created_event_id) VALUES ('REC-matrix', 'RUN-1', 'RUN-missing', 'CLM-1', 'CLM-missing', 'OBS-matrix', '{}', '[]', '{}', 'test', 'EVT-recovery-matrix')`); err != nil {
+			t.Fatalf("seed broken recovery link: %v", err)
+		}
+		setFixturePragmas(t, fixture.db, true, false)
+		beforeJournal := fixture.journalBytes(t)
+		beforeChanges := fixture.changeCount(t)
+
+		result, err := Check(CheckOptions{DB: fixture.db, JournalDir: fixture.journalDir, Now: time.Date(2026, time.September, 8, 0, 0, 0, 0, time.UTC)})
+		if err != nil {
+			t.Fatalf("Check() error = %v", err)
+		}
+		for _, expected := range []struct{ check, entityID string }{
+			{"recovery-link-integrity", "REC-matrix"},
+			{"attempt-receipt-integrity", "ATT-1"},
+			{"budget-binding-integrity", "BUD-missing-binding"},
+			{"activation-recovery-integrity", "ACT-1"},
+			{"artifact-integrity", "ART-1"},
+		} {
+			if !hasFinding(result.Errors, expected.check, expected.entityID) {
+				t.Fatalf("Check().Errors = %#v, want %s for %s", result.Errors, expected.check, expected.entityID)
+			}
+		}
+		if !hasFinding(result.Warnings, "stale_claims", "FID-final-schema") {
+			t.Fatalf("Check().Warnings = %#v, want stale Claims warning", result.Warnings)
+		}
+		if afterJournal := fixture.journalBytes(t); !reflect.DeepEqual(afterJournal, beforeJournal) {
+			t.Fatal("maintenance Check changed journal bytes")
+		}
+		if afterChanges := fixture.changeCount(t); afterChanges != beforeChanges {
+			t.Fatalf("maintenance Check changed projection rows = %d, want %d", afterChanges, beforeChanges)
+		}
+	})
+}
+
 func TestCheckReportsFinalSchemaIntegrityClassesWithoutRepair(t *testing.T) {
 	fixture := newMaintenanceFixture(t)
 	seedIssue(t, fixture.db, "FID-final-schema", "task", nil, nil, "task-default", "todo")

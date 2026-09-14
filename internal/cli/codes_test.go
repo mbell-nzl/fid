@@ -49,7 +49,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			stringDetail("from_type"), stringDetail("from_id"), stringDetail("relation"), stringDetail("to_type"), stringDetail("to_id"),
 		}},
 		{CodeWorkflowNotFound, CategoryNotFound, false, []SubjectType{SubjectWorkflow}, stringDetails("id")},
-		{CodeDuplicateEntity, CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink, SubjectWorkflow}, []detailExpectation{
+		{CodeDuplicateEntity, CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink, SubjectWorkflow, SubjectRun}, []detailExpectation{
 			stringDetail("entity_type"),
 			{name: "identity", kind: detailObjectKind, children: []detailExpectation{
 				{name: "fields", kind: detailStringsKind, value: []string{"name", "colour"}},
@@ -84,8 +84,14 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeActivationConflict, CategoryConflict, false, []SubjectType{SubjectActivation}, []detailExpectation{
 			nullableStringDetail("active_id"), nullableStringDetail("nonterminal_id"), stringDetail("requested_direction"),
 		}},
-		{CodeActivationRecoveryUnavailable, CategoryAuthority, false, []SubjectType{SubjectActivation}, []detailExpectation{
-			stringDetail("status"), {name: "point_of_no_return", kind: detailBooleanKind}, integerDetail("owner_phase"),
+		{CodeActivationNotFound, CategoryNotFound, false, []SubjectType{SubjectActivation}, stringDetails("id")},
+		{CodeActivationInvalid, CategoryPrecondition, false, []SubjectType{SubjectActivation}, []detailExpectation{
+			stringDetail("status"), {name: "expected_statuses", kind: detailStringsKind}, {name: "component_errors", kind: detailObjectsKind, children: []detailExpectation{stringDetail("component_id"), stringDetail("code")}},
+		}},
+		{CodeActivationVersionConflict, CategoryConflict, false, []SubjectType{SubjectActivation}, []detailExpectation{stringDetail("activation_id"), integerDetail("expected_version"), integerDetail("actual_version")}},
+		{CodeActivationDirectionConflict, CategoryPrecondition, false, []SubjectType{SubjectActivation}, []detailExpectation{stringDetail("activation_id"), {name: "point_of_no_return", kind: detailBooleanKind}, stringDetail("required_direction")}},
+		{CodeActivationIncomplete, CategoryPrecondition, false, []SubjectType{SubjectActivation}, []detailExpectation{
+			stringDetail("activation_id"), {name: "components", kind: detailStringsKind}, {name: "reasons", kind: detailObjectsKind, children: []detailExpectation{stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type")}},
 		}},
 		{CodeAuthorityUnavailable, CategoryAuthority, false, nil, []detailExpectation{
 			nullableStringDetail("actor_id"), stringDetail("operation"), {name: "required_actions", kind: detailStringsKind}, {name: "required_capabilities", kind: detailStringsKind},
@@ -106,11 +112,25 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeClaimStale, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
 		{CodeRunNotFound, CategoryNotFound, false, []SubjectType{SubjectRun}, stringDetails("id")},
 		{CodeRunInactive, CategoryPrecondition, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("status")}},
+		{Code("run-version-conflict"), CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), integerDetail("expected_version"), integerDetail("actual_version")}},
+		{CodeExecutorLivenessUnknown, CategoryPrecondition, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("executor_id"), nullableStringDetail("observation_id")}},
+		{CodeExecutorStillLive, CategoryPrecondition, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("executor_id"), stringDetail("observation_id")}},
+		{CodeRecoveryStateConflict, CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), nullableStringDetail("observation_digest"), {name: "paths", kind: detailStringsKind}, {name: "reasons", kind: detailStringsKind}}},
+		{CodeObservationNotFound, CategoryNotFound, false, []SubjectType{SubjectRun}, stringDetails("id")},
+		{CodeRecoveryAlreadyLinked, CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("successor_run_id")}},
 		{CodeReceiptNotFound, CategoryNotFound, false, []SubjectType{SubjectReceipt}, stringDetails("id")},
 		{CodeEvidenceNotFound, CategoryNotFound, false, []SubjectType{SubjectEvidence}, stringDetails("id")},
 		{CodeGateUnsuccessful, CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt}, []detailExpectation{
 			stringDetail("attempt_id"), stringDetail("receipt_id"), stringDetail("outcome"), nullableIntegerDetail("exit_code"), nullableStringDetail("signal"), {name: "timed_out", kind: detailBooleanKind},
 		}},
+		{CodeBudgetExhausted, CategoryPrecondition, false, []SubjectType{SubjectRun}, budgetDenialDetails()},
+		{CodeBudgetDataUnavailable, CategoryPrecondition, false, []SubjectType{SubjectRun}, budgetDenialDetails()},
+		{CodeBudgetSampleConflict, CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("budget_name"), stringDetail("source_sample_id"), nullableStringDetail("expected_previous_sample_id"), nullableStringDetail("actual_previous_sample_id")}},
+		{CodeStopNotFound, CategoryNotFound, false, []SubjectType{SubjectStop}, stringDetails("id")},
+		{CodeAttentionNotFound, CategoryNotFound, false, []SubjectType{SubjectAttention}, stringDetails("id")},
+		{CodeAttentionVersionConflict, CategoryConflict, false, []SubjectType{SubjectAttention}, []detailExpectation{stringDetail("attention_id"), integerDetail("expected_version"), integerDetail("actual_version")}},
+		{CodeStopUnresolved, CategoryPrecondition, false, []SubjectType{SubjectStop}, []detailExpectation{{name: "stop_ids", kind: detailStringsKind}, {name: "reasons", kind: detailObjectsKind, children: []detailExpectation{stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type")}}}},
+		{CodeResolutionInvalid, CategoryPrecondition, false, []SubjectType{SubjectStop, SubjectAttention}, []detailExpectation{{name: "subject", kind: detailObjectKind, children: []detailExpectation{stringDetail("type"), stringDetail("id")}}, {name: "fact_event_ids", kind: detailStringsKind}, {name: "reasons", kind: detailObjectsKind, children: []detailExpectation{stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type")}}}},
 		{CodeObligationUnsatisfied, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, []detailExpectation{
 			{name: "reasons", kind: detailObjectsKind, children: []detailExpectation{
 				stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type"),
@@ -121,6 +141,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 				stringDetail("code"), nullableStringDetail("entry"), stringDetail("detail"),
 			}},
 		}},
+		{CodeImportTargetConflict, CategoryConflict, false, []SubjectType{SubjectExport}, []detailExpectation{stringDetail("target_root"), stringDetail("reason")}},
 	}
 
 	registered := RegisteredCodes()
@@ -154,6 +175,9 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			}
 
 			validDetails := detailValues(expectation.details)
+			if expectation.code == CodeImportTargetConflict {
+				validDetails["reason"] = "populated"
+			}
 			validSubject := subjectFor(expectation.subjects)
 			failure := mustNewFailure(t, expectation.code, validSubject, validDetails)
 			assertSerializedFailureSchema(t, failure, expectation)
@@ -167,6 +191,28 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		if _, err := NewFailure(code, "message", nil, map[string]any{}); err == nil {
 			t.Errorf("NewFailure(%q) error = nil, want unknown-code rejection", code)
 		}
+	}
+}
+
+func TestImportTargetConflictAcceptsOnlyClosedReasons(t *testing.T) {
+	for _, reason := range []string{"populated", "different-import", "unsafe-path"} {
+		t.Run(reason, func(t *testing.T) {
+			_, err := NewFailure(CodeImportTargetConflict, "conflict", &Subject{Type: SubjectExport, ID: "archive.zip"}, map[string]any{"target_root": "/target", "reason": reason})
+			if err != nil {
+				t.Fatalf("NewFailure(%q) error = %v", reason, err)
+			}
+		})
+	}
+	if _, err := NewFailure(CodeImportTargetConflict, "conflict", &Subject{Type: SubjectExport, ID: "archive.zip"}, map[string]any{"target_root": "/target", "reason": "other"}); err == nil {
+		t.Fatal("NewFailure accepted an open import-target-conflict reason")
+	}
+}
+
+func budgetDenialDetails() []detailExpectation {
+	return []detailExpectation{
+		{name: "budget", kind: detailObjectKind, children: []detailExpectation{stringDetail("name"), stringDetail("scope"), stringDetail("unit"), integerDetail("maximum"), nullableIntegerDetail("warning_threshold"), stringDetail("exhaustion_action"), nullableIntegerDetail("consumed"), nullableIntegerDetail("remaining"), stringDetail("state")}},
+		{name: "stop_ids", kind: detailStringsKind}, {name: "attention_ids", kind: detailStringsKind},
+		{name: "event", kind: detailObjectKind, nullable: true, children: []detailExpectation{stringDetail("id"), stringDetail("occurred_at")}}, {name: "replayed", kind: detailBooleanKind},
 	}
 }
 

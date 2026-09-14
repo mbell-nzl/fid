@@ -4,9 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/project"
 )
 
 type ResumeIssue struct {
@@ -26,18 +30,34 @@ type ResumeClaim struct {
 	Scope            struct {
 		Paths []string `json:"paths"`
 	} `json:"scope"`
-	Mode          string  `json:"mode"`
-	Version       int     `json:"version"`
-	Status        string  `json:"status"`
-	AcquiredAt    string  `json:"acquired_at"`
-	ExpiresAt     string  `json:"expires_at"`
-	ReleasedAt    *string `json:"released_at"`
-	ReleaseReason *string `json:"release_reason"`
+	Mode            string  `json:"mode"`
+	Version         int     `json:"version"`
+	Status          string  `json:"status"`
+	AcquiredAt      string  `json:"acquired_at"`
+	ExpiresAt       string  `json:"expires_at"`
+	ReleasedAt      *string `json:"released_at"`
+	ReleaseReason   *string `json:"release_reason"`
+	EffectiveStatus string  `json:"effective_status"`
 }
 
 type ResumeCompletion struct {
 	Status  string             `json:"status"`
 	Reasons []EvaluationReason `json:"reasons"`
+}
+
+// NextAction projects one available read or possible mutation.
+// Empty Reasons means the current durable state permits the operation once its
+// ordinary request values are supplied.
+type NextAction struct {
+	Operation            string             `json:"operation"`
+	Subject              Subject            `json:"subject"`
+	RequiredCapabilities []string           `json:"required_capabilities"`
+	Reasons              []EvaluationReason `json:"reasons"`
+}
+
+type ResumeFindings struct {
+	Available bool  `json:"available"`
+	Items     []any `json:"items"`
 }
 
 type Resume struct {
@@ -48,14 +68,26 @@ type Resume struct {
 	Repository  Repository             `json:"repository"`
 	Obligations []ObligationEvaluation `json:"obligations"`
 	Completion  ResumeCompletion       `json:"completion"`
-	NextActions []string               `json:"next_actions"`
+	Stops       []Stop                 `json:"stops"`
+	Attention   []Attention            `json:"attention"`
+	Budgets     []Budget               `json:"budgets"`
+	Recoveries  []Recovery             `json:"recoveries"`
+	Findings    ResumeFindings         `json:"findings"`
+	NextActions []NextAction           `json:"next_actions"`
 }
 
-func ResumeIssueState(workspaceRoot, migrationsDir, issueID string) (Resume, error) {
+func ResumeIssueState(workspaceRoot, migrationsDir, issueID, repositoryRoot string) (Resume, error) {
 	if strings.TrimSpace(issueID) == "" {
 		return Resume{}, &EnvelopeInvalidError{Reason: "resume issue id is required"}
 	}
+	if strings.TrimSpace(repositoryRoot) == "" {
+		return Resume{}, &EnvelopeInvalidError{Reason: "resume repository is required"}
+	}
 	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
+		return Resume{}, err
+	}
+	repository, err := resumeObservedRepository(workspaceRoot, repositoryRoot)
+	if err != nil {
 		return Resume{}, err
 	}
 	conn, err := openWorkflowDB(workspaceRoot)
@@ -63,10 +95,23 @@ func ResumeIssueState(workspaceRoot, migrationsDir, issueID string) (Resume, err
 		return Resume{}, err
 	}
 	defer closeWorkflowDB(conn)
-	return resumeIssueState(conn, issueID)
+	return resumeIssueState(conn, issueID, repository)
 }
 
-func resumeIssueState(conn *sql.DB, issueID string) (Resume, error) {
+func resumeObservedRepository(workspaceRoot, repositoryRoot string) (Repository, error) {
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	if err != nil {
+		return Repository{}, err
+	}
+	observation, err := project.ObserveRepository(repositoryRoot)
+	if err != nil {
+		return Repository{}, err
+	}
+	head := observation.HeadOID
+	return Repository{BaseOID: &head, CaptureSource: "git", Dirty: observation.Dirty, DirtyDigest: observation.DirtyDigest, HeadOID: observation.HeadOID, ProjectID: projectConfig.ProjectID, TreeOID: observation.TreeOID, WorktreeID: observation.WorktreeID}, nil
+}
+
+func resumeIssueState(conn *sql.DB, issueID string, repository Repository) (Resume, error) {
 	var envelopeID string
 	err := conn.QueryRow(`
 		SELECT envelope_id
@@ -89,7 +134,7 @@ func resumeIssueState(conn *sql.DB, issueID string) (Resume, error) {
 	if err != nil {
 		return Resume{}, err
 	}
-	evaluation, err := currentEnvelopeEvaluation(conn, envelope, envelope.RepositoryScope)
+	evaluation, err := currentEnvelopeEvaluation(conn, envelope, repository)
 	if err != nil {
 		return Resume{}, err
 	}
@@ -101,6 +146,14 @@ func resumeIssueState(conn *sql.DB, issueID string) (Resume, error) {
 	if err != nil {
 		return Resume{}, err
 	}
+	stops, attention, err := resumeStopsAndAttention(conn, envelope.ID, run)
+	if err != nil {
+		return Resume{}, err
+	}
+	recoveries, err := resumeRecoveries(conn, issueID, envelope.ID)
+	if err != nil {
+		return Resume{}, err
+	}
 	completion := ResumeCompletion{Status: "incomplete", Reasons: append([]EvaluationReason(nil), evaluation.Reasons...)}
 	if !terminal {
 		completion.Reasons = append(completion.Reasons, evaluationReason("issue-not-terminal-success", "completed workflow category", issue.ID, "issue"))
@@ -109,7 +162,15 @@ func resumeIssueState(conn *sql.DB, issueID string) (Resume, error) {
 	if envelope.Status == "completed" && len(completion.Reasons) == 0 {
 		completion.Status = "complete"
 	}
-	return Resume{Envelope: envelope, Issue: issue, Claim: claim, Run: run, Repository: envelope.RepositoryScope, Obligations: []ObligationEvaluation{evaluation}, Completion: completion, NextActions: resumeNextActions(envelope, terminal, evaluation, claim, run)}, nil
+	budgets := append([]Budget(nil), envelope.Budgets...)
+	if run != nil {
+		budgets = append([]Budget(nil), run.Budgets...)
+	}
+	nextActions, err := resumeNextActions(conn, envelope, terminal, evaluation, claim, run, repository)
+	if err != nil {
+		return Resume{}, err
+	}
+	return Resume{Envelope: envelope, Issue: issue, Claim: claim, Run: run, Repository: repository, Obligations: []ObligationEvaluation{evaluation}, Completion: completion, Stops: stops, Attention: attention, Budgets: budgets, Recoveries: recoveries, Findings: ResumeFindings{Available: false, Items: []any{}}, NextActions: nextActions}, nil
 }
 
 func resumeIssue(conn *sql.DB, issueID string) (ResumeIssue, bool, error) {
@@ -153,6 +214,16 @@ func resumeClaim(conn *sql.DB, issueID string) (*ResumeClaim, error) {
 	if releaseReason.Valid {
 		claim.ReleaseReason = &releaseReason.String
 	}
+	claim.EffectiveStatus = claim.Status
+	if claim.Status == "active" {
+		expiresAt, err := time.Parse(time.RFC3339Nano, claim.ExpiresAt)
+		if err != nil {
+			return nil, fmt.Errorf("resume Claim expiry: %w", err)
+		}
+		if !time.Now().UTC().Before(expiresAt.UTC()) {
+			claim.EffectiveStatus = "expired"
+		}
+	}
 	return &claim, nil
 }
 
@@ -175,25 +246,136 @@ func resumeRun(conn *sql.DB, issueID, envelopeID string) (*Run, error) {
 	return &run, nil
 }
 
-func resumeNextActions(envelope Envelope, terminal bool, evaluation ObligationEvaluation, claim *ResumeClaim, run *Run) []string {
-	if envelope.Status == "completed" {
-		return []string{}
+func resumeStopsAndAttention(conn *sql.DB, envelopeID string, run *Run) ([]Stop, []Attention, error) {
+	subjects := []Subject{{Type: "envelope", ID: envelopeID}}
+	if run != nil {
+		subjects = append(subjects, Subject{Type: "run", ID: run.ID})
 	}
-	actions := []string{}
-	if len(evaluation.Reasons) > 0 {
-		actions = append(actions, "evaluate-obligations", "run-gate", "link-evidence")
+	activationIDs, err := resumeOpenActivationIDs(conn)
+	if err != nil {
+		return nil, nil, err
 	}
-	if !terminal {
-		actions = append(actions, "transition-issue")
+	for _, activationID := range activationIDs {
+		subjects = append(subjects, Subject{Type: "activation", ID: activationID})
 	}
-	if run != nil && run.Status == "active" {
-		actions = append(actions, "finish-run")
+	stops := []Stop{}
+	attention := []Attention{}
+	seenAttention := map[string]bool{}
+	for _, subject := range subjects {
+		rows, err := conn.Query(`
+			SELECT s.id FROM stops s
+			LEFT JOIN stop_resolutions r ON r.stop_id = s.id
+			WHERE s.subject_type = ? AND s.subject_id = ? AND r.stop_id IS NULL
+			ORDER BY s.raised_at, s.id
+		`, subject.Type, subject.ID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("resume Stops: %w", err)
+		}
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				_ = rows.Close()
+				return nil, nil, err
+			}
+			stop, err := loadStop(conn, id)
+			if err != nil {
+				_ = rows.Close()
+				return nil, nil, err
+			}
+			stops = append(stops, stop)
+			item, err := loadAttentionForStop(conn, id)
+			if err != nil {
+				_ = rows.Close()
+				return nil, nil, err
+			}
+			if !seenAttention[item.ID] {
+				seenAttention[item.ID] = true
+				attention = append(attention, item)
+			}
+		}
+		if err := rows.Close(); err != nil {
+			return nil, nil, err
+		}
+		rows, err = conn.Query(`SELECT id FROM attention_items WHERE subject_type = ? AND subject_id = ? AND status = 'open' ORDER BY raised_at, id`, subject.Type, subject.ID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("resume Attention: %w", err)
+		}
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				_ = rows.Close()
+				return nil, nil, err
+			}
+			if seenAttention[id] {
+				continue
+			}
+			item, err := loadAttentionByQuery(conn, `SELECT id, semantic_key, subject_type, subject_id, code, status, version, raised_at, resolution_event_id FROM attention_items WHERE id = ?`, id)
+			if err != nil {
+				_ = rows.Close()
+				return nil, nil, err
+			}
+			seenAttention[id] = true
+			attention = append(attention, item)
+		}
+		if err := rows.Close(); err != nil {
+			return nil, nil, err
+		}
 	}
-	if claim != nil {
-		actions = append(actions, "release-claim")
+	return stops, attention, nil
+}
+
+func resumeOpenActivationIDs(conn *sql.DB) ([]string, error) {
+	rows, err := conn.Query(`
+		SELECT subject_id FROM (
+			SELECT s.subject_id
+			FROM stops s
+			LEFT JOIN stop_resolutions r ON r.stop_id = s.id
+			WHERE s.subject_type = 'activation' AND s.code = 'activation-incomplete' AND r.stop_id IS NULL
+			UNION
+			SELECT subject_id
+			FROM attention_items
+			WHERE subject_type = 'activation' AND status = 'open'
+		)
+		ORDER BY subject_id
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("resume activation Stops: %w", err)
 	}
-	if terminal && len(evaluation.Reasons) == 0 {
-		actions = append(actions, "complete-envelope")
+	defer func() { _ = rows.Close() }()
+	ids := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
 	}
-	return actions
+	return ids, rows.Err()
+}
+
+func resumeRecoveries(conn *sql.DB, issueID, envelopeID string) ([]Recovery, error) {
+	rows, err := conn.Query(`
+		SELECT r.id
+		FROM run_recoveries r
+		JOIN runs prior ON prior.id = r.prior_run_id
+		WHERE prior.issue_id = ? AND prior.envelope_id = ?
+		ORDER BY r.id
+	`, issueID, envelopeID)
+	if err != nil {
+		return nil, fmt.Errorf("resume recoveries: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	recoveries := []Recovery{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		recovery, err := loadRecovery(conn, id)
+		if err != nil {
+			return nil, err
+		}
+		recoveries = append(recoveries, recovery)
+	}
+	return recoveries, rows.Err()
 }

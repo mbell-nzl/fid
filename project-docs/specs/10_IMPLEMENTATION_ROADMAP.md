@@ -1,7 +1,7 @@
 # IMPLEMENTATION ROADMAP - fid
 
-**Status:** Phase 21 complete; Phase 22 (failure and recovery) is next to plan
-**Last updated:** 2026-09-04
+**Status:** Phase 22 complete and Human-accepted (DEC-220); branch awaiting PR/merge; no next phase planned
+**Last updated:** 2026-09-13
 **Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md),
 [ADR-0012](../../docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md)
 
@@ -62,7 +62,13 @@ generic Actor/Claim/Run authority, fid-executed Attempts and Receipts, guarded
 terminal-success transition, completion, resume, export create/validate, and
 rebuild parity - and the section 5 Phase 21 removal column is discharged through
 migrations `0013`/`0014`. Incomplete semantic capabilities remain
-`available:false`. **Phase 22 (failure and recovery) is the next phase to plan.**
+`available:false`. Phase 21 is merged at
+`89d964a84dbdd297fdf472d6f78b001e2efac702`. **Phase 22 (failure and recovery)
+is complete and Human-accepted (DEC-220): 18 planned tasks plus supplemental
+Human-guidance task 19, 80/80 validation assertions and 6/6 Human checks.**
+Independent final QA and the accepted second Human checklist are reconciled in
+`../docs/phases/phase-22/qa/final-acceptance.md`. The phase branch awaits PR/merge;
+Phase 23 has not been planned or started.
 
 ## 3. Foundation to retain
 
@@ -129,6 +135,22 @@ surface until Phase 25. Phase planning must enumerate exact commands, packages,
 tables, events, migrations, fixtures, and tests. If implementation discovery
 moves an item, the owning phase records the reason and a concrete new expiry
 point.
+
+Phase 22 retains `work.claims.v1` as unavailable until Phase 24's parallel-
+conflict semantics qualify (DEC-188/220). The row's "only when complete" condition
+does not authorize partial advertisement. Recovery operations and limits are
+delivered; `kit.activation.v1`, `attention.v1` and `export.portable.v1` are enabled
+after their scoped conformance passed. CF-040 carries Human-accepted CLI polish
+and verbosity review to the Phase 25 operating-experience qualification.
+
+Phase 22 DEC-187 records the kit comparison in
+`../docs/phases/phase-22/kit-contract-mapping.md`. Receiving work is explicit:
+Phase 23 plans Review charge semantics, review_cycles and review-rework-exhausted;
+Phase 24 plans generic retry-exhausted and removes the revision-1 limitation.
+Phase 25 qualification (CF-037) must prove kit coordinator recovery-export
+binding, derived terminalState expectation mapping, validate-only/scope/asOf
+mapping, deduplication-key agreement and explicit representations for unmapped
+Stop codes. No fid capability advertisement alone closes these adapter duties.
 
 ### 5.1 Current implementation ownership check
 
@@ -242,14 +264,13 @@ reading `.fid/` internals.
    one-Issue operational walking skeleton and its owned V1 removal; all 87 VAL
    assertions and all four Human checks pass. The delivered wire contract is
    `../docs/phases/phase-21/public-interface.md` and the sign-off is DEC-179.
-5. Plan Phase 22 (failure and recovery) from the section 5 row: operating mode,
-   exact slice and wire contract, validation contract, ordered task pack, QA
-   Lead handoff, and Ready QA plan. Carry CF-024 (rebuild headroom), CF-033
-   (`AGENTS.md` package inventory), CF-034 (in-package recovery-branch
-   coverage), CF-035 (unknown config-key validation), and re-targeted CF-018 as
-   planning inputs. A deep delivery-workflow retrospective is recommended first.
-   No implementation begins before a Ready QA plan, Tech Lead refinements, and
-   Human execution approval.
+5. **Complete (2026-09-13).** Phase 22 delivered failure/recovery, budgets and
+   Stops, activation recovery and portable state, including the supplemental
+   Human guidance repair. DEC-220 records 80/80 assertions and the accepted
+   6/6 second Human checklist. See the phase final acceptance and wrap audit.
+   CF-024/034/035 close; remaining workflow maintenance and kit qualification
+   stay explicitly assigned in the active register. CF-040 records accepted
+   future CLI polish. The branch is ready for PR; this wrap does not plan Phase 23.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

@@ -1,0 +1,20 @@
+{
+  "name": "run-recover-accepted",
+  "operation": "run.recover",
+  "kind": "accepted",
+  "result_fields": [
+    "recovery",
+    "run",
+    "claim",
+    "idempotency_key",
+    "replayed"
+  ],
+  "event": true,
+  "exit_code": 0,
+  "expected": {
+    "run.version": 1,
+    "run.status": "active",
+    "claim.version": 1,
+    "claim.status": "active"
+  }
+}

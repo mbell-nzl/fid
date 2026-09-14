@@ -15,7 +15,7 @@ import (
 
 func TestTerminalSuccessTransitionRejectsUnsuccessfulReceiptEvidence(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/false"}
 	})
 	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task18-unsuccessful")
@@ -113,7 +113,7 @@ func TestTerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState(t 
 
 func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 	})
 	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task18-qualified")
@@ -155,12 +155,7 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 	}
 
 	runID, claimID := task18RunAndClaim(t, workspace, issueID)
-	finishPath := filepath.Join(workspace, "task18-finish-run.json")
-	writeActivationInput(t, finishPath, map[string]any{"run_id": runID, "expected_status": "active", "outcome": "succeeded", "repository": repository})
-	finished := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "finish", "--actor", "actor-builder", "--input", finishPath, "--idempotency-key", "task18-finish-run")
-	if finished.err != nil || finished.stderr != "" {
-		t.Fatalf("finish Run = %#v", finished)
-	}
+	closeRunForTest(t, workspace, runID, repository, "task18-close-run")
 	releasePath := filepath.Join(workspace, "task18-release-claim.json")
 	writeActivationInput(t, releasePath, map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
 	released := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "task18-release-claim")
@@ -185,8 +180,7 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 }
 
 func TestResumeReadsDurableFactsWithoutMutation(t *testing.T) {
-	t.Parallel()
-	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, nil)
+	workspace, issueID, envelopeID := observedEvidenceEnvelopeForTest(t, nil)
 	beforeEvents := journalEventCount(t, workspace)
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "resume", issueID)
 	if result.err != nil || result.stderr != "" {
@@ -202,9 +196,8 @@ func TestResumeReadsDurableFactsWithoutMutation(t *testing.T) {
 }
 
 func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *testing.T) {
-	t.Parallel()
 	t.Run("active", func(t *testing.T) {
-		workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+		workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 			definition["argv"] = []string{"/bin/true"}
 		})
 		terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task18-resume-active")
@@ -217,14 +210,14 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 			t.Fatalf("active resume command = %#v, want bounded read", result)
 		}
 		resume := decodeCanonicalResult(t, result.stdout)["resume"].(map[string]any)
-		assertTask18ResumeProjection(t, resume, envelopeID, issueID, "active", "todo", 1, true, "active", "incomplete", []string{"obligation-evidence-absent"}, []string{"obligation-evidence-absent", "issue-not-terminal-success"}, []string{"evaluate-obligations", "run-gate", "link-evidence", "transition-issue", "finish-run", "release-claim"})
+		assertTask18ResumeProjection(t, resume, envelopeID, issueID, "active", "todo", 1, true, "active", "incomplete", []string{"obligation-evidence-absent"}, []string{"obligation-evidence-absent", "issue-not-terminal-success"}, []string{"run.inspect", "run.observe", "gate.run", "claim.renew", "claim.release"})
 		if afterEvents := journalEventCount(t, workspace); afterEvents != beforeEvents {
 			t.Fatalf("active resume Event count = %d, want unchanged %d", afterEvents, beforeEvents)
 		}
 	})
 
 	t.Run("completed", func(t *testing.T) {
-		workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+		workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 			definition["argv"] = []string{"/bin/true"}
 		})
 		terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task18-resume-completed")
@@ -240,16 +233,26 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 			t.Fatalf("completed resume Evidence link = %#v", linked)
 		}
 		task18AdvanceToTerminalGuard(t, workspace, issueID)
+		if err := os.WriteFile(filepath.Join(workspace, "current-target.txt"), []byte("one byte changed\n"), 0o600); err != nil {
+			t.Fatalf("change current observed target: %v", err)
+		}
+		beforeStaleTransition := journalEventCount(t, workspace)
+		staleTransition := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "transition", issueID, "--to", "qa_pass", "--actor", "agent:actor-builder", "--expected-revision", "4", "--idempotency-key", "task18-resume-terminal-stale")
+		if staleTransition.err == nil || staleTransition.stdout != "" || !strings.Contains(staleTransition.stderr, `"evidence-stale"`) {
+			t.Fatalf("stale current-target terminal transition = %#v, want evidence-stale rejection", staleTransition)
+		}
+		if after := journalEventCount(t, workspace); after != beforeStaleTransition {
+			t.Fatalf("stale terminal transition event count = %d, want unchanged %d", after, beforeStaleTransition)
+		}
+		if err := os.Remove(filepath.Join(workspace, "current-target.txt")); err != nil {
+			t.Fatalf("restore current observed target: %v", err)
+		}
 		transitioned := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "transition", issueID, "--to", "qa_pass", "--actor", "agent:actor-builder", "--expected-revision", "4", "--idempotency-key", "task18-resume-terminal")
 		if transitioned.err != nil || transitioned.stderr != "" {
 			t.Fatalf("terminal transition for completed resume = %#v", transitioned)
 		}
 		runID, claimID := task18RunAndClaim(t, workspace, issueID)
-		finishPath := filepath.Join(workspace, "task18-resume-finish.json")
-		writeActivationInput(t, finishPath, map[string]any{"run_id": runID, "expected_status": "active", "outcome": "succeeded", "repository": repository})
-		if finished := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "finish", "--actor", "actor-builder", "--input", finishPath, "--idempotency-key", "task18-resume-finish"); finished.err != nil || finished.stderr != "" {
-			t.Fatalf("finish completed resume Run = %#v", finished)
-		}
+		closeRunForTest(t, workspace, runID, repository, "task18-resume-close")
 		releasePath := filepath.Join(workspace, "task18-resume-release.json")
 		writeActivationInput(t, releasePath, map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
 		if released := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "task18-resume-release"); released.err != nil || released.stderr != "" {
@@ -257,6 +260,20 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 		}
 		completePath := filepath.Join(workspace, "task18-resume-complete.json")
 		writeActivationInput(t, completePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1, "repository": repository})
+		if err := os.WriteFile(filepath.Join(workspace, "current-target.txt"), []byte("one byte changed\n"), 0o600); err != nil {
+			t.Fatalf("change complete current target: %v", err)
+		}
+		beforeStaleComplete := journalEventCount(t, workspace)
+		staleComplete := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "complete", "--actor", "actor-builder", "--input", completePath, "--idempotency-key", "task18-resume-complete-stale")
+		if staleComplete.err == nil || staleComplete.stdout != "" || !strings.Contains(staleComplete.stderr, `"evidence-stale"`) {
+			t.Fatalf("stale current-target Envelope completion = %#v, want evidence-stale rejection", staleComplete)
+		}
+		if after := journalEventCount(t, workspace); after != beforeStaleComplete {
+			t.Fatalf("stale Envelope completion event count = %d, want unchanged %d", after, beforeStaleComplete)
+		}
+		if err := os.Remove(filepath.Join(workspace, "current-target.txt")); err != nil {
+			t.Fatalf("restore complete current target: %v", err)
+		}
 		if completed := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "complete", "--actor", "actor-builder", "--input", completePath, "--idempotency-key", "task18-resume-complete"); completed.err != nil || completed.stderr != "" {
 			t.Fatalf("complete resume Envelope = %#v", completed)
 		}
@@ -276,7 +293,7 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 
 func TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, nil)
+	workspace, issueID, envelopeID := observedEvidenceEnvelopeForTest(t, nil)
 	repository := runRepositoryForTest(t, workspace)
 	beforeEnvelope := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "get", envelopeID).stdout
 	beforeIssue := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "get", issueID).stdout
@@ -353,13 +370,18 @@ func task18TableCounts(t *testing.T, workspace string) (int, int) {
 
 func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence bool) (string, string, string, string, string) {
 	t.Helper()
-	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		if withArtifact {
 			definition["artifact_paths"] = []string{"task18-evidence.txt"}
 		}
 	})
 	if withArtifact {
+		// This declared Gate output is material, not a project-source change.
+		// Keep its generation outside the repository freshness target.
+		if err := os.WriteFile(filepath.Join(workspace, ".git", "info", "exclude"), []byte("/task18-evidence.txt\n"), 0o600); err != nil {
+			t.Fatalf("exclude generated Gate Artifact: %v", err)
+		}
 		if err := os.WriteFile(filepath.Join(workspace, "task18-evidence.txt"), []byte("terminal evidence\n"), 0o600); err != nil {
 			t.Fatalf("write terminal Evidence Artifact: %v", err)
 		}
@@ -403,13 +425,9 @@ func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence boo
 
 func task18TerminalGuardFixture(t *testing.T, withArtifact, linkEvidence bool) (string, string, string, string, string) {
 	t.Helper()
-	key := "task18-terminal-guard:" + strconv.FormatBool(withArtifact) + ":" + strconv.FormatBool(linkEvidence)
-	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, envelopeID, evidenceID, artifactID := task18QualifiedEvidenceFixture(t, withArtifact, linkEvidence)
-		task18AdvanceToTerminalGuard(t, workspace, issueID)
-		return workspace, []string{issueID, envelopeID, evidenceID, artifactID}
-	})
-	return workspace, values[0], values[1], values[2], values[3]
+	workspace, issueID, envelopeID, evidenceID, artifactID := task18QualifiedEvidenceFixture(t, withArtifact, linkEvidence)
+	task18AdvanceToTerminalGuard(t, workspace, issueID)
+	return workspace, issueID, envelopeID, evidenceID, artifactID
 }
 
 func task18AdvanceToTerminalGuard(t *testing.T, workspace, issueID string) {
@@ -494,7 +512,11 @@ func assertTask18ResumeProjection(t *testing.T, resume map[string]any, envelopeI
 	if completion["status"] != completionStatus || !reflect.DeepEqual(task18ReasonCodes(completion["reasons"].([]any)), wantCompletionReasons) {
 		t.Fatalf("resume completion = %#v, want %s/%#v", completion, completionStatus, wantCompletionReasons)
 	}
-	gotActions := anyStrings(t, resume["next_actions"])
+	actionItems := resume["next_actions"].([]any)
+	gotActions := make([]string, 0, len(actionItems))
+	for _, item := range actionItems {
+		gotActions = append(gotActions, item.(map[string]any)["operation"].(string))
+	}
 	if !reflect.DeepEqual(gotActions, wantActions) {
 		t.Fatalf("resume next actions = %#v, want %#v", gotActions, wantActions)
 	}

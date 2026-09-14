@@ -19,7 +19,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func TestPhase21AttentionBoundary(t *testing.T) {
+func TestPhase22AttentionReadBoundary(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	discovery := executeCommandForTest(workspace, "--json", "capabilities")
@@ -57,32 +57,15 @@ func TestPhase21AttentionBoundary(t *testing.T) {
 		}
 	}
 	if len(matches) != 1 {
-		t.Fatalf("attention capability rows = %#v, want one canonical unavailable row", matches)
-	}
-	if got, want := matches[0], (struct {
-		Available    bool           `json:"available"`
-		CapabilityID string         `json:"capability_id"`
-		Limits       map[string]any `json:"limits"`
-		SchemaMax    int            `json:"schema_max"`
-		SchemaMin    int            `json:"schema_min"`
-		TrustSource  string         `json:"trust_source"`
-	}{
-		Available:    false,
-		CapabilityID: "attention.v1",
-		Limits:       map[string]any{"state": false},
-		SchemaMax:    1,
-		SchemaMin:    1,
-		TrustSource:  "phase-22-unavailable",
-	}); !reflect.DeepEqual(got, want) {
-		t.Fatalf("attention capability row = %#v, want %#v", got, want)
+		t.Fatalf("attention capability rows = %#v, want one canonical row", matches)
 	}
 
 	journalPath := mustJournalPath(t, workspace)
 	journalBefore := mustReadCommandFile(t, journalPath)
 	projectionBefore := commandProjectionTableCounts(t, workspace)
 	probe := executeCommandForTest(workspace, "--json", "attention", "list")
-	if probe.err == nil || probe.stdout != "" || !strings.Contains(probe.err.Error(), `unknown command "attention"`) {
-		t.Fatalf("fid --json attention list = %#v, want unavailable no-leaf rejection", probe)
+	if probe.err != nil || probe.stderr != "" || !strings.Contains(probe.stdout, `"operation":"attention.list"`) {
+		t.Fatalf("fid --json attention list = %#v, want read-only list success", probe)
 	}
 	if journalAfter := mustReadCommandFile(t, journalPath); !bytes.Equal(journalAfter, journalBefore) {
 		t.Fatal("fid --json attention list changed journal bytes")
@@ -91,21 +74,21 @@ func TestPhase21AttentionBoundary(t *testing.T) {
 		t.Fatalf("fid --json attention list changed projection counts: got %#v, want %#v", projectionAfter, projectionBefore)
 	}
 
-	if got, want := phase21AttentionProductionMatches(t), []string{
-		"internal/workflow/capabilities.go:{\"attention.v1\", false, `{\"state\":false}`, \"phase-22-unavailable\"},",
+	if got, want := phase21AttentionUnavailableSurfaceMatches(t), []string{
+		"cmd/fid/attention.go", "cmd/fid/gate.go", "cmd/fid/live_output.go", "cmd/fid/resume_human.go", "cmd/fid/root.go", "cmd/fid/run.go", "cmd/fid/stop.go", "cmd/fid/stop_human.go",
+		"internal/workflow/activation.go", "internal/workflow/activation_recovery.go", "internal/workflow/budget.go", "internal/workflow/capabilities.go", "internal/workflow/resume.go", "internal/workflow/run_budget.go", "internal/workflow/stop.go", "internal/workflow/stop_errors.go", "internal/workflow/stop_read.go",
 	}; !reflect.DeepEqual(got, want) {
-		t.Fatalf("production Attention matches = %v, want exactly %v", got, want)
+		t.Fatalf("production Attention paths = %v, want exactly %v", got, want)
 	}
 }
 
-func phase21AttentionProductionMatches(t *testing.T) []string {
+func phase21AttentionUnavailableSurfaceMatches(t *testing.T) []string {
 	t.Helper()
 	repoRoot := commandTestRepositoryRoot(t)
-	var matches []string
+	paths := make(map[string]bool)
 	for _, root := range []string{
 		filepath.Join(repoRoot, "cmd", "fid"),
-		filepath.Join(repoRoot, "internal"),
-		filepath.Join(repoRoot, "migrations"),
+		filepath.Join(repoRoot, "internal", "workflow"),
 	} {
 		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 			if err != nil {
@@ -125,7 +108,7 @@ func phase21AttentionProductionMatches(t *testing.T) []string {
 			for _, line := range strings.Split(string(content), "\n") {
 				lower := strings.ToLower(line)
 				if strings.Contains(lower, "attention") || strings.Contains(lower, "attention_items") {
-					matches = append(matches, filepath.ToSlash(relative)+":"+strings.TrimSpace(line))
+					paths[filepath.ToSlash(relative)] = true
 				}
 			}
 			return nil
@@ -133,6 +116,10 @@ func phase21AttentionProductionMatches(t *testing.T) []string {
 		if err != nil {
 			t.Fatalf("inventory %q: %v", root, err)
 		}
+	}
+	matches := make([]string, 0, len(paths))
+	for path := range paths {
+		matches = append(matches, path)
 	}
 	sort.Strings(matches)
 	return matches
@@ -147,6 +134,9 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"activation commit",
 		"activation abort",
 		"activation finalize",
+		"activation resource",
+		"activation recover",
+		"activation recover-complete",
 		"activation status",
 		"artifact verify",
 		"gate register",
@@ -160,16 +150,29 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"evidence get",
 		"evidence evaluate",
 		"export create",
+		"export import",
 		"export validate",
 		"claim acquire",
+		"claim expire",
 		"claim renew",
 		"claim release",
 		"claim list",
 		"run start",
-		"run finish",
+		"run close",
+		"run abandon",
+		"run observe",
+		"run observe-budget",
+		"run checkpoint",
+		"run inspect",
+		"run recover",
 		"run get",
 		"run list",
 		"run",
+		"stop raise",
+		"stop resolve",
+		"stop list",
+		"attention resolve",
+		"attention list",
 		"receipt get",
 		"receipt list",
 		"init",
@@ -207,10 +210,11 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	}
 	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 63 || len(legacy) != 2 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 63 and 2", len(retained), len(legacy))
+	if len(retained) != 79 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 79 and 2", len(retained), len(legacy))
 	}
-	want := append(append(append([]string{}, retained...), "export"), legacy...)
+	want := append(append([]string{}, retained...), "export")
+	want = append(want, legacy...)
 	sort.Strings(want)
 	got := liveExecutableLeafCommands(newRootCommandAt(t.TempDir()))
 	if !reflect.DeepEqual(got, want) {
@@ -225,6 +229,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		wantCapabilities[command] = rootFlagCapability{Project: true, JSON: true}
 	}
 	wantCapabilities["export"] = rootFlagCapability{Project: true, JSON: true}
+	wantCapabilities["export import"] = rootFlagCapability{JSON: true}
 	if !reflect.DeepEqual(rootFlagCapabilities, wantCapabilities) {
 		t.Fatalf("root flag capabilities = %#v, want exact retained inventory %#v", rootFlagCapabilities, wantCapabilities)
 	}

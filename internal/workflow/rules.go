@@ -13,7 +13,7 @@ const (
 	// RuleHasCompletion is reserved for structured completion requirements.
 	// It has no evaluator in this phase.
 	RuleHasCompletion = "has_completion"
-	// RuleLinkedToDecision is reserved for escalation resolution in v0.2d.
+	// RuleLinkedToDecision remains reserved for project Decision scope (Phase 23).
 	// It has no evaluator in this phase.
 	RuleLinkedToDecision = "linked_to_decision"
 )

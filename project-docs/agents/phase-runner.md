@@ -9,7 +9,7 @@ claude:
 codex:
   name: phase_runner
   description: Mechanical orchestrator for one phase. Spawns qa_lead, developer, qa_reviewer, and tl_lite as needed; stops on hard blockers.
-  model: gpt-5.4-mini
+  model: gpt-5.6-luna
   model_reasoning_effort: xhigh
 ---
 <!-- body: shared -->

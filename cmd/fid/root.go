@@ -78,6 +78,7 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.SetOut(os.Stdout)
 	cmd.SetErr(os.Stderr)
 	cmd.AddCommand(newActivityCommand())
+	cmd.AddCommand(newAttentionCommand())
 	cmd.AddCommand(newCapabilitiesCommand())
 	cmd.AddCommand(newActivationCommand())
 	cmd.AddCommand(newArtifactCommand())
@@ -101,6 +102,7 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.AddCommand(newRunCommand())
 	cmd.AddCommand(newSQLCommand())
 	cmd.AddCommand(newStatsCommand())
+	cmd.AddCommand(newStopCommand())
 	cmd.AddCommand(newWorkflowCommand())
 
 	return cmd

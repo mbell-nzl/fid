@@ -203,13 +203,18 @@ func parseRequiredInt(values map[string]string, key string, minimum, maximum int
 }
 
 func validateProjectConfig(project ProjectConfig, fidRoot string) error {
+	if err := ValidatePortableProjectConfig(project); err != nil {
+		return err
+	}
+	return validateArtifactRoot(project.ArtifactRoot, fidRoot)
+}
+
+// ValidatePortableProjectConfig checks values without consulting a filesystem.
+func ValidatePortableProjectConfig(project ProjectConfig) error {
 	if !isOpaqueProjectID(project.ProjectID) {
 		return fmt.Errorf("project.id must be non-empty ASCII and at most 128 bytes")
 	}
 	if err := ValidateIssuePrefix(project.IssuePrefix); err != nil {
-		return err
-	}
-	if err := validateArtifactRoot(project.ArtifactRoot, fidRoot); err != nil {
 		return err
 	}
 	if project.MaxOutputBytes < 1 || project.MaxExcerptBytes < 1 || project.MaxExcerptBytes > project.MaxOutputBytes {

@@ -13,6 +13,7 @@ func init() {
 	rootFlagCapabilities["export"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["export create"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["export validate"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["export import"] = rootFlagCapability{JSON: true}
 }
 
 func newExportCommand() *cobra.Command {
@@ -22,7 +23,33 @@ func newExportCommand() *cobra.Command {
 		}
 		return fmt.Errorf("unknown command %q for %q", args[0], "fid export")
 	}}
-	cmd.AddCommand(newExportCreateCommand(), newExportValidateCommand())
+	cmd.AddCommand(newExportCreateCommand(), newExportValidateCommand(), newExportImportCommand())
+	return cmd
+}
+
+func newExportImportCommand() *cobra.Command {
+	var repository, key string
+	cmd := &cobra.Command{Use: "import <archive-path>", Short: "Import a portable recovery archive.", Args: canonicalExactArgs("export.import", 1), RunE: func(cmd *cobra.Command, args []string) error {
+		for _, flag := range []string{"repository", "idempotency-key"} {
+			if err := requireCanonicalFlag(cmd, "export.import", flag); err != nil {
+				return err
+			}
+		}
+		result, err := export.Import(export.ImportOptions{ArchivePath: args[0], RepositoryRoot: repository, MigrationsDir: issueMigrationsDir(), IdempotencyKey: key})
+		if err != nil {
+			return renderExportError(cmd, "export.import", args[0], err)
+		}
+		if jsonMode, err := readJSONMode(cmd); err != nil {
+			return err
+		} else if jsonMode {
+			return cli.WriteSuccess(cmd.OutOrStdout(), "export.import", map[string]any{"import": result}, nil)
+		}
+		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", result.TargetRoot, result.ProjectID)
+		return err
+	}}
+	cmd.Flags().StringVar(&repository, "repository", "", "Existing empty target repository directory")
+	cmd.Flags().StringVar(&key, "idempotency-key", "", "Import idempotency key")
+	cmd.SetFlagErrorFunc(canonicalFlagError("export.import"))
 	return cmd
 }
 
@@ -53,7 +80,7 @@ func newExportCreateCommand() *cobra.Command {
 
 func newExportValidateCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "validate <archive-path>", Short: "Validate an export archive without mutation.", Args: canonicalExactArgs("export.validate", 1), RunE: func(cmd *cobra.Command, args []string) error {
-		result, err := export.Validate(args[0])
+		result, err := export.Validate(export.ValidateOptions{ArchivePath: args[0], MigrationsDir: issueMigrationsDir()})
 		if err != nil {
 			return renderExportError(cmd, "export.validate", args[0], err)
 		}
@@ -78,7 +105,11 @@ func renderExportError(cmd *cobra.Command, operation, archivePath string, cause 
 	if errors.As(cause, &invalid) {
 		checks := make([]map[string]any, 0, len(invalid.Checks))
 		for _, item := range invalid.Checks {
-			checks = append(checks, map[string]any{"code": item.Code, "entry": item.Entry, "detail": item.Detail})
+			var entry any
+			if item.Entry != nil {
+				entry = *item.Entry
+			}
+			checks = append(checks, map[string]any{"code": item.Code, "entry": entry, "detail": item.Detail})
 		}
 		failure, err := cli.NewFailure(cli.CodeArchiveInvalid, "export archive is invalid", &cli.Subject{Type: cli.SubjectExport, ID: archivePath}, map[string]any{"archive_path": archivePath, "checks": checks})
 		if err != nil {
@@ -88,6 +119,20 @@ func renderExportError(cmd *cobra.Command, operation, archivePath string, cause 
 			return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 		}
 		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "error: export archive is invalid"); err != nil {
+			return err
+		}
+		return cli.NewFailureError(failure, cause)
+	}
+	var targetConflict *export.ImportTargetConflictError
+	if errors.As(cause, &targetConflict) {
+		failure, err := cli.NewFailure(cli.CodeImportTargetConflict, "import target conflicts with portable recovery archive", &cli.Subject{Type: cli.SubjectExport, ID: archivePath}, map[string]any{"target_root": targetConflict.TargetRoot, "reason": targetConflict.Reason})
+		if err != nil {
+			return err
+		}
+		if jsonMode {
+			return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
+		}
+		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "error: import target conflicts with portable recovery archive"); err != nil {
 			return err
 		}
 		return cli.NewFailureError(failure, cause)

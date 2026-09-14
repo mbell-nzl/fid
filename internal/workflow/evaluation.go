@@ -33,6 +33,71 @@ type ExecutionTransitionEvaluation struct {
 	Reasons    []EvaluationReason
 }
 
+// StopBlockedError reports an unresolved Stop that applies to a guarded
+// operation. It carries the immutable facts so command adapters do not infer
+// scope from an error string.
+type StopBlockedError struct {
+	Action string
+	Stops  []Stop
+}
+
+func (err *StopBlockedError) Error() string { return "guarded action is blocked by unresolved Stop" }
+
+// ApplicableStops returns unresolved Stops whose exact subject and declared
+// action match this mutation. Callers use the same predicate before any
+// durable effect is prepared.
+func ApplicableStops(conn *sql.DB, action string, subjects ...Subject) ([]Stop, error) {
+	if conn == nil || !blockedActionSet[action] {
+		return nil, fmt.Errorf("Stop predicate input is invalid")
+	}
+	items := []Stop{}
+	for _, subject := range subjects {
+		if !validSubject(subject) {
+			return nil, fmt.Errorf("Stop predicate subject is invalid")
+		}
+		rows, err := conn.Query(`
+			SELECT s.id
+			FROM stops s
+			LEFT JOIN stop_resolutions r ON r.stop_id = s.id
+			WHERE s.subject_type = ? AND s.subject_id = ? AND r.stop_id IS NULL
+			  AND EXISTS (SELECT 1 FROM json_each(s.blocked_actions_json) WHERE value = ?)
+			ORDER BY s.raised_at, s.id
+		`, subject.Type, subject.ID, action)
+		if err != nil {
+			return nil, fmt.Errorf("evaluate Stops: %w", err)
+		}
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				_ = rows.Close()
+				return nil, err
+			}
+			stop, err := loadStop(conn, id)
+			if err != nil {
+				_ = rows.Close()
+				return nil, err
+			}
+			items = append(items, stop)
+		}
+		if err := rows.Close(); err != nil {
+			return nil, err
+		}
+	}
+	return items, nil
+}
+
+func stopEvaluationReasons(conn *sql.DB, action string, subjects ...Subject) ([]EvaluationReason, error) {
+	stops, err := ApplicableStops(conn, action, subjects...)
+	if err != nil {
+		return nil, err
+	}
+	reasons := make([]EvaluationReason, 0, len(stops))
+	for _, stop := range stops {
+		reasons = append(reasons, evaluationReason(stop.Code, action, stop.ID, "stop"))
+	}
+	return reasons, nil
+}
+
 // ObligationEvaluationInput carries durable Evidence presence into the shared
 // action-independent Obligation evaluator.
 type ObligationEvaluationInput struct {
@@ -154,7 +219,16 @@ func evaluateExecutionTransition(conn *sql.DB, workspaceRoot, migrationsDir stri
 		reasons = append(reasons, evaluationReason("workflow-transition-invalid", "workflow edge", request.IssueID, "issue"))
 	}
 	if request.TerminalSuccess {
-		obligationReasons, err := evaluateObligations(conn, envelope.Obligations, envelope.RepositoryScope)
+		repository, err := resumeObservedRepository(workspaceRoot, workspaceRoot)
+		if err != nil {
+			return ExecutionTransitionEvaluation{}, fmt.Errorf("observe terminal transition repository: %w", err)
+		}
+		stopReasons, err := stopEvaluationReasons(conn, "issue.transition-terminal-success", Subject{Type: "envelope", ID: envelope.ID})
+		if err != nil {
+			return ExecutionTransitionEvaluation{}, err
+		}
+		reasons = append(reasons, stopReasons...)
+		obligationReasons, err := evaluateObligations(conn, envelope.Obligations, repository)
 		if err != nil {
 			return ExecutionTransitionEvaluation{}, err
 		}
@@ -205,7 +279,13 @@ func executionRunActive(conn *sql.DB, claim executionClaim, usableClaim bool, en
 		return false
 	}
 	var repository Repository
-	return json.Unmarshal([]byte(repositoryJSON), &repository) == nil && sameRepository(repository, envelope.RepositoryScope)
+	// A recovered Run has a newly observed repository target but remains bound
+	// to the Envelope's approved project and worktree. Comparing its full target
+	// to the original Envelope snapshot would reject the very reconciliation
+	// that admitted the successor Run; content may change, identity may not.
+	return json.Unmarshal([]byte(repositoryJSON), &repository) == nil &&
+		repository.ProjectID == envelope.RepositoryScope.ProjectID &&
+		repository.WorktreeID == envelope.RepositoryScope.WorktreeID
 }
 
 func evaluateObligations(conn *sql.DB, obligations []Obligation, current Repository) ([]EvaluationReason, error) {
@@ -302,6 +382,8 @@ func sortEvaluationReasons(reasons []EvaluationReason) []EvaluationReason {
 		"run-inactive": 5, "issue-revision-conflict": 6, "workflow-transition-invalid": 7,
 		"obligation-evidence-absent": 8, "receipt-unsuccessful": 9, "evidence-invalid": 10,
 		"evidence-stale": 11, "artifact-unavailable": 12, "issue-not-terminal-success": 13,
+		"executor-liveness-unknown": 8, "recovery-state-conflict": 8, "budget-exhausted": 8,
+		"budget-data-unavailable": 8, "activation-incomplete": 8, "capability-unavailable": 8, "operator-stop": 8,
 	}
 	sort.Slice(ordered, func(left, right int) bool {
 		leftRank, rightRank := precedence[ordered[left].Code], precedence[ordered[right].Code]

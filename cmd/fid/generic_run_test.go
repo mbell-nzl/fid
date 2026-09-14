@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets(t *testing.T) {
@@ -13,10 +16,7 @@ func TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets(t *testing.T)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-start-claim")
 	repository := runRepositoryForTest(t, workspace)
 	path := filepath.Join(workspace, "run-start.json")
-	writeActivationInput(t, path, map[string]any{
-		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"claim_id": claim["id"], "claim_version": 1, "repository": repository,
-	})
+	writeActivationInput(t, path, runStartInput(issueID, envelopeID, claim["id"], repository))
 
 	result := executeCommandForTest(workspace,
 		"--project", workspace, "--json", "run", "start", "--actor", "actor-builder",
@@ -29,17 +29,21 @@ func TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets(t *testing.T)
 	for field, want := range map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": "1", "claim_id": claim["id"],
 		"claim_version": "1", "actor_id": "actor-builder", "status": "active", "terminal_repository": nil, "ended_at": nil,
+		"version": "1", "obligation_id": nil,
 	} {
 		if got := stringifyClaimValue(run[field]); got != want {
 			t.Fatalf("run.%s = %#v, want %#v", field, got, want)
 		}
 	}
+	if executor, ok := run["executor"].(map[string]any); !ok || executor["id"] != "executor-builder" || executor["source"] != "activated-harness" {
+		t.Fatalf("run.executor = %#v, want bound activated-harness identity", run["executor"])
+	}
 	if got := run["start_repository"].(map[string]any); got["worktree_id"] != repository["worktree_id"] || got["tree_oid"] != repository["tree_oid"] {
 		t.Fatalf("start_repository = %#v, want exact input repository %#v", got, repository)
 	}
 	budgets := run["budgets"].([]any)
-	if len(budgets) != 1 || budgets[0].(map[string]any)["consumed"] != nil || budgets[0].(map[string]any)["remaining"] != nil {
-		t.Fatalf("run budgets = %#v, want one immutable null-counter budget", budgets)
+	if len(budgets) != 1 || stringifyClaimValue(budgets[0].(map[string]any)["consumed"]) != "0" || stringifyClaimValue(budgets[0].(map[string]any)["remaining"]) != "3" {
+		t.Fatalf("run budgets = %#v, want one derived attempts budget with zero consumption and three remaining", budgets)
 	}
 	got := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "get", run["id"].(string))
 	if got.err != nil || runFromResponse(t, got.stdout)["id"] != run["id"] {
@@ -149,43 +153,123 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 	}
 }
 
-func TestRunFinishIsOneWayAndRecoveryRespawnAreAbsent(t *testing.T) {
+func TestRunObserveRequiresTrustedBoundHarnessAndCurrentVersion(t *testing.T) {
+	workspace, issueID, envelopeID := runEnvelopeForTest(t)
+	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-observe-claim")
+	startPath := filepath.Join(workspace, "run-observe-start.json")
+	writeActivationInput(t, startPath, runStartInput(issueID, envelopeID, claim["id"], runRepositoryForTest(t, workspace)))
+	started := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", startPath, "--idempotency-key", "run-observe-start")
+	if started.err != nil {
+		t.Fatalf("start Run: %v; stderr=%q", started.err, started.stderr)
+	}
+	run := runFromResponse(t, started.stdout)
+	observePath := filepath.Join(workspace, "run-observe.json")
+	request := map[string]any{"run_id": run["id"], "expected_version": 1, "liveness": map[string]any{"executor_id": "executor-builder", "state": "terminated", "source_ref": "harness://worker/1", "observed_at": time.Now().UTC().Format(time.RFC3339Nano)}}
+	writeActivationInput(t, observePath, request)
+
+	before := snapshotWorkspacePersistence(t, workspace)
+	builder := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "observe", "--actor", "actor-builder", "--input", observePath, "--idempotency-key", "run-observe-builder")
+	if builder.err == nil || !strings.Contains(builder.stderr, `"code":"authority-denied"`) {
+		t.Fatalf("Builder observation = %#v, want typed authority rejection", builder)
+	}
+	assertRunStateUnchanged(t, workspace, before)
+
+	harness := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "observe", "--actor", "actor-harness", "--input", observePath, "--idempotency-key", "run-observe-harness")
+	if harness.err != nil || harness.stderr != "" {
+		t.Fatalf("harness observation = %#v, want stdout-only success", harness)
+	}
+	payload := decodeCommandJSONStructure(t, harness.stdout).(map[string]any)
+	result := payload["result"].(map[string]any)
+	if result["run"].(map[string]any)["version"] != json.Number("2") || result["observation"].(map[string]any)["liveness"].(map[string]any)["state"] != "terminated" {
+		t.Fatalf("observation result = %#v, want terminated observation and Run version 2", result)
+	}
+
+	request["expected_version"] = 1
+	beforeStale := snapshotWorkspacePersistence(t, workspace)
+	stale := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "observe", "--actor", "actor-harness", "--input", observePath, "--idempotency-key", "run-observe-stale")
+	if stale.err == nil || !strings.Contains(stale.stderr, `"code":"run-version-conflict"`) {
+		t.Fatalf("stale observation = %#v, want typed version conflict", stale)
+	}
+	assertRunStateUnchanged(t, workspace, beforeStale)
+
+	request["expected_version"] = 2
+	request["liveness"].(map[string]any)["executor_id"] = "executor-forged"
+	writeActivationInput(t, observePath, request)
+	beforeForged := snapshotWorkspacePersistence(t, workspace)
+	forged := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "observe", "--actor", "actor-harness", "--input", observePath, "--idempotency-key", "run-observe-forged")
+	if forged.err == nil || !strings.Contains(forged.stderr, `"code":"invalid-argument"`) {
+		t.Fatalf("forged observation = %#v, want typed binding rejection", forged)
+	}
+	assertRunStateUnchanged(t, workspace, beforeForged)
+}
+
+func TestRunStartBindsOptionalObligationAndRejectsReusedExecutor(t *testing.T) {
+	workspace, issueID, envelopeID := observedEvidenceEnvelopeForTest(t, nil)
+	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-executor-claim-1")
+	repository := runRepositoryForTest(t, workspace)
+	firstInput := runStartInput(issueID, envelopeID, claim["id"], repository)
+	firstInput["obligation_id"] = testEvidenceObligationID
+	firstPath := filepath.Join(workspace, "run-executor-first.json")
+	writeActivationInput(t, firstPath, firstInput)
+	started := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", firstPath, "--idempotency-key", "run-executor-first")
+	if started.err != nil {
+		t.Fatalf("start bound Run: %v; stderr=%q", started.err, started.stderr)
+	}
+	first := runFromResponse(t, started.stdout)
+	if first["obligation_id"] != testEvidenceObligationID {
+		t.Fatalf("Run obligation = %#v, want exact bound obligation", first["obligation_id"])
+	}
+
+	closeRunForTest(t, workspace, first["id"].(string), repository, "run-executor-close")
+	releasePath := filepath.Join(workspace, "run-executor-release.json")
+	writeActivationInput(t, releasePath, map[string]any{"claim_id": claim["id"], "expected_version": 1, "reason": "failed"})
+	if released := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "run-executor-release"); released.err != nil {
+		t.Fatalf("release first Claim: %#v", released)
+	}
+	second, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-executor-claim-2")
+	secondInput := runStartInput(issueID, envelopeID, second["id"], repository)
+	secondPath := filepath.Join(workspace, "run-executor-second.json")
+	writeActivationInput(t, secondPath, secondInput)
+
+	before := snapshotWorkspacePersistence(t, workspace)
+	duplicate := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", secondPath, "--idempotency-key", "run-executor-duplicate")
+	if duplicate.err == nil || !strings.Contains(duplicate.stderr, `"code":"duplicate-entity"`) || !strings.Contains(duplicate.stderr, `"subject":{"id":null,"type":"run"}`) || !strings.Contains(duplicate.stderr, `"values":["executor-builder"]`) {
+		t.Fatalf("reused executor = %#v, want exact duplicate-entity Run envelope", duplicate)
+	}
+	assertRunStateUnchanged(t, workspace, before)
+
+	secondInput["executor"] = map[string]any{"id": "executor-second", "source": "activated-harness"}
+	secondInput["obligation_id"] = "OBL-missing"
+	writeActivationInput(t, secondPath, secondInput)
+	beforeWrongObligation := snapshotWorkspacePersistence(t, workspace)
+	wrongObligation := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", secondPath, "--idempotency-key", "run-obligation-missing")
+	if wrongObligation.err == nil || !strings.Contains(wrongObligation.stderr, `"code":"invalid-argument"`) {
+		t.Fatalf("wrong obligation = %#v, want typed binding rejection", wrongObligation)
+	}
+	assertRunStateUnchanged(t, workspace, beforeWrongObligation)
+}
+
+func TestRetiredRunLeafAndUnsupportedRespawnLeavesAreAbsent(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-finish-claim")
 	repository := runRepositoryForTest(t, workspace)
 	startPath := filepath.Join(workspace, "run-finish-start.json")
-	writeActivationInput(t, startPath, map[string]any{
-		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"claim_id": claim["id"], "claim_version": 1, "repository": repository,
-	})
+	writeActivationInput(t, startPath, runStartInput(issueID, envelopeID, claim["id"], repository))
 	started := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", startPath, "--idempotency-key", "run-finish-start")
 	if started.err != nil {
 		t.Fatalf("start run: %v; stderr=%q", started.err, started.stderr)
 	}
-	run := runFromResponse(t, started.stdout)
-
-	finishPath := filepath.Join(workspace, "run-finish.json")
-	writeActivationInput(t, finishPath, map[string]any{"run_id": run["id"], "expected_status": "active", "outcome": "succeeded", "repository": repository})
-	finished := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "finish", "--actor", "actor-builder", "--input", finishPath, "--idempotency-key", "run-finish-1")
-	if finished.err != nil || finished.stderr != "" {
-		t.Fatalf("finish run = %#v, want stdout-only success", finished)
-	}
-	finishedRun := runFromResponse(t, finished.stdout)
-	if finishedRun["status"] != "succeeded" || finishedRun["ended_at"] == nil || finishedRun["terminal_repository"] == nil {
-		t.Fatalf("finished run = %#v, want one terminal succeeded Run", finishedRun)
-	}
-
 	before := journalEventCount(t, workspace)
-	repeated := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "finish", "--actor", "actor-builder", "--input", finishPath, "--idempotency-key", "run-finish-repeat")
-	if repeated.err == nil || repeated.stdout != "" {
-		t.Fatalf("repeat finish = %#v, want closed failure", repeated)
+	retired := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "finish")
+	if retired.err == nil || retired.stdout != "" || !strings.Contains(retired.err.Error(), `unknown command "finish"`) {
+		t.Fatalf("retired finish = %#v, want absent-leaf rejection", retired)
 	}
 	if after := journalEventCount(t, workspace); after != before {
-		t.Fatalf("repeat finish changed Event count to %d, want %d", after, before)
+		t.Fatalf("retired finish changed Event count to %d, want %d", after, before)
 	}
 
-	for _, absent := range []string{"run recover", "run predecessor", "run continuation", "run respawn"} {
+	for _, absent := range []string{"run predecessor", "run continuation", "run respawn"} {
 		for _, leaf := range liveExecutableLeafCommands(newRootCommandAt(workspace)) {
 			if leaf == absent {
 				t.Fatalf("unavailable Run leaf %q remains registered", absent)
@@ -222,11 +306,15 @@ func buildRunEnvelopeForTest(t *testing.T, definitions []any) (string, string, s
 	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinitions(t, definitions)
 	input := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := input["authority_grants"].([]any)[0].(map[string]any)
-	grant["actions"] = []string{"claim.acquire", "claim.release", "envelope.activate", "gate.run", "run.finish", "run.start"}
+	grant["actions"] = []string{"claim.acquire", "claim.expire", "claim.release", "envelope.activate", "gate.run", "run.close", "run.observe", "run.start"}
 	grant["actor_selector"] = map[string]any{
 		"actor_id":              "actor-builder",
-		"required_capabilities": []string{"claim.acquire", "claim.release", "envelope.activate", "gate.run", "run.finish", "run.start"},
+		"required_capabilities": []string{"claim.acquire", "claim.expire", "claim.release", "envelope.activate", "gate.run", "run.close", "run.observe", "run.start"},
 	}
+	input["authority_grants"] = append(input["authority_grants"].([]any), map[string]any{
+		"actor_selector": map[string]any{"actor_id": "actor-harness", "required_capabilities": []string{"run.observe"}},
+		"actions":        []string{"run.observe"}, "scope": map[string]any{"issue_id": issueID},
+	})
 	path := filepath.Join(workspace, "run-envelope.json")
 	writeActivationInput(t, path, input)
 	created := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", path, "--idempotency-key", "run-envelope-create")
@@ -256,7 +344,37 @@ func runFromResponse(t *testing.T, output string) map[string]any {
 func runStartInput(issueID, envelopeID, claimID any, repository map[string]any) map[string]any {
 	return map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"claim_id": claimID, "claim_version": 1, "repository": repository,
+		"claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-builder", "source": "activated-harness"}, "obligation_id": nil, "repository": repository,
+	}
+}
+
+func closeRunForTest(t *testing.T, workspace, runID string, repository map[string]any, key string) {
+	t.Helper()
+	current := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "get", runID)
+	if current.err != nil {
+		t.Fatalf("get Run before close: %#v", current)
+	}
+	currentRun := runFromResponse(t, current.stdout)
+	var err error
+	version, err := strconv.Atoi(fmt.Sprint(currentRun["version"]))
+	if err != nil {
+		t.Fatalf("decode Run version: %v", err)
+	}
+	executorID := currentRun["executor"].(map[string]any)["id"]
+	observePath := filepath.Join(workspace, key+"-observe.json")
+	writeActivationInput(t, observePath, map[string]any{"run_id": runID, "expected_version": version, "liveness": map[string]any{"executor_id": executorID, "state": "terminated", "source_ref": "process:test", "observed_at": time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)}})
+	observed := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "observe", "--actor", "actor-harness", "--input", observePath, "--idempotency-key", key+"-observe")
+	if observed.err != nil {
+		t.Fatalf("observe terminated Run: %#v", observed)
+	}
+	response := decodeCommandJSONStructure(t, observed.stdout).(map[string]any)["result"].(map[string]any)
+	observation := response["observation"].(map[string]any)
+	run := response["run"].(map[string]any)
+	closePath := filepath.Join(workspace, key+"-close.json")
+	writeActivationInput(t, closePath, map[string]any{"run_id": runID, "expected_version": run["version"], "observation_id": observation["id"], "repository": repository})
+	closed := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "close", "--actor", "actor-builder", "--input", closePath, "--idempotency-key", key+"-close")
+	if closed.err != nil {
+		t.Fatalf("close Run: %#v", closed)
 	}
 }
 
@@ -296,7 +414,7 @@ func TestGenericRunUsesNoHistoricalAgentRunsTable(t *testing.T) {
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-table-claim")
 	repository := runRepositoryForTest(t, workspace)
 	path := filepath.Join(workspace, "run-table-start.json")
-	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claim["id"], "claim_version": 1, "repository": repository})
+	writeActivationInput(t, path, runStartInput(issueID, envelopeID, claim["id"], repository))
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", path, "--idempotency-key", "run-table-start")
 	if result.err != nil {
 		t.Fatalf("start Run: %v; stderr=%q", result.err, result.stderr)

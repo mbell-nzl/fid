@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -114,9 +115,11 @@ func RunLive(ctx context.Context, workspaceRoot string, definition GateDefinitio
 		}
 	}
 	if err := command.Wait(); err != nil {
-		if processContext.Err() != nil {
+		if errors.Is(processContext.Err(), context.DeadlineExceeded) {
 			result.Outcome = "timed-out"
 			result.TimedOut = true
+		} else if errors.Is(processContext.Err(), context.Canceled) {
+			result.Outcome = "cancelled"
 		} else {
 			result.Outcome = "failed"
 		}
@@ -130,7 +133,7 @@ func RunLive(ctx context.Context, workspaceRoot string, definition GateDefinitio
 			signal := status.Signal().String()
 			result.Signal = &signal
 			result.ExitCode = nil
-			if !result.TimedOut {
+			if !result.TimedOut && result.Outcome != "cancelled" {
 				result.Outcome = "signaled"
 			}
 		}
@@ -253,14 +256,35 @@ func (result *LiveResult) AppendTerminal(terminal LiveTerminal) error {
 // persistence path. It intentionally creates neither a Receipt nor an
 // idempotency result.
 func (result *LiveResult) AppendFidError(attemptID string, response map[string]any) error {
-	if result.terminalFrameEmitted || len(result.Frames) == 0 || strings.TrimSpace(attemptID) == "" || response == nil {
-		return fmt.Errorf("append live fid error: started frames, attempt ID, and response are required")
+	return result.appendFidError(attemptID, "", response, false)
+}
+
+// AppendCommittedFidError emits the sole terminal frame for a pre-spawn
+// durable denial, retaining its run identity and idempotent replay state.
+func (result *LiveResult) AppendCommittedFidError(runID string, response map[string]any, replayed bool) error {
+	return result.appendFidError("", runID, response, replayed)
+}
+
+func (result *LiveResult) appendFidError(attemptID, runID string, response map[string]any, replayed bool) error {
+	if result.terminalFrameEmitted || response == nil || (len(result.Frames) != 0 && strings.TrimSpace(attemptID) == "") {
+		return fmt.Errorf("append live fid error: one response is required")
+	}
+	if len(result.Frames) == 0 && strings.TrimSpace(runID) != "" {
+		result.executionID = runID
+	}
+	var attempt any
+	if strings.TrimSpace(attemptID) != "" {
+		attempt = attemptID
+	}
+	rejected := result.RejectedArtifacts
+	if rejected == nil {
+		rejected = []ArtifactRejection{}
 	}
 	result.appendFrame("terminal", map[string]any{
-		"attempt_id": attemptID, "receipt_id": nil, "outcome": "fid-error", "exit_code": nil, "signal": nil,
+		"attempt_id": attempt, "receipt_id": nil, "outcome": "fid-error", "exit_code": nil, "signal": nil,
 		"timed_out": false, "output_bytes": result.OutputBytes, "output_truncated": result.OutputTruncated,
-		"redaction_applied": result.RedactionApplied, "artifact_ids": []string{}, "rejected_artifacts": result.RejectedArtifacts,
-		"response": response, "replayed": false,
+		"redaction_applied": result.RedactionApplied, "artifact_ids": []string{}, "rejected_artifacts": rejected,
+		"response": response, "replayed": replayed,
 	})
 	result.terminalFrameEmitted = true
 	return nil

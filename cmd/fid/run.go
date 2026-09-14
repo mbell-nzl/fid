@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	for _, operation := range []string{"run start", "run finish", "run get", "run list"} {
+	for _, operation := range []string{"run start", "run close", "run abandon", "run observe", "run observe-budget", "run checkpoint", "run recover", "run inspect", "run get", "run list"} {
 		rootFlagCapabilities[operation] = rootFlagCapability{Project: true, JSON: true}
 	}
 }
@@ -34,7 +34,55 @@ func newRunCommand() *cobra.Command {
 			return cmd.Help()
 		},
 	}
-	cmd.AddCommand(newRunStartCommand(), newRunFinishCommand(), newRunGetCommand(), newRunListCommand())
+	cmd.AddCommand(newRunStartCommand(), newRunCloseCommand(), newRunAbandonCommand(), newRunObserveCommand(), newRunObserveBudgetCommand(), newRunCheckpointCommand(), newRunInspectCommand(), newRunRecoverCommand(), newRunGetCommand(), newRunListCommand())
+	return cmd
+}
+
+func newRunObserveCommand() *cobra.Command {
+	var inputPath, actor, key string
+	cmd := &cobra.Command{Use: "observe", Short: "Record a trusted Run liveness observation.", Args: canonicalNoArgs("run.observe"), RunE: func(cmd *cobra.Command, _ []string) error {
+		var request workflow.RunObserveRequest
+		if err := runRequest(cmd, "run.observe", inputPath, actor, key, &request); err != nil {
+			return err
+		}
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderRunError(cmd, "run.observe", err)
+		}
+		result, err := workflow.ObserveRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		if err != nil {
+			return renderRunError(cmd, "run.observe", err)
+		}
+		return writeRunObservationSuccess(cmd, result)
+	}}
+	runMutationFlags(cmd, &inputPath, &actor, &key)
+	return cmd
+}
+
+func newRunObserveBudgetCommand() *cobra.Command {
+	var inputPath, actor, key string
+	cmd := &cobra.Command{Use: "observe-budget", Short: "Record a trusted external budget observation.", Args: canonicalNoArgs("run.observe-budget"), RunE: func(cmd *cobra.Command, _ []string) error {
+		var request workflow.RunBudgetObserveRequest
+		if err := runRequest(cmd, "run.observe-budget", inputPath, actor, key, &request); err != nil {
+			return err
+		}
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderRunError(cmd, "run.observe-budget", err)
+		}
+		result, err := workflow.ObserveRunBudget(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		if err != nil {
+			return renderBudgetSampleError(cmd, err, request.RunID)
+		}
+		if jsonMode, err := readJSONMode(cmd); err != nil {
+			return err
+		} else if jsonMode {
+			return cli.WriteSuccess(cmd.OutOrStdout(), "run.observe-budget", map[string]any{"sample": result.Sample, "budget": result.Budget, "stops": result.Stops, "attention": result.Attention, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.Sample.ObservedAt})
+		}
+		_, err = fmt.Fprintf(cmd.OutOrStdout(), "observed budget %s\n", result.Budget.Name)
+		return err
+	}}
+	runMutationFlags(cmd, &inputPath, &actor, &key)
 	return cmd
 }
 
@@ -59,22 +107,43 @@ func newRunStartCommand() *cobra.Command {
 	return cmd
 }
 
-func newRunFinishCommand() *cobra.Command {
+func newRunCloseCommand() *cobra.Command {
 	var inputPath, actor, key string
-	cmd := &cobra.Command{Use: "finish", Short: "Terminalize one active Run.", Args: canonicalNoArgs("run.finish"), RunE: func(cmd *cobra.Command, _ []string) error {
-		var request workflow.RunFinishRequest
-		if err := runRequest(cmd, "run.finish", inputPath, actor, key, &request); err != nil {
+	cmd := &cobra.Command{Use: "close", Short: "Close one Run from trusted observations and Evidence.", Args: canonicalNoArgs("run.close"), RunE: func(cmd *cobra.Command, _ []string) error {
+		var request workflow.RunCloseRequest
+		if err := runRequest(cmd, "run.close", inputPath, actor, key, &request); err != nil {
 			return err
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
-			return renderRunError(cmd, "run.finish", err)
+			return renderRunError(cmd, "run.close", err)
 		}
-		result, err := workflow.FinishRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		result, err := workflow.CloseRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
 		if err != nil {
-			return renderRunError(cmd, "run.finish", err)
+			return renderRunRecoveryError(cmd, "run.close", err, request.RunID, "")
 		}
-		return writeRunSuccess(cmd, "run.finish", result)
+		return writeRunSuccess(cmd, "run.close", result)
+	}}
+	runMutationFlags(cmd, &inputPath, &actor, &key)
+	return cmd
+}
+
+func newRunAbandonCommand() *cobra.Command {
+	var inputPath, actor, key string
+	cmd := &cobra.Command{Use: "abandon", Short: "Abandon one Run with recovery authority.", Args: canonicalNoArgs("run.abandon"), RunE: func(cmd *cobra.Command, _ []string) error {
+		var request workflow.RunAbandonRequest
+		if err := runRequest(cmd, "run.abandon", inputPath, actor, key, &request); err != nil {
+			return err
+		}
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderRunError(cmd, "run.abandon", err)
+		}
+		result, err := workflow.AbandonRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		if err != nil {
+			return renderRunRecoveryError(cmd, "run.abandon", err, request.RunID, "")
+		}
+		return writeRunAbandonSuccess(cmd, result)
 	}}
 	runMutationFlags(cmd, &inputPath, &actor, &key)
 	return cmd
@@ -189,6 +258,26 @@ func writeRunSuccess(cmd *cobra.Command, operation string, result workflow.RunMu
 	return err
 }
 
+func writeRunObservationSuccess(cmd *cobra.Command, result workflow.RunObservationResult) error {
+	if jsonMode, err := readJSONMode(cmd); err != nil {
+		return err
+	} else if jsonMode {
+		return cli.WriteSuccess(cmd.OutOrStdout(), "run.observe", map[string]any{"observation": result.Observation, "run": result.Run, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.Observation.ObservedAt})
+	}
+	_, err := fmt.Fprintf(cmd.OutOrStdout(), "observed Run %s\n", result.Run.ID)
+	return err
+}
+
+func writeRunAbandonSuccess(cmd *cobra.Command, result workflow.RunAbandonResult) error {
+	if jsonMode, err := readJSONMode(cmd); err != nil {
+		return err
+	} else if jsonMode {
+		return cli.WriteSuccess(cmd.OutOrStdout(), "run.abandon", map[string]any{"run": result.Run, "claim": result.Claim, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: runEventTime(result.Run)})
+	}
+	_, err := fmt.Fprintf(cmd.OutOrStdout(), "abandoned Run %s\n", result.Run.ID)
+	return err
+}
+
 func runEventTime(run workflow.Run) string {
 	if run.EndedAt != nil {
 		return *run.EndedAt
@@ -197,6 +286,10 @@ func runEventTime(run workflow.Run) string {
 }
 
 func renderRunError(cmd *cobra.Command, operation string, cause error) error {
+	var stopped *workflow.StopBlockedError
+	if errors.As(cause, &stopped) {
+		return renderStopError(cmd, operation, cause)
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
@@ -208,6 +301,14 @@ func renderRunError(cmd *cobra.Command, operation string, cause error) error {
 	var inactive *workflow.RunInactiveError
 	if errors.As(cause, &inactive) {
 		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRunInactive, "run is not active", &cli.Subject{Type: cli.SubjectRun, ID: inactive.RunID}, map[string]any{"run_id": inactive.RunID, "status": inactive.Status})
+	}
+	var versionConflict *workflow.RunVersionConflictError
+	if errors.As(cause, &versionConflict) {
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRunVersionConflict, "run version conflict", &cli.Subject{Type: cli.SubjectRun, ID: versionConflict.RunID}, map[string]any{"run_id": versionConflict.RunID, "expected_version": versionConflict.ExpectedVersion, "actual_version": versionConflict.ActualVersion})
+	}
+	var duplicateExecutor *workflow.DuplicateRunExecutorError
+	if errors.As(cause, &duplicateExecutor) {
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeDuplicateEntity, "executor identity already exists", &cli.Subject{Type: cli.SubjectRun, ID: nil}, map[string]any{"entity_type": "run", "identity": map[string]any{"fields": []string{"executor_id"}, "values": []string{duplicateExecutor.ExecutorID}}})
 	}
 	var denied *policy.EnvelopeAuthorityDeniedError
 	if errors.As(cause, &denied) {
@@ -226,4 +327,16 @@ func writeRunFailure(cmd *cobra.Command, jsonMode bool, operation string, cause 
 		return cli.NewFailureError(failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
+}
+
+func renderBudgetSampleError(cmd *cobra.Command, cause error, runID string) error {
+	var conflict *workflow.BudgetSampleConflictError
+	if !errors.As(cause, &conflict) {
+		return renderRunError(cmd, "run.observe-budget", cause)
+	}
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	return writeRunFailure(cmd, jsonMode, "run.observe-budget", cause, cli.CodeBudgetSampleConflict, "budget sample conflict", &cli.Subject{Type: cli.SubjectRun, ID: runID}, map[string]any{"budget_name": conflict.BudgetName, "source_sample_id": conflict.SourceSampleID, "expected_previous_sample_id": optionalString(conflict.ExpectedPreviousSampleID), "actual_previous_sample_id": optionalString(conflict.ActualPreviousSampleID)})
 }

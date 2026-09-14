@@ -698,4 +698,28 @@ Migration `0014` does not drop `task_completions`, `agent_runs`,
 `ac_verifications`, or `concerns`; the convergence inventory freezes them
 without writers or protected-semantic readers and names Phase 23/25 ownership.
 
-*Last updated: 2026-09-03 (Phase 21 final-review reconciliation; DEC-178)*
+### 8.3 Phase 22 - accepted failure-and-recovery amendment
+
+Status: delivered and accepted under DEC-188/220. The exact SQL and closed
+Event fixture contract are incorporated here from
+`../docs/phases/phase-22/schema.md`. Its sections 1-3 define the precise 0013
+development-baseline replacements and 0015 up/down SQL; section 4 defines
+replacement-bound 0016 escalation removal/reset; sections 5-6 define Event
+Effects, references, rejection, and live/rebuild/import proof obligations.
+
+The associated JSON values and mutation semantics are
+`../docs/phases/phase-22/public-interface.md` and `contracts.md`. Their explicit
+replacements are the delivered Phase 22 baseline, and shipped SQL must match
+this incorporated source. Section 8.2 retains historical Phase 21 SQL; these
+pre-adoption replacements do not authorize an old-data migration. DEC-195
+adds the accepted cancelled Receipt member and composite CHECK clause to 0013;
+DEC-216 specifies complete typed current-family idempotency snapshots, including
+pending Attempts, terminal Receipts and committed denials.
+
+DEC-184's QA refinement makes run_recoveries.observation_id non-null and gives
+attention_items.code the same seven-code CHECK as stops.code. Disposition Event
+references are distinct from their underlying qualifying fact references.
+DEC-187 keeps recovery-export binding in the kit coordinator's activation
+record; no such column is implied in fid activation_recoveries.
+
+*Last updated: 2026-09-13 (Phase 22 delivered baseline; DEC-220)*

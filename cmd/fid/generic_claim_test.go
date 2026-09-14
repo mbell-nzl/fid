@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -226,6 +227,158 @@ func TestClaimConflictsExpiryAndWrongHolderFailWithoutMutation(t *testing.T) {
 	}
 }
 
+func TestExpiredClaimWithUnresolvedExecutorCannotBeReacquired(t *testing.T) {
+	workspace, issueID, envelopeID := runEnvelopeForTest(t)
+	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "expired-unresolved-claim")
+	repository := runRepositoryForTest(t, workspace)
+	startPath := filepath.Join(workspace, "expired-unresolved-run.json")
+	writeActivationInput(t, startPath, runStartInput(issueID, envelopeID, claim["id"], repository))
+	started := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "run", "start", "--actor", "actor-builder",
+		"--input", startPath, "--idempotency-key", "expired-unresolved-run",
+	)
+	if started.err != nil || started.stderr != "" {
+		t.Fatalf("start unresolved Run = %#v, want stdout-only success", started)
+	}
+
+	expirePath := filepath.Join(workspace, "expired-unresolved-expire.json")
+	writeActivationInput(t, expirePath, map[string]any{"claim_id": claim["id"], "expected_version": 1})
+	expired := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "claim", "expire", "--actor", "actor-builder",
+		"--input", expirePath, "--idempotency-key", "expired-unresolved-expire",
+	)
+	if expired.err != nil || expired.stderr != "" {
+		t.Fatalf("expire Claim = %#v, want explicit expiry success", expired)
+	}
+
+	before := snapshotWorkspacePersistence(t, workspace)
+	reacquirePath := filepath.Join(workspace, "expired-unresolved-reacquire.json")
+	writeActivationInput(t, reacquirePath, map[string]any{
+		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
+		"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+	})
+	reacquired := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder",
+		"--input", reacquirePath, "--idempotency-key", "expired-unresolved-reacquire",
+	)
+	if reacquired.err == nil || !strings.Contains(reacquired.stderr, `"code":"claim-conflict"`) {
+		t.Fatalf("reacquire with unresolved executor = %#v, want typed claim conflict", reacquired)
+	}
+	assertClaimStateUnchanged(t, workspace, before)
+}
+
+func TestClaimRenewalAfterRunPreservesLineageAndFencesClaimVersions(t *testing.T) {
+	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+	envelopeInput := envelopeCreateInput(t, workspace, issueID, registration)
+	grant := envelopeInput["authority_grants"].([]any)[0].(map[string]any)
+	grant["actions"] = []string{"claim.acquire", "claim.release", "claim.renew", "envelope.activate", "run.start"}
+	grant["actor_selector"] = map[string]any{
+		"actor_id": "actor-builder",
+		"required_capabilities": []string{
+			"claim.acquire", "claim.release", "claim.renew", "envelope.activate", "run.start",
+		},
+	}
+	envelopePath := filepath.Join(workspace, "claim-renewal-run-envelope.json")
+	writeActivationInput(t, envelopePath, envelopeInput)
+	created := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder",
+		"--input", envelopePath, "--idempotency-key", "claim-renewal-run-envelope-create",
+	)
+	if created.err != nil || created.stderr != "" {
+		t.Fatalf("create envelope = %#v, want stdout-only success", created)
+	}
+	envelopeID := assertEnvelopeShape(t, created.stdout, "draft")
+	activatePath := filepath.Join(workspace, "claim-renewal-run-envelope-activate.json")
+	writeActivationInput(t, activatePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
+	activated := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "envelope", "activate", "--actor", "actor-builder",
+		"--input", activatePath, "--idempotency-key", "claim-renewal-run-envelope-activate",
+	)
+	if activated.err != nil || activated.stderr != "" {
+		t.Fatalf("activate envelope = %#v, want stdout-only success", activated)
+	}
+
+	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "claim-renewal-run-acquire")
+	startPath := filepath.Join(workspace, "claim-renewal-run-start.json")
+	repository := runRepositoryForTest(t, workspace)
+	writeActivationInput(t, startPath, runStartInput(issueID, envelopeID, claim["id"], repository))
+	started := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "run", "start", "--actor", "actor-builder",
+		"--input", startPath, "--idempotency-key", "claim-renewal-run-start",
+	)
+	if started.err != nil || started.stderr != "" {
+		t.Fatalf("start Run = %#v, want stdout-only success", started)
+	}
+	run := runFromResponse(t, started.stdout)
+	if run["id"] == "" || run["issue_id"] != issueID || run["envelope_id"] != envelopeID ||
+		stringifyClaimValue(run["envelope_revision"]) != "1" || run["claim_id"] != claim["id"] ||
+		stringifyClaimValue(run["claim_version"]) != "1" || run["actor_id"] != "actor-builder" ||
+		!reflect.DeepEqual(run["executor"], map[string]any{"id": "executor-builder", "source": "activated-harness"}) ||
+		!reflect.DeepEqual(run["start_repository"], repository) {
+		t.Fatalf("started Run = %#v, want accepted Claim binding and immutable lineage", run)
+	}
+	lineage := map[string]any{}
+	for _, field := range []string{
+		"id", "issue_id", "envelope_id", "envelope_revision", "claim_id", "claim_version",
+		"actor_id", "executor", "obligation_id", "start_repository", "predecessor_run_id", "successor_run_id",
+	} {
+		lineage[field] = run[field]
+	}
+
+	renewPath := filepath.Join(workspace, "claim-renewal-run-renew.json")
+	writeActivationInput(t, renewPath, map[string]any{"claim_id": claim["id"], "expected_version": 1, "ttl_seconds": 120})
+	renewed := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "claim", "renew", "--actor", "actor-builder",
+		"--input", renewPath, "--idempotency-key", "claim-renewal-run-renew",
+	)
+	if renewed.err != nil || renewed.stderr != "" || stringifyClaimValue(claimFromResponse(t, renewed.stdout)["version"]) != "2" {
+		t.Fatalf("renew Claim = %#v, want accepted version 2", renewed)
+	}
+
+	assertRenewedClaimRunLineage(t, workspace, run["id"].(string), lineage)
+	staleReleasePath := filepath.Join(workspace, "claim-renewal-run-release-stale.json")
+	writeActivationInput(t, staleReleasePath, map[string]any{"claim_id": claim["id"], "expected_version": 1, "reason": "completed"})
+	beforeStale := snapshotWorkspacePersistence(t, workspace)
+	stale := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "claim", "release", "--actor", "actor-builder",
+		"--input", staleReleasePath, "--idempotency-key", "claim-renewal-run-release-stale",
+	)
+	if stale.err == nil || stale.stdout != "" || !strings.Contains(stale.stderr, `"code":"claim-stale"`) {
+		t.Fatalf("stale Claim release = %#v, want typed claim-stale rejection", stale)
+	}
+	assertClaimStateUnchanged(t, workspace, beforeStale)
+	assertRenewedClaimRunLineage(t, workspace, run["id"].(string), lineage)
+
+	currentReleasePath := filepath.Join(workspace, "claim-renewal-run-release-current.json")
+	writeActivationInput(t, currentReleasePath, map[string]any{"claim_id": claim["id"], "expected_version": 2, "reason": "completed"})
+	current := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "claim", "release", "--actor", "actor-builder",
+		"--input", currentReleasePath, "--idempotency-key", "claim-renewal-run-release-current",
+	)
+	if current.err != nil || current.stderr != "" {
+		t.Fatalf("current Claim release = %#v, want stdout-only success", current)
+	}
+	currentClaim := claimFromResponse(t, current.stdout)
+	if stringifyClaimValue(currentClaim["version"]) != "3" || currentClaim["status"] != "released" || currentClaim["release_reason"] != "completed" {
+		t.Fatalf("current Claim release = %#v, want released Claim version 3", currentClaim)
+	}
+	assertRenewedClaimRunLineage(t, workspace, run["id"].(string), lineage)
+}
+
+func assertRenewedClaimRunLineage(t *testing.T, workspace, runID string, want map[string]any) {
+	t.Helper()
+	got := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "get", runID)
+	if got.err != nil || got.stderr != "" {
+		t.Fatalf("get renewed-Claim Run = %#v, want stdout-only success", got)
+	}
+	run := runFromResponse(t, got.stdout)
+	for field, wantValue := range want {
+		if !reflect.DeepEqual(run[field], wantValue) {
+			t.Fatalf("Run.%s after Claim renewal = %#v, want immutable %#v", field, run[field], wantValue)
+		}
+	}
+}
+
 func TestClaimRenewReleaseVersionAndReplayAreExact(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
@@ -320,7 +473,8 @@ func acquireGenericClaimForTest(t *testing.T, workspace, issueID, envelopeID, ke
 func acquireGenericClaimForTestWithTTL(t *testing.T, workspace, issueID, envelopeID, key string, ttlSeconds int) (map[string]any, string) {
 	t.Helper()
 	path := filepath.Join(workspace, key+".json")
-	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": ttlSeconds})
+	worktreeID := testEnvelopeRepository(t, workspace)["worktree_id"]
+	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": worktreeID, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": ttlSeconds})
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", path, "--idempotency-key", key)
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("acquire = %#v, want stdout-only success", result)

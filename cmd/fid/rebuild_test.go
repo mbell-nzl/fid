@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -407,6 +408,9 @@ func TestRebuildCommandReplaysJournalAndReportsCounts(t *testing.T) {
 	}
 	if got := stdout.String(); !strings.Contains(got, "replayed 2 events from 1 journal files") {
 		t.Fatalf("stdout = %q, want replay count line", got)
+	}
+	if got := stdout.String(); !strings.Contains(got, "schema version: "+fmt.Sprint(fiddb.ActiveMigrationVersion)) {
+		t.Fatalf("stdout = %q, want active schema version %d", got, fiddb.ActiveMigrationVersion)
 	}
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))

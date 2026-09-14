@@ -1,0 +1,9 @@
+{
+  "name": "run-close-unknown",
+  "operation": "run.close",
+  "kind": "unknown-field",
+  "result_fields": [],
+  "event": false,
+  "exit_code": 2,
+  "failure_code": "invalid-argument"
+}

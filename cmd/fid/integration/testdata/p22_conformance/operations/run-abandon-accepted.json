@@ -1,0 +1,17 @@
+{
+  "name": "run-abandon-accepted",
+  "operation": "run.abandon",
+  "kind": "accepted",
+  "result_fields": [
+    "run",
+    "claim",
+    "replayed"
+  ],
+  "event": true,
+  "exit_code": 0,
+  "expected": {
+    "run.status": "abandoned",
+    "run.version": 5,
+    "claim.status": "released"
+  }
+}

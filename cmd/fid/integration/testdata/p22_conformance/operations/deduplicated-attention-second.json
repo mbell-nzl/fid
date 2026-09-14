@@ -1,0 +1,9 @@
+{
+  "name": "deduplicated-attention-second",
+  "operation": "stop.raise",
+  "kind": "accepted",
+  "result_fields": ["stop", "attention", "replayed"],
+  "event": true,
+  "exit_code": 0,
+  "expected": {"attention.status": "open", "attention.stop_ids.#": 2}
+}

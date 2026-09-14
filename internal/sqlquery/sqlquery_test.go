@@ -92,7 +92,7 @@ func TestRunReturnsStructuredRows(t *testing.T) {
 
 	wantRows := []Row{
 		{"id": "epic-default", "active": int64(1), "applies_to": "epic"},
-		{"id": "escalation-default", "active": int64(1), "applies_to": "escalation"},
+		{"id": "subtask-default", "active": int64(1), "applies_to": "subtask"},
 	}
 	if !reflect.DeepEqual(result.Rows, wantRows) {
 		t.Fatalf("Run().Rows = %#v, want %#v", result.Rows, wantRows)

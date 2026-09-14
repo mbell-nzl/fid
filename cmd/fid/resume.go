@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
@@ -19,7 +17,13 @@ func newResumeCommand() *cobra.Command {
 		if err != nil {
 			return renderEnvelopeError(cmd, "projection.resume", err, "")
 		}
-		resume, err := workflow.ResumeIssueState(workspace, issueMigrationsDir(), args[0])
+		if repository == "" {
+			repository, err = commandWorkingDirectory(cmd)
+			if err != nil {
+				return renderEnvelopeError(cmd, "projection.resume", err, "")
+			}
+		}
+		resume, err := workflow.ResumeIssueState(workspace, issueMigrationsDir(), args[0], repository)
 		if err != nil {
 			return renderEnvelopeError(cmd, "projection.resume", err, "")
 		}
@@ -28,8 +32,15 @@ func newResumeCommand() *cobra.Command {
 		} else if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), "projection.resume", map[string]any{"resume": resume}, nil)
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", resume.Issue.ID, resume.Completion.Status)
-		return err
+		runID := ""
+		if resume.Run != nil {
+			runID = resume.Run.ID
+		}
+		context, err := workflow.ReadRecoveryContext(workspace, runID)
+		if err != nil {
+			return renderEnvelopeError(cmd, "projection.resume", err, "")
+		}
+		return writeResumeHuman(cmd, resume, context)
 	}}
 	cmd.Flags().StringVar(&repository, "repository", "", "Repository path for the durable observation")
 	cmd.SetFlagErrorFunc(canonicalFlagError("projection.resume"))

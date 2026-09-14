@@ -1,0 +1,13 @@
+{
+  "name": "stop-list-accepted",
+  "operation": "stop.list",
+  "kind": "accepted",
+  "result_fields": [
+    "items"
+  ],
+  "event": false,
+  "exit_code": 0,
+  "expected": {
+    "items.#": 1
+  }
+}

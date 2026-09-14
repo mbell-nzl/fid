@@ -12,6 +12,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/evidence"
+	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
@@ -47,6 +48,10 @@ func newGateRunCommand() *cobra.Command {
 		}
 		result, err := evidence.RunGate(context.Background(), evidence.GateRunOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key, Request: request})
 		if err != nil {
+			var denied *evidence.BudgetAdmissionDeniedError
+			if errors.As(err, &denied) {
+				return writeCommittedBudgetDenial(cmd, request.RunID, result, denied)
+			}
 			if len(result.Live.Frames) == 0 {
 				return renderGateError(cmd, "gate.run", err)
 			}
@@ -79,6 +84,51 @@ func newGateRunCommand() *cobra.Command {
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("gate.run"))
 	return cmd
+}
+
+func writeCommittedBudgetDenial(cmd *cobra.Command, runID string, result evidence.GateRunResult, denied *evidence.BudgetAdmissionDeniedError) error {
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	code := cli.CodeBudgetDataUnavailable
+	if denied.Code == "budget-exhausted" {
+		code = cli.CodeBudgetExhausted
+	}
+	denial := denied.Denial
+	budget := map[string]any{
+		"name": denial.Budget.Name, "scope": denial.Budget.Scope, "unit": denial.Budget.Unit,
+		"maximum": denial.Budget.Maximum, "exhaustion_action": denial.Budget.ExhaustionAction,
+	}
+	budget["warning_threshold"] = optionalBudgetValue(denial.Budget.WarningThreshold)
+	budget["consumed"] = optionalBudgetValue(denial.Budget.Consumed)
+	budget["remaining"] = optionalBudgetValue(denial.Budget.Remaining)
+	budget["state"] = denial.Budget.State
+	failure, err := cli.NewFailure(code, "gate execution admission was denied", &cli.Subject{Type: cli.SubjectRun, ID: runID}, map[string]any{
+		"budget": budget, "stop_ids": denial.StopIDs, "attention_ids": denial.AttentionIDs,
+		"event": map[string]any{"id": denial.EventID, "occurred_at": denial.EventOccurredAt}, "replayed": result.Replayed,
+	})
+	if err != nil {
+		return err
+	}
+	if !jsonMode {
+		return cli.NewFailureError(failure, fmt.Errorf("gate run admission denied"))
+	}
+	response := failureEnvelope("gate.run", failure)
+	if err := result.Live.AppendCommittedFidError(runID, response, result.Replayed); err != nil {
+		return err
+	}
+	if err := writeGateLiveResult(cmd, result.Live, "unsatisfied", false); err != nil {
+		return err
+	}
+	return cli.NewFailureError(failure, fmt.Errorf("gate run admission denied"))
+}
+
+func optionalBudgetValue(value *int64) any {
+	if value == nil {
+		return nil
+	}
+	return *value
 }
 
 func gateTerminalResponse(result evidence.GateRunResult) (map[string]any, *cli.Failure, error) {
@@ -247,6 +297,10 @@ func decodeClosedGateInput(stdin io.Reader, path string, target any) error {
 }
 
 func renderGateError(cmd *cobra.Command, operation string, cause error) error {
+	var stopped *workflow.StopBlockedError
+	if errors.As(cause, &stopped) {
+		return renderStopError(cmd, operation, cause)
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err

@@ -88,6 +88,14 @@ Rules:
 
 ## 3. Cross-Product Configuration
 
+Phase 22 adopts an explicit interpretation of the section 2
+rejection rule (CF-035, DEC-182): any operation that consumes project config
+validates the whole closed file before using a value or writing state.
+Config-independent help, archive validation, and diagnostics remain available.
+Human accepted this under DEC-188 with the Phase 22 pack; it does not authorize
+global validation middleware. Task 11 and VAL-047 prove both consuming and
+non-consuming behavior. No new config key is proposed.
+
 | Value | Owner and transport |
 |---|---|
 | Risk lanes, roles, routing, protected Decisions, Work Envelope policy | Project/kit configuration; compiled into approved Envelopes |
