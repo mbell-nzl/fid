@@ -1,23 +1,30 @@
 # Progress — Current
 
-Updated 2026-09-14. **Phase 22 closed; Phase 23 planned and awaiting approval.**
-Branch: `phase-22` (PR open, CI green); planning base for Phase 23 is
-`0195897a347dfe1872db0f7be3800c5c3ccdefcf` on `main`.
+Updated 2026-09-14. **Phase 22 closed; Phase 23 approved under DEC-222, not started.**
+Branch: `phase-23` at `0195897a347dfe1872db0f7be3800c5c3ccdefcf`; the `phase-22`
+PR remains open with green CI.
 
 ## Phase 23 planning — 2026-09-14
 
-Tech Lead drafted the full Heavy-mode plan for the roadmap's "Review and Human
-judgment" slice: slice contract, wire amendment, DDL and Event contract,
-execution scope, V1 convergence inventory, a clause-to-task coverage matrix, a
-73-assertion validation contract, and an ordered 18-task pack. Proposed DEC-222
-requests acceptance of that set as one unit. Nothing is approved; no product
-code, migration, or test for the slice may start yet. Two open questions go to
-the Human: adding `fid concern dispose` to the accepted CLI surface, and
-restricting `links` to Issue endpoints so requirement traceability has one
-authoritative model. New carry-forward CF-041 records that hosted CI does not
-run the tagged integration suite or the rebuild benchmark. See
-[phase brief](phase_brief.md) and
-[Phase 23 decisions](../phases/phase-23/decisions.md).
+Tech Lead planned the roadmap's "Review and Human judgment" slice in Heavy mode
+and the Human accepted it under DEC-222: slice contract, wire amendment, DDL and
+Event contract, execution scope, V1 convergence inventory, a clause-to-task
+coverage matrix, a 74-assertion validation contract, and an ordered 18-task pack,
+plus six canonical spec amendments applied by their owning tasks.
+
+Both open planning questions were resolved before acceptance. Concern
+dispositions are exactly `carried-forward`, `rejected`, and `superseded`, with
+self-disposal permitted and both Actors recorded; `links` is restricted to Issue
+endpoints so `requirement_issue_links` is the single traceability model, keeping
+the new `verifies` relation. Planning also found a third spec gap: the canonical
+Event family list had no `Concern disposed` family, added under the DEC-195 rule.
+
+Execution has not started and nothing is dispatched. The Heavy-mode QA plan and
+fresh command and feasibility validation are still required before task 1, and
+the Human is activating QA Lead directly rather than through a Tech Lead handoff.
+New carry-forward CF-041 records that hosted CI does not run the tagged
+integration suite or the rebuild benchmark. See [phase brief](phase_brief.md)
+and [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Completed
 
@@ -38,8 +45,8 @@ outcomes; [wrap audit](../phases/phase-22/wrap-up-audit.md) records dispositions
 [Phase progress](../phases/phase-22/progress.md) retains execution history and
 [decisions](../phases/phase-22/decisions.md) retain all authorities and workflow notes.
 Phase 22's original implementation and Human acceptance remain closed. The
-post-wrap PR CI follow-up is task 20 under DEC-221; the Phase 23 plan above is
-drafted but unapproved.
+post-wrap PR CI follow-up is task 20 under DEC-221; Phase 23 is approved above
+and awaiting its QA plan.
 Separate workflow retrospective remains CF-036/039. Claims and external adapter
 qualification remain in their approved Phase 24/25 owners.
 

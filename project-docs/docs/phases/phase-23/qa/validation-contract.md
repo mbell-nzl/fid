@@ -1,8 +1,10 @@
 # Phase 23 Validation Contract - Review And Human Judgment
 
 > Phase: 23 - Review and Human judgment
-> Author: Tech Lead (draft), 2026-09-14
-> Last refined: pending QA Lead proposals in the phase QA plan.
+> Author: Tech Lead, 2026-09-14. Assertions accepted under DEC-222.
+> Last refined: not yet. Rows stay `Draft` until QA Lead proposes evidence and
+> assertion refinements in the phase QA plan and the Tech Lead applies them;
+> that application is what moves rows to `Ready` before execution.
 >
 > Sources are `01_PRD.md`, `02_TRD.md`, `03_TRD_SCHEMA.md`,
 > `06_DESIGN_PLAN_CLI.md`, `07_DESIGN_PLAN_FLOWS.md`,
@@ -145,7 +147,7 @@ Final review records every `VAL-NNN` as `PASS`, `FAIL`, `BLOCKED`, or
 
 | Date | Assertion | Change | Reason | Decision reference |
 |---|---|---|---|---|
-| 2026-09-14 | VAL-001..073 | created | Phase 23 planning draft | pending DEC-222 |
-| 2026-09-14 | VAL-035 | refined | Concern dispositions narrowed to `carried-forward`, `rejected`, `superseded` per Human decision | pending DEC-222 |
-| 2026-09-14 | VAL-052 | refined | cover all three `requirement_issue_links` relations including the new `verifies` | pending DEC-222 |
-| 2026-09-14 | VAL-074 | created | record the accepted self-disposal rule and its Actor provenance | pending DEC-222 |
+| 2026-09-14 | VAL-001..073 | created | Phase 23 planning draft | DEC-222 |
+| 2026-09-14 | VAL-035 | refined | Concern dispositions narrowed to `carried-forward`, `rejected`, `superseded` per Human decision | DEC-222 |
+| 2026-09-14 | VAL-052 | refined | cover all three `requirement_issue_links` relations including the new `verifies` | DEC-222 |
+| 2026-09-14 | VAL-074 | created | record the accepted self-disposal rule and its Actor provenance | DEC-222 |

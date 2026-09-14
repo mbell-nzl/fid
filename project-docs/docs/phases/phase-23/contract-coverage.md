@@ -1,6 +1,6 @@
 # Phase 23 Contract Coverage Matrix
 
-> Tech Lead planning cross-check, 2026-09-14. DRAFT with the slice contract.
+> Tech Lead planning cross-check, 2026-09-14. ACCEPTED under DEC-222.
 >
 > **Why this file exists.** Phase 22 shipped a contract clause that had no
 > schema row (DEC-195) and an accepted allocation that was never delivered

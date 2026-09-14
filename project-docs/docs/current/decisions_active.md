@@ -88,16 +88,24 @@
 - Current V1 delivery scaffolding is binding engineering procedure, not forward
   fid product scope. No failed gate authorizes a protected definition change.
 
-## Proposed Next Phase
+## Current Phase
 
-- DEC-222 (PROPOSED, 2026-09-14): accept the Phase 23 "Review and Human
-  judgment" slice contract, wire amendment, DDL/Event contract, execution scope,
-  V1 convergence inventory, clause coverage matrix, 73-assertion validation
-  contract, and the ordered 18-task pack; declare the phase Heavy. Phase 23 is
-  **planned but not approved**; no product code, migration, or test for the
-  slice may start before acceptance. See
-  [Phase 23 decisions](../phases/phase-23/decisions.md) and
-  [phase brief](phase_brief.md).
+- DEC-222 (ACCEPTED by Human, 2026-09-14): Phase 23 "Review and Human judgment"
+  is approved and Heavy. The accepted authority is `contracts.md`,
+  `public-interface.md`, `schema.md`, `execution-scope.md`,
+  `v1-convergence-inventory.md`, `contract-coverage.md`, the 74-assertion
+  `qa/validation-contract.md`, and the ordered 18-task pack, all under
+  `../phases/phase-23/`. Six canonical spec amendments are accepted with it and
+  are applied by their owning implementation tasks, not in advance.
+- DEC-222 Human planning decisions: Concern dispositions are exactly
+  `carried-forward`, `rejected`, `superseded`, with self-disposal permitted and
+  both Actors recorded; `links` is restricted to Issue endpoints so
+  `requirement_issue_links` is the single traceability model, retaining the new
+  `verifies` relation.
+- Execution has not started. The QA plan and fresh Heavy-mode feasibility
+  validation are still required before task 1, and the Human is activating QA
+  Lead directly. See [phase brief](phase_brief.md) and
+  [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Latest Phase Closure
 
@@ -139,11 +147,10 @@ CF-024/034/035 closed with Phase 22 evidence; historical dispositions and closed
 IDs remain in the wrap audit and must not be reused. All triggers checked
 against the actual phase diff.
 
-Phase 23 planning proposes re-deferring CF-008/018/023/026a/026b/029/030/033/
-036/037/038/039 unchanged, partially scheduling CF-040, and registering CF-041.
-The full proposed disposition table is in
-[Phase 23 decisions](../phases/phase-23/decisions.md); it binds only on DEC-222
-acceptance.
+Under DEC-222, CF-008/018/023/026a/026b/029/030/033/036/037/038/039 are
+re-deferred unchanged, CF-040 is partially scheduled, and CF-041 is registered.
+The full disposition table is in
+[Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Environment
 

@@ -1,6 +1,6 @@
 # Phase 23 V1 Convergence Inventory
 
-> DRAFT, pending Human acceptance with the slice contract.
+> ACCEPTED under DEC-222 with the slice contract.
 > Inventory base `0195897a347dfe1872db0f7be3800c5c3ccdefcf`.
 > Git history is the archive; no legacy compatibility mode is promised.
 

@@ -1,6 +1,6 @@
 # Phase 23 Public Interface Amendment
 
-> DRAFT, pending Human acceptance with `contracts.md` and `schema.md`.
+> ACCEPTED under DEC-222 with `contracts.md` and `schema.md`.
 > Phase 21 and Phase 22 `public-interface.md` remain the baseline for every
 > leaf, value, code, and exit this document does not replace.
 

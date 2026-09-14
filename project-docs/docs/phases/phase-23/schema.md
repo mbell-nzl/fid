@@ -1,7 +1,7 @@
 # Phase 23 DDL And Event Contract
 
-> DRAFT, pending Human acceptance with `contracts.md` and `public-interface.md`.
-> On acceptance this document is incorporated by `03_TRD_SCHEMA.md` section 8.4.
+> ACCEPTED under DEC-222 with `contracts.md` and `public-interface.md`.
+> Task 1 incorporates it by `03_TRD_SCHEMA.md` section 8.4.
 > No implementation may infer additional tables, columns, indexes, triggers,
 > Event families, or effect rows beyond what is written here.
 

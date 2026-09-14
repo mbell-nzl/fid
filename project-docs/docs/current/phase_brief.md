@@ -1,4 +1,4 @@
-# Phase Brief - Phase 23 (Planning)
+# Phase Brief - Phase 23 (Approved)
 
 ## Phase Goal
 
@@ -14,10 +14,12 @@ merely addressed, what still blocks, and which judgment unblocked it.
 
 ## Status
 
-**Planning; awaiting Human approval.** No branch yet; planning base is
-`0195897a347dfe1872db0f7be3800c5c3ccdefcf` on `main`. Next action: Human accepts
-or amends proposed DEC-222 in `../phases/phase-23/decisions.md`. No product
-code, migration, or test for this slice may start before that acceptance.
+**Approved, not started.** Branch `phase-23` at planning base
+`0195897a347dfe1872db0f7be3800c5c3ccdefcf`. DEC-222 is accepted, so the contract
+set below is binding authority. Next action: the **Human** activates QA Lead to
+author the Heavy-mode QA plan and fresh command and feasibility validation; Tech
+Lead performed no handoff. No task may be dispatched until that QA plan exists
+and the Phase Runner's readiness check passes.
 
 ## Operating Mode
 
@@ -30,8 +32,8 @@ replacement-bound removal of fail-closed V1 behavior. Matrix:
 
 ## Accepted Contract Set
 
-Accepted together under proposed DEC-222 and the only authority for
-implementation, all under `../phases/phase-23/`: `contracts.md`,
+Accepted under DEC-222 and the only authority for implementation, all under
+`../phases/phase-23/`: `contracts.md`,
 `public-interface.md`, `schema.md`, `execution-scope.md`,
 `v1-convergence-inventory.md`, and `contract-coverage.md` (clause to schema row
 to task to assertion).
@@ -82,8 +84,8 @@ assertions, VAL-001 to VAL-074, all `Draft` until QA Lead refinement. Index only
 
 | Artifact | Path | Status |
 |---|---|---|
-| Validation contract | `../phases/phase-23/qa/validation-contract.md` | Draft |
-| QA plan | `../phases/phase-23/qa/qa-plan.md` | Missing; QA Lead authors before task 1 |
+| Validation contract | `../phases/phase-23/qa/validation-contract.md` | Accepted; rows `Draft` until QA Lead refinement |
+| QA plan | `../phases/phase-23/qa/qa-plan.md` | **Missing; blocks task 1.** Human activates QA Lead |
 | Mid-phase reviews | `../phases/phase-23/qa/review-M.md` | Windows 1-3, 4-6, 7-9, 10-12, 13-15, 16-18 |
 | Independent checkpoint | `../phases/phase-23/qa/checkpoint-after-task-11.md` | Must PASS before task 12 |
 | Human fixtures | `../phases/phase-23/qa/human-fixtures.md` | Authored by task 14 |
@@ -93,7 +95,7 @@ Heavy mode requires fresh command and feasibility validation.
 
 ## Active Constraints
 
-- Nothing in the slice starts before DEC-222 acceptance.
+- DEC-222 is accepted. Nothing dispatches before the QA plan and readiness check.
 - Every task runs the tagged integration gate from task 1. Hosted CI does not
   run it (CF-041), so a green PR is never phase-level evidence.
 - Removal is replacement-bound: task 15 removes nothing whose replacement is not

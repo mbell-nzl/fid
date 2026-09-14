@@ -3,39 +3,43 @@
 > Purpose: phase-local decision history, spec sync verdicts, workflow notes,
 > and wrap-up decisions. DEC numbering is global and never resets.
 >
-> Status: planning draft. Nothing below is accepted yet.
+> Status: accepted. Phase 23 is approved and not yet started.
 
-## Pending Acceptance
+## Decisions
 
-### DEC-222 (PROPOSED): Accept the Phase 23 slice contract and task pack
+### DEC-222: Accept the Phase 23 slice contract and task pack
 
-- **Date:** proposed 2026-09-14
+- **Status:** ACCEPTED by Human, 2026-09-14.
+- **Date:** proposed and accepted 2026-09-14
 - **Context:** The approved roadmap calls Phase 23 "Review and Human judgment".
   Its exact contracts and task pack were explicitly left to this planning step
   by the Phase 22 wrap. Roadmap section 5 requires the JSON, event, and schema
   contracts to be accepted before any product code in the slice changes.
-- **Decision requested:** Accept, together and as one unit,
+- **Decision:** Accepted, together and as one unit,
   `contracts.md`, `public-interface.md`, `schema.md`,
   `execution-scope.md`, `v1-convergence-inventory.md`, `contract-coverage.md`,
   `qa/validation-contract.md`, and the ordered 18-task pack; declare the phase
   Heavy; and accept the six canonical spec amendments listed in
   `contracts.md` section 15. The Human planning decisions below are already
   folded into those artifacts.
-- **Consequences if accepted:** Implementation may begin at task 1 after the
-  Runner's QA readiness check. `reviews.coverage.v1` and `human.outcomes.v1`
+- **Consequences:** Implementation may begin at task 1 after the QA plan and
+  the Runner's QA readiness check. `reviews.coverage.v1` and `human.outcomes.v1`
   become advertisable at task 17. The named V1 judgment surfaces are removed at
   task 15 under replacement-bound removal. `work.claims.v1` stays unavailable
   until Phase 24 and `telemetry.trajectory.v1` until Phase 25.
-- **Consequences if not accepted:** No Phase 23 product code, migration, or
-  test may start; the planning artifacts remain drafts.
+- **Preconditions still open:** the Heavy-mode QA plan and fresh command and
+  feasibility validation do not exist yet. The Human is activating QA Lead
+  directly; Tech Lead performed no handoff. No task may be dispatched until the
+  QA plan exists and the Phase Runner's readiness check passes.
 - **Refs:** `10_IMPLEMENTATION_ROADMAP.md` sections 4, 5, 5.1, 7; PRD sections
   7 and 8; TRD sections 4, 5.4, and `03_TRD_SCHEMA.md` sections 3.7 and 7;
   Phase 22 DEC-187 kit dispositions C-03, C-04, C-10; DEC-220.
 
-### Human planning decisions, 2026-09-14
+### DEC-222 Human planning decisions, 2026-09-14
 
-Both open planning questions are resolved. They amend the DEC-222 draft in
-place and are folded into the artifacts above; they are not separate DECs.
+Both open planning questions were resolved before acceptance. They amend
+DEC-222 in place and are folded into the accepted artifacts; they are not
+separate DECs.
 
 - **Concern lifecycle.** `fid concern dispose` is accepted as a new accepted CLI
   leaf with a matching `concern.disposed` Event family, closing the gap between
@@ -64,9 +68,9 @@ place and are folded into the artifacts above; they are not separate DECs.
   `verifies` relation is retained, and `03_TRD_SCHEMA.md` section 3.2 is added
   to the accepted spec-amendment list to record both changes.
 
-### Proposed carry-forward dispositions
+### Accepted carry-forward dispositions
 
-| ID | Proposed Phase 23 disposition |
+| ID | Phase 23 disposition |
 |---|---|
 | CF-008 | Re-defer to Phase 24 with the Envelope disposition work for removed unfinished Issues. |
 | CF-018 | Re-defer; no planned production edit to `internal/sqlquery/sqlquery.go` in this phase. |
@@ -82,10 +86,6 @@ place and are folded into the artifacts above; they are not separate DECs.
 | CF-039 | Re-defer the executable cross-check; Phase 23 adopts the manual mitigation in `contract-coverage.md` and records whether it worked in the wrap-up workflow notes. |
 | CF-040 | Partially scheduled: the guidance is applied to the Human views this phase introduces (task 14, VAL-073). The polish and verbosity review of pre-existing views stays with Phase 25. |
 | CF-041 | New: hosted CI runs only the ordinary suite. The tagged integration suite and the rebuild benchmark are local-only gates, so a green PR is not phase-level evidence. Owner: workflow and CI maintainer, in dedicated maintenance. |
-
-## Decisions
-
-None recorded yet.
 
 ## Spec Sync Verdict
 

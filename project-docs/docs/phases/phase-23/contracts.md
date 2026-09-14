@@ -1,6 +1,6 @@
 # Phase 23 Slice Contract - Review And Human Judgment
 
-> Status: DRAFT, pending Human acceptance (proposed DEC-222).
+> Status: ACCEPTED by Human under DEC-222, 2026-09-14.
 > Author: Tech Lead, 2026-09-14. Read with `public-interface.md` and `schema.md`.
 > Planning base: `0195897a347dfe1872db0f7be3800c5c3ccdefcf`.
 > Roadmap slice 23 of ADR-0012; Phase 21/22 contracts remain authoritative
