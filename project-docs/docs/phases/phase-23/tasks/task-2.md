@@ -8,13 +8,22 @@ Obligation evaluation return one independent result per Obligation.
 
 ## Validation Contract Coverage
 
-- VAL-006: Envelope accepts 1..16 Obligations and enforces each type's exact
-  field combination.
+- VAL-006: Envelope accepts 1..16 Obligations and 0..16 protected Decisions and
+  enforces each type's exact field combination and the protected-Decision
+  authoring rules (0, 16, and 17 entries; duplicate class; duplicate ordinal;
+  an affected action outside the guarded set).
 - VAL-007: Duplicate IDs, a second `gate-evidence` Obligation, duplicate
   `review_profile` or `outcome_class`, and a non-primary subject each reject.
 - VAL-008: Evaluation returns one result per Obligation in ID order with
-  independent dimensions and every unsatisfied reason.
+  independent dimensions and every unsatisfied reason. Evidence here is the
+  shared domain evaluator and `envelope.activate`'s `Evaluation[]`; the
+  `evidence.evaluate` leaf re-check belongs to task 6, which owns that leaf's
+  optional Obligation ID.
 - VAL-009: A guarded action requires every applicable Obligation to be satisfied.
+  This task owns the blocking half only - a satisfied `gate-evidence` Obligation
+  with an unsatisfied `review` Obligation - because review and Human Outcome
+  evidence cannot be linked before tasks 6 and 10. Task 10 completes the
+  all-satisfied half.
 - VAL-010: `artifact_availability:"not-applicable"` is returned exactly for
   `metadata-sufficient` Obligations.
 
@@ -110,11 +119,20 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
-go test -race -cover ./internal/workflow/
+go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
+go test -race -timeout 30m -cover ./internal/workflow/
 ```
+
+Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
+30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
+suite already approaches at 560 s. Record in the completion report the wall time
+`go test` reports for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow`,
+so a regression is attributed to the task that caused it. Budgets: tagged
+integration under 900 s and no ordinary package over 600 s (VAL-079). A breach is
+a bounded speed repair owned by this task when this task's own new journeys
+caused it; otherwise stop and escalate. Never record a timed-out gate as `PASS`.
 
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or
@@ -127,7 +145,7 @@ is a Runner control after the report commit, not a Developer gate.
 
 List any conditional command required by this task and why:
 
-- `go test -race -cover ./internal/workflow/` before and after the edits, because this task adds branch-heavy validation to an existing package.
+- `go test -race -timeout 30m -cover ./internal/workflow/` before and after the edits, because this task adds branch-heavy validation to an existing package.
 
 ## Notes For Developer
 

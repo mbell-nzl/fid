@@ -1,6 +1,11 @@
 # Phase 23 Contract Coverage Matrix
 
 > Tech Lead planning cross-check, 2026-09-14. ACCEPTED under DEC-222.
+> Amended 2026-09-15 for the QA Lead's independent re-derivation: every clause
+> the re-derivation found mapped-but-unasserted now names a row that evidences
+> it, and the duplicated `links` row was removed. The manual cross-check worked
+> as intended - it is what surfaced R-02 and R-12 before dispatch - and that
+> outcome is recorded for CF-039 at wrap-up.
 >
 > **Why this file exists.** Phase 22 shipped a contract clause that had no
 > schema row (DEC-195) and an accepted allocation that was never delivered
@@ -30,7 +35,8 @@
 | 3: one active Claim per Issue across modes | retained `claims_one_active_mutation` index | 3 | VAL-011 |
 | 3: review Claim cannot adopt dirty paths | domain-only plus `claim-mode-invalid` | 3 | VAL-012 |
 | 3: review Run lifecycle otherwise unchanged | domain-only | 3 | VAL-013 |
-| 3: independence computed from Claim and Run history | `review_records.independence` CHECK plus domain | 4 | VAL-015 |
+| 3: independence computed from Claim and Run history, mutating side only (DEC-225) | `review_records.independence` CHECK plus domain | 4 | VAL-015 |
+| 13: link-time independence re-evaluation | domain-only plus `review-not-independent` | 6 | VAL-077 |
 | 4: immutable Review binding | `review_records` columns and FKs | 4 | VAL-014 |
 | 4: repository re-observation at record time | domain-only plus `repository-mismatch` | 4 | VAL-016 |
 | 4: closed coverage structure | `review_records.coverage_json` plus domain | 4 | VAL-014 |
@@ -74,14 +80,15 @@
 | 10: satisfies only a matching class with `approved` | `evidence_records` discriminator CHECK plus domain | 10 | VAL-044 |
 | 10: never serialized as deterministic proof | `evidence_records` producer and trust-source CHECK | 10 | VAL-045 |
 | 10: `human-outcome-required` Stop conditions | `stops.code` CHECK plus domain | 1 defines code, 10 uses | VAL-046 |
+| 10: the four named raising Events for that Stop (DEC-224) | `envelope.activated`, `evidence.linked`, `review.recorded`, and `artifact.availability-observed` effect rules | 10 (task 9 already adds the activation rows) | VAL-046 |
+| 9: 0..16 protected Decisions, unique class and ordinal, affected-action subset | `envelope_protected_decisions` PK and UNIQUE plus domain authoring validation | 2 authors, 9 enforces | VAL-006 |
 | 11: `human_outcome_resolution:true` | `system_capabilities` materialization | 11 implements, 17 advertises | VAL-047 |
-| 11: four new Condition types with exclusive fields | `stops.resolution_condition_json` plus domain | 11 | VAL-048 |
+| 11: four new Condition types with exclusive fields | `stops.resolution_condition_json` plus domain | 11 | VAL-048, VAL-078 |
 | 11: `attention.resolve` input shape unchanged | domain-only | 11 | VAL-049 |
 | 11: only matching Stops resolve | domain-only | 11 | VAL-050 |
 | 12: `requirement_refs` with digest and supersession | `requirement_refs` CHECKs and `requirement_refs_one_active` | 12 | VAL-051 |
 | 12: `requirement_issue_links` traceability | `requirement_issue_links` plus its guard trigger | 12 | VAL-052 |
 | 12: V1 requirement authoring removed | `0018` DROP plus fence and Event removal | 12 | VAL-053 |
-| 12: `links` restricted to Issue endpoints | `0018` rebuilt link triggers plus registry | 12 | VAL-054 |
 | 13: three evidence types, one non-null subject each | `evidence_records` rebuild discriminator CHECK | 1 defines, 6 and 10 use | VAL-025 |
 | 13: one record per Obligation and subject, never overwritten | three partial unique indexes on `evidence_records` | 6 | VAL-024 |
 | 13: `evidence.evaluate` optional Obligation ID | domain-only | 6 defines, 13 exposes | VAL-008, VAL-055 |
@@ -94,11 +101,19 @@
 | 15: accepted spec amendments applied | canonical spec files | 1 (schema 8.4), 8 (schema 5 and 3.7, CLI 3), 12 (schema 3.2 and CLI 3), 9 and 13 (CLI 3 and 5), 17 (TRD 4) | wrap-up spec sync |
 | public-interface 4.1: thirty grant actions | `envelope_authority_grants` plus profile validation | each listed owner; 18 audits | VAL-067 |
 | public-interface 5: added failure codes | `internal/cli/codes.go` plus adapters | 13 | VAL-056 |
+| public-interface 5.1: named producers and denial precedence (DEC-226) | domain-only; one code per denied request | 13 audits; each producing task implements | VAL-039, VAL-056 |
+| public-interface 5: Phase 23 denials commit nothing (DEC-226) | no denial Event; no `idempotency_results` row | 13 | VAL-057 |
+| public-interface 5: added ReasonCodes | evaluation reason precedence in `internal/workflow/evaluation.go` | 6 adds the codes; 10 and 13 exercise them | VAL-008, VAL-026, VAL-033, VAL-046 |
+| public-interface 2: added ActivityEvent names | `internal/activity` plus the owning effect rules | 8 and 13 add; 15 removes the four V1 names | VAL-055, VAL-061 |
 | public-interface 6: manifest projection schema | `internal/export` plus manifest fixtures | 1, 15, 16 | VAL-064, VAL-065 |
 | schema 6.1: progressive Event fence | `internal/journal/project_effects.go` | 1 creates; 4, 5, 8, 9, 10, 12 remove keys | VAL-003 |
 | schema 6.2: effect families | `internal/journal/current_event_catalog.go` | each Event's owner; 15 renames the concern rows | VAL-003, VAL-055 |
 | schema 6.3: typed result snapshots | idempotency snapshot writers | 13 | VAL-057 |
 | schema 7: parity and corruption proof | fresh-workspace rebuild, pragma, and export probes | 1, 16 | VAL-004, VAL-005, VAL-064 |
+| schema 7: corrupted or unknown Phase 23 payload rejected, never partially applied | current-Event validator | 16 (all nine types; task 1 can only reach the fence) | VAL-076 |
+| schema 1: baseline hunks exactly the accepted seven | `0013` and `0015` file state | 1 | VAL-075 |
+| schema 2: link-preserving `evidence_records` rebuild (DEC-223) | `0017` staging of `evidence_artifact_links` | 1 | VAL-005 |
+| 8: Concern and Deviation subjects need not resolve (DEC-228) | `subject_type` CHECK only; no reference trigger | 8 | VAL-034 |
 
 ## Planning Checks Performed
 

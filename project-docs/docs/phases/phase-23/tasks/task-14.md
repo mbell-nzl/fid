@@ -16,6 +16,9 @@ and add the bounded judgment sections and per-Obligation evaluations.
   never reproduces project prose.
 - VAL-073: advanced here; the new Human views follow the accepted CF-040
   guidance. The assertion itself is Human-validated at phase end.
+- VAL-070, VAL-071, VAL-072: this task owns the runnable Human fixtures and
+  invocation instructions for all three phase-end Human rows (R-10). The
+  judgment stays with the Human; this task only makes it executable.
 
 ## Binding Constraints
 
@@ -50,7 +53,19 @@ and add the bounded judgment sections and per-Obligation evaluations.
 - `internal/workflow/resume.go`, `resume_actions.go`.
 - `cmd/fid/resume.go`, `resume_human.go`, `resume_human_guidance.go`.
 - Human renderers for each Phase 23 leaf under `cmd/fid/`.
-- `project-docs/docs/phases/phase-23/qa/human-fixtures.md` - new.
+- `project-docs/docs/phases/phase-23/qa/human-fixtures.md` - new; the verbatim
+  Human-text fixtures the window 13-15 review checks, plus the Human-run
+  checkpoints for VAL-070, VAL-071, and VAL-072 with absolute invocation
+  arguments.
+- `cmd/fid/integration/p23_human_fixtures_test.go` - new tagged generator,
+  following the `p22_human_fixtures_test.go` precedent: it builds the seeded
+  workspaces and emits a manifest with the binary digest, source commit, and the
+  exact `cwd` plus argument vectors the Human runs. It must seed (a) a
+  mixed-state Review with resolved, addressed, and still-blocking Findings
+  (VAL-070); (b) a protected Decision blocking a guarded action, with an
+  activated `human`-type Actor holding `human-outcome.record` so the Human can
+  run the blocked action, record the Outcome, and rerun (VAL-071); and (c) an
+  exhausted `review-cycles` budget with its Stop and Attention (VAL-072).
 - Matching in-package tests and `cmd/fid/integration/` fixtures.
 - `project-docs/docs/phases/phase-23/tasks/task-14-done.md`.
 
@@ -103,10 +118,19 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
+go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
 ```
+
+Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
+30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
+suite already approaches at 560 s. Record in the completion report the wall time
+`go test` reports for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow`,
+so a regression is attributed to the task that caused it. Budgets: tagged
+integration under 900 s and no ordinary package over 600 s (VAL-079). A breach is
+a bounded speed repair owned by this task when this task's own new journeys
+caused it; otherwise stop and escalate. Never record a timed-out gate as `PASS`.
 
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or

@@ -1,6 +1,7 @@
 # Progress — Current
 
-Updated 2026-09-14. **Phase 22 closed; Phase 23 approved under DEC-222, not started.**
+Updated 2026-09-15. **Phase 22 closed; Phase 23 approved, QA-planned, not
+started; five contract amendments await Human approval.**
 Branch: `phase-23` at `0195897a347dfe1872db0f7be3800c5c3ccdefcf`; the `phase-22`
 PR remains open with green CI.
 
@@ -9,7 +10,7 @@ PR remains open with green CI.
 Tech Lead planned the roadmap's "Review and Human judgment" slice in Heavy mode
 and the Human accepted it under DEC-222: slice contract, wire amendment, DDL and
 Event contract, execution scope, V1 convergence inventory, a clause-to-task
-coverage matrix, a 74-assertion validation contract, and an ordered 18-task pack,
+coverage matrix, a validation contract, and an ordered 18-task pack,
 plus six canonical spec amendments applied by their owning tasks.
 
 Both open planning questions were resolved before acceptance. Concern
@@ -19,12 +20,31 @@ endpoints so `requirement_issue_links` is the single traceability model, keeping
 the new `verifies` relation. Planning also found a third spec gap: the canonical
 Event family list had no `Concern disposed` family, added under the DEC-195 rule.
 
-Execution has not started and nothing is dispatched. The Heavy-mode QA plan and
-fresh command and feasibility validation are still required before task 1, and
-the Human is activating QA Lead directly rather than through a Tech Lead handoff.
 New carry-forward CF-041 records that hosted CI does not run the tagged
-integration suite or the rebuild benchmark. See [phase brief](phase_brief.md)
-and [Phase 23 decisions](../phases/phase-23/decisions.md).
+integration suite or the rebuild benchmark.
+
+## Phase 23 QA first pass — 2026-09-15
+
+QA Lead authored the Heavy-mode plan with fresh command and feasibility
+validation and returned it **NOT READY** with thirteen Must-fix revisions and
+sixteen improvements: a migration that fails wherever Evidence has Artifact
+links, a Stop no Event could raise, one input with two accepted codes, an
+ambiguous independence rule, unnamed code producers, a denial replay with no
+denial Event, four assertions whose owning task could not produce their
+evidence, two unexecutable file scopes, unowned Human fixtures, a bundled
+assertion, three unasserted clauses, and 560 s of test time against an implicit
+600 s limit.
+
+Tech Lead accepted all thirteen and applied them. DEC-223..227 amend accepted
+contracts and need Human approval before dispatch; DEC-228 carries the rest
+under planning authority. The validation contract grew from 74 to 79 assertions
+and every row is now `Ready`. New carry-forward CF-042 records the leaked
+integration binary directories, with bounded pruning added to task 1.
+
+Execution has not started and nothing is dispatched. Next: Human approval, then
+the QA Lead readiness refresh, then the Runner's readiness check. See
+[phase brief](phase_brief.md) and
+[Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Completed
 
@@ -46,7 +66,7 @@ outcomes; [wrap audit](../phases/phase-22/wrap-up-audit.md) records dispositions
 [decisions](../phases/phase-22/decisions.md) retain all authorities and workflow notes.
 Phase 22's original implementation and Human acceptance remain closed. The
 post-wrap PR CI follow-up is task 20 under DEC-221; Phase 23 is approved above
-and awaiting its QA plan.
+and awaiting Human approval of DEC-223..227.
 Separate workflow retrospective remains CF-036/039. Claims and external adapter
 qualification remain in their approved Phase 24/25 owners.
 

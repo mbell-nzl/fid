@@ -11,10 +11,18 @@ removed surface absent.
 
 - VAL-004: `foreign_key_check` and `integrity_check` are clean after 0018 and
   after a full rebuild.
-- VAL-061: Every removed table, index, trigger, view column, Event type, rule,
-  and CLI leaf is absent from the latest schema and the built binary.
+- VAL-061: Every removed table, index, trigger, view column, column, Event type,
+  rule, and CLI leaf is absent from the latest schema and the built binary. The
+  inventory must include the `requirements.last_synced_hash` column (moved here
+  from VAL-053) and the two triggers 0018 drops implicitly with their tables,
+  `decisions_epic_kind_guard_insert` and
+  `task_completions_issue_kind_guard_insert`. Record the measured
+  `issues_enriched` column list: it is identical across 0018, so the accepted
+  view-column removal set is empty and that clause is satisfied vacuously.
 - VAL-062: The rebuilt `issues_enriched` view and link and activity triggers
-  behave exactly as accepted.
+  behave exactly as accepted, and a seeded 17-to-18 probe holding both Issue and
+  non-Issue `links` and `activity_log` rows proves 0018's deletes remove exactly
+  the non-Issue rows.
 - VAL-063: Maintenance checks over removed tables are removed and the remaining
   checks pass.
 
@@ -108,14 +116,23 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
+go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
 go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/
 rg -n --glob '!*_test.go' "task_completions|ac_verifications" cmd internal
 rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal
 rg -n --glob '!*_test.go' "has_completion_report|concerns_addressed" cmd internal
 ```
+
+Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
+30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
+suite already approaches at 560 s. Record in the completion report the wall time
+`go test` reports for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow`,
+so a regression is attributed to the task that caused it. Budgets: tagged
+integration under 900 s and no ordinary package over 600 s (VAL-079). A breach is
+a bounded speed repair owned by this task when this task's own new journeys
+caused it; otherwise stop and escalate. Never record a timed-out gate as `PASS`.
 
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or

@@ -13,6 +13,13 @@ semantically equivalent.
   Event with semantically equivalent current state.
 - VAL-065: Import accepts only the binary's exact current accepted projection
   schema.
+- VAL-076: A corrupted or unknown Phase 23 Event payload is rejected by the
+  current-Event validator rather than partially applied, proven for each of the
+  nine Phase 23 Event types plus one unknown type (R-12a). Task 1 could only
+  prove this behind the fence, so the per-family proof lands here.
+- VAL-027: the import leg only - a `review-cycles` charge is not duplicated by
+  export and import, feasible here because this task extends the archive profile
+  to the Phase 23 tables (I-08).
 
 ## Binding Constraints
 
@@ -84,11 +91,20 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
+go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
 go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/
 ```
+
+Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
+30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
+suite already approaches at 560 s. Record in the completion report the wall time
+`go test` reports for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow`,
+so a regression is attributed to the task that caused it. Budgets: tagged
+integration under 900 s and no ordinary package over 600 s (VAL-079). A breach is
+a bounded speed repair owned by this task when this task's own new journeys
+caused it; otherwise stop and escalate. Never record a timed-out gate as `PASS`.
 
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or

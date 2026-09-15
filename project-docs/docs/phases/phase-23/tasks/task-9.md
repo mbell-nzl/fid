@@ -8,12 +8,14 @@ until a matching approved reference and Human Outcome both exist.
 
 ## Validation Contract Coverage
 
-- VAL-038: `decision.record-reference` stores a reference only and rejects a
-  digest mismatch.
+- VAL-038: `decision.record-reference` stores a reference only and rejects both
+  a digest mismatch and a `Source` whose file does not exist.
 - VAL-039: An unsatisfied protected Decision blocks exactly its declared
-  affected actions.
+  affected actions and returns `protected-decision-required` from them, also
+  when an Obligation is unsatisfied at the same time (DEC-226 precedence).
 - VAL-040: Satisfaction requires the approved reference and the approved Human
-  Outcome together.
+  Outcome together, including a negative for an approved reference whose
+  recording authority does not match the declared required capabilities.
 - VAL-041: Activation raises one Stop per unsatisfied protected Decision and the
   satisfying pair resolves that Stop and its Attention in one Event.
 - VAL-042: `linked_to_decision` becomes an implemented transition rule.
@@ -55,7 +57,9 @@ until a matching approved reference and Human Outcome both exist.
 
 - `internal/review/` - Decision Reference rules, effects, satisfaction.
 - `internal/workflow/envelope.go`, `evaluation.go`, `resolve.go`, `rules.go`,
-  `registry.go`, `authority.go`.
+  `registry.go`, `authority.go`, `activation.go` - the new grant action belongs
+  to the closed `sortedUniqueCapabilities` allowlist in `activation.go`
+  (R-08, DEC-167/173).
 - `internal/issues/transition_rules.go` - the `linked_to_decision` evaluator.
 - `internal/journal/project_effects.go`, `current_event_catalog.go`.
 - `internal/cli/codes.go` - `protected-decision-required`,
@@ -115,10 +119,19 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
+go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
 ```
+
+Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
+30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
+suite already approaches at 560 s. Record in the completion report the wall time
+`go test` reports for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow`,
+so a regression is attributed to the task that caused it. Budgets: tagged
+integration under 900 s and no ordinary package over 600 s (VAL-079). A breach is
+a bounded speed repair owned by this task when this task's own new journeys
+caused it; otherwise stop and escalate. Never record a timed-out gate as `PASS`.
 
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or

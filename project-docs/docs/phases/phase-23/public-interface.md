@@ -1,6 +1,9 @@
 # Phase 23 Public Interface Amendment
 
 > ACCEPTED under DEC-222 with `contracts.md` and `schema.md`.
+> Amended 2026-09-15 by DEC-226 (failure-code producers, precedence, and
+> non-committing denial semantics) and DEC-224 (`human-outcome-required`
+> producers), **pending Human approval**; amended passages name their DEC inline.
 > Phase 21 and Phase 22 `public-interface.md` remain the baseline for every
 > leaf, value, code, and exit this document does not replace.
 
@@ -193,7 +196,6 @@ Added codes are closed, all `retryable:false`, subject as named.
 | review-verdict-invalid | invalid-argument / 2 | `{verdict:text,reason:text}` |
 | review-changes-required | precondition / 4 | `{review_id:ID,obligation_id:ID,blocking_finding_ids:ID[]}` |
 | review-rework-exhausted | precondition / 4 | `{budget:Budget,stop_ids:ID[],attention_ids:ID[],event:?EventRef,replayed:boolean}` |
-| finding-unresolved | precondition / 4 | `{obligation_id:ID,finding_ids:ID[]}` |
 | finding-already-disposed | conflict / 4 | `{finding_id:ID,state:text}` |
 | finding-not-found / review-not-found / concern-not-found / deviation-not-found / decision-not-found / outcome-not-found / requirement-not-found | not-found / 3 | `{id:ID}` |
 | concern-already-disposed | conflict / 4 | `{concern_id:ID,disposed_at:timestamp}` |
@@ -205,16 +207,79 @@ Added codes are closed, all `retryable:false`, subject as named.
 | repository-mismatch | conflict / 4 | `{expected:Repository,observed:Repository}` |
 | human-outcome-required | precondition / 4 | `{envelope_id:ID,obligation_id:ID,outcome_class:ID}` |
 
-`review-rework-exhausted` and `protected-decision-required` follow the Phase 22
-committed-denial rule: when the denial durably raises a Stop and Attention the
-response is `ok:false` with the committed `EventRef` and immutable Stop and
-Attention IDs, stored and replayed under its original idempotency key as a
-complete typed snapshot. A denial that commits nothing has null `EventRef`.
+`finding-unresolved` is a `ReasonCode` only and is **not** a failure code
+(DEC-226). No leaf rejects on it: linking a `pass` Review that leaves an earlier
+blocking Finding unresolved is accepted, and the Obligation simply stays
+unsatisfied with that reason (`contracts.md` section 5). Task 6 therefore adds it
+to the evaluation reason precedence order in `internal/workflow/evaluation.go`,
+not to `internal/cli/codes.go`.
 
 `ReasonCode` adds `finding-unresolved`, `review-changes-required`,
 `protected-decision-required`, `human-outcome-absent`,
 `review-not-independent`, and `outcome-superseded`. `ReasonSubjectType` adds
-`review`, `finding`, `decision`, and `human-outcome`.
+`review`, `finding`, `decision`, and `human-outcome`. `human-outcome-absent`
+replaces the generic `obligation-evidence-absent` for an unsatisfied
+`human-outcome` Obligation with no linked Outcome, and `outcome-superseded` is
+returned when section 7 supersession displaces the Outcome that previously
+satisfied it.
+
+### 5.1 Producers And Precedence (DEC-226)
+
+Every added code names the operations that can return it. `evidence.link`
+rejections follow the single order in `contracts.md` section 13.
+
+| Code | Returned by |
+|---|---|
+| review-not-independent | `review.record`; `evidence.link` when independence no longer holds at link time |
+| review-verdict-invalid | `review.record` |
+| review-changes-required | `evidence.link` |
+| review-rework-exhausted | `claim.acquire`, `run.start` while the exhaustion Stop is open |
+| finding-already-disposed | `finding.address` |
+| concern-already-disposed | `concern.dispose` |
+| claim-mode-invalid | `review.record` under a `mutation` Claim; `finding.address` under a `review` Claim; `run.recover` and `run.abandon` adopting a path under a `review` Claim |
+| protected-decision-required | `envelope.complete` and `issue.transition-terminal-success`, for the declared affected actions only |
+| human-outcome-required | `envelope.complete` and `issue.transition-terminal-success`, for the blocked actions of the open readiness Stop only |
+| outcome-not-permitted | `evidence.link` |
+| evidence-type-not-accepted | `evidence.link` |
+| source-digest-mismatch | `decision.record-reference`, `requirement.record-reference` |
+| repository-mismatch | `review.record` |
+| `*-not-found` | the read and mutation leaves naming that entity |
+
+Where more than one applies to the same guarded-action request, exactly one code
+is returned in this order:
+
+1. every retained Phase 21/22 precondition and authority failure, unchanged;
+2. `protected-decision-required`, lowest unsatisfied protected-Decision ordinal
+   first, because an authority failure (exit 5) outranks a precondition;
+3. `review-rework-exhausted` (disjoint action set; it can never collide with
+   the two above);
+4. `human-outcome-required`;
+5. `obligation-unsatisfied` with its `reasons` array, which is returned only
+   when no open Stop blocks the requested action.
+
+An open Stop therefore always speaks for itself; the generic
+`obligation-unsatisfied` denial never masks one. The `reasons` array keeps
+reporting every unsatisfied Obligation reason, in the section 2 reason
+precedence order, whichever code is returned.
+
+### 5.2 Denials Commit Nothing (DEC-226)
+
+Phase 23 adds no denial Event. `review-rework-exhausted`,
+`protected-decision-required`, and `human-outcome-required` are raised by the
+successful Events named in `contracts.md` sections 6, 9, and 10, which store
+their own typed snapshots under their own idempotency keys. The later requests
+those Stops block - `claim.acquire`, `run.start`,
+`issue.transition-terminal-success`, `envelope.complete` - create nothing:
+no Claim, Run, transition, completion, Event, or `idempotency_results` row.
+Their response is `ok:false` with the immutable Stop and Attention IDs raised
+earlier, null `EventRef`, and `replayed:false`, and repeating the request while
+the Stop is unresolved returns byte-identical Stop and Attention IDs. The
+Phase 22 committed-denial rule is retained unchanged for `run.execution-blocked`,
+which does durably raise its Stop and does store its Denial snapshot.
+
+`review-rework-exhausted` keeps its declared detail shape, and under this rule
+its `event` is always null and its `replayed` always `false`; the fields stay
+present so the closed shape is unchanged. VAL-056 asserts exactly that.
 
 ## 6. Manifest And Availability
 

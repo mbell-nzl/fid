@@ -13,7 +13,15 @@ product family reappeared.
 - VAL-068: Shared fake and fid adapters pass identical conformance cases for
   every Phase 23 operation.
 - VAL-069: No product escalation, QA-plan, validation-contract, template,
-  retrospective, or carry-forward table or command exists.
+  retrospective, or carry-forward table or command exists. This task owns the
+  row; `v1-convergence-inventory.md` section 1 is corrected to match (I-10).
+- VAL-070, VAL-071, VAL-072, VAL-073: regenerate task 14's Human fixture
+  manifest against the final binary and confirm every recorded invocation still
+  runs, so the Human judgment at phase end is exercised against the shipped
+  surface rather than a mid-phase one (R-10).
+- VAL-079: the phase-end wall-time budgets hold with the explicit `-timeout`,
+  and every completion report carries its three recorded package times
+  (R-13, DEC-227).
 
 ## Binding Constraints
 
@@ -41,7 +49,8 @@ product family reappeared.
 ### Files To Create Or Modify
 
 - `cmd/fid/integration/` - Phase 23 conformance corpus, fake and fid adapters,
-  and the audit tests.
+  the audit tests, and regeneration of `p23_human_fixtures_test.go`'s manifest
+  against the final binary.
 - `cmd/fid/integration/testdata/` - the Phase 23 operation fixtures.
 - `internal/workflow/authority.go` - audit support only, no new action.
 - `project-docs/docs/phases/phase-23/tasks/task-18-done.md`.
@@ -92,10 +101,19 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
+go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
 ```
+
+Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
+30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
+suite already approaches at 560 s. Record in the completion report the wall time
+`go test` reports for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow`,
+so a regression is attributed to the task that caused it. Budgets: tagged
+integration under 900 s and no ordinary package over 600 s (VAL-079). A breach is
+a bounded speed repair owned by this task when this task's own new journeys
+caused it; otherwise stop and escalate. Never record a timed-out gate as `PASS`.
 
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or

@@ -8,13 +8,24 @@ deterministic proof.
 
 ## Validation Contract Coverage
 
-- VAL-043: Recording requires a human Actor type in a finalized Activation
-  profile with the capability.
+- VAL-043: Recording requires a human Actor type in a finalized Kit Activation
+  profile with the capability, and standalone Issue-inventory attributed
+  authority rejects (PRD-AUTH-007).
 - VAL-044: A Human Outcome satisfies only a matching class with result
   `approved`.
-- VAL-045: Human Outcome Evidence is never serialized as deterministic proof.
-- VAL-046: A `human-outcome-required` Stop is raised exactly when the Human
-  Obligation is the only unsatisfied one.
+- VAL-045: the Human Outcome Evidence record and its evaluation carry
+  `producer:"human"`, `trust_source:"activated-human"`, and
+  `artifact_availability:"not-applicable"`. The Human-text half of
+  `contracts.md` section 14 belongs to task 14 (VAL-058/VAL-060); do not pin text
+  task 14 replaces.
+- VAL-046: A `human-outcome-required` Stop is raised by each of its four named
+  Events exactly when the Human Obligation becomes the only unsatisfied one, at
+  most once while unresolved, and never for routine status (DEC-224).
+- VAL-009: the completing half - a guarded action is permitted only once the
+  gate-evidence, review, and human-outcome Obligations are all satisfied. This
+  is the first task where that state is reachable.
+- VAL-010: re-verified here with linked review and Human Outcome evidence
+  present, not only with evidence absent.
 - VAL-003: task 1's fence assertion for `human-outcome.recorded` converges
   here without losing its parity subject.
 
@@ -51,8 +62,16 @@ deterministic proof.
 
 - `internal/review/` - Human Outcome rules, provenance, effects.
 - `internal/evidence/evidence.go`, `policy.go` - the Human Outcome evidence type.
-- `internal/workflow/authority.go`, `evaluation.go`, `resolve.go`.
-- `internal/journal/project_effects.go`, `current_event_catalog.go`.
+- `internal/workflow/authority.go`, `activation.go`, `evaluation.go`,
+  `resolve.go` - the new grant action belongs to the closed
+  `sortedUniqueCapabilities` allowlist in `activation.go` (R-08, DEC-167/173).
+- `internal/workflow/` readiness-Stop raising shared by the four producers, and
+  its call sites for `envelope.activated`, `evidence.linked`, `review.recorded`,
+  and `artifact.availability-observed` (DEC-224).
+- `internal/journal/project_effects.go`, `current_event_catalog.go` - the fence
+  key, plus the optional `stops/insert`, `attention_items/insert`, and
+  `attention_stop_links/insert` effect rows added to `evidence.linked` and
+  `artifact.availability-observed` under `schema.md` section 6.2 (DEC-224).
 - `internal/cli/codes.go` - `outcome-not-permitted`, `outcome-not-found`,
   `human-outcome-required`.
 - `cmd/fid/human_outcome.go` - new leaf wiring for `record` and `list`.
@@ -108,10 +127,19 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
+go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
 ```
+
+Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
+30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
+suite already approaches at 560 s. Record in the completion report the wall time
+`go test` reports for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow`,
+so a regression is attributed to the task that caused it. Budgets: tagged
+integration under 900 s and no ordinary package over 600 s (VAL-079). A breach is
+a bounded speed repair owned by this task when this task's own new journeys
+caused it; otherwise stop and escalate. Never record a timed-out gate as `PASS`.
 
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or

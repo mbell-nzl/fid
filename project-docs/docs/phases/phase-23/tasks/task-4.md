@@ -10,9 +10,15 @@ name.
 ## Validation Contract Coverage
 
 - VAL-014: The Review binds Run, Issue, Envelope revision, re-observed
-  repository identity, profile, coverage, verdict, and evidence references.
+  repository identity, profile, coverage, verdict, and evidence references, and
+  rejects a Receipt produced by another Run and a coverage item and exclusion
+  sharing one `Source` digest.
 - VAL-015: Independence is enforced in both directions from Claim and Run
-  history.
+  history, over the mutating side only (DEC-225): a mutating-Claim holder and a
+  Run holder under such a Claim reject; a distinct Actor succeeds, and so does
+  that same Actor's second Review after a rework cycle.
+- VAL-003: task 1's fence assertion for `review.recorded` converges here
+  without losing its parity subject.
 - VAL-016: A repository identity mismatch rejects with no Event.
 - VAL-017: Verdict and Finding consistency is enforced for all three verdicts.
 - VAL-018: Exactly one Review exists per review Run.
@@ -50,7 +56,10 @@ name.
 ### Files To Create Or Modify
 
 - `internal/review/` - new package: Review recording, independence, validation.
-- `internal/workflow/authority.go` - the one new grant action.
+- `internal/workflow/authority.go` and `internal/workflow/activation.go` - the
+  one new grant action. The closed allowlist is `sortedUniqueCapabilities` in
+  `activation.go`; Envelope grants reuse it through `sortedUniqueEnvelopeActions`
+  in `envelope.go`, and `authority.go` holds no action list (R-08, DEC-167/173).
 - `internal/journal/project_effects.go` - the one fence key and its effects.
 - `internal/cli/codes.go` - `review-not-independent`, `review-verdict-invalid`,
   `repository-mismatch`, `review-not-found`.
@@ -109,10 +118,19 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
+go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
 ```
+
+Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
+30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
+suite already approaches at 560 s. Record in the completion report the wall time
+`go test` reports for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow`,
+so a regression is attributed to the task that caused it. Budgets: tagged
+integration under 900 s and no ordinary package over 600 s (VAL-079). A breach is
+a bounded speed repair owned by this task when this task's own new journeys
+caused it; otherwise stop and escalate. Never record a timed-out gate as `PASS`.
 
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or

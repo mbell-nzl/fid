@@ -10,7 +10,15 @@ next rework atomically when that budget is exhausted.
 
 - VAL-024: `evidence.link` accepts a `pass` Review and rejects
   `changes-required` and `blocked`.
-- VAL-025: An evidence type outside the Obligation's accepted list rejects.
+- VAL-025: An evidence type outside the Obligation's accepted list rejects with
+  exactly one code in the accepted precedence: the two Human Outcome mismatches
+  return `outcome-not-permitted` and the other four return
+  `evidence-type-not-accepted` (DEC-226).
+- VAL-077: Linking a Review whose recording Actor has since taken a mutating
+  Claim on that Issue and revision rejects `review-not-independent` at link time.
+- VAL-008: the leaf re-check - `evidence.evaluate` with a null Obligation ID
+  returns one evaluation per Obligation in ID order - lands here, because this
+  task owns the leaf's optional Obligation ID.
 - VAL-026: An unresolved blocking Finding keeps the Obligation unsatisfied even
   after a later `pass` Review.
 - VAL-027: Exactly one `review-cycles` charge per `changes-required` Review,
@@ -54,7 +62,11 @@ next rework atomically when that budget is exhausted.
 - `internal/review/` - the verdict effects that charge and raise.
 - `internal/journal/` - the `review.recorded` effect-rule optional rows.
 - `internal/cli/codes.go` - `review-changes-required`,
-  `review-rework-exhausted`, `finding-unresolved`, `evidence-type-not-accepted`.
+  `review-rework-exhausted`, `evidence-type-not-accepted`. `finding-unresolved`
+  is a ReasonCode, **not** a failure code (DEC-226): add it, together with
+  `human-outcome-absent`, `review-not-independent`, and `outcome-superseded`, to
+  the evaluation reason precedence order in `internal/workflow/evaluation.go`
+  immediately after `obligation-evidence-absent`, in that order.
 - `cmd/fid/evidence.go`, `run.go`, `claim.go` - denial responses only.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
   this change.
@@ -114,12 +126,21 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
-go test -race -cover ./internal/evidence/
-go test -race -cover ./internal/workflow/
+go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
+go test -race -timeout 30m -cover ./internal/evidence/
+go test -race -timeout 30m -cover ./internal/workflow/
 ```
+
+Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
+30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
+suite already approaches at 560 s. Record in the completion report the wall time
+`go test` reports for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow`,
+so a regression is attributed to the task that caused it. Budgets: tagged
+integration under 900 s and no ordinary package over 600 s (VAL-079). A breach is
+a bounded speed repair owned by this task when this task's own new journeys
+caused it; otherwise stop and escalate. Never record a timed-out gate as `PASS`.
 
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or
@@ -132,7 +153,7 @@ is a Runner control after the report commit, not a Developer gate.
 
 List any conditional command required by this task and why:
 
-- `go test -race -cover ./internal/evidence/` and `go test -race -cover ./internal/workflow/` before and after the edits, because this task adds branch-heavy evaluation and budget paths to two existing packages.
+- `go test -race -timeout 30m -cover ./internal/evidence/` and `go test -race -timeout 30m -cover ./internal/workflow/` before and after the edits, because this task adds branch-heavy evaluation and budget paths to two existing packages.
 
 ## Notes For Developer
 

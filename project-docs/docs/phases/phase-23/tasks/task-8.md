@@ -11,7 +11,10 @@ Neither is Evidence and neither blocks a guarded action.
 - VAL-034: Concerns are generic, never completion-linked, and never block a
   guarded action by themselves.
 - VAL-035: `concern.dispose` is a single irreversible transition with a
-  mandatory reason and a resolvable reference for each action that binds one.
+  mandatory reason and a resolvable reference for each action that binds one,
+  proven with three valid dispositions and seven negatives (second disposal,
+  missing reason, unknown Issue, unknown Concern, unknown Finding,
+  self-supersession, and an action outside the three).
 - VAL-074: Self-disposal is permitted and records both Actors distinctly.
 - VAL-036: Deviations are append-only with explicit supersession.
 - VAL-037: Neither a Concern nor a Deviation can be linked as Evidence.
@@ -20,6 +23,14 @@ Neither is Evidence and neither blocks a guarded action.
 
 
 ## Binding Constraints
+
+- Subject resolution (DEC-228, `contracts.md` section 8): a Concern or Deviation
+  `subject` is a typed reference fid records without requiring it to resolve to
+  an existing row - a `requirement` subject cannot resolve before task 12 - while
+  `subject_type` stays closed and validated. Only a disposition that binds an
+  identity (`carried-forward` Issue, `superseded` Concern or Finding) must
+  resolve, enforced by foreign key. Record this interpretation in the completion
+  report.
 
 - `contracts.md` section 8 is the exact authority; `schema.md` section 2 fixes
   `judgment_concerns` and `deviations` including their composite CHECKs.
@@ -59,7 +70,9 @@ Neither is Evidence and neither blocks a guarded action.
 ### Files To Create Or Modify
 
 - `internal/review/` - Concern and Deviation rules and effects.
-- `internal/workflow/authority.go` - the three new grant actions.
+- `internal/workflow/authority.go` and `internal/workflow/activation.go` - the
+  three new grant actions. The closed allowlist is `sortedUniqueCapabilities` in
+  `activation.go`; `authority.go` holds no action list (R-08, DEC-167/173).
 - `internal/journal/project_effects.go`, `current_event_catalog.go` - the three
   fence keys, effects, and activity event names.
 - `internal/activity/` - the added activity event names.
@@ -127,10 +140,19 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
+go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
 ```
+
+Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
+30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
+suite already approaches at 560 s. Record in the completion report the wall time
+`go test` reports for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow`,
+so a regression is attributed to the task that caused it. Budgets: tagged
+integration under 900 s and no ordinary package over 600 s (VAL-079). A breach is
+a bounded speed repair owned by this task when this task's own new journeys
+caused it; otherwise stop and escalate. Never record a timed-out gate as `PASS`.
 
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or

@@ -3,6 +3,9 @@
 > Tech Lead planning inspection, 2026-09-14. ACCEPTED under DEC-222.
 > No build, test, lint, or feasibility gate was run by Tech Lead.
 > Base `0195897a347dfe1872db0f7be3800c5c3ccdefcf`.
+> Amended 2026-09-15: section 7 adds the test-time headroom disposition
+> (DEC-227, R-13), and three file scopes are corrected under DEC-167/173
+> (R-08, R-09) in the affected task specs.
 
 ## 1. Ownership Rule
 
@@ -59,14 +62,16 @@ QA Lead performs fresh feasibility validation in Heavy mode before Ready.
 | 1, 15, 16 | Migration, DDL, rebuild, reset, current schema, portable schema | ordinary race and coverage, full tagged integration, plus the named fresh-process rebuild benchmark |
 | 2, 3, 5, 6, 7, 8, 9, 10, 11 | Domain rules, Effects, SQLite projections, authority and failure branches | ordinary race and coverage plus full tagged integration; the tagged gate catches displaced adapter fixtures |
 | 4, 13, 14, 17, 18 | CLI, JSON, Human text, shared semantic fixtures, process journeys, availability matrix | both gates; tagged integration is mandatory and never substituted |
-| 12 | Requirement reference replacement and link-model removal | both gates plus the fresh-process rebuild benchmark, because it removes an Event family from the replay corpus |
+| 12 | Requirement reference replacement and link-model removal | both gates plus the fresh-process rebuild benchmark, because it removes an Event family from the replay corpus, plus its own declared expected-non-zero absence search |
 | 2, 6 | New branch coverage in `internal/workflow` and `internal/evidence` | named package `go test -race -cover` before and after edits |
 | 15 | V1 removal absence proof | both gates plus the declared expected-non-zero absence searches in that task spec |
 
 The tag selection is case-sensitive and remains exactly
-`go test -tags integration -race ./cmd/fid/integration/...`. No other
-environment-gated suite is assigned. New helpers and fake adapters must be used
-by real assertions; compiling an unused helper is not behavioral evidence.
+`go test -tags integration -race -timeout 30m ./cmd/fid/integration/...`
+(the `-timeout` is the DEC-227 bound in section 7; the tag selection itself is
+unchanged). No other environment-gated suite is assigned. New helpers and fake
+adapters must be used by real assertions; compiling an unused helper is not
+behavioral evidence.
 
 Every task runs the tagged integration gate from task 1. There is no delayed
 first integration gate and therefore no planned convergence debt. If
@@ -116,13 +121,66 @@ concrete invocation is:
 project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-1-done.md project-docs/docs/phases/phase-23/tasks/task-1.md
 ```
 
-Required commands report their own output token and observed termination. Only
-task 15 declares expected non-zero commands. Red tests retain their failing
+Required commands report their own output token and observed termination. Tasks
+12 and 15 declare expected non-zero commands; task 12's declaration was added
+2026-09-15 with its `requirement.synced` absence search (R-07d). Red tests retain their failing
 evidence and never authorize weakening a gate. No cleanup is a gate. Do not
 impose a parent session lifetime as a command timeout. External interruption
 retains no-progress state and follows current schema-v2 recovery.
 
-## 6. Incorporating Earlier Delivery Lessons
+## 6. Corrected File Scopes (2026-09-15)
+
+Three assignments were incomplete under DEC-167/173 and are corrected in the
+task specs before dispatch, not after a failure:
+
+- The closed 23-name activated-capability and grant-action allowlist is
+  `sortedUniqueCapabilities` in `internal/workflow/activation.go`; Envelope
+  grants reuse it through `sortedUniqueEnvelopeActions` in `envelope.go`, and
+  `authority.go` holds no action list. Tasks 4, 5, 8, 9, and 10 each add
+  `internal/workflow/activation.go` to their file scope for their own new
+  action (R-08).
+- `internal/export/archive_semantics_catalog.go` carries the
+  `requirement.synced` archive semantic rule. Task 12 removes the Event, so that
+  file joins task 12's scope; without it, task 12's own declared absence search
+  fails with its cause outside the task (R-09).
+- Task 10 owns the readiness-Stop effect rows added to `evidence.linked` and
+  `artifact.availability-observed` in `internal/journal/current_event_catalog.go`
+  (DEC-224), alongside its fence key.
+
+## 7. Test-Time Headroom (DEC-227)
+
+Fresh QA Lead measurements at the planning base: the tagged integration suite
+runs 560.2 s against Go's implicit 600 s per-binary default, with `cmd/fid` at
+472.0 s and `internal/workflow` at 458.4 s under the race gate, and
+`t.Parallel()` appears in none of the 58 `cmd/fid/integration` files. Phase 23
+adds real-process journeys to exactly those packages at tasks 4, 6, 11, 14, 17,
+and 18, so an unbounded default would convert ordinary growth into a killed
+command - which is `BLOCKED`, never `PASS`, and whose only cure inside a task
+would be a protected command change.
+
+The disposition:
+
+- Every Phase 23 task runs the two long gates with an explicit `-timeout 30m`.
+  The bound is deliberately generous: it makes the harness limit a declared
+  constant instead of an accidental cliff, and it weakens no assertion, changes
+  no scope, and removes no gate.
+- Wall time stays a measured budget, not an aspiration. Every completion report
+  records the times `go test` reports for `cmd/fid/integration`, `cmd/fid`, and
+  `internal/workflow`. Budgets: tagged integration under 900 s, no ordinary
+  package over 600 s, asserted at phase end by VAL-079.
+- Speed repair follows causation. A task whose own new journeys push a package
+  past its budget owns the bounded repair - reuse of seeded workspaces, fewer
+  redundant end-to-end setups, and `t.Parallel()` in **new** Phase 23 journey
+  files where the fixture is self-contained. A retrofit of the 58 existing files
+  is not in any task's scope; if the cause is pre-existing, stop and escalate
+  rather than absorbing it.
+- Task 1 additionally prunes stale `fid-integration-binary-*` directories in
+  `cmd/fid/integration/main_test.go` (CF-042). `TestMain` deletes its directory
+  only on normal exits, so timeout kills leaked 148 directories and 2.3 GB into
+  a RAM-backed `/tmp` during QA planning. That is a gate-blocking environment
+  failure, not a test failure.
+
+## 8. Incorporating Earlier Delivery Lessons
 
 - `contract-coverage.md` maps every binding contract clause to its schema row,
   owning task, and validation assertion. It exists because Phase 22 shipped a

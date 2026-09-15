@@ -11,9 +11,14 @@ Review, and a derived Finding state.
 - VAL-020: Findings are created only with their Review, atomically, and are
   immutable.
 - VAL-021: `finding.address` requires an active mutating Claim and leaves the
-  Finding unresolved and still blocking.
+  Finding unresolved and still blocking; the review-Claim case rejects
+  `claim-mode-invalid` with `required_mode:"mutation"`. At this task the review
+  Obligation is unsatisfied regardless, so the non-vacuous "still unsatisfied"
+  proof is VAL-026's sequence at task 6; this row's final PASS needs both.
 - VAL-022: Only a later qualifying independent Review resolves or marks a
-  Finding inapplicable, and no Review resolves a Finding it created.
+  Finding inapplicable, and no Review resolves a Finding it created. Six cases,
+  including a `blocked`-verdict resolving Review (rejects) and a resolution by
+  the same independent Reviewer's later Review (succeeds, DEC-225).
 - VAL-023: `Finding.state` is derived from the latest disposition.
 - VAL-003: task 1's fence assertion for `finding.addressed` converges here
   without losing its parity subject.
@@ -46,7 +51,10 @@ Review, and a derived Finding state.
 ### Files To Create Or Modify
 
 - `internal/review/` - Finding creation effects, dispositions, derived state.
-- `internal/workflow/authority.go` - the one new grant action.
+- `internal/workflow/authority.go` and `internal/workflow/activation.go` - the
+  one new grant action. The closed allowlist is `sortedUniqueCapabilities` in
+  `activation.go`; Envelope grants reuse it through `sortedUniqueEnvelopeActions`
+  in `envelope.go`, and `authority.go` holds no action list (R-08, DEC-167/173).
 - `internal/journal/project_effects.go` - the one fence key and its effects.
 - `internal/cli/codes.go` - `finding-not-found`, `finding-already-disposed`.
 - `cmd/fid/finding.go` - new leaf wiring for `address` and `list`.
@@ -101,10 +109,19 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
+go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
 ```
+
+Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
+30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
+suite already approaches at 560 s. Record in the completion report the wall time
+`go test` reports for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow`,
+so a regression is attributed to the task that caused it. Budgets: tagged
+integration under 900 s and no ordinary package over 600 s (VAL-079). A breach is
+a bounded speed repair owned by this task when this task's own new journeys
+caused it; otherwise stop and escalate. Never record a timed-out gate as `PASS`.
 
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or

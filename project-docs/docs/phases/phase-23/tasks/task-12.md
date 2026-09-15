@@ -12,8 +12,10 @@ its Event, and restrict `links` to Issue endpoints so one fact has one model.
   re-recording supersedes while retaining the prior row.
 - VAL-052: `requirement.link` records traceability and rejects an unknown
   requirement.
-- VAL-053: `fid requirement sync`, its parser, `last_synced_hash`, and
-  `requirement.synced` are absent from the binary and latest schema.
+- VAL-053: `fid requirement sync`, its parser, and `requirement.synced` are
+  absent from the binary, from both Event catalogs, and from the source tree.
+  The `requirements.last_synced_hash` column belongs to the V1 table that
+  migration 0018 drops, so its absence is asserted by VAL-061 at task 15.
 - VAL-054: `links` accepts only Issue endpoints.
 
 ## Binding Constraints
@@ -52,6 +54,10 @@ its Event, and restrict `links` to Issue endpoints so one fact has one model.
 - Delete `internal/requirements/`.
 - `internal/links/registry.go`, `add.go`, `list.go`, `errors.go`, `types.go`.
 - `internal/journal/project_effects.go`, `current_event_catalog.go`.
+- `internal/export/archive_semantics_catalog.go` - delete the
+  `requirement.synced` semantic rule. The removed Event's archive rule lives
+  here, so without this file the declared absence search cannot pass and its
+  cause would fall outside task 15 (R-09, DEC-167/173).
 - `internal/cli/codes.go` - `requirement-not-found` retained, plus any adapter
   change required by the removed leaf.
 - `cmd/fid/requirement.go` - replace `sync` with `record-reference`, `link`,
@@ -104,6 +110,17 @@ absent requirement reference writer.
   the slice contract; apply them with this implementation.
 - `project-docs/docs/phases/phase-23/tasks/task-12-done.md` in the full format,
   including the final fence removal and its parity proof.
+
+## Expected Non-Zero Commands
+
+- `rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal`
+  - expected `exit_code: 1`; no match is the pass condition. Record it as
+  `PASS - exit 1 (no output) (expected exit_code: 1; terminated exit_code: 1)`.
+  Never convert it to `exit 0 (no output)`. At the planning base the matches are
+  `internal/requirements/sync.go`, `internal/journal/current_event_catalog.go`,
+  and `internal/export/archive_semantics_catalog.go`; all three are removed by
+  this task's own scope.
+
 ## Exact Commands To Run
 
 Working directory: repository root `/home/mark/projects/fid`, or the isolated
@@ -116,11 +133,21 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
+go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
 go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/
+rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal
 ```
+
+Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
+30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
+suite already approaches at 560 s. Record in the completion report the wall time
+`go test` reports for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow`,
+so a regression is attributed to the task that caused it. Budgets: tagged
+integration under 900 s and no ordinary package over 600 s (VAL-079). A breach is
+a bounded speed repair owned by this task when this task's own new journeys
+caused it; otherwise stop and escalate. Never record a timed-out gate as `PASS`.
 
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or
@@ -134,6 +161,7 @@ is a Runner control after the report commit, not a Developer gate.
 List any conditional command required by this task and why:
 
 - the named fresh-process rebuild benchmark, because this task removes an Event family from the replay corpus and must prove the reference rebuild is unaffected.
+- the declared `rg` absence search, whose pass condition is `exit_code: 1`; see `## Expected Non-Zero Commands`.
 
 ## Notes For Developer
 

@@ -1,6 +1,9 @@
 # Phase 23 DDL And Event Contract
 
 > ACCEPTED under DEC-222 with `contracts.md` and `public-interface.md`.
+> Amended 2026-09-15 by DEC-223 (link-preserving `evidence_records` rebuild),
+> DEC-224 (readiness Stop effect rows), and DEC-226 (denial semantics), all
+> **pending Human approval**; amended passages name their DEC inline.
 > Task 1 incorporates it by `03_TRD_SCHEMA.md` section 8.4.
 > No implementation may infer additional tables, columns, indexes, triggers,
 > Event families, or effect rows beyond what is written here.
@@ -302,8 +305,14 @@ INSERT INTO evidence_records_new (
 SELECT id, obligation_id, evidence_type, receipt_id, NULL, NULL,
   producer, trust_source, target_repository_json, validity, created_at
 FROM evidence_records;
+CREATE TEMP TABLE evidence_artifact_links_carry AS
+  SELECT evidence_id, artifact_id, required_material FROM evidence_artifact_links;
+DELETE FROM evidence_artifact_links;
 DROP TABLE evidence_records;
 ALTER TABLE evidence_records_new RENAME TO evidence_records;
+INSERT INTO evidence_artifact_links (evidence_id, artifact_id, required_material)
+  SELECT evidence_id, artifact_id, required_material FROM evidence_artifact_links_carry;
+DROP TABLE evidence_artifact_links_carry;
 CREATE UNIQUE INDEX evidence_records_one_receipt
   ON evidence_records(obligation_id, receipt_id) WHERE receipt_id IS NOT NULL;
 CREATE UNIQUE INDEX evidence_records_one_review
@@ -316,6 +325,23 @@ CREATE UNIQUE INDEX evidence_records_one_outcome
 runs inside the migration transaction with `PRAGMA legacy_alter_table` left at
 its default; task 1 proves `PRAGMA foreign_key_check` is empty after the
 rebuild, after `0018`, and after a full rebuild from the journal.
+
+**Link staging is load-bearing (DEC-223).** The migration runner opens its
+connection with `foreign_keys(1)` (`internal/db/db.go`) and wraps one migration
+file in one transaction, so `DROP TABLE evidence_records` performs an implicit
+`DELETE` that immediately violates the `evidence_artifact_links.evidence_id`
+reference whenever any link row exists. `PRAGMA defer_foreign_keys` does not
+help: the deferred violation counter is never decremented by a table rename, so
+the transaction fails at `COMMIT` instead of at the `DROP`. The staging of
+`evidence_artifact_links` above is therefore part of the accepted DDL, not an
+optimization, and no implementation may drop it. This path is reachable in
+ordinary use, not only in a seeded test: `catchUpWorkspaceLocked` runs
+`MigrateUp` against the existing populated projection, so a workspace that
+already holds receipt Evidence with Artifact links migrates in place.
+Migration order is fixed: stage, delete, rebuild, rename, restore, drop the
+staging table. Restored rows keep their exact `(evidence_id, artifact_id,
+required_material)` values, and `evidence_artifact_links` keeps its original
+declared DDL and is never itself rebuilt.
 
 ## 3. Migration 0017 Down
 
@@ -339,8 +365,15 @@ INSERT INTO evidence_records_old
 SELECT id, obligation_id, receipt_id, evidence_type, producer, trust_source,
   target_repository_json, validity, created_at
 FROM evidence_records WHERE evidence_type = 'receipt';
+CREATE TEMP TABLE evidence_artifact_links_carry AS
+  SELECT evidence_id, artifact_id, required_material FROM evidence_artifact_links;
+DELETE FROM evidence_artifact_links;
 DROP TABLE evidence_records;
 ALTER TABLE evidence_records_old RENAME TO evidence_records;
+INSERT INTO evidence_artifact_links (evidence_id, artifact_id, required_material)
+  SELECT evidence_id, artifact_id, required_material FROM evidence_artifact_links_carry
+  WHERE evidence_id IN (SELECT id FROM evidence_records);
+DROP TABLE evidence_artifact_links_carry;
 DROP INDEX envelope_obligations_one_gate_evidence;
 DROP INDEX envelope_obligations_one_outcome_class;
 DROP INDEX envelope_obligations_one_review_profile;
@@ -360,7 +393,11 @@ DROP TABLE review_records;
 ```
 
 Down is a development reset, not a data-preserving downgrade: rows whose
-evidence type is not `receipt` are discarded and that loss is explicit.
+evidence type is not `receipt` are discarded and that loss is explicit. The down
+direction stages `evidence_artifact_links` for the same reason the up direction
+does (DEC-223), and restores only the links whose Evidence row survives the
+receipt-only filter; links to discarded `review` and `human-outcome` Evidence are
+dropped with their Evidence, which is part of the explicit loss.
 
 ## 4. Migration 0018 Up - V1 Judgment Removal
 
@@ -572,20 +609,36 @@ Amended existing rules:
 | Event | Change | Owner |
 |---|---|---|
 | `envelope.created` | add optional `envelope_protected_decisions/insert` | task 9 |
-| `envelope.activated` | add optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` | task 9 |
-| `evidence.linked` | unchanged effect rows; the record shape widens only | task 6 |
+| `envelope.activated` | add optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` | task 9 protected Decisions; task 10 readiness Stop |
+| `evidence.linked` | record shape widens (task 6); add optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` for the readiness Stop (DEC-224) | task 6 shape; task 10 Stop rows |
+| `artifact.availability-observed` | add optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` for the readiness Stop (DEC-224) | task 10 |
 
 After task 15 renames `judgment_concerns` to `concerns`, the two concern effect
 rules name `concerns`. Task 15 owns that single-word rule change and its
 fixtures; no other effect row moves.
 
-### 6.3 Typed Result Snapshots
+### 6.3 Typed Result Snapshots And Denials
 
-DEC-216 typed idempotency snapshots extend to every Phase 23 mutation. A
-committed denial for `review-rework-exhausted` or `protected-decision-required`
-stores its complete typed snapshot - original Budget or protected-Decision
-state, Stop and Attention IDs, and EventRef - and replays it without
-re-deriving current state.
+DEC-216 typed idempotency snapshots extend to every Phase 23 mutation: each
+successful Phase 23 Event stores the complete typed result it returned and
+replays it under its original idempotency key without re-deriving current state.
+
+**Phase 23 adds no denial Event (DEC-226).** Every Phase 23 Stop is raised by a
+successful Event that commits its own typed snapshot - the exhausting
+`changes-required` `review.recorded` for `review-rework-exhausted`,
+`envelope.activated` for `protected-decision-required`, and the four raising
+Events in `contracts.md` section 10 for `human-outcome-required`. The later
+requests those Stops block (`claim.acquire`, `run.start`,
+`issue.transition-terminal-success`, `envelope.complete`) commit nothing: they
+create no Claim, Run, transition, or completion, append no Event, write no
+`idempotency_results` row, and return `ok:false` with null `EventRef`,
+`replayed:false`, and the immutable Stop and Attention IDs raised earlier. Such
+a denial is deterministic because the durable Stop is, not because a snapshot
+was stored; repeating the request with the same or a different idempotency key
+returns the identical Stop and Attention IDs while the Stop stays unresolved.
+The Phase 22 committed-denial rule is retained unchanged for the Phase 22
+`run.execution-blocked` path, which does durably raise its Stop and does store
+its Denial snapshot.
 
 ## 7. Parity And Corruption Proof
 
@@ -599,7 +652,9 @@ Task 1 and task 16 each prove, with fresh workspaces:
 - export, validate, and import round-trip every Phase 23 table and Event with
   semantically equivalent current state (PRD-REC-004);
 - a corrupted or unknown Phase 23 Event payload is rejected by the current-Event
-  validator rather than partially applied; and
+  validator rather than partially applied. Task 1 can only prove this for the
+  fenced types, so the per-family proof over all nine implemented Phase 23 Event
+  types is owned by task 16 (VAL-076); and
 - every removed table, index, trigger, view column, Event type, and rule name
   in section 4 is proven absent from the latest schema by a direct projection
   query, not by a source-text search alone.

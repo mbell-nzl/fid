@@ -93,7 +93,7 @@
 - DEC-222 (ACCEPTED by Human, 2026-09-14): Phase 23 "Review and Human judgment"
   is approved and Heavy. The accepted authority is `contracts.md`,
   `public-interface.md`, `schema.md`, `execution-scope.md`,
-  `v1-convergence-inventory.md`, `contract-coverage.md`, the 74-assertion
+  `v1-convergence-inventory.md`, `contract-coverage.md`, the now 79-assertion
   `qa/validation-contract.md`, and the ordered 18-task pack, all under
   `../phases/phase-23/`. Six canonical spec amendments are accepted with it and
   are applied by their owning implementation tasks, not in advance.
@@ -102,9 +102,19 @@
   both Actors recorded; `links` is restricted to Issue endpoints so
   `requirement_issue_links` is the single traceability model, retaining the new
   `verifies` relation.
-- Execution has not started. The QA plan and fresh Heavy-mode feasibility
-  validation are still required before task 1, and the Human is activating QA
-  Lead directly. See [phase brief](phase_brief.md) and
+- DEC-223..227 (PROPOSED 2026-09-15, **awaiting Human approval**): the QA Lead's
+  first-pass plan returned thirteen Must-fix revisions; all are accepted and
+  applied, and these five amend DEC-222 contracts. DEC-223 link-preserving
+  `evidence_records` rebuild (0017 fails wherever Evidence has Artifact links).
+  DEC-224 four named Events raise `human-outcome-required`, two gaining effect
+  rows. DEC-225 independence conflicts with mutating Claims and their Runs only,
+  so one Reviewer may review successive rework cycles. DEC-226 named code
+  producers, denial precedence, non-committing denials, `finding-unresolved`
+  demoted to a ReasonCode. DEC-227 explicit `-timeout 30m` plus measured
+  wall-time budgets. DEC-228 (ACCEPTED, Tech Lead) carries the rest, including
+  three DEC-167/173 scope corrections and five new assertions.
+- Execution has not started. After approval the QA Lead refreshes plan readiness
+  and the Runner's readiness check runs. See [phase brief](phase_brief.md) and
   [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Latest Phase Closure
@@ -142,6 +152,7 @@
 | CF-039 | Dedicated workflow maintainer: executable cross-check of contract clauses, schema, task ownership and acceptance criteria; existing scope-audit item now formally indexed. |
 | CF-040 | Partially scheduled in Phase 23 task 14 (VAL-073) for the Human views that phase introduces; polish/verbosity review of pre-existing views stays with Phase 25 operating-experience qualification. |
 | CF-041 | Workflow/CI maintainer: hosted CI runs only format, lint, build, shard verification, and the ordinary race/coverage shards. The tagged integration suite and the rebuild benchmark are local-only gates, so a green PR is not phase-level evidence. Dedicated maintenance. |
+| CF-042 | Workflow/test-infra maintainer: `cmd/fid/integration/main_test.go` cleans up its built-binary directory only on normal exits, so timeout kills leak ~16 MB each (148 dirs, 2.3 GB, observed filling a RAM-backed `/tmp`). Phase 23 task 1 adds bounded age-based pruning; the durable cleanup-on-kill design stays in dedicated maintenance. |
 
 CF-024/034/035 closed with Phase 22 evidence; historical dispositions and closed
 IDs remain in the wrap audit and must not be reused. All triggers checked
@@ -149,6 +160,7 @@ against the actual phase diff.
 
 Under DEC-222, CF-008/018/023/026a/026b/029/030/033/036/037/038/039 are
 re-deferred unchanged, CF-040 is partially scheduled, and CF-041 is registered.
+CF-042 is registered under DEC-227/DEC-228 from the QA plan's I-16.
 The full disposition table is in
 [Phase 23 decisions](../phases/phase-23/decisions.md).
 

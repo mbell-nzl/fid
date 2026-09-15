@@ -1,6 +1,10 @@
 # Phase 23 Slice Contract - Review And Human Judgment
 
 > Status: ACCEPTED by Human under DEC-222, 2026-09-14.
+> Amended 2026-09-15 by DEC-224 (readiness Stop producers), DEC-225
+> (independence reading), and DEC-226 (failure-code precedence and denial
+> semantics), all **pending Human approval**; amended passages name their DEC
+> inline. Tech Lead planning clarifications under DEC-228 are marked the same way.
 > Author: Tech Lead, 2026-09-14. Read with `public-interface.md` and `schema.md`.
 > Planning base: `0195897a347dfe1872db0f7be3800c5c3ccdefcf`.
 > Roadmap slice 23 of ADR-0012; Phase 21/22 contracts remain authoritative
@@ -69,7 +73,17 @@ while review proof is (section 7).
 Obligation evaluation stays the single shared evaluator. It now returns one
 `Evaluation` per Obligation, in Obligation ID order, each retaining the three
 independent dimensions - absence, record validity/freshness, Artifact
-availability - and all unsatisfied reasons. A guarded action requires every
+availability - and all unsatisfied reasons. Absence keeps a per-type reason code
+(DEC-228): a `gate-evidence` or `review` Obligation with no qualifying Evidence
+keeps the existing `obligation-evidence-absent`, a `human-outcome` Obligation
+with no linked Outcome returns `human-outcome-absent`, an unresolved blocking
+Finding returns `finding-unresolved` (section 5), a Review whose independence no
+longer holds at link time returns `review-not-independent`, and an Outcome
+displaced under section 7 returns `outcome-superseded`. Each new code takes a
+rank in the existing evaluation reason precedence order immediately after
+`obligation-evidence-absent`, in the order `human-outcome-absent`,
+`finding-unresolved`, `review-not-independent`, `outcome-superseded`; the
+Phase 21/22 ranks are unchanged. A guarded action requires every
 applicable Obligation to be `satisfied`; a single unsatisfied Obligation blocks
 it and every unsatisfied reason from every Obligation is returned. Evidence
 absence, invalidity, and staleness never collapse into one reason code.
@@ -90,11 +104,26 @@ Receipts remain ordinary trusted execution facts, not Review Records.
 
 Independence is a durable, computed property, not an attribution string. The
 recording Actor of a Review Record must not equal any Actor that held a
-mutating Claim or a Run on the reviewed Issue within the same Envelope
-revision. A non-independent request rejects `review-not-independent` with the
-exact conflicting Claim or Run identity and creates no Event. This rule, not a
-role name, is what makes "a Builder cannot resolve its own Finding" enforceable
-(PRD-REV-004, TRD invariant).
+mutating Claim on the reviewed Issue within the same Envelope revision, or a
+Run under such a Claim. A non-independent request rejects
+`review-not-independent` with the exact conflicting Claim or Run identity and
+creates no Event. This rule, not a role name, is what makes "a Builder cannot
+resolve its own Finding" enforceable (PRD-REV-004, TRD invariant).
+
+**The conflicting set is the mutating side only (DEC-225).** A `review` Claim
+and any Run under it never conflict, so the same independent Actor may record
+successive Reviews across rework cycles on the same Issue and Envelope revision,
+and may resolve a Finding created by its own earlier Review Record. Only a
+Review Record resolving a Finding **it** created is prohibited (section 5); that
+prohibition is per Review Record, never per Actor. The opposite reading - any
+Run, including a review Run - would make the second Review of any rework cycle
+impossible for the recording Reviewer, require a fresh Actor per cycle, and
+leave the section 6 review-cycle and exhaustion model unusable, so it is not the
+accepted reading. Conversely, an Actor that reviewed an Issue is not thereby
+barred from later taking a mutating Claim on it; independence is evaluated at
+Review record time against the durable history that exists then, and a Review
+already recorded is never retroactively invalidated. Linking such a Review as
+Evidence is re-evaluated at link time (section 13).
 
 ## 4. Review Records, Coverage, And Verdicts
 
@@ -182,7 +211,10 @@ the Stop blocks the next rework instead of voiding the Review. The Stop code is
 `stop.resolve`, blocked actions are exactly `claim.acquire` and `run.start`,
 and its resolution condition is `budget-observed` on that budget name. A
 subsequent `claim.acquire` or `run.start` on that Envelope returns
-`review-rework-exhausted` and creates no Claim or Run.
+`review-rework-exhausted` and creates no Claim or Run. That refusal is a
+non-committing denial (DEC-226): it appends no Event, stores no idempotency
+result, and returns null `EventRef`, `replayed:false`, and the immutable Stop
+and Attention IDs raised by the exhausting Review.
 
 A budget whose `exhaustion_action` is `review-rework-exhausted` must have unit
 `review-cycles`, and a `review-cycles` budget must use that exhaustion action.
@@ -273,6 +305,17 @@ from `accepted`, `rejected`, `pending-decision`, ordered references, concise
 reasoning, and a created time. A Deviation is never edited; a changed judgment
 is a new Deviation that references the earlier one.
 
+A Concern or Deviation `subject` is a typed reference that fid records without
+requiring it to resolve to an existing row (DEC-228). Concerns and Deviations are
+lightweight observations that must remain recordable about a subject fid does not
+own or does not yet store - a `requirement` subject cannot resolve before task
+12, and an observation about a removed or external subject stays legible. The
+recorded `subject_type` is still closed and validated. The exception is a
+disposition that binds an identity: `carried-forward` names an Issue and
+`superseded` names a Concern or Finding, and those must already exist and are
+enforced by foreign key. Task 8 records this interpretation in its completion
+report.
+
 Neither a Concern nor a Deviation is Evidence and neither can satisfy an
 Obligation.
 
@@ -338,11 +381,35 @@ deterministic proof; its Evidence record retains
 `artifact_availability:"not-applicable"` (PRD-HUM-001).
 
 An Envelope whose `human-outcome` Obligation is unsatisfied when every other
-Obligation is satisfied raises one `human-outcome-required` Stop with subject
-Envelope, blocked actions exactly that Obligation's guarded actions, resolver
-capability `stop.resolve`, and resolution condition `human-outcome-recorded`
-naming the `outcome_class`. This is the "readiness for Human validation"
-Attention permitted by PRD-HUM-002; routine status never raises Attention.
+applicable Obligation is satisfied raises one `human-outcome-required` Stop with
+subject Envelope, blocked actions exactly that Obligation's guarded actions,
+resolver capability `stop.resolve`, and resolution condition
+`human-outcome-recorded` naming the `outcome_class`. This is the "readiness for
+Human validation" Attention permitted by PRD-HUM-002; routine status never
+raises Attention.
+
+**Raising producers are closed and named (DEC-224).** A Stop is durable state
+and must be raised by a committing Event, so this readiness condition is
+evaluated atomically inside exactly the four Events whose commit can make it
+true, and nowhere else:
+
+| Raising Event | Case it covers | Effect rows |
+|---|---|---|
+| `envelope.activated` | activation where the `human-outcome` Obligation is already the only unsatisfied one | Stop rows added for protected Decisions by task 9; reused here |
+| `evidence.linked` | the ordinary case: linking Receipt or Review Evidence satisfies the last non-Human Obligation | optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` added by task 10 |
+| `review.recorded` | a later independent Review resolves the last blocking Finding, satisfying an already-evidenced `review` Obligation | already optional in `schema.md` section 6.2 |
+| `artifact.availability-observed` | an observation flips the last `required-available` Artifact to available | optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` added by task 10 |
+
+At most one unresolved `human-outcome-required` Stop exists per Obligation: a
+later qualifying Event re-evaluates and raises nothing while that Stop is open.
+The Stop is never withdrawn by a later state change - a tree change that stales
+Review evidence leaves it open - and resolves only through a qualifying Human
+Outcome under section 11. No other Event raises it, and a guarded-action denial
+never raises it, because a denial commits nothing (DEC-226).
+
+While that Stop is open, the actions it blocks return `human-outcome-required`
+rather than the generic `obligation-unsatisfied`, under the precedence in
+`public-interface.md` section 5.
 
 ## 11. Attention Resolution Through Human Outcomes
 
@@ -409,8 +476,24 @@ subject's type must be in the Obligation's `accepted_evidence_types` and its
 trust source in `accepted_trust_sources`; a mismatch rejects
 `evidence-type-not-accepted`. Linking a `changes-required` or `blocked` Review
 rejects `review-changes-required` with the blocking Finding IDs. Linking a
-Review that fails independence rejects `review-not-independent`. Linking a
-non-`approved` Human Outcome rejects `outcome-not-permitted`.
+Review that fails independence rejects `review-not-independent`; independence is
+re-evaluated against the durable history at link time, so a Reviewer that has
+since taken a mutating Claim on that Issue and revision cannot have its Review
+linked. Linking a non-`approved` Human Outcome rejects `outcome-not-permitted`.
+
+**Rejection precedence is fixed (DEC-226).** Exactly one code is returned per
+rejected `evidence.link`, in this order: `outcome-not-permitted` whenever the
+linked subject is a Human Outcome - including a Human Outcome offered to a
+`gate-evidence` or `review` Obligation, and a non-`approved` Outcome offered to
+a matching `human-outcome` Obligation; then `review-changes-required`; then
+`review-not-independent`; then `evidence-type-not-accepted` for every remaining
+type or trust-source mismatch. The Human Outcome case is deliberately the most
+specific: `outcome-not-permitted` names the Obligation type, the Outcome, and
+its result, which is what the caller must act on, while
+`evidence-type-not-accepted` would only echo the accepted list. The nine-cell
+type-by-type matrix therefore resolves to three accepted pairs, two
+`outcome-not-permitted` rejections (a Human Outcome against `gate-evidence` and
+against `review`), and four `evidence-type-not-accepted` rejections.
 
 `evidence.evaluate` takes an optional Obligation ID. With an Obligation ID it
 retains the Phase 21 single-Obligation result; without one it returns every

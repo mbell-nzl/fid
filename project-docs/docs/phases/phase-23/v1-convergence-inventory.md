@@ -18,7 +18,7 @@
 | `internal/issues/concern_raise.go`, `concern_address.go`, `concern_list.go`; `cmd/fid/concern.go` raise/address; `cmd/fid/concern_test.go` | Fail-closed completion-linked V1 Concern surface | Replace with generic Concerns in task 8, remove V1 leaves, writers and readers in task 15; both gates |
 | `internal/issues/detail.go`, `get.go`, `list.go`, `issue.go`, `transition_rules.go`; `internal/issues/detail_test.go`, `list_test.go`, `issue_test.go` | Issue detail and list read `task_completions`, `ac_verifications`, and V1 `concerns` | Re-point to generic Concerns, drop completion and verification projections, task 15; both gates |
 | `internal/workflow/rules.go` `all_acs_verified`, `has_completion_report`, `concerns_addressed`, `linked_to_decision`; `rules_test.go`; `internal/workflow/registry.go` `RequiredRoles`; `internal/workflow/workflow.go` | Role-parameterised and completion-bound transition rules; `linked_to_decision` reserved | Delete the first three rules and the roles parameter, implement `linked_to_decision` against `decision_refs`, tasks 9 and 15; both gates |
-| `internal/requirements/` all files; `cmd/fid/requirement.go`; `cmd/fid/requirement_test.go`; `internal/journal/current_event_catalog.go` `requirement.synced` | Markdown-parsing requirement authoring with `last_synced_hash` | Replace with `requirement_refs`/`requirement_issue_links` and remove the package, leaf, Event, and rule, task 12; both gates |
+| `internal/requirements/` all files; `cmd/fid/requirement.go`; `cmd/fid/requirement_test.go`; `internal/journal/current_event_catalog.go` and `internal/export/archive_semantics_catalog.go` `requirement.synced` | Markdown-parsing requirement authoring with `last_synced_hash`; the removed Event carries both a current effect rule and an archive semantic rule | Replace with `requirement_refs`/`requirement_issue_links` and remove the package, leaf, Event, and **both** rules, task 12; both gates plus task 12's declared expected-non-zero absence search (R-09) |
 | `internal/links/registry.go`, `add.go`, `list.go`, `errors.go`, `types.go`; `cmd/fid/link.go`; `cmd/fid/link_test.go`, `link_limit_test.go`; `cmd/fid/e2e_v01d_link_test.go` | `links` accepts `requirement` endpoints and `implements`/`implemented_by` | Restrict `links` to Issue endpoints; requirement traceability moves to `requirement_issue_links`, task 12; both gates. This removes the second authoritative model for one fact |
 | `internal/maintenance/errors.go`, `warnings.go`, `operational.go`, `check.go`; `internal/maintenance/*_test.go` | Integrity, `stale_verifications`, `telemetry_gaps`, and `frozen-state-present` checks read the removed tables | Re-point to the Phase 23 tables and delete the checks whose subject is removed, task 15; both gates |
 | `internal/stats/stats.go`, `stats_test.go`; `cmd/fid/stats.go`, `stats_test.go` | Historical stats join `agent_runs.completion_id` | Converge only the dropped column; `agent_runs` and historical stats stay Phase 25, task 15; both gates |
@@ -33,8 +33,10 @@
 | `internal/activity/`; `internal/journal/project_effects.go` activity writers | Closed ActivityEvent set includes `ac-verified`, `concern-raised`, `concern-addressed`, `task-completed` | Replace with the Phase 23 event names in `public-interface.md` section 2, tasks 8 and 15; both gates |
 
 No product escalation, QA-plan, validation-contract, template, retrospective, or
-carry-forward table exists at the planning base; task 17 proves they remain
-absent rather than creating an alias. Searches must distinguish product state
+carry-forward table exists at the planning base; **task 18** proves they remain
+absent rather than creating an alias (VAL-069). The earlier "task 17" reading was
+an inconsistency with the validation contract and task 18's own spec, corrected
+2026-09-15 under I-10. Searches must distinguish product state
 from `project-docs` delivery artifacts, which are outside product removal scope.
 
 ## 2. Provenance Anchors
@@ -67,6 +69,9 @@ never assign ownership (DEC-162/165/166/194). The convergence rules in force:
 - `internal/sqlquery/sqlquery.go`: diagnostic only. No planned production edit;
   CF-018's split fires only if a causal change reopens it.
 - `acceptance_criteria` add and list: retained target behavior, not residue.
+- `cmd/fid/integration/main_test.go` stale binary-directory pruning: added by
+  task 1 as bounded test infrastructure (CF-042). The durable cleanup-on-kill
+  question stays with workflow maintenance.
 
 Replacement-bound removal cannot be deferred to task 17 or Phase 25 merely
 because a test breaks. Any newly found surface gets a recorded exact owner,
