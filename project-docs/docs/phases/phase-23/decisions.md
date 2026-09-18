@@ -5,10 +5,10 @@
 >
 > Status: accepted. Phase 23 is approved and not yet started. The QA Lead's
 > first-pass plan returned thirteen Must-fix revisions; all thirteen are
-> accepted and applied. Of the five contract amendments, DEC-223, DEC-225, and
-> DEC-227 are approved by the Human on 2026-09-19; DEC-224 and DEC-226 remain
-> open pending the detail the Human requested. No task dispatches until both
-> are resolved and the QA readiness refresh passes.
+> accepted and applied. All five contract amendments, DEC-223 through DEC-227,
+> are approved by the Human on 2026-09-19, DEC-226 together with the part 5
+> vocabulary fix added during that review. No decision remains open. Next: the
+> QA Lead readiness refresh, then the Runner's readiness check.
 
 ## Decisions
 
@@ -117,10 +117,11 @@ separate DECs.
 
 ### DEC-224: Named raising Events for the `human-outcome-required` Stop
 
-- **Status:** PROPOSED by Tech Lead 2026-09-15. **Human approval required**;
-  this adds effect rows to an accepted Event contract. 2026-09-19: the Human
-  asked for the four raising moments and the exact added permissions before
-  deciding; both are enumerated below and in the section 10 producer table.
+- **Status:** **ACCEPTED by Human, 2026-09-19** ("ok as described"), after the
+  Human asked for the four raising moments and the exact added permissions;
+  both are enumerated below and in the `contracts.md` section 10 producer table.
+  Proposed by Tech Lead 2026-09-15; adds effect rows to an accepted Event
+  contract.
 - **Context:** QA Lead R-02 established that no accepted effect row can raise
   the Stop that `contracts.md` section 10 requires. The clause states a state
   predicate ("the Human Obligation is the only unsatisfied one") while Stops are
@@ -178,12 +179,19 @@ separate DECs.
 
 ### DEC-226: Failure-code producers, precedence, and non-committing denials
 
-- **Status:** PROPOSED by Tech Lead 2026-09-15. **Human approval required**;
-  this fixes accepted public-interface semantics and removes one failure code.
-  2026-09-19: the Human asked for the per-part specifics before deciding. The
-  four parts below are separable and may be approved or rejected individually;
-  parts 1, 2, and 4 only write down what was contradictory or unstated, and
-  part 3 is the only change that removes anything.
+- **Status:** **ACCEPTED by Human, 2026-09-19**, together with the part 5
+  vocabulary fix added during that review. Proposed by Tech Lead 2026-09-15;
+  fixes accepted public-interface semantics and removes one failure code.
+- **Root cause found during Human review, 2026-09-19:** the Human could not
+  reconcile the two code lists, and the reason was a real naming collision in
+  the project's own language, not a gap in their understanding. `GLOSSARY.md`
+  carried a single entry, `Reason code`, defined as "why an operation failed" -
+  the failure set - while the slice contracts used `ReasonCode` for the
+  evaluation-reason set. The implementation carries the same collision: the
+  failure-code registry is named `reasonCodeDefinitions`
+  (`internal/cli/codes.go`). One term denoted two closed sets, which is exactly
+  how `finding-unresolved` came to be filed as a failure code. Parts 1 and 3
+  below are both downstream of that collision.
 - **Context:** QA Lead R-03, R-05, and R-06 found three contradictions: one
   input with two accepted codes; three new codes with no named producer and no
   precedence; and a committed-denial replay rule with no denial Event.
@@ -209,12 +217,31 @@ separate DECs.
      null `EventRef`, `replayed:false`, and the immutable Stop and Attention IDs.
      Determinism comes from the durable Stop, not a stored snapshot. The Phase 22
      `run.execution-blocked` committed-denial rule is unchanged.
+  5. **Name the two sets** (added 2026-09-19). `GLOSSARY.md` replaces the single
+     `Reason code` entry with **Failure code** (names one refused operation;
+     exactly one per failed response; carries category, retryability, and exit
+     status) and **Evaluation reason** (describes why one Obligation is
+     unsatisfied; zero or more; no category, retryability, or exit status), plus
+     the rule that an identifier belongs to both sets only where the same fact
+     both refuses an action and describes a state. The Tech Lead applied that
+     edit under this decision. Task 13 renames `reasonCodeDefinitions` to
+     `failureCodeDefinitions` and its sibling test identifiers: a pure rename of
+     unexported names, no behavior, JSON key, or public value change.
+- **Why the vocabulary fix belongs here:** without it Phase 24 inherits the same
+  collision, and the next misfiled identifier is as invisible as this one was.
+  Per `AGENTS.md`, `GLOSSARY.md` is the canonical language source and unclear
+  terms are resolved or flagged there rather than worked around, which is the
+  same move DEC-195 makes for a missing schema row.
 - **Rejected alternative:** adding denial Events for `claim.acquire`,
   `run.start`, `issue.transition-terminal-success`, and `envelope.complete`.
   That would expand the Event surface and write journal entries for refused
   requests, to reproduce a guarantee the existing Stop already provides.
 - **Consequences:** VAL-025, VAL-039, VAL-056, and VAL-057 are restated
-  accordingly; task 6's code list loses `finding-unresolved`.
+  accordingly; task 6's code list loses `finding-unresolved`; `GLOSSARY.md` is
+  amended now and recorded `touched` in the spec sync table; task 13 carries the
+  rename. No new assertion is added for part 5: vocabulary and an unexported
+  rename change no observable behavior, and the existing gates compile the
+  rename.
 - **Refs:** `qa-plan.md` R-03, R-05, R-06; `public-interface.md` section 5;
   `contracts.md` sections 6, 10, 13; `schema.md` section 6.3; DEC-216.
 
@@ -342,7 +369,7 @@ not the default.
 | `09_AI_WORKFLOW.md` | pending | |
 | `AGENTS.md` (Commands) | pending | DEC-227: decide at wrap-up whether the explicit `-timeout` bound becomes the project default |
 | `10_IMPLEMENTATION_ROADMAP.md` | pending | |
-| `GLOSSARY.md` | pending | |
+| `GLOSSARY.md` | touched: see DEC-226 | `Reason code` split into **Failure code** and **Evaluation reason**; applied by Tech Lead 2026-09-19, ahead of implementation, because the phase's task specs depend on the distinction |
 
 ## Triage-Log Audit
 

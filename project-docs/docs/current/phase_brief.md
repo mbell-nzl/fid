@@ -14,26 +14,23 @@ still blocks, and which judgment unblocked it.
 
 ## Status
 
-**Approved, not started; two contract amendments still open.** Branch
-`phase-23` at planning base `0195897a347dfe1872db0f7be3800c5c3ccdefcf`. The QA
-Lead's Heavy-mode plan returned thirteen Must-fix revisions and sixteen
-improvements; all are accepted and applied by the Tech Lead on 2026-09-15, with
-the disposition table and reasoning in
-[phase decisions](../phases/phase-23/decisions.md). On 2026-09-19 the Human
-approved DEC-223 and DEC-227 and confirmed DEC-225. Next action: the **Human**
-decides DEC-224 and DEC-226, after the requested detail.
+**Approved, not started; all amendments approved.** Branch `phase-23` at
+planning base `0195897a347dfe1872db0f7be3800c5c3ccdefcf`. The QA Lead's
+Heavy-mode plan returned thirteen Must-fix revisions and sixteen improvements;
+all are accepted and applied by the Tech Lead on 2026-09-15, with the
+disposition table and reasoning in
+[phase decisions](../phases/phase-23/decisions.md).
 
-| DEC | Amendment | State |
-|---|---|---|
-| DEC-223 | Link-preserving `evidence_records` rebuild in 0017/0017-down | **Approved 2026-09-19** |
-| DEC-224 | Four named Events raise `human-outcome-required`, two gain effect rows | **Open** - detail supplied 2026-09-19 |
-| DEC-225 | Independence conflicts with the mutating side only | **Confirmed 2026-09-19** |
-| DEC-226 | Code producers, precedence, denials; one code demoted | **Open** - four separable parts, detail 2026-09-19 |
-| DEC-227 | Explicit `-timeout 30m` on the two long gates plus measured wall-time budgets | **Approved 2026-09-19** |
+The Human approved all five contract amendments on 2026-09-19: DEC-223
+link-preserving `evidence_records` rebuild; DEC-224 four named Events raise
+`human-outcome-required`, two gaining effect rows; DEC-225 independence
+conflicts with the mutating side only; DEC-226 failure-code producers,
+precedence, non-committing denials, and the **Failure code** / **Evaluation
+reason** split in `GLOSSARY.md`; DEC-227 explicit `-timeout 30m` plus wall-time
+budgets.
 
-Once both are decided the QA Lead runs the `qa-plan.md` section 11 readiness
-refresh, then the Runner's readiness check; no task dispatches before both. A
-rejected amendment reverts its dependent rows to `Draft` and needs replanning.
+Next action: the **QA Lead** runs the `qa-plan.md` section 11 readiness refresh,
+then the Runner's readiness check; no task dispatches before both pass.
 
 ## Operating Mode
 
@@ -93,8 +90,11 @@ task 18; final review and human checklist pending.
 
 ## Active Constraints
 
-- Nothing dispatches before DEC-224 and DEC-226 are decided, the QA readiness
-  refresh passes, and the Runner's readiness check passes.
+- Nothing dispatches before the QA readiness refresh and the Runner's readiness
+  check pass.
+- A **Failure code** names one refused request; an **Evaluation reason**
+  describes why one Obligation is unsatisfied. `GLOSSARY.md` defines both; file
+  every new identifier in the set it belongs to (DEC-226).
 - Every task runs the tagged integration gate from task 1 with an explicit
   `-timeout 30m`, and records the `cmd/fid/integration`, `cmd/fid`, and
   `internal/workflow` package times (DEC-227). Hosted CI does not run that gate

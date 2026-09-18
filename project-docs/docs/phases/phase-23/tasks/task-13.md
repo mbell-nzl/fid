@@ -25,6 +25,14 @@ mutation replay its original typed snapshot, including committed denials.
 
 ## Binding Constraints
 
+- `GLOSSARY.md` (DEC-226) distinguishes a **Failure code** (names one refused
+  operation; exactly one per failed response; carries category, retryability,
+  and exit status) from an **Evaluation reason** (describes why one Obligation
+  is unsatisfied; zero or more; no category, retryability, or exit status).
+  Register an identifier in the set it belongs to. An identifier may belong to
+  both sets only where the same fact both refuses an action and describes a
+  state, as `protected-decision-required` does.
+
 - `public-interface.md` sections 1, 4, and 5 are the exact authority. Add no
   leaf, flag, field, or code that is not listed there.
 - Every mutation takes `--input`, `--actor`, and `--idempotency-key` and no
@@ -51,6 +59,15 @@ mutation replay its original typed snapshot, including committed denials.
   `decision.go`, `human_outcome.go`, `requirement.go`, `evidence.go`,
   `envelope.go`, `claim.go`, `root.go`.
 - `internal/cli/codes.go`, `internal/cli` response and failure adapters.
+- Vocabulary rename (DEC-226): `reasonCodeDefinitions` names the **failure
+  code** registry, not the evaluation-reason set, and that collision is what let
+  `finding-unresolved` be filed as a failure code. Rename it to
+  `failureCodeDefinitions` at its declaration and its three other uses
+  (`internal/cli/codes.go`, `internal/cli/envelope.go:38`), plus the test-local
+  `reasonCodeExpectation` in `internal/cli/codes_test.go` and `reasonCodes` in
+  `cmd/fid/evidence_test.go` where they name the failure set. This is a pure
+  identifier rename of unexported names: no behavior, no JSON key, and no
+  public value changes. `GLOSSARY.md` defines both terms.
 - Idempotency snapshot writers in the owning domain packages.
 - Matching in-package tests and `cmd/fid/integration/` fixtures.
 - `project-docs/docs/phases/phase-23/tasks/task-13-done.md`.
@@ -76,6 +93,8 @@ mutation replay its original typed snapshot, including committed denials.
 - [ ] Every mutation replays its original typed result with `replayed:true` and
   no second Event, and both committed denials replay their original Stop,
   Attention, and EventRef. (VAL-057)
+- [ ] The failure-code registry and its uses are renamed to name the failure
+  set, with no behavior, JSON key, or public value change. (DEC-226)
 - [ ] Full required commands terminate with preserved red/green evidence.
 - [ ] Every converged retained row records its provenance and executing command.
 

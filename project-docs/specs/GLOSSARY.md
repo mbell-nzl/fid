@@ -487,12 +487,42 @@ Definition: The stable dotted identifier of one machine operation, such as
 Use when: routing, logging, or asserting on a specific operation.
 Avoid: deriving it from the command string or from a Human message.
 
-**Reason code**
-Definition: A stable machine identifier for why an operation failed, paired
-with a closed category and a retryability flag.
-Use when: a consumer must branch on a failure.
-Avoid: parsing Human message text, or introducing a code outside the owning
-slice contract.
+**Failure code**
+Definition: A stable machine identifier naming one refused operation, paired
+with a closed category and a retryability flag. Exactly one accompanies a
+failed response, and it decides that response's exit status.
+Use when: a consumer must branch on why a request was refused.
+Avoid: parsing Human message text; introducing a code outside the owning slice
+contract; or using a failure code to describe the state of an Obligation that
+was read successfully.
+
+**Evaluation reason**
+Definition: A stable machine identifier describing why one Obligation is
+unsatisfied, carried with the subject it refers to. Zero or more accompany an
+Obligation evaluation. An evaluation reason has no category, no retryability,
+and no exit status of its own.
+Use when: reporting or branching on the state of one Obligation, whether it was
+read successfully or restated inside a refused response's details.
+Avoid: treating an evaluation reason as a refusal. A successful read that
+reports an unsatisfied Obligation is not a failure.
+
+A **Failure code** and an **Evaluation reason** are separate closed sets that
+answer different questions: "was this request refused, and why" against "what is
+the state of this Obligation, and why". Both appear in machine responses, and
+both are written as a `code` field, so they are distinguished by position, never
+by shape. An unsatisfied Obligation read on its own carries evaluation reasons
+in a successful response; attempting the action that Obligation guards returns a
+single failure code, which may restate those same evaluation reasons in its
+details.
+
+An identifier may deliberately belong to both sets, because the same fact can
+refuse an action and describe a state: `protected-decision-required` names the
+refusal when the guarded action is attempted, and describes the Obligation state
+when the Envelope is read. An identifier that belongs to only one set must not
+be registered in the other. The bare term `Reason code` is retired: it named the
+failure set here while the slice contracts used `ReasonCode` for the evaluation
+set, so one term denoted two closed sets and an identifier was filed in the
+wrong one (Phase 23 DEC-226). Name the set explicitly.
 
 **Project root**
 Definition: The directory that directly contains `.fid/` and identifies one fid
@@ -509,4 +539,5 @@ forward fid entities. They may appear in historical phase records, the current
 V1 repository delivery process, or the external kit's temporary engineering
 memory. New fid product specifications must use the retained terms above.
 
-*Last updated: 2026-08-15 (workflow recovery dispositions; ADR-0011 boundary preserved)*
+*Last updated: 2026-09-19 (Phase 23 DEC-226: `Reason code` split into
+**Failure code** and **Evaluation reason**)*

@@ -2,9 +2,8 @@
 
 > ACCEPTED under DEC-222 with `contracts.md` and `public-interface.md`.
 > Amended 2026-09-15 by DEC-223 (link-preserving `evidence_records` rebuild),
-> **approved by the Human 2026-09-19**; and by DEC-224 (readiness Stop effect
-> rows) and DEC-226 (denial semantics), both still **pending Human approval**.
-> Amended passages name their DEC inline.
+> DEC-224 (readiness Stop effect rows), and DEC-226 (denial semantics), all
+> **approved by the Human 2026-09-19**. Amended passages name their DEC inline.
 > Task 1 incorporates it by `03_TRD_SCHEMA.md` section 8.4.
 > No implementation may infer additional tables, columns, indexes, triggers,
 > Event families, or effect rows beyond what is written here.

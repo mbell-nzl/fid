@@ -5,11 +5,10 @@
 > Last refined: 2026-09-15 by the Tech Lead, applying the QA Lead's first-pass
 > revisions R-01..R-13 and improvements I-01..I-16 from `qa-plan.md` section 2.3.
 > All rows are now `Ready`. Rows whose content depends on a contract amendment
-> name their DEC in the source column. DEC-223 (VAL-005), DEC-225 (VAL-015,
-> VAL-022, VAL-077), and DEC-227 (VAL-079) were approved by the Human on
-> 2026-09-19. DEC-224 (VAL-046) and DEC-226 (VAL-025, VAL-039, VAL-056,
-> VAL-057) are still pending; if either is not approved, its rows revert to
-> `Draft` and the phase cannot dispatch.
+> name their DEC in the source column: DEC-223 (VAL-005), DEC-224 (VAL-046),
+> DEC-225 (VAL-015, VAL-022, VAL-077), DEC-226 (VAL-025, VAL-039, VAL-056,
+> VAL-057), and DEC-227 (VAL-079). All five were approved by the Human on
+> 2026-09-19, so no row is conditional.
 > A fresh QA Lead readiness refresh (`qa-plan.md` section 11) is still required.
 >
 > Sources are `01_PRD.md`, `02_TRD.md`, `03_TRD_SCHEMA.md`,

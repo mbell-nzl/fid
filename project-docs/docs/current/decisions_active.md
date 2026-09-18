@@ -102,20 +102,23 @@
   both Actors recorded; `links` is restricted to Issue endpoints so
   `requirement_issue_links` is the single traceability model, retaining the new
   `verifies` relation.
-- DEC-223/225/227 (ACCEPTED by Human 2026-09-19): the link-preserving
+- DEC-223..227 (ACCEPTED by Human 2026-09-19): the link-preserving
   `evidence_records` rebuild, since 0017 fails wherever Evidence has Artifact
-  links; independence conflicts with mutating Claims and their Runs only, so one
-  Reviewer may review successive rework cycles; and an explicit `-timeout 30m`
-  on the two long gates plus measured wall-time budgets.
-- DEC-224 and DEC-226 (PROPOSED 2026-09-15, **open**): four named Events raise
-  `human-outcome-required`, two gaining effect rows; and named failure-code
-  producers, denial precedence, non-committing denials, with
-  `finding-unresolved` demoted to a ReasonCode. The Human requested detail on
-  both on 2026-09-19; DEC-226's four parts are separable.
+  links; four named Events raise `human-outcome-required`, two gaining effect
+  rows; independence conflicts with mutating Claims and their Runs only, so one
+  Reviewer may review successive rework cycles; named failure-code producers,
+  denial precedence and non-committing denials; and an explicit `-timeout 30m`
+  plus measured wall-time budgets.
+- DEC-226 vocabulary (standing): a **Failure code** names one refused request
+  and carries category, retryability, and exit status; an **Evaluation reason**
+  describes why one Obligation is unsatisfied and carries none of those. One
+  glossary term named both sets, which is how `finding-unresolved` was filed as
+  a failure code. `GLOSSARY.md` now defines each; register every new identifier
+  in the set it belongs to.
 - DEC-228 (ACCEPTED, Tech Lead) carries the remaining dispositions, including
   three DEC-167/173 scope corrections and five new assertions.
-- Execution has not started. Once both open DECs are decided the QA Lead
-  refreshes plan readiness and the Runner's readiness check runs. See [phase brief](phase_brief.md) and
+- Execution has not started. No decision remains open; the QA Lead refreshes
+  plan readiness next, then the Runner's readiness check runs. See [phase brief](phase_brief.md) and
   [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Latest Phase Closure

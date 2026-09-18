@@ -3,7 +3,10 @@
 > ACCEPTED under DEC-222 with `contracts.md` and `schema.md`.
 > Amended 2026-09-15 by DEC-226 (failure-code producers, precedence, and
 > non-committing denial semantics) and DEC-224 (`human-outcome-required`
-> producers), **pending Human approval**; amended passages name their DEC inline.
+> producers), both **approved by the Human 2026-09-19**; amended passages name
+> their DEC inline. `GLOSSARY.md` defines **Failure code** and **Evaluation
+> reason**: section 5 lists the failure set, and the `ReasonCode` paragraph the
+> evaluation set.
 > Phase 21 and Phase 22 `public-interface.md` remain the baseline for every
 > leaf, value, code, and exit this document does not replace.
 

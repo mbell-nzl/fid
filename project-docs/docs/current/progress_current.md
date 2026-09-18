@@ -36,15 +36,21 @@ assertion, three unasserted clauses, and 560 s of test time against an implicit
 600 s limit.
 
 Tech Lead accepted all thirteen and applied them. DEC-223..227 amend accepted
-contracts; DEC-228 carries the rest under planning authority. On 2026-09-19 the
-Human approved DEC-223 and DEC-227 and confirmed DEC-225, and asked for detail
-on DEC-224 and DEC-226 before deciding those two. The validation contract grew from 74 to 79 assertions
+contracts; DEC-228 carries the rest under planning authority. The Human approved
+all five on 2026-09-19.
+
+Reviewing DEC-226 surfaced a root cause worth recording: the project had one
+name for two closed sets. `GLOSSARY.md` defined `Reason code` as "why an
+operation failed" while the slice contracts used `ReasonCode` for the
+evaluation-reason set, and the implementation registry carries the same
+collision - which is how `finding-unresolved` came to be filed as a failure
+code. The glossary now defines **Failure code** and **Evaluation reason**
+separately; task 13 renames the registry to match. The validation contract grew from 74 to 79 assertions
 and every row is now `Ready`. New carry-forward CF-042 records the leaked
 integration binary directories, with bounded pruning added to task 1.
 
-Execution has not started and nothing is dispatched. Next: the two open
-decisions, then the QA Lead readiness refresh, then the Runner's readiness
-check. See
+Execution has not started and nothing is dispatched. Next: the QA Lead
+readiness refresh, then the Runner's readiness check. See
 [phase brief](phase_brief.md) and
 [Phase 23 decisions](../phases/phase-23/decisions.md).
 
@@ -68,7 +74,7 @@ outcomes; [wrap audit](../phases/phase-22/wrap-up-audit.md) records dispositions
 [decisions](../phases/phase-22/decisions.md) retain all authorities and workflow notes.
 Phase 22's original implementation and Human acceptance remain closed. The
 post-wrap PR CI follow-up is task 20 under DEC-221; Phase 23 is approved above
-and awaiting decisions on DEC-224 and DEC-226.
+with all five amendments approved.
 Separate workflow retrospective remains CF-036/039. Claims and external adapter
 qualification remain in their approved Phase 24/25 owners.
 
