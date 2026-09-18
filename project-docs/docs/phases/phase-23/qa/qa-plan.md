@@ -1,21 +1,26 @@
 # Phase 23 QA Plan - Review And Human Judgment
 
 > Phase: 23 - Review and Human judgment
-> Refreshed: 2026-09-15
+> First pass: 2026-09-15. Readiness refresh: 2026-09-19 (section 12).
 > QA Lead: Claude Opus 5 (activated directly by the Human; no Tech Lead handoff)
-> Operating mode: Heavy. Every command and feasibility result below was produced
-> fresh in this session on `phase-23` at `0c28936a6ad3980d2b3c4439b42ec70c83313d4c`
-> (planning base `0195897a347dfe1872db0f7be3800c5c3ccdefcf` plus documentation
-> commits only). Nothing carries forward from Phase 22.
+> Operating mode: Heavy. Sections 1-11 were produced fresh on `phase-23` at
+> `0c28936a6ad3980d2b3c4439b42ec70c83313d4c`; section 12 was produced fresh at
+> `6057066` (planning base `0195897a347dfe1872db0f7be3800c5c3ccdefcf` plus
+> documentation commits only). Nothing carries forward from Phase 22, and
+> section 12 reuses no earlier result for anything the Tech Lead changed.
 >
-> **Status: NOT READY - pending Tech Lead refinement.** This is not a
-> placeholder `BLOCKED`: every required command is concrete and was executed or
-> feasibility-proven in section 6. The plan cannot become Ready because
-> thirteen Must-fix revisions (section 2.3) name contract contradictions,
-> infeasible owning-task evidence, unowned scope, and unasserted clauses, three
-> of which are blocker candidates for protected authority (section 2.4). No
-> task may be dispatched until the Tech Lead dispositions R-01..R-13, applies
-> the accepted edits, and a fresh QA Lead readiness refresh (section 11) passes.
+> **Status: NOT READY - two Must-fix revisions remain (section 12.10).** This is
+> not a placeholder `BLOCKED`: every required command is concrete and was
+> executed or feasibility-proven in sections 6 and 12. The first pass returned
+> R-01..R-13 and I-01..I-16; all were accepted and applied (DEC-223..228), and
+> section 12 confirms every one of those edits against fresh evidence,
+> including the amended migration 0017 on the real chain. The plan cannot become
+> Ready because the refresh found two further Must-fix revisions - **R-14**
+> (four closed Phase 23 registries with no owning task) and **R-15** (the
+> accepted CF-042 mitigation does not address the measured `/tmp` leak) - both
+> bounded, decision-free planning corrections with no blocker candidate. Read
+> section 12 before sections 2-11: it supersedes the earlier statements listed
+> in 12.8.
 
 ## 1. Scope And Source Documents
 
@@ -535,3 +540,362 @@ This plan becomes Ready only after:
    row, fixture owner, and assertion in a new section of this file, reusing no
    result above for anything that changed.
 4. The Phase Runner's readiness check passes.
+
+## 12. Readiness Refresh - 2026-09-19
+
+Readiness condition 3. A fresh QA Lead session revalidated every changed
+command, DDL row, fixture owner, and assertion. **No result in sections 1-11 is
+reused for anything that changed.** Conditions 1 and 2 are satisfied: the Tech
+Lead dispositioned R-01..R-13 and I-01..I-16 (all accepted), the Human approved
+DEC-223..227 on 2026-09-19, DEC-228 covers the remaining dispositions, and the
+edits are applied across `contracts.md`, `public-interface.md`, `schema.md`,
+`execution-scope.md`, `contract-coverage.md`, `v1-convergence-inventory.md`,
+`qa/validation-contract.md`, `GLOSSARY.md`, and all eighteen task specs.
+
+Working directory for every command: `/home/mark/projects/fid`. The gate
+sequence ran serially through one wrapper that recorded each command's own exit
+status and wall time; `go clean -testcache` ran first as setup, so no result is
+a cached replay. Scratch state was allocated fresh (`mktemp -d`) under the
+session scratch directory; the repository working tree stayed clean throughout
+and no product file was written.
+
+### 12.1 Toolchain And Reference Instance (fresh)
+
+| Referenced step | Validation method | Result | Evidence |
+|---|---|---|---|
+| Go toolchain | executed | PASS | `go version go1.26.2 linux/amd64`; `go env GOOS GOARCH` -> `linux` `amd64` |
+| Kernel / CPU / memory | executed | PASS | `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64`; `nproc` 6; `AMD Ryzen 7 5700G with Radeon Graphics`; `MemTotal: 8133236 kB` |
+| Linter | executed | PASS | `golangci-lint has version 2.12.2 built with go1.26.2` |
+| Git, ripgrep, SQLite CLI | executed | PASS | `git version 2.53.0`; `ripgrep 15.1.0`; `sqlite3 3.50.6` |
+| Runtime SQLite and migrator | `go.mod` inspection | PASS | `modernc.org/sqlite v1.51.0`; `github.com/golang-migrate/migrate/v4 v4.19.1` |
+| Phase HEAD under test | `git rev-parse HEAD` | PASS | `6057066`; `git status --porcelain` empty |
+
+### 12.2 DEC-223 - Amended 0017 On The Real Chain
+
+The Tech Lead's own validation note is explicit that its sandbox proof used the
+`sqlite3` 3.50.6 CLI on a four-table minimal schema, and that the shipped
+migration under `modernc.org/sqlite` was still unproven. That gap is now closed.
+
+**Method.** A real schema-16 workspace was built end to end **through the
+shipped `fid` binary only** - `git init`, `fid init --prefix P23`,
+`issue create`, `activation prepare/component/resource/commit/finalize`,
+`gate register`, `envelope create/activate`, `claim acquire`, `run start`,
+`gate run` (artifact path `base.txt`), `evidence link` with
+`required_artifact_ids` - so the receipt Evidence and its `evidence_artifact_links`
+row are ordinary durable projection state, not hand-written SQL. The accepted
+`schema.md` sections 2 and 3 were extracted programmatically into
+`0017_p23_review_judgment.{up,down}.sql` in a copy of the real migration chain,
+and applied **in place** to that workspace's `.fid/fid.sqlite` through
+`internal/db.MigrateUp`, which is exactly what `catchUpWorkspaceLocked`
+(`internal/journal/projection.go:182-185`) calls. A second copy of the chain
+carried the pre-amendment (DEC-222) text with the six staging lines removed.
+
+| Referenced step | Validation method | Result | Evidence |
+|---|---|---|---|
+| Seed reachability through the product | 16 real CLI calls against the built binary | PASS | `EVIDENCE=EVD-672103 STATUS=satisfied`, `RECEIPT=RCP-2f0abd`, `ARTIFACTS=["ART-fd0274"]`; projection at `schema_migrations` `16\|0` with one `evidence_records` row, one `evidence_artifact_links` row (`EVD-672103\|ART-fd0274\|1`), `foreign_key_check` empty, `integrity_check` `ok` |
+| Pre-amendment 0017 up, real runner, linked seed | executed | **FAIL as predicted** | `MIGRATE-ERROR: run up migrations: constraint failed: FOREIGN KEY constraint failed (787) in line 0: CREATE TABLE review_records ...`, `rc=1`. R-01's premise reproduces under `modernc.org/sqlite`, not only under the CLI |
+| Pre-amendment 0017 down, real runner, linked state | executed (`Steps(-1)`) | **FAIL as predicted** | `STEP-ERROR: constraint failed: FOREIGN KEY constraint failed (787) in line 0: DROP INDEX evidence_records_one_outcome; ...`, `rc=1`, and the projection is left `16\|1` - **dirty**. The down direction needed the amendment too |
+| **Accepted (amended) 0017 up, in place** | executed | **PASS** | `MIGRATE-OK`, `rc=0`; `schema_migrations` `17\|0` |
+| Evidence row preserved by named column | before/after dumps compared | PASS | `EVD-672103` identical in `id, obligation_id, evidence_type, receipt_id, producer, trust_source, target_repository_json, validity, created_at`; `review_id IS NULL` and `human_outcome_id IS NULL` both `1` |
+| Artifact links preserved exactly | before/after dumps diffed | PASS | `LINKS-IDENTICAL` - `EVD-672103\|ART-fd0274\|1` with its exact `required_material` |
+| `evidence_artifact_links` never rebuilt | `sqlite_schema.sql` diffed | PASS | `DDL-BYTE-IDENTICAL` |
+| No staging table leaked | schema query | PASS | `SELECT count(*) FROM sqlite_schema WHERE name LIKE '%_carry'` -> `0` |
+| Integrity after up | pragmas | PASS | `foreign_key_check` empty; `integrity_check` `ok` |
+| Object inventory 16 -> 17 (VAL-001, EVID-01) | `sqlite_schema` diff excluding `sqlite_autoindex_*` | PASS | exactly **10 tables, 18 indexes, 1 trigger** added, **nothing removed**; `envelope_obligations.review_profile` and `.outcome_class` present and null |
+| **Accepted 0017 down, single step, with a `review` Evidence row present** | executed | **PASS** | `STEP-OK`, `rc=0`; `schema_migrations` `16\|0` |
+| Receipt-only filter in the down direction | row dumps | PASS | `EVD-qa-review` and its link are gone; `EVD-672103` and `EVD-672103\|ART-fd0274\|1` survive - exactly the explicit loss `schema.md` 3 declares |
+| Down restores schema 16 | object inventory diff | PASS | `INVENTORY-IDENTICAL-TO-16`; `foreign_key_check` empty; `integrity_check` `ok`; no `%_carry` leak |
+| Shipped full-teardown API | `internal/db.MigrateDown` on the linked workspace | PASS | `MIGRATE-OK`, `rc=0` - the amended down text is also executable inside the whole-chain teardown the product actually exposes |
+
+**Verdict.** DEC-223 is correct as shipped, in both directions, on the real
+chain, under the real driver, in place, with links present. VAL-005 is feasible
+exactly as written and must not be narrowed. Two observations for the owning
+task, carried as improvements below: the product exposes no single-step down
+(`MigrateDown` runs `m.Down()` to zero), so task 1's down evidence is either the
+full teardown or a test-local `Steps(-1)`; and a failed migration leaves
+`schema_migrations` **dirty**, which is worth recording as the failure mode
+VAL-005 rules out.
+
+### 12.3 DEC-223 Follow-on - 0018 Re-verified On The Same Real Workspace
+
+VAL-061 and VAL-062 were both restated, so their subjects were re-measured on
+the migrated real workspace rather than on the first pass's synthetic chain.
+
+| Referenced step | Validation method | Result | Evidence |
+|---|---|---|---|
+| The two implicitly dropped kind guards exist at 17 | schema query | PASS | `task_completions_issue_kind_guard_insert`, `decisions_epic_kind_guard_insert` |
+| `requirements.last_synced_hash` exists at 17 | `pragma_table_info` | PASS | count `1` |
+| 0018 up on the real 17 workspace | executed (`Steps(1)`) | PASS | `STEP-OK`; `schema_migrations` `18\|0` |
+| Non-Issue `links` and `activity_log` deletes (VAL-062) | seeded `issue->requirement` link and a `requirement` activity row, then migrated | PASS | after 0018 only `issue->issue relates_to` and `activity:issue` remain; every Issue row retained |
+| Both kind guards dropped implicitly (VAL-061) | schema query | PASS | count `0` |
+| `requirements` table and its column gone (VAL-061) | schema query | PASS | count `0` |
+| `issues_enriched` column list across 0018 (VAL-061) | `pragma_table_info` diff | PASS | `VIEW-COLUMNS-IDENTICAL (17 columns)` - the accepted view-column removal set is empty and the measured list is 17 columns |
+| Rename and new index | schema query | PASS | `concerns` present, `judgment_concerns` absent, `concerns_by_subject_status` present |
+| `agent_runs.completion_id` dropped | `pragma_table_info` | PASS | count `0` |
+| Pragmas at 18 (VAL-004) | pragmas | PASS | `foreign_key_check` empty; `integrity_check` `ok` |
+
+### 12.4 DEC-227 - New Command Text, Fresh Feasibility And Budgets
+
+Every task spec now carries `-timeout 30m` on the two long gates, and tasks 2
+and 6 on their named package runs. That is new command text, so every result
+here is new. All eighteen task specs were checked mechanically against
+the byte-exact bounded command lines: 18/18 carry both, task 2 carries the
+bounded `internal/workflow` run, task 6 carries both bounded package runs, and
+no task retains an unbounded form of either long gate (zero unbounded
+occurrences across the pack).
+
+| Referenced step (byte-identical to the task specs) | Validation method | Result | Evidence |
+|---|---|---|---|
+| `gofmt -l cmd internal` | executed | PASS | `exit 0 (no output)` (terminated `exit_code: 0`, 0 s) |
+| `golangci-lint run ./...` | executed | PASS | `0 issues.` (terminated `exit_code: 0`, 2 s) |
+| `go test -race -timeout 30m -coverprofile=coverage.out ./...` | executed | PASS | last line `ok github.com/mbell-nzl/fid/internal/workflow 443.528s coverage: 62.6% of statements`; 0 `FAIL` lines (terminated `exit_code: 0`, 562 s wall) |
+| `go tool cover -func=coverage.out` | executed | PASS | `total: (statements) 65.5%` (terminated `exit_code: 0`) |
+| `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` | executed | PASS | `ok github.com/mbell-nzl/fid/cmd/fid/integration 551.480s` (terminated `exit_code: 0`, 554 s wall) |
+| `go test -race -timeout 30m -cover ./internal/evidence/` (task 6) | executed | PASS | `ok github.com/mbell-nzl/fid/internal/evidence 2.273s coverage: 23.6% of statements` (terminated `exit_code: 0`) |
+| `go test -race -timeout 30m -cover ./internal/workflow/` (tasks 2, 6) | executed | PASS | `ok github.com/mbell-nzl/fid/internal/workflow 405.408s coverage: 62.6% of statements` (terminated `exit_code: 0`, 409 s) |
+| `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` (unchanged text, re-run) | executed | PASS | `26580 ms/rebuild`; `ok github.com/mbell-nzl/fid/internal/journal 29.108s` (terminated `exit_code: 0`) |
+| `rg -n --glob '!*_test.go' "requirement\.synced\|last_synced_hash" cmd internal` (task 12, new declaration) | executed | PASS (syntax); matches expected before task 12 | `exit_code: 0`; matches exactly the three files task 12's `## Expected Non-Zero Commands` names - `internal/export/archive_semantics_catalog.go:82`, `internal/requirements/sync.go` (6), `internal/journal/current_event_catalog.go:101`; all three are in task 12's own scope |
+| Task 15's two declared absence searches (unchanged text, re-run) | executed | PASS (syntax); matches expected before task 15 | `exit_code: 0`; matches only `internal/maintenance/{operational,errors,warnings}.go`, `internal/issues/{detail,transition_rules}.go`, `internal/workflow/rules.go` - all in task 15's scope |
+
+**VAL-079 budgets, measured under the new command text.**
+
+| Budget | Limit | Measured | Margin |
+|---|---|---|---|
+| Tagged integration gate | < 900 s | **551.480 s** | 39% |
+| `cmd/fid` under the race gate | < 600 s | **473.689 s** | 21% |
+| `internal/workflow` under the race gate | < 600 s | **443.528 s** | 26% |
+
+DEC-227's baselines are confirmed: 551.5 s against the recorded 560.2 s, 473.7 s
+against 472.0 s, and 443.5 s against 458.4 s - all within run-to-run variance on
+the same instance, and all inside budget. The explicit `-timeout 30m` is
+effective and no gate approached it. The headroom the decision buys is real:
+without the bound, `cmd/fid` at 473.7 s sits 21% under an *undeclared* 600 s
+cliff that a killed command would turn into `BLOCKED`.
+
+**One measured fact contradicts the accepted cause of CF-042 - see R-15.** A
+single clean tagged run (exit 0, no kill, no timeout, 551 s) left **20**
+`fid-integration-binary-*` directories and **306 MB** in a 3.9 GB RAM-backed
+`/tmp`. `/tmp` held 3.6 MB before the run. The directories are created between
+09:44:07 and 09:52:04 - during the run - each holding a complete 16 MB `fid`
+binary. `TestMain` creates exactly one directory
+(`cmd/fid/integration/main_test.go:22`) and removes it on a normal exit
+(`:42`), so these are not its leak: five tests re-execute the test binary as a
+child process (`exec.Command(os.Args[0], ...)` in `p22_activation_fault_test.go:134`,
+`p22_budget_fault_test.go:208`, `p22_force_budget_fault_test.go:34`,
+`p22_recovery_fault_test.go:52`, and `os.Executable()` in
+`p22_human_fixtures_test.go:64`), each child runs `runIntegrationSuite` again,
+rebuilds the binary, and - for the crash-process children, whose whole purpose
+is to die abnormally - never reaches its `RemoveAll`.
+
+### 12.5 DEC-224 - All Four Raising Sequences Reachable At Task 10
+
+| Sequence | Reachability at task 10 | Result | Evidence |
+|---|---|---|---|
+| `envelope.activated` on a Human-only Envelope | `contracts.md` 2 accepts 1..16 Obligations with no `gate-evidence` requirement; the `human-outcome` Obligation type and its authoring land at task 2; `stops.code` and `attention_items.code` gain `human-outcome-required` at task 1 (`schema.md` 1) | PASS | `envelope_obligations_one_gate_evidence` is a partial unique index, not a presence requirement - verified on the applied schema at 17; a revision whose only Obligation is `human-outcome` is authorable and activates unsatisfied |
+| `evidence.linked` satisfying the last non-Human Obligation | tasks 2 and 6 precede | PASS | reproduced end to end in 12.2: `evidence link` returned `STATUS=satisfied` for the `gate-evidence` Obligation through the built binary |
+| `review.recorded` resolving the last blocking Finding | tasks 4, 5, 6 precede; `schema.md` 6.2 already gives `review.recorded` optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` | PASS | the new-rule row is present in `schema.md` 6.2 as the decision states; no additional effect-row amendment is needed for this producer |
+| **`artifact.availability-observed` flipping the last required Artifact** | the one sequence with no prior evidence anywhere | **PASS - reproduced live** | On the real seeded workspace: `artifact verify` -> `available`, `changed:false`, `EVT-...000021`; retained blob removed -> `missing`, `changed:true`, `EVT-...000022`, and `evidence evaluate` returns `status:"unsatisfied"`, `artifact_availability:"missing"`, reason `artifact-unavailable`; blob restored -> `available`, `changed:true`, `EVT-...000023`, and evaluation returns `status:"satisfied"` with `reasons:[]`. The Obligation genuinely transitions unsatisfied -> satisfied inside that one Event |
+
+The fourth sequence - the one the Human specifically asked about - is real, not
+theoretical. `internal/evidence/artifact.go:428-444` derives availability by
+digest-verifying the retained content-addressed blob and writes a
+`referenced_artifacts/update` effect with a precondition on the prior value, so
+`missing -> available` is exactly one qualifying Event. The fixture technique it
+requires (remove and restore the blob under `.fid/artifacts/<digest>`) is
+recorded nowhere; see I-24.
+
+Effect-row ownership for the amendment is assigned and consistent:
+`execution-scope.md` 6 and task 10's file list both give task 10 the optional
+`stops/insert`, `attention_items/insert`, `attention_stop_links/insert` rows on
+`evidence.linked` and `artifact.availability-observed` in
+`internal/journal/current_event_catalog.go`, and task 9 already owns the
+`envelope.activated` rows. Two mechanical gaps in that assignment are R-14 and
+I-17 below.
+
+### 12.6 DEC-226 - Failure Codes, Producers, Precedence, Vocabulary
+
+| Referenced step | Validation method | Result | Evidence |
+|---|---|---|---|
+| Every code in `public-interface.md` 5 has a producer in 5.1 | list comparison | PASS | all 14 table rows are covered; the grouped `*-not-found` row maps to "the read and mutation leaves naming that entity" (category, not operation - see I-25) |
+| `finding-unresolved` is no longer a failure code | source search | PASS | absent from `internal/cli/codes.go`; the section 5 table no longer lists it; `contracts.md` 2 places it in the evaluation reason precedence instead |
+| Count of genuinely new failure codes | comparison against `internal/cli/codes.go` | PASS | 20 codes declared in section 5; exactly one (`requirement-not-found`) already exists, so **19** are new. This supersedes section 6.5's "20 new codes" |
+| Codes VAL-056 must reproduce, per producing task | per-code search across all eighteen task specs | PASS | all 19 new codes have an owning task that names `internal/cli/codes.go`: task 3 (`claim-mode-invalid`, named in its body at `task-3.md:21` rather than in the file bullet), task 4 (4), task 5 (2), task 6 (4, including `review-not-independent` again for the VAL-077 link-time check), task 8 (3), task 9 (3), task 10 (3); task 12 retains `requirement-not-found` and task 13 owns the adapters |
+| `evidence.link` single-code precedence | `contracts.md` 13 against DEC-226 part 1 | PASS | identical order in both: `outcome-not-permitted`, `review-changes-required`, `review-not-independent`, `evidence-type-not-accepted`; the nine-cell matrix resolves to 3 accepted, 2 `outcome-not-permitted`, 4 `evidence-type-not-accepted`, which is exactly VAL-025's restated pass criterion |
+| Guarded-action denial precedence | `public-interface.md` 5.1 against VAL-039, VAL-056 | PASS with one wording note | the five-step order is determinate and both VAL-056 precedence probes are constructible at task 13 (tasks 9 and 10 precede). Step 1 says "every retained Phase 21/22 precondition and authority failure" while step 5 names `obligation-unsatisfied`, itself a retained failure - determinate only because step 5 names it explicitly (I-19) |
+| Denials commit nothing | `schema.md` 6.3, `public-interface.md` 5.2, `contracts.md` 6 | PASS | mutually consistent: no denial Event, no `idempotency_results` row, null `EventRef`, `replayed:false`, immutable Stop/Attention IDs; Phase 22 `run.execution-blocked` explicitly retained. VAL-057's restated criterion matches all four clauses |
+| `idempotency-conflict` real-process emission | source search, live probe through the built binary | **UNVERIFIED (unchanged)** | replay under the original key works (`ok:true`, `replayed:true`, same `EVD-672103` and `EVT-...000020`, no second Event); the same key with a different payload returns the adapter's generic `invalid-argument` / "invalid Evidence request" (`cmd/fid/evidence.go:125`). `"idempotency-conflict"` exists in `internal/journal/idempotency.go` as `IdempotencyConflictError` but appears as a CLI code only in fake-adapter test files. It **is** an accepted Phase 21 code (`phase-21/public-interface.md:467`, `06_DESIGN_PLAN_CLI.md:230`), so registering it is conformance, not a new code - see I-21 |
+| Evaluation reason precedence insertion | `internal/workflow/evaluation.go:380-387` | PASS with an ambiguity | `precedence` is an integer map where `obligation-evidence-absent` is 8 and seven other codes also hold 8; `receipt-unsuccessful` is 9. "Immediately after `obligation-evidence-absent` ... Phase 21/22 ranks are unchanged" is satisfiable only as *relative* order (I-18). No asserted observable depends on the finer reading |
+| `GLOSSARY.md` split | read in full | PASS | `Reason code` is replaced by **Failure code** and **Evaluation reason**, each with definition, use-when, avoid, the both-sets rule with `protected-decision-required` as the worked example, and an explicit retirement note naming DEC-226. `Last updated` is 2026-09-19 |
+| The task 13 rename targets | source verification | PASS with one false example | `reasonCodeDefinitions` is declared at `internal/cli/codes.go:200` with exactly three other uses - `codes.go:328`, `codes.go:339`, `envelope.go:38` - matching the spec's "declaration and its three other uses". `reasonCodeExpectation` (`internal/cli/codes_test.go:30`) does name the failure set. `reasonCodes` in `cmd/fid/evidence_test.go:429` does **not**: it is the parameter of `assertEvaluation` compared against `evaluation reasons` (I-20) |
+
+**Term usage in this plan.** Checked against the new GLOSSARY entries. Sections
+4, 5, 7 and this section use *failure code* only for the closed refusal set
+(`review-not-independent`, `outcome-not-permitted`, `protected-decision-required`,
+`human-outcome-required`, `idempotency-conflict`, ...) and *evaluation reason*
+only for the state set (`finding-unresolved`, `human-outcome-absent`,
+`outcome-superseded`, `artifact-unavailable`, `review-changes-required` when it
+appears in a `reasons` array). Two earlier statements needed correction and are
+superseded in 12.8: section 6.5's "20 new codes", and EVID-16/QA-16's phrasing
+that an Obligation "keeps `finding-unresolved`" - correct as an evaluation
+reason, and now explicitly labelled as one.
+
+### 12.7 Contract, File Scopes, And Fixture Owners
+
+**Mechanical contract checks, all re-run on the amended file.**
+
+| Check | Result | Evidence |
+|---|---|---|
+| Row count | PASS | 79 `VAL-NNN` rows; header claims 79 (75 deterministic + 4 Human) |
+| Human rows | PASS | exactly 4 (`VAL-070`, `071`, `072`, `073`) |
+| Status | PASS | 0 rows not `Ready` |
+| One validator per row | PASS | **40** QA Lead + **35** QA Reviewer + **4** Human = 79; no row names two (the first pass counted 36/34/4 = 74) |
+| Every `VAL-NNN` cited by a task spec | PASS | 0 uncited; VAL-070..072 are now cited by tasks 14 and 18, closing the first pass's `09_AI_WORKFLOW.md` 6.1 violation |
+| No task cites an undefined `VAL-NNN` | PASS | the cited set and the defined set are identical, 79 members each |
+
+**New rows.**
+
+| Row | Evidence method feasible? | Basis |
+|---|---|---|
+| VAL-075 | PASS | `git cat-file -t 0195897a347...` is a commit and `git diff --stat 0195897..HEAD -- migrations/` is empty, so the baseline diff shows exactly task 1's edits. All seven hunk anchors verified in place: `0013:155` `obligation_type` CHECK, `0013:156-157` registration columns, insertion before `0013:159` `UNIQUE (envelope_id, revision, id)`, `0013:181` `work_claims.mode`, `0015:58` `stops.code`, `0015:84` `attention_items.code`. I-13's collision is real: `registration_id TEXT NOT NULL,` and `registration_version INTEGER NOT NULL,` recur byte-identically at `0013:222-223` in `execution_attempts` |
+| VAL-076 | PASS | nine Phase 23 Event types exist in `schema.md` 6.2's new-rules table; all nine are implemented by task 12, so task 16 is the first point where the per-family corruption proof is executable, exactly as the row's note says |
+| VAL-077 | PASS | `evidence.link` already loads its binding and authority before committing (`internal/evidence/evidence.go:107-121`), so a link-time independence re-check is an ordinary added precondition at task 6; both states are named |
+| VAL-078 | PASS with a scope gap | the four Condition types and the "exactly one non-null field" rule are enforceable, but the closed registries that must change are unowned - see R-14 |
+| VAL-079 | PASS | measured in 12.4; both budgets hold with margin, and "every completion report carries its three recorded package times" is a report-lint-checkable fact |
+
+**Restated rows.** All 74 pre-existing rows moved `Draft` -> `Ready`. Comparing
+every row's ten columns against `f7811c6` with the `Status` column excluded,
+**33** are substantively restated, not the 27 the refresh brief names: `VAL-001`,
+`VAL-004`, `VAL-006`, `VAL-010`, `VAL-014` and `VAL-024` also changed, under
+I-01, I-02, I-11, I-09 and I-06 respectively, and were re-read here too. All 33
+were re-read against their sources, and every restatement is a strengthening or
+a note clarification, never a weakening: VAL-002 sheds the file
+diff to VAL-075 and gains the two valid counterparts; VAL-005 gains the link
+requirement and the explicit "a link-free seed alone is not evidence"; VAL-008,
+009, 010 and 027 gain their second point of verification; VAL-015 goes from two
+recordings to four and names the mutating-side-only reading; VAL-021 names the
+`claim-mode-invalid` code and `required_mode`; VAL-022 goes from four cases to
+six; VAL-025 goes from one code to the full precedence; VAL-033 adds the reverse
+supersession direction; VAL-035 goes from four negatives to seven; VAL-038, 040,
+043 gain their negatives; VAL-039 gains the with-an-Obligation-also-unsatisfied
+probe; VAL-045 fences off task 14's text; VAL-046 goes from one producer to four
+plus the at-most-once rule and both non-qualifying states; VAL-053 moves
+`last_synced_hash` to VAL-061 and names both Event catalogs; VAL-055 adds the
+activity-log inventory; VAL-056 adds the two precedence probes; VAL-057 adds the
+denial half; VAL-061 adds the implicit triggers and the column; VAL-062 adds the
+0018 delete probe; VAL-069 moves to task 18; VAL-070..072 gain a fixture owner;
+VAL-001 is scoped to schema 17 with the 0018 rename excluded; VAL-006 gains the
+four protected-Decision authoring negatives; VAL-010 gains its task-10
+present-evidence leg; VAL-014 gains the foreign-Receipt and shared-digest
+negatives; and VAL-004 and VAL-024 gain corrected cross-references only.
+No row's pass criterion was loosened and no negative case was dropped.
+
+**Amended file scopes and fixture owners.**
+
+| Referenced step | Validation method | Result | Evidence |
+|---|---|---|---|
+| R-08: `internal/workflow/activation.go` added to tasks 4, 5, 8, 9, 10 | task-spec inspection plus source check | PASS | all five name it with the correct rationale; `sortedUniqueCapabilities` is at `internal/workflow/activation.go:832` and holds **exactly 23** names; `sortedUniqueEnvelopeActions` reuses it (`envelope.go:505,546`); `authority.go` holds no action list |
+| Grant-action arithmetic (VAL-067) | count | PASS | 23 + 7 added (`review.record`, `finding.address`, `concern.record`, `concern.dispose`, `deviation.record`, `decision.record-reference`, `human-outcome.record`) = **30**, matching `public-interface.md` 4.1 and task 18; `requirement.record-reference` and `requirement.link` are correctly excluded |
+| R-09: `internal/export/archive_semantics_catalog.go` added to task 12 | task-spec inspection plus search | PASS | named with the rationale, and the declared absence search does match `archive_semantics_catalog.go:82` today, so without the file that command could not pass |
+| R-07d: task 12 gains `## Expected Non-Zero Commands` | section inspection plus execution | PASS | the section exists, declares `expected exit_code: 1`, names the exact recording form, lists the three current matches, and the command itself is in task 12's `Exact Commands To Run` block and its conditional-command list |
+| R-10: task 14 owns the VAL-070..072 fixture generator | task-spec inspection plus precedent check | PASS | task 14 names `cmd/fid/integration/p23_human_fixtures_test.go` and all three seeded scenarios; the `p22_human_fixtures_test.go` precedent already emits exactly the prescribed manifest (`SourceCommit`, `BinarySHA256`, `Checkpoints[].Inspections[].{CWD,Args}`) and already supports a durable output root via an environment variable, so a Human-runnable fixture is producible. Task 18 names the regeneration against the final binary and cites all four Human rows |
+| I-16 / CF-042: task 1 prunes stale integration binary directories | task-spec inspection plus measurement | **FAIL - drives R-15** | the instruction is present and bounded, but its stated cause and its 24-hour age bound do not match the measured leak (12.4) |
+| I-10: VAL-069 moves to task 18 | cross-document check | PASS | `v1-convergence-inventory.md` 1, task 18, and the contract now all say task 18 |
+| DEC-228 subject-resolution rule | `contracts.md` 8 against VAL-034 | PASS, implicitly | `contracts.md` 8 states it and task 8 records it; VAL-034 proves it only as a side effect of recording a `requirement`-subject Concern at task 8, where no requirement row can exist (I-23) |
+
+### 12.8 Statements In Sections 1-11 Superseded By This Section
+
+| Where | Superseded statement | Replacement |
+|---|---|---|
+| Header, section 1, section 10 | "74 assertions (70 deterministic, 4 Human)"; "all 74" | **79 assertions, 75 deterministic and 4 Human** |
+| Section 2 and 2.3 | R-01..R-13 open; three blocker candidates | all thirteen accepted and applied under DEC-223..228; **no blocker candidate is open**; the open items are R-14 and R-15 in 12.10 |
+| Section 2.1 gap table | the eight mapped-but-unasserted clauses; the duplicated `links` row | all eight now carry an evidencing row - `schema.md` 7 payload rejection -> **VAL-076**; `contracts.md` 13 link-time independence -> **VAL-077**; `contracts.md` 11 Condition types -> **VAL-078**; `contracts.md` 10 Stop producers -> **VAL-046** under DEC-224; `contracts.md` 9 protected-Decision authoring -> **VAL-006**; `contracts.md` 4 and `public-interface.md` 3 negatives -> **VAL-014**; `schema.md` 4 deletes and implicit trigger drops -> **VAL-061**, **VAL-062**; `public-interface.md` 2 ActivityEvent and ReasonCode additions -> **VAL-055** and the VAL-008/026/033/046 set - and the duplicate row is gone |
+| Section 3 | task coverage columns | task 1 also covers VAL-075; task 6 VAL-077; task 11 VAL-078; task 16 VAL-076; task 18 VAL-079 and the VAL-070..073 regeneration; task 14 owns the VAL-070..072 fixtures; tasks 12 **and** 15 declare expected non-zero commands |
+| Section 4, EVID-03 | "VAL-002 / R-11 row" | **VAL-075** |
+| Section 4, EVID-09 / EVID-21 / EVID-34 | "(R-07b)", "the R-02 producer", "owner per R-10" | task 10's all-satisfied state; the **four** DEC-224 producers; **task 14** generates and **task 18** regenerates |
+| Section 5 | the unbounded `go test -race -coverprofile=coverage.out ./...`, `go test -tags integration -race ./cmd/fid/integration/...`, and the two package runs | the byte-identical bounded forms with `-timeout 30m` in 12.4; all four re-measured |
+| Section 5 note | "Only task 15 declares expected non-zero commands (R-07d adds one to task 12)" | tasks **12 and 15** declare them; task 12's is applied and validated |
+| Section 6.2, 6.3 | the first pass's gate timings | the 12.4 measurements; the first pass's 609 s / 568 s wall figures are superseded by 562 s / 554 s under the new command text |
+| Section 6.5 | "none of the 20 new codes exists" | **19** are new; `requirement-not-found` already exists; `finding-unresolved` is no longer among them |
+| Section 6.7 | "Runnable fixtures for VAL-070..072 - FAIL - no task owns a generator" | **PASS** - task 14 owns it, task 18 regenerates |
+| Section 6.9 | "148 stale integration binary dirs" attributed to timeout kills | **20 directories and 306 MB leak per clean run**; see 12.4 and R-15 |
+| Section 7, QA-04 | one item covering VAL-002 including the baseline diff | split: QA-04 keeps the four discriminator probes for VAL-002; **QA-40** owns the baseline diff for VAL-075 |
+| Section 7, QA-13 / QA-16 / QA-21 | "per the R-04 disposition", "per R-03", "Stop only in the middle state per the R-02 producer" | **DEC-225** four recordings; **DEC-226** precedence; **DEC-224** four sequences plus the repeat case and every non-qualifying state |
+| Section 9 preamble | "Fixtures come from the owner assigned under R-10" | task 14 generates all four Human rows' fixtures; task 18 regenerates them against the final binary |
+
+### 12.9 Deterministic Checklist Additions
+
+Appended to section 7. Same rules: executed by QA Lead at final review, `PASS`
+without cited evidence is invalid.
+
+| ID | Check | Covers | Evidence Required |
+|---|---|---|---|
+| QA-40 | `git diff 0195897a347dfe1872db0f7be3800c5c3ccdefcf -- migrations/0013_p21_operational_kernel.up.sql migrations/0015_p22_recovery.up.sql` is exactly the seven accepted hunks, every one inside `envelope_obligations`, `work_claims`, `stops`, or `attention_items`, with `execution_attempts` lines 222-223 untouched `(qa-lead)` | VAL-075 | full diff output |
+| QA-41 | For each of the nine Phase 23 Event types, an unknown effect table, a missing required effect, and a malformed body are rejected, plus one unknown Event type; projection digest byte-identical before and after each `(qa-lead)` | VAL-076 | 28 probe outputs and digest pairs |
+| QA-42 | A Review recorded independently, whose Actor then takes a mutating Claim on the same Issue and revision, cannot be linked (`review-not-independent`, no Event), while a Review whose Actor never took one links `(qa-lead)` | VAL-077 | both outputs, journal line counts |
+| QA-43 | Each of the four Condition types resolves only on its own qualifying fact Event and rejects a foreign one; a Condition with two or with zero non-null fields is rejected with no Event `(qa-lead)` | VAL-078 | per-type paired outputs, rejection outputs |
+| QA-44 | The phase-end run of both bounded gates records per-package times; tagged integration under 900 s, no ordinary package over 600 s, no gate terminated by timeout; every completion report carries its three package times `(qa-lead)` | VAL-079 | gate transcript with times, report excerpts |
+| QA-45 | `/tmp` free space recorded before and after the phase-end tagged gate, and the `fid-integration-binary-*` directory count recorded at both points `(qa-lead)` | no VAL | `df` and `ls` output pairs |
+
+### 12.10 Revisions Requested From The Tech Lead (second pass)
+
+Must-fix (M) blocks Ready. These are bounded, decision-free planning
+corrections; neither is a blocker candidate and neither needs Human authority.
+
+| ID | Sev | Where | Finding and proposal |
+|---|---|---|---|
+| R-14 | M | task specs 4, 5, 6, 8, 9, 10, 11, 12, 16; `execution-scope.md` 6; `schema.md` 6.2 | **Four closed Phase 23 registries have no owning task.** `execution-scope.md` 1 is explicit that "every task owns its **named** implementation paths", and the Tech Lead accepted exactly this finding class twice already (R-08, R-09). Four production files that an owning task must edit are named by no task: (a) **`internal/workflow/stop.go`** - `stopCodes` is a closed 7-member map (`:114`), `conditionTypes` a closed 6-member map (`:120`), `Condition` a closed 4-field struct (`:26`), and `validStopDetails` a closed per-code key map (`:409`). Tasks 6, 9, 10 and 11 each raise a new Stop code or a new Condition type; without this file `validateStopRaise` (`:364`) and `validateCondition` (`:396`) reject every Phase 23 Stop. No task names it; task 11 names only `cmd/fid/stop.go` "result shapes only". (b) **`internal/journal/current_event_value_catalog.go`** - line 15 holds the closed `Condition` value grammar with its six accepted types, and lines 43-51 `currentStopDetailShapes`, the closed per-Stop-code details grammar that `StopCode` validation itself keys on (`current_event_value_types.go:89-91`). Named by no task. (c) **`internal/journal/current_event_columns.go`** - `currentEventTables` (`:5`) registers 22 tables with their column types; `validateCurrentEffect` returns `unknown table` for any effect on an unregistered table (`current_event_validation.go:160-164`), so all ten new Phase 23 tables must be registered. Named by no task. (d) **`internal/export/archive_semantics_catalog.go`** - `semanticEventRules` is the archive-side mirror of the journal catalogs; its 44 keys are exactly the union of `currentEventRules` (22) and `retainedCurrentRules` (22), and `validateEffects` (`archive_semantics.go:337-361`) rejects any Event whose family is unknown or whose effect table/op is not accepted. The nine new Phase 23 rules and the three amended ones (`envelope.activated` at task 9, `evidence.linked` and `artifact.availability-observed` at task 10 under DEC-224) must be mirrored there, or `export validate` and `import` reject the journal of any workspace that recorded a Phase 23 Event or raised a readiness Stop. The file is named only by task 12, for a **deletion**. No test asserts parity between the two catalogs, so the divergence is silent until VAL-064 at task 16 - by which point the cause sits outside task 16's ordinary scope, which is the precise failure mode R-09 was accepted to prevent. Additionally `internal/journal/current_event_catalog.go` is named by tasks 8, 9, 10 and 12 but **not** by tasks 4 and 5, which own the new `review.recorded` and `finding.addressed` rules and their `currentEventCommands` entries. **Proposal:** add `internal/workflow/stop.go`, `internal/journal/current_event_value_catalog.go` and `internal/journal/current_event_columns.go` to the file scopes of tasks 4, 5, 6, 8, 9, 10, 11 and 12 as each one's own additions require; add `internal/journal/current_event_catalog.go` to tasks 4 and 5; and give `internal/export/archive_semantics_catalog.go` an explicit owner for the additions and the three amendments - either each Event's own task, or task 16 as a single named owner, stated in `execution-scope.md` 6 either way. No assertion changes. |
+| R-15 | M | task 1; `execution-scope.md` 7; CF-042 | **The accepted CF-042 mitigation does not address the measured cause and does not stop the measured leak.** CF-042 and task 1 record the cause as "`TestMain` removes its directory only on normal exits, so a timeout kill or interrupt leaks a ~16 MB directory", and the mitigation as pruning directories "older than 24 hours". Fresh measurement (12.4): one **clean** tagged run - `exit_code: 0`, 551.480 s, no kill, no timeout - left **20** directories and **306 MB** in a `/tmp` that held 3.6 MB beforehand. The dominant cause is not timeout kills: five tests deliberately re-execute the test binary as a child process, each child re-enters `runIntegrationSuite`, creates its own directory and rebuilds the 16 MB binary, and the crash-process children by design never reach `RemoveAll`. Because the leak is per-run rather than per-kill, an age bound of 24 hours prunes **nothing** during a working day: Phase 23 runs the tagged gate at least 18 times for tasks plus 6 window reviews, the task-11 checkpoint and final review, so roughly 26 runs at 306 MB is about 7.8 GB against a 3.9 GB RAM-backed `/tmp`. On the measured rate `/tmp` fills around the twelfth run - well before any timeout - and a full `/tmp` is a gate-blocking environment failure, not a test failure. **Proposal:** keep the CF-042 split, but correct the recorded cause and make the task 1 mitigation match it. Either (i) have `runIntegrationSuite` publish the built binary path in an environment variable and have a child that finds it set reuse it, creating and removing nothing - which also removes about twenty redundant `go build ./cmd/fid` invocations per run and so helps the DEC-227 budget; or (ii) keep pruning but bound it by "not the current process's directory" rather than by age. Option (i) is the causal fix and stays inside `cmd/fid/integration/main_test.go` plus the five re-executing tests. Record the measured 20-directory, 306 MB per-run figure in `execution-scope.md` 7 in place of the "148 directories / 2.3 GB" framing, which described an accumulated symptom rather than the rate. |
+
+Improvements (the Tech Lead may apply or decline; none blocks Ready).
+
+| ID | Where | Proposal |
+|---|---|---|
+| I-17 | `schema.md` 6.2 | The section says "`currentEventRules` gains exactly these rows", but the three amended families (`envelope.activated`, `evidence.linked`, `artifact.availability-observed`) live in **`retainedCurrentRules`** (`current_event_catalog.go:77`), which has its own validation path (`current_event_validation.go:39-60`). Name both maps so the DEC-224 rows are added in the right one. |
+| I-18 | `contracts.md` 2 | "each new code takes a rank ... immediately after `obligation-evidence-absent`; the Phase 21/22 ranks are unchanged" is unsatisfiable read numerically: `precedence` (`evaluation.go:380`) is an integer map where seven codes already share rank 8 and `receipt-unsuccessful` is 9. State that only the relative order is accepted and that renumbering the unexported ranks is permitted. |
+| I-19 | `public-interface.md` 5.1 | Precedence step 1 says "every retained Phase 21/22 precondition and authority failure", and step 5 names `obligation-unsatisfied`, which is itself retained. Write step 1 as "every retained Phase 21/22 precondition and authority failure **other than `obligation-unsatisfied`**". |
+| I-20 | task 13 | The rename list names `reasonCodes` in `cmd/fid/evidence_test.go` "where they name the failure set". It does not: at `:429` it is the `assertEvaluation` parameter compared against `evaluation reasons` (`:438`). The qualifier makes the instruction vacuous rather than wrong, but naming a real identifier invites the wrong rename - exactly the collision DEC-226 removes. Drop it, or rename it to `evaluationReasons` as an explicit evaluation-set clarification. |
+| I-21 | task 4 | Name `idempotency-conflict` in task 4's `internal/cli/codes.go` list. It is an accepted Phase 21 code with **no** entry in `reasonCodeDefinitions` and no adapter mapping today (12.6), while VAL-019 and VAL-057 require a real-process reproduction. Registering an already-accepted code is conformance and is in task 4's declared scope; naming it removes any doubt that it is. |
+| I-22 | VAL-006 | The evidence method now enumerates the protected-Decision counts (0, 16, 17) but no longer names the Obligation counts. Add 0, 1, 16 and 17 so the row's "accepts 1..16 Obligations" clause has both boundary states, matching EVID-07. |
+| I-23 | VAL-034 | The row proves the DEC-228 "a subject need not resolve" rule only as a side effect: a `requirement`-subject Concern at task 8 cannot resolve, because task 12 has not run. Say so in the pass criterion so the proof is deliberate rather than incidental. |
+| I-24 | task 10 | Record the fixture technique for the `artifact.availability-observed` raising sequence: remove the retained content-addressed blob under `.fid/artifacts/<digest>`, observe `missing`, restore it, observe `available`. Proven reachable in 12.5; without it the sequence reads as unreachable and the Developer has no accepted way to produce the qualifying state. |
+| I-25 | `public-interface.md` 5.1 | The grouped `*-not-found` row names a category ("the read and mutation leaves naming that entity") rather than an operation, while VAL-056 requires "one reproduction per code through the producer named in section 5.1". Pin the exact leaf per code - `deviation-not-found`, for instance, has no `deviation get`; its only producer is `deviation.record` with an unknown `supersedes_deviation_id`. |
+| I-26 | task 1 | Two facts measured in 12.2 that the task should know: the product exposes no single-step down (`internal/db.MigrateDown` runs `m.Down()` to zero), so the 0017 down evidence is either the full teardown or a test-local `Steps(-1)`; and a failed migration leaves `schema_migrations` **dirty** (observed `16\|1`), which is the exact failure state VAL-005 rules out and is worth naming in the fail criterion. |
+
+### 12.11 Blocker Candidates
+
+**None.** The first pass's three candidates (R-01, R-02, R-04) were resolved by
+DEC-223, DEC-224 and DEC-225, all Human-approved on 2026-09-19, and section 12
+confirms each against fresh evidence. R-14 and R-15 change no protected command,
+no assertion semantics, no accepted status or scope, no threshold, budget or
+tolerance, and no policy: R-14 adds file paths to task scopes that already own
+the behavior, and R-15 corrects a recorded cause and a test-infrastructure
+bound inside a file task 1 already owns. No `ESC` identity is requested and none
+is minted here.
+
+### 12.12 Readiness Verdict
+
+**NOT READY.** Readiness condition 3 is executed and complete, and conditions 1
+and 2 are satisfied, but two Must-fix revisions remain open.
+
+What is proven ready:
+
+- The five Human-approved decisions hold under fresh, independent evidence. In
+  particular DEC-223 is now proven on the real migration chain, under
+  `modernc.org/sqlite`, in place, on a workspace whose receipt Evidence carries
+  Artifact links produced by the product itself - and the pre-amendment text is
+  proven to fail there, in **both** directions, leaving the projection dirty.
+- Every command in every task spec is concrete, syntactically valid, and was
+  executed or feasibility-proven at its new text. Both DEC-227 budgets hold with
+  21-39% margin.
+- All four DEC-224 raising sequences are reachable at task 10, including
+  `artifact.availability-observed`, which was reproduced live.
+- The contract is internally consistent at 79 rows: all Ready, one validator
+  each, every row cited by a task spec, no task citing an undefined row, and
+  every restatement a strengthening.
+
+What blocks Ready: **R-14** and **R-15**. Both are bounded and decision-free.
+No task may be dispatched until the Tech Lead dispositions them, applies the
+accepted edits, and a fresh QA Lead readiness refresh confirms them; then the
+Phase Runner's readiness check (condition 4) can run.
+
+No assertion was weakened to reach this verdict, and no `VAL-NNN` was narrowed.
