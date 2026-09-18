@@ -1,10 +1,11 @@
 # Phase 23 Slice Contract - Review And Human Judgment
 
 > Status: ACCEPTED by Human under DEC-222, 2026-09-14.
-> Amended 2026-09-15 by DEC-224 (readiness Stop producers), DEC-225
-> (independence reading), and DEC-226 (failure-code precedence and denial
-> semantics), all **pending Human approval**; amended passages name their DEC
-> inline. Tech Lead planning clarifications under DEC-228 are marked the same way.
+> Amended 2026-09-15 by DEC-225 (independence reading), **confirmed by the
+> Human 2026-09-19**; and by DEC-224 (readiness Stop producers) and DEC-226
+> (failure-code precedence and denial semantics), both still **pending Human
+> approval**. Amended passages name their DEC inline; Tech Lead planning
+> clarifications under DEC-228 are marked the same way.
 > Author: Tech Lead, 2026-09-14. Read with `public-interface.md` and `schema.md`.
 > Planning base: `0195897a347dfe1872db0f7be3800c5c3ccdefcf`.
 > Roadmap slice 23 of ADR-0012; Phase 21/22 contracts remain authoritative

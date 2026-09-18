@@ -102,19 +102,20 @@
   both Actors recorded; `links` is restricted to Issue endpoints so
   `requirement_issue_links` is the single traceability model, retaining the new
   `verifies` relation.
-- DEC-223..227 (PROPOSED 2026-09-15, **awaiting Human approval**): the QA Lead's
-  first-pass plan returned thirteen Must-fix revisions; all are accepted and
-  applied, and these five amend DEC-222 contracts. DEC-223 link-preserving
-  `evidence_records` rebuild (0017 fails wherever Evidence has Artifact links).
-  DEC-224 four named Events raise `human-outcome-required`, two gaining effect
-  rows. DEC-225 independence conflicts with mutating Claims and their Runs only,
-  so one Reviewer may review successive rework cycles. DEC-226 named code
-  producers, denial precedence, non-committing denials, `finding-unresolved`
-  demoted to a ReasonCode. DEC-227 explicit `-timeout 30m` plus measured
-  wall-time budgets. DEC-228 (ACCEPTED, Tech Lead) carries the rest, including
+- DEC-223/225/227 (ACCEPTED by Human 2026-09-19): the link-preserving
+  `evidence_records` rebuild, since 0017 fails wherever Evidence has Artifact
+  links; independence conflicts with mutating Claims and their Runs only, so one
+  Reviewer may review successive rework cycles; and an explicit `-timeout 30m`
+  on the two long gates plus measured wall-time budgets.
+- DEC-224 and DEC-226 (PROPOSED 2026-09-15, **open**): four named Events raise
+  `human-outcome-required`, two gaining effect rows; and named failure-code
+  producers, denial precedence, non-committing denials, with
+  `finding-unresolved` demoted to a ReasonCode. The Human requested detail on
+  both on 2026-09-19; DEC-226's four parts are separable.
+- DEC-228 (ACCEPTED, Tech Lead) carries the remaining dispositions, including
   three DEC-167/173 scope corrections and five new assertions.
-- Execution has not started. After approval the QA Lead refreshes plan readiness
-  and the Runner's readiness check runs. See [phase brief](phase_brief.md) and
+- Execution has not started. Once both open DECs are decided the QA Lead
+  refreshes plan readiness and the Runner's readiness check runs. See [phase brief](phase_brief.md) and
   [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Latest Phase Closure

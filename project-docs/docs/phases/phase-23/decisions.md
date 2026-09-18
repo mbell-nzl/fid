@@ -3,10 +3,12 @@
 > Purpose: phase-local decision history, spec sync verdicts, workflow notes,
 > and wrap-up decisions. DEC numbering is global and never resets.
 >
-> Status: accepted, with five contract amendments awaiting Human approval.
-> Phase 23 is approved and not yet started. The QA Lead's first-pass plan
-> returned thirteen Must-fix revisions; all thirteen are accepted and applied,
-> and DEC-223..227 below need Human approval before any task may be dispatched.
+> Status: accepted. Phase 23 is approved and not yet started. The QA Lead's
+> first-pass plan returned thirteen Must-fix revisions; all thirteen are
+> accepted and applied. Of the five contract amendments, DEC-223, DEC-225, and
+> DEC-227 are approved by the Human on 2026-09-19; DEC-224 and DEC-226 remain
+> open pending the detail the Human requested. No task dispatches until both
+> are resolved and the QA readiness refresh passes.
 
 ## Decisions
 
@@ -73,8 +75,8 @@ separate DECs.
 
 ### DEC-223: Link-preserving `evidence_records` rebuild in migration 0017
 
-- **Status:** PROPOSED by Tech Lead 2026-09-15. **Human approval required**
-  before dispatch; this amends DDL accepted under DEC-222.
+- **Status:** **ACCEPTED by Human, 2026-09-19.** Proposed by Tech Lead
+  2026-09-15; amends DDL accepted under DEC-222, now approved.
 - **Context:** QA Lead R-01 measured that accepted 0017 fails on any schema-16
   workspace whose receipt Evidence has Artifact links:
   `Runtime error near line 265: FOREIGN KEY constraint failed (19)`, rc=1. The
@@ -116,7 +118,9 @@ separate DECs.
 ### DEC-224: Named raising Events for the `human-outcome-required` Stop
 
 - **Status:** PROPOSED by Tech Lead 2026-09-15. **Human approval required**;
-  this adds effect rows to an accepted Event contract.
+  this adds effect rows to an accepted Event contract. 2026-09-19: the Human
+  asked for the four raising moments and the exact added permissions before
+  deciding; both are enumerated below and in the section 10 producer table.
 - **Context:** QA Lead R-02 established that no accepted effect row can raise
   the Stop that `contracts.md` section 10 requires. The clause states a state
   predicate ("the Human Obligation is the only unsatisfied one") while Stops are
@@ -145,8 +149,9 @@ separate DECs.
 
 ### DEC-225: Review independence conflicts with the mutating side only
 
-- **Status:** PROPOSED by Tech Lead 2026-09-15. Determined by prior accepted
-  material; recorded for **Human confirmation** because it fixes product
+- **Status:** **CONFIRMED by Human, 2026-09-19** ("your interpretation is
+  correct"). Proposed by Tech Lead 2026-09-15 as determined by prior accepted
+  material, and recorded for Human confirmation because it fixes product
   semantics.
 - **Context:** QA Lead R-04: `contracts.md` section 3 said the recording Actor
   "must not equal any Actor that held a mutating Claim or a Run on the reviewed
@@ -175,6 +180,10 @@ separate DECs.
 
 - **Status:** PROPOSED by Tech Lead 2026-09-15. **Human approval required**;
   this fixes accepted public-interface semantics and removes one failure code.
+  2026-09-19: the Human asked for the per-part specifics before deciding. The
+  four parts below are separable and may be approved or rejected individually;
+  parts 1, 2, and 4 only write down what was contradictory or unstated, and
+  part 3 is the only change that removes anything.
 - **Context:** QA Lead R-03, R-05, and R-06 found three contradictions: one
   input with two accepted codes; three new codes with no named producer and no
   precedence; and a committed-denial replay rule with no denial Event.
@@ -211,8 +220,8 @@ separate DECs.
 
 ### DEC-227: Explicit test-time bound, wall-time budgets, and speed ownership
 
-- **Status:** PROPOSED by Tech Lead 2026-09-15. **Human approval required**;
-  it changes a required command.
+- **Status:** **ACCEPTED by Human, 2026-09-19.** Proposed by Tech Lead
+  2026-09-15; changes a required command, now approved.
 - **Context:** QA Lead R-13 measured the tagged integration suite at 560.2 s
   against Go's implicit 600 s per-binary default, with `cmd/fid` at 472.0 s and
   `internal/workflow` at 458.4 s, and Phase 23 adds real-process journeys to
