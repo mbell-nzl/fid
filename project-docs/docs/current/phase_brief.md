@@ -31,10 +31,9 @@ decides DEC-224 and DEC-226, after the requested detail.
 | DEC-226 | Code producers, precedence, denials; one code demoted | **Open** - four separable parts, detail 2026-09-19 |
 | DEC-227 | Explicit `-timeout 30m` on the two long gates plus measured wall-time budgets | **Approved 2026-09-19** |
 
-Once DEC-224 and DEC-226 are decided, the QA Lead runs the `qa-plan.md` section
-11 readiness refresh, then the Runner's readiness check. No task dispatches
-before both. A rejected amendment reverts its dependent validation rows to
-`Draft` and needs replanning.
+Once both are decided the QA Lead runs the `qa-plan.md` section 11 readiness
+refresh, then the Runner's readiness check; no task dispatches before both. A
+rejected amendment reverts its dependent rows to `Draft` and needs replanning.
 
 ## Operating Mode
 
