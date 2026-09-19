@@ -24,6 +24,15 @@ func currentStage(minimum int, operations ...string) currentEffectStage {
 func currentEffectKey(table, op string) string { return table + "/" + op }
 
 var currentEventRules = map[string]currentEventRule{
+	"review.recorded":               currentRule("review", currentStage(1, currentEffectKey("review_records", "insert")), currentStage(0, currentEffectKey("review_findings", "insert"), currentEffectKey("finding_dispositions", "insert"), currentEffectKey("budget_samples", "insert"), currentEffectKey("stops", "insert"), currentEffectKey("attention_items", "insert"), currentEffectKey("attention_stop_links", "insert"), currentEffectKey("stop_resolutions", "insert"), currentEffectKey("attention_items", "update"), currentEffectKey("activity_log", "activity"), currentEffectKey("idempotency_results", "insert"))),
+	"finding.addressed":             currentRule("finding", currentStage(1, currentEffectKey("finding_dispositions", "insert")), currentStage(0, currentEffectKey("activity_log", "activity"), currentEffectKey("idempotency_results", "insert"))),
+	"concern.recorded":              currentRule("concern", currentStage(1, currentEffectKey("judgment_concerns", "insert")), currentStage(0, currentEffectKey("activity_log", "activity"), currentEffectKey("idempotency_results", "insert"))),
+	"concern.disposed":              currentRule("concern", currentStage(1, currentEffectKey("judgment_concerns", "update")), currentStage(0, currentEffectKey("activity_log", "activity"), currentEffectKey("idempotency_results", "insert"))),
+	"deviation.recorded":            currentRule("deviation", currentStage(1, currentEffectKey("deviations", "insert")), currentStage(0, currentEffectKey("activity_log", "activity"), currentEffectKey("idempotency_results", "insert"))),
+	"decision.referenced":           currentRule("decision", currentStage(1, currentEffectKey("decision_refs", "insert")), currentStage(0, currentEffectKey("stop_resolutions", "insert"), currentEffectKey("attention_items", "update"), currentEffectKey("activity_log", "activity"), currentEffectKey("idempotency_results", "insert"))),
+	"human-outcome.recorded":        currentRule("human-outcome", currentStage(1, currentEffectKey("human_outcomes", "insert")), currentStage(0, currentEffectKey("stop_resolutions", "insert"), currentEffectKey("attention_items", "update"), currentEffectKey("activity_log", "activity"), currentEffectKey("idempotency_results", "insert"))),
+	"requirement.referenced":        currentRule("requirement", currentStage(1, currentEffectKey("requirement_refs", "insert")), currentStage(0, currentEffectKey("requirement_refs", "update"), currentEffectKey("activity_log", "activity"), currentEffectKey("idempotency_results", "insert"))),
+	"requirement.linked":            currentRule("requirement", currentStage(1, currentEffectKey("requirement_issue_links", "insert")), currentStage(0, currentEffectKey("activity_log", "activity"), currentEffectKey("idempotency_results", "insert"))),
 	"activation.prepared":           currentRule("activation", currentStage(1, currentEffectKey("kit_activations", "insert")), currentStage(1, currentEffectKey("activation_resources", "insert")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"activation.component-staged":   currentRule("activation", currentStage(1, currentEffectKey("kit_activations", "update")), currentStage(1, currentEffectKey("activation_components", "insert")), currentStage(1, currentEffectKey("activation_actor_profiles", "insert"), currentEffectKey("activation_gate_definitions", "insert")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"activation.committed":          currentRule("activation", currentStage(1, currentEffectKey("kit_activations", "update")), currentStage(0, currentEffectKey("activation_components", "update")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
@@ -48,6 +57,15 @@ var currentEventRules = map[string]currentEventRule{
 	"attention.resolved":            currentRule("attention", currentStage(1, currentEffectKey("attention_items", "update")), currentStage(1, currentEffectKey("idempotency_results", "insert"))),
 }
 var currentEventCommands = map[string]string{
+	"review.recorded":               "review.record",
+	"finding.addressed":             "finding.address",
+	"concern.recorded":              "concern.record",
+	"concern.disposed":              "concern.dispose",
+	"deviation.recorded":            "deviation.record",
+	"decision.referenced":           "decision.record-reference",
+	"human-outcome.recorded":        "human-outcome.record",
+	"requirement.referenced":        "requirement.record-reference",
+	"requirement.linked":            "requirement.link",
 	"run.started":                   "run.start",
 	"claim.expired":                 "claim.expire",
 	"run.observed":                  "run.observe",

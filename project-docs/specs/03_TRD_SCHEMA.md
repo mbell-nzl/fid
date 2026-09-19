@@ -722,4 +722,16 @@ references are distinct from their underlying qualifying fact references.
 DEC-187 keeps recovery-export binding in the kit coordinator's activation
 record; no such column is implied in fid activation_recoveries.
 
+### 8.4 Phase 23 - review and judgment baseline
+
+Status: accepted under DEC-222 and delivered incrementally by the Phase 23 task
+pack. The exact development-baseline replacements to migrations 0013 and 0015,
+the full migration 0017 up/down DDL, the evidence-artifact-link-preserving
+rebuild order, and the nine Event family Effect rules are incorporated by
+reference from `../docs/phases/phase-23/schema.md` sections 1-3 and 6-7.
+Those sections are the physical DDL authority for this slice; shipped migration
+SQL and the incorporated DDL must agree exactly. The baseline remains
+pre-adoption: clean initialization and rebuild are required, with no old-data
+converter implied.
+
 *Last updated: 2026-09-13 (Phase 22 delivered baseline; DEC-220)*

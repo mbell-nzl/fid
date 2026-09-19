@@ -36,6 +36,15 @@ func (stage semanticEffectStage) accepts(table, operation string) bool {
 // the accepted projection order while allowing the documented optional and
 // repeated rows within a stage. An idempotency result, where present, is last.
 var semanticEventRules = map[string]semanticEventRule{
+	"review.recorded":                semanticRule("review", semanticStage(1, semanticEffectKey("review_records", "insert")), semanticStage(0, semanticEffectKey("review_findings", "insert"), semanticEffectKey("finding_dispositions", "insert"), semanticEffectKey("budget_samples", "insert"), semanticEffectKey("stops", "insert"), semanticEffectKey("attention_items", "insert"), semanticEffectKey("attention_stop_links", "insert"), semanticEffectKey("stop_resolutions", "insert"), semanticEffectKey("attention_items", "update"), semanticEffectKey("activity_log", "activity"), semanticEffectKey("idempotency_results", "insert"))),
+	"finding.addressed":              semanticRule("finding", semanticStage(1, semanticEffectKey("finding_dispositions", "insert")), semanticStage(0, semanticEffectKey("activity_log", "activity"), semanticEffectKey("idempotency_results", "insert"))),
+	"concern.recorded":               semanticRule("concern", semanticStage(1, semanticEffectKey("judgment_concerns", "insert")), semanticStage(0, semanticEffectKey("activity_log", "activity"), semanticEffectKey("idempotency_results", "insert"))),
+	"concern.disposed":               semanticRule("concern", semanticStage(1, semanticEffectKey("judgment_concerns", "update")), semanticStage(0, semanticEffectKey("activity_log", "activity"), semanticEffectKey("idempotency_results", "insert"))),
+	"deviation.recorded":             semanticRule("deviation", semanticStage(1, semanticEffectKey("deviations", "insert")), semanticStage(0, semanticEffectKey("activity_log", "activity"), semanticEffectKey("idempotency_results", "insert"))),
+	"decision.referenced":            semanticRule("decision", semanticStage(1, semanticEffectKey("decision_refs", "insert")), semanticStage(0, semanticEffectKey("stop_resolutions", "insert"), semanticEffectKey("attention_items", "update"), semanticEffectKey("activity_log", "activity"), semanticEffectKey("idempotency_results", "insert"))),
+	"human-outcome.recorded":         semanticRule("human-outcome", semanticStage(1, semanticEffectKey("human_outcomes", "insert")), semanticStage(0, semanticEffectKey("stop_resolutions", "insert"), semanticEffectKey("attention_items", "update"), semanticEffectKey("activity_log", "activity"), semanticEffectKey("idempotency_results", "insert"))),
+	"requirement.referenced":         semanticRule("requirement", semanticStage(1, semanticEffectKey("requirement_refs", "insert")), semanticStage(0, semanticEffectKey("requirement_refs", "update"), semanticEffectKey("activity_log", "activity"), semanticEffectKey("idempotency_results", "insert"))),
+	"requirement.linked":             semanticRule("requirement", semanticStage(1, semanticEffectKey("requirement_issue_links", "insert")), semanticStage(0, semanticEffectKey("activity_log", "activity"), semanticEffectKey("idempotency_results", "insert"))),
 	"project.initialized":            semanticRule("project"),
 	"activation.prepared":            semanticRule("activation", semanticStage(1, semanticEffectKey("kit_activations", "insert")), semanticStage(1, semanticEffectKey("activation_resources", "insert")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
 	"activation.component-staged":    semanticRule("activation", semanticStage(1, semanticEffectKey("kit_activations", "update")), semanticStage(1, semanticEffectKey("activation_components", "insert")), semanticStage(1, semanticEffectKey("activation_actor_profiles", "insert"), semanticEffectKey("activation_gate_definitions", "insert")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
@@ -82,10 +91,13 @@ var semanticEventRules = map[string]semanticEventRule{
 	"requirement.synced":             semanticRule("requirement-sync", semanticStage(0, semanticEffectKey("requirements", "insert"), semanticEffectKey("requirements", "update")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
 }
 
-var semanticPhase22Events = map[string]bool{
+var semanticPost14Events = map[string]bool{
 	"activation.resource-observed": true, "activation.recovery-selected": true, "activation.recovery-completed": true,
 	"claim.expired": true, "run.observed": true, "run.checkpointed": true, "run.recovered": true, "run.budget-observed": true, "run.execution-blocked": true, "run.closed": true, "run.abandoned": true,
 	"stop.raised": true, "stop.resolved": true, "attention.resolved": true,
+	"review.recorded": true, "finding.addressed": true, "concern.recorded": true,
+	"concern.disposed": true, "deviation.recorded": true, "decision.referenced": true,
+	"human-outcome.recorded": true, "requirement.referenced": true, "requirement.linked": true,
 }
 
 func init() {

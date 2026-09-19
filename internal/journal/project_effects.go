@@ -7,7 +7,22 @@ import (
 	"strings"
 )
 
+var unavailableJudgmentEvents = map[string]bool{
+	"review.recorded":        true,
+	"finding.addressed":      true,
+	"concern.recorded":       true,
+	"concern.disposed":       true,
+	"deviation.recorded":     true,
+	"decision.referenced":    true,
+	"human-outcome.recorded": true,
+	"requirement.referenced": true,
+	"requirement.linked":     true,
+}
+
 func applyEventEffects(tx *sql.Tx, input ProjectionInput) error {
+	if unavailableJudgmentEvents[input.Event.EventType] {
+		return fmt.Errorf("project event %q: Phase 23 Event %q is unavailable", input.Event.EventID, input.Event.EventType)
+	}
 	if err := validateCurrentEvent(tx, input.Event); err != nil {
 		return err
 	}

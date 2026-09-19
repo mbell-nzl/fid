@@ -410,10 +410,14 @@ func expectedOperationalKernelSchemaObjects() map[string]string {
   id TEXT PRIMARY KEY,
   envelope_id TEXT NOT NULL,
   revision INTEGER NOT NULL,
-  obligation_type TEXT NOT NULL CHECK (obligation_type = 'gate-evidence'),
-  registration_id TEXT NOT NULL,
-  registration_version INTEGER NOT NULL,
-  obligation_json TEXT NOT NULL CHECK (json_valid(obligation_json)),
+	  obligation_type TEXT NOT NULL CHECK (obligation_type IN ('gate-evidence','review','human-outcome')),
+	  registration_id TEXT,
+	  registration_version INTEGER,
+	  obligation_json TEXT NOT NULL CHECK (json_valid(obligation_json)),
+	  CHECK ((obligation_type = 'gate-evidence'
+	          AND registration_id IS NOT NULL AND registration_version IS NOT NULL)
+	      OR (obligation_type IN ('review','human-outcome')
+	          AND registration_id IS NULL AND registration_version IS NULL)),
   UNIQUE (envelope_id, revision, id),
   FOREIGN KEY (envelope_id, revision) REFERENCES envelope_revisions(envelope_id, revision),
   FOREIGN KEY (registration_id, registration_version) REFERENCES gate_registrations(id, version)
@@ -434,7 +438,7 @@ func expectedOperationalKernelSchemaObjects() map[string]string {
   actor_id TEXT NOT NULL,
   worktree_id TEXT NOT NULL,
   scope_json TEXT NOT NULL CHECK (json_valid(scope_json)),
-  mode TEXT NOT NULL CHECK (mode = 'mutation'),
+	  mode TEXT NOT NULL CHECK (mode IN ('mutation','review')),
   version INTEGER NOT NULL CHECK (version > 0),
   status TEXT NOT NULL CHECK (status IN ('active','released','expired','superseded')),
   acquired_at DATETIME NOT NULL,
