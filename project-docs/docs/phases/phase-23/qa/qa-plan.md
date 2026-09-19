@@ -2,6 +2,7 @@
 
 > Phase: 23 - Review and Human judgment
 > First pass: 2026-09-15. Readiness refresh: 2026-09-19 (section 12).
+> Readiness confirmation of DEC-229/DEC-230: 2026-09-19 (section 13).
 > QA Lead: Claude Opus 5 (activated directly by the Human; no Tech Lead handoff)
 > Operating mode: Heavy. Sections 1-11 were produced fresh on `phase-23` at
 > `0c28936a6ad3980d2b3c4439b42ec70c83313d4c`; section 12 was produced fresh at
@@ -9,18 +10,20 @@
 > documentation commits only). Nothing carries forward from Phase 22, and
 > section 12 reuses no earlier result for anything the Tech Lead changed.
 >
-> **Status: NOT READY - two Must-fix revisions remain (section 12.10).** This is
+> **Status: NOT READY - one Must-fix revision remains (section 13.5).** This is
 > not a placeholder `BLOCKED`: every required command is concrete and was
 > executed or feasibility-proven in sections 6 and 12. The first pass returned
 > R-01..R-13 and I-01..I-16; all were accepted and applied (DEC-223..228), and
 > section 12 confirms every one of those edits against fresh evidence,
-> including the amended migration 0017 on the real chain. The plan cannot become
-> Ready because the refresh found two further Must-fix revisions - **R-14**
-> (four closed Phase 23 registries with no owning task) and **R-15** (the
-> accepted CF-042 mitigation does not address the measured `/tmp` leak) - both
-> bounded, decision-free planning corrections with no blocker candidate. Read
+> including the amended migration 0017 on the real chain. The refresh returned
+> R-14 and R-15; both were dispositioned under DEC-229 and DEC-230 and are
+> **confirmed correct and correctly applied** in section 13. The plan cannot
+> become Ready because confirming R-14 surfaced one further Must-fix - **R-16**
+> (the typed-result registries for the nine new Event families have no owning
+> task, so the first unfenced Phase 23 Event is rejected at append time) - a
+> bounded, decision-free planning correction with no blocker candidate. Read
 > section 12 before sections 2-11: it supersedes the earlier statements listed
-> in 12.8.
+> in 12.8. Read section 13 after it: 13.4 supersedes statements in section 12.
 
 ## 1. Scope And Source Documents
 
@@ -899,3 +902,134 @@ accepted edits, and a fresh QA Lead readiness refresh confirms them; then the
 Phase Runner's readiness check (condition 4) can run.
 
 No assertion was weakened to reach this verdict, and no `VAL-NNN` was narrowed.
+
+## 13. Readiness Confirmation - DEC-229 / DEC-230 (2026-09-19)
+
+Readiness condition 3, second cycle. A fresh QA Lead session confirmed the
+edits the Tech Lead applied in `5ff523a` under DEC-229 and DEC-230, per
+`tl-qa-confirmation-brief.md`. Base: branch `phase-23` at `c0a0876`,
+`git status --porcelain` empty before and after this pass.
+
+Scope bounds honoured. R-01..R-13 and DEC-223..228 were not re-opened. The
+DEC-227 budgets, the DEC-223 migration-chain proof, and the DEC-224 raising
+sequences were not re-measured: no product file changed in `5ff523a` (all 19
+edited files are under `project-docs/docs/`, confirmed by `git show --stat`),
+so section 12's measurements stand except where restated in 13.5 below.
+
+Method. Every claim below was checked against the product source or the task
+specs themselves, never against the brief's summary. Two throwaway probes were
+executed against the real packages through `go test -overlay`, which injects a
+test file without writing to the working tree; both probes and their overlays
+live in the session scratch directory and the tree stayed clean.
+
+### 13.1 The Four Judged Items
+
+| Item | Verdict | Evidence |
+|---|---|---|
+| **3.1 Condition-type sequencing** | **CONFIRMED - the split is complete and correctly ordered** | Phase 23 adds exactly three StopCodes and four Condition types (`public-interface.md` 2). Registration per the task specs: task 6 `review-rework-exhausted` and *no* Condition type, because its resolution condition is the retained `budget-observed` (`task-6.md:64-72`); task 9 `protected-decision-required` + `decision-satisfied` + the `decision_class` field *with its exactly-one-non-null rule in `validateCondition`* (`task-9.md:65-73`); task 10 `human-outcome-required` + `human-outcome-recorded` + `outcome_class` with the same rule (`task-10.md:83-90`); task 11 the remaining `review-recorded` and `finding-resolved` plus `finding_id`, and no Stop code (`task-11.md:55-65`). That is 3/3 codes, 4/4 types, and 3/3 new `Condition` fields, each field's rule added by the task that adds the field. No task raises a Stop whose code or condition type is registered later: `budget-observed` is already in the 6-member `conditionTypes` (`stop.go:120`); tasks 9 and 10 register their own at the raising task; tasks 6, 9, 10 all precede 11. A search of all eighteen specs for the three new codes and four new types returns nothing outside tasks 6, 9, 10, 11 except two descriptive mentions in `task-13.md:34,44`. The Tech Lead's correction of the refresh's under-specified "as each one's own additions require" is right, and is the only reading compatible with `validateStopRaise` (`stop.go:363-370`), which rejects an unregistered code and calls `validateCondition` before any commit. Two supporting facts also hold: every Phase 23 Stop takes subject Envelope, which `validSubject` (`stop.go:377`) already accepts, and every declared blocked action is already in `blockedActionSet` (`stop.go:125`), so neither registry needs an addition. |
+| **3.2 Task 1 as owner of `current_event_columns.go`** | **CONFIRMED - the executable proof lands at task 1, and no effect can precede registration** | `TestCurrentEventColumnDomainsMatchAcceptedDDL` exists today at `internal/journal/current_event_validation_test.go:228`. It iterates `currentEventTables` and introspects the live migrated database via `PRAGMA table_info`, checking column presence, integer-vs-text type, nullability and primary-key membership, and it fails closed: a registered table absent from the DDL yields zero rows, so `len(found) != len(definition.columns)` fires `t.Fatal`. Task 1 ships the 0017 DDL and registers the ten tables in the same task, so the proof genuinely executes there, inside `internal/journal`, which task 1's `go test -race -timeout 30m -coverprofile=coverage.out ./...` runs. No effect on a new table can precede registration: task 1 is the first task, and its own fence rejects all nine Event types until a later owner deletes its key. The ten names in `task-1.md:87-93` are exactly the new tables reachable from `schema.md` 6.2 - the nine required/optional new-rule tables plus `envelope_protected_decisions`, which only task 9's `envelope.created` amendment writes; registering it at task 1 is earlier than its first effect, not later. Assigning this to one task rather than five is also the safer choice for a single shared map. Task 15's rename of the `judgment_concerns` key is correctly the sole exception (`task-15.md:63`). |
+| **3.3 The rejection at tasks 4 and 5** | **CONFIRMED - the rejection is correct; the refresh's sub-item was wrong** | Verified directly against `task-1.md:60-63`: "Register the nine Event types **and their operation mappings** in `internal/journal/current_event_catalog.go` with the effect rules in `schema.md` section 6.2", and `current_event_catalog.go` is in task 1's file list (`task-1.md:86`). `schema.md` 6.2 gives `review.recorded` and `finding.addressed` their complete rows, including every optional effect those families ever take - `review.recorded` already carries `budget_samples/insert`, `stops/insert`, `attention_items/insert`, `attention_stop_links/insert`, `stop_resolutions/insert` and `attention_items/update`, which are what tasks 6 and 10 later need. The two maps tasks 4 and 5 would have touched are `currentEventRules` and `currentEventCommands` (`current_event_catalog.go:26,50`); task 1's wording covers both. So tasks 4 and 5 need no catalog edit and the file would only have created a shared-map conflict. My own first-pass inference from file lists alone was the error. |
+| **3.4 DEC-230** | **CONFIRMED - the premise holds; I agree with the removal over the leaf** | Verified independently of the brief. `public-interface.md` 4 gives Decision References exactly `decision.record-reference` and `decision.list`; there is no `decision get` row. `decision.record-reference`'s `id:ID` is the caller-supplied identity of the record being created, not a lookup key, so it cannot return not-found. A repository-wide search of the phase documents for `decision_ref_id` returns exactly one hit, `public-interface.md:108`, and it is a **result** field of `ProtectedDecision` (`ProtectedDecisionInput + {status,decision_ref_id:?ID,human_outcome_id:?ID}`), never an input; `ProtectedDecisionInput` has no such field. No other leaf's input names a Decision Reference ID. `linked_to_decision` is confirmed a transition rule "evaluated against Decision References in the Issue's scope" (`contracts.md:359-361`), reporting satisfied/unsatisfied - not a not-found error. The row was therefore unsatisfiable for VAL-056 exactly as DEC-230 states. I also agree with the choice: adding a `decision.get` leaf would expand the public surface to rescue dead vocabulary, and `deviation-not-found` and `outcome-not-found` are precedents in this very phase for a not-found code reachable only through another leaf's input field. The removal is the smaller change and is one line to reverse. |
+
+### 13.2 Mechanical Re-checks
+
+| Referenced step | Validation method | Result | Evidence |
+|---|---|---|---|
+| `public-interface.md` 5 and 5.1 well formed | full read plus set comparison | PASS | Section 5 declares **19** codes (13 single rows plus the grouped not-found row's six); section 5.1 has **19** producer rows; the two sets are identical. The grouped row now lists six codes, not seven. The table is well formed - no ragged row, every code `retryable:false`, every details shape closed. |
+| Each pinned producer exists | leaf and input-field check against `public-interface.md` 3 and 4 | PASS | All six pinned not-found producers resolve: `review.get` is a declared leaf; `requirement.get` is a declared leaf; `finding.address` takes `finding_id`; `review.record` takes `resolves_finding_ids`; `concern.dispose` takes `concern_id`, `supersedes_concern_id` and `supersedes_finding_id`; `deviation.record` takes `supersedes_deviation_id`; `evidence.link` takes `review_id` and `human_outcome_id`. The two "there is no ... get leaf" notes are true of section 4. The other thirteen producers are existing or newly declared leaves; `source-digest-mismatch`'s two producers both take `source:Source`. |
+| New-code count | re-derivation against `internal/cli/codes.go` | PASS - **restated to 18** | 19 codes declared in section 5, of which `requirement-not-found` already exists, so **18 are new**. This supersedes 12.6's "19" exactly as 12.8 superseded 6.5's "20". DEC-230's "the added set becomes 18" uses the same sense and agrees. |
+| 12.7 file-scope table, four new rows | re-derived from the task specs, not the brief | PASS | `internal/workflow/stop.go` -> tasks 6, 9, 10, 11. `internal/journal/current_event_value_catalog.go` -> tasks 6, 9, 10, 11. `internal/journal/current_event_columns.go` -> tasks 1, 15. `internal/export/archive_semantics_catalog.go` -> tasks 1, 9, 10, 12, 15. Each derivation is from the task's own `Files To Create Or Modify` bullet and matches `execution-scope.md` 6. The R-08 and R-09 rows are untouched by this commit and stand. |
+| Contract row count and integrity | mechanical re-run on the amended file | PASS | **79** `VAL-NNN` rows, **79** unique IDs. Validator column extracted per row: **40** QA Lead + **35** QA Reviewer + **4** Human = 79, and zero rows whose validator column is anything else, so one validator per row holds exactly. **0** rows not `Ready`. The four Human rows are VAL-070..073. |
+| Contract citation closure | defined-vs-cited set comparison across all eighteen specs | PASS | Defined set and cited set are identical, 79 members each; zero uncited, zero undefined. |
+| Contract diff is two rows, no weakening | `git show 5ff523a -- qa/validation-contract.md` | PASS | Exactly two rows changed and nothing else. **VAL-006** gains "at Obligation counts 0, 1, 16, and 17" in the evidence method and "1 and 16 Obligations are accepted and 0 and 17 are rejected" in the pass criterion (I-22) - a strengthening that gives the "accepts 1..16" clause both boundary states in both directions. **VAL-034** makes the DEC-228 unresolvable-subject proof deliberate in the pass criterion and adds "or the unresolvable `requirement` subject is rejected" to the fail criterion (I-23) - a strengthening that names both states. No row added, removed, renumbered, reworded elsewhere, or weakened. |
+| Gate reach for every file gained | `go list` plus per-task command-block read | PASS | `go list ./...` returns `internal/workflow`, `internal/journal` and `internal/export`, and each has in-package tests (`stop_test.go`, `current_event_validation_test.go`, `archive_semantics_test.go`). Tasks 1, 6, 9, 10, 11 and 15 each carry the byte-identical `go test -race -timeout 30m -coverprofile=coverage.out ./...`, which executes all three. `cmd/fid/integration/main_test.go` is `//go:build integration`; `go list -tags integration ./cmd/fid/integration/...` resolves the package, and task 1 carries `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` and declares the tagged gate mandatory from that task. Confirmed, not assumed. |
+| I-17 applied | `schema.md` 6.2 read | PASS | The amended-rules table is now explicitly prefaced "the last three families live in `retainedCurrentRules`, which has its own validation path, so add their rows there and not to `currentEventRules`", and the standing mirror rule is stated in the same place. |
+| I-18 applied | `contracts.md` 2 read | PASS | `contracts.md:83-89` now states the four-code order and then "Only the relative order is accepted (I-18)", naming the integer `precedence` map and permitting renumbering. Matches `evaluation.go:380`. |
+| I-19 applied | `public-interface.md` 5.1 read | PASS | Step 1 reads "every retained Phase 21/22 precondition and authority failure **other than `obligation-unsatisfied`**", so the five-step order is determinate without relying on step 5's mention. |
+| I-20 applied | `task-13.md` read | PASS | `task-13.md:67-69` now says "Rename nothing in `cmd/fid/evidence_test.go`: its `reasonCodes` is the `assertEvaluation` ..." - the vacuous instruction is gone and the correct sense is recorded. |
+| I-21 applied | `task-4.md` read | PASS | `internal/cli/codes.go` list now names `idempotency-conflict` with the conformance rationale and the VAL-019 / VAL-057 justification. |
+| I-24 applied | `task-10.md` read | PASS | The blob remove/restore technique is recorded with the `.fid/artifacts/<digest>` path, the `referenced_artifacts/update` precondition, and the note that `missing -> available` is exactly one qualifying Event. |
+| I-25 applied | `public-interface.md` 5.1 read | PASS | Six pinned producer rows replace the grouped category row; see the two checks above. |
+| I-26 applied | `task-1.md` read | PASS | `task-1.md:48-55` records both facts: no single-step down (`internal/db.MigrateDown` runs `m.Down()` to zero), and the dirty `schema_migrations` failure state with the required `17\|0` / `16\|0` end states. |
+| `archive_semantics_catalog.go` mirror coverage | task-spec derivation against the standing rule | PASS | Every journal Event-rule change this phase has a named mirroring task: task 1 the nine new rules, task 9 `envelope.created` and `envelope.activated`, task 10 `evidence.linked` and `artifact.availability-observed`, task 12 the `requirement.synced` deletion, task 15 the concerns rename. One arithmetic correction to 12.10: `semanticEventRules` does hold **44** keys (measured), but it is not the union of `currentEventRules` (22) and `retainedCurrentRules` (**24**, not 22), which would be 46. The measured key count and the disposition are unaffected. |
+
+### 13.3 R-15 Specifically
+
+| Referenced step | Validation method | Result | Evidence |
+|---|---|---|---|
+| The fix stays inside `main_test.go` | source check of all five re-executing call sites | PASS | All five spawn with `append(os.Environ(), ...)`: `p22_budget_fault_test.go:209`, `p22_activation_fault_test.go:135`, `p22_human_fixtures_test.go:69`, `p22_force_budget_fault_test.go:35`, `p22_recovery_fault_test.go:53`. Each re-executes the test binary itself (`os.Args[0]` or `os.Executable()`), so each child re-enters `TestMain` -> `runIntegrationSuite`, confirming the per-run mechanism. A variable published by the parent is inherited without editing any of the five. |
+| The causal claim holds | `main_test.go` read | PASS | `runIntegrationSuite` unconditionally `MkdirTemp`s `fid-integration-binary-*`, builds a ~16 MB binary into it, and calls `RemoveAll` only after `m.Run()` returns - so an abnormally exiting child leaks by construction. Task 1's instruction (publish the path; a process that finds it set and pointing at an existing executable reuses it and neither builds nor removes; only the builder removes; a stale path falls back to building) is the matching causal fix and is fully specified. |
+| Option (ii) correctly rejected | reasoning check against the same source | PASS | A "not the current process's directory" bound would delete a concurrent run's live binary, because `integrationBinary` is per-process and nothing distinguishes a sibling run's directory from a stale one. Age remains the only safe bound. Keeping the 24-hour prune as a residual net for a parent killed mid-run is right; note that today's `main_test.go` contains no prune at all, so task 1's "Keep" means "retain the I-16 instruction", and the required change list does state it. |
+| Cause corrected in all four places | cross-document check | PASS | `task-1.md:104-127`, `execution-scope.md` 7, `v1-convergence-inventory.md:72-75`, and CF-042 in both `decisions.md` and `decisions_active.md:159`. All five quote the measured 20 directories / 306 MB per clean run against a 3.9 GB `/tmp`, the ~26-run / ~7.8 GB projection, and the per-run-not-per-kill cause. The superseded "148 directories / 2.3 GB" framing appears nowhere. |
+| Task 1 records the measurement | `task-1.md` read | PASS | It requires the `fid-integration-binary-*` directory count and `/tmp` free space immediately before and after the tagged gate, with "a clean run must leak none". This overlaps QA-45 by design, as the brief says. |
+| **Ownership question** | judgment | **CONFIRMED at task 1** | Task 1 already owns `cmd/fid/integration/` fixtures, is the first task to run the tagged gate, and declares that gate mandatory from itself. Any later owner leaves every intervening task exposed to the same leak, and section 12 measured `/tmp` filling around the twelfth run. The change is decision-free, test-infrastructure only, confined to one file, and needs no edit to the five fault tests. It is a defensible addition to a schema baseline task precisely because it is the earliest point that protects the rest of the phase. |
+
+### 13.4 Statements Superseded By This Section
+
+| Where | Superseded statement | Replacement |
+|---|---|---|
+| Section 12.6, 12.8 | "20 codes declared in section 5 ... so **19** are new"; "all 19 new codes have an owning task" | **19** declared, **18** new (DEC-230 removes `decision-not-found`). The owning-task check re-runs clean at 18: task 9 now names two codes, not three. |
+| Section 12.7 | `semanticEventRules`' "44 keys are exactly the union of `currentEventRules` (22) and `retainedCurrentRules` (22)" | 44 keys measured; `retainedCurrentRules` holds **24**, so the union is 46 and the two catalogs are not key-identical today. The mirror-ownership finding is unaffected. |
+| Section 12.10, 12.12 | R-14 and R-15 open | Both dispositioned under DEC-229 and confirmed here. The open item is **R-16** in 13.5. |
+| Header status block | "two Must-fix revisions remain (section 12.10)" | one Must-fix remains: **R-16** (section 13.5). |
+
+### 13.5 Revisions Requested From The Tech Lead (third pass)
+
+| ID | Sev | Where | Finding and proposal |
+|---|---|---|---|
+| R-16 | M | `internal/journal/current_event_json.go`; `internal/journal/current_event_result_projection.go`; `internal/journal/current_event_value_catalog.go`; task specs 1, 4, 5, 8, 9, 10, 12; `execution-scope.md` 6 | **The typed-result registries for the nine new Event families have no owning task, and the first Phase 23 Event to clear its fence is rejected at append time.** This is the same class as R-08, R-09 and R-14, found while confirming R-14, and it is larger than any of them. Mechanism, verified in source: `project_effects.go:20` calls `validateCurrentAppliedResults` on every append, and `validateCurrentEvent` (`current_event_validation.go:37-63`) routes a family to the **strict** path if and only if it is in `currentEventRules`. Task 1 registers all nine Phase 23 types there (`task-1.md:60-63`, `schema.md` 6.2), and `schema.md` 6.3 requires a typed snapshot for every Phase 23 mutation, so each of the nine must clear three further closed registries that no task names: (a) the inline `fields` map in **`current_event_json.go:135-141`**, which maps Event type to its typed-result grammar and fails with `unregistered current result family`; (b) `currentExpectedResult`'s switch in **`current_event_result_projection.go:69-121`**, whose `default` branch fails with `unknown current result` for anything not prefixed `activation.`; and (c) **`currentValueShapes`** in `current_event_value_catalog.go`, from which `currentProjectedValue` (`:175-203`) reads the projected field list - an unregistered kind yields an empty list and a guaranteed snapshot mismatch. **Executable proof** (`go test -overlay`, `internal/journal`, working tree untouched): for all nine types, `validateCurrentResultJSON` returns `unregistered current result family` and `currentExpectedResult` returns `unknown current result`; and `currentValueShapes` (35 entries) contains none of `Review`, `Finding`, `FindingDisposition`, `Concern`, `ConcernDisposition`, `Deviation`, `DecisionRef`, `HumanOutcome`, `ProtectedDecision`, `RequirementRef`, `RequirementLink`, `Coverage`. A repository-wide search of all eighteen task specs returns **zero** mentions of `current_event_json.go` or `current_event_result_projection.go`, and the four tasks that do name `current_event_value_catalog.go` (6, 9, 10, 11) name it only for the `currentStopDetailShapes` entry and the `Condition` value grammar. Task 1 stays green because its fence rejects all nine and VAL-003 asserts exactly that; the failure therefore first lands at **task 4**, when `review.recorded` is unfenced, with its cause in files outside task 4's declared scope - the precise failure mode R-09 and R-14 were accepted to prevent, and here it blocks every remaining domain task rather than one archive check. Two consequential sub-items in the same files: `currentValueShapes["Claim"]` is `mode:=mutation`, which `public-interface.md` 2 widens to `mutation\|review` (task 3), and `currentValueShapes["Budget"]` / `["ImmutableBudget"]` close `unit` without `review-cycles` and `exhaustion_action` without `review-rework-exhausted`, which `public-interface.md` 2 adds (task 6); and if any new shape is written as `subject:Subject`, the closed `Subject` enum `type:=run,envelope,activation` needs the six added SubjectTypes. **Proposal:** apply the R-14 standing-rule pattern. Give `current_event_json.go` and `current_event_result_projection.go` explicit owners - a family's typed-result grammar, expected-result branch and value shapes are added by the task that unfences that family (tasks 4, 5, 8, 9, 10, 12), or all nine at task 1 alongside the `currentEventRules` registration it already owns - and state the choice in `execution-scope.md` 6 as a standing rule, as DEC-229 did for `semanticEventRules`. Add the `Claim` domain to task 3's scope and the two Budget domains to task 6's. Note that `currentProjectedValue`'s `switch kind` carries per-kind fill helpers for composite values (`Run`, `Activation`, `Stop`/`Attention`, `Receipt`); Phase 23's composite values - `Review` with `findings:[]Finding` and `coverage:Coverage`, `Finding` with `dispositions:[]FindingDisposition`, `Concern` with `disposition:?ConcernDisposition` - will need the same, so the disposition should say which task owns that too. **No assertion changes, no protected command, threshold, budget or public surface changes**: every value shape is derived from the already-accepted `public-interface.md` 3, and the typed-snapshot requirement is already accepted under DEC-216 and `schema.md` 6.3. This is an ownership and file-scope correction under planning authority, exactly like R-14. |
+
+Improvements (the Tech Lead may apply or decline; none blocks Ready).
+
+| ID | Where | Proposal |
+|---|---|---|
+| I-27 | `qa/validation-contract.md` header | The provenance block still reads "Last refined: 2026-09-15 ... applying the QA Lead's first-pass revisions R-01..R-13 and improvements I-01..I-16", and still says "A fresh QA Lead readiness refresh (`qa-plan.md` section 11) is still required". Both are now stale: VAL-006 and VAL-034 were refined on 2026-09-19 under DEC-229 (I-22, I-23), and the refresh is section 12. Record the second refinement and drop the satisfied prerequisite. The rows themselves are correct; only the header misstates their history. Contract edits are Tech Lead-owned, so this is recorded here rather than applied. |
+| I-28 | tasks 6 and 11 | Both still carry a directory-level bullet - `internal/journal/` "the `review.recorded` effect-rule optional rows" (`task-6.md:63`) and "the `human-outcome.recorded` optional effect rows" (`task-11.md:54`). Under DEC-229 task 1 registers each family's **complete** `schema.md` 6.2 rule, including every optional row those two tasks would have added, so both bullets are now no-ops that invite a Developer to edit a map task 1 owns. Delete them, or restate them as "no catalog edit; task 1 registered the complete rule". |
+| I-29 | `schema.md` 6.2 amended-rules table | The `envelope.activated` owner cell reads "task 9 protected Decisions; task 10 readiness Stop", but the three optional Stop rows are identical for both and only task 9's spec adds them; task 10's catalog bullet correctly limits itself to `evidence.linked` and `artifact.availability-observed`. No gap exists - task 9 precedes task 10 - but the cell reads as though task 10 also edits that row. Say "rows added by task 9; also raised from this family by task 10". |
+
+### 13.6 Blocker Candidates
+
+**None.** R-16 changes no protected definition, command, threshold, budget,
+tolerance, assertion semantics, accepted status, public surface, or policy. It
+assigns existing files to tasks that already own the behavior, and every value
+shape it needs is derived from the already-accepted `public-interface.md`
+section 3 under the already-accepted DEC-216 / `schema.md` 6.3 snapshot rule. It
+is a bounded, decision-free planning correction within Tech Lead planning
+authority, as R-08, R-09 and R-14 were. No `ESC` identity is requested and none
+is minted here. DEC-230's `decision.get` alternative remains a live Human-facing
+choice, and this pass supports the Tech Lead's recommendation to leave the code
+removed.
+
+### 13.7 Readiness Verdict
+
+**NOT READY.**
+
+**Every edit this pass was asked to confirm is confirmed correct.** DEC-229 and
+DEC-230 are both sound and faithfully applied. Specifically: the R-14 (a), (b)
+and (d) dispositions are complete; the Condition-type sequencing the Tech Lead
+imposed on the refresh's under-specified proposal is right and is the only
+reading compatible with `validateStopRaise`; task 1 is the correct owner of
+`current_event_columns.go` and its executable proof genuinely lands there; the
+rejection at tasks 4 and 5 is correct and my own first-pass sub-item was wrong;
+DEC-230's premise is independently verified and its choice is the better one;
+R-15's cause is corrected in all four places, option (i) is the causal fix,
+option (ii) is correctly rejected, and task 1 is the right owner. The contract
+is unchanged at 79 rows with both edits strengthening. I-17 through I-26 are all
+applied. Nothing in DEC-229 or DEC-230 needs to be revisited.
+
+What blocks Ready is a **new** Must-fix surfaced while confirming R-14:
+**R-16**. Registering the nine Phase 23 Event families in `currentEventRules` -
+which task 1 must do, and which DEC-229 correctly reasoned about for the column
+and archive catalogs - also routes them onto the journal's strict validation
+path, and three further closed registries on that path have no owning task. The
+first unfenced Phase 23 Event, `review.recorded` at task 4, is rejected at
+append time with its cause outside task 4's scope. This is proven by execution,
+not by reading. It is bounded and decision-free, and it belongs to the Tech Lead
+under the same planning authority as R-14.
+
+No task may be dispatched until the Tech Lead dispositions R-16, applies the
+accepted edits, and a fresh QA Lead confirmation pass verifies them; then the
+Phase Runner's readiness check (condition 4) can run.
+
+No assertion was weakened to reach this verdict, and no `VAL-NNN` was narrowed,
+re-scoped, or restated to reach Ready.
