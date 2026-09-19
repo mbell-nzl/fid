@@ -53,3 +53,21 @@ the Runner has already resumed or performed its own report verification.
 The canonical ledger separately returned `VALID state=STOPPED` (terminated
 `exit_code: 0`). Replace simulation values with actual verified checkpoints
 and receipts; do not copy simulated receipt text as evidence.
+
+## Verified handoff receipts
+
+The implementation is `730128cd8842e2943c9ab2b21f8f2b154148c10a`
+(`perf(phase-23): repair rebuild and task gate runtime`). The COMPLETE report
+was committed immediately afterwards and its receipt formatting corrected in
+`462d3db`; that correction and its failed lint output are preserved.
+At that committed report checkpoint, the repair agent directly observed:
+
+- The exact report-lint command above: `OUTCOME COMPLETE` and
+  `PASS report-lint completed with no failures` (terminated `exit_code: 0`).
+- The exact sequence-lint command above: `VALID state=STOPPED`
+  (terminated `exit_code: 0`).
+- `git status --short`: no output (terminated `exit_code: 0`).
+
+These receipts close the earlier report-format failure. The Runner must still
+perform its own mechanical checks and append actual resume receipts as stated
+above; it need not rerun implementation merely to satisfy the role boundary.
