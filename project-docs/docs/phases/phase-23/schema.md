@@ -35,6 +35,17 @@ The added `envelope_obligations` discriminator is exactly:
           AND registration_id IS NULL AND registration_version IS NULL)),
 ```
 
+One consequence of that policy is silent and worth stating once (QA I-37,
+DEC-235). `golang-migrate` (`internal/db/migrate.go:8`) records only version and
+dirty state; it never re-runs or checksums an applied file. A workspace migrated
+in place therefore keeps its original `stops.code` and `work_claims.mode` CHECK
+text while reporting schema 17, and a fresh init at 17 does not - the two
+diverge with nothing reporting it, and the first Phase 23 Stop on such a
+workspace fails with a CHECK-constraint error rather than a re-init
+instruction. This is intentional under the baseline-replacement policy above and
+reopens no decision; it is recorded so the failure mode is recognised, and it is
+what bounds the harm population of ESC-23-001.
+
 `work_claims` keeps its existing partial unique index unchanged: Phase 23
 retains one active Claim per Issue across both modes, and mode-aware
 concurrency is Phase 24 work. Migration 0013 and 0015 down behavior is

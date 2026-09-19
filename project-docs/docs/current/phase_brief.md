@@ -14,13 +14,12 @@ blocks, and which judgment unblocked it.
 
 ## Status
 
-**Approved and READY for tasks 1-8; one Human decision open.** Branch
-`phase-23` at planning base `0195897a347dfe1872db0f7be3800c5c3ccdefcf`.
+**Approved and READY; all 18 tasks dispatchable; no open decision or
+escalation.** Branch `phase-23` at planning base
+`0195897a347dfe1872db0f7be3800c5c3ccdefcf`.
 Six QA passes returned twenty-three Must-fix revisions plus five the Tech Lead
-found while dispositioning them. All are applied except R-22 and R-23, held for
-the ESC-23-001 disposition batch because each must be phrased against the
-encoding the Human chooses and both touch only tasks already blocked. The Human
-approved five contract amendments on 2026-09-19 - DEC-223 link-preserving
+found while dispositioning them; **all are applied**. The Human approved five
+contract amendments on 2026-09-19 - DEC-223 link-preserving
 `evidence_records` rebuild, DEC-224 four named Events raise
 `human-outcome-required`, DEC-225 independence over the mutating side only,
 DEC-226 failure-code producers, precedence, non-committing denials and the
@@ -34,24 +33,23 @@ extended it to a registry that reaches a Phase 23 family and declines to
 constrain it (row 9). Full record:
 [phase decisions](../phases/phase-23/decisions.md).
 
-The sixth pass (`qa-plan.md` 17) returned **READY EXCEPT ESC-23-001**: tasks 1-8
-confirmed unaffected across all eighteen specs, DEC-233 confirmed correct in
-full, the contract untouched at 79 rows. DEC-234 dispositioned its four Must-fix
-revisions and four improvements.
+The sixth pass (`qa-plan.md` 17) returned READY EXCEPT ESC-23-001, confirming
+DEC-233 in full with the contract untouched at 79 rows; DEC-234 dispositioned
+its four Must-fix revisions and four improvements.
 
-**Open: ESC-23-001.** Widening the journal `Condition` value is not monotonic:
-`validateCurrentShape` matches field count exactly and `ReplayJournal`
-revalidates history, so no workspace holding a pre-widening Stop can rebuild;
-`attentionSemanticKey` hashes the whole struct, so every open Attention stops
-deduplicating; and `stopDigest` embeds the same struct, so an idempotent
-`stop.raise` retry becomes a conflict. All three measured twice. The remedy
-changes an accepted value's encoding, so the choice is the Human's. Blocks
-**tasks 9, 10, and 11 only**.
+**ESC-23-001 is resolved.** The Human chose Option A on 2026-09-20: the three
+new `Condition` fields are `omitempty` and absent on the types they do not apply
+to, the six Phase 22 types keep `budget_name` and `capability_id`
+present-and-null and stay byte-identical, and exclusivity is enforced
+structurally by per-type journal shapes keyed on `type` rather than by the
+nullable-binding relation. Recorded as DEC-235 with the whole batch: the
+`Condition` row in `public-interface.md` section 2 amended, inventory row 8
+restated and row 10 created, tasks 9, 10, and 11 rewritten, and the three held
+revisions (R-22, R-23, I-37) applied. VAL-078 keeps its assertion and gains an
+evidence-class note only.
 
-Next action: the Runner's readiness check, then dispatch tasks 1-8. The Human's
-ESC-23-001 decision is needed before task 9, not before task 1; task 12 is
-substantively independent of the `Condition` shape and is available out of order
-at the Runner's discretion if the decision takes time.
+Next action: a fresh QA Lead pass over the DEC-235 batch, then the Runner's
+readiness check and dispatch from task 1.
 
 ## Operating Mode
 
@@ -98,15 +96,22 @@ four Human rows.
 ## QA Artifacts
 
 All under `../phases/phase-23/qa/`. QA plan authored, sections 12-17 executed and
-freshly measured; section 17 is the sixth and final readiness confirmation,
-verdict **READY EXCEPT ESC-23-001**. Tasks 1-8 dispatch once the Runner's
-readiness check passes.
+freshly measured; section 17 is the sixth readiness confirmation, verdict READY
+EXCEPT ESC-23-001, now resolved. One pass remains before dispatch: the DEC-235
+batch amends an accepted public value and rewrites three task specs, so it needs
+fresh QA Lead eyes.
 Mid-phase `review-M.md` for windows 1-3, 4-6, 7-9, 10-12, 13-15, 16-18;
 `checkpoint-after-task-11.md` must PASS before task 12; `human-fixtures.md` and
 the VAL-070..072 fixtures come from task 14, regenerated at task 18.
 
 ## Active Constraints
 
+- The accepted `Condition` encoding is DEC-235: `omitempty` on `outcome_class`,
+  `decision_class`, and `finding_id` and **on no other field**. Tagging
+  `budget_name` or `capability_id` changes every stored `semantic_key` and
+  `request_digest` in existence - measured - and is the one way to reintroduce
+  ESC-23-001. Exclusivity is structural, in the per-type shapes; the
+  `case "Condition"` relation branch is not extended by any task.
 - A task owns only the files it names; `execution-scope.md` section 6 names
   every closed registry's owner and two standing rules: a journal Event rule is
   mirrored in `semanticEventRules` in the same task (DEC-229), and a task that
@@ -114,9 +119,10 @@ the VAL-070..072 fixtures come from task 14, regenerated at task 18.
   registry that family reaches (DEC-231, generalised by DEC-232). DEC-233 widens
   the frame: the obligation covers every closed journal registry a Phase 23
   **value or Effect** reaches, whichever family carries it - nine known,
-  inventoried there with their rejection messages; rows 7 and 8 are reached
-  through live Phase 21/22 families, and row 9 (DEC-234) is a registry a Phase
-  23 family reaches on the strict path that declines to constrain it. Ownership
+  inventoried there with their rejection messages - **ten** rows now: 7 and 8
+  reached through live Phase 21/22 families, 9 (DEC-234) a registry a Phase 23
+  family reaches and declines to constrain, and 10 (DEC-235) the per-type
+  `Condition` shape map, the one registry this phase creates rather than finds. Ownership
   is only assignable where it is executable, and a registry absent from that
   inventory is a Developer escalation, not a local fix.
 - A **Failure code** names one refused request; an **Evaluation reason**
@@ -155,10 +161,13 @@ recurring one: six re-derivations caught twelve before dispatch, each inside the
 previous fix, and the last two had to widen the frame to find their own. The
 sixth still added one (row 9), so the series has **not** converged to zero; what
 released dispatch is that the last two additions fail open and block nothing,
-not that the search is finished. Treat a registry rejection during tasks 1-8 as
-expected-class and escalate it. Of the same family: a live journal **value**
-shape that gains a field is not monotonic over stored history (ESC-23-001), and
-`Condition` is the only one this phase.
+not that the search is finished - row 10 was then added by DEC-235. Treat a
+registry rejection in any task as expected-class and escalate it. Of the same
+family and now closed: a live journal **value** shape that gains a field is not
+monotonic over stored history (ESC-23-001, resolved by DEC-235), and `Condition`
+was the only one this phase. The residual risk is implementation drift against
+that decision - `omitempty` on the wrong field, or a Phase 22 shape row not
+transcribed exactly - which task 9's byte-identity criterion exists to catch.
 Late Human-readability discovery: the Human-text check in window 13-15. Removal
 ordering: task 15 depends on fourteen replacements; a slip amends the task
 rather than deferring a removal. Test-time headroom: bounded by DEC-227.

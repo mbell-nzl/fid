@@ -88,7 +88,14 @@ until a matching approved reference and Human Outcome both exist.
   `validStopDetails` key set, `decision-satisfied` to `conditionTypes`, and the
   `decision_class` field to the `Condition` struct together with its
   exactly-one-non-null-field rule in `validateCondition`, all from
-  `public-interface.md` section 2.
+  `public-interface.md` section 2. **Tag the new field `omitempty`, and add
+  `omitempty` to nothing else** (DEC-235, resolving ESC-23-001). `budget_name`
+  and `capability_id` keep present-and-null treatment: putting `omitempty` on
+  either changes every stored `attention_items.semantic_key` and
+  `idempotency_results.request_digest` in existence - measured - which is the
+  exact harm the decision exists to prevent. A `decision-satisfied` Condition
+  therefore marshals five fields, a Phase 22 Condition still four, byte-for-byte
+  as today.
 - `internal/journal/current_event_json.go` and
   `internal/journal/current_event_result_projection.go` - the typed-result
   registration for `decision.referenced` (R-16, DEC-231). Deleting the fence key
@@ -103,25 +110,39 @@ until a matching approved reference and Human Outcome both exist.
   "." + column` switch at `:14`, which otherwise returns `unregistered current
   JSON column decision_refs.source_json` on the first Decision Reference
   (DEC-232).
-- `internal/journal/current_event_value_relations.go` - also extend
-  `case "Condition"` for `decision_class` (DEC-233, inventory row 8). That branch
-  enforces the accepted "only the field matching the type is non-null" rule
-  today for `budget_name` and `capability_id` only, and it fails **open**, so
-  without this the rule is enforced on the producer side in `validateCondition`
-  and silently nowhere else. Reproduced: with the shape widened, a Condition
-  carrying the wrong new field, all three, or none is accepted. Make the branch
-  type-driven rather than adding a third boolean term, so tasks 10 and 11
-  extend a mapping instead of a chain. **Read ESC-23-001 before widening the
-  shape at all** - how `Condition` may gain fields is a Human decision, and its
-  outcome
-  changes what this branch has to check.
+- `internal/journal/current_event_value_types.go` - **new to this task's scope,
+  and this task creates the pattern the next two follow** (DEC-235, inventory
+  row 10). ESC-23-001 is resolved: `Condition` is widened by **per-type shapes
+  keyed on `type`**, not by widening one shape. Replace the single
+  `currentValueShapes["Condition"]` entry with a per-type map in
+  `current_event_value_catalog.go` and add the selecting `Condition` branch to
+  `validateCurrentValue` here. Two hard requirements. **(a)** The six Phase 22
+  type rows keep their exact current four-field shape -
+  `type:=<type> subject:Subject budget_name:?ID capability_id:?ID` - so
+  historical Events replay unchanged and no stored semantic key moves; this was
+  measured byte-identical and it is the acceptance bar. **(b)** The branch reads
+  the discriminant **before** `validateCurrentShape` has proved it is a string,
+  so it must use a **checked** type assertion and fall through to the ordinary
+  rejection: `object["type"].(string)` panics `interface conversion: interface
+  {} is int, not string`, and this code validates untrusted journal and archive
+  bytes during replay and `import`. Your own type's row is
+  `type:=decision-satisfied subject:Subject budget_name:?ID capability_id:?ID
+  decision_class:ID`.
+- `internal/journal/current_event_value_relations.go` - **do not touch
+  `case "Condition"`** (DEC-235, restating inventory row 8). Under the accepted
+  encoding the new fields' exclusivity is structural, enforced by the shapes
+  above; adding a third boolean term here has misread the decision. The branch
+  stays as it is because it still carries the Phase 22 `budget_name` /
+  `capability_id` binding, which the shapes cannot express. This task still
+  edits this file, but only for the capability allowlist below.
 - `internal/journal/current_event_value_catalog.go` - also add the `DecisionRef`
   and `ProtectedDecision` entries to `currentValueShapes` from
   `public-interface.md` section 3 (R-16, DEC-231). This task owns
   `ProtectedDecision` because it is the first to project one; task 10 reuses it
   unchanged. The same file carries the matching
-  `currentStopDetailShapes` entry, and the closed `Condition` value grammar
-  gaining `decision-satisfied` and `decision_class:?ID` (R-14).
+  `currentStopDetailShapes` entry, and the per-type `Condition` shape map
+  described above, into which this task writes the six retained Phase 22 rows
+  unchanged plus its own `decision-satisfied` row (R-14, DEC-235).
 - `internal/export/archive_semantics_catalog.go` - mirror this task's own
   catalog amendments (`envelope.created` gaining
   `envelope_protected_decisions/insert`, `envelope.activated` gaining the
@@ -161,6 +182,28 @@ until a matching approved reference and Human Outcome both exist.
   (VAL-041)
 - [ ] `linked_to_decision` is listed as implemented and is satisfied only with a
   qualifying reference. (VAL-042)
+- [ ] The six Phase 22 Condition types validate **byte-identically** to the
+  pre-change binary: a recorded pre-change journal carrying a `budget-observed`
+  Stop replays clean, and the `attentionSemanticKey` of an unchanged Condition
+  is unchanged. This is the acceptance bar of DEC-235; a failure here means the
+  per-type rows were not transcribed exactly. (No new VAL ID.)
+- [ ] Exclusivity is enforced by the shape, asserted at the journal layer and
+  not through the raise: a `decision-satisfied` Condition carrying
+  `outcome_class` instead of `decision_class` rejects, one with its own field
+  null rejects, one carrying two new fields rejects, and one carrying only its
+  own field is accepted. (Evidence toward VAL-078, which task 11 completes.)
+- [ ] A Condition whose `type` is not a string is **rejected, not a panic**,
+  proving the checked assertion. (No new VAL ID; DEC-235.)
+- [ ] The `currentStopDetailShapes` and per-type `Condition` entries this task
+  adds are proved by a **direct strict-path append** in this task, following
+  `TestCurrentEventRejectsConditionalBindingCorruption`
+  (`internal/journal/current_event_validation_test.go:171`) - **not** by this
+  task's raise tests. `protected-decision-required` is raised at
+  `envelope.activated`, a retained family that returns at
+  `current_event_validation.go:64` before any value validation, so this task's
+  raise path never exercises these entries and green raise tests are not
+  evidence for them. Omitting the entries would pass here and fail at task 11 or
+  tasks 15/16 with the cause outside the failing task. (QA R-22, DEC-235.)
 - [ ] Full required commands terminate with preserved red/green evidence.
 - [ ] Every converged retained row records its provenance and executing command.
 

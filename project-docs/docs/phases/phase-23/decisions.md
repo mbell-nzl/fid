@@ -980,6 +980,108 @@ keeps its assertion while its evidence class becomes shape rejection. That batch
 does need a fresh QA pass, because it amends an accepted public value and
 rewrites three task specs; this one does not.
 
+### DEC-235: Human resolves ESC-23-001 with Option A, and the batch it carries
+
+- **Status:** **ACCEPTED by the Human 2026-09-20**, choosing Option A in the
+  corrected reading R-20 established. This amends an accepted public value's
+  encoding, which is Human authority; the consequent ownership, file-scope, and
+  task-spec edits below are Tech Lead planning authority applied under it. One
+  `VAL-NNN` row gains an evidence-class note; no assertion, method, pass or fail
+  criterion, validator, or owning task changes, and the contract stays at 79
+  rows.
+- **Context:** ESC-23-001 established that widening the journal `Condition`
+  value is not monotonic over stored history in three measured ways - journal
+  replay, Attention deduplication, and `stop.raise` idempotency. Option A makes
+  the three new fields absent on the types they do not apply to; Option B keeps
+  the accepted present-and-null encoding and pays for it with a V3 schema bump,
+  a four-site payload upgrader, two column recomputes, a mid-life Attention key
+  rule, and 11 corpus repairs. The QA Lead implemented and measured Option A
+  before the decision (`qa-plan.md` 17.3): byte-identical Phase 22 semantic keys,
+  a clean replay of the recorded pre-widening journal, and zero failures and
+  zero fixture edits across `internal/journal`, `internal/workflow`, and
+  `internal/export`.
+
+**The accepted encoding, stated once and authoritative.** `omitempty` on the
+three new fields - `outcome_class`, `decision_class`, `finding_id` - **and on no
+other field**. `budget_name` and `capability_id` keep present-and-null
+treatment. A judgment Condition therefore carries **five** fields and a Phase 22
+Condition is unchanged at four, byte-for-byte. The alternative reading, which
+would also tag `budget_name` and `capability_id`, is **rejected**: measured, it
+changes every existing semantic key and reproduces the exact harm the decision
+prevents. `public-interface.md` section 2's `Condition` row is amended to say
+this, including the superseded reading and why.
+
+**Exclusivity moves from a relation to a shape.** The journal registers per-type
+`Condition` shapes keyed on `type`, as `currentStopDetailShapes` is keyed on
+`code`. Measured consequences: the wrong field rejects with `missing required
+field`, an own field that is null with `invalid ID`, two fields with `closed
+object has wrong shape`, and the own field alone is accepted - all four cases
+inventory row 8 left open, closed by the shape itself.
+
+**Ownership, which is where this decision costs something.**
+
+- **Inventory row 8 is restated, not deleted.** The relation branch keeps the
+  Phase 22 `budget_name` / `capability_id` binding, which per-type shapes cannot
+  express, because both fields stay present-and-null on every type. **No Phase
+  23 task extends it**, and all three task specs now say so explicitly - a task
+  that adds a third boolean term has misread this decision. Deleting the row
+  would have been the easy error: the invariant survives, only its enforcer
+  moves.
+- **New inventory row 10**, the per-type shape map and its `validateCurrentValue`
+  dispatch. It fails **closed**, so each of tasks 9, 10, and 11 adds its own
+  type's row. **Task 9 creates the map and the dispatch branch and takes
+  `internal/journal/current_event_value_types.go` into its file scope** - the
+  file R-20 found that no task owned. Ownership is assignable there because task
+  9 is the first task that can execute it.
+- **The dispatch must use a checked type assertion**, with an acceptance
+  criterion in task 9. The naive `object["type"].(string)` panics on a
+  non-string discriminant in code that validates untrusted journal and archive
+  bytes; the baseline degrades to an invalid closed enum. A panic here is a
+  crash on a crafted archive.
+- **Byte-identity of the six Phase 22 shape rows is an acceptance bar**, not a
+  hope: task 9 must show a recorded pre-change journal replaying clean and an
+  unchanged Condition keeping its `attentionSemanticKey`. Any drift there
+  reintroduces the escalation.
+
+**VAL-078's evidence class is annotated, and nothing else about it changes.**
+Its closed-schema half is now satisfied by shape rejection rather than by the
+`condition nullable binding mismatch` relation. Evidence citing the relation
+message would indicate the encoding was implemented wrong, so the note is
+recorded in the contract row and in `task-11.md`. The assertion, method, pass
+and fail criteria, validator, and owning task are untouched.
+
+**The three held revisions are applied with this decision, as promised.**
+
+- **R-22 accepted, and strengthened from documentation to an executable
+  assertion.** QA asked that the proving Event be named, because three of
+  DEC-224's four raising families are retained and return at
+  `current_event_validation.go:64` before any value validation, so tasks 9 and
+  10 could omit their registry entries, watch their raise tests pass, and fail
+  at task 11 or tasks 15/16 with the cause outside the failing task; task 9's
+  `protected-decision-required` has no strict raising path at all. Naming an
+  Event is necessary but still leaves the proof outside the task. Both specs
+  therefore now require a **direct strict-path append** inside the owning task,
+  following `TestCurrentEventRejectsConditionalBindingCorruption`
+  (`internal/journal/current_event_validation_test.go:171`), and both state that
+  green raise tests are not evidence for these entries. This is the phase's own
+  rule applied honestly: ownership is only assignable where it is executable, so
+  where a raise cannot prove an entry, the task asserts it directly.
+- **R-23 accepted:** `task-11.md` gains the missing VAL-078 acceptance
+  criterion, covering both halves and phrased against the accepted encoding.
+- **I-37 accepted:** `schema.md` section 1 records that under `golang-migrate` a
+  workspace migrated in place keeps its original CHECK text while reporting
+  schema 17, so the first Phase 23 Stop there fails with a CHECK-constraint
+  error rather than a re-init instruction. Intentional under the accepted
+  baseline-replacement policy, reopening no decision, recorded so the failure
+  mode is recognised.
+
+**What this decision does not do.** It does not bump `EventSchema`, add an
+upgrader, or touch migration 0017's data path - the whole point of Option A is
+that none of that is needed. It does not change any Stop code, Condition type,
+grant action, failure code, or evaluation reason. And it does not relieve tasks
+9, 10, and 11 of `validateCondition`: producer-side exclusivity stays, with the
+journal shapes as the second, now-structural line.
+
 ### Accepted carry-forward dispositions
 
 | ID | Phase 23 disposition |

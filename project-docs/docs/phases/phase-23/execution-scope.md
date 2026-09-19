@@ -244,8 +244,9 @@ general rule with a closed inventory:
 | 5 | `validateCurrentJSON` `table.column` switch | `current_event_json.go:14` | `unregistered current JSON column <t>.<c>` | 4, 8, 9, 10, 12 |
 | 6 | `validateCurrentUpdate` table switch | `current_event_updates.go:14` | `current Event update table not admitted` | 8, 12; renamed by 15 |
 | 7 | `const actions` capability allowlist in `validateCurrentValueRelations` `case "ActorProfile"` | `current_event_value_relations.go:63` | `invalid closed enum artifact.verify,...` | 4, 5, 8, 9, 10 (R-19) |
-| 8 | `case "Condition"` nullable-binding relation in the same function | `current_event_value_relations.go:49` | none - **fails open** | 9, 10, 11 (DEC-233) |
+| 8 | `case "Condition"` nullable-binding relation in the same function | `current_event_value_relations.go:49` | none - **fails open** | **none** - restated by DEC-235; see below |
 | 9 | `validateCurrentBudgetFacts` family switch | `current_event_budget_values.go:34` | none - **fails open** at its `default` | 6 (DEC-234) |
+| 10 | per-type `Condition` shape map and its `validateCurrentValue` dispatch | `current_event_value_catalog.go`; `current_event_value_types.go:39` | `Condition: closed object has wrong shape` / `missing required field "<own>"` | 9 (creates), 10, 11 (DEC-235) |
 
 - **Row 7 (R-19), the second copy of the capability allowlist.** The closed
   23-name set exists **twice** in non-test code: `sortedUniqueCapabilities`
@@ -281,12 +282,21 @@ general rule with a closed inventory:
   non-null, one with none of them non-null, and a `decision-satisfied` Condition
   carrying `outcome_class` instead of `decision_class` are **all accepted**,
   while the Phase 22 control still returns `condition nullable binding
-  mismatch`. This registry fails **open**, so it blocks nothing and is not a
-  dispatch blocker; it is a silent loss of an accepted journal-layer invariant,
-  the class R-09 and R-18 were accepted to prevent. Each of tasks 9, 10, and 11
-  extends this branch for its own field in the same change that adds the field
-  to `currentValueShapes["Condition"]` and to `validateCondition`. See ESC-23-001
-  for the separate, blocking question of **how** that shape may be widened.
+  mismatch`. This registry fails **open**, so it blocks nothing.
+
+  **Restated by DEC-235, not deleted.** The Human resolved ESC-23-001 by
+  choosing Option A, so the three new fields are absent on the types they do not
+  apply to and their exclusivity is enforced **structurally** by the per-type
+  shapes of row 10 - measured: the wrong field rejects with `missing required
+  field`, the own field null with `invalid ID`, and two fields with `closed
+  object has wrong shape`. The invariant survives; only its enforcer moves.
+  **No Phase 23 task extends this branch**, and a task that adds a third boolean
+  term here has misread the decision. The branch also stays exactly as it is,
+  because it still carries the Phase 22 `budget_name` / `capability_id` binding,
+  which the per-type shapes cannot express: both fields remain present-and-null
+  on every type, so shape validation admits them and only this relation ties
+  them to `budget-observed` and `capability-available`. Do not simplify it
+  away.
 - **Row 9, journal-side budget facts do not reach any Phase 23 family. QA Lead
   finding R-21, `qa-plan.md` 17.8; recorded as an owned row rather than a
   positive, because it names work task 6 must not assume is done for it.**
@@ -312,6 +322,29 @@ general rule with a closed inventory:
   journal-layer proof, which is stated in `task-6.md`. A task that *wants* the
   journal-side guarantee extends the switch and says so in its completion report;
   a Developer who finds this row wrong escalates rather than fixing it locally.
+- **Row 10, the per-type `Condition` shape map. Created by DEC-235 resolving
+  ESC-23-001, and the one registry in this inventory that Phase 23 brings into
+  existence rather than finds.** Option A replaces the single
+  `currentValueShapes["Condition"]` entry with shapes keyed on `type`, as
+  `currentStopDetailShapes` is keyed on `code`. Two consequences for ownership.
+  First, it fails **closed**: a Condition type with no shape row is rejected, so
+  each of tasks 9, 10, and 11 adds its own type's row in the same change that
+  adds the type to `conditionTypes` and its field to the `Condition` struct.
+  Second, and unlike `currentStopDetailShapes`, the discriminant lives **inside**
+  the value, and the value is also reached generically as a field of `Stop`
+  (`if shape, ok := currentValueShapes[kind]; ok`,
+  `current_event_value_types.go:39`), so selection requires a `Condition` branch
+  in `validateCurrentValue` - a file no task previously owned. **Task 9 creates
+  the map and the dispatch branch and adds
+  `internal/journal/current_event_value_types.go` to its file scope; tasks 10
+  and 11 add rows only.** The branch must use a **checked** type assertion:
+  measured, `object["type"].(string)` panics with `interface conversion:
+  interface {} is int, not string` on a non-string discriminant, in code that
+  validates untrusted journal and archive bytes during replay and `import`,
+  where the baseline degrades cleanly to `Condition: type: invalid closed enum`.
+  The six Phase 22 type rows keep their current four-field shape byte-for-byte;
+  changing any one of them breaks every stored `semantic_key` and
+  `request_digest`, which is the whole point of the decision.
 
 - `validateCurrentTerminalValues`'s second switch in that same file
   (`current_event_updates.go:61`) fails **open**, so it blocks nothing. The

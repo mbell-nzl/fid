@@ -97,6 +97,10 @@ deterministic proof.
   set, `human-outcome-recorded` to `conditionTypes`, and the `outcome_class`
   field to the `Condition` struct together with its exactly-one-non-null-field
   rule in `validateCondition`, all from `public-interface.md` section 2.
+  **Tag the new field `omitempty`, and add `omitempty` to nothing else**
+  (DEC-235). `budget_name` and `capability_id` keep present-and-null treatment;
+  tagging either changes every stored `semantic_key` and `request_digest` in
+  existence. Task 9 set this pattern - follow it exactly.
 - `internal/journal/current_event_json.go` and
   `internal/journal/current_event_result_projection.go` - the typed-result
   registration for `human-outcome.recorded` (R-16, DEC-231). Deleting the fence
@@ -109,18 +113,13 @@ deterministic proof.
   register `human_outcomes.references_json` as `[]Source` in the `effect.Table +
   "." + column` switch at `:14`, which otherwise returns `unregistered current
   JSON column human_outcomes.references_json` on the first Outcome (DEC-232).
-- `internal/journal/current_event_value_relations.go` - also extend
-  `case "Condition"` for `outcome_class` (DEC-233, inventory row 8). That branch
-  enforces the accepted "only the field matching the type is non-null" rule
-  today for `budget_name` and `capability_id` only, and it fails **open**, so
-  without this the rule is enforced on the producer side in `validateCondition`
-  and silently nowhere else. Reproduced: with the shape widened, a Condition
-  carrying the wrong new field, all three, or none is accepted. Make the branch
-  type-driven rather than adding a third boolean term, so task 11 extends a
-  mapping instead of a chain. **Read ESC-23-001 before widening the
-  shape at all** - how `Condition` may gain fields is a Human decision, and its
-  outcome
-  changes what this branch has to check.
+- `internal/journal/current_event_value_relations.go` - **do not touch
+  `case "Condition"`** (DEC-235, restating inventory row 8). ESC-23-001 is
+  resolved: the new fields' exclusivity is structural, enforced by the per-type
+  shapes task 9 created, so there is no relation work for this field. The branch
+  stays as it is because it still carries the Phase 22 `budget_name` /
+  `capability_id` binding. This task still edits this file, but only for the
+  capability allowlist above.
 - `internal/journal/current_event_value_catalog.go` - also add the
   `HumanOutcome` entry to `currentValueShapes` from `public-interface.md`
   section 3 (R-16, DEC-231). Reuse task 9's `ProtectedDecision` unchanged; if it
@@ -129,8 +128,11 @@ deterministic proof.
   `currentValueShapes["Subject"]`, which Phase 23 leaves as it is (DEC-232,
   correcting DEC-231). The same file carries the
   matching
-  `currentStopDetailShapes` entry, and the closed `Condition` value grammar
-  gaining `human-outcome-recorded` and `outcome_class:?ID` (R-14).
+  `currentStopDetailShapes` entry, and the per-type `Condition` shape map task 9
+  created, which gains exactly one row here:
+  `type:=human-outcome-recorded subject:Subject budget_name:?ID
+  capability_id:?ID outcome_class:ID` (R-14, DEC-235). Add a row; do not widen
+  task 9's rows, and do not touch the six Phase 22 rows.
 - `internal/export/archive_semantics_catalog.go` - mirror this task's
   `retainedCurrentRules` amendments for `evidence.linked` and
   `artifact.availability-observed` into `semanticEventRules` (R-14). Without
@@ -165,6 +167,22 @@ deterministic proof.
   no field or text claims deterministic proof. (VAL-045)
 - [ ] The `human-outcome-required` Stop appears only when the Human Obligation
   is the single unsatisfied one, and never for routine status. (VAL-046)
+- [ ] Exclusivity is enforced by the shape, asserted at the journal layer: a
+  `human-outcome-recorded` Condition carrying `decision_class` instead of
+  `outcome_class` rejects, one with its own field null rejects, one carrying two
+  new fields rejects, and one carrying only its own field is accepted.
+  (Evidence toward VAL-078, which task 11 completes.)
+- [ ] The `currentStopDetailShapes` and per-type `Condition` entries this task
+  adds are proved by a **direct strict-path append** in this task, following
+  `TestCurrentEventRejectsConditionalBindingCorruption`
+  (`internal/journal/current_event_validation_test.go:171`) - **not** by this
+  task's raise tests. Three of DEC-224's four raising families
+  (`envelope.activated`, `evidence.linked`, `artifact.availability-observed`)
+  are retained and return at `current_event_validation.go:64` before any value
+  validation, so the raises this task owns do not exercise these entries and
+  green raise tests are not evidence for them. Omitting the entries would pass
+  here and fail at task 11 or tasks 15/16 with the cause outside the failing
+  task. (QA R-22, DEC-235.)
 - [ ] Full required commands terminate with preserved red/green evidence.
 - [ ] Every converged retained row, including the seeded task 7 and task 9
   fixtures, records its provenance and executing command.

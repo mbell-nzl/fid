@@ -3,7 +3,11 @@
 ## ESC-23-001 - Widening the journal `Condition` value breaks journal replay and Attention deduplication
 
 - **Phase:** 23 (planning; raised before any task dispatch)
-- **Status:** OPEN - blocks dispatch of tasks 9, 10, and 11 only
+- **Status:** **RESOLVED 2026-09-20 - Human chose Option A.** Recorded as
+  DEC-235; `public-interface.md` section 2's `Condition` row amended, inventory
+  row 8 restated and row 10 created, tasks 9, 10, and 11 rewritten. Nothing is
+  blocked; all eighteen tasks are dispatchable. The record below is kept as
+  raised, with the resolution at the end.
 - **Raised by:** Tech Lead, while dispositioning R-19 under the widened
   inventory frame the QA Lead asked for in I-33
 - **Category:** accepted public-value encoding, with migration and
@@ -235,7 +239,35 @@ inventory row 8 invariant.
   time to `decision-satisfied` and `decision_class`. Recorded here only so it is
   not re-derived.
 
-### Required resolution
+### Resolution as decided
+
+**The Human chose Option A on 2026-09-20, in the corrected reading**: `omitempty`
+on the three new fields only, the six Phase 22 types keeping `budget_name` and
+`capability_id` present-and-null, with per-type journal shapes keyed on `type`.
+Recorded as DEC-235, which carries the full disposition. Applied in this batch:
+
+- `public-interface.md` section 2's `Condition` row now states the encoding, the
+  five-field judgment Condition, the untouched four-field Phase 22 Condition,
+  and that exclusivity is structural.
+- `execution-scope.md` section 6: inventory **row 8 restated, not deleted** -
+  the relation branch keeps the Phase 22 `budget_name` / `capability_id`
+  binding, which the shapes cannot express, and **no Phase 23 task extends it**.
+  New **row 10** is the per-type shape map and its dispatch, failing closed,
+  with task 9 creating it and owning
+  `internal/journal/current_event_value_types.go`, and tasks 10 and 11 adding
+  rows.
+- Tasks 9, 10, and 11: the `omitempty`-on-new-fields-only rule in all three
+  (each edits the struct), the checked type assertion in task 9, byte-identity
+  of the six Phase 22 rows as an acceptance bar, and the relation branch marked
+  do-not-touch.
+- VAL-078 keeps its assertion, method, pass and fail criteria, validator, and
+  owning task; only its **evidence class** is annotated, from relation rejection
+  to shape rejection.
+- The three held revisions are applied with it: R-22 (proving Event named in
+  tasks 9 and 10, as a direct strict-path assertion rather than a raise), R-23
+  (`task-11.md` now has a VAL-078 criterion), I-37 (`schema.md` section 1).
+
+### Original required resolution, as raised
 
 Human chooses A, B, or C (or directs another route). Whichever is chosen, record
 it as a DEC, amend `public-interface.md` section 2's `Condition` row to match,

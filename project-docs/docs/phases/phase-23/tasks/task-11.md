@@ -60,26 +60,29 @@ original request.
 - `internal/workflow/stop.go` - the closed Stop registries (R-14). Add the two
   remaining Condition types, `review-recorded` and `finding-resolved`, to
   `conditionTypes`, and the `finding_id` field to the `Condition` struct with
-  its exactly-one-non-null-field rule in `validateCondition`. Tasks 9 and 10
+  its exactly-one-non-null-field rule in `validateCondition`. **Tag the new
+  field `omitempty`, and add `omitempty` to nothing else** (DEC-235); tasks 9
+  and 10 set this pattern. Note that `finding_id` serves **two** types here,
+  `review-recorded` and `finding-resolved`, so both of their shape rows carry
+  it. Tasks 9 and 10
   already added `decision-satisfied` and `human-outcome-recorded`, because each
   must exist before its own raising Event can commit; this task completes the
   closed four-type set and owns their resolution behavior (VAL-078). Add no
   Stop code.
-- `internal/journal/current_event_value_relations.go` - also extend
-  `case "Condition"` for `finding_id` (DEC-233, inventory row 8). That branch
-  enforces the accepted "only the field matching the type is non-null" rule
-  today for `budget_name` and `capability_id` only, and it fails **open**, so
-  without this the rule is enforced on the producer side in `validateCondition`
-  and silently nowhere else. Reproduced: with the shape widened, a Condition
-  carrying the wrong new field, all three, or none is accepted. Tasks 9 and 10
-  made the branch type-driven; add the last two types to that mapping and
-  confirm in the completion report that all four new types and all three new
-  fields are covered, since this task closes the set. **Read ESC-23-001 before
-  widening the shape at all** - how `Condition` may gain fields is a Human
-  decision, and its outcome changes what this branch has to check.
-- `internal/journal/current_event_value_catalog.go` - the closed `Condition`
-  value grammar gaining `review-recorded`, `finding-resolved`, and
-  `finding_id:?ID` (R-14).
+- `internal/journal/current_event_value_relations.go` - **do not touch
+  `case "Condition"`** (DEC-235, restating inventory row 8). ESC-23-001 is
+  resolved: exclusivity is structural, enforced by the per-type shapes task 9
+  created, so there is no relation work for these fields. The branch stays as it
+  is because it still carries the Phase 22 `budget_name` / `capability_id`
+  binding. This task closes the four-type set, so confirm in the completion
+  report that all four new types and all three new fields are covered **by shape
+  rows**, and that the six Phase 22 rows are unchanged.
+- `internal/journal/current_event_value_catalog.go` - the per-type `Condition`
+  shape map task 9 created, gaining its **last two** rows (R-14, DEC-235):
+  `type:=review-recorded subject:Subject budget_name:?ID capability_id:?ID
+  finding_id:ID` and the same for `type:=finding-resolved`. Ten rows exist after
+  this task - the six Phase 22 types unchanged and the four judgment types - and
+  the map is closed. Add rows; do not touch the six Phase 22 rows.
 - `cmd/fid/attention.go`, `stop.go` - result shapes only.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
   this change.
@@ -109,6 +112,16 @@ original request.
 - [ ] Capability discovery still reports `human_outcome_resolution:false` at the
   end of this task, with the working path proven separately. (VAL-047, first
   half)
+- [ ] All four Condition types resolve only on their own qualifying durable
+  fact: for each of `review-recorded`, `finding-resolved`, `decision-satisfied`,
+  and `human-outcome-recorded`, a resolution attempt with a non-qualifying fact
+  Event leaves the Stop open and rejects, and the qualifying Event resolves it.
+  **And** the closed-schema half: a Condition carrying a second non-null field
+  or none rejects with no Event. Under DEC-235 that rejection is a **shape**
+  rejection, not a nullable-binding relation rejection - `closed object has
+  wrong shape` for two fields, `missing required field` for the wrong field, and
+  `invalid ID` for an own field that is null. Evidence citing the relation
+  message would mean the encoding was implemented wrong. (VAL-078)
 - [ ] Full required commands terminate with preserved red/green evidence.
 - [ ] Every converged retained row records its provenance and executing command.
 
