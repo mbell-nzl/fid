@@ -1849,3 +1849,432 @@ addition in task 1 - are all bounded, none requires a decision, and none of them
 holds a task that is not already held. No assertion was weakened, no `VAL-NNN`
 was narrowed, re-scoped, or restated, and no product code was read as a
 substitute for running it.
+
+## 18. Readiness Confirmation - DEC-235 And The ESC-23-001 Batch (2026-09-20)
+
+Seventh confirmation pass, fresh session, against the Tech Lead's four asks on
+the DEC-235 disposition batch. Base: branch `phase-23` at `932fbea`,
+`git status --porcelain` empty before and after. Sections 12 through 17 are not
+reopened, and the contract is untouched at **79** rows. Every measurement below
+was taken with `go test -overlay`, so no product file was written at any point -
+re-verified clean after the last probe.
+
+**Verdict: READY, EXCEPT TASKS 9, 10, AND 11.** Tasks 1-8 are unaffected by this
+batch and by everything in this section; nothing here touches a file, registry,
+or assertion they own. Option A is transcribed correctly, the batch's four
+conclusions are all right, and two of them are right for a reason that does not
+hold. The batch also leaves one enforcement instruction unwritten whose omission
+nothing in the shipped corpus detects, and it introduces one public-value
+reading that the accepted contract set contradicts. Four Must-fix revisions
+(R-24 to R-27), three improvements, one conditional blocker candidate.
+
+### 18.1 The Four Asks, In One Line Each
+
+| Ask | Result |
+|---|---|
+| 1. The `omitempty`-on-three-fields-only rule in all three specs; can any be read as tagging `budget_name` or `capability_id`? | **No.** All three say "add `omitempty` to nothing else"; the shape rows pin both fields present independently of the prose; and the rejected reading is caught loudly by the **ordinary** task gate - measured, 43 failing tests and subtests, `exit 1`. One asymmetry is improvement-only (I-39) |
+| 2. Row 8's restatement - does the relation branch genuinely still need to exist? | **Yes, as the rows are specified - but not for the recorded reason, and the batch never says the thing that keeps it reachable.** Measured: a dispatch that selects a per-type shape and returns drops the Phase 22 binding entirely, and the whole ordinary suite still passes `exit 0`. That is **R-24**, the one finding in this pass I would not dispatch task 9 without. The premise "the per-type shapes cannot express it" is measurably false (I-40) |
+| 3. Task 9's six Phase 22 shape rows and the byte-identity criterion as the only catch | **The criterion as written catches four of the six rows and provably not the other two.** `run-recovered` and `capability-available` reach journal validation **zero** times in the entire ordinary suite; with both rows deleted the suite still passes `exit 0`. **R-25** |
+| 4. Is the R-22 direct-assertion requirement executable as written in tasks 9 and 10? | **Executable for the `Condition` half by three measured routes; not by the route it cites for the `currentStopDetailShapes` half.** Following the cited exemplar literally rejects with `current budget boundary: unrelated Stop` - inventory row 9's own registry - and `internal/journal` has no `stop.raised` Event fixture to follow instead. **R-27** |
+
+### 18.2 Method, Base, And Commands
+
+All probes are `go test -overlay` manifests over scratch copies; the repository
+was never modified. Working directory `/home/mark/projects/fid`; toolchain
+`go version go1.26.2 linux/amd64`; scratch under
+`/tmp/claude-1000/.../scratchpad/opta/`.
+
+The overlay implements Option A exactly as the batch specifies it: the
+`Condition` key removed from `currentValueShapes`, a per-type map keyed on
+`type` holding the six Phase 22 rows in their current four-field form plus task
+9's `decision-satisfied` row, and a `case "Condition"` branch in
+`validateCurrentValue` using a checked type assertion. Two variants differ in
+one line: **v1** returns after `validateCurrentShape` (the literal reading of
+the three task specs), **v2** ends with
+`return validateCurrentValueRelations("Condition", object)`. A third, **v3**, is
+v2 with the `run-recovered` and `capability-available` rows deleted; a fourth,
+**wrong**, leaves the journal untouched and instead tags `budget_name` and
+`capability_id` `omitempty` in `internal/workflow/stop.go`'s `Condition` struct.
+
+| # | Command | Result | Termination |
+|---|---|---|---|
+| 1 | `go test -count=1 -overlay overlay_v1.json -run TestQAConditionProbe -v ./internal/journal/` | PASS - `ok github.com/mbell-nzl/fid/internal/journal 0.004s` | `exit_code: 0` |
+| 2 | `go test -count=1 -overlay overlay_v2.json -run TestQAConditionProbe -v ./internal/journal/` | PASS - `ok github.com/mbell-nzl/fid/internal/journal 0.005s` | `exit_code: 0` |
+| 3 | `go test -count=1 -overlay overlay_v1.json ./internal/... ./cmd/...` | PASS - `ok github.com/mbell-nzl/fid/cmd/fid 43.138s` | `exit_code: 0` |
+| 4 | `FID_QA_CONDITION_PROBE=... go test -count=1 -overlay overlay_v2.json ./internal/... ./cmd/...` | PASS - `ok github.com/mbell-nzl/fid/cmd/fid 42.928s` | `exit_code: 0` |
+| 5 | `go test -count=1 -overlay overlay_v3.json ./internal/... ./cmd/...` | PASS - `ok github.com/mbell-nzl/fid/cmd/fid 40.783s` | `exit_code: 0` |
+| 6 | `go test -count=1 -overlay overlay_wrong.json ./internal/... ./cmd/...` | FAIL (intended) - `FAIL github.com/mbell-nzl/fid/cmd/fid 42.051s` | `exit_code: 1` |
+| 7 | `go test -count=1 -overlay overlay_v2.json -run TestQADirectStrictPathAppendProbe -v ./internal/journal/` | PASS - `ok github.com/mbell-nzl/fid/internal/journal 0.304s` | `exit_code: 0` |
+| 8 | `go test -count=1 -overlay overlay_combined.json -run TestQADirectStrictPathStopCodeProbe -v ./internal/journal/` | PASS - `ok github.com/mbell-nzl/fid/internal/journal 0.167s` | `exit_code: 0` |
+| 9 | `go test -count=1 -overlay overlay_p3.json -run TestQAClosedValuesPrecedentProbe -v ./internal/journal/` | PASS - `ok github.com/mbell-nzl/fid/internal/journal 0.005s` | `exit_code: 0` |
+
+Runs 3 to 6 are whole-corpus ordinary-suite runs (`./internal/... ./cmd/...`,
+no `-race`, tagged suite excluded); each took roughly six minutes of wall time
+and terminated with package result lines. These are QA measurements of a
+**planned** design under overlay, not phase gates and not evidence about
+repository state.
+
+**One positive first, because it is the thing the decision rests on.** Run 4 is
+the full ordinary suite with Option A implemented as specified and the relation
+call preserved: `exit 0`, zero failures, zero fixture edits. Section 17.3's
+measurement reproduces in a fresh session on the post-batch base.
+
+### 18.3 Ask 1 - The `omitempty` Rule In All Three Specs
+
+The rule appears three times, once per task, and each instance carries the
+prohibition in the same sentence as the instruction:
+
+| Spec | Sentence | Reachable misreading? |
+|---|---|---|
+| `task-9.md` (`decision_class`) | "**Tag the new field `omitempty`, and add `omitempty` to nothing else**" plus the measured harm and "a `decision-satisfied` Condition therefore marshals five fields, a Phase 22 Condition still four, byte-for-byte as today" | No |
+| `task-10.md` (`outcome_class`) | Same prohibition, plus "`budget_name` and `capability_id` keep present-and-null treatment; tagging either changes every stored `semantic_key` and `request_digest` in existence" | No |
+| `task-11.md` (`finding_id`) | Same prohibition, plus "tasks 9 and 10 set this pattern" - but **not** the present-and-null sentence and **not** the byte-identity bar | No, but the reader is one link further from the reason (I-39) |
+
+Three independent facts close this off:
+
+1. **The prose is unambiguous in all three.** "Add `omitempty` to nothing else"
+   admits no reading in which `budget_name` or `capability_id` is tagged, and
+   `public-interface.md` section 2 states the same prohibition positively
+   ("`budget_name` and `capability_id` keep present-and-null treatment and gain
+   **no** `omitempty`").
+2. **The shape rows pin it independently of the prose.** Every row the three
+   specs give carries `budget_name:?ID capability_id:?ID`, and
+   `validateCurrentShape` (`current_event_value_types.go:112`) requires an exact
+   field-count match, so an omitted field is a rejected value regardless of what
+   the Developer thought the prose meant.
+3. **The ordinary gate catches the rejected reading, loudly.** Run 6 tags both
+   fields `omitempty` and nothing else: `internal/workflow` and `cmd/fid` both
+   `FAIL`, 43 failing tests and subtests, first failure
+   `stop_test.go:77: RaiseStop(first) error = current Event stop.raised
+   stops/insert: invalid JSON column "resolution_condition_json": Condition:
+   closed object has wrong shape`. `internal/journal` stays green (`ok ...
+   12.897s`) because its Condition fixtures are literal JSON, which is exactly
+   why the detection lives in the two packages that marshal the struct.
+
+So the protection is not only prose: it is `go test -race ./...`, which all
+three tasks run. The tagged suite adds a second detector -
+`p22_event_value_validation_test.go:297,312` requires `budget_name` and
+`capability_id` to be **present** in every stored Condition and in every
+`Stop.resolution_condition` in a typed result - but that one is local-only
+(CF-041), so the ordinary-suite detection is the one that matters.
+
+**No Must-fix on ask 1.** One improvement, I-39.
+
+### 18.4 Ask 2 - Row 8's Restatement, And The Instruction The Batch Does Not Give
+
+**The conclusion is right: the relation branch must stay.** As the ten rows are
+specified, `budget_name:?ID capability_id:?ID` on every one of them, shape
+validation admits a `budget_name` on any type, and the relation at
+`current_event_value_relations.go:49-52` is the only thing tying `budget_name`
+to `budget-observed` and `capability_id` to `capability-available`. Deleting it
+loses the invariant. Measured, runs 1 and 2, the same eleven probes under both
+variants:
+
+| Probe | v1 (dispatch returns after shape) | v2 (dispatch ends in the relation call) |
+|---|---|---|
+| `work-ended` with `budget_name:"tokens"` | **ACCEPTED** | rejected `condition nullable binding mismatch` |
+| `budget-observed` with `budget_name:null` | **ACCEPTED** | rejected `condition nullable binding mismatch` |
+| `work-ended` with `capability_id:"stop.resolve"` | **ACCEPTED** | rejected `condition nullable binding mismatch` |
+| `decision-satisfied` with a stray `budget_name` | **ACCEPTED** | rejected `condition nullable binding mismatch` |
+| `decision-satisfied` with only `decision_class` | ACCEPTED | ACCEPTED |
+| `decision-satisfied` carrying `outcome_class` instead | rejected `Condition: missing required field "decision_class"` | same |
+| `decision-satisfied` carrying both new fields | rejected `Condition: closed object has wrong shape` | same |
+| `decision-satisfied` with `decision_class:null` | rejected `Condition: decision_class: invalid ID` | same |
+| a type with no shape row | rejected `Condition: type: invalid closed enum` | same |
+| non-string discriminant | rejected `Condition: type: invalid closed enum`, no panic | same |
+
+The same difference holds at real append time (run 7, through `ProjectEvent` on
+the strict `run.execution-blocked` family): under v1 a `work-ended` Condition
+carrying `budget_name:"tokens"` is **APPENDED and projected**; under v2 it is
+rejected `current Event run.execution-blocked stops/insert: invalid JSON column
+"resolution_condition_json": condition nullable binding mismatch` with the
+projection unchanged.
+
+**And nothing in the repository notices the loss.** Run 3 is the entire ordinary
+suite under v1: `exit 0`. a repository-wide search of the Go sources for
+`nullable binding` returns exactly one hit, the `fmt.Errorf` line itself - no test asserts that rejection, in any
+package, tagged or not. The four judgment-exclusivity messages DEC-235 measured
+are all still produced under v1, so the batch's own acceptance criteria for
+tasks 9, 10, and 11 pass with row 8's invariant already gone.
+
+The gap is small and entirely in the instructions. All three specs say "**do not
+touch `case "Condition"`**", which is right; none of them says the new dispatch
+must still **reach** it, and inventory row 10's description of the dispatch ends
+at shape selection. A Developer who writes the obvious branch -
+`validateCurrentShape(value, shape)` then `return err` - has followed every
+written instruction and deleted the invariant the same batch says survives.
+That is **R-24**.
+
+**The recorded premise is wrong, and worth correcting separately.** Row 8 says
+the relation stays "because it still carries the Phase 22 `budget_name` /
+`capability_id` binding, which the per-type shapes cannot express". The shape
+grammar has a `Null` token (`current_event_value_types.go:59-60`) in live use -
+`ImmutableBudget` ends `consumed:Null remaining:Null`
+(`current_event_value_catalog.go:21`) - and a required `ID` token, so per-type
+rows could express both halves exactly (`budget_name:ID capability_id:Null` for
+`budget-observed`, `budget_name:Null capability_id:ID` for
+`capability-available`, `budget_name:Null capability_id:Null` for the other
+four) with **no change to any marshaled byte**, since `Null` still requires the
+field present. Keeping the relation is still the right call - it is the smaller
+change and it leaves stored history untouched - but the reason recorded for it
+is not a fact, and a later pass acting on that premise would draw a wrong
+conclusion about what the shapes can and cannot do. I-40.
+
+### 18.5 Ask 3 - The Six Phase 22 Rows And What The Byte-Identity Bar Catches
+
+**The row syntax is executable as written.** `type:=<type> subject:Subject
+budget_name:?ID capability_id:?ID` is a single-member closed enum plus the
+existing tokens; all eleven probes in 18.4 ran against rows transcribed verbatim
+from `task-9.md`.
+
+**Coverage, measured rather than assumed.** Run 4 instruments the dispatch to
+record every type that reaches `validateCurrentValue("Condition", …)` anywhere
+in the ordinary suite:
+
+| Condition type | Journal-layer validations in the ordinary suite |
+|---|---|
+| `activation-recovered` | 76 |
+| `work-ended` | 65 |
+| `executor-terminated` | 30 |
+| `budget-observed` | 29 |
+| `decision-satisfied` | 5 (this pass's own probes) |
+| **`run-recovered`** | **0** |
+| **`capability-available`** | **0** |
+
+Both zero-coverage types do appear in tests - `stop_conditions_test.go:101-105,
+237` - but only through `qualifyingFact`, the workflow-side predicate, in tests
+that assert the journal is **unchanged**. In the tagged corpus they appear once,
+at `p22_closed_values_test.go:25`, inside `p22ClosedFieldGrammar`, a
+self-contained wire oracle that validates fixtures against its own literal table
+and never reaches the journal. No Stop carrying either condition is raised
+anywhere in either suite.
+
+**Confirmed by deletion.** Run 5 removes the `run-recovered` and
+`capability-available` rows outright: the entire ordinary suite passes,
+`exit 0`. A Developer who drops, misspells, or mistypes either row ships a
+binary that rejects those Conditions at runtime with `Condition: type: invalid
+closed enum`, and every gate this phase requires stays green.
+
+Task 9's acceptance bar as written - "a recorded pre-change journal carrying a
+`budget-observed` Stop replays clean, and the `attentionSemanticKey` of an
+unchanged Condition is unchanged" - covers one type in replay and one semantic
+key, while claiming "the six Phase 22 Condition types validate
+**byte-identically**". Four of the six are covered incidentally by corpus
+traffic; two are covered nowhere. The fix is ten lines and the pattern is
+already measured. That is **R-25**.
+
+**Positive, recorded so it is not re-derived:** row 10's "fails closed" claim is
+correct and now measured twice - at value level (`Condition: type: invalid
+closed enum`) and at append level (run 7, `registry-row-absent`, rejected with
+the projection unchanged).
+
+### 18.6 Ask 4 - Is The R-22 Direct Assertion Executable As Written?
+
+**For the `Condition` entries: yes, by three routes, all measured.**
+
+| Route | Measured result | Cost |
+|---|---|---|
+| `validateCurrentValue("Condition", value)` directly (run 1/2) | all four exclusivity cases and the absent-row case reject with the exact DEC-235 messages | ~15 lines, no DB |
+| `validateCurrentJSON(Event{EventType: "stop.raised"}, effect, "resolution_condition_json", raw)` - the pattern of `TestCurrentClosedValuesRejectIncompleteAndInvalidFacts` (`current_event_closed_values_test.go:76`), which already uses family `stop.raised` for two Condition cases (run 9) | own field ACCEPTED; wrong field rejected `Condition: missing required field "decision_class"`; Phase 22 binding violation rejected | ~5 lines per case, no DB |
+| A real projected append through `ProjectEvent` on a strict family, mutating `executionBlockedProjectionEvent` (run 7) | own field APPENDED; wrong field, two fields, and absent row all rejected with the projection unchanged | ~12 lines plus the existing seed |
+
+**For the `currentStopDetailShapes` entries: not by the route the specs cite.**
+Run 8 follows the cited exemplar literally - take the fixture the cited test
+mutates and change the Stop code - and the strict path rejects with `current
+budget boundary: unrelated Stop` before any detail shape is consulted, because
+`run.execution-blocked` is one of the five families inventory **row 9** names in
+`validateCurrentBudgetFacts`. The journal package has no `stop.raised` Event
+fixture to use instead: `rg '"stop.raised"' internal/journal` returns catalog
+and validator lines plus two `validateCurrentJSON` cases, and no builder. What
+does work, measured in the same run and in run 9:
+
+- `validateCurrentJSON(Event{EventType:"stop.raised"}, Effect{Table:"stops",
+  Values:{"code":"protected-decision-required"}}, "details_json", …)` rejects
+  `unknown Stop code` without the entry and accepts with a registered code -
+  which is exactly the assertion R-22 asks for, fails closed, and needs no
+  fixture at all.
+- A `stop.raised` Event fixture built in-package would also work
+  (`current_event_catalog.go:46`; `stop.raised` is absent from
+  `validateCurrentBudgetFacts`'s family switch), at the cost of a stops +
+  attention_items + attention_stop_links + idempotency_results event with a
+  typed `stop:Stop attention:Attention` result.
+
+Two further facts the specs should carry, both verified:
+
+- **If the proof appends into the projection**, the details half also needs
+  migration 0017's widened `stops.code` and `attention_items.code` CHECK
+  (`schema.md` section 1, rows at `:26-27`), which task 1 ships. The
+  `validateCurrentJSON` route does not touch the database and has no such
+  dependency. Either is fine; the dependency should not be discovered at
+  implementation time.
+- **A raise is not forbidden as evidence - only *their own* raises are
+  insufficient.** `validateStopRaise` (`stop.go:363-374`) checks
+  `stopCodes[Code]` and `validateCondition` independently, which is the same
+  fact `task-11.md` already relies on, so tasks 9 and 10 may also prove their
+  entries through a real `stop.raise` on the strict `stop.raised` family. The
+  current wording ("**not** by this task's raise tests") is correct about
+  `envelope.activated`, `evidence.linked`, and `artifact.availability-observed`
+  being retained, but reads as a blanket prohibition.
+
+That is **R-27**. The requirement itself is sound and I would keep it: without
+it, tasks 9 and 10 can omit an entry, watch green raise tests, and fail at task
+11 or tasks 15/16 with the cause outside the failing task - reproduced in run 7,
+where the absent row rejects only when something actually validates a Condition
+of that type.
+
+### 18.7 Outside The Four Asks - `review-recorded` And `finding_id`
+
+`task-11.md` is rewritten by this batch, and the rewrite adds a sentence and a
+shape row that the accepted contract set contradicts.
+
+| Source | What it says |
+|---|---|
+| `contracts.md:425-429` (accepted, not amended by this batch) | "`human-outcome-recorded` additionally names a non-null `outcome_class`, `decision-satisfied` a non-null `decision_class`, and `finding-resolved` a non-null `finding_id`. Only the matching field is non-null." `review-recorded` is given **no** discriminator field |
+| `public-interface.md:48` (amended by this batch) | the three fields are "each **present only on its own type and absent on every other**", and "a judgment Condition therefore carries **five** fields" |
+| `task-11.md:64-67, 80-84` (new in this batch) | "`finding_id` serves **two** types here, `review-recorded` and `finding-resolved`, so both of their shape rows carry it", with the row `type:=review-recorded subject:Subject budget_name:?ID capability_id:?ID finding_id:ID` |
+
+`git show 932fbea -- .../task-11.md` confirms both are new; the pre-batch spec
+said only that the shape gains "`review-recorded`, `finding-resolved`, and
+`finding_id:?ID`", which decided nothing. DEC-235 does not mention the pairing.
+
+This is not cosmetic. It decides the wire shape of a new public value - a
+`review-recorded` Condition is four fields or five - and therefore its
+`attentionSemanticKey` and its `stop.raise` `request_digest`. It also decides
+whether **VAL-078 is satisfiable**: the assertion says "exactly one Condition
+field is non-null per type" and its fail criterion is "a Condition with two or
+**zero** non-null fields is stored", which under the `contracts.md` reading is
+violated by every well-formed `review-recorded` Condition. Phase 23 has four new
+Condition types and three new fields; one type has to be the odd one out, and
+nothing in the accepted set says which way.
+
+Two branches, with different owners:
+
+- **Branch A - `review-recorded` carries no discriminator** (what `contracts.md`
+  section 11 says today). Then `task-11.md`'s row becomes the four-field form,
+  its "finding_id serves two types" sentence is deleted, `public-interface.md`
+  section 2's "a judgment Condition carries five fields" needs a carve-out, and
+  VAL-078's pass and fail criteria need the "exactly one non-null" clause scoped
+  to the three types that have a field. The task-spec half is Tech Lead
+  planning; the VAL-078 half is a contract edit the Tech Lead applies.
+- **Branch B - `review-recorded` carries `finding_id`** (what `task-11.md` says
+  today). Then `contracts.md` section 11 and `public-interface.md` section 2
+  both need amending, because a field would be present on two types. That is a
+  change to an accepted public value's encoding - the same class as ESC-23-001,
+  and by the precedent this batch just set, Human authority.
+
+Either way the three documents must agree before task 11 is dispatched. **R-26**,
+with a conditional blocker candidate in 18.12 for branch B.
+
+### 18.8 Mechanical Re-checks
+
+| Check | Result |
+|---|---|
+| Contract row count | **PASS** - `grep -c "^| VAL-"` returns 79; the only diff in `validation-contract.md` is VAL-078's note plus one amendment-log row |
+| VAL-078 unchanged where it matters | **PASS** - assertion, evidence method, validator (QA Lead), owning task (11), and both criteria are byte-identical to `8cd613e`; the added text is labelled "Evidence class (DEC-235, no change to the assertion)" |
+| `public-interface.md` edit scope | **PASS** - exactly one row changed (`Condition (amend)`), and it states the accepted reading, the five-field judgment Condition, the four-field Phase 22 Condition, the `omitempty` prohibition, and the superseded reading |
+| Inventory row 8 restated, not deleted; row 10 added | **PASS** - ten rows; row 8 owner column reads "**none**"; row 10 owners 9 (creates), 10, 11 |
+| `internal/journal/current_event_value_types.go` now owned | **PASS** - `task-9.md` scope, and by no other task |
+| Task command blocks unchanged | **PASS** - a search of the batch diff for tasks 9 and 10 over `go test`, `golangci-lint`, `gofmt`, and `-timeout 30m` lines returns no match, terminating `exit 1 (no output)`; no-match is the pass condition here |
+| Batch touched no product file | **PASS** - all 11 files in `932fbea` are under `project-docs/docs/` |
+| Anchors cited by the batch | **PASS** - `current_event_value_relations.go:49` (`case "Condition"`), `:63` (`const actions`), `:77` (`budget-` prefix), `current_event_value_types.go:39,59-60,89,112`, `current_event_json.go:27,38`, `current_event_catalog.go:46`, `current_event_validation_test.go:171` (`TestCurrentEventRejectsConditionalBindingCorruption`), `stop.go:363,422,431,557` all verified in place |
+| I-35, I-36, I-37, I-38 applied | **PASS** - `task-1.md:177` carries the projection-14 criterion with its I-35 provenance; the five drifted anchors now read `:49`, `:77`, `:89`, `:27`, and `loadOpenAttentionByKey`; `schema.md` section 1 carries the in-place-migration paragraph; `task-10.md`'s grammar slip is gone with the rewritten bullet |
+| Escalation mirrored | **PASS** - `tl-escalations.md`, `tl_escalations_current.md`, and `phase_brief.md` all record ESC-23-001 RESOLVED with Option A and DEC-235 |
+| No protected definition, command, threshold, or budget changed by this pass | **PASS** |
+
+### 18.9 Command And Feasibility Validation
+
+| Item | Method | Result |
+|---|---|---|
+| Per-type shape row syntax in tasks 9, 10, 11 | transcribed verbatim into the overlay catalog and executed (runs 1, 2, 7, 9) | Valid; accepts and rejects exactly as DEC-235 records |
+| "checked type assertion" requirement (task 9) | non-string discriminant probe | Feasible; degrades to `Condition: type: invalid closed enum`, no panic |
+| Byte-identity bar (task 9) | type-coverage instrumentation and row-deletion run | Feasible but **insufficient as scoped** - R-25 |
+| "direct strict-path append" (tasks 9, 10) | three routes executed (runs 7, 8, 9) | Feasible for `Condition`; the cited route does not reach `currentStopDetailShapes` - R-27 |
+| "do not touch `case "Condition"`" (tasks 9, 10, 11) | v1/v2 differential plus a corpus run | Feasible, but incomplete as an instruction - R-24 |
+| Task command blocks (9, 10, 11) | unchanged by the batch; already validated in 12.4 | No re-validation needed |
+| Migration 0017 dependency for the details-shape append | `schema.md` section 1 rows `:26-27` | Planned; `stops.code` and `attention_items.code` both reach ten members at task 1 |
+
+### 18.10 Revisions Requested From The Tech Lead (seventh pass)
+
+| ID | Severity | Subject | Request |
+|---|---|---|---|
+| R-24 | M | `task-9.md`; confirmations in `task-10.md` and `task-11.md`; inventory row 10 | **Say that the new dispatch must still reach the relation.** Measured (18.4): a `case "Condition"` branch that selects a per-type shape and returns leaves `validateCurrentValueRelations` unreached, accepts a `work-ended` Condition carrying `budget_name`, appends and projects it on the strict path, and passes the entire ordinary suite `exit 0`; no test in the repository asserts `condition nullable binding mismatch`. Add to task 9's `current_event_value_types.go` bullet that the branch ends with `return validateCurrentValueRelations("Condition", object)`, and add an acceptance criterion: a Phase 22 Condition with a non-null `budget_name` on a non-`budget-observed` type, and a judgment Condition carrying a stray `budget_name`, are both still rejected `condition nullable binding mismatch` on the strict path. Extend row 10's dispatch description with the same sentence, and have tasks 10 and 11 confirm in their completion reports that the relation still fires. Without this, row 8's restatement - "the invariant survives; only its enforcer moves" - is false in the implementation and nothing detects it |
+| R-25 | M | `task-9.md` acceptance criteria | **Make the byte-identity bar cover all six rows.** Measured (18.5): `run-recovered` and `capability-available` reach journal Condition validation zero times in the ordinary suite and are raised nowhere in the tagged corpus; with both rows deleted the suite passes `exit 0`. Replace "a recorded pre-change journal carrying a `budget-observed` Stop replays clean" with that **plus** a table over all six Phase 22 types - one canonical Condition of each accepted at the journal layer and one mutated Condition of each rejected - keeping the replay and the unchanged `attentionSemanticKey`. Ten lines; the pattern is measured in run 1 |
+| R-26 | M | `task-11.md`; `contracts.md` 11; `public-interface.md` 2; VAL-078 | **Decide whether `review-recorded` carries `finding_id`, and make the three documents agree** (18.7). `contracts.md` section 11 gives `review-recorded` no discriminator and says "only the matching field is non-null"; `task-11.md`, new in this batch, requires `finding_id:ID` on its shape row. The choice fixes the wire shape of a new public value and decides whether VAL-078's "exactly one Condition field is non-null per type" is satisfiable for that type. Branch A (no discriminator) is task-spec plus a VAL-078 criteria edit; branch B (two types share `finding_id`) amends an accepted public value and carries the blocker candidate in 18.12 |
+| R-27 | M | `task-9.md` and `task-10.md`, R-22 criterion | **Name a route that works for the `currentStopDetailShapes` half.** Measured (18.6): mutating the cited test's fixture to carry a non-budget Stop code is rejected `current budget boundary: unrelated Stop` by inventory row 9's registry before any detail shape is consulted, and `internal/journal` has no `stop.raised` Event fixture. Cite `TestCurrentClosedValuesRejectIncompleteAndInvalidFacts` (`current_event_closed_values_test.go:76`) as the pattern - it already asserts on family `stop.raised` for both `resolution_condition_json` and `details_json`, needs no database, and rejects `unknown Stop code` without the entry - or require a `stop.raised` fixture and say so. Add two sentences while there: if the proof appends into the projection it depends on migration 0017's widened `stops.code` / `attention_items.code` CHECK from task 1, and a real `stop.raise` on the strict `stop.raised` family is acceptable evidence - what is insufficient is a raise on the task's **own** retained family |
+
+### 18.11 Improvements (not blocking)
+
+| ID | Subject | Note |
+|---|---|---|
+| I-39 | `task-11.md` | Task 11 edits the `Condition` struct like tasks 9 and 10 but carries only "add `omitempty` to nothing else"; it does not repeat "`budget_name` and `capability_id` keep present-and-null treatment" or the byte-identity bar. The prohibition is sufficient and the gate catches the misreading (18.3), so this is symmetry, not risk - one clause |
+| I-40 | `execution-scope.md` row 8 | "which the per-type shapes cannot express" is measurably false: the grammar has `Null` (`current_event_value_types.go:59-60`), in live use at `current_event_value_catalog.go:21`, so rows could express the binding as `budget_name:ID capability_id:Null` and so on, with no change to any marshaled byte. The conclusion stands - keeping the relation is the smaller change and the right one - but the reason should be "the accepted rows deliberately keep both fields `?ID` on every type, so the relation is the only enforcer", which is also what makes R-24 necessary |
+| I-41 | `cmd/fid/integration/p22_closed_values_test.go:25`; task 18 | `p22ClosedFieldGrammar`'s `Condition` row lists the six Phase 22 types and the test asserts hard counts - 50 accepted and 90 rejected member cases. It is a self-contained oracle, so adding four Condition types does **not** fail it - it silently stops covering the new members. Task 18 owns the Phase 23 conformance corpus; say there that this row and its counts are extended, so the wire oracle keeps matching the wire |
+
+### 18.12 Blocker Candidates
+
+**One, conditional, and not mine to allocate: R-26 branch B.** If the Tech Lead
+concludes that `review-recorded` carries `finding_id`, the resolution amends an
+accepted public value's encoding - a field present on two types, against
+`public-interface.md` section 2's "present only on its own type and absent on
+every other" and `contracts.md` section 11's "only the matching field is
+non-null".
+
+- **Protected category:** accepted public-value encoding, plus the pass and fail
+  criteria of an accepted `VAL-NNN`.
+- **Evidence:** 18.7 - the three conflicting statements with line references,
+  the batch diff showing both are new, and the consequence for VAL-078's
+  satisfiability.
+- **Authority boundary:** by the precedent this batch set in DEC-235, changing
+  what a Phase 23 value looks like on the wire is Human authority; task-spec and
+  contract-text reconciliation under a chosen reading is Tech Lead planning
+  authority.
+- **Requested action:** choose branch A or branch B; under A, disposition R-26
+  as an ordinary planning edit; under B, take the encoding change to the Human
+  with VAL-078's criteria attached.
+
+R-24, R-25, and R-27 are bounded and decision-free, and none of them holds a
+task that R-26 does not already hold. **I raise no other blocker candidate**,
+and I do not allocate an escalation identifier.
+
+### 18.13 Readiness Verdict
+
+**READY, EXCEPT TASKS 9, 10, AND 11.**
+
+**Tasks 1-8 may dispatch now.** Nothing in this pass touches a file, registry,
+Condition type, Stop code, or assertion they own; the batch itself changed no
+task spec before 9, and section 17.5's eighteen-spec sweep still holds.
+
+**Everything DEC-235 decided is correctly transcribed.** The `omitempty` rule is
+stated three times with its prohibition attached, and the rejected reading is
+caught by the ordinary task gate with 43 failures rather than by prose alone.
+`public-interface.md` section 2 states the encoding exactly, with the superseded
+reading recorded. VAL-078 keeps its assertion, method, validator, owner, and
+both criteria, with a note that is genuinely a note. The contract stays at 79
+rows, and the batch touched no product file. Inventory row 8 is restated rather
+than deleted, row 10 is real and fails closed - measured twice - and task 9 is
+the right owner of `current_event_value_types.go` for the reason the row gives:
+it is the first task that can execute it.
+
+**The one thing I would not dispatch task 9 without is R-24.** The batch tells
+three tasks not to touch the relation branch and tells none of them to keep
+reaching it. The literal reading of the instructions deletes the Phase 22
+`budget_name` / `capability_id` binding, appends a Condition that violates it,
+and passes every gate this phase requires, including the four exclusivity
+criteria the batch itself wrote. That is the same failure shape as the
+registry-without-an-owner series: correct ownership, correct prohibition, and a
+missing sentence about what still has to run.
+
+**R-25 and R-27 are the same kind of gap, one step smaller.** A criterion that
+claims six rows and proves one, in a phase whose stated residual risk is "a
+Phase 22 shape row not transcribed exactly"; and a mandated assertion whose
+cited exemplar rejects for an unrelated reason before it reaches the registry
+being asserted. Both are ten-line fixes with measured patterns.
+
+**R-26 is not a transcription question.** Four Condition types and three
+discriminator fields do not divide evenly, and the batch resolved that
+arithmetic inside a task spec in a direction the accepted contract set
+contradicts. It needs a decision before task 11, and possibly a Human one.
+
+No assertion was weakened, no `VAL-NNN` was narrowed, re-scoped, or restated, no
+escalation identifier was allocated, and no product code was read as a
+substitute for running it.
