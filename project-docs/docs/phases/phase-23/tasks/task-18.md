@@ -59,6 +59,18 @@ product family reappeared.
 - `cmd/fid/integration/` - Phase 23 conformance corpus, fake and fid adapters,
   the audit tests, and regeneration of `p23_human_fixtures_test.go`'s manifest
   against the final binary.
+- `cmd/fid/integration/p22_closed_values_test.go` - extend
+  `p22ClosedFieldGrammar`'s `Condition` row from the six Phase 22 types to all
+  **ten**, adding `review-recorded`, `finding-resolved`, `decision-satisfied`,
+  and `human-outcome-recorded`, and update the hard accepted/rejected member
+  counts the test asserts (50 and 90 before this task). This is a
+  **self-contained wire oracle**: it validates fixtures against its own literal
+  table and never reaches the journal, so adding Condition types does not fail
+  it - it silently stops covering the new members (I-41). The per-type
+  discriminator fields belong in the extension too, `review-recorded` carrying
+  none (DEC-236). Verify the extended table against
+  `internal/journal/current_event_value_catalog.go`'s per-type shape map, which
+  is the wire authority.
 - `cmd/fid/integration/testdata/` - the Phase 23 operation fixtures.
 - `internal/workflow/authority.go` - audit support only, no new action.
 - `project-docs/docs/phases/phase-23/tasks/task-18-done.md`.

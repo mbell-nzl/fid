@@ -427,6 +427,11 @@ and `human-outcome-recorded`, plus `decision-satisfied` for section 9. Each new
 condition names its subject; `human-outcome-recorded` additionally names a
 non-null `outcome_class`, `decision-satisfied` a non-null `decision_class`, and
 `finding-resolved` a non-null `finding_id`. Only the matching field is non-null.
+`review-recorded` names **no** discriminator field: it is the one type of the
+four with none, resolved by a `review.recorded` Event scoped by its subject, and
+a `review-recorded` Condition carrying any of the three fields is rejected. The
+enumeration above is exhaustive and no field serves two types (stated explicitly
+under DEC-236; the accepted rule is unchanged).
 
 Stop resolution continues to require a durable qualifying fact Event, never a
 caller assertion. A Stop whose resolution condition is `human-outcome-recorded`

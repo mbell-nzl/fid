@@ -117,8 +117,21 @@
   in the set it belongs to.
 - DEC-228 (ACCEPTED, Tech Lead) carries the remaining dispositions, including
   three DEC-167/173 scope corrections and five new assertions.
-- Execution has not started. No decision remains open; the QA Lead refreshes
-  plan readiness next, then the Runner's readiness check runs. See [phase brief](phase_brief.md) and
+- DEC-235 (ACCEPTED by Human 2026-09-20) resolves ESC-23-001 with Option A: the
+  three new `Condition` fields are `omitempty` and absent on the types they do
+  not apply to, the six Phase 22 types stay byte-identical, and exclusivity is
+  structural in per-type journal shapes keyed on `type`.
+- DEC-236 (ACCEPTED, Tech Lead 2026-09-20) dispositions QA pass 7. Two standing
+  consequences: task 9's new `case "Condition"` dispatch must **end by calling**
+  `validateCurrentValueRelations("Condition", object)` - removing the
+  `currentValueShapes["Condition"]` key deletes the Phase 22 nullable binding's
+  only call site, and no test asserts its message; and `review-recorded` carries
+  **no** discriminator field, per accepted `contracts.md` section 11, so
+  `finding_id` belongs to `finding-resolved` alone. VAL-078 is refined to the
+  accepted pairing and strengthened; the contract stays at 79 rows.
+- Execution has not started. No decision remains open and no escalation is
+  registered; tasks 1-8 are dispatchable now and 9-11 once the QA Lead confirms
+  this batch. See [phase brief](phase_brief.md) and
   [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Latest Phase Closure

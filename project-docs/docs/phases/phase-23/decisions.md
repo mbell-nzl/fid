@@ -1021,8 +1021,11 @@ inventory row 8 left open, closed by the shape itself.
 **Ownership, which is where this decision costs something.**
 
 - **Inventory row 8 is restated, not deleted.** The relation branch keeps the
-  Phase 22 `budget_name` / `capability_id` binding, which per-type shapes cannot
-  express, because both fields stay present-and-null on every type. **No Phase
+  Phase 22 `budget_name` / `capability_id` binding, because both fields stay
+  present-and-null on every type. (*Corrected by DEC-236 / I-40: "which
+  per-type shapes cannot express" was wrong - the grammar's `Null` token could
+  express it. The relation is kept by choice, not necessity, and the branch must
+  still be **reached** by the new dispatch; see R-24 under DEC-236.*) **No Phase
   23 task extends it**, and all three task specs now say so explicitly - a task
   that adds a third boolean term has misread this decision. Deleting the row
   would have been the easy error: the invariant survives, only its enforcer
@@ -1081,6 +1084,146 @@ that none of that is needed. It does not change any Stop code, Condition type,
 grant action, failure code, or evaluation reason. And it does not relieve tasks
 9, 10, and 11 of `validateCondition`: producer-side exclusivity stays, with the
 journal shapes as the second, now-structural line.
+
+### DEC-236: Seventh-pass dispositions - the relation call, the six-row bar, the details route, and `review-recorded`
+
+- **Status:** **ACCEPTED 2026-09-20 under Tech Lead planning authority.** No
+  Human decision was required; the authority question R-26 raised is answered
+  below and resolved on the accepted contract, not by amending it. The
+  validation contract stays at **79** rows; one row (VAL-078) is refined and
+  strengthened, and no assertion is weakened, narrowed, or retired.
+- **Context:** QA pass 7 (`qa-plan.md` 18, commit `9b28ba2`) re-verified the
+  DEC-235 batch in a fresh session under `go test -overlay` with the working
+  tree untouched. It confirmed all four of the Tech Lead's asks, found Option A
+  transcribed correctly in all three specs, and returned four Must-fix revisions
+  and three improvements. Verdict: READY except tasks 9, 10, and 11. The Tech
+  Lead independently re-derived the structural facts behind R-24, R-26, and R-27
+  from the source before dispositioning them.
+
+**R-24 accepted: the new dispatch must still reach the relation.** This is the
+one finding that would have shipped a silent regression.
+`validateCurrentValue`'s generic path ends
+`return validateCurrentValueRelations(kind, object)`
+(`current_event_value_types.go:39-44`) - verified in the source - and DEC-235
+removes the `"Condition"` key from `currentValueShapes`, which deletes that
+path's only call for this kind. All three specs said "do not touch
+`case "Condition"`"; none said the new branch must still call it. Measured by
+QA: a branch that selects a per-type shape and returns accepts a `work-ended`
+Condition carrying `budget_name:"tokens"`, **appends and projects it** on the
+strict path, and passes the entire ordinary suite `exit 0`. `condition nullable
+binding mismatch` occurs exactly once in the repository - the `fmt.Errorf` that
+produces it - so no test detects the loss, and DEC-235's own four exclusivity
+criteria pass with row 8's invariant already gone. Task 9 gains requirement
+**(c)** and a dedicated acceptance criterion; tasks 10 and 11 confirm the
+relation still fires in their completion reports; inventory rows 8 and 10 carry
+the same sentence. This is the registry-without-an-owner failure shape one level
+down: correct ownership, correct prohibition, missing statement of what must
+still run.
+
+**R-25 accepted: the byte-identity bar covers all six rows, not one.**
+`run-recovered` and `capability-available` reach journal Condition validation
+**zero** times in the ordinary suite and are raised nowhere in the tagged
+corpus; QA deleted both rows and the suite still passed `exit 0`. A dropped or
+mistyped row would ship a binary rejecting those Conditions at runtime with
+every gate green. Task 9's criterion becomes a six-type table - one canonical
+Condition of each accepted, one mutated Condition of each rejected - retaining
+the replay and `attentionSemanticKey` halves. This directly serves the phase's
+stated residual risk, "a Phase 22 shape row not transcribed exactly".
+
+**R-27 accepted: the R-22 assertion keeps its force and gains a route that
+works.** The requirement itself stands - without it tasks 9 and 10 can omit a
+registry entry, watch green raise tests, and fail at task 11 or 15/16 with the
+cause outside the failing task. Only the cited exemplar was wrong for the
+`currentStopDetailShapes` half:
+`TestCurrentEventRejectsConditionalBindingCorruption` mutates
+`executionBlockedProjectionEvent`, and `run.execution-blocked` is one of the
+five families in `validateCurrentBudgetFacts`
+(`current_event_budget_values.go:34-50`, inventory row 9 - verified in source),
+so a changed Stop code is rejected `current budget boundary: unrelated Stop`
+before any detail shape is consulted. Tasks 9 and 10 now cite
+`TestCurrentClosedValuesRejectIncompleteAndInvalidFacts`
+(`current_event_closed_values_test.go:76`), which already asserts on family
+`stop.raised` for `resolution_condition_json` and on `stops.details_json` with a
+`code`, needs no database, and rejects `unknown Stop code` when the entry is
+missing. Two clarifications ride along: a proof that appends into the projection
+depends on migration 0017's widened `stops.code` / `attention_items.code` CHECK
+from task 1, and a **real `stop.raise` on the strict `stop.raised` family is
+acceptable evidence** - `validateStopRaise` (`stop.go:363-374`) checks code and
+condition independently. What is insufficient is a raise on the task's **own**
+retained family, which the earlier blanket wording over-stated.
+
+**R-26 accepted as branch A: `review-recorded` carries no discriminator, and
+this is not a Human decision.** `task-11.md`, rewritten by the DEC-235 batch,
+required `finding_id` on both `review-recorded` and `finding-resolved`.
+Accepted `contracts.md` section 11 enumerates the pairing exhaustively -
+`outcome_class` on `human-outcome-recorded`, `decision_class` on
+`decision-satisfied`, `finding_id` on `finding-resolved`, "only the matching
+field is non-null" - and gives `review-recorded` none. Four types and three
+fields do not divide evenly; one type is the odd one out, and section 11 already
+says which. Three reasons this is branch A:
+
+1. **Authority.** DEC-235's Human approval was of an *encoding mechanism* -
+   `omitempty` on three fields, structural exclusivity through per-type shapes -
+   not of a per-type field assignment, which accepted `contracts.md` section 11
+   had already fixed under DEC-222. Branch B would have added a field to a
+   public value on a second type, against both section 11 and
+   `public-interface.md` section 2; that would be Human authority, and it is not
+   what the accepted set says. Branch A restores the accepted reading and amends
+   no encoding, so it is ordinary planning correction. The pairing sentence was
+   a Tech Lead drafting error introduced in `932fbea`, not a decision.
+2. **Semantics.** A `review-recorded` Condition resolves on a `review.recorded`
+   Event scoped by its `subject`; naming a Finding would duplicate
+   `finding-resolved` rather than discriminate anything.
+3. **It costs nothing structurally.** The per-type shape rows are
+   field-count-exact, so the four-field `review-recorded` row is what makes a
+   `review-recorded` Condition carrying `finding_id` reject with `closed object
+   has wrong shape`.
+
+**VAL-078 is refined, and the refinement strengthens it.** Its assertion said
+"exactly one Condition field is non-null per type" with a fail criterion of "two
+or **zero** non-null fields", which under the accepted contract was
+**unsatisfiable** for `review-recorded` - every well-formed instance has zero.
+The row now names the section 11 pairing explicitly and requires
+`review-recorded` to **reject** any discriminator, which is an assertion the old
+wording did not make. Nothing is narrowed: the resolution half, evidence method,
+validator (QA Lead), and owning task (11) are unchanged, and the amendment log
+records the refinement. Under the standing rule, an assertion that cannot be
+satisfied is escalated rather than weakened - here the assertion was
+mis-specified against its own cited authority, and correcting it against that
+authority is the repair, not a relaxation.
+
+**The 18.12 conditional blocker candidate is not raised, and no ESC identifier
+is allocated.** It was explicitly conditional on branch B. Branch A is chosen,
+so no accepted public-value encoding changes, no Human authority is engaged, and
+no escalation exists to register. The Human is informed of the disposition
+rather than asked for a decision.
+
+**Improvements, all three accepted.**
+
+- **I-39:** `task-11.md` gains the present-and-null sentence and the pointer to
+  task 9's byte-identity bar, so all three `Condition`-editing tasks carry the
+  same reason and not just the same prohibition.
+- **I-40:** inventory row 8's recorded premise - "which the per-type shapes
+  cannot express" - is **wrong and is corrected in place**. The grammar has a
+  `Null` token (`current_event_value_types.go:59-60`), in live use at
+  `current_event_value_catalog.go:21`, so rows could express the binding with no
+  change to any marshaled byte. The conclusion is unchanged - keeping the
+  relation is the smaller change and the right one - but it is kept **by choice,
+  not by necessity**, and the corrected reason ("the accepted rows keep both
+  fields `?ID` on every type, so the relation is their only enforcer") is also
+  precisely what makes R-24 necessary. DEC-235 restated the same wrong premise
+  and is annotated rather than rewritten.
+- **I-41:** `task-18.md` now owns extending `p22ClosedFieldGrammar`'s
+  `Condition` row (`cmd/fid/integration/p22_closed_values_test.go:25`) to all
+  ten types with its asserted member counts. It is a self-contained wire oracle,
+  so new Condition types do not fail it - it silently stops covering them, which
+  is exactly the failure mode a conformance audit exists to prevent.
+
+**What this decision does not do.** It changes no Stop code, Condition type,
+grant action, failure code, or evaluation reason; adds and retires no `VAL-NNN`;
+touches no required command, threshold, or budget; and reopens neither DEC-235
+nor ESC-23-001. Tasks 1 to 8 were unaffected by the pass and are unaffected by
+this disposition.
 
 ### Accepted carry-forward dispositions
 

@@ -292,11 +292,34 @@ general rule with a closed inventory:
   object has wrong shape`. The invariant survives; only its enforcer moves.
   **No Phase 23 task extends this branch**, and a task that adds a third boolean
   term here has misread the decision. The branch also stays exactly as it is,
-  because it still carries the Phase 22 `budget_name` / `capability_id` binding,
-  which the per-type shapes cannot express: both fields remain present-and-null
-  on every type, so shape validation admits them and only this relation ties
-  them to `budget-observed` and `capability-available`. Do not simplify it
-  away.
+  because it still carries the Phase 22 `budget_name` / `capability_id` binding:
+  the accepted rows deliberately keep both fields `?ID` on **every** type, so
+  shape validation admits them and only this relation ties them to
+  `budget-observed` and `capability-available`. Do not simplify it away.
+
+  **Corrected premise (I-40, QA `qa-plan.md` 18.4).** The earlier reason
+  recorded here - "which the per-type shapes cannot express" - is measurably
+  false. The shape grammar has a `Null` token
+  (`current_event_value_types.go:59-60`), in live use at
+  `current_event_value_catalog.go:21` where `ImmutableBudget` ends
+  `consumed:Null remaining:Null`, so rows *could* express the binding as
+  `budget_name:ID capability_id:Null` and so on, with no change to any marshaled
+  byte, since `Null` still requires the field present. Keeping the relation
+  remains the right call - it is the smaller change and leaves stored history
+  untouched - but it is kept by choice, not by necessity, and a later pass
+  acting on the old premise would draw a wrong conclusion about the grammar.
+
+  **The enforcer only survives if the new dispatch still reaches it (R-24).**
+  `validateCurrentValue`'s generic path ends
+  `return validateCurrentValueRelations(kind, object)`
+  (`current_event_value_types.go:39-44`), and row 10 removes the `"Condition"`
+  key from `currentValueShapes`, which deletes that path's only call for this
+  kind. Measured: a `case "Condition"` branch that selects a per-type shape and
+  returns accepts a `work-ended` Condition carrying `budget_name:"tokens"`,
+  appends and projects it on the strict path, and passes the entire ordinary
+  suite `exit 0`; `condition nullable binding mismatch` is asserted by no test
+  in the repository. "Do not touch the branch" therefore means do not change the
+  relation - not stop calling it.
 - **Row 9, journal-side budget facts do not reach any Phase 23 family. QA Lead
   finding R-21, `qa-plan.md` 17.8; recorded as an owned row rather than a
   positive, because it names work task 6 must not assume is done for it.**
@@ -337,7 +360,11 @@ general rule with a closed inventory:
   in `validateCurrentValue` - a file no task previously owned. **Task 9 creates
   the map and the dispatch branch and adds
   `internal/journal/current_event_value_types.go` to its file scope; tasks 10
-  and 11 add rows only.** The branch must use a **checked** type assertion:
+  and 11 add rows only.** The branch must **end by returning
+  `validateCurrentValueRelations("Condition", object)`**, because it replaces
+  the generic path that made that call and row 8's Phase 22 binding has no other
+  enforcer (R-24; see row 8). The branch must also use a **checked** type
+  assertion:
   measured, `object["type"].(string)` panics with `interface conversion:
   interface {} is int, not string` on a non-string discriminant, in code that
   validates untrusted journal and archive bytes during replay and `import`,

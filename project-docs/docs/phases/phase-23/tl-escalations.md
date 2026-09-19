@@ -251,11 +251,12 @@ Recorded as DEC-235, which carries the full disposition. Applied in this batch:
   and that exclusivity is structural.
 - `execution-scope.md` section 6: inventory **row 8 restated, not deleted** -
   the relation branch keeps the Phase 22 `budget_name` / `capability_id`
-  binding, which the shapes cannot express, and **no Phase 23 task extends it**.
-  New **row 10** is the per-type shape map and its dispatch, failing closed,
-  with task 9 creating it and owning
+  binding and **no Phase 23 task extends it**. New **row 10** is the per-type
+  shape map and its dispatch, failing closed, with task 9 creating it and owning
   `internal/journal/current_event_value_types.go`, and tasks 10 and 11 adding
-  rows.
+  rows. *(Corrected by DEC-236: the reason first recorded here - "which the
+  shapes cannot express" - was wrong, and the branch must still be **reached**
+  by task 9's new dispatch or the binding is lost silently.)*
 - Tasks 9, 10, and 11: the `omitempty`-on-new-fields-only rule in all three
   (each edits the struct), the checked type assertion in task 9, byte-identity
   of the six Phase 22 rows as an acceptance bar, and the relation branch marked

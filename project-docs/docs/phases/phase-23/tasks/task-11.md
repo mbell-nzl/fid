@@ -15,7 +15,10 @@ original request.
   class and result.
 - VAL-078: All four Condition types - `review-recorded`, `finding-resolved`,
   `decision-satisfied`, `human-outcome-recorded` - resolve only on their own
-  qualifying durable fact, and exactly one Condition field is non-null per type.
+  qualifying durable fact, and each carries exactly its own discriminator field
+  and no other: `finding_id` for `finding-resolved`, `decision_class` for
+  `decision-satisfied`, `outcome_class` for `human-outcome-recorded`, and
+  **none** for `review-recorded` (DEC-236).
 - VAL-049: `attention.resolve` keeps its exact input shape and retains history.
 - VAL-050: A qualifying Human Outcome resolves only matching Stops.
 
@@ -23,7 +26,13 @@ original request.
 
 - `contracts.md` section 11 is the exact authority. The closed Condition type
   set is exactly `review-recorded`, `finding-resolved`, `human-outcome-recorded`,
-  and `decision-satisfied`, each with only its matching non-null field. Tasks 9
+  and `decision-satisfied`. Three of the four name one discriminator field each
+  and only that one; **`review-recorded` names none** - section 11 enumerates
+  the pairing and assigns `finding_id` to `finding-resolved` alone (DEC-236,
+  resolving QA R-26). Four types and three fields do not divide evenly, and
+  `review-recorded` is the type without one: its qualifying fact is a
+  `review.recorded` Event scoped by `subject`, which needs no further
+  discriminant. Do not add a field to it to make the arithmetic even. Tasks 9
   and 10 register `decision-satisfied` and `human-outcome-recorded` when they
   raise the Stops that carry them; this task registers the remaining two and
   owns the resolution behavior of all four (R-14).
@@ -60,11 +69,19 @@ original request.
 - `internal/workflow/stop.go` - the closed Stop registries (R-14). Add the two
   remaining Condition types, `review-recorded` and `finding-resolved`, to
   `conditionTypes`, and the `finding_id` field to the `Condition` struct with
-  its exactly-one-non-null-field rule in `validateCondition`. **Tag the new
+  its discriminator rule in `validateCondition`. **Tag the new
   field `omitempty`, and add `omitempty` to nothing else** (DEC-235); tasks 9
-  and 10 set this pattern. Note that `finding_id` serves **two** types here,
-  `review-recorded` and `finding-resolved`, so both of their shape rows carry
-  it. Tasks 9 and 10
+  and 10 set this pattern. `budget_name` and `capability_id` keep
+  present-and-null treatment and gain no `omitempty`: tagging either changes
+  every stored `semantic_key` and `request_digest` in existence, and task 9's
+  six-row byte-identity bar is the check that catches it (I-39). `finding_id`
+  belongs to **`finding-resolved` only**; `review-recorded` carries no
+  discriminator field at all (DEC-236). Completing the closed set therefore
+  makes `validateCondition`'s rule exact rather than uniform: **at most one**
+  discriminator field is non-null, it is exactly the one matching the type for
+  `finding-resolved`, `decision-satisfied`, and `human-outcome-recorded`, and
+  **none** of the three is set for `review-recorded`, whose Condition carrying
+  any of them is rejected. Tasks 9 and 10
   already added `decision-satisfied` and `human-outcome-recorded`, because each
   must exist before its own raising Event can commit; this task completes the
   closed four-type set and owns their resolution behavior (VAL-078). Add no
@@ -74,13 +91,26 @@ original request.
   resolved: exclusivity is structural, enforced by the per-type shapes task 9
   created, so there is no relation work for these fields. The branch stays as it
   is because it still carries the Phase 22 `budget_name` / `capability_id`
-  binding. This task closes the four-type set, so confirm in the completion
-  report that all four new types and all three new fields are covered **by shape
-  rows**, and that the six Phase 22 rows are unchanged.
+  binding, and the accepted rows keep both fields `?ID` on every type, so this
+  relation is their only enforcer (I-40). **Confirm in the completion report
+  that the relation still fires** from task 9's dispatch: a `finding-resolved`
+  Condition carrying a stray `budget_name` is rejected `condition nullable
+  binding mismatch`. No test in the repository asserted that message before task
+  9, so a dispatch that returned after shape validation would have deleted the
+  binding silently (QA R-24); if it does not fire, that is a task 9 defect -
+  stop and escalate rather than adding the call here. This task closes the
+  four-type set, so also confirm that all four new types and all three new
+  fields are covered **by shape rows**, and that the six Phase 22 rows are
+  unchanged.
 - `internal/journal/current_event_value_catalog.go` - the per-type `Condition`
   shape map task 9 created, gaining its **last two** rows (R-14, DEC-235):
-  `type:=review-recorded subject:Subject budget_name:?ID capability_id:?ID
-  finding_id:ID` and the same for `type:=finding-resolved`. Ten rows exist after
+  `type:=review-recorded subject:Subject budget_name:?ID capability_id:?ID` -
+  four fields, with **no** `finding_id`, because `contracts.md` section 11 gives
+  that type no discriminator (DEC-236) - and
+  `type:=finding-resolved subject:Subject budget_name:?ID capability_id:?ID
+  finding_id:ID`. The shapes are closed and field-count-exact, so this is what
+  makes a `review-recorded` Condition carrying `finding_id` reject with `closed
+  object has wrong shape`. Ten rows exist after
   this task - the six Phase 22 types unchanged and the four judgment types - and
   the map is closed. Add rows; do not touch the six Phase 22 rows.
 - `cmd/fid/attention.go`, `stop.go` - result shapes only.
@@ -116,12 +146,17 @@ original request.
   fact: for each of `review-recorded`, `finding-resolved`, `decision-satisfied`,
   and `human-outcome-recorded`, a resolution attempt with a non-qualifying fact
   Event leaves the Stop open and rejects, and the qualifying Event resolves it.
-  **And** the closed-schema half: a Condition carrying a second non-null field
-  or none rejects with no Event. Under DEC-235 that rejection is a **shape**
-  rejection, not a nullable-binding relation rejection - `closed object has
-  wrong shape` for two fields, `missing required field` for the wrong field, and
-  `invalid ID` for an own field that is null. Evidence citing the relation
-  message would mean the encoding was implemented wrong. (VAL-078)
+  **And** the closed-schema half, per type: for `finding-resolved`,
+  `decision-satisfied`, and `human-outcome-recorded`, a Condition carrying a
+  second discriminator field, the wrong one, or none of them rejects with no
+  Event; and for `review-recorded`, which carries none, a Condition carrying
+  `finding_id` - or either other discriminator - rejects with no Event, while
+  the bare four-field form is accepted (DEC-236). Under DEC-235 every one of
+  those is a **shape** rejection, not a nullable-binding relation rejection -
+  `closed object has wrong shape` for a field the row does not declare,
+  `missing required field` for the wrong field, and `invalid ID` for an own
+  field that is null. Evidence citing the relation message would mean the
+  encoding was implemented wrong. (VAL-078)
 - [ ] Full required commands terminate with preserved red/green evidence.
 - [ ] Every converged retained row records its provenance and executing command.
 

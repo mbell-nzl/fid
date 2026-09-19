@@ -116,7 +116,7 @@ until a matching approved reference and Human Outcome both exist.
   keyed on `type`**, not by widening one shape. Replace the single
   `currentValueShapes["Condition"]` entry with a per-type map in
   `current_event_value_catalog.go` and add the selecting `Condition` branch to
-  `validateCurrentValue` here. Two hard requirements. **(a)** The six Phase 22
+  `validateCurrentValue` here. Three hard requirements. **(a)** The six Phase 22
   type rows keep their exact current four-field shape -
   `type:=<type> subject:Subject budget_name:?ID capability_id:?ID` - so
   historical Events replay unchanged and no stored semantic key moves; this was
@@ -125,7 +125,19 @@ until a matching approved reference and Human Outcome both exist.
   so it must use a **checked** type assertion and fall through to the ordinary
   rejection: `object["type"].(string)` panics `interface conversion: interface
   {} is int, not string`, and this code validates untrusted journal and archive
-  bytes during replay and `import`. Your own type's row is
+  bytes during replay and `import`. **(c)** The branch must **end by calling
+  the relation**: `return validateCurrentValueRelations("Condition", object)`,
+  exactly as the generic `currentValueShapes` path it replaces does at
+  `current_event_value_types.go:39-44`. Removing the `"Condition"` key from
+  `currentValueShapes` deletes that path's only call for this kind, so a branch
+  that validates the shape and returns leaves the Phase 22 `budget_name` /
+  `capability_id` binding unenforced. Measured (QA R-24): such a branch accepts
+  a `work-ended` Condition carrying `budget_name:"tokens"`, **appends and
+  projects it** on the strict path, and still passes the entire ordinary suite
+  `exit 0` - `condition nullable binding mismatch` is asserted by no test in the
+  repository, tagged or not, so nothing else detects the loss. "Do not touch
+  `case "Condition"`" below means do not change the relation; it does not mean
+  stop reaching it. Your own type's row is
   `type:=decision-satisfied subject:Subject budget_name:?ID capability_id:?ID
   decision_class:ID`.
 - `internal/journal/current_event_value_relations.go` - **do not touch
@@ -133,8 +145,12 @@ until a matching approved reference and Human Outcome both exist.
   encoding the new fields' exclusivity is structural, enforced by the shapes
   above; adding a third boolean term here has misread the decision. The branch
   stays as it is because it still carries the Phase 22 `budget_name` /
-  `capability_id` binding, which the shapes cannot express. This task still
-  edits this file, but only for the capability allowlist below.
+  `capability_id` binding, and the accepted rows deliberately keep both fields
+  `?ID` on **every** type, so this relation is their only enforcer - which is
+  exactly why requirement (c) above exists (I-40 corrects the earlier reason,
+  "the shapes cannot express it"; the grammar's `Null` token could express it,
+  but the accepted rows do not use it). This task still edits this file, but
+  only for the capability allowlist below.
 - `internal/journal/current_event_value_catalog.go` - also add the `DecisionRef`
   and `ProtectedDecision` entries to `currentValueShapes` from
   `public-interface.md` section 3 (R-16, DEC-231). This task owns
@@ -183,27 +199,62 @@ until a matching approved reference and Human Outcome both exist.
 - [ ] `linked_to_decision` is listed as implemented and is satisfied only with a
   qualifying reference. (VAL-042)
 - [ ] The six Phase 22 Condition types validate **byte-identically** to the
-  pre-change binary: a recorded pre-change journal carrying a `budget-observed`
-  Stop replays clean, and the `attentionSemanticKey` of an unchanged Condition
-  is unchanged. This is the acceptance bar of DEC-235; a failure here means the
-  per-type rows were not transcribed exactly. (No new VAL ID.)
+  pre-change binary, proved over **all six rows** and not left to corpus
+  traffic. A table over `executor-terminated`, `run-recovered`,
+  `activation-recovered`, `capability-available`, `budget-observed`, and
+  `work-ended`: for each, one canonical four-field Condition is accepted at the
+  journal layer and one mutated Condition of that same type is rejected.
+  **Plus** the replay and key halves: a recorded pre-change journal carrying a
+  `budget-observed` Stop replays clean, and the `attentionSemanticKey` of an
+  unchanged Condition is unchanged. The per-type table is required because
+  `run-recovered` and `capability-available` reach journal Condition validation
+  **zero** times in the whole ordinary suite and are raised nowhere in the
+  tagged corpus - measured (QA R-25): deleting both rows outright leaves every
+  gate this phase requires green, so a dropped, misspelled, or mistyped row
+  ships a binary that rejects those Conditions at runtime with `Condition: type:
+  invalid closed enum` and no gate notices. This is the acceptance bar of
+  DEC-235; a failure here means the per-type rows were not transcribed exactly.
+  (No new VAL ID.)
 - [ ] Exclusivity is enforced by the shape, asserted at the journal layer and
   not through the raise: a `decision-satisfied` Condition carrying
   `outcome_class` instead of `decision_class` rejects, one with its own field
   null rejects, one carrying two new fields rejects, and one carrying only its
   own field is accepted. (Evidence toward VAL-078, which task 11 completes.)
+- [ ] The Phase 22 nullable binding still fires **from the new dispatch**: a
+  `work-ended` Condition carrying a non-null `budget_name`, a `budget-observed`
+  Condition carrying `budget_name:null`, and a `decision-satisfied` Condition
+  carrying a stray `budget_name` are each rejected `condition nullable binding
+  mismatch` on the strict path, and the projection is unchanged. This is the
+  executable proof of requirement (c) - that the branch still reaches
+  `validateCurrentValueRelations` - and it is the only assertion of that message
+  anywhere in the repository. (No new VAL ID; DEC-235 inventory row 8, QA R-24.)
 - [ ] A Condition whose `type` is not a string is **rejected, not a panic**,
   proving the checked assertion. (No new VAL ID; DEC-235.)
 - [ ] The `currentStopDetailShapes` and per-type `Condition` entries this task
-  adds are proved by a **direct strict-path append** in this task, following
-  `TestCurrentEventRejectsConditionalBindingCorruption`
-  (`internal/journal/current_event_validation_test.go:171`) - **not** by this
-  task's raise tests. `protected-decision-required` is raised at
+  adds are proved by a **direct assertion inside this task**, not by this task's
+  own retained-family raise tests. `protected-decision-required` is raised at
   `envelope.activated`, a retained family that returns at
-  `current_event_validation.go:64` before any value validation, so this task's
-  raise path never exercises these entries and green raise tests are not
-  evidence for them. Omitting the entries would pass here and fail at task 11 or
-  tasks 15/16 with the cause outside the failing task. (QA R-22, DEC-235.)
+  `current_event_validation.go:64` before any value validation, so that raise
+  path never exercises these entries. **Follow
+  `TestCurrentClosedValuesRejectIncompleteAndInvalidFacts`**
+  (`internal/journal/current_event_closed_values_test.go:76`): it already
+  asserts on family `stop.raised` for `stops.resolution_condition_json`, and on
+  `stops.details_json` with a `code` in its `values` map, needs no database, and
+  rejects `unknown Stop code` when the detail entry is missing. Do **not**
+  follow `TestCurrentEventRejectsConditionalBindingCorruption` for the details
+  half: it mutates `executionBlockedProjectionEvent`, and `run.execution-blocked`
+  is one of the five families in `validateCurrentBudgetFacts`
+  (`current_event_budget_values.go:34`, inventory row 9), so a changed Stop code
+  there is rejected `current budget boundary: unrelated Stop` before any detail
+  shape is consulted - measured, QA R-27. A **real `stop.raise` on the strict
+  `stop.raised` family is acceptable evidence too**: `validateStopRaise`
+  (`stop.go:363-374`) checks the code and the condition independently. What is
+  insufficient is a raise on this task's **own** retained family. If the chosen
+  proof appends into the projection it also depends on migration 0017's widened
+  `stops.code` and `attention_items.code` CHECK from task 1 (`schema.md` section
+  1); the `validateCurrentJSON` route touches no database and has no such
+  dependency. Omitting the entries would pass here and fail at task 11 or tasks
+  15/16 with the cause outside the failing task. (QA R-22/R-27, DEC-235.)
 - [ ] Full required commands terminate with preserved red/green evidence.
 - [ ] Every converged retained row records its provenance and executing command.
 

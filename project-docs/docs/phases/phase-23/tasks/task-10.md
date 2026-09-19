@@ -118,8 +118,15 @@ deterministic proof.
   resolved: the new fields' exclusivity is structural, enforced by the per-type
   shapes task 9 created, so there is no relation work for this field. The branch
   stays as it is because it still carries the Phase 22 `budget_name` /
-  `capability_id` binding. This task still edits this file, but only for the
-  capability allowlist above.
+  `capability_id` binding, and the accepted rows keep both fields `?ID` on every
+  type, so this relation is their only enforcer (I-40). **Confirm in the
+  completion report that the relation still fires** from task 9's dispatch: a
+  `human-outcome-recorded` Condition carrying a stray `budget_name` is rejected
+  `condition nullable binding mismatch`. No test in the repository asserts that
+  message, so a task 9 branch that returned after shape validation would have
+  deleted the binding silently (QA R-24). If it does not fire, that is a task 9
+  defect - stop and escalate rather than adding the call here. This task still
+  edits this file, but only for the capability allowlist above.
 - `internal/journal/current_event_value_catalog.go` - also add the
   `HumanOutcome` entry to `currentValueShapes` from `public-interface.md`
   section 3 (R-16, DEC-231). Reuse task 9's `ProtectedDecision` unchanged; if it
@@ -173,16 +180,31 @@ deterministic proof.
   new fields rejects, and one carrying only its own field is accepted.
   (Evidence toward VAL-078, which task 11 completes.)
 - [ ] The `currentStopDetailShapes` and per-type `Condition` entries this task
-  adds are proved by a **direct strict-path append** in this task, following
-  `TestCurrentEventRejectsConditionalBindingCorruption`
-  (`internal/journal/current_event_validation_test.go:171`) - **not** by this
-  task's raise tests. Three of DEC-224's four raising families
+  adds are proved by a **direct assertion inside this task**, not by this task's
+  own retained-family raise tests. Three of DEC-224's four raising families
   (`envelope.activated`, `evidence.linked`, `artifact.availability-observed`)
   are retained and return at `current_event_validation.go:64` before any value
-  validation, so the raises this task owns do not exercise these entries and
-  green raise tests are not evidence for them. Omitting the entries would pass
-  here and fail at task 11 or tasks 15/16 with the cause outside the failing
-  task. (QA R-22, DEC-235.)
+  validation, so the raises this task owns do not exercise these entries.
+  **Follow `TestCurrentClosedValuesRejectIncompleteAndInvalidFacts`**
+  (`internal/journal/current_event_closed_values_test.go:76`): it already
+  asserts on family `stop.raised` for `stops.resolution_condition_json`, and on
+  `stops.details_json` with a `code` in its `values` map, needs no database, and
+  rejects `unknown Stop code` when the detail entry is missing. Do **not**
+  follow `TestCurrentEventRejectsConditionalBindingCorruption` for the details
+  half: it mutates `executionBlockedProjectionEvent`, and `run.execution-blocked`
+  is one of the five families in `validateCurrentBudgetFacts`
+  (`current_event_budget_values.go:34`, inventory row 9), so a changed Stop code
+  there is rejected `current budget boundary: unrelated Stop` before any detail
+  shape is consulted - measured, QA R-27. A **real `stop.raise` on the strict
+  `stop.raised` family is acceptable evidence too**: `validateStopRaise`
+  (`stop.go:363-374`) checks the code and the condition independently. What is
+  insufficient is a raise on one of this task's **own** retained families. If
+  the chosen proof appends into the projection it also depends on migration
+  0017's widened `stops.code` and `attention_items.code` CHECK from task 1
+  (`schema.md` section 1); the `validateCurrentJSON` route touches no database
+  and has no such dependency. Omitting the entries would pass here and fail at
+  task 11 or tasks 15/16 with the cause outside the failing task. (QA
+  R-22/R-27, DEC-235.)
 - [ ] Full required commands terminate with preserved red/green evidence.
 - [ ] Every converged retained row, including the seeded task 7 and task 9
   fixtures, records its provenance and executing command.
