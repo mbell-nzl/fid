@@ -2,18 +2,28 @@
 
 ## Open escalations
 
-**None.** Phase 23 has no open escalation.
+None.
 
 ## Recently resolved
+
+ESC-23-002 is **RESOLVED 2026-09-20 under DEC-238**. The Human delegated
+bounded repair authority above the fixed agent roles. Rebuild statement reuse
+and fresh/isolated test setup repair the causes without changing any gate or
+assertion. Fresh exact gates pass: CLI **527.099s**, workflow **231.010s**,
+tagged integration **669.586s**; rebuild samples **22.728s / 22.623s / 22.489s**.
+Integration binary directories stay **0 → 0**. Task 1 is complete in its report;
+the Runner must reconcile the retained STOP before advancing. Tasks 9-11 stay
+held. See [repair evidence](../phases/phase-23/qa/esc-23-002-repair.md) and
+[resume handoff](../phases/phase-23/qa/resume-after-esc-23-002.md).
 
 ESC-23-001 is **resolved**: the Human chose Option A on 2026-09-20 - `omitempty`
 on the three new `Condition` fields only, the six Phase 22 types keeping
 `budget_name` and `capability_id` present-and-null, with per-type journal shapes
 keyed on `type`. Recorded as DEC-235, which amends `public-interface.md` section
 2, restates inventory row 8, creates row 10, and rewrites tasks 9, 10, and 11.
-The three held revisions (R-22, R-23, I-37) shipped with it. **No task is
-blocked by an escalation**; tasks 9-11 are held only by the Human's dispatch
-instruction and one bounded QA confirmation of the DEC-237 contract edits. See
+The three held revisions (R-22, R-23, I-37) shipped with it. **ESC-23-001
+blocks no task**; tasks 9-11 are held only by the Human's dispatch instruction
+and one bounded QA confirmation of the DEC-237 contract edits. See
 [Phase 23 escalations](../phases/phase-23/tl-escalations.md).
 
 QA pass 8 raised one **blocker candidate with no identifier allocated** (R-28,

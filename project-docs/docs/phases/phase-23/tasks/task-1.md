@@ -238,3 +238,12 @@ commit, not a Developer gate.
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
+
+## ESC-23-002 recovery scope amendment (DEC-238)
+
+The Human's 2026-09-20 delegation assigns this recovery the rebuild statement
+reuse and cached execution-transition fixture repair described in DEC-238,
+plus causal test-runtime repair in `cmd/fid` and `internal/workflow` if needed.
+Matching tests and repair evidence are in scope. All exact commands and
+thresholds above remain unchanged. This authorizes causal cross-task repair;
+it does not authorize weakening assertions or dispatching later tasks.

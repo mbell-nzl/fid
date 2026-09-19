@@ -48,8 +48,7 @@ func TestMaintenanceCheckRefreshesProjectionWithoutChangingJournal(t *testing.T)
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			workspace := t.TempDir()
-			runInitCommand(t, workspace, "init")
+			workspace := clonePristineWorkspace(t)
 			testCase.setup(t, workspace)
 
 			journalPath := mustJournalPath(t, workspace)

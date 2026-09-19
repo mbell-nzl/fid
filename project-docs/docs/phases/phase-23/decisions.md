@@ -1389,6 +1389,44 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 | CF-041 | New: hosted CI runs only the ordinary suite. The tagged integration suite and the rebuild benchmark are local-only gates, so a green PR is not phase-level evidence. Owner: workflow and CI maintainer, in dedicated maintenance. |
 | CF-042 | New (QA plan I-16); cause and mitigation corrected under DEC-229 (readiness refresh R-15). `cmd/fid/integration/main_test.go` leaks built-binary directories per run, not per kill: five tests re-execute the test binary, each child re-enters `runIntegrationSuite` and rebuilds its own ~16 MB binary, and the crash-process children exit abnormally by design and never reach `RemoveAll`. One clean tagged run - exit 0, no kill, 551 s - leaked 20 directories and 306 MB into a 3.9 GB RAM-backed `/tmp`; at ~26 tagged runs this phase that is ~7.8 GB, filling `/tmp` around the twelfth. Task 1's mitigation is therefore causal: publish the built binary path so a re-executing child reuses it and neither builds nor removes, keeping the 24-hour prune only as the residual safety net for a parent killed mid-run. The durable cleanup-on-kill design stays with the workflow and test-infrastructure maintainer in dedicated maintenance. |
 
+### DEC-238: Human delegates ESC-23-002 causal repair and resume preparation
+
+- **Status:** ACCEPTED by explicit Human delegation, 2026-09-20.
+- **Authority:** The Human authorized this agent to act above the fixed role and
+  workflow boundaries, complete the proposed repairs and documentation, close
+  ESC-23-002, commit, and prepare a Phase Runner handoff. This is a bounded
+  exception for this escalation, not a standing workflow policy change.
+- **Scope:** Task 1 recovery may repair rebuild SQL preparation in
+  `internal/journal` and `internal/db`, the cached execution-transition fixture
+  in `cmd/fid`, and causally identified test-fixture/runtime overhead needed to
+  meet the retained ordinary-package budgets in `cmd/fid` and
+  `internal/workflow`. Matching tests, task/report, escalation, current-context,
+  evidence, and resume documentation are included. No dependency is added.
+- **Unchanged controls:** The 100k rebuild remains strictly below 30 seconds;
+  ordinary packages remain below 600 seconds and tagged integration below 900
+  seconds. Exact task commands, semantic assertions, expiry rejection, journal
+  bytes, per-Event rollback/checkpoint semantics, and rebuild parity stand.
+  Product Events, schemas, public interfaces, and migration SQL are unchanged.
+- **Implementation direction:** Reuse prepared writes, including projection
+  metadata, within one rebuild; close owned resources on success and failure.
+  Remove cached-fixture age from the transition cases' qualifying premises.
+  Keep the explicit expiry cases and all expected rejection reasons.
+- **Evidence:** Preserve original failed attempts; record red/green, exact task
+  gates, observed package times, integration binary counts/free space, three
+  fresh reference benchmarks, and focused rollback/isolation/parity checks in
+  `qa/esc-23-002-repair.md`. Update Task 1's report with current-session evidence.
+- **Resume:** No later task is dispatched by this repair. The Runner resumes
+  using DEC-238 and the committed evidence/repair, verifies Task 1 closure and
+  ledger sequence, then continues tasks 2–8. Tasks 9–11 retain the Human hold.
+  Earlier BLOCK/TRG/STOP records remain historical evidence, not deleted.
+  The Runner may reconcile this completed Human-delegated recovery without
+  redispatching implementation solely to satisfy role boundaries: verify the
+  committed report/evidence, append the bound recovery and RESOLVED receipt,
+  then record Task 1 COMPLETE. The precise binding is in
+  `qa/resume-after-esc-23-002.md`; later QA review windows are unchanged.
+- **Refs:** ESC-23-002; TRG-23-001/002; DEC-227; VAL-004/079;
+  `../../reviews/2026-09-20-phase-23-rebuild-performance-diagnosis.md`.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,
@@ -1398,7 +1436,7 @@ not the default.
 |---|---|---|
 | `00_PROJECT_CHARTER.md` | pending | |
 | `01_PRD.md` | pending | |
-| `02_TRD.md` | pending | expected `touched` at task 17 |
+| `02_TRD.md` | touched: DEC-238 | section 6 records rebuild-scoped prepared writes; task 17 still owns its later sync |
 | `03_TRD_SCHEMA.md` | pending | expected `touched` at task 1 (section 8.4) |
 | `04_TRD_CONFIG.md` | pending | |
 | `05_DESIGN_PLAN.md` | pending | |

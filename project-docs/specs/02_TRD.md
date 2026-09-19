@@ -254,6 +254,14 @@ Projection tables may normalize current query state, but canonical history is
 never inferred from row update timestamps. Rebuild and live application use
 the same event appliers and must produce semantic parity.
 
+Full rebuild owns one SQLite connection and a bounded cache of prepared
+Effect-write and projection-metadata statements for that rebuild only. It
+retains one transaction and checkpoint update per Event, all validation and
+foreign-key checks, and the existing rebuild-only durability settings.
+Statements and the connection are released on success or failure before the
+staged projection can replace the installed database. Live writes and catch-up
+retain their existing transaction path (Phase 23 DEC-238).
+
 ## 7. Concurrency And Idempotency
 
 - Aggregate sequence and expected revision detect stale writers.

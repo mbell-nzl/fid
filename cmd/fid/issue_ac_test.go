@@ -127,8 +127,7 @@ func TestAcceptanceCriterionAddJSONUsesSpecificAtomicFailureCodes(t *testing.T) 
 }
 
 func TestIssueACAddCommandAddsAcceptanceCriterionAndPrintsConfirmation(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 	journalPath := mustJournalPath(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI AC add", "--actor", "agent:developer")
@@ -338,16 +337,14 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 }
 
 func TestIssueACVerifyCommandPersistsVerificationAndPrintsConfirmation(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI AC verify")
 	assertIssueACVerifyUnavailable(t, workspace, issueID, criterionID, "agent:developer")
 }
 
 func TestIssueACVerifyCommandKeepsLatestPerRoleIndependent(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI multi-role verify")
 	assertIssueACVerifyUnavailable(t, workspace, issueID, criterionID, "agent:developer")
@@ -355,8 +352,7 @@ func TestIssueACVerifyCommandKeepsLatestPerRoleIndependent(t *testing.T) {
 }
 
 func TestIssueACVerifyCommandPreservesFailToPassHistory(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI fail then pass")
 	assertIssueACVerifyUnavailable(t, workspace, issueID, criterionID, "agent:developer")
@@ -364,8 +360,7 @@ func TestIssueACVerifyCommandPreservesFailToPassHistory(t *testing.T) {
 }
 
 func TestIssueACVerifyCommandLatestPerRoleSurvivesRebuild(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI rebuild AC parity")
 	assertIssueACVerifyUnavailable(t, workspace, issueID, criterionID, "agent:developer")
@@ -386,8 +381,7 @@ func TestIssueACVerifyCommandRejectsBeforeAppend(t *testing.T) {
 }
 
 func TestIssueACVerifyCommandUsesRoleSpecificPermissionsAndHumanAttribution(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI verifier permissions")
 	assertIssueACVerifyUnavailable(t, workspace, issueID, criterionID, "agent:workflow_runner")
@@ -421,8 +415,7 @@ func assertIssueACVerifyUnavailable(t *testing.T, workspace, issueID, criterionI
 }
 
 func TestIssueACListCommandMatchesClosedHumanAndJSONContracts(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI AC list")
 	secondCriterionStdout, secondCriterionStderr := runFIDCommand(
@@ -484,8 +477,7 @@ func TestIssueACListCommandMatchesClosedHumanAndJSONContracts(t *testing.T) {
 }
 
 func TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	issueID, _ := seedIssueAcceptanceCriterion(t, workspace, "CLI AC transport replacement")
 

@@ -1,0 +1,7 @@
+goos: linux
+goarch: amd64
+pkg: github.com/mbell-nzl/fid/internal/journal
+cpu: AMD Ryzen 7 5700G with Radeon Graphics
+BenchmarkRebuildWorkspace100kEvents-6   	       1	22489003547 ns/op	     22489 ms/rebuild	2296526336 B/op	34582021 allocs/op
+PASS
+ok  	github.com/mbell-nzl/fid/internal/journal	25.113s

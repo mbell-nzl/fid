@@ -13,10 +13,12 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 
 ## Status
 
-**Approved; tasks 1-8 dispatchable now, 9-11 after one bounded QA confirmation
-and explicit Human dispatch clearance; no open decision and no registered
-escalation.** Branch `phase-23` at planning base
-`0195897a347dfe1872db0f7be3800c5c3ccdefcf`.
+**Task 1 complete after DEC-238 causal repair; ESC-23-002 resolved.**
+The Runner must reconcile its retained STOP using
+[the resume handoff](../phases/phase-23/qa/resume-after-esc-23-002.md), then
+continue tasks 2-8 in order. Tasks 9-11 remain held for bounded QA confirmation
+and explicit Human dispatch clearance. Branch `phase-23`; the Task 1 report
+records the implementation commit.
 
 Eight QA passes returned twenty-eight Must-fix revisions plus five the Tech Lead
 found while dispositioning them; **all are applied**. Six Human contract
@@ -34,9 +36,9 @@ nullable binding still reached from the new dispatch, and VAL-082, the six-row
 compatibility bar. The contract is 82 rows; nothing was weakened.** I-42..I-45
 are applied.
 
-Next action: one bounded QA confirmation of the DEC-237 contract edits, then the
-Runner's readiness check. **Tasks 9-11 stay held until the Runner receives
-explicit Human dispatch clearance.** Tasks 1-8 dispatch in parallel.
+Next action: verify Task 1 closure and resume the retained STOP under DEC-238.
+Continue the ordered task/review sequence through Task 8. **Tasks 9-11 stay
+held until bounded QA confirmation and explicit Human dispatch clearance.**
 
 ## Operating Mode
 
@@ -54,8 +56,8 @@ amendments inline with their DEC and approval state.
 
 ## Task Index
 
-Full specs and reports: `../phases/phase-23/tasks/`. Task 1 is in execution;
-2-18 **Pending**, sequential; task 12 also needs the task-11 checkpoint.
+Full specs and reports: `../phases/phase-23/tasks/`. Task 1 has a COMPLETE report,
+awaiting Runner ledger reconciliation; 2-18 **Pending**, sequential; task 12 also needs the task-11 checkpoint.
 
 1 schema baseline; 2 typed multi-Obligation Envelope; 3 review Claim mode and
 Run; 4 Review Records and independence; 5 Finding dispositions; 6 review

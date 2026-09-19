@@ -167,7 +167,7 @@ func rebuildWorkspaceLocked(lock *WriteLock, migrationsDir string) (ReplayStats,
 		return ReplayStats{}, err
 	}
 
-	replayed, err := ReplayJournal(conn, filepath.Join(lock.workspaceRoot, ".fid", "journal"), nil)
+	replayed, err := replayRebuild(conn, filepath.Join(lock.workspaceRoot, ".fid", "journal"))
 	closeReplayDB(conn)
 	if err != nil {
 		return ReplayStats{}, err

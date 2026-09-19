@@ -1,10 +1,26 @@
 # Progress — Current
 
-Updated 2026-09-20. **Phase 22 closed; Phase 23 approved, QA-planned, not
-started; six contract amendments approved, eight QA readiness passes
-dispositioned, tasks 1-8 dispatchable.**
-Branch: `phase-23` at `0195897a347dfe1872db0f7be3800c5c3ccdefcf`; the `phase-22`
-PR remains open with green CI.
+Updated 2026-09-20. **Phase 23 Task 1 is complete after DEC-238 causal
+repair; ESC-23-002 resolved. Runner STOP reconciliation is the next action.**
+Branch: `phase-23`; exact implementation identity is in Task 1's completion
+report. Tasks 2-8 remain pending and ordered; tasks 9-11 remain held.
+
+## Task 1 recovery — 2026-09-20
+
+ESC-23-002 is **RESOLVED 2026-09-20 under DEC-238**. The Human delegated
+bounded repair authority above the fixed agent roles. Rebuild statement reuse
+and fresh/isolated test setup repair the causes without changing any gate or
+assertion. Fresh exact gates pass: CLI **527.099s**, workflow **231.010s**,
+tagged integration **669.586s**; rebuild samples **22.728s / 22.623s / 22.489s**.
+Integration binary directories stay **0 → 0**. Task 1 is complete in its report;
+the Runner must reconcile the retained STOP before advancing. Tasks 9-11 stay
+held. See [repair evidence](../phases/phase-23/qa/esc-23-002-repair.md) and
+[resume handoff](../phases/phase-23/qa/resume-after-esc-23-002.md).
+
+The original benchmark, expired-fixture assertion and runtime-budget failures
+remain durable evidence. Thresholds stay 30s / 600s / 900s. Prepared rebuild
+writes retain per-Event transactions and rollback; cached test setup creates
+fresh expiring state and preserves per-case isolation. No later task dispatched.
 
 ## Phase 23 planning — 2026-09-14
 
@@ -77,11 +93,11 @@ Condition encoding (VAL-080), and gives the two DEC-235 preservation invariants
 an ID each (VAL-081, VAL-082): live behavior this refactor could delete with no
 other detector. The contract is 82 rows and nothing was weakened.
 
-Task 1 is dispatched and with the Runner; nothing else is. Next: one bounded QA
-confirmation of the DEC-237 contract edits, then the Runner's readiness check.
-Tasks 9-11 also await explicit Human dispatch clearance; tasks 2-8 may dispatch
-now. See [phase brief](phase_brief.md) and
-[Phase 23 decisions](../phases/phase-23/decisions.md).
+Task 1's delegated repair is complete; the Runner now verifies the committed
+report and reconciles the retained STOP using DEC-238. Continue tasks 2-8 in
+order. The bounded QA confirmation of DEC-237 and explicit Human dispatch
+clearance remain prerequisites for tasks 9-11. See
+[phase brief](phase_brief.md) and [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Completed
 

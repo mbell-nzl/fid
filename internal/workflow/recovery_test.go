@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/project"
@@ -281,8 +280,8 @@ func recoveryFixture(t *testing.T) (RunOptions, RunRecoveryRequest) {
 	runReconciliationGit(t, workspace, "add", "base.txt")
 	runReconciliationGit(t, workspace, "commit", "-qm", "base")
 	migrationsDir := workflowMigrationsDir(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir}); err != nil {
-		t.Fatalf("InitializeWorkspace() error = %v", err)
+	if err := cloneWorkflowPristine(workspace); err != nil {
+		t.Fatalf("clone initialized recovery workspace: %v", err)
 	}
 	observation, err := project.ObserveRepository(workspace)
 	if err != nil {

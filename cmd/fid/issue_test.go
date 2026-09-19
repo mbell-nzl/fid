@@ -17,8 +17,7 @@ import (
 )
 
 func TestIssueGetHumanSuccessUsesStdout(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Human read", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 	result := executeCommandForTest(workspace, "issue", "get", issueID)
@@ -28,8 +27,7 @@ func TestIssueGetHumanSuccessUsesStdout(t *testing.T) {
 }
 
 func TestIssueCreateEpicAcceptsSchedulingAndReturnsDefaultReadShape(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Phase 4 authoring", "--scheduling", "sequential", "--actor", "agent:tl")
 	issueID := parseCreatedIssueID(t, stderr)
@@ -102,8 +100,7 @@ func TestIssueCreateEpicAcceptsSchedulingAndReturnsDefaultReadShape(t *testing.T
 }
 
 func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -370,8 +367,7 @@ func TestIssueCreateRejectsInvalidFlagsAndConstraintViolations(t *testing.T) {
 }
 
 func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierarchy(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -451,8 +447,7 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 }
 
 func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Surface enriched issue state", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
@@ -584,8 +579,7 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 }
 
 func TestIssueGetRejectsRetiredFormatFlags(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Format retirement", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 	for _, flag := range []string{"--format", "--section"} {
@@ -600,8 +594,7 @@ func TestIssueGetRejectsRetiredFormatFlags(t *testing.T) {
 }
 
 func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	journalPath := mustJournalPath(t, workspace)
 	beforePayload, err := os.ReadFile(journalPath)
@@ -682,8 +675,7 @@ func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 }
 
 func TestIssueCreateAndRebuildRoundTripReturnsIdenticalJSON(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Rebuild parity", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
@@ -704,8 +696,7 @@ func TestIssueCreateAndRebuildRoundTripReturnsIdenticalJSON(t *testing.T) {
 }
 
 func TestIssueCreateStandaloneActorIsAttributionOnly(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 
 	t.Run("issue create missing actor", func(t *testing.T) {
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "create", "--kind", "task", "--title", "Missing role")
@@ -740,8 +731,7 @@ func TestIssueCreateStandaloneActorIsAttributionOnly(t *testing.T) {
 
 func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 	t.Run("malformed trailing line", func(t *testing.T) {
-		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		workspace := clonePristineWorkspace(t)
 
 		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up corruption", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, stderr)
@@ -766,8 +756,7 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 	})
 
 	t.Run("precondition conflict", func(t *testing.T) {
-		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		workspace := clonePristineWorkspace(t)
 
 		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up conflict", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, stderr)
@@ -819,8 +808,7 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 }
 
 func TestIssueGetRejectsAllFormatValues(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	workspace := clonePristineWorkspace(t)
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Format rejection", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 	for _, value := range []string{"json", "toon", "yaml", "markdown", "xml"} {

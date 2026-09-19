@@ -44,6 +44,13 @@
 
 ## Standing Delivery Constraints
 
+- DEC-238: Human-delegated ESC-23-002 recovery owns prepared rebuild writes
+  and causal test-fixture repairs across Task 1 boundaries. Keep the strict
+  30-second rebuild, 600-second ordinary-package and 900-second tagged budgets,
+  all semantic assertions, and tasks 9-11 hold. Runner reconciliation is defined
+  in `../phases/phase-23/qa/resume-after-esc-23-002.md`; this is a bounded
+  exception, not a standing role or gate-policy change.
+
 - DEC-158: report lint is a two-argument Runner pre-dispatch control, not a
   Developer task command; 100k rebuild needs three fresh <30 s samples (CF-024).
 - DEC-162/165/166: retained-test convergence follows the accepted invalidating
