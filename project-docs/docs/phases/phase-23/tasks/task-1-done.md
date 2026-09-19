@@ -40,19 +40,23 @@
 ## Tests run
 
 - `go test ./internal/db -run '^TestMigration0017CreatesExactlyTheAcceptedObjects$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); initial red against the absent migration 0017.
-- `go test ./internal/db -run '^TestMigration0017CreatesExactlyTheAcceptedObjects$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/db 0.063s` (terminated `exit_code: 0`).
-- `go test ./internal/db -run '^(TestMigration0017CreatesExactlyTheAcceptedObjects|TestMigration0017ObligationRegistrationDiscriminator|TestMigration0017PreservesReceiptEvidenceAndArtifactLinksInPlace|TestPhase23BaselineMigrationDiffIsExactlySevenAcceptedHunks)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/db 0.214s` (terminated `exit_code: 0`).
-- `go test -race ./internal/journal -run '^(TestProjectEventFenceRejectsEveryUnavailablePhase23EventWithoutProjectionChange|TestCurrentEventColumnDomainsMatchAcceptedDDL)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/journal 4.065s` (terminated `exit_code: 0`).
-- `go test -race ./cmd/fid -run '^TestPristineWorkspaceClonePreservesRebuildParityAndIsolation$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 5.922s` (terminated `exit_code: 0`); this is the retained projection-byte-parity control after reverting the rejected exclusive-lock experiment.
+- `go test ./internal/db -run '^TestMigration0017CreatesExactlyTheAcceptedObjects$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/db 0.063s` (terminated `exit_code: 0`)
+- `go test ./internal/db -run '^(TestMigration0017CreatesExactlyTheAcceptedObjects|TestMigration0017ObligationRegistrationDiscriminator|TestMigration0017PreservesReceiptEvidenceAndArtifactLinksInPlace|TestPhase23BaselineMigrationDiffIsExactlySevenAcceptedHunks)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/db 0.214s` (terminated `exit_code: 0`)
+- `go test -race ./internal/journal -run '^(TestProjectEventFenceRejectsEveryUnavailablePhase23EventWithoutProjectionChange|TestCurrentEventColumnDomainsMatchAcceptedDDL)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/journal 4.065s` (terminated `exit_code: 0`)
+- `go test -race ./cmd/fid -run '^TestPristineWorkspaceClonePreservesRebuildParityAndIsolation$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 5.922s` (terminated `exit_code: 0`)
+  This is the retained projection-byte-parity control after reverting the rejected exclusive-lock experiment.
 - Real integration entrypoint: `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` invoked the integration `TestMain`, which built the parent `fid` executable and re-executed the child suite through `FID_INTEGRATION_BINARY`; it passed with no residual integration-binary directories.
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 595.167s coverage: 62.6% of statements` (terminated `exit_code: 0`); prior successful attempt. Wall times: `cmd/fid` 581.395s; `internal/workflow` 595.167s.
-- `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.5%` (terminated `exit_code: 0`); prior successful attempt.
-- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 668.694s` (terminated `exit_code: 0`). Before the gate, `/tmp` had 0 `fid-integration-binary-*` directories and 3789979648 free bytes; after it had 0 directories and 3789045760 free bytes. Observed `cmd/fid/integration` wall time: 668.694s.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 595.167s coverage: 62.6% of statements` (terminated `exit_code: 0`)
+  Prior successful attempt. Wall times: `cmd/fid` 581.395s; `internal/workflow` 595.167s.
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.5%` (terminated `exit_code: 0`)
+  Prior successful attempt.
+- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 668.694s` (terminated `exit_code: 0`)
+  Before the gate, `/tmp` had 0 `fid-integration-binary-*` directories and 3789979648 free bytes; after it had 0 directories and 3789045760 free bytes. Observed `cmd/fid/integration` wall time: 668.694s.
 - `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - BLOCKED - `FAIL github.com/mbell-nzl/fid/internal/journal 35.245s` (terminated `exit_code: 1`); first final-behavior attempt measured 32.500159404s, above the strict 30s assertion.
 - `go test -race -timeout 30m -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`); latest mandatory attempt after acceptance-test additions. `cmd/fid` failed after 619.168s and `internal/workflow` passed after 614.196s, both above the 600s budget. The `cmd/fid` failure includes `TestExecutionBoundTransitionPredicateMatrix/workflow_edge_invalid`, whose expected only `workflow-transition-invalid` but observed `claim-expired`, `run-inactive`, and `workflow-transition-invalid`.
 - Later exact commands are BLOCKED pending recovery because command 3 did not terminate green; no narrower command is substituted for the required full gate.
