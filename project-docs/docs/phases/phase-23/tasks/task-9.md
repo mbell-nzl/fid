@@ -68,7 +68,19 @@ until a matching approved reference and Human Outcome both exist.
   `decision_class` field to the `Condition` struct together with its
   exactly-one-non-null-field rule in `validateCondition`, all from
   `public-interface.md` section 2.
-- `internal/journal/current_event_value_catalog.go` - the matching
+- `internal/journal/current_event_json.go` and
+  `internal/journal/current_event_result_projection.go` - the typed-result
+  registration for `decision.referenced` (R-16, DEC-231). Deleting the fence key
+  routes this family onto the journal's strict result path, so both are required
+  here or the first successful `decision record-reference` is rejected at append
+  time. Add the `decision.referenced` entry in the `fields` grammar map, derived
+  from the `decision.record-reference` result row in `public-interface.md`
+  section 4, and the matching `currentExpectedResult` branch.
+- `internal/journal/current_event_value_catalog.go` - also add the `DecisionRef`
+  and `ProtectedDecision` entries to `currentValueShapes` from
+  `public-interface.md` section 3 (R-16, DEC-231). This task owns
+  `ProtectedDecision` because it is the first to project one; task 10 reuses it
+  unchanged. The same file carries the matching
   `currentStopDetailShapes` entry, and the closed `Condition` value grammar
   gaining `decision-satisfied` and `decision_class:?ID` (R-14).
 - `internal/export/archive_semantics_catalog.go` - mirror this task's own

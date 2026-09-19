@@ -60,16 +60,28 @@ next rework atomically when that budget is exhausted.
 - `internal/workflow/budget.go`, `run_budget.go`, `recovery_budget.go`,
   `evaluation.go`, `resolve.go`.
 - `internal/review/` - the verdict effects that charge and raise.
-- `internal/journal/` - the `review.recorded` effect-rule optional rows.
+- **No `current_event_catalog.go` edit in this task** (I-28, DEC-229): task 1
+  registered `review.recorded`'s complete `schema.md` 6.2 rule including every
+  optional row this task's charging and raising paths use. If a needed optional
+  row is missing, that is a task 1 defect - stop and escalate rather than
+  editing a map task 1 owns. This task also registers no typed-result grammar:
+  task 4 unfenced `review.recorded` and owns all three of its result registries
+  (DEC-231).
 - `internal/workflow/stop.go` - the closed Stop registries (R-14). Add
   `review-rework-exhausted` to `stopCodes` and its exact `validStopDetails` key
   set from the `public-interface.md` section 2 StopDetails table. Add no
   Condition type here: the resolution condition is the retained
   `budget-observed`.
-- `internal/journal/current_event_value_catalog.go` - the matching
-  `currentStopDetailShapes` entry (R-14). `StopCode` validation keys on that
-  map (`current_event_value_types.go`), so without the entry the journal
-  rejects the Stop this task raises.
+- `internal/journal/current_event_value_catalog.go` - two additions. First, the
+  matching `currentStopDetailShapes` entry (R-14). `StopCode` validation keys on
+  that map (`current_event_value_types.go`), so without the entry the journal
+  rejects the Stop this task raises. Second, widen
+  `currentValueShapes["Budget"]` and `["ImmutableBudget"]` (R-16, DEC-231): add
+  `review-cycles` to the `unit` domain and `review-rework-exhausted` to the
+  `exhaustion_action` domain, per `public-interface.md` section 2. Without both,
+  the first `review-cycles` Budget projected inside a `Run` or a
+  `run.budget-observed` result is rejected at append time. No other Budget rule
+  changes.
 - `internal/cli/codes.go` - `review-changes-required`,
   `review-rework-exhausted`, `evidence-type-not-accepted`. `finding-unresolved`
   is a ReasonCode, **not** a failure code (DEC-226): add it, together with

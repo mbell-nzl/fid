@@ -85,7 +85,20 @@ deterministic proof.
   set, `human-outcome-recorded` to `conditionTypes`, and the `outcome_class`
   field to the `Condition` struct together with its exactly-one-non-null-field
   rule in `validateCondition`, all from `public-interface.md` section 2.
-- `internal/journal/current_event_value_catalog.go` - the matching
+- `internal/journal/current_event_json.go` and
+  `internal/journal/current_event_result_projection.go` - the typed-result
+  registration for `human-outcome.recorded` (R-16, DEC-231). Deleting the fence
+  key routes this family onto the journal's strict result path, so both are
+  required here or the first successful `human-outcome record` is rejected at
+  append time. Add the `human-outcome.recorded` entry in the `fields` grammar
+  map, derived from the `human-outcome.record` result row in
+  `public-interface.md` section 4, and the matching `currentExpectedResult`
+  branch.
+- `internal/journal/current_event_value_catalog.go` - also add the
+  `HumanOutcome` entry to `currentValueShapes` from `public-interface.md`
+  section 3 (R-16, DEC-231). Reuse task 9's `ProtectedDecision` unchanged; if it
+  is missing or wrong, that is a task 9 defect. The same file carries the
+  matching
   `currentStopDetailShapes` entry, and the closed `Condition` value grammar
   gaining `human-outcome-recorded` and `outcome_class:?ID` (R-14).
 - `internal/export/archive_semantics_catalog.go` - mirror this task's

@@ -56,6 +56,19 @@ Review, and a derived Finding state.
   `activation.go`; Envelope grants reuse it through `sortedUniqueEnvelopeActions`
   in `envelope.go`, and `authority.go` holds no action list (R-08, DEC-167/173).
 - `internal/journal/project_effects.go` - the one fence key and its effects.
+- `internal/journal/current_event_json.go` and
+  `internal/journal/current_event_result_projection.go` - the typed-result
+  registration for `finding.addressed` (R-16, DEC-231). Deleting the fence key
+  routes this family onto the journal's strict result path, so both are required
+  in this task or the first successful `finding.address` is rejected at append
+  time. Add the `finding.addressed` entry in the `fields` grammar map
+  (`finding:Finding`, from the `finding.address` result row in
+  `public-interface.md` section 4) and the matching `currentExpectedResult`
+  branch. **No new value shape and no `current_event_value_catalog.go` edit:**
+  task 4 registered `Finding` and `FindingDisposition` and their fill helper,
+  and this task reuses both unchanged. If either is missing or wrong, that is a
+  task 4 defect - stop and escalate rather than editing shapes this task does
+  not own.
 - `internal/cli/codes.go` - `finding-not-found`, `finding-already-disposed`.
 - `cmd/fid/finding.go` - new leaf wiring for `address` and `list`.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by

@@ -389,6 +389,111 @@ separate DECs.
 - **Refs:** `public-interface.md` sections 4, 5, 5.1; `qa-plan.md` 12.6, I-25;
   DEC-226; VAL-056.
 
+### DEC-231: Typed-result registries are owned by the task that unfences the family
+
+- **Status:** ACCEPTED by Tech Lead 2026-09-19 under planning authority. No
+  protected definition, command, threshold, budget, public surface, or accepted
+  assertion semantics changes; this is a file-scope and ownership correction of
+  the same class as DEC-228 and DEC-229.
+- **Context:** The QA Lead's DEC-229/DEC-230 confirmation pass (`qa-plan.md`
+  section 13) confirmed every edit it was asked to confirm and surfaced one new
+  Must-fix, **R-16**, while doing so. Registering the nine Phase 23 families in
+  `currentEventRules` - which task 1 must do - routes them onto the journal's
+  strict validation path, and three further closed registries on that path were
+  named by no task spec. Independently re-verified in source before
+  disposition: `project_effects.go:20` calls `validateCurrentAppliedResults`,
+  which gates on `currentEventRules` membership
+  (`current_event_result_projection.go:12`) and then requires the family to
+  clear (a) the inline `fields` grammar map in `current_event_json.go:135-141`,
+  which otherwise returns `unregistered current result family`; (b)
+  `currentExpectedResult`'s switch (`current_event_result_projection.go:69-121`),
+  whose `default` returns `unknown current result`; and (c) `currentValueShapes`
+  in `current_event_value_catalog.go`, from which `currentProjectedValue`
+  (`:175-203`) reads the projected field list. `schema.md` 6.3 makes a typed
+  snapshot mandatory for every Phase 23 mutation, so all nine families need all
+  three. Task 1 stays green because its own fence rejects all nine; the failure
+  first lands at task 4 with its cause outside task 4's scope.
+- **Decision:** Accept R-16. **A family's typed-result grammar, expected-result
+  branch, value shapes, and any composite fill helper are added by the task
+  that deletes that family's fence key**, not by task 1. Recorded as a standing
+  rule in `execution-scope.md` section 6. The nine keys map one-to-one onto six
+  tasks: task 4 `review.recorded`; task 5 `finding.addressed`; task 8
+  `concern.recorded`, `concern.disposed`, `deviation.recorded`; task 9
+  `decision.referenced`; task 10 `human-outcome.recorded`; task 12
+  `requirement.referenced`, `requirement.linked`.
+- **Why the unfencing task and not task 1, where DEC-229 put the column
+  catalog.** The two cases look identical and are not, on the one test that
+  matters - whether the owning task can execute what it registers:
+  - *DEC-229's column catalog is provable at task 1.*
+    `TestCurrentEventColumnDomainsMatchAcceptedDDL` iterates `currentEventTables`
+    and introspects the migrated database with `PRAGMA table_info`. It needs no
+    Event to be appended, it runs against the 0017 DDL task 1 itself ships, and
+    it fails closed. Column domains are also fully derivable from that DDL.
+  - *These three registries are not provable at task 1.*
+    `validateCurrentResultJSON`, `currentExpectedResult`, and
+    `currentProjectedValue` execute only when an Event of the family is
+    appended, and `unavailableJudgmentEvents` makes that impossible for all nine
+    until their unfencing task. Putting all nine at task 1 would write roughly
+    nine result grammars, nine switch branches, fourteen value shapes, and three
+    composite fill helpers behind a fence guaranteeing that **none of them is
+    ever executed in the task that wrote them**. Ownership is only assignable
+    where it is executable; this would convert a scoped, provable obligation
+    into an unverifiable one and hand task 4 a silent inherited defect instead
+    of its own failing test.
+  - *Derivability differs too.* `currentProjectedValue` maps a projected public
+    row plus child-table queries onto a field list. That mapping is the domain
+    the unfencing task builds; at task 1 only the DDL exists.
+  - *It is the consistent reading of DEC-229, not a departure from it.*
+    DEC-229 already ruled that a Condition type is registered by the task that
+    first **raises** a Stop carrying it. Same principle: registration lands
+    where it first executes. Task-1-for-everything would be the inconsistent
+    choice.
+  - *The shared-map objection does not apply.* The eighteen tasks are strictly
+    sequential, so there is no concurrent edit, and no test iterates
+    `currentEventRules` to cross-check the other three registries - verified by
+    search across `internal/journal` and `internal/export` test files - so a
+    partial registration cannot be observed before the fence opens.
+- **Value-shape ownership**, each first registered by the task named and reused
+  unchanged afterwards: task 4 `Review`, `Coverage`, `CoverageItem`,
+  `CoverageExclusion`, `Finding`, `FindingDisposition`, plus the
+  `currentProjectedValue` fill helpers for `Review` (`findings[]`, `coverage`)
+  and `Finding` (`dispositions[]`); task 5 reuses `Finding` and
+  `FindingDisposition` and registers no new shape; task 8 `Concern`,
+  `ConcernDisposition`, `Deviation`, plus the fill helper for
+  `Concern.disposition`; task 9 `DecisionRef` and `ProtectedDecision`; task 10
+  `HumanOutcome`, reusing `ProtectedDecision`; task 12 `RequirementRef` and
+  `RequirementLink`. Task 4 also widens the journal `Subject` value shape - today
+  `type:=run,envelope,activation` - to the complete accepted SubjectType set in
+  `public-interface.md` section 2, in one monotonic edit, as the first task to
+  register a value shape that references `Subject`; no later task re-narrows it.
+- **Two consequential sub-items, both accepted.** `currentValueShapes["Claim"]`
+  closes `mode:=mutation`, which `public-interface.md` section 2 widens to
+  `mutation|review`: task 3, which is where review-mode Claims become
+  reachable, and it is genuinely reachable because `run.abandoned` and
+  `run.recovered` both project a `Claim`. `currentValueShapes["Budget"]` and
+  `["ImmutableBudget"]` close `unit` without `review-cycles` and
+  `exhaustion_action` without `review-rework-exhausted`: task 6, which adds
+  both.
+- **Recorded for the Developer, not a new finding:** `idempotency_results` is
+  encoded `currentStage(0, ...)` - optional - for nearly every existing family,
+  yet `validateCurrentAppliedResults` requires the result row unconditionally
+  once a family is in `currentEventRules`. The Phase 23 rows in `schema.md` 6.2
+  mirror that existing encoding exactly. "Optional" there is the stage
+  encoding, not permission to omit the typed snapshot, which DEC-216 and
+  `schema.md` 6.3 make mandatory for every Phase 23 mutation.
+- **Improvements:** I-27, I-28, and I-29 are all applied.
+- **Consequences:** eight task specs (3, 4, 5, 6, 8, 9, 10, 11, 12),
+  `execution-scope.md` section 6, `schema.md` 6.2, and the validation contract
+  header are edited. Task 1 is unchanged and gains nothing. The contract stays
+  at **79** rows; no row is added, removed, renumbered, reworded, or weakened,
+  and no `VAL-NNN` covers or needs to cover these registries directly - each is
+  proved by the first successful Event of its family, which every unfencing
+  task already asserts. A fresh QA Lead confirmation pass is required before the
+  Runner's readiness check.
+- **Refs:** `qa-plan.md` section 13.5 (R-16), 13.7; `execution-scope.md` 6;
+  `schema.md` 6.2, 6.3; `public-interface.md` 2, 3, 4; DEC-192, DEC-216,
+  DEC-228, DEC-229.
+
 ### QA readiness-refresh disposition table (R-14, R-15, I-17..I-26)
 
 | ID | Disposition | Where applied |
@@ -405,6 +510,15 @@ separate DECs.
 | I-24 | Apply | task 10 records the blob remove/restore fixture technique |
 | I-25 | Apply, and it surfaced DEC-230 | `public-interface.md` 5.1 pins six producers; the seventh code is removed |
 | I-26 | Apply | task 1 records the no-single-step-down fact and the dirty `schema_migrations` failure state |
+
+### QA confirmation-pass disposition table (R-16, I-27..I-29)
+
+| ID | Disposition | Where applied |
+|---|---|---|
+| R-16 | Accept; owner is the unfencing task, not task 1 | DEC-231; `execution-scope.md` 6; tasks 3, 4, 5, 6, 8, 9, 10, 12 |
+| I-27 | Apply | `qa/validation-contract.md` header records the 2026-09-19 refinement and drops the satisfied prerequisite |
+| I-28 | Apply | tasks 6 and 11: the vacuous `internal/journal/` bullets are replaced with their real DEC-229/DEC-231 scope |
+| I-29 | Apply | `schema.md` 6.2 `envelope.activated` owner cell now reads "rows added by task 9; also raised from this family by task 10" |
 
 ### QA first-pass disposition table (R-01..R-13, I-01..I-16)
 

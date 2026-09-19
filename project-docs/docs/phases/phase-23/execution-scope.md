@@ -180,12 +180,65 @@ task's scope:
   the concerns rename. Without this, a divergence stays silent until VAL-064 at
   task 16, where the cause sits outside that task's ordinary scope.
 
+A fifth gap, larger than the four above, was found while confirming them.
+Corrected under R-16 (DEC-231):
+
+- Registering the nine families in `currentEventRules` also routes them onto the
+  journal's **strict** result path. `validateCurrentAppliedResults`
+  (`current_event_result_projection.go:12`, called from `project_effects.go:20`)
+  gates on `currentEventRules` membership, and `schema.md` 6.3 makes a typed
+  snapshot mandatory for every Phase 23 mutation, so each family must also clear
+  three further closed registries: the inline `fields` grammar map in
+  `internal/journal/current_event_json.go` (else `unregistered current result
+  family`), `currentExpectedResult`'s switch in
+  `internal/journal/current_event_result_projection.go` (else `unknown current
+  result`), and `currentValueShapes` in
+  `internal/journal/current_event_value_catalog.go`, which
+  `currentProjectedValue` reads the projected field list from.
+- **Standing rule: a family's typed-result grammar, its `currentExpectedResult`
+  branch, its value shapes, and any `currentProjectedValue` fill helper are
+  added by the task that deletes that family's fence key - never by task 1.**
+  All three registries execute only when an Event of the family is appended, so
+  the unfencing task is the earliest point at which any of them is provable, and
+  it is the point at which the task's own first successful Event proves all
+  three at once. This is the same principle DEC-229 applied to Condition types,
+  which are registered by the task that first raises a Stop carrying them.
+  Task 1 is deliberately **not** the owner here, unlike
+  `current_event_columns.go`: that catalog is proved by
+  `TestCurrentEventColumnDomainsMatchAcceptedDDL`, which introspects the 0017
+  DDL task 1 ships and needs no Event at all, whereas these three would sit
+  behind task 1's own fence unexecuted. Ownership is only assignable where it is
+  executable.
+- Owners, one-to-one with the nine fence keys: task 4 `review.recorded`; task 5
+  `finding.addressed`; task 8 `concern.recorded`, `concern.disposed`,
+  `deviation.recorded`; task 9 `decision.referenced`; task 10
+  `human-outcome.recorded`; task 12 `requirement.referenced`,
+  `requirement.linked`. A value shape is registered once, by the first of those
+  tasks to need it, and reused unchanged afterwards - so task 5 adds no shape,
+  and task 10 reuses task 9's `ProtectedDecision`.
+- Two shared shapes are widened outside that set, each by the task that makes
+  the wider domain reachable: `currentValueShapes["Claim"]`'s `mode:=mutation`
+  becomes `mutation,review` at **task 3**, reachable because `run.abandoned` and
+  `run.recovered` both project a `Claim`; and `["Budget"]` / `["ImmutableBudget"]`
+  gain `review-cycles` in `unit` and `review-rework-exhausted` in
+  `exhaustion_action` at **task 6**. Task 4 additionally widens the `Subject`
+  shape's `type:=run,envelope,activation` to the complete accepted SubjectType
+  set in `public-interface.md` section 2, in one monotonic edit, as the first
+  task to register a value shape referencing `Subject`; no later task re-narrows
+  it.
+- Note for every owner: `idempotency_results` is encoded as an optional stage in
+  `currentEventRules` for nearly every family, but `validateCurrentAppliedResults`
+  requires the result row unconditionally. "Optional" in `schema.md` 6.2 is the
+  stage encoding, not permission to omit the typed snapshot.
+
 Not corrected, and deliberately so: tasks 4 and 5 do **not** gain
 `internal/journal/current_event_catalog.go`. Task 1's binding constraints
 already register all nine Phase 23 Event types, their operation mappings, and
 their complete `schema.md` section 6.2 effect rules, so `review.recorded` and
 `finding.addressed` need no catalog edit at tasks 4 and 5. Those tasks own only
-their fence key in `internal/journal/project_effects.go`.
+their fence key in `internal/journal/project_effects.go`. That rejection is
+unaffected by R-16: the three registries above are different files, and tasks 4
+and 5 gain those, not `current_event_catalog.go`.
 
 ## 7. Test-Time Headroom (DEC-227)
 

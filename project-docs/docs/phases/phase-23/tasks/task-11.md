@@ -51,7 +51,12 @@ original request.
 
 - `internal/workflow/resolve.go`, `evaluation.go`, `attention` readers.
 - `internal/review/` - the resolution effects emitted with a Human Outcome.
-- `internal/journal/` - the `human-outcome.recorded` optional effect rows.
+- **No `current_event_catalog.go` edit in this task** (I-28, DEC-229): task 1
+  registered `human-outcome.recorded`'s complete `schema.md` 6.2 rule including
+  every optional row this task's resolution effects use, and task 10 owns that
+  family's typed-result registries (DEC-231). If a needed optional row is
+  missing, that is a task 1 defect - stop and escalate rather than editing a map
+  task 1 owns. This task unfences nothing and registers no typed result.
 - `internal/workflow/stop.go` - the closed Stop registries (R-14). Add the two
   remaining Condition types, `review-recorded` and `finding-resolved`, to
   `conditionTypes`, and the `finding_id` field to the `Condition` struct with

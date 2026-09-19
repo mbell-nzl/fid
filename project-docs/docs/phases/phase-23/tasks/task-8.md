@@ -75,6 +75,22 @@ Neither is Evidence and neither blocks a guarded action.
   `activation.go`; `authority.go` holds no action list (R-08, DEC-167/173).
 - `internal/journal/project_effects.go`, `current_event_catalog.go` - the three
   fence keys, effects, and activity event names.
+- `internal/journal/current_event_json.go`,
+  `internal/journal/current_event_result_projection.go`, and
+  `internal/journal/current_event_value_catalog.go` - the typed-result
+  registration for all three families this task unfences (R-16, DEC-231).
+  Deleting the fence keys routes `concern.recorded`, `concern.disposed`, and
+  `deviation.recorded` onto the journal's strict result path, so all three
+  registries are required here or the first successful `concern record` is
+  rejected at append time. Add: three `fields` grammar entries derived from the
+  `concern.record`, `concern.dispose`, and `deviation.record` result rows in
+  `public-interface.md` section 4; the three matching `currentExpectedResult`
+  branches; and the `Concern`, `ConcernDisposition`, and `Deviation` entries in
+  `currentValueShapes` from `public-interface.md` section 3. `Concern` is
+  composite - `disposition:?ConcernDisposition` - so add its
+  `currentProjectedValue` fill helper. `Subject` was widened to the full
+  accepted SubjectType set at task 4, so the DEC-228 unresolvable subjects this
+  task records already validate; if one does not, that is a task 4 defect.
 - `internal/activity/` - the added activity event names.
 - `internal/cli/codes.go` - `concern-not-found`, `deviation-not-found`,
   `concern-already-disposed`.

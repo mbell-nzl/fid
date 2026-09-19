@@ -36,6 +36,14 @@ a dirty-path recovery or abandonment.
 - `internal/claims/generic.go` and its package files.
 - `internal/workflow/recovery.go`, `run.go`, `run_read.go`, `authority.go`.
 - `internal/cli/codes.go` - the one new code.
+- `internal/journal/current_event_value_catalog.go` - widen
+  `currentValueShapes["Claim"]`'s `mode:=mutation` to `mode:=mutation,review`
+  (R-16, DEC-231). This is reachable in this task and not deferrable: a
+  review-mode Claim carries a Run, and `run.abandoned` and `run.recovered` both
+  project the `Claim` value through `currentProjectedValue`, so without the
+  widening the first abandon or recover of a review-mode Run is rejected at
+  append time with its cause outside the failing task. `public-interface.md`
+  section 2 fixes the amended domain; add nothing else to this file.
 - `cmd/fid/claim.go`, `run.go`, `run_recovery.go` - request and result only.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
   this change.

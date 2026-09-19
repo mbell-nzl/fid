@@ -61,6 +61,32 @@ name.
   `activation.go`; Envelope grants reuse it through `sortedUniqueEnvelopeActions`
   in `envelope.go`, and `authority.go` holds no action list (R-08, DEC-167/173).
 - `internal/journal/project_effects.go` - the one fence key and its effects.
+- `internal/journal/current_event_json.go`,
+  `internal/journal/current_event_result_projection.go`, and
+  `internal/journal/current_event_value_catalog.go` - the typed-result
+  registration for `review.recorded` (R-16, DEC-231). Deleting the fence key
+  routes this family onto the journal's strict result path, so all three are
+  required in this task or the first successful `review.record` is rejected at
+  append time. Add: the `review.recorded` entry in the `fields` grammar map in
+  `current_event_json.go`, derived from the `review.record` result row in
+  `public-interface.md` section 4 (`validateCurrentResultJSON` appends
+  `idempotency_key` and `replayed` itself); the matching
+  `currentExpectedResult` branch that re-derives that result from the committed
+  rows; and the `Review`, `Coverage`, `CoverageItem`, `CoverageExclusion`,
+  `Finding`, and `FindingDisposition` entries in `currentValueShapes` from
+  `public-interface.md` section 3. `Review` and `Finding` are composite, so add
+  `currentProjectedValue` fill helpers for `Review.findings[]` /
+  `Review.coverage` and `Finding.dispositions[]` in the same style as
+  `currentFillRun` and `currentFillStopAttention`. This task owns
+  `FindingDisposition` even though task 5 is the disposition task, because
+  `review.recorded`'s own rule already inserts `finding_dispositions` rows for
+  `resolves_finding_ids`; task 5 then reuses both shapes unchanged. Finally, in
+  the same value catalog, widen the `Subject` shape's
+  `type:=run,envelope,activation` to the complete accepted SubjectType set in
+  `public-interface.md` section 2, in one edit: this is the first task to
+  register a value shape referencing `Subject`, the widening is monotonic and
+  cannot loosen anything reachable earlier because the fence keeps every other
+  Phase 23 family closed, and no later task re-narrows it.
 - `internal/cli/codes.go` - `review-not-independent`, `review-verdict-invalid`,
   `repository-mismatch`, `review-not-found`, and `idempotency-conflict`
   (I-21). The last is an accepted Phase 21 code with no `reasonCodeDefinitions`

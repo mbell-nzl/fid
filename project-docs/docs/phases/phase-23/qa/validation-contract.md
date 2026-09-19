@@ -2,14 +2,21 @@
 
 > Phase: 23 - Review and Human judgment
 > Author: Tech Lead, 2026-09-14. Assertions accepted under DEC-222.
-> Last refined: 2026-09-15 by the Tech Lead, applying the QA Lead's first-pass
+> Refined 2026-09-15 by the Tech Lead, applying the QA Lead's first-pass
 > revisions R-01..R-13 and improvements I-01..I-16 from `qa-plan.md` section 2.3.
-> All rows are now `Ready`. Rows whose content depends on a contract amendment
+> Last refined 2026-09-19 under DEC-229, strengthening exactly two rows from the
+> readiness refresh: VAL-006 (I-22, Obligation counts 0, 1, 16, 17) and VAL-034
+> (I-23, the DEC-228 unresolvable-subject state named in both directions). The
+> later DEC-230 and DEC-231 dispositions changed no row. The contract stands at
+> **79** rows; none has been added, removed, renumbered, or weakened.
+> All rows are `Ready`. Rows whose content depends on a contract amendment
 > name their DEC in the source column: DEC-223 (VAL-005), DEC-224 (VAL-046),
 > DEC-225 (VAL-015, VAL-022, VAL-077), DEC-226 (VAL-025, VAL-039, VAL-056,
 > VAL-057), and DEC-227 (VAL-079). All five were approved by the Human on
 > 2026-09-19, so no row is conditional.
-> A fresh QA Lead readiness refresh (`qa-plan.md` section 11) is still required.
+> The QA Lead readiness refresh is complete (`qa-plan.md` section 12), as is the
+> DEC-229/DEC-230 confirmation pass (section 13). A further confirmation pass is
+> required for DEC-231 before the Runner's readiness check.
 >
 > Sources are `01_PRD.md`, `02_TRD.md`, `03_TRD_SCHEMA.md`,
 > `06_DESIGN_PLAN_CLI.md`, `07_DESIGN_PLAN_FLOWS.md`,

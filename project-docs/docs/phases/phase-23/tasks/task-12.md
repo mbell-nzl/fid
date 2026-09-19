@@ -54,6 +54,22 @@ its Event, and restrict `links` to Issue endpoints so one fact has one model.
 - Delete `internal/requirements/`.
 - `internal/links/registry.go`, `add.go`, `list.go`, `errors.go`, `types.go`.
 - `internal/journal/project_effects.go`, `current_event_catalog.go`.
+- `internal/journal/current_event_json.go`,
+  `internal/journal/current_event_result_projection.go`, and
+  `internal/journal/current_event_value_catalog.go` - the typed-result
+  registration for the last two families this task unfences (R-16, DEC-231).
+  Deleting the final fence keys routes `requirement.referenced` and
+  `requirement.linked` onto the journal's strict result path, so all three
+  registries are required here or the first successful
+  `requirement record-reference` is rejected at append time. Add: the two
+  `fields` grammar entries derived from the `requirement.record-reference` and
+  `requirement.link` result rows in `public-interface.md` section 4; the two
+  matching `currentExpectedResult` branches; and the `RequirementRef` and
+  `RequirementLink` entries in `currentValueShapes` from `public-interface.md`
+  section 3. Neither is composite, so neither needs a fill helper. This task
+  removes the fence map entirely, so after it no Phase 23 family is registered
+  in `currentEventRules` without all three of these registries; the audit that
+  this holds for all nine belongs to this task.
 - `internal/export/archive_semantics_catalog.go` - delete the
   `requirement.synced` semantic rule. The removed Event's archive rule lives
   here, so without this file the declared absence search cannot pass and its

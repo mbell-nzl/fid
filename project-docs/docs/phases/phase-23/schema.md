@@ -614,7 +614,7 @@ below is also mirrored into `semanticEventRules`
 | Event | Change | Owner |
 |---|---|---|
 | `envelope.created` | add optional `envelope_protected_decisions/insert` | task 9 |
-| `envelope.activated` | add optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` | task 9 protected Decisions; task 10 readiness Stop |
+| `envelope.activated` | add optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` | rows added by task 9; also raised from this family by task 10 (I-29) |
 | `evidence.linked` | record shape widens (task 6); add optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` for the readiness Stop (DEC-224) | task 6 shape; task 10 Stop rows |
 | `artifact.availability-observed` | add optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` for the readiness Stop (DEC-224) | task 10 |
 
