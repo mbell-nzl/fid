@@ -116,8 +116,8 @@ deterministic proof.
   without this the rule is enforced on the producer side in `validateCondition`
   and silently nowhere else. Reproduced: with the shape widened, a Condition
   carrying the wrong new field, all three, or none is accepted. Make the branch
-  type-driven rather than adding a third boolean term, so tasks 11
-  extend a mapping instead of a chain. **Read ESC-23-001 before widening the
+  type-driven rather than adding a third boolean term, so task 11 extends a
+  mapping instead of a chain. **Read ESC-23-001 before widening the
   shape at all** - how `Condition` may gain fields is a Human decision, and its
   outcome
   changes what this branch has to check.

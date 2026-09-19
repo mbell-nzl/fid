@@ -169,6 +169,12 @@ Full sources, pass and fail criteria, and validator ownership are in
   by column with the three new columns null, every link row is restored with its
   exact `required_material`, and `PRAGMA foreign_key_check` is empty. A
   link-free seed alone does not satisfy this criterion. (VAL-005)
+- [ ] A crafted legacy archive at `ProjectionSchema` 14 carrying a
+  `review.recorded` Event is rejected by `validateEvent`, and the same archive
+  at the current projection schema is not rejected for that reason. (No VAL ID:
+  VAL-065 correctly does not cover this - the legacy branch at
+  `archive_validation.go:127-129` admits profile-14 archives by design, which is
+  why `semanticPhase22Events` has to do the work. I-35, DEC-234.)
 - [ ] Full required commands terminate; preserve red/green and failed-attempt
   evidence with output tokens and observed exit status.
 - [ ] Every converged retained row identifies introducing commit, phase/task,

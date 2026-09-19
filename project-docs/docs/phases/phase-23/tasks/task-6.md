@@ -82,6 +82,20 @@ next rework atomically when that budget is exhausted.
   the first `review-cycles` Budget projected inside a `Run` or a
   `run.budget-observed` result is rejected at append time. No other Budget rule
   changes.
+- **No journal-side budget-fact validation exists for this charge, and none is
+  required of this task** (`execution-scope.md` section 6, inventory row 9;
+  DEC-234, from QA R-21). `validateCurrentBudgetFacts`
+  (`internal/journal/current_event_budget_values.go:34-50`) switches on
+  `event.EventType` and returns `nil` at its `default` for all nine Phase 23
+  families - measured, `review.recorded` included - so the sample/state
+  consistency check, the automatic-charge rule, and the exhaustion-Stop
+  derivation the journal enforces for `attempts` and `interventions` do **not**
+  apply to `review-cycles`. The registry fails open, so nothing here is
+  blocked. The consequence for this task is evidential: **VAL-027 and VAL-029
+  are satisfied by producer-side enforcement only**, and the completion report
+  must not present their evidence as journal-layer proof of the charge. If you
+  conclude the journal-side guarantee is needed after all, extend the switch and
+  say so explicitly in the report; do not assume it already holds.
 - `internal/cli/codes.go` - `review-changes-required`,
   `review-rework-exhausted`, `evidence-type-not-accepted`. `finding-unresolved`
   is a ReasonCode, **not** a failure code (DEC-226): add it, together with

@@ -862,6 +862,124 @@ value's encoding or add unaccepted migration machinery, which is a Human
 decision of the DEC-223..227 class, not a planning correction. Tasks 1-8 are
 unaffected and may dispatch; tasks 9, 10, and 11 are held.
 
+### DEC-234: Tech Lead dispositions of the sixth QA confirmation pass
+
+- **Status:** ACCEPTED by Tech Lead 2026-09-19 under planning authority. No
+  protected definition, command, threshold, budget, or accepted assertion
+  semantics changes; no `VAL-NNN` is added, renumbered, narrowed, or reworded,
+  and the contract stays at 79 rows. No spec file outside the phase directory is
+  edited. Three of the pass's revisions are deliberately **held**, not deferred
+  silently - see the last paragraph.
+- **Context:** the QA Lead's sixth confirmation pass (`qa-plan.md` section 17)
+  returned **READY EXCEPT ESC-23-001**: tasks 1-8 unaffected and dispatchable,
+  DEC-233 confirmed correct in full, ESC-23-001 verified in every particular and
+  stronger than recorded in two respects. Four Must-fix revisions (R-20..R-23)
+  and four improvements (I-35..I-38). Everything below is a transcription of
+  measurements the pass already recorded and cited; nothing here is newly
+  derived, which is why no confirmation pass is requested for this batch.
+
+**R-20, ESC-23-001's options were stated on wrong costs. Accepted in full and
+applied; this was the priority, because the Human has not yet read the record.**
+Four substantive amendments and two citation fixes, all transcribed from
+`qa-plan.md` 17.2-17.4:
+
+1. **Option A's encoding was ambiguous and one reading destroys it.** "Each new
+   type carries only its own field" admits a reading that puts `omitempty` on
+   `budget_name` and `capability_id` as well; measured, that reading changes
+   **every** existing semantic key (`38cda009…` -> `cf865c69…`, `da2f2a11…` ->
+   `ef2f1a6a…`, `28607d77…` -> `9fb954bc…`) - the exact harm Option A exists to
+   prevent. The option now states `omitempty` on the **three new fields only**,
+   with the six Phase 22 types keeping `budget_name` and `capability_id`
+   present-and-null, so a new type carries five fields, not three. That reading
+   measures byte-identical to baseline and replays the recorded pre-widening
+   journal clean.
+2. **Option A is one file larger than stated, and the obvious implementation
+   panics.** The discriminant lives inside the value and `Condition` is also
+   reached generically as a `Stop` field
+   (`current_event_value_types.go:39`), so per-type dispatch needs a branch in
+   `internal/journal/current_event_value_types.go`, which no task owns. The
+   option now names it, requires it to join the implementing task's scope, and
+   requires a **checked** type assertion: the naive `object["type"].(string)`
+   panics `interface conversion: interface {} is int, not string` in code that
+   validates untrusted archive bytes, where the baseline degrades cleanly to an
+   invalid closed enum.
+3. **Option B costs more than recorded.** Four payload sites rather than one
+   (`stops.resolution_condition_json` plus the nested `Stop` in the typed
+   results of `stop.raised`, `stop.resolved`, `run.budget-observed`), plus an
+   `idempotency_results.request_digest` recompute, plus 11 failing tests in the
+   shipped corpus, all named; against Option A's zero failures and zero fixture
+   edits across `internal/journal`, `internal/workflow`, `internal/export`.
+   Option B's genuine merits are now stated too, so the Human sees a fair
+   comparison rather than an advocate's.
+4. **A third consequence is added to the Evidence section.** `stopDigest`
+   canonicalises `StopRaiseRequest`, which embeds the `Condition`, so the
+   widening turns an idempotent `stop.raise` retry into
+   `idempotency conflict for stop.raise:project-… key "retained-test-1"`.
+   The Summary's "two independent reasons" becomes three.
+
+Also applied: the QA Lead's harm-population framing (17.4) as a new
+**"Who this reaches, and what is actually being decided"** section. It records
+that `schema.md` section 1's accepted fresh-init policy plus `golang-migrate`'s
+never-re-run behaviour means there is no released Phase 22 population, so the
+question is "what encoding do we want for V1" rather than "how do we protect
+user data" - while keeping both reasons the escalation survives that framing:
+the incompatibility is in-phase at tasks 9-11 against tasks 1-8 workspaces, and
+the Attention and idempotency consequences need no rebuild at all. This
+strengthens the recommendation and was recorded because it changes what the
+Human is choosing between, not because it changes the answer.
+
+**R-21, the ninth registry. Accepted as an owned inventory row, not as a
+positive.** `validateCurrentBudgetFacts`
+(`internal/journal/current_event_budget_values.go:34-50`) returns `nil` at its
+`default` for all nine Phase 23 families - measured on every one - so task 6's
+`review-cycles` charge has no journal-side sample/state consistency check,
+automatic-charge rule, or exhaustion-Stop derivation. QA offered either a row or
+an explicit positive. **Row 9, owned by task 6**, is the better of the two: a
+positive tells a later sweep not to re-derive it, which is true but insufficient
+here, because this one also tells a **Developer** something they would otherwise
+assume wrong. It is the third kind of inventory entry - a registry a Phase 23
+family does reach and which declines to constrain it - and the frame's closing
+rule already covers it ("silently fails to constrain a Phase 23 value"). The row
+requires **no code** from task 6: producer-side enforcement of the charge is
+accepted for this phase. What task 6 gains is the evidential statement, now in
+its spec, that VAL-027 and VAL-029 are producer-side proof only and must not be
+reported as journal-layer proof. It fails open, so it blocks nothing.
+
+**I-35 accepted:** task 1's `semanticPhase22Events` addition gains an acceptance
+criterion - a crafted legacy projection-14 archive carrying `review.recorded` is
+rejected - with **no new VAL ID**, because VAL-065 correctly does not cover it
+(the legacy branch admits profile-14 archives by design) and the phase does not
+add contract rows for defensive in-task assertions.
+
+**I-36 accepted, with one correction of the correction.** Five anchors fixed:
+inventory row 8 `:48` -> `:49`, positive 2 `:76` -> `:77`, positive 3
+`current_event_value_types.go:88` -> `:89`, and in ESC-23-001
+`current_event_json.go:26` -> `:27` and `openAttentionBySemanticKey` ->
+`loadOpenAttentionByKey` at `stop.go:557`. A sixth: the pass's own citation of
+the generic shape lookup as `current_event_value_types.go:38` is off by one -
+`if shape, ok := currentValueShapes[kind]; ok` is at `:39`, verified in the
+tree, and `:39` is what the escalation now carries. Every anchor written into a
+task-facing or Human-facing document in this batch was re-verified against the
+working tree before transcription, not copied.
+
+**I-38 accepted:** `task-10.md` grammar fixed.
+
+**Held for the ESC-23-001 disposition batch, and recorded in the escalation's
+Required resolution so they cannot be lost: R-22, R-23, and I-37.** Each is
+bounded and accepted in principle; each must be **phrased against whichever
+encoding the Human chooses**, so writing them now would mean writing them twice
+and risking a stale phrasing surviving the rewrite. R-22 (name the proving Event
+for the entries tasks 9 and 10 add, since three of DEC-224's four raising
+families are retained and never exercise them) and R-23 (`task-11.md` has no
+acceptance criterion citing VAL-078) touch only tasks 9, 10, and 11, which
+ESC-23-001 already holds; I-37 is one sentence in `schema.md` section 1 and is
+part of the same encoding question. Recorded with them: if the Human chooses
+Option A, inventory row 8 is **restated, not deleted** - the invariant survives
+and only its enforcer moves from the relation branch to the shape - and VAL-078
+keeps its assertion while its evidence class becomes shape rejection. That batch
+does need a fresh QA pass, because it amends an accepted public value and
+rewrites three task specs; this one does not.
+
 ### Accepted carry-forward dispositions
 
 | ID | Phase 23 disposition |

@@ -230,7 +230,10 @@ general rule with a closed inventory:
   value is a Developer escalation, not a silent workaround.** Rows 1-6 are
   reached by a Phase 23 family on the strict path. Rows 7 and 8 are reached by a
   Phase 23 **value** inside a live Phase 21/22 family and are the reason the
-  frame above is stated the way it is.
+  frame above is stated the way it is. Row 9 is the third kind: a registry a
+  Phase 23 family **does** reach on the strict path but which declines to
+  constrain it, which the frame's closing rule covers because it "silently fails
+  to constrain a Phase 23 value".
 
 | # | Registry | File | Rejection message | Phase 23 owners |
 |---|---|---|---|---|
@@ -241,7 +244,8 @@ general rule with a closed inventory:
 | 5 | `validateCurrentJSON` `table.column` switch | `current_event_json.go:14` | `unregistered current JSON column <t>.<c>` | 4, 8, 9, 10, 12 |
 | 6 | `validateCurrentUpdate` table switch | `current_event_updates.go:14` | `current Event update table not admitted` | 8, 12; renamed by 15 |
 | 7 | `const actions` capability allowlist in `validateCurrentValueRelations` `case "ActorProfile"` | `current_event_value_relations.go:63` | `invalid closed enum artifact.verify,...` | 4, 5, 8, 9, 10 (R-19) |
-| 8 | `case "Condition"` nullable-binding relation in the same function | `current_event_value_relations.go:48` | none - **fails open** | 9, 10, 11 (DEC-233) |
+| 8 | `case "Condition"` nullable-binding relation in the same function | `current_event_value_relations.go:49` | none - **fails open** | 9, 10, 11 (DEC-233) |
+| 9 | `validateCurrentBudgetFacts` family switch | `current_event_budget_values.go:34` | none - **fails open** at its `default` | 6 (DEC-234) |
 
 - **Row 7 (R-19), the second copy of the capability allowlist.** The closed
   23-name set exists **twice** in non-test code: `sortedUniqueCapabilities`
@@ -283,6 +287,31 @@ general rule with a closed inventory:
   extends this branch for its own field in the same change that adds the field
   to `currentValueShapes["Condition"]` and to `validateCondition`. See ESC-23-001
   for the separate, blocking question of **how** that shape may be widened.
+- **Row 9, journal-side budget facts do not reach any Phase 23 family. QA Lead
+  finding R-21, `qa-plan.md` 17.8; recorded as an owned row rather than a
+  positive, because it names work task 6 must not assume is done for it.**
+  `validateCurrentBudgetFacts` (`current_event_budget_values.go:34-50`) switches
+  on `event.EventType` over exactly `run.budget-observed`,
+  `run.execution-blocked`, `run.recovered`, `gate.execution-started`, and
+  `gate.receipt-recorded`, and returns `nil` at its `default`. Task 6 makes a
+  Phase 23 **value** - a `review-cycles` budget sample - reachable inside
+  `review.recorded`, a family that is in `currentEventRules` after task 1, so
+  `validateCurrentAppliedResults` calls this function for it and it declines.
+  Measured with a `review-cycles` binding seeded and an Event carrying a
+  `budget_samples` insert: all nine Phase 23 families return `nil` -
+  `BUDGET-PROBE review.recorded -> returned nil - budget facts NOT validated` -
+  while the `run.budget-observed` control reaches validation. The sample/state
+  consistency check, the automatic-charge rule (`validateCurrentAutomaticCharge`,
+  `:91`, itself scoped to three families), and the exhaustion-Stop derivation
+  that Phase 22 enforces for `attempts` and `interventions` therefore do **not**
+  apply to Phase 23's `review-cycles` charge. **This registry fails open, so it
+  blocks nothing and is not a dispatch blocker, and task 6 is not required to
+  extend it**: charging `review-cycles` is accepted as producer-side enforcement
+  for this phase. What task 6 owes is the knowledge, not the code - VAL-027 and
+  VAL-029 evidence is producer-side proof only and must not be read as
+  journal-layer proof, which is stated in `task-6.md`. A task that *wants* the
+  journal-side guarantee extends the switch and says so in its completion report;
+  a Developer who finds this row wrong escalates rather than fixing it locally.
 
 - `validateCurrentTerminalValues`'s second switch in that same file
   (`current_event_updates.go:61`) fails **open**, so it blocks nothing. The
@@ -306,9 +335,9 @@ general rule with a closed inventory:
      six-name action set. `public-interface.md` section 2 says the Stop
      blocked-action subset "adds nothing", and all four names the three new Stop
      codes use are already in it. The `budget-` prefix relation
-     (`current_event_value_relations.go:76`) keys on a prefix no Phase 23 code
+     (`current_event_value_relations.go:77`) keys on a prefix no Phase 23 code
      has. **No entry, either place.**
-  3. `StopCode` is not a separate list: `current_event_value_types.go:88` keys
+  3. `StopCode` is not a separate list: `current_event_value_types.go:89` keys
      it on `currentStopDetailShapes`, which tasks 6, 9, 10, and 11 already own.
      Registering the details shape registers the code. **No second edit.**
   4. Envelope grant actions reach no journal registry.
