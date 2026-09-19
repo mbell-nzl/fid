@@ -60,6 +60,18 @@ name.
   one new grant action. The closed allowlist is `sortedUniqueCapabilities` in
   `activation.go`; Envelope grants reuse it through `sortedUniqueEnvelopeActions`
   in `envelope.go`, and `authority.go` holds no action list (R-08, DEC-167/173).
+- `internal/journal/current_event_value_relations.go` - the **second** copy of
+  that same closed allowlist (R-19, DEC-233). `validateCurrentValueRelations`'s
+  `case "ActorProfile"` holds a `const actions` string with the identical 23
+  names at `:63`, and nothing cross-checks the two. Add
+  `review.record`
+  there in the same change that adds it to `sortedUniqueCapabilities`, keeping
+  both copies sorted and identical. This is not on any Phase 23 family's strict
+  path: it is reached through `activation.component-staged`, a live Phase 21/22
+  family, so without it the first Activation that stages a profile carrying
+  `review.record`
+  is rejected with `invalid closed enum` before this task can append a single
+  Event, with its cause outside this task's scope.
 - `internal/journal/project_effects.go` - the one fence key and its effects.
 - `internal/journal/current_event_json.go`,
   `internal/journal/current_event_result_projection.go`, and

@@ -3,16 +3,19 @@
 > Purpose: phase-local decision history, spec sync verdicts, workflow notes,
 > and wrap-up decisions. DEC numbering is global and never resets.
 >
-> Status: accepted. Phase 23 is approved and not yet started. Four QA passes
-> have returned eighteen Must-fix revisions - thirteen first-pass, R-14/R-15 on
-> the readiness refresh, R-16 on the DEC-231 confirmation, and R-17/R-18 on the
-> DEC-232 confirmation - and all are dispositioned and applied, together with
-> three the Tech Lead found while dispositioning the last pair. All five
-> contract amendments, DEC-223 through DEC-227, are approved by the Human on
-> 2026-09-19, DEC-226 together with the part 5 vocabulary fix added during that
-> review. DEC-229 through DEC-232 are Tech Lead planning dispositions. No
-> decision remains open. Next: a fresh QA Lead confirmation of the DEC-232
-> edits, then the Runner's readiness check.
+> Status: accepted, with one open Human decision. Phase 23 is approved and not
+> yet started. Five QA passes have returned nineteen Must-fix revisions -
+> thirteen first-pass, R-14/R-15 on the readiness refresh, R-16 on the DEC-231
+> confirmation, R-17/R-18 on the DEC-232 confirmation, and R-19 on the DEC-233
+> confirmation - and all are dispositioned and applied, together with five the
+> Tech Lead found while dispositioning them. All five contract amendments,
+> DEC-223 through DEC-227, are approved by the Human on 2026-09-19, DEC-226
+> together with the part 5 vocabulary fix added during that review. DEC-229
+> through DEC-233 are Tech Lead planning dispositions. **One decision is open:
+> ESC-23-001**, how the journal `Condition` value may gain fields, raised by the
+> Tech Lead under DEC-233; it blocks tasks 9, 10, and 11 only. Next: a fresh QA
+> Lead confirmation of the DEC-233 edits, the Human's ESC-23-001 choice, then the
+> Runner's readiness check.
 
 ## Decisions
 
@@ -559,11 +562,15 @@ optional strengthening, not a requirement.
 **R-17c, the `validateCurrentJSON` column switch. Tech Lead finding, described
 rather than reassigned.** `current_event_json.go:14` is a second closed registry
 in the file DEC-231 already assigned, keyed `table.column`, returning
-`unregistered current JSON column`. Reproduced for all eleven Phase 23 `*_json`
-columns on unfenced families. This is **not** a new ownership gap - the file is
-already in the scope of tasks 4, 5, 8, 9, 10, and 12, and the failure is loud
-and inside the owning task - but their spec text named only the `fields` map, so
-each task's bullet now names its own columns and their accepted kinds.
+`unregistered current JSON column`. Reproduced for all **twelve** Phase 23
+`*_json` columns on unfenced families - task 4 five, task 8 three, task 9 two,
+task 10 one, task 12 one; the count was written as eleven here and in the
+confirmation brief and is corrected under I-32 (DEC-233), with the per-task
+assignment unchanged and already complete. This is **not** a new ownership
+gap - the file is already in the scope of tasks 4, 5, 8, 9, 10, and 12, and the
+failure is loud and inside the owning task - but their spec text named only the
+`fields` map, so each task's bullet now names its own columns and their
+accepted kinds.
 `evidence_records.target_repository_json` needs nothing because `evidence.linked`
 is retained.
 
@@ -729,6 +736,131 @@ Every Must-fix is accepted; none is rejected, deferred, or cancelled.
 The QA Lead's "no revision requested" note on `idempotency-conflict` is adopted
 as binding: VAL-019 and VAL-057 require a real-process reproduction through the
 built binary, and fixture inventory is not evidence.
+
+### DEC-233: Widen the registry frame to Phase 23 values in Phase 21/22 families
+
+- **Status:** ACCEPTED by Tech Lead 2026-09-19 under planning authority, except
+  the `Condition` item, which is **escalated to the Human as ESC-23-001**. No
+  protected definition, command, threshold, budget, or accepted assertion
+  semantics changes. One item edits `public-interface.md` section 2 and is
+  flagged to the Human with this batch as reversible: naming the implemented
+  `SubjectType` set authoritative for `ErrorSubjectType`, which adds and removes
+  no name (I-34).
+- **Context:** the QA Lead's DEC-232 confirmation pass (`qa-plan.md` section 16)
+  confirmed DEC-232 in full - the `JudgmentSubject` split is better than QA's own
+  R-18 proposal, R-17's owner derivation re-derives to task 4 alone, and the
+  six-row inventory is complete on the strict path - and returned one new
+  Must-fix, R-19, plus I-32, I-33, and I-34. R-19 is the fifth consecutive pass
+  to find a registry inside the previous pass's fix, and the first to find one
+  **off** the strict path. I-33 asked me to widen the frame rather than add a
+  seventh row. Doing that surfaced two further items, recorded below as Tech Lead
+  findings, and one of them is not dispositionable under planning authority.
+
+**R-19, the journal's second copy of the capability allowlist. Confirmed
+independently, accepted, owners are QA's five.**
+`internal/journal/current_event_value_relations.go:63` holds `const actions`,
+a closed 23-name string identical to the keys of
+`sortedUniqueCapabilities` at `internal/workflow/activation.go:832`. Verified in
+source: `activation_components.evidence_json` is validated as `[]ActorProfile`
+when `component_type` is `authority-profile` (`current_event_json.go:52-63`), on
+`activation.component-staged`, which sits in `currentEventRules`
+(`current_event_catalog.go:28`) behind no fence; and the integration fixtures
+that build Actor profiles pass capability lists straight through Kit Activation
+(`p21_conformance_test.go:96`, `p22_fake_test.go:308`, and
+`p22_resume_actions_test.go:111`).
+So the first Activation staging a Phase 23-capable profile is rejected before
+task 4 records a Review, with its cause in a file **no** phase document names -
+confirmed by search; the only prior mention anywhere is
+`phase-22/task-1-done.md`.
+Owners are tasks 4, 5, 8, 9, and 10, matching R-08's set for the other copy, and
+each now adds its own name to both copies in one change. The split is
+`public-interface.md` 4.1's: the seven grant actions in,
+`requirement.record-reference` and `requirement.link` out. 23 becomes 30 in
+both places.
+
+**R-19's follow-on, accepted: task 18 audits the two copies against each
+other.** Nothing cross-checks them today, and each is now widened name-by-name
+across five tasks, so a single missed name leaves a capability a profile can
+hold and the journal rejects. VAL-067's audit asserts set equality between the
+two directly rather than each against a literal. This is the protection DEC-229
+gave `semanticEventRules`, applied to the pair R-19 exposed; it needs no new
+assertion, because VAL-067 already owns the thirty-name set.
+
+**I-33, the frame. Accepted, and it is the substantive part of this
+disposition.** The rule in `execution-scope.md` 6 was scoped to registries the
+strict path consults *for a Phase 23 family*. Three consecutive sweeps - QA's
+two and my own - walked only that path, which is exactly why R-19 survived all
+three. The rule now reads: **every closed journal registry that a Phase 23 value
+or Effect reaches, whichever family carries it**, with the two entry points named
+- a Phase 23 family on the strict path, and a Phase 23 value inside a live or
+retained Phase 21/22 family. Rows 1-6 of the inventory are the first kind; rows
+7 and 8 are the second.
+
+**I-32, the count. Accepted, prose only.** The JSON column enumeration is
+**twelve**, not eleven - task 4 five, task 8 three, task 9 two, task 10 one, task
+12 one. The per-task assignment was already complete and does not move. Corrected
+in DEC-232's R-17c paragraph and in the confirmation brief.
+
+**I-34, `ErrorSubjectType`. Accepted, with the implementation named
+authoritative.** Measured: the phase-21 prose lists 22 names, the implemented
+`SubjectType` at `internal/cli/codes.go:88` has 19. Five documented names
+(`actor`, `idempotency`, `obligation`, `path`, `repository`) were never
+implemented; two implemented names (`attention`, `stop`) were added by Phase 22
+without amending the prose. The section 2 row already cites the implementation as
+its referent, so the implementation is authoritative and the phase-end set is
+**25**, not 28. Phase 23 adds the six named and nothing else; reconciling the
+prose is a spec-sync item at wrap-up. The row also now states the registration
+rule, which was implicit: the task that first returns an error carrying a new
+subject registers its constant in the same change - 4, 5, 8, 8, 9, 10 - the same
+rule DEC-229 set for Condition types.
+
+**Tech Lead finding 1, `semanticPhase22Events` has no Phase 23 analogue.
+Accepted; owner is task 1.** Found while checking whether export mirrors any
+closed **value** registry. It does not - `validateSemanticMap` validates by DDL
+column type and `loadSemanticTables` introspects the installed schema, so the ten
+new tables arrive from migration 0017 free - but `validateEvent`
+(`archive_semantics.go:328`) rejects an Event when `!found || (profile == 14 &&
+semanticPhase22Events[type])`. Once task 1 mirrors the nine families into
+`semanticEventRules` under DEC-229, `found` is true for them at every profile, so
+a legacy projection-14 archive carrying `review.recorded` validates clean. That
+is the precise hole Phase 22 added the map to close. Task 1 adds the nine in the
+same file and change as the mirror and corrects the map's name. Task 1 is the
+right owner for the same reason it owns `current_event_columns.go` and the
+unfencing tasks do not: this is provable with a crafted archive and no Event.
+VAL-065 is unaffected and already holds by the manifest check at
+`archive_validation.go:130`.
+
+**Tech Lead finding 2, the `Condition` nullable-binding relation fails open.
+Accepted as inventory row 8; owners are tasks 9, 10, and 11.** Same file as
+R-19, different case, found by asking what else in that file a Phase 23 value
+reaches. `case "Condition"` enforces the accepted "only the field matching the
+type is non-null" rule for `budget_name` and `capability_id` and nothing else.
+Reproduced under overlay with the shape widened, working tree untouched: a
+`human-outcome-recorded` Condition with all three new fields non-null, with none
+non-null, and a `decision-satisfied` Condition carrying `outcome_class` are all
+**accepted**, while the Phase 22 control still returns `condition nullable
+binding mismatch`. It fails open, so it blocks nothing and is not a dispatch
+blocker - it is a silent loss of an accepted invariant, the R-09 and R-18 class.
+Each of tasks 9, 10, and 11 extends the branch for its own field alongside the
+`validateCondition` change it already owns.
+
+**Tech Lead finding 3, how `Condition` may be widened at all. NOT
+dispositioned - raised as ESC-23-001.** Checking finding 2 showed that the
+widening itself is not monotonic, and that `Condition` is the only field-adding
+widening of a live journal value shape in the phase; every other section 2
+amendment widens a closed enum or lands on a retained family. Two measured
+consequences, neither mentioned in any Phase 23 document - a search for
+`semantic_key`, `EventSchema`, and `omitempty` across the contract set and all
+eighteen task specs returns nothing. First, `validateCurrentShape` matches field
+count exactly, and `ReplayJournal` revalidates every historical Event against
+current shapes, so after the widening no workspace holding a pre-widening Stop
+can rebuild, and `UpgradeToCurrent` has no hook because Phase 23 does not bump
+`EventSchema`. Second, `attentionSemanticKey` hashes the whole struct and
+canonical JSON preserves nulls, so every stored `semantic_key` stops matching and
+an identical Stop raises a duplicate Attention. Both remedies change an accepted
+value's encoding or add unaccepted migration machinery, which is a Human
+decision of the DEC-223..227 class, not a planning correction. Tasks 1-8 are
+unaffected and may dispatch; tasks 9, 10, and 11 are held.
 
 ### Accepted carry-forward dispositions
 

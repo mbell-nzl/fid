@@ -65,6 +65,18 @@ original request.
   must exist before its own raising Event can commit; this task completes the
   closed four-type set and owns their resolution behavior (VAL-078). Add no
   Stop code.
+- `internal/journal/current_event_value_relations.go` - also extend
+  `case "Condition"` for `finding_id` (DEC-233, inventory row 8). That branch
+  enforces the accepted "only the field matching the type is non-null" rule
+  today for `budget_name` and `capability_id` only, and it fails **open**, so
+  without this the rule is enforced on the producer side in `validateCondition`
+  and silently nowhere else. Reproduced: with the shape widened, a Condition
+  carrying the wrong new field, all three, or none is accepted. Tasks 9 and 10
+  made the branch type-driven; add the last two types to that mapping and
+  confirm in the completion report that all four new types and all three new
+  fields are covered, since this task closes the set. **Read ESC-23-001 before
+  widening the shape at all** - how `Condition` may gain fields is a Human
+  decision, and its outcome changes what this branch has to check.
 - `internal/journal/current_event_value_catalog.go` - the closed `Condition`
   value grammar gaining `review-recorded`, `finding-resolved`, and
   `finding_id:?ID` (R-14).

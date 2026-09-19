@@ -10,6 +10,14 @@ product family reappeared.
 
 - VAL-067: The activated capability and grant action set is exactly thirty
   names with allow and reject cases.
+  The audit covers **both** copies of the closed set and compares them against
+  each other: `sortedUniqueCapabilities` in `internal/workflow/activation.go`
+  and the `const actions` string in
+  `internal/journal/current_event_value_relations.go:63`. Nothing cross-checks
+  them today, and each was widened name-by-name across tasks 4, 5, 8, 9, and 10
+  (R-19, DEC-233); a single missed name leaves a capability that a profile can
+  hold but the journal rejects, or the reverse. Assert set equality between the
+  two directly, not each against a literal, so the pair cannot drift later.
 - VAL-068: Shared fake and fid adapters pass identical conformance cases for
   every Phase 23 operation.
 - VAL-069: No product escalation, QA-plan, validation-contract, template,
@@ -72,7 +80,8 @@ product family reappeared.
 
 - [ ] Exactly thirty grant actions are accepted, each at or after its owning
   task, with every unknown action rejected, proven against an independently
-  pinned corpus. (VAL-067)
+  pinned corpus; and the workflow and journal copies of the closed set are
+  asserted equal to each other. (VAL-067)
 - [ ] Fake and fid adapters produce identical accepted results and identical
   rejections for every Phase 23 case. (VAL-068)
 - [ ] No cancelled product family is present under any name or alias. (VAL-069)

@@ -73,6 +73,18 @@ deterministic proof.
 - `internal/workflow/authority.go`, `activation.go`, `evaluation.go`,
   `resolve.go` - the new grant action belongs to the closed
   `sortedUniqueCapabilities` allowlist in `activation.go` (R-08, DEC-167/173).
+- `internal/journal/current_event_value_relations.go` - the **second** copy of
+  that same closed allowlist (R-19, DEC-233). `validateCurrentValueRelations`'s
+  `case "ActorProfile"` holds a `const actions` string with the identical 23
+  names at `:63`, and nothing cross-checks the two. Add
+  `human-outcome.record`
+  there in the same change that adds it to `sortedUniqueCapabilities`, keeping
+  both copies sorted and identical. This is not on any Phase 23 family's strict
+  path: it is reached through `activation.component-staged`, a live Phase 21/22
+  family, so without it the first Activation that stages a profile carrying
+  `human-outcome.record`
+  is rejected with `invalid closed enum` before this task can append a single
+  Event, with its cause outside this task's scope.
 - `internal/workflow/` readiness-Stop raising shared by the four producers, and
   its call sites for `envelope.activated`, `evidence.linked`, `review.recorded`,
   and `artifact.availability-observed` (DEC-224).
@@ -97,6 +109,18 @@ deterministic proof.
   register `human_outcomes.references_json` as `[]Source` in the `effect.Table +
   "." + column` switch at `:14`, which otherwise returns `unregistered current
   JSON column human_outcomes.references_json` on the first Outcome (DEC-232).
+- `internal/journal/current_event_value_relations.go` - also extend
+  `case "Condition"` for `outcome_class` (DEC-233, inventory row 8). That branch
+  enforces the accepted "only the field matching the type is non-null" rule
+  today for `budget_name` and `capability_id` only, and it fails **open**, so
+  without this the rule is enforced on the producer side in `validateCondition`
+  and silently nowhere else. Reproduced: with the shape widened, a Condition
+  carrying the wrong new field, all three, or none is accepted. Make the branch
+  type-driven rather than adding a third boolean term, so tasks 11
+  extend a mapping instead of a chain. **Read ESC-23-001 before widening the
+  shape at all** - how `Condition` may gain fields is a Human decision, and its
+  outcome
+  changes what this branch has to check.
 - `internal/journal/current_event_value_catalog.go` - also add the
   `HumanOutcome` entry to `currentValueShapes` from `public-interface.md`
   section 3 (R-16, DEC-231). Reuse task 9's `ProtectedDecision` unchanged; if it

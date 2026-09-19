@@ -184,9 +184,11 @@ task's scope:
   task 16, where the cause sits outside that task's ordinary scope.
 
 A fifth gap, larger than the four above, was found while confirming them
-(R-16, DEC-231), and a sixth and seventh on the same path while confirming
-that (R-17 and the Tech Lead's own re-derivation, DEC-232). They share one
-cause, so they are stated once as a general rule with a closed inventory:
+(R-16, DEC-231), a sixth and seventh on the same path while confirming that
+(R-17 and the Tech Lead's own re-derivation, DEC-232), and an eighth and ninth
+off that path while confirming *that* (R-19 and the Tech Lead's own
+re-derivation, DEC-233). They share one cause, so they are stated once as a
+general rule with a closed inventory:
 
 - Registering the nine families in `currentEventRules` routes them onto the
   journal's **strict** validation path - `validateCurrentEvent`
@@ -196,6 +198,17 @@ cause, so they are stated once as a general rule with a closed inventory:
   `schema.md` 6.3 makes mandatory for every Phase 23 mutation. That path
   consults several closed registries that fail closed on an unregistered
   family, table, or column.
+- **Frame (widened by I-33). The obligation is not "registries the strict path
+  consults for a Phase 23 family". It is every closed journal registry that a
+  Phase 23 value or Effect reaches, whichever family carries it.** There are
+  exactly two entry points, and a sweep that walks only the first is incomplete:
+  1. a **Phase 23 family** on the strict path - the six registries in the table
+     below, owned by the task that unfences the family; and
+  2. a **Phase 23 value inside a live or retained Phase 21/22 family** - rows 7
+     and 8 below. R-19 is the proof that this second entry point exists: the
+     capability allowlist is reached through `activation.component-staged`, a
+     never-fenced Phase 21/22 family, and three consecutive sweeps missed it
+     because all three walked only the nine families' own path.
 - **Standing rule (generalised by I-31): a task that deletes a family's fence
   key owns that family's entry in every closed journal registry the strict path
   consults - never task 1.** That covers the family's typed-result grammar, its
@@ -213,17 +226,63 @@ cause, so they are stated once as a general rule with a closed inventory:
   behind task 1's own fence unexecuted. Ownership is only assignable where it is
   executable.
 - **The inventory known today, all under `internal/journal/`. A registry that
-  is not on this list and rejects a Phase 23 family is a Developer escalation,
-  not a silent workaround.**
+  is not on this list and rejects - or silently fails to constrain - a Phase 23
+  value is a Developer escalation, not a silent workaround.** Rows 1-6 are
+  reached by a Phase 23 family on the strict path. Rows 7 and 8 are reached by a
+  Phase 23 **value** inside a live Phase 21/22 family and are the reason the
+  frame above is stated the way it is.
 
-| Registry | File | Rejection message | Phase 23 owners |
-|---|---|---|---|
-| `fields` grammar map in `validateCurrentResultJSON` | `current_event_json.go:135` | `unregistered current result family` | 4, 5, 8, 9, 10, 12 |
-| `currentExpectedResult` switch | `current_event_result_projection.go:69` | `unknown current result` | 4, 5, 8, 9, 10, 12 |
-| `currentValueShapes` | `current_event_value_catalog.go:6` | `missing projected <Kind>.<field>` | 4, 8, 9, 10, 12 |
-| `validateCurrentCardinality` table switch | `current_event_cardinality.go:14` | `too many <table>/<op> Effects` | 4 only (R-17) |
-| `validateCurrentJSON` `table.column` switch | `current_event_json.go:14` | `unregistered current JSON column <t>.<c>` | 4, 8, 9, 10, 12 |
-| `validateCurrentUpdate` table switch | `current_event_updates.go:14` | `current Event update table not admitted` | 8, 12; renamed by 15 |
+| # | Registry | File | Rejection message | Phase 23 owners |
+|---|---|---|---|---|
+| 1 | `fields` grammar map in `validateCurrentResultJSON` | `current_event_json.go:135` | `unregistered current result family` | 4, 5, 8, 9, 10, 12 |
+| 2 | `currentExpectedResult` switch | `current_event_result_projection.go:69` | `unknown current result` | 4, 5, 8, 9, 10, 12 |
+| 3 | `currentValueShapes` | `current_event_value_catalog.go:6` | `missing projected <Kind>.<field>` | 4, 8, 9, 10, 12 |
+| 4 | `validateCurrentCardinality` table switch | `current_event_cardinality.go:14` | `too many <table>/<op> Effects` | 4 only (R-17) |
+| 5 | `validateCurrentJSON` `table.column` switch | `current_event_json.go:14` | `unregistered current JSON column <t>.<c>` | 4, 8, 9, 10, 12 |
+| 6 | `validateCurrentUpdate` table switch | `current_event_updates.go:14` | `current Event update table not admitted` | 8, 12; renamed by 15 |
+| 7 | `const actions` capability allowlist in `validateCurrentValueRelations` `case "ActorProfile"` | `current_event_value_relations.go:63` | `invalid closed enum artifact.verify,...` | 4, 5, 8, 9, 10 (R-19) |
+| 8 | `case "Condition"` nullable-binding relation in the same function | `current_event_value_relations.go:48` | none - **fails open** | 9, 10, 11 (DEC-233) |
+
+- **Row 7 (R-19), the second copy of the capability allowlist.** The closed
+  23-name set exists **twice** in non-test code: `sortedUniqueCapabilities`
+  (`internal/workflow/activation.go:832`) and this `const actions` string. They
+  are byte-for-byte the same names and nothing cross-checks them. The journal
+  copy is reached with no Phase 23 family involved at all:
+  `activation_components.evidence_json` is validated as `[]ActorProfile` when
+  `component_type` is `authority-profile` (`current_event_json.go:52-63`), on
+  `activation.component-staged`, which is in `currentEventRules`
+  (`current_event_catalog.go:28`) and behind no fence. `public-interface.md`
+  section 4 requires each Phase 23 leaf's capability in the Actor profile, and a
+  profile reaches the journal only through Kit Activation, so **the first
+  Activation staging a Phase 23-capable profile is rejected before task 4
+  records a single Review**. Each of tasks 4, 5, 8, 9, and 10 therefore adds
+  `internal/journal/current_event_value_relations.go` beside the
+  `internal/workflow/activation.go` entry R-08 already gives it, and adds its
+  own name to **both** copies in one change. 23 becomes 30: exactly the seven
+  grant actions of `public-interface.md` 4.1 and **not**
+  `requirement.record-reference` or `requirement.link`, which stay operation IDs
+  only. Task 18's audit compares the two copies against each other (VAL-067), so
+  a future divergence fails a test instead of staying silent - the same
+  protection DEC-229 gave `semanticEventRules`.
+- **Row 8, the `Condition` nullable-binding relation. Tech Lead finding under
+  DEC-233, same file, found while confirming R-19.** `case "Condition"`
+  enforces the accepted "only the field matching the type is non-null" rule for
+  the two Phase 22 fields and nothing else: `(type == "budget-observed") !=
+  (budget_name != nil) || (type == "capability-available") != (capability_id !=
+  nil)`. `public-interface.md` section 2 extends that rule to `outcome_class`,
+  `decision_class`, and `finding_id`, and tasks 9, 10, and 11 already add each
+  field to `validateCondition` in `internal/workflow/stop.go` - the **producer**
+  side only. Reproduced under overlay with the shape widened and the working
+  tree untouched: a `human-outcome-recorded` Condition with all three new fields
+  non-null, one with none of them non-null, and a `decision-satisfied` Condition
+  carrying `outcome_class` instead of `decision_class` are **all accepted**,
+  while the Phase 22 control still returns `condition nullable binding
+  mismatch`. This registry fails **open**, so it blocks nothing and is not a
+  dispatch blocker; it is a silent loss of an accepted journal-layer invariant,
+  the class R-09 and R-18 were accepted to prevent. Each of tasks 9, 10, and 11
+  extends this branch for its own field in the same change that adds the field
+  to `currentValueShapes["Condition"]` and to `validateCondition`. See ESC-23-001
+  for the separate, blocking question of **how** that shape may be widened.
 
 - `validateCurrentTerminalValues`'s second switch in that same file
   (`current_event_updates.go:61`) fails **open**, so it blocks nothing. The
@@ -237,6 +296,49 @@ cause, so they are stated once as a general rule with a closed inventory:
   (`current_event_idempotency.go:65`) are both keyed by Event type and both
   fail **open** to the aggregate ID, which is the correct `result_entity_id`
   for all nine Phase 23 families. Do not add rows to either.
+- **Six further checks on the widened frame returned no work. Recorded as
+  positives under DEC-233 so the next pass does not re-derive them.**
+  1. `validateCurrentValueRelations` reaches `return nil` for any kind not in
+     its switch, verified under overlay for `Review`. The nine new Phase 23
+     value kinds therefore need **no** relations entry, and rows 7 and 8 are the
+     file's complete Phase 23 surface. That is what makes the file closable.
+  2. `validateCurrentBlockedActions` (`current_event_json.go:117`) closes the
+     six-name action set. `public-interface.md` section 2 says the Stop
+     blocked-action subset "adds nothing", and all four names the three new Stop
+     codes use are already in it. The `budget-` prefix relation
+     (`current_event_value_relations.go:76`) keys on a prefix no Phase 23 code
+     has. **No entry, either place.**
+  3. `StopCode` is not a separate list: `current_event_value_types.go:88` keys
+     it on `currentStopDetailShapes`, which tasks 6, 9, 10, and 11 already own.
+     Registering the details shape registers the code. **No second edit.**
+  4. Envelope grant actions reach no journal registry.
+     `sortedUniqueEnvelopeActions` reuses the `activation.go` allowlist, and
+     `envelope.created` / `envelope.activated` are in `retainedCurrentRules`,
+     not `currentEventRules`. The retained branch returns at
+     `current_event_validation.go:64` before any JSON or value validation. Row 7
+     is the **only** second copy.
+  5. Export needs no value-side registration. `validateSemanticMap`
+     (`archive_semantics_values.go:10`) validates by DDL column type and checks
+     `_json` columns only for well-formed JSON, and `loadSemanticTables`
+     (`archive_semantics.go:125`) introspects the installed schema, so the ten
+     new tables and every new value arrive from migration 0017 for free. The
+     `semanticEventRules` mirror DEC-229 already assigns is the whole export-side
+     obligation - with one exception, next.
+  6. **Exception, and the one piece of new work from this sweep:
+     `semanticPhase22Events` (`archive_semantics_catalog.go:85`) has no Phase 23
+     analogue.** `validateEvent` (`archive_semantics.go:328`) rejects an Event
+     when `!found || (profile == 14 && semanticPhase22Events[type])`. Once task 1
+     mirrors the nine families into `semanticEventRules`, `found` becomes true
+     for them at **every** profile, so a legacy projection-14 archive carrying
+     `review.recorded` would validate clean - the exact hole Phase 22 added that
+     map to close. Task 1 adds the nine families to it in the same file and the
+     same change as the mirror, and the map's name is corrected to read
+     "families that do not exist at projection 14". This is provable with no
+     Event, like `current_event_columns.go`, so task 1 is the right owner.
+     VAL-065 is unaffected and already holds by a different route: the manifest
+     check `decoded.ProjectionSchema != fiddb.ActiveMigrationVersion`
+     (`archive_validation.go:130`) rejects a cross-version archive with
+     `schema-unsupported` before any Event is read.
 - Owners, one-to-one with the nine fence keys: task 4 `review.recorded`; task 5
   `finding.addressed`; task 8 `concern.recorded`, `concern.disposed`,
   `deviation.recorded`; task 9 `decision.referenced`; task 10

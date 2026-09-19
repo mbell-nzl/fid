@@ -14,11 +14,11 @@ blocks, and which judgment unblocked it.
 
 ## Status
 
-**Approved, not started; all amendments approved.** Branch `phase-23` at
-planning base `0195897a347dfe1872db0f7be3800c5c3ccdefcf`. Four QA passes have
-returned eighteen Must-fix revisions - thirteen first-pass, R-14/R-15
-(`qa-plan.md` 12), R-16 (13), R-17/R-18 (14) - plus three the Tech Lead found
-while dispositioning the last pair. All are applied; see
+**Approved, not started; all amendments approved; one Human decision open.**
+Branch `phase-23` at planning base `0195897a347dfe1872db0f7be3800c5c3ccdefcf`.
+Five QA passes have returned nineteen Must-fix revisions - thirteen first-pass,
+R-14/R-15 (`qa-plan.md` 12), R-16 (13), R-17/R-18 (14), R-19 (16) - plus five
+the Tech Lead found while dispositioning them. All are applied; see
 [phase decisions](../phases/phase-23/decisions.md).
 
 The Human approved all five contract amendments on 2026-09-19: DEC-223
@@ -31,10 +31,21 @@ followed: DEC-229 registry owners and CF-042's corrected per-run cause; DEC-230
 removes `decision-not-found`, a code no leaf can return; DEC-231 and DEC-232
 give every closed journal registry on the strict path an owning task, keyed to
 the task that unfences the family, and leave the journal `Subject` shape narrow
-in favour of a separate `JudgmentSubject`.
+in favour of a separate `JudgmentSubject`. DEC-233 widens that frame to any
+closed journal registry a Phase 23 **value** reaches in any family, adding the
+capability allowlist's second copy (R-19) and the `Condition` nullable-binding
+relation as rows 7 and 8.
 
-Next action: a **fresh QA Lead** confirms the DEC-232 edits, then the Runner's
-readiness check; no task dispatches before both pass.
+**Open: ESC-23-001.** Widening the journal `Condition` value is not monotonic -
+`validateCurrentShape` matches field count exactly and `ReplayJournal`
+revalidates history, so no workspace holding a pre-widening Stop can rebuild;
+and `attentionSemanticKey` hashes the whole struct, so every open Attention
+stops deduplicating. Both measured. The remedy changes an accepted value's
+encoding, so the choice is the Human's. Blocks **tasks 9, 10, and 11 only**.
+
+Next action: the Human decides ESC-23-001 and a **fresh QA Lead** confirms the
+DEC-233 edits, then the Runner's readiness check. Tasks 1-8 may dispatch once
+those pass; tasks 9-11 wait on ESC-23-001.
 
 ## Operating Mode
 
@@ -80,9 +91,9 @@ four Human rows.
 
 ## QA Artifacts
 
-All under `../phases/phase-23/qa/`. QA plan authored, sections 12-14 executed and
+All under `../phases/phase-23/qa/`. QA plan authored, sections 12-16 executed and
 freshly measured, but the plan is **NOT READY** and nothing dispatches until a
-fresh QA Lead confirms the DEC-232 edits and the Runner's readiness check passes.
+fresh QA Lead confirms the DEC-233 edits and the Runner's readiness check passes.
 Mid-phase `review-M.md` for windows 1-3, 4-6, 7-9, 10-12, 13-15, 16-18;
 `checkpoint-after-task-11.md` must PASS before task 12; `human-fixtures.md` and
 the VAL-070..072 fixtures come from task 14, regenerated at task 18.
@@ -93,10 +104,13 @@ the VAL-070..072 fixtures come from task 14, regenerated at task 18.
   every closed registry's owner and two standing rules: a journal Event rule is
   mirrored in `semanticEventRules` in the same task (DEC-229), and a task that
   unfences a family owns that family's entry in **every** closed journal
-  registry the strict path consults - six known, inventoried there with their
-  rejection messages (DEC-231, generalised by DEC-232). Ownership is only
-  assignable where it is executable, and a registry absent from that inventory
-  is a Developer escalation, not a local fix.
+  registry that family reaches (DEC-231, generalised by DEC-232). DEC-233 widens
+  the frame: the obligation covers every closed journal registry a Phase 23
+  **value or Effect** reaches, whichever family carries it - eight known,
+  inventoried there with their rejection messages, rows 7 and 8 reached through
+  live Phase 21/22 families. Ownership is only assignable where it is
+  executable, and a registry absent from that inventory is a Developer
+  escalation, not a local fix.
 - A **Failure code** names one refused request; an **Evaluation reason**
   describes why one Obligation is unsatisfied. `GLOSSARY.md` defines both; file
   every new identifier in the set it belongs to (DEC-226).
@@ -129,8 +143,12 @@ removed; `internal/export/`, `internal/maintenance/`, `internal/activity/`,
 
 Wide-reach change: Obligation generalization (task 2) and Evidence widening
 (task 6), each isolated. Registry without an owning task (DEC-167/173) is the
-recurring one: five re-derivations caught nine before dispatch, each inside the
-previous fix, so the confirmation gate stays until a pass adds nothing. Late Human-readability
+recurring one: six re-derivations caught eleven before dispatch, each inside the
+previous fix, and the sixth had to widen the search frame to find its own, so the
+confirmation gate stays until a pass adds nothing. New and of the same family:
+a live journal **value** shape that gains a field is not monotonic over stored
+history (ESC-23-001); `Condition` is the only one this phase, and it was found
+only by walking the widened frame. Late Human-readability
 discovery: the Human-text check in window 13-15. Removal ordering: task 15
 depends on fourteen replacements; a slip amends the task rather than deferring a
 removal. Test-time headroom: bounded by DEC-227.

@@ -96,6 +96,16 @@ Full sources, pass and fail criteria, and validator ownership are in
   `schema.md` section 6.2 source (R-14). Standing rule in
   `execution-scope.md` section 6: a task that changes a journal Event rule
   mirrors it here in the same task.
+  In the same file and the same change, add the nine families to
+  `semanticPhase22Events` at `:85` and correct that map's name to say what it
+  means - families that do not exist at projection 14 (DEC-233). Mirroring the
+  rules makes `found` true for the nine at **every** profile, so
+  `validateEvent` (`archive_semantics.go:328`) would otherwise accept
+  `review.recorded` inside a legacy projection-14 archive: the exact hole Phase
+  22 added that map to close. This is provable with a crafted legacy archive and
+  no Event, which is why it is task 1's and not an unfencing task's. VAL-065 is
+  unaffected - the manifest check at `archive_validation.go:130` already rejects
+  a cross-version archive with `schema-unsupported` before any Event is read.
 - `internal/export/` - manifest projection schema and its fixtures.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
   this change.

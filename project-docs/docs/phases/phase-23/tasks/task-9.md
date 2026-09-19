@@ -60,6 +60,18 @@ until a matching approved reference and Human Outcome both exist.
   `registry.go`, `authority.go`, `activation.go` - the new grant action belongs
   to the closed `sortedUniqueCapabilities` allowlist in `activation.go`
   (R-08, DEC-167/173).
+- `internal/journal/current_event_value_relations.go` - the **second** copy of
+  that same closed allowlist (R-19, DEC-233). `validateCurrentValueRelations`'s
+  `case "ActorProfile"` holds a `const actions` string with the identical 23
+  names at `:63`, and nothing cross-checks the two. Add
+  `decision.record-reference`
+  there in the same change that adds it to `sortedUniqueCapabilities`, keeping
+  both copies sorted and identical. This is not on any Phase 23 family's strict
+  path: it is reached through `activation.component-staged`, a live Phase 21/22
+  family, so without it the first Activation that stages a profile carrying
+  `decision.record-reference`
+  is rejected with `invalid closed enum` before this task can append a single
+  Event, with its cause outside this task's scope.
 - `internal/issues/transition_rules.go` - the `linked_to_decision` evaluator.
 - `internal/journal/project_effects.go`, `current_event_catalog.go` - the
   `decision.referenced` fence key, and this task's two amendments to existing
@@ -91,6 +103,18 @@ until a matching approved reference and Human Outcome both exist.
   "." + column` switch at `:14`, which otherwise returns `unregistered current
   JSON column decision_refs.source_json` on the first Decision Reference
   (DEC-232).
+- `internal/journal/current_event_value_relations.go` - also extend
+  `case "Condition"` for `decision_class` (DEC-233, inventory row 8). That branch
+  enforces the accepted "only the field matching the type is non-null" rule
+  today for `budget_name` and `capability_id` only, and it fails **open**, so
+  without this the rule is enforced on the producer side in `validateCondition`
+  and silently nowhere else. Reproduced: with the shape widened, a Condition
+  carrying the wrong new field, all three, or none is accepted. Make the branch
+  type-driven rather than adding a third boolean term, so tasks 10 and 11
+  extend a mapping instead of a chain. **Read ESC-23-001 before widening the
+  shape at all** - how `Condition` may gain fields is a Human decision, and its
+  outcome
+  changes what this branch has to check.
 - `internal/journal/current_event_value_catalog.go` - also add the `DecisionRef`
   and `ProtectedDecision` entries to `currentValueShapes` from
   `public-interface.md` section 3 (R-16, DEC-231). This task owns
