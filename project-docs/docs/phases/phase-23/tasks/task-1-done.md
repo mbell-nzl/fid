@@ -64,8 +64,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `4aa2320`
 
 ## Commit subject
 
-- Pending commit
+- `feat(phase-23): add review judgment schema baseline`
