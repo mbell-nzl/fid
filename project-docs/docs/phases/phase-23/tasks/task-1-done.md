@@ -45,7 +45,8 @@
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 595.167s coverage: 62.6% of statements` (terminated `exit_code: 0`); `cmd/fid` 581.395s, `internal/workflow` 595.167s.
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 595.167s coverage: 62.6% of statements` (terminated `exit_code: 0`)
+- Wall times: `cmd/fid` 581.395s; `internal/workflow` 595.167s.
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.5%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - BLOCKED - not started before session checkpoint.
 - `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - BLOCKED - not started before session checkpoint.
