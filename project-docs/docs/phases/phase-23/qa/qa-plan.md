@@ -4,6 +4,7 @@
 > First pass: 2026-09-15. Readiness refresh: 2026-09-19 (section 12).
 > Readiness confirmation of DEC-229/DEC-230: 2026-09-19 (section 13).
 > Readiness confirmation of DEC-231: 2026-09-19 (section 14).
+> Readiness confirmation of DEC-232: 2026-09-19 (section 15).
 > QA Lead: Claude Opus 5 (activated directly by the Human; no Tech Lead handoff)
 > Operating mode: Heavy. Sections 1-11 were produced fresh on `phase-23` at
 > `0c28936a6ad3980d2b3c4439b42ec70c83313d4c`; section 12 was produced fresh at
@@ -11,22 +12,21 @@
 > documentation commits only). Nothing carries forward from Phase 22, and
 > section 12 reuses no earlier result for anything the Tech Lead changed.
 >
-> **Status: NOT READY - two Must-fix revisions remain (section 14.5).** This is
+> **Status: NOT READY - one Must-fix revision remains (section 15.6).** This is
 > not a placeholder `BLOCKED`: every required command is concrete and was
 > executed or feasibility-proven in sections 6 and 12. Every disposition so far
 > is confirmed: R-01..R-13 and I-01..I-16 under DEC-223..228 (section 12), R-14,
-> R-15 and DEC-230 under DEC-229 (section 13), and R-16 under DEC-231 (section
-> 14), whose central judgment - the unfencing task owns the typed-result
-> registries, not task 1 - is correct. The plan cannot become Ready because the
-> journal's strict validation path holds further closed registries with no
-> owning task: **R-17** (`validateCurrentCardinality` caps every new Phase 23
-> table at one effect per key, so a two-Finding `review.recorded` is rejected at
-> task 4) and **R-18** (the planned `Subject` widening drops the accepted
-> Phase 22 Stop/Attention subject constraint on live unfenced families). Both
-> are bounded, decision-free planning corrections with no blocker candidate.
-> Read section 12 before sections 2-11: it supersedes the earlier statements
-> listed in 12.8. Then section 13 (13.4 supersedes statements in section 12),
-> then section 14.
+> R-15 and DEC-230 under DEC-229 (section 13), R-16 under DEC-231 (section 14),
+> and R-17, R-17b, R-17c, R-18 and R-18b under DEC-232 (section 15). The plan
+> cannot become Ready because the journal holds one further closed registry with
+> no owning task: **R-19** - `current_event_value_relations.go` carries a second,
+> byte-identical copy of the 23-name capability allowlist that R-08 assigns in
+> `internal/workflow/activation.go`, and it rejects all seven Phase 23 grant
+> actions, blocking the first Activation that stages a Phase 23-capable Actor
+> profile. It is bounded and decision-free, with no blocker candidate. Read
+> section 12 before sections 2-11: it supersedes the earlier statements listed
+> in 12.8. Then section 13 (13.4 supersedes statements in section 12), then
+> sections 14 and 15.
 
 ## 1. Scope And Source Documents
 
@@ -1196,3 +1196,186 @@ invariant intact.
 Both are bounded, decision-free, and of the same class the last three passes
 have dispositioned. No assertion was weakened to reach this verdict, and no
 `VAL-NNN` was narrowed, re-scoped, or restated to reach Ready.
+
+## 15. Readiness Confirmation - DEC-232 (2026-09-19)
+
+Readiness condition 3, fourth cycle. Confirmation of the edits applied in
+`bf38e50` under DEC-232, per the superseding `tl-qa-confirmation-brief.md`.
+Base: branch `phase-23` at `bf38e50`, `git status --porcelain` empty before and
+after this pass. Sections 12, 13 and 14 stand; none is reopened. No product file
+changed - all 14 edited files are under `project-docs/docs/` per
+`git show --stat` - so no budget, migration, raising sequence, failure-code set
+or contract count was re-measured.
+
+### 15.1 The Three Tech Lead Findings
+
+| Finding | Verdict | Independent source evidence |
+|---|---|---|
+| **R-17b `validateCurrentUpdate`** | **CONFIRMED, and the owner set is complete** | `current_event_updates.go:44` is `default: return fmt.Errorf("current Event update table not admitted")`, and the `switch effect.Table` at `:14` lists only `run_runtime`, `runs`, `claims`, `kit_activations`, `activation_components`, `activation_resources`, `activation_recoveries`, `attention_items`, `idempotency_results` - no Phase 23 table. It is called at `current_event_validation.go:200`, inside the strict path. I derived the affected set from `schema.md` 6.2 independently: of the nine families, exactly two emit an update to a Phase 23 table - `concern.disposed`'s **required** `judgment_concerns/update` and `requirement.referenced`'s **optional** `requirement_refs/update`. The `attention_items/update` rows in `review.recorded`, `decision.referenced` and `human-outcome.recorded` are already admitted. **No third Phase 23 update Effect exists.** Tasks 8 and 12 are the right owners and task 15's rename carry-through is correct. The field and guard sets are derivable as directed: `currentKeys` (`:52`) demands an exact sorted-set match of both `effect.Values` and `effect.Preconditions`, and `schema.md` 2 fixes the disposition columns on `judgment_concerns` and `status`/`superseded_by_id` on `requirement_refs`, so each task can derive its own sets from accepted DDL without loosening anything. The `validateCurrentTerminalValues` note is accurate - that second switch (`:61`) leaves `valid` true for any table it does not name, so it fails open and blocks nothing. |
+| **R-17c the `validateCurrentJSON` column switch** | **CONFIRMED, and I agree with not reassigning it; the enumeration is complete, but the brief's count is one low** | `current_event_json.go:75` returns `unregistered current JSON column %s.%s` for any `*_json` column not in the switch at `:14`, with only `start_repository_json` and `terminal_repository_json` falling through. The judgment call is right: the file is already owned by all six unfencing tasks under DEC-231, the failure is loud and lands inside the owning task's own first Event, so describing the columns is sufficient and reassignment would add nothing. **Enumeration checked against `schema.md` 2 by extracting every `_json` column from the DDL.** Fourteen exist on Phase 23 tables. Twelve need registration and are all assigned: task 4 five (`review_records.repository_json`, `coverage_json`, `evidence_refs_json`, `receipt_ids_json`, `review_findings.scope_json`), task 8 three (`judgment_concerns.scope_json`, `judgment_concerns.references_json`, `deviations.references_json`), task 9 two (`decision_refs.source_json`, `authority_capabilities_json`), task 10 one (`human_outcomes.references_json`), task 12 one (`requirement_refs.source_json`). The other two - `envelope_protected_decisions.required_capabilities_json` and `affected_actions_json` - correctly need nothing, because their only writer `envelope.created` is retained. `evidence_records.target_repository_json` likewise needs nothing, for the same reason, and `finding_dispositions` and `requirement_issue_links` carry no `_json` column at all, so task 5's recorded negative holds. The brief's prose says "eleven columns"; the assignment is **twelve** and is complete. Prose only - see I-32. |
+| **R-18b `schema.md` 6.2's I-17 sentence** | **CONFIRMED, and the correction is right** | Verified directly in source rather than from the prose. `currentEventRules` spans `current_event_catalog.go:26-49`; `retainedCurrentRules` starts at `:77`. All four amended families are inside the retained map: `envelope.created` `:82`, `envelope.activated` `:83`, `evidence.linked` `:88`, `artifact.availability-observed` `:89`. **None is in `currentEventRules`.** The earlier I-17 text, which placed the first row in `currentEventRules`, was wrong, and the consequence the Tech Lead names is real: a Developer following it would have moved a live family onto the strict path, where its own long-standing Effects would then face the six registries in the inventory. The corrected sentence at `schema.md:607-613` states the classification and the line range accurately. None of the R-17 conclusions moves, because they were derived from `schema.md` 6.2's effect rows rather than from this sentence. |
+
+### 15.2 The `ErrorSubjectType` Reading
+
+**CONFIRMED. The reading is correct, and I would have reached it independently
+on two decisive tests.**
+
+1. *"`requirement` is retained."* `requirement` is in Phase 21's documented
+   `ErrorSubjectType` (`phase-21/public-interface.md:45-48`) and in the
+   implementation (`internal/cli/codes.go` `SubjectRequirement`). It is **not**
+   in the Stop/Attention `Subject` set, and there was no prior judgment subject
+   vocabulary at all - Concerns, Deviations and Findings are new this phase. So
+   "retained" can only be true of the error vocabulary. No other reading
+   survives this clause.
+2. *Phase 23 amends `ReasonSubjectType` separately.* `public-interface.md` 5
+   says `ReasonSubjectType` adds `review`, `finding`, `decision`, and
+   `human-outcome` - four values, a different set from section 2's six. The two
+   rows therefore cannot name the same vocabulary.
+
+The six added values are also exactly the six new entity kinds that can appear
+as an error subject, which is coherent with the failure-code table. And the
+Tech Lead's reductio holds: read literally as a Stop subject amendment, a
+resolution condition could name `type:"path"`.
+
+**`JudgmentSubject` adds no accepted value.** `public-interface.md:66-67`
+defines it as `type:"issue"|"envelope"|"run"|"review"|"finding"|"requirement"`.
+That is byte-identical to the closed set already accepted under DEC-222 in
+`contracts.md` 8 ("`issue`, `envelope`, `run`, `review`, `finding`,
+`requirement`") and to the `subject_type` CHECK on all four judgment tables in
+`schema.md` 2, which I extracted and compared: `review_findings`,
+`judgment_concerns`, `deviations` and `human_outcomes` each carry
+`('issue','envelope','run','review','finding','requirement')`. It is a name for
+an accepted domain, not a new one.
+
+**The stronger conclusion is also right, and better than my R-18 proposal.** The
+two domains are genuinely non-nested: `stops` and `attention_items` CHECK
+`('run','envelope','activation')` (`0015:56,82`), so Stop admits `activation`
+and judgment does not, while judgment admits `issue`, `review`, `finding` and
+`requirement` and Stop does not. No single shape can serve both, so "no widening
+is possible" is correct where I had proposed only that widening was unnecessary.
+Withdrawing the `Subject` edit entirely is the right call.
+
+### 15.3 Inventory Completeness - The Seventh Registry
+
+I walked `validateCurrentEvent` and `validateCurrentAppliedResults` end to end
+and enumerated every closed-set rejection in `internal/journal` rather than
+checking the inventory's six against itself. The six listed registries are
+correct and correctly owned, and the two recorded as needing nothing
+(`validateCurrentBindings`'s `entityTable` map and `currentResultEntity`'s map)
+do both fail open to the aggregate ID, as recorded. I also checked three the
+inventory does not list and confirmed each needs nothing:
+`validateCurrentStopReferences`'s subject map
+(`current_event_stop_references.go:14`) fails closed but already admits
+`envelope`, which every Phase 23 Stop uses; `current_event_prior.go:75,81` keys
+on `currentEventTables`, which task 1 owns; and `validateCurrentValue`'s
+`unregistered current value type` default is satisfied by the same
+`currentValueShapes` registration DEC-231 already assigns.
+
+**But there is a seventh, and it is a hard blocker: R-19 below.** It was missed
+by both of us for the same structural reason - it is not reached through a
+Phase 23 family at all. It is reached when a Phase 23 **value** flows through a
+live Phase 21/22 family, which is outside the "walk the strict path for the nine
+families" frame both previous sweeps used.
+
+### 15.4 Per-Family Completeness
+
+For each family, the registries it needs against the registries its owning task
+names. Derived from `schema.md` 6.2 and the DDL, not from the brief.
+
+| Family | Task | `fields` | `expectedResult` | value shapes | cardinality | JSON cols | updates | Complete? |
+|---|---|---|---|---|---|---|---|---|
+| `review.recorded` | 4 | yes | yes | `Review`, `Coverage`, `CoverageItem`, `CoverageExclusion`, `Finding`, `FindingDisposition`, `JudgmentSubject` | `review_findings`, `finding_dispositions` | 5 | - | **yes** |
+| `finding.addressed` | 5 | yes | yes | reuse only | none needed | none | - | **yes** |
+| `concern.recorded` | 8 | yes | yes | `Concern`, `ConcernDisposition` | none needed | 2 | - | **yes** |
+| `concern.disposed` | 8 | yes | yes | reuse | none needed | - | `judgment_concerns` | **yes** |
+| `deviation.recorded` | 8 | yes | yes | `Deviation` | none needed | 1 | - | **yes** |
+| `decision.referenced` | 9 | yes | yes | `DecisionRef`, `ProtectedDecision` | none needed | 2 | - | **yes** |
+| `human-outcome.recorded` | 10 | yes | yes | `HumanOutcome` | none needed | 1 | - | **yes** |
+| `requirement.referenced` | 12 | yes | yes | `RequirementRef` | none needed | 1 | `requirement_refs` | **yes** |
+| `requirement.linked` | 12 | yes | yes | `RequirementLink` | none needed | none | - | **yes** |
+
+**Task 5's "needs nothing" holds.** `finding.addressed` writes one
+`finding_dispositions` row per Event, so cardinality's default maximum of 1 is
+correct; `finding_dispositions` carries no `*_json` column in the accepted DDL;
+it emits no update; and its two value shapes are registered at task 4 because
+`review.recorded` already inserts that table. Its only entries are the `fields`
+row and the `currentExpectedResult` branch, exactly as recorded.
+
+**R-17's owner derivation re-derived independently: task 4 alone is right.**
+Only `review.recorded` carries repeated effects on a Phase 23 table -
+`findings:FindingInput[0..64]` and `resolves_finding_ids:ID[0..64]`. Every other
+family writes one row per key, and `requirement.referenced`'s insert and update
+are distinct keys.
+
+### 15.5 Mechanical Re-checks
+
+| Referenced step | Validation method | Result | Evidence |
+|---|---|---|---|
+| Contract untouched | row count plus diff | PASS | **79** rows; `git diff a2cef73..HEAD` on the contract file is **empty**. No row added, removed, renumbered, reworded, or weakened. |
+| No product file touched | `git show --stat` | PASS | All 14 files under `project-docs/docs/`. |
+| I-30 applied | `execution-scope.md` 6 read | PASS | Now reads "15 of the 22 existing families and a required stage for the other 7", matching my measurement. |
+| I-31 applied and extended | `execution-scope.md` 6 read | PASS | The general rule is stated, the inventory lists six registries with file, line, rejection message and owners, two are recorded as deliberately needing nothing, and a registry not on the list is declared a Developer escalation. Grew from my four to six. See I-33 for the one scoping word I would change. |
+| Task 12's end-of-phase audit widened | `task-12.md` read | PASS | Now requires every family to have its entry in **all six** inventory registries before the fence map is removed, not three. |
+| Task 15 rename carry-through | `task-15.md` read | PASS | The `judgment_concerns` rename now crosses five catalogs, not three, which matches the registries that key on the table name. |
+| `Subject` untouched by every task | file-scope search | PASS | No task instructs an edit to `currentValueShapes["Subject"]`; tasks 8 and 10 are explicitly told to reuse `JudgmentSubject` and not to edit `Subject`. |
+
+### 15.6 Revisions Requested From The Tech Lead (fifth pass)
+
+| ID | Sev | Where | Finding and proposal |
+|---|---|---|---|
+| R-19 | M | `internal/journal/current_event_value_relations.go`; tasks 4, 5, 8, 9, 10; `execution-scope.md` 6 | **The journal holds a second, independent copy of the closed 23-name capability allowlist, and no document names the file.** `validateCurrentValueRelations`'s `case "ActorProfile"` (`current_event_value_relations.go:59-66`) contains a hard-coded `const actions = "artifact.verify,attention.resolve,claim.acquire,...,stop.raise,stop.resolve"` - exactly the same 23 names as `sortedUniqueCapabilities` in `internal/workflow/activation.go:832`, which R-08 already assigned to tasks 4, 5, 8, 9 and 10 to take to 30 (`public-interface.md` 4.1, VAL-067). An Actor profile's `capabilities` are validated against that constant, plus a sorted-unique check. **Reachability, and why both previous sweeps missed it:** this is not on the Phase 23 families' strict path. It is reached through `activation.component-staged` - a live, never-fenced Phase 21/22 family - whose `activation_components.evidence_json` is validated as `[]ActorProfile` when `component_type` is `authority-profile` (`current_event_json.go:52-63`). `public-interface.md` 4 requires every Phase 23 leaf's capability to be present in the Actor profile, and that profile reaches the journal only through Kit Activation. So the first Activation that stages a Phase 23-capable profile is rejected at append time, before task 4 can record a single Review, with its cause in a file no task names. Both earlier sweeps walked the nine families' own path; this is a Phase 23 **value** travelling through a Phase 21/22 **family**, which that frame does not reach. **Executable proof** (`go test -overlay`, `internal/journal`, working tree untouched): a control profile with `claim.acquire` and `evidence.link` is accepted, and each of the seven grant actions - `review.record`, `finding.address`, `concern.record`, `concern.dispose`, `deviation.record`, `decision.record-reference`, `human-outcome.record` - is rejected with `invalid closed enum` naming the 23-name list. `requirement.record-reference` and `requirement.link` are also rejected, which is **correct** and serves as a second control: `public-interface.md` 4.1 deliberately keeps them out of the allowlist as operation IDs only, so the list is confirmed to be the capability allowlist and not something broader. **Proposal:** add `internal/journal/current_event_value_relations.go` to the file scope of tasks 4, 5, 8, 9 and 10 alongside the `internal/workflow/activation.go` entry R-08 already gives each of them, so one task adds one name to both copies in the same change; the journal list goes 23 -> 30 with exactly the seven grant actions and not the two requirement operations. Record it in the `execution-scope.md` 6 inventory as a seventh row, noting that it is the only entry reached through a Phase 21/22 family. Consider also whether task 18's 30-name audit should compare the two copies against each other, since nothing does today - that is the same silent-divergence risk R-09 was accepted to prevent for `semanticEventRules`. No assertion changes; no public value changes; the 30-name set is already accepted. |
+
+Improvements (the Tech Lead may apply or decline; none blocks Ready).
+
+| ID | Where | Proposal |
+|---|---|---|
+| I-32 | brief section 3, R-17c | The JSON column enumeration is described as "eleven columns" but the task specs correctly assign **twelve**: task 4 five, task 8 three, task 9 two, task 10 one, task 12 one. The assignment is complete; only the count in the prose is low. Correct it wherever it is restated so a later pass does not go looking for the missing one. |
+| I-33 | `execution-scope.md` 6 | The inventory rule is scoped to registries "the strict path consults" for a Phase 23 family. R-19 is proof that the frame is one step too narrow: it sits on the value-relations path, reached when a Phase 23 **value** flows through a Phase 21/22 family. Restate the rule as *any closed journal registry that a Phase 23 value or Effect reaches, whichever family carries it*, and note the two known entry points - a Phase 23 family on the strict path, and a Phase 23 value inside a retained or live Phase 21/22 family. |
+| I-34 | `public-interface.md` 2 | The renamed `ErrorSubjectType` row says "Retain the Phase 21/22 set", and cites `internal/cli/codes.go:88` as the implementation. The two have drifted: the documented Phase 21 set has 22 values including `actor`, `idempotency`, `obligation`, `path` and `repository`; the implemented `SubjectType` has 19 and adds `stop` and `attention`. The rename is still right and the instruction to add six is unambiguous and monotonic, but say which set is authoritative so a Developer reconciling them knows which way to move. |
+
+### 15.7 Blocker Candidates
+
+**None.** R-19 adds an existing file to five task scopes that already own the
+identical change in the sibling file under R-08, and the 30-name set it must
+reach is already accepted in `public-interface.md` 4.1 and asserted by VAL-067.
+It changes no protected definition, command, threshold, budget, tolerance,
+assertion semantics, accepted status, public value, or policy. Tech Lead
+planning authority, as R-08, R-09, R-14, R-16, R-17 and R-18 were. No `ESC`
+identity is requested and none is minted here.
+
+### 15.8 Readiness Verdict
+
+**NOT READY.**
+
+**Everything DEC-232 did is confirmed correct.** All three Tech Lead findings
+survive independent source verification: `validateCurrentUpdate` is a real
+unowned hard-failure registry and tasks 8 and 12 are the complete owner set with
+no third Phase 23 update Effect; the `validateCurrentJSON` column switch is
+correctly described rather than reassigned, and its twelve columns are all
+assigned; and the I-17 misclassification was real, with all four amended
+families verified at `current_event_catalog.go:82,83,88,89` inside
+`retainedCurrentRules`. The `ErrorSubjectType` reading is right on two
+independent decisive tests, `JudgmentSubject` adds no accepted value, and the
+stronger conclusion - that no widening of `Subject` is possible because the two
+domains are not nested - is better than the R-18 remedy I proposed. Per-family
+completeness closes for all nine families, task 5's recorded negative holds, and
+R-17's owner derivation re-derives to task 4 alone. The contract is untouched at
+79 rows with an empty diff, and no product file changed.
+
+What blocks Ready is **R-19**, a seventh registry, and the honest prior in the
+brief's own section 7 was right. `current_event_value_relations.go` holds a
+byte-identical second copy of the 23-name capability allowlist that R-08 already
+assigns to tasks 4, 5, 8, 9 and 10 in `internal/workflow/activation.go`, and no
+document names the journal copy. All seven Phase 23 grant actions are rejected
+by it, proven by execution with two passing controls. It is a hard blocker
+before task 4's first Review, because a Phase 23 leaf's capability reaches the
+journal only inside an Actor profile staged through Kit Activation.
+
+It was missed twice because it is structurally different from the previous six:
+it is reached by a Phase 23 **value** travelling through a live Phase 21/22
+**family**, not by a Phase 23 family on the strict path. That is why I-33 asks
+for the inventory rule to be widened rather than only extended by one row - the
+frame, not just the list, was incomplete.
+
+R-19 is bounded and decision-free. No assertion was weakened to reach this
+verdict, and no `VAL-NNN` was narrowed, re-scoped, or restated to reach Ready.
