@@ -1379,3 +1379,473 @@ frame, not just the list, was incomplete.
 
 R-19 is bounded and decision-free. No assertion was weakened to reach this
 verdict, and no `VAL-NNN` was narrowed, re-scoped, or restated to reach Ready.
+
+## 17. Readiness Confirmation - DEC-233 And ESC-23-001 (2026-09-19)
+
+Sixth confirmation pass, fresh session, against the Tech Lead brief for DEC-233
+(`tl-qa-confirmation-brief.md`, rewritten for this pass). Base: branch
+`phase-23` at `c27c1f4`, `git status --porcelain` empty before and after.
+Sections 12 through 16 are not reopened; the contract is untouched at **79**
+rows. Every measurement below was taken with `go test -overlay`, so no product
+file was written at any point - re-verified clean after the last probe.
+
+**Verdict: READY EXCEPT ESC-23-001.** I agree that tasks 1-8 are unaffected and
+may dispatch. ESC-23-001 is verified in every particular, is *stronger* than
+recorded in two respects, and its recommendation is right in direction but wrong
+in one stated detail that would destroy the remedy's whole benefit if a
+Developer implemented it literally - R-20 below.
+
+### 17.1 The Four Asks, In One Line Each
+
+| Ask | Result |
+|---|---|
+| 1. ESC-23-001 hard, and argue with Option A | **Confirmed, and extended.** Both consequences reproduced end to end, plus a third the escalation does not record. Option A is materially cheaper than B - measured - but its own sentence has two readings and only one works (R-20) |
+| 2. Scope of the block | **Confirmed.** All eighteen specs checked: no task before 9 touches the `Condition` shape or struct, and task 6 explicitly forbids it. Tasks 9, 10, 11 held; 12-18 by ordering only, and task 12 is substantively independent |
+| 3. R-19's application and the two other findings | **Confirmed in full.** Both allowlist copies verified at 23, the seven owners' names and the 30 total re-derived, five task specs and row 7 correct, task 18's audit is now a real parity assertion. Profile-14 exclusion and row 8 both verified by execution |
+| 4. Inventory completeness on the widened frame | **A ninth item exists**, of the fails-open kind, like row 8: the journal's budget-fact validation does not reach any Phase 23 family. Recorded as R-21. It blocks no task. Also one validation **void** (R-22) and one new positive |
+
+### 17.2 ESC-23-001 - Evidence Verification
+
+Method for the replay arm: a real Phase 22 `stop.raised` Event was committed
+through `journal.WithLock` / `PrepareEvent` / `CommitEvent` into a pristine
+workspace by the **baseline** binary, and the resulting journal bytes were
+recorded. Those same bytes were then replayed through `journal.ReplayJournal`
+against a fresh pristine workspace under three different binaries. The recorded
+line carries
+`{"type":"work-ended","subject":{"type":"run","id":"RUN-1"},"budget_name":null,"capability_id":null}`.
+
+| Claim | Method | Result | Evidence |
+|---|---|---|---|
+| `validateCurrentShape` requires an exact field count | source | **PASS - citation exact** | `current_event_value_types.go:112` is `if !ok || len(object) != len(fields)` |
+| A pre-widening Condition is rejected by the widened shape | overlay execution | **PASS** | all three Phase 22 forms (`budget-observed`, `executor-terminated`, `capability-available`) return `Condition: closed object has wrong shape`; all three are accepted on the baseline |
+| `ReplayJournal` revalidates historical Events against current shapes | **end-to-end execution**, not source reading | **PASS - stronger than recorded** | baseline replay of the recorded journal: `REBUILD OK: events=1 stops=1 attention=1`. Widened replay of the **same bytes**: `malformed journal entry at .fid/journal/2026-09-19.jsonl:1: project event "EVT-20260919-000002": current Event stop.raised stops/insert: invalid JSON column "resolution_condition_json": Condition: closed object has wrong shape`. Note the failure class: a `CorruptJournalError`, so the operator is told the journal is **malformed**, not that the binary is too new |
+| There is genuinely no upgrade hook | source | **PASS** | `mustNewDefaultUpgradeChain` (`upgrade.go:97-118`) registers exactly two upgraders, `V1->V1` and `V2->V2`, both `func(event Event) (Event, error) { return event, nil }`. `CurrentEventSchema` is still `EventSchemaV1` and the chain's current is `EventSchemaV2`. Nothing in the chain can rewrite a payload |
+| `attentionSemanticKey` hashes the whole struct | source + execution | **PASS** | `stop.go:422` marshals `map[string]any{"subject":…,"code":…,"resolution_condition":condition}` through `MarshalCanonicalJSON`, which round-trips `json.Marshal` and so preserves explicit nulls |
+| Every stored `semantic_key` stops matching | measurement | **PASS** | three representative Conditions, baseline -> widened: `da2f2a11ead9bd44…` -> `d9858e43e38ffd7f…`; `38cda009a5f63497…` -> `5c48f0fa952948db…`; `28607d77c9f106d8…` -> `d263b7114f7965e3…`. The canonical form gains `"decision_class":null,"finding_id":null,"outcome_class":null` unconditionally, so the shift is **input-independent**: no Condition keeps its key |
+| An identical Stop raises a duplicate Attention | **end-to-end execution across two binaries sharing one workspace** | **PASS** | baseline raise: `stop=STP-c6d8fd attention=ATT-e01a1c key=4ba154fa… openAttention=1`. Second identical raise under the baseline (control): `stop=STP-8a72e2 attention=ATT-e01a1c openAttention=1` - joins the open Attention. Second identical raise under the widened struct: `stop=STP-9286c4 attention=ATT-49846c key=a97a66c8… openAttention=**2**`, with both keys stored side by side |
+
+Two corrections to the record, neither weakening the conclusion:
+
+1. **The escalation names one strict reach point; there are four.** It cites
+   `stops.resolution_condition_json` (`current_event_json.go:27`, not `:26`).
+   `Condition` is also reached as a nested field of the `Stop` value, which
+   `validateCurrentResultJSON` (`current_event_json.go:134-141`) requires in the
+   typed result of `stop.raised` (`stop:Stop attention:Attention`),
+   `stop.resolved` (`stop:Stop`), and `run.budget-observed`
+   (`stops:[]Stop attention:[]Attention`). Measured: a Phase 22 `Stop` value
+   carrying a four-field Condition is rejected under the widened shape with
+   `Stop: resolution_condition: Condition: closed object has wrong shape`. This
+   matters only for Option B, whose upgrader must therefore rewrite Conditions in
+   **four** places rather than one.
+2. **`openAttentionBySemanticKey` does not exist.** The function is
+   `loadOpenAttentionByKey` at `stop.go:557` (`:558` is its `SELECT`), called
+   from `stop.go:172`, `budget.go:253`, and `activation_recovery.go:334`. Its
+   predicate is a literal `WHERE semantic_key = ? AND status = 'open'`, so the
+   reasoning is right; the name in an escalation the Human will read should be
+   the real one.
+
+**A third consequence, not in the escalation, measured.** `StopRaiseRequest`
+(`stop.go:72-79`) embeds `ResolutionCondition Condition`, and `stopDigest`
+(`stop.go:431`) canonicalises the whole request into
+`idempotency_results.request_digest`. Widening the struct therefore changes the
+request digest of every `stop.raise`. Measured on a workspace whose Stop was
+raised by the baseline binary: replaying the **same idempotency key** under the
+widened struct returns
+`idempotency conflict for stop.raise:project-39a67eeb55ab37a49660127379b9876d key "retained-test-1"`
+instead of the stored result. A retry that was idempotent before the upgrade
+becomes a hard refusal after it. This strengthens the escalation and it enlarges
+Option B, whose migration must recompute `request_digest` as well as
+`semantic_key`.
+
+### 17.3 Arguing The Recommendation
+
+**I agree with Option A, and I disagree with three things about how it is
+stated.** Option A was implemented under overlay - per-type Condition shapes
+keyed on `type` in the catalog, one dispatch branch, `omitempty` on the three new
+fields - and measured.
+
+| Measurement | Result |
+|---|---|
+| The recorded pre-widening journal replays under Option A | **`REBUILD OK: events=1 stops=1 attention=1`** - the identical bytes that fail under the plain widening |
+| The three Phase 22 semantic keys under Option A | `da2f2a11ead9bd44…`, `38cda009a5f63497…`, `28607d77c9f106d8…` - **byte-identical to the baseline**. Both recorded consequences and the third one above are eliminated |
+| Exclusivity becomes structural | wrong field -> `Condition: missing required field "outcome_class"`; own field null -> `Condition: outcome_class: invalid ID`; two fields -> `Condition: closed object has wrong shape`; own field only -> accepted. **All four cases inventory row 8 leaves open are closed by the shape itself** |
+| Option A against the shipped corpus | `internal/journal`, `internal/workflow`, `internal/export` all `ok` (7.7 s / 32.8 s / 13.2 s), **zero failures, zero fixture edits** |
+| The accepted present-and-null encoding against the shipped corpus | **11 failing tests and subtests** across 7 top-level tests, all Condition-carrying, before any Option B machinery is written: `TestExecutionBlockedEventProjectsIdenticallyLiveAndReplay`, `TestActivationRecoveryEventsProjectIdenticallyLiveAndReplay/activation.recovery-selected`, `TestCurrentEventRejectsConditionalBindingCorruption` (3 cases x live/replay), `TestTerminalSuccessEvaluationIncludesEnvelopeStop`, `TestRecoverRunRejectsApplicableStopWithoutEffects`, `TestStopAndAttentionListsFilterLimitAndRemainReadOnly`, `TestEquivalentStopsShareAttentionButKeepDistinctFacts`. `internal/export` is unaffected, consistent with positive finding 5 |
+| Option A's size | 16 lines of catalog map plus a 15-line dispatch branch |
+
+So on cost, Option A wins decisively, and by more than the escalation claims: it
+also **removes** work, because the exclusivity rule inventory row 8 assigns to
+tasks 9, 10, and 11 becomes structural and those three relation edits disappear.
+Option B keeps row 8's work *and* adds a V3 bump, a four-site payload upgrader,
+two column recomputes in migration 0017, a mid-life Attention key rule, and the
+11 fixture repairs above.
+
+**Three things about Option A are wrong or missing as written.**
+
+1. **"Each new type carries only its own field" is the wrong reading of its own
+   remedy, and it is the reading that breaks it.** With one Go struct there are
+   two ways to read that sentence. (a) `omitempty` on the three *new* fields
+   only: a new type marshals `{type, subject, budget_name:null,
+   capability_id:null, <own field>}` - five fields - and the six Phase 22 types
+   are untouched. (b) A new type carries *literally* only its own field, which
+   requires `omitempty` on `budget_name` and `capability_id` too. Reading (b) was
+   measured: the three keys become `ef2f1a6a1a938e0a…`, `cf865c69f70fcdd5…`,
+   `9fb954bc97298c2a…` - **every one different from the baseline**, because
+   `work-ended` drops from `{"budget_name":null,"capability_id":null,…}` to
+   `{"subject":…,"type":"work-ended"}`. Reading (b) reproduces exactly the
+   breakage Option A exists to prevent. Only reading (a) delivers the promised
+   byte-identity, and every measurement in the table above used (a). The
+   escalation must say (a) explicitly before the Human chooses, because a
+   Developer given the current sentence can reasonably implement (b).
+2. **Option A touches a file no task owns, and the escalation does not name
+   it.** The analogy to `currentStopDetailShapes` is sound in spirit but differs
+   in one way that costs a file: details shapes are selected at the call site
+   from the **row's** `code` column (`current_event_json.go:35-40`), whereas a
+   Condition's discriminant lives **inside the value**, and the value is also
+   reached generically as a field of `Stop` through
+   `if shape, ok := currentValueShapes[kind]; ok`
+   (`current_event_value_types.go:38`). Per-type selection therefore requires a
+   `Condition` branch in `validateCurrentValue` - that is, in
+   `current_event_value_types.go`, which the inventory names only as a *reader*
+   of `currentStopDetailShapes` and which no task's file scope lists. Under the
+   phase's own ownership discipline that file must join the scope of whichever
+   task implements the remedy.
+3. **A naive implementation of that branch panics on adversarial input.**
+   Selecting the shape requires reading `object["type"]` **before**
+   `validateCurrentShape` has established it is a string. Measured: the baseline
+   dispatch degrades gracefully -
+   `Condition: type: invalid closed enum =executor-terminated,…` - while the
+   obvious `object["type"].(string)` panics with
+   `interface conversion: interface {} is int, not string`. This code validates
+   untrusted journal and archive bytes during replay and `import`, so the lookup
+   must use a checked assertion and return the ordinary rejection. One line of
+   implementation, worth one sentence in the decision, because a panic here is a
+   crash on a crafted archive.
+
+**Option C's rejection is sound, and stronger than stated.** The escalation
+rejects C because two human-outcome Attentions of different classes would
+collide on one semantic key. Verified: the key is derived from
+`(subject, code, condition)` only, so with no class field in the Condition two
+Stops for different outcome classes on the same Envelope produce the same key,
+`loadOpenAttentionByKey` joins them to one Attention, and resolving one class
+closes the Attention covering both. The same collision applies a second time to
+`decision-satisfied` and `decision_class`, which C does not mention. C is
+correctly rejected.
+
+**Is B ever preferable?** One honest argument for B: it keeps one shape per value
+kind, which is the pattern every other entry in `currentValueShapes` follows, and
+it preserves the accepted section 2 row verbatim. And one point in B's favour on
+feasibility that the escalation does not claim: `ReplayJournal` hashes the
+**stored** Event before upgrading it (`replay.go:141` then `:147`), so a
+payload-rewriting upgrader does not break hash chains. B is implementable. It is
+simply four to five times the work, in the two tasks already carrying the most
+migration risk, for an encoding difference that no consumer has been shown to
+need.
+
+### 17.4 What The Harm Actually Is - The One Place I Think The Record Overstates
+
+The escalation says "no workspace holding a pre-widening Stop can rebuild". The
+mechanism is exactly as described; the **population** deserves a sentence,
+because it changes what the Human is deciding.
+
+`schema.md` section 1 states that task 1's edits to the shipped `0013` and `0015`
+files are "a deliberate pre-adoption baseline replacement requiring fresh init
+and rebuild; it is not an upgrade of old fid data". Migrations run under
+`golang-migrate` (`internal/db/migrate.go:8`), which records only version and
+dirty state and never re-runs or checksums an applied file, so an existing
+workspace keeps its original `stops.code` and `work_claims.mode` CHECK text while
+reporting schema 17. Under that accepted policy there is no released population
+of Phase 22 workspaces expected to run Phase 23 features.
+
+That does **not** dissolve ESC-23-001, for two reasons:
+
+1. **The incompatibility is in-phase, not only post-release.** The widening lands
+   at tasks 9-11, and task 6 raises `review-rework-exhausted` Stops carrying
+   ordinary `budget-observed` Conditions. Any workspace - developer, gate, or
+   fixture - whose journal was written by a tasks 1-8 binary and is rebuilt by a
+   task 9+ binary hits the measured `CorruptJournalError`. That is precisely the
+   TL's "VAL-004 and VAL-064 at risk at tasks 15/16", and it is a real risk
+   rather than a theoretical one. One mitigating fact, checked: **no** pinned
+   journal fixture in `testdata/` contains a `resolution_condition` today, so the
+   exposure is live workspaces and any fixture task 6 chooses to pin.
+2. **The Attention and idempotency consequences do not need a rebuild at all.**
+   They are stored-column comparisons. Any workspace carrying an open Attention
+   or a live `stop.raise` idempotency record across the upgrade is affected
+   whether or not it ever replays.
+
+So the decision the Human is making is better framed as "what encoding do we want
+for V1, given that either choice costs us in-phase churn" than as "how do we
+protect existing user data". Framed that way Option B's migration machinery is
+work for a population the accepted policy says does not exist, while Option A's
+cost is 31 lines and buys the row 8 invariant. That strengthens the
+recommendation; it does not change it.
+
+### 17.5 Scope Of The Block - Confirmed
+
+All eighteen task specs searched for `Condition`, `resolution_condition`,
+`semantic_key`, `attentionSemanticKey`, `stop.go`, and `currentValueShapes`.
+
+| Task | Touches the `Condition` shape or struct? | Evidence |
+|---|---|---|
+| 1 | No | no match; its journal work is `current_event_columns.go`, `current_event_catalog.go`, the 0013/0015 CHECK text, and the `semanticPhase22Events` addition |
+| 2 | No | no match |
+| 3 | No | widens `currentValueShapes["Claim"]`'s `mode` enum only (`task-3.md:40`) - a closed-enum widening, monotonic, field count unchanged |
+| 4 | No | adds `Finding`/`FindingDisposition`/`JudgmentSubject` shapes and asserts `Subject` byte-identical; `Condition` appears only as read context (`task-4.md:106,111,166`) |
+| 5 | No | no match |
+| **6** | **No - explicitly forbidden** | `task-6.md:72-74`: "**Add no Condition type here**: the resolution condition is the retained `budget-observed`." Its `current_event_value_catalog.go` edits are a new `currentStopDetailShapes` key and the `Budget`/`ImmutableBudget` enum widenings, all monotonic |
+| 7 | No | no match |
+| 8 | No | adds `Concern`/`Deviation` shapes, reuses `JudgmentSubject`, asserts `Subject` unchanged |
+| 9, 10, 11 | **Yes** | each adds one field to the struct, to `currentValueShapes["Condition"]`, and to `validateCondition`, and each already carries "**Read ESC-23-001 before widening the shape at all**" |
+| 12-18 | No | no match in any of the seven |
+
+**I agree: tasks 1-8 are unaffected and the block is exactly tasks 9, 10, 11.**
+Two notes. Task 6 co-edits `current_event_value_catalog.go`, the file Option A
+would extend, but on unrelated lines - serial co-editing, not a conflict. And
+tasks 12-18 contain no textual dependency on tasks 9-11 at all; task 12
+(Requirement References) is substantively independent of the `Condition` shape,
+so if the Human's decision takes time, task 12 is available out of order at the
+Runner's discretion. Tasks 13-18 depend substantively on the features, not on the
+shape.
+
+Independently re-derived: every other section 2 amendment is monotonic. `Claim`,
+`Budget`, `ImmutableBudget`, and `StopCode` are closed-enum or map-key additions
+on live families; `Obligation`, `ObligationInput`, `Envelope`, `Evidence`, and
+`Evaluation` land on `retainedCurrentRules` families or on tables absent from
+`currentEventTables`, and the retained branch returns at
+`current_event_validation.go:64` - verified as the exact line - before any value
+validation; `ErrorSubjectType`, `Resume`, and `TrustSource` reach no journal
+registry. **`Condition` is the only field-adding widening of a live journal value
+shape in the phase.** Confirmed.
+
+**New positive.** `ActivityEvent` is the only section 2 row that *removes*
+names, which is the other non-monotonic direction and was not checked anywhere.
+It is safe: `internal/activity/activity.go` holds no closed set and only reads
+rows, `applyActivity` (`project_effects.go:49-62`) normalizes and inserts with no
+vocabulary check, and `activity_log.event` is plain `TEXT NOT NULL` with no CHECK
+(`migrations/0002_v01_tables.up.sql:172-181`). Removing the four V1 names at task
+15 cannot break replay, and historical rows stay readable and filterable. Record
+this as a positive so a later pass does not re-derive it.
+
+### 17.6 R-19's Application - Confirmed
+
+| Check | Result | Evidence |
+|---|---|---|
+| Both copies exist and are the same 23 names | PASS | `sortedUniqueCapabilities` (`activation.go:831-832`, a 23-key `map[string]bool`) and `const actions` (`current_event_value_relations.go:63`, a 23-member comma string). Parsed and compared: identical sets, both sorted |
+| There is no **third** copy | PASS | `sortedUniqueEnvelopeActions` (`envelope.go:540-552`) delegates to `sortedUniqueCapabilities([]string{action})`; a repository-wide search for `run.force-recover` as a list member returns exactly the two copies. Row 7's "second copy" is exact |
+| 23 -> 30 is the right split | PASS | `public-interface.md` 4.1 lists exactly seven added names across five owners: task 4 `review.record`; task 5 `finding.address`; task 8 `concern.record`, `concern.dispose`, `deviation.record`; task 9 `decision.record-reference`; task 10 `human-outcome.record`. 23 + 7 = 30, and `requirement.record-reference` / `requirement.link` are correctly excluded as operation IDs |
+| All five task specs name the journal file | PASS | `task-4.md:63`, `task-5.md:58`, `task-8.md:76`, `task-9.md:63`, `task-10.md:76`, each citing `:63`, each naming its own action(s), each requiring "both copies sorted and identical" in one change, each stating the `activation.component-staged` reach |
+| Inventory row 7 | PASS | `execution-scope.md` section 6 row 7 with the right file, message, and owner set, plus the narrative paragraph. `activation.component-staged` verified in `currentEventRules` (`current_event_catalog.go:28`) and behind no fence; `[]ActorProfile` selection verified at `current_event_json.go:52-63` |
+| Task 18's VAL-067 audit | PASS - my follow-on applied as asked | `task-18.md` now requires the audit to "Assert set equality between the two copies directly, not each against a literal", with a matching acceptance criterion. This is deterministic structural conformance, which is the right evidence class for a parity assertion |
+| Contract row VAL-067 unchanged | PASS | the contract file's last commit is `8cd613e`, two dispositions ago; no VAL row was touched to accommodate this |
+
+### 17.7 The Tech Lead's Two Other Findings - Confirmed By Execution
+
+**Finding 1, the missing profile-14 exclusion.** The boolean reading is exactly
+right. `validateEvent` (`archive_semantics.go:323`) rejects on
+`!found || (validator.profile == 14 && semanticPhase22Events[event.EventType])`
+at `:328` - both citations exact. Once task 1 mirrors the nine families into
+`semanticEventRules`, `found` is true at every profile, and the profile-14 guard
+only excludes the 14 names currently in `semanticPhase22Events`
+(`archive_semantics_catalog.go:85`), so a legacy projection-14 archive carrying
+`review.recorded` would pass this check. The claim that VAL-065 is unaffected is
+also right, and for a sharper reason than stated: the legacy branch at
+`archive_validation.go:127-129` *deliberately admits* `ProjectionSchema == 14`
+archives, so the manifest check at `:130` never sees them - which is precisely
+why `semanticPhase22Events` has to do the work. Task 1 is the right owner and the
+addition needs no Event. **PASS.** One gap, I-35 below: the addition has no
+acceptance criterion and no VAL row.
+
+**Finding 2, the `Condition` relation fails open.** Reproduced exactly, with the
+shape widened under overlay and the tree untouched:
+
+| Condition | Outcome |
+|---|---|
+| `human-outcome-recorded` with all three new fields non-null | **ACCEPTED** |
+| `human-outcome-recorded` with none of them non-null | **ACCEPTED** |
+| `decision-satisfied` carrying `outcome_class` instead of `decision_class` | **ACCEPTED** |
+| Phase 22 control: `budget-observed` with a null `budget_name` | REJECTED `condition nullable binding mismatch` |
+
+Row 8 is real, it fails open, it blocks nothing, and it is the correct class of
+finding. Its contract coverage exists and is correctly placed: **VAL-078**
+already requires "closed-schema rejection of a Condition carrying a second
+non-null field or none" with the fail criterion "a Condition with two or zero
+non-null fields is stored", owned by task 11. Note for the disposition of
+ESC-23-001: if the Human chooses Option A, row 8's assigned work disappears
+because the shape enforces it, and VAL-078's evidence becomes shape rejection
+rather than relation rejection. The row should then be restated, not deleted.
+
+### 17.8 Inventory Completeness On The Widened Frame
+
+I walked the frame's second entry point the way the brief asked: for every value
+in `public-interface.md` section 2, which live Phase 21/22 family carries it, and
+what does that family's path validate.
+
+| Section 2 value | Carrier | What validates it | Owner / result |
+|---|---|---|---|
+| `ErrorSubjectType` | none - CLI failure envelope | `internal/cli/codes.go` only | no journal reach. 19 implemented constants verified at `codes.go:89-108`; +6 = 25 |
+| `ObligationInput`, `Obligation`, `Envelope` | `envelope.created` / `envelope.activated` (**retained**) | retained branch returns at `current_event_validation.go:64`; `work_envelopes` and `envelope_obligations` are absent from `currentEventTables` | no journal registry |
+| `Evidence`, `Evaluation` | `evidence.linked` (**retained**); evaluations are a read model | same; `evidence_records` absent from `currentEventTables` | no journal registry |
+| `Claim` | `run.recovered`, `run.abandoned`, `claim.expired` (**live**) | `currentValueShapes["Claim"]` | task 3 - enum widening |
+| `Budget`, `ImmutableBudget` | `run.started`, `run.budget-observed` (**live**) | `currentValueShapes` + `run_budget_bindings.budget_json` as `ImmutableBudget` | task 6 - enum widening |
+| `Condition` | `stop.raised`, `stop.resolved`, `attention.resolved`, `run.budget-observed`, `activation.recovery-*` (**live**) | `currentValueShapes["Condition"]` + row 8 relation, via **four** reach points (17.2) | tasks 9/10/11 - **ESC-23-001** |
+| `StopCode`, StopDetails | same live families | `currentStopDetailShapes`, which `StopCode` itself keys on (`current_event_value_types.go:89`) | tasks 6/9/10/11 - map-key additions |
+| Stop blocked actions | same | `validateCurrentBlockedActions` (`current_event_json.go:117`) closes six names; both names the new codes use are already members; the `budget-` prefix relation is at `:77` | no entry needed - positive holds |
+| `Resume` | none - CLI output | - | no journal reach |
+| `TrustSource` | `Receipt.trust_source:=fid-executed` is the only journal enum, and no Phase 23 receipt carries a new source | - | no entry needed |
+| `ActivityEvent` | `activity_log` writes on retained issue/link families | nothing - free text, no CHECK | no entry needed; **new positive, 17.5** |
+
+**R-21, the ninth item.** It is the fails-open kind, like row 8.
+`validateCurrentBudgetFacts` (`current_event_budget_values.go:34-50`) switches on
+`event.EventType` over exactly `run.budget-observed`, `run.execution-blocked`,
+`run.recovered`, `gate.execution-started`, `gate.receipt-recorded`, and returns
+`nil` at its `default`. Task 6 makes a **Phase 23 value** - a `review-cycles`
+budget sample - reachable inside `review.recorded`, a family that will be in
+`currentEventRules` after task 1, so `validateCurrentAppliedResults` will call
+this function for it. Measured, with a `review-cycles` binding seeded and an
+Event carrying a `budget_samples` insert:
+
+```
+BUDGET-PROBE review.recorded            -> returned nil - budget facts NOT validated
+BUDGET-PROBE finding.addressed          -> returned nil - budget facts NOT validated
+... all nine Phase 23 families identical ...
+BUDGET-PROBE run.budget-observed        -> reached validation: current Event: missing reference to runs map[id:RUN-1]
+```
+
+So the journal-side sample/state consistency, automatic-charge rule
+(`validateCurrentAutomaticCharge`, `:91-93`, itself scoped to three families),
+and exhaustion-Stop derivation that Phase 22 enforces for `attempts` and
+`interventions` do **not** reach Phase 23's `review-cycles` charge. VAL-027 and
+VAL-029 are therefore producer-side assertions only. This blocks nothing and is
+not a dispatch blocker - but the inventory's own closing rule says a registry
+that "silently fails to constrain a Phase 23 value" belongs on the list, and a
+Developer at task 6 reading the inventory today finds no row for it. Requested in
+R-21.
+
+**R-22, a validation void rather than a missing registry.** All four DEC-224
+raising sequences were checked. Three of them - `envelope.activated`,
+`evidence.linked`, `artifact.availability-observed` - are in
+`retainedCurrentRules`, and both journal checks exit early for retained
+families: `validateCurrentEvent` returns at `current_event_validation.go:64`, and
+`validateCurrentAppliedResults` returns at
+`current_event_result_projection.go:11-13`. Measured, in two arms:
+
+| Arm | Result |
+|---|---|
+| Today's catalog | all three reject the readiness Stop row: `current Event <family>: unrelated domain Effect` - which is exactly why DEC-224 assigns the effect rows |
+| With DEC-224's rows added (tasks 9/10's change) | **all three ACCEPT** a `human-outcome-required` Stop whose `resolution_condition_json` is `{"type":"human-outcome-recorded","subject":{…},"nonsense":true}` and whose `details_json` is `{"totally":"wrong"}` |
+
+Only the `stops.code` CHECK and `json_valid()` constrain such a row. Two
+consequences worth recording. The journal-side grammar tasks 9 and 10 add is
+**not exercised by the raising path they own** - it first binds when the Stop is
+read back through a live family, and task 9's `protected-decision-required` Stop
+is raised only at `envelope.activated` (VAL-041), so it has no strict raising
+path at all. That undercuts the inventory's ownership rationale - "the task's own
+first successful Event proves them together" - for exactly these rows, and it
+means a Developer could omit the `currentStopDetailShapes` entry, watch the raise
+tests pass, and fail later at task 11 or at tasks 15/16, with the cause outside
+the failing task. The remedy is documentation, not code: name the proving Event.
+
+Per-value and per-family completeness otherwise closes, and all six DEC-233
+positives were re-derived and hold, with the two anchor corrections in I-36.
+
+### 17.9 Mechanical Re-checks
+
+| Check | Result |
+|---|---|
+| Contract row count | **PASS** - 79 rows, 79 distinct `VAL-NNN`, no duplicates |
+| No VAL renumbered or reworded | **PASS** - `validation-contract.md` has not been committed since `8cd613e`, two dispositions before this one |
+| No product file touched | **PASS** - all 15 files in `c27c1f4` are under `project-docs/docs/`; `git diff --name-only HEAD~3 HEAD` outside `project-docs/` is empty |
+| Working tree | **PASS** - `git status --porcelain` empty before and after every overlay probe; no `zz_qa_*` file exists in the tree |
+| The one `public-interface.md` edit adds and removes no name | **PASS** - one row replaced, `ErrorSubjectType`; the six added names are unchanged; the edit only re-seats authority on the implementation and records the 19 -> 25 count. 19 implemented `SubjectType` constants counted at `codes.go:89-108`, and `codes.go:88` is the `type SubjectType string` declaration the row cites |
+| I-32 applied | **PASS** - twelve columns in DEC-232's R-17c paragraph, assignment unchanged |
+| I-34 applied | **PASS** - implementation authoritative, prose set recorded as drifted, reconciliation a wrap-up spec-sync item |
+| No protected definition, command, threshold, or budget changed | **PASS** |
+| Escalation mirrored | **PASS** - `tl_escalations_current.md` and `phase_brief.md` both carry ESC-23-001 with the same scope and recommendation as `tl-escalations.md` |
+
+### 17.10 Revisions Requested From The Tech Lead (sixth pass)
+
+| ID | Severity | Subject | Request |
+|---|---|---|---|
+| R-20 | M | ESC-23-001, Option A and Option B | Three amendments to the escalation before the Human reads it, all measured in 17.3: (i) state Option A's encoding unambiguously as `omitempty` on the **three new fields only**, with the six Phase 22 types keeping `budget_name` and `capability_id` present-and-null, and say that the alternative reading changes every existing semantic key; (ii) name `internal/journal/current_event_value_types.go` as the file the per-type dispatch requires and say it must join the implementing task's scope, and require a **checked** type assertion because the naive one panics on a non-string discriminant; (iii) correct Option B's cost to four payload sites plus an `idempotency_results.request_digest` recompute plus the 11 named corpus failures. Also fix two citations: the function is `loadOpenAttentionByKey` at `stop.go:557`, and the Condition column case is `current_event_json.go:27` |
+| R-21 | M | `execution-scope.md` section 6 inventory; task 6 | Record the ninth item. `validateCurrentBudgetFacts` (`current_event_budget_values.go:34-50`) returns `nil` at its `default` for all nine Phase 23 families, so the `review-cycles` charge task 6 introduces has no journal-side validation of sample/state consistency, automatic charge, or exhaustion-Stop derivation - measured. Either add it as row 9 with task 6 as owner, or record it as an explicit positive stating that Phase 23 charges are deliberately producer-side only, and say so in task 6 so VAL-027 and VAL-029 evidence is not mistaken for journal-layer proof. Not a dispatch blocker: it fails open |
+| R-22 | M | `execution-scope.md` section 6; tasks 9 and 10 | Record the validation void measured in 17.8 and name the proving Event. Three of DEC-224's four raising families are retained, so the `currentStopDetailShapes` and `Condition` entries tasks 9 and 10 add are not exercised by the raise they own; task 9's `protected-decision-required` has no strict raising path at all. State in both task specs which Event proves those entries, so the entry is not dropped as unnecessary when the raise tests pass green without it. Not a dispatch blocker |
+| R-23 | M | `task-11.md` | VAL-078 is listed in task 11's Validation Contract Coverage and assigned to task 11 by the contract, but **no acceptance criterion cites it** - the criteria cover VAL-047, 048, 049, 050 only. Add the missing criterion, including the closed-schema half (a Condition with two or zero non-null fields is rejected with no Event), phrased to match whichever encoding the Human selects. Bounded and mechanical; task 11 is held by ESC-23-001 in any case |
+
+### 17.11 Improvements (not blocking)
+
+| ID | Subject | Note |
+|---|---|---|
+| I-35 | `task-1.md` | The `semanticPhase22Events` addition has no acceptance criterion and no VAL row, and VAL-065 correctly does not cover it (the legacy branch admits profile 14 by design). Add a criterion with no new VAL ID - "a crafted legacy projection-14 archive carrying `review.recorded` is rejected" - so the defensive addition is asserted rather than assumed |
+| I-36 | anchor drift | Five citations are off by one or wrong, all in task-facing text: inventory row 8 says `current_event_value_relations.go:48`, actual `:49`; positive 2 says `:76`, actual `:77`; positive 3 says `current_event_value_types.go:88`, actual `:89`; ESC-23-001 says `current_event_json.go:26`, actual `:27`; ESC-23-001 names `openAttentionBySemanticKey`, actual `loadOpenAttentionByKey` at `stop.go:557`. Exact anchors verified correct: `current_event_value_types.go:112`, `current_event_value_relations.go:63`, `stop.go:422`, `replay.go:153`, `project_effects.go:11,20`, `upgrade.go:50`, `current_event_validation.go:26,64`, `archive_semantics.go:328`, `archive_semantics_catalog.go:85`, `archive_validation.go:130`, `current_event_value_catalog.go:6`, `activation.go:832` |
+| I-37 | `schema.md` section 1 boundary | Under `golang-migrate` an applied migration is never re-run or checksummed, so a workspace migrated in place to 17 keeps the original seven-member `stops.code` CHECK and `mode = 'mutation'` while reporting schema 17, and a fresh init at 17 does not. The accepted policy ("fresh init, not an upgrade of old fid data") makes that intentional, and DEC-223 is not reopened - but the divergence is silent, and the first Phase 23 Stop on such a workspace fails with a CHECK-constraint error rather than a re-init instruction. Worth one recorded sentence, and it bounds ESC-23-001's harm population (17.4) |
+| I-38 | `task-10.md:119` | "so tasks 11 extend a mapping" - grammar slip in text a Developer will read |
+
+### 17.12 Blocker Candidates
+
+One, and it is not mine to allocate: **ESC-23-001**, already raised by the Tech
+Lead and awaiting the Human. Category: accepted public-value encoding with
+durable-replay, Attention-identity, and idempotency-identity consequences.
+Evidence: 17.2 and 17.3 above, all reproduced. Authority boundary: the remedy
+changes what an accepted Phase 23 value looks like on the wire, which is Human
+authority, not Tech Lead planning authority. Requested action: choose A, B, or
+another route, with R-20's three amendments applied to the options first so the
+choice is made on correct costs.
+
+I raise **no new blocker candidate**. R-20 through R-23 are bounded and
+decision-free, and none of them holds a task that ESC-23-001 does not already
+hold: R-20 is an amendment to a record the Human has not yet acted on, R-21
+concerns a registry that fails open, R-22 is documentation for two already-held
+tasks, and R-23 is one missing checkbox in a held task.
+
+### 17.13 Readiness Verdict
+
+**READY EXCEPT ESC-23-001.**
+
+**Tasks 1-8 are unaffected and may dispatch.** I checked all eighteen specs, not
+only the three the escalation names: no task before 9 touches the `Condition`
+shape or struct, and task 6 - the one that comes closest, because it owns
+`internal/workflow/stop.go`'s closed registries and edits the same catalog file -
+explicitly forbids adding a Condition type and uses the retained
+`budget-observed` condition. Tasks 12-18 are held by ordering alone, and task 12
+is substantively independent if the Runner wants work available while the Human
+decides.
+
+**Everything DEC-233 did is confirmed correct.** R-19's application is right in
+both copies, in all five task specs, in inventory row 7, and in task 18's audit,
+which is now a genuine two-copy parity assertion rather than two comparisons
+against a literal. The `semanticPhase22Events` boolean reading is right and task
+1 is the right owner. Row 8 is real, fails open, and already has contract
+coverage in VAL-078. I-32 and I-34 are applied as accepted, the contract is
+untouched at 79 rows, and no product file changed.
+
+**ESC-23-001 is correctly raised and I would not have dispositioned it either.**
+Its two recorded consequences reproduce end to end - the same recorded journal
+bytes rebuild clean on the baseline and fail as a `CorruptJournalError` under the
+widening, and the same identical Stop joins one Attention on the baseline and
+opens a second one under the widening. There is a third consequence the record
+does not carry: the `stop.raise` idempotency request digest also shifts, turning
+an idempotent retry into a hard conflict. And there is a fourth reach point the
+record does not carry: `Condition` is validated again inside the `Stop` value of
+three families' typed results, which is where Option B's real cost lives.
+
+**On the recommendation: Option A, with its statement corrected.** I implemented
+it and measured it. It replays the pre-widening journal clean, it leaves all
+three measured semantic keys byte-identical, it closes all four of inventory row
+8's open cases structurally - which *removes* work from tasks 9, 10, and 11 - and
+it passes `internal/journal`, `internal/workflow`, and `internal/export` with
+zero failures and zero fixture edits, against 11 failing tests for the accepted
+present-and-null encoding. That is not a marginal difference. But the sentence
+"each new type carries only its own field" has a second reading that requires
+`omitempty` on `budget_name` and `capability_id`, and I measured that reading
+changing every existing key - it reproduces the exact harm Option A exists to
+prevent. Option A is also one file larger than stated and carries a panic hazard
+in the obvious implementation. Those three corrections are R-20, and they matter
+more than the choice itself, because a correctly-chosen option implemented from
+an ambiguous sentence lands in the same place as the wrong choice.
+
+The four findings this pass adds - a ninth fails-open registry, a retained-family
+validation void, one missing acceptance criterion in task 11, and one unasserted
+addition in task 1 - are all bounded, none requires a decision, and none of them
+holds a task that is not already held. No assertion was weakened, no `VAL-NNN`
+was narrowed, re-scoped, or restated, and no product code was read as a
+substitute for running it.
