@@ -1,5 +1,11 @@
 # Phase 23 QA Plan - Review And Human Judgment
 
+> **Latest confirmation: section 20 (Codex QA Lead, 2026-09-20).** DEC-236
+> transcriptions confirmed; task 11 readiness awaits the R-28 contract split.
+> Tasks 1-8 remain dispatchable. Tasks 9-11 stay held until explicit Human
+> clearance to the Phase Runner, regardless of confirmation. Earlier status
+> blocks below are historical; section 20 controls this bounded pass.
+
 > Phase: 23 - Review and Human judgment
 > First pass: 2026-09-15. Readiness refresh: 2026-09-19 (section 12).
 > Readiness confirmation of DEC-229/DEC-230: 2026-09-19 (section 13).
@@ -2703,3 +2709,336 @@ historical records rather than live authority. None holds a task.
 No assertion was weakened, no `VAL-NNN` was narrowed, re-scoped, or restated by
 me, no escalation identifier was allocated, no product file was written, and no
 product code was read as a substitute for running it.
+
+## 20. DEC-236 Confirmation - Tasks 9, 10, And 11 (2026-09-20)
+
+Separate confirmation pass, by **Codex QA Lead**, independently reviewing the
+DEC-236 batch at `a0e8e7ea1111e2a4caa6c39bc6d1e63dee82accf` (parent
+`9b28ba2ca91a8e82cac89fd3bb1af24cfcb5971a`). This is a planning confirmation,
+not the task-11 implementation checkpoint or a phase-end final review.
+
+During this session, commit `3907b7ecd2cb7d0a4404c2dace7ec6fbd5246581`
+appended another QA Lead's section 19. That section is preserved verbatim; this
+record takes the next unused section number. Its runtime results are not this
+session's evidence. Its READY verdict does not address the one-observable
+finding below, and its dispatch wording cannot override the direct Human hold.
+
+**Verdict: NOT READY for task 11 pending R-28, the validation-contract
+granularity refinement below. The DEC-236 transcriptions R-24 through R-27
+PASS.** No additional technical readiness defect was found for tasks 9 or 10.
+Tasks 1-8 remain dispatchable under the existing sequence. **Tasks 9-11 remain
+on hold regardless of this verdict until the Phase Runner receives explicit
+Human clearance.** In particular, task 9 must not begin implementation.
+This direct Human instruction supersedes the batch and current-context
+statements that confirmation alone releases dispatch.
+
+### 20.1 Scope, Authority, And Evidence Limits
+
+Read `AGENTS.md`, `CLAUDE.md`, all four requested current-context documents,
+this plan's governing evidence/checklist sections and pass 7, the validation
+contract's affected rows, `decisions.md` DEC-235/236, `contracts.md` 9-11,
+`public-interface.md` 1-2 and the relevant result/authority rows, `schema.md`
+1 and 6-7, `execution-scope.md` ownership/registry provisions, and the full
+task 9/10/11 specifications and their DEC-236 diff. The older
+`tl-qa-confirmation-brief.md` concerns DEC-233 and is not this pass's authority.
+The DEC-236 batch is the 12-file commit named above; task 18's I-41 work is
+outside this three-task confirmation and receives no new verdict here.
+
+Procedure: `09_AI_WORKFLOW.md` 2.6, 6.1, and 8;
+`08_QUALITY_PLAN.md` 3, 5-8; `qa-plan-template.md`; the
+`.agents/skills/validation-contract/SKILL.md` and
+`.agents/skills/qa-evidence/SKILL.md` procedures. Relevant PRD-AUTH-005/007/008,
+PRD-REV-009, and PRD-HUM-001/002/003 rows and glossary entries were checked.
+
+Coverage rollup for this bounded pass: **YES**, every affected requirement has
+a VAL/evidence route. Tasks 9 and 10 contribute schema evidence to VAL-078;
+task 11 completes it. **NO** to the one-observable check for VAL-078 (R-28).
+Validator and owner remain QA Lead/task 11; both qualifying and non-qualifying
+states are specified. Other phase requirements are not re-audited here.
+
+All evidence below was captured in this session from repository root
+`/home/mark/projects/fid`. File-state PASS means transcription or command
+feasibility, not implemented behavior. The four judgment Condition types are
+still unimplemented, and none of `task-9-done.md`, `task-10-done.md`, or
+`task-11-done.md` exists. Their implementation outcomes remain **UNVERIFIED**.
+No prior pass's runtime results are promoted to a fresh PASS. Full test suites,
+migration rehearsals, wall-time budgets, and Human judgments were not rerun or
+claimed passed in this documentation confirmation.
+
+### 20.2 Confirmation Results
+
+The reproducible file comparison in 20.6 terminated `exit_code: 0` and verifies
+the task blobs against DEC-236, the six names against the live baseline catalog,
+and the before/after assertion and command sets.
+
+| Item | Confirmation | Evidence and remaining implementation obligation |
+|---|---|---|
+| R-24: relation remains reachable | PASS, transcription | Task 9 scope requirement (c) explicitly ends the new dispatch with `return validateCurrentValueRelations("Condition", object)`. Its acceptance criterion covers stray `budget_name` on `work-ended` and `decision-satisfied`, and null on `budget-observed`, with the exact relation error and unchanged projection. Tasks 10 and 11 require report evidence for their own stray-budget cases. Inventory rows 8/10 repeat the reachability requirement. |
+| R-25: six-type byte identity | PASS, transcription | Task 9 acceptance criteria enumerate exactly the six baseline types, each with a journal-layer accepted canonical four-field case and rejected mutation. Pre-change `budget-observed` journal replay and unchanged `attentionSemanticKey` remain required. This is additional evidence to the full gates, not an inference from corpus coverage. |
+| R-27: details registry proof route | PASS, transcription and feasibility | Both tasks cite `TestCurrentClosedValuesRejectIncompleteAndInvalidFacts` at `internal/journal/current_event_closed_values_test.go:76`, the direct `validateCurrentJSON` route, missing-entry `unknown Stop code`, and the projection CHECK dependency. Both permit a real strict `stop.raise` and exclude reliance on their own retained-family raises. |
+| R-26: `review-recorded` has no discriminator | PASS, transcription | `contracts.md` 11, `public-interface.md` 2, task 11 coverage/scope/criteria, and VAL-078 agree: `finding_id` belongs only to `finding-resolved`. The task's literal `review-recorded` row has four fields; all three foreign discriminator keys reject, and the bare form is accepted. The batch changes only VAL-078 among 79 existing IDs. |
+| I-39 / DEC-235 encoding | PASS, transcription | All three specs restrict `omitempty` to their new fields. Task 11 now repeats the retained-field treatment and task 9's six-row compatibility bar. `budget_name` and `capability_id` remain present, with values determined by the Phase 22 binding. |
+| I-40: reason for retaining the relation | PASS, transcription | All three specs and inventory row 8 now explain that accepted rows use `?ID` for both retained fields. `current_event_value_types.go:59` supports `Null`, used in `current_event_value_catalog.go:21`; preserving the relation is the accepted choice, not a grammar limitation. |
+| Task commands and mutation boundary | PASS, file state | All three complete `Exact Commands To Run` sections are byte-identical to the parent commit. All 12 batch paths are documentation; no task 1-8 or product file changed in that batch. |
+
+For R-27 the exact route is
+`validateCurrentJSON -> stops.details_json -> currentStopDetailShapes[code]
+-> validateCurrentShape` (`current_event_json.go:38-45`).
+It does not invoke `validateCurrentBudgetFacts` or require SQLite.
+The existing details test uses `activation.recovery-selected`; the same test
+function uses `stop.raised` for its Condition cases. A new direct details case
+can use `stop.raised` because this function selects by table/column/code,
+not by family. Condition cases must also supply matching
+`subject_type`/`subject_id` in the effect values to pass the row-subject check
+at `current_event_json.go:31-34`.
+
+An appended proof uses a fresh database built from task 1's amended baseline
+migrations (0013/0015, then 0017). Merely migrating an old schema-16 workspace
+to 17 does not widen its already-applied CHECKs; `schema.md` 1 explicitly
+records this. The direct JSON route avoids that dependency. A successful
+own-family raise is not sufficient evidence for either new registry.
+
+### 20.3 QA Evidence Routes - Replaces QA-43 In Section 12.9
+
+Section 12.9's unqualified rejection of "zero non-null fields" is superseded.
+Its use against a valid `review-recorded` Condition would contradict DEC-236.
+The following deterministic checks preserve every accepted case and keep the
+two VAL-078 observables separately inspectable while R-28 awaits TL action.
+They are planned implementation/final-review checks, **not executed behavior
+PASSes in this confirmation**.
+
+| ID | Check | Covers | Owner/window and reproducible evidence |
+|---|---|---|---|
+| QA-43 (replacement) | Each of the four judgment Condition types resolves only on its own qualifying durable fact; a foreign/non-qualifying fact leaves the Stop open and rejects `(qa-lead)` | VAL-078, resolution observable | Task 11; task-11 checkpoint and final QA. Record per-type paired outputs, fact IDs, and before/after Stop state. |
+| QA-46 | Condition discriminator membership follows the four-row table below, with accepted canonical forms and rejected wrong/missing/null/additional fields `(qa-lead)` | VAL-078, schema observable pending R-28 split | Tasks 9/10 partial evidence, task 11 complete matrix; checkpoint and final QA. Named in-package journal tests reach the per-type shape; rejection must be a shape error. For writes, show no Event and unchanged projection. |
+| QA-47 | All six Phase 22 types retain canonical Condition bytes across task 9's change, with one accepted and one mutated rejected journal case per type `(qa-lead)` | no VAL; DEC-235, R-25 | Task 9; window 7-9 and final QA. Capture the pre-change commit, fixed inputs, canonical byte comparison, and each table-case output. Tasks 10/11 retain those rows unchanged. |
+| QA-48 | The Condition dispatch still reaches the unchanged Phase 22 nullable-binding relation `(qa-lead)` | no VAL; DEC-235, R-24 | Task 9's three negatives plus tasks 10/11's own stray-budget cases; windows 7-9 and 10-12, checkpoint and final QA. Require `condition nullable binding mismatch` and unchanged projection; a shape rejection does not establish this check. |
+| QA-49 | Each owning task's Stop-details entry is reached and enforces its accepted shape `(qa-lead)` | no VAL; R-22/R-27 | Tasks 9/10. Use the direct JSON route with a valid control and malformed details. Record actual registry/error evidence; a failure in budget validation is not evidence. A missing-entry countercheck, when used, must reach `unknown Stop code`. |
+| QA-50 | Recorded pre-change `budget-observed` Stop history replays without changing the journal bytes `(qa-lead)` | no VAL; DEC-235, R-25 | Task 9; window 7-9 and final QA. Preserve the reference commit, fixture path and digest, replay output, and unchanged source-journal digest. |
+| QA-51 | The same fixed subject/code/Condition produces the same `attentionSemanticKey` before and after the change `(qa-lead)` | no VAL; DEC-235, R-25 | Task 9; window 7-9 and final QA. Record both key strings with identical inputs and the reference commit. |
+| QA-52 | A non-string Condition discriminant rejects without panic `(qa-lead)` | no VAL; DEC-235 | Task 9; window 7-9 and final QA. Named journal negative test through the dispatch, with observed rejection. |
+
+The schema matrix for QA-46 is explicit; required retained fields are always
+`type`, `subject`, `budget_name`, and `capability_id`.
+
+| Type | Only permitted new field | Canonical total fields | Negative states |
+|---|---|---|---|
+| `decision-satisfied` | `decision_class:ID` | 5 | own field missing/null, wrong field, additional discriminator |
+| `human-outcome-recorded` | `outcome_class:ID` | 5 | own field missing/null, wrong field, additional discriminator |
+| `finding-resolved` | `finding_id:ID` | 5 | own field missing/null, wrong field, additional discriminator |
+| `review-recorded` | none | 4 | each of `outcome_class`, `decision_class`, `finding_id` present, including null |
+
+QA-47's six fixed cases are `executor-terminated`, `run-recovered`,
+`activation-recovered`, `capability-available`, `budget-observed`, and
+`work-ended`. Only `budget-observed` has non-null `budget_name`; only
+`capability-available` has non-null `capability_id`. Both fields are present
+on every case. Use a same-type mutation, such as omitting a retained required
+field, for each negative; changing the type to an unknown string alone does
+not test that type's row.
+
+The existing task gates below execute the new in-package tests and tagged
+journeys. Completion reports must name the actual test/fixture paths, retain
+red/green evidence and observed termination, and record the exact full commands
+and package times. These checks add no command selection or budget. No new
+Human checklist step is introduced, and `human-checklist.md` is not generated.
+
+### 20.4 Command And Feasibility Validation
+
+Fresh toolchain: `go version go1.26.2 linux/amd64`. Caches reported by
+`go env GOCACHE GOMODCACHE GOPATH` are the repository's `.gocache`,
+`.gomodcache`, and `.gopath`. The following results are observed; help and
+dry-runs validate feasibility only.
+
+| Command or step | Validation method | Result and evidence |
+|---|---|---|
+| `gofmt -l cmd internal` | Exact command executed | PASS; `exit 0 (no output)` (terminated `exit_code: 0`). |
+| `golangci-lint run ./...` | Fresh `golangci-lint run --help` | Syntax feasible; `Analyze tests (*_test.go) (default true)`; help terminated `exit_code: 0`. Lint itself not executed in this confirmation. |
+| `go test -race -timeout 30m -coverprofile=coverage.out ./...` | Exact command with Go's documented `-n` dry-run flag | Feasible; 20 test-binary invocations, including `journal`, `workflow`, and `cmd/fid`; all use `-test.timeout=30m0s` and a coverage profile, none has `-test.run`. Dry-run terminated `exit_code: 0`. Tests did not run. |
+| `go tool cover -func=coverage.out` | Fresh `go tool cover -help` plus `go help testflag` | Feasible; help prints `go tool cover -func=c.out` and testflag documents writing the profile after tests pass. Cover help terminated `exit_code: 2` (usage observation, not a passing gate or expected-nonzero gate declaration); testflag help terminated `exit_code: 0`. Requires the successful immediately preceding coverage run, not an old profile. |
+| `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` | Exact command with `-n` | Feasible; exactly one `integration.test` invocation with `-test.timeout=30m0s`, no `-test.run`. Dry-run terminated `exit_code: 0`. `main_test.go:1` has the integration build tag; its TestMain builds the real CLI. Tests did not run. |
+| `go build -o /tmp/fid ./cmd/fid` | Exact command executed; polled original session to completion | PASS; `exit 0 (no output)` (terminated `exit_code: 0`). |
+| Existing strict-raise probe | Built binary: `/tmp/fid stop raise --help` | Feasible; `fid stop raise [flags]`, with `--actor`, `--idempotency-key`, `--input` (terminated `exit_code: 0`). `validateStopRaise` at `stop.go:363` checks code and condition independently. This proves invocation feasibility, not future judgment behavior. |
+| Existing resolution probe | Built binary: `/tmp/fid attention resolve --help` | Feasible; `fid attention resolve [flags]` and the same three mutation flags (terminated `exit_code: 0`). The retained request struct is `stop.go:88`. |
+| New discriminator shape rows | Literal task rows compared with accepted pairing and existing grammar | Feasible syntax; `validateCurrentShape` at `current_event_value_types.go:112` enforces count, required names, and scalar grammar. Four-field bare Review / five-field discriminated rows are transcribed exactly. Implementation execution remains outstanding. |
+| Direct details / Condition test route | File existence, exact test/function inspection and ordinary-scope dry-run | Feasible; `current_event_closed_values_test.go:76` and `current_event_json.go:27-45` provide the no-database route described in 20.2. No future fixture is claimed already present. |
+| R-24 projected negative evidence | Existing test setup inspected and included in ordinary dry-run | Feasible; `TestCurrentEventRejectsConditionalBindingCorruption` at `current_event_validation_test.go:171` supplies a valid control, live/replay routes, and before/after projection comparison. It remains appropriate for a Condition-only mutation; do not change its Stop code for QA-49. |
+| Pre-change bytes / replay / key fixtures | Existing helpers inspected; owning task explicitly supplies new fixtures | Feasible construction: journal `replay_test.go` supplies recording/replay helpers; workflow `stop_test.go:60` supplies a real Stop, journal capture, and idempotent retry fixture; `stop.go:422` computes the key from canonical bytes. Task 9 must record its actual pre-change reference and fixture; no scratch from pass 7 is assumed to survive. |
+| Human steps | Compare changed scope with this plan section 9 | No Human evidence route changed by DEC-236. Human judgment is not requested or recorded by this confirmation. The separate dispatch clearance is still required by the Human's instruction. |
+
+Exact dry-run invocations, from repository root, were:
+
+```sh
+go test -n -race -timeout 30m -coverprofile=coverage.out ./... > /tmp/fid-p23-dec236.UYFWY3/ordinary-dry-run.log 2>&1
+go test -n -tags integration -race -timeout 30m ./cmd/fid/integration/... > /tmp/fid-p23-dec236.UYFWY3/integration-dry-run.log 2>&1
+```
+
+The scratch directory was freshly allocated by `mktemp -d
+/tmp/fid-p23-dec236.XXXXXX`. These are diagnostic logs, not durable implementation
+evidence. Reproduction allocates a new scratch directory. Log SHA-256 values:
+
+- Ordinary: `9d2469e5c3106bba6cae0ebad5940044457a0262f947149f7a4742fd9a15e935`.
+- Integration: `1190c43703376bcd01ea60b488e50f927f480717be8669cdc07ef5a77765b4dd`.
+
+Their final test invocations contain respectively
+`workflow.test ... -test.timeout=30m0s -test.coverprofile=$WORK/b253/_cover_.out`
+and `integration.test ... -test.timeout=30m0s`. The logs end in printed cleanup
+commands because `-n` prints the build plan; cleanup is not pass evidence and
+was not executed by these dry-runs. Fresh `go help build` confirms
+"print the commands but do not run them" (terminated `exit_code: 0`).
+Both nested dry-run processes were observed terminating; the ordinary command's
+initial empty output and live session were not treated as completion.
+
+### 20.5 R-28 - Validation-Contract Refinement Proposal And Blocker Candidate
+
+**Must-fix planning finding, affected task 11 / VAL-078.** The DEC-236 wording
+is correctly transcribed and now satisfiable for `review-recorded`, but still
+bundles two independently observable requirements:
+
+1. resolution accepts only the appropriate durable fact; and
+2. Condition encoding admits exactly the assigned discriminator fields.
+
+A shape validator can enforce (2) while resolution accepts a foreign fact;
+resolution can enforce (1) while malformed Conditions are stored. The evidence
+methods in the row itself separate them with "plus closed-schema rejection".
+This fails the QA Lead's one-observable rule in `09_AI_WORKFLOW.md` 2.6/6.1
+and `08_QUALITY_PLAN.md` 8. Splitting QA-43 into independently inspectable checks
+does not by itself repair a bundled deterministic VAL assertion.
+
+**Proposal for the Tech Lead, not applied here:** retain VAL-078 for resolution
+and allocate a separate assertion for the existing discriminator-shape
+requirement. Preserve all four types, all positive/negative cases, the
+DEC-235 shape-error evidence class, QA Lead validation, task-11 final ownership,
+and tasks 9/10's earlier schema evidence. Update the task/QA coverage pointers
+and the assertion count/revision record explicitly. Do not drop a half to keep
+79 rows, use Human fan-out for deterministic checks, or change any wire rule.
+
+Blocker candidate (no ESC allocated):
+
+- **Protected category:** specification / validation-contract authority.
+- **Evidence:** `qa/validation-contract.md:99`; the unchanged resolution half
+  plus the discriminator half in the DEC-236 diff; reproducible inspection
+  output in 20.6; task 11's combined acceptance criterion at `task-11.md:145`.
+- **Authority boundary:** QA Lead proposes; Tech Lead owns contract edits and
+  task-spec mappings. A Developer implementing task 11 cannot repair this
+  contract defect under its product-file scope. No new product/encoding choice
+  or Human judgment is requested by the proposed semantics-preserving split.
+- **Requested action:** TL disposition and apply the split with both obligations
+  intact, then obtain fresh independent QA confirmation of the affected
+  assertion/task/evidence mappings. Existing R-24/R-25/R-27 transcriptions need
+  rechecking only if that follow-up changes them. The Runner still needs the
+  explicit Human clearance for tasks 9-11.
+
+R-26 branch B's earlier conditional candidate does not apply: DEC-236 chose
+branch A consistently. ESC-23-001 remains resolved. R-28 is not a product bug,
+a failed runtime gate, or a re-opening of the earlier encoding decision.
+Tasks 1-8 remain unaffected. No other blocker candidate is emitted.
+
+### 20.6 Reproducible File-State Inspection
+
+This command was executed at the reviewed batch, from repository root. It
+inspects documentation and fixture existence only. Terminated `exit_code: 0`;
+its last line was `FINDING VAL-078: independent resolution and schema
+observables remain bundled`. That exit proves the inspection completed, not
+that the reported finding passed. It also printed the R-24/R-25/R-26/R-27 PASS
+records described above. Run against the same pinned batch to reproduce the
+original result; later TL amendments intentionally change the comparisons.
+
+```sh
+python3 - <<'PY'
+from pathlib import Path
+import hashlib, json, re, subprocess
+
+root = Path.cwd()
+phase = Path("project-docs/docs/phases/phase-23")
+batch = "a0e8e7ea1111e2a4caa6c39bc6d1e63dee82accf"
+def git(*args):
+    return subprocess.check_output(["git", *args], text=True)
+def compact(text):
+    return " ".join(text.replace("**", "").split())
+def blob(path, rev):
+    return git("show", f"{rev}:{path}")
+def exact_commands(text):
+    return text.split("## Exact Commands To Run", 1)[1].split("## Notes For Developer", 1)[0]
+
+changed = git("diff-tree", "--no-commit-id", "--name-only", "-r", batch).splitlines()
+assert len(changed) == 12 and all(p.startswith("project-docs/docs/") for p in changed)
+assert not any(str(phase / f"tasks/task-{n}.md") in changed for n in range(1, 9))
+print("PASS batch: 12 documentation files; tasks 1-8 and product files unchanged")
+
+tasks = {n: (phase / f"tasks/task-{n}.md").read_text() for n in (9, 10, 11)}
+for n, text in tasks.items():
+    path = phase / f"tasks/task-{n}.md"
+    assert text == blob(path, batch)
+    assert exact_commands(text) == exact_commands(blob(path, batch + "^"))
+    assert "omitempty" in text and "to nothing else" in compact(text)
+    print(f"PASS task {n}: DEC-236 blob exact; command section byte-identical")
+
+catalog = Path("internal/journal/current_event_value_catalog.go").read_text()
+baseline_shape = re.search(r'"Condition":\s*"([^"]+)"', catalog).group(1)
+types = baseline_shape.split()[0].removeprefix("type:=").split(",")
+assert len(types) == 6
+criterion = tasks[9].split("- [ ] The six Phase 22 Condition", 1)[1].split("- [ ] Exclusivity", 1)[0]
+assert all(f"`{t}`" in criterion for t in types)
+for token in ("one canonical four-field Condition", "one mutated Condition", "journal", "replays clean", "attentionSemanticKey"):
+    assert token in compact(criterion)
+print("PASS R-25: " + ", ".join(types) + "; accepted/rejected cases, replay and key retained")
+
+assert 'return validateCurrentValueRelations("Condition", object)' in compact(tasks[9])
+for n in (10, 11):
+    assert "Confirm in the completion report that the relation still fires" in compact(tasks[n])
+scope = compact((phase / "execution-scope.md").read_text())
+assert 'validateCurrentValueRelations("Condition", object)' in scope
+print("PASS R-24: task 9 call and tasks 10/11 report checks; inventory call retained")
+
+for n in (9, 10):
+    for token in ("TestCurrentClosedValuesRejectIncompleteAndInvalidFacts", "validateCurrentJSON", "unknown Stop code", "migration 0017", "own retained"):
+        assert token in compact(tasks[n])
+print("PASS R-27: both tasks cite the direct JSON route and projection dependency")
+
+shape11 = compact(tasks[11])
+assert "`type:=review-recorded subject:Subject budget_name:?ID capability_id:?ID`" in shape11
+assert "`type:=finding-resolved subject:Subject budget_name:?ID capability_id:?ID finding_id:ID`" in shape11
+contract_path = phase / "qa/validation-contract.md"
+before = {line.split(" | ")[0]: line for line in blob(contract_path, batch + "^").splitlines() if line.startswith("| VAL-")}
+after = {line.split(" | ")[0]: line for line in contract_path.read_text().splitlines() if line.startswith("| VAL-")}
+assert len(after) == 79 and before.keys() == after.keys()
+assert [key for key in after if after[key] != before[key]] == ["| VAL-078"]
+row = after["| VAL-078"]
+assert "none for `review-recorded`" in row and "bare four-field" in row and "any discriminator" in row
+assert "| QA Lead | task 11 |" in row
+print("PASS R-26: four-field review-recorded; only VAL-078 changed among 79 IDs; owner unchanged")
+
+for path in ("internal/journal/current_event_closed_values_test.go", "internal/journal/current_event_validation_test.go", "internal/journal/current_event_value_types.go", "internal/journal/current_event_value_relations.go", "internal/journal/current_event_json.go", "internal/journal/current_event_budget_values.go", "internal/workflow/stop.go", "cmd/fid/integration/main_test.go"):
+    assert Path(path).is_file()
+print("PASS feasibility: all 8 referenced source/fixture files exist")
+for n in (9, 10, 11):
+    assert not (phase / f"tasks/task-{n}-done.md").exists()
+print("OBSERVED tasks 9-11: no completion reports; implementation results UNVERIFIED")
+assert "qualifying durable fact" in row and "plus closed-schema rejection" in row
+print("FINDING VAL-078: independent resolution and schema observables remain bundled")
+PY
+```
+
+### 20.7 Artifact Integrity And Concurrent Work
+
+The embedded inspection was extracted from this document and executed again;
+it returned the same records and terminated `exit_code: 0`. A separate
+comparison verified that the concurrently committed section 19 remains
+verbatim, and SHA-256 comparisons verified all ten protected inputs unchanged:
+the six slice/decision/validation documents, tasks 9-11, and the run ledger.
+The ledger's observed digest was
+`6ec21cc4f435ae0770c8014581e55a2b3f3a7522546f7bb30b3a7ffe7e0c0628`.
+`git diff --check` completed with `exit 0 (no output)` (terminated
+`exit_code: 0`).
+
+Preserved failed diagnostic: an additional assertion that the entire worktree
+had only QA-plan dirt failed with
+`AssertionError: ['migrations/0013_p21_operational_kernel.up.sql', 'migrations/0015_p22_recovery.up.sql', 'project-docs/docs/phases/phase-23/qa/qa-plan.md']`
+(terminated `exit_code: 1`). The embedded confirmation and protected-file
+checks had already completed successfully in that same invocation. The cause
+was concurrent changes to the two migration files after the earlier inventory;
+the Human explicitly permits tasks 1-8 to proceed during this pass. Global
+worktree cleanliness is not the authorization boundary. Those files are left
+untouched; QA commits only this plan and verifies that commit's path list.
+This optional diagnostic is not a product/test-gate failure, and its failed
+attempt is not converted into a PASS.
