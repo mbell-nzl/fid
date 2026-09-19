@@ -48,18 +48,24 @@ All new PASS claims below were observed in this repair session, working director
 prior-session PASS rows are not re-attested here.
 
 - Focused race command recorded verbatim in `qa/esc-23-002-repair.md`: PASS, cmd/fid `33.064s` and journal `14.879s` (terminated `exit_code: 0`). It covers the aged-fixture regression, retained expiry/holder rejection, projection byte parity, Event rollback/connection release, failed staged rebuild preservation, and deterministic rebuild.
-- `go test -race ./internal/workflow -run '^TestRecoveryFixturesKeepRepositoryAndProjectionIsolation$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	4.078s` (terminated `exit_code: 0`). Distinct real Git bindings, sibling projection isolation, and pristine template bytes are checked.
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `python3 project-docs/docs/phases/phase-23/qa/esc-23-002-evidence/rebuild-smoke.py` - PASS - `PASS real CLI rebuild: read parity, unchanged journal, schema 17, FK/integrity clean` (terminated `exit_code: 0`). Raw subprocess results are in `qa/esc-23-002-evidence/rebuild-smoke.log`.
+- `go test -race ./internal/workflow -run '^TestRecoveryFixturesKeepRepositoryAndProjectionIsolation$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	4.078s` (terminated `exit_code: 0`)
+  Distinct real Git bindings, sibling projection isolation, and pristine template bytes are checked.
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `python3 project-docs/docs/phases/phase-23/qa/esc-23-002-evidence/rebuild-smoke.py` - PASS - `PASS real CLI rebuild: read parity, unchanged journal, schema 17, FK/integrity clean` (terminated `exit_code: 0`)
+  Raw subprocess results are in `qa/esc-23-002-evidence/rebuild-smoke.log`.
 
 ## Exact quality-gate results
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	231.010s	coverage: 62.6% of statements` (terminated `exit_code: 0`); fresh CLI **527.099s**, workflow **231.010s**, every package below 600s. Raw output: `qa/esc-23-002-evidence/race-attempt-3.log`.
-- `go tool cover -func=coverage.out` - PASS - `65.6%` (terminated `exit_code: 0`); total statement coverage. Raw output: `qa/esc-23-002-evidence/coverage.log`.
-- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	669.586s` (terminated `exit_code: 0`); below 900s. Binary directories **0 before / 0 after**; `/tmp` free bytes **3696472064 before / 3696328704 after**. Raw output and resource snapshots: `qa/esc-23-002-evidence/integration.log` and `integration-resources.jsonl`.
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `PASS` (terminated `exit_code: 0`); three consecutive fresh process runs **22.728s / 22.623s / 22.489s**, all strictly below 30s. Each process terminated `exit_code: 0`; logs `qa/esc-23-002-evidence/benchmark-{1,2,3}.log`.
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	231.010s	coverage: 62.6% of statements` (terminated `exit_code: 0`)
+  fresh CLI **527.099s**, workflow **231.010s**, every package below 600s. Raw output: `qa/esc-23-002-evidence/race-attempt-3.log`.
+- `go tool cover -func=coverage.out` - PASS - `65.6%` (terminated `exit_code: 0`)
+  total statement coverage. Raw output: `qa/esc-23-002-evidence/coverage.log`.
+- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	669.586s` (terminated `exit_code: 0`)
+  below 900s. Binary directories **0 before / 0 after**; `/tmp` free bytes **3696472064 before / 3696328704 after**. Raw output and resource snapshots: `qa/esc-23-002-evidence/integration.log` and `integration-resources.jsonl`.
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `PASS` (terminated `exit_code: 0`)
+  three consecutive fresh process runs **22.728s / 22.623s / 22.489s**, all strictly below 30s. Each process terminated `exit_code: 0`; logs `qa/esc-23-002-evidence/benchmark-{1,2,3}.log`.
 
 ## Deviations from spec
 
@@ -70,6 +76,8 @@ prior-session PASS rows are not re-attested here.
 - This recovery's full race attempts 1 and 2 returned `62.6% of statements` (both terminated `exit_code: 0`) but FAILED the runtime control: CLI/workflow 628.145s/623.362s, then 604.046s/233.338s. Neither is counted as a passing gate. Removing repeated bootstrap setup, supported by before/after measurements and isolation tests, led to the byte-identical fresh attempt 3 above. Raw failed attempts are retained.
 
 - The additional smoke harness first omitted the required idempotency key and then used Python SQLite 3.46.1, which cannot parse the existing dynamic RAISE trigger. Both script invocations terminated `exit_code: 1` and their logs are retained. The corrected invocation uses actual create JSON and the installed SQLite CLI 3.50.6; the byte-identical script command passed without product changes.
+
+- Report-lint initially printed `FAIL report-lint found 7 failure(s)` (terminated `exit_code: 7`): punctuation and explanatory prose followed the required termination suffix on seven PASS rows. Moving that prose to continuation lines repairs only report formatting. The failed output is preserved in `qa/esc-23-002-evidence/report-lint-attempt-1.log`; the exact control is rerun after committing this correction.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
