@@ -166,7 +166,8 @@ task's scope:
   `outcome_class`), and task 11 (`review-recorded`, `finding-resolved`,
   `finding_id`). A Condition type is registered by the task that first raises a
   Stop carrying it, never deferred to task 11; task 11 completes the closed
-  four-type set and owns the resolution behavior of all four (VAL-078).
+  four-type set and owns both the resolution behavior of all four (VAL-078) and
+  their encoding matrix (VAL-080).
 - `internal/journal/current_event_columns.go` joins task 1, which registers all
   ten new Phase 23 tables in `currentEventTables` alongside the nine effect
   rules it already registers. `validateCurrentEffect` returns `unknown table`

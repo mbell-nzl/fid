@@ -28,6 +28,12 @@ deterministic proof.
   present, not only with evidence absent.
 - VAL-003: task 1's fence assertion for `human-outcome.recorded` converges
   here without losing its parity subject.
+- VAL-080: this task's `human-outcome-recorded` row carries `outcome_class` and
+  no other discriminator, enforced by the shape at the journal layer. Task 11
+  completes the four-type matrix.
+- VAL-081: re-confirm, after adding this task's row, that the Phase 22 nullable
+  binding still fires from task 9's dispatch. Task 9 owns the assertion; a
+  failure here is a task 9 defect (DEC-237).
 
 
 ## Binding Constraints
@@ -178,7 +184,7 @@ deterministic proof.
   `human-outcome-recorded` Condition carrying `decision_class` instead of
   `outcome_class` rejects, one with its own field null rejects, one carrying two
   new fields rejects, and one carrying only its own field is accepted.
-  (Evidence toward VAL-078, which task 11 completes.)
+  (Evidence toward VAL-080, which task 11 completes.)
 - [ ] The `currentStopDetailShapes` and per-type `Condition` entries this task
   adds are proved by a **direct assertion inside this task**, not by this task's
   own retained-family raise tests. Three of DEC-224's four raising families
@@ -205,6 +211,11 @@ deterministic proof.
   and has no such dependency. Omitting the entries would pass here and fail at
   task 11 or tasks 15/16 with the cause outside the failing task. (QA
   R-22/R-27, DEC-235.)
+- [ ] The Phase 22 nullable binding still fires from task 9's dispatch after
+  this task's row is added: a `human-outcome-recorded` Condition carrying a
+  stray `budget_name` is rejected `condition nullable binding mismatch`, and the
+  completion report records the observed message. A failure here is a task 9
+  defect, not a local fix. (VAL-081; QA R-24, I-45)
 - [ ] Full required commands terminate with preserved red/green evidence.
 - [ ] Every converged retained row, including the seeded task 7 and task 9
   fixtures, records its provenance and executing command.

@@ -248,7 +248,10 @@ Recorded as DEC-235, which carries the full disposition. Applied in this batch:
 
 - `public-interface.md` section 2's `Condition` row now states the encoding, the
   five-field judgment Condition, the untouched four-field Phase 22 Condition,
-  and that exclusivity is structural.
+  and that exclusivity is structural. (*Corrected by DEC-236 / R-26: only the
+  three judgment types that have a discriminator carry five fields;
+  `review-recorded` carries four. `public-interface.md` itself is correct - this
+  summary line is not, and is historical.*)
 - `execution-scope.md` section 6: inventory **row 8 restated, not deleted** -
   the relation branch keeps the Phase 22 `budget_name` / `capability_id`
   binding and **no Phase 23 task extends it**. New **row 10** is the per-type
@@ -326,3 +329,22 @@ takes time, task 12 is available out of order at the Runner's discretion.
   `internal/journal/project_effects.go:11`;
   `internal/journal/upgrade.go:50`; `internal/db/migrate.go:8`;
   `internal/workflow/stop.go:72-79,422,431,557`.
+
+## Blocker candidates raised without an identifier
+
+Recorded here so the phase register is complete; neither became an escalation.
+
+- **QA pass 7, `qa-plan.md` 18.12 - conditional on branch B.** Withdrawn by the
+  QA Lead once DEC-236 chose branch A, and independently re-checked on three
+  legs in `qa-plan.md` 19.11: the discriminator pairing was accepted before the
+  escalation existed, the Human approved a mechanism rather than a per-type
+  field assignment, and the contradicting sentence was new in the `932fbea`
+  batch. Restoring the accepted reading is Tech Lead planning authority, so no
+  Human decision was required.
+- **QA pass 8, `qa-plan.md` 20.5 - R-28, VAL-078's granularity.** Correctly
+  raised as a candidate with no identifier allocated: the protected category is
+  validation-contract authority, the repair is a Tech Lead contract edit, and no
+  product, encoding, or Human judgment is requested. Dispositioned under DEC-237
+  by splitting the row into VAL-078 and VAL-080. A Developer could not have
+  repaired it under task 11's product-file scope, which is why it was a
+  candidate and not a Developer deviation.

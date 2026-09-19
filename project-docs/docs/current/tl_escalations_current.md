@@ -12,8 +12,14 @@ on the three new `Condition` fields only, the six Phase 22 types keeping
 keyed on `type`. Recorded as DEC-235, which amends `public-interface.md` section
 2, restates inventory row 8, creates row 10, and rewrites tasks 9, 10, and 11.
 The three held revisions (R-22, R-23, I-37) shipped with it. **No task is
-blocked; all eighteen are dispatchable.** See
+blocked by an escalation**; tasks 9-11 are held only by the Human's dispatch
+instruction and one bounded QA confirmation of the DEC-237 contract edits. See
 [Phase 23 escalations](../phases/phase-23/tl-escalations.md).
+
+QA pass 8 raised one **blocker candidate with no identifier allocated** (R-28,
+VAL-078's granularity), which is the correct handling: the repair is a Tech Lead
+contract edit, not a Human decision. Dispositioned under DEC-237 by splitting
+the row. No escalation was or should have been opened.
 
 ESC-22-005 is resolved by the Human's performance-repair approval under
 DEC-221; its proposed timeout increase was not approved or applied. Task 20 is

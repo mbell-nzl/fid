@@ -13,26 +13,30 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 
 ## Status
 
-**Approved; tasks 1-8 dispatchable now, 9-11 after one QA confirmation pass; no
-open decision and no registered escalation.** Branch `phase-23` at planning base
+**Approved; tasks 1-8 dispatchable now, 9-11 after one bounded QA confirmation
+and explicit Human dispatch clearance; no open decision and no registered
+escalation.** Branch `phase-23` at planning base
 `0195897a347dfe1872db0f7be3800c5c3ccdefcf`.
 
-Seven QA passes returned twenty-seven Must-fix revisions plus five the Tech Lead
+Eight QA passes returned twenty-eight Must-fix revisions plus five the Tech Lead
 found while dispositioning them; **all are applied**. Six Human contract
-amendments (DEC-223..227, DEC-235); Tech Lead dispositions DEC-228..234 and
-DEC-236. Record: [phase decisions](../phases/phase-23/decisions.md).
+amendments (DEC-223..227, DEC-235); Tech Lead dispositions DEC-228..234,
+DEC-236, DEC-237. **ESC-23-001 is resolved** (DEC-235, Human, Option A). Record:
+[phase decisions](../phases/phase-23/decisions.md).
 
-**ESC-23-001 is resolved** (DEC-235, Human, Option A) and **QA pass 7
-(`qa-plan.md` 18) returned READY EXCEPT TASKS 9, 10, AND 11**, confirming Option
-A transcribed correctly in all three specs. **DEC-236 dispositioned all four
-Must-fix revisions and three improvements; no task is held and no escalation was
-allocated.** Its two standing consequences are the first two Active Constraints
-below. R-25 made task 9's byte-identity bar a six-type table; R-27 gave tasks 9
-and 10 a `currentStopDetailShapes` proof route that reaches the registry.
-VAL-078 is refined and strengthened; the contract stays at 79 rows.
+Pass 8 ran twice independently on the same base: `qa-plan.md` 19 returned READY
+with four improvements and one contract proposal; `qa-plan.md` 20 returned NOT
+READY for task 11 on R-28, VAL-078's granularity. Both confirmed DEC-236's
+R-24..R-27 and that tasks 1-8 are untouched; neither allocated an escalation.
+**DEC-237 split VAL-078 into resolution (VAL-078) and encoding (VAL-080) and
+gave the two DEC-235 preservation invariants an ID each - VAL-081, the Phase 22
+nullable binding still reached from the new dispatch, and VAL-082, the six-row
+compatibility bar. The contract is 82 rows; nothing was weakened.** I-42..I-45
+are applied.
 
-Next action: a QA Lead pass over the DEC-236 batch for tasks 9, 10, and 11, then
-the Runner's readiness check. Tasks 1-8 may dispatch in parallel with it.
+Next action: one bounded QA confirmation of the DEC-237 contract edits, then the
+Runner's readiness check. **Tasks 9-11 stay held until the Runner receives
+explicit Human dispatch clearance.** Tasks 1-8 dispatch in parallel.
 
 ## Operating Mode
 
@@ -50,8 +54,8 @@ amendments inline with their DEC and approval state.
 
 ## Task Index
 
-Full specs and reports: `../phases/phase-23/tasks/`. All 18 are **Pending** and
-strictly sequential; task 12 also depends on the checkpoint after task 11.
+Full specs and reports: `../phases/phase-23/tasks/`. Task 1 is in execution;
+2-18 **Pending**, sequential; task 12 also needs the task-11 checkpoint.
 
 1 schema baseline; 2 typed multi-Obligation Envelope; 3 review Claim mode and
 Run; 4 Review Records and independence; 5 Finding dispositions; 6 review
@@ -63,13 +67,12 @@ capability matrix; 18 conformance audit.
 
 ## Validation Contract And QA Artifacts
 
-All under `../phases/phase-23/qa/`. `validation-contract.md` holds **79**
-assertions (75 deterministic, 4 Human), all `Ready`; every row names its owning
-task, so the contract is its own index. Validators are QA Lead or QA Reviewer
-except VAL-070..073, the Human comprehension rows, whose fixtures come from task
-14. The QA plan's sections 12-18 are executed and freshly measured; section 18 is
-the seventh readiness confirmation, verdict READY EXCEPT TASKS 9, 10, AND 11, and
-one pass remains for those three. Mid-phase `review-M.md` for windows 1-3, 4-6,
+All under `../phases/phase-23/qa/`. `validation-contract.md` holds **82**
+assertions (78 deterministic, 4 Human), all `Ready`; every row names its owning
+task. Validators are QA Lead or QA Reviewer except VAL-070..073, the Human rows,
+whose fixtures come from task 14. QA plan sections 12-20 are executed and
+freshly measured; 19 and 20 are the eighth confirmation, and one bounded pass
+remains over the DEC-237 edits. Mid-phase `review-M.md` for windows 1-3, 4-6,
 7-9, 10-12, 13-15, 16-18; `checkpoint-after-task-11.md` must PASS before task 12.
 
 ## Active Constraints
@@ -78,10 +81,10 @@ one pass remains for those three. Mid-phase `review-M.md` for windows 1-3, 4-6,
   `decision_class`, and `finding_id` and **on no other field**. Tagging
   `budget_name` or `capability_id` changes every stored `semantic_key` and
   `request_digest` in existence - measured - and is the one way to reintroduce
-  ESC-23-001. Exclusivity is structural, in the per-type shapes. No task
-  **extends** the `case "Condition"` relation, but task 9's new dispatch must
-  still **reach** it, or the Phase 22 nullable binding is silently deleted with
-  every gate green (DEC-236 R-24).
+  ESC-23-001 (VAL-082). Exclusivity is structural, in the per-type shapes. No
+  task **extends** the `case "Condition"` relation, but task 9's new dispatch
+  must still **reach** it, or the Phase 22 nullable binding is silently deleted
+  with every gate green (DEC-236 R-24; VAL-081).
 - The discriminator pairing is `contracts.md` section 11's and is exhaustive:
   `outcome_class`/`human-outcome-recorded`, `decision_class`/`decision-satisfied`,
   `finding_id`/`finding-resolved`, and **none on `review-recorded`** (DEC-236).
@@ -125,20 +128,18 @@ projections, and archive semantics.
 Wide-reach change: Obligation generalization (task 2) and Evidence widening
 (task 6), each isolated. **Registry without an owning task** (DEC-167/173) is
 the recurring one: seven re-derivations caught thirteen before dispatch, each
-inside the previous fix, and the series has **not** converged to zero - what
-released dispatch is that the last additions fail open, not that the search is
-finished. Treat a registry rejection in any task as expected-class and escalate
-it. Pass 7 found the same family one step worse - a correct prohibition with no
-statement of what must still **run** (DEC-236 R-24), where the literal reading
-deleted an invariant and passed every gate. Expect more of that shape than of
-outright omission. Also: late Human-readability discovery in window 13-15;
-removal ordering, where a slip amends task 15 rather than deferring a removal;
-and test-time headroom, bounded by DEC-227.
+inside the previous fix, and the series has **not** converged - what released
+dispatch is that the last additions fail open. Treat a registry rejection in any
+task as expected-class and escalate it. Passes 7 and 8 found the family one step
+worse: a correct prohibition with no statement of what must still **run**
+(R-24), and live Phase 22 behavior with no assertion at all (VAL-081/082).
+Expect that shape more than outright omission. Also: late Human-readability
+discovery in window 13-15; removal ordering; and test-time headroom (DEC-227).
 
 ## Success / Exit Criteria
 
 - [ ] All 18 tasks complete with green quality gates.
-- [ ] All 79 `VAL-NNN` outcomes recorded with cited evidence.
+- [ ] All 82 `VAL-NNN` outcomes recorded with cited evidence.
 - [ ] Final QA review has no unresolved blocking finding.
 - [ ] Human checklist accepted, including VAL-070 to VAL-073.
 - [ ] Sign-off recorded and all twelve canonical specs synced.

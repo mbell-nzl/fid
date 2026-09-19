@@ -93,7 +93,7 @@
 - DEC-222 (ACCEPTED by Human, 2026-09-14): Phase 23 "Review and Human judgment"
   is approved and Heavy. The accepted authority is `contracts.md`,
   `public-interface.md`, `schema.md`, `execution-scope.md`,
-  `v1-convergence-inventory.md`, `contract-coverage.md`, the now 79-assertion
+  `v1-convergence-inventory.md`, `contract-coverage.md`, the now 82-assertion
   `qa/validation-contract.md`, and the ordered 18-task pack, all under
   `../phases/phase-23/`. Six canonical spec amendments are accepted with it and
   are applied by their owning implementation tasks, not in advance.
@@ -111,10 +111,9 @@
   plus measured wall-time budgets.
 - DEC-226 vocabulary (standing): a **Failure code** names one refused request
   and carries category, retryability, and exit status; an **Evaluation reason**
-  describes why one Obligation is unsatisfied and carries none of those. One
-  glossary term named both sets, which is how `finding-unresolved` was filed as
-  a failure code. `GLOSSARY.md` now defines each; register every new identifier
-  in the set it belongs to.
+  says why one Obligation is unsatisfied and carries none of those. One glossary
+  term named both sets, which is how `finding-unresolved` was filed as a failure
+  code. `GLOSSARY.md` now defines each; file every new identifier in its set.
 - DEC-228 (ACCEPTED, Tech Lead) carries the remaining dispositions, including
   three DEC-167/173 scope corrections and five new assertions.
 - DEC-235 (ACCEPTED by Human 2026-09-20) resolves ESC-23-001 with Option A: the
@@ -123,15 +122,23 @@
   structural in per-type journal shapes keyed on `type`.
 - DEC-236 (ACCEPTED, Tech Lead 2026-09-20) dispositions QA pass 7. Two standing
   consequences: task 9's new `case "Condition"` dispatch must **end by calling**
-  `validateCurrentValueRelations("Condition", object)` - removing the
+  `validateCurrentValueRelations("Condition", object)`, because removing the
   `currentValueShapes["Condition"]` key deletes the Phase 22 nullable binding's
-  only call site, and no test asserts its message; and `review-recorded` carries
-  **no** discriminator field, per accepted `contracts.md` section 11, so
-  `finding_id` belongs to `finding-resolved` alone. VAL-078 is refined to the
-  accepted pairing and strengthened; the contract stays at 79 rows.
-- Execution has not started. No decision remains open and no escalation is
-  registered; tasks 1-8 are dispatchable now and 9-11 once the QA Lead confirms
-  this batch. See [phase brief](phase_brief.md) and
+  only call site and no test asserts its message; and `review-recorded` carries
+  **no** discriminator, so `finding_id` belongs to `finding-resolved` alone.
+- DEC-237 (ACCEPTED, Tech Lead 2026-09-20) dispositions QA pass 8, which ran
+  twice independently. VAL-078 is **split** into resolution (VAL-078) and
+  Condition encoding (VAL-080): a row asserting both that a thing behaves
+  correctly and that it is encoded correctly is two rows, the second such split
+  this phase. VAL-081 and VAL-082 give the two DEC-235 preservation invariants
+  an ID - the nullable binding reached from the new dispatch, and byte
+  compatibility for the six retained types - because both were live behavior
+  with no assertion and no other detector. The contract is **82** rows; nothing
+  weakened and no new implementation work.
+- Task 1 is in execution; no decision remains open and no escalation is
+  registered. Tasks 2-8 are dispatchable now, and 9-11 need one bounded QA
+  confirmation of the DEC-237 edits **and** explicit Human dispatch clearance.
+  See [phase brief](phase_brief.md) and
   [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Latest Phase Closure

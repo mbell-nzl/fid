@@ -1,8 +1,8 @@
 # Progress — Current
 
-Updated 2026-09-19. **Phase 22 closed; Phase 23 approved, QA-planned, not
-started; all five contract amendments approved and the QA readiness refresh
-dispositioned.**
+Updated 2026-09-20. **Phase 22 closed; Phase 23 approved, QA-planned, not
+started; six contract amendments approved, eight QA readiness passes
+dispositioned, tasks 1-8 dispatchable.**
 Branch: `phase-23` at `0195897a347dfe1872db0f7be3800c5c3ccdefcf`; the `phase-22`
 PR remains open with green CI.
 
@@ -66,9 +66,21 @@ removes it. Two QA findings were not accepted as written: task 1 already
 registers the nine Event rules, so tasks 4 and 5 gain no catalog file, and the
 column catalog goes to task 1 rather than five domain tasks.
 
-Execution has not started and nothing is dispatched. Next: a fresh QA Lead
-confirms the DEC-229 edits, then the Runner's readiness check. See
-[phase brief](phase_brief.md) and
+Six further readiness passes followed. DEC-231/232/233 closed the journal
+strict-path registry set after three independent re-derivations; ESC-23-001
+raised the `Condition` encoding to the Human, who chose Option A (DEC-235); and
+DEC-236 dispositioned pass 7, whose R-24 caught a correct prohibition with no
+statement of what must still **run** - the literal reading deleted the Phase 22
+nullable binding with every gate green. Pass 8 ran twice independently and both
+runs converged on VAL-078. DEC-237 splits it into resolution (VAL-078) and
+Condition encoding (VAL-080), and gives the two DEC-235 preservation invariants
+an ID each (VAL-081, VAL-082): live behavior this refactor could delete with no
+other detector. The contract is 82 rows and nothing was weakened.
+
+Task 1 is dispatched and with the Runner; nothing else is. Next: one bounded QA
+confirmation of the DEC-237 contract edits, then the Runner's readiness check.
+Tasks 9-11 also await explicit Human dispatch clearance; tasks 2-8 may dispatch
+now. See [phase brief](phase_brief.md) and
 [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Completed

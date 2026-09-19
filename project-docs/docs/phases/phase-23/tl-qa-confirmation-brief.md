@@ -1,122 +1,94 @@
 # Phase 23 - Tech Lead Brief For The QA Lead Confirmation Pass
 
-> Author: Tech Lead, 2026-09-19. Audience: a fresh QA Lead session.
-> Subject: confirm the edits applied under **DEC-233** in response to R-19 and
-> I-32/I-33/I-34 (`qa/qa-plan.md` section 16).
-> Base: branch `phase-23`; the working tree was clean at commit.
-> This supersedes the previous brief, which covered DEC-232. That pass is
-> closed: section 16 confirmed DEC-232 in full, including that the
-> `JudgmentSubject` split is better than the R-18 proposal it replaced and that
-> R-17's owner derivation re-derives to task 4 alone.
+> Author: Tech Lead, 2026-09-20. Audience: a fresh QA Lead session.
+> Subject: confirm the edits applied under **DEC-237** in response to R-28
+> (`qa/qa-plan.md` section 20.5), P-01 (section 19.10), and I-42..I-45
+> (section 19.9).
+> Base: branch `phase-23`. Tasks 1-8 are dispatching in parallel, so the working
+> tree carries their product changes; ignore them, and do not treat worktree
+> cleanliness as this pass's authorization boundary.
+> This supersedes the previous brief, which covered DEC-233. That pass and
+> everything after it stand: QA-plan sections 12 to 20 are **not reopened**.
 
 ## 1. What This Pass Is
 
-The fifth confirmation cycle. Sections 12 through 16 of the QA plan all stand in
-full; **nothing in any of them is reopened**. R-19 is confirmed correct in every
-particular and accepted as proposed, with the follow-on you suggested. I-32,
-I-33, and I-34 are all accepted.
+The ninth confirmation cycle, and a deliberately **bounded** one. It exists
+because a Tech Lead edited the validation contract, and a contract edit should
+not be its own confirmation. R-28's own requested action is exactly this pass.
 
-**No product file changed.** Every edited file is under `project-docs/docs/`.
-Do not re-measure the DEC-227 budgets, the DEC-223 migration chain, the DEC-224
-raising sequences, the failure-code sets, or the contract row counts. Those
-results are fresh and unaffected. The contract is still **79** rows.
+**Scope is four things and nothing else:** the three affected rows
+(VAL-078, VAL-080, VAL-081, VAL-082 - four IDs, three additions and one split),
+their task-spec citations in tasks 9, 10, and 11, the row count and revision
+log, and the derived pointers in `contract-coverage.md`.
 
-One thing is different about this pass: **it does not end in `READY` on its
-own.** Taking I-33 seriously surfaced a blocking question I cannot disposition,
-raised as **ESC-23-001** and awaiting the Human. Your verdict should be `READY
-EXCEPT ESC-23-001` or `NOT READY`, and should say explicitly whether you agree
-that tasks 1-8 are unaffected by it. Record the outcome as a new section 17 in
-`qa/qa-plan.md`.
+**Do not re-measure** the DEC-227 budgets, the DEC-223 migration chain, the
+DEC-224 raising sequences, the failure-code sets, the registry inventory, or the
+R-24 / R-25 / R-26 / R-27 transcriptions. Both pass-8 sessions confirmed those
+independently and nothing here changes them. **No product file changed**; every
+edited file is under `project-docs/docs/`.
 
-## 2. The Dispositions, In One Line Each
+**Your verdict does not release dispatch.** Tasks 9, 10, and 11 remain held
+until the Phase Runner receives explicit Human clearance, whatever you return.
+Record the outcome as the next unused section of `qa/qa-plan.md`.
 
-- **R-19 accepted in full, owners are your five.** Confirmed independently in
-  source, including the fixture path: `p21_conformance_test.go:96`,
-  `p22_fake_test.go:308`, and `p22_resume_actions_test.go:111` all build
-  capability lists and stage them through Kit Activation, so the rejection is on
-  the ordinary setup path and not a synthetic one. Tasks 4, 5, 8, 9, and 10 each
-  gain `internal/journal/current_event_value_relations.go`.
-- **Your follow-on accepted.** Task 18's VAL-067 audit now asserts set equality
-  between the two copies directly, rather than each against a literal.
-- **I-32 accepted**, twelve not eleven, corrected in DEC-232's R-17c paragraph
-  and in section 3 of this brief. Assignment unchanged.
-- **I-33 accepted, and it did the work you expected it to.** The frame now reads
-  "every closed journal registry a Phase 23 value or Effect reaches, whichever
-  family carries it", with the two entry points named. Walking the second entry
-  point found two more items, below.
-- **I-34 accepted**, implementation authoritative: 19 implemented names plus six
-  is **25**. The prose set is recorded as drifted and its reconciliation is a
-  wrap-up spec-sync item.
+## 2. What Was Decided, In One Line Each
 
-## 3. My Own Findings On The Widened Frame
+- **R-28 accepted.** VAL-078 asserted both that the four Condition types resolve
+  correctly and that they are encoded correctly. Those fail independently, so it
+  is two rows: VAL-078 keeps resolution, the new **VAL-080** carries the
+  encoding matrix with every case, the DEC-236 scoping, and the DEC-235 shape
+  evidence class intact. Second split of this kind in the phase after R-11.
+- **P-01 accepted** as **VAL-081**: the Phase 22 nullable binding must still
+  fire from task 9's new dispatch. Your argument is the reason - only detector,
+  no other gate, one checkbox otherwise.
+- **Extended to VAL-082** by me, on your own reasoning: DEC-235's six-row
+  compatibility bar had no assertion either, and it is the larger invariant -
+  `omitempty` on the retained fields changes every stored `semantic_key` and
+  `request_digest` in existence. Every other Human-approved amendment in this
+  phase carries at least one row; DEC-235 carried none.
+- **Two routes declined a row, with reasons recorded in DEC-237:** QA-52 (a
+  panic fails task 9's own gate, so it has a detector) and QA-49 (a missing
+  details entry is caught late by VAL-064's rebuild leg; R-22's direct assertion
+  is the right fix for locality, and the contract asserts end state).
+- **I-42..I-45 applied.** I-44 is in task 9's table as "canonical means
+  type-appropriate". I-45 promoted the relation confirmation into acceptance
+  criteria in tasks 10 and 11, citing VAL-081.
 
-Three, from asking what else a Phase 23 **value** reaches. Verify each; two are
-dispositioned and one is not.
+## 3. The Four Asks
 
-1. **`semanticPhase22Events` has no Phase 23 analogue.** Owner: task 1, same
-   file and change as the DEC-229 mirror. Once the nine families are in
-   `semanticEventRules`, `found` is true at every profile, so
-   `archive_semantics.go:328` would accept `review.recorded` inside a legacy
-   projection-14 archive. VAL-065 is unaffected; the manifest check at
-   `archive_validation.go:130` already rejects cross-version archives. Check my
-   reading of that boolean and my claim that task 1 can prove it with no Event.
-2. **The `Condition` nullable-binding relation fails open.** Inventory row 8,
-   owners tasks 9, 10, 11. Same file as R-19, different case. Reproduced under
-   overlay with the shape widened: a `human-outcome-recorded` Condition with all
-   three new fields non-null, with none, and a `decision-satisfied` Condition
-   carrying `outcome_class` are all accepted, while the Phase 22 control still
-   returns `condition nullable binding mismatch`. Not a blocker - it fails open.
-3. **ESC-23-001, and this one is a blocker.** Checking (2) showed the widening
-   itself is not monotonic. `Condition` is the only field-adding widening of a
-   live journal value shape in the phase - every other section 2 amendment
-   widens a closed enum or lands on a retained family, which returns at
-   `current_event_validation.go:64` before value validation. Two measured
-   consequences: `validateCurrentShape` matches field count exactly and
-   `ReplayJournal` (`replay.go:153`) revalidates every historical Event, so no
-   workspace holding a pre-widening Stop can rebuild and `UpgradeToCurrent` has
-   no hook because Phase 23 does not bump `EventSchema`; and
-   `attentionSemanticKey` (`stop.go:422`) hashes the whole struct, measured to
-   shift from `sha256:8aa57e2a…` to `sha256:3407ff3b…` on the same
-   `budget-observed` condition, so every stored `semantic_key` stops matching and
-   an identical Stop raises a duplicate Attention. Full record and three options
-   in `tl-escalations.md`.
+1. **Is the split lossless?** Compare VAL-078 before `a0e8e7e`'s successor with
+   VAL-078 ∪ VAL-080 now. Every type, case, positive, negative, evidence class,
+   validator, and owning-task obligation should be present, and nothing should
+   be narrower. If any case was dropped or softened, that is a Must-fix.
+2. **Is each row now one observable?** VAL-078 and VAL-080 are the point of the
+   exercise. **VAL-082 is the one I am least sure of**: I wrote it as one
+   property, byte compatibility, measured by three legs (per-type validation,
+   pre-change journal replay, unchanged `attentionSemanticKey`), on the argument
+   that the latter two follow from the first. If you judge those independently
+   failable, say so and I will split it rather than argue.
+3. **Are VAL-081 and VAL-082 executable exactly as task 9 already reads?** They
+   were written to add **no** implementation work and **no** command: each maps
+   onto a criterion the spec already carried. Confirm that, and confirm the two
+   evidence classes cannot be confused - VAL-080 is satisfied only by shape
+   rejection, VAL-081 only by `condition nullable binding mismatch`. Also
+   confirm I-44's clause makes VAL-082's `budget-observed` and
+   `capability-available` cases reachable rather than relation rejections.
+4. **Coverage and pointers.** Every row cited by at least one acceptance
+   criterion; exactly one validator per row; the count 82 = 78 deterministic + 4
+   Human in the header, the numbering note, and the brief; the
+   `contract-coverage.md` clause rows; and the three I-43 staleness corrections
+   plus the I-42 annotation. And the standing question: **does anything here
+   reach tasks 1-8?** I believe not - the edits touch the contract, tasks 9-11,
+   and derived records only - but check it by name, as both pass-8 sessions did.
 
-## 4. What I Want From You
+## 4. What I Am Not Asking For
 
-1. **R-19's application.** Five task specs, one inventory row, one audit change.
-   Is the 23 -> 30 split right in both copies, and does every one of the five
-   tasks now name the file?
-2. **Finding 3 above, hard.** This is the one that matters. Is the replay claim
-   right - does `ReplayJournal` really revalidate historical Events against
-   current shapes, and is there genuinely no upgrade hook? Is the semantic-key
-   shift right? And is my Option A - non-applicable fields **absent** rather
-   than null, with per-type Condition shapes keyed on `type` exactly as
-   `currentStopDetailShapes` is keyed on `code` - actually cheaper than Option
-   B, or am I under-counting its public-surface cost? Argue with the
-   recommendation; the Human decides, and a wrong recommendation from me is
-   worse than no recommendation.
-3. **Scope of the block.** I claim only tasks 9, 10, and 11 are held, because no
-   earlier task touches the `Condition` shape or struct. Verify that against all
-   eighteen specs. If task 6 or any earlier task touches it, the whole phase is
-   held and I need to know now.
-4. **Inventory completeness, on the widened frame this time.** Eight registries,
-   plus eight recorded positives (two from DEC-232 and six new). This is the
-   sixth pass to find something inside the previous fix, and the fifth found its
-   item only after the frame was widened, so the honest prior is still that there
-   may be a ninth. The new question to ask is the one that found R-19: for every
-   **value** in `public-interface.md` section 2, which live Phase 21/22 family
-   carries it, and what does that family's path validate?
-5. **Mechanical.** 79 contract rows unchanged; no VAL row renumbered or
-   reworded; no product file touched; no protected definition, command,
-   threshold, or budget changed. The one `public-interface.md` edit (I-34) adds
-   and removes no name.
+Not a re-derivation of the registry inventory, not a re-run of any gate, not a
+Human-fixture change, and not a re-opening of DEC-235, DEC-236, or ESC-23-001.
+Your own QA-plan mapping - section 12.9's QA-43 replacement and section 20.3's
+route table - now maps to two rows instead of one; that file is yours, and
+updating it is your call, not a Tech Lead instruction.
 
-## 5. What Would Make This NOT READY
-
-A ninth unowned registry; my ESC-23-001 evidence failing source verification;
-the block being wider than tasks 9-11; or the `ErrorSubjectType` reading being
-wrong. Anything smaller is an improvement, and improvements do not block.
-
-Note that `READY EXCEPT ESC-23-001` is a real and expected outcome here: the
-escalation is a Human contract decision, not a defect in the plan's ownership,
-and tasks 1-8 are ready to dispatch without it.
+If you find a third bundled row anywhere in the contract while you are in there,
+raise it. The pattern is a row that asserts both that a thing behaves correctly
+and that it is encoded correctly, and this phase has now produced two.

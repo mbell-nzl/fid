@@ -21,6 +21,15 @@ until a matching approved reference and Human Outcome both exist.
 - VAL-042: `linked_to_decision` becomes an implemented transition rule.
 - VAL-003: task 1's fence assertion for `decision.referenced` converges here
   without losing its parity subject.
+- VAL-080: this task's `decision-satisfied` row carries `decision_class` and no
+  other discriminator, enforced by the shape at the journal layer. Task 11
+  completes the four-type matrix.
+- VAL-081: the Phase 22 `budget_name` / `capability_id` nullable binding still
+  fires **from the new per-type dispatch this task creates**. This task owns the
+  assertion; tasks 10 and 11 re-confirm it (DEC-237, from QA P-01).
+- VAL-082: the six retained Phase 22 Condition types stay byte-compatible across
+  that dispatch - per-type validation, journal replay, and the derived Attention
+  key (DEC-237, from DEC-235 and QA R-25).
 
 
 ## Binding Constraints
@@ -204,6 +213,13 @@ until a matching approved reference and Human Outcome both exist.
   `activation-recovered`, `capability-available`, `budget-observed`, and
   `work-ended`: for each, one canonical four-field Condition is accepted at the
   journal layer and one mutated Condition of that same type is rejected.
+  **Canonical means type-appropriate**, not all-null: `budget-observed` carries
+  a non-null `budget_name` and `capability-available` a non-null
+  `capability_id`, because those two types are the ones the Phase 22 relation
+  binds. An all-null form of either is rejected `condition nullable binding
+  mismatch` - measured (QA I-44) - so it is a VAL-081 case, not an acceptance
+  here. Getting this wrong costs a red-test cycle on exactly the two
+  zero-coverage types this table exists for.
   **Plus** the replay and key halves: a recorded pre-change journal carrying a
   `budget-observed` Stop replays clean, and the `attentionSemanticKey` of an
   unchanged Condition is unchanged. The per-type table is required because
@@ -214,12 +230,12 @@ until a matching approved reference and Human Outcome both exist.
   ships a binary that rejects those Conditions at runtime with `Condition: type:
   invalid closed enum` and no gate notices. This is the acceptance bar of
   DEC-235; a failure here means the per-type rows were not transcribed exactly.
-  (No new VAL ID.)
+  (VAL-082)
 - [ ] Exclusivity is enforced by the shape, asserted at the journal layer and
   not through the raise: a `decision-satisfied` Condition carrying
   `outcome_class` instead of `decision_class` rejects, one with its own field
   null rejects, one carrying two new fields rejects, and one carrying only its
-  own field is accepted. (Evidence toward VAL-078, which task 11 completes.)
+  own field is accepted. (Evidence toward VAL-080, which task 11 completes.)
 - [ ] The Phase 22 nullable binding still fires **from the new dispatch**: a
   `work-ended` Condition carrying a non-null `budget_name`, a `budget-observed`
   Condition carrying `budget_name:null`, and a `decision-satisfied` Condition
@@ -227,9 +243,11 @@ until a matching approved reference and Human Outcome both exist.
   mismatch` on the strict path, and the projection is unchanged. This is the
   executable proof of requirement (c) - that the branch still reaches
   `validateCurrentValueRelations` - and it is the only assertion of that message
-  anywhere in the repository. (No new VAL ID; DEC-235 inventory row 8, QA R-24.)
+  anywhere in the repository. (VAL-081; DEC-235 inventory row 8, QA R-24.)
 - [ ] A Condition whose `type` is not a string is **rejected, not a panic**,
-  proving the checked assertion. (No new VAL ID; DEC-235.)
+  proving the checked assertion. (No new VAL ID, declined with reason under
+  DEC-237: a panic fails this task's own gate loudly, so unlike VAL-081 and
+  VAL-082 the property already has a detector; DEC-235.)
 - [ ] The `currentStopDetailShapes` and per-type `Condition` entries this task
   adds are proved by a **direct assertion inside this task**, not by this task's
   own retained-family raise tests. `protected-decision-required` is raised at

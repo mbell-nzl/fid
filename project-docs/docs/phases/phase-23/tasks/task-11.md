@@ -15,10 +15,16 @@ original request.
   class and result.
 - VAL-078: All four Condition types - `review-recorded`, `finding-resolved`,
   `decision-satisfied`, `human-outcome-recorded` - resolve only on their own
-  qualifying durable fact, and each carries exactly its own discriminator field
-  and no other: `finding_id` for `finding-resolved`, `decision_class` for
+  qualifying durable fact. This row is the **resolution** observable only
+  (split under DEC-237, QA R-28).
+- VAL-080: each of the four carries exactly its own discriminator field and no
+  other - `finding_id` for `finding-resolved`, `decision_class` for
   `decision-satisfied`, `outcome_class` for `human-outcome-recorded`, and
-  **none** for `review-recorded` (DEC-236).
+  **none** for `review-recorded` (DEC-236). Tasks 9 and 10 evidenced the type
+  each raises; this task completes the four-type matrix and owns the row.
+- VAL-081: re-confirm, after adding this task's two rows, that the Phase 22
+  nullable binding still fires from task 9's dispatch. Task 9 owns the
+  assertion; a failure here is a task 9 defect (DEC-237).
 - VAL-049: `attention.resolve` keeps its exact input shape and retains history.
 - VAL-050: A qualifying Human Outcome resolves only matching Stops.
 
@@ -47,9 +53,9 @@ original request.
   negative with a second open Stop carrying a different condition.
 - `review-recorded` and `finding-resolved` are registered here but no Phase 23
   Event raises a Stop carrying them. `validateStopRaise` checks code and
-  condition type independently, so VAL-078's per-type probes are constructible
-  through the existing `fid stop raise` leaf with an accepted code and the
-  condition under test.
+  condition type independently, so the VAL-078 and VAL-080 per-type probes are
+  constructible through the existing `fid stop raise` leaf with an accepted code
+  and the condition under test.
 - This task implements the path. The capability limit flips to true only in
   task 17, after every replacement proof passes; do not change the matrix here.
 - `execution-scope.md` is incorporated on the usual convergence terms.
@@ -84,7 +90,8 @@ original request.
   any of them is rejected. Tasks 9 and 10
   already added `decision-satisfied` and `human-outcome-recorded`, because each
   must exist before its own raising Event can commit; this task completes the
-  closed four-type set and owns their resolution behavior (VAL-078). Add no
+  closed four-type set and owns both their resolution behavior (VAL-078) and
+  their encoding matrix (VAL-080). Add no
   Stop code.
 - `internal/journal/current_event_value_relations.go` - **do not touch
   `case "Condition"`** (DEC-235, restating inventory row 8). ESC-23-001 is
@@ -146,8 +153,11 @@ original request.
   fact: for each of `review-recorded`, `finding-resolved`, `decision-satisfied`,
   and `human-outcome-recorded`, a resolution attempt with a non-qualifying fact
   Event leaves the Stop open and rejects, and the qualifying Event resolves it.
-  **And** the closed-schema half, per type: for `finding-resolved`,
-  `decision-satisfied`, and `human-outcome-recorded`, a Condition carrying a
+  (VAL-078)
+- [ ] The closed-schema half, which is a separate observable and fails
+  independently of resolution (VAL-080, split from VAL-078 under DEC-237): per
+  type, for `finding-resolved`, `decision-satisfied`, and
+  `human-outcome-recorded`, a Condition carrying a
   second discriminator field, the wrong one, or none of them rejects with no
   Event; and for `review-recorded`, which carries none, a Condition carrying
   `finding_id` - or either other discriminator - rejects with no Event, while
@@ -156,7 +166,12 @@ original request.
   `closed object has wrong shape` for a field the row does not declare,
   `missing required field` for the wrong field, and `invalid ID` for an own
   field that is null. Evidence citing the relation message would mean the
-  encoding was implemented wrong. (VAL-078)
+  encoding was implemented wrong. (VAL-080)
+- [ ] The Phase 22 nullable binding still fires from task 9's dispatch after
+  this task's two rows are added: a `finding-resolved` Condition carrying a
+  stray `budget_name` is rejected `condition nullable binding mismatch`, and the
+  completion report records the observed message. A failure here is a task 9
+  defect, not a local fix. (VAL-081; QA R-24, I-45)
 - [ ] Full required commands terminate with preserved red/green evidence.
 - [ ] Every converged retained row records its provenance and executing command.
 

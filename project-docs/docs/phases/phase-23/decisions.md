@@ -890,7 +890,12 @@ Four substantive amendments and two citation fixes, all transcribed from
    `ef2f1a6a…`, `28607d77…` -> `9fb954bc…`) - the exact harm Option A exists to
    prevent. The option now states `omitempty` on the **three new fields only**,
    with the six Phase 22 types keeping `budget_name` and `capability_id`
-   present-and-null, so a new type carries five fields, not three. That reading
+   present-and-null, so a new type carries five fields, not three. (*Corrected
+   by DEC-236 / R-26: three judgment types carry five fields; `review-recorded`,
+   which section 11 gives no discriminator, carries four. The five-field
+   generalization was written before that was settled - do not re-derive the
+   arithmetic from this line; the four authorities are the task specs,
+   `contracts.md` 11, `public-interface.md` 2, and VAL-080.*) That reading
    measures byte-identical to baseline and replays the recorded pre-widening
    journal clean.
 2. **Option A is one file larger than stated, and the obvious implementation
@@ -1066,7 +1071,13 @@ and fail criteria, validator, and owning task are untouched.
   therefore now require a **direct strict-path append** inside the owning task,
   following `TestCurrentEventRejectsConditionalBindingCorruption`
   (`internal/journal/current_event_validation_test.go:171`), and both state that
-  green raise tests are not evidence for these entries. This is the phase's own
+  green raise tests are not evidence for these entries. (*Corrected by DEC-236 /
+  R-27: that exemplar is wrong for the `currentStopDetailShapes` half, because
+  it mutates `executionBlockedProjectionEvent` and `run.execution-blocked` is a
+  `validateCurrentBudgetFacts` family. Both task specs now cite
+  `TestCurrentClosedValuesRejectIncompleteAndInvalidFacts`
+  (`internal/journal/current_event_closed_values_test.go:76`) and are the live
+  authority; the requirement itself is unchanged.*) This is the phase's own
   rule applied honestly: ownership is only assignable where it is executable, so
   where a raise cannot prove an entry, the task asserts it directly.
 - **R-23 accepted:** `task-11.md` gains the missing VAL-078 acceptance
@@ -1224,6 +1235,139 @@ grant action, failure code, or evaluation reason; adds and retires no `VAL-NNN`;
 touches no required command, threshold, or budget; and reopens neither DEC-235
 nor ESC-23-001. Tasks 1 to 8 were unaffected by the pass and are unaffected by
 this disposition.
+
+### DEC-237: Eighth-pass dispositions - split VAL-078, and give the two DEC-235 preservation invariants an ID
+
+- **Status:** **ACCEPTED 2026-09-20 under Tech Lead planning authority.** No
+  Human decision is required: the split preserves every case, type, evidence
+  class, validator, and owning task, and the two additions assert behavior that
+  three task specs already require. Creating rows under planning authority has
+  precedent in this phase - DEC-228 created VAL-075 to VAL-078, and R-11 split
+  VAL-002. The validation contract moves from **79** to **82** rows: 78
+  deterministic and 4 Human. Nothing is removed, renumbered, or weakened.
+- **Context:** two independent QA confirmations of the DEC-236 batch arrived
+  against the same base `a0e8e7e`. `qa-plan.md` section 19 (commit `3907b7e`)
+  returned **READY** with no Must-fix, four improvements (I-42..I-45) and one
+  validation-contract proposal (P-01), and measured R-24's acceptance criterion
+  as discriminating - six cases accepted by a branch that returns after shape
+  validation and rejected by one that ends in the relation. `qa-plan.md` section
+  20 (commit `7a865d8`) confirmed R-24 through R-27 as transcribed and returned
+  **NOT READY for task 11** on one finding, R-28, a blocker candidate against
+  VAL-078's granularity with no ESC allocated. Both passes converge on the same
+  row from opposite directions: one says the row now covers a case it could not
+  before, the other says the row was never one observable. Both are right.
+
+**R-28 accepted: VAL-078 is split, not reworded.** The row asserted both that
+the four Condition types resolve only on their own qualifying fact **and** that
+each carries exactly its assigned discriminator. Those fail independently - a
+shape validator can be exactly right while resolution accepts a foreign fact,
+and resolution can be exactly right while malformed Conditions are stored - and
+the row's own fail criterion was an `or` across the two. The practical cost was
+already visible in the task pack: tasks 9 and 10 each produce encoding evidence
+and are marked "evidence toward VAL-078, which task 11 completes", so the
+encoding half had no recordable state until task 11 closed, and a final-review
+`FAIL` would not have said which half failed. VAL-078 keeps the resolution half,
+its QA Lead validator, and task 11. The new **VAL-080** carries the encoding
+half with every case intact, the DEC-236 scoping that made it satisfiable for
+`review-recorded`, and the DEC-235 evidence class: shape rejection, never the
+relation message. Its owning-task cell records what was already true - tasks 9
+and 10 evidence the type each raises, task 11 completes the four-type matrix.
+This is the second bundled row in this phase; R-11 split VAL-002 on the same
+pattern, a row asserting both that a thing behaves correctly and that it is
+encoded correctly. The rule is now written into the contract's coverage rules so
+the third one is caught at authoring time.
+
+**P-01 accepted: the Phase 22 nullable binding becomes VAL-081.** The binding -
+`budget-observed` alone carries a non-null `budget_name`, `capability-available`
+alone a non-null `capability_id` - is live public behavior that this phase's
+refactor can delete with every gate green. That is not a hypothesis: QA measured
+a branch that returns after shape validation, which accepts and projects a
+`work-ended` Condition carrying `budget_name:"tokens"` and passes the entire
+ordinary suite. `condition nullable binding mismatch` appears once in the
+repository, in the `fmt.Errorf` that produces it, and no other Phase 23 gate
+would notice its loss: a valid Phase 22 journal replays clean with or without
+the relation, so tasks 15 and 16 are blind to it, and task 18's extended
+`p22ClosedFieldGrammar` is a self-contained wire oracle that never reaches the
+journal. Task 9's new test will be the only detector that has ever existed. A
+`VAL-NNN` makes its survival a recorded final-review outcome instead of one
+checkbox in one completion report. Task 9 owns it; tasks 10 and 11 re-confirm it
+after adding their rows, on the VAL-003 precedent.
+
+**Extended by the Tech Lead: the six-row compatibility bar becomes VAL-082.**
+P-01's argument does not stop at the relation. DEC-235 is a Human-approved
+contract amendment, and every other Human-approved amendment in this phase
+carries at least one assertion - DEC-223 (VAL-005), DEC-224 (VAL-046), DEC-225
+(VAL-015/022/077), DEC-226 (VAL-025/039/056/057), DEC-227 (VAL-079). DEC-235
+carried none, and the invariant it exists to protect is the larger of the two:
+`omitempty` on `budget_name` or `capability_id` changes **every** stored
+`semantic_key` and `request_digest` in existence, measured, with three key pairs
+recorded above. It has the same profile P-01 describes - `run-recovered` and
+`capability-available` reach journal Condition validation zero times in the
+whole suite, so deleting both rows leaves every required gate green - and the
+same single detector, task 9's six-type table. VAL-082 asserts that table plus
+the replay and `attentionSemanticKey` halves as one observable: the six retained
+types are unchanged. Byte identity is the property; the three legs are how it is
+measured, and the latter two follow from the first.
+
+**Two QA evidence routes declined a row, with the reason recorded.** Neither is
+a coverage gap, and the boundary is deliberate: a row is warranted when the
+property is publicly observable, this phase can destroy it silently, **no**
+other gate would catch the loss, and the evidence is already mandated, so the
+row costs no new work.
+
+- **QA-52, a non-string `type` discriminant rejects without panic.** Declined: a
+  panic fails task 9's own required gate loudly. The property has a detector, so
+  it stays a task acceptance criterion. Task 9's criterion now records the
+  decline rather than reading as an unexamined "No new VAL ID".
+- **QA-49, each owning task's `currentStopDetailShapes` entry is reached.**
+  Declined: a missing entry is caught, just late and badly - as DEC-235's R-22
+  paragraph says, at task 11 or tasks 15/16, with the cause outside the failing
+  task, and VAL-064's rebuild leg is its end-state backstop. The defect there is
+  locality, and R-22's direct-assertion requirement is the right fix for
+  locality. A contract row asserts an end state, and the end state is already
+  asserted.
+
+**Improvements, all four accepted and applied.**
+
+- **I-44** is the one that mattered before dispatch. Task 9's six-type table now
+  says **canonical means type-appropriate**: `budget-observed` carries a
+  non-null `budget_name` and `capability-available` a non-null `capability_id`,
+  because an all-null form of either is a `condition nullable binding mismatch`
+  rejection - a VAL-081 case, not an acceptance here. Without the clause the two
+  types with zero corpus coverage, which are the two the table exists for, would
+  each have cost a red-test cycle on their first fixture.
+- **I-45:** tasks 10 and 11 carried "confirm in the completion report that the
+  relation still fires" in a file-scope bullet only, so a report that omitted it
+  still ticked every box. Both now have an acceptance criterion citing VAL-081,
+  which also gives the re-confirmation an ID to report against.
+- **I-42:** DEC-235's R-22 paragraph still directed tasks 9 and 10 to follow
+  `TestCurrentEventRejectsConditionalBindingCorruption` for the details half,
+  which R-27 measured as wrong. Annotated in place, in the same form as the I-40
+  annotation; the live authority is both task specs and they are correct.
+- **I-43:** the over-generalized "five-field judgment Condition" survived in
+  three derived places - `tl-escalations.md`'s resolution bullet, DEC-235's
+  Option A description, and `contract-coverage.md`'s clause title. All three now
+  state that only the three discriminated types carry five fields. This is the
+  staleness that produced R-26 in the first place: a later pass re-derived the
+  arithmetic from a line that predated the finding.
+
+**What this decision does not do.** It changes no Stop code, Condition type,
+discriminator pairing, encoding rule, grant action, failure code, or evaluation
+reason; retires or weakens no `VAL-NNN`; touches no required command, threshold,
+or budget; adds no Human checklist step; and reopens neither DEC-235 nor
+ESC-23-001, which stays RESOLVED. It adds no implementation work: every new row
+maps onto an acceptance criterion the task specs already carried, and the two
+I-45 checkboxes promote an obligation that was already written. **Tasks 1 to 8
+are untouched** - both passes checked this by name, and none of the edited
+criteria, rows, or files is theirs.
+
+**Consequences.** One fresh QA confirmation pass is required over these contract
+edits before tasks 9, 10, and 11 dispatch - R-28's own requested action, and the
+right bar for a Tech Lead edit to the contract. It is bounded: the three rows,
+their task-spec citations, the count, and the revision log; R-24 through R-27
+need no recheck, because nothing here changes them. Independently of that pass,
+**tasks 9, 10, and 11 remain held until the Phase Runner receives explicit Human
+clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 
 ### Accepted carry-forward dispositions
 
