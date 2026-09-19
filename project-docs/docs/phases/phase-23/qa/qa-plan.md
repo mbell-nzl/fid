@@ -3,6 +3,7 @@
 > Phase: 23 - Review and Human judgment
 > First pass: 2026-09-15. Readiness refresh: 2026-09-19 (section 12).
 > Readiness confirmation of DEC-229/DEC-230: 2026-09-19 (section 13).
+> Readiness confirmation of DEC-231: 2026-09-19 (section 14).
 > QA Lead: Claude Opus 5 (activated directly by the Human; no Tech Lead handoff)
 > Operating mode: Heavy. Sections 1-11 were produced fresh on `phase-23` at
 > `0c28936a6ad3980d2b3c4439b42ec70c83313d4c`; section 12 was produced fresh at
@@ -10,20 +11,22 @@
 > documentation commits only). Nothing carries forward from Phase 22, and
 > section 12 reuses no earlier result for anything the Tech Lead changed.
 >
-> **Status: NOT READY - one Must-fix revision remains (section 13.5).** This is
+> **Status: NOT READY - two Must-fix revisions remain (section 14.5).** This is
 > not a placeholder `BLOCKED`: every required command is concrete and was
-> executed or feasibility-proven in sections 6 and 12. The first pass returned
-> R-01..R-13 and I-01..I-16; all were accepted and applied (DEC-223..228), and
-> section 12 confirms every one of those edits against fresh evidence,
-> including the amended migration 0017 on the real chain. The refresh returned
-> R-14 and R-15; both were dispositioned under DEC-229 and DEC-230 and are
-> **confirmed correct and correctly applied** in section 13. The plan cannot
-> become Ready because confirming R-14 surfaced one further Must-fix - **R-16**
-> (the typed-result registries for the nine new Event families have no owning
-> task, so the first unfenced Phase 23 Event is rejected at append time) - a
-> bounded, decision-free planning correction with no blocker candidate. Read
-> section 12 before sections 2-11: it supersedes the earlier statements listed
-> in 12.8. Read section 13 after it: 13.4 supersedes statements in section 12.
+> executed or feasibility-proven in sections 6 and 12. Every disposition so far
+> is confirmed: R-01..R-13 and I-01..I-16 under DEC-223..228 (section 12), R-14,
+> R-15 and DEC-230 under DEC-229 (section 13), and R-16 under DEC-231 (section
+> 14), whose central judgment - the unfencing task owns the typed-result
+> registries, not task 1 - is correct. The plan cannot become Ready because the
+> journal's strict validation path holds further closed registries with no
+> owning task: **R-17** (`validateCurrentCardinality` caps every new Phase 23
+> table at one effect per key, so a two-Finding `review.recorded` is rejected at
+> task 4) and **R-18** (the planned `Subject` widening drops the accepted
+> Phase 22 Stop/Attention subject constraint on live unfenced families). Both
+> are bounded, decision-free planning corrections with no blocker candidate.
+> Read section 12 before sections 2-11: it supersedes the earlier statements
+> listed in 12.8. Then section 13 (13.4 supersedes statements in section 12),
+> then section 14.
 
 ## 1. Scope And Source Documents
 
@@ -1033,3 +1036,163 @@ Phase Runner's readiness check (condition 4) can run.
 
 No assertion was weakened to reach this verdict, and no `VAL-NNN` was narrowed,
 re-scoped, or restated to reach Ready.
+
+## 14. Readiness Confirmation - DEC-231 (2026-09-19)
+
+Readiness condition 3, third cycle. A fresh confirmation of the edits applied in
+`8cd613e` under DEC-231, per the superseding `tl-qa-confirmation-brief.md`.
+Base: branch `phase-23` at `8cd613e`, `git status --porcelain` empty before and
+after this pass.
+
+Scope bounds honoured. Sections 12 and 13 are not reopened. No product file
+changed in `8cd613e` (all 15 edited files are under `project-docs/docs/`,
+confirmed by `git show --stat`), so the DEC-227 budgets, the DEC-223 migration
+chain, the DEC-224 raising sequences, the failure-code sets and the contract row
+counts were not re-measured. Two throwaway probes ran against the real
+`internal/journal` package through `go test -overlay`, which injects a test file
+without writing to the working tree.
+
+### 14.1 The Judged Item - Owner Is The Unfencing Task, Not Task 1
+
+**CONFIRMED. The disposition is correct, and it is the right reading of
+DEC-229 rather than a departure from it.**
+
+The executability test is the correct test, and it separates the two cases
+cleanly. `TestCurrentEventColumnDomainsMatchAcceptedDDL` introspects the 0017
+DDL through `PRAGMA table_info`, needs no Event appended, and fails closed -
+section 13.1 confirmed exactly that, which is why task 1 is right for
+`current_event_columns.go`. The three registries here execute only inside
+`validateCurrentEvent`'s strict branch and `validateCurrentAppliedResults`, both
+of which require an appended Event of the family, and `unavailableJudgmentEvents`
+makes that impossible until the unfencing task. Placing them at task 1 would
+write nine grammars, nine branches, fourteen shapes and three fill helpers that
+task 1's own gate could never execute, and would convert task 4's red test into
+an inherited defect. The parallel the Tech Lead draws to DEC-229's Condition-type
+rule is exact: registration lands where it first executes.
+
+**Is there a proof that would land at task 1 and that the Tech Lead missed?** No.
+I looked for the `current_event_columns.go` analogue - a test that iterates one
+of these three registries and cross-checks it against something task 1 ships.
+There is none: `currentValueShapes` is checked only by being *read* during an
+append, the `fields` map only by `validateCurrentResultJSON` on an append, and
+`currentExpectedResult` only by `validateCurrentAppliedResults` on an append. A
+task-1-time parity test could only be written by inventing a new cross-check
+between `currentEventRules` and the other three maps, which is new product
+behavior, not registration. The Tech Lead's search finding no such test is
+confirmed.
+
+### 14.2 The Reachability Sweep
+
+**Is there any path that reaches one of the three registries before its family's
+fence key is deleted?** I checked all four the brief names, and found none.
+
+| Path | Result | Evidence |
+|---|---|---|
+| A retained family projecting a new value | **Cannot reach them** | `validateCurrentEvent` routes a family to the retained branch when it is absent from `currentEventRules` and returns at `current_event_validation.go:64` - before `validateCurrentJSON` is ever called. `validateCurrentAppliedResults` independently gates on `currentEventRules` membership (`current_event_result_projection.go:12`). So `evidence.linked`, `envelope.activated`, `envelope.created` and `artifact.availability-observed` - the four families tasks 9 and 10 amend - never touch any of the three. |
+| Export or import | **Different registry** | `internal/export` keys on `semanticEventRules` (44 entries, measured), which DEC-229 already assigned. Neither `currentValueShapes` nor either result registry is referenced from `internal/export`. |
+| Rebuild | **Cannot reach them** | A rebuild replays the Events that exist. A fenced family cannot be appended, so no Event of it exists to replay. |
+| Replay of a stored snapshot | **Cannot reach them** | Replay returns the stored `idempotency_results` row; it re-derives nothing, and the row can only exist if the original append already succeeded, which the fence prevents. |
+
+The unfencing task is therefore not too late for any of the three. The
+disposition holds on its own terms.
+
+**But the sweep did not stop there.** The brief's own section 6 asks whether a
+fourth closed registry on the strict path has no owning task. It does - see
+R-17 - and a fifth shared registry is being edited in a way that drops an
+accepted Phase 22 constraint - see R-18.
+
+### 14.3 Mechanical Re-checks
+
+| Referenced step | Validation method | Result | Evidence |
+|---|---|---|---|
+| Nine fence keys map one-to-one onto six unfencing tasks | `execution-scope.md` 4 and 6 against `schema.md` 6.1 and the task specs | PASS | 4 `review.recorded`; 5 `finding.addressed`; 8 `concern.recorded`/`concern.disposed`/`deviation.recorded`; 9 `decision.referenced`; 10 `human-outcome.recorded`; 12 `requirement.referenced`/`requirement.linked`. Nine keys, six tasks, no key unowned and none owned twice. |
+| The two result files are named by exactly those six tasks | file-name search across all eighteen specs | PASS | `current_event_json.go` and `current_event_result_projection.go` each appear in tasks 4, 5, 8, 9, 10, 12 and nowhere else. `current_event_value_catalog.go` appears in those six plus 3, 6 and 11, which is correct: 3 and 6 own the `Claim` and Budget sub-items and 11 owns the `Condition` grammar under DEC-229. |
+| Value shapes registered once and reused | task-spec read | PASS | Task 4 `Review`, `Coverage`, `CoverageItem`, `CoverageExclusion`, `Finding`, `FindingDisposition`; task 8 `Concern`, `ConcernDisposition`, `Deviation`; task 9 `DecisionRef`, `ProtectedDecision`; task 10 `HumanOutcome`; task 12 `RequirementRef`, `RequirementLink`. Fourteen shapes, each with one first owner. Tasks 5 and 10 are explicitly told to reuse and to escalate rather than edit a shape they do not own. |
+| Task 4 owning `FindingDisposition` | `schema.md` 6.2 check | PASS | `review.recorded`'s accepted rule lists `finding_dispositions/insert` as an optional effect for `resolves_finding_ids`, so task 4 genuinely writes that table before task 5 exists. Correct, and not merely convenient. |
+| Composite fill helpers assigned | task-spec read against `currentProjectedValue` | PASS | `Review.findings[]` / `Review.coverage` and `Finding.dispositions[]` at task 4, `Concern.disposition` at task 8, each named in the same style as the existing `currentFillRun` / `currentFillStopAttention`. These are the only Phase 23 shapes with child-table or nested content. |
+| Gate reach for every task that gained a file | per-task command-block check | PASS | Tasks 3, 4, 5, 6, 8, 9, 10 and 12 all carry the byte-identical `go test -race -timeout 30m -coverprofile=coverage.out ./...`, and `internal/journal` is in `go list ./...` with in-package tests. Confirmed directly, not taken from the brief. |
+| Task 1 unchanged | `git diff 5a94a42..HEAD` | PASS | `task-1.md` is not in the commit's file list. Task 1 gains nothing from R-16, as DEC-231 states. |
+| The DEC-229 tasks-4/5 rejection still stands | `execution-scope.md` 6 read | PASS | Explicitly restated: tasks 4 and 5 gain the three R-16 files, not `current_event_catalog.go`, and the rejection is called out as unaffected. Correct - they are different files. |
+| Contract untouched at 79 rows | row count plus diff inspection | PASS | 79 rows. The diff against `5a94a42` touches **zero** `VAL-` lines; only the header provenance block changed. |
+| I-27 applied | contract header read | PASS | The header now records the 2026-09-15 and 2026-09-19 refinements separately, names VAL-006 (I-22) and VAL-034 (I-23) as the only two rows changed, states that DEC-230 and DEC-231 changed no row, and replaces the satisfied prerequisite with the current one. |
+| I-28 applied | tasks 6 and 11 read | PASS | Both vacuous `internal/journal/` bullets are replaced with explicit "no catalog edit; a missing row is a task 1 defect - stop and escalate" instructions, which is stronger than the deletion I proposed. |
+| I-29 applied | `schema.md` 6.2 read | PASS | `schema.md:617` now reads "rows added by task 9; also raised from this family by task 10 (I-29)". |
+| Sub-item: `Claim.mode` at task 3 | reachability check | PASS | `currentProjectedValue` is called with kind `Claim` from the `run.recovered` and `run.abandoned` branches of `currentExpectedResult`, both live families, so the Tech Lead's stated reachability is correct. Task 3 is where review-mode Claims first exist. |
+| Sub-item: Budget domains at task 6 | task-spec read | PASS | `unit` gains `review-cycles` and `exhaustion_action` gains `review-rework-exhausted` in both `Budget` and `ImmutableBudget` at task 6, which is the task that adds both. |
+
+### 14.4 The Two Items The Tech Lead Recorded Unprompted
+
+**5.1, the `idempotency_results` optional-stage note: CONFIRMED pre-existing,
+with one figure corrected.** Measured in `currentEventRules`: **15** of 22
+families encode `currentStage(0, ...)` for `idempotency_results` and **7**
+encode `currentStage(1, ...)`, while `validateCurrentAppliedResults` requires
+the result row unconditionally for all 22. So the distinction is real,
+pre-existing and uniform in the sense that matters - the stage encoding never
+governs whether the snapshot is required. "Nearly every family" overstates a
+15/22 split; the note reads better as "most". All nine Phase 23 rows in
+`schema.md` 6.2 list `idempotency_results/insert` as optional, mirroring the
+majority encoding, and none is designed to omit the row. Not a gap; the note is
+worth keeping.
+
+**5.2, the `Subject` widening: NOT CONFIRMED.** This is R-18 below. The
+conditional the Tech Lead removed was the wrong one to remove: four new shapes
+do reference `Subject`, but the shape being widened is not free to widen.
+
+### 14.5 Revisions Requested From The Tech Lead (fourth pass)
+
+| ID | Sev | Where | Finding and proposal |
+|---|---|---|---|
+| R-17 | M | `internal/journal/current_event_cardinality.go`; task 4; `execution-scope.md` 6 | **A fourth closed registry on the same strict path has no owning task, and it rejects an ordinary two-Finding Review.** `validateCurrentCardinality` (`current_event_cardinality.go:8`) is called from the strict branch at `current_event_validation.go:96`, so every Phase 23 family reaches it the moment task 1 registers it in `currentEventRules`. It defaults `maximum := 1` per `table/op` key and widens that only through a closed `switch effect.Table` (`:14-33`) listing Phase 21/22 tables - `budget_samples`, `run_budget_bindings`, `referenced_artifacts`, `receipt_artifacts`, `activation_*`, and the Stop bundle tables. **None of the ten new Phase 23 tables is in it.** `public-interface.md` 4 accepts `findings:FindingInput[0..64]` and `resolves_finding_ids:ID[0..64]` on `review.record`, and `schema.md` 6.2 makes `review_findings/insert` and `finding_dispositions/insert` repeated optional effects of `review.recorded`, so the ordinary case is many effects on one key. **Executable proof** (`go test -overlay`, `internal/journal`, working tree untouched): a `review.recorded` Event with two `review_findings/insert` effects returns `current Event review.recorded: too many review_findings/insert Effects`, and two `finding_dispositions/insert` returns the same for that key. Controls behave correctly - one Finding passes; two `stops/insert` pass, because the existing `case "stops", "attention_items", ...` branch already widens the maximum for any family other than `stop.raised`/`stop.resolved`/`attention.resolved`; and `requirement_refs` insert-plus-update passes because they are distinct keys. A search of all eighteen task specs and every phase document returns **zero** mentions of `current_event_cardinality.go`. This lands at **task 4**, on the first Review that carries more than one Finding, with its cause outside task 4's declared scope - the identical failure mode to R-09, R-14 and R-16, one validator further along the same path. It blocks at minimum VAL-017 (verdict/Finding consistency across all three verdicts), VAL-020 (Findings created only with their Review in one atomic Event), VAL-022, VAL-023 and VAL-026, none of which is meaningful with a one-Finding ceiling. **Proposal:** apply the DEC-231 standing rule to this file as well - the task that unfences a family also registers that family's repeated-effect cardinality - and add `current_event_cardinality.go` to task 4's scope for `review_findings` and `finding_dispositions`. Check each remaining family as you disposition: `concern.*`, `deviation.recorded`, `decision.referenced` and `human-outcome.recorded` each write one row per Event and need nothing, and `requirement.referenced`'s insert and update are separate keys, so on my reading task 4 is the only task that needs an entry - but that derivation should be yours, not mine. No assertion changes; no public surface changes. |
+| R-18 | M | task 4; `execution-scope.md` 6; DEC-231 | **The `Subject` widening drops an accepted Phase 22 constraint, and its recorded rationale is factually wrong.** `task-4.md` instructs "widen the `Subject` shape's `type:=run,envelope,activation` to the complete accepted SubjectType set", justified as "monotonic and cannot loosen anything reachable earlier because the fence keeps every other Phase 23 family closed". The fence is irrelevant here. `currentValueShapes["Subject"]` is referenced by exactly three shapes and no others - `Condition` (`:15`), `Stop` (`:26`) and `Attention` (`:27`) - and those belong to `stop.raised`, `stop.resolved` and `attention.resolved`, which are **Phase 21/22 families in `currentEventRules` that are never fenced** and are live from task 1. So the widening takes effect immediately at task 4 on live families, not on fenced ones. What it removes is explicit accepted material: `phase-22/public-interface.md:67-68` states "**Subject types for Stop/Attention are only run, envelope, activation**", and no Phase 23 document amends it - Phase 23's `public-interface.md` 2 amends `StopCode` and says the blocked-action subset "adds nothing", `stop.list --subject <run\|envelope\|activation>` is unamended, and a search of the Phase 23 documents for any Stop/Attention subject amendment returns nothing. The widening is also **unnecessary**: the four new shapes that need a wide subject (`Finding`, `Concern`, `Deviation`, `HumanOutcome`) are new, so they can reference a new shape instead. It is not a reachable defect today - `internal/workflow/stop.go`'s `validSubject` (`:377`) still restricts raising to run/envelope/activation and no Phase 23 task widens it - so this is a silent loss of a journal-layer invariant plus a wrong recorded reason, not a live bug; but a wrong reason in a task spec propagates, and the invariant would be gone with nothing recording that it was dropped deliberately. **Proposal:** leave `currentValueShapes["Subject"]` at `type:=run,envelope,activation`, and have task 4 register a **separate** wide shape - say `JudgmentSubject`, `type:=` the full accepted SubjectType set - referenced by `Finding`, `Concern`, `Deviation` and `HumanOutcome`. Same one-edit ownership at task 4, same monotonicity, and the Phase 22 Stop/Attention constraint survives intact. Correct the rationale in `task-4.md` and `execution-scope.md` 6 either way: whatever is decided, "the fence keeps every other Phase 23 family closed" is not a true statement about `Subject`. |
+
+Improvements (the Tech Lead may apply or decline; none blocks Ready).
+
+| ID | Where | Proposal |
+|---|---|---|
+| I-30 | `execution-scope.md` 6; DEC-231 | The `idempotency_results` note says "nearly every family". Measured: 15 of 22 use the optional stage and 7 use the required one. Say "most families" so the note does not invite a Developer to check for a uniformity that is not there. The substantive point - that the stage encoding never governs whether the snapshot is required - is correct and worth keeping. |
+| I-31 | `execution-scope.md` 6 | The DEC-231 rule is stated for the three registries it names. Given that R-16 and R-17 were both found the same way, state it once as a general obligation - *a task that unfences a family owns that family's entry in every closed journal registry the strict path consults* - and list the registries known today (`current_event_json.go`, `current_event_result_projection.go`, `current_event_value_catalog.go`, `current_event_cardinality.go`). That makes the next such gap a Developer's escalation rather than a fifth planning pass. |
+
+### 14.6 Blocker Candidates
+
+**None.** R-17 assigns an existing file to a task that already owns the
+behavior; the effect counts it needs are fixed by the already-accepted
+`public-interface.md` 4 bounds and `schema.md` 6.2 rules. R-18 makes a task
+spec's edit match accepted Phase 22 material instead of contradicting it, which
+narrows a planned change rather than requesting a new one. Neither changes a
+protected definition, command, threshold, budget, tolerance, assertion
+semantics, accepted status, public surface, or policy. Both sit within Tech Lead
+planning authority, as R-08, R-09, R-14 and R-16 did. No `ESC` identity is
+requested and none is minted here.
+
+### 14.7 Readiness Verdict
+
+**NOT READY.**
+
+**DEC-231's central judgment is confirmed correct.** The owner of the three
+typed-result registries is the unfencing task, not task 1; the executability
+test is the right test; the reasoning is the consistent extension of DEC-229
+rather than a departure from it; and the full reachability sweep the brief asked
+for - retained families, export and import, rebuild, replay - finds no path that
+reaches any of the three before the fence opens. The mechanical re-checks all
+pass: nine keys onto six tasks with none unowned or doubly owned, fourteen value
+shapes each with one first owner, composite fill helpers assigned, gate reach
+confirmed directly, task 1 untouched, the DEC-229 tasks-4/5 rejection intact,
+the contract still at 79 rows with zero `VAL-` lines changed, and I-27, I-28 and
+I-29 all applied. The unprompted `idempotency_results` note is confirmed
+pre-existing.
+
+What blocks Ready is the Tech Lead's own stated test in section 6 of the brief:
+a fourth registry on the strict path with no owning task. **R-17**:
+`validateCurrentCardinality` defaults every new Phase 23 table to one effect per
+key, so `review.recorded` carrying two Findings - the ordinary case, and the one
+VAL-017, VAL-020, VAL-022, VAL-023 and VAL-026 all depend on - is rejected at
+append time at task 4, with its cause in a file no document names. Proven by
+execution. **R-18**: the `Subject` widening would drop the accepted Phase 22
+constraint that Stop and Attention subjects are only run, envelope and
+activation, on live unfenced families, for a reason that does not hold; a
+separate shape for the four new judgment values achieves the same end with the
+invariant intact.
+
+Both are bounded, decision-free, and of the same class the last three passes
+have dispositioned. No assertion was weakened to reach this verdict, and no
+`VAL-NNN` was narrowed, re-scoped, or restated to reach Ready.
