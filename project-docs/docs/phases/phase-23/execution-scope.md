@@ -6,6 +6,9 @@
 > Amended 2026-09-15: section 7 adds the test-time headroom disposition
 > (DEC-227, R-13), and three file scopes are corrected under DEC-167/173
 > (R-08, R-09) in the affected task specs.
+> Amended 2026-09-19: section 6 gains the closed-registry owners (DEC-229),
+> the unfencing-task standing rule (DEC-231), and its generalisation with the
+> six-row strict-path registry inventory (DEC-232, R-17/R-18/I-31).
 
 ## 1. Ownership Rule
 
@@ -180,35 +183,60 @@ task's scope:
   the concerns rename. Without this, a divergence stays silent until VAL-064 at
   task 16, where the cause sits outside that task's ordinary scope.
 
-A fifth gap, larger than the four above, was found while confirming them.
-Corrected under R-16 (DEC-231):
+A fifth gap, larger than the four above, was found while confirming them
+(R-16, DEC-231), and a sixth and seventh on the same path while confirming
+that (R-17 and the Tech Lead's own re-derivation, DEC-232). They share one
+cause, so they are stated once as a general rule with a closed inventory:
 
-- Registering the nine families in `currentEventRules` also routes them onto the
-  journal's **strict** result path. `validateCurrentAppliedResults`
-  (`current_event_result_projection.go:12`, called from `project_effects.go:20`)
-  gates on `currentEventRules` membership, and `schema.md` 6.3 makes a typed
-  snapshot mandatory for every Phase 23 mutation, so each family must also clear
-  three further closed registries: the inline `fields` grammar map in
-  `internal/journal/current_event_json.go` (else `unregistered current result
-  family`), `currentExpectedResult`'s switch in
-  `internal/journal/current_event_result_projection.go` (else `unknown current
-  result`), and `currentValueShapes` in
-  `internal/journal/current_event_value_catalog.go`, which
-  `currentProjectedValue` reads the projected field list from.
-- **Standing rule: a family's typed-result grammar, its `currentExpectedResult`
-  branch, its value shapes, and any `currentProjectedValue` fill helper are
-  added by the task that deletes that family's fence key - never by task 1.**
-  All three registries execute only when an Event of the family is appended, so
-  the unfencing task is the earliest point at which any of them is provable, and
-  it is the point at which the task's own first successful Event proves all
-  three at once. This is the same principle DEC-229 applied to Condition types,
-  which are registered by the task that first raises a Stop carrying them.
-  Task 1 is deliberately **not** the owner here, unlike
-  `current_event_columns.go`: that catalog is proved by
+- Registering the nine families in `currentEventRules` routes them onto the
+  journal's **strict** validation path - `validateCurrentEvent`
+  (`current_event_validation.go:26`) for the append checks and
+  `validateCurrentAppliedResults` (`current_event_result_projection.go:12`,
+  called from `project_effects.go:20`) for the typed snapshot, which
+  `schema.md` 6.3 makes mandatory for every Phase 23 mutation. That path
+  consults several closed registries that fail closed on an unregistered
+  family, table, or column.
+- **Standing rule (generalised by I-31): a task that deletes a family's fence
+  key owns that family's entry in every closed journal registry the strict path
+  consults - never task 1.** That covers the family's typed-result grammar, its
+  `currentExpectedResult` branch, its value shapes, any `currentProjectedValue`
+  fill helper, its repeated-effect cardinality, its `*_json` column grammars,
+  and its update field-and-guard sets. Every one of these executes only when an
+  Event of the family is appended, so the unfencing task is the earliest point
+  at which any of them is provable, and it is the point at which the task's own
+  first successful Event proves them together. This is the same principle
+  DEC-229 applied to Condition types, which are registered by the task that
+  first raises a Stop carrying them. Task 1 is deliberately **not** the owner
+  here, unlike `current_event_columns.go`: that catalog is proved by
   `TestCurrentEventColumnDomainsMatchAcceptedDDL`, which introspects the 0017
-  DDL task 1 ships and needs no Event at all, whereas these three would sit
+  DDL task 1 ships and needs no Event at all, whereas all of these would sit
   behind task 1's own fence unexecuted. Ownership is only assignable where it is
   executable.
+- **The inventory known today, all under `internal/journal/`. A registry that
+  is not on this list and rejects a Phase 23 family is a Developer escalation,
+  not a silent workaround.**
+
+| Registry | File | Rejection message | Phase 23 owners |
+|---|---|---|---|
+| `fields` grammar map in `validateCurrentResultJSON` | `current_event_json.go:135` | `unregistered current result family` | 4, 5, 8, 9, 10, 12 |
+| `currentExpectedResult` switch | `current_event_result_projection.go:69` | `unknown current result` | 4, 5, 8, 9, 10, 12 |
+| `currentValueShapes` | `current_event_value_catalog.go:6` | `missing projected <Kind>.<field>` | 4, 8, 9, 10, 12 |
+| `validateCurrentCardinality` table switch | `current_event_cardinality.go:14` | `too many <table>/<op> Effects` | 4 only (R-17) |
+| `validateCurrentJSON` `table.column` switch | `current_event_json.go:14` | `unregistered current JSON column <t>.<c>` | 4, 8, 9, 10, 12 |
+| `validateCurrentUpdate` table switch | `current_event_updates.go:14` | `current Event update table not admitted` | 8, 12; renamed by 15 |
+
+- `validateCurrentTerminalValues`'s second switch in that same file
+  (`current_event_updates.go:61`) fails **open**, so it blocks nothing. The
+  owning task may add a status-transition guard there and should say in its
+  completion report whether it did; the required change is the admission switch
+  above.
+- Two registries on the path were checked and need **no** Phase 23 entry; this
+  is a positive finding, recorded so no later pass re-derives it.
+  `validateCurrentBindings`'s `entityTable` map
+  (`current_event_validation.go:282`) and `currentResultEntity`'s map
+  (`current_event_idempotency.go:65`) are both keyed by Event type and both
+  fail **open** to the aggregate ID, which is the correct `result_entity_id`
+  for all nine Phase 23 families. Do not add rows to either.
 - Owners, one-to-one with the nine fence keys: task 4 `review.recorded`; task 5
   `finding.addressed`; task 8 `concern.recorded`, `concern.disposed`,
   `deviation.recorded`; task 9 `decision.referenced`; task 10
@@ -221,15 +249,35 @@ Corrected under R-16 (DEC-231):
   becomes `mutation,review` at **task 3**, reachable because `run.abandoned` and
   `run.recovered` both project a `Claim`; and `["Budget"]` / `["ImmutableBudget"]`
   gain `review-cycles` in `unit` and `review-rework-exhausted` in
-  `exhaustion_action` at **task 6**. Task 4 additionally widens the `Subject`
-  shape's `type:=run,envelope,activation` to the complete accepted SubjectType
-  set in `public-interface.md` section 2, in one monotonic edit, as the first
-  task to register a value shape referencing `Subject`; no later task re-narrows
-  it.
+  `exhaustion_action` at **task 6**.
+- **The journal `Subject` value shape is not widened by any task (R-18,
+  DEC-232).** DEC-231 directed task 4 to widen
+  `currentValueShapes["Subject"]`'s `type:=run,envelope,activation` "to the
+  complete accepted SubjectType set"; that direction is withdrawn as wrong on
+  three counts. `Subject` is referenced by the `Condition`, `Stop`, and
+  `Attention` shapes, which serve `stop.raised`, `stop.resolved`,
+  `attention.resolved`, `run.budget-observed`, and every `stops/insert` in any
+  family - all live from task 1 and none behind the fence, so no widening of it
+  is "monotonic behind the fence". The two domains are not nested either:
+  `stops`/`attention_items` admit `activation` (`0015:56,82`) and the four
+  judgment tables do not, while the judgment tables admit `issue`, `review`,
+  `finding`, and `requirement` and Stop does not, so no single shape can serve
+  both. And `public-interface.md` section 2's `SubjectType` row is the CLI
+  **error** subject vocabulary - `internal/cli/codes.go:88`, which is why
+  `requirement` can be "retained" there - not the Stop or judgment subject; a
+  literal reading would let a Stop resolution condition name `type:"path"`.
+- **Task 4 instead registers a separate `JudgmentSubject` shape**,
+  `type:=issue,envelope,run,review,finding,requirement id:ID`, from the closed
+  set already accepted in `contracts.md` section 8 and enforced identically by
+  the `subject_type` CHECK on `review_findings`, `judgment_concerns`,
+  `deviations`, and `human_outcomes`. `Finding` uses it at task 4; `Concern` and
+  `Deviation` reuse it unchanged at task 8 and `HumanOutcome` at task 10.
+  `Subject` stays exactly as it is, and no task edits it.
 - Note for every owner: `idempotency_results` is encoded as an optional stage in
-  `currentEventRules` for nearly every family, but `validateCurrentAppliedResults`
-  requires the result row unconditionally. "Optional" in `schema.md` 6.2 is the
-  stage encoding, not permission to omit the typed snapshot.
+  `currentEventRules` for 15 of the 22 existing families and a required stage
+  for the other 7 (I-30), but `validateCurrentAppliedResults` requires the
+  result row unconditionally for all of them. "Optional" in `schema.md` 6.2 is
+  the stage encoding, not permission to omit the typed snapshot.
 
 Not corrected, and deliberately so: tasks 4 and 5 do **not** gain
 `internal/journal/current_event_catalog.go`. Task 1's binding constraints
@@ -237,8 +285,9 @@ already register all nine Phase 23 Event types, their operation mappings, and
 their complete `schema.md` section 6.2 effect rules, so `review.recorded` and
 `finding.addressed` need no catalog edit at tasks 4 and 5. Those tasks own only
 their fence key in `internal/journal/project_effects.go`. That rejection is
-unaffected by R-16: the three registries above are different files, and tasks 4
-and 5 gain those, not `current_event_catalog.go`.
+unaffected by R-16 and R-17: every registry in the inventory above lives in a
+different file, and tasks 4 and 5 gain the rows they need there, not
+`current_event_catalog.go`.
 
 ## 7. Test-Time Headroom (DEC-227)
 

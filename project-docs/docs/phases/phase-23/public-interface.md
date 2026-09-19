@@ -14,7 +14,9 @@
 
 Retain `fid-cli.v1`, `--json`, `--project`, the existing error envelope, exit
 mapping, and the Phase 22 notation (`?T`, `T[]`, ID, text, timestamp, digest,
-Subject, Source, Repository, Version). Every Phase 23 mutation takes no
+Subject, Source, Repository, Version); `Subject` keeps its Phase 22 meaning
+exactly, and section 3 disambiguates it from the three other Phase 23 subject
+vocabularies (DEC-232). Every Phase 23 mutation takes no
 positional argument and requires `--input <file|->`, `--actor
 <activated-actor-id>`, and `--idempotency-key`. Every Phase 23 read uses its
 declared read grammar. No mutation accepts a caller success flag, a claimed
@@ -35,7 +37,7 @@ Obligation evaluations by Obligation ID.
 
 | Value | Exact change |
 |---|---|
-| SubjectType (amend) | Retain the Phase 21/22 set and add `review`, `finding`, `concern`, `deviation`, `decision`, `human-outcome`. `requirement` is retained and now names a `requirement_refs` row. |
+| ErrorSubjectType (amend) | The failure-envelope subject vocabulary of `../phase-21/public-interface.md` section 1, implemented as `SubjectType` in `internal/cli/codes.go:88`. Retain the Phase 21/22 set and add `review`, `finding`, `concern`, `deviation`, `decision`, `human-outcome`. `requirement` is retained and now names a `requirement_refs` row. This row does **not** amend the Stop/Attention `Subject` or the judgment `JudgmentSubject` below (DEC-232). |
 | ObligationInput (replace) | `{id:ID,type:"gate-evidence"\|"review"\|"human-outcome",applicability:"required",guarded_actions:text[1..2],subject:{type:"issue",id:ID},registration:?{id:ID,version:int>=1},review_profile:?ID,outcome_class:?ID,accepted_evidence_types:text[1],accepted_trust_sources:text[1],freshness_target:"repository-tree"\|"none",artifact_policy:"required-available"\|"metadata-sufficient",independence:"fid-executed"\|"distinct-actor"\|"human",required_lane:null,source:Source}`; the exact per-type field combination is fixed by `contracts.md` section 2 |
 | Obligation (amend) | `ObligationInput` plus `{derived_status:"satisfied"\|"unsatisfied",reasons:Reason[]}`, unchanged in shape |
 | Evaluation (amend) | `artifact_availability` domain becomes `"available"\|"missing"\|"not-applicable"`; all other fields unchanged |
@@ -61,11 +63,13 @@ StopDetails gains three closed variants:
 ## 3. New Closed Values
 
 ```text
+JudgmentSubject = {type:"issue"|"envelope"|"run"|"review"|"finding"
+                  |"requirement",id:ID}
 CoverageItem   = {source:Source,assessed:boolean}
 CoverageExclusion = {source:Source,reason:text}
 Coverage       = {items:CoverageItem[1..64],exclusions:CoverageExclusion[0..64]}
 Severity       = "blocker"|"major"|"minor"|"nit"
-FindingInput   = {id:ID,subject:Subject,scope:{paths:text[0..256]},
+FindingInput   = {id:ID,subject:JudgmentSubject,scope:{paths:text[0..256]},
                   severity:Severity,summary:text,blocking:boolean}
 FindingDisposition = {id:ID,action:"addressed"|"resolved"|"inapplicable",
                   actor_id:ID,qualifying_review_id:?ID,reason:text,
@@ -82,11 +86,13 @@ Review         = {id:ID,run_id:ID,issue_id:ID,envelope_id:ID,envelope_revision:1
 ConcernDisposition = {action:"carried-forward"|"rejected"|"superseded",
                   issue_id:?ID,supersedes_concern_id:?ID,supersedes_finding_id:?ID,
                   reason:text,actor_id:ID,disposed_at:timestamp,event_id:ID}
-Concern        = {id:ID,subject:Subject,actor_id:ID,scope:{paths:text[0..256]},
+Concern        = {id:ID,subject:JudgmentSubject,actor_id:ID,
+                  scope:{paths:text[0..256]},
                   severity:Severity,summary:text,reasoning:text,
                   references:Source[0..32],status:"open"|"disposed",
                   disposition:?ConcernDisposition,created_at:timestamp,event_id:ID}
-Deviation      = {id:ID,subject:Subject,actor_id:ID,expected:text,observed:text,
+Deviation      = {id:ID,subject:JudgmentSubject,actor_id:ID,
+                  expected:text,observed:text,
                   authority:{actor_id:ID,reference:?text},
                   disposition:"accepted"|"rejected"|"pending-decision",
                   reasoning:text,references:Source[0..32],
@@ -97,7 +103,7 @@ DecisionRef    = {id:ID,class:ID,source:Source,
                   created_at:timestamp,event_id:ID}
 HumanOutcome   = {id:ID,actor_id:ID,
                   provenance:{activation_id:ID,activation_version:int,
-                    profile_ref:text},class:ID,subject:Subject,
+                    profile_ref:text},class:ID,subject:JudgmentSubject,
                   result:"approved"|"rejected"|"changes-required"|"acknowledged",
                   scope:{issue_id:ID},reasoning:text,references:Source[0..32],
                   created_at:timestamp,event_id:ID}
@@ -112,6 +118,25 @@ RequirementLink = {requirement_id:ID,issue_id:ID,
                   relation:"implements"|"verifies"|"relates-to",
                   created_at:timestamp,event_id:ID}
 ```
+
+`JudgmentSubject` is a new **name** for a domain already accepted under
+DEC-222, not a new domain: it is the closed set stated in `contracts.md`
+section 8 and enforced identically by the `subject_type` CHECK on
+`review_findings`, `judgment_concerns`, `deviations`, and `human_outcomes` in
+`schema.md` section 2. Naming it is required because Phase 23 has four distinct
+subject vocabularies, and reusing the bare name `Subject` for two of them
+already produced one wrong instruction (DEC-232, R-18):
+
+| Name | Domain | Where it applies |
+|---|---|---|
+| `Subject` | `run`, `envelope`, `activation` - unchanged by Phase 23 | Stop, Attention, Condition, NextAction; `stops`/`attention_items` DDL; `currentValueShapes["Subject"]` |
+| `JudgmentSubject` | `issue`, `envelope`, `run`, `review`, `finding`, `requirement` | Finding, Concern, Deviation, HumanOutcome |
+| `ErrorSubjectType` | section 2 row; `internal/cli/codes.go:88` | the failure envelope's `error.subject`, and `Subject`-typed failure `details` fields such as `review-not-independent.conflicting_subject` |
+| `ReasonSubjectType` | section 5; adds `review`, `finding`, `decision`, `human-outcome` | `Reason.subject_type` in Evaluations |
+
+Neither `Subject` nor `JudgmentSubject` contains the other: Stop admits
+`activation` and the judgment set does not, and the judgment set admits
+`issue`, `review`, `finding`, and `requirement` and Stop does not.
 
 Exactly one of `ConcernDisposition.issue_id`, `supersedes_concern_id`, and
 `supersedes_finding_id` is non-null for `carried-forward` and `superseded`, and
@@ -137,14 +162,14 @@ the row says read-only.
 | `review.list` / `fid review list` | read; optional `--issue`, `--envelope`, `--verdict`, `--limit` | `{items:Review[]}` | null / 13 |
 | `finding.address` / `fid finding address` | `{finding_id:ID,claim_id:ID,expected_claim_version:int,reason:text}` | Mutation keyed `finding`: Finding | finding.addressed / 5,13 |
 | `finding.list` / `fid finding list` | read; optional `--issue`, `--review`, `--state`, `--severity`, `--limit` | `{items:Finding[]}` | null / 5,13 |
-| `concern.record` / `fid concern record` | `{id:ID,subject:Subject,scope:{paths:text[]},severity:Severity,summary:text,reasoning:text,references:Source[0..32]}` | Mutation keyed `concern`: Concern | concern.recorded / 8,13 |
+| `concern.record` / `fid concern record` | `{id:ID,subject:JudgmentSubject,scope:{paths:text[]},severity:Severity,summary:text,reasoning:text,references:Source[0..32]}` | Mutation keyed `concern`: Concern | concern.recorded / 8,13 |
 | `concern.dispose` / `fid concern dispose` | `{concern_id:ID,action:text,issue_id:?ID,supersedes_concern_id:?ID,supersedes_finding_id:?ID,reason:text}` | Mutation keyed `concern`: Concern | concern.disposed / 8,13 |
 | `concern.list` / `fid concern list` | read; optional `--subject <type>:<id>`, `--status`, `--severity`, `--limit` | `{items:Concern[]}` | null / 8,13 |
-| `deviation.record` / `fid deviation record` | `{id:ID,subject:Subject,expected:text,observed:text,authority:{actor_id:ID,reference:?text},disposition:text,reasoning:text,references:Source[0..32],supersedes_deviation_id:?ID}` | Mutation keyed `deviation`: Deviation | deviation.recorded / 8,13 |
+| `deviation.record` / `fid deviation record` | `{id:ID,subject:JudgmentSubject,expected:text,observed:text,authority:{actor_id:ID,reference:?text},disposition:text,reasoning:text,references:Source[0..32],supersedes_deviation_id:?ID}` | Mutation keyed `deviation`: Deviation | deviation.recorded / 8,13 |
 | `deviation.list` / `fid deviation list` | read; optional `--subject`, `--disposition`, `--limit` | `{items:Deviation[]}` | null / 8,13 |
 | `decision.record-reference` / `fid decision record-reference` | `{id:ID,class:ID,source:Source,authority:{actor_id:ID,required_capabilities:ID[1..16]},outcome:text,scope:{issue_id:ID}}` | `{decision:DecisionRef,protected_decisions:ProtectedDecision[],stops:Stop[],attention:Attention[],idempotency_key:ID,replayed:boolean}` | decision.referenced / 9,13 |
 | `decision.list` / `fid decision list` | read; optional `--class`, `--outcome`, `--issue`, `--limit` | `{items:DecisionRef[]}` | null / 9,13 |
-| `human-outcome.record` / `fid human-outcome record` | `{id:ID,class:ID,subject:Subject,result:text,scope:{issue_id:ID},reasoning:text,references:Source[0..32]}` | `{outcome:HumanOutcome,protected_decisions:ProtectedDecision[],stops:Stop[],attention:Attention[],idempotency_key:ID,replayed:boolean}` | human-outcome.recorded / 10,11,13 |
+| `human-outcome.record` / `fid human-outcome record` | `{id:ID,class:ID,subject:JudgmentSubject,result:text,scope:{issue_id:ID},reasoning:text,references:Source[0..32]}` | `{outcome:HumanOutcome,protected_decisions:ProtectedDecision[],stops:Stop[],attention:Attention[],idempotency_key:ID,replayed:boolean}` | human-outcome.recorded / 10,11,13 |
 | `human-outcome.list` / `fid human-outcome list` | read; optional `--class`, `--result`, `--issue`, `--limit` | `{items:HumanOutcome[]}` | null / 10,13 |
 | `requirement.record-reference` / `fid requirement record-reference` | `{id:ID,source:Source,status:text}` | Mutation keyed `requirement`: RequirementRef | requirement.referenced / 12,13 |
 | `requirement.link` / `fid requirement link` | `{requirement_id:ID,issue_id:ID,relation:text}` | Mutation keyed `link`: RequirementLink | requirement.linked / 12,13 |

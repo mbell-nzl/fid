@@ -3,14 +3,16 @@
 > Purpose: phase-local decision history, spec sync verdicts, workflow notes,
 > and wrap-up decisions. DEC numbering is global and never resets.
 >
-> Status: accepted. Phase 23 is approved and not yet started. The QA Lead's
-> first-pass plan returned thirteen Must-fix revisions and the readiness
-> refresh returned two more; all fifteen are dispositioned and applied. All
-> five contract amendments, DEC-223 through DEC-227, are approved by the Human
-> on 2026-09-19, DEC-226 together with the part 5 vocabulary fix added during
-> that review. DEC-229 and DEC-230 are Tech Lead planning dispositions of the
-> readiness refresh. No decision remains open. Next: a fresh QA Lead
-> confirmation of the R-14/R-15 edits, then the Runner's readiness check.
+> Status: accepted. Phase 23 is approved and not yet started. Four QA passes
+> have returned eighteen Must-fix revisions - thirteen first-pass, R-14/R-15 on
+> the readiness refresh, R-16 on the DEC-231 confirmation, and R-17/R-18 on the
+> DEC-232 confirmation - and all are dispositioned and applied, together with
+> three the Tech Lead found while dispositioning the last pair. All five
+> contract amendments, DEC-223 through DEC-227, are approved by the Human on
+> 2026-09-19, DEC-226 together with the part 5 vocabulary fix added during that
+> review. DEC-229 through DEC-232 are Tech Lead planning dispositions. No
+> decision remains open. Next: a fresh QA Lead confirmation of the DEC-232
+> edits, then the Runner's readiness check.
 
 ## Decisions
 
@@ -493,6 +495,174 @@ separate DECs.
 - **Refs:** `qa-plan.md` section 13.5 (R-16), 13.7; `execution-scope.md` 6;
   `schema.md` 6.2, 6.3; `public-interface.md` 2, 3, 4; DEC-192, DEC-216,
   DEC-228, DEC-229.
+
+### DEC-232: Close the journal strict-path registry set and keep `Subject` narrow
+
+- **Status:** ACCEPTED by Tech Lead 2026-09-19 under planning authority. No
+  protected definition, command, threshold, budget, public surface, or accepted
+  assertion semantics changes; file-scope, ownership, and recorded-cause
+  corrections of the same class as DEC-228, DEC-229, and DEC-231. Two items
+  edit `public-interface.md` and are flagged to the Human with this batch as
+  reversible: naming the section 2 row `ErrorSubjectType`, and naming the
+  already-accepted judgment subject domain `JudgmentSubject`. Neither adds,
+  removes, or changes a single accepted value.
+- **Context:** the QA Lead's DEC-231 confirmation pass (`qa-plan.md` section 14)
+  confirmed DEC-231 - the unfencing task is the right owner, the executability
+  test is the right test, and all four reachability paths are clean - and
+  returned two new Must-fix revisions, R-17 and R-18, plus I-30 and I-31. R-17
+  asked me to derive the affected task set myself rather than adopt QA's, and
+  I-31 asked for the rule to be stated once with an inventory. Doing both
+  surfaced two further defects of the same family, recorded below as the Tech
+  Lead's own findings.
+
+**R-17, `validateCurrentCardinality` has no owning task. Accepted; owner is
+task 4 alone.** `current_event_cardinality.go:8`, called from the strict branch
+at `current_event_validation.go:96`, defaults `maximum := 1` per `table/op` key
+and widens it only through a closed `switch effect.Table` at `:14` naming
+Phase 21/22 tables. Independently reproduced: a `review.recorded` Event with two
+`review_findings/insert` Effects returns `current Event review.recorded: too
+many review_findings/insert Effects`, and the same for two
+`finding_dispositions/insert`, while one Finding, two `stops/insert`, two
+`stop_resolutions/insert`, two `attention_items/update`, and
+`requirement_refs` insert-plus-update all pass. `public-interface.md` section 4
+accepts `findings:FindingInput[0..64]` and `resolves_finding_ids:ID[0..64]`, so
+the ordinary two-Finding Review was blocked at task 4 with its cause outside
+task 4's scope.
+
+QA's proposed task set is confirmed, by a different route than QA's. Only
+`review.recorded` repeats a key: every other new family writes one row per key,
+`requirement.referenced`'s insert and update are distinct keys, and the Stop
+bundle and `budget_samples` tables are already widened by the existing branches.
+The four **amended** families needed separate treatment and also need nothing:
+`envelope.created`, `envelope.activated`, `evidence.linked`, and
+`artifact.availability-observed` are all in `retainedCurrentRules`
+(`current_event_catalog.go:82-83,87-88`), and the retained branch returns at
+`current_event_validation.go:64` before cardinality is ever reached. That is
+what makes the 16-entry `protected_decisions` input safe without an entry. The
+widening is conditioned on `review.recorded` so `finding.addressed` keeps its
+implicit maximum of one.
+
+**R-17b, `validateCurrentUpdate` has no owning task. Tech Lead finding, same
+class, accepted.** Found while deriving R-17's task set by walking every
+validator the strict path calls. `current_event_updates.go:14` is a closed
+`switch effect.Table` whose `default` returns `current Event update table not
+admitted`. It lists no Phase 23 table, and two Phase 23 families emit an update:
+`concern.disposed`'s **required** `judgment_concerns/update` and
+`requirement.referenced`'s optional `requirement_refs/update`. Reproduced: both
+return that error; `attention_items/update` is admitted, as expected. The file
+is named in **zero** phase documents. Owners: task 8 and task 12, each supplying
+the exact changed-field and guard sets from the accepted DDL; task 15 renames
+the `judgment_concerns` entry with its table.
+`validateCurrentTerminalValues` in the same file fails open and is recorded as
+optional strengthening, not a requirement.
+
+**R-17c, the `validateCurrentJSON` column switch. Tech Lead finding, described
+rather than reassigned.** `current_event_json.go:14` is a second closed registry
+in the file DEC-231 already assigned, keyed `table.column`, returning
+`unregistered current JSON column`. Reproduced for all eleven Phase 23 `*_json`
+columns on unfenced families. This is **not** a new ownership gap - the file is
+already in the scope of tasks 4, 5, 8, 9, 10, and 12, and the failure is loud
+and inside the owning task - but their spec text named only the `fields` map, so
+each task's bullet now names its own columns and their accepted kinds.
+`evidence_records.target_repository_json` needs nothing because `evidence.linked`
+is retained.
+
+**R-18, the `Subject` widening removes the wrong conditional. Accepted, and the
+defect is larger than reported.** DEC-231 directed task 4 to widen
+`currentValueShapes["Subject"]` "to the complete accepted SubjectType set in
+`public-interface.md` section 2". Withdrawn on three counts:
+
+1. *The recorded rationale is false.* `Subject` is referenced by exactly three
+   shapes - `Condition` (`:15`), `Stop` (`:26`), `Attention` (`:27`) - and they
+   serve `stop.raised`, `stop.resolved`, `attention.resolved`,
+   `run.budget-observed`, and, through `stops.resolution_condition_json` in
+   `validateCurrentJSON`, every `stops/insert` in any family. All are live from
+   task 1 and none is fenced, so "the fence keeps every other Phase 23 family
+   closed" does not hold and the widening is not monotonic-behind-the-fence.
+   QA is right that it is not reachable as a defect today, because
+   `stop.go:377 validSubject` still restricts raising; it is a silent loss of an
+   accepted invariant, contradicting `../phase-22/public-interface.md:67-68`.
+2. *No single shape can serve both domains.* `stops` and `attention_items`
+   CHECK `('run','envelope','activation')` (`0015:56,82`), unchanged by 0017.
+   The four judgment tables CHECK
+   `('issue','envelope','run','review','finding','requirement')`
+   (`schema.md` section 2). Neither set contains the other - Stop has
+   `activation`, judgment has `issue`, `review`, `finding`, `requirement` - so
+   "widening" is impossible in principle, not merely unwise. A union would let
+   the journal admit a Stop subject its own DDL rejects.
+3. *The cited source set is the wrong vocabulary entirely.* Section 2's
+   `SubjectType` row is the CLI **error** subject vocabulary - `type SubjectType`
+   at `internal/cli/codes.go:88` - which is why `requirement` can be "retained"
+   there and why the six added values are exactly the six new entity kinds that
+   appear as error subjects. It has ~19 members including `path`, `label`,
+   `export`, and `idempotency`. Followed literally, task 4 would have let a Stop
+   resolution condition name `type:"path"`.
+
+**Decision:** `currentValueShapes["Subject"]` is not edited by any Phase 23
+task and must be byte-identical after task 4. Task 4 instead registers
+`JudgmentSubject`, `type:=issue,envelope,run,review,finding,requirement id:ID`,
+used by `Finding` at task 4 and reused unchanged by `Concern` and `Deviation`
+at task 8 and `HumanOutcome` at task 10. This is a new name for a domain already
+accepted under DEC-222 in `contracts.md` section 8 and four identical DDL
+CHECKs, not a new domain. `public-interface.md` section 2's row is renamed
+`ErrorSubjectType`, and section 3 gains a four-row table separating `Subject`,
+`JudgmentSubject`, `ErrorSubjectType`, and `ReasonSubjectType`, because reusing
+one bare name for two domains is what produced this defect and the note is what
+stops it recurring.
+
+**R-18b, `schema.md` 6.2 misclassifies `envelope.created`. Tech Lead finding,
+accepted.** Found while establishing which amended families reach cardinality.
+The I-17 sentence reads "The first row is in `currentEventRules`; the last three
+families live in `retainedCurrentRules`". All **four** are retained;
+`envelope.created` is at `current_event_catalog.go:82`. A Developer following it
+would add an `envelope.created` key to `currentEventRules`, routing a live family
+onto the strict path where its `work_envelopes` and `envelope_*` Effects fail on
+`unknown table` - the exact outcome I-17 existed to prevent. Corrected in
+`schema.md` 6.2 and in task 9's scope, with the reason the retained stages are
+still required: task 1 registers `envelope_protected_decisions` in
+`currentEventTables`, and the retained branch validates every Effect on a
+`currentEventTables` table against the retained rule's stages.
+
+- **I-30, I-31.** Both applied. I-30: the idempotency-stage note now reads 15 of
+  22 optional and 7 required, counted at the planning base. I-31: the DEC-231
+  rule is restated once as a general obligation - *a task that unfences a family
+  owns that family's entry in every closed journal registry the strict path
+  consults* - above a six-row inventory in `execution-scope.md` section 6 naming
+  each registry, its file and line, its exact rejection message, and its Phase 23
+  owners. Task 12 owns the end-of-phase nine-family, six-registry audit, and a
+  registry not on the inventory is an escalation rather than a local fix. Two
+  further path registries were checked and deliberately recorded as needing
+  nothing: `validateCurrentBindings`'s `entityTable` map and
+  `currentResultEntity`'s map both fail open to the aggregate ID, which is
+  correct for all nine families.
+- **Consequences:** seven task specs (4, 5, 8, 9, 10, 12, 15),
+  `execution-scope.md` section 6, `public-interface.md` sections 1, 2, 3, 4,
+  `schema.md` 6.2, and `contracts.md` section 8 are edited. Task 1 is again
+  unchanged. The contract stays at **79** rows; no row is added, removed,
+  renumbered, reworded, or weakened. Task 4 gains two acceptance criteria that
+  cite existing assertions (VAL-017, VAL-020) rather than new ones. A fresh QA
+  Lead confirmation pass is required before the Runner's readiness check.
+- **Evidence:** all six reproductions were run by the Tech Lead against the
+  planning base in `internal/journal`, using throwaway probe files created and
+  deleted within the session; the working tree is unmodified outside
+  `project-docs/`. `go test ./internal/journal/` is the harness; no product file
+  was touched.
+- **Refs:** `qa-plan.md` sections 14.5 and 14.7 (R-17, R-18, I-30, I-31);
+  `execution-scope.md` 6; `public-interface.md` 1, 2, 3; `schema.md` 6.2;
+  `contracts.md` 8; `../phase-22/public-interface.md` 67-68; DEC-192, DEC-216,
+  DEC-228, DEC-229, DEC-231.
+
+### QA confirmation-pass-2 disposition table (R-17, R-18, I-30, I-31)
+
+| ID | Disposition | Where applied |
+|---|---|---|
+| R-17 | Accept; owner is task 4 alone, derived independently and reproduced | DEC-232; `execution-scope.md` 6; task 4 |
+| R-17b | New, Tech Lead; accept - `validateCurrentUpdate` is unowned and fails hard | DEC-232; `execution-scope.md` 6; tasks 8, 12, 15 |
+| R-17c | New, Tech Lead; describe rather than reassign - file already owned | DEC-232; tasks 4, 8, 9, 10, 12; task 5 records the checked negative |
+| R-18 | Accept and strengthen; `Subject` untouched, `JudgmentSubject` added | DEC-232; `execution-scope.md` 6; `public-interface.md` 1, 2, 3, 4; `contracts.md` 8; tasks 4, 8, 10 |
+| R-18b | New, Tech Lead; accept - all four amended families are retained | DEC-232; `schema.md` 6.2; task 9 |
+| I-30 | Apply | `execution-scope.md` 6: 15 of 22 optional, 7 required |
+| I-31 | Apply, and extend from four registries to six | `execution-scope.md` 6 inventory; task 12 audit |
 
 ### QA readiness-refresh disposition table (R-14, R-15, I-17..I-26)
 

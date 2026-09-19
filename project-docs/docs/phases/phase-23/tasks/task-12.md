@@ -66,10 +66,24 @@ its Event, and restrict `links` to Issue endpoints so one fact has one model.
   `requirement.link` result rows in `public-interface.md` section 4; the two
   matching `currentExpectedResult` branches; and the `RequirementRef` and
   `RequirementLink` entries in `currentValueShapes` from `public-interface.md`
-  section 3. Neither is composite, so neither needs a fill helper. This task
-  removes the fence map entirely, so after it no Phase 23 family is registered
-  in `currentEventRules` without all three of these registries; the audit that
-  this holds for all nine belongs to this task.
+  section 3. Neither is composite, so neither needs a fill helper. Also, in
+  `current_event_json.go` and distinct from the `fields` map, register
+  `requirement_refs.source_json` as `Source` in the `effect.Table + "." +
+  column` switch at `:14` (DEC-232).
+- `internal/journal/current_event_updates.go` - `requirement.referenced`'s
+  optional `requirement_refs/update` Effect, which supersedes a predecessor, is
+  rejected with `current Event update table not admitted` because
+  `validateCurrentUpdate`'s closed `switch effect.Table` at `:14` lists no Phase
+  23 table (DEC-232). Admit `requirement_refs` with its exact changed-field set
+  - `status` and `superseded_by_id` per `schema.md` section 2 - and its exact
+  guard set. Task 8 added the sibling `judgment_concerns` entry; if it is
+  missing, that is a task 8 defect.
+- This task removes the fence map entirely, so after it no Phase 23 family is
+  registered in `currentEventRules` without its entry in **every** registry
+  listed in the `execution-scope.md` section 6 inventory - all six, not only the
+  three named by DEC-231. That nine-family, six-registry audit belongs to this
+  task, and a registry that is not on the inventory and rejects a Phase 23
+  family is an escalation, not a local fix.
 - `internal/export/archive_semantics_catalog.go` - delete the
   `requirement.synced` semantic rule. The removed Event's archive rule lives
   here, so without this file the declared absence search cannot pass and its

@@ -93,11 +93,17 @@ deterministic proof.
   append time. Add the `human-outcome.recorded` entry in the `fields` grammar
   map, derived from the `human-outcome.record` result row in
   `public-interface.md` section 4, and the matching `currentExpectedResult`
-  branch.
+  branch. Also, in `current_event_json.go` and distinct from the `fields` map,
+  register `human_outcomes.references_json` as `[]Source` in the `effect.Table +
+  "." + column` switch at `:14`, which otherwise returns `unregistered current
+  JSON column human_outcomes.references_json` on the first Outcome (DEC-232).
 - `internal/journal/current_event_value_catalog.go` - also add the
   `HumanOutcome` entry to `currentValueShapes` from `public-interface.md`
   section 3 (R-16, DEC-231). Reuse task 9's `ProtectedDecision` unchanged; if it
-  is missing or wrong, that is a task 9 defect. The same file carries the
+  is missing or wrong, that is a task 9 defect. `HumanOutcome.subject` resolves
+  through task 4's `JudgmentSubject`, also reused unchanged; do **not** edit
+  `currentValueShapes["Subject"]`, which Phase 23 leaves as it is (DEC-232,
+  correcting DEC-231). The same file carries the
   matching
   `currentStopDetailShapes` entry, and the closed `Condition` value grammar
   gaining `human-outcome-recorded` and `outcome_class:?ID` (R-14).

@@ -80,13 +80,38 @@ name.
   `currentFillRun` and `currentFillStopAttention`. This task owns
   `FindingDisposition` even though task 5 is the disposition task, because
   `review.recorded`'s own rule already inserts `finding_dispositions` rows for
-  `resolves_finding_ids`; task 5 then reuses both shapes unchanged. Finally, in
-  the same value catalog, widen the `Subject` shape's
-  `type:=run,envelope,activation` to the complete accepted SubjectType set in
-  `public-interface.md` section 2, in one edit: this is the first task to
-  register a value shape referencing `Subject`, the widening is monotonic and
-  cannot loosen anything reachable earlier because the fence keeps every other
-  Phase 23 family closed, and no later task re-narrows it.
+  `resolves_finding_ids`; task 5 then reuses both shapes unchanged.
+  - Also in `current_event_json.go`, and distinct from the `fields` map above:
+    register this family's four `*_json` columns in the `effect.Table +
+    "." + column` switch at `:14`, which otherwise returns `unregistered
+    current JSON column review_records.repository_json` on the very first
+    Review. `review_records.repository_json` is `Repository`,
+    `coverage_json` is `Coverage`, `evidence_refs_json` is `[]Source`,
+    `receipt_ids_json` is `[]ID`, and `review_findings.scope_json` is the
+    Finding `scope` object, all from `public-interface.md` section 3
+    (DEC-232).
+  - Do **not** widen the `Subject` shape. DEC-231 directed that and DEC-232
+    withdraws it: `Subject` is referenced by the live `Condition`, `Stop`, and
+    `Attention` shapes, and the Stop and judgment domains are not nested.
+    Instead register a new `JudgmentSubject` shape,
+    `type:=issue,envelope,run,review,finding,requirement id:ID`, from
+    `public-interface.md` section 3, and have `Finding` reference it.
+    `currentValueShapes["Subject"]` must be byte-identical before and after
+    this task.
+- `internal/journal/current_event_cardinality.go` - `validateCurrentCardinality`
+  defaults to one Effect per `table/op` key and widens it only through a closed
+  `switch effect.Table` that lists no Phase 23 table, so a Review with two
+  Findings is rejected with `current Event review.recorded: too many
+  review_findings/insert Effects` (R-17, DEC-232). Admit repeated
+  `review_findings/insert` and `finding_dispositions/insert` **for
+  `review.recorded` only**: `public-interface.md` section 4 accepts
+  `findings:FindingInput[0..64]` and `resolves_finding_ids:ID[0..64]`, while
+  `finding.addressed` inserts exactly one disposition and must keep its
+  implicit maximum of one, so condition the widening on the Event type in the
+  style the existing `case "stops", ...` branch already uses. This is the only
+  task that needs an entry in this file; every other Phase 23 family writes one
+  row per key, and `requirement.referenced`'s insert and update are distinct
+  keys.
 - `internal/cli/codes.go` - `review-not-independent`, `review-verdict-invalid`,
   `repository-mismatch`, `review-not-found`, and `idempotency-conflict`
   (I-21). The last is an accepted Phase 21 code with no `reasonCodeDefinitions`
@@ -122,6 +147,12 @@ name.
 - [ ] A second `review.record` for the same Run rejects with no Event. (VAL-018)
 - [ ] Replay returns the original typed result with `replayed:true` and no
   second Event; a different digest returns `idempotency-conflict`. (VAL-019)
+- [ ] A Review carrying more than one Finding, and one resolving more than one
+  earlier Finding, both commit in a single Event and project every Finding and
+  disposition; `finding.addressed` still admits exactly one
+  `finding_dispositions/insert`. (VAL-017, VAL-020; R-17, DEC-232)
+- [ ] `currentValueShapes["Subject"]` is unchanged by this task, and `Finding`
+  resolves through the new `JudgmentSubject` shape. (DEC-232)
 - [ ] Full required commands terminate with preserved red/green evidence.
 - [ ] Every converged retained row records its provenance and executing command.
 

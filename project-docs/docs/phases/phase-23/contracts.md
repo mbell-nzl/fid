@@ -255,7 +255,9 @@ a distinct third value, never silently reported as `available`.
 
 Concerns replace the V1 completion-linked `concerns` table. A Concern binds a
 generic subject drawn from the closed set `issue`, `envelope`, `run`, `review`,
-`finding`, `requirement`; a recording Actor; a scope; a severity from the
+`finding`, `requirement` - named `JudgmentSubject` in `public-interface.md`
+section 3, and distinct from the Stop/Attention `Subject` (DEC-232); a
+recording Actor; a scope; a severity from the
 Finding severity set; a summary; concise reasoning; ordered references; a
 status of `open` or `disposed`; and a created time. A Concern is not linked to
 a completion report, a role, or a triage event.

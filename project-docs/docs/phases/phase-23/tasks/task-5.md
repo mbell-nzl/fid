@@ -68,7 +68,14 @@ Review, and a derived Finding state.
   task 4 registered `Finding` and `FindingDisposition` and their fill helper,
   and this task reuses both unchanged. If either is missing or wrong, that is a
   task 4 defect - stop and escalate rather than editing shapes this task does
-  not own.
+  not own. This family also needs **no** entry in the remaining three registries
+  of the `execution-scope.md` section 6 inventory - cardinality, `*_json`
+  columns, and update admission - checked deliberately rather than assumed
+  (DEC-232): `finding_dispositions` carries no `*_json` column, its one
+  Effect is an insert so `validateCurrentUpdate` is never reached, and
+  `finding.address` disposes exactly one Finding, so the default maximum of one
+  `finding_dispositions/insert` per Event is the correct bound and must not be
+  widened here.
 - `internal/cli/codes.go` - `finding-not-found`, `finding-already-disposed`.
 - `cmd/fid/finding.go` - new leaf wiring for `address` and `list`.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by

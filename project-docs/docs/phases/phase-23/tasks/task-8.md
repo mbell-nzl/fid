@@ -88,9 +88,29 @@ Neither is Evidence and neither blocks a guarded action.
   branches; and the `Concern`, `ConcernDisposition`, and `Deviation` entries in
   `currentValueShapes` from `public-interface.md` section 3. `Concern` is
   composite - `disposition:?ConcernDisposition` - so add its
-  `currentProjectedValue` fill helper. `Subject` was widened to the full
-  accepted SubjectType set at task 4, so the DEC-228 unresolvable subjects this
-  task records already validate; if one does not, that is a task 4 defect.
+  `currentProjectedValue` fill helper. `Concern` and `Deviation` reference the
+  `JudgmentSubject` shape task 4 registered, reused unchanged; if it is missing
+  or wrong, that is a task 4 defect. Do **not** touch
+  `currentValueShapes["Subject"]`, which Phase 23 leaves exactly as it is
+  (DEC-232, correcting DEC-231).
+  - Also in `current_event_json.go`, and distinct from the `fields` map:
+    register this task's `*_json` columns in the `effect.Table + "." + column`
+    switch at `:14`, which otherwise returns `unregistered current JSON column
+    judgment_concerns.scope_json` on the first Concern.
+    `judgment_concerns.scope_json` is the Concern `scope` object,
+    `judgment_concerns.references_json` and `deviations.references_json` are
+    `[]Source`, all from `public-interface.md` section 3 (DEC-232).
+- `internal/journal/current_event_updates.go` - `concern.disposed`'s required
+  `judgment_concerns/update` Effect is rejected with `current Event update table
+  not admitted` because `validateCurrentUpdate`'s closed `switch effect.Table`
+  at `:14` lists no Phase 23 table (DEC-232). Admit `judgment_concerns` with its
+  exact changed-field set and its exact guard set: the fields are the
+  disposition columns `schema.md` section 2 defines on that table plus `status`,
+  and the guard is `status`, so a Concern already `disposed` cannot be disposed
+  twice. Derive both sets from the DDL and from `concern.dispose` in
+  `public-interface.md` section 4, not by loosening the check. Note that
+  `validateCurrentTerminalValues` in the same file fails open; say in the
+  completion report whether you added an `open` -> `disposed` guard there.
 - `internal/activity/` - the added activity event names.
 - `internal/cli/codes.go` - `concern-not-found`, `deviation-not-found`,
   `concern-already-disposed`.

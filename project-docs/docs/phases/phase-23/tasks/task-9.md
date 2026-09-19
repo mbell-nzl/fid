@@ -61,7 +61,16 @@ until a matching approved reference and Human Outcome both exist.
   to the closed `sortedUniqueCapabilities` allowlist in `activation.go`
   (R-08, DEC-167/173).
 - `internal/issues/transition_rules.go` - the `linked_to_decision` evaluator.
-- `internal/journal/project_effects.go`, `current_event_catalog.go`.
+- `internal/journal/project_effects.go`, `current_event_catalog.go` - the
+  `decision.referenced` fence key, and this task's two amendments to existing
+  families. Both amended families are in **`retainedCurrentRules`**, not
+  `currentEventRules` (`current_event_catalog.go:82-83`; `schema.md` 6.2 as
+  corrected by DEC-232). Add the `envelope_protected_decisions/insert` stage to
+  the retained `envelope.created` rule and the Stop stages to the retained
+  `envelope.activated` rule. Moving either family into `currentEventRules` would
+  route a live family onto the strict path and fail immediately on `unknown
+  table`; the retained path needs the stages only because task 1 registers
+  `envelope_protected_decisions` in `currentEventTables`.
 - `internal/workflow/stop.go` - the closed Stop registries (R-14). Add
   `protected-decision-required` to `stopCodes` with its exact
   `validStopDetails` key set, `decision-satisfied` to `conditionTypes`, and the
@@ -75,7 +84,13 @@ until a matching approved reference and Human Outcome both exist.
   here or the first successful `decision record-reference` is rejected at append
   time. Add the `decision.referenced` entry in the `fields` grammar map, derived
   from the `decision.record-reference` result row in `public-interface.md`
-  section 4, and the matching `currentExpectedResult` branch.
+  section 4, and the matching `currentExpectedResult` branch. Also, in
+  `current_event_json.go` and distinct from the `fields` map, register
+  `decision_refs.source_json` as `Source` and
+  `decision_refs.authority_capabilities_json` as `[]ID` in the `effect.Table +
+  "." + column` switch at `:14`, which otherwise returns `unregistered current
+  JSON column decision_refs.source_json` on the first Decision Reference
+  (DEC-232).
 - `internal/journal/current_event_value_catalog.go` - also add the `DecisionRef`
   and `ProtectedDecision` entries to `currentValueShapes` from
   `public-interface.md` section 3 (R-16, DEC-231). This task owns

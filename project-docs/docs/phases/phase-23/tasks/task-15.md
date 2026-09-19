@@ -60,12 +60,17 @@ removed surface absent.
 - `internal/maintenance/errors.go`, `warnings.go`, `operational.go`, `check.go`.
 - `internal/stats/stats.go` - the dropped column only.
 - `internal/journal/current_event_catalog.go`,
-  `internal/journal/current_event_columns.go`, and
+  `internal/journal/current_event_columns.go`,
+  `internal/journal/current_event_updates.go`,
+  `internal/journal/current_event_json.go`, and
   `internal/export/archive_semantics_catalog.go` - carry the
-  `judgment_concerns` -> `concerns` rename through all three closed catalogs in
+  `judgment_concerns` -> `concerns` rename through all five closed catalogs in
   this task: the two concern effect rules, the `currentEventTables` key with
-  its column domains, and the mirrored `semanticEventRules` rows (R-14). No
-  other rule or table moves.
+  its column domains, the `validateCurrentUpdate` admission entry and any
+  terminal-values guard task 8 added, the two `judgment_concerns.*_json` column
+  entries, and the mirrored `semanticEventRules` rows (R-14, DEC-232). No other
+  rule or table moves. The `execution-scope.md` section 6 registry inventory is
+  the checklist; every row naming the old table name is renamed here.
 - `internal/journal/`, `internal/db/` - latest-schema expectations and rebuild
   parity.
 - `internal/export/` - projection schema 18 and its fixtures.

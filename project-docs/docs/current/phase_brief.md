@@ -15,26 +15,25 @@ blocks, and which judgment unblocked it.
 ## Status
 
 **Approved, not started; all amendments approved.** Branch `phase-23` at
-planning base `0195897a347dfe1872db0f7be3800c5c3ccdefcf`. The QA Lead's
-Heavy-mode plan returned thirteen Must-fix revisions and sixteen improvements;
-the readiness refresh (`qa-plan.md` 12) returned R-14, R-15, I-17..I-26; the
-confirmation pass (13) confirmed those and returned R-16, I-27..I-29. All
-dispositioned and applied; see [phase decisions](../phases/phase-23/decisions.md).
+planning base `0195897a347dfe1872db0f7be3800c5c3ccdefcf`. Four QA passes have
+returned eighteen Must-fix revisions - thirteen first-pass, R-14/R-15
+(`qa-plan.md` 12), R-16 (13), R-17/R-18 (14) - plus three the Tech Lead found
+while dispositioning the last pair. All are applied; see
+[phase decisions](../phases/phase-23/decisions.md).
 
 The Human approved all five contract amendments on 2026-09-19: DEC-223
 link-preserving `evidence_records` rebuild; DEC-224 four named Events raise
-`human-outcome-required`, two gaining effect rows; DEC-225 independence
-conflicts with the mutating side only; DEC-226 failure-code producers,
-precedence, non-committing denials, and the **Failure code** / **Evaluation
-reason** split in `GLOSSARY.md`; DEC-227 explicit `-timeout 30m` plus wall-time
-budgets. DEC-229 then gave four closed registries owning tasks and corrected
-CF-042's cause to a per-run leak fixed in task 1; DEC-230 removes
-`decision-not-found`, a code no leaf can return; DEC-231 gives the three
-typed-result registries owning tasks - a family's result grammar,
-expected-result branch, value shapes, and fill helpers belong to the task that
-deletes its fence key, the earliest point any of them executes.
+`human-outcome-required`; DEC-225 independence conflicts with the mutating side
+only; DEC-226 failure-code producers, precedence, non-committing denials, and
+the **Failure code** / **Evaluation reason** split in `GLOSSARY.md`; DEC-227
+explicit `-timeout 30m` plus wall-time budgets. Tech Lead planning dispositions
+followed: DEC-229 registry owners and CF-042's corrected per-run cause; DEC-230
+removes `decision-not-found`, a code no leaf can return; DEC-231 and DEC-232
+give every closed journal registry on the strict path an owning task, keyed to
+the task that unfences the family, and leave the journal `Subject` shape narrow
+in favour of a separate `JudgmentSubject`.
 
-Next action: a **fresh QA Lead** confirms the DEC-231 edits, then the Runner's
+Next action: a **fresh QA Lead** confirms the DEC-232 edits, then the Runner's
 readiness check; no task dispatches before both pass.
 
 ## Operating Mode
@@ -54,8 +53,8 @@ amendments inline with their DEC and approval state.
 ## Task Index
 
 Full specs and reports: `../phases/phase-23/tasks/`. All 18 are **Pending** and
-strictly sequential: each depends on the one before; task 1 also on
-DEC-222/223, task 10 on DEC-224, task 12 on the checkpoint after task 11.
+strictly sequential: each depends on the one before; task 1 also on DEC-222/223,
+task 10 on DEC-224, task 12 on the checkpoint after task 11.
 
 1 schema baseline; 2 typed multi-Obligation Envelope; 3 review Claim mode and
 Run; 4 Review Records and computed independence; 5 Finding dispositions; 6
@@ -69,34 +68,35 @@ removal; 16 portable recovery; 17 capability matrix; 18 conformance audit.
 
 `../phases/phase-23/qa/validation-contract.md` holds **79** assertions (75
 deterministic, 4 Human), all `Ready`. By range: VAL-001..005/075 schema, fence,
-parity (tasks 1, 15, 16); VAL-006..013 Obligations, evaluation, review Claims
-(2, 3); VAL-014..023 Review Records, independence, Findings (4, 5);
-VAL-024..033/077 review evidence, cycles, exhaustion, freshness (6, 7);
-VAL-034..046/074 Concerns, Deviations, Decisions, Outcomes (8, 9, 10);
-VAL-047..054/078 Attention, Conditions, requirements, links (11, 12, 17);
-VAL-055..065/076 CLI, Human projections, removal, portability (13-16);
-VAL-066..069/079 availability, conformance, gate budgets (17, 18); VAL-070..073
-Human comprehension at phase end, fixtures from task 14. Validators are QA Lead
-or QA Reviewer except those four Human rows.
+parity (1, 15, 16); VAL-006..013 Obligations, evaluation, review Claims (2, 3);
+VAL-014..023 Review Records, independence, Findings (4, 5); VAL-024..033/077
+review evidence, cycles, exhaustion, freshness (6, 7); VAL-034..046/074
+Concerns, Deviations, Decisions, Outcomes (8, 9, 10); VAL-047..054/078
+Attention, Conditions, requirements, links (11, 12, 17); VAL-055..065/076 CLI,
+Human projections, removal, portability (13-16); VAL-066..069/079 availability,
+conformance, gate budgets (17, 18); VAL-070..073 Human comprehension at phase
+end, fixtures from task 14. Validators are QA Lead or QA Reviewer except those
+four Human rows.
 
 ## QA Artifacts
 
-All under `../phases/phase-23/qa/`. QA plan authored; sections 12 and 13 are
-executed and freshly measured, but the plan is **NOT READY**, and nothing
-dispatches, until a fresh QA Lead confirms the DEC-231 edits and the Runner's
-readiness check passes. Mid-phase `review-M.md` for windows 1-3, 4-6, 7-9,
-10-12, 13-15, 16-18; `checkpoint-after-task-11.md` must PASS before task 12;
-`human-fixtures.md` and the VAL-070..072 fixtures come from task 14, regenerated
-at task 18; final review and human checklist pending.
+All under `../phases/phase-23/qa/`. QA plan authored, sections 12-14 executed and
+freshly measured, but the plan is **NOT READY** and nothing dispatches until a
+fresh QA Lead confirms the DEC-232 edits and the Runner's readiness check passes.
+Mid-phase `review-M.md` for windows 1-3, 4-6, 7-9, 10-12, 13-15, 16-18;
+`checkpoint-after-task-11.md` must PASS before task 12; `human-fixtures.md` and
+the VAL-070..072 fixtures come from task 14, regenerated at task 18.
 
 ## Active Constraints
 
 - A task owns only the files it names; `execution-scope.md` section 6 names
   every closed registry's owner and two standing rules: a journal Event rule is
-  mirrored in `semanticEventRules` in the same task (DEC-229), and a family's
-  typed-result grammar, expected-result branch, value shapes, and fill helpers
-  belong to the task deleting its fence key (DEC-231). Ownership is only
-  assignable where it is executable.
+  mirrored in `semanticEventRules` in the same task (DEC-229), and a task that
+  unfences a family owns that family's entry in **every** closed journal
+  registry the strict path consults - six known, inventoried there with their
+  rejection messages (DEC-231, generalised by DEC-232). Ownership is only
+  assignable where it is executable, and a registry absent from that inventory
+  is a Developer escalation, not a local fix.
 - A **Failure code** names one refused request; an **Evaluation reason**
   describes why one Obligation is unsatisfied. `GLOSSARY.md` defines both; file
   every new identifier in the set it belongs to (DEC-226).
@@ -107,8 +107,8 @@ at task 18; final review and human checklist pending.
 - Removal is replacement-bound: task 15 removes nothing whose replacement is not
   already green, and defers nothing because a test broke. Independence is
   computed from Claim and Run history over mutating Claims and their Runs only
-  (DEC-225); no role string decides it, and a Human Outcome is never stored,
-  evaluated, or rendered as deterministic proof.
+  (DEC-225); no role string decides it, and a Human Outcome is never deterministic
+  proof.
 - Phase 23 adds no denial Event: a Stop-blocked request commits nothing and
   returns the existing Stop and Attention IDs with a null EventRef (DEC-226).
   Envelope revision stays 1, the primary Issue single; parallel Claims,
@@ -121,18 +121,16 @@ Reference, and Human Outcome rules. `internal/workflow/`, `internal/evidence/`,
 `internal/claims/` carry Obligations, protected Decisions, budgets, Stops,
 Attention, freshness, review Claim mode, and the closed allowlists in
 `activation.go` and `stop.go`. `internal/journal/`, `internal/db/`,
-`migrations/` own 0017, 0018, the fence, effect rules, column domains, typed
-results, and parity. `internal/links/` is restricted, `internal/requirements/`
+`migrations/` own 0017, 0018, the fence, and the strict-path registries. `internal/links/` is restricted, `internal/requirements/`
 removed; `internal/export/`, `internal/maintenance/`, `internal/activity/`,
 `cmd/fid/` carry adapters, projections, archive semantics, and convergence.
 
 ## Known Risks
 
 Wide-reach change: Obligation generalization (task 2) and Evidence widening
-(task 6), each isolated. Clause without a schema row (DEC-195) and registry
-without an owning task (DEC-167/173): three QA re-derivations caught five before
-dispatch (R-02, R-12, R-14, R-16), each found inside the previous fix, so the
-confirmation gate stays until a pass adds nothing. Late Human-readability
+(task 6), each isolated. Registry without an owning task (DEC-167/173) is the
+recurring one: five re-derivations caught nine before dispatch, each inside the
+previous fix, so the confirmation gate stays until a pass adds nothing. Late Human-readability
 discovery: the Human-text check in window 13-15. Removal ordering: task 15
 depends on fourteen replacements; a slip amends the task rather than deferring a
 removal. Test-time headroom: bounded by DEC-227.
@@ -147,5 +145,5 @@ removal. Test-time headroom: bounded by DEC-227.
 
 ## Next Planning Checkpoint
 
-Phase 24: multi-Issue Envelope revision, scope conflict, parallel Claims,
-partial progress, generic `retry-exhausted`, `triage_events` and V1 removals.
+Phase 24: multi-Issue Envelope revision, scope conflict, parallel Claims, partial
+progress, generic `retry-exhausted`, `triage_events` and V1 removals.

@@ -604,10 +604,22 @@ optional, matching the existing encoding.
 | `requirement.referenced` | `requirement_refs/insert` | `requirement_refs/update`, `activity_log/activity`, `idempotency_results/insert` |
 | `requirement.linked` | `requirement_issue_links/insert` | `activity_log/activity`, `idempotency_results/insert` |
 
-Amended existing rules. The first row is in `currentEventRules`; the last
-three families live in `retainedCurrentRules`, which has its own validation
-path, so add their rows there and not to `currentEventRules` (I-17). Every row
-below is also mirrored into `semanticEventRules`
+Amended existing rules. **All four live in `retainedCurrentRules`**
+(`current_event_catalog.go:77-102`), which has its own validation path, so add
+every row below there and none of them to `currentEventRules` (I-17, corrected
+by DEC-232: the earlier text placed `envelope.created` in `currentEventRules`,
+which is wrong - it is at `:82`, inside the retained map). This matters twice
+over. Adding any of these four to `currentEventRules` would route a live family
+onto the strict path it has never been on, where its `work_envelopes`,
+`envelope_*`, and `evidence_records` Effects hit `unknown table` in
+`validateCurrentEffect`. And because they stay retained, they reach neither
+`validateCurrentCardinality` nor `validateCurrentAppliedResults`, so the
+repeated `envelope_protected_decisions/insert` rows of a 16-entry
+`protected_decisions` input need no cardinality entry. What the retained path
+does check is that every Effect on a `currentEventTables` table is allowed by
+some stage of the retained rule, so task 1 adding `envelope_protected_decisions`
+to `currentEventTables` is exactly why task 9 must add the stage below. Every row
+is also mirrored into `semanticEventRules`
 (`internal/export/archive_semantics_catalog.go`) by the same owning task
 (R-14).
 
