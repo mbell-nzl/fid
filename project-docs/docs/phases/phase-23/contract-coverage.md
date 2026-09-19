@@ -83,7 +83,7 @@
 | 10: the four named raising Events for that Stop (DEC-224) | `envelope.activated`, `evidence.linked`, `review.recorded`, and `artifact.availability-observed` effect rules | 10 (task 9 already adds the activation rows) | VAL-046 |
 | 9: 0..16 protected Decisions, unique class and ordinal, affected-action subset | `envelope_protected_decisions` PK and UNIQUE plus domain authoring validation | 2 authors, 9 enforces | VAL-006 |
 | 11: `human_outcome_resolution:true` | `system_capabilities` materialization | 11 implements, 17 advertises | VAL-047 |
-| 11: four new Condition types with exclusive fields | `stops.resolution_condition_json` plus domain | 11 | VAL-048, VAL-078 |
+| 11: four new Condition types with exclusive fields | `stops.resolution_condition_json` plus the closed `conditionTypes`/`Condition` registries in `internal/workflow/stop.go` and `internal/journal/current_event_value_catalog.go` | 9 and 10 register the type each raises; 11 registers the other two and owns resolution (R-14) | VAL-048, VAL-078 |
 | 11: `attention.resolve` input shape unchanged | domain-only | 11 | VAL-049 |
 | 11: only matching Stops resolve | domain-only | 11 | VAL-050 |
 | 12: `requirement_refs` with digest and supersession | `requirement_refs` CHECKs and `requirement_refs_one_active` | 12 | VAL-051 |

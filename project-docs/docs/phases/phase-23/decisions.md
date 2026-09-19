@@ -4,11 +4,13 @@
 > and wrap-up decisions. DEC numbering is global and never resets.
 >
 > Status: accepted. Phase 23 is approved and not yet started. The QA Lead's
-> first-pass plan returned thirteen Must-fix revisions; all thirteen are
-> accepted and applied. All five contract amendments, DEC-223 through DEC-227,
-> are approved by the Human on 2026-09-19, DEC-226 together with the part 5
-> vocabulary fix added during that review. No decision remains open. Next: the
-> QA Lead readiness refresh, then the Runner's readiness check.
+> first-pass plan returned thirteen Must-fix revisions and the readiness
+> refresh returned two more; all fifteen are dispositioned and applied. All
+> five contract amendments, DEC-223 through DEC-227, are approved by the Human
+> on 2026-09-19, DEC-226 together with the part 5 vocabulary fix added during
+> that review. DEC-229 and DEC-230 are Tech Lead planning dispositions of the
+> readiness refresh. No decision remains open. Next: a fresh QA Lead
+> confirmation of the R-14/R-15 edits, then the Runner's readiness check.
 
 ## Decisions
 
@@ -290,6 +292,120 @@ separate DECs.
   depending on DEC-223..227 revert to `Draft` if those are not approved.
 - **Refs:** `qa-plan.md` section 2.3; DEC-167/173, DEC-192, DEC-194, DEC-195.
 
+### DEC-229: Tech Lead dispositions of the QA readiness-refresh revisions
+
+- **Status:** ACCEPTED by Tech Lead 2026-09-19 under planning authority. No
+  protected definition, command, threshold, budget, or accepted assertion
+  semantics changes; these are file-scope and recorded-cause corrections of the
+  same class as DEC-228.
+- **Context:** The readiness refresh (`qa-plan.md` section 12) re-proved all
+  five Human-approved decisions against fresh evidence and returned two
+  Must-fix revisions, R-14 and R-15, plus improvements I-17..I-26.
+- **Decision - R-14, four closed registries with no owning task.** Accepted in
+  substance, with one owner changed and one sub-item rejected:
+  - `internal/workflow/stop.go` and
+    `internal/journal/current_event_value_catalog.go` join tasks 6, 9, 10, and
+    11, each for its own additions. Verified: `stopCodes` (7), `conditionTypes`
+    (6), the 4-field `Condition`, and `validStopDetails` are closed maps, and
+    `StopCode` validation keys on `currentStopDetailShapes`, so without these
+    two files every Phase 23 Stop is rejected at raise time. A Condition type
+    is registered by the task that first **raises** a Stop carrying it - tasks
+    9 and 10 - not deferred to task 11, which registers the remaining two and
+    owns the resolution behavior of all four. `public-interface.md` section 2
+    already fixes every added StopCode, StopDetails variant, and Condition
+    field, so no contract addition was needed.
+  - `internal/journal/current_event_columns.go` joins **task 1**, not the five
+    domain tasks QA proposed. Task 1's own binding constraints already register
+    all nine Event types with their complete `schema.md` 6.2 effect rules; the
+    ten effect tables those rules name belong with them, the 0017 DDL that
+    fixes their column domains ships in the same task, and
+    `TestCurrentEventColumnDomainsMatchAcceptedDDL` then proves the agreement
+    there instead of five tasks editing one shared map. Task 15 renames the
+    `judgment_concerns` key with its table.
+  - `internal/export/archive_semantics_catalog.go` gains explicit owners under
+    a standing rule recorded in `execution-scope.md` section 6: a task that
+    adds, amends, or removes a journal Event rule mirrors that same change in
+    `semanticEventRules` in the same task. Task 1 mirrors the nine new rules,
+    task 9 its two amendments, task 10 its two, task 12 the deletion (R-09),
+    task 15 the rename.
+  - **Rejected:** adding `internal/journal/current_event_catalog.go` to tasks 4
+    and 5. QA inferred the gap from the file lists alone. Task 1 registers all
+    nine Event types, their operation mappings, and their complete effect rules
+    including `review.recorded` and `finding.addressed`, so tasks 4 and 5 own
+    only their fence key in `project_effects.go`. Adding the file would create
+    a shared-map conflict for no behavior.
+- **Decision - R-15, CF-042's recorded cause is wrong.** Accepted, with option
+  (i), the causal fix. The leak is per-run, not per-kill: five tests re-execute
+  the test binary, each child rebuilds a ~16 MB binary, and the crash-process
+  children never reach `RemoveAll`; one clean run leaks 20 directories and
+  306 MB, so a 24-hour age bound prunes nothing intra-phase. Task 1 therefore
+  publishes the built binary path and has a re-executing child reuse it,
+  building and removing nothing. All five call sites already spawn with
+  `append(os.Environ(), ...)`, so the change stays inside
+  `cmd/fid/integration/main_test.go`. Option (ii) - pruning everything but the
+  current process's directory - is rejected: it would delete a concurrent run's
+  live binary. The 24-hour prune is retained only as the residual safety net
+  for a parent killed mid-run, and task 1 records the directory count and
+  `/tmp` free space either side of its tagged gate. Reuse also removes about
+  twenty redundant `go build` invocations per run, which helps the DEC-227
+  budgets.
+- **Decision - improvements.** I-17 through I-26 are all applied; see the table
+  below. I-25 additionally surfaced an unreachable failure code, which is
+  DEC-230.
+- **Consequences:** eight task specs, `execution-scope.md`, `contracts.md`,
+  `public-interface.md`, `schema.md`, `v1-convergence-inventory.md`, the
+  validation contract, and both carry-forward registers are edited. The
+  contract stays at 79 rows; no row is added, removed, renumbered, or weakened.
+  A fresh QA Lead readiness confirmation is required before the Runner's
+  readiness check.
+- **Refs:** `qa-plan.md` sections 12.4, 12.7, 12.10; DEC-167/173, DEC-224,
+  DEC-226, DEC-227, DEC-228; CF-042.
+
+### DEC-230: Remove `decision-not-found` from the added failure code set
+
+- **Status:** ACCEPTED by Tech Lead 2026-09-19 under planning authority,
+  applying DEC-226's own acceptance criterion. Reversible in one line if the
+  Human prefers the alternative below; flagged to the Human with this batch.
+- **Context:** Pinning each `*-not-found` producer under I-25 showed that six
+  of the seven codes have a real producing leaf, and `decision-not-found` has
+  none. No Phase 23 leaf takes a Decision Reference ID as input: section 4 gives
+  Decision References `record-reference` and `list` only, with no `get`, and no
+  mutation names one. `linked_to_decision` is a transition rule that reports
+  satisfied or unsatisfied, not a not-found error. VAL-056 requires one
+  reproduction per added code through its named producer, so the row was
+  unsatisfiable exactly for this code.
+- **Decision:** Remove `decision-not-found` from `public-interface.md` section 5
+  and from task 9's `internal/cli/codes.go` list. The added set becomes 18
+  codes, not 19. Reading a Decision Reference stays `decision.list --class`.
+- **Alternative considered and rejected:** add a `decision.get` leaf. It would
+  make the code reachable, but it adds public surface to fix dead vocabulary,
+  and four other Phase 23 entities already ship with `list` and no `get`, their
+  not-found codes reachable only because other leaves take their IDs. Removing
+  an unreturnable code is the smaller and more consistent change; DEC-226 exists
+  precisely to stop codes with no producer.
+- **Consequences:** VAL-056 is satisfiable in full at 18 codes. QA's 12.6 count
+  of 19 new codes becomes 18. If a `decision.get` leaf is ever added, the code
+  returns with it.
+- **Refs:** `public-interface.md` sections 4, 5, 5.1; `qa-plan.md` 12.6, I-25;
+  DEC-226; VAL-056.
+
+### QA readiness-refresh disposition table (R-14, R-15, I-17..I-26)
+
+| ID | Disposition | Where applied |
+|---|---|---|
+| R-14 | Accept (a), (b), (d); accept (c) with task 1 as the owner instead of five domain tasks; reject the tasks 4/5 sub-item | DEC-229; `execution-scope.md` 6; tasks 1, 6, 9, 10, 11, 15 |
+| R-15 | Accept; correct the recorded cause and adopt option (i), the causal fix | DEC-229; task 1; `execution-scope.md` 7; CF-042 in both registers; `v1-convergence-inventory.md` |
+| I-17 | Apply | `schema.md` 6.2 names `retainedCurrentRules` for the three amended families |
+| I-18 | Apply | `contracts.md` 2: only the relative order is accepted; renumbering the unexported ranks is permitted |
+| I-19 | Apply | `public-interface.md` 5.1 step 1 excludes `obligation-unsatisfied` |
+| I-20 | Apply | task 13 renames nothing in `cmd/fid/evidence_test.go`; that `reasonCodes` is already the correct sense |
+| I-21 | Apply | task 4 names `idempotency-conflict` as conformance registration |
+| I-22 | Apply | VAL-006 probes Obligation counts 0, 1, 16, 17 |
+| I-23 | Apply | VAL-034 proves the DEC-228 unresolvable-subject rule deliberately |
+| I-24 | Apply | task 10 records the blob remove/restore fixture technique |
+| I-25 | Apply, and it surfaced DEC-230 | `public-interface.md` 5.1 pins six producers; the seventh code is removed |
+| I-26 | Apply | task 1 records the no-single-step-down fact and the dirty `schema_migrations` failure state |
+
 ### QA first-pass disposition table (R-01..R-13, I-01..I-16)
 
 Every Must-fix is accepted; none is rejected, deferred, or cancelled.
@@ -348,7 +464,7 @@ built binary, and fixture inventory is not evidence.
 | CF-039 | Re-defer the executable cross-check; Phase 23 adopts the manual mitigation in `contract-coverage.md` and records whether it worked in the wrap-up workflow notes. |
 | CF-040 | Partially scheduled: the guidance is applied to the Human views this phase introduces (task 14, VAL-073). The polish and verbosity review of pre-existing views stays with Phase 25. |
 | CF-041 | New: hosted CI runs only the ordinary suite. The tagged integration suite and the rebuild benchmark are local-only gates, so a green PR is not phase-level evidence. Owner: workflow and CI maintainer, in dedicated maintenance. |
-| CF-042 | New (QA plan I-16): `cmd/fid/integration/main_test.go` removes its binary directory only on normal exits, so a timeout kill or interrupt leaks a ~16 MB directory; 148 of them (2.3 GB) had filled a RAM-backed `/tmp` during QA planning. Task 1 adds bounded age-based pruning at `TestMain` start as immediate mitigation; the durable cleanup-on-kill design stays with the workflow and test-infrastructure maintainer in dedicated maintenance. |
+| CF-042 | New (QA plan I-16); cause and mitigation corrected under DEC-229 (readiness refresh R-15). `cmd/fid/integration/main_test.go` leaks built-binary directories per run, not per kill: five tests re-execute the test binary, each child re-enters `runIntegrationSuite` and rebuilds its own ~16 MB binary, and the crash-process children exit abnormally by design and never reach `RemoveAll`. One clean tagged run - exit 0, no kill, 551 s - leaked 20 directories and 306 MB into a 3.9 GB RAM-backed `/tmp`; at ~26 tagged runs this phase that is ~7.8 GB, filling `/tmp` around the twelfth. Task 1's mitigation is therefore causal: publish the built binary path so a re-executing child reuses it and neither builds nor removes, keeping the 24-hour prune only as the residual safety net for a parent killed mid-run. The durable cleanup-on-kill design stays with the workflow and test-infrastructure maintainer in dedicated maintenance. |
 
 ## Spec Sync Verdict
 

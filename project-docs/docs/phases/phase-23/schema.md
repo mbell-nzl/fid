@@ -604,7 +604,12 @@ optional, matching the existing encoding.
 | `requirement.referenced` | `requirement_refs/insert` | `requirement_refs/update`, `activity_log/activity`, `idempotency_results/insert` |
 | `requirement.linked` | `requirement_issue_links/insert` | `activity_log/activity`, `idempotency_results/insert` |
 
-Amended existing rules:
+Amended existing rules. The first row is in `currentEventRules`; the last
+three families live in `retainedCurrentRules`, which has its own validation
+path, so add their rows there and not to `currentEventRules` (I-17). Every row
+below is also mirrored into `semanticEventRules`
+(`internal/export/archive_semantics_catalog.go`) by the same owning task
+(R-14).
 
 | Event | Change | Owner |
 |---|---|---|

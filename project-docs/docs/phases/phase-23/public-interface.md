@@ -200,7 +200,7 @@ Added codes are closed, all `retryable:false`, subject as named.
 | review-changes-required | precondition / 4 | `{review_id:ID,obligation_id:ID,blocking_finding_ids:ID[]}` |
 | review-rework-exhausted | precondition / 4 | `{budget:Budget,stop_ids:ID[],attention_ids:ID[],event:?EventRef,replayed:boolean}` |
 | finding-already-disposed | conflict / 4 | `{finding_id:ID,state:text}` |
-| finding-not-found / review-not-found / concern-not-found / deviation-not-found / decision-not-found / outcome-not-found / requirement-not-found | not-found / 3 | `{id:ID}` |
+| finding-not-found / review-not-found / concern-not-found / deviation-not-found / outcome-not-found / requirement-not-found | not-found / 3 | `{id:ID}` |
 | concern-already-disposed | conflict / 4 | `{concern_id:ID,disposed_at:timestamp}` |
 | claim-mode-invalid | precondition / 4 | `{claim_id:ID,mode:text,required_mode:text}` |
 | protected-decision-required | authority / 5 | `{envelope_id:ID,decision_class:ID,required_capabilities:ID[],affected_actions:text[]}` |
@@ -209,6 +209,15 @@ Added codes are closed, all `retryable:false`, subject as named.
 | source-digest-mismatch | precondition / 4 | `{display_label:text,path:?text,expected_digest:digest,observed_digest:?digest}` |
 | repository-mismatch | conflict / 4 | `{expected:Repository,observed:Repository}` |
 | human-outcome-required | precondition / 4 | `{envelope_id:ID,obligation_id:ID,outcome_class:ID}` |
+
+`decision-not-found` is **removed** from the added set (DEC-230). Pinning each
+`*-not-found` producer under I-25 showed that no Phase 23 leaf takes a Decision
+Reference ID as input: there is no `decision get`, and no mutation names one.
+DEC-226's own criterion is that every added code has a producing operation, so a
+code nothing can return is dead vocabulary rather than an unimplemented one. The
+added set is therefore 18 codes, not 19. Reading a Decision Reference stays
+`decision.list --class`. If a `decision.get` leaf is ever added, the code
+returns with it.
 
 `finding-unresolved` is a `ReasonCode` only and is **not** a failure code
 (DEC-226). No leaf rejects on it: linking a `pass` Review that leaves an earlier
@@ -246,12 +255,18 @@ rejections follow the single order in `contracts.md` section 13.
 | evidence-type-not-accepted | `evidence.link` |
 | source-digest-mismatch | `decision.record-reference`, `requirement.record-reference` |
 | repository-mismatch | `review.record` |
-| `*-not-found` | the read and mutation leaves naming that entity |
+| review-not-found | `review.get`; `evidence.link` with an unknown `review_id` |
+| finding-not-found | `finding.address`; `review.record` with an unknown ID in `resolves_finding_ids`; `concern.dispose` with an unknown `supersedes_finding_id` |
+| concern-not-found | `concern.dispose`, by `concern_id` or by `supersedes_concern_id` |
+| deviation-not-found | `deviation.record` with an unknown `supersedes_deviation_id`; there is no `deviation get` leaf |
+| outcome-not-found | `evidence.link` with an unknown `human_outcome_id`; there is no `human-outcome get` leaf |
+| requirement-not-found | `requirement.get`; `requirement.link` with an unknown `requirement_id` |
 
 Where more than one applies to the same guarded-action request, exactly one code
 is returned in this order:
 
-1. every retained Phase 21/22 precondition and authority failure, unchanged;
+1. every retained Phase 21/22 precondition and authority failure other than
+   `obligation-unsatisfied`, unchanged (I-19);
 2. `protected-decision-required`, lowest unsatisfied protected-Decision ordinal
    first, because an authority failure (exit 5) outranks a precondition;
 3. `review-rework-exhausted` (disjoint action set; it can never collide with

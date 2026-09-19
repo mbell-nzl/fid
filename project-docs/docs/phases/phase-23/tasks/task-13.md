@@ -64,8 +64,9 @@ mutation replay its original typed snapshot, including committed denials.
   `finding-unresolved` be filed as a failure code. Rename it to
   `failureCodeDefinitions` at its declaration and its three other uses
   (`internal/cli/codes.go`, `internal/cli/envelope.go:38`), plus the test-local
-  `reasonCodeExpectation` in `internal/cli/codes_test.go` and `reasonCodes` in
-  `cmd/fid/evidence_test.go` where they name the failure set. This is a pure
+  `reasonCodeExpectation` in `internal/cli/codes_test.go`. Rename nothing in
+  `cmd/fid/evidence_test.go`: its `reasonCodes` is the `assertEvaluation`
+  parameter naming evaluation reasons, which is the correct sense (I-20). This is a pure
   identifier rename of unexported names: no behavior, no JSON key, and no
   public value changes. `GLOSSARY.md` defines both terms.
 - Idempotency snapshot writers in the owning domain packages.

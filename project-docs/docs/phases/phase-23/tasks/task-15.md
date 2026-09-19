@@ -59,8 +59,15 @@ removed surface absent.
   role-bound rules, their evaluators, and the roles parameter.
 - `internal/maintenance/errors.go`, `warnings.go`, `operational.go`, `check.go`.
 - `internal/stats/stats.go` - the dropped column only.
-- `internal/journal/`, `internal/db/` - effect-rule rename, latest-schema
-  expectations, rebuild parity.
+- `internal/journal/current_event_catalog.go`,
+  `internal/journal/current_event_columns.go`, and
+  `internal/export/archive_semantics_catalog.go` - carry the
+  `judgment_concerns` -> `concerns` rename through all three closed catalogs in
+  this task: the two concern effect rules, the `currentEventTables` key with
+  its column domains, and the mirrored `semanticEventRules` rows (R-14). No
+  other rule or table moves.
+- `internal/journal/`, `internal/db/` - latest-schema expectations and rebuild
+  parity.
 - `internal/export/` - projection schema 18 and its fixtures.
 - `cmd/fid/issue_ac.go`, `concern.go` - delete the removed leaves.
 - Matching in-package tests and `cmd/fid/integration/` fixtures, including the

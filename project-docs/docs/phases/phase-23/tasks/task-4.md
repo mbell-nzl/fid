@@ -62,7 +62,11 @@ name.
   in `envelope.go`, and `authority.go` holds no action list (R-08, DEC-167/173).
 - `internal/journal/project_effects.go` - the one fence key and its effects.
 - `internal/cli/codes.go` - `review-not-independent`, `review-verdict-invalid`,
-  `repository-mismatch`, `review-not-found`.
+  `repository-mismatch`, `review-not-found`, and `idempotency-conflict`
+  (I-21). The last is an accepted Phase 21 code with no `reasonCodeDefinitions`
+  entry and no adapter mapping today, while VAL-019 and VAL-057 both require a
+  real-process reproduction of it; registering it is conformance inside this
+  task's declared scope, not a new code.
 - `cmd/fid/review.go` - new leaf wiring for `record` and `get`.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
   this change.

@@ -2,9 +2,10 @@
 
 ## Objective
 
-Add the four judgment resolution conditions and make a qualifying Human Outcome
-resolve exactly the Stops whose recorded condition matches, without changing the
-`attention.resolve` input shape or erasing the original request.
+Complete the closed four-type judgment resolution Condition set and make a
+qualifying Human Outcome resolve exactly the Stops whose recorded condition
+matches, without changing the `attention.resolve` input shape or erasing the
+original request.
 
 ## Validation Contract Coverage
 
@@ -20,9 +21,12 @@ resolve exactly the Stops whose recorded condition matches, without changing the
 
 ## Binding Constraints
 
-- `contracts.md` section 11 is the exact authority. The added Condition types
-  are exactly `review-recorded`, `finding-resolved`, `human-outcome-recorded`,
-  and `decision-satisfied`, each with only its matching non-null field.
+- `contracts.md` section 11 is the exact authority. The closed Condition type
+  set is exactly `review-recorded`, `finding-resolved`, `human-outcome-recorded`,
+  and `decision-satisfied`, each with only its matching non-null field. Tasks 9
+  and 10 register `decision-satisfied` and `human-outcome-recorded` when they
+  raise the Stops that carry them; this task registers the remaining two and
+  owns the resolution behavior of all four (R-14).
 - Stop resolution still requires a durable qualifying fact Event; a caller
   assertion never resolves a Stop.
 - `attention.resolve` keeps its exact existing input: the sorted unique set of
@@ -32,6 +36,11 @@ resolve exactly the Stops whose recorded condition matches, without changing the
   the original raise facts, Stop links, or deduplication key (PRD-HUM-003).
 - Recording a qualifying Outcome must not close unrelated Attention. Prove the
   negative with a second open Stop carrying a different condition.
+- `review-recorded` and `finding-resolved` are registered here but no Phase 23
+  Event raises a Stop carrying them. `validateStopRaise` checks code and
+  condition type independently, so VAL-078's per-type probes are constructible
+  through the existing `fid stop raise` leaf with an accepted code and the
+  condition under test.
 - This task implements the path. The capability limit flips to true only in
   task 17, after every replacement proof passes; do not change the matrix here.
 - `execution-scope.md` is incorporated on the usual convergence terms.
@@ -43,6 +52,17 @@ resolve exactly the Stops whose recorded condition matches, without changing the
 - `internal/workflow/resolve.go`, `evaluation.go`, `attention` readers.
 - `internal/review/` - the resolution effects emitted with a Human Outcome.
 - `internal/journal/` - the `human-outcome.recorded` optional effect rows.
+- `internal/workflow/stop.go` - the closed Stop registries (R-14). Add the two
+  remaining Condition types, `review-recorded` and `finding-resolved`, to
+  `conditionTypes`, and the `finding_id` field to the `Condition` struct with
+  its exactly-one-non-null-field rule in `validateCondition`. Tasks 9 and 10
+  already added `decision-satisfied` and `human-outcome-recorded`, because each
+  must exist before its own raising Event can commit; this task completes the
+  closed four-type set and owns their resolution behavior (VAL-078). Add no
+  Stop code.
+- `internal/journal/current_event_value_catalog.go` - the closed `Condition`
+  value grammar gaining `review-recorded`, `finding-resolved`, and
+  `finding_id:?ID` (R-14).
 - `cmd/fid/attention.go`, `stop.go` - result shapes only.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
   this change.

@@ -128,7 +128,7 @@ evidence and never authorize weakening a gate. No cleanup is a gate. Do not
 impose a parent session lifetime as a command timeout. External interruption
 retains no-progress state and follows current schema-v2 recovery.
 
-## 6. Corrected File Scopes (2026-09-15)
+## 6. Corrected File Scopes (2026-09-15, extended 2026-09-19)
 
 Three assignments were incomplete under DEC-167/173 and are corrected in the
 task specs before dispatch, not after a failure:
@@ -146,6 +146,46 @@ task specs before dispatch, not after a failure:
 - Task 10 owns the readiness-Stop effect rows added to `evidence.linked` and
   `artifact.availability-observed` in `internal/journal/current_event_catalog.go`
   (DEC-224), alongside its fence key.
+
+Four further closed registries had no owning task. Corrected under R-14
+(DEC-229); same rule, same reason - a task owns only what it names, and a
+registry nobody names is rejected at runtime with its cause outside the failing
+task's scope:
+
+- `internal/workflow/stop.go` holds the closed `stopCodes`, `conditionTypes`,
+  `Condition`, and `validStopDetails` registries, and
+  `internal/journal/current_event_value_catalog.go` holds their journal-side
+  grammar (`currentStopDetailShapes`, which `StopCode` validation itself keys
+  on, and the `Condition` value shape). Both files join the scope of every task
+  that adds to them: task 6 (`review-rework-exhausted`), task 9
+  (`protected-decision-required`, `decision-satisfied`, `decision_class`),
+  task 10 (`human-outcome-required`, `human-outcome-recorded`,
+  `outcome_class`), and task 11 (`review-recorded`, `finding-resolved`,
+  `finding_id`). A Condition type is registered by the task that first raises a
+  Stop carrying it, never deferred to task 11; task 11 completes the closed
+  four-type set and owns the resolution behavior of all four (VAL-078).
+- `internal/journal/current_event_columns.go` joins task 1, which registers all
+  ten new Phase 23 tables in `currentEventTables` alongside the nine effect
+  rules it already registers. `validateCurrentEffect` returns `unknown table`
+  for an effect on an unregistered table, and
+  `TestCurrentEventColumnDomainsMatchAcceptedDDL` proves the registration
+  against the 0017 DDL in the same task that ships it. Task 15 renames the
+  `judgment_concerns` key with its table; no other task edits this map.
+- `internal/export/archive_semantics_catalog.go` mirrors the journal catalogs
+  for `export validate` and `import`, and no test asserts parity between them.
+  Standing rule: **a task that adds, amends, or removes a journal Event rule
+  mirrors that same change in `semanticEventRules` in the same task.** Task 1
+  mirrors the nine new rules, task 9 its two amendments, task 10 its two, task
+  12 the `requirement.synced` deletion (R-09, already assigned), and task 15
+  the concerns rename. Without this, a divergence stays silent until VAL-064 at
+  task 16, where the cause sits outside that task's ordinary scope.
+
+Not corrected, and deliberately so: tasks 4 and 5 do **not** gain
+`internal/journal/current_event_catalog.go`. Task 1's binding constraints
+already register all nine Phase 23 Event types, their operation mappings, and
+their complete `schema.md` section 6.2 effect rules, so `review.recorded` and
+`finding.addressed` need no catalog edit at tasks 4 and 5. Those tasks own only
+their fence key in `internal/journal/project_effects.go`.
 
 ## 7. Test-Time Headroom (DEC-227)
 
@@ -174,11 +214,21 @@ The disposition:
   files where the fixture is self-contained. A retrofit of the 58 existing files
   is not in any task's scope; if the cause is pre-existing, stop and escalate
   rather than absorbing it.
-- Task 1 additionally prunes stale `fid-integration-binary-*` directories in
-  `cmd/fid/integration/main_test.go` (CF-042). `TestMain` deletes its directory
-  only on normal exits, so timeout kills leaked 148 directories and 2.3 GB into
-  a RAM-backed `/tmp` during QA planning. That is a gate-blocking environment
-  failure, not a test failure.
+- Task 1 additionally stops the per-run integration binary leak in
+  `cmd/fid/integration/main_test.go` (CF-042, cause corrected under R-15 /
+  DEC-229). The dominant cause is not timeout kills: five tests re-execute the
+  test binary, each child re-enters `runIntegrationSuite` and rebuilds its own
+  ~16 MB binary, and the crash-process children never reach `RemoveAll`. One
+  clean run - exit 0, no kill - leaks 20 directories and 306 MB into a 3.9 GB
+  RAM-backed `/tmp`, so this phase's ~26 tagged runs would need about 7.8 GB and
+  fill `/tmp` around the twelfth. Because the leak is per-run, not per-kill, an
+  age bound prunes nothing within a working day. The mitigation is therefore
+  causal: `runIntegrationSuite` publishes the built binary path, a process that
+  finds it reuses it and neither builds nor removes, and the 24-hour prune stays
+  only as the residual safety net for a parent killed mid-run. Reuse also
+  removes about twenty redundant `go build ./cmd/fid` invocations per run, which
+  helps the budgets above. A full `/tmp` is a gate-blocking environment failure,
+  not a test failure.
 
 ## 8. Incorporating Earlier Delivery Lessons
 

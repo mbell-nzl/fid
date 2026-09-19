@@ -83,8 +83,12 @@ longer holds at link time returns `review-not-independent`, and an Outcome
 displaced under section 7 returns `outcome-superseded`. Each new code takes a
 rank in the existing evaluation reason precedence order immediately after
 `obligation-evidence-absent`, in the order `human-outcome-absent`,
-`finding-unresolved`, `review-not-independent`, `outcome-superseded`; the
-Phase 21/22 ranks are unchanged. A guarded action requires every
+`finding-unresolved`, `review-not-independent`, `outcome-superseded`. Only the
+relative order is accepted (I-18): the unexported `precedence` map in
+`internal/workflow/evaluation.go` is an integer map in which several codes
+already share a rank, so renumbering its values to insert these four is
+permitted and expected. What must not change is the relative order of the
+Phase 21/22 codes among themselves. A guarded action requires every
 applicable Obligation to be `satisfied`; a single unsatisfied Obligation blocks
 it and every unsatisfied reason from every Obligation is returned. Evidence
 absence, invalidity, and staleness never collapse into one reason code.

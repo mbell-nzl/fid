@@ -1,7 +1,8 @@
 # Progress — Current
 
-Updated 2026-09-15. **Phase 22 closed; Phase 23 approved, QA-planned, not
-started; five contract amendments await Human approval.**
+Updated 2026-09-19. **Phase 22 closed; Phase 23 approved, QA-planned, not
+started; all five contract amendments approved and the QA readiness refresh
+dispositioned.**
 Branch: `phase-23` at `0195897a347dfe1872db0f7be3800c5c3ccdefcf`; the `phase-22`
 PR remains open with green CI.
 
@@ -47,10 +48,26 @@ collision - which is how `finding-unresolved` came to be filed as a failure
 code. The glossary now defines **Failure code** and **Evaluation reason**
 separately; task 13 renames the registry to match. The validation contract grew from 74 to 79 assertions
 and every row is now `Ready`. New carry-forward CF-042 records the leaked
-integration binary directories, with bounded pruning added to task 1.
+integration binary directories.
 
-Execution has not started and nothing is dispatched. Next: the QA Lead
-readiness refresh, then the Runner's readiness check. See
+The QA Lead's 2026-09-19 readiness refresh re-proved all five approved
+decisions against fresh evidence - DEC-223 on the real migration chain under
+`modernc.org/sqlite`, DEC-227's budgets re-measured at the new command text,
+and all four DEC-224 raising sequences reachable - and returned two Must-fix
+revisions. DEC-229 dispositions both: four closed registries
+(`internal/workflow/stop.go`, `current_event_value_catalog.go`,
+`current_event_columns.go`, `archive_semantics_catalog.go`) had no owning task
+and now have one, with a standing rule that a journal Event rule change is
+mirrored in the archive catalog in the same task; and CF-042's recorded cause
+was wrong - the leak is per-run, not per-kill, so task 1's mitigation becomes
+binary reuse rather than age-based pruning. Pinning the `*-not-found` producers
+then showed `decision-not-found` has no producing leaf at all, and DEC-230
+removes it. Two QA findings were not accepted as written: task 1 already
+registers the nine Event rules, so tasks 4 and 5 gain no catalog file, and the
+column catalog goes to task 1 rather than five domain tasks.
+
+Execution has not started and nothing is dispatched. Next: a fresh QA Lead
+confirms the DEC-229 edits, then the Runner's readiness check. See
 [phase brief](phase_brief.md) and
 [Phase 23 decisions](../phases/phase-23/decisions.md).
 

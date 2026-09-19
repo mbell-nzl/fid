@@ -156,7 +156,7 @@
 | CF-039 | Dedicated workflow maintainer: executable cross-check of contract clauses, schema, task ownership and acceptance criteria; existing scope-audit item now formally indexed. |
 | CF-040 | Partially scheduled in Phase 23 task 14 (VAL-073) for the Human views that phase introduces; polish/verbosity review of pre-existing views stays with Phase 25 operating-experience qualification. |
 | CF-041 | Workflow/CI maintainer: hosted CI runs only format, lint, build, shard verification, and the ordinary race/coverage shards. The tagged integration suite and the rebuild benchmark are local-only gates, so a green PR is not phase-level evidence. Dedicated maintenance. |
-| CF-042 | Workflow/test-infra maintainer: `cmd/fid/integration/main_test.go` cleans up its built-binary directory only on normal exits, so timeout kills leak ~16 MB each (148 dirs, 2.3 GB, observed filling a RAM-backed `/tmp`). Phase 23 task 1 adds bounded age-based pruning; the durable cleanup-on-kill design stays in dedicated maintenance. |
+| CF-042 | Workflow/test-infra maintainer: `cmd/fid/integration/main_test.go` leaks built-binary directories. Cause corrected under R-15/DEC-229: five tests re-execute the test binary, each child rebuilds its own ~16 MB binary, and the crash-process children never reach `RemoveAll`, so one clean run (exit 0, no kill) leaks 20 directories and 306 MB into a RAM-backed `/tmp`. Phase 23 task 1 makes children reuse the parent's published binary and keeps a 24-hour prune only as the residual safety net for a parent killed mid-run; the durable cleanup-on-kill design stays in dedicated maintenance. |
 
 CF-024/034/035 closed with Phase 22 evidence; historical dispositions and closed
 IDs remain in the wrap audit and must not be reused. All triggers checked
@@ -164,7 +164,8 @@ against the actual phase diff.
 
 Under DEC-222, CF-008/018/023/026a/026b/029/030/033/036/037/038/039 are
 re-deferred unchanged, CF-040 is partially scheduled, and CF-041 is registered.
-CF-042 is registered under DEC-227/DEC-228 from the QA plan's I-16.
+CF-042 is registered under DEC-227/DEC-228 from the QA plan's I-16, with its
+cause and mitigation corrected under DEC-229 from the readiness refresh's R-15.
 The full disposition table is in
 [Phase 23 decisions](../phases/phase-23/decisions.md).
 

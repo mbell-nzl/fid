@@ -61,6 +61,15 @@ next rework atomically when that budget is exhausted.
   `evaluation.go`, `resolve.go`.
 - `internal/review/` - the verdict effects that charge and raise.
 - `internal/journal/` - the `review.recorded` effect-rule optional rows.
+- `internal/workflow/stop.go` - the closed Stop registries (R-14). Add
+  `review-rework-exhausted` to `stopCodes` and its exact `validStopDetails` key
+  set from the `public-interface.md` section 2 StopDetails table. Add no
+  Condition type here: the resolution condition is the retained
+  `budget-observed`.
+- `internal/journal/current_event_value_catalog.go` - the matching
+  `currentStopDetailShapes` entry (R-14). `StopCode` validation keys on that
+  map (`current_event_value_types.go`), so without the entry the journal
+  rejects the Stop this task raises.
 - `internal/cli/codes.go` - `review-changes-required`,
   `review-rework-exhausted`, `evidence-type-not-accepted`. `finding-unresolved`
   is a ReasonCode, **not** a failure code (DEC-226): add it, together with

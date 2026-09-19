@@ -49,6 +49,14 @@ deterministic proof.
   present it as deterministic or fid-executed proof (PRD-HUM-001).
 - Raise a `human-outcome-required` Stop exactly when the Human Obligation is the
   only unsatisfied Obligation. Routine status raises no Attention (PRD-HUM-002).
+- The `artifact.availability-observed` raising sequence has a proven fixture
+  technique (I-24, reproduced live at QA readiness): remove the retained
+  content-addressed blob under `.fid/artifacts/<digest>` and observe `missing`,
+  then restore it and observe `available`. `internal/evidence/artifact.go`
+  derives availability by digest-verifying that blob and writes one
+  `referenced_artifacts/update` effect with a precondition on the prior value,
+  so `missing -> available` is exactly one qualifying Event and the Obligation
+  transitions unsatisfied -> satisfied inside it.
 - DEC-192: delete exactly the `"human-outcome.recorded"` key and prove its
   live-apply and replay parity; converge task 1's fence assertion for that key.
 - Add the `human-outcome.record` grant action exactly here. Replace the seeded
@@ -72,6 +80,19 @@ deterministic proof.
   key, plus the optional `stops/insert`, `attention_items/insert`, and
   `attention_stop_links/insert` effect rows added to `evidence.linked` and
   `artifact.availability-observed` under `schema.md` section 6.2 (DEC-224).
+- `internal/workflow/stop.go` - the closed Stop registries (R-14). Add
+  `human-outcome-required` to `stopCodes` with its exact `validStopDetails` key
+  set, `human-outcome-recorded` to `conditionTypes`, and the `outcome_class`
+  field to the `Condition` struct together with its exactly-one-non-null-field
+  rule in `validateCondition`, all from `public-interface.md` section 2.
+- `internal/journal/current_event_value_catalog.go` - the matching
+  `currentStopDetailShapes` entry, and the closed `Condition` value grammar
+  gaining `human-outcome-recorded` and `outcome_class:?ID` (R-14).
+- `internal/export/archive_semantics_catalog.go` - mirror this task's
+  `retainedCurrentRules` amendments for `evidence.linked` and
+  `artifact.availability-observed` into `semanticEventRules` (R-14). Without
+  the mirror, `export validate` and `import` reject the journal of any
+  workspace whose readiness Stop was raised by either Event.
 - `internal/cli/codes.go` - `outcome-not-permitted`, `outcome-not-found`,
   `human-outcome-required`.
 - `cmd/fid/human_outcome.go` - new leaf wiring for `record` and `list`.

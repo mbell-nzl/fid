@@ -62,8 +62,25 @@ until a matching approved reference and Human Outcome both exist.
   (R-08, DEC-167/173).
 - `internal/issues/transition_rules.go` - the `linked_to_decision` evaluator.
 - `internal/journal/project_effects.go`, `current_event_catalog.go`.
-- `internal/cli/codes.go` - `protected-decision-required`,
-  `source-digest-mismatch`, `decision-not-found`.
+- `internal/workflow/stop.go` - the closed Stop registries (R-14). Add
+  `protected-decision-required` to `stopCodes` with its exact
+  `validStopDetails` key set, `decision-satisfied` to `conditionTypes`, and the
+  `decision_class` field to the `Condition` struct together with its
+  exactly-one-non-null-field rule in `validateCondition`, all from
+  `public-interface.md` section 2.
+- `internal/journal/current_event_value_catalog.go` - the matching
+  `currentStopDetailShapes` entry, and the closed `Condition` value grammar
+  gaining `decision-satisfied` and `decision_class:?ID` (R-14).
+- `internal/export/archive_semantics_catalog.go` - mirror this task's own
+  catalog amendments (`envelope.created` gaining
+  `envelope_protected_decisions/insert`, `envelope.activated` gaining the
+  optional Stop rows) into `semanticEventRules` (R-14). Without the mirror,
+  `export validate` and `import` reject the journal of any workspace that
+  recorded those effects, and the divergence stays silent until task 16.
+- `internal/cli/codes.go` - `protected-decision-required` and
+  `source-digest-mismatch` only. Do **not** add `decision-not-found`: it is
+  removed from the accepted set under DEC-230 because no leaf takes a Decision
+  Reference ID, so nothing could return it and VAL-056 could not reproduce it.
 - `cmd/fid/decision.go` - new leaf wiring for `record-reference` and `list`.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
   this change.

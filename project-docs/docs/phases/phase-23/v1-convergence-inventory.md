@@ -69,8 +69,10 @@ never assign ownership (DEC-162/165/166/194). The convergence rules in force:
 - `internal/sqlquery/sqlquery.go`: diagnostic only. No planned production edit;
   CF-018's split fires only if a causal change reopens it.
 - `acceptance_criteria` add and list: retained target behavior, not residue.
-- `cmd/fid/integration/main_test.go` stale binary-directory pruning: added by
-  task 1 as bounded test infrastructure (CF-042). The durable cleanup-on-kill
+- `cmd/fid/integration/main_test.go` binary-directory leak: task 1 makes a
+  re-executing child reuse the parent's published binary, and keeps the
+  24-hour prune only as the residual safety net, as bounded test infrastructure
+  (CF-042, cause corrected under R-15/DEC-229). The durable cleanup-on-kill
   question stays with workflow maintenance.
 
 Replacement-bound removal cannot be deferred to task 17 or Phase 25 merely

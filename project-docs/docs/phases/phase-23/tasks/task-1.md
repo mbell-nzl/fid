@@ -41,6 +41,13 @@ Full sources, pass and fail criteria, and validator ownership are in
   `registration_version INTEGER NOT NULL,` also occur in `execution_attempts`
   (`0013` lines 222-223). The replacement applies **only** inside
   `envelope_obligations`; a global substitution fails DEC-178 and VAL-075.
+- Two facts measured on the real chain during QA readiness (I-26). The product
+  exposes no single-step down - `internal/db.MigrateDown` runs `m.Down()` to
+  zero - so the 0017 down evidence is either the full teardown through that API
+  or a test-local `Steps(-1)`; name which one the report uses. A failed
+  migration leaves `schema_migrations` dirty (observed `16|1`), which is
+  precisely the state VAL-005 rules out: after the accepted up and the accepted
+  down, `schema_migrations` must be `17|0` and `16|0` respectively, never dirty.
 - DEC-178: shipped migration SQL and the canonical slice DDL must agree exactly.
   Every line of 0013 and 0015 outside the accepted replacement table stays
   byte-identical.
@@ -54,6 +61,14 @@ Full sources, pass and fail criteria, and validator ownership are in
   `internal/journal/current_event_catalog.go` with the effect rules in
   `schema.md` section 6.2, so a fenced type is rejected by the fence and not by
   an unknown-type path.
+- Registration is not complete until all three closed catalogs agree (R-14).
+  The same nine rules require their ten new effect tables registered in
+  `internal/journal/current_event_columns.go` - `validateCurrentEffect` returns
+  `unknown table` for an effect on an unregistered table - and their mirrored
+  rows in `internal/export/archive_semantics_catalog.go`, which
+  `export validate` and `import` key on. Column domains are copied from the
+  0017 DDL this task ships, and
+  `TestCurrentEventColumnDomainsMatchAcceptedDDL` proves that agreement here.
 - Manifest `projection_schema` becomes 17 in this task. It becomes 18 in task
   15; do not anticipate that value.
 - `execution-scope.md` is incorporated into this scope: it assigns only
@@ -69,16 +84,45 @@ Full sources, pass and fail criteria, and validator ownership are in
 - `migrations/0017_p23_review_judgment.up.sql`, `.down.sql` - new.
 - `internal/db/` - migration loading, latest-schema expectations, tests.
 - `internal/journal/project_effects.go`, `current_event_catalog.go` and tests.
+- `internal/journal/current_event_columns.go` - register all ten new Phase 23
+  tables in `currentEventTables` with the column domains of the 0017 DDL:
+  `review_records`, `review_findings`, `finding_dispositions`,
+  `judgment_concerns`, `deviations`, `decision_refs`, `human_outcomes`,
+  `envelope_protected_decisions`, `requirement_refs`, and
+  `requirement_issue_links` (R-14). Task 15 renames the `judgment_concerns`
+  key with the table; no other task edits this map.
+- `internal/export/archive_semantics_catalog.go` - mirror the nine new
+  `currentEventRules` rows into `semanticEventRules` from the same
+  `schema.md` section 6.2 source (R-14). Standing rule in
+  `execution-scope.md` section 6: a task that changes a journal Event rule
+  mirrors it here in the same task.
 - `internal/export/` - manifest projection schema and its fixtures.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
   this change.
-- `cmd/fid/integration/main_test.go` - prune stale `fid-integration-binary-*`
-  directories older than 24 hours before creating this run's directory, then
-  create it as today (test infrastructure only, no product behavior; CF-042).
-  Rationale: `TestMain` removes its directory only on normal exits, so a timeout
-  kill leaks a ~16 MB binary directory. 148 such directories (2.3 GB) had filled
-  a RAM-backed `/tmp` to 1010 MB free during QA planning, which would block this
-  phase's gates rather than fail them.
+- `cmd/fid/integration/main_test.go` - stop the per-run binary-directory leak
+  (test infrastructure only, no product behavior; CF-042, corrected under
+  R-15). Measured cause: five tests re-execute the test binary as a child
+  process, each child re-enters `runIntegrationSuite`, creates its own
+  directory and rebuilds the same ~16 MB binary, and the crash-process children
+  exit abnormally by design and never reach `RemoveAll`. One clean tagged run -
+  exit 0, no kill, no timeout - leaked **20 directories and 306 MB** into a
+  3.9 GB RAM-backed `/tmp`. At roughly 26 tagged runs this phase that is about
+  7.8 GB, so `/tmp` fills around the twelfth run and the gates become
+  environment-blocked rather than failing. Required change: have
+  `runIntegrationSuite` publish the built binary path in an environment
+  variable after a successful build, and have a process that finds that
+  variable set and pointing at an existing executable reuse it - building
+  nothing and removing nothing. Only the building process removes its own
+  directory, exactly as today. All five re-executing call sites already spawn
+  with `append(os.Environ(), ...)`, so they inherit it and need no edit; a
+  variable pointing at a missing path must fall back to building. Keep the
+  bounded 24-hour prune of stale `fid-integration-binary-*` directories before
+  creating a directory, as the residual safety net for a parent killed mid-run;
+  age is the only safe bound, because a count- or newest-based prune would
+  delete a concurrent run's live binary. Record in the completion report the
+  `fid-integration-binary-*` directory count and `/tmp` free space immediately
+  before and after the tagged gate; a clean run must leak none. The durable
+  cleanup-on-kill design stays with CF-042.
 - `project-docs/docs/phases/phase-23/tasks/task-1-done.md`.
 
 ### Files To Read For Context
