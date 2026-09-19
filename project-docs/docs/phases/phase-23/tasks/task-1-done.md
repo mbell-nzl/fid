@@ -73,8 +73,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `3c0b520e2d183c203356942d00a3652aef84376f`
 
 ## Commit subject
 
-- Pending commit
+- `test(phase-23): add task-1 migration acceptance evidence`
