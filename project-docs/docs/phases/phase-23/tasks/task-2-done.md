@@ -67,8 +67,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `710db23c946891133f1967e4ec317a17d43a6038`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): add typed envelope obligations`
