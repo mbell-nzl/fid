@@ -158,6 +158,63 @@ func EvaluateEvidenceStates(states []ObligationEvidenceState) []EvaluationReason
 	return sortEvaluationReasons(reasons)
 }
 
+// EvaluateEnvelopeObligations serializes the independently evaluated state of
+// every Obligation in stable ID order. Metadata-only Obligations deliberately
+// have no Artifact availability requirement.
+func EvaluateEnvelopeObligations(obligations []Obligation, statesByObligation map[string][]ObligationEvidenceState) []ObligationEvaluation {
+	ordered := append([]Obligation(nil), obligations...)
+	sort.Slice(ordered, func(left, right int) bool { return ordered[left].ID < ordered[right].ID })
+	evaluations := make([]ObligationEvaluation, 0, len(ordered))
+	for _, obligation := range ordered {
+		states := append([]ObligationEvidenceState(nil), statesByObligation[obligation.ID]...)
+		if len(states) == 0 {
+			states = []ObligationEvidenceState{{ObligationID: obligation.ID}}
+		}
+		metadataSufficient := obligation.ArtifactPolicy == "metadata-sufficient"
+		if metadataSufficient {
+			for index := range states {
+				states[index].ArtifactAvailability = "not-applicable"
+			}
+		}
+		reasons := EvaluateEvidenceStates(states)
+		if obligation.Type == "human-outcome" && evidenceAbsent(states) {
+			reasons = []EvaluationReason{evaluationReason("human-outcome-absent", "qualifying Human Outcome is absent", obligation.ID, "obligation")}
+		}
+		evaluation := ObligationEvaluation{ObligationID: obligation.ID, Status: "unsatisfied", Validity: "invalid", Freshness: "stale", ArtifactAvailability: "missing", Reasons: reasons}
+		if metadataSufficient {
+			evaluation.ArtifactAvailability = "not-applicable"
+		}
+		for _, state := range states {
+			if state.Validity == "valid" {
+				evaluation.Validity = "valid"
+			}
+			if state.Freshness == "fresh" {
+				evaluation.Freshness = "fresh"
+			}
+			if !metadataSufficient && state.ArtifactAvailability == "available" {
+				evaluation.ArtifactAvailability = "available"
+			}
+		}
+		if len(reasons) == 0 {
+			evaluation.Status, evaluation.Validity, evaluation.Freshness = "satisfied", "valid", "fresh"
+			if !metadataSufficient {
+				evaluation.ArtifactAvailability = "available"
+			}
+		}
+		evaluations = append(evaluations, evaluation)
+	}
+	return evaluations
+}
+
+func evidenceAbsent(states []ObligationEvidenceState) bool {
+	for _, state := range states {
+		if state.EvidenceID != "" || state.ReceiptSuccessful {
+			return false
+		}
+	}
+	return true
+}
+
 // EvaluateExecutionTransition evaluates the generic Envelope-bound path. A
 // non-bound Issue keeps using its retained standalone workflow behavior.
 func EvaluateExecutionTransition(workspaceRoot, migrationsDir string, request ExecutionTransitionRequest) (ExecutionTransitionEvaluation, error) {
@@ -289,15 +346,20 @@ func executionRunActive(conn *sql.DB, claim executionClaim, usableClaim bool, en
 }
 
 func evaluateObligations(conn *sql.DB, obligations []Obligation, current Repository) ([]EvaluationReason, error) {
-	states := make([]ObligationEvidenceState, 0, len(obligations))
+	states := map[string][]ObligationEvidenceState{}
 	for _, obligation := range obligations {
 		loaded, err := loadObligationEvidenceStates(conn, obligation.ID, current)
 		if err != nil {
 			return nil, err
 		}
-		states = append(states, loaded...)
+		states[obligation.ID] = loaded
 	}
-	return EvaluateEvidenceStates(states), nil
+	evaluations := EvaluateEnvelopeObligations(obligations, states)
+	reasons := []EvaluationReason{}
+	for _, evaluation := range evaluations {
+		reasons = append(reasons, evaluation.Reasons...)
+	}
+	return sortEvaluationReasons(reasons), nil
 }
 
 func loadObligationEvidenceStates(conn *sql.DB, obligationID string, current Repository) ([]ObligationEvidenceState, error) {

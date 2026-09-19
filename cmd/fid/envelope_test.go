@@ -52,7 +52,7 @@ func TestEnvelopeCreateGetActivateRoundTripAndRejectsWidening(t *testing.T) {
 		apply func(map[string]any)
 	}{
 		{"related issues", func(value map[string]any) { value["related_issue_ids"] = []string{"ISS-2"} }},
-		{"multiple obligations", func(value map[string]any) {
+		{"duplicate obligation ID", func(value map[string]any) {
 			value["obligations"] = append(value["obligations"].([]any), value["obligations"].([]any)[0])
 		}},
 		{"computed status", func(value map[string]any) {
@@ -88,6 +88,35 @@ func TestEnvelopeCreateGetActivateRoundTripAndRejectsWidening(t *testing.T) {
 				t.Fatalf("%s event count = %d, want no Event after %d", testCase.name, after, before)
 			}
 		})
+	}
+}
+
+func TestEnvelopeCreateAcceptsTypedObligationsAndProtectedDecisions(t *testing.T) {
+	t.Parallel()
+	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+	input := envelopeCreateInput(t, workspace, issueID, registration)
+	source := input["sources"].([]any)[0]
+	input["obligations"] = []any{
+		input["obligations"].([]any)[0],
+		map[string]any{"id": "OBL-review", "type": "review", "applicability": "required", "guarded_actions": []string{"envelope.complete"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "review_profile": "standard", "accepted_evidence_types": []string{"review"}, "accepted_trust_sources": []string{"activated-actor"}, "freshness_target": "repository-tree", "artifact_policy": "metadata-sufficient", "independence": "distinct-actor", "required_lane": nil, "source": source},
+		map[string]any{"id": "OBL-human", "type": "human-outcome", "applicability": "required", "guarded_actions": []string{"envelope.complete"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "outcome_class": "release", "accepted_evidence_types": []string{"human-outcome"}, "accepted_trust_sources": []string{"activated-human"}, "freshness_target": "none", "artifact_policy": "metadata-sufficient", "independence": "human", "required_lane": nil, "source": source},
+	}
+	input["protected_decisions"] = []any{map[string]any{"ordinal": 0, "decision_class": "release", "required_capabilities": []string{"envelope.complete"}, "affected_actions": []string{"envelope.complete"}}}
+	inputPath := filepath.Join(workspace, "typed-envelope.json")
+	writeActivationInput(t, inputPath, input)
+
+	result := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", "typed-envelope")
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("typed envelope create = %#v, want success", result)
+	}
+	payload := decodeCommandJSONStructure(t, result.stdout).(map[string]any)
+	envelope := payload["result"].(map[string]any)["envelope"].(map[string]any)
+	obligations := envelope["obligations"].([]any)
+	if len(obligations) != 3 || obligations[1].(map[string]any)["registration"] != nil || obligations[2].(map[string]any)["registration"] != nil {
+		t.Fatalf("typed Envelope obligations = %#v, want three rows with null new-type registrations", obligations)
+	}
+	if decisions := envelope["protected_decisions"].([]any); len(decisions) != 1 {
+		t.Fatalf("typed Envelope protected decisions = %#v, want one authoring row", decisions)
 	}
 }
 

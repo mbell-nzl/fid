@@ -171,8 +171,9 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 		t.Fatalf("complete terminal Envelope = %#v", completed)
 	}
 	result := decodeCanonicalResult(t, completed.stdout)
-	if result["envelope"].(map[string]any)["status"] != "completed" || !sameJSONMap(result["evaluation"].(map[string]any), wantEvaluation) {
-		t.Fatalf("completion result = %#v, want completed Envelope and shared evaluator result %#v", result, wantEvaluation)
+	evaluations := result["evaluation"].([]any)
+	if result["envelope"].(map[string]any)["status"] != "completed" || len(evaluations) != 1 || !sameJSONMap(evaluations[0].(map[string]any), wantEvaluation) {
+		t.Fatalf("completion result = %#v, want completed Envelope and one shared evaluator result %#v", result, wantEvaluation)
 	}
 	if afterEvents := journalEventCount(t, workspace); afterEvents != beforeEvents+1 {
 		t.Fatalf("completion Event count = %d, want %d", afterEvents, beforeEvents+1)
