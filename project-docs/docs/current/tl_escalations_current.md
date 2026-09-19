@@ -9,15 +9,21 @@ section 2 adds three nullable fields to `Condition`; it is the only field-adding
 widening of a live journal value shape in the phase. `validateCurrentShape`
 matches field count exactly, and `ReplayJournal` revalidates every historical
 Event against current shapes, so no workspace holding a pre-widening Stop can
-rebuild; and `attentionSemanticKey` hashes the whole struct, so every open
+rebuild; `attentionSemanticKey` hashes the whole struct, so every open
 Attention's stored `semantic_key` stops matching and an identical Stop raises a
-duplicate. Both measured under overlay, working tree untouched. Every remedy
-changes an accepted value's encoding or adds an `EventSchema` bump plus a
-semantic-key migration, so the choice is the Human's. **Blocks tasks 9, 10, and
-11 only**; tasks 1-8 may dispatch. Recommended Option A: non-applicable fields
-absent rather than null, with per-type Condition shapes keyed on `type` exactly
-as `currentStopDetailShapes` is keyed on `code`. Full record, evidence, and
-options: [Phase 23 escalations](../phases/phase-23/tl-escalations.md).
+duplicate; and `stopDigest` embeds the same struct, so an idempotent
+`stop.raise` retry becomes an idempotency conflict. All three measured, twice -
+under overlay by the Tech Lead and end to end by the QA Lead (`qa-plan.md`
+17.2). Every remedy changes an accepted value's encoding or adds an
+`EventSchema` bump plus two column recomputes, so the choice is the Human's.
+**Blocks tasks 9, 10, and 11 only**; tasks 1-8 may dispatch. Recommended Option
+A: `omitempty` on the **three new fields only**, the six Phase 22 types keeping
+`budget_name` and `capability_id` present-and-null, with per-type Condition
+shapes keyed on `type` as `currentStopDetailShapes` is keyed on `code` -
+measured byte-identical to baseline, zero corpus failures, and it closes
+inventory row 8 structurally. Options restated on measured costs under DEC-234
+(QA R-20); R-22, R-23, and I-37 are held for the disposition batch. Full record,
+evidence, and options: [Phase 23 escalations](../phases/phase-23/tl-escalations.md).
 
 ESC-22-005 is resolved by the Human's performance-repair approval under
 DEC-221; its proposed timeout increase was not approved or applied. Task 20 is
