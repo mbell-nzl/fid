@@ -502,7 +502,7 @@ func evaluationFromBinding(evidence Evidence, binding evidenceBinding, target Re
 		ReviewIndependent:            binding.ReviewIndependent,
 		UnresolvedBlockingFindingIDs: append([]string(nil), binding.UnresolvedBlockingFindingIDs...),
 		Validity:                     evidence.Validity,
-		Freshness:                    freshnessForRepository(binding.Repository, target),
+		Freshness:                    freshnessForTarget(binding.Obligation.FreshnessTarget, binding.Repository, target),
 		ArtifactAvailability:         availability,
 		ArtifactIDs:                  artifactIDs,
 	}
@@ -550,7 +550,15 @@ func loadEvaluationStates(conn *sql.DB, obligation workflow.Obligation, target R
 	if err := conn.QueryRow(`SELECT envelope_id,revision FROM envelope_obligations WHERE id=?`, obligation.ID).Scan(&envelopeID, &revision); err != nil {
 		return nil, fmt.Errorf("load Evidence evaluation Obligation binding: %w", err)
 	}
-	rows, err := conn.Query(`SELECT e.id,e.evidence_type,e.receipt_id,e.review_id,e.validity,e.target_repository_json,r.terminal_status,rv.verdict FROM evidence_records e LEFT JOIN execution_receipts r ON r.id=e.receipt_id LEFT JOIN review_records rv ON rv.id=e.review_id WHERE e.obligation_id=? ORDER BY e.id`, obligation.ID)
+	rows, err := conn.Query(`
+		SELECT e.id,e.evidence_type,e.receipt_id,e.review_id,e.human_outcome_id,e.validity,e.target_repository_json,
+		       r.terminal_status,rv.verdict,ho.result,ho.class,ho.scope_issue_id
+		FROM evidence_records e
+		LEFT JOIN execution_receipts r ON r.id=e.receipt_id
+		LEFT JOIN review_records rv ON rv.id=e.review_id
+		LEFT JOIN human_outcomes ho ON ho.id=e.human_outcome_id
+		WHERE e.obligation_id=?
+		ORDER BY e.id`, obligation.ID)
 	if err != nil {
 		return nil, fmt.Errorf("evaluate Evidence: %w", err)
 	}
@@ -558,8 +566,8 @@ func loadEvaluationStates(conn *sql.DB, obligation workflow.Obligation, target R
 	states := []workflow.ObligationEvidenceState{}
 	for rows.Next() {
 		var evidenceID, evidenceType, validity, repositoryJSON string
-		var receiptID, reviewID, receiptOutcome, reviewVerdict sql.NullString
-		if err := rows.Scan(&evidenceID, &evidenceType, &receiptID, &reviewID, &validity, &repositoryJSON, &receiptOutcome, &reviewVerdict); err != nil {
+		var receiptID, reviewID, humanOutcomeID, receiptOutcome, reviewVerdict, humanOutcomeResult, outcomeClass, scopeIssueID sql.NullString
+		if err := rows.Scan(&evidenceID, &evidenceType, &receiptID, &reviewID, &humanOutcomeID, &validity, &repositoryJSON, &receiptOutcome, &reviewVerdict, &humanOutcomeResult, &outcomeClass, &scopeIssueID); err != nil {
 			return nil, err
 		}
 		var evidenceTarget Repository
@@ -575,9 +583,18 @@ func loadEvaluationStates(conn *sql.DB, obligation workflow.Obligation, target R
 			ReceiptSuccessful:    receiptOutcome.String == "succeeded",
 			ReviewVerdict:        reviewVerdict.String,
 			ReviewIndependent:    evidenceType != "review" || reviewID.Valid,
+			HumanOutcomeID:       humanOutcomeID.String,
+			HumanOutcomeResult:   humanOutcomeResult.String,
 			Validity:             validity,
-			Freshness:            freshnessForRepository(evidenceTarget, target),
+			Freshness:            freshnessForTarget(obligation.FreshnessTarget, evidenceTarget, target),
 			ArtifactAvailability: "available",
+		}
+		if evidenceType == "human-outcome" {
+			governing, err := workflow.ResolveGoverningHumanOutcome(conn, outcomeClass.String, scopeIssueID.String)
+			if err != nil {
+				return nil, err
+			}
+			state.OutcomeSuperseded = governing.ID != humanOutcomeID.String && governing.Result != humanOutcomeResult.String
 		}
 		if evidenceType == "review" {
 			blocking, err := blockingFindingIDs(conn, `r.issue_id=? AND r.envelope_id=? AND r.envelope_revision=? AND NOT EXISTS (SELECT 1 FROM finding_dispositions d WHERE d.finding_id=f.id AND d.action IN ('resolved','inapplicable'))`, obligation.Subject.ID, envelopeID, revision)
@@ -679,6 +696,13 @@ func freshnessForRepository(receipt, target Repository) string {
 		return "fresh"
 	}
 	return "stale"
+}
+
+func freshnessForTarget(freshnessTarget string, evidence, target Repository) string {
+	if freshnessTarget == "none" {
+		return "fresh"
+	}
+	return freshnessForRepository(evidence, target)
 }
 
 func sortedUnique(values []string) bool {

@@ -12,6 +12,31 @@ type ResolvedIssueWorkflow struct {
 	InitialState string
 }
 
+// GoverningHumanOutcome is the latest durable judgment for one class and
+// Issue scope. Event identity, rather than a caller-authored timestamp, fixes
+// the order.
+type GoverningHumanOutcome struct {
+	ID      string
+	Result  string
+	EventID string
+}
+
+// ResolveGoverningHumanOutcome selects by immutable Event identity so caller
+// timestamps cannot change which judgment governs.
+func ResolveGoverningHumanOutcome(conn *sql.DB, class, scopeIssueID string) (GoverningHumanOutcome, error) {
+	var outcome GoverningHumanOutcome
+	err := conn.QueryRow(`
+		SELECT id,result,created_event_id
+		FROM human_outcomes
+		WHERE class=? AND scope_issue_id=?
+		ORDER BY created_event_id DESC
+		LIMIT 1`, class, scopeIssueID).Scan(&outcome.ID, &outcome.Result, &outcome.EventID)
+	if err != nil {
+		return GoverningHumanOutcome{}, fmt.Errorf("resolve governing Human Outcome: %w", err)
+	}
+	return outcome, nil
+}
+
 // ResolveIssueWorkflow resolves kind, project, then built-in workflow assignment precedence.
 func ResolveIssueWorkflow(conn *sql.DB, kind string) (ResolvedIssueWorkflow, error) {
 	workflowID, err := assignedWorkflowID(conn, kind)

@@ -107,6 +107,9 @@ type ObligationEvidenceState struct {
 	ReviewID                     string
 	ReviewVerdict                string
 	ReviewIndependent            bool
+	HumanOutcomeID               string
+	HumanOutcomeResult           string
+	OutcomeSuperseded            bool
 	UnresolvedBlockingFindingIDs []string
 	Validity                     string
 	Freshness                    string
@@ -142,7 +145,10 @@ func EvaluateEvidenceStates(states []ObligationEvidenceState) []EvaluationReason
 			appendReason(evaluationReason("obligation-evidence-absent", "qualifying Evidence is absent", state.ObligationID, "obligation"))
 			continue
 		}
-		if state.EvidenceType != "review" && !state.ReceiptSuccessful {
+		if state.EvidenceType == "human-outcome" && state.OutcomeSuperseded {
+			appendReason(evaluationReason("outcome-superseded", "a later Human Outcome has a different result", state.HumanOutcomeID, "human-outcome"))
+		}
+		if state.EvidenceType != "review" && state.EvidenceType != "human-outcome" && !state.ReceiptSuccessful {
 			appendReason(evaluationReason("receipt-unsuccessful", "Receipt outcome is not succeeded", state.ReceiptID, "receipt"))
 		}
 		for _, findingID := range state.UnresolvedBlockingFindingIDs {
@@ -189,6 +195,9 @@ func EvaluateEnvelopeObligations(obligations []Obligation, statesByObligation ma
 			reasons = []EvaluationReason{evaluationReason("human-outcome-absent", "qualifying Human Outcome is absent", obligation.ID, "obligation")}
 		}
 		evaluation := ObligationEvaluation{ObligationID: obligation.ID, Status: "unsatisfied", Validity: "invalid", Freshness: "stale", ArtifactAvailability: "missing", Reasons: reasons}
+		if obligation.FreshnessTarget == "none" {
+			evaluation.Freshness = "fresh"
+		}
 		if metadataSufficient {
 			evaluation.ArtifactAvailability = "not-applicable"
 		}
@@ -372,12 +381,14 @@ func evaluateObligations(conn *sql.DB, obligations []Obligation, current Reposit
 
 func loadObligationEvidenceStates(conn *sql.DB, obligationID string, current Repository) ([]ObligationEvidenceState, error) {
 	rows, err := conn.Query(`
-		SELECT e.id, e.evidence_type, COALESCE(e.receipt_id,''), COALESCE(e.review_id,''), e.validity, e.target_repository_json,
+		SELECT e.id, e.evidence_type, COALESCE(e.receipt_id,''), COALESCE(e.review_id,''), COALESCE(e.human_outcome_id,''), e.validity, e.target_repository_json,
 		       COALESCE(r.terminal_status,''), COALESCE(rv.verdict,''),
-		       COALESCE(rv.issue_id,''), COALESCE(rv.envelope_id,''), COALESCE(rv.envelope_revision,0)
+		       COALESCE(rv.issue_id,''), COALESCE(rv.envelope_id,''), COALESCE(rv.envelope_revision,0),
+		       COALESCE(ho.result,''), COALESCE(ho.class,''), COALESCE(ho.scope_issue_id,'')
 		FROM evidence_records e
 		LEFT JOIN execution_receipts r ON r.id = e.receipt_id
 		LEFT JOIN review_records rv ON rv.id = e.review_id
+		LEFT JOIN human_outcomes ho ON ho.id = e.human_outcome_id
 		WHERE e.obligation_id = ?
 		ORDER BY e.id
 	`, obligationID)
@@ -388,9 +399,10 @@ func loadObligationEvidenceStates(conn *sql.DB, obligationID string, current Rep
 
 	states := []ObligationEvidenceState{}
 	for rows.Next() {
-		var evidenceID, evidenceType, receiptID, reviewID, validity, targetJSON, outcome, verdict, issueID, envelopeID string
+		var evidenceID, evidenceType, receiptID, reviewID, humanOutcomeID, validity, targetJSON, outcome, verdict, issueID, envelopeID string
+		var humanOutcomeResult, outcomeClass, scopeIssueID string
 		var revision int
-		if err := rows.Scan(&evidenceID, &evidenceType, &receiptID, &reviewID, &validity, &targetJSON, &outcome, &verdict, &issueID, &envelopeID, &revision); err != nil {
+		if err := rows.Scan(&evidenceID, &evidenceType, &receiptID, &reviewID, &humanOutcomeID, &validity, &targetJSON, &outcome, &verdict, &issueID, &envelopeID, &revision, &humanOutcomeResult, &outcomeClass, &scopeIssueID); err != nil {
 			return nil, err
 		}
 		var target Repository
@@ -399,8 +411,16 @@ func loadObligationEvidenceStates(conn *sql.DB, obligationID string, current Rep
 		}
 		state := ObligationEvidenceState{
 			ObligationID: obligationID, EvidenceID: evidenceID, EvidenceType: evidenceType, ReceiptID: receiptID, ReviewID: reviewID, ReviewVerdict: verdict,
+			HumanOutcomeID: humanOutcomeID, HumanOutcomeResult: humanOutcomeResult,
 			ReceiptSuccessful: outcome == "succeeded", Validity: validity,
-			Freshness: evidenceFreshness(target, current), ArtifactAvailability: "available",
+			Freshness: evidenceFreshnessForType(evidenceType, target, current), ArtifactAvailability: "available",
+		}
+		if evidenceType == "human-outcome" {
+			governing, err := ResolveGoverningHumanOutcome(conn, outcomeClass, scopeIssueID)
+			if err != nil {
+				return nil, err
+			}
+			state.OutcomeSuperseded = governing.ID != humanOutcomeID && governing.Result != humanOutcomeResult
 		}
 		if evidenceType == "review" {
 			state.ReviewIndependent = true
@@ -496,6 +516,13 @@ func evidenceFreshness(target, current Repository) string {
 		return "fresh"
 	}
 	return "stale"
+}
+
+func evidenceFreshnessForType(evidenceType string, target, current Repository) string {
+	if evidenceType == "human-outcome" {
+		return "fresh"
+	}
+	return evidenceFreshness(target, current)
 }
 
 func evaluationReason(code, detail, subjectID, subjectType string) EvaluationReason {

@@ -287,6 +287,7 @@ func p22NewFIDRecoveryAdapterWithArtifacts(t *testing.T, actorType string, lease
 type p22ExecutionFixture struct {
 	Argv                []string
 	ExtraBudgets        []any
+	HumanObligations    bool
 	ReviewObligation    bool
 	ReviewCyclesMaximum int
 }
@@ -362,7 +363,16 @@ func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, ac
 	if len(execution) != 0 && execution[0].ReviewObligation {
 		obligation = map[string]any{"id": "OBL-p22-corpus", "type": "review", "applicability": "required", "guarded_actions": []string{"envelope.complete"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "review_profile": "review-default", "accepted_evidence_types": []string{"review"}, "accepted_trust_sources": []string{"activated-actor"}, "freshness_target": "repository-tree", "artifact_policy": "metadata-sufficient", "independence": "distinct-actor", "required_lane": nil, "source": source}
 	}
-	envelopeRequest := map[string]any{"outcome": "Recover one interrupted Run", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "authority_grants": authorityGrants, "obligations": []any{obligation}, "budgets": []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}, map[string]any{"name": "tokens", "scope": "envelope", "unit": "input-tokens", "maximum": 10, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}}}
+	obligations := []any{obligation}
+	if len(execution) != 0 && execution[0].HumanObligations {
+		for _, outcomeClass := range []string{"release", "security"} {
+			obligations = append(obligations, map[string]any{"id": "OBL-human-" + outcomeClass, "type": "human-outcome", "applicability": "required", "guarded_actions": []string{"envelope.complete"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "outcome_class": outcomeClass, "accepted_evidence_types": []string{"human-outcome"}, "accepted_trust_sources": []string{"activated-human"}, "freshness_target": "none", "artifact_policy": "metadata-sufficient", "independence": "human", "required_lane": nil, "source": source})
+		}
+	}
+	sort.Slice(obligations, func(i, j int) bool {
+		return obligations[i].(map[string]any)["id"].(string) < obligations[j].(map[string]any)["id"].(string)
+	})
+	envelopeRequest := map[string]any{"outcome": "Recover one interrupted Run", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "authority_grants": authorityGrants, "obligations": obligations, "budgets": []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}, map[string]any{"name": "tokens", "scope": "envelope", "unit": "input-tokens", "maximum": 10, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}}}
 	if len(execution) != 0 {
 		budgets := append(envelopeRequest["budgets"].([]any), execution[0].ExtraBudgets...)
 		if execution[0].ReviewCyclesMaximum != 0 {
