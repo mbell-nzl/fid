@@ -49,7 +49,7 @@ func newClaimExpireCommand() *cobra.Command {
 
 func newClaimAcquireCommand() *cobra.Command {
 	var inputPath, actor, key string
-	cmd := &cobra.Command{Use: "acquire", Short: "Acquire one mutation claim.", Args: canonicalNoArgs("claim.acquire"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "acquire", Short: "Acquire one Claim.", Args: canonicalNoArgs("claim.acquire"), RunE: func(cmd *cobra.Command, _ []string) error {
 		var request claims.AcquireRequest
 		if err := claimRequest(cmd, "claim.acquire", inputPath, actor, key, &request); err != nil {
 			return err

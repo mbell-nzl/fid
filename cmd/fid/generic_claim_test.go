@@ -64,6 +64,73 @@ func TestClaimAcquireBindsActiveEnvelopeActorWorktreeScopeAndTTL(t *testing.T) {
 	}
 }
 
+func TestClaimAcquireAcceptsReviewMode(t *testing.T) {
+	t.Parallel()
+	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
+	path := filepath.Join(workspace, "claim-acquire-review.json")
+	worktreeID := testEnvelopeRepository(t, workspace)["worktree_id"]
+	writeActivationInput(t, path, map[string]any{
+		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
+		"worktree_id": worktreeID, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": "review", "ttl_seconds": 60,
+	})
+	result := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder",
+		"--input", path, "--idempotency-key", "claim-acquire-review",
+	)
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("review Claim acquire = %#v, want stdout-only success", result)
+	}
+	if claim := claimFromResponse(t, result.stdout); claim["mode"] != "review" {
+		t.Fatalf("Claim mode = %#v, want review", claim["mode"])
+	}
+}
+
+func TestClaimAcquireKeepsOneActiveClaimAcrossModes(t *testing.T) {
+	t.Parallel()
+	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
+	review, _ := acquireGenericClaimForTestWithMode(t, workspace, issueID, envelopeID, "claim-mode-review", 60, "review")
+
+	mutationPath := filepath.Join(workspace, "claim-mode-mutation.json")
+	worktreeID := testEnvelopeRepository(t, workspace)["worktree_id"]
+	writeActivationInput(t, mutationPath, map[string]any{
+		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
+		"worktree_id": worktreeID, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": "mutation", "ttl_seconds": 60,
+	})
+	beforeConflict := snapshotWorkspacePersistence(t, workspace)
+	competing := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", mutationPath, "--idempotency-key", "claim-mode-mutation-conflict")
+	if competing.err == nil || competing.stdout != "" || !strings.Contains(competing.stderr, `"code":"claim-conflict"`) {
+		t.Fatalf("mutation acquire under active review Claim = %#v, want conflict", competing)
+	}
+	assertClaimStateUnchanged(t, workspace, beforeConflict)
+
+	releasePath := filepath.Join(workspace, "claim-mode-release-review.json")
+	writeActivationInput(t, releasePath, map[string]any{"claim_id": review["id"], "expected_version": 1, "reason": "completed"})
+	released := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "claim-mode-release-review")
+	if released.err != nil || released.stderr != "" {
+		t.Fatalf("release review Claim = %#v, want stdout-only success", released)
+	}
+
+	acquired := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", mutationPath, "--idempotency-key", "claim-mode-mutation")
+	if acquired.err != nil || acquired.stderr != "" || claimFromResponse(t, acquired.stdout)["mode"] != "mutation" {
+		t.Fatalf("mutation acquire after review release = %#v, want active mutation Claim", acquired)
+	}
+	mutation := claimFromResponse(t, acquired.stdout)
+	writeActivationInput(t, releasePath, map[string]any{"claim_id": mutation["id"], "expected_version": 1, "reason": "completed"})
+	released = executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "claim-mode-release-mutation")
+	if released.err != nil || released.stderr != "" {
+		t.Fatalf("release mutation Claim = %#v, want stdout-only success", released)
+	}
+	reviewAgainPath := filepath.Join(workspace, "claim-mode-review-again.json")
+	writeActivationInput(t, reviewAgainPath, map[string]any{
+		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
+		"worktree_id": worktreeID, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": "review", "ttl_seconds": 60,
+	})
+	reviewAgain := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", reviewAgainPath, "--idempotency-key", "claim-mode-review-after-mutation")
+	if reviewAgain.err != nil || reviewAgain.stderr != "" || claimFromResponse(t, reviewAgain.stdout)["mode"] != "review" {
+		t.Fatalf("review acquire after mutation release = %#v, want active review Claim", reviewAgain)
+	}
+}
+
 func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
@@ -471,10 +538,14 @@ func acquireGenericClaimForTest(t *testing.T, workspace, issueID, envelopeID, ke
 }
 
 func acquireGenericClaimForTestWithTTL(t *testing.T, workspace, issueID, envelopeID, key string, ttlSeconds int) (map[string]any, string) {
+	return acquireGenericClaimForTestWithMode(t, workspace, issueID, envelopeID, key, ttlSeconds, "mutation")
+}
+
+func acquireGenericClaimForTestWithMode(t *testing.T, workspace, issueID, envelopeID, key string, ttlSeconds int, mode string) (map[string]any, string) {
 	t.Helper()
 	path := filepath.Join(workspace, key+".json")
 	worktreeID := testEnvelopeRepository(t, workspace)["worktree_id"]
-	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": worktreeID, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": ttlSeconds})
+	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": worktreeID, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": mode, "ttl_seconds": ttlSeconds})
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", path, "--idempotency-key", key)
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("acquire = %#v, want stdout-only success", result)

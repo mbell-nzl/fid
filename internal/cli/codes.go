@@ -58,6 +58,7 @@ const (
 	CodeClaimConflict               Code = "claim-conflict"
 	CodeClaimExpired                Code = "claim-expired"
 	CodeClaimStale                  Code = "claim-stale"
+	CodeClaimModeInvalid            Code = "claim-mode-invalid"
 	CodeRunNotFound                 Code = "run-not-found"
 	CodeRunInactive                 Code = "run-inactive"
 	CodeRunVersionConflict          Code = "run-version-conflict"
@@ -251,6 +252,7 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeClaimConflict:        definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
 	CodeClaimExpired:         definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
 	CodeClaimStale:           definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
+	CodeClaimModeInvalid:     definition(CategoryPrecondition, false, []SubjectType{SubjectClaim}, stringField("claim_id"), stringField("mode"), stringField("required_mode")),
 	CodeRunNotFound:          definition(CategoryNotFound, false, []SubjectType{SubjectRun}, stringField("id")),
 	CodeRunInactive:          definition(CategoryPrecondition, false, []SubjectType{SubjectRun}, stringField("run_id"), stringField("status")),
 	CodeRunVersionConflict:   definition(CategoryConflict, false, []SubjectType{SubjectRun}, stringField("run_id"), integerField("expected_version"), integerField("actual_version")),
@@ -303,7 +305,7 @@ var registeredCodes = []Code{
 	CodeActivationDirectionConflict,
 	CodeActivationIncomplete,
 	CodeAuthorityUnavailable, CodeCapabilityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
-	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive, CodeRunVersionConflict,
+	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeClaimModeInvalid, CodeRunNotFound, CodeRunInactive, CodeRunVersionConflict,
 	CodeExecutorLivenessUnknown, CodeExecutorStillLive, CodeRecoveryStateConflict, CodeObservationNotFound, CodeRecoveryAlreadyLinked,
 	CodeReceiptNotFound, CodeEvidenceNotFound,
 	CodeGateUnsuccessful,

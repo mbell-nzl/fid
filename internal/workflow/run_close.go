@@ -160,6 +160,9 @@ func AbandonRun(options RunOptions, request RunAbandonRequest) (RunAbandonResult
 		if claim.Version != request.ExpectedClaimVersion || claim.Status != "active" {
 			return invalidRun("run abandon claim is invalid")
 		}
+		if err := validateClaimModeAdoption(claim, request.Repository.Dirty); err != nil {
+			return err
+		}
 		if err := validateRunTerminalRepository(options.WorkspaceRoot, request.Repository); err != nil {
 			return err
 		}

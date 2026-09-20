@@ -110,6 +110,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeClaimConflict, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
 		{CodeClaimExpired, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
 		{CodeClaimStale, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
+		{CodeClaimModeInvalid, CategoryPrecondition, false, []SubjectType{SubjectClaim}, []detailExpectation{stringDetail("claim_id"), stringDetail("mode"), stringDetail("required_mode")}},
 		{CodeRunNotFound, CategoryNotFound, false, []SubjectType{SubjectRun}, stringDetails("id")},
 		{CodeRunInactive, CategoryPrecondition, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("status")}},
 		{Code("run-version-conflict"), CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), integerDetail("expected_version"), integerDetail("actual_version")}},

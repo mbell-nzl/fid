@@ -33,6 +33,7 @@ type AcquireRequest struct {
 	EnvelopeRevision int    `json:"envelope_revision"`
 	WorktreeID       string `json:"worktree_id"`
 	Scope            Scope  `json:"scope"`
+	Mode             string `json:"mode"`
 	TTLSeconds       int    `json:"ttl_seconds"`
 }
 
@@ -130,6 +131,9 @@ func closeClaimsRows(rows *sql.Rows) {
 }
 
 func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationResult, error) {
+	if request.Mode == "" {
+		request.Mode = "mutation"
+	}
 	if err := validateMutationOptions(options); err != nil || !validAcquireRequest(request) {
 		return MutationResult{}, invalidGenericClaim("claim acquire input is invalid")
 	}
@@ -167,7 +171,7 @@ func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationRe
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
 		}
-		claim := GenericClaim{ID: claimID, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, EnvelopeRevision: request.EnvelopeRevision, ActorID: options.ActorID, WorktreeID: request.WorktreeID, Scope: request.Scope, Mode: "mutation", Version: 1, Status: "active", AcquiredAt: now.Format(time.RFC3339Nano), ExpiresAt: now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)}
+		claim := GenericClaim{ID: claimID, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, EnvelopeRevision: request.EnvelopeRevision, ActorID: options.ActorID, WorktreeID: request.WorktreeID, Scope: request.Scope, Mode: request.Mode, Version: 1, Status: "active", AcquiredAt: now.Format(time.RFC3339Nano), ExpiresAt: now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)}
 		event, err := genericClaimEvent(options.WorkspaceRoot, actor, envelope.RepositoryScope, claimID, 1, "claim.acquired", claimAcquireAction, []journal.Effect{{
 			Op: "insert", Table: "claims", PK: map[string]any{"id": claimID}, Values: claimValues(claim),
 		}})
@@ -461,7 +465,7 @@ func validateMutationOptions(options MutationOptions) error {
 }
 
 func validAcquireRequest(request AcquireRequest) bool {
-	if strings.TrimSpace(request.IssueID) == "" || strings.TrimSpace(request.EnvelopeID) == "" || request.EnvelopeRevision != 1 || strings.TrimSpace(request.WorktreeID) == "" || request.TTLSeconds < 1 || request.TTLSeconds > 86400 || len(request.Scope.Paths) == 0 {
+	if strings.TrimSpace(request.IssueID) == "" || strings.TrimSpace(request.EnvelopeID) == "" || request.EnvelopeRevision != 1 || strings.TrimSpace(request.WorktreeID) == "" || (request.Mode != "mutation" && request.Mode != "review") || request.TTLSeconds < 1 || request.TTLSeconds > 86400 || len(request.Scope.Paths) == 0 {
 		return false
 	}
 	previous := ""

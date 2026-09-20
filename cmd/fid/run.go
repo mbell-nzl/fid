@@ -310,6 +310,10 @@ func renderRunError(cmd *cobra.Command, operation string, cause error) error {
 	if errors.As(cause, &duplicateExecutor) {
 		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeDuplicateEntity, "executor identity already exists", &cli.Subject{Type: cli.SubjectRun, ID: nil}, map[string]any{"entity_type": "run", "identity": map[string]any{"fields": []string{"executor_id"}, "values": []string{duplicateExecutor.ExecutorID}}})
 	}
+	var invalidClaimMode *workflow.ClaimModeInvalidError
+	if errors.As(cause, &invalidClaimMode) {
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeClaimModeInvalid, "claim mode is invalid", &cli.Subject{Type: cli.SubjectClaim, ID: invalidClaimMode.ClaimID}, map[string]any{"claim_id": invalidClaimMode.ClaimID, "mode": invalidClaimMode.Mode, "required_mode": invalidClaimMode.RequiredMode})
+	}
 	var denied *policy.EnvelopeAuthorityDeniedError
 	if errors.As(cause, &denied) {
 		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor": denied.ActorID})

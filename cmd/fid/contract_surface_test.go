@@ -243,6 +243,21 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	}
 }
 
+func TestClaimAcquireHelpCoversBothClaimModes(t *testing.T) {
+	t.Parallel()
+	command := newRootCommandAt(t.TempDir())
+	var output bytes.Buffer
+	command.SetOut(&output)
+	command.SetErr(&output)
+	command.SetArgs([]string{"claim", "acquire", "--help"})
+	if err := command.Execute(); err != nil {
+		t.Fatalf("claim acquire help: %v", err)
+	}
+	if got := output.String(); !strings.Contains(got, "Acquire one Claim.") || strings.Contains(got, "mutation claim") {
+		t.Fatalf("claim acquire help = %q, want mode-neutral description", got)
+	}
+}
+
 type legacyLeafInvocation struct {
 	command string
 	args    []string
