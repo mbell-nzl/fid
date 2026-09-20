@@ -27,7 +27,7 @@ var p22PortableColumns = map[string]string{
 	"envelope_sources":             "envelope_id revision ordinal source_json",
 	"epic_metadata":                "issue_id scheduling brief_md_path target_start target_end",
 	"evidence_artifact_links":      "evidence_id artifact_id required_material",
-	"evidence_records":             "id obligation_id receipt_id evidence_type producer trust_source target_repository_json validity created_at",
+	"evidence_records":             "id obligation_id receipt_id review_id human_outcome_id evidence_type producer trust_source target_repository_json validity created_at",
 	"execution_attempts":           "id registration_id registration_version obligation_id run_id actor_id start_repository_json resolved_policy_digest producer started_at",
 	"execution_receipts":           "id attempt_id trust_source terminal_status exit_code signal timed_out started_at ended_at terminal_repository_json toolchain_json output_excerpt output_digest output_bytes output_truncated redaction_applied rejected_artifacts_json",
 	"gate_registrations":           "id version activation_id definition_id definition_version definition_digest binding_digest project_id worktree_id scope_json policy_json authorization_provenance created_event_id created_at",
