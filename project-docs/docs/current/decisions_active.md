@@ -108,7 +108,7 @@
 - DEC-222 (ACCEPTED by Human, 2026-09-14): Phase 23 "Review and Human judgment"
   is approved and Heavy. The accepted authority is `contracts.md`,
   `public-interface.md`, `schema.md`, `execution-scope.md`,
-  `v1-convergence-inventory.md`, `contract-coverage.md`, the now 82-assertion
+  `v1-convergence-inventory.md`, `contract-coverage.md`, the now 84-assertion
   `qa/validation-contract.md`, and the ordered 18-task pack, all under
   `../phases/phase-23/`. Six canonical spec amendments are accepted with it and
   are applied by their owning implementation tasks, not in advance.
@@ -148,8 +148,13 @@
   this phase. VAL-081 and VAL-082 give the two DEC-235 preservation invariants
   an ID - the nullable binding reached from the new dispatch, and byte
   compatibility for the six retained types - because both were live behavior
-  with no assertion and no other detector. The contract is **82** rows; nothing
+  with no assertion and no other detector. That brought it to **82** rows; nothing
   weakened and no new implementation work.
+- DEC-240 (ACCEPTED, Tech Lead 2026-09-20): bounded QA finding R-29 splits
+  VAL-082's validation, recorded-journal replay and Attention-key stability
+  into VAL-082/083/084, retaining every case, Task 9 ownership and QA Lead
+  validation. Current count is **84**: 80 deterministic, 4 Human. Commands and
+  product contracts stay fixed; the final bounded QA confirmation remains.
 - Tasks 1-3 are complete; Task 4 has DEC-239 recovery authority and ESC-23-003
   is resolved. Tasks 5-8 follow sequentially. Task 9 has Human dispatch clearance
   and still needs bounded QA confirmation of DEC-237; Tasks 10-11 remain held.

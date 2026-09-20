@@ -28,8 +28,11 @@ until a matching approved reference and Human Outcome both exist.
   fires **from the new per-type dispatch this task creates**. This task owns the
   assertion; tasks 10 and 11 re-confirm it (DEC-237, from QA P-01).
 - VAL-082: the six retained Phase 22 Condition types stay byte-compatible across
-  that dispatch - per-type validation, journal replay, and the derived Attention
-  key (DEC-237, from DEC-235 and QA R-25).
+  that dispatch with their per-type validation behavior retained (DEC-237/240).
+- VAL-083: recorded pre-change `budget-observed` Stop history replays against an
+  unchanged source journal digest (split from VAL-082 under DEC-240).
+- VAL-084: the fixed subject/code/Condition derives the same Attention key at
+  the named pre-change reference and after the change (DEC-240).
 
 
 ## Binding Constraints
@@ -207,12 +210,13 @@ until a matching approved reference and Human Outcome both exist.
   (VAL-041)
 - [ ] `linked_to_decision` is listed as implemented and is satisfied only with a
   qualifying reference. (VAL-042)
-- [ ] The six Phase 22 Condition types validate **byte-identically** to the
-  pre-change binary, proved over **all six rows** and not left to corpus
+- [ ] The per-type dispatch accepts the exact pinned canonical pre-change bytes
+  of **all six** retained Phase 22 Condition types, not left to corpus
   traffic. A table over `executor-terminated`, `run-recovered`,
   `activation-recovered`, `capability-available`, `budget-observed`, and
-  `work-ended`: for each, one canonical four-field Condition is accepted at the
-  journal layer and one mutated Condition of that same type is rejected.
+  `work-ended`: for each, one canonical four-field Condition from a named
+  pre-change reference is accepted unchanged at the journal layer and one
+  mutated Condition of that same type is rejected.
   **Canonical means type-appropriate**, not all-null: `budget-observed` carries
   a non-null `budget_name` and `capability-available` a non-null
   `capability_id`, because those two types are the ones the Phase 22 relation
@@ -220,9 +224,7 @@ until a matching approved reference and Human Outcome both exist.
   mismatch` - measured (QA I-44) - so it is a VAL-081 case, not an acceptance
   here. Getting this wrong costs a red-test cycle on exactly the two
   zero-coverage types this table exists for.
-  **Plus** the replay and key halves: a recorded pre-change journal carrying a
-  `budget-observed` Stop replays clean, and the `attentionSemanticKey` of an
-  unchanged Condition is unchanged. The per-type table is required because
+  The per-type table is required because
   `run-recovered` and `capability-available` reach journal Condition validation
   **zero** times in the whole ordinary suite and are raised nowhere in the
   tagged corpus - measured (QA R-25): deleting both rows outright leaves every
@@ -231,6 +233,14 @@ until a matching approved reference and Human Outcome both exist.
   invalid closed enum` and no gate notices. This is the acceptance bar of
   DEC-235; a failure here means the per-type rows were not transcribed exactly.
   (VAL-082)
+- [ ] A recorded pre-change journal carrying a `budget-observed` Stop replays
+  clean under the new binary with an unchanged source-journal digest. Record
+  the reference commit, fixture path/digest, replay result and post-replay
+  source digest. (VAL-083; DEC-240, split from VAL-082)
+- [ ] The `attentionSemanticKey` for the same fixed subject, code and retained
+  Condition is unchanged across the named pre-change reference and this task.
+  Record identical inputs and both key strings. (VAL-084; DEC-240, split from
+  VAL-082)
 - [ ] Exclusivity is enforced by the shape, asserted at the journal layer and
   not through the raise: a `decision-satisfied` Condition carrying
   `outcome_class` instead of `decision_class` rejects, one with its own field

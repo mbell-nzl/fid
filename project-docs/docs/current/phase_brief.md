@@ -27,15 +27,14 @@ amendments (DEC-223..227, DEC-235); Tech Lead dispositions DEC-228..234,
 DEC-236, DEC-237. **ESC-23-001 is resolved** (DEC-235, Human, Option A). Record:
 [phase decisions](../phases/phase-23/decisions.md).
 
-Pass 8 ran twice independently on the same base: `qa-plan.md` 19 returned READY
-with four improvements and one contract proposal; `qa-plan.md` 20 returned NOT
-READY for task 11 on R-28, VAL-078's granularity. Both confirmed DEC-236's
-R-24..R-27 and that tasks 1-8 are untouched; neither allocated an escalation.
+Pass 8's two independent reviews confirmed DEC-236 and requested the VAL-078
+split below; detailed outcomes remain in `qa-plan.md` sections 19-20.
 **DEC-237 split VAL-078 into resolution (VAL-078) and encoding (VAL-080) and
 gave the two DEC-235 preservation invariants an ID each - VAL-081, the Phase 22
 nullable binding still reached from the new dispatch, and VAL-082, the six-row
-compatibility bar. The contract is 82 rows; nothing was weakened.** I-42..I-45
-are applied.
+compatibility bar. That brought the contract to 82 rows.** I-42..I-45 are
+applied. DEC-240 splits VAL-082's validation, replay and key observations into
+VAL-082/083/084 without losing cases; the contract is now 84 rows.
 
 Next action: resume Task 4 under DEC-239, close its evidence gaps, then continue
 the ordered task/review sequence through the window 7-9 review. **Task 9 has
@@ -70,8 +69,8 @@ capability matrix; 18 conformance audit.
 
 ## Validation Contract And QA Artifacts
 
-All under `../phases/phase-23/qa/`. `validation-contract.md` holds **82**
-assertions (78 deterministic, 4 Human), all `Ready`; every row names its owning
+All under `../phases/phase-23/qa/`. `validation-contract.md` holds **84**
+assertions (80 deterministic, 4 Human), all `Ready`; every row names its owning
 task. Validators are QA Lead or QA Reviewer except VAL-070..073, the Human rows,
 whose fixtures come from task 14. QA plan sections 12-20 are executed and
 freshly measured; 19 and 20 are the eighth confirmation, and one bounded pass
@@ -142,12 +141,7 @@ discovery in window 13-15; removal ordering; and test-time headroom (DEC-227).
 ## Success / Exit Criteria
 
 - [ ] All 18 tasks complete with green quality gates.
-- [ ] All 82 `VAL-NNN` outcomes recorded with cited evidence.
+- [ ] All 84 `VAL-NNN` outcomes recorded with cited evidence.
 - [ ] Final QA review has no unresolved blocking finding.
 - [ ] Human checklist accepted, including VAL-070 to VAL-073.
 - [ ] Sign-off recorded and all twelve canonical specs synced.
-
-## Next Planning Checkpoint
-
-Phase 24: multi-Issue Envelope revision, scope conflict, parallel Claims, partial
-progress, generic `retry-exhausted`, `triage_events` and V1 removals.

@@ -104,7 +104,7 @@
 | public-interface 5.1: named producers and denial precedence (DEC-226) | domain-only; one code per denied request | 13 audits; each producing task implements | VAL-039, VAL-056 |
 | public-interface 5: Phase 23 denials commit nothing (DEC-226) | no denial Event; no `idempotency_results` row | 13 | VAL-057 |
 | public-interface 5: added ReasonCodes | evaluation reason precedence in `internal/workflow/evaluation.go` | 6 adds the codes; 10 and 13 exercise them | VAL-008, VAL-026, VAL-033, VAL-046 |
-| public-interface 2: the retained four-field Phase 22 `Condition` is untouched by the per-type dispatch (DEC-235) | `internal/journal/current_event_value_types.go` per-type shapes, plus the unchanged `case "Condition"` relation they must still reach | 9 (tasks 10 and 11 re-confirm the relation) | VAL-081, VAL-082 |
+| public-interface 2: the retained four-field Phase 22 `Condition` is untouched by the per-type dispatch (DEC-235/240) | `internal/journal/current_event_value_types.go` per-type shapes, plus the unchanged `case "Condition"` relation they must still reach; recorded-history replay and Attention-key comparison | 9 (tasks 10 and 11 re-confirm the relation) | VAL-081, VAL-082, VAL-083, VAL-084 |
 | public-interface 2: added ActivityEvent names | `internal/activity` plus the owning effect rules | 8 and 13 add; 15 removes the four V1 names | VAL-055, VAL-061 |
 | public-interface 6: manifest projection schema | `internal/export` plus manifest fixtures | 1, 15, 16 | VAL-064, VAL-065 |
 | schema 6.1: progressive Event fence | `internal/journal/project_effects.go` | 1 creates; 4, 5, 8, 9, 10, 12 remove keys | VAL-003 |

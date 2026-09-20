@@ -19,6 +19,11 @@ built-binary evidence and close the report's VAL-003 UNVERIFIED row before
 recording completion. Historical failures and the eight attempts remain intact.
 See [resume handoff](../phases/phase-23/qa/resume-after-esc-23-003.md).
 
+DEC-240 dispositions the bounded Task 9 readiness finding R-29: split retained
+Condition validation, recorded-history replay and Attention-key stability into
+VAL-082/083/084. All cases and task commands remain; the contract now has 84
+assertions. Independent QA confirms this final diff before Task 9 dispatch.
+
 ## Task 1 recovery — 2026-09-20
 
 ESC-23-002 is **RESOLVED 2026-09-20 under DEC-238**. The Human delegated

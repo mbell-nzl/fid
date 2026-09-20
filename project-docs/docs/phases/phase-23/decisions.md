@@ -1478,6 +1478,35 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   public operation changes.
 - **Refs:** ESC-23-003; TRG-23-003; DEC-225; DEC-237; VAL-003/015/022.
 
+### DEC-240: Lossless split of retained Condition compatibility evidence
+
+- **Status:** ACCEPTED 2026-09-20 under Tech Lead planning authority, applying
+  bounded DEC-237 confirmation finding R-29. Independent QA confirmation of
+  this final diff remains the Task 9 readiness prerequisite.
+- **Finding:** VAL-082 combines retained Condition bytes/validation, recorded
+  journal replay and Attention semantic-key stability. Replay or key derivation
+  can fail while the per-type table passes; their outcomes must be recordable
+  separately under the same single-observable rule that split VAL-078.
+- **Decision:** VAL-082 retains the all-six canonical bytes and paired
+  acceptance/mutation-rejection table. VAL-083 carries the recorded pre-change
+  `budget-observed` journal replay with unchanged source digest. VAL-084 carries
+  fixed-input `attentionSemanticKey` equality against the named pre-change
+  reference. All three remain Task 9 obligations with QA Lead validation. Task
+  9's combined criterion is split into matching checkboxes; QA-47/50/51 map to
+  VAL-082/083/084. No case, reference, comparison or failure signal is dropped.
+- **Boundaries:** The contract count is 84 (80 deterministic, 4 Human), with
+  consecutive unreused IDs. Required commands, field encodings, nullable
+  relation, product scope, budgets and Human checks are unchanged. This is no
+  new implementation work and does not reopen R-24 through R-27. The final
+  bounded QA confirmation checks rows, citations, count and revision log; no
+  additional full readiness cycle is required. Task 9 has Human clearance
+  under DEC-239; Tasks 10-11 stay held.
+- **Spec impact:** Canonical quality plan section 8 already requires one
+  observable per assertion. This split conforms to it; no canonical product
+  spec edit is needed. `validation-contract.md`, Task 9, coverage pointers,
+  QA-plan mapping and current context are synchronized.
+- **Refs:** DEC-235/237; QA R-29; VAL-082/083/084.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,
