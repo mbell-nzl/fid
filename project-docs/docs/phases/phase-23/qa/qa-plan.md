@@ -242,7 +242,7 @@ tests" means tests the completion report names and whose output it records.
 | EVID-10 | Claim acquire matrix across modes; review-mode `run.recover`/`run.abandon` with adopted paths rejecting `claim-mode-invalid` with no Event versus mutating-mode Phase 22 behavior | VAL-011, VAL-012 | Developer | task 3 |
 | EVID-11 | The same real-process Run lifecycle under both modes with normalized JSON results diffed, differing only in adoption | VAL-013 | Developer | task 3 |
 | EVID-12 | `review.record` read back through `review.get` and raw projection; no update leaf, writer, or effect rule; repository mismatch returns expected and observed values; second Review per Run rejects; replay returns `replayed:true` with no second journal line; different digest returns `idempotency-conflict` through the built binary | VAL-014, 016, 018, 019 | Developer | task 4 |
-| EVID-13 | Independence both states per the R-04 reading, naming the conflicting subject and Actor | VAL-015 | Developer | task 4 |
+| EVID-13 | DEC-239: real CLI rejection of a durable mutating-Claim holder with exact conflicting Claim/Actor and no Event; successful first and post-rework Reviews by the same independent Actor; isolated durable-history Run-holder query naming exact Run/Actor (explicitly not a reachable CLI lifecycle fixture). | VAL-015 | Developer | task 4 |
 | EVID-14 | Verdict matrix: three invalid, three valid | VAL-017 | Developer | task 4 |
 | EVID-15 | Findings only in `review.recorded` effects; address under mutating, review, and no Claim; four resolution cases plus a `blocked` resolver; supplied `state` rejected; state sequence open -> addressed -> resolved/inapplicable | VAL-020-023 | Developer | task 5 |
 | EVID-16 | Link `pass`/`changes-required`/`blocked`; 3x3 type matrix per the R-03 precedence; addressed-but-unresolved blocker keeps `finding-unresolved` after a later `pass` | VAL-024-026 | Developer | task 6 |
@@ -442,7 +442,7 @@ PASS without evidence is invalid.
 | QA-10 | Both guarded actions blocked with one applicable Obligation unsatisfied, permitted with all three satisfied `(qa-lead)` | VAL-009 | paired outputs |
 | QA-11 | Claim acquire matrix; review-mode adoption rejects with no Event; same lifecycle under both modes diffed after normalizing IDs and timestamps `(qa-lead)` | VAL-011-013 | outputs and normalized diff |
 | QA-12 | Record, `review.get`, raw projection row, no update path in the command tree or effect rules; stale repository rejects with expected/observed; second Review per Run rejects; replay `replayed:true` with journal line count unchanged; different digest `idempotency-conflict` through the binary `(qa-lead)` | VAL-014, 016, 018, 019 | outputs, line counts, catalog query |
-| QA-13 | Independence both states per the R-04 disposition, with the conflicting subject and Actor in details `(qa-lead)` | VAL-015 | outputs |
+| QA-13 | DEC-239: real CLI rejection of a durable mutating-Claim holder with exact conflicting Claim/Actor and no Event; successful first and post-rework Reviews by the same independent Actor; isolated durable-history Run-holder query naming exact Run/Actor (explicitly not a reachable CLI lifecycle fixture). `(qa-lead)` | VAL-015 | CLI outputs and isolated query result; evidence classes identified separately |
 | QA-14 | Six verdict cases `(qa-lead)` | VAL-017 | outputs |
 | QA-15 | Finding creation only inside `review.recorded`; address under three Claim states; five resolution cases; supplied `state` rejects; state sequence; VAL-021 closed only with QA-16's addressed-blocker evidence `(qa-lead)` | VAL-020-023 | outputs, Event effect listing |
 | QA-16 | Link three verdicts; 3x3 type matrix per R-03; `finding-unresolved` after an unresolving `pass` `(qa-lead)` | VAL-024-026 | outputs |
@@ -3042,3 +3042,176 @@ worktree cleanliness is not the authorization boundary. Those files are left
 untouched; QA commits only this plan and verifies that commit's path list.
 This optional diagnostic is not a product/test-gate failure, and its failed
 attempt is not converted into a PASS.
+
+## 21. Bounded DEC-237 Confirmation And DEC-239 Evidence Sync
+
+> QA Lead: Codex, 2026-09-20. Scope: the four asks in
+> `tl-qa-confirmation-brief.md`, plus the delegate-authorized DEC-239 sync of
+> EVID-13 and QA-13. Sections 12-20 retain their historical observations.
+> Planning confirmation only: no runtime gate, final review, or Human judgment
+> is performed here. Initial comparison: DEC-236
+> `a0e8e7ea1111e2a4caa6c39bc6d1e63dee82accf` to DEC-237
+> `2739ef1d22ff302e70b48143616db302839ba8e8`.
+> Final split: DEC-240 `1def9d039ffc8840fa5d51838aef3eb9fc0c7aeb`;
+> separate independence sync: DEC-239
+> `cdfbd080b36c1b102bc76459a068e70feb8b4d2d`.
+
+**READY for task 9, subject to completion of its preceding tasks and scheduled
+review.** DEC-237 is confirmed and R-29 is resolved by the independently checked
+DEC-240 split in this same pass; no remaining bounded contract issue exists.
+The Human's current delegation authorizes
+execution through task 9 and its subsequent window 7-9 QA review. That replaces
+the older dispatch hold for task 9 only; tasks 10 onward remain held.
+
+### 21.1 Four-Ask Findings
+
+1. **VAL-078 split is lossless.** Resolution retains all four types, each
+   qualifying and non-qualifying fact, exact qualifying Event identity, and
+   task-11 / QA Lead ownership. VAL-080 retains wrong, second, missing, and
+   null discriminator cases, every canonical positive, the four-field
+   `review-recorded` exception, and the shape-error evidence class. Its explicit
+   unchanged projection and present-null negatives strengthen inspection;
+   nothing moves into the Phase 22 relation. Tasks 9/10 supply their own type's
+   encoding evidence and task 11 completes the matrix.
+2. **R-29: VAL-082 needs three separately reportable observables.** The six-type
+   acceptance/rejection table, recorded-journal replay, and fixed-input
+   Attention-key equality can fail independently. For example, a hand-built
+   canonical JSON table can pass while a serializer-tag change alters the key;
+   the fixed `budget-observed` journal cannot cover a missing different type.
+   Proposed and accepted by the Tech Lead as DEC-240: retain VAL-082 for the
+   table, allocate VAL-083 for replay and VAL-084 for key equality, preserve
+   every case/evidence route and QA Lead/task-9 ownership, and split only the
+   existing task-9 criterion and derived pointers. This is a contract-authoring
+   repair, not additional implementation or a new gate. QA does not edit the
+   validation contract. DEC-240 was applied and confirmed in this pass, with
+   VAL-082 explicitly accepting the exact pinned pre-change bytes: byte
+   identity is fixture provenance, not a second serializer observable. No
+   escalation ID is allocated.
+3. **Evidence routes already belong to task 9.** Its pre-DEC-237 criteria
+   already require the three relation negatives, all six accepted/mutated
+   type cases, recorded pre-change replay, and key comparison. I-44 makes the
+   two bound-field positives reachable: `budget-observed` carries a non-null
+   `budget_name`; `capability-available` carries a non-null `capability_id`.
+   VAL-080 requires shape rejection (`closed object has wrong shape`,
+   `missing required field`, or `invalid ID`); VAL-081 requires
+   `condition nullable binding mismatch`. Neither error class substitutes for
+   the other. The existing full commands execute the future in-package tests;
+   no narrower or additional gate is proposed.
+4. **Pointers and corrections.** I-42 annotates DEC-235's obsolete details-test
+   exemplar; I-43 corrects DEC-235's Option A description, the escalation
+   resolution bullet, and the coverage-clause title. I-45 promotes the tasks
+   10/11 nullable-binding checks into acceptance criteria citing VAL-081.
+   DEC-237 changes no product file or task-1..8 spec; none of those eight specs
+   cites the affected Condition assertions. DEC-239 separately changes task 4
+   and VAL-015 by explicit authority and is not included in that no-impact
+   claim. The final file-state check confirms 84 unique rows (80 deterministic,
+   4 Human), exactly one validator per row, all affected acceptance citations,
+   and the updated header, numbering, brief, coverage and revision pointers.
+
+### 21.2 Current Evidence Mapping
+
+This table supersedes only the assertion pointers in section 20.3; its evidence
+routes, complete discriminator matrix, and positive/negative cases stand.
+
+| Existing check | Current assertion | Required evidence and owner |
+|---|---|---|
+| QA-43 `(qa-lead)` | VAL-078 | Task 11: all four qualifying/non-qualifying durable-fact resolution pairs. |
+| QA-46 `(qa-lead)` | VAL-080 | Tasks 9/10 partial, task 11 complete: all canonical and malformed discriminator shapes, correct shape-error class, no Event or projection change on rejection. |
+| QA-48 `(qa-lead)` | VAL-081 | Task 9's three nullable-binding negatives and two canonical positives; tasks 10/11 reconfirm their added types using the exact relation message. |
+| QA-47 `(qa-lead)` | VAL-082 | Task 9: all six exact pinned type-appropriate canonical pre-change byte fixtures accepted and same-type mutations rejected; byte identity establishes fixture provenance. |
+| QA-50 `(qa-lead)` | VAL-083 | Task 9: recorded pre-change `budget-observed` journal replays, with source digest unchanged. |
+| QA-51 `(qa-lead)` | VAL-084 | Task 9: identical fixed subject/code/Condition inputs produce identical Attention keys at the named pre-change reference and new implementation. |
+
+QA-49 and QA-52 remain `no VAL` under DEC-237's recorded rationale. No Human
+checklist changes. Runtime outcomes for the above assertions remain
+**UNVERIFIED in this confirmation**; this table plans evidence, not results.
+
+### 21.3 Command And Feasibility Validation
+
+| Item | Fresh validation method | Observation and practical limit |
+|---|---|---|
+| Tasks 9-11 exact commands | Compare each command section with DEC-236 using Git blobs | Byte-identical in the inspected DEC-237 batch; final comparison repeated below. No runtime gate rerun. |
+| Shape and relation evidence | File existence and exact function inspection | `current_event_closed_values_test.go` supplies the direct JSON route; `checkpoint_projection_test.go` supplies the strict append/projection fixture. `current_event_value_relations.go` still defines the nullable-binding message and both bound fields. The forthcoming test results remain unverified. |
+| Replay and Attention key | File existence and function inspection | `internal/journal/replay_test.go`, `internal/workflow/stop_test.go`, and `stop.go`'s `attentionSemanticKey` provide the existing routes. Task 9 must capture its actual pre-change reference and durable fixture; no old scratch directory is assumed to survive. |
+| DEC-239 isolated history | Inspect `internal/review/review_test.go`, `TestCheckIndependenceRejectsClaimAndRunHistoryDirections` | The fixture distinguishes Claim owner from Run holder and checks exact conflict type, ID, and Actor. `internal/workflow/run.go` retains same-Actor Claim/Run binding. This proves route availability, not a newly passing test or CLI-reachable history. |
+| DEC-239 same-Reviewer rework | Compare amended contract with existing `cmd/fid/review_test.go` journey | The earlier two-Reviewer journey is insufficient. The root delegate owns the same-Actor causal repair and fresh evidence; this planning pass does not mark task 4 complete or VAL-015 passed. |
+
+EVID-13 and QA-13 now carry the exact DEC-239 evidence boundary: real CLI
+mutating-Claim rejection with the exact conflicting Claim/Actor and no Event,
+successful first and post-rework Reviews by the same independent Actor, and a
+separately labelled isolated Run-holder query naming the exact Run/Actor.
+Same-Reviewer means the same Actor, and resolution must target a Finding from
+an earlier Review Record. Two different Reviewers do not satisfy that case.
+
+### 21.4 Final File-State Confirmation
+
+The following read-only inspection is executed from `/home/mark/projects/fid`.
+It checks documentation and route existence only, not runtime behavior.
+
+```sh
+python3 - <<'PY'
+from pathlib import Path
+import hashlib, re, subprocess
+p = Path('project-docs/docs/phases/phase-23')
+base = 'a0e8e7ea1111e2a4caa6c39bc6d1e63dee82accf'
+batch = '2739ef1d22ff302e70b48143616db302839ba8e8'
+git = lambda *a: subprocess.check_output(['git', *a], text=True)
+compact = lambda s: ' '.join(s.replace('**', '').split())
+v = (p / 'qa/validation-contract.md').read_text()
+rows = {s.split(' | ')[0][2:]: s.split(' | ')
+        for s in v.splitlines() if s.startswith('| VAL-')}
+assert set(rows) == {f'VAL-{i:03}' for i in range(1, 85)}
+assert sum(r[4] == 'Human' for r in rows.values()) == 4
+assert all(r[4] in ('Human', 'QA Lead', 'QA Reviewer') for r in rows.values())
+affected = (78, 80, 81, 82, 83, 84)
+assert all(rows[f'VAL-{i:03}'][4] == 'QA Lead' for i in affected)
+assert '84 assertions: 80 deterministic and 4 Human' in compact(v)
+assert '84 rows: 80 deterministic and 4 Human' in compact(v)
+brief = compact(Path('project-docs/docs/current/phase_brief.md').read_text())
+assert '84' in brief and '80 deterministic, 4 Human' in brief
+assert 'pinned' in rows['VAL-082'][2]
+assert 'Reference-byte identity is fixture provenance' in rows['VAL-082'][9]
+print('PASS file state: 84 unique rows; 80 deterministic + 4 Human; counts agree')
+commands = lambda s: s.split('## Exact Commands To Run', 1)[1].split('\n## ', 1)[0]
+for n in (9, 10, 11):
+    path = p / f'tasks/task-{n}.md'
+    task = path.read_text()
+    assert commands(task) == commands(git('show', f'{base}:{path}'))
+    ac = task.split('## Acceptance Criteria', 1)[1].split('\n## ', 1)[0]
+    required = {9: (80, 81, 82, 83, 84), 10: (80, 81), 11: (78, 80, 81)}[n]
+    assert all(f'VAL-{i:03}' in ac for i in required)
+    print(f'PASS task {n}: exact commands unchanged; acceptance citations present')
+coverage = (p / 'contract-coverage.md').read_text()
+revision = v.split('## Revision Log', 1)[1]
+assert all(f'VAL-{i:03}' in coverage and f'VAL-{i:03}' in revision for i in affected)
+print('PASS file state: all six affected coverage and revision pointers present')
+changed = git('diff-tree', '--no-commit-id', '--name-only', '-r', batch).splitlines()
+assert len(changed) == 13 and all(s.startswith('project-docs/docs/') for s in changed)
+for n in range(1, 9):
+    path = p / f'tasks/task-{n}.md'
+    assert str(path) not in changed
+    assert not re.search(r'VAL-(078|080|081|082|083|084)', path.read_text())
+print('PASS DEC-237 scope: 13 documentation files; product and tasks 1-8 untouched')
+for path in ('internal/journal/current_event_closed_values_test.go',
+             'internal/journal/checkpoint_projection_test.go',
+             'internal/journal/replay_test.go', 'internal/workflow/stop_test.go',
+             'internal/review/review_test.go', 'cmd/fid/review_test.go'):
+    assert Path(path).is_file()
+print('PASS feasibility file state: six referenced source/fixture paths exist')
+print('validation-contract sha256:', hashlib.sha256(v.encode()).hexdigest())
+print('PASS bounded planning file-state confirmation; runtime outcomes UNVERIFIED')
+PY
+```
+
+The embedded script was extracted from this plan and executed in this session.
+It printed all eight `PASS` inspection records and
+`validation-contract sha256: a52552c4b9082753a6e3b78ba3ec6c2beca936fea95e447b54b8cc83531fa155`.
+Last token: `PASS bounded planning file-state confirmation; runtime outcomes
+UNVERIFIED` (terminated `exit_code: 0`). This is fresh file-state evidence for
+the planning verdict only. No product gate or assertion outcome is promoted
+from earlier sessions, and no historical failed attempt is removed.
+
+A separate comparison with the committed plan printed `PASS artifact scope:
+sections 1-20 preserved except authorized EVID-13/QA-13 sync` (terminated
+`exit_code: 0`). QA owns and commits only this plan; concurrent product, ledger,
+and Tech Lead edits are outside this confirmation's write scope.
