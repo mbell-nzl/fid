@@ -4,8 +4,8 @@
 
 - Task outcome: COMPLETE
 - Category: none
-- Condition: All Task 2 required gates pass.
-- Recovery attempts: 0
+- Condition: MF-01 QA repair is complete; all Task 2 required gates pass.
+- Recovery attempts: QA repair attempt 1
 - Next action: Phase Runner review.
 - Human attention required: no
 
@@ -27,11 +27,11 @@
 
 ## Validation Contract Coverage
 
-- VAL-006: `internal/workflow/envelope_test.go:TestEnvelopeCreateAcceptsTypedObligationSet` proves one accepted gate-evidence, review, and human-outcome set; `TestEnvelopeCreateRejectsInvalidTypedObligationAndProtectedDecisionAuthoring` proves the closed registry rejects invalid type/field combinations.
-- VAL-007: `internal/workflow/envelope_test.go:TestEnvelopeCreateRejectsInvalidTypedObligationAndProtectedDecisionAuthoring` proves duplicate review profiles and invalid protected-decision authoring reject without admitting a second semantic binding.
-- VAL-008: `internal/workflow/envelope_test.go:TestEvaluateEnvelopeObligationsReturnsIndependentOrderedResults` proves obligation-ID order and separately reports validity, freshness, and Artifact availability reasons.
+- VAL-006: `internal/workflow/envelope_test.go:TestEnvelopeAuthoringObligationCardinalityAndTypeFieldMatrix` proves 0/1/16/17 Obligation boundaries; `TestEnvelopeAuthoringAcceptedAndForbiddenTypedFieldCombinations` covers every accepted type and each forbidden registration, discriminator, evidence-type, trust-source, freshness, Artifact-policy, and independence combination; `TestEnvelopeAuthoringProtectedDecisionMatrix` and `cmd/fid/envelope_test.go:TestEnvelopeCreateCommandCoversObligationAndDecisionBoundaries` prove 0/16/17 protected-Decision boundaries.
+- VAL-007: `internal/workflow/envelope_test.go:TestEnvelopeAuthoringProtectedDecisionMatrix` covers duplicate class, duplicate ordinal, and unguarded action; `cmd/fid/envelope_test.go:TestEnvelopeCreateCommandRejectsEveryTypedAuthoringNegativeWithoutPersistenceChange` covers all five request-level negatives and every listed protected-Decision rejection, asserting unchanged journal and projection bytes through `snapshotWorkspacePersistence`.
+- VAL-008: `internal/workflow/envelope_test.go:TestEvaluateEnvelopeObligationsReturnsIndependentOrderedResults` proves Obligation-ID order, distinct validity/freshness/Artifact dimensions, and all unsatisfied reasons; `TestEvaluateEnvelopeObligationsIncludesQualifyingValidFreshAvailableState` proves the qualifying state.
 - VAL-009: `internal/workflow/envelope_test.go:TestEnvelopeActivationEvaluationIncludesEveryObligation` proves activation evaluates every typed Obligation; `cmd/fid/envelope_test.go:TestEnvelopeCreateAcceptsTypedObligationsAndProtectedDecisions` proves the command surface preserves all three authored rows.
-- VAL-010: `internal/workflow/envelope_test.go:TestEvaluateEnvelopeObligationsReturnsIndependentOrderedResults` proves `not-applicable` occurs for the metadata-sufficient review row while the unavailable human outcome remains independently reported.
+- VAL-010: `internal/workflow/envelope_test.go:TestEvaluateEnvelopeObligationsIncludesQualifyingValidFreshAvailableState` proves gate Evidence is `available` in the qualifying valid/fresh state and review/Human metadata-sufficient rows are exactly `not-applicable`; the existing independent-state test preserves `missing` for absent gate Evidence.
 
 ## Tests run
 
@@ -41,6 +41,12 @@
 - Required workflow pre-edit: `go test -race -timeout 30m -cover ./internal/workflow/` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 192.569s coverage: 62.6% of statements` (terminated `exit_code: 0`)
 - Required workflow post-edit, uncached observation: `go test -race -timeout 30m -cover ./internal/workflow/` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 193.138s coverage: 63.8% of statements` (terminated `exit_code: 0`)
 - Real entrypoint coverage: the tagged `cmd/fid/integration` gate starts the `fid` CLI process and passed in `650.206s` (terminated `exit_code: 0`).
+- QA repair red: `go test -race -timeout 30m ./internal/workflow/ -run '^(TestEnvelopeAuthoringObligationCardinalityAndTypeFieldMatrix|TestEnvelopeAuthoringAcceptedAndForbiddenTypedFieldCombinations|TestEnvelopeAuthoringProtectedDecisionMatrix|TestEvaluateEnvelopeObligationsIncludesQualifyingValidFreshAvailableState)$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`; test fixture initially produced 17 rows for the 16-row case).
+- QA repair green: the same byte-identical focused domain command - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 3.382s` (terminated `exit_code: 0`).
+- QA repair command-surface red: `go test -race -timeout 30m ./cmd/fid/ -run '^(TestEnvelopeCreateCommandCoversObligationAndDecisionBoundaries|TestEnvelopeCreateCommandRejectsEveryTypedAuthoringNegativeWithoutPersistenceChange)$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`; the unguarded-action fixture still left the action guarded).
+- QA repair command-surface green: the same byte-identical focused command - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 7.110s` (terminated `exit_code: 0`).
+- QA repair named matrix: `go test -race -timeout 30m ./internal/workflow/ -run '^(TestEnvelopeCreateAcceptsTypedObligationSet|TestEnvelopeCreateRejectsInvalidTypedObligationAndProtectedDecisionAuthoring|TestEnvelopeCreatePersistsEveryTypedObligationAndProtectedDecision|TestEvaluateEnvelopeObligationsReturnsIndependentOrderedResults|TestEnvelopeActivationEvaluationIncludesEveryObligation|TestEnvelopeAuthoringObligationCardinalityAndTypeFieldMatrix|TestEnvelopeAuthoringAcceptedAndForbiddenTypedFieldCombinations|TestEnvelopeAuthoringProtectedDecisionMatrix|TestEvaluateEnvelopeObligationsIncludesQualifyingValidFreshAvailableState)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 3.520s` (terminated `exit_code: 0`).
+- QA repair named command surface: `go test -race -timeout 30m ./cmd/fid/ -run '^(TestEnvelopeCreateAcceptsTypedObligationsAndProtectedDecisions|TestEnvelopeCreateCommandCoversObligationAndDecisionBoundaries|TestEnvelopeCreateCommandRejectsEveryTypedAuthoringNegativeWithoutPersistenceChange)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 7.247s` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
 
@@ -51,11 +57,19 @@
 - `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 650.206s` (terminated `exit_code: 0`)
 - `go test -race -timeout 30m -cover ./internal/workflow/` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 63.8% of statements` (terminated `exit_code: 0`)
 - Observed wall times: `cmd/fid` `440.185s`; `cmd/fid/integration` `650.206s`; `internal/workflow` `193.138s` for the current-session post-edit uncached required run (the final rerun was cached).
+- QA repair attempt 1 exact rerun: `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- QA repair attempt 1 exact rerun: `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- QA repair attempt 1 exact rerun: `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 203.449s coverage: 64.1% of statements` (terminated `exit_code: 0`)
+- QA repair attempt 1 exact rerun: `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.9%` (terminated `exit_code: 0`)
+- QA repair attempt 1 exact rerun: `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 681.075s` (terminated `exit_code: 0`)
+- QA repair attempt 1 exact rerun: `go test -race -timeout 30m -cover ./internal/workflow/` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 198.163s coverage: 64.1% of statements` (terminated `exit_code: 0`)
+- QA repair attempt 1 wall times: `cmd/fid` `451.009s`; `cmd/fid/integration` `681.075s`; `internal/workflow` `198.163s` for the final dedicated workflow run (`203.449s` in the full race/coverage gate).
 
 ## Deviations from spec
 
 - First full race attempt failed on the displaced single-map completion assertion; its exact token was `FAIL` (terminated `exit_code: 1`). Task 2 converged that assertion to require one list item for its legacy fixture, then the byte-identical gate passed.
 - First integration attempt failed on accepted new portable columns; its exact token was `FAIL` (terminated `exit_code: 1`). The Task 2 integration fixture now recognizes the accepted schema columns, and the byte-identical gate passed.
+- QA repair attempt 1 preserved two focused red attempts: the new cardinality fixture initially returned 17 instead of 16, and the command fixture initially left the supposedly unguarded action guarded. Both test-only fixture defects were corrected within the bounded review scope; their subsequent byte-identical focused commands passed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -67,8 +81,8 @@
 
 ## Commit hash
 
-- `710db23c946891133f1967e4ec317a17d43a6038`
+- Pending commit
 
 ## Commit subject
 
-- `feat(workflow): add typed envelope obligations`
+- Pending commit

@@ -120,6 +120,107 @@ func TestEnvelopeCreateAcceptsTypedObligationsAndProtectedDecisions(t *testing.T
 	}
 }
 
+func TestEnvelopeCreateCommandCoversObligationAndDecisionBoundaries(t *testing.T) {
+	for _, test := range []struct {
+		name            string
+		obligationCount int
+		decisionCount   int
+	}{
+		{name: "one obligation and zero decisions", obligationCount: 1, decisionCount: 0},
+		{name: "sixteen obligations and sixteen decisions", obligationCount: 16, decisionCount: 16},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+			input := typedEnvelopeCreateInput(t, workspace, issueID, registration)
+			input["obligations"] = commandObligationsForCount(t, input, issueID, test.obligationCount)
+			input["protected_decisions"] = commandProtectedDecisionMaps(test.decisionCount)
+			inputPath := filepath.Join(workspace, "envelope-boundary.json")
+			writeActivationInput(t, inputPath, input)
+
+			result := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", "envelope-boundary-"+strings.ReplaceAll(test.name, " ", "-"))
+			if result.err != nil || result.stderr != "" {
+				t.Fatalf("boundary create = %#v, want success", result)
+			}
+			payload := decodeCommandJSONStructure(t, result.stdout).(map[string]any)
+			envelope := payload["result"].(map[string]any)["envelope"].(map[string]any)
+			if got := len(envelope["obligations"].([]any)); got != test.obligationCount {
+				t.Fatalf("obligation count = %d, want %d", got, test.obligationCount)
+			}
+			if got := len(envelope["protected_decisions"].([]any)); got != test.decisionCount {
+				t.Fatalf("protected decision count = %d, want %d", got, test.decisionCount)
+			}
+		})
+	}
+}
+
+func TestEnvelopeCreateCommandRejectsEveryTypedAuthoringNegativeWithoutPersistenceChange(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		mutate func(t *testing.T, input map[string]any, issueID string, registration gateRegistrationView)
+	}{
+		{name: "zero obligations", mutate: func(_ *testing.T, input map[string]any, _ string, _ gateRegistrationView) {
+			input["obligations"] = []any{}
+		}},
+		{name: "seventeen obligations", mutate: func(t *testing.T, input map[string]any, issueID string, registration gateRegistrationView) {
+			input["obligations"] = commandObligationsForCount(t, input, issueID, 17)
+		}},
+		{name: "duplicate obligation ID", mutate: func(_ *testing.T, input map[string]any, _ string, _ gateRegistrationView) {
+			obligations := input["obligations"].([]any)
+			obligations[1].(map[string]any)["id"] = obligations[0].(map[string]any)["id"]
+		}},
+		{name: "second gate-evidence obligation", mutate: func(t *testing.T, input map[string]any, issueID string, registration gateRegistrationView) {
+			obligations := input["obligations"].([]any)
+			input["obligations"] = append(obligations, commandObligationsForCount(t, input, issueID, 1)[0])
+			input["obligations"].([]any)[3].(map[string]any)["id"] = "OBL-second-gate"
+		}},
+		{name: "duplicate review profile", mutate: func(_ *testing.T, input map[string]any, issueID string, _ gateRegistrationView) {
+			obligations := input["obligations"].([]any)
+			duplicate := commandReviewObligation(input["sources"].([]any)[0], issueID, "OBL-review-duplicate", "standard")
+			input["obligations"] = append(obligations, duplicate)
+		}},
+		{name: "duplicate outcome class", mutate: func(_ *testing.T, input map[string]any, issueID string, _ gateRegistrationView) {
+			obligations := input["obligations"].([]any)
+			duplicate := commandHumanObligation(input["sources"].([]any)[0], issueID, "OBL-human-duplicate", "release")
+			input["obligations"] = append(obligations, duplicate)
+		}},
+		{name: "non-primary subject", mutate: func(_ *testing.T, input map[string]any, _ string, _ gateRegistrationView) {
+			input["obligations"].([]any)[0].(map[string]any)["subject"] = map[string]any{"type": "issue", "id": "ISS-other"}
+		}},
+		{name: "seventeen protected decisions", mutate: func(_ *testing.T, input map[string]any, _ string, _ gateRegistrationView) {
+			input["protected_decisions"] = commandProtectedDecisionMaps(17)
+		}},
+		{name: "duplicate protected decision class", mutate: func(_ *testing.T, input map[string]any, _ string, _ gateRegistrationView) {
+			input["protected_decisions"] = []any{commandProtectedDecisionMap(0, "release", "envelope.complete"), commandProtectedDecisionMap(1, "release", "envelope.complete")}
+		}},
+		{name: "duplicate protected decision ordinal", mutate: func(_ *testing.T, input map[string]any, _ string, _ gateRegistrationView) {
+			input["protected_decisions"] = []any{commandProtectedDecisionMap(0, "release", "envelope.complete"), commandProtectedDecisionMap(0, "rollback", "envelope.complete")}
+		}},
+		{name: "unguarded protected decision action", mutate: func(_ *testing.T, input map[string]any, _ string, _ gateRegistrationView) {
+			for _, obligation := range input["obligations"].([]any) {
+				obligation.(map[string]any)["guarded_actions"] = []string{"envelope.complete"}
+			}
+			input["protected_decisions"] = []any{commandProtectedDecisionMap(0, "release", "issue.transition-terminal-success")}
+		}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+			input := typedEnvelopeCreateInput(t, workspace, issueID, registration)
+			test.mutate(t, input, issueID, registration)
+			inputPath := filepath.Join(workspace, "envelope-rejected.json")
+			writeActivationInput(t, inputPath, input)
+			before := snapshotWorkspacePersistence(t, workspace)
+
+			result := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", "envelope-rejected-"+strings.ReplaceAll(test.name, " ", "-"))
+			if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"invalid-argument"`) {
+				t.Fatalf("rejected command = %#v, want invalid-argument with no stdout", result)
+			}
+			if after := snapshotWorkspacePersistence(t, workspace); !before.equal(after) {
+				t.Fatalf("rejected %s changed journal or projection", test.name)
+			}
+		})
+	}
+}
+
 func TestDecodeClosedEnvelopeInputRejectsAuthoredBudgetState(t *testing.T) {
 	t.Parallel()
 	for _, state := range []string{`""`, `null`} {
@@ -285,6 +386,69 @@ func envelopeCreateInput(t *testing.T, workspace, issueID string, registration g
 			"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil,
 			"exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil,
 		}},
+	}
+}
+
+func typedEnvelopeCreateInput(t *testing.T, workspace, issueID string, registration gateRegistrationView) map[string]any {
+	t.Helper()
+	input := envelopeCreateInput(t, workspace, issueID, registration)
+	source := input["sources"].([]any)[0]
+	input["obligations"] = []any{
+		input["obligations"].([]any)[0],
+		commandReviewObligation(source, issueID, "OBL-review", "standard"),
+		commandHumanObligation(source, issueID, "OBL-human", "release"),
+	}
+	input["protected_decisions"] = []any{}
+	return input
+}
+
+func commandObligationsForCount(t *testing.T, input map[string]any, issueID string, count int) []any {
+	t.Helper()
+	if count < 1 || count > 17 {
+		t.Fatalf("command obligation count = %d, want 1..17", count)
+	}
+	source := input["sources"].([]any)[0]
+	gate := input["obligations"].([]any)[0].(map[string]any)
+	obligations := []any{gate}
+	for index := 1; index < count; index++ {
+		if index%2 == 1 {
+			obligations = append(obligations, commandReviewObligation(source, issueID, "OBL-review-"+string(rune('a'+index)), "profile-"+string(rune('a'+index))))
+			continue
+		}
+		obligations = append(obligations, commandHumanObligation(source, issueID, "OBL-human-"+string(rune('a'+index)), "outcome-"+string(rune('a'+index))))
+	}
+	return obligations
+}
+
+func commandReviewObligation(source any, issueID, id, profile string) map[string]any {
+	return map[string]any{
+		"id": id, "type": "review", "applicability": "required", "guarded_actions": []string{"envelope.complete"},
+		"subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "review_profile": profile,
+		"accepted_evidence_types": []string{"review"}, "accepted_trust_sources": []string{"activated-actor"},
+		"freshness_target": "repository-tree", "artifact_policy": "metadata-sufficient", "independence": "distinct-actor", "required_lane": nil, "source": source,
+	}
+}
+
+func commandHumanObligation(source any, issueID, id, outcomeClass string) map[string]any {
+	return map[string]any{
+		"id": id, "type": "human-outcome", "applicability": "required", "guarded_actions": []string{"envelope.complete"},
+		"subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "outcome_class": outcomeClass,
+		"accepted_evidence_types": []string{"human-outcome"}, "accepted_trust_sources": []string{"activated-human"},
+		"freshness_target": "none", "artifact_policy": "metadata-sufficient", "independence": "human", "required_lane": nil, "source": source,
+	}
+}
+
+func commandProtectedDecisionMaps(count int) []any {
+	decisions := make([]any, 0, count)
+	for ordinal := 0; ordinal < count; ordinal++ {
+		decisions = append(decisions, commandProtectedDecisionMap(ordinal, "decision-"+string(rune('a'+ordinal)), "envelope.complete"))
+	}
+	return decisions
+}
+
+func commandProtectedDecisionMap(ordinal int, decisionClass, action string) map[string]any {
+	return map[string]any{
+		"ordinal": ordinal, "decision_class": decisionClass, "required_capabilities": []string{"envelope.complete"}, "affected_actions": []string{action},
 	}
 }
 
