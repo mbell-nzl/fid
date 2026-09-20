@@ -63,7 +63,7 @@
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - First `golangci-lint run ./...` attempt - FAIL - `* staticcheck: 3` (terminated `exit_code: 1`)
 - Second byte-identical `golangci-lint run ./...` attempt - FAIL - `* staticcheck: 1` (terminated `exit_code: 1`)
-- Final byte-identical `golangci-lint run ./...` attempt - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 211.559s coverage: 64.0% of statements` (terminated `exit_code: 0`)
 - Ordinary package budgets: `cmd/fid` was 538.754s and `internal/workflow` was 211.559s; every reported ordinary package remained below 600s.
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 63.2%` (terminated `exit_code: 0`)
@@ -75,6 +75,7 @@
 - No product, schema, protected gate, threshold, validation-contract, or dependency deviation was made.
 - The first exact lint attempt found three capitalized internal error strings; after those were lowercased, the byte-identical second attempt exposed the remaining capitalized Deviation self-reference error. All four strings were repaired without changing typed failure behavior, and the third byte-identical attempt passed with `0 issues.`. Both failed attempts and their real exit statuses remain recorded above.
 - Focused real-process development progressed through expected sequential fixture failures: the first gate run lacked an observed Budget sample; the next used stale workflow state names; replay then exposed terminal-state ordering; the predecessor negative initially expected the wrong not-found exit; and the first multi-Actor fixture revisions widened authority grants and denied the later gate. Each cause was repaired in the same in-scope journey without changing its command, assertion, or accepted behavior; the final byte-identical command passed.
+- The first post-finalization report-lint attempt printed `FAIL required command missing from report` and `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`) because the passing lint row prefixed the required command with descriptive text. The row was changed to the canonical command-first form without changing evidence; the byte-identical control was then rerun.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
