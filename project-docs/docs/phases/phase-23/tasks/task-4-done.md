@@ -64,9 +64,11 @@
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 217.082s coverage: 64.1% of statements` (terminated `exit_code: 0`); `cmd/fid` was 496.639s and every ordinary package stayed below 600s.
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 217.082s coverage: 64.1% of statements` (terminated `exit_code: 0`)
+- Ordinary package budgets: `cmd/fid` was 496.639s and `internal/workflow` was 217.082s; every package stayed below 600s.
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 64.9%` (terminated `exit_code: 0`)
-- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 659.237s` (terminated `exit_code: 0`); below the 900s budget.
+- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 659.237s` (terminated `exit_code: 0`)
+- Tagged integration budget: `cmd/fid/integration` was 659.237s, below 900s.
 
 ## Deviations from spec
 
