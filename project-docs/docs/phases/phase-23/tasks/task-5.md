@@ -16,9 +16,10 @@ Review, and a derived Finding state.
   Obligation is unsatisfied regardless, so the non-vacuous "still unsatisfied"
   proof is VAL-026's sequence at task 6; this row's final PASS needs both.
 - VAL-022: Only a later qualifying independent Review resolves or marks a
-  Finding inapplicable, and no Review resolves a Finding it created. Six cases,
-  including a `blocked`-verdict resolving Review (rejects) and a resolution by
-  the same independent Reviewer's later Review (succeeds, DEC-225).
+  Finding inapplicable, and no Review resolves a Finding it created. Run the
+  six-case authority matrix for both terminal actions, including a
+  `blocked`-verdict Review (rejects) and the same independent Reviewer's later
+  Review (succeeds, DEC-225); inapplicability also requires its reason (DEC-242).
 - VAL-023: `Finding.state` is derived from the latest disposition.
 - VAL-003: task 1's fence assertion for `finding.addressed` converges here
   without losing its parity subject.
@@ -31,10 +32,20 @@ Review, and a derived Finding state.
   unique index that caps terminal dispositions at one.
 - `addressed` is an assertion of rework, never a resolution. It must not change
   blocking state, satisfy an Obligation, or close a Stop.
-- Resolution arrives only through `resolves_finding_ids` on a later Review
-  Record that binds the same Issue and revision, satisfies task 4 independence,
-  and has verdict `pass` or `changes-required`. There is no `finding.resolve`
-  leaf and none may be added.
+- Resolution arrives through retained `resolves_finding_ids`; inapplicability
+  arrives through the optional `inapplicable_findings:[{finding_id,reason}]`
+  collection added here under DEC-242. Both belong to a later Review Record
+  that binds the same Issue and revision, satisfies task 4 independence, and
+  has verdict `pass` or `changes-required`. There is no `finding.resolve` or
+  `finding.inapplicable` leaf and none may be added.
+- `public-interface.md` section 4 fixes this optional input: omitted and `[]`
+  canonicalize to omission for hashing; explicit null rejects; reasons are
+  nonblank valid UTF-8 of at most 4096 bytes and are stored verbatim; IDs are
+  unique and disjoint across the two terminal collections, at most 64 combined.
+  Preserve Task 4 request bytes/digests and the existing Review output shape.
+  Its `resolved_finding_ids` remains resolved-only; inapplicable details are
+  read through the existing Finding disposition/state projection. No DDL,
+  Event, journal value shape or new failure code is required.
 - A Review may not resolve a Finding it created, nor one already resolved or
   inapplicable. Both rejections name the exact Finding.
 - DEC-192: delete exactly the `"finding.addressed"` key and prove its
@@ -88,7 +99,21 @@ Review, and a derived Finding state.
   `finding.address` disposes exactly one Finding, so the default maximum of one
   `finding_dispositions/insert` per Event is the correct bound and must not be
   widened here.
+- `internal/journal/current_event_result_values.go` - under DEC-242,
+  `currentFillReview` must project `resolved_finding_ids` from dispositions with
+  `action='resolved'` only, matching the domain read path. The present query
+  selects every row naming `qualifying_review_id`; the first inapplicable
+  disposition would otherwise corrupt strict result/projection parity. This
+  is the minimum causal helper change for the existing Review shape, not a
+  new result registry or permission to broaden the value catalog.
 - `internal/cli/codes.go` - `finding-not-found`, `finding-already-disposed`.
+- `cmd/fid/review.go` - the DEC-242 optional-input admission and exact existing
+  error mappings for both terminal collections. Unknown persisted IDs return
+  `finding-not-found`; already terminal IDs return `finding-already-disposed`
+  with actual state; malformed reason/collection, overlap, duplicate and size
+  violations return `invalid-argument`; same-Review or foreign-scope targets
+  return `invalid-argument` naming the exact Finding ID. Preserve the existing
+  independence and verdict codes. No Task 4 request gains a required key.
 - `cmd/fid/finding.go` - new leaf wiring for `address` and `list`.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
   this change.
@@ -111,9 +136,25 @@ Review, and a derived Finding state.
   their Review Event. (VAL-020)
 - [ ] Address succeeds only under an active mutating Claim, and afterwards the
   Finding is `addressed`, unresolved, and still blocking. (VAL-021)
-- [ ] Self-resolution, non-independent resolution, and a second terminal
-  disposition all reject; a valid independent resolution records its qualifying
-  Review. (VAL-022)
+- [ ] For both `resolved` and `inapplicable`: same-Review, non-independent,
+  `blocked`-verdict and second-terminal attempts reject with no Event or partial
+  change; valid later Reviews by a different independent Actor and by the same
+  independent Reviewer succeed and bind the qualifying Review. An inapplicable
+  disposition preserves its exact nonblank reason. (VAL-022; DEC-242)
+- [ ] A built-binary journey records resolved and inapplicable dispositions for
+  different earlier Findings in one `review.recorded` Event, then reads the
+  original Findings and proves action, reason, Actor, qualifying Review and
+  derived state through the existing output shape. Strict result/projection
+  parity and replay pass; `resolved_finding_ids` includes only resolved IDs.
+  (VAL-022/023; DEC-242)
+- [ ] Optional input omission and `[]` retain the Task 4 reference request's
+  exact canonical bytes/digest and idempotent replay. Explicit null, missing,
+  null, blank or oversize reasons, nested unknown/duplicate keys, duplicate
+  IDs, cross-collection overlap, and 65 combined terminal IDs each reject
+  with no Event; 64 combined IDs are accepted when otherwise qualifying.
+  Unknown and already-terminal IDs produce the exact specified codes/details;
+  changing a nonempty collection's reason under the same key conflicts.
+  (DEC-242 input/digest conformance; supports VAL-019/022 and later VAL-055/057)
 - [ ] A supplied `state` rejects and the derived state follows the dispositions.
   (VAL-023)
 - [ ] Full required commands terminate with preserved red/green evidence.

@@ -220,7 +220,9 @@ returns absence, validity/freshness, and Artifact availability separately.
 ### 5.4 Review and judgment
 
 - record a Review Record and Findings;
-- record addressed assertions and later independent Finding resolution;
+- record nonterminal addressed assertions and later independent Finding
+  resolution or reasoned inapplicability, with terminal dispositions committed
+  atomically in their qualifying Review Event;
 - record Concerns, Deviations, Decision References, and Human Outcomes;
 - raise, list, and resolve Attention through the qualifying outcome/fact.
 

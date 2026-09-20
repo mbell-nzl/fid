@@ -243,8 +243,8 @@ Avoid: a QA Work Item or mutable review document.
 
 **Review Finding**
 Definition: A structured defect or improvement recorded by a Review Record. A
-Builder may mark it addressed; only a later qualifying Review Record resolves
-it.
+Builder may mark it addressed, a nonterminal assertion; only a later qualifying
+independent Review Record resolves it or marks it inapplicable with a reason.
 Use when: review discovers actionable work.
 Avoid: free-form comment streams or Builder self-resolution.
 

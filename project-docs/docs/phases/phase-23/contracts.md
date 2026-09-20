@@ -181,8 +181,10 @@ scope, a severity from `blocker`, `major`, `minor`, `nit`, a summary, and a
 blocking flag. `blocker` and `major` are blocking; `minor` and `nit` are not.
 Severity and the blocking flag must agree, or the record rejects.
 
-A Finding has exactly one of three terminal dispositions, each an append-only
-row with its own Event:
+A Finding starts open and may receive append-only disposition rows. `addressed`
+is nonterminal; at most one `resolved` or `inapplicable` row is terminal.
+Addressing has its own `finding.addressed` Event, while terminal dispositions
+are effects in their qualifying `review.recorded` Event (clarified by DEC-242):
 
 - `addressed` - recorded by an Actor holding an active mutating Claim on the
   reviewed Issue. It is an assertion of rework, never a resolution. An
@@ -195,6 +197,12 @@ row with its own Event:
   that is already resolved or inapplicable.
 - `inapplicable` - recorded only as part of a later qualifying independent
   Review Record, under the same rules as `resolved`, with a mandatory reason.
+  Task 5 introduces the optional `inapplicable_findings` collection of
+  `{finding_id,reason}` on `review.record` (DEC-242). Omission and an empty
+  collection leave the existing request digest unchanged. Reasons are nonblank
+  bounded text; IDs may occur in only one of the two terminal collections, with
+  at most 64 terminal dispositions combined. `public-interface.md` section 4
+  fixes exact input validation and rejection codes.
 
 A Builder-recorded `addressed` disposition may be superseded by a later
 `resolved` or `inapplicable` disposition. No other transition exists. A Finding

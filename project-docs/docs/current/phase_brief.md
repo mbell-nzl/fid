@@ -18,8 +18,8 @@ ESC-23-003's VAL-015 contradiction is resolved; the Runner must reconcile its
 retained STOP using [the resume handoff](../phases/phase-23/qa/resume-after-esc-23-003.md).
 Task 4 still needs same-Reviewer rework, multiple-Finding resolution, built-binary
 evidence and fence-parity closure. The Human authorizes ordered execution through
-Task 9 and its mid-phase review. Task 9 still needs bounded DEC-237 QA
-confirmation; Tasks 10-11 remain held. Branch `phase-23`.
+Task 9 and its mid-phase review. Bounded DEC-237/240 QA confirmation is READY
+(`qa-plan.md` section 21); Tasks 10-11 remain held. Branch `phase-23`.
 
 Eight QA passes returned twenty-eight Must-fix revisions plus five the Tech Lead
 found while dispositioning them; **all are applied**. Six Human contract
@@ -38,7 +38,7 @@ VAL-082/083/084 without losing cases; the contract is now 84 rows.
 
 Next action: resume Task 4 under DEC-239, close its evidence gaps, then continue
 the ordered task/review sequence through the window 7-9 review. **Task 9 has
-Human clearance; bounded QA confirmation remains. Tasks 10-11 stay held.**
+Human clearance and bounded QA readiness. Tasks 10-11 stay held.**
 
 ## Operating Mode
 
@@ -72,13 +72,16 @@ capability matrix; 18 conformance audit.
 All under `../phases/phase-23/qa/`. `validation-contract.md` holds **84**
 assertions (80 deterministic, 4 Human), all `Ready`; every row names its owning
 task. Validators are QA Lead or QA Reviewer except VAL-070..073, the Human rows,
-whose fixtures come from task 14. QA plan sections 12-20 are executed and
-freshly measured; 19 and 20 are the eighth confirmation, and one bounded pass
-remains over the DEC-237 edits. Mid-phase `review-M.md` for windows 1-3, 4-6,
+whose fixtures come from task 14. QA plan section 21 confirms DEC-237/240 READY
+in commit `74c83b7`. DEC-242 adds executable inapplicability evidence for Task 5;
+window 4-6 reviews it. Mid-phase `review-M.md` for windows 1-3, 4-6,
 7-9, 10-12, 13-15, 16-18; `checkpoint-after-task-11.md` must PASS before task 12.
 
 ## Active Constraints
 
+- DEC-242: Task 5 adds optional `inapplicable_findings:[{finding_id,reason}]`;
+  omitted/empty preserve Task 4 digests. Existing Finding readback and schema
+  suffice. Addressed is nonterminal; terminal dispositions share the Review Event.
 - The accepted `Condition` encoding is DEC-235: `omitempty` on `outcome_class`,
   `decision_class`, and `finding_id` and **on no other field**. Tagging
   `budget_name` or `capability_id` changes every stored `semantic_key` and
@@ -124,8 +127,6 @@ own 0017, 0018, the fence, and the strict-path registries. `internal/links/` is
 restricted and `internal/requirements/` removed; `internal/export/`,
 `internal/maintenance/`, `internal/activity/`, and `cmd/fid/` carry adapters,
 projections, and archive semantics.
-
-## Known Risks
 
 Wide-reach change: Obligation generalization (task 2) and Evidence widening
 (task 6), each isolated. **Registry without an owning task** (DEC-167/173) is

@@ -47,7 +47,7 @@
 | 5: Findings created only with their Review, atomically | `review.recorded` effect rule stage 1 plus stage 0 | 5 | VAL-020 |
 | 5: severity and blocking must agree | `review_findings` composite CHECK | 4 defines, 5 uses | VAL-017 |
 | 5: `addressed` requires an active mutating Claim | `finding_dispositions` action CHECK plus domain | 5 | VAL-021 |
-| 5: only a later independent Review resolves | `finding_dispositions.qualifying_review_id` CHECK plus domain | 5 | VAL-022 |
+| 5: only a later independent Review resolves or marks inapplicable with reason (DEC-242 optional input) | `finding_dispositions.qualifying_review_id` CHECK, reason and action plus domain; existing Review output remains resolved-only | 5 | VAL-022 |
 | 5: at most one terminal disposition | `finding_dispositions_one_terminal` | 5 | VAL-022 |
 | 5: `Finding.state` derived, never supplied | domain-only | 5 | VAL-023 |
 | 5: unresolved blocking Finding keeps the Obligation unsatisfied | domain-only evaluation | 6 | VAL-026 |

@@ -43,8 +43,8 @@ on the three new `Condition` fields only, the six Phase 22 types keeping
 keyed on `type`. Recorded as DEC-235, which amends `public-interface.md` section
 2, restates inventory row 8, creates row 10, and rewrites tasks 9, 10, and 11.
 The three held revisions (R-22, R-23, I-37) shipped with it. **ESC-23-001
-blocks no task**. DEC-239 supplies Human clearance for Task 9, subject to one
-bounded QA confirmation of DEC-237; Tasks 10-11 remain held. See
+blocks no task**. DEC-239 supplies Human clearance for Task 9, and qa-plan
+section 21 records DEC-237/240 bounded QA readiness; Tasks 10-11 remain held. See
 [Phase 23 escalations](../phases/phase-23/tl-escalations.md).
 
 QA pass 8 raised one **blocker candidate with no identifier allocated** (R-28,

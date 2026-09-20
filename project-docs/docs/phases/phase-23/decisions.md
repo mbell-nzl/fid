@@ -1528,6 +1528,65 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   Product specifications already state the behavior and need no amendment.
 - **Refs:** Task 6; VAL-030; contracts section 6; DEC-167/173.
 
+### DEC-242: Make reasoned Finding inapplicability expressible in Task 5
+
+- **Status:** ACCEPTED 2026-09-20 by the Human's explicitly authorized delegate,
+  following Tech Lead inspection and the delegate's approval of this exact
+  minimal interface amendment. Implement in Task 5 after Task 4 closes.
+- **Contradiction:** `contracts.md` section 5 and VAL-022 require a later
+  qualifying Review to mark a Finding inapplicable with a reason, but the closed
+  `review.record` input contains only `resolves_finding_ids:ID[]`. No accepted
+  request can express that action/reason. The section also incorrectly calls
+  addressed terminal and assigns a separate Event to every disposition,
+  contradicting its own rework rule and `schema.md` section 6.2.
+- **Accepted input:** Add optional
+  `inapplicable_findings:InapplicableFindingInput[0..64]`, where each closed
+  object is `{finding_id:ID,reason:text}`. Omitted and `[]` canonicalize to
+  omission; null rejects. Reasons are nonblank valid UTF-8 of at most 4096
+  bytes, stored verbatim. Duplicate IDs within either terminal collection,
+  overlap across collections and more than 64 terminal IDs combined reject.
+  Same Issue/revision, later Review, independence and qualifying verdict apply
+  equally to both actions, including the same independent Reviewer's later
+  Review. No new leaf is added.
+- **Compatibility and storage:** Existing `resolves_finding_ids`, Task 4
+  canonical request bytes/digests and Review output shape remain unchanged.
+  `resolved_finding_ids` projects only resolved actions; existing
+  Finding.dispositions carries inapplicable action, reason, Actor and qualifying
+  Review for readback. Existing DDL and Event effects already represent all of
+  this; no migration, Event family or closed journal value changes. Addressed
+  is nonterminal in `finding.addressed`; resolved/inapplicable are terminal
+  effects of one atomic `review.recorded`. The terminal index remains intact.
+- **Failures:** Reuse `invalid-argument` for malformed/null collection, invalid
+  reason, duplicates, overlap, combined limit, same-Review and foreign-scope
+  targets; the latter two name `finding_id` and its exact value in details.
+  Use existing `finding-not-found` for unknown persisted IDs and
+  `finding-already-disposed` for either terminal state, recording its actual
+  state. Independence and verdict retain their accepted codes. Every denial
+  leaves Event/projection state unchanged; no failure code is invented.
+- **Task scope and evidence:** Task 5 owns `internal/review/`, its existing
+  Finding scopes, `cmd/fid/review.go` optional input/error mapping, and
+  `internal/journal/current_event_result_values.go`'s resolved-only filter.
+  That helper currently selects all dispositions by qualifying Review, so the
+  first inapplicable row otherwise fails result/projection parity. Required
+  ordinary and tagged gates already execute this scope. Run red/green for both
+  terminal actions, retain all six authority cases for each, cover request
+  boundary/error cases, and evidence one mixed-action built-binary journey,
+  atomic effects, original-Finding readback and replay. Pin a Task 4 reference
+  request for omitted/empty digest equivalence and reason-change conflict.
+- **Reconciliation:** Slice contract, input contract, schema explanatory
+  prose, Task 5, VAL-022, coverage and QA-15/EVID-15 now agree. Canonical PRD,
+  TRD, schema catalog, CLI plan, Review flow and Glossary explicitly distinguish
+  nonterminal addressing from Review-only terminal disposition; the schema
+  catalog's conflicting Human-Outcome resolver language is removed. The
+  validation count remains 84. No Task 4 criteria, command or active product
+  implementation is changed by this decision.
+- **Review boundary:** Normal independent window 4-6 behavior review is the
+  verification point; no further planning-readiness loop is required. Task 9's
+  independent bounded confirmation is already READY in `qa-plan.md` section
+  21, commit `74c83b7033729785eb99403ecec9dcde30ac4280`; the affected Task 9
+  rows and commands remain untouched. Tasks 10-11 remain held.
+- **Refs:** VAL-020/022/023; PRD-REV-004; DEC-225/239; Task 5.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,
@@ -1536,18 +1595,18 @@ not the default.
 | Spec | Verdict | Evidence / Reference |
 |---|---|---|
 | `00_PROJECT_CHARTER.md` | pending | |
-| `01_PRD.md` | pending | |
-| `02_TRD.md` | touched: DEC-238, DEC-239 | section 6 records rebuild-scoped prepared writes; section 5.2 clarifies retained Run/Claim binding and history; task 17 still owns its later sync |
-| `03_TRD_SCHEMA.md` | pending | expected `touched` at task 1 (section 8.4) |
+| `01_PRD.md` | touched: DEC-242 | PRD-REV-004 distinguishes nonterminal addressed from Review-only resolved/inapplicable |
+| `02_TRD.md` | touched: DEC-238, DEC-239, DEC-242 | rebuild-scoped writes, retained Actor/history binding and atomic Review terminal dispositions; task 17 still owns its later sync |
+| `03_TRD_SCHEMA.md` | touched: DEC-242 | section 3.7 removes conflicting Human-Outcome Finding resolution; task 1's section 8.4 sync still audited at wrap |
 | `04_TRD_CONFIG.md` | pending | |
 | `05_DESIGN_PLAN.md` | pending | |
-| `06_DESIGN_PLAN_CLI.md` | pending | expected `touched` at tasks 8, 9, 12, 13 |
-| `07_DESIGN_PLAN_FLOWS.md` | touched: DEC-239 | section 7 clarifies same-independent-Reviewer resolution under DEC-225 |
+| `06_DESIGN_PLAN_CLI.md` | touched: DEC-242 | Review optional inapplicability input; later task-owned sync remains |
+| `07_DESIGN_PLAN_FLOWS.md` | touched: DEC-239, DEC-242 | same-independent-Reviewer resolution and reasoned inapplicability in one Review Event |
 | `08_QUALITY_PLAN.md` | touched: DEC-239 | section 8 records VAL-015 evidence-route boundary |
 | `09_AI_WORKFLOW.md` | pending | |
 | `AGENTS.md` (Commands) | pending | DEC-227: decide at wrap-up whether the explicit `-timeout` bound becomes the project default |
 | `10_IMPLEMENTATION_ROADMAP.md` | pending | |
-| `GLOSSARY.md` | touched: see DEC-226 | `Reason code` split into **Failure code** and **Evaluation reason**; applied by Tech Lead 2026-09-19, ahead of implementation, because the phase's task specs depend on the distinction |
+| `GLOSSARY.md` | touched: DEC-226, DEC-242 | Failure code / Evaluation reason split; Review Finding distinguishes nonterminal addressed and Review-only terminal dispositions |
 
 ## Triage-Log Audit
 

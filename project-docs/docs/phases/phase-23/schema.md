@@ -600,6 +600,14 @@ and is never deleted as a parity assertion.
 
 ### 6.2 Current Event Effect Families
 
+DEC-242 adds no DDL or Event family: `finding_dispositions` already admits
+`resolved` and `inapplicable`, stores `reason`, and binds each to a qualifying
+Review. Task 5's optional `inapplicable_findings` input produces existing
+`finding_dispositions/insert` effects in the same atomic `review.recorded`
+Event. `addressed` alone uses `finding.addressed`; it is not a terminal state.
+The Review result's `resolved_finding_ids` projects only `action='resolved'`;
+an inapplicable row is read through the unchanged Finding disposition shape.
+
 `currentEventRules` gains exactly these rows. Stage 1 is required, stage 0 is
 optional, matching the existing encoding.
 

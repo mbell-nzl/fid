@@ -95,7 +95,9 @@ Recovered code is not trusted evidence; gates/review run normally.
 4. `changes-required` leaves it unsatisfied and derives Builder rework on the
    original Issue/Envelope.
 5. Builder acquires a new Claim/Run and may mark Findings addressed.
-6. Only a later qualifying independent Review Record resolves a Finding. The
+6. Only a later qualifying independent Review Record resolves a Finding or
+   marks it inapplicable with a reason; those dispositions commit in that
+   Review's atomic Event. An addressed assertion remains nonterminal. The
    same independent Actor may record this later Review and resolve a Finding
    from their earlier Review. The prohibition is the same Review Record
    resolving a Finding it created, never the same Actor reviewing twice

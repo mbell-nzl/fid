@@ -48,7 +48,7 @@
   isolated Run-holder history query; Run/Claim Actor binding, durable history,
   real CLI Claim rejection and same-Reviewer rework remain required. Task 4 is
   in bounded recovery, not complete. The Human authorizes through Task 9 and
-  its review; DEC-237 QA confirmation still precedes Task 9, while Tasks 10-11
+  its review; DEC-237/240 QA confirmation is READY (qa-plan section 21), while Tasks 10-11
   stay held. Exact resume: `../phases/phase-23/qa/resume-after-esc-23-003.md`.
 
 - DEC-238: Human-delegated ESC-23-002 recovery owns prepared rebuild writes
@@ -154,10 +154,16 @@
   VAL-082's validation, recorded-journal replay and Attention-key stability
   into VAL-082/083/084, retaining every case, Task 9 ownership and QA Lead
   validation. Current count is **84**: 80 deterministic, 4 Human. Commands and
-  product contracts stay fixed; the final bounded QA confirmation remains.
+  product contracts stay fixed. QA Lead recorded READY for this bounded
+  confirmation in qa-plan section 21, commit `74c83b7`.
+- DEC-242: Task 5 adds optional reasoned `inapplicable_findings` input to
+  `review.record`; omitted/empty preserve existing request digests. Existing
+  Finding disposition output and DDL are sufficient; terminal dispositions
+  belong to the qualifying Review Event, and addressed is nonterminal. Task 5
+  owns both-action evidence and the strict resolved-only projection filter.
 - Tasks 1-3 are complete; Task 4 has DEC-239 recovery authority and ESC-23-003
   is resolved. Tasks 5-8 follow sequentially. Task 9 has Human dispatch clearance
-  and still needs bounded QA confirmation of DEC-237; Tasks 10-11 remain held.
+  and bounded QA readiness under DEC-237/240; Tasks 10-11 remain held.
   See [phase brief](phase_brief.md) and
   [Phase 23 decisions](../phases/phase-23/decisions.md).
 

@@ -4,8 +4,8 @@ Updated 2026-09-20. **Phase 23 Tasks 1-3 complete; Task 4 recovery authorized
 under DEC-239 after ESC-23-003's protected evidence contradiction is resolved.**
 Branch: `phase-23`. The Runner must reconcile the retained Task 4 STOP; Task 4
 is not complete. The Human authorizes execution through Task 9 and the window
-7-9 review. Task 9 still needs bounded DEC-237 QA confirmation; Tasks 10-11 stay
-held.
+7-9 review. Task 9's bounded DEC-237/240 QA confirmation is READY in qa-plan
+section 21 (`74c83b7`); Tasks 10-11 stay held.
 
 ## Task 4 recovery authority - 2026-09-20
 
@@ -22,7 +22,14 @@ See [resume handoff](../phases/phase-23/qa/resume-after-esc-23-003.md).
 DEC-240 dispositions the bounded Task 9 readiness finding R-29: split retained
 Condition validation, recorded-history replay and Attention-key stability into
 VAL-082/083/084. All cases and task commands remain; the contract now has 84
-assertions. Independent QA confirms this final diff before Task 9 dispatch.
+assertions. QA Lead confirmed the final diff READY in qa-plan section 21,
+commit `74c83b7033729785eb99403ecec9dcde30ac4280`.
+
+DEC-242 reconciles Task 5's previously unexpressible inapplicability behavior:
+optional `inapplicable_findings` supplies Finding IDs and mandatory reasons;
+omitted/empty input preserves Task 4 digests and existing output/schema stays
+fixed. Task 5 owns both terminal actions' implementation/evidence and the
+strict resolved-only projection filter. Window 4-6 provides independent QA.
 
 ## Task 1 recovery — 2026-09-20
 
@@ -114,8 +121,8 @@ other detector. The contract is 82 rows and nothing was weakened.
 
 Task 1's delegated repair was completed and the Runner advanced through Task 3.
 The current Task 4 STOP is resolved into recovery authority under DEC-239 above.
-The Human has cleared Task 9; DEC-237's bounded QA confirmation still applies,
-and Tasks 10-11 remain held. See
+The Human has cleared Task 9 and DEC-237/240 bounded QA confirmation is READY;
+Tasks 10-11 remain held. See
 [phase brief](phase_brief.md) and [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Completed

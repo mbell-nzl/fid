@@ -137,7 +137,7 @@ indexes, checks, and migration numbers are accepted with the owning slice.
 |---|---|---|
 | `review_records` | Review ID, Run, Envelope/revision, exact repository identity, profile, coverage, verdict, evidence refs, created time | Immutable; Findings may be empty. |
 | `review_findings` | Finding ID, Review, subject/scope, severity, summary, blocking flag | Created only with a Review Record. |
-| `finding_dispositions` | Finding, Actor, addressed/resolved/inapplicable action, qualifying later Review/Outcome/reference, time | Builder may address; qualifying Reviewer/Human authority resolves. |
+| `finding_dispositions` | Finding, Actor, addressed/resolved/inapplicable action, Claim or qualifying later Review, reason, time and Event | Addressed is nonterminal and requires a mutating Claim; only a later qualifying independent Review records resolved or inapplicable, with a mandatory reason for inapplicable. At most one terminal disposition; no Human Outcome substitutes for the Review (DEC-242). |
 | `concerns` | ID, subject, Actor, scope, severity, summary, status, references, created time | Generic subject; not completion-linked. |
 | `deviations` | ID, subject, expected contract/control, observed departure, authority, disposition, references, created time | Append-only decision-relevant fact. |
 | `decision_refs` | ID, class, source reference/digest, authority, outcome, scope, created time | No decision body. |

@@ -71,6 +71,7 @@ Coverage       = {items:CoverageItem[1..64],exclusions:CoverageExclusion[0..64]}
 Severity       = "blocker"|"major"|"minor"|"nit"
 FindingInput   = {id:ID,subject:JudgmentSubject,scope:{paths:text[0..256]},
                   severity:Severity,summary:text,blocking:boolean}
+InapplicableFindingInput = {finding_id:ID,reason:text}
 FindingDisposition = {id:ID,action:"addressed"|"resolved"|"inapplicable",
                   actor_id:ID,qualifying_review_id:?ID,reason:text,
                   disposed_at:timestamp,event_id:ID}
@@ -147,17 +148,22 @@ Concern may not supersede itself. `Concern.actor_id` is the raising Actor and
 `Coverage.items` and `Coverage.exclusions` may not reference the same `Source`
 digest. `Finding.state` is derived from the latest disposition, never supplied.
 `Review.resolved_finding_ids` echoes the accepted `resolves_finding_ids` input.
+It contains only `resolved` actions. An `inapplicable` action, reason and
+qualifying Review are read through the existing Finding's `dispositions` and
+derived `state`, using `finding.list` or `review.get` on its creating Review;
+the `Review` result shape gains no field (DEC-242).
 `Review.independence` is the constant recorded basis; a Review is never stored
 with any other value.
 
 ## 4. New And Replaced Leaves
 
-Each row lists every required input key. Shared flags follow section 1 unless
-the row says read-only.
+Each row lists every required input key. `optional(key:Type)` explicitly marks
+an omittable key, not a nullable value; all other keys remain required. Shared
+flags follow section 1 unless the row says read-only.
 
 | Operation / CLI | Input or read arguments | Result | Event / task |
 |---|---|---|---|
-| `review.record` / `fid review record` | `{run_id:ID,expected_run_version:int,profile:ID,repository:Repository,coverage:Coverage,verdict:text,findings:FindingInput[0..64],resolves_finding_ids:ID[0..64],evidence_refs:Source[0..64],receipt_ids:ID[0..64]}` | `{review:Review,budget:?Budget,stops:Stop[],attention:Attention[],idempotency_key:ID,replayed:boolean}` | review.recorded / 4,6,13 |
+| `review.record` / `fid review record` | `{run_id:ID,expected_run_version:int,profile:ID,repository:Repository,coverage:Coverage,verdict:text,findings:FindingInput[0..64],resolves_finding_ids:ID[0..64],optional(inapplicable_findings:InapplicableFindingInput[0..64]),evidence_refs:Source[0..64],receipt_ids:ID[0..64]}` | `{review:Review,budget:?Budget,stops:Stop[],attention:Attention[],idempotency_key:ID,replayed:boolean}` | review.recorded / 4,5,6,13; optional input begins task 5 |
 | `review.get` / `fid review get <review-id>` | read | `{review:Review}` | null / 13 |
 | `review.list` / `fid review list` | read; optional `--issue`, `--envelope`, `--verdict`, `--limit` | `{items:Review[]}` | null / 13 |
 | `finding.address` / `fid finding address` | `{finding_id:ID,claim_id:ID,expected_claim_version:int,reason:text}` | Mutation keyed `finding`: Finding | finding.addressed / 5,13 |
@@ -180,6 +186,35 @@ the row says read-only.
 | `claim.acquire` / existing leaf | add `mode:"mutation"\|"review"` | existing result with amended Claim | claim.acquired / 3 |
 | `evidence.link` / existing leaf | `{obligation_id:ID,evidence_type:text,receipt_id:?ID,review_id:?ID,human_outcome_id:?ID,target_repository:Repository,required_artifact_ids:ID[]}` | `{evidence:Evidence,evaluation:Evaluation,idempotency_key:ID,replayed:boolean}` | evidence.linked / 6,10 |
 | `evidence.evaluate` / existing leaf | `{obligation_id:?ID,target_repository:Repository}` | `{evaluations:Evaluation[]}` when `obligation_id` is null, otherwise retained `{evaluation:Evaluation}` | null / 6,13 |
+
+**Task 5 input addition (DEC-242).** `inapplicable_findings` is omitted or an
+array of closed `{finding_id,reason}` objects. Explicit `null`, a missing or
+null member, and unknown or duplicate keys reject. Each reason is valid UTF-8,
+at most the retained text limit of 4096 bytes, and nonblank after whitespace
+trimming; store the supplied valid text verbatim. IDs are unique within each
+terminal-disposition collection and disjoint across `resolves_finding_ids` and
+`inapplicable_findings`; their combined length is at most 64. Both actions use
+the same later-Review, Issue/revision, independence and verdict checks.
+
+Omission and `[]` both canonicalize to omission of `inapplicable_findings` for
+request hashing. Thus a request using only Task 4 fields retains its exact
+canonical bytes and request digest. A nonempty collection participates in the
+digest, including its reasons; changed reasons conflict under the same key.
+No Review output, journal value shape, DDL, or Event family is added or widened.
+Disposition effects commit atomically within `review.recorded`.
+
+Terminal-disposition input failures use the existing codes: malformed collection,
+missing/null/blank/oversize reason, duplicate or overlapping ID, or combined
+limit violation returns `invalid-argument` (exit 2, existing closed details).
+An unknown persisted Finding ID returns `finding-not-found` (exit 3,
+`{id:ID}`); an already `resolved` or `inapplicable` Finding returns
+`finding-already-disposed` (exit 4, `{finding_id:ID,state:text}`). A Finding
+created in this same Review or belonging to another Issue/revision returns
+`invalid-argument`, with `argument:"finding_id"` and the exact ID in `value`.
+The independent-Actor and resolving-verdict failures remain
+`review-not-independent` and `review-verdict-invalid`. All reject without an
+Event or partial projection change. These rules are implemented by Task 5;
+Task 4's existing input, criteria and commands remain unchanged.
 
 `review.record` requires an active `review`-mode Claim for the named Run, the
 `review.record` capability in the Actor profile, and a matching Envelope grant.
@@ -271,7 +306,7 @@ rejections follow the single order in `contracts.md` section 13.
 | review-verdict-invalid | `review.record` |
 | review-changes-required | `evidence.link` |
 | review-rework-exhausted | `claim.acquire`, `run.start` while the exhaustion Stop is open |
-| finding-already-disposed | `finding.address` |
+| finding-already-disposed | `finding.address`; `review.record` attempting either terminal action against an already terminal Finding (DEC-242, task 5) |
 | concern-already-disposed | `concern.dispose` |
 | claim-mode-invalid | `review.record` under a `mutation` Claim; `finding.address` under a `review` Claim; `run.recover` and `run.abandon` adopting a path under a `review` Claim |
 | protected-decision-required | `envelope.complete` and `issue.transition-terminal-success`, for the declared affected actions only |
@@ -281,7 +316,7 @@ rejections follow the single order in `contracts.md` section 13.
 | source-digest-mismatch | `decision.record-reference`, `requirement.record-reference` |
 | repository-mismatch | `review.record` |
 | review-not-found | `review.get`; `evidence.link` with an unknown `review_id` |
-| finding-not-found | `finding.address`; `review.record` with an unknown ID in `resolves_finding_ids`; `concern.dispose` with an unknown `supersedes_finding_id` |
+| finding-not-found | `finding.address`; `review.record` with an unknown ID in `resolves_finding_ids` or `inapplicable_findings`; `concern.dispose` with an unknown `supersedes_finding_id` |
 | concern-not-found | `concern.dispose`, by `concern_id` or by `supersedes_concern_id` |
 | deviation-not-found | `deviation.record` with an unknown `supersedes_deviation_id`; there is no `deviation get` leaf |
 | outcome-not-found | `evidence.link` with an unknown `human_outcome_id`; there is no `human-outcome get` leaf |

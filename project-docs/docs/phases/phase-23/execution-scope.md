@@ -81,6 +81,13 @@ first integration gate and therefore no planned convergence debt. If
 implementation reveals a build tag or environment switch outside these
 commands, amend the task before assigning that scope; never narrow a gate.
 
+DEC-242 assigns Task 5 the `review.record` optional-inapplicability input and
+error adapter in `cmd/fid/review.go` and the resolved-only `currentFillReview`
+query in `internal/journal/current_event_result_values.go`, plus matching tests.
+These are untagged files exercised by the existing ordinary gate; the required
+tagged gate exercises the built-binary mixed-action journey. Existing journal
+value shapes and DDL remain unchanged.
+
 ## 4. Ordered Delivery And Fence Ownership
 
 `schema.md` section 6.1 assigns each progressive fence key to exactly one task:

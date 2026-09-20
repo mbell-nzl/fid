@@ -189,6 +189,15 @@ Review and Outcome inputs are versioned structured records. Protected Human
 authority is established through active provenance, not a free-form `--by
 human` flag. Decision input is a reference/outcome, never an ADR body.
 
+Phase 23 Task 5 adds optional `inapplicable_findings:[{finding_id,reason}]` to
+`review.record`, alongside retained `resolves_finding_ids` (DEC-242). The
+reason is mandatory nonblank text; the later qualifying Review records both
+terminal actions atomically. Omission and `[]` canonicalize to omission for
+the request digest, retaining Task 4 request compatibility; explicit null is
+invalid. No independent terminal-disposition leaf is added. The accepted
+[Phase 23 input contract](../docs/phases/phase-23/public-interface.md) fixes
+bounds, rejection codes and existing Finding disposition readback.
+
 ### Activation and portable recovery
 
 ```text
