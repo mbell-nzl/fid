@@ -73,8 +73,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `b500ab45406dd1cbd79153232d2add3ca8a74021`
 
 ## Commit subject
 
-- Pending commit
+- `feat(review): register immutable review event parity`
