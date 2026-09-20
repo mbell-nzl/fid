@@ -121,7 +121,11 @@ func renderReviewError(cmd *cobra.Command, cause error) error {
 	}
 	var mismatch *review.RepositoryMismatchError
 	if errors.As(cause, &mismatch) {
-		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeRepositoryMismatch, "repository identity does not match", nil, map[string]any{"expected": mismatch.Expected, "observed": mismatch.Observed})
+		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeRepositoryMismatch, "repository identity does not match", nil, map[string]any{"expected": repositoryDetails(mismatch.Expected), "observed": repositoryDetails(mismatch.Observed)})
+	}
+	var reviewConflict *review.ReviewConflictError
+	if errors.As(cause, &reviewConflict) {
+		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeDuplicateEntity, "Review already exists for Run", &cli.Subject{Type: cli.SubjectRun, ID: reviewConflict.RunID}, map[string]any{"entity_type": "review", "identity": map[string]any{"fields": []string{"run_id"}, "values": []string{reviewConflict.RunID}}})
 	}
 	var missing *review.ReviewNotFoundError
 	if errors.As(cause, &missing) {
@@ -132,4 +136,15 @@ func renderReviewError(cmd *cobra.Command, cause error) error {
 		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
 	}
 	return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeInvalidArgument, "invalid review request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted review.record input"}})
+}
+
+func repositoryDetails(repository review.Repository) map[string]any {
+	var baseOID, dirtyDigest any
+	if repository.BaseOID != nil {
+		baseOID = *repository.BaseOID
+	}
+	if repository.DirtyDigest != nil {
+		dirtyDigest = *repository.DirtyDigest
+	}
+	return map[string]any{"base_oid": baseOID, "capture_source": repository.CaptureSource, "dirty": repository.Dirty, "dirty_digest": dirtyDigest, "head_oid": repository.HeadOID, "project_id": repository.ProjectID, "tree_oid": repository.TreeOID, "worktree_id": repository.WorktreeID}
 }

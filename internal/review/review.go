@@ -191,6 +191,9 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if err := validateVerdictFindingAgreement(request.Verdict, request.Findings, request.Coverage); err != nil {
 			return err
 		}
+		if len(request.ResolvesFindingIDs) > 0 && request.Verdict != "pass" && request.Verdict != "changes-required" {
+			return &VerdictInvalidError{Verdict: request.Verdict, Reason: "resolving Findings requires pass or changes-required"}
+		}
 		if err := workflow.AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, workflow.EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: "review.record", Capability: "review.record", IssueID: binding.IssueID, EnvelopeID: binding.EnvelopeID, Revision: binding.EnvelopeRevision}); err != nil {
 			return err
 		}
@@ -471,7 +474,11 @@ func loadReview(conn *sql.DB, reviewID string) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	review = map[string]any{"id": reviewID, "run_id": runID, "issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": revision, "actor_id": actorID, "profile": profile, "repository": repository, "coverage": coverage, "verdict": verdict, "evidence_refs": evidenceRefs, "receipt_ids": receiptIDs, "findings": findings, "resolved_finding_ids": []any{}, "independence": independence, "recorded_at": recordedAt, "event_id": eventID}
+	resolvedFindingIDs, err := loadResolvedFindingIDs(conn, reviewID)
+	if err != nil {
+		return nil, err
+	}
+	review = map[string]any{"id": reviewID, "run_id": runID, "issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": revision, "actor_id": actorID, "profile": profile, "repository": repository, "coverage": coverage, "verdict": verdict, "evidence_refs": evidenceRefs, "receipt_ids": receiptIDs, "findings": findings, "resolved_finding_ids": resolvedFindingIDs, "independence": independence, "recorded_at": recordedAt, "event_id": eventID}
 	return review, nil
 }
 
@@ -492,9 +499,55 @@ func loadReviewFindings(conn *sql.DB, reviewID string) ([]any, error) {
 		if err := json.Unmarshal([]byte(scopeJSON), &scope); err != nil {
 			return nil, err
 		}
-		findings = append(findings, map[string]any{"id": id, "subject": map[string]any{"type": subjectType, "id": subjectID}, "scope": scope, "severity": severity, "summary": summary, "blocking": blocking, "review_id": reviewID, "created_at": createdAt, "dispositions": []any{}, "state": "open"})
+		dispositions, err := loadFindingDispositions(conn, id)
+		if err != nil {
+			return nil, err
+		}
+		findings = append(findings, map[string]any{"id": id, "subject": map[string]any{"type": subjectType, "id": subjectID}, "scope": scope, "severity": severity, "summary": summary, "blocking": blocking, "review_id": reviewID, "created_at": createdAt, "dispositions": dispositions, "state": findingState(dispositions)})
 	}
 	return findings, rows.Err()
+}
+
+func loadResolvedFindingIDs(conn *sql.DB, reviewID string) ([]any, error) {
+	rows, err := conn.Query(`SELECT finding_id FROM finding_dispositions WHERE qualifying_review_id=? AND action='resolved' ORDER BY finding_id`, reviewID)
+	if err != nil {
+		return nil, fmt.Errorf("load resolved Finding IDs: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	ids := []any{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+func loadFindingDispositions(conn *sql.DB, findingID string) ([]any, error) {
+	rows, err := conn.Query(`SELECT id, action, actor_id, qualifying_review_id, reason, disposed_at, created_event_id FROM finding_dispositions WHERE finding_id=? ORDER BY disposed_at, id`, findingID)
+	if err != nil {
+		return nil, fmt.Errorf("load Finding dispositions: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	dispositions := []any{}
+	for rows.Next() {
+		var id, action, actorID, reason, disposedAt, eventID string
+		var qualifyingReviewID *string
+		if err := rows.Scan(&id, &action, &actorID, &qualifyingReviewID, &reason, &disposedAt, &eventID); err != nil {
+			return nil, err
+		}
+		dispositions = append(dispositions, map[string]any{"id": id, "action": action, "actor_id": actorID, "qualifying_review_id": qualifyingReviewID, "reason": reason, "disposed_at": disposedAt, "event_id": eventID})
+	}
+	return dispositions, rows.Err()
+}
+
+func findingState(dispositions []any) string {
+	if len(dispositions) == 0 {
+		return "open"
+	}
+	return dispositions[len(dispositions)-1].(map[string]any)["action"].(string)
 }
 
 func recordReviewValue(id string, binding recordBinding, actorID string, request RecordRequest, repository Repository, recordedAt, eventID string) (map[string]any, error) {
