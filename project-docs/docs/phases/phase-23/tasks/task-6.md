@@ -242,6 +242,15 @@ List any conditional command required by this task and why:
 
 - `go test -race -timeout 30m -cover ./internal/evidence/` and `go test -race -timeout 30m -cover ./internal/workflow/` before and after the edits, because this task adds branch-heavy evaluation and budget paths to two existing packages.
 
+DEC-246 records that the chronological before-runs were missed. Recover their
+baseline from the clean detached Task 5 completion commit
+`8e6a76b5a4d083cf6b9dde76acf9ac3a5d169f0f` in the root-allocated worktree
+`/tmp/fid-task6-baseline.N7uwYo`, using both byte-identical commands above.
+The implementing/reporting worker captures their actual outputs and termination
+in its own session and labels them reconstructed pre-change source evidence,
+not runs made before editing. The report preserves this omission and both
+baseline receipts. Both unchanged after-runs remain required on Task 6 code.
+
 ## Notes For Developer
 
 - This task belongs to QA Review window 2.

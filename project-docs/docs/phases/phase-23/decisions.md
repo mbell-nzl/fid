@@ -1675,6 +1675,27 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   only to the Run and Claim adapters. This changes no requirement or file
   ownership beyond the already-dispatched Evidence slice.
 
+### DEC-246 - Reconstruct the missed Task 6 coverage baseline explicitly
+
+- **Authority:** Human-delegated super-agent authority; root makes the
+  verification-method exception explicit rather than fabricating chronology.
+- **Omission:** Task 6 began implementation without capturing its two required
+  dedicated pre-change coverage commands. Later main-suite output or another
+  agent's report cannot substitute for those observations.
+- **Decision:** Retain the omission as a report deviation. Execute the two
+  byte-identical dedicated coverage commands in a clean detached worktree at
+  Task 5 completion commit `8e6a76b5a4d083cf6b9dde76acf9ac3a5d169f0f`.
+  Root allocated `/tmp/fid-task6-baseline.N7uwYo`; the implementing/reporting
+  worker verifies HEAD and cleanliness and captures command termination in its
+  own session. This is reconstructed pre-change source evidence, never a claim
+  that execution preceded the edits.
+- **Retained controls:** Both dedicated post-change commands and every other
+  exact Task 6 gate still run. Commands, package scope, coverage measurement,
+  budgets, thresholds and behavior assertions remain unchanged. Preserve any
+  failure and the baseline commit/cwd/output/termination in the report.
+- **Review:** Window 4-6 QA explicitly checks the omission, authorized baseline
+  source, actual receipts, and post-change results. Cleanup is not gate evidence.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,
