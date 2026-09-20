@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -119,4 +121,193 @@ func TestReviewRecordCreatesImmutableReview(t *testing.T) {
 	if afterConflict := snapshotWorkspacePersistence(t, workspace); !afterConflict.equal(beforeConflict) {
 		t.Fatal("idempotency conflict appended an Event or changed the projection")
 	}
+}
+
+func TestReviewRecordIndependentReworkAndReceiptBinding(t *testing.T) {
+	workspace, issueID, envelopeID, registration, source := reviewWorkspaceWithTwoActivatedReviewers(t)
+	repository := runRepositoryForTest(t, workspace)
+
+	mutationClaim := acquireReviewClaim(t, workspace, issueID, envelopeID, "actor-builder", "mutation", "review-mutation")
+	mutationRun := startReviewRun(t, workspace, issueID, envelopeID, mutationClaim, "actor-builder", "mutation")
+	gatePath := filepath.Join(workspace, "review-mutation-gate.json")
+	writeActivationInput(t, gatePath, map[string]any{"registration_id": registration.ID, "registration_version": registration.Version, "obligation_id": testEvidenceObligationID, "run_id": mutationRun["id"], "repository": repository})
+	gate := executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", gatePath, "--idempotency-key", "review-mutation-gate")
+	if gate.err != nil || gate.stderr != "" {
+		t.Fatalf("record Receipt on mutation Run = %#v", gate)
+	}
+	var terminal gateTerminalFrame
+	lines := strings.Split(strings.TrimSpace(gate.stdout), "\n")
+	if err := json.Unmarshal([]byte(lines[len(lines)-1]), &terminal); err != nil || terminal.Data.ReceiptID == "" {
+		t.Fatalf("decode mutation Receipt: %v, output=%q", err, gate.stdout)
+	}
+	closeReviewRun(t, workspace, mutationRun, repository, "actor-builder", "review-mutation")
+	releaseReviewClaim(t, workspace, mutationClaim, "actor-builder", "review-mutation")
+
+	reviewClaim := acquireReviewClaim(t, workspace, issueID, envelopeID, "actor-reviewer-one", "review", "review-first")
+	reviewRun := startReviewRun(t, workspace, issueID, envelopeID, reviewClaim, "actor-reviewer-one", "review-first")
+	wrongReceipt := reviewRecordInput(issueID, reviewRun, repository, source, "changes-required", []any{reviewFinding(issueID, "FND-prior", "major", true)}, []any{}, []any{terminal.Data.ReceiptID})
+	wrongReceiptPath := filepath.Join(workspace, "review-wrong-receipt.json")
+	writeActivationInput(t, wrongReceiptPath, wrongReceipt)
+	beforeReceipt := snapshotWorkspacePersistence(t, workspace)
+	rejectedReceipt := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "record", "--actor", "actor-reviewer-one", "--input", wrongReceiptPath, "--idempotency-key", "review-wrong-receipt")
+	if rejectedReceipt.err == nil || rejectedReceipt.stdout != "" || !strings.Contains(rejectedReceipt.stderr, `"code":"invalid-argument"`) {
+		t.Fatalf("Review binding another Run Receipt = %#v, want typed no-Event rejection", rejectedReceipt)
+	}
+	if afterReceipt := snapshotWorkspacePersistence(t, workspace); !afterReceipt.equal(beforeReceipt) {
+		t.Fatal("different-Run Receipt rejection appended an Event or changed the projection")
+	}
+	firstPath := filepath.Join(workspace, "review-first.json")
+	firstInput := reviewRecordInput(issueID, reviewRun, repository, source, "changes-required", []any{reviewFinding(issueID, "FND-prior", "major", true)}, []any{}, []any{})
+	writeActivationInput(t, firstPath, firstInput)
+	first := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "record", "--actor", "actor-reviewer-one", "--input", firstPath, "--idempotency-key", "review-first")
+	if first.err != nil || first.stderr != "" {
+		t.Fatalf("independent first Review = %#v", first)
+	}
+	firstReview := decodeCommandJSONStructure(t, first.stdout).(map[string]any)["result"].(map[string]any)["review"].(map[string]any)
+	closeReviewRun(t, workspace, reviewRun, repository, "actor-reviewer-one", "review-first")
+	releaseReviewClaim(t, workspace, reviewClaim, "actor-reviewer-one", "review-first")
+
+	reworkClaim := acquireReviewClaim(t, workspace, issueID, envelopeID, "actor-builder", "mutation", "review-rework")
+	reworkRun := startReviewRun(t, workspace, issueID, envelopeID, reworkClaim, "actor-builder", "review-rework")
+	closeReviewRun(t, workspace, reworkRun, repository, "actor-builder", "review-rework")
+	releaseReviewClaim(t, workspace, reworkClaim, "actor-builder", "review-rework")
+
+	secondClaim := acquireReviewClaim(t, workspace, issueID, envelopeID, "actor-reviewer-two", "review", "review-second")
+	secondRun := startReviewRun(t, workspace, issueID, envelopeID, secondClaim, "actor-reviewer-two", "review-second")
+	secondPath := filepath.Join(workspace, "review-second.json")
+	writeActivationInput(t, secondPath, reviewRecordInput(issueID, secondRun, repository, source, "pass", []any{}, []any{"FND-prior"}, []any{}))
+	second := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "record", "--actor", "actor-reviewer-two", "--input", secondPath, "--idempotency-key", "review-second")
+	if second.err != nil || second.stderr != "" || !strings.Contains(second.stdout, `"resolved_finding_ids":["FND-prior"]`) {
+		t.Fatalf("independent Reviewer after rework resolves prior Finding = %#v", second)
+	}
+	secondReview := decodeCommandJSONStructure(t, second.stdout).(map[string]any)["result"].(map[string]any)["review"].(map[string]any)
+	gotFirst := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "get", firstReview["id"].(string))
+	gotSecond := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "get", secondReview["id"].(string))
+	if gotFirst.err != nil || gotSecond.err != nil || !strings.Contains(gotFirst.stdout, `"state":"resolved"`) || !strings.Contains(gotSecond.stdout, `"resolved_finding_ids":["FND-prior"]`) {
+		t.Fatalf("review.get prior/resolving Reviews = first %#v second %#v, want resolved Finding projected through CLI", gotFirst, gotSecond)
+	}
+}
+
+func reviewWorkspaceWithTwoActivatedReviewers(t *testing.T) (string, string, string, gateRegistrationView, any) {
+	t.Helper()
+	workspace := clonePristineWorkspace(t)
+	created := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Review fixture", "--actor", "agent:developer")
+	if created.err != nil {
+		t.Fatalf("create fixture Issue: %#v", created)
+	}
+	issueID := decodeCommandJSONStructure(t, created.stdout).(map[string]any)["result"].(map[string]any)["issue"].(map[string]any)["id"].(string)
+	activationID := prepareActivationForTest(t, workspace)
+	profiles := []any{
+		map[string]any{"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/builder", "session_ref": nil, "capabilities": authorityCapabilities()},
+		map[string]any{"actor_id": "actor-harness", "actor_type": "service", "producer": "activated-harness", "provenance_ref": "activation:profile/harness", "session_ref": nil, "capabilities": []string{"run.observe"}},
+		map[string]any{"actor_id": "actor-reviewer-one", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/reviewer-one", "session_ref": nil, "capabilities": authorityCapabilities()},
+		map[string]any{"actor_id": "actor-reviewer-two", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/reviewer-two", "session_ref": nil, "capabilities": authorityCapabilities()},
+	}
+	profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "reviewers", profiles)
+	gateDigest := stageActivationComponentForTest(t, workspace, activationID, "gate-definitions", "review-gates", gateDefinitionsForTest(func(definition map[string]any) { definition["argv"] = []string{"/bin/true"} }))
+	observeActivationResourcesForTest(t, workspace, activationID, "new")
+	digests := []string{profileDigest, gateDigest}
+	sort.Strings(digests)
+	commitPath := filepath.Join(workspace, "review-activation-commit.json")
+	writeActivationInput(t, commitPath, map[string]any{"activation_id": activationID, "expected_status": "staged", "expected_version": activationVersionForTest(t, workspace, activationID), "component_digests": digests})
+	if committed := executeCommandForTest(workspace, "--project", workspace, "--json", "activation", "commit", "--input", commitPath, "--idempotency-key", "review-activation-commit"); committed.err != nil {
+		t.Fatalf("commit review activation: %#v", committed)
+	}
+	finalPath := filepath.Join(workspace, "review-activation-finalize.json")
+	writeActivationInput(t, finalPath, map[string]any{"activation_id": activationID, "expected_status": "committed", "expected_version": activationVersionForTest(t, workspace, activationID)})
+	if finalized := executeCommandForTest(workspace, "--project", workspace, "--json", "activation", "finalize", "--input", finalPath, "--idempotency-key", "review-activation-finalize"); finalized.err != nil {
+		t.Fatalf("finalize review activation: %#v", finalized)
+	}
+	initializeObservedRepositoryForTest(t, workspace)
+	registrationPath := filepath.Join(workspace, "review-gate-register.json")
+	registrationInput := gateRegisterInput(t, workspace)
+	registrationInput["scope"] = map[string]any{"issue_id": issueID}
+	writeActivationInput(t, registrationPath, registrationInput)
+	registration := registerGateForTest(t, workspace, registrationPath, "review-gate-register")
+	input := envelopeCreateInput(t, workspace, issueID, registration)
+	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "gate.run", "review.record", "run.close", "run.start"}
+	input["authority_grants"] = []any{
+		map[string]any{"actions": actions, "actor_selector": map[string]any{"actor_id": "actor-builder", "required_capabilities": actions}, "scope": map[string]any{"issue_id": issueID}},
+		map[string]any{"actions": []string{"run.observe"}, "actor_selector": map[string]any{"actor_id": "actor-harness", "required_capabilities": []string{"run.observe"}}, "scope": map[string]any{"issue_id": issueID}},
+		map[string]any{"actions": actions, "actor_selector": map[string]any{"actor_id": "actor-reviewer-one", "required_capabilities": actions}, "scope": map[string]any{"issue_id": issueID}},
+		map[string]any{"actions": actions, "actor_selector": map[string]any{"actor_id": "actor-reviewer-two", "required_capabilities": actions}, "scope": map[string]any{"issue_id": issueID}},
+	}
+	envelopePath := filepath.Join(workspace, "review-two-actor-envelope.json")
+	writeActivationInput(t, envelopePath, input)
+	createdEnvelope := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", envelopePath, "--idempotency-key", "review-two-actor-envelope")
+	if createdEnvelope.err != nil {
+		t.Fatalf("create review Envelope: %#v", createdEnvelope)
+	}
+	envelopeID := assertEnvelopeShape(t, createdEnvelope.stdout, "draft")
+	activatePath := filepath.Join(workspace, "review-two-actor-activate.json")
+	writeActivationInput(t, activatePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
+	if activated := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", "actor-builder", "--input", activatePath, "--idempotency-key", "review-two-actor-activate"); activated.err != nil {
+		t.Fatalf("activate review Envelope: %#v", activated)
+	}
+	return workspace, issueID, envelopeID, registration, input["sources"].([]any)[0]
+}
+
+func acquireReviewClaim(t *testing.T, workspace, issueID, envelopeID, actor, mode, key string) map[string]any {
+	t.Helper()
+	path := filepath.Join(workspace, key+"-claim.json")
+	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": runRepositoryForTest(t, workspace)["worktree_id"], "scope": map[string]any{"paths": []string{"cmd/fid/review.go"}}, "mode": mode, "ttl_seconds": 60})
+	result := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", actor, "--input", path, "--idempotency-key", key+"-claim")
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("acquire %s Claim as %s = %#v", mode, actor, result)
+	}
+	return claimFromResponse(t, result.stdout)
+}
+
+func startReviewRun(t *testing.T, workspace, issueID, envelopeID string, claim map[string]any, actor, key string) map[string]any {
+	t.Helper()
+	path := filepath.Join(workspace, key+"-run.json")
+	input := runStartInput(issueID, envelopeID, claim["id"], runRepositoryForTest(t, workspace))
+	input["executor"] = map[string]any{"id": "executor-" + key, "source": "activated-harness"}
+	writeActivationInput(t, path, input)
+	result := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", actor, "--input", path, "--idempotency-key", key+"-run")
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("start Run as %s = %#v", actor, result)
+	}
+	return runFromResponse(t, result.stdout)
+}
+
+func closeReviewRun(t *testing.T, workspace string, run map[string]any, repository map[string]any, actor, key string) {
+	t.Helper()
+	runID := run["id"].(string)
+	current := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "get", runID)
+	if current.err != nil {
+		t.Fatalf("get Run before close = %#v", current)
+	}
+	run = runFromResponse(t, current.stdout)
+	observePath := filepath.Join(workspace, key+"-observe.json")
+	writeActivationInput(t, observePath, map[string]any{"run_id": runID, "expected_version": run["version"], "liveness": map[string]any{"executor_id": run["executor"].(map[string]any)["id"], "state": "terminated", "source_ref": "process:test", "observed_at": "2026-09-20T00:00:00Z"}})
+	observed := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "observe", "--actor", "actor-harness", "--input", observePath, "--idempotency-key", key+"-observe")
+	if observed.err != nil {
+		t.Fatalf("observe Run = %#v", observed)
+	}
+	response := decodeCommandJSONStructure(t, observed.stdout).(map[string]any)["result"].(map[string]any)
+	closePath := filepath.Join(workspace, key+"-close.json")
+	writeActivationInput(t, closePath, map[string]any{"run_id": runID, "expected_version": response["run"].(map[string]any)["version"], "observation_id": response["observation"].(map[string]any)["id"], "repository": repository})
+	closed := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "close", "--actor", actor, "--input", closePath, "--idempotency-key", key+"-close")
+	if closed.err != nil {
+		t.Fatalf("close Run as %s = %#v", actor, closed)
+	}
+}
+
+func releaseReviewClaim(t *testing.T, workspace string, claim map[string]any, actor, key string) {
+	t.Helper()
+	path := filepath.Join(workspace, key+"-release.json")
+	writeActivationInput(t, path, map[string]any{"claim_id": claim["id"], "expected_version": claim["version"], "reason": "completed"})
+	released := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "release", "--actor", actor, "--input", path, "--idempotency-key", key+"-release")
+	if released.err != nil || released.stderr != "" {
+		t.Fatalf("release Claim as %s = %#v", actor, released)
+	}
+}
+
+func reviewRecordInput(issueID string, run map[string]any, repository map[string]any, source any, verdict string, findings, resolves, receipts []any) map[string]any {
+	return map[string]any{"run_id": run["id"], "expected_run_version": run["version"], "profile": "review-default", "repository": repository, "coverage": map[string]any{"items": []any{map[string]any{"source": source, "assessed": true}}, "exclusions": []any{}}, "verdict": verdict, "findings": findings, "resolves_finding_ids": resolves, "evidence_refs": []any{}, "receipt_ids": receipts}
+}
+
+func reviewFinding(issueID, id, severity string, blocking bool) map[string]any {
+	return map[string]any{"id": id, "subject": map[string]any{"type": "issue", "id": issueID}, "scope": map[string]any{"paths": []any{}}, "severity": severity, "summary": "review finding", "blocking": blocking}
 }
