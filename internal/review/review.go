@@ -115,9 +115,12 @@ type VerdictInvalidError struct {
 func (err *VerdictInvalidError) Error() string { return "review verdict is invalid" }
 
 type RecordResult struct {
-	Review         map[string]any `json:"review"`
-	IdempotencyKey string         `json:"idempotency_key"`
-	Replayed       bool           `json:"replayed"`
+	Review         map[string]any       `json:"review"`
+	Budget         *workflow.Budget     `json:"budget"`
+	Stops          []workflow.Stop      `json:"stops"`
+	Attention      []workflow.Attention `json:"attention"`
+	IdempotencyKey string               `json:"idempotency_key"`
+	Replayed       bool                 `json:"replayed"`
 	EventID        string
 }
 
@@ -250,10 +253,16 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 			return err
 		}
 		effects := append(reviewRecordEffects(review, "<event-id>"), resolutionEffects...)
+		cycleEffects, budget, stops, attention, err := reviewCycleEffects(conn, binding, request.RunID, options.ActorID, reviewID, request.Verdict, "<occurred-at>")
+		if err != nil {
+			return err
+		}
+		effects = append(effects, cycleEffects...)
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "review.recorded", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: reviewID, Sequence: next, Type: "review"}, CommandName: "review.record", Repository: journalRepository(observed), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setReviewEventIdentity(review, prepared)
-			resultJSON, err := journal.MarshalCanonicalJSON(map[string]any{"review": review, "budget": nil, "stops": []any{}, "attention": []any{}, "idempotency_key": options.IdempotencyKey, "replayed": false})
+			setReviewCycleEventIdentity(stops, attention, prepared)
+			resultJSON, err := journal.MarshalCanonicalJSON(map[string]any{"review": review, "budget": budget, "stops": stops, "attention": attention, "idempotency_key": options.IdempotencyKey, "replayed": false})
 			if err != nil {
 				return journal.IdempotencyMutation{}, err
 			}
@@ -265,7 +274,7 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if outcome.Replayed {
 			return recordReplay(outcome, options.IdempotencyKey, &result)
 		}
-		result = RecordResult{Review: review, IdempotencyKey: options.IdempotencyKey, Replayed: false, EventID: outcome.EventID}
+		result = RecordResult{Review: review, Budget: budget, Stops: stops, Attention: attention, IdempotencyKey: options.IdempotencyKey, Replayed: false, EventID: outcome.EventID}
 		return nil
 	})
 	if err != nil {
@@ -284,22 +293,116 @@ func checkIndependence(conn *sql.DB, actorID, runID string) error {
 	if err != nil {
 		return fmt.Errorf("load review Run: %w", err)
 	}
-	var conflictingID string
-	err = conn.QueryRow(`SELECT id FROM claims WHERE issue_id = ? AND envelope_id = ? AND envelope_revision = ? AND mode = 'mutation' AND actor_id = ? ORDER BY acquired_at, id LIMIT 1`, issueID, envelopeID, revision, actorID).Scan(&conflictingID)
-	if err == nil {
-		return &NotIndependentError{ReviewActorID: actorID, ConflictingType: "claim", ConflictingID: conflictingID, ConflictingActorID: actorID}
+	conflict, err := workflow.FindReviewIndependenceConflict(conn, actorID, issueID, envelopeID, revision)
+	if err != nil {
+		return err
 	}
-	if err != sql.ErrNoRows {
-		return fmt.Errorf("load mutating Claim history: %w", err)
-	}
-	err = conn.QueryRow(`SELECT r.id FROM runs r JOIN claims c ON c.id = r.claim_id WHERE r.issue_id = ? AND r.envelope_id = ? AND r.envelope_revision = ? AND c.mode = 'mutation' AND r.actor_id = ? ORDER BY r.started_at, r.id LIMIT 1`, issueID, envelopeID, revision, actorID).Scan(&conflictingID)
-	if err == nil {
-		return &NotIndependentError{ReviewActorID: actorID, ConflictingType: "run", ConflictingID: conflictingID, ConflictingActorID: actorID}
-	}
-	if err != sql.ErrNoRows {
-		return fmt.Errorf("load mutating Run history: %w", err)
+	if conflict != nil {
+		return &NotIndependentError{ReviewActorID: conflict.ReviewActorID, ConflictingType: conflict.SubjectType, ConflictingID: conflict.SubjectID, ConflictingActorID: conflict.ActorID}
 	}
 	return nil
+}
+
+func reviewCycleEffects(conn *sql.DB, binding recordBinding, runID, actorID, reviewID, verdict, observedAt string) ([]journal.Effect, *workflow.Budget, []workflow.Stop, []workflow.Attention, error) {
+	if verdict != "changes-required" {
+		return nil, nil, []workflow.Stop{}, []workflow.Attention{}, nil
+	}
+	rows, err := conn.Query(`SELECT budget_json FROM envelope_budgets WHERE envelope_id=? AND revision=? ORDER BY name`, binding.EnvelopeID, binding.EnvelopeRevision)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("load review-cycle budgets: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var policies []workflow.Budget
+	for rows.Next() {
+		var raw string
+		var budget workflow.Budget
+		if err := rows.Scan(&raw); err != nil || json.Unmarshal([]byte(raw), &budget) != nil {
+			return nil, nil, nil, nil, fmt.Errorf("decode review-cycle budget")
+		}
+		if budget.Unit == "review-cycles" {
+			policies = append(policies, budget)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, nil, nil, nil, err
+	}
+	if len(policies) == 0 {
+		return nil, nil, []workflow.Stop{}, []workflow.Attention{}, nil
+	}
+	if len(policies) != 1 {
+		return nil, nil, nil, nil, fmt.Errorf("review-cycle budget policy is ambiguous")
+	}
+	budget := policies[0]
+	samples, err := reviewBudgetSamples(conn, binding, budget.Name)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	before, err := workflow.DeriveBudget(budget, samples)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	sampleID, err := journal.GenerateID("BSM", func(candidate string) (bool, error) {
+		var found int
+		err := conn.QueryRow(`SELECT 1 FROM budget_samples WHERE id=?`, candidate).Scan(&found)
+		return err == nil, nil
+	})
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	value := int64(1)
+	sample := workflow.BudgetSample{ID: sampleID, EnvelopeID: binding.EnvelopeID, EnvelopeRevision: binding.EnvelopeRevision, BudgetName: budget.Name, RunID: runID, ActorID: actorID, Source: "fid", SourceSampleID: reviewID, SampleKind: "delta", Value: &value, ObservedAt: observedAt}
+	if len(samples) > 0 {
+		previous := samples[len(samples)-1].ID
+		sample.PreviousSampleID = &previous
+	}
+	admission, err := workflow.AdmitBudgetSample(budget, samples, sample)
+	if err != nil {
+		return nil, nil, nil, nil, fmt.Errorf("admit review cycle: %w", err)
+	}
+	effects := []journal.Effect{{Op: "insert", Table: "budget_samples", PK: map[string]any{"id": sample.ID}, Values: reviewBudgetSampleValues(sample)}}
+	blocks := []workflow.BudgetAdmissionBlock{}
+	if before.Remaining != nil && *before.Remaining > 0 && admission.Exhausted {
+		blocks = append(blocks, workflow.BudgetAdmissionBlock{Code: "review-rework-exhausted", Budget: admission.Budget, LastReviewID: reviewID})
+	}
+	stopEffects, stops, attention, err := workflow.BudgetStopEffects(conn, workflow.Subject{Type: "envelope", ID: binding.EnvelopeID}, binding.EnvelopeID, actorID, blocks, observedAt)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	effects = append(effects, stopEffects...)
+	return effects, &admission.Budget, stops, attention, nil
+}
+
+func reviewBudgetSamples(conn *sql.DB, binding recordBinding, name string) ([]workflow.BudgetSample, error) {
+	rows, err := conn.Query(`SELECT id,source,source_sample_id,sample_kind,previous_sample_id,value FROM budget_samples WHERE envelope_id=? AND envelope_revision=? AND budget_name=? ORDER BY observed_at,id`, binding.EnvelopeID, binding.EnvelopeRevision, name)
+	if err != nil {
+		return nil, fmt.Errorf("load review-cycle samples: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var samples []workflow.BudgetSample
+	for rows.Next() {
+		var sample workflow.BudgetSample
+		if err := rows.Scan(&sample.ID, &sample.Source, &sample.SourceSampleID, &sample.SampleKind, &sample.PreviousSampleID, &sample.Value); err != nil {
+			return nil, err
+		}
+		samples = append(samples, sample)
+	}
+	return samples, rows.Err()
+}
+
+func reviewBudgetSampleValues(sample workflow.BudgetSample) map[string]any {
+	return map[string]any{"envelope_id": sample.EnvelopeID, "envelope_revision": sample.EnvelopeRevision, "budget_name": sample.BudgetName, "run_id": sample.RunID, "actor_id": sample.ActorID, "source": sample.Source, "source_sample_id": sample.SourceSampleID, "sample_kind": sample.SampleKind, "previous_sample_id": sample.PreviousSampleID, "value": sample.Value, "measurement_ref_json": nil, "observed_at": sample.ObservedAt, "created_event_id": "<event-id>"}
+}
+
+func setReviewCycleEventIdentity(stops []workflow.Stop, attention []workflow.Attention, event journal.Event) {
+	occurredAt := event.OccurredAt.UTC().Format(time.RFC3339Nano)
+	for index := range stops {
+		stops[index].RaisedAt = occurredAt
+	}
+	for index := range attention {
+		if attention[index].RaisedAt == "<occurred-at>" {
+			attention[index].RaisedAt = occurredAt
+		}
+	}
 }
 
 func validateVerdictFindingAgreement(verdict string, findings []FindingInput, coverage Coverage) error {
@@ -410,13 +513,12 @@ func reviewRequestDigest(projectID, actorID string, request RecordRequest) (stri
 }
 
 func recordReplay(outcome journal.IdempotencyOutcome, key string, result *RecordResult) error {
-	var decoded struct {
-		Review map[string]any `json:"review"`
-	}
+	var decoded RecordResult
 	if err := json.Unmarshal([]byte(outcome.ResultJSON), &decoded); err != nil {
 		return fmt.Errorf("decode Review replay result: %w", err)
 	}
-	*result = RecordResult{Review: decoded.Review, IdempotencyKey: key, Replayed: true, EventID: outcome.EventID}
+	decoded.IdempotencyKey, decoded.Replayed, decoded.EventID = key, true, outcome.EventID
+	*result = decoded
 	return nil
 }
 

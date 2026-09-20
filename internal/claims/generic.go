@@ -142,6 +142,13 @@ func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationRe
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
 		}
+		blocked, err := claimAcquireStopBlock(conn, request)
+		if err != nil {
+			return journal.Event{}, GenericClaim{}, err
+		}
+		if blocked != nil {
+			return journal.Event{}, GenericClaim{}, blocked
+		}
 		current, err := loadGenericActiveForIssue(conn, request.IssueID)
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
@@ -180,6 +187,14 @@ func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationRe
 		}
 		return event, claim, nil
 	})
+}
+
+func claimAcquireStopBlock(conn *sql.DB, request AcquireRequest) (*workflow.StopBlockedError, error) {
+	stops, err := workflow.ApplicableStops(conn, claimAcquireAction, workflow.Subject{Type: "envelope", ID: request.EnvelopeID})
+	if err != nil || len(stops) == 0 {
+		return nil, err
+	}
+	return workflow.NewStopBlockedError(conn, claimAcquireAction, stops)
 }
 
 func RenewGeneric(options MutationOptions, request RenewRequest) (MutationResult, error) {

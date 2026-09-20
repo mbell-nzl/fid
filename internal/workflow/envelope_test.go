@@ -276,6 +276,55 @@ func TestEnvelopeAuthoringAcceptedAndForbiddenTypedFieldCombinations(t *testing.
 	}
 }
 
+func TestEnvelopeAuthoringReviewCycleBudgetMatrix(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		unit       string
+		action     string
+		withReview bool
+		withBudget bool
+		wantError  bool
+	}{
+		{name: "matched pair", unit: "review-cycles", action: "review-rework-exhausted", withReview: true, withBudget: true},
+		{name: "review cycles with ordinary action", unit: "review-cycles", action: "budget-exhausted", withReview: true, withBudget: true, wantError: true},
+		{name: "ordinary unit with review action", unit: "attempts", action: "review-rework-exhausted", withReview: true, withBudget: true, wantError: true},
+		{name: "review cycles without review obligation", unit: "review-cycles", action: "review-rework-exhausted", withBudget: true, wantError: true},
+		{name: "unbudgeted review", withReview: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			request := testEnvelopeCreateRequest()
+			request.Obligations = []ObligationInput{testObligation("OBL-gate", "gate-evidence", request.PrimaryIssueID)}
+			if test.withReview {
+				review := testObligation("OBL-review", "review", request.PrimaryIssueID)
+				review.ReviewProfile = stringPointer("profile")
+				request.Obligations = append(request.Obligations, review)
+			}
+			if test.withBudget {
+				request.Budgets = []Budget{{Name: "reviews", Scope: "envelope", Unit: test.unit, Maximum: 2, ExhaustionAction: test.action}}
+			}
+			err := validateEnvelopeCreate(request)
+			if (err != nil) != test.wantError {
+				t.Fatalf("validateEnvelopeCreate() error = %v, wantError=%t", err, test.wantError)
+			}
+		})
+	}
+}
+
+func TestEnvelopeAuthoringReviewCycleAlongsideRetainedBudgets(t *testing.T) {
+	request := testEnvelopeCreateRequest()
+	review := testObligation("OBL-review", "review", request.PrimaryIssueID)
+	review.ReviewProfile = stringPointer("standard")
+	request.Obligations = []ObligationInput{review}
+	request.Budgets = []Budget{
+		{Name: "attempts", Scope: "envelope", Unit: "attempts", Maximum: 3, ExhaustionAction: "budget-exhausted"},
+		{Name: "review-cycles", Scope: "envelope", Unit: "review-cycles", Maximum: 1, ExhaustionAction: "review-rework-exhausted", State: ""},
+		{Name: "tokens", Scope: "envelope", Unit: "input-tokens", Maximum: 10, ExhaustionAction: "budget-exhausted"},
+	}
+	if err := validateEnvelopeCreate(request); err != nil {
+		t.Fatalf("validateEnvelopeCreate() error = %v", err)
+	}
+}
+
 func TestEnvelopeAuthoringProtectedDecisionMatrix(t *testing.T) {
 	for _, test := range []struct {
 		name      string

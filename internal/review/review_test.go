@@ -2,13 +2,56 @@ package review
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/workflow"
 	_ "modernc.org/sqlite"
 )
+
+func TestChangesRequiredReviewChargesExactlyOneReviewCycle(t *testing.T) {
+	conn, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatalf("open review-cycle database: %v", err)
+	}
+	defer func() { _ = conn.Close() }()
+	for _, statement := range []string{
+		`CREATE TABLE envelope_budgets (envelope_id TEXT, revision INTEGER, name TEXT, budget_json TEXT)`,
+		`CREATE TABLE budget_samples (id TEXT, envelope_id TEXT, envelope_revision INTEGER, budget_name TEXT, run_id TEXT, actor_id TEXT, source TEXT, source_sample_id TEXT, sample_kind TEXT, previous_sample_id TEXT, value INTEGER, measurement_ref_json TEXT, observed_at TEXT, created_event_id TEXT)`,
+	} {
+		if _, err := conn.Exec(statement); err != nil {
+			t.Fatalf("prepare review-cycle database: %v", err)
+		}
+	}
+	policy, err := json.Marshal(workflow.Budget{Name: "reviews", Unit: "review-cycles", Maximum: 2, Scope: "envelope", ExhaustionAction: "review-rework-exhausted"})
+	if err != nil {
+		t.Fatalf("marshal budget policy: %v", err)
+	}
+	if _, err := conn.Exec(`INSERT INTO envelope_budgets VALUES ('ENV-1',1,'reviews',?)`, string(policy)); err != nil {
+		t.Fatalf("insert review-cycle budget: %v", err)
+	}
+
+	effects, budget, stops, attention, err := reviewCycleEffects(conn, recordBinding{EnvelopeID: "ENV-1", EnvelopeRevision: 1}, "RUN-review", "actor-reviewer", "REV-current", "changes-required", "2026-09-20T00:00:00Z")
+	if err != nil {
+		t.Fatalf("reviewCycleEffects() error = %v", err)
+	}
+	value, _ := effects[0].Values["value"].(*int64)
+	if len(effects) != 1 || effects[0].Table != "budget_samples" || effects[0].Values["source_sample_id"] != "REV-current" || value == nil || *value != 1 {
+		t.Fatalf("reviewCycleEffects() effects = %#v, want one Review-keyed charge", effects)
+	}
+	if budget == nil || budget.Consumed == nil || *budget.Consumed != 1 || len(stops) != 0 || len(attention) != 0 {
+		t.Fatalf("reviewCycleEffects() budget/stops/attention = %#v/%#v/%#v", budget, stops, attention)
+	}
+	for _, verdict := range []string{"pass", "blocked"} {
+		effects, budget, stops, attention, err := reviewCycleEffects(conn, recordBinding{EnvelopeID: "ENV-1", EnvelopeRevision: 1}, "RUN-"+verdict, "actor-reviewer", "REV-"+verdict, verdict, "2026-09-20T00:00:00Z")
+		if err != nil || len(effects) != 0 || budget != nil || len(stops) != 0 || len(attention) != 0 {
+			t.Fatalf("reviewCycleEffects(%s) = effects %#v budget %#v stops %#v attention %#v error %v, want no charge", verdict, effects, budget, stops, attention, err)
+		}
+	}
+}
 
 func TestTerminalFindingDispositionAuthorityMatrix(t *testing.T) {
 	reason := "no longer applies"

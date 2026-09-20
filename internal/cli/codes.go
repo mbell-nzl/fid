@@ -86,6 +86,10 @@ const (
 	CodeImportTargetConflict        Code = "import-target-conflict"
 	CodeReviewNotIndependent        Code = "review-not-independent"
 	CodeReviewVerdictInvalid        Code = "review-verdict-invalid"
+	CodeReviewChangesRequired       Code = "review-changes-required"
+	CodeReviewReworkExhausted       Code = "review-rework-exhausted"
+	CodeEvidenceTypeNotAccepted     Code = "evidence-type-not-accepted"
+	CodeOutcomeNotPermitted         Code = "outcome-not-permitted"
 	CodeRepositoryMismatch          Code = "repository-mismatch"
 	CodeReviewNotFound              Code = "review-not-found"
 	CodeFindingNotFound             Code = "finding-not-found"
@@ -219,6 +223,14 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 		stringField("review_actor_id"), objectField("conflicting_subject", stringField("type"), stringField("id")), stringField("conflicting_actor_id")),
 	CodeReviewVerdictInvalid: definition(CategoryInvalidInput, false, nil,
 		stringField("verdict"), stringField("reason")),
+	CodeReviewChangesRequired: definition(CategoryPrecondition, false, nil,
+		stringField("review_id"), stringField("obligation_id"), stringsField("blocking_finding_ids")),
+	CodeReviewReworkExhausted: definition(CategoryPrecondition, false, []SubjectType{SubjectEnvelope},
+		objectField("budget", stringField("name"), stringField("scope"), stringField("unit"), integerField("maximum"), nullableIntegerField("warning_threshold"), stringField("exhaustion_action"), nullableIntegerField("consumed"), nullableIntegerField("remaining"), stringField("state")), stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
+	CodeEvidenceTypeNotAccepted: definition(CategoryPrecondition, false, nil,
+		stringField("obligation_id"), stringField("evidence_type"), stringsField("accepted_evidence_types")),
+	CodeOutcomeNotPermitted: definition(CategoryPrecondition, false, nil,
+		stringField("obligation_id"), stringField("obligation_type"), stringField("outcome_id"), stringField("result")),
 	CodeRepositoryMismatch: definition(CategoryConflict, false, nil,
 		objectField("expected", repositoryFields()...), objectField("observed", repositoryFields()...)),
 	CodeReviewNotFound:  definition(CategoryNotFound, false, []SubjectType{SubjectReview}, stringField("id")),
@@ -336,6 +348,7 @@ var registeredCodes = []Code{
 	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeClaimModeInvalid, CodeRunNotFound, CodeRunInactive, CodeRunVersionConflict,
 	CodeExecutorLivenessUnknown, CodeExecutorStillLive, CodeRecoveryStateConflict, CodeObservationNotFound, CodeRecoveryAlreadyLinked,
 	CodeReceiptNotFound, CodeEvidenceNotFound,
+	CodeReviewChangesRequired, CodeReviewReworkExhausted, CodeEvidenceTypeNotAccepted, CodeOutcomeNotPermitted,
 	CodeGateUnsuccessful,
 	CodeBudgetExhausted, CodeBudgetDataUnavailable, CodeBudgetSampleConflict,
 	CodeStopNotFound, CodeAttentionNotFound, CodeAttentionVersionConflict, CodeStopUnresolved, CodeResolutionInvalid,

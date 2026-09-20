@@ -22,6 +22,17 @@ func TestEvaluateObligationsReturnsIdenticalUnsatisfiedReasonsForBothGuards(t *t
 	}
 }
 
+func TestEvaluateEvidenceStatesDeduplicatesUnresolvedFindingAcrossReviews(t *testing.T) {
+	states := []ObligationEvidenceState{
+		{ObligationID: "OBL-review", EvidenceID: "EVD-a", EvidenceType: "review", ReviewID: "REV-a", ReviewVerdict: "pass", ReviewIndependent: true, Validity: "valid", Freshness: "fresh", ArtifactAvailability: "not-applicable", UnresolvedBlockingFindingIDs: []string{"FND-blocking"}},
+		{ObligationID: "OBL-review", EvidenceID: "EVD-b", EvidenceType: "review", ReviewID: "REV-b", ReviewVerdict: "pass", ReviewIndependent: true, Validity: "valid", Freshness: "fresh", ArtifactAvailability: "not-applicable", UnresolvedBlockingFindingIDs: []string{"FND-blocking"}},
+	}
+	reasons := EvaluateEvidenceStates(states)
+	if len(reasons) != 1 || reasons[0].Code != "finding-unresolved" || reasons[0].SubjectID != "FND-blocking" {
+		t.Fatalf("EvaluateEvidenceStates() = %#v, want one unresolved Finding reason", reasons)
+	}
+}
+
 func TestTerminalSuccessEvaluationIncludesEnvelopeStop(t *testing.T) {
 	options, _ := recoveryFixture(t)
 	conn, err := openWorkflowDB(options.WorkspaceRoot)

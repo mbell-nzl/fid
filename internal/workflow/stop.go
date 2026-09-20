@@ -111,10 +111,69 @@ type AttentionResolveResult struct {
 	EventID        string    `json:"event_id"`
 }
 
+// StopBlockedError reports an unresolved Stop that applies to a guarded
+// operation. It carries the immutable facts so command adapters do not infer
+// scope from an error string.
+type StopBlockedError struct {
+	Action       string
+	Stops        []Stop
+	AttentionIDs []string
+	Budget       *Budget
+}
+
+func (err *StopBlockedError) Error() string { return "guarded action is blocked by unresolved Stop" }
+
+// NewStopBlockedError enriches a non-committing denial with the immutable
+// Attention identities and, for review exhaustion, the derived budget state.
+func NewStopBlockedError(conn *sql.DB, action string, stops []Stop) (*StopBlockedError, error) {
+	blocked := &StopBlockedError{Action: action, Stops: stops, AttentionIDs: []string{}}
+	for _, stop := range stops {
+		rows, err := conn.Query(`SELECT attention_id FROM attention_stop_links WHERE stop_id=? ORDER BY attention_id`, stop.ID)
+		if err != nil {
+			return nil, fmt.Errorf("load blocking Attention: %w", err)
+		}
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				_ = rows.Close()
+				return nil, err
+			}
+			blocked.AttentionIDs = append(blocked.AttentionIDs, id)
+		}
+		if err := rows.Close(); err != nil {
+			return nil, err
+		}
+		if stop.Code == "review-rework-exhausted" && blocked.Budget == nil {
+			var details struct {
+				EnvelopeID string `json:"envelope_id"`
+				BudgetName string `json:"budget_name"`
+			}
+			if err := json.Unmarshal(stop.Details, &details); err != nil {
+				return nil, fmt.Errorf("decode review exhaustion details: %w", err)
+			}
+			budget, err := loadRunBudget(conn, details.EnvelopeID, 1, details.BudgetName)
+			if err != nil {
+				return nil, fmt.Errorf("load review exhaustion budget: %w", err)
+			}
+			samples, err := loadRunBudgetSamples(conn, details.EnvelopeID, 1, details.BudgetName)
+			if err != nil {
+				return nil, err
+			}
+			derived, err := DeriveBudget(budget, samples)
+			if err != nil {
+				return nil, err
+			}
+			blocked.Budget = &derived
+		}
+	}
+	return blocked, nil
+}
+
 var stopCodes = map[string]bool{
 	"executor-liveness-unknown": true, "recovery-state-conflict": true,
 	"budget-exhausted": true, "budget-data-unavailable": true,
-	"activation-incomplete": true, "capability-unavailable": true, "operator-stop": true,
+	"review-rework-exhausted": true,
+	"activation-incomplete":   true, "capability-unavailable": true, "operator-stop": true,
 }
 
 var conditionTypes = map[string]bool{
@@ -406,7 +465,7 @@ func validateCondition(condition Condition, subject Subject) error {
 }
 
 func validStopDetails(code string, details map[string]any) bool {
-	keys := map[string][]string{"executor-liveness-unknown": {"run_id", "executor_id", "observation_id"}, "recovery-state-conflict": {"run_id", "observation_digest", "paths", "reasons"}, "budget-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "budget-data-unavailable": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "activation-incomplete": {"activation_id", "point_of_no_return", "components"}, "capability-unavailable": {"capability_id", "available", "owner_phase"}, "operator-stop": {"reason", "reference"}}
+	keys := map[string][]string{"executor-liveness-unknown": {"run_id", "executor_id", "observation_id"}, "recovery-state-conflict": {"run_id", "observation_digest", "paths", "reasons"}, "budget-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "budget-data-unavailable": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "review-rework-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining", "last_review_id"}, "activation-incomplete": {"activation_id", "point_of_no_return", "components"}, "capability-unavailable": {"capability_id", "available", "owner_phase"}, "operator-stop": {"reason", "reference"}}
 	want, ok := keys[code]
 	if !ok || len(details) != len(want) {
 		return false

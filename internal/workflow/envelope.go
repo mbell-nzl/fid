@@ -569,8 +569,14 @@ func validateEnvelopeCreate(request EnvelopeCreateRequest) error {
 		return err
 	}
 	previous = ""
+	hasReviewObligation := false
+	for _, obligation := range request.Obligations {
+		hasReviewObligation = hasReviewObligation || obligation.Type == "review"
+	}
 	for _, budget := range request.Budgets {
-		if budget.Name == "" || previous >= budget.Name || budget.Scope != "envelope" || !validBudgetUnit(budget.Unit) || budget.Maximum < 1 || (budget.WarningThreshold != nil && (*budget.WarningThreshold < 0 || *budget.WarningThreshold > budget.Maximum)) || budget.ExhaustionAction != "budget-exhausted" || budget.Consumed != nil || budget.Remaining != nil || budget.State != "" {
+		reviewCycles := budget.Unit == "review-cycles"
+		reviewExhaustion := budget.ExhaustionAction == "review-rework-exhausted"
+		if budget.Name == "" || previous >= budget.Name || budget.Scope != "envelope" || !validBudgetUnit(budget.Unit) || budget.Maximum < 1 || (budget.WarningThreshold != nil && (*budget.WarningThreshold < 0 || *budget.WarningThreshold > budget.Maximum)) || reviewCycles != reviewExhaustion || (!reviewCycles && budget.ExhaustionAction != "budget-exhausted") || (reviewCycles && !hasReviewObligation) || budget.Consumed != nil || budget.Remaining != nil || budget.State != "" {
 			return &EnvelopeInvalidError{Reason: "budget values must remain immutable null counters"}
 		}
 		previous = budget.Name

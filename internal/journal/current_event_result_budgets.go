@@ -18,7 +18,7 @@ func currentProjectedBudget(tx *sql.Tx, runID, name any, excluding ...string) (m
 	if err != nil {
 		return nil, err
 	}
-	known := currentEnum(budget["unit"], "attempts", "failures", "milliseconds", "tool-failures", "interventions")
+	known := currentEnum(budget["unit"], "attempts", "failures", "milliseconds", "tool-failures", "interventions", "review-cycles")
 	consumed := int64(0)
 	excluded := ""
 	if len(excluding) != 0 {
@@ -141,6 +141,33 @@ func currentBudgetEventResult(tx *sql.Tx, event Event) (map[string]any, error) {
 			return nil, err
 		}
 		attention = append(attention, v)
+	}
+	result["attention"] = attention
+	return result, nil
+}
+
+func currentReviewBudgetResult(tx *sql.Tx, event Event) (map[string]any, error) {
+	result := map[string]any{"budget": nil, "stops": []any{}, "attention": []any{}}
+	sample := currentInserted(event, "budget_samples")
+	if sample == nil {
+		return result, nil
+	}
+	budget, err := currentProjectedBudget(tx, sample["run_id"], sample["budget_name"])
+	if err != nil {
+		return nil, err
+	}
+	result["budget"] = budget
+	result["stops"], err = currentEventObjects(tx, event, "stops", "Stop", "id")
+	if err != nil {
+		return nil, err
+	}
+	attention := []any{}
+	for _, id := range currentEventIDs(event, "attention_stop_links", "attention_id") {
+		value, err := currentProjectedValue(tx, "Attention", "attention_items", map[string]any{"id": id})
+		if err != nil {
+			return nil, err
+		}
+		attention = append(attention, value)
 	}
 	result["attention"] = attention
 	return result, nil

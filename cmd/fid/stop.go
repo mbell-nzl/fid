@@ -124,6 +124,19 @@ func renderStopError(cmd *cobra.Command, operation string, cause error) error {
 	}
 	var unresolved *workflow.StopBlockedError
 	if errors.As(cause, &unresolved) {
+		if len(unresolved.Stops) > 0 && unresolved.Stops[0].Code == "review-rework-exhausted" && unresolved.Budget != nil {
+			ids := make([]string, 0, len(unresolved.Stops))
+			for _, stop := range unresolved.Stops {
+				ids = append(ids, stop.ID)
+			}
+			budget := map[string]any{
+				"name": unresolved.Budget.Name, "scope": unresolved.Budget.Scope, "unit": unresolved.Budget.Unit,
+				"maximum": unresolved.Budget.Maximum, "exhaustion_action": unresolved.Budget.ExhaustionAction,
+				"warning_threshold": optionalBudgetValue(unresolved.Budget.WarningThreshold), "consumed": optionalBudgetValue(unresolved.Budget.Consumed),
+				"remaining": optionalBudgetValue(unresolved.Budget.Remaining), "state": unresolved.Budget.State,
+			}
+			return writeStopFailure(cmd, jsonMode, operation, cause, cli.CodeReviewReworkExhausted, "review rework budget is exhausted", &cli.Subject{Type: cli.SubjectEnvelope, ID: unresolved.Stops[0].Subject.ID}, map[string]any{"budget": budget, "stop_ids": ids, "attention_ids": unresolved.AttentionIDs, "event": nil, "replayed": false})
+		}
 		ids := make([]string, 0, len(unresolved.Stops))
 		reasons := make([]map[string]any, 0, len(unresolved.Stops))
 		for _, stop := range unresolved.Stops {

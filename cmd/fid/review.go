@@ -75,7 +75,7 @@ func newReviewRecordCommand() *cobra.Command {
 			return err
 		}
 		if jsonMode {
-			return cli.WriteSuccess(cmd.OutOrStdout(), "review.record", map[string]any{"review": result.Review, "budget": nil, "stops": []any{}, "attention": []any{}, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.Review["recorded_at"].(string)})
+			return cli.WriteSuccess(cmd.OutOrStdout(), "review.record", map[string]any{"review": result.Review, "budget": result.Budget, "stops": result.Stops, "attention": result.Attention, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.Review["recorded_at"].(string)})
 		}
 		_, err = fmt.Fprintf(cmd.OutOrStdout(), "recorded review %s\n", result.Review["id"])
 		return err

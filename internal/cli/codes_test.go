@@ -121,6 +121,10 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeRecoveryAlreadyLinked, CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("successor_run_id")}},
 		{CodeReceiptNotFound, CategoryNotFound, false, []SubjectType{SubjectReceipt}, stringDetails("id")},
 		{CodeEvidenceNotFound, CategoryNotFound, false, []SubjectType{SubjectEvidence}, stringDetails("id")},
+		{CodeReviewChangesRequired, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("review_id"), stringDetail("obligation_id"), {name: "blocking_finding_ids", kind: detailStringsKind}}},
+		{CodeReviewReworkExhausted, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, budgetDenialDetails()},
+		{CodeEvidenceTypeNotAccepted, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("obligation_id"), stringDetail("evidence_type"), {name: "accepted_evidence_types", kind: detailStringsKind}}},
+		{CodeOutcomeNotPermitted, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("obligation_id"), stringDetail("obligation_type"), stringDetail("outcome_id"), stringDetail("result")}},
 		{CodeGateUnsuccessful, CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt}, []detailExpectation{
 			stringDetail("attempt_id"), stringDetail("receipt_id"), stringDetail("outcome"), nullableIntegerDetail("exit_code"), nullableStringDetail("signal"), {name: "timed_out", kind: detailBooleanKind},
 		}},

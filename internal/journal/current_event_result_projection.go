@@ -81,7 +81,13 @@ func currentExpectedResult(tx *sql.Tx, event Event) (map[string]any, error) {
 	switch event.EventType {
 	case "review.recorded":
 		put("review", "Review", "review_records", id(event.Aggregate.ID))
-		result["budget"], result["stops"], result["attention"] = nil, []any{}, []any{}
+		if failure == nil {
+			var budgetResult map[string]any
+			budgetResult, failure = currentReviewBudgetResult(tx, event)
+			if failure == nil {
+				result["budget"], result["stops"], result["attention"] = budgetResult["budget"], budgetResult["stops"], budgetResult["attention"]
+			}
+		}
 	case "finding.addressed":
 		put("finding", "Finding", "review_findings", id(event.Aggregate.ID))
 	case "run.started", "run.closed", "run.observed", "run.checkpointed", "run.abandoned":

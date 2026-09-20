@@ -33,16 +33,6 @@ type ExecutionTransitionEvaluation struct {
 	Reasons    []EvaluationReason
 }
 
-// StopBlockedError reports an unresolved Stop that applies to a guarded
-// operation. It carries the immutable facts so command adapters do not infer
-// scope from an error string.
-type StopBlockedError struct {
-	Action string
-	Stops  []Stop
-}
-
-func (err *StopBlockedError) Error() string { return "guarded action is blocked by unresolved Stop" }
-
 // ApplicableStops returns unresolved Stops whose exact subject and declared
 // action match this mutation. Callers use the same predicate before any
 // durable effect is prepared.
@@ -109,14 +99,19 @@ type ObligationEvaluationInput struct {
 // ObligationEvidenceState carries the independent Evidence dimensions used by
 // pure evaluation and guarded transitions.
 type ObligationEvidenceState struct {
-	ObligationID         string
-	EvidenceID           string
-	ReceiptID            string
-	ReceiptSuccessful    bool
-	Validity             string
-	Freshness            string
-	ArtifactAvailability string
-	ArtifactIDs          []string
+	ObligationID                 string
+	EvidenceID                   string
+	EvidenceType                 string
+	ReceiptID                    string
+	ReceiptSuccessful            bool
+	ReviewID                     string
+	ReviewVerdict                string
+	ReviewIndependent            bool
+	UnresolvedBlockingFindingIDs []string
+	Validity                     string
+	Freshness                    string
+	ArtifactAvailability         string
+	ArtifactIDs                  []string
 }
 
 // EvaluateObligations returns the same ordered result for each guarded action.
@@ -135,23 +130,36 @@ func EvaluateObligations(input ObligationEvaluationInput) []EvaluationReason {
 // unsuccessful Receipt and from each persisted Evidence dimension.
 func EvaluateEvidenceStates(states []ObligationEvidenceState) []EvaluationReason {
 	reasons := make([]EvaluationReason, 0, len(states)*3)
+	seen := map[EvaluationReason]bool{}
+	appendReason := func(reason EvaluationReason) {
+		if !seen[reason] {
+			reasons = append(reasons, reason)
+			seen[reason] = true
+		}
+	}
 	for _, state := range states {
 		if state.EvidenceID == "" && !state.ReceiptSuccessful {
-			reasons = append(reasons, evaluationReason("obligation-evidence-absent", "qualifying Evidence is absent", state.ObligationID, "obligation"))
+			appendReason(evaluationReason("obligation-evidence-absent", "qualifying Evidence is absent", state.ObligationID, "obligation"))
 			continue
 		}
-		if !state.ReceiptSuccessful {
-			reasons = append(reasons, evaluationReason("receipt-unsuccessful", "Receipt outcome is not succeeded", state.ReceiptID, "receipt"))
+		if state.EvidenceType != "review" && !state.ReceiptSuccessful {
+			appendReason(evaluationReason("receipt-unsuccessful", "Receipt outcome is not succeeded", state.ReceiptID, "receipt"))
+		}
+		for _, findingID := range state.UnresolvedBlockingFindingIDs {
+			appendReason(evaluationReason("finding-unresolved", "blocking Finding remains unresolved", findingID, "finding"))
+		}
+		if state.EvidenceType == "review" && !state.ReviewIndependent {
+			appendReason(evaluationReason("review-not-independent", "Review actor is not independent", state.ReviewID, "review"))
 		}
 		if state.Validity != "valid" {
-			reasons = append(reasons, evaluationReason("evidence-invalid", "Evidence validity is invalid", state.EvidenceID, "evidence"))
+			appendReason(evaluationReason("evidence-invalid", "Evidence validity is invalid", state.EvidenceID, "evidence"))
 		}
 		if state.Freshness != "fresh" {
-			reasons = append(reasons, evaluationReason("evidence-stale", "repository tree differs from Evidence target", state.EvidenceID, "evidence"))
+			appendReason(evaluationReason("evidence-stale", "repository tree differs from Evidence target", state.EvidenceID, "evidence"))
 		}
 		if state.ArtifactAvailability != "available" {
 			for _, artifactID := range state.ArtifactIDs {
-				reasons = append(reasons, evaluationReason("artifact-unavailable", "required Artifact is unavailable", artifactID, "artifact"))
+				appendReason(evaluationReason("artifact-unavailable", "required Artifact is unavailable", artifactID, "artifact"))
 			}
 		}
 	}
@@ -364,9 +372,12 @@ func evaluateObligations(conn *sql.DB, obligations []Obligation, current Reposit
 
 func loadObligationEvidenceStates(conn *sql.DB, obligationID string, current Repository) ([]ObligationEvidenceState, error) {
 	rows, err := conn.Query(`
-		SELECT e.id, e.receipt_id, e.validity, e.target_repository_json, r.terminal_status
+		SELECT e.id, e.evidence_type, COALESCE(e.receipt_id,''), COALESCE(e.review_id,''), e.validity, e.target_repository_json,
+		       COALESCE(r.terminal_status,''), COALESCE(rv.verdict,''),
+		       COALESCE(rv.issue_id,''), COALESCE(rv.envelope_id,''), COALESCE(rv.envelope_revision,0)
 		FROM evidence_records e
-		JOIN execution_receipts r ON r.id = e.receipt_id
+		LEFT JOIN execution_receipts r ON r.id = e.receipt_id
+		LEFT JOIN review_records rv ON rv.id = e.review_id
 		WHERE e.obligation_id = ?
 		ORDER BY e.id
 	`, obligationID)
@@ -377,8 +388,9 @@ func loadObligationEvidenceStates(conn *sql.DB, obligationID string, current Rep
 
 	states := []ObligationEvidenceState{}
 	for rows.Next() {
-		var evidenceID, receiptID, validity, targetJSON, outcome string
-		if err := rows.Scan(&evidenceID, &receiptID, &validity, &targetJSON, &outcome); err != nil {
+		var evidenceID, evidenceType, receiptID, reviewID, validity, targetJSON, outcome, verdict, issueID, envelopeID string
+		var revision int
+		if err := rows.Scan(&evidenceID, &evidenceType, &receiptID, &reviewID, &validity, &targetJSON, &outcome, &verdict, &issueID, &envelopeID, &revision); err != nil {
 			return nil, err
 		}
 		var target Repository
@@ -386,9 +398,16 @@ func loadObligationEvidenceStates(conn *sql.DB, obligationID string, current Rep
 			return nil, fmt.Errorf("decode Evidence target repository: %w", err)
 		}
 		state := ObligationEvidenceState{
-			ObligationID: obligationID, EvidenceID: evidenceID, ReceiptID: receiptID,
+			ObligationID: obligationID, EvidenceID: evidenceID, EvidenceType: evidenceType, ReceiptID: receiptID, ReviewID: reviewID, ReviewVerdict: verdict,
 			ReceiptSuccessful: outcome == "succeeded", Validity: validity,
 			Freshness: evidenceFreshness(target, current), ArtifactAvailability: "available",
+		}
+		if evidenceType == "review" {
+			state.ReviewIndependent = true
+			state.UnresolvedBlockingFindingIDs, err = unresolvedBlockingFindingIDs(conn, issueID, envelopeID, revision)
+			if err != nil {
+				return nil, err
+			}
 		}
 		artifactRows, err := conn.Query(`
 			SELECT l.artifact_id, a.availability
@@ -425,6 +444,53 @@ func loadObligationEvidenceStates(conn *sql.DB, obligationID string, current Rep
 	return states, nil
 }
 
+// ReviewIndependenceConflict identifies the first mutating-side history that
+// conflicts with a Review actor. Claims take precedence over Runs.
+type ReviewIndependenceConflict struct {
+	ReviewActorID string
+	SubjectType   string
+	SubjectID     string
+	ActorID       string
+}
+
+// FindReviewIndependenceConflict applies the shared durable-history rule used
+// both when a Review is recorded and when it is later linked as Evidence.
+func FindReviewIndependenceConflict(conn *sql.DB, actorID, issueID, envelopeID string, revision int) (*ReviewIndependenceConflict, error) {
+	var conflictingID string
+	err := conn.QueryRow(`SELECT id FROM claims WHERE issue_id=? AND envelope_id=? AND envelope_revision=? AND mode='mutation' AND actor_id=? ORDER BY acquired_at,id LIMIT 1`, issueID, envelopeID, revision, actorID).Scan(&conflictingID)
+	if err == nil {
+		return &ReviewIndependenceConflict{ReviewActorID: actorID, SubjectType: "claim", SubjectID: conflictingID, ActorID: actorID}, nil
+	}
+	if err != sql.ErrNoRows {
+		return nil, fmt.Errorf("load mutating Claim history: %w", err)
+	}
+	err = conn.QueryRow(`SELECT r.id FROM runs r JOIN claims c ON c.id=r.claim_id WHERE r.issue_id=? AND r.envelope_id=? AND r.envelope_revision=? AND c.mode='mutation' AND r.actor_id=? ORDER BY r.started_at,r.id LIMIT 1`, issueID, envelopeID, revision, actorID).Scan(&conflictingID)
+	if err == nil {
+		return &ReviewIndependenceConflict{ReviewActorID: actorID, SubjectType: "run", SubjectID: conflictingID, ActorID: actorID}, nil
+	}
+	if err != sql.ErrNoRows {
+		return nil, fmt.Errorf("load mutating Run history: %w", err)
+	}
+	return nil, nil
+}
+
+func unresolvedBlockingFindingIDs(conn *sql.DB, issueID, envelopeID string, revision int) ([]string, error) {
+	rows, err := conn.Query(`SELECT f.id FROM review_findings f JOIN review_records r ON r.id=f.review_id WHERE r.issue_id=? AND r.envelope_id=? AND r.envelope_revision=? AND f.blocking=1 AND NOT EXISTS (SELECT 1 FROM finding_dispositions d WHERE d.finding_id=f.id AND d.action IN ('resolved','inapplicable')) ORDER BY f.id`, issueID, envelopeID, revision)
+	if err != nil {
+		return nil, fmt.Errorf("load unresolved blocking Findings: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	ids := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
 func evidenceFreshness(target, current Repository) string {
 	if sameRepository(target, current) {
 		return "fresh"
@@ -442,8 +508,9 @@ func sortEvaluationReasons(reasons []EvaluationReason) []EvaluationReason {
 	precedence := map[string]int{
 		"authority-unavailable": 1, "envelope-inactive": 2, "claim-missing": 3, "claim-expired": 4,
 		"run-inactive": 5, "issue-revision-conflict": 6, "workflow-transition-invalid": 7,
-		"obligation-evidence-absent": 8, "receipt-unsuccessful": 9, "evidence-invalid": 10,
-		"evidence-stale": 11, "artifact-unavailable": 12, "issue-not-terminal-success": 13,
+		"obligation-evidence-absent": 8, "human-outcome-absent": 9, "finding-unresolved": 10,
+		"review-not-independent": 11, "outcome-superseded": 12, "receipt-unsuccessful": 13,
+		"evidence-invalid": 14, "evidence-stale": 15, "artifact-unavailable": 16, "issue-not-terminal-success": 17,
 		"executor-liveness-unknown": 8, "recovery-state-conflict": 8, "budget-exhausted": 8,
 		"budget-data-unavailable": 8, "activation-incomplete": 8, "capability-unavailable": 8, "operator-stop": 8,
 	}

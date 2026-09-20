@@ -11,6 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
@@ -198,6 +199,10 @@ func writeClaimSuccess(cmd *cobra.Command, operation string, result claims.Mutat
 }
 
 func renderClaimError(cmd *cobra.Command, operation string, cause error) error {
+	var stopped *workflow.StopBlockedError
+	if errors.As(cause, &stopped) {
+		return renderStopError(cmd, operation, cause)
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
