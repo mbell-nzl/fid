@@ -59,6 +59,7 @@
 - Integration helper first attempt: `go test -tags integration -race -timeout 30m ./cmd/fid/integration/... -run '^TestP23ReviewRecordRealProcessJourney$'` - FAIL - `FAIL` (terminated `exit_code: 1`); the new Envelope grant fixture was unsorted.
 - Integration helper focused evidence, attributed to `/root/task4_process_journey`: the byte-identical command above - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 4.509s` (terminated `exit_code: 0`).
 - Integration helper shared-fixture evidence, attributed to `/root/task4_process_journey`: `go test -tags integration -race -timeout 30m ./cmd/fid/integration/... -run '^TestP22FinalActivatedActionSetAcceptsProfilesAndGrants$'` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 3.078s` (terminated `exit_code: 0`).
+- First report control: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-4-done.md project-docs/docs/phases/phase-23/tasks/task-4.md` - FAIL - `FAIL report-lint found 2 failure(s)` (terminated `exit_code: 2`); two gate rows appended budget prose after the termination marker.
 
 ## Exact quality-gate results
 
@@ -76,6 +77,7 @@
 - The first typed repository probe failed because the adapter passed `review.Repository` structs to the strict error encoder; the repair emits contract-shaped maps. No contract or gate changed.
 - The earlier report described same-Actor resolution as an "intentional self-resolution rejection." That claim was wrong: DEC-225 prohibits self-resolution by Review identity, while permitting a later Review by the same independent Actor. The regression reproduced the failure, `resolveFindingEffects` now compares the creating and resolving Review IDs, and both in-process and built-binary journeys pass.
 - The first real-process journey attempt failed because its second Envelope grant was not sorted by Actor. Sorting the fixture preserved the accepted request and the byte-identical focused command then passed. No product behavior or protected definition changed.
+- The first report-lint attempt failed because two PASS rows placed budget prose after the required termination marker. The report now records those budgets on separate bullets; the identical control later passed. No command or evidence semantics changed.
 - DEC-239 amended only VAL-015's evidence route. The isolated Run-holder history fixture is not claimed to be reachable through `run.start`, valid canonical journal replay, or import.
 
 ## Concerns, technical debt, or notes for the Tech Lead
