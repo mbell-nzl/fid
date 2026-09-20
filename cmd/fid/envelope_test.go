@@ -463,7 +463,7 @@ func gateDefinitionsForTest(modifyDefinition func(map[string]any)) []any {
 func authorityCapabilities() []string {
 	return []string{
 		"artifact.verify", "claim.acquire", "claim.expire", "claim.release", "claim.renew", "envelope.activate", "envelope.complete",
-		"envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.close", "run.observe", "run.start",
+		"envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "review.record", "run.close", "run.observe", "run.start",
 	}
 }
 

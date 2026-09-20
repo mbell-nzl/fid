@@ -85,6 +85,10 @@ const (
 	CodeArchiveInvalid              Code = "archive-invalid"
 	CodeImportTargetConflict        Code = "import-target-conflict"
 	CodeReviewNotIndependent        Code = "review-not-independent"
+	CodeReviewVerdictInvalid        Code = "review-verdict-invalid"
+	CodeRepositoryMismatch          Code = "repository-mismatch"
+	CodeReviewNotFound              Code = "review-not-found"
+	CodeIdempotencyConflict         Code = "idempotency-conflict"
 )
 
 type SubjectType string
@@ -109,6 +113,7 @@ const (
 	SubjectExport           SubjectType = "export"
 	SubjectStop             SubjectType = "stop"
 	SubjectAttention        SubjectType = "attention"
+	SubjectReview           SubjectType = "review"
 )
 
 type Subject struct {
@@ -188,6 +193,13 @@ func objectsField(name string, fields ...detailField) detailField {
 	return detailField{name: name, typeOf: detailObjects, fields: fields}
 }
 
+func repositoryFields() []detailField {
+	return []detailField{
+		nullableStringField("base_oid"), stringField("capture_source"), booleanField("dirty"), nullableStringField("dirty_digest"),
+		stringField("head_oid"), stringField("project_id"), stringField("tree_oid"), stringField("worktree_id"),
+	}
+}
+
 func definition(category Category, retryable bool, subjects []SubjectType, details ...detailField) reasonDefinition {
 	fields := make([]string, len(details))
 	for index, detail := range details {
@@ -202,6 +214,13 @@ func definition(category Category, retryable bool, subjects []SubjectType, detai
 var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeReviewNotIndependent: definition(CategoryPrecondition, false, nil,
 		stringField("review_actor_id"), objectField("conflicting_subject", stringField("type"), stringField("id")), stringField("conflicting_actor_id")),
+	CodeReviewVerdictInvalid: definition(CategoryInvalidInput, false, nil,
+		stringField("verdict"), stringField("reason")),
+	CodeRepositoryMismatch: definition(CategoryConflict, false, nil,
+		objectField("expected", repositoryFields()...), objectField("observed", repositoryFields()...)),
+	CodeReviewNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectReview}, stringField("id")),
+	CodeIdempotencyConflict: definition(CategoryConflict, false, nil,
+		stringField("operation_scope"), stringField("idempotency_key"), stringField("stored_request_digest"), stringField("supplied_request_digest")),
 	CodeInvalidArgument:     definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeUnsupportedKind:     definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeUnsupportedRelation: definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),

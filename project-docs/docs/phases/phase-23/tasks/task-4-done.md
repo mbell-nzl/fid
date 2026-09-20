@@ -4,9 +4,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: The Review independence admission boundary is implemented, but immutable Review Event creation and its strict journal projection path remain incomplete.
-- Recovery attempts: 3
-- Next action: Continue Task 4 from the green strict-journal tracer, implement the atomic `review.record` domain mutation and CLI result/read surface, then complete its full validation matrix and required gates.
+- Condition: The atomic pass-Review Event and `review.get` readback now work through the real CLI, but coverage/source validation, non-empty Finding projection, prior-Finding resolution, and the remaining typed VAL-014 through VAL-019 matrix are incomplete.
+- Recovery attempts: 4
+- Next action: Continue from this green record/get checkpoint; write focused red tests for repository mismatch, valid/invalid Finding verdict combinations, cardinality, one-Review-per-Run, replay/conflict, and multi-Finding resolution before completing the implementation.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -14,7 +14,8 @@
 - Added the mandated vertical red tracer for `review.record` and retained its original absent-command failure evidence.
 - Added `fid review record` and `internal/review`'s write-locked independence admission. It derives conflicts solely from durable mutating Claim and Run history for the reviewed Run's Issue and Envelope revision, and returns the exact conflicting subject and Actor.
 - Removed only the `review.recorded` availability fence and registered Task 4's closed `review.record` capability in both authoritative capability allowlists.
-- Began the required strict journal convergence: its closed Review value shapes, JSON columns, typed result grammar, result re-derivation, projected Finding/Review fills, and Task 4-only repeated Finding/disposition cardinality are registered and tested. The actual atomic Review mutation has not yet emitted an Event through this path.
+- Completed the first atomic `review.record` slice: it locks, refreshes the projection, validates the active review Run/Claim and authority grant, re-observes repository identity, appends a `review.recorded` Event with idempotency, projects `review_records`, and returns the canonical typed result.
+- Added `fid review get <review-id>` and a real CLI record/get tracer. Converged the retained executable-leaf and Attention surface inventories for the accepted new Review leaves.
 
 ## Files created or modified
 
@@ -33,13 +34,13 @@
 
 ## Validation Contract Coverage
 
-- VAL-014: UNVERIFIED - Review recording and immutable bound-field readback are not implemented; `internal/journal/current_event_validation_test.go:284` now proves the strict journal has the distinct Review/Coverage/Finding/JudgmentSubject registrations required when creation is added.
+- VAL-014: PARTIAL - `TestReviewRecordCreatesImmutableReview` records and reads a pass Review through `fid`; full bound-field and source/coverage parity evidence remains required.
 - VAL-015: UNVERIFIED - `cmd/fid/review_test.go:12` now proves the mutating-Claim-holder rejection at the real CLI boundary. The required Run-holder, independent-Actor, and rework-cycle cases remain to be implemented and tested.
 - VAL-003: UNVERIFIED - The `review.recorded` fence is removed, while the retained Task 1 fence-parity assertion has not yet been converged to a still-fenced Event or run in this recovery.
-- VAL-016: UNVERIFIED - repository re-observation is not implemented.
-- VAL-017: UNVERIFIED - verdict/Finding validation is not implemented.
-- VAL-018: UNVERIFIED - one-Review-per-Run enforcement is not implemented.
-- VAL-019: UNVERIFIED - Review idempotency is not implemented.
+- VAL-016: PARTIAL - implementation re-observes and compares Repository, but no typed no-Event mismatch test exists.
+- VAL-017: PARTIAL - implementation checks verdict/Finding agreement; the required valid and invalid CLI matrix is absent.
+- VAL-018: PARTIAL - implementation rejects an existing `review_records.run_id`; no typed test exists.
+- VAL-019: PARTIAL - implementation uses `journal.CommitIdempotent`; replay/conflict tests are absent.
 
 ## Tests run
 
@@ -49,15 +50,18 @@
 - `go test -race -timeout 30m ./internal/journal/ -run '^TestCurrentReviewRecordedRegistersItsDistinctJudgmentValues$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); expected red state: `Review` was absent from `currentValueShapes` after the Event fence was removed.
 - `go test -race -timeout 30m ./internal/journal/ -run '^TestCurrentReviewRecordedRegistersItsDistinctJudgmentValues$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/journal 1.016s` (terminated `exit_code: 0`)
 - `go test -race -timeout 30m ./internal/journal/ -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/journal 159.995s` (terminated `exit_code: 0`)
+- `go test -race -timeout 30m ./internal/review/ -run '^TestValidateVerdictFindingAgreement$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); expected red state: Task 4 Review/Finding types and verdict validation were absent.
+- `go test -race -timeout 30m ./internal/review/ -run '^TestValidateVerdictFindingAgreement$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/review 1.017s` (terminated `exit_code: 0`)
+- `go test -race -timeout 30m ./cmd/fid/ -run '^TestReviewRecordCreatesImmutableReview$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 9.350s` (terminated `exit_code: 0`); records and reads one immutable pass Review via the CLI.
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - BLOCKED - `not run` (no observed termination); the atomic Review mutation and its typed validation matrix are incomplete.
-- `golangci-lint run ./...` - BLOCKED - `not run` (no observed termination); the atomic Review mutation and its typed validation matrix are incomplete.
-- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - BLOCKED - `not run` (no observed termination); the atomic Review mutation and its typed validation matrix are incomplete.
-- `go tool cover -func=coverage.out` - BLOCKED - `not run` (no observed termination); no fresh full-suite `coverage.out` exists for this incomplete implementation.
-- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - BLOCKED - `not run` (no observed termination); the atomic Review mutation and its real-process coverage are incomplete.
-- Observed wall times: unavailable; no required full gate was run in this session. The recovery must record `cmd/fid`, `internal/workflow`, and `cmd/fid/integration` wall times against the 600 s / 600 s / 900 s budgets.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - FAIL then PASS - first token `FAIL` (terminated `exit_code: 1`), after in-scope inventory convergence `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 64.1% of statements` (terminated `exit_code: 0`).
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.0%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 694.141s` (terminated `exit_code: 0`)
+- Observed wall times: `cmd/fid` 542.160s failed attempt and 473.760s passing rerun; `internal/workflow` 230.960s first attempt, cached on rerun; `cmd/fid/integration` 694.141s. All applicable 600s/900s budgets passed.
 
 ## Deviations from spec
 
@@ -77,4 +81,4 @@
 
 ## Commit subject
 
-- `feat(review): register immutable review event parity`
+- Pending commit
