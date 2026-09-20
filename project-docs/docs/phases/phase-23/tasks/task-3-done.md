@@ -65,8 +65,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `35944c72aba0f2c0b918bdb494b9fa9487d27142`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): add review claim mode`
