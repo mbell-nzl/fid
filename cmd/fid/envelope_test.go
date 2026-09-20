@@ -221,6 +221,115 @@ func TestEnvelopeCreateCommandRejectsEveryTypedAuthoringNegativeWithoutPersisten
 	}
 }
 
+func TestEnvelopeCreateCommandRejectsEveryForbiddenTypedFieldCombinationWithoutPersistenceChange(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		mutate func(map[string]any)
+	}{
+		{name: "gate missing registration", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "gate-evidence")["registration"] = nil
+		}},
+		{name: "gate has review profile", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "gate-evidence")["review_profile"] = "profile"
+		}},
+		{name: "gate has outcome class", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "gate-evidence")["outcome_class"] = "outcome"
+		}},
+		{name: "gate evidence type mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "gate-evidence")["accepted_evidence_types"] = []string{"review"}
+		}},
+		{name: "gate trust source mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "gate-evidence")["accepted_trust_sources"] = []string{"activated-actor"}
+		}},
+		{name: "gate freshness mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "gate-evidence")["freshness_target"] = "none"
+		}},
+		{name: "gate artifact policy mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "gate-evidence")["artifact_policy"] = "metadata-sufficient"
+		}},
+		{name: "gate independence mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "gate-evidence")["independence"] = "distinct-actor"
+		}},
+		{name: "review has registration", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "review")["registration"] = map[string]any{"id": "REG-test", "version": 1}
+		}},
+		{name: "review missing profile", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "review")["review_profile"] = nil
+		}},
+		{name: "review has outcome class", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "review")["outcome_class"] = "outcome"
+		}},
+		{name: "review evidence type mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "review")["accepted_evidence_types"] = []string{"receipt"}
+		}},
+		{name: "review trust source mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "review")["accepted_trust_sources"] = []string{"fid-executed"}
+		}},
+		{name: "review freshness mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "review")["freshness_target"] = "none"
+		}},
+		{name: "review artifact policy mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "review")["artifact_policy"] = "required-available"
+		}},
+		{name: "review independence mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "review")["independence"] = "human"
+		}},
+		{name: "human has registration", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "human-outcome")["registration"] = map[string]any{"id": "REG-test", "version": 1}
+		}},
+		{name: "human has review profile", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "human-outcome")["review_profile"] = "profile"
+		}},
+		{name: "human missing outcome class", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "human-outcome")["outcome_class"] = nil
+		}},
+		{name: "human evidence type mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "human-outcome")["accepted_evidence_types"] = []string{"review"}
+		}},
+		{name: "human trust source mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "human-outcome")["accepted_trust_sources"] = []string{"activated-actor"}
+		}},
+		{name: "human freshness mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "human-outcome")["freshness_target"] = "repository-tree"
+		}},
+		{name: "human artifact policy mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "human-outcome")["artifact_policy"] = "required-available"
+		}},
+		{name: "human independence mismatch", mutate: func(input map[string]any) {
+			commandObligationByType(t, input, "human-outcome")["independence"] = "distinct-actor"
+		}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+			input := typedEnvelopeCreateInput(t, workspace, issueID, registration)
+			test.mutate(input)
+			inputPath := filepath.Join(workspace, "envelope-forbidden-field.json")
+			writeActivationInput(t, inputPath, input)
+			before := snapshotWorkspacePersistence(t, workspace)
+
+			result := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", "envelope-forbidden-field-"+strings.ReplaceAll(test.name, " ", "-"))
+			if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"invalid-argument"`) {
+				t.Fatalf("forbidden typed field command = %#v, want invalid-argument with no stdout", result)
+			}
+			if after := snapshotWorkspacePersistence(t, workspace); !before.equal(after) {
+				t.Fatalf("forbidden typed field %s changed journal or projection", test.name)
+			}
+		})
+	}
+}
+
+func commandObligationByType(t *testing.T, input map[string]any, wantType string) map[string]any {
+	t.Helper()
+	for _, value := range input["obligations"].([]any) {
+		obligation := value.(map[string]any)
+		if obligation["type"] == wantType {
+			return obligation
+		}
+	}
+	t.Fatalf("typed input has no %q Obligation", wantType)
+	return nil
+}
+
 func TestDecodeClosedEnvelopeInputRejectsAuthoredBudgetState(t *testing.T) {
 	t.Parallel()
 	for _, state := range []string{`""`, `null`} {

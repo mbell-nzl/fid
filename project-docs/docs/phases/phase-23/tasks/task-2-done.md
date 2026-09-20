@@ -14,6 +14,7 @@
 - Envelope authoring now accepts 1..16 typed gate-evidence, review, and human-outcome Obligations and 0..16 protected Decisions.
 - Evaluation returns ID-ordered results with distinct validity, freshness, and Artifact availability dimensions.
 - The CLI and portable integration model serialize accepted null registrations and typed authoring rows.
+- This review-2 extension is based on prior repair commit `d71618aae4d8f3f56fee98468d2400a896a7a760`; its earlier matrix evidence and failed attempts remain recorded below.
 
 ## Files created or modified
 
@@ -27,7 +28,7 @@
 
 ## Validation Contract Coverage
 
-- VAL-006: `internal/workflow/envelope_test.go:TestEnvelopeAuthoringObligationCardinalityAndTypeFieldMatrix` proves 0/1/16/17 Obligation boundaries; `TestEnvelopeAuthoringAcceptedAndForbiddenTypedFieldCombinations` covers every accepted type and each forbidden registration, discriminator, evidence-type, trust-source, freshness, Artifact-policy, and independence combination; `TestEnvelopeAuthoringProtectedDecisionMatrix` and `cmd/fid/envelope_test.go:TestEnvelopeCreateCommandCoversObligationAndDecisionBoundaries` prove 0/16/17 protected-Decision boundaries.
+- VAL-006: `internal/workflow/envelope_test.go:TestEnvelopeAuthoringObligationCardinalityAndTypeFieldMatrix` proves 0/1/16/17 Obligation boundaries; `TestEnvelopeAuthoringAcceptedAndForbiddenTypedFieldCombinations` covers every accepted type and each forbidden registration, discriminator, evidence-type, trust-source, freshness, Artifact-policy, and independence combination; `TestEnvelopeAuthoringProtectedDecisionMatrix` and `cmd/fid/envelope_test.go:TestEnvelopeCreateCommandCoversObligationAndDecisionBoundaries` prove 0/16/17 protected-Decision boundaries; `TestEnvelopeCreateCommandRejectsEveryForbiddenTypedFieldCombinationWithoutPersistenceChange` sends all 24 forbidden typed-field cases through `envelope create`.
 - VAL-007: `internal/workflow/envelope_test.go:TestEnvelopeAuthoringProtectedDecisionMatrix` covers duplicate class, duplicate ordinal, and unguarded action; `cmd/fid/envelope_test.go:TestEnvelopeCreateCommandRejectsEveryTypedAuthoringNegativeWithoutPersistenceChange` covers all five request-level negatives and every listed protected-Decision rejection, asserting unchanged journal and projection bytes through `snapshotWorkspacePersistence`.
 - VAL-008: `internal/workflow/envelope_test.go:TestEvaluateEnvelopeObligationsReturnsIndependentOrderedResults` proves Obligation-ID order, distinct validity/freshness/Artifact dimensions, and all unsatisfied reasons; `TestEvaluateEnvelopeObligationsIncludesQualifyingValidFreshAvailableState` proves the qualifying state.
 - VAL-009: `internal/workflow/envelope_test.go:TestEnvelopeActivationEvaluationIncludesEveryObligation` proves activation evaluates every typed Obligation; `cmd/fid/envelope_test.go:TestEnvelopeCreateAcceptsTypedObligationsAndProtectedDecisions` proves the command surface preserves all three authored rows.
@@ -47,6 +48,7 @@
 - QA repair command-surface green: the same byte-identical focused command - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 7.110s` (terminated `exit_code: 0`).
 - QA repair named matrix: `go test -race -timeout 30m ./internal/workflow/ -run '^(TestEnvelopeCreateAcceptsTypedObligationSet|TestEnvelopeCreateRejectsInvalidTypedObligationAndProtectedDecisionAuthoring|TestEnvelopeCreatePersistsEveryTypedObligationAndProtectedDecision|TestEvaluateEnvelopeObligationsReturnsIndependentOrderedResults|TestEnvelopeActivationEvaluationIncludesEveryObligation|TestEnvelopeAuthoringObligationCardinalityAndTypeFieldMatrix|TestEnvelopeAuthoringAcceptedAndForbiddenTypedFieldCombinations|TestEnvelopeAuthoringProtectedDecisionMatrix|TestEvaluateEnvelopeObligationsIncludesQualifyingValidFreshAvailableState)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 3.520s` (terminated `exit_code: 0`).
 - QA repair named command surface: `go test -race -timeout 30m ./cmd/fid/ -run '^(TestEnvelopeCreateAcceptsTypedObligationsAndProtectedDecisions|TestEnvelopeCreateCommandCoversObligationAndDecisionBoundaries|TestEnvelopeCreateCommandRejectsEveryTypedAuthoringNegativeWithoutPersistenceChange)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 7.247s` (terminated `exit_code: 0`).
+- QA review-2 remaining repair command surface: `go test -race -timeout 30m ./cmd/fid/ -run '^(TestEnvelopeCreateAcceptsTypedObligationsAndProtectedDecisions|TestEnvelopeCreateCommandCoversObligationAndDecisionBoundaries|TestEnvelopeCreateCommandRejectsEveryTypedAuthoringNegativeWithoutPersistenceChange|TestEnvelopeCreateCommandRejectsEveryForbiddenTypedFieldCombinationWithoutPersistenceChange)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 7.687s` (terminated `exit_code: 0`). The new case table covers all 24 forbidden typed-field combinations and asserts typed rejection, empty stdout, and byte-identical persistence.
 
 ## Exact quality-gate results
 
@@ -64,6 +66,13 @@
 - QA repair attempt 1 exact rerun: `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 681.075s` (terminated `exit_code: 0`)
 - QA repair attempt 1 exact rerun: `go test -race -timeout 30m -cover ./internal/workflow/` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 198.163s coverage: 64.1% of statements` (terminated `exit_code: 0`)
 - QA repair attempt 1 wall times: `cmd/fid` `451.009s`; `cmd/fid/integration` `681.075s`; `internal/workflow` `198.163s` for the final dedicated workflow run (`203.449s` in the full race/coverage gate).
+- QA review-2 remaining repair exact rerun: `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- QA review-2 remaining repair exact rerun: `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- QA review-2 remaining repair exact rerun: `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 64.1% of statements` (terminated `exit_code: 0`)
+- QA review-2 remaining repair exact rerun: `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.9%` (terminated `exit_code: 0`)
+- QA review-2 remaining repair exact rerun: `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 666.085s` (terminated `exit_code: 0`)
+- QA review-2 remaining repair exact rerun: `go test -race -timeout 30m -cover ./internal/workflow/` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 64.1% of statements` (terminated `exit_code: 0`)
+- QA review-2 wall times: `cmd/fid` `448.937s`; `cmd/fid/integration` `666.085s`; `internal/workflow` retained noncached package wall time `198.163s` from the prior repair gate, with the current exact dedicated rerun cached and completing in `4.131s` process wall time.
 
 ## Deviations from spec
 
@@ -81,8 +90,8 @@
 
 ## Commit hash
 
-- `d71618aae4d8f3f56fee98468d2400a896a7a760`
+- Pending commit
 
 ## Commit subject
 
-- `test(workflow): complete envelope QA evidence matrix`
+- Pending commit
