@@ -1696,6 +1696,31 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 - **Review:** Window 4-6 QA explicitly checks the omission, authorized baseline
   source, actual receipts, and post-change results. Cleanup is not gate evidence.
 
+### DEC-247 - Task 6 converges retained strict-journal budget projections
+
+- **Authority:** Human-delegated super-agent authority; root assigns the exact
+  missing implementation paths for accepted Task 6 behavior.
+- **Observed mismatch:** A valid review-cycle Envelope reaches `run.start` but
+  the strict projection expects an unknown budget because its fid-owned unit
+  list omits `review-cycles`. The same omission rejects a fid-sourced sample;
+  Review samples are also bound to the aggregate Review ID instead of the
+  inserted Review's Run. The Review result projection still contains Task 4's
+  null Budget and empty Stop/Attention placeholders.
+- **Scope:** Authorize `internal/journal/current_event_result_budgets.go`,
+  `internal/journal/current_event_budget_values.go`,
+  `internal/journal/current_event_references.go`, and
+  `internal/journal/current_event_result_projection.go`, plus matching tests,
+  for known-zero/source ownership, exact sample Run binding, and accepted
+  result reconstruction respectively.
+- **Preserved boundary:** No Event catalog or typed-result grammar changes.
+  DEC-234's absent Review-specific budget-fact validation switch remains
+  unchanged; producer charge evidence must not be represented as a new
+  journal-layer arithmetic guarantee. Existing unit semantics remain intact.
+- **Verification:** Preserve the real-process `run.start` failure, capture
+  focused journal red/green checks, and rerun the same integration selection.
+  Task 6's unchanged full gates and VAL-027/029 remain mandatory. Record the
+  scope correction in its report; window 4-6 QA examines these strict paths.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,

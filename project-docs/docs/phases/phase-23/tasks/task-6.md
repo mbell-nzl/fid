@@ -88,13 +88,23 @@ DEC-243 cell accounting, with otherwise qualifying subjects and trust:
   existing full race/coverage gate and the named `./internal/workflow/` gate;
   no command change or unrelated Envelope redesign is authorized.
 - `internal/review/` - the verdict effects that charge and raise.
+- DEC-247 adds the strict-journal convergence needed by those accepted effects:
+  `internal/journal/current_event_result_budgets.go` includes `review-cycles`
+  among known-zero fid-owned units; `current_event_budget_values.go` recognizes
+  its `fid` sample source; `current_event_references.go` derives the sample Run
+  from the inserted Review's `run_id` rather than its Review aggregate ID; and
+  `current_event_result_projection.go` reconstructs the actual Budget, Stops,
+  and Attention in the accepted Review result. Matching journal tests cover
+  these paths. Do not widen the Event catalog, typed-result grammar, or the
+  intentionally absent Review budget-fact switch under DEC-234.
 - **No `current_event_catalog.go` edit in this task** (I-28, DEC-229): task 1
   registered `review.recorded`'s complete `schema.md` 6.2 rule including every
   optional row this task's charging and raising paths use. If a needed optional
   row is missing, that is a task 1 defect - stop and escalate rather than
   editing a map task 1 owns. This task also registers no typed-result grammar:
   task 4 unfenced `review.recorded` and owns all three of its result registries
-  (DEC-231).
+  (DEC-231). DEC-247 updates the existing projection implementation for this
+  task's actual budget effects; it introduces no new result grammar.
 - `internal/workflow/stop.go` - the closed Stop registries (R-14). Add
   `review-rework-exhausted` to `stopCodes` and its exact `validStopDetails` key
   set from the `public-interface.md` section 2 StopDetails table. Add no
