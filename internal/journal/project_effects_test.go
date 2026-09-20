@@ -43,6 +43,28 @@ func TestProjectEventFenceRejectsEveryUnavailablePhase23EventWithoutProjectionCh
 	}
 }
 
+// TestReviewRecordedFenceConvergencePreservesEveryRemainingEvent retains
+// VAL-003's convergence boundary:
+// review.recorded must take the strict current-Event path while every remaining
+// unavailable Phase 23 Event stays covered by the fence loop above.
+func TestReviewRecordedFenceConvergencePreservesEveryRemainingEvent(t *testing.T) {
+	if unavailableJudgmentEvents["review.recorded"] {
+		t.Fatal("review.recorded remains fenced after Task 4 implemented its strict event path")
+	}
+	want := []string{
+		"concern.disposed", "concern.recorded", "decision.referenced", "deviation.recorded",
+		"finding.addressed", "human-outcome.recorded", "requirement.linked", "requirement.referenced",
+	}
+	if len(unavailableJudgmentEvents) != len(want) {
+		t.Fatalf("remaining unavailable Event count = %d, want %d", len(unavailableJudgmentEvents), len(want))
+	}
+	for _, eventType := range want {
+		if !unavailableJudgmentEvents[eventType] {
+			t.Errorf("remaining Event %q lost its progressive fence", eventType)
+		}
+	}
+}
+
 func fencedProjectionState(t *testing.T, conn interface{ QueryRow(string, ...any) *sql.Row }) string {
 	t.Helper()
 	var labelCount, metaCount int

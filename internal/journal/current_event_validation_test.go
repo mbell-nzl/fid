@@ -295,6 +295,20 @@ func TestCurrentReviewRecordedRegistersItsDistinctJudgmentValues(t *testing.T) {
 	}
 }
 
+func TestReviewRecordedAloneAdmitsRepeatedFindingDispositionEffects(t *testing.T) {
+	dispositions := []Effect{
+		{Op: "insert", Table: "finding_dispositions", PK: map[string]any{"id": "FDP-one"}},
+		{Op: "insert", Table: "finding_dispositions", PK: map[string]any{"id": "FDP-two"}},
+	}
+	if err := validateCurrentCardinality(Event{EventType: "review.recorded", Effects: dispositions}); err != nil {
+		t.Fatalf("review.recorded repeated Finding dispositions: %v", err)
+	}
+	err := validateCurrentCardinality(Event{EventType: "finding.addressed", Effects: dispositions})
+	if err == nil || err.Error() != "current Event finding.addressed: too many finding_dispositions/insert Effects" {
+		t.Fatalf("finding.addressed repeated Finding dispositions error = %v, want cardinality rejection", err)
+	}
+}
+
 func TestCurrentRecoveryAdmitsTerminalPredecessorAndOptionalClaimDisposal(t *testing.T) {
 	for _, terminal := range []bool{false, true} {
 		for _, expired := range []bool{false, true} {

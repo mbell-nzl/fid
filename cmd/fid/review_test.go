@@ -3,9 +3,12 @@ package main
 import (
 	"encoding/json"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
+
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 // TestReviewRecordRejectsNonIndependentActor is the Task 4 vertical tracer:
@@ -71,6 +74,29 @@ func TestReviewRecordCreatesImmutableReview(t *testing.T) {
 		map[string]any{"id": "FND-review-two", "subject": map[string]any{"type": "issue", "id": issueID}, "scope": map[string]any{"paths": []any{}}, "severity": "nit", "summary": "second non-blocking finding", "blocking": false},
 	}
 	recordInput := map[string]any{"run_id": run["id"], "expected_run_version": run["version"], "profile": "review-default", "repository": repository, "coverage": map[string]any{"items": []any{map[string]any{"source": source, "assessed": true}}, "exclusions": []any{}}, "verdict": "pass", "findings": findings, "resolves_finding_ids": []any{}, "evidence_refs": []any{}, "receipt_ids": []any{}}
+	invalidVerdicts := []struct {
+		name     string
+		verdict  string
+		findings []any
+	}{
+		{name: "pass-blocking", verdict: "pass", findings: []any{reviewFinding(issueID, "FND-pass-blocking", "major", true)}},
+		{name: "changes-required-without-blocker", verdict: "changes-required", findings: []any{}},
+		{name: "blocked-without-finding-or-exclusion", verdict: "blocked", findings: []any{}},
+	}
+	for _, test := range invalidVerdicts {
+		invalid := cloneJSONMap(t, recordInput)
+		invalid["verdict"] = test.verdict
+		invalid["findings"] = test.findings
+		writeActivationInput(t, recordPath, invalid)
+		before := snapshotWorkspacePersistence(t, workspace)
+		result := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "record", "--actor", "actor-builder", "--input", recordPath, "--idempotency-key", "review-invalid-"+test.name)
+		if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"review-verdict-invalid"`) {
+			t.Fatalf("invalid %s Review = %#v, want typed review-verdict-invalid rejection", test.name, result)
+		}
+		if after := snapshotWorkspacePersistence(t, workspace); !after.equal(before) {
+			t.Fatalf("invalid %s Review appended an Event or changed the projection", test.name)
+		}
+	}
 	writeActivationInput(t, recordPath, recordInput)
 	staleInput := cloneJSONMap(t, recordInput)
 	staleRepository := cloneJSONMap(t, repository)
@@ -97,6 +123,13 @@ func TestReviewRecordCreatesImmutableReview(t *testing.T) {
 	}
 	if !strings.Contains(got.stdout, `"FND-review-one"`) || !strings.Contains(got.stdout, `"FND-review-two"`) {
 		t.Fatalf("get recorded Review = %#v, want both immutable Findings", got)
+	}
+	if rebuilt := executeCommandForTest(workspace, "--project", workspace, "--json", "rebuild"); rebuilt.err != nil || rebuilt.stderr != "" {
+		t.Fatalf("rebuild Review projection = %#v", rebuilt)
+	}
+	replayedProjection := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "get", recorded["id"].(string))
+	if replayedProjection.err != nil || replayedProjection.stderr != "" || replayedProjection.stdout != got.stdout {
+		t.Fatalf("review.get after rebuild = %#v, want byte-identical live projection %#v", replayedProjection, got)
 	}
 	replayed := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "record", "--actor", "actor-builder", "--input", recordPath, "--idempotency-key", "review-record")
 	if replayed.err != nil || replayed.stderr != "" || !strings.Contains(replayed.stdout, `"replayed":true`) {
@@ -157,7 +190,7 @@ func TestReviewRecordIndependentReworkAndReceiptBinding(t *testing.T) {
 		t.Fatal("different-Run Receipt rejection appended an Event or changed the projection")
 	}
 	firstPath := filepath.Join(workspace, "review-first.json")
-	firstInput := reviewRecordInput(issueID, reviewRun, repository, source, "changes-required", []any{reviewFinding(issueID, "FND-prior", "major", true)}, []any{}, []any{})
+	firstInput := reviewRecordInput(issueID, reviewRun, repository, source, "changes-required", []any{reviewFinding(issueID, "FND-prior", "major", true), reviewFinding(issueID, "FND-prior-two", "major", true)}, []any{}, []any{})
 	writeActivationInput(t, firstPath, firstInput)
 	first := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "record", "--actor", "actor-reviewer-one", "--input", firstPath, "--idempotency-key", "review-first")
 	if first.err != nil || first.stderr != "" {
@@ -172,19 +205,85 @@ func TestReviewRecordIndependentReworkAndReceiptBinding(t *testing.T) {
 	closeReviewRun(t, workspace, reworkRun, repository, "actor-builder", "review-rework")
 	releaseReviewClaim(t, workspace, reworkClaim, "actor-builder", "review-rework")
 
-	secondClaim := acquireReviewClaim(t, workspace, issueID, envelopeID, "actor-reviewer-two", "review", "review-second")
-	secondRun := startReviewRun(t, workspace, issueID, envelopeID, secondClaim, "actor-reviewer-two", "review-second")
+	secondClaim := acquireReviewClaim(t, workspace, issueID, envelopeID, "actor-reviewer-one", "review", "review-second")
+	secondRun := startReviewRun(t, workspace, issueID, envelopeID, secondClaim, "actor-reviewer-one", "review-second")
 	secondPath := filepath.Join(workspace, "review-second.json")
-	writeActivationInput(t, secondPath, reviewRecordInput(issueID, secondRun, repository, source, "pass", []any{}, []any{"FND-prior"}, []any{}))
-	second := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "record", "--actor", "actor-reviewer-two", "--input", secondPath, "--idempotency-key", "review-second")
-	if second.err != nil || second.stderr != "" || !strings.Contains(second.stdout, `"resolved_finding_ids":["FND-prior"]`) {
-		t.Fatalf("independent Reviewer after rework resolves prior Finding = %#v", second)
+	writeActivationInput(t, secondPath, reviewRecordInput(issueID, secondRun, repository, source, "pass", []any{}, []any{"FND-prior", "FND-prior-two"}, []any{}))
+	second := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "record", "--actor", "actor-reviewer-one", "--input", secondPath, "--idempotency-key", "review-second")
+	if second.err != nil || second.stderr != "" {
+		t.Fatalf("same independent Reviewer after rework resolves prior Findings = %#v", second)
 	}
 	secondReview := decodeCommandJSONStructure(t, second.stdout).(map[string]any)["result"].(map[string]any)["review"].(map[string]any)
+	wantResolved := []any{"FND-prior", "FND-prior-two"}
+	if !reflect.DeepEqual(secondReview["resolved_finding_ids"], wantResolved) {
+		t.Fatalf("resolving Review result IDs = %#v, want %#v", secondReview["resolved_finding_ids"], wantResolved)
+	}
+	assertAtomicReviewResolutionEvent(t, workspace, secondReview["id"].(string), secondReview["event_id"].(string), wantResolved)
 	gotFirst := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "get", firstReview["id"].(string))
 	gotSecond := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "get", secondReview["id"].(string))
-	if gotFirst.err != nil || gotSecond.err != nil || !strings.Contains(gotFirst.stdout, `"state":"resolved"`) || !strings.Contains(gotSecond.stdout, `"resolved_finding_ids":["FND-prior"]`) {
-		t.Fatalf("review.get prior/resolving Reviews = first %#v second %#v, want resolved Finding projected through CLI", gotFirst, gotSecond)
+	if gotFirst.err != nil || gotSecond.err != nil {
+		t.Fatalf("review.get prior/resolving Reviews = first %#v second %#v, want both Findings atomically resolved through CLI", gotFirst, gotSecond)
+	}
+	assertResolvedReviewReadback(t, gotFirst.stdout, gotSecond.stdout, secondReview["id"].(string), wantResolved)
+	if rebuilt := executeCommandForTest(workspace, "--project", workspace, "--json", "rebuild"); rebuilt.err != nil || rebuilt.stderr != "" {
+		t.Fatalf("rebuild resolved Review projection = %#v", rebuilt)
+	}
+	rebuiltFirst := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "get", firstReview["id"].(string))
+	rebuiltSecond := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "get", secondReview["id"].(string))
+	if rebuiltFirst.stdout != gotFirst.stdout || rebuiltSecond.stdout != gotSecond.stdout || rebuiltFirst.err != nil || rebuiltSecond.err != nil {
+		t.Fatalf("resolved Review readback after rebuild = first %#v second %#v, want byte-identical live projections", rebuiltFirst, rebuiltSecond)
+	}
+}
+
+func assertAtomicReviewResolutionEvent(t *testing.T, workspace, reviewID, eventID string, findingIDs []any) {
+	t.Helper()
+	event := mustReadLastJournalEvent(t, mustJournalPath(t, workspace))
+	if event.EventType != "review.recorded" || event.EventID != eventID {
+		t.Fatalf("resolving Event identity = %q/%q, want review.recorded/%q", event.EventType, event.EventID, eventID)
+	}
+	var dispositionEffects int
+	for _, effect := range event.Effects {
+		if effect.Op == "insert" && effect.Table == "finding_dispositions" {
+			dispositionEffects++
+			if effect.Values["qualifying_review_id"] != reviewID {
+				t.Fatalf("resolution Effect qualifying Review = %#v, want %q", effect.Values["qualifying_review_id"], reviewID)
+			}
+		}
+	}
+	if dispositionEffects != len(findingIDs) {
+		t.Fatalf("resolution disposition Effects = %d, want %d in one Event", dispositionEffects, len(findingIDs))
+	}
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open Review projection: %v", err)
+	}
+	defer func() { _ = conn.Close() }()
+	var projected int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM finding_dispositions WHERE qualifying_review_id=? AND action='resolved'`, reviewID).Scan(&projected); err != nil {
+		t.Fatalf("count projected Finding dispositions: %v", err)
+	}
+	if projected != len(findingIDs) {
+		t.Fatalf("projected Finding dispositions = %d, want %d", projected, len(findingIDs))
+	}
+}
+
+func assertResolvedReviewReadback(t *testing.T, firstJSON, secondJSON, resolvingReviewID string, wantResolved []any) {
+	t.Helper()
+	first := decodeCommandJSONStructure(t, firstJSON).(map[string]any)["result"].(map[string]any)["review"].(map[string]any)
+	second := decodeCommandJSONStructure(t, secondJSON).(map[string]any)["result"].(map[string]any)["review"].(map[string]any)
+	if !reflect.DeepEqual(second["resolved_finding_ids"], wantResolved) {
+		t.Fatalf("resolving Review readback IDs = %#v, want %#v", second["resolved_finding_ids"], wantResolved)
+	}
+	findings := first["findings"].([]any)
+	if len(findings) != len(wantResolved) {
+		t.Fatalf("prior Review Finding count = %d, want %d", len(findings), len(wantResolved))
+	}
+	for index, value := range findings {
+		finding := value.(map[string]any)
+		dispositions := finding["dispositions"].([]any)
+		if finding["id"] != wantResolved[index] || finding["state"] != "resolved" || len(dispositions) != 1 || dispositions[0].(map[string]any)["qualifying_review_id"] != resolvingReviewID {
+			t.Fatalf("resolved Finding %d = %#v, want one disposition from %q", index, finding, resolvingReviewID)
+		}
 	}
 }
 

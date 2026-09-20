@@ -273,10 +273,10 @@ func resolveFindingEffects(conn *sql.DB, findingIDs []string, binding recordBind
 			return nil, fmt.Errorf("review resolution Finding %q is duplicated", findingID)
 		}
 		seen[findingID] = struct{}{}
-		var issueID, envelopeID, creatorActorID string
+		var issueID, envelopeID, creatorReviewID string
 		var revision int
-		err := conn.QueryRow(`SELECT r.issue_id, r.envelope_id, r.envelope_revision, r.actor_id FROM review_findings f JOIN review_records r ON r.id=f.review_id WHERE f.id=?`, findingID).Scan(&issueID, &envelopeID, &revision, &creatorActorID)
-		if err != nil || issueID != binding.IssueID || envelopeID != binding.EnvelopeID || revision != binding.EnvelopeRevision || creatorActorID == actorID {
+		err := conn.QueryRow(`SELECT r.issue_id, r.envelope_id, r.envelope_revision, f.review_id FROM review_findings f JOIN review_records r ON r.id=f.review_id WHERE f.id=?`, findingID).Scan(&issueID, &envelopeID, &revision, &creatorReviewID)
+		if err != nil || issueID != binding.IssueID || envelopeID != binding.EnvelopeID || revision != binding.EnvelopeRevision || creatorReviewID == reviewID {
 			return nil, fmt.Errorf("review resolution Finding %q is invalid", findingID)
 		}
 		var terminal int

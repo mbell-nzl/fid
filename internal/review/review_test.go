@@ -28,6 +28,11 @@ func TestValidateVerdictFindingAgreement(t *testing.T) {
 			if (err == nil) != test.valid {
 				t.Fatalf("validateVerdictFindingAgreement() error = %v, valid = %v", err, test.valid)
 			}
+			if !test.valid {
+				if _, ok := err.(*VerdictInvalidError); !ok {
+					t.Fatalf("validateVerdictFindingAgreement() error = %T, want *VerdictInvalidError", err)
+				}
+			}
 		})
 	}
 }
