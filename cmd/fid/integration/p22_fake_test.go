@@ -321,10 +321,14 @@ func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, ac
 		grantActions = capabilities
 	}
 	activationID := p21Activation(t, binary, workspace, "prepare", "p22-corpus-activation-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "p22-corpus", "phase": 21})
-	profileDigest := p21Component(t, binary, workspace, activationID, "authority-profile", "p22-corpus-authority", []any{
+	profiles := []any{
 		map[string]any{"actor_id": "actor-denied", "actor_type": "agent", "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities},
 		map[string]any{"actor_id": actor, "actor_type": actorType, "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities},
-	})
+	}
+	if containsReviewRecordAction(actions) {
+		profiles = append(profiles, map[string]any{"actor_id": "actor-reviewer-two", "actor_type": "agent", "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities})
+	}
+	profileDigest := p21Component(t, binary, workspace, activationID, "authority-profile", "p22-corpus-authority", profiles)
 	argv := []string{"/bin/true"}
 	if len(execution) != 0 {
 		argv = execution[0].Argv
@@ -345,6 +349,7 @@ func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, ac
 	// carries the new Review action.
 	if containsReviewRecordAction(actions) {
 		authorityGrants = append(authorityGrants, map[string]any{"actions": grantActions, "actor_selector": map[string]any{"actor_id": "actor-denied", "required_capabilities": grantActions}, "scope": map[string]any{"issue_id": issueID}})
+		authorityGrants = append(authorityGrants, map[string]any{"actions": grantActions, "actor_selector": map[string]any{"actor_id": "actor-reviewer-two", "required_capabilities": grantActions}, "scope": map[string]any{"issue_id": issueID}})
 		sort.Slice(authorityGrants, func(i, j int) bool {
 			left := authorityGrants[i].(map[string]any)["actor_selector"].(map[string]any)["actor_id"].(string)
 			right := authorityGrants[j].(map[string]any)["actor_selector"].(map[string]any)["actor_id"].(string)
