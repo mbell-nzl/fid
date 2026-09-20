@@ -5,7 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: MF-01 QA repair is complete; all Task 2 required gates pass.
-- Recovery attempts: QA repair attempt 1
+- Recovery attempts: 1
 - Next action: Phase Runner review.
 - Human attention required: no
 
