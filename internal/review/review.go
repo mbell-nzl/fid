@@ -185,6 +185,9 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if binding.Version != request.ExpectedRunVersion || binding.Status != "active" || binding.ClaimMode != "review" || binding.ClaimActorID != options.ActorID {
 			return fmt.Errorf("review record Run binding is invalid")
 		}
+		if err := validateCoverage(request.Coverage); err != nil {
+			return err
+		}
 		if err := validateVerdictFindingAgreement(request.Verdict, request.Findings, request.Coverage); err != nil {
 			return err
 		}
@@ -305,6 +308,32 @@ func validateVerdictFindingAgreement(verdict string, findings []FindingInput, co
 		}
 	default:
 		return &VerdictInvalidError{Verdict: verdict, Reason: "verdict is not accepted"}
+	}
+	return nil
+}
+
+func validateCoverage(coverage Coverage) error {
+	if len(coverage.Items) == 0 || len(coverage.Items) > 64 || len(coverage.Exclusions) > 64 {
+		return fmt.Errorf("review coverage cardinality is invalid")
+	}
+	digests := make(map[string]struct{}, len(coverage.Items)+len(coverage.Exclusions))
+	for _, item := range coverage.Items {
+		if strings.TrimSpace(item.Source.Digest) == "" {
+			return fmt.Errorf("review coverage Source digest is required")
+		}
+		if _, found := digests[item.Source.Digest]; found {
+			return fmt.Errorf("review coverage Source digest is duplicated")
+		}
+		digests[item.Source.Digest] = struct{}{}
+	}
+	for _, exclusion := range coverage.Exclusions {
+		if strings.TrimSpace(exclusion.Source.Digest) == "" || strings.TrimSpace(exclusion.Reason) == "" {
+			return fmt.Errorf("review coverage exclusion is incomplete")
+		}
+		if _, found := digests[exclusion.Source.Digest]; found {
+			return fmt.Errorf("review coverage Source digest is duplicated")
+		}
+		digests[exclusion.Source.Digest] = struct{}{}
 	}
 	return nil
 }
@@ -446,6 +475,13 @@ func recordReviewValue(id string, binding recordBinding, actorID string, request
 	if value["resolved_finding_ids"] == nil {
 		value["resolved_finding_ids"] = []any{}
 	}
+	for _, raw := range value["findings"].([]any) {
+		finding := raw.(map[string]any)
+		finding["review_id"] = id
+		finding["created_at"] = recordedAt
+		finding["dispositions"] = []any{}
+		finding["state"] = "open"
+	}
 	return value, nil
 }
 
@@ -480,6 +516,9 @@ func reviewRecordEffects(review map[string]any, eventID string) []journal.Effect
 func setReviewEventIdentity(review map[string]any, event journal.Event) {
 	recordedAt := event.OccurredAt.UTC().Format(time.RFC3339Nano)
 	review["recorded_at"], review["event_id"] = recordedAt, event.EventID
+	for _, raw := range review["findings"].([]any) {
+		raw.(map[string]any)["created_at"] = recordedAt
+	}
 	for index := range event.Effects {
 		for key, value := range event.Effects[index].Values {
 			if value == "<event-id>" {

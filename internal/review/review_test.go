@@ -26,3 +26,13 @@ func TestValidateVerdictFindingAgreement(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateCoverageRejectsSourceInItemAndExclusion(t *testing.T) {
+	coverage := Coverage{
+		Items:      []CoverageItem{{Source: Source{Digest: "sha256:same"}, Assessed: true}},
+		Exclusions: []CoverageExclusion{{Source: Source{Digest: "sha256:same"}, Reason: "unavailable"}},
+	}
+	if err := validateCoverage(coverage); err == nil {
+		t.Fatal("validateCoverage() accepted an item and exclusion sharing one Source digest")
+	}
+}

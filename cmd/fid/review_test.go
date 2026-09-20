@@ -64,7 +64,11 @@ func TestReviewRecordCreatesImmutableReview(t *testing.T) {
 	run := runFromResponse(t, started.stdout)
 	source := input["sources"].([]any)[0]
 	recordPath := filepath.Join(workspace, "review-record-input.json")
-	writeActivationInput(t, recordPath, map[string]any{"run_id": run["id"], "expected_run_version": run["version"], "profile": "review-default", "repository": repository, "coverage": map[string]any{"items": []any{map[string]any{"source": source, "assessed": true}}, "exclusions": []any{}}, "verdict": "pass", "findings": []any{}, "resolves_finding_ids": []any{}, "evidence_refs": []any{}, "receipt_ids": []any{}})
+	findings := []any{
+		map[string]any{"id": "FND-review-one", "subject": map[string]any{"type": "issue", "id": issueID}, "scope": map[string]any{"paths": []any{}}, "severity": "minor", "summary": "first non-blocking finding", "blocking": false},
+		map[string]any{"id": "FND-review-two", "subject": map[string]any{"type": "issue", "id": issueID}, "scope": map[string]any{"paths": []any{}}, "severity": "nit", "summary": "second non-blocking finding", "blocking": false},
+	}
+	writeActivationInput(t, recordPath, map[string]any{"run_id": run["id"], "expected_run_version": run["version"], "profile": "review-default", "repository": repository, "coverage": map[string]any{"items": []any{map[string]any{"source": source, "assessed": true}}, "exclusions": []any{}}, "verdict": "pass", "findings": findings, "resolves_finding_ids": []any{}, "evidence_refs": []any{}, "receipt_ids": []any{}})
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "record", "--actor", "actor-builder", "--input", recordPath, "--idempotency-key", "review-record")
 	if result.err != nil || result.stderr != "" || !strings.Contains(result.stdout, `"verdict":"pass"`) {
 		t.Fatalf("record Review = %#v, want immutable pass Review", result)
@@ -73,5 +77,8 @@ func TestReviewRecordCreatesImmutableReview(t *testing.T) {
 	got := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "get", recorded["id"].(string))
 	if got.err != nil || got.stderr != "" || !strings.Contains(got.stdout, `"verdict":"pass"`) {
 		t.Fatalf("get recorded Review = %#v, want immutable pass Review", got)
+	}
+	if !strings.Contains(got.stdout, `"FND-review-one"`) || !strings.Contains(got.stdout, `"FND-review-two"`) {
+		t.Fatalf("get recorded Review = %#v, want both immutable Findings", got)
 	}
 }
