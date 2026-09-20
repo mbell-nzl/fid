@@ -71,7 +71,7 @@ func newEvidenceGetCommand() *cobra.Command {
 			return renderEvidenceError(cmd, "evidence.get", err)
 		}
 		if len(evaluations) != 1 {
-			return renderEvidenceError(cmd, "evidence.get", fmt.Errorf("Evidence evaluation returned %d rows", len(evaluations)))
+			return renderEvidenceError(cmd, "evidence.get", fmt.Errorf("evidence evaluation returned %d rows", len(evaluations)))
 		}
 		evaluation := evaluations[0]
 		if jsonMode, err := readJSONMode(cmd); err != nil {
