@@ -86,8 +86,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `81651df858143933c6e9c4501d0147700f9b6704`
 
 ## Commit subject
 
-- Pending commit
+- `fix(review): admit same reviewer rework`
