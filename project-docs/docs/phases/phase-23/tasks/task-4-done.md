@@ -3,7 +3,7 @@
 ## Workflow outcome
 
 - Task outcome: BLOCKED
-- Category: protected-contract-conflict
+- Category: specification-contradiction
 - Condition: The real CLI journey now proves a different-Run Receipt rejection with no Event, independent two-Reviewer rework, and prior-Finding resolution. VAL-015's required real CLI Run-holder-only direction is impossible under the accepted Run binding: `validateRunStartBinding` requires `claim.ActorID == options.ActorID`, while durable Claim history is retained and `checkIndependence` checks that Claim before it can name the Run.
 - Recovery attempts: 8
 - Next action: Tech Lead must decide whether the accepted Run binding permits a distinct Run Actor, or whether VAL-015 accepts the retained direct domain-history proof for the unrepresentable Run-holder-only state. Either choice changes protected public/data-model semantics or validation acceptance.
