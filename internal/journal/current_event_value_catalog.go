@@ -8,6 +8,7 @@ var currentValueShapes = map[string]string{
 	"Source":             "source_type:=project-file,external-reference display_label:Nonempty path:?Path section:?Text external_id:?Nonempty digest:Digest repository:Repository",
 	"Executor":           "id:ID source:=activated-harness",
 	"Subject":            "type:=run,envelope,activation id:ID",
+	"JudgmentSubject":    "type:=issue,envelope,run,review,finding,requirement id:ID",
 	"PathChange":         "path:Path before_digest:?Digest after_digest:?Digest classification:=in-scope,outside-scope,protected",
 	"Reconciliation":     "repository:Repository checkpoint_id:?ID paths:[]PathChange unmerged_paths:[]Path operation:=none,merge,rebase,cherry-pick,revert,bisect ancestry:=unchanged,descendant,conflict,unknown digest:Digest",
 	"GrantRef":           "envelope_id:ID revision:One ordinal:Nonnegative",
@@ -38,6 +39,12 @@ var currentValueShapes = map[string]string{
 	"Artifact":           "id:ID digest:Digest media_type:Nonempty size_bytes:Nonnegative retention_class:=evidence availability:=available,missing location_policy:=content-addressed created_at:Timestamp expires_at:?Timestamp",
 	"ArtifactRejection":  "path:Text reason:Nonempty",
 	"Receipt":            "id:ID attempt_id:ID registration_id:ID registration_version:Positive obligation_id:ID run_id:ID actor_id:ID trust_source:=fid-executed outcome:=succeeded,failed,signaled,timed-out,spawn-failed,cancelled exit_code:?Integer signal:?Nonempty timed_out:Bool started_at:Timestamp ended_at:Timestamp terminal_repository:Repository toolchain:Toolchain output_excerpt:Text output_digest:Digest output_bytes:Nonnegative output_truncated:Bool redaction_applied:Bool artifacts:[]Artifact rejected_artifacts:[]ArtifactRejection",
+	"CoverageItem":       "source:Source assessed:Bool",
+	"CoverageExclusion":  "source:Source reason:Text",
+	"Coverage":           "items:[]CoverageItem exclusions:[]CoverageExclusion",
+	"FindingDisposition": "id:ID action:=addressed,resolved,inapplicable actor_id:ID qualifying_review_id:?ID reason:Text disposed_at:Timestamp event_id:ID",
+	"Finding":            "id:ID subject:JudgmentSubject scope:Scope severity:=blocker,major,minor,nit summary:Text blocking:Bool review_id:ID created_at:Timestamp dispositions:[]FindingDisposition state:=open,addressed,resolved,inapplicable",
+	"Review":             "id:ID run_id:ID issue_id:ID envelope_id:ID envelope_revision:One actor_id:ID profile:ID repository:Repository coverage:Coverage verdict:=pass,changes-required,blocked evidence_refs:[]Source receipt_ids:[]ID findings:[]Finding resolved_finding_ids:[]ID independence:=distinct-actor recorded_at:Timestamp event_id:ID",
 	"Denial":             "budget:Budget stop_ids:[]ID attention_ids:[]ID event_id:ID event_occurred_at:Timestamp",
 }
 var currentStopDetailShapes = map[string]string{

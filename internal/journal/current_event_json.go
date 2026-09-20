@@ -66,6 +66,16 @@ func validateCurrentJSON(event Event, effect Effect, column, raw string) error {
 		kind = "Toolchain"
 	case "execution_receipts.rejected_artifacts_json":
 		kind = "[]ArtifactRejection"
+	case "review_records.repository_json":
+		kind = "Repository"
+	case "review_records.coverage_json":
+		kind = "Coverage"
+	case "review_records.evidence_refs_json":
+		kind = "[]Source"
+	case "review_records.receipt_ids_json":
+		kind = "[]ID"
+	case "review_findings.scope_json":
+		kind = "Scope"
 	case "idempotency_results.result_json":
 		return validateCurrentResultJSON(event, value)
 	default:
@@ -133,7 +143,8 @@ func validateCurrentAdoptedPaths(value any) error {
 }
 func validateCurrentResultJSON(event Event, value any) error {
 	fields := map[string]string{
-		"run.started": "run:Run", "run.observed": "observation:Observation run:Run", "run.checkpointed": "checkpoint:Checkpoint run:Run",
+		"review.recorded": "review:Review budget:?Budget stops:[]Stop attention:[]Attention",
+		"run.started":     "run:Run", "run.observed": "observation:Observation run:Run", "run.checkpointed": "checkpoint:Checkpoint run:Run",
 		"run.recovered": "recovery:Recovery run:Run claim:Claim", "run.abandoned": "run:Run claim:Claim", "run.closed": "run:Run", "claim.expired": "claim:Claim",
 		"run.budget-observed": "sample:BudgetSample budget:Budget stops:[]Stop attention:[]Attention", "run.execution-blocked": "denial:Denial",
 		"gate.execution-started": "attempt:Attempt receipt:Null", "gate.receipt-recorded": "receipt:Receipt",

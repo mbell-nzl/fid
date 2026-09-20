@@ -279,6 +279,22 @@ func TestCurrentEventColumnDomainsMatchAcceptedDDL(t *testing.T) {
 	}
 }
 
+// TestCurrentReviewRecordedRegistersItsDistinctJudgmentValues protects the
+// strict journal path reached after Task 4 removes review.recorded's fence.
+func TestCurrentReviewRecordedRegistersItsDistinctJudgmentValues(t *testing.T) {
+	for _, kind := range []string{
+		"Review", "Coverage", "CoverageItem", "CoverageExclusion", "Finding",
+		"FindingDisposition", "JudgmentSubject",
+	} {
+		if _, found := currentValueShapes[kind]; !found {
+			t.Fatalf("currentValueShapes[%q] is not registered", kind)
+		}
+	}
+	if currentValueShapes["Subject"] != "type:=run,envelope,activation id:ID" {
+		t.Fatalf("Subject = %q, want retained Phase 22 shape", currentValueShapes["Subject"])
+	}
+}
+
 func TestCurrentRecoveryAdmitsTerminalPredecessorAndOptionalClaimDisposal(t *testing.T) {
 	for _, terminal := range []bool{false, true} {
 		for _, expired := range []bool{false, true} {

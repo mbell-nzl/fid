@@ -26,6 +26,10 @@ func validateCurrentCardinality(event Event) error {
 			if effect.Op == "insert" {
 				maximum = 5
 			}
+		case "review_findings", "finding_dispositions":
+			if event.EventType == "review.recorded" && effect.Op == "insert" {
+				maximum = len(event.Effects)
+			}
 		case "kit_activations":
 			if event.EventType == "activation.finalized" || event.EventType == "activation.recovery-completed" {
 				maximum = 2

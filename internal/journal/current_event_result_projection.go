@@ -79,6 +79,9 @@ func currentExpectedResult(tx *sql.Tx, event Event) (map[string]any, error) {
 	}
 	id := func(value any) map[string]any { return map[string]any{"id": value} }
 	switch event.EventType {
+	case "review.recorded":
+		put("review", "Review", "review_records", id(event.Aggregate.ID))
+		result["budget"], result["stops"], result["attention"] = nil, []any{}, []any{}
 	case "run.started", "run.closed", "run.observed", "run.checkpointed", "run.abandoned":
 		put("run", "Run", "runs", id(event.Aggregate.ID))
 		if event.EventType == "run.abandoned" && failure == nil {
@@ -188,6 +191,10 @@ func currentProjectedValue(tx *sql.Tx, kind, table string, pk map[string]any) (m
 		err = currentFillStopAttention(tx, kind, row)
 	case "Receipt":
 		err = currentFillReceipt(tx, row)
+	case "Review":
+		err = currentFillReview(tx, row)
+	case "Finding":
+		err = currentFillFinding(tx, row)
 	}
 	if err != nil {
 		return nil, err
