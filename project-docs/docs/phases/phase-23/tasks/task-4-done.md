@@ -115,8 +115,8 @@
 
 ## Commit hash
 
-- `17bd6acdf523d2eb01e06b7dbb0a2ee9700c6dec`
+- `a1ae1bb61363a591bb46c9ddfd4b8df36462687b`
 
 ## Commit subject
 
-- `fix(review): preserve typed review record denials`
+- `test(review): cover independent reviewer rework`
