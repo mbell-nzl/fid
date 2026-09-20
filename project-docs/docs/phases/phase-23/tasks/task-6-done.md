@@ -69,23 +69,26 @@
 - Focused cycle real-process GREEN after strict projection and adapter repairs: `go test -tags integration -race -timeout 30m ./cmd/fid/integration/... -run '^TestP23ReviewCyclesRealProcessJourney$' -count=1 -v` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 4.728s` (terminated `exit_code: 0`).
 - Integration helper focused evidence, attributed to `/root/task4_process_journey`: `go test -tags integration -race -timeout 30m ./cmd/fid/integration/... -run '^(TestP23ReviewEvidenceRealProcessJourney|TestP23ReviewCyclesRealProcessJourney)$'` - UNVERIFIED - reported `ok  github.com/mbell-nzl/fid/cmd/fid/integration 8.681s` with `exit_code: 0`; the committed helper change is `d05c288`.
 - Reconstructed prechange conditional baseline under DEC-246: clean detached worktree `/tmp/fid-task6-baseline.N7uwYo` at Task 5 completion `8e6a76b5a4d083cf6b9dde76acf9ac3a5d169f0f`; `git status --short` was empty.
-- `go test -race -timeout 30m -cover ./internal/evidence/` at that baseline - PASS - `ok  github.com/mbell-nzl/fid/internal/evidence 2.281s coverage: 23.6% of statements` (terminated `exit_code: 0`).
-- `go test -race -timeout 30m -cover ./internal/workflow/` at that baseline - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 192.336s coverage: 64.1% of statements` (terminated `exit_code: 0`).
+- `go test -race -timeout 30m -cover ./internal/evidence/` - PASS - `ok  github.com/mbell-nzl/fid/internal/evidence 2.281s coverage: 23.6% of statements` (terminated `exit_code: 0`)
+- `go test -race -timeout 30m -cover ./internal/workflow/` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 192.336s coverage: 64.1% of statements` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS after causal repair - `0 issues.` (terminated `exit_code: 0`). The first byte-identical attempt failed with `cmd/fid/evidence.go:74:52: ST1005: error strings should not be capitalized` and `exit_code: 1`.
-- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 211.439s coverage: 63.4% of statements` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- First lint attempt - FAIL - `cmd/fid/evidence.go:74:52: ST1005: error strings should not be capitalized` (terminated `exit_code: 1`); commit `e861e1a` made the causal one-line repair before the byte-identical passing attempt.
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 211.439s coverage: 63.4% of statements` (terminated `exit_code: 0`)
 - Ordinary package budgets: `cmd/fid` was 535.185s, `internal/workflow` was 211.439s, and every ordinary package remained below 600s.
-- `go tool cover -func=coverage.out` - PASS - `total: (statements) 64.2%` (terminated `exit_code: 0`).
-- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS after retained portable-Effect fixture repair - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 643.828s` (terminated `exit_code: 0`). The first byte-identical attempt failed with `unknown Effect column evidence_records.review_id` and `unknown Effect column evidence_records.human_outcome_id`; token `FAIL github.com/mbell-nzl/fid/cmd/fid/integration 351.564s` (terminated `exit_code: 1`).
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 64.2%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 643.828s` (terminated `exit_code: 0`)
+- First tagged integration attempt - FAIL - `FAIL github.com/mbell-nzl/fid/cmd/fid/integration 351.564s` (terminated `exit_code: 1`); the retained interpreter rejected `evidence_records.review_id` and `human_outcome_id`, and commit `0e0f2aa` converged that accepted fixture before the byte-identical passing attempt.
 - Tagged integration budget: `cmd/fid/integration` was 643.828s, below 900s.
-- `go test -race -timeout 30m -cover ./internal/evidence/` - PASS - `ok  github.com/mbell-nzl/fid/internal/evidence 2.293s coverage: 25.7% of statements` (terminated `exit_code: 0`).
-- `go test -race -timeout 30m -cover ./internal/workflow/` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 183.638s coverage: 63.4% of statements` (terminated `exit_code: 0`).
+- `go test -race -timeout 30m -cover ./internal/evidence/` - PASS - `ok  github.com/mbell-nzl/fid/internal/evidence 2.293s coverage: 25.7% of statements` (terminated `exit_code: 0`)
+- `go test -race -timeout 30m -cover ./internal/workflow/` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 183.638s coverage: 63.4% of statements` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
+- The first post-commit report-lint attempt terminated `exit_code: 11` with `FAIL report-lint found 11 failure(s)`. Required-command statuses and termination receipts were reformatted without changing their evidence; the byte-identical control then passed.
 - The required conditional before-edit coverage commands were missed chronologically. DEC-246 authorized reconstruction at the immutable Task 5 completion commit. Both byte-identical commands were personally run in a clean detached worktree, with the source commit and working directory recorded above. The after-edit commands remain ordinary exact gates.
 - The first exact lint attempt found one capitalized internal error string in the new Evidence adapter. Commit `e861e1a7888ec870983246c8822644cc9aa83325` lowercased it; the byte-identical lint command then passed.
 - The first exact tagged integration attempt found the retained portable-Effect interpreter had not admitted the accepted nullable Review and Human Outcome Evidence columns. The retained fixture was converged without changing product behavior or the gate, then the byte-identical full command was rerun.
