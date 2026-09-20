@@ -75,6 +75,42 @@ func TestEvidenceEvaluationMultiFailureGoldenSurvivesRepeatAndRebuild(t *testing
 	}
 }
 
+func TestEvidenceEvaluateNullObligationReturnsActiveRevisionInIDOrder(t *testing.T) {
+	t.Parallel()
+	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+	input := typedEnvelopeCreateInput(t, workspace, issueID, registration)
+	path := filepath.Join(workspace, "evidence-evaluate-all-envelope.json")
+	writeActivationInput(t, path, input)
+	created := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", path, "--idempotency-key", "evidence-evaluate-all-envelope")
+	if created.err != nil || created.stderr != "" {
+		t.Fatalf("create multi-Obligation Envelope = %#v", created)
+	}
+	envelopeID := assertEnvelopeShape(t, created.stdout, "draft")
+	writeActivationInput(t, path, map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
+	activated := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", "actor-builder", "--input", path, "--idempotency-key", "evidence-evaluate-all-activate")
+	if activated.err != nil || activated.stderr != "" {
+		t.Fatalf("activate multi-Obligation Envelope = %#v", activated)
+	}
+
+	writeActivationInput(t, path, map[string]any{"obligation_id": nil, "target_repository": testEnvelopeRepository(t, workspace)})
+	result := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", path)
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("evaluate active Envelope = %#v", result)
+	}
+	evaluations := decodeCanonicalResult(t, result.stdout)["evaluations"].([]any)
+	gotIDs := make([]string, 0, len(evaluations))
+	for _, item := range evaluations {
+		gotIDs = append(gotIDs, item.(map[string]any)["obligation_id"].(string))
+	}
+	wantIDs := []string{"OBL-1", "OBL-human", "OBL-review"}
+	if !reflect.DeepEqual(gotIDs, wantIDs) {
+		t.Fatalf("evaluation IDs = %#v, want ID order %#v", gotIDs, wantIDs)
+	}
+	if evaluations[0].(map[string]any)["artifact_availability"] != "missing" || evaluations[1].(map[string]any)["artifact_availability"] != "not-applicable" || evaluations[2].(map[string]any)["artifact_availability"] != "not-applicable" {
+		t.Fatalf("evaluation dimensions = %#v, want independent per-policy Artifact states", evaluations)
+	}
+}
+
 type linkedEvidenceFixture struct {
 	workspace    string
 	obligationID string
@@ -128,7 +164,7 @@ func buildLinkedEvidenceFixture(t *testing.T, key string) linkedEvidenceFixture 
 	obligationID := testEvidenceObligationID
 	linkPath := filepath.Join(workspace, "evidence-link.json")
 	writeActivationInput(t, linkPath, map[string]any{
-		"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID,
+		"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil,
 		"target_repository": repository, "required_artifact_ids": []string{artifactID},
 	})
 	linked := executeCommandForTest(workspace,
@@ -214,7 +250,7 @@ func TestEvidenceLinkRejectsEveryCallerAuthoredProof(t *testing.T) {
 	for _, proof := range []string{"pass", "command", "import", "attestation", "role"} {
 		t.Run(proof, func(t *testing.T) {
 			path := filepath.Join(workspace, proof+"-evidence.json")
-			input := map[string]any{"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID, "target_repository": repository, "required_artifact_ids": []string{}}
+			input := map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository, "required_artifact_ids": []string{}}
 			input[proof] = true
 			writeActivationInput(t, path, input)
 			before := snapshotWorkspacePersistence(t, workspace)
@@ -303,7 +339,7 @@ func TestEvidenceLinkRejectsPersistedReceiptBindingMismatches(t *testing.T) {
 			}
 			linkPath := filepath.Join(workspace, "binding-mismatch-evidence.json")
 			writeActivationInput(t, linkPath, map[string]any{
-				"obligation_id": testEvidenceObligationID, "receipt_id": terminal.Data.ReceiptID,
+				"obligation_id": testEvidenceObligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil,
 				"target_repository": repository, "required_artifact_ids": []string{},
 			})
 			before := snapshotWorkspacePersistence(t, workspace)

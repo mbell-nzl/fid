@@ -16,13 +16,14 @@ import (
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
-// Evidence is the immutable fid-created link between one Obligation and one
-// exact Receipt.
+// Evidence is one immutable typed link between an Obligation and its subject.
 type Evidence struct {
 	ID                  string     `json:"id"`
 	ObligationID        string     `json:"obligation_id"`
-	ReceiptID           string     `json:"receipt_id"`
 	EvidenceType        string     `json:"evidence_type"`
+	ReceiptID           *string    `json:"receipt_id"`
+	ReviewID            *string    `json:"review_id"`
+	HumanOutcomeID      *string    `json:"human_outcome_id"`
 	Producer            string     `json:"producer"`
 	TrustSource         string     `json:"trust_source"`
 	TargetRepository    Repository `json:"target_repository"`
@@ -43,13 +44,16 @@ type Evaluation struct {
 
 type EvidenceLinkRequest struct {
 	ObligationID        string     `json:"obligation_id"`
-	ReceiptID           string     `json:"receipt_id"`
+	EvidenceType        string     `json:"evidence_type"`
+	ReceiptID           *string    `json:"receipt_id"`
+	ReviewID            *string    `json:"review_id"`
+	HumanOutcomeID      *string    `json:"human_outcome_id"`
 	TargetRepository    Repository `json:"target_repository"`
 	RequiredArtifactIDs []string   `json:"required_artifact_ids"`
 }
 
 type EvidenceEvaluateRequest struct {
-	ObligationID     string     `json:"obligation_id"`
+	ObligationID     *string    `json:"obligation_id"`
 	TargetRepository Repository `json:"target_repository"`
 }
 
@@ -134,7 +138,20 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 			return err
 		}
 		createdAt := time.Now().UTC().Format(time.RFC3339Nano)
-		evidence := Evidence{ID: evidenceID, ObligationID: options.Request.ObligationID, ReceiptID: options.Request.ReceiptID, EvidenceType: "receipt", Producer: "fid", TrustSource: "fid-executed", TargetRepository: options.Request.TargetRepository, Validity: "valid", RequiredArtifactIDs: append([]string(nil), options.Request.RequiredArtifactIDs...), CreatedAt: createdAt}
+		evidence := Evidence{
+			ID:                  evidenceID,
+			ObligationID:        options.Request.ObligationID,
+			EvidenceType:        binding.EvidenceType,
+			ReceiptID:           binding.ReceiptID,
+			ReviewID:            binding.ReviewID,
+			HumanOutcomeID:      binding.HumanOutcomeID,
+			Producer:            binding.Producer,
+			TrustSource:         binding.TrustSource,
+			TargetRepository:    options.Request.TargetRepository,
+			Validity:            "valid",
+			RequiredArtifactIDs: append([]string{}, options.Request.RequiredArtifactIDs...),
+			CreatedAt:           createdAt,
+		}
 		evaluation := evaluationFromBinding(evidence, binding, options.Request.TargetRepository)
 		result = EvidenceLinkResult{Evidence: evidence, Evaluation: evaluation, IdempotencyKey: options.IdempotencyKey}
 		resultJSON, err := journal.MarshalCanonicalJSON(result)
@@ -145,11 +162,11 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 		if err != nil {
 			return err
 		}
-		effects := []journal.Effect{{Op: "insert", Table: "evidence_records", PK: map[string]any{"id": evidence.ID}, Values: map[string]any{"obligation_id": evidence.ObligationID, "receipt_id": evidence.ReceiptID, "evidence_type": evidence.EvidenceType, "producer": evidence.Producer, "trust_source": evidence.TrustSource, "target_repository_json": string(targetJSON), "validity": evidence.Validity, "created_at": evidence.CreatedAt}}}
+		effects := []journal.Effect{{Op: "insert", Table: "evidence_records", PK: map[string]any{"id": evidence.ID}, Values: map[string]any{"obligation_id": evidence.ObligationID, "receipt_id": evidence.ReceiptID, "review_id": evidence.ReviewID, "human_outcome_id": evidence.HumanOutcomeID, "evidence_type": evidence.EvidenceType, "producer": evidence.Producer, "trust_source": evidence.TrustSource, "target_repository_json": string(targetJSON), "validity": evidence.Validity, "created_at": evidence.CreatedAt}}}
 		for _, artifactID := range evidence.RequiredArtifactIDs {
 			effects = append(effects, journal.Effect{Op: "insert", Table: "evidence_artifact_links", PK: map[string]any{"evidence_id": evidence.ID, "artifact_id": artifactID}, Values: map[string]any{"required_material": true}})
 		}
-		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "evidence.linked", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: evidence.ID, Sequence: 1, Type: "evidence"}, CommandName: "evidence.link", CorrelationID: &binding.RunID, Repository: repositoryEventValue(evidence.TargetRepository), Effects: effects}
+		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "evidence.linked", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: evidence.ID, Sequence: 1, Type: "evidence"}, CommandName: "evidence.link", CorrelationID: binding.CorrelationID, Repository: repositoryEventValue(evidence.TargetRepository), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(journal.Event) (journal.IdempotencyMutation, error) {
 			return journal.IdempotencyMutation{EntityID: evidence.ID, ResultJSON: string(resultJSON)}, nil
 		})
@@ -171,16 +188,16 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 }
 
 // EvaluateEvidence reads durable Evidence dimensions without an Event or Effect.
-func EvaluateEvidence(workspaceRoot, migrationsDir string, request EvidenceEvaluateRequest) (Evaluation, error) {
-	if strings.TrimSpace(workspaceRoot) == "" || strings.TrimSpace(migrationsDir) == "" || strings.TrimSpace(request.ObligationID) == "" || !validEvidenceRepository(request.TargetRepository) {
-		return Evaluation{}, &EvidenceBindingError{Reason: "Evidence evaluation input is invalid"}
+func EvaluateEvidence(workspaceRoot, migrationsDir string, request EvidenceEvaluateRequest) ([]Evaluation, error) {
+	if strings.TrimSpace(workspaceRoot) == "" || strings.TrimSpace(migrationsDir) == "" || (request.ObligationID != nil && strings.TrimSpace(*request.ObligationID) == "") || !validEvidenceRepository(request.TargetRepository) {
+		return nil, &EvidenceBindingError{Reason: "Evidence evaluation input is invalid"}
 	}
 	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
-		return Evaluation{}, err
+		return nil, err
 	}
 	conn, err := openEvidenceDB(workspaceRoot)
 	if err != nil {
-		return Evaluation{}, err
+		return nil, err
 	}
 	defer func() { _ = conn.Close() }()
 	return evaluateEvidence(conn, request)
@@ -203,140 +220,267 @@ func GetEvidence(workspaceRoot, migrationsDir, id string) (Evidence, error) {
 }
 
 type evidenceBinding struct {
-	EnvelopeID string
-	Revision   int
-	IssueID    string
-	RunID      string
-	ReceiptID  string
-	Outcome    string
-	Repository Repository
-	Artifacts  map[string]string
+	EnvelopeID                   string
+	Revision                     int
+	IssueID                      string
+	CorrelationID                *string
+	EvidenceType                 string
+	ReceiptID                    *string
+	ReviewID                     *string
+	HumanOutcomeID               *string
+	Producer                     string
+	TrustSource                  string
+	ReceiptOutcome               string
+	ReviewVerdict                string
+	ReviewIndependent            bool
+	UnresolvedBlockingFindingIDs []string
+	Repository                   Repository
+	Artifacts                    map[string]string
+	Obligation                   workflow.ObligationInput
 }
 
 func validateEvidenceLinkOptions(options EvidenceLinkOptions) error {
-	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" || strings.TrimSpace(options.ActorID) == "" || strings.TrimSpace(options.IdempotencyKey) == "" || strings.TrimSpace(options.Request.ObligationID) == "" || strings.TrimSpace(options.Request.ReceiptID) == "" || !validEvidenceRepository(options.Request.TargetRepository) || !sortedUnique(options.Request.RequiredArtifactIDs) {
+	request := options.Request
+	subjectCount := nonNilCount(request.ReceiptID, request.ReviewID, request.HumanOutcomeID)
+	subjectMatchesType := (request.EvidenceType == "receipt" && nonBlankPointer(request.ReceiptID)) || (request.EvidenceType == "review" && nonBlankPointer(request.ReviewID)) || (request.EvidenceType == "human-outcome" && nonBlankPointer(request.HumanOutcomeID))
+	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" || strings.TrimSpace(options.ActorID) == "" || strings.TrimSpace(options.IdempotencyKey) == "" || strings.TrimSpace(request.ObligationID) == "" || subjectCount != 1 || !subjectMatchesType || !validEvidenceRepository(request.TargetRepository) || !sortedUnique(request.RequiredArtifactIDs) {
 		return &EvidenceBindingError{Reason: "Evidence link input is invalid"}
 	}
 	return nil
 }
 
+func nonNilCount(values ...*string) int {
+	count := 0
+	for _, value := range values {
+		if value != nil {
+			count++
+		}
+	}
+	return count
+}
+
+func nonBlankPointer(value *string) bool {
+	return value != nil && strings.TrimSpace(*value) != ""
+}
+
 func loadEvidenceBinding(conn *sql.DB, request EvidenceLinkRequest) (evidenceBinding, error) {
+	binding, err := loadObligationBinding(conn, request.ObligationID)
+	if err != nil {
+		return evidenceBinding{}, err
+	}
+	switch request.EvidenceType {
+	case "receipt":
+		err = loadReceiptEvidenceBinding(conn, request, &binding)
+	case "review":
+		err = loadReviewEvidenceBinding(conn, request, &binding)
+	case "human-outcome":
+		err = loadHumanOutcomeEvidenceBinding(conn, request, &binding)
+	default:
+		return evidenceBinding{}, &EvidenceBindingError{Reason: "Evidence link input is invalid"}
+	}
+	if err != nil {
+		return evidenceBinding{}, err
+	}
+	if request.EvidenceType == "human-outcome" {
+		return evidenceBinding{}, &EvidenceBindingError{Reason: "Human Outcome Evidence linking is unavailable"}
+	}
+	return binding, nil
+}
+
+func loadObligationBinding(conn *sql.DB, obligationID string) (evidenceBinding, error) {
 	var binding evidenceBinding
-	var obligationJSON, receiptRepositoryJSON, trustSource, producer string
-	err := conn.QueryRow(`SELECT o.envelope_id, o.revision, o.obligation_json, r.id, r.terminal_status, r.terminal_repository_json, r.trust_source, a.producer, a.registration_id, a.registration_version, a.obligation_id, a.run_id, run.issue_id, run.envelope_id, run.envelope_revision FROM envelope_obligations o JOIN execution_receipts r ON r.id = ? JOIN execution_attempts a ON a.id = r.attempt_id JOIN runs run ON run.id = a.run_id WHERE o.id = ?`, request.ReceiptID, request.ObligationID).Scan(&binding.EnvelopeID, &binding.Revision, &obligationJSON, &binding.ReceiptID, &binding.Outcome, &receiptRepositoryJSON, &trustSource, &producer, new(string), new(int), new(string), &binding.RunID, &binding.IssueID, new(string), new(int))
+	var obligationJSON string
+	err := conn.QueryRow(`SELECT envelope_id,revision,obligation_json FROM envelope_obligations WHERE id=?`, obligationID).Scan(&binding.EnvelopeID, &binding.Revision, &obligationJSON)
 	if err == sql.ErrNoRows {
-		return evidenceBinding{}, &EvidenceBindingError{Reason: "Receipt and Obligation binding is not exact"}
+		return binding, &EvidenceBindingError{Reason: "Evidence Obligation was not found"}
 	}
 	if err != nil {
-		return evidenceBinding{}, fmt.Errorf("load Evidence binding: %w", err)
+		return binding, fmt.Errorf("load Evidence Obligation: %w", err)
 	}
-	var obligation struct {
-		Subject struct {
-			ID string `json:"id"`
-		} `json:"subject"`
-		Registration struct {
-			ID      string `json:"id"`
-			Version int    `json:"version"`
-		} `json:"registration"`
+	if err := json.Unmarshal([]byte(obligationJSON), &binding.Obligation); err != nil {
+		return binding, fmt.Errorf("decode Evidence Obligation: %w", err)
 	}
-	if err := json.Unmarshal([]byte(obligationJSON), &obligation); err != nil {
-		return evidenceBinding{}, fmt.Errorf("decode Evidence Obligation: %w", err)
-	}
-	if err := json.Unmarshal([]byte(receiptRepositoryJSON), &binding.Repository); err != nil {
-		return evidenceBinding{}, fmt.Errorf("decode Receipt repository: %w", err)
-	}
-	var registrationID, attemptObligationID, runEnvelopeID string
+	binding.IssueID = binding.Obligation.Subject.ID
+	return binding, nil
+}
+
+func loadReceiptEvidenceBinding(conn *sql.DB, request EvidenceLinkRequest, binding *evidenceBinding) error {
+	var repositoryJSON, trustSource, producer, registrationID, attemptObligationID, runEnvelopeID, runID, issueID string
 	var registrationVersion, runRevision int
-	err = conn.QueryRow(`SELECT a.registration_id, a.registration_version, a.obligation_id, run.envelope_id, run.envelope_revision FROM execution_receipts r JOIN execution_attempts a ON a.id = r.attempt_id JOIN runs run ON run.id = a.run_id WHERE r.id = ?`, request.ReceiptID).Scan(&registrationID, &registrationVersion, &attemptObligationID, &runEnvelopeID, &runRevision)
-	if err != nil {
-		return evidenceBinding{}, fmt.Errorf("load Receipt chain: %w", err)
+	err := conn.QueryRow(`SELECT r.terminal_status,r.terminal_repository_json,r.trust_source,a.producer,a.registration_id,a.registration_version,a.obligation_id,a.run_id,run.issue_id,run.envelope_id,run.envelope_revision FROM execution_receipts r JOIN execution_attempts a ON a.id=r.attempt_id JOIN runs run ON run.id=a.run_id WHERE r.id=?`, *request.ReceiptID).Scan(&binding.ReceiptOutcome, &repositoryJSON, &trustSource, &producer, &registrationID, &registrationVersion, &attemptObligationID, &runID, &issueID, &runEnvelopeID, &runRevision)
+	if err == sql.ErrNoRows {
+		return &EvidenceBindingError{Reason: "Receipt and Obligation binding is not exact"}
 	}
-	if trustSource != "fid-executed" || producer != "fid" || registrationID != obligation.Registration.ID || registrationVersion != obligation.Registration.Version || attemptObligationID != request.ObligationID || binding.EnvelopeID != runEnvelopeID || binding.Revision != runRevision || obligation.Subject.ID != binding.IssueID || !sameEvidenceRepository(binding.Repository, request.TargetRepository) {
-		return evidenceBinding{}, &EvidenceBindingError{Reason: "Receipt and Obligation binding is not exact"}
+	if err != nil {
+		return fmt.Errorf("load Receipt chain: %w", err)
+	}
+	if err := json.Unmarshal([]byte(repositoryJSON), &binding.Repository); err != nil {
+		return fmt.Errorf("decode Receipt repository: %w", err)
+	}
+	obligation := binding.Obligation
+	if trustSource != "fid-executed" || producer != "fid" || binding.EnvelopeID != runEnvelopeID || binding.Revision != runRevision || binding.IssueID != issueID || !sameEvidenceRepository(binding.Repository, request.TargetRepository) {
+		return &EvidenceBindingError{Reason: "Receipt and Obligation binding is not exact"}
+	}
+	binding.EvidenceType, binding.ReceiptID = "receipt", request.ReceiptID
+	binding.Producer, binding.TrustSource, binding.CorrelationID = "fid", "fid-executed", &runID
+	if err := classifyBindingAdmission(request, binding); err != nil {
+		return err
+	}
+	if registrationID != obligation.Registration.ID || registrationVersion != obligation.Registration.Version || attemptObligationID != request.ObligationID {
+		return &EvidenceBindingError{Reason: "Receipt and Obligation binding is not exact"}
 	}
 	binding.Artifacts = map[string]string{}
-	rows, err := conn.Query(`SELECT artifact_id, availability FROM receipt_artifacts ra JOIN referenced_artifacts a ON a.id = ra.artifact_id WHERE ra.receipt_id = ? ORDER BY artifact_id`, request.ReceiptID)
+	rows, err := conn.Query(`SELECT ra.artifact_id,a.availability FROM receipt_artifacts ra JOIN referenced_artifacts a ON a.id=ra.artifact_id WHERE ra.receipt_id=? ORDER BY ra.artifact_id`, *request.ReceiptID)
 	if err != nil {
-		return evidenceBinding{}, fmt.Errorf("load Receipt Artifacts: %w", err)
+		return fmt.Errorf("load Receipt Artifacts: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var id, availability string
 		if err := rows.Scan(&id, &availability); err != nil {
-			return evidenceBinding{}, err
+			return err
 		}
 		binding.Artifacts[id] = availability
 	}
 	if err := rows.Err(); err != nil {
-		return evidenceBinding{}, err
+		return err
 	}
 	for _, artifactID := range request.RequiredArtifactIDs {
 		if _, found := binding.Artifacts[artifactID]; !found {
-			return evidenceBinding{}, &EvidenceBindingError{Reason: "required Artifact is not linked to Receipt"}
+			return &EvidenceBindingError{Reason: "required Artifact is not linked to Receipt"}
 		}
 	}
-	return binding, nil
+	return nil
 }
 
-func evaluateEvidence(conn *sql.DB, request EvidenceEvaluateRequest) (Evaluation, error) {
-	rows, err := conn.Query(`SELECT e.id, e.receipt_id, e.validity, r.terminal_status, r.terminal_repository_json FROM evidence_records e JOIN execution_receipts r ON r.id = e.receipt_id WHERE e.obligation_id = ? ORDER BY e.id`, request.ObligationID)
+func loadReviewEvidenceBinding(conn *sql.DB, request EvidenceLinkRequest, binding *evidenceBinding) error {
+	var runID, issueID, envelopeID, actorID, profile, repositoryJSON string
+	var revision int
+	err := conn.QueryRow(`SELECT run_id,issue_id,envelope_id,envelope_revision,actor_id,profile,repository_json,verdict FROM review_records WHERE id=?`, *request.ReviewID).Scan(&runID, &issueID, &envelopeID, &revision, &actorID, &profile, &repositoryJSON, &binding.ReviewVerdict)
+	if err == sql.ErrNoRows {
+		return &ReviewNotFoundError{ID: *request.ReviewID}
+	}
 	if err != nil {
-		return Evaluation{}, fmt.Errorf("evaluate Evidence: %w", err)
+		return fmt.Errorf("load Review Evidence binding: %w", err)
+	}
+	if err := json.Unmarshal([]byte(repositoryJSON), &binding.Repository); err != nil {
+		return fmt.Errorf("decode Review repository: %w", err)
+	}
+	if issueID != binding.IssueID || envelopeID != binding.EnvelopeID || revision != binding.Revision || !sameEvidenceRepository(binding.Repository, request.TargetRepository) {
+		return &EvidenceBindingError{Reason: "Review and Obligation binding is not exact"}
+	}
+	blocking, err := blockingFindingIDs(conn, `f.review_id=?`, *request.ReviewID)
+	if err != nil {
+		return err
+	}
+	if err := validateReviewEvidenceAdmission(request.ObligationID, *request.ReviewID, binding.ReviewVerdict, blocking); err != nil {
+		return err
+	}
+	conflict, err := workflow.FindReviewIndependenceConflict(conn, actorID, issueID, envelopeID, revision)
+	if err != nil {
+		return err
+	}
+	if conflict != nil {
+		return &ReviewNotIndependentError{ReviewActorID: actorID, ConflictingType: conflict.SubjectType, ConflictingID: conflict.SubjectID, ConflictingActorID: conflict.ActorID}
+	}
+	binding.EvidenceType, binding.ReviewID = "review", request.ReviewID
+	binding.Producer, binding.TrustSource, binding.CorrelationID = "activated-actor", "activated-actor", &runID
+	if err := classifyBindingAdmission(request, binding); err != nil {
+		return err
+	}
+	if binding.Obligation.ReviewProfile == nil || profile != *binding.Obligation.ReviewProfile {
+		return &EvidenceBindingError{Reason: "Review and Obligation binding is not exact"}
+	}
+	unresolved, err := blockingFindingIDs(conn, `r.issue_id=? AND r.envelope_id=? AND r.envelope_revision=? AND NOT EXISTS (SELECT 1 FROM finding_dispositions d WHERE d.finding_id=f.id AND d.action IN ('resolved','inapplicable'))`, issueID, envelopeID, revision)
+	if err != nil {
+		return err
+	}
+	binding.ReviewIndependent = true
+	binding.UnresolvedBlockingFindingIDs = unresolved
+	binding.Artifacts = map[string]string{}
+	return nil
+}
+
+func loadHumanOutcomeEvidenceBinding(conn *sql.DB, request EvidenceLinkRequest, binding *evidenceBinding) error {
+	var class, subjectType, subjectID, scopeIssueID string
+	err := conn.QueryRow(`SELECT class,subject_type,subject_id,result,scope_issue_id FROM human_outcomes WHERE id=?`, *request.HumanOutcomeID).Scan(&class, &subjectType, &subjectID, &binding.ReceiptOutcome, &scopeIssueID)
+	if err == sql.ErrNoRows {
+		return &OutcomeNotFoundError{ID: *request.HumanOutcomeID}
+	}
+	if err != nil {
+		return fmt.Errorf("load Human Outcome Evidence binding: %w", err)
+	}
+	if subjectType != "issue" || subjectID != binding.IssueID || scopeIssueID != binding.IssueID {
+		return &EvidenceBindingError{Reason: "Human Outcome and Obligation binding is not exact"}
+	}
+	binding.EvidenceType, binding.HumanOutcomeID = "human-outcome", request.HumanOutcomeID
+	binding.Producer, binding.TrustSource = "human", "activated-human"
+	binding.Repository, binding.Artifacts = request.TargetRepository, map[string]string{}
+	if err := classifyBindingAdmission(request, binding); err != nil {
+		return err
+	}
+	if binding.Obligation.OutcomeClass == nil || class != *binding.Obligation.OutcomeClass {
+		return &EvidenceBindingError{Reason: "Human Outcome and Obligation binding is not exact"}
+	}
+	return nil
+}
+
+func classifyBindingAdmission(request EvidenceLinkRequest, binding *evidenceBinding) error {
+	return classifyEvidenceAdmission(evidenceAdmission{
+		ObligationID:          request.ObligationID,
+		ObligationType:        binding.Obligation.Type,
+		AcceptedEvidenceTypes: binding.Obligation.AcceptedEvidenceTypes,
+		AcceptedTrustSources:  binding.Obligation.AcceptedTrustSources,
+		EvidenceType:          binding.EvidenceType,
+		TrustSource:           binding.TrustSource,
+		HumanOutcomeID:        pointerValue(binding.HumanOutcomeID),
+		HumanOutcomeResult:    binding.ReceiptOutcome,
+	})
+}
+
+func blockingFindingIDs(conn *sql.DB, where string, arguments ...any) ([]string, error) {
+	rows, err := conn.Query(`SELECT f.id FROM review_findings f JOIN review_records r ON r.id=f.review_id WHERE f.blocking=1 AND `+where+` ORDER BY f.id`, arguments...)
+	if err != nil {
+		return nil, fmt.Errorf("load blocking Findings: %w", err)
 	}
 	defer func() { _ = rows.Close() }()
-	states := []workflow.ObligationEvidenceState{}
-	validity, freshness, availability := "invalid", "stale", "missing"
+	ids := []string{}
 	for rows.Next() {
-		var evidenceID, receiptID, recordValidity, outcome, repositoryJSON string
-		if err := rows.Scan(&evidenceID, &receiptID, &recordValidity, &outcome, &repositoryJSON); err != nil {
-			return Evaluation{}, err
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
 		}
-		var target Repository
-		if err := json.Unmarshal([]byte(repositoryJSON), &target); err != nil {
-			return Evaluation{}, fmt.Errorf("decode Evidence Receipt repository: %w", err)
-		}
-		state := workflow.ObligationEvidenceState{ObligationID: request.ObligationID, EvidenceID: evidenceID, ReceiptID: receiptID, ReceiptSuccessful: outcome == "succeeded", Validity: recordValidity, Freshness: freshnessForRepository(target, request.TargetRepository), ArtifactAvailability: "available"}
-		artifactRows, err := conn.Query(`SELECT l.artifact_id, a.availability FROM evidence_artifact_links l JOIN referenced_artifacts a ON a.id = l.artifact_id WHERE l.evidence_id = ? AND l.required_material = 1 ORDER BY l.artifact_id`, evidenceID)
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+func pointerValue(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
+}
+
+func evaluateEvidence(conn *sql.DB, request EvidenceEvaluateRequest) ([]Evaluation, error) {
+	obligations, err := loadEvaluationObligations(conn, request.ObligationID)
+	if err != nil {
+		return nil, err
+	}
+	statesByObligation := make(map[string][]workflow.ObligationEvidenceState, len(obligations))
+	for _, obligation := range obligations {
+		states, err := loadEvaluationStates(conn, obligation, request.TargetRepository)
 		if err != nil {
-			return Evaluation{}, err
+			return nil, err
 		}
-		for artifactRows.Next() {
-			var artifactID, artifactState string
-			if err := artifactRows.Scan(&artifactID, &artifactState); err != nil {
-				_ = artifactRows.Close()
-				return Evaluation{}, err
-			}
-			state.ArtifactIDs = append(state.ArtifactIDs, artifactID)
-			if artifactState != "available" {
-				state.ArtifactAvailability = "missing"
-			}
-		}
-		if err := artifactRows.Close(); err != nil {
-			return Evaluation{}, err
-		}
-		states = append(states, state)
-		if recordValidity == "valid" {
-			validity = "valid"
-		}
-		if state.Freshness == "fresh" {
-			freshness = "fresh"
-		}
-		if state.ArtifactAvailability == "available" {
-			availability = "available"
-		}
+		statesByObligation[obligation.ID] = states
 	}
-	if err := rows.Err(); err != nil {
-		return Evaluation{}, err
+	shared := workflow.EvaluateEnvelopeObligations(obligations, statesByObligation)
+	evaluations := make([]Evaluation, 0, len(shared))
+	for _, evaluation := range shared {
+		evaluations = append(evaluations, evaluationFromWorkflow(evaluation))
 	}
-	if len(states) == 0 {
-		states = append(states, workflow.ObligationEvidenceState{ObligationID: request.ObligationID})
-	}
-	reasons := workflow.EvaluateEvidenceStates(states)
-	status := "unsatisfied"
-	if len(reasons) == 0 {
-		status, validity, freshness, availability = "satisfied", "valid", "fresh", "available"
-	}
-	return Evaluation{ObligationID: request.ObligationID, Status: status, Validity: validity, Freshness: freshness, ArtifactAvailability: availability, Reasons: reasons}, nil
+	return evaluations, nil
 }
 
 func evaluationFromBinding(evidence Evidence, binding evidenceBinding, target Repository) Evaluation {
@@ -347,19 +491,136 @@ func evaluationFromBinding(evidence Evidence, binding evidenceBinding, target Re
 			availability = "missing"
 		}
 	}
-	state := workflow.ObligationEvidenceState{ObligationID: evidence.ObligationID, EvidenceID: evidence.ID, ReceiptID: evidence.ReceiptID, ReceiptSuccessful: binding.Outcome == "succeeded", Validity: evidence.Validity, Freshness: freshnessForRepository(binding.Repository, target), ArtifactAvailability: availability, ArtifactIDs: artifactIDs}
-	reasons := workflow.EvaluateEvidenceStates([]workflow.ObligationEvidenceState{state})
-	status := "unsatisfied"
-	if len(reasons) == 0 {
-		status = "satisfied"
+	state := workflow.ObligationEvidenceState{
+		ObligationID:                 evidence.ObligationID,
+		EvidenceID:                   evidence.ID,
+		EvidenceType:                 evidence.EvidenceType,
+		ReceiptID:                    pointerValue(evidence.ReceiptID),
+		ReviewID:                     pointerValue(evidence.ReviewID),
+		ReceiptSuccessful:            binding.ReceiptOutcome == "succeeded",
+		ReviewVerdict:                binding.ReviewVerdict,
+		ReviewIndependent:            binding.ReviewIndependent,
+		UnresolvedBlockingFindingIDs: append([]string(nil), binding.UnresolvedBlockingFindingIDs...),
+		Validity:                     evidence.Validity,
+		Freshness:                    freshnessForRepository(binding.Repository, target),
+		ArtifactAvailability:         availability,
+		ArtifactIDs:                  artifactIDs,
 	}
-	return Evaluation{ObligationID: evidence.ObligationID, Status: status, Validity: evidence.Validity, Freshness: state.Freshness, ArtifactAvailability: availability, Reasons: reasons}
+	obligation := workflow.Obligation{ObligationInput: binding.Obligation}
+	result := workflow.EvaluateEnvelopeObligations([]workflow.Obligation{obligation}, map[string][]workflow.ObligationEvidenceState{evidence.ObligationID: {state}})
+	return evaluationFromWorkflow(result[0])
+}
+
+func loadEvaluationObligations(conn *sql.DB, obligationID *string) ([]workflow.Obligation, error) {
+	query := `SELECT o.obligation_json FROM envelope_obligations o JOIN work_envelopes e ON e.id=o.envelope_id AND e.current_revision=o.revision WHERE e.status='active' ORDER BY o.id`
+	arguments := []any{}
+	if obligationID != nil {
+		query = `SELECT obligation_json FROM envelope_obligations WHERE id=? ORDER BY id`
+		arguments = append(arguments, *obligationID)
+	}
+	rows, err := conn.Query(query, arguments...)
+	if err != nil {
+		return nil, fmt.Errorf("load Evidence evaluation Obligations: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	obligations := []workflow.Obligation{}
+	for rows.Next() {
+		var payload string
+		if err := rows.Scan(&payload); err != nil {
+			return nil, err
+		}
+		var input workflow.ObligationInput
+		if err := json.Unmarshal([]byte(payload), &input); err != nil {
+			return nil, fmt.Errorf("decode Evidence evaluation Obligation: %w", err)
+		}
+		obligations = append(obligations, workflow.Obligation{ObligationInput: input})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if obligationID != nil && len(obligations) == 0 {
+		return nil, &EvidenceBindingError{Reason: "Evidence Obligation was not found"}
+	}
+	return obligations, nil
+}
+
+func loadEvaluationStates(conn *sql.DB, obligation workflow.Obligation, target Repository) ([]workflow.ObligationEvidenceState, error) {
+	var envelopeID string
+	var revision int
+	if err := conn.QueryRow(`SELECT envelope_id,revision FROM envelope_obligations WHERE id=?`, obligation.ID).Scan(&envelopeID, &revision); err != nil {
+		return nil, fmt.Errorf("load Evidence evaluation Obligation binding: %w", err)
+	}
+	rows, err := conn.Query(`SELECT e.id,e.evidence_type,e.receipt_id,e.review_id,e.validity,e.target_repository_json,r.terminal_status,rv.verdict FROM evidence_records e LEFT JOIN execution_receipts r ON r.id=e.receipt_id LEFT JOIN review_records rv ON rv.id=e.review_id WHERE e.obligation_id=? ORDER BY e.id`, obligation.ID)
+	if err != nil {
+		return nil, fmt.Errorf("evaluate Evidence: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	states := []workflow.ObligationEvidenceState{}
+	for rows.Next() {
+		var evidenceID, evidenceType, validity, repositoryJSON string
+		var receiptID, reviewID, receiptOutcome, reviewVerdict sql.NullString
+		if err := rows.Scan(&evidenceID, &evidenceType, &receiptID, &reviewID, &validity, &repositoryJSON, &receiptOutcome, &reviewVerdict); err != nil {
+			return nil, err
+		}
+		var evidenceTarget Repository
+		if err := json.Unmarshal([]byte(repositoryJSON), &evidenceTarget); err != nil {
+			return nil, fmt.Errorf("decode Evidence target repository: %w", err)
+		}
+		state := workflow.ObligationEvidenceState{
+			ObligationID:         obligation.ID,
+			EvidenceID:           evidenceID,
+			EvidenceType:         evidenceType,
+			ReceiptID:            receiptID.String,
+			ReviewID:             reviewID.String,
+			ReceiptSuccessful:    receiptOutcome.String == "succeeded",
+			ReviewVerdict:        reviewVerdict.String,
+			ReviewIndependent:    evidenceType != "review" || reviewID.Valid,
+			Validity:             validity,
+			Freshness:            freshnessForRepository(evidenceTarget, target),
+			ArtifactAvailability: "available",
+		}
+		if evidenceType == "review" {
+			blocking, err := blockingFindingIDs(conn, `r.issue_id=? AND r.envelope_id=? AND r.envelope_revision=? AND NOT EXISTS (SELECT 1 FROM finding_dispositions d WHERE d.finding_id=f.id AND d.action IN ('resolved','inapplicable'))`, obligation.Subject.ID, envelopeID, revision)
+			if err != nil {
+				return nil, err
+			}
+			state.UnresolvedBlockingFindingIDs = blocking
+		}
+		if err := loadStateArtifacts(conn, &state); err != nil {
+			return nil, err
+		}
+		states = append(states, state)
+	}
+	return states, rows.Err()
+}
+
+func loadStateArtifacts(conn *sql.DB, state *workflow.ObligationEvidenceState) error {
+	rows, err := conn.Query(`SELECT l.artifact_id,a.availability FROM evidence_artifact_links l JOIN referenced_artifacts a ON a.id=l.artifact_id WHERE l.evidence_id=? AND l.required_material=1 ORDER BY l.artifact_id`, state.EvidenceID)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var id, availability string
+		if err := rows.Scan(&id, &availability); err != nil {
+			return err
+		}
+		state.ArtifactIDs = append(state.ArtifactIDs, id)
+		if availability != "available" {
+			state.ArtifactAvailability = "missing"
+		}
+	}
+	return rows.Err()
+}
+
+func evaluationFromWorkflow(input workflow.ObligationEvaluation) Evaluation {
+	return Evaluation{ObligationID: input.ObligationID, Status: input.Status, Validity: input.Validity, Freshness: input.Freshness, ArtifactAvailability: input.ArtifactAvailability, Reasons: input.Reasons}
 }
 
 func loadEvidence(conn *sql.DB, id string) (Evidence, error) {
-	var evidence Evidence
+	evidence := Evidence{RequiredArtifactIDs: []string{}}
 	var repositoryJSON string
-	err := conn.QueryRow(`SELECT id, obligation_id, receipt_id, evidence_type, producer, trust_source, target_repository_json, validity, created_at FROM evidence_records WHERE id = ?`, id).Scan(&evidence.ID, &evidence.ObligationID, &evidence.ReceiptID, &evidence.EvidenceType, &evidence.Producer, &evidence.TrustSource, &repositoryJSON, &evidence.Validity, &evidence.CreatedAt)
+	err := conn.QueryRow(`SELECT id,obligation_id,evidence_type,receipt_id,review_id,human_outcome_id,producer,trust_source,target_repository_json,validity,created_at FROM evidence_records WHERE id=?`, id).Scan(&evidence.ID, &evidence.ObligationID, &evidence.EvidenceType, &evidence.ReceiptID, &evidence.ReviewID, &evidence.HumanOutcomeID, &evidence.Producer, &evidence.TrustSource, &repositoryJSON, &evidence.Validity, &evidence.CreatedAt)
 	if err != nil {
 		return Evidence{}, err
 	}

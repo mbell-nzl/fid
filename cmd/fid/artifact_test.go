@@ -293,7 +293,7 @@ func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *test
 	obligationID := testEvidenceObligationID
 	linkPath := filepath.Join(workspace, "artifact-lifecycle-evidence.json")
 	writeActivationInput(t, linkPath, map[string]any{
-		"obligation_id": obligationID, "receipt_id": receiptID,
+		"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": receiptID, "review_id": nil, "human_outcome_id": nil,
 		"target_repository": repository, "required_artifact_ids": []string{artifactID},
 	})
 	linked := executeCommandForTest(workspace,
