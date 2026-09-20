@@ -89,7 +89,7 @@
 | 12: `requirement_refs` with digest and supersession | `requirement_refs` CHECKs and `requirement_refs_one_active` | 12 | VAL-051 |
 | 12: `requirement_issue_links` traceability | `requirement_issue_links` plus its guard trigger | 12 | VAL-052 |
 | 12: V1 requirement authoring removed | `0018` DROP plus fence and Event removal | 12 | VAL-053 |
-| 13: three evidence types, one non-null subject each | `evidence_records` rebuild discriminator CHECK | 1 defines, 6 and 10 use | VAL-025 |
+| 13: three evidence types, one non-null subject each | `evidence_records` rebuild discriminator CHECK | 1 defines; 6 evidences receipt/review links and mismatch classification; 10 closes real Human Outcome row (DEC-243) | VAL-025 |
 | 13: one record per Obligation and subject, never overwritten | three partial unique indexes on `evidence_records` | 6 | VAL-024 |
 | 13: `evidence.evaluate` optional Obligation ID | domain-only | 6 defines, 13 exposes | VAL-008, VAL-055 |
 | 14: Human text obligations per leaf | domain-only; no schema | 14 | VAL-058, VAL-060 |

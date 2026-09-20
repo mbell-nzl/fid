@@ -524,6 +524,15 @@ type-by-type matrix therefore resolves to three accepted pairs, two
 `outcome-not-permitted` rejections (a Human Outcome against `gate-evidence` and
 against `review`), and four `evidence-type-not-accepted` rejections.
 
+**Delivery and evidence timing (DEC-243).** Task 6 delivers receipt/review
+positive links and all six mismatch classifications using production code.
+Before the Human Outcome writer exists, its row may use an explicitly labelled
+pure classifier or seeded fixture; even a matching classification is not a
+durable Human Outcome link. Task 10 supplies that real recorded positive link
+and re-proves the two Human-row denials with the actual producer. VAL-025's
+final PASS requires all nine cells across both tasks. This changes no
+compatibility behavior or rejection precedence.
+
 `evidence.evaluate` takes an optional Obligation ID. With an Obligation ID it
 retains the Phase 21 single-Obligation result; without one it returns every
 Obligation's evaluation for the active Envelope revision in Obligation ID

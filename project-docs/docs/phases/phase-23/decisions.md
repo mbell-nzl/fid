@@ -1587,6 +1587,50 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   rows and commands remain untouched. Tasks 10-11 remain held.
 - **Refs:** VAL-020/022/023; PRD-REV-004; DEC-225/239; Task 5.
 
+### DEC-243: Stage evidence-type compatibility proof at its implementing owners
+
+- **Status:** ACCEPTED 2026-09-20 under Tech Lead planning authority and the
+  Human delegate's explicit direction to reconcile this Task 6/10 contradiction.
+- **Contradiction:** Task 6 forbids implementing Human Outcome evidence but
+  its VAL-025 owner cell and acceptance criterion require all three matching
+  evidence types to link. Positive Human Outcome linking is expressly Task
+  10's scope and already required by VAL-044. The evidence timing was impossible
+  within Task 6, as previously recognized for VAL-009/010 at earlier owners.
+- **Decision:** Preserve all nine evidence-type/Obligation-type pairs and every
+  DEC-226 code. Task 6 supplies receipt/gate-evidence and review/review durable
+  links plus all six mismatch classifications using the actual production
+  admission code. Its Human row may use explicitly identified pure or seeded
+  fixtures, never a test-only replacement classifier or temporary Human writer.
+  Matching Human classification, if tested, is intermediate evidence only.
+  Task 10 records a real approved Human Outcome, links it to a matching
+  human-outcome Obligation, and proves the two mismatches with that real
+  producer. It reconciles all nine cells with Task 6's evidence before final
+  VAL-025 PASS. The validator remains QA Reviewer; assertion count remains 84.
+- **Error ownership:** Task 6 already owns `internal/cli/codes.go` and the
+  evidence denial adapter. Register existing `outcome-not-permitted` there for
+  its two mismatch cells; Task 10 reuses it for the completed Human Outcome
+  path. This changes no error shape, code, precedence or public behavior.
+  Other four mismatches retain `evidence-type-not-accepted` and its accepted
+  list. Real rejected mutation attempts require no-Event/projection evidence;
+  classify pure tests honestly rather than claiming durable observations.
+- **Scope and gates:** No positive Human Outcome linking moves into Task 6.
+  Existing domain, adapter and matching test scopes cover the classifier and
+  denials; both tasks' unchanged full ordinary and tagged gates execute them.
+  Task 10's existing positive behavior is given the missing VAL-025 citation.
+  The Task 6 report closes its assigned evidence and explicitly records final
+  Human-row closure pending Task 10; that planned sequencing is not a Task 6
+  blocker or a phase-assertion PASS.
+- **Documentation:** Task 6, Task 10, VAL-025 owner/evidence cells, slice section
+  13, QA-16/21, EVID-16/21, coverage pointers and current notes now agree.
+  Canonical TRD/quality sections contain no conflicting Task 6/10 schedule, so
+  no canonical product spec changes are required. No new feature, interface,
+  DDL, Event, command, budget or threshold is introduced.
+- **Review boundary:** Ordinary windows 4-6 and 10-12 examine their respective
+  evidence; no new planning-readiness cycle. The current Human dispatch limit
+  remains Task 9 and its review; Task 10 is still held, and this future evidence
+  assignment does not dispatch it.
+- **Refs:** VAL-025/044; DEC-226; tasks 6 and 10; contracts section 13.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,

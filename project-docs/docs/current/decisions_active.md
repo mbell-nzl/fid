@@ -161,8 +161,13 @@
   Finding disposition output and DDL are sufficient; terminal dispositions
   belong to the qualifying Review Event, and addressed is nonterminal. Task 5
   owns both-action evidence and the strict resolved-only projection filter.
-- Tasks 1-3 are complete; Task 4 has DEC-239 recovery authority and ESC-23-003
-  is resolved. Tasks 5-8 follow sequentially. Task 9 has Human dispatch clearance
+- DEC-243: VAL-025 retains all nine compatibility cells. Task 6 delivers
+  receipt/review durable links and production mismatch classification; Task 10
+  owns the real positive Human link and final Human-row closure. Seeded/pure
+  evidence is labelled intermediate. Task 6 registers the accepted
+  `outcome-not-permitted` mismatch code and Task 10 reuses it. No gate changes.
+- Tasks 1-4 are recorded complete; DEC-239 recovery and ESC-23-003 are closed.
+  Task 5 is in progress; Tasks 6-8 follow. Task 9 has Human dispatch clearance
   and bounded QA readiness under DEC-237/240; Tasks 10-11 remain held.
   See [phase brief](phase_brief.md) and
   [Phase 23 decisions](../phases/phase-23/decisions.md).

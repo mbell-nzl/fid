@@ -13,11 +13,9 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 
 ## Status
 
-**Tasks 1-3 complete; Task 4 recovery authorized under DEC-239.**
-ESC-23-003's VAL-015 contradiction is resolved; the Runner must reconcile its
-retained STOP using [the resume handoff](../phases/phase-23/qa/resume-after-esc-23-003.md).
-Task 4 still needs same-Reviewer rework, multiple-Finding resolution, built-binary
-evidence and fence-parity closure. The Human authorizes ordered execution through
+**Tasks 1-4 complete in their reports and Runner ledger; Task 5 in progress.**
+DEC-239 recovery closed Task 4's same-Reviewer, multiple-Finding, built-binary
+and fence-parity gaps. The Human authorizes ordered execution through
 Task 9 and its mid-phase review. Bounded DEC-237/240 QA confirmation is READY
 (`qa-plan.md` section 21); Tasks 10-11 remain held. Branch `phase-23`.
 
@@ -36,7 +34,7 @@ compatibility bar. That brought the contract to 82 rows.** I-42..I-45 are
 applied. DEC-240 splits VAL-082's validation, replay and key observations into
 VAL-082/083/084 without losing cases; the contract is now 84 rows.
 
-Next action: resume Task 4 under DEC-239, close its evidence gaps, then continue
+Next action: close Task 5 under DEC-242, then continue Tasks 6-9 and
 the ordered task/review sequence through the window 7-9 review. **Task 9 has
 Human clearance and bounded QA readiness. Tasks 10-11 stay held.**
 
@@ -56,8 +54,8 @@ amendments inline with their DEC and approval state.
 
 ## Task Index
 
-Full specs and reports: `../phases/phase-23/tasks/`. Tasks 1-3 complete; Task 4
-in recovery; 5-18 pending, sequential. Task 12 also needs the task-11 checkpoint.
+Full specs and reports: `../phases/phase-23/tasks/`. Tasks 1-4 complete; Task 5
+in progress; 6-18 pending, sequential. Task 12 also needs the task-11 checkpoint.
 
 1 schema baseline; 2 typed multi-Obligation Envelope; 3 review Claim mode and
 Run; 4 Review Records and independence; 5 Finding dispositions; 6 review
@@ -79,6 +77,9 @@ window 4-6 reviews it. Mid-phase `review-M.md` for windows 1-3, 4-6,
 
 ## Active Constraints
 
+- DEC-243: Task 6 supplies VAL-025 receipt/review links and mismatch
+  classifications; Task 10 owns the real positive Human Outcome link and final
+  nine-cell closure. Classifier/seeded acceptance is never a durable-link PASS.
 - DEC-242: Task 5 adds optional `inapplicable_findings:[{finding_id,reason}]`;
   omitted/empty preserve Task 4 digests. Existing Finding readback and schema
   suffice. Addressed is nonterminal; terminal dispositions share the Review Event.

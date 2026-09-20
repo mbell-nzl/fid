@@ -13,6 +13,10 @@ deterministic proof.
   authority rejects (PRD-AUTH-007).
 - VAL-044: A Human Outcome satisfies only a matching class with result
   `approved`.
+- VAL-025: complete Task 6's staged nine-cell compatibility matrix with a real
+  recorded approved Human Outcome linked durably to its matching human-outcome
+  Obligation; re-prove the Human row's two mismatch denials with that real
+  producer. Final PASS requires Task 6's other cells too (DEC-243).
 - VAL-045: the Human Outcome Evidence record and its evaluation carry
   `producer:"human"`, `trust_source:"activated-human"`, and
   `artifact_availability:"not-applicable"`. The Human-text half of
@@ -49,6 +53,13 @@ deterministic proof.
 - A Human Outcome may satisfy only a `human-outcome` Obligation whose
   `outcome_class` equals its class, and only with result `approved`. Any other
   link rejects `outcome-not-permitted` naming the Obligation type.
+- DEC-243: Task 6's Human-row evidence may use a production classifier or seeded
+  fixture because it cannot record Human Outcomes. This task closes that
+  evidence boundary with actual `human-outcome.record` and `evidence.link`
+  requests. Reuse Task 6's `outcome-not-permitted` registration, preserve all
+  nine pairings and the DEC-226 precedence, and reconcile the per-cell evidence
+  against `task-6-done.md`; seeded/classifier acceptance alone never closes the
+  positive Human Outcome link.
 - The Evidence record for a Human Outcome retains exactly `producer:"human"`,
   `trust_source:"activated-human"`, and
   `artifact_availability:"not-applicable"`. No field, reason, or text may
@@ -151,7 +162,8 @@ deterministic proof.
   `artifact.availability-observed` into `semanticEventRules` (R-14). Without
   the mirror, `export validate` and `import` reject the journal of any
   workspace whose readiness Stop was raised by either Event.
-- `internal/cli/codes.go` - `outcome-not-permitted`, `outcome-not-found`,
+- `internal/cli/codes.go` - reuse Task 6's `outcome-not-permitted` registration
+  (DEC-243); add `outcome-not-found`,
   `human-outcome-required`.
 - `cmd/fid/human_outcome.go` - new leaf wiring for `record` and `list`.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
@@ -176,6 +188,14 @@ deterministic proof.
   provenance bound. (VAL-043)
 - [ ] Only the matching class with `approved` satisfies; every other link
   attempt rejects `outcome-not-permitted`. (VAL-044)
+- [ ] A real recorded approved Human Outcome links to the matching
+  human-outcome Obligation with its immutable Evidence/Event and readback;
+  attempts to link it to gate-evidence and review reject `outcome-not-permitted`
+  with exact closed details and no Event/projection change. Combine these
+  observed cells with Task 6's receipt/review positives and other four mismatch
+  results, accounting for all nine pairings before claiming VAL-025 PASS.
+  Existing Task 6 tests remain exercised by this task's full gate. (VAL-025;
+  DEC-243; complements VAL-044)
 - [ ] The Evidence record and evaluation carry exactly the declared triple and
   no field or text claims deterministic proof. (VAL-045)
 - [ ] The `human-outcome-required` Stop appears only when the Human Obligation

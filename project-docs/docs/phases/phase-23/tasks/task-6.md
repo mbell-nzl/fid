@@ -13,7 +13,9 @@ next rework atomically when that budget is exhausted.
 - VAL-025: An evidence type outside the Obligation's accepted list rejects with
   exactly one code in the accepted precedence: the two Human Outcome mismatches
   return `outcome-not-permitted` and the other four return
-  `evidence-type-not-accepted` (DEC-226).
+  `evidence-type-not-accepted` (DEC-226). This task supplies receipt/review
+  positive links and all six mismatch classifications; the matching Human
+  Outcome durable link and real-producer closure are Task 10 (DEC-243).
 - VAL-077: Linking a Review whose recording Actor has since taken a mutating
   Claim on that Issue and revision rejects `review-not-independent` at link time.
 - VAL-008: the leaf re-check - `evidence.evaluate` with a null Obligation ID
@@ -49,8 +51,21 @@ next rework atomically when that budget is exhausted.
 - `evidence.link` appends one immutable record per (Obligation, subject) pair
   and never overwrites prior proof. `evidence.evaluate` gains its optional
   Obligation ID here.
-- Do not implement staling or Human Outcome evidence; those are tasks 7 and 10.
+- Do not implement staling or positive Human Outcome evidence linking; those
+  are tasks 7 and 10. DEC-243 permits the production type-admission classifier
+  and the two Human Outcome mismatch denials here. A pure or seeded fixture
+  may exercise those cells before the Human Outcome writer exists; identify
+  its evidence class and never claim it as a real recorded Outcome or a
+  successful Human Outcome link. Add no temporary Human Outcome writer.
 - `execution-scope.md` is incorporated on the usual convergence terms.
+
+DEC-243 cell accounting, with otherwise qualifying subjects and trust:
+
+| Evidence type | gate-evidence Obligation | review Obligation | human-outcome Obligation |
+|---|---|---|---|
+| receipt | durable link here | evidence-type-not-accepted | evidence-type-not-accepted |
+| review | evidence-type-not-accepted | durable link here | evidence-type-not-accepted |
+| human-outcome | outcome-not-permitted | outcome-not-permitted | type-compatible here; real durable link at Task 10 |
 
 ## Scope
 
@@ -105,7 +120,10 @@ next rework atomically when that budget is exhausted.
   conclude the journal-side guarantee is needed after all, extend the switch and
   say so explicitly in the report; do not assume it already holds.
 - `internal/cli/codes.go` - `review-changes-required`,
-  `review-rework-exhausted`, `evidence-type-not-accepted`. `finding-unresolved`
+  `review-rework-exhausted`, `evidence-type-not-accepted`, and the already
+  accepted `outcome-not-permitted` for the two Human Outcome mismatch denials
+  (DEC-243; Task 10 reuses this registration for the positive-Outcome path and
+  its further denials). `finding-unresolved`
   is a ReasonCode, **not** a failure code (DEC-226): add it, together with
   `human-outcome-absent`, `review-not-independent`, and `outcome-superseded`, to
   the evaluation reason precedence order in `internal/workflow/evaluation.go`
@@ -125,15 +143,29 @@ next rework atomically when that budget is exhausted.
 
 ### Out Of Scope
 
-- Freshness and staling, Human Outcomes, protected Decisions, and Human text.
+- Freshness and staling, Human Outcome recording and positive evidence links,
+  protected Decisions, and Human text. The two Human Outcome type-mismatch
+  denials and production classifier evidence above are in scope (DEC-243).
 
 ## Acceptance Criteria
 
 - [ ] `pass` links and can satisfy the Obligation; `changes-required` and
   `blocked` reject `review-changes-required` with the blocking Finding IDs.
   (VAL-024)
-- [ ] Only the three matching evidence-type and Obligation-type pairs link; the
-  six mismatches reject with the accepted list in details. (VAL-025)
+- [ ] The receipt/gate-evidence and review/review pairs link durably. All six
+  mismatches return the exact DEC-226 codes: Human Outcome against gate-evidence
+  or review returns `outcome-not-permitted`; the other four return
+  `evidence-type-not-accepted` with the accepted list. Exercise the actual
+  production admission path/classifier, never a test-only matrix. For Human
+  cells, a named pure or seeded fixture is permitted and must be labelled as
+  intermediate evidence. A nine-cell classifier acceptance for the matching
+  Human pair is not a successful durable link. (VAL-025 task-6 evidence;
+  DEC-243; final PASS also requires Task 10)
+- [ ] Report each VAL-025 cell's expected code/admission result, observed
+  result, evidence route and producing test. Observe no Event/projection change
+  for actual rejected mutation attempts. Explicitly leave the positive Human
+  link and real-producer Human-row closure to Task 10; do not mark the full
+  phase assertion PASS from classifier or seeded-history evidence. (DEC-243)
 - [ ] A blocking unresolved Finding keeps the Obligation unsatisfied with reason
   `finding-unresolved` even after a later `pass` Review. (VAL-026)
 - [ ] Consumption rises by exactly one per distinct `changes-required` Review

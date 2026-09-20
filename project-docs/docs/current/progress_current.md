@@ -1,13 +1,16 @@
 # Progress — Current
 
-Updated 2026-09-20. **Phase 23 Tasks 1-3 complete; Task 4 recovery authorized
-under DEC-239 after ESC-23-003's protected evidence contradiction is resolved.**
-Branch: `phase-23`. The Runner must reconcile the retained Task 4 STOP; Task 4
-is not complete. The Human authorizes execution through Task 9 and the window
+Updated 2026-09-20. **Phase 23 Tasks 1-4 recorded complete; Task 5 in progress.**
+Branch: `phase-23`. Task 4's report and Runner's 21:19 COMPLETE ledger event
+record DEC-239 recovery closure. The Human authorizes execution through Task 9 and the window
 7-9 review. Task 9's bounded DEC-237/240 QA confirmation is READY in qa-plan
 section 21 (`74c83b7`); Tasks 10-11 stay held.
 
 ## Task 4 recovery authority - 2026-09-20
+
+The report records Task 4 COMPLETE after attempt 9; the Runner verified and
+recorded its closure against implementation `81651df` and report `4bc8525`.
+The following retains the recovery's original required work and rationale.
 
 DEC-239 preserves Run/Claim Actor binding and durable history, and explicitly
 amends VAL-015's unreachable Run-only CLI fixture to isolated query evidence.
@@ -30,6 +33,12 @@ optional `inapplicable_findings` supplies Finding IDs and mandatory reasons;
 omitted/empty input preserves Task 4 digests and existing output/schema stays
 fixed. Task 5 owns both terminal actions' implementation/evidence and the
 strict resolved-only projection filter. Window 4-6 provides independent QA.
+
+DEC-243 reconciles VAL-025 evidence ownership without changing its nine cells:
+Task 6 supplies receipt/review durable links and all six mismatch classifications
+using production code; Task 10 records and links the real Human Outcome and
+closes that row. Pure/seeded Human evidence is intermediate, and final PASS
+requires both tasks. Task 10 remains outside the current dispatch authorization.
 
 ## Task 1 recovery — 2026-09-20
 
