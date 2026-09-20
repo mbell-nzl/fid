@@ -115,6 +115,15 @@ Run under such a Claim. A non-independent request rejects
 creates no Event. This rule, not a role name, is what makes "a Builder cannot
 resolve its own Finding" enforceable (PRD-REV-004, TRD invariant).
 
+**Evidence boundary (DEC-239).** The accepted Run lifecycle binds the Run to
+the Claim's Actor and retains Claim history. A Run-only conflicting Actor
+therefore cannot be manufactured through the CLI without changing that
+lifecycle. VAL-015 retains real CLI evidence for the mutating-Claim rejection
+and same-Reviewer rework, and an explicitly isolated durable-history query
+fixture proves the Run-holder branch. That fixture proves the query's exact
+conflicting Run and Actor; it does not claim the history is CLI-reachable or
+authorize importing it. Neither independence rule nor lifecycle is changed.
+
 **The conflicting set is the mutating side only (DEC-225).** A `review` Claim
 and any Run under it never conflict, so the same independent Actor may record
 successive Reviews across rework cycles on the same Issue and Envelope revision,

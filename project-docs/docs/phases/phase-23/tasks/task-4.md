@@ -16,7 +16,9 @@ name.
 - VAL-015: Independence is enforced in both directions from Claim and Run
   history, over the mutating side only (DEC-225): a mutating-Claim holder and a
   Run holder under such a Claim reject; a distinct Actor succeeds, and so does
-  that same Actor's second Review after a rework cycle.
+  that same Actor's second Review after a rework cycle. DEC-239 accepts an
+  isolated durable-history query fixture for the Run-holder-only direction;
+  the Claim rejection and same-Actor repeat Review remain real CLI evidence.
 - VAL-003: task 1's fence assertion for `review.recorded` converges here
   without losing its parity subject.
 - VAL-016: A repository identity mismatch rejects with no Event.
@@ -34,6 +36,12 @@ name.
   held a mutating Claim or a Run on the reviewed Issue within the same Envelope
   revision. The rejection names the exact conflicting subject and Actor. No
   role string, actor-type heuristic, or attribution label participates.
+- DEC-239 preserves the accepted same-Actor Run/Claim binding and durable
+  Claim history. A Run-holder-only conflict cannot be created through that
+  lifecycle; isolate it in a query fixture and identify it as such. A later
+  qualifying Review may resolve a Finding created by the same independent
+  Actor's earlier Review (DEC-225); compare Review identities, never Actor
+  identities, for the self-resolution prohibition.
 - Coverage is stored and reported, never validated as true. fid asserts nothing
   about whether the Reviewer actually examined a declared subject.
 - Referenced Receipt IDs must belong to the recording Run.
@@ -150,8 +158,13 @@ name.
 
 - [ ] A recorded Review is immutable and every bound field matches the request
   and fid's own observation. (VAL-014)
-- [ ] A conflicted Actor rejects `review-not-independent` naming the conflicting
-  subject; a genuinely independent Actor succeeds. (VAL-015)
+- [ ] A real CLI mutating-Claim-holder attempt rejects `review-not-independent`
+  naming the exact Claim and Actor with no Event; an isolated durable-history
+  Run-holder query rejects naming the exact Run and Actor. The same independent
+  Actor's first Review and second Review after Builder rework both succeed.
+  Include a later qualifying Review resolving that Actor's earlier Finding;
+  two different Reviewers do not prove repeat-Reviewer admission. (VAL-015;
+  DEC-225, DEC-239; evidence toward task 5's VAL-022)
 - [ ] A stale supplied repository identity rejects `repository-mismatch` with
   expected and observed values and no Event. (VAL-016)
 - [ ] All three invalid verdict and Finding combinations reject

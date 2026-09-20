@@ -95,7 +95,11 @@ Recovered code is not trusted evidence; gates/review run normally.
 4. `changes-required` leaves it unsatisfied and derives Builder rework on the
    original Issue/Envelope.
 5. Builder acquires a new Claim/Run and may mark Findings addressed.
-6. Only a later qualifying independent Review Record resolves a Finding.
+6. Only a later qualifying independent Review Record resolves a Finding. The
+   same independent Actor may record this later Review and resolve a Finding
+   from their earlier Review. The prohibition is the same Review Record
+   resolving a Finding it created, never the same Actor reviewing twice
+   (DEC-225, clarified during DEC-239).
 7. Target changes stale bound proof; rework consumes existing budgets.
 8. Exhaustion creates `review-rework-exhausted` and Attention.
 

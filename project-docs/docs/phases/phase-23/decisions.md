@@ -1427,6 +1427,57 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 - **Refs:** ESC-23-002; TRG-23-001/002; DEC-227; VAL-004/079;
   `../../reviews/2026-09-20-phase-23-rebuild-performance-diagnosis.md`.
 
+### DEC-239: Resolve the VAL-015 evidence contradiction and authorize execution through Task 9 review
+
+- **Status:** ACCEPTED 2026-09-20 under the Human's explicit delegation to
+  resolve the current Phase 23 block and orchestrate through Task 9 and its
+  subsequent mid-phase review. This is a bounded protected evidence-route
+  decision, not permission to weaken independence or change the Run lifecycle.
+- **Decision:** Retain same-Actor Run/Claim binding and durable Claim history.
+  Amend VAL-015 to accept an explicitly isolated durable-history query fixture
+  for the Run-holder-only direction. Retain real CLI mutating-Claim rejection,
+  exact conflicting subject and Actor, no Event on rejection, and successful
+  first and post-rework Reviews by the same independent Actor. The assertion,
+  two conflicting directions, validator, task owner, task commands, and budgets
+  remain unchanged. ESC-23-003's protected contradiction is resolved.
+- **Evidence for the contradiction:** `internal/workflow/run.go`
+  `validateRunStartBinding` rejects a Claim Actor unequal to the request Actor;
+  `internal/review` checks retained mutating Claim history before the Run branch.
+  The current `TestCheckIndependenceRejectsClaimAndRunHistoryDirections` inserts
+  a different Run Actor into isolated SQL tables. That proves the query branch,
+  not lifecycle reachability, journal acceptance, or import eligibility. No
+  test or gate was executed by the Tech Lead for this decision.
+- **Residual implementation obligations:** The retained Task 4 report mistakes
+  per-Actor self-resolution rejection for accepted behavior and changes its
+  fixture to two Reviewers. DEC-225 and `contracts.md` sections 3 and 5 already
+  require the same independent Reviewer's later Review to be admissible. Repair
+  that mismatch and prove same-Reviewer rework; do not reinterpret the new
+  evidence route as satisfying it. Also close the report's VAL-003 UNVERIFIED
+  parity row and the Task 4 criterion for resolving multiple prior Findings in
+  one Event. These are existing Task 4 obligations, not new product decisions.
+- **Task 4 resume:** Preserve TRG-23-003's BLOCK, the STOP, every failed attempt,
+  and the blocked report as historical evidence. Resume the same trigger using
+  DEC-239, attempt 9, task-scope in-scope implementation recovery, then verify
+  the amended report and all unchanged exact task gates before completion.
+  The exact runner binding and acceptance checklist are in
+  `qa/resume-after-esc-23-003.md`. This decision is not a completion receipt.
+- **Dispatch boundary:** The Human's current instruction supplies the explicit
+  clearance formerly missing for Task 9. DEC-237's bounded QA confirmation
+  remains required before that task starts. Tasks 10 and 11 remain held; the
+  authorized run stops after Task 9 and the window 7-9 review, including causal
+  repairs needed to close that review. Normal ordering and reviews after Tasks
+  6 and 9 remain required. No phase wrap or Task 10 dispatch is authorized.
+- **Spec reconciliation:** The contradiction was in VAL-015's evidence method,
+  not the product independence guarantee. The validation contract, Task 4 and
+  slice contract now state the executable proof boundary. Canonical
+  `02_TRD.md` section 5.2 records the retained Actor binding/history explicitly;
+  `07_DESIGN_PLAN_FLOWS.md` section 7 makes repeat-Reviewer resolution explicit;
+  `08_QUALITY_PLAN.md` section 8 records the precise Phase 23 evidence class.
+  PRD-REV-004, PRD-RUN-005, schema sections 3.5/3.7 and Glossary Claim/Run/Review
+  Finding were inspected and remain consistent; no DDL, wire shape, Event, or
+  public operation changes.
+- **Refs:** ESC-23-003; TRG-23-003; DEC-225; DEC-237; VAL-003/015/022.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,
@@ -1436,13 +1487,13 @@ not the default.
 |---|---|---|
 | `00_PROJECT_CHARTER.md` | pending | |
 | `01_PRD.md` | pending | |
-| `02_TRD.md` | touched: DEC-238 | section 6 records rebuild-scoped prepared writes; task 17 still owns its later sync |
+| `02_TRD.md` | touched: DEC-238, DEC-239 | section 6 records rebuild-scoped prepared writes; section 5.2 clarifies retained Run/Claim binding and history; task 17 still owns its later sync |
 | `03_TRD_SCHEMA.md` | pending | expected `touched` at task 1 (section 8.4) |
 | `04_TRD_CONFIG.md` | pending | |
 | `05_DESIGN_PLAN.md` | pending | |
 | `06_DESIGN_PLAN_CLI.md` | pending | expected `touched` at tasks 8, 9, 12, 13 |
-| `07_DESIGN_PLAN_FLOWS.md` | pending | |
-| `08_QUALITY_PLAN.md` | pending | |
+| `07_DESIGN_PLAN_FLOWS.md` | touched: DEC-239 | section 7 clarifies same-independent-Reviewer resolution under DEC-225 |
+| `08_QUALITY_PLAN.md` | touched: DEC-239 | section 8 records VAL-015 evidence-route boundary |
 | `09_AI_WORKFLOW.md` | pending | |
 | `AGENTS.md` (Commands) | pending | DEC-227: decide at wrap-up whether the explicit `-timeout` bound becomes the project default |
 | `10_IMPLEMENTATION_ROADMAP.md` | pending | |

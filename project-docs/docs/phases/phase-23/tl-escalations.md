@@ -1,5 +1,26 @@
 # Phase 23 Escalations
 
+## ESC-23-003 - Unreachable Run-holder-only CLI evidence
+
+- **Raised by:** TRG-23-003, Task 4 attempt 8.
+- **Original condition:** VAL-015 required a CLI Run-holder-only independence
+  rejection although Run start binds the Run Actor to the Claim Actor and
+  retains durable Claim history. A diagnostic Run-history query existed, but
+  accepting it required protected evidence authority. The historical BLOCK
+  and STOP remain in `triage-log.md` and `run-ledger.md`.
+- **Status:** RESOLVED 2026-09-20 under DEC-239 and the Human's explicit
+  delegation through Task 9 and its mid-phase review.
+- **Resolution:** Preserve Actor binding, durable history and both independence
+  query directions. Accept the isolated Run-holder query as diagnostic evidence
+  only; retain real CLI Claim rejection and same-Reviewer rework. Reconcile the
+  canonical TRD, Review flow and quality plan with that proof boundary.
+- **Residual work:** Task 4 still needs its same-Reviewer implementation repair,
+  multiple-prior-Finding resolution proof, built-binary evidence, VAL-003 parity
+  closure and current-session exact gates. The decision resolves the protected
+  contradiction; it does not mark those observations passed.
+- **Resume:** `qa/resume-after-esc-23-003.md`; governing TRG-23-003/ESC-23-003,
+  DEC-239, same trigger, attempt 9. Tasks 10-11 remain held.
+
 ## ESC-23-001 - Widening the journal `Condition` value breaks journal replay and Attention deduplication
 
 - **Phase:** 23 (planning; raised before any task dispatch)

@@ -44,10 +44,18 @@
 
 ## Standing Delivery Constraints
 
+- DEC-239: ESC-23-003's evidence contradiction is resolved with an explicitly
+  isolated Run-holder history query; Run/Claim Actor binding, durable history,
+  real CLI Claim rejection and same-Reviewer rework remain required. Task 4 is
+  in bounded recovery, not complete. The Human authorizes through Task 9 and
+  its review; DEC-237 QA confirmation still precedes Task 9, while Tasks 10-11
+  stay held. Exact resume: `../phases/phase-23/qa/resume-after-esc-23-003.md`.
+
 - DEC-238: Human-delegated ESC-23-002 recovery owns prepared rebuild writes
   and causal test-fixture repairs across Task 1 boundaries. Keep the strict
   30-second rebuild, 600-second ordinary-package and 900-second tagged budgets,
-  all semantic assertions, and tasks 9-11 hold. Runner reconciliation is defined
+  all semantic assertions. Its tasks 9-11 hold is superseded for Task 9 alone by
+  DEC-239. Runner reconciliation is defined
   in `../phases/phase-23/qa/resume-after-esc-23-002.md`; this is a bounded
   exception, not a standing role or gate-policy change.
 
@@ -142,9 +150,9 @@
   compatibility for the six retained types - because both were live behavior
   with no assertion and no other detector. The contract is **82** rows; nothing
   weakened and no new implementation work.
-- Task 1 is in execution; no decision remains open and no escalation is
-  registered. Tasks 2-8 are dispatchable now, and 9-11 need one bounded QA
-  confirmation of the DEC-237 edits **and** explicit Human dispatch clearance.
+- Tasks 1-3 are complete; Task 4 has DEC-239 recovery authority and ESC-23-003
+  is resolved. Tasks 5-8 follow sequentially. Task 9 has Human dispatch clearance
+  and still needs bounded QA confirmation of DEC-237; Tasks 10-11 remain held.
   See [phase brief](phase_brief.md) and
   [Phase 23 decisions](../phases/phase-23/decisions.md).
 

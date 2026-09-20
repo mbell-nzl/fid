@@ -199,6 +199,12 @@ distinct Issues, worktrees, and provably disjoint scopes. Lease mismatch,
 unknown liveness, unsafe repository state, or active prior-revision mutation
 rejects without partial effects.
 
+Run start binds the Run Actor to the active Claim's Actor; releasing or expiring
+the Claim retains its durable history. Phase 23 Review independence reads
+mutating Claim history and Runs under those Claims. A separate Run-only Actor
+is therefore a diagnostic query fixture, not a state the accepted CLI creates
+(DEC-239); the binding and retained history are not relaxed for validation.
+
 ### 5.3 Registered execution and evidence
 
 - register and resolve immutable Gate Definitions;

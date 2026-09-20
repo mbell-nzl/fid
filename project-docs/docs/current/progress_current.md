@@ -1,9 +1,23 @@
 # Progress — Current
 
-Updated 2026-09-20. **Phase 23 Task 1 is complete after DEC-238 causal
-repair; ESC-23-002 resolved. Runner STOP reconciliation is the next action.**
-Branch: `phase-23`; exact implementation identity is in Task 1's completion
-report. Tasks 2-8 remain pending and ordered; tasks 9-11 remain held.
+Updated 2026-09-20. **Phase 23 Tasks 1-3 complete; Task 4 recovery authorized
+under DEC-239 after ESC-23-003's protected evidence contradiction is resolved.**
+Branch: `phase-23`. The Runner must reconcile the retained Task 4 STOP; Task 4
+is not complete. The Human authorizes execution through Task 9 and the window
+7-9 review. Task 9 still needs bounded DEC-237 QA confirmation; Tasks 10-11 stay
+held.
+
+## Task 4 recovery authority - 2026-09-20
+
+DEC-239 preserves Run/Claim Actor binding and durable history, and explicitly
+amends VAL-015's unreachable Run-only CLI fixture to isolated query evidence.
+Real CLI Claim rejection and same-Reviewer rework remain required. Inspection
+also found the current implementation incorrectly rejects the same independent
+Actor resolving their earlier Review's Finding. One bounded recovery must fix
+that, prove multiple prior Findings resolved atomically, provide the required
+built-binary evidence and close the report's VAL-003 UNVERIFIED row before
+recording completion. Historical failures and the eight attempts remain intact.
+See [resume handoff](../phases/phase-23/qa/resume-after-esc-23-003.md).
 
 ## Task 1 recovery — 2026-09-20
 
@@ -93,10 +107,10 @@ Condition encoding (VAL-080), and gives the two DEC-235 preservation invariants
 an ID each (VAL-081, VAL-082): live behavior this refactor could delete with no
 other detector. The contract is 82 rows and nothing was weakened.
 
-Task 1's delegated repair is complete; the Runner now verifies the committed
-report and reconciles the retained STOP using DEC-238. Continue tasks 2-8 in
-order. The bounded QA confirmation of DEC-237 and explicit Human dispatch
-clearance remain prerequisites for tasks 9-11. See
+Task 1's delegated repair was completed and the Runner advanced through Task 3.
+The current Task 4 STOP is resolved into recovery authority under DEC-239 above.
+The Human has cleared Task 9; DEC-237's bounded QA confirmation still applies,
+and Tasks 10-11 remain held. See
 [phase brief](phase_brief.md) and [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Completed

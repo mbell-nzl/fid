@@ -304,6 +304,14 @@ The explicit VAL-056 boundary matrix uses real measured decompression at the
 unchanged ceilings. Phase 21's historical checkpoints are not extra Phase 22
 task dependencies; the standing evidence and report-lint rules remain binding.
 
+For approved Heavy Phase 23, VAL-015 proves reachable Claim-history rejection
+and same-independent-Reviewer rework through the CLI. Its isolated Run-holder
+query uses a diagnostic durable-history fixture because the accepted lifecycle
+binds each Run to its Claim's Actor and preserves Claim history (DEC-239).
+Record the fixture's evidence class explicitly; it is not a CLI-reachability,
+journal-acceptance, or import-eligibility claim. Both history directions and the
+exact conflicting subject and Actor remain required.
+
 ## 9. First supported baseline
 
 Before fid is used by a live project:
