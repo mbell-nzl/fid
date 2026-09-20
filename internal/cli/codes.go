@@ -84,6 +84,7 @@ const (
 	CodeObligationUnsatisfied       Code = "obligation-unsatisfied"
 	CodeArchiveInvalid              Code = "archive-invalid"
 	CodeImportTargetConflict        Code = "import-target-conflict"
+	CodeReviewNotIndependent        Code = "review-not-independent"
 )
 
 type SubjectType string
@@ -199,6 +200,8 @@ func definition(category Category, retryable bool, subjects []SubjectType, detai
 }
 
 var reasonCodeDefinitions = map[Code]reasonDefinition{
+	CodeReviewNotIndependent: definition(CategoryPrecondition, false, nil,
+		stringField("review_actor_id"), objectField("conflicting_subject", stringField("type"), stringField("id")), stringField("conflicting_actor_id")),
 	CodeInvalidArgument:     definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeUnsupportedKind:     definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeUnsupportedRelation: definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),

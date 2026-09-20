@@ -4,19 +4,23 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: The required red command-surface tracer is preserved, but `review.record` and its accepted strict journal projection path have not yet been implemented.
-- Recovery attempts: 0
-- Next action: Continue Task 4 from `TestReviewRecordRejectsNonIndependentActor`, implement the bounded Review domain and journal registrations, then complete the required gates.
+- Condition: The Review independence admission boundary is implemented, but immutable Review Event creation and its strict journal projection path remain incomplete.
+- Recovery attempts: 1
+- Next action: Continue Task 4 from the green independence tracer, implement atomic `review.recorded` projection/result parity and the remaining accepted validation matrix, then complete the required gates.
 - Human attention required: no
 
 ## Summary of what was implemented
 
-- Added the mandated vertical red tracer for `review.record`; it asserts the required typed non-independent-Actor rejection at the real CLI boundary.
-- No product implementation was added. The test deliberately remains red because `fid review record` is not registered.
+- Added the mandated vertical red tracer for `review.record` and retained its original absent-command failure evidence.
+- Added `fid review record` and `internal/review`'s write-locked independence admission. It derives conflicts solely from durable mutating Claim and Run history for the reviewed Run's Issue and Envelope revision, and returns the exact conflicting subject and Actor.
 
 ## Files created or modified
 
 - `cmd/fid/review_test.go`
+- `cmd/fid/review.go`
+- `internal/review/review.go`
+- `internal/cli/codes.go`
+- `cmd/fid/root.go`
 - `project-docs/docs/phases/phase-23/tasks/task-4-done.md`
 
 ## Documentation updated
@@ -26,7 +30,7 @@
 ## Validation Contract Coverage
 
 - VAL-014: UNVERIFIED - Review recording and immutable bound-field readback are not implemented.
-- VAL-015: FAIL - `cmd/fid/review_test.go:12` is the required red tracer; the focused command fails because the `review` command is absent and cannot produce `review-not-independent`.
+- VAL-015: UNVERIFIED - `cmd/fid/review_test.go:12` now proves the mutating-Claim-holder rejection at the real CLI boundary. The required Run-holder, independent-Actor, and rework-cycle cases remain to be implemented and tested.
 - VAL-003: UNVERIFIED - `review.recorded` remains fenced; no convergence has started.
 - VAL-016: UNVERIFIED - repository re-observation is not implemented.
 - VAL-017: UNVERIFIED - verdict/Finding validation is not implemented.
@@ -36,6 +40,7 @@
 ## Tests run
 
 - `go test -race -timeout 30m ./cmd/fid/ -run '^TestReviewRecordRejectsNonIndependentActor$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); expected red state: `review.record` is absent, so no typed `review-not-independent` rejection can be emitted.
+- `go test -race -timeout 30m ./cmd/fid/ -run '^TestReviewRecordRejectsNonIndependentActor$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 8.269s` (terminated `exit_code: 0`); the response contains `review-not-independent` and names the mutating Claim and `actor-builder`.
 
 ## Exact quality-gate results
 
@@ -48,7 +53,7 @@
 
 ## Deviations from spec
 
-- None. This is an in-scope recovery checkpoint, not a specification deviation.
+- Focused implementation attempt initially failed to compile with `undefined: config.DatabaseName` (terminated `exit_code: 1`). The in-scope repair used the existing `config.DatabaseFileName`; the later focused tracer passed. No task command, assertion, threshold, or policy changed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -60,8 +65,8 @@
 
 ## Commit hash
 
-- `926ef720fbd3c6640abde1ec66ecc9ddb8960cbf`
+- Pending commit
 
 ## Commit subject
 
-- `test(review): add review record independence tracer`
+- Pending commit
