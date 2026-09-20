@@ -90,6 +90,7 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.AddCommand(newClaimCommand())
 	cmd.AddCommand(newInitCommand())
 	cmd.AddCommand(newConcernCommand())
+	cmd.AddCommand(newDeviationCommand())
 	cmd.AddCommand(newIssueCommand())
 	cmd.AddCommand(newJournalCommand())
 	cmd.AddCommand(newLabelCommand())

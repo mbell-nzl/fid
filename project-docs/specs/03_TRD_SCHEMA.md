@@ -138,7 +138,7 @@ indexes, checks, and migration numbers are accepted with the owning slice.
 | `review_records` | Review ID, Run, Envelope/revision, exact repository identity, profile, coverage, verdict, evidence refs, created time | Immutable; Findings may be empty. |
 | `review_findings` | Finding ID, Review, subject/scope, severity, summary, blocking flag | Created only with a Review Record. |
 | `finding_dispositions` | Finding, Actor, addressed/resolved/inapplicable action, Claim or qualifying later Review, reason, time and Event | Addressed is nonterminal and requires a mutating Claim; only a later qualifying independent Review records resolved or inapplicable, with a mandatory reason for inapplicable. At most one terminal disposition; no Human Outcome substitutes for the Review (DEC-242). |
-| `concerns` | ID, subject, Actor, scope, severity, summary, status, references, created time | Generic subject; not completion-linked. |
+| `concerns` | ID, subject, raising Actor, scope, severity, summary, status, references, created time; disposition action, Issue/superseded Concern/superseded Finding reference, reason, disposing Actor, time and Event | Generic subject; not completion-linked. One irreversible `carried-forward`, `rejected`, or `superseded` disposition; the reference columns are mutually constrained by action. |
 | `deviations` | ID, subject, expected contract/control, observed departure, authority, disposition, references, created time | Append-only decision-relevant fact. |
 | `decision_refs` | ID, class, source reference/digest, authority, outcome, scope, created time | No decision body. |
 | `human_outcomes` | ID, Actor/provenance, class, subject, result, scope, references, created time | Only active-activation provenance can exercise protected authority. |
@@ -187,7 +187,7 @@ parity test before implementation:
 | Claim/Run | claimed, renewed, released, started, telemetry recorded, terminalized, recovered |
 | Stop/Attention | raised, deduplicated, resolved |
 | Gate/Evidence | registered, superseded, execution started, Receipt recorded, attestation ingested, Evidence linked, Artifact availability changed |
-| Review/Judgment | Review recorded, Finding addressed/resolved, Concern/Deviation recorded, Decision Reference recorded, Human Outcome recorded |
+| Review/Judgment | Review recorded, Finding addressed/resolved, Concern recorded/disposed, Deviation recorded, Decision Reference recorded, Human Outcome recorded |
 | Activation | prepared, component recorded, committed, aborted, finalized, recovery direction selected/completed |
 
 Every Event carries aggregate sequence, idempotency, Actor/producer,

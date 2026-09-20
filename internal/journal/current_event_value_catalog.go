@@ -45,6 +45,10 @@ var currentValueShapes = map[string]string{
 	"FindingDisposition": "id:ID action:=addressed,resolved,inapplicable actor_id:ID qualifying_review_id:?ID reason:Text disposed_at:Timestamp event_id:ID",
 	"Finding":            "id:ID subject:JudgmentSubject scope:Scope severity:=blocker,major,minor,nit summary:Text blocking:Bool review_id:ID created_at:Timestamp dispositions:[]FindingDisposition state:=open,addressed,resolved,inapplicable",
 	"Review":             "id:ID run_id:ID issue_id:ID envelope_id:ID envelope_revision:One actor_id:ID profile:ID repository:Repository coverage:Coverage verdict:=pass,changes-required,blocked evidence_refs:[]Source receipt_ids:[]ID findings:[]Finding resolved_finding_ids:[]ID independence:=distinct-actor recorded_at:Timestamp event_id:ID",
+	"ConcernDisposition": "action:=carried-forward,rejected,superseded issue_id:?ID supersedes_concern_id:?ID supersedes_finding_id:?ID reason:Text actor_id:ID disposed_at:Timestamp event_id:ID",
+	"Concern":            "id:ID subject:JudgmentSubject actor_id:ID scope:Scope severity:=blocker,major,minor,nit summary:Text reasoning:Text references:[]Source status:=open,disposed disposition:?ConcernDisposition created_at:Timestamp event_id:ID",
+	"DeviationAuthority": "actor_id:ID reference:?Text",
+	"Deviation":          "id:ID subject:JudgmentSubject actor_id:ID expected:Text observed:Text authority:DeviationAuthority disposition:=accepted,rejected,pending-decision reasoning:Text references:[]Source supersedes_deviation_id:?ID created_at:Timestamp event_id:ID",
 	"Denial":             "budget:Budget stop_ids:[]ID attention_ids:[]ID event_id:ID event_occurred_at:Timestamp",
 }
 var currentStopDetailShapes = map[string]string{

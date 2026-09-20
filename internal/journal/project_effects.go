@@ -10,9 +10,6 @@ import (
 )
 
 var unavailableJudgmentEvents = map[string]bool{
-	"concern.recorded":       true,
-	"concern.disposed":       true,
-	"deviation.recorded":     true,
 	"decision.referenced":    true,
 	"human-outcome.recorded": true,
 	"requirement.referenced": true,

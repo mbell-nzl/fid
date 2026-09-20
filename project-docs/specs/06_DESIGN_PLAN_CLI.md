@@ -179,7 +179,7 @@ slice before implementation.
 ```text
 fid review record|get|list
 fid finding address|list
-fid concern record|list
+fid concern record|dispose|list
 fid deviation record|list
 fid decision record-reference
 fid human-outcome record
@@ -188,6 +188,12 @@ fid human-outcome record
 Review and Outcome inputs are versioned structured records. Protected Human
 authority is established through active provenance, not a free-form `--by
 human` flag. Decision input is a reference/outcome, never an ADR body.
+
+Phase 23 Task 8 adds `concern dispose` for one irreversible, reasoned
+`carried-forward`, `rejected`, or `superseded` disposition. `deviation list`
+reads the append-only Deviation chain; a changed judgment is recorded with
+`deviation record` and an explicit predecessor reference rather than an update
+leaf.
 
 Phase 23 Task 5 adds optional `inapplicable_findings:[{finding_id,reason}]` to
 `review.record`, alongside retained `resolves_finding_ids` (DEC-242). The

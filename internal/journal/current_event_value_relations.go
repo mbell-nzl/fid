@@ -60,7 +60,7 @@ func validateCurrentValueRelations(kind string, o map[string]any) error {
 		if len(o["producer"].(string)) > 128 || len(o["provenance_ref"].(string)) > 512 {
 			return fmt.Errorf("actor metadata exceeds bound")
 		}
-		const actions = "artifact.verify,attention.resolve,claim.acquire,claim.expire,claim.release,claim.renew,envelope.activate,envelope.complete,envelope.create,evidence.link,finding.address,gate.register,gate.run,issue.transition,review.record,run.abandon,run.checkpoint,run.close,run.force-recover,run.observe,run.observe-budget,run.recover,run.start,stop.raise,stop.resolve"
+		const actions = "artifact.verify,attention.resolve,claim.acquire,claim.expire,claim.release,claim.renew,concern.dispose,concern.record,deviation.record,envelope.activate,envelope.complete,envelope.create,evidence.link,finding.address,gate.register,gate.run,issue.transition,review.record,run.abandon,run.checkpoint,run.close,run.force-recover,run.observe,run.observe-budget,run.recover,run.start,stop.raise,stop.resolve"
 		if err := validateCurrentValue("[]="+actions, o["capabilities"]); err != nil {
 			return err
 		}

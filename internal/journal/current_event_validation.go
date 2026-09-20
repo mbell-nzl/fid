@@ -279,7 +279,7 @@ func currentNextVersion(previous, next any) bool {
 }
 
 func validateCurrentBindings(event Event) error {
-	entityTable := map[string]string{"gate.execution-started": "execution_attempts", "gate.receipt-recorded": "execution_receipts", "stop.raised": "stops", "stop.resolved": "stop_resolutions", "attention.resolved": "attention_items"}[event.EventType]
+	entityTable := map[string]string{"gate.execution-started": "execution_attempts", "gate.receipt-recorded": "execution_receipts", "stop.raised": "stops", "stop.resolved": "stop_resolutions", "attention.resolved": "attention_items", "concern.recorded": "judgment_concerns", "concern.disposed": "judgment_concerns", "deviation.recorded": "deviations"}[event.EventType]
 	for _, effect := range event.Effects {
 		row, err := mergeEffectValues(effect.PK, effect.Values)
 		if err != nil {

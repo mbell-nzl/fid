@@ -129,6 +129,15 @@ func TestP23ReviewRecordRealProcessJourney(t *testing.T) {
 	}
 }
 
+func requiresAdditionalJudgmentActors(actions []string) bool {
+	for _, action := range actions {
+		if action == "review.record" || action == "concern.dispose" {
+			return true
+		}
+	}
+	return false
+}
+
 func containsReviewRecordAction(actions []string) bool {
 	for _, action := range actions {
 		if action == "review.record" {

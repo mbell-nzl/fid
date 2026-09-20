@@ -829,7 +829,7 @@ func validateActorProfiles(profiles []ActorProfile) error {
 }
 
 func sortedUniqueCapabilities(capabilities []string) bool {
-	allowed := map[string]bool{"artifact.verify": true, "attention.resolve": true, "claim.acquire": true, "claim.expire": true, "claim.release": true, "claim.renew": true, "envelope.activate": true, "envelope.complete": true, "envelope.create": true, "evidence.link": true, "finding.address": true, "gate.register": true, "gate.run": true, "issue.transition": true, "review.record": true, "run.abandon": true, "run.checkpoint": true, "run.close": true, "run.force-recover": true, "run.observe": true, "run.observe-budget": true, "run.recover": true, "run.start": true, "stop.raise": true, "stop.resolve": true}
+	allowed := map[string]bool{"artifact.verify": true, "attention.resolve": true, "claim.acquire": true, "claim.expire": true, "claim.release": true, "claim.renew": true, "concern.dispose": true, "concern.record": true, "deviation.record": true, "envelope.activate": true, "envelope.complete": true, "envelope.create": true, "evidence.link": true, "finding.address": true, "gate.register": true, "gate.run": true, "issue.transition": true, "review.record": true, "run.abandon": true, "run.checkpoint": true, "run.close": true, "run.force-recover": true, "run.observe": true, "run.observe-budget": true, "run.recover": true, "run.start": true, "stop.raise": true, "stop.resolve": true}
 	previous := ""
 	for _, capability := range capabilities {
 		if !allowed[capability] || previous >= capability {

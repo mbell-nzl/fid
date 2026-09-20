@@ -1,0 +1,122 @@
+package main
+
+import (
+	"errors"
+	"fmt"
+
+	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/review"
+	"github.com/spf13/cobra"
+)
+
+func init() {
+	rootFlagCapabilities["deviation record"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["deviation list"] = rootFlagCapability{Project: true, JSON: true}
+}
+
+func newDeviationCommand() *cobra.Command {
+	cmd := &cobra.Command{Use: "deviation", Short: "Record and list append-only Deviations."}
+	cmd.AddCommand(newDeviationRecordCommand(), newDeviationListCommand())
+	return cmd
+}
+
+func newDeviationRecordCommand() *cobra.Command {
+	var inputPath, actor, key string
+	cmd := &cobra.Command{Use: "record", Args: canonicalNoArgs("deviation.record"), RunE: func(cmd *cobra.Command, _ []string) error {
+		for _, flag := range []string{"input", "actor", "idempotency-key"} {
+			if err := requireCanonicalFlag(cmd, "deviation.record", flag); err != nil {
+				return err
+			}
+		}
+		var request review.DeviationRecordRequest
+		fields := []string{"id", "subject", "expected", "observed", "authority", "disposition", "reasoning", "references", "supersedes_deviation_id"}
+		if err := decodeClosedJudgmentInput(cmd.InOrStdin(), inputPath, fields, &request); err != nil {
+			return renderDeviationError(cmd, "deviation.record", err)
+		}
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderDeviationError(cmd, "deviation.record", err)
+		}
+		result, err := review.RecordDeviation(review.JudgmentOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		if err != nil {
+			return renderDeviationError(cmd, "deviation.record", err)
+		}
+		jsonMode, err := readJSONMode(cmd)
+		if err != nil {
+			return err
+		}
+		if jsonMode {
+			return cli.WriteSuccess(cmd.OutOrStdout(), "deviation.record", map[string]any{"deviation": result.Deviation, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.Deviation["created_at"].(string)})
+		}
+		_, err = fmt.Fprintf(cmd.OutOrStdout(), "recorded deviation %s\n", result.Deviation["id"])
+		return err
+	}}
+	cmd.Flags().StringVar(&inputPath, "input", "", "Deviation JSON input")
+	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
+	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
+	cmd.SetFlagErrorFunc(canonicalFlagError("deviation.record"))
+	return cmd
+}
+
+func newDeviationListCommand() *cobra.Command {
+	var subject, disposition string
+	var limit int
+	cmd := &cobra.Command{Use: "list", Args: canonicalNoArgs("deviation.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderDeviationError(cmd, "deviation.list", err)
+		}
+		items, err := review.ListDeviations(review.DeviationListOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), Subject: subject, Disposition: disposition, Limit: limit})
+		if err != nil {
+			return renderDeviationError(cmd, "deviation.list", err)
+		}
+		jsonMode, err := readJSONMode(cmd)
+		if err != nil {
+			return err
+		}
+		if jsonMode {
+			values := make([]any, len(items))
+			for index := range items {
+				values[index] = items[index]
+			}
+			return cli.WriteSuccess(cmd.OutOrStdout(), "deviation.list", map[string]any{"items": values}, nil)
+		}
+		for _, item := range items {
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", item["id"], item["disposition"]); err != nil {
+				return err
+			}
+		}
+		return nil
+	}}
+	cmd.Flags().StringVar(&subject, "subject", "", "Filter by type:id subject")
+	cmd.Flags().StringVar(&disposition, "disposition", "", "Filter by disposition")
+	cmd.Flags().IntVar(&limit, "limit", 100, "Maximum Deviations to return")
+	cmd.SetFlagErrorFunc(canonicalFlagError("deviation.list"))
+	return cmd
+}
+
+func renderDeviationError(cmd *cobra.Command, operation string, cause error) error {
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	var missing *review.DeviationNotFoundError
+	if errors.As(cause, &missing) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeDeviationNotFound, "Deviation was not found", &cli.Subject{Type: cli.SubjectDeviation, ID: missing.ID}, map[string]any{"id": missing.ID})
+	}
+	var denied *policy.EnvelopeAuthorityDeniedError
+	if errors.As(cause, &denied) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor": denied.ActorID})
+	}
+	var conflict *journal.IdempotencyConflictError
+	if errors.As(cause, &conflict) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
+	}
+	var resultLimit *review.ResultLimitExceededError
+	if errors.As(cause, &resultLimit) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeResultLimitExceeded, "Deviation result limit exceeded", nil, map[string]any{"collection": "items", "limit": resultLimit.Limit, "observed": resultLimit.Observed})
+	}
+	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Deviation request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+}

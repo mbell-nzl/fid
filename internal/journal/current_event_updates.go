@@ -38,6 +38,8 @@ func validateCurrentUpdate(event Event, effect Effect) error {
 		values = "completed_event_id"
 	case "attention_items":
 		values, guards = "version status resolution_event_id", "version status"
+	case "judgment_concerns":
+		values, guards = "status disposition_action disposition_issue_id supersedes_concern_id supersedes_finding_id disposition_reason disposed_actor_id disposed_at disposed_event_id", "status"
 	case "idempotency_results":
 		values, guards = "result_entity_id result_event_id aggregate_sequence result_json", "request_digest"
 	default:
@@ -81,6 +83,8 @@ func validateCurrentTerminalValues(event Event, effect Effect) error {
 		}
 	case "attention_items":
 		valid = status == "resolved" && effect.Preconditions["status"] == "open" && effect.Values["resolution_event_id"] == event.EventID
+	case "judgment_concerns":
+		valid = event.EventType == "concern.disposed" && effect.Preconditions["status"] == "open" && status == "disposed" && effect.Values["disposed_event_id"] == event.EventID && effect.Values["disposed_actor_id"] == event.ActorV2.ActorID
 	case "activation_recoveries":
 		valid = effect.Values["completed_event_id"] == event.EventID
 	case "kit_activations", "activation_components":

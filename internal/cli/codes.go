@@ -94,6 +94,9 @@ const (
 	CodeReviewNotFound              Code = "review-not-found"
 	CodeFindingNotFound             Code = "finding-not-found"
 	CodeFindingAlreadyDisposed      Code = "finding-already-disposed"
+	CodeConcernNotFound             Code = "concern-not-found"
+	CodeDeviationNotFound           Code = "deviation-not-found"
+	CodeConcernAlreadyDisposed      Code = "concern-already-disposed"
 	CodeIdempotencyConflict         Code = "idempotency-conflict"
 )
 
@@ -121,6 +124,8 @@ const (
 	SubjectAttention        SubjectType = "attention"
 	SubjectReview           SubjectType = "review"
 	SubjectFinding          SubjectType = "finding"
+	SubjectConcern          SubjectType = "concern"
+	SubjectDeviation        SubjectType = "deviation"
 )
 
 type Subject struct {
@@ -237,6 +242,10 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeFindingNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectFinding}, stringField("id")),
 	CodeFindingAlreadyDisposed: definition(CategoryConflict, false, []SubjectType{SubjectFinding},
 		stringField("finding_id"), stringField("state")),
+	CodeConcernNotFound:   definition(CategoryNotFound, false, []SubjectType{SubjectConcern}, stringField("id")),
+	CodeDeviationNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectDeviation}, stringField("id")),
+	CodeConcernAlreadyDisposed: definition(CategoryConflict, false, []SubjectType{SubjectConcern},
+		stringField("concern_id"), stringField("disposed_at")),
 	CodeIdempotencyConflict: definition(CategoryConflict, false, nil,
 		stringField("operation_scope"), stringField("idempotency_key"), stringField("stored_request_digest"), stringField("supplied_request_digest")),
 	CodeInvalidArgument:     definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
@@ -356,6 +365,7 @@ var registeredCodes = []Code{
 	CodeArchiveInvalid,
 	CodeImportTargetConflict,
 	CodeFindingNotFound, CodeFindingAlreadyDisposed,
+	CodeConcernNotFound, CodeDeviationNotFound, CodeConcernAlreadyDisposed,
 }
 
 func findingFields() []detailField {

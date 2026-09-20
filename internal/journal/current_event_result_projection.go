@@ -90,6 +90,10 @@ func currentExpectedResult(tx *sql.Tx, event Event) (map[string]any, error) {
 		}
 	case "finding.addressed":
 		put("finding", "Finding", "review_findings", id(event.Aggregate.ID))
+	case "concern.recorded", "concern.disposed":
+		put("concern", "Concern", "judgment_concerns", id(event.Aggregate.ID))
+	case "deviation.recorded":
+		put("deviation", "Deviation", "deviations", id(event.Aggregate.ID))
 	case "run.started", "run.closed", "run.observed", "run.checkpointed", "run.abandoned":
 		put("run", "Run", "runs", id(event.Aggregate.ID))
 		if event.EventType == "run.abandoned" && failure == nil {
@@ -203,6 +207,10 @@ func currentProjectedValue(tx *sql.Tx, kind, table string, pk map[string]any) (m
 		err = currentFillReview(tx, row)
 	case "Finding":
 		err = currentFillFinding(tx, row)
+	case "Concern":
+		err = currentFillConcern(row)
+	case "Deviation":
+		err = currentFillDeviation(row)
 	}
 	if err != nil {
 		return nil, err
@@ -218,6 +226,27 @@ func currentProjectedValue(tx *sql.Tx, kind, table string, pk map[string]any) (m
 	}
 	return result, nil
 }
+
+func currentFillConcern(row map[string]any) error {
+	row["subject"] = map[string]any{"type": row["subject_type"], "id": row["subject_id"]}
+	row["disposition"] = nil
+	if row["disposition_action"] != nil {
+		row["disposition"] = map[string]any{
+			"action": row["disposition_action"], "issue_id": row["disposition_issue_id"],
+			"supersedes_concern_id": row["supersedes_concern_id"], "supersedes_finding_id": row["supersedes_finding_id"],
+			"reason": row["disposition_reason"], "actor_id": row["disposed_actor_id"],
+			"disposed_at": row["disposed_at"], "event_id": row["disposed_event_id"],
+		}
+	}
+	return nil
+}
+
+func currentFillDeviation(row map[string]any) error {
+	row["subject"] = map[string]any{"type": row["subject_type"], "id": row["subject_id"]}
+	row["authority"] = map[string]any{"actor_id": row["authority_actor_id"], "reference": row["authority_reference"]}
+	return nil
+}
+
 func currentQueryValues(tx *sql.Tx, query string, args ...any) ([]any, error) {
 	rows, err := tx.Query(query, args...)
 	if err != nil {

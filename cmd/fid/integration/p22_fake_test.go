@@ -328,7 +328,7 @@ func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, ac
 		map[string]any{"actor_id": "actor-denied", "actor_type": "agent", "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities},
 		map[string]any{"actor_id": actor, "actor_type": actorType, "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities},
 	}
-	if containsReviewRecordAction(actions) {
+	if requiresAdditionalJudgmentActors(actions) {
 		profiles = append(profiles, map[string]any{"actor_id": "actor-reviewer-two", "actor_type": "agent", "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities})
 	}
 	profileDigest := p21Component(t, binary, workspace, activationID, "authority-profile", "p22-corpus-authority", profiles)
@@ -347,9 +347,8 @@ func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, ac
 	registrationVersion := p21Path(t, registered, "result", "registration", "version")
 	source := map[string]any{"digest": "sha256:" + p22Zeros(64), "display_label": "Phase 22 corpus", "external_id": nil, "path": "project-docs/p22-corpus.md", "repository": repository, "section": nil, "source_type": "project-file"}
 	authorityGrants := []any{map[string]any{"actions": grantActions, "actor_selector": map[string]any{"actor_id": actor, "required_capabilities": grantActions}, "scope": map[string]any{"issue_id": issueID}}}
-	// The Review journey needs a second, independently activated Actor. Keep the
-	// standard recovery fixture's single-Actor authority unless it explicitly
-	// carries the new Review action.
+	// The Review journey needs a second, independently authorized Actor. Keep the
+	// standard recovery fixture's single-Actor authority otherwise.
 	if containsReviewRecordAction(actions) {
 		authorityGrants = append(authorityGrants, map[string]any{"actions": grantActions, "actor_selector": map[string]any{"actor_id": "actor-denied", "required_capabilities": grantActions}, "scope": map[string]any{"issue_id": issueID}})
 		authorityGrants = append(authorityGrants, map[string]any{"actions": grantActions, "actor_selector": map[string]any{"actor_id": "actor-reviewer-two", "required_capabilities": grantActions}, "scope": map[string]any{"issue_id": issueID}})
