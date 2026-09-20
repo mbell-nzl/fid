@@ -86,8 +86,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `3a0aed9d35ca2d43540e686a5cbbaa245177ea0f`
 
 ## Commit subject
 
-- Pending commit
+- `feat(judgment): add generic concerns and deviations`
