@@ -134,6 +134,10 @@ DEC-243 cell accounting, with otherwise qualifying subjects and trust:
   the evaluation reason precedence order in `internal/workflow/evaluation.go`
   immediately after `obligation-evidence-absent`, in that order.
 - `cmd/fid/evidence.go`, `run.go`, `claim.go` - denial responses only.
+- `cmd/fid/review.go` and matching existing tests - replace Task 4's
+  `budget:null`, empty `stops`, and empty `attention` placeholders with the
+  domain result produced by this task's atomic charge/exhaustion operation
+  (DEC-245). Preserve the accepted Review result shape and replay semantics.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
   this change.
 - `project-docs/docs/phases/phase-23/tasks/task-6-done.md`.

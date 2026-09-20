@@ -1653,6 +1653,22 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   report records this scope repair; window 4-6 QA verifies the behavior. No new
   planning review or Human escalation is required.
 
+### DEC-245 - Task 6 projects its accepted Review budget result
+
+- **Authority:** Human-delegated super-agent authority; root resolves an
+  executable task-scope omission without changing the accepted interface.
+- **Problem:** `cmd/fid/review.go` retained Task 4's literal null Budget and
+  empty Stop/Attention collections. Task 6 implements the already-specified
+  producer result, but its file list omitted this adapter.
+- **Decision:** Add `cmd/fid/review.go` and matching existing tests to Task 6.
+  Render the domain-produced Budget, Stops, and Attention in the existing
+  `review.record` result fields, including idempotent replay. Do not add fields
+  or move charge/exhaustion rules into the adapter.
+- **Validation:** VAL-027/029 and the unchanged Task 6 gates must demonstrate
+  result/Event/projection consistency for non-exhausting and exhausting
+  Reviews. The same Task 6 report records the scope correction; window 4-6 QA
+  reviews it. No new gate, threshold, product decision, or recovery cycle.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,
