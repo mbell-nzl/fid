@@ -81,8 +81,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `0be596e9068795ceb3a0a89bdac50d538f8e8791`
 
 ## Commit subject
 
-- Pending commit
+- `feat(finding): implement disposition lifecycle`
