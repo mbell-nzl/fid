@@ -103,8 +103,8 @@
 
 ## Commit hash
 
-- `23ea3e9d0dac3676867788b293647c9546a4ad1b`
+- `17bd6acdf523d2eb01e06b7dbb0a2ee9700c6dec`
 
 ## Commit subject
 
-- `feat(review): resolve prior findings atomically`
+- `fix(review): preserve typed review record denials`
