@@ -90,8 +90,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `c9afe9016eeb5ff783f3aabe5fa68847b3f69be2`
 
 ## Commit subject
 
-- Pending commit
+- `test(workflow): complete envelope field rejection matrix`
