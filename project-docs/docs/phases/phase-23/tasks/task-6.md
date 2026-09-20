@@ -59,6 +59,14 @@ next rework atomically when that budget is exhausted.
 - `internal/evidence/evidence.go`, `policy.go`, `execution.go`.
 - `internal/workflow/budget.go`, `run_budget.go`, `recovery_budget.go`,
   `evaluation.go`, `resolve.go`.
+- `internal/workflow/envelope.go` - the authoring-validation path for VAL-030
+  (DEC-241). Replace the existing `budget-exhausted`-only admission with the
+  accepted exact unit/action pairing and require a `review` Obligation for a
+  `review-cycles` budget; retain acceptance of an unbudgeted `review`
+  Obligation and all other budget validation. Matching ordinary in-package
+  tests exercise all five VAL-030 cases. This scope is executed by both the
+  existing full race/coverage gate and the named `./internal/workflow/` gate;
+  no command change or unrelated Envelope redesign is authorized.
 - `internal/review/` - the verdict effects that charge and raise.
 - **No `current_event_catalog.go` edit in this task** (I-28, DEC-229): task 1
   registered `review.recorded`'s complete `schema.md` 6.2 rule including every

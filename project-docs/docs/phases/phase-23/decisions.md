@@ -1507,6 +1507,27 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   QA-plan mapping and current context are synchronized.
 - **Refs:** DEC-235/237; QA R-29; VAL-082/083/084.
 
+### DEC-241: Assign the existing review-budget authoring validator to Task 6
+
+- **Status:** ACCEPTED 2026-09-20 under Tech Lead task-scope authority after a
+  bounded pre-dispatch inspection requested by the Human's delegate.
+- **Finding:** `internal/workflow/envelope.go` `validateEnvelopeCreate`
+  currently accepts only `budget.ExhaustionAction == "budget-exhausted"`.
+  Task 6's VAL-030 requires accepting the matched
+  `review-cycles`/`review-rework-exhausted` pair with a review Obligation,
+  rejecting three invalid pairings, and accepting unbudgeted review. Its
+  named budget files cannot implement that existing authoring guard alone.
+- **Scope correction:** Task 6 owns the minimum authoring-validation change in
+  `internal/workflow/envelope.go` and matching ordinary in-package tests for
+  those five accepted cases. Retain every other Envelope and budget rule.
+  `go test -race -timeout 30m -coverprofile=coverage.out ./...` and the existing
+  `go test -race -timeout 30m -cover ./internal/workflow/` compile and execute
+  this untagged scope. No command, assertion, threshold or contract changes.
+- **Review:** The ordinary window 4-6 review checks the implemented behavior;
+  this executable ownership correction does not open another readiness cycle.
+  Product specifications already state the behavior and need no amendment.
+- **Refs:** Task 6; VAL-030; contracts section 6; DEC-167/173.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,
