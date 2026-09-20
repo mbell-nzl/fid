@@ -72,8 +72,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `e4fe99111e035ebd72c547eda3a9dbf828cafa14`
 
 ## Commit subject
 
-- Pending commit
+- `feat(evidence): enforce freshness and outcome supersession`
