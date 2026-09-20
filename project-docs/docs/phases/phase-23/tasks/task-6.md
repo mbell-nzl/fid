@@ -133,7 +133,10 @@ DEC-243 cell accounting, with otherwise qualifying subjects and trust:
   `human-outcome-absent`, `review-not-independent`, and `outcome-superseded`, to
   the evaluation reason precedence order in `internal/workflow/evaluation.go`
   immediately after `obligation-evidence-absent`, in that order.
-- `cmd/fid/evidence.go`, `run.go`, `claim.go` - denial responses only.
+- `cmd/fid/evidence.go` and matching tests - the accepted typed Evidence link
+  request/result, optional-Obligation evaluation result, and denial adapters
+  owned by this task (VAL-008/024/025/077). `cmd/fid/run.go` and `claim.go`
+  own denial rendering only; domain operations enforce admission.
 - `cmd/fid/review.go` and matching existing tests - replace Task 4's
   `budget:null`, empty `stops`, and empty `attention` placeholders with the
   domain result produced by this task's atomic charge/exhaustion operation

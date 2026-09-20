@@ -1668,6 +1668,12 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   result/Event/projection consistency for non-exhausting and exhausting
   Reviews. The same Task 6 report records the scope correction; window 4-6 QA
   reviews it. No new gate, threshold, product decision, or recovery cycle.
+- **Adjacent clarification:** The existing `cmd/fid/evidence.go` scope also
+  implements the accepted link and optional-Obligation evaluation adapters,
+  not only their denials. The old shared "denial responses only" annotation
+  contradicted Task 6's explicit VAL-008/024/025/077 ownership; it now applies
+  only to the Run and Claim adapters. This changes no requirement or file
+  ownership beyond the already-dispatched Evidence slice.
 
 ## Spec Sync Verdict
 
