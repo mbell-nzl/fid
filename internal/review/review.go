@@ -225,6 +225,10 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if err != nil {
 			return err
 		}
+		resolutionEffects, err := resolveFindingEffects(conn, request.ResolvesFindingIDs, binding, options.ActorID, reviewID)
+		if err != nil {
+			return err
+		}
 		next, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: reviewID, Type: "review"})
 		if err != nil {
 			return err
@@ -233,7 +237,8 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if err != nil {
 			return err
 		}
-		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "review.recorded", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: reviewID, Sequence: next, Type: "review"}, CommandName: "review.record", Repository: journalRepository(observed), Effects: reviewRecordEffects(review, "<event-id>")}
+		effects := append(reviewRecordEffects(review, "<event-id>"), resolutionEffects...)
+		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "review.recorded", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: reviewID, Sequence: next, Type: "review"}, CommandName: "review.record", Repository: journalRepository(observed), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setReviewEventIdentity(review, prepared)
 			resultJSON, err := journal.MarshalCanonicalJSON(map[string]any{"review": review, "budget": nil, "stops": []any{}, "attention": []any{}, "idempotency_key": options.IdempotencyKey, "replayed": false})
@@ -255,6 +260,40 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		return RecordResult{}, err
 	}
 	return result, nil
+}
+
+func resolveFindingEffects(conn *sql.DB, findingIDs []string, binding recordBinding, actorID, reviewID string) ([]journal.Effect, error) {
+	seen := make(map[string]struct{}, len(findingIDs))
+	effects := make([]journal.Effect, 0, len(findingIDs))
+	for _, findingID := range findingIDs {
+		if _, found := seen[findingID]; found {
+			return nil, fmt.Errorf("review resolution Finding %q is duplicated", findingID)
+		}
+		seen[findingID] = struct{}{}
+		var issueID, envelopeID, creatorActorID string
+		var revision int
+		err := conn.QueryRow(`SELECT r.issue_id, r.envelope_id, r.envelope_revision, r.actor_id FROM review_findings f JOIN review_records r ON r.id=f.review_id WHERE f.id=?`, findingID).Scan(&issueID, &envelopeID, &revision, &creatorActorID)
+		if err != nil || issueID != binding.IssueID || envelopeID != binding.EnvelopeID || revision != binding.EnvelopeRevision || creatorActorID == actorID {
+			return nil, fmt.Errorf("review resolution Finding %q is invalid", findingID)
+		}
+		var terminal int
+		if err := conn.QueryRow(`SELECT 1 FROM finding_dispositions WHERE finding_id=? AND action IN ('resolved','inapplicable')`, findingID).Scan(&terminal); err != sql.ErrNoRows {
+			if err == nil {
+				return nil, fmt.Errorf("review resolution Finding %q is terminal", findingID)
+			}
+			return nil, fmt.Errorf("review resolution Finding %q: %w", findingID, err)
+		}
+		dispositionID, err := journal.GenerateID("FDP", func(candidate string) (bool, error) {
+			var found int
+			err := conn.QueryRow(`SELECT 1 FROM finding_dispositions WHERE id=?`, candidate).Scan(&found)
+			return err == nil, nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		effects = append(effects, journal.Effect{Op: "insert", Table: "finding_dispositions", PK: map[string]any{"id": dispositionID}, Values: map[string]any{"finding_id": findingID, "action": "resolved", "actor_id": actorID, "claim_id": nil, "qualifying_review_id": reviewID, "reason": "resolved by qualifying Review", "disposed_at": "<occurred-at>", "created_event_id": "<event-id>"}})
+	}
+	return effects, nil
 }
 
 func checkIndependence(conn *sql.DB, actorID, runID string) error {

@@ -5,8 +5,8 @@
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
 - Condition: The atomic pass-Review Event and `review.get` readback now work through the real CLI, but coverage/source validation, non-empty Finding projection, prior-Finding resolution, and the remaining typed VAL-014 through VAL-019 matrix are incomplete.
-- Recovery attempts: 5
-- Next action: Continue from the green coverage-digest and two-Finding checkpoint; add the typed no-Event repository/Receipt, complete verdict matrix, one-Run conflict, replay/conflict, both independence directions and rework-cycle tests, then implement prior-Finding resolution.
+- Recovery attempts: 6
+- Next action: Continue from the green prior-Finding resolution-effect checkpoint; add the typed no-Event repository/Receipt probes, complete verdict matrix, one-Run conflict, replay/conflict, both independence directions and rework-cycle journeys, and verify resolving multiple prior Findings through the CLI.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -17,6 +17,7 @@
 - Completed the first atomic `review.record` slice: it locks, refreshes the projection, validates the active review Run/Claim and authority grant, re-observes repository identity, appends a `review.recorded` Event with idempotency, projects `review_records`, and returns the canonical typed result.
 - Added `fid review get <review-id>` and a real CLI record/get tracer. Converged the retained executable-leaf and Attention surface inventories for the accepted new Review leaves.
 - Added closed-coverage validation that rejects an item and exclusion sharing one Source digest before Event creation. Expanded the real CLI tracer to record, strictly project, and read back two non-blocking Findings in one Event.
+- Added bounded `resolves_finding_ids` admission and Event effects: each requested prior Finding must be unique, belong to the same Issue and Envelope revision, have a different recording Actor, and be non-terminal; accepted IDs add atomic `resolved` disposition inserts linked to the qualifying Review.
 
 ## Files created or modified
 
@@ -39,7 +40,7 @@
 - VAL-015: UNVERIFIED - `cmd/fid/review_test.go:12` now proves the mutating-Claim-holder rejection at the real CLI boundary. The required Run-holder, independent-Actor, and rework-cycle cases remain to be implemented and tested.
 - VAL-003: UNVERIFIED - The `review.recorded` fence is removed, while the retained Task 1 fence-parity assertion has not yet been converged to a still-fenced Event or run in this recovery.
 - VAL-016: PARTIAL - implementation re-observes and compares Repository, but no typed no-Event mismatch test exists.
-- VAL-017: PARTIAL - implementation checks verdict/Finding agreement; the required valid and invalid CLI matrix is absent.
+- VAL-017: PARTIAL - implementation checks verdict/Finding agreement and supports repeated Finding effects; the required valid and invalid CLI matrix is absent.
 - VAL-018: PARTIAL - implementation rejects an existing `review_records.run_id`; no typed test exists.
 - VAL-019: PARTIAL - implementation uses `journal.CommitIdempotent`; replay/conflict tests are absent.
 
@@ -58,6 +59,7 @@
 - `go test -race -timeout 30m ./internal/review/ -run '^TestValidateCoverageRejectsSourceInItemAndExclusion$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/review 1.017s` (terminated `exit_code: 0`)
 - `go test -race -timeout 30m ./cmd/fid/ -run '^TestReviewRecordCreatesImmutableReview$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); expected red state: non-empty Finding result values carried the Event timestamp placeholder.
 - `go test -race -timeout 30m ./cmd/fid/ -run '^TestReviewRecordCreatesImmutableReview$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 9.070s` (terminated `exit_code: 0`)
+- `go test -race -timeout 30m ./internal/review/ ./cmd/fid/ -run '^(TestValidateVerdictFindingAgreement|TestReviewRecordCreatesImmutableReview)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 9.078s` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
@@ -66,11 +68,14 @@
 - `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 64.1% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.0%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 665.125s` (terminated `exit_code: 0`)
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 64.1% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 64.9%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 663.124s` (terminated `exit_code: 0`)
 - `go test -race -timeout 30m -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`); retained executable-leaf and Attention inventories needed Task 4 convergence.
 - `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 64.1% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.0%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 694.141s` (terminated `exit_code: 0`)
-- Observed wall times: `cmd/fid` 542.160s failed attempt, 473.760s prior rerun, and 457.990s current rerun; `internal/workflow` 230.960s first attempt, cached on later reruns; `cmd/fid/integration` 694.141s prior and 665.125s current. All applicable 600s/900s budgets passed.
+- Observed wall times: `cmd/fid` 542.160s failed attempt, then 473.760s, 457.990s, and 442.371s passing reruns; `internal/workflow` 230.960s first attempt, cached on later reruns; `cmd/fid/integration` 694.141s, 665.125s, and 663.124s. All applicable 600s/900s budgets passed.
 
 ## Deviations from spec
 
@@ -86,8 +91,8 @@
 
 ## Commit hash
 
-- `9416d743f2d20dfaf6cd0e70d605e2a870dd15ac`
+- Pending commit
 
 ## Commit subject
 
-- `feat(review): validate coverage and finding parity`
+- Pending commit
