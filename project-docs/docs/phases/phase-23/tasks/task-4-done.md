@@ -91,8 +91,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `23ea3e9d0dac3676867788b293647c9546a4ad1b`
 
 ## Commit subject
 
-- Pending commit
+- `feat(review): resolve prior findings atomically`
