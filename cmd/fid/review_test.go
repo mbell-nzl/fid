@@ -131,6 +131,8 @@ func TestReviewRecordCreatesImmutableReview(t *testing.T) {
 	if replayedProjection.err != nil || replayedProjection.stderr != "" || replayedProjection.stdout != got.stdout {
 		t.Fatalf("review.get after rebuild = %#v, want byte-identical live projection %#v", replayedProjection, got)
 	}
+	recordInput["inapplicable_findings"] = []any{}
+	writeActivationInput(t, recordPath, recordInput)
 	replayed := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "record", "--actor", "actor-builder", "--input", recordPath, "--idempotency-key", "review-record")
 	if replayed.err != nil || replayed.stderr != "" || !strings.Contains(replayed.stdout, `"replayed":true`) {
 		t.Fatalf("replay Review = %#v, want original typed replay", replayed)
@@ -324,7 +326,7 @@ func reviewWorkspaceWithTwoActivatedReviewers(t *testing.T) (string, string, str
 	writeActivationInput(t, registrationPath, registrationInput)
 	registration := registerGateForTest(t, workspace, registrationPath, "review-gate-register")
 	input := envelopeCreateInput(t, workspace, issueID, registration)
-	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "gate.run", "review.record", "run.close", "run.start"}
+	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "finding.address", "gate.run", "review.record", "run.close", "run.start"}
 	input["authority_grants"] = []any{
 		map[string]any{"actions": actions, "actor_selector": map[string]any{"actor_id": "actor-builder", "required_capabilities": actions}, "scope": map[string]any{"issue_id": issueID}},
 		map[string]any{"actions": []string{"run.observe"}, "actor_selector": map[string]any{"actor_id": "actor-harness", "required_capabilities": []string{"run.observe"}}, "scope": map[string]any{"issue_id": issueID}},

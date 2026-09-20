@@ -85,6 +85,7 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.AddCommand(newEnvelopeCommand())
 	cmd.AddCommand(newExportCommand())
 	cmd.AddCommand(newEvidenceCommand())
+	cmd.AddCommand(newFindingCommand())
 	cmd.AddCommand(newGateCommand())
 	cmd.AddCommand(newClaimCommand())
 	cmd.AddCommand(newInitCommand())

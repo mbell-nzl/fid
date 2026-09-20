@@ -88,6 +88,8 @@ const (
 	CodeReviewVerdictInvalid        Code = "review-verdict-invalid"
 	CodeRepositoryMismatch          Code = "repository-mismatch"
 	CodeReviewNotFound              Code = "review-not-found"
+	CodeFindingNotFound             Code = "finding-not-found"
+	CodeFindingAlreadyDisposed      Code = "finding-already-disposed"
 	CodeIdempotencyConflict         Code = "idempotency-conflict"
 )
 
@@ -114,6 +116,7 @@ const (
 	SubjectStop             SubjectType = "stop"
 	SubjectAttention        SubjectType = "attention"
 	SubjectReview           SubjectType = "review"
+	SubjectFinding          SubjectType = "finding"
 )
 
 type Subject struct {
@@ -218,7 +221,10 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 		stringField("verdict"), stringField("reason")),
 	CodeRepositoryMismatch: definition(CategoryConflict, false, nil,
 		objectField("expected", repositoryFields()...), objectField("observed", repositoryFields()...)),
-	CodeReviewNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectReview}, stringField("id")),
+	CodeReviewNotFound:  definition(CategoryNotFound, false, []SubjectType{SubjectReview}, stringField("id")),
+	CodeFindingNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectFinding}, stringField("id")),
+	CodeFindingAlreadyDisposed: definition(CategoryConflict, false, []SubjectType{SubjectFinding},
+		stringField("finding_id"), stringField("state")),
 	CodeIdempotencyConflict: definition(CategoryConflict, false, nil,
 		stringField("operation_scope"), stringField("idempotency_key"), stringField("stored_request_digest"), stringField("supplied_request_digest")),
 	CodeInvalidArgument:     definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
@@ -336,6 +342,7 @@ var registeredCodes = []Code{
 	CodeObligationUnsatisfied,
 	CodeArchiveInvalid,
 	CodeImportTargetConflict,
+	CodeFindingNotFound, CodeFindingAlreadyDisposed,
 }
 
 func findingFields() []detailField {

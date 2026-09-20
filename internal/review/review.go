@@ -19,16 +19,17 @@ import (
 )
 
 type RecordRequest struct {
-	RunID              string         `json:"run_id"`
-	ExpectedRunVersion int            `json:"expected_run_version"`
-	Profile            string         `json:"profile"`
-	Repository         Repository     `json:"repository"`
-	Coverage           Coverage       `json:"coverage"`
-	Verdict            string         `json:"verdict"`
-	Findings           []FindingInput `json:"findings"`
-	ResolvesFindingIDs []string       `json:"resolves_finding_ids"`
-	EvidenceRefs       []Source       `json:"evidence_refs"`
-	ReceiptIDs         []string       `json:"receipt_ids"`
+	RunID                string                     `json:"run_id"`
+	ExpectedRunVersion   int                        `json:"expected_run_version"`
+	Profile              string                     `json:"profile"`
+	Repository           Repository                 `json:"repository"`
+	Coverage             Coverage                   `json:"coverage"`
+	Verdict              string                     `json:"verdict"`
+	Findings             []FindingInput             `json:"findings"`
+	ResolvesFindingIDs   []string                   `json:"resolves_finding_ids"`
+	InapplicableFindings []InapplicableFindingInput `json:"inapplicable_findings,omitempty"`
+	EvidenceRefs         []Source                   `json:"evidence_refs"`
+	ReceiptIDs           []string                   `json:"receipt_ids"`
 }
 
 type RecordOptions struct {
@@ -90,6 +91,11 @@ type FindingInput struct {
 	Severity string  `json:"severity"`
 	Summary  string  `json:"summary"`
 	Blocking bool    `json:"blocking"`
+}
+
+type InapplicableFindingInput struct {
+	FindingID string  `json:"finding_id"`
+	Reason    *string `json:"reason"`
 }
 
 type NotIndependentError struct {
@@ -191,8 +197,11 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if err := validateVerdictFindingAgreement(request.Verdict, request.Findings, request.Coverage); err != nil {
 			return err
 		}
-		if len(request.ResolvesFindingIDs) > 0 && request.Verdict != "pass" && request.Verdict != "changes-required" {
-			return &VerdictInvalidError{Verdict: request.Verdict, Reason: "resolving Findings requires pass or changes-required"}
+		if err := validateTerminalFindingInputs(request.ResolvesFindingIDs, request.InapplicableFindings); err != nil {
+			return err
+		}
+		if err := validateTerminalFindingVerdict(request); err != nil {
+			return err
 		}
 		if err := workflow.AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, workflow.EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: "review.record", Capability: "review.record", IssueID: binding.IssueID, EnvelopeID: binding.EnvelopeID, Revision: binding.EnvelopeRevision}); err != nil {
 			return err
@@ -228,7 +237,7 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if err != nil {
 			return err
 		}
-		resolutionEffects, err := resolveFindingEffects(conn, request.ResolvesFindingIDs, binding, options.ActorID, reviewID)
+		resolutionEffects, err := resolveFindingEffects(conn, request, binding, options.ActorID, reviewID)
 		if err != nil {
 			return err
 		}
@@ -263,40 +272,6 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		return RecordResult{}, err
 	}
 	return result, nil
-}
-
-func resolveFindingEffects(conn *sql.DB, findingIDs []string, binding recordBinding, actorID, reviewID string) ([]journal.Effect, error) {
-	seen := make(map[string]struct{}, len(findingIDs))
-	effects := make([]journal.Effect, 0, len(findingIDs))
-	for _, findingID := range findingIDs {
-		if _, found := seen[findingID]; found {
-			return nil, fmt.Errorf("review resolution Finding %q is duplicated", findingID)
-		}
-		seen[findingID] = struct{}{}
-		var issueID, envelopeID, creatorReviewID string
-		var revision int
-		err := conn.QueryRow(`SELECT r.issue_id, r.envelope_id, r.envelope_revision, f.review_id FROM review_findings f JOIN review_records r ON r.id=f.review_id WHERE f.id=?`, findingID).Scan(&issueID, &envelopeID, &revision, &creatorReviewID)
-		if err != nil || issueID != binding.IssueID || envelopeID != binding.EnvelopeID || revision != binding.EnvelopeRevision || creatorReviewID == reviewID {
-			return nil, fmt.Errorf("review resolution Finding %q is invalid", findingID)
-		}
-		var terminal int
-		if err := conn.QueryRow(`SELECT 1 FROM finding_dispositions WHERE finding_id=? AND action IN ('resolved','inapplicable')`, findingID).Scan(&terminal); err != sql.ErrNoRows {
-			if err == nil {
-				return nil, fmt.Errorf("review resolution Finding %q is terminal", findingID)
-			}
-			return nil, fmt.Errorf("review resolution Finding %q: %w", findingID, err)
-		}
-		dispositionID, err := journal.GenerateID("FDP", func(candidate string) (bool, error) {
-			var found int
-			err := conn.QueryRow(`SELECT 1 FROM finding_dispositions WHERE id=?`, candidate).Scan(&found)
-			return err == nil, nil
-		})
-		if err != nil {
-			return nil, err
-		}
-		effects = append(effects, journal.Effect{Op: "insert", Table: "finding_dispositions", PK: map[string]any{"id": dispositionID}, Values: map[string]any{"finding_id": findingID, "action": "resolved", "actor_id": actorID, "claim_id": nil, "qualifying_review_id": reviewID, "reason": "resolved by qualifying Review", "disposed_at": "<occurred-at>", "created_event_id": "<event-id>"}})
-	}
-	return effects, nil
 }
 
 func checkIndependence(conn *sql.DB, actorID, runID string) error {

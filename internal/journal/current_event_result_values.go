@@ -105,7 +105,7 @@ func currentFillReview(tx *sql.Tx, row map[string]any) error {
 		return err
 	}
 	row["findings"] = findings
-	resolved, err := currentQueryValues(tx, "SELECT finding_id FROM finding_dispositions WHERE qualifying_review_id=? ORDER BY finding_id", row["id"])
+	resolved, err := currentQueryValues(tx, "SELECT finding_id FROM finding_dispositions WHERE qualifying_review_id=? AND action='resolved' ORDER BY finding_id", row["id"])
 	if err != nil {
 		return err
 	}

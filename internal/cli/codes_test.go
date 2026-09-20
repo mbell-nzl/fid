@@ -143,6 +143,8 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			}},
 		}},
 		{CodeImportTargetConflict, CategoryConflict, false, []SubjectType{SubjectExport}, []detailExpectation{stringDetail("target_root"), stringDetail("reason")}},
+		{CodeFindingNotFound, CategoryNotFound, false, []SubjectType{SubjectFinding}, stringDetails("id")},
+		{CodeFindingAlreadyDisposed, CategoryConflict, false, []SubjectType{SubjectFinding}, []detailExpectation{stringDetail("finding_id"), stringDetail("state")}},
 	}
 
 	registered := RegisteredCodes()

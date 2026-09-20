@@ -10,7 +10,6 @@ import (
 )
 
 var unavailableJudgmentEvents = map[string]bool{
-	"finding.addressed":      true,
 	"concern.recorded":       true,
 	"concern.disposed":       true,
 	"deviation.recorded":     true,

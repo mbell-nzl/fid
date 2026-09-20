@@ -143,8 +143,9 @@ func validateCurrentAdoptedPaths(value any) error {
 }
 func validateCurrentResultJSON(event Event, value any) error {
 	fields := map[string]string{
-		"review.recorded": "review:Review budget:?Budget stops:[]Stop attention:[]Attention",
-		"run.started":     "run:Run", "run.observed": "observation:Observation run:Run", "run.checkpointed": "checkpoint:Checkpoint run:Run",
+		"review.recorded":   "review:Review budget:?Budget stops:[]Stop attention:[]Attention",
+		"finding.addressed": "finding:Finding",
+		"run.started":       "run:Run", "run.observed": "observation:Observation run:Run", "run.checkpointed": "checkpoint:Checkpoint run:Run",
 		"run.recovered": "recovery:Recovery run:Run claim:Claim", "run.abandoned": "run:Run claim:Claim", "run.closed": "run:Run", "claim.expired": "claim:Claim",
 		"run.budget-observed": "sample:BudgetSample budget:Budget stops:[]Stop attention:[]Attention", "run.execution-blocked": "denial:Denial",
 		"gate.execution-started": "attempt:Attempt receipt:Null", "gate.receipt-recorded": "receipt:Receipt",

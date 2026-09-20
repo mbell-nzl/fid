@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -94,6 +95,18 @@ func decodeClosedReviewInput(stdin io.Reader, path string, target any) error {
 	if err != nil {
 		return fmt.Errorf("read review input: %w", err)
 	}
+	if !utf8.Valid(payload) {
+		return fmt.Errorf("decode review input: input is not valid UTF-8")
+	}
+	if err := rejectDuplicateJSONKeys(payload); err != nil {
+		return fmt.Errorf("decode review input: %w", err)
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(payload, &fields); err == nil {
+		if raw, found := fields["inapplicable_findings"]; found && string(raw) == "null" {
+			return fmt.Errorf("decode review input: inapplicable_findings must be an array")
+		}
+	}
 	decoder := json.NewDecoder(strings.NewReader(string(payload)))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(target); err != nil {
@@ -104,6 +117,52 @@ func decodeClosedReviewInput(stdin io.Reader, path string, target any) error {
 		return fmt.Errorf("review input must contain one object")
 	}
 	return nil
+}
+
+func rejectDuplicateJSONKeys(payload []byte) error {
+	decoder := json.NewDecoder(strings.NewReader(string(payload)))
+	var walk func() error
+	walk = func() error {
+		token, err := decoder.Token()
+		if err != nil {
+			return err
+		}
+		delimiter, ok := token.(json.Delim)
+		if !ok {
+			return nil
+		}
+		switch delimiter {
+		case '{':
+			seen := map[string]bool{}
+			for decoder.More() {
+				keyToken, err := decoder.Token()
+				if err != nil {
+					return err
+				}
+				key := keyToken.(string)
+				if seen[key] {
+					return fmt.Errorf("duplicate key %q", key)
+				}
+				seen[key] = true
+				if err := walk(); err != nil {
+					return err
+				}
+			}
+			_, err = decoder.Token()
+			return err
+		case '[':
+			for decoder.More() {
+				if err := walk(); err != nil {
+					return err
+				}
+			}
+			_, err = decoder.Token()
+			return err
+		default:
+			return fmt.Errorf("unexpected JSON delimiter %q", delimiter)
+		}
+	}
+	return walk()
 }
 
 func renderReviewError(cmd *cobra.Command, cause error) error {
@@ -126,6 +185,18 @@ func renderReviewError(cmd *cobra.Command, cause error) error {
 	var reviewConflict *review.ReviewConflictError
 	if errors.As(cause, &reviewConflict) {
 		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeDuplicateEntity, "Review already exists for Run", &cli.Subject{Type: cli.SubjectRun, ID: reviewConflict.RunID}, map[string]any{"entity_type": "review", "identity": map[string]any{"fields": []string{"run_id"}, "values": []string{reviewConflict.RunID}}})
+	}
+	var findingMissing *review.FindingNotFoundError
+	if errors.As(cause, &findingMissing) {
+		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeFindingNotFound, "Finding was not found", &cli.Subject{Type: cli.SubjectFinding, ID: findingMissing.ID}, map[string]any{"id": findingMissing.ID})
+	}
+	var disposed *review.FindingAlreadyDisposedError
+	if errors.As(cause, &disposed) {
+		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeFindingAlreadyDisposed, "Finding is already terminal", &cli.Subject{Type: cli.SubjectFinding, ID: disposed.ID}, map[string]any{"finding_id": disposed.ID, "state": disposed.State})
+	}
+	var invalidTarget *review.FindingTargetInvalidError
+	if errors.As(cause, &invalidTarget) {
+		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeInvalidArgument, "invalid Finding target", nil, map[string]any{"argument": "finding_id", "value": invalidTarget.ID, "allowed": []string{"earlier Finding on the same Issue and Envelope revision"}})
 	}
 	var missing *review.ReviewNotFoundError
 	if errors.As(cause, &missing) {

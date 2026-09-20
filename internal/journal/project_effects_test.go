@@ -43,17 +43,20 @@ func TestProjectEventFenceRejectsEveryUnavailablePhase23EventWithoutProjectionCh
 	}
 }
 
-// TestReviewRecordedFenceConvergencePreservesEveryRemainingEvent retains
+// TestFindingAddressedFenceConvergencePreservesEveryRemainingEvent retains
 // VAL-003's convergence boundary:
-// review.recorded must take the strict current-Event path while every remaining
+// review.recorded and finding.addressed take the strict current-Event path while every remaining
 // unavailable Phase 23 Event stays covered by the fence loop above.
-func TestReviewRecordedFenceConvergencePreservesEveryRemainingEvent(t *testing.T) {
+func TestFindingAddressedFenceConvergencePreservesEveryRemainingEvent(t *testing.T) {
 	if unavailableJudgmentEvents["review.recorded"] {
 		t.Fatal("review.recorded remains fenced after Task 4 implemented its strict event path")
 	}
+	if unavailableJudgmentEvents["finding.addressed"] {
+		t.Fatal("finding.addressed remains fenced after Task 5 implemented its strict event path")
+	}
 	want := []string{
 		"concern.disposed", "concern.recorded", "decision.referenced", "deviation.recorded",
-		"finding.addressed", "human-outcome.recorded", "requirement.linked", "requirement.referenced",
+		"human-outcome.recorded", "requirement.linked", "requirement.referenced",
 	}
 	if len(unavailableJudgmentEvents) != len(want) {
 		t.Fatalf("remaining unavailable Event count = %d, want %d", len(unavailableJudgmentEvents), len(want))

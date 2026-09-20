@@ -82,6 +82,8 @@ func currentExpectedResult(tx *sql.Tx, event Event) (map[string]any, error) {
 	case "review.recorded":
 		put("review", "Review", "review_records", id(event.Aggregate.ID))
 		result["budget"], result["stops"], result["attention"] = nil, []any{}, []any{}
+	case "finding.addressed":
+		put("finding", "Finding", "review_findings", id(event.Aggregate.ID))
 	case "run.started", "run.closed", "run.observed", "run.checkpointed", "run.abandoned":
 		put("run", "Run", "runs", id(event.Aggregate.ID))
 		if event.EventType == "run.abandoned" && failure == nil {
