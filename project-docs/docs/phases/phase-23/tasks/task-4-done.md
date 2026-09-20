@@ -65,8 +65,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `45a2a168e0abcf1d4d43dd37138f5e3b6024c485`
 
 ## Commit subject
 
-- Pending commit
+- `feat(review): enforce recorded review independence`
