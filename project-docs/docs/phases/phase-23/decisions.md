@@ -1631,6 +1631,28 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   assignment does not dispatch it.
 - **Refs:** VAL-025/044; DEC-226; tasks 6 and 10; contracts section 13.
 
+### DEC-244 - Task 6 owns atomic Claim admission for review exhaustion
+
+- **Authority:** Human-delegated super-agent authority for Phase 23 through
+  Task 9 and its review; root resolves a concrete task-scope omission.
+- **Problem:** Task 6 requires VAL-029's next `claim.acquire` to reject
+  `review-rework-exhausted` without creating a Claim, but its file list named
+  only the CLI adapter. The admission transaction is in
+  `internal/claims/generic.go`; adapter-only enforcement would leave the domain
+  operation unguarded and violate the accepted architecture.
+- **Decision:** Add exactly `internal/claims/generic.go` and matching
+  in-package tests to Task 6's implementation scope. Check the applicable
+  exhaustion Stop inside the existing locked acquisition operation, before
+  durable effects. Preserve existing Claim precedence and other Stop behavior;
+  expose the accepted denial for the CLI adapter to render.
+- **Validation:** Existing VAL-029 and the unchanged Task 6 exact ordinary
+  race/coverage and tagged integration gates execute this repair. Require the
+  rejected acquisition to leave both Claim projection and journal unchanged.
+  No new command, threshold, interface, Event, or product behavior is accepted.
+- **Disposition:** Continue the same Task 6 implementation. Its completion
+  report records this scope repair; window 4-6 QA verifies the behavior. No new
+  planning review or Human escalation is required.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,

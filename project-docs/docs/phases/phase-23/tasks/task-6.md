@@ -72,6 +72,11 @@ DEC-243 cell accounting, with otherwise qualifying subjects and trust:
 ### Files To Create Or Modify
 
 - `internal/evidence/evidence.go`, `policy.go`, `execution.go`.
+- `internal/claims/generic.go` and matching in-package tests - enforce
+  VAL-029's `review-rework-exhausted` admission denial inside the locked
+  `claim.acquire` domain operation before any Claim Event or projection effect
+  (DEC-244). The CLI adapter renders the domain denial; it is not the admission
+  boundary. Retain existing Claim precedence and other Stop behavior.
 - `internal/workflow/budget.go`, `run_budget.go`, `recovery_budget.go`,
   `evaluation.go`, `resolve.go`.
 - `internal/workflow/envelope.go` - the authoring-validation path for VAL-030
