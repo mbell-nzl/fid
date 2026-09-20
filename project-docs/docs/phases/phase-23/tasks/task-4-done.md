@@ -86,8 +86,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `9416d743f2d20dfaf6cd0e70d605e2a870dd15ac`
 
 ## Commit subject
 
-- Pending commit
+- `feat(review): validate coverage and finding parity`
