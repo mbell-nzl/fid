@@ -26,8 +26,8 @@ func TestTerminalSuccessTransitionRejectsUnsuccessfulReceiptEvidence(t *testing.
 	repository := runRepositoryForTest(t, workspace)
 	linkPath := filepath.Join(workspace, "task18-evidence-link.json")
 	writeActivationInput(t, linkPath, map[string]any{
-		"obligation_id": testEvidenceObligationID,
-		"receipt_id":    terminal.Data.ReceiptID, "target_repository": repository,
+		"obligation_id": testEvidenceObligationID, "evidence_type": "receipt",
+		"receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository,
 		"required_artifact_ids": []string{},
 	})
 	linked := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task18-unsuccessful-evidence")
