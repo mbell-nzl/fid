@@ -789,3 +789,33 @@
 - Resolution evidence: PENDING - canonical Terra Developer completes DEC-248 adapter repair, retained acceptance evidence, unchanged exact gates, implementation commit, and completion report
 - Next action: dispatch one canonical Terra Developer for Task 9 only; root verifies completion controls and pauses before any window 7-9 QA dispatch
 - Human attention required: no
+
+### 2026-09-21 20:23 REPAIR task-9
+
+- Trigger signature: task-9:in-scope-implementation:protected-decision-cli-adapter-mapping
+- Attempt count: 2
+- Starting checkpoint: phase-23 HEAD 8c80bb70fe12a5e6b3a4b772a914d0edf74bbf6d; preserved Task 9 implementation and authorized DEC-248 adapter recovery
+- Ending checkpoint: implementation fec3bdf8a1665f3b79bfdcd0146ca16b51527a51; Developer report 733cacc42bef206be2176185acfbf82a2d43937a; root report formatting correction 99a4d0e; committed report verifies COMPLETE
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Canonical Terra Developer completed the accepted protected-Decision mappings, retained claims and V01 fixture repairs, and five exact gates with observed termination. Developer reports serial cmd/fid 513.222s, observed workflow 431.647s (cached on final ordinary rerun), tagged integration 713.194s, coverage 62.5%. Root verified implementation hash/subject and committed report using fresh report-lint. Root control first failed with FAIL report-lint found 6 failure(s), exit_code 6; formatting-only repair followed by byte-identical control returned PASS report-lint completed with no failures, exit_code 0. Prior failures, root duplicate execution, and unresolved intermittent live-output observation remain preserved in the report and supervisor execution note.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-21 20:23 TASK task-9 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-9-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: fec3bdf8a1665f3b79bfdcd0146ca16b51527a51 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-21 20:23 RUN-END
+
+- All tasks complete. Final review: N/A - Human-requested pause after Task 9; tasks 1-9 complete, independent window 7-9 QA not run, tasks 10 onward held
+- Human checklist: N/A - paused before window 7-9 review
+- Phase ready for Tech Lead wrap-up.
+- Closure scope: the required closure labels end this Runner session only; the phase is incomplete and is not ready for wrap-up
+- Pause reason: Human authorized canonical Terra Task 9 completion only and explicitly requested another stop before the mid-phase review, potentially to use Claude
+- Resume checkpoint: Task 9 implementation fec3bdf8a1665f3b79bfdcd0146ca16b51527a51 and report correction 99a4d0e; next work is independent review of Tasks 7-9 only after Human resumption, not another Task 9 implementation dispatch or Task 10

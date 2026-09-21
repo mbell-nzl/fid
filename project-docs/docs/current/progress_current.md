@@ -1,18 +1,25 @@
 # Progress — Current
 
-Updated 2026-09-21. **RESUMED by the Human for Task 9 completion only.**
-Branch: `phase-23`. Tasks 1-8 are recorded complete. Window 4-6 QA passed in
+Updated 2026-09-21. **PAUSED at the Human's request before window 7-9 QA.**
+Branch: `phase-23`. Tasks 1-9 are recorded complete. Window 4-6 QA passed in
 `qa/review-4.md` (`0d4f3d6`); window 7-9 QA has not run.
 
-Task 9 is substantially implemented but incomplete. Its preserved real-process
-red requires the two CLI denial adapters now authorized by DEC-248 (`d3ef13c`):
-`cmd/fid/envelope.go` and `cmd/fid/issue_mutation_response.go`. Resume that
-bounded repair and complete the unchanged Task 9 gates/report using the canonical
-Terra Developer, then pause before window 7-9 QA. The Human may use Claude for
-that review; no review is authorized by this resumption. Task 9's planning confirmation
-remains READY in qa-plan section 21 (`74c83b7`). Tasks 10 onward remain held.
-Only Task 9 implementation, required gates, and completion reporting may proceed.
-The run ledger retains the exact recovery checkpoint; Tasks 10 onward remain held.
+The canonical Terra Developer completed Task 9's DEC-248 CLI denial mappings,
+retained fixture repairs, and all five required gates. Implementation:
+`fec3bdf8a1665f3b79bfdcd0146ca16b51527a51`; report finalized at `99a4d0e`.
+Root's fresh report-lint check passed after a report-formatting-only correction.
+The serial ordinary run reports `cmd/fid 513.222s`; final tagged integration
+reports `713.194s`; coverage is `62.5%`. See
+`../phases/phase-23/tasks/task-9-done.md` for Developer-observed evidence.
+
+Next authorized work requires the Human to resume the independent Tasks 7-9
+mid-phase review; they may choose a Claude agent. Review task reports 7-9 using
+the phase QA plan and validation contract. The live-output failure observed
+under overlapping test load did not recur in isolation or the serial full run,
+but its cause remains unproven; retain it for review. Root's execution and
+report-control failures are recorded in
+`../phases/phase-23/qa/task-9-supervisor-execution.md`.
+Do not dispatch the review or Task 10 onward while this pause remains in effect.
 
 ## Task 4 recovery authority - 2026-09-20
 
