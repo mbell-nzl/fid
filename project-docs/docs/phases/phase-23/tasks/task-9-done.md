@@ -5,7 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 2; attempt 1 was interrupted by the Human-requested quota pause before implementation began, and attempt 2 completed the DEC-248 adapter repair and gates.
+- Recovery attempts: 2
 - Next action: Pause before the independent window 7-9 QA review, as directed by the Human.
 - Human attention required: no
 
@@ -60,18 +60,21 @@
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - First `golangci-lint run ./...` attempt - FAIL - `* staticcheck: 3` (terminated `exit_code: 1`).
 - Second byte-identical `golangci-lint run ./...` attempt - FAIL - `* staticcheck: 1` (terminated `exit_code: 1`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - First `go test -race -timeout 30m -coverprofile=coverage.out ./...` attempt - FAIL - `FAIL` (terminated `exit_code: 1`): Task 9’s new Stop ordering query exposed the outdated claims fake schema; the concurrently loaded `TestLiveOutputGoldenFixtures` also failed, but its isolated race rerun passed and no causal conclusion is claimed.
-- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 63.0% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` - PASS - `total: (statements) 62.5%` (terminated `exit_code: 0`).
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 63.0% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 62.5%` (terminated `exit_code: 0`)
 - First `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` attempt - FAIL - `FAIL` (terminated `exit_code: 1`): the retained V01 closure fixture asserted that Task 9’s new Decision command was unknown.
-- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 713.194s` (terminated `exit_code: 0`). This final invocation followed `gofmt -w cmd/fid/integration/e2e_v01_closure_helpers_test.go` as required formatting preparation; the required Go command itself is byte-identical and was the final shell command.
+- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 713.194s` (terminated `exit_code: 0`)
+
+The final integration invocation followed `gofmt -w cmd/fid/integration/e2e_v01_closure_helpers_test.go` as formatting preparation; the required Go command itself is byte-identical and was the final shell command.
 
 ## Deviations from spec
 
+- Recovery attempt 1 was interrupted by the Human-requested quota pause before resumed implementation began; attempt 2 completed the DEC-248 repair and gates.
 - No product, public-interface, validation-contract, threshold, dependency, or protected gate definition changed.
 - DEC-248 added the two missing CLI adapter files and matching tests to Task 9 scope. The domain admission rules and immutable Stop details remain unchanged; only the accepted CLI mapping and precedence were completed.
 - The initial lint failures were Task 9’s new Condition-dispatch error literals. The repair parameterizes the existing `Condition` kind so the accepted emitted bytes remain unchanged while satisfying staticcheck.
@@ -79,7 +82,7 @@
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- None.
+- The live-output failure under overlapping load has no proven causal explanation. Its isolated retry and serial full gate passed; retain this observation for the independent window 7-9 reviewer. Root's duplicate-run failure and timing caveat are recorded in `project-docs/docs/phases/phase-23/qa/task-9-supervisor-execution.md`.
 
 ## Dependency-budget note
 

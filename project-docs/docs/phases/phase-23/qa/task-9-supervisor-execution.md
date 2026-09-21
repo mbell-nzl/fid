@@ -47,3 +47,14 @@ duplicate is closed. The Developer owns the causal fixture repair and the
 next byte-identical required gate, run without another root gate in parallel.
 Prior failures and timing observations remain retained regardless of the later
 result. No threshold, test assertion, or required command has been relaxed.
+
+## Completion-report formatting repair
+
+Root ran `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-9-done.md project-docs/docs/phases/phase-23/tasks/task-9.md` against committed report `733cacc42bef206be2176185acfbf82a2d43937a`.
+It returned `FAIL report-lint found 6 failure(s)` (terminated `exit_code: 6`).
+The recovery count included prose, and the five exact gate PASS rows had
+trailing punctuation or prose after their termination fields. Root moved the
+explanations out of parsed fields and removed that punctuation. Developer-
+observed gate tokens, statuses, commands, and termination values remain intact;
+root did not rerun or attest those product gates. The live-output observation
+is also explicitly retained for the later reviewer under concerns.
