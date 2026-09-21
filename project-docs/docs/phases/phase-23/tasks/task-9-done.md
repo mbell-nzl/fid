@@ -87,8 +87,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `fec3bdf8a1665f3b79bfdcd0146ca16b51527a51`
 
 ## Commit subject
 
-- Pending commit
+- `fix(cli): render protected Decision denials`
