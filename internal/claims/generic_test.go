@@ -20,6 +20,8 @@ func TestClaimAcquireRejectsOpenReviewReworkStop(t *testing.T) {
 	for _, statement := range []string{
 		`CREATE TABLE stops (id TEXT,subject_type TEXT,subject_id TEXT,code TEXT,blocked_actions_json TEXT,details_json TEXT,resolution_condition_json TEXT,resolver_capability TEXT,actor_id TEXT,raised_at TEXT)`,
 		`CREATE TABLE stop_resolutions (stop_id TEXT,actor_id TEXT,fact_event_id TEXT,resolved_at TEXT,created_event_id TEXT)`,
+		`CREATE TABLE work_envelopes (id TEXT,current_revision INTEGER)`,
+		`CREATE TABLE envelope_protected_decisions (envelope_id TEXT,revision INTEGER,ordinal INTEGER,decision_class TEXT)`,
 		`CREATE TABLE attention_stop_links (attention_id TEXT,stop_id TEXT)`,
 		`CREATE TABLE envelope_budgets (envelope_id TEXT,revision INTEGER,name TEXT,budget_json TEXT)`,
 		`CREATE TABLE budget_samples (id TEXT,envelope_id TEXT,envelope_revision INTEGER,budget_name TEXT,run_id TEXT,actor_id TEXT,source TEXT,source_sample_id TEXT,sample_kind TEXT,previous_sample_id TEXT,value INTEGER,measurement_ref_json TEXT,observed_at TEXT,created_event_id TEXT)`,

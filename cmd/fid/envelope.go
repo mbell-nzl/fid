@@ -226,11 +226,23 @@ func renderEnvelopeError(cmd *cobra.Command, operation string, cause error, acto
 	var notFound *workflow.EnvelopeNotFoundError
 	var authority *workflow.EnvelopeAuthorityError
 	var completion *workflow.EnvelopeCompletionError
+	var protectedDecision *workflow.StopBlockedError
 	if errors.As(cause, &notFound) {
 		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeEnvelopeNotFound, "envelope was not found", &cli.Subject{Type: cli.SubjectEnvelope, ID: notFound.ID}, map[string]any{"id": notFound.ID})
 	}
 	if errors.As(cause, &authority) {
 		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityUnavailable, "finalized envelope authority is unavailable", nil, map[string]any{"operation": operation, "actor_id": actor, "required_actions": []string{authority.Capability}, "required_capabilities": []string{authority.Capability}})
+	}
+	if errors.As(cause, &protectedDecision) {
+		failure, err := protectedDecisionFailure(protectedDecision)
+		if err != nil {
+			return err
+		}
+		if !jsonMode {
+			_ = renderIssueError(cmd.ErrOrStderr(), cause)
+			return cli.NewFailureError(failure, cause)
+		}
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 	}
 	if errors.As(cause, &completion) {
 		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeObligationUnsatisfied, "Envelope completion obligations are unsatisfied", &cli.Subject{Type: cli.SubjectEnvelope, ID: completion.EnvelopeID}, map[string]any{"reasons": envelopeReasonValues(completion.Reasons)})

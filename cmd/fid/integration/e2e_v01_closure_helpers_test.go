@@ -357,11 +357,11 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 		t.Fatalf("maintenance vacuum = (%v, %q, %q), want fail-closed unavailable", err, stdout, stderr)
 	}
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "maintenance vacuum")
-	stdout, stderr, err = closureRunFIDExpectError(t, binary, workspace, "decision", "get")
-	if err == nil || stdout != "" || stderr != "" {
-		t.Fatalf("decision command = (%v, %q, %q), want unknown command with empty output", err, stdout, stderr)
+	decision, _ := closureRunFID(t, binary, workspace, "--json", "decision", "list")
+	if !strings.Contains(decision, `"items":[]`) {
+		t.Fatalf("decision list = %q, want empty read result", decision)
 	}
-	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "unknown decision command")
+	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "decision list")
 	for _, args := range [][]string{
 		{"--json", "issue", "list"},
 		{"--json", "ready"},

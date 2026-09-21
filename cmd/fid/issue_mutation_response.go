@@ -9,6 +9,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/project"
+	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
@@ -197,6 +198,20 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 	}
 	var executionTransition *issues.ExecutionBoundTransitionError
 	if errors.As(mutationErr, &executionTransition) {
+		for _, reason := range executionTransition.Reasons {
+			if reason.Code != "protected-decision-required" {
+				continue
+			}
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
+			if err != nil {
+				return cli.Failure{}, err
+			}
+			blocked, err := workflow.ProtectedDecisionBlockForIssue(workspaceRoot, issueMigrationsDir(), executionTransition.IssueID, "issue.transition-terminal-success")
+			if err != nil {
+				return cli.Failure{}, err
+			}
+			return protectedDecisionFailure(blocked)
+		}
 		unsatisfied := make([]string, 0, len(executionTransition.Reasons))
 		for _, reason := range executionTransition.Reasons {
 			unsatisfied = append(unsatisfied, reason.Code)
