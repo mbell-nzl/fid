@@ -106,3 +106,34 @@ Resume uses the existing TRG-23-002 / ESC-23-002, authority DEC-238, and next
 attempt 3 for `task-1:gate-repair:final-required-gates`. This resolves the
 protected ownership condition into the authorized task-scope recovery; it is
 not a control-conformance directive or a rewrite of either historical verdict.
+
+---
+
+## TRG-23-003 - VAL-015 real CLI Run-holder-only evidence contradicts accepted lifecycle
+
+- **Trigger:** Phase 23 Task 4 VAL-015 requires a real CLI Run-holder-only independence case that the accepted Run/Claim lifecycle cannot represent.
+- **Originating task:** task-4
+- **Trigger signature:** task-4:in-scope-implementation:review-record-independence-tracer
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** `project-docs/docs/phases/phase-23/tasks/task-4-done.md`
+- **Candidate:** specification-contradiction
+- **Attempt count:** 8
+- **Checkpoint:** implementation commit `a1ae1bb61363a591bb46c9ddfd4b8df36462687b` verified by attached `git rev-parse --verify` evidence (terminated `exit_code: 0`) with subject `test(review): cover independent reviewer rework`; attached report-lint evidence verified the committed report's typed `OUTCOME BLOCKED` (terminated `exit_code: 0`); runner-recorded control repair base `eee11a2a1964e7802371e33cdcbf872c233c41c7`.
+- **Verdict:** BLOCK
+- **Reasoning:** The accepted lifecycle requires `claim.ActorID == options.ActorID` when a Run is started. Durable mutating Claim history remains authoritative for independence and is checked before the Run can be named, so the required real CLI case of an Actor holding only a Run under another Actor's mutating Claim cannot be constructed. The remaining choices either change the accepted Run/Claim actor-binding and durable-history semantics or change VAL-015's accepted evidence/pass criterion; both are protected data-model/public-interface or validation-contract decisions.
+- **Local decisions made:** none.
+- **Resolution evidence:** The attached reproduced mismatch and the completion report establish that the direct durable-history query covers the intended Run-holder row, while the admissible real CLI fixture proves the two-Reviewer rework journey and all five exact task gates pass. This does not clear VAL-015's required real CLI observation. The cited commit/report evidence confirms the attempted implementation and its typed BLOCKED outcome, not a resolution.
+- **If REPAIR:** N/A.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** changing the accepted Run/Claim actor-binding semantics, durable Claim-history precedence, VAL-015 acceptance, public/data-model contract, or task scope without Tech Lead/Human authority.
+- **Exact verification:** `go test -race -timeout 30m ./cmd/fid/ -run '^TestReviewRecordIndependentReworkAndReceiptBinding$' -count=1` from `/home/mark/projects/fid`; attached observed final token `ok github.com/mbell-nzl/fid/cmd/fid 25.479s` (terminated `exit_code: 0`), with the direct Run-history query proof in `internal/review` and the real CLI Run-holder-only row remaining unrepresentable.
+- **Originating report:** project-docs/docs/phases/phase-23/tasks/task-4-done.md
+- **Control repair base:** eee11a2a1964e7802371e33cdcbf872c233c41c7
+- **If BLOCK:** category specification contradiction requiring protected data-model/public-interface and validation-contract authority; ESC-23-003 raised in `tl_escalations_current.md`; resolution condition a Tech Lead/Human decision either authorizes a compatible Run/Claim lifecycle change or amends VAL-015's accepted evidence requirement while preserving the intended independence guarantee.
+- **Human attention required:** yes
+- **References:** `project-docs/docs/phases/phase-23/tasks/task-4.md:16-19,153-154`; `project-docs/docs/phases/phase-23/tasks/task-4-done.md:5-10,24-25,44-50`; `project-docs/docs/phases/phase-23/contracts.md:112-130`; `project-docs/docs/phases/phase-23/qa/validation-contract.md` VAL-015 and DEC-225 refinement; `project-docs/specs/09_AI_WORKFLOW.md` sections 2.3 and 9.
