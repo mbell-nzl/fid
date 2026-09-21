@@ -749,3 +749,43 @@
 - Phase ready for Tech Lead wrap-up.
 - Pause reason: user explicitly requested immediate pause; this closes the active Runner session only and does not claim phase completion or wrap-up readiness
 - Resume checkpoint: commit 828eb18f422ebbfacbe4e65c62d53a061b7e9b9f; append the next Task 9 recovery for task-9:in-scope-implementation:protected-decision-cli-adapter-mapping attempt 2, implement the committed adapter scope, run unchanged exact gates, complete the report, and obtain independent window 7-9 QA PASS; do not dispatch Task 10
+
+### 2026-09-21 19:08 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-21 17:18 RUN-END; Human-requested usage pause
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: clean phase-23 HEAD 8c80bb70fe12a5e6b3a4b772a914d0edf74bbf6d; Task 9 checkpoint 828eb18f422ebbfacbe4e65c62d53a061b7e9b9f; prior recovery attempt 1 INTERRUPTED
+- Resolution evidence: Human explicitly requested canonical Terra Developer to finish Task 9 and stop again before the window 7-9 mid-phase review; root verified clean worktree, checkpoint HEAD, retained recovery, and DEC-248 scope
+- Resolution authority: N/A
+- Continuing task: task-9
+- Next recovery: N/A
+
+### 2026-09-21 19:08 TASK-RECOVERY task-9
+
+- Source: Human-authorized resumption after interrupted Task 9 attempt 1; DEC-248 and committed task spec
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-9:in-scope-implementation:protected-decision-cli-adapter-mapping
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 8c80bb70fe12a5e6b3a4b772a914d0edf74bbf6d; Task 9 work durably preserved at 828eb18f422ebbfacbe4e65c62d53a061b7e9b9f; authorized denial adapters remain incomplete and full gates/report pending
+- Phase worktree: /home/mark/projects/fid on branch phase-23; root owns run-ledger.md and progress_current.md resumption updates
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - canonical Terra Developer completes DEC-248 adapter repair, retained acceptance evidence, unchanged exact gates, implementation commit, and completion report
+- Next action: dispatch one canonical Terra Developer for Task 9 only; root verifies completion controls and pauses before any window 7-9 QA dispatch
+- Human attention required: no
