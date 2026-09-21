@@ -1,10 +1,17 @@
 # Progress — Current
 
-Updated 2026-09-20. **Phase 23 Tasks 1-4 recorded complete; Task 5 in progress.**
-Branch: `phase-23`. Task 4's report and Runner's 21:19 COMPLETE ledger event
-record DEC-239 recovery closure. The Human authorizes execution through Task 9 and the window
-7-9 review. Task 9's bounded DEC-237/240 QA confirmation is READY in qa-plan
-section 21 (`74c83b7`); Tasks 10-11 stay held.
+Updated 2026-09-21. **PAUSED at the Human's request to conserve weekly usage.**
+Branch: `phase-23`. Tasks 1-8 are recorded complete. Window 4-6 QA passed in
+`qa/review-4.md` (`0d4f3d6`); window 7-9 QA has not run.
+
+Task 9 is substantially implemented but incomplete. Its preserved real-process
+red requires the two CLI denial adapters now authorized by DEC-248 (`d3ef13c`):
+`cmd/fid/envelope.go` and `cmd/fid/issue_mutation_response.go`. Resume that
+bounded repair, complete the unchanged Task 9 gates/report, then run window
+7-9 QA only after the Human chooses to continue. Task 9's planning confirmation
+remains READY in qa-plan section 21 (`74c83b7`). Tasks 10 onward remain held.
+No implementation, full gates, or new QA should dispatch while this pause is in
+effect. The run ledger and pause handoff retain the exact recovery checkpoint.
 
 ## Task 4 recovery authority - 2026-09-20
 
