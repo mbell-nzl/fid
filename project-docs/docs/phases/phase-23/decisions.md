@@ -1721,6 +1721,27 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   Task 6's unchanged full gates and VAL-027/029 remain mandatory. Record the
   scope correction in its report; window 4-6 QA examines these strict paths.
 
+### DEC-248 - Task 9 owns protected-Decision denial adapters
+
+- **Authority:** Human-delegated super-agent authority; root resolves the
+  minimal executable task-scope omission for an already accepted interface.
+- **Observed mismatch:** The built CLI returns exit 4
+  `transition-not-permitted` with `protected-decision-required` and
+  `obligation-evidence-absent` reasons. VAL-039 and public-interface section
+  5.1 require exit 5 `protected-decision-required` with the exact immutable
+  Decision details. Existing adapter mappings also hide this domain denial
+  behind `obligation-unsatisfied` on Envelope completion.
+- **Scope:** Add exactly `cmd/fid/envelope.go` and
+  `cmd/fid/issue_mutation_response.go`, plus matching tests, to Task 9.
+  Render the domain's protected-Decision denial using the accepted code,
+  details and precedence, including when an Obligation is also unsatisfied.
+  Keep admission rules in the domain and preserve all other error mappings.
+- **Verification:** Retain the observed real-process red, rerun its identical
+  focused command after the causal adapter repair, and run all unchanged
+  Task 9 exact gates. Record this scope correction in the completion report;
+  the scheduled window 7-9 QA review verifies both guarded adapters and the
+  accepted precedence. No gate, threshold, interface, or product rule changes.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,

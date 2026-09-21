@@ -182,6 +182,12 @@ until a matching approved reference and Human Outcome both exist.
   removed from the accepted set under DEC-230 because no leaf takes a Decision
   Reference ID, so nothing could return it and VAL-056 could not reproduce it.
 - `cmd/fid/decision.go` - new leaf wiring for `record-reference` and `list`.
+- `cmd/fid/envelope.go`, `cmd/fid/issue_mutation_response.go`, and matching
+  tests - map the domain's protected-Decision denial to the accepted
+  `protected-decision-required` code, exit status, and immutable Decision
+  details for `envelope.complete` and `issue.transition-terminal-success`
+  (DEC-248). Preserve the required precedence when an Obligation is also
+  unsatisfied; other completion and transition error mappings stay unchanged.
 - Matching in-package tests and `cmd/fid/integration/` fixtures invalidated by
   this change.
 - `project-docs/docs/phases/phase-23/tasks/task-9-done.md`.
