@@ -24,10 +24,11 @@ type Subject struct {
 
 // Condition describes the durable fact required to resolve a Stop.
 type Condition struct {
-	Type         string  `json:"type"`
-	Subject      Subject `json:"subject"`
-	BudgetName   *string `json:"budget_name"`
-	CapabilityID *string `json:"capability_id"`
+	Type          string  `json:"type"`
+	Subject       Subject `json:"subject"`
+	BudgetName    *string `json:"budget_name"`
+	CapabilityID  *string `json:"capability_id"`
+	DecisionClass *string `json:"decision_class,omitempty"`
 }
 
 type Stop struct {
@@ -172,13 +173,15 @@ func NewStopBlockedError(conn *sql.DB, action string, stops []Stop) (*StopBlocke
 var stopCodes = map[string]bool{
 	"executor-liveness-unknown": true, "recovery-state-conflict": true,
 	"budget-exhausted": true, "budget-data-unavailable": true,
-	"review-rework-exhausted": true,
-	"activation-incomplete":   true, "capability-unavailable": true, "operator-stop": true,
+	"review-rework-exhausted":     true,
+	"protected-decision-required": true,
+	"activation-incomplete":       true, "capability-unavailable": true, "operator-stop": true,
 }
 
 var conditionTypes = map[string]bool{
 	"executor-terminated": true, "run-recovered": true, "activation-recovered": true,
 	"capability-available": true, "budget-observed": true, "work-ended": true,
+	"decision-satisfied": true,
 }
 
 var blockedActionSet = map[string]bool{
@@ -280,6 +283,17 @@ func GetStop(workspaceRoot, migrationsDir, id string) (Stop, error) {
 	}
 	defer closeWorkflowDB(conn)
 	return loadStop(conn, id)
+}
+
+// GetStopFromProjection reads a Stop from an already locked projection.
+func GetStopFromProjection(conn *sql.DB, id string) (Stop, error) {
+	return loadStop(conn, id)
+}
+
+// AttentionForStopFromProjection reads the Attention linked to a Stop from an
+// already locked projection.
+func AttentionForStopFromProjection(conn *sql.DB, stopID string) (Attention, error) {
+	return loadAttentionForStop(conn, stopID)
 }
 
 func ResolveStop(options StopOptions, request StopResolveRequest) (StopResolveResult, error) {
@@ -461,11 +475,14 @@ func validateCondition(condition Condition, subject Subject) error {
 	if (condition.Type == "capability-available") != (condition.CapabilityID != nil && *condition.CapabilityID != "") {
 		return fmt.Errorf("stop resolution condition capability binding is invalid")
 	}
+	if (condition.Type == "decision-satisfied") != (condition.DecisionClass != nil && *condition.DecisionClass != "") {
+		return fmt.Errorf("stop resolution condition Decision binding is invalid")
+	}
 	return nil
 }
 
 func validStopDetails(code string, details map[string]any) bool {
-	keys := map[string][]string{"executor-liveness-unknown": {"run_id", "executor_id", "observation_id"}, "recovery-state-conflict": {"run_id", "observation_digest", "paths", "reasons"}, "budget-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "budget-data-unavailable": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "review-rework-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining", "last_review_id"}, "activation-incomplete": {"activation_id", "point_of_no_return", "components"}, "capability-unavailable": {"capability_id", "available", "owner_phase"}, "operator-stop": {"reason", "reference"}}
+	keys := map[string][]string{"executor-liveness-unknown": {"run_id", "executor_id", "observation_id"}, "recovery-state-conflict": {"run_id", "observation_digest", "paths", "reasons"}, "budget-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "budget-data-unavailable": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "review-rework-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining", "last_review_id"}, "protected-decision-required": {"envelope_id", "decision_class", "required_capabilities", "affected_actions"}, "activation-incomplete": {"activation_id", "point_of_no_return", "components"}, "capability-unavailable": {"capability_id", "available", "owner_phase"}, "operator-stop": {"reason", "reference"}}
 	want, ok := keys[code]
 	if !ok || len(details) != len(want) {
 		return false

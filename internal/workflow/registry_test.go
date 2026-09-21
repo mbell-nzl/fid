@@ -99,7 +99,7 @@ func TestLoadSurfacesReservedRulesAsUnimplementedWithoutWriting(t *testing.T) {
 	}
 }
 
-func TestLoadRetainsProjectDecisionRuleWithoutRetiredSeed(t *testing.T) {
+func TestLoadImplementsProjectDecisionRuleWithoutRetiredSeed(t *testing.T) {
 	t.Parallel()
 
 	conn := migratedWorkflowRegistryDB(t)
@@ -125,7 +125,7 @@ func TestLoadRetainsProjectDecisionRuleWithoutRetiredSeed(t *testing.T) {
 	if !ok {
 		t.Fatal("loaded project Decision rule edge is missing")
 	}
-	want := []RuleReference{{Name: RuleLinkedToDecision, Unimplemented: true}}
+	want := []RuleReference{{Name: RuleLinkedToDecision}}
 	if !reflect.DeepEqual(rules, want) {
 		t.Fatalf("project Decision rule = %#v, want %#v", rules, want)
 	}

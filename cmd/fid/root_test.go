@@ -9,7 +9,7 @@ import (
 func TestPromisedGovernanceCommandsAreAbsent(t *testing.T) {
 	t.Parallel()
 
-	for _, commandName := range []string{"decision", "escalation", "triage"} {
+	for _, commandName := range []string{"escalation", "triage"} {
 		t.Run(commandName, func(t *testing.T) {
 			stdout := &bytes.Buffer{}
 			stderr := &bytes.Buffer{}

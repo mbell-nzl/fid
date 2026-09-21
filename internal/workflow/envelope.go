@@ -371,15 +371,21 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 			return &EnvelopeInvalidError{Reason: "active mutation claim blocks envelope activation"}
 		}
 		activatedAt := time.Now().UTC().Format(time.RFC3339Nano)
+		stopEffects, err := protectedDecisionStopEffects(conn, envelope, options.ActorID)
+		if err != nil {
+			return err
+		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "envelope.activated", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: envelope.ID, Sequence: 2, Type: "envelope"}, CommandName: "envelope.activate", Repository: envelopeRepository(envelope.RepositoryScope), Effects: []journal.Effect{
 			{Op: "update", Table: "work_envelopes", PK: map[string]any{"id": envelope.ID}, Values: map[string]any{"status": "active"}},
 			{Op: "update", Table: "envelope_revisions", PK: map[string]any{"envelope_id": envelope.ID, "revision": 1}, Values: map[string]any{"status": "active", "activated_at": activatedAt}},
 		}}
+		event.Effects = append(event.Effects, stopEffects...)
 		resultJSON, err := envelopeActivateResultJSON(envelope, activatedAt, options.IdempotencyKey)
 		if err != nil {
 			return err
 		}
-		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
+			setEnvelopeEventIdentity(prepared.Effects, prepared)
 			return journal.IdempotencyMutation{EntityID: envelope.ID, ResultJSON: resultJSON}, nil
 		})
 		if err != nil {
@@ -436,6 +442,21 @@ func CompleteEnvelope(options EnvelopeOptions, request EnvelopeCompleteRequest) 
 		reasons, evaluation, err := evaluateEnvelopeCompletion(options, conn, envelope, request)
 		if err != nil {
 			return err
+		}
+		if len(reasons) > 0 && reasons[0].Code == "protected-decision-required" {
+			stops, err := ApplicableStops(conn, "envelope.complete", Subject{Type: "envelope", ID: envelope.ID})
+			if err != nil {
+				return err
+			}
+			for _, stop := range stops {
+				if stop.Code == "protected-decision-required" {
+					blocked, err := NewStopBlockedError(conn, "envelope.complete", []Stop{stop})
+					if err != nil {
+						return err
+					}
+					return blocked
+				}
+			}
 		}
 		if len(reasons) > 0 {
 			return &EnvelopeCompletionError{EnvelopeID: envelope.ID, Reasons: reasons}
@@ -944,9 +965,71 @@ func loadEnvelopeProtectedDecisions(conn *sql.DB, envelope *Envelope) error {
 			return fmt.Errorf("decode envelope protected decision")
 		}
 		decision.Status = "unsatisfied"
+		if err := resolveProtectedDecision(conn, envelope.PrimaryIssueID, &decision); err != nil {
+			return err
+		}
 		envelope.ProtectedDecisions = append(envelope.ProtectedDecisions, decision)
 	}
 	return rows.Err()
+}
+
+func protectedDecisionStopEffects(conn *sql.DB, envelope Envelope, actorID string) ([]journal.Effect, error) {
+	effects := []journal.Effect{}
+	for _, decision := range envelope.ProtectedDecisions {
+		if decision.Status == "satisfied" {
+			continue
+		}
+		class := decision.DecisionClass
+		request := StopRaiseRequest{
+			Subject:        Subject{Type: "envelope", ID: envelope.ID},
+			Code:           "protected-decision-required",
+			BlockedActions: decision.AffectedActions,
+			ResolutionCondition: Condition{Type: "decision-satisfied", Subject: Subject{Type: "envelope", ID: envelope.ID},
+				DecisionClass: &class},
+			ResolverCapability: "stop.resolve",
+		}
+		request.Details = mustEnvelopeJSON(map[string]any{"envelope_id": envelope.ID, "decision_class": class, "required_capabilities": decision.RequiredCapabilities, "affected_actions": decision.AffectedActions})
+		if err := validateStopRaise(request); err != nil {
+			return nil, err
+		}
+		stopID, err := newStopID(conn)
+		if err != nil {
+			return nil, err
+		}
+		key, err := attentionSemanticKey(request.Subject, request.Code, request.ResolutionCondition)
+		if err != nil {
+			return nil, err
+		}
+		attention, found, err := loadOpenAttentionByKey(conn, key)
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			attentionID, err := newAttentionID(conn)
+			if err != nil {
+				return nil, err
+			}
+			attention = Attention{ID: attentionID, SemanticKey: key, Subject: request.Subject, Code: request.Code, Status: "open", Version: 1, StopIDs: []string{stopID}, RaisedAt: "<occurred-at>"}
+		}
+		stop := Stop{ID: stopID, Subject: request.Subject, Code: request.Code, BlockedActions: request.BlockedActions, Details: request.Details, ResolutionCondition: request.ResolutionCondition, ResolverCapability: request.ResolverCapability, ActorID: actorID, RaisedAt: "<occurred-at>"}
+		raised := stopRaisedEventForDomain(stop, attention, !found, "<event-id>")
+		effects = append(effects, raised.Effects...)
+	}
+	return effects, nil
+}
+
+func setEnvelopeEventIdentity(effects []journal.Effect, event journal.Event) {
+	stamp := event.OccurredAt.UTC().Format(time.RFC3339Nano)
+	for index := range effects {
+		for key, value := range effects[index].Values {
+			switch value {
+			case "<event-id>":
+				effects[index].Values[key] = event.EventID
+			case "<occurred-at>":
+				effects[index].Values[key] = stamp
+			}
+		}
+	}
 }
 
 func loadEnvelopeBudgets(conn *sql.DB, envelope *Envelope) error {

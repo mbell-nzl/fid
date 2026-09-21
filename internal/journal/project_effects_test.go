@@ -59,8 +59,11 @@ func TestConcernDeviationFenceConvergencePreservesEveryRemainingEvent(t *testing
 			t.Fatalf("%s remains fenced after Task 8 implemented its strict event path", eventType)
 		}
 	}
+	if unavailableJudgmentEvents["decision.referenced"] {
+		t.Fatal("decision.referenced remains fenced after Task 9 implemented its strict event path")
+	}
 	want := []string{
-		"decision.referenced", "human-outcome.recorded", "requirement.linked", "requirement.referenced",
+		"human-outcome.recorded", "requirement.linked", "requirement.referenced",
 	}
 	if len(unavailableJudgmentEvents) != len(want) {
 		t.Fatalf("remaining unavailable Event count = %d, want %d", len(unavailableJudgmentEvents), len(want))

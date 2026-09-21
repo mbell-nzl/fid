@@ -109,3 +109,92 @@ func TestCurrentClosedValuesRejectIncompleteAndInvalidFacts(t *testing.T) {
 		})
 	}
 }
+
+const task9ConditionReference = "74c83b7033729785eb99403ecec9dcde30ac4280"
+
+func TestTask9ConditionDispatchRetainsPinnedPhase22Bytes(t *testing.T) {
+	canonical := map[string]string{
+		"executor-terminated":  `{"type":"executor-terminated","subject":{"type":"run","id":"RUN-pinned"},"budget_name":null,"capability_id":null}`,
+		"run-recovered":        `{"type":"run-recovered","subject":{"type":"run","id":"RUN-pinned"},"budget_name":null,"capability_id":null}`,
+		"activation-recovered": `{"type":"activation-recovered","subject":{"type":"activation","id":"ACT-pinned"},"budget_name":null,"capability_id":null}`,
+		"capability-available": `{"type":"capability-available","subject":{"type":"activation","id":"ACT-pinned"},"budget_name":null,"capability_id":"attention.v1"}`,
+		"budget-observed":      `{"type":"budget-observed","subject":{"type":"run","id":"RUN-pinned"},"budget_name":"attempts","capability_id":null}`,
+		"work-ended":           `{"type":"work-ended","subject":{"type":"run","id":"RUN-pinned"},"budget_name":null,"capability_id":null}`,
+	}
+	if task9ConditionReference == "" {
+		t.Fatal("pre-change reference is required")
+	}
+	for conditionType, raw := range canonical {
+		t.Run(conditionType, func(t *testing.T) {
+			if err := validateCurrentJSON(Event{EventType: "stop.raised"}, Effect{Table: "stops", Values: map[string]any{"subject_type": subjectTypeForPinnedCondition(conditionType), "subject_id": subjectIDForPinnedCondition(conditionType)}}, "resolution_condition_json", raw); err != nil {
+				t.Fatalf("pinned %s Condition rejected: %v", conditionType, err)
+			}
+			mutated := strings.TrimSuffix(raw, "}") + `,"decision_class":"release"}`
+			if err := validateCurrentJSON(Event{EventType: "stop.raised"}, Effect{Table: "stops", Values: map[string]any{"subject_type": subjectTypeForPinnedCondition(conditionType), "subject_id": subjectIDForPinnedCondition(conditionType)}}, "resolution_condition_json", mutated); err == nil {
+				t.Fatalf("mutated %s Condition accepted", conditionType)
+			}
+		})
+	}
+}
+
+func TestTask9ConditionDispatchPreservesNullableBindings(t *testing.T) {
+	cases := []string{
+		`{"type":"work-ended","subject":{"type":"run","id":"RUN-pinned"},"budget_name":"attempts","capability_id":null}`,
+		`{"type":"budget-observed","subject":{"type":"run","id":"RUN-pinned"},"budget_name":null,"capability_id":null}`,
+		`{"type":"decision-satisfied","subject":{"type":"envelope","id":"ENV-pinned"},"budget_name":"attempts","capability_id":null,"decision_class":"release"}`,
+	}
+	for _, raw := range cases {
+		value, err := decodeCurrentJSON(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := validateCurrentValue("Condition", value); err == nil || err.Error() != "condition nullable binding mismatch" {
+			t.Fatalf("binding error = %v", err)
+		}
+	}
+}
+
+func TestTask9DecisionConditionShapeAndNonStringDiscriminant(t *testing.T) {
+	cases := []struct {
+		name string
+		raw  string
+		ok   bool
+	}{
+		{"canonical", `{"type":"decision-satisfied","subject":{"type":"envelope","id":"ENV-pinned"},"budget_name":null,"capability_id":null,"decision_class":"release"}`, true},
+		{"wrong-field", `{"type":"decision-satisfied","subject":{"type":"envelope","id":"ENV-pinned"},"budget_name":null,"capability_id":null,"outcome_class":"release"}`, false},
+		{"null-own-field", `{"type":"decision-satisfied","subject":{"type":"envelope","id":"ENV-pinned"},"budget_name":null,"capability_id":null,"decision_class":null}`, false},
+		{"two-new-fields", `{"type":"decision-satisfied","subject":{"type":"envelope","id":"ENV-pinned"},"budget_name":null,"capability_id":null,"decision_class":"release","outcome_class":"release"}`, false},
+		{"non-string-type", `{"type":42,"subject":{"type":"envelope","id":"ENV-pinned"},"budget_name":null,"capability_id":null,"decision_class":"release"}`, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			defer func() {
+				if recovered := recover(); recovered != nil {
+					t.Fatalf("invalid Condition panicked: %v", recovered)
+				}
+			}()
+			value, err := decodeCurrentJSON(tc.raw)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = validateCurrentValue("Condition", value)
+			if (err == nil) != tc.ok {
+				t.Fatalf("validation error = %v, want accepted=%v", err, tc.ok)
+			}
+		})
+	}
+}
+
+func subjectTypeForPinnedCondition(conditionType string) string {
+	if conditionType == "activation-recovered" || conditionType == "capability-available" {
+		return "activation"
+	}
+	return "run"
+}
+
+func subjectIDForPinnedCondition(conditionType string) string {
+	if subjectTypeForPinnedCondition(conditionType) == "activation" {
+		return "ACT-pinned"
+	}
+	return "RUN-pinned"
+}

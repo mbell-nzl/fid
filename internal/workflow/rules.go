@@ -12,9 +12,7 @@ const (
 	RuleRequiredGatesCurrent = "required_gates_current"
 	// RuleHasCompletion is reserved for structured completion requirements.
 	// It has no evaluator in this phase.
-	RuleHasCompletion = "has_completion"
-	// RuleLinkedToDecision remains reserved for project Decision scope (Phase 23).
-	// It has no evaluator in this phase.
+	RuleHasCompletion    = "has_completion"
 	RuleLinkedToDecision = "linked_to_decision"
 )
 
@@ -23,7 +21,8 @@ func IsImplementedRule(name string) bool {
 	return name == RuleAllACsVerified ||
 		name == RuleHasCompletionReport ||
 		name == RuleConcernsAddressed ||
-		name == RuleAllChildTasksDoneOrCanceled
+		name == RuleAllChildTasksDoneOrCanceled ||
+		name == RuleLinkedToDecision
 }
 
 type RuleResult struct {
@@ -87,6 +86,14 @@ func HasCompletionReport(status CompletionReportStatus) RuleResult {
 		Rule:      RuleHasCompletionReport,
 		EntityIDs: singleEntityID(status.IssueID),
 	}})
+}
+
+func LinkedToDecision(issueID string, decisionReferenceIDs []string) RuleResult {
+	ids := uniqueNonEmpty(decisionReferenceIDs)
+	if len(ids) > 0 {
+		return RuleResult{Satisfied: true}
+	}
+	return newRuleResult([]UnmetCondition{{Rule: RuleLinkedToDecision, EntityIDs: singleEntityID(issueID)}})
 }
 
 func ConcernsAddressed(status ConcernStatus) RuleResult {

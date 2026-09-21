@@ -51,7 +51,14 @@ func ApplicableStops(conn *sql.DB, action string, subjects ...Subject) ([]Stop, 
 			LEFT JOIN stop_resolutions r ON r.stop_id = s.id
 			WHERE s.subject_type = ? AND s.subject_id = ? AND r.stop_id IS NULL
 			  AND EXISTS (SELECT 1 FROM json_each(s.blocked_actions_json) WHERE value = ?)
-			ORDER BY s.raised_at, s.id
+			ORDER BY s.raised_at,
+			  CASE WHEN s.code = 'protected-decision-required' THEN COALESCE((
+			    SELECT p.ordinal FROM envelope_protected_decisions p
+			    WHERE p.envelope_id = s.subject_id
+			      AND p.revision = (SELECT current_revision FROM work_envelopes WHERE id = s.subject_id)
+			      AND p.decision_class = json_extract(s.details_json, '$.decision_class')
+			  ), 2147483647) ELSE 0 END,
+			  s.id
 		`, subject.Type, subject.ID, action)
 		if err != nil {
 			return nil, fmt.Errorf("evaluate Stops: %w", err)
@@ -221,6 +228,119 @@ func EvaluateEnvelopeObligations(obligations []Obligation, statesByObligation ma
 		evaluations = append(evaluations, evaluation)
 	}
 	return evaluations
+}
+
+func evaluateProtectedDecisions(conn *sql.DB, envelope Envelope, action string) ([]EvaluationReason, error) {
+	reasons := []EvaluationReason{}
+	for index := range envelope.ProtectedDecisions {
+		decision := &envelope.ProtectedDecisions[index]
+		if err := resolveProtectedDecision(conn, envelope.PrimaryIssueID, decision); err != nil {
+			return nil, err
+		}
+		if decision.Status == "satisfied" || !containsAction(decision.AffectedActions, action) {
+			continue
+		}
+		reasons = append(reasons, evaluationReason(
+			"protected-decision-required",
+			"protected Decision requires approved reference and Human Outcome",
+			decision.DecisionClass,
+			"decision",
+		))
+	}
+	return sortEvaluationReasons(reasons), nil
+}
+
+// ProtectedDecisionsForIssue derives the current status of every protected
+// Decision on the Issue's active or draft Envelope revision.
+func ProtectedDecisionsForIssue(conn *sql.DB, issueID string) (Envelope, []ProtectedDecision, error) {
+	var envelopeID string
+	err := conn.QueryRow(`
+		SELECT e.id
+		FROM work_envelopes e
+		JOIN envelope_issue_selection s ON s.envelope_id=e.id AND s.revision=e.current_revision
+		WHERE s.issue_id=? AND e.status IN ('active','draft')
+		ORDER BY CASE e.status WHEN 'active' THEN 0 ELSE 1 END,e.id
+		LIMIT 1`, issueID).Scan(&envelopeID)
+	if err != nil {
+		return Envelope{}, nil, fmt.Errorf("load protected Decision Envelope: %w", err)
+	}
+	envelope, err := loadEnvelope(conn, envelopeID)
+	if err != nil {
+		return Envelope{}, nil, err
+	}
+	for index := range envelope.ProtectedDecisions {
+		if err := resolveProtectedDecision(conn, envelope.PrimaryIssueID, &envelope.ProtectedDecisions[index]); err != nil {
+			return Envelope{}, nil, err
+		}
+	}
+	return envelope, envelope.ProtectedDecisions, nil
+}
+
+// ProtectedDecisionBlockForIssue reloads the immutable Stop that produced an
+// execution-bound Issue denial. Command adapters use it to render the same
+// protected Decision facts as other guarded actions.
+func ProtectedDecisionBlockForIssue(workspaceRoot, migrationsDir, issueID, action string) (*StopBlockedError, error) {
+	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
+		return nil, err
+	}
+	conn, err := openWorkflowDB(workspaceRoot)
+	if err != nil {
+		return nil, err
+	}
+	defer closeWorkflowDB(conn)
+
+	envelope, _, err := ProtectedDecisionsForIssue(conn, issueID)
+	if err != nil {
+		return nil, err
+	}
+	stops, err := ApplicableStops(conn, action, Subject{Type: "envelope", ID: envelope.ID})
+	if err != nil {
+		return nil, err
+	}
+	for _, stop := range stops {
+		if stop.Code == "protected-decision-required" {
+			return NewStopBlockedError(conn, action, []Stop{stop})
+		}
+	}
+	return nil, fmt.Errorf("protected Decision Stop is unavailable for issue %q", issueID)
+}
+
+func resolveProtectedDecision(conn *sql.DB, issueID string, decision *ProtectedDecision) error {
+	required, err := journal.MarshalCanonicalJSON(decision.RequiredCapabilities)
+	if err != nil {
+		return fmt.Errorf("encode protected Decision authority: %w", err)
+	}
+	var referenceID string
+	err = conn.QueryRow(`
+		SELECT id FROM decision_refs
+		WHERE class = ? AND scope_issue_id = ? AND outcome = 'approved'
+		  AND authority_capabilities_json = ?
+		ORDER BY created_event_id DESC LIMIT 1`,
+		decision.DecisionClass, issueID, string(required)).Scan(&referenceID)
+	if err != nil && err != sql.ErrNoRows {
+		return fmt.Errorf("resolve protected Decision reference: %w", err)
+	}
+	var outcomeID string
+	outcomeErr := conn.QueryRow(`
+		SELECT id FROM human_outcomes
+		WHERE class = ? AND scope_issue_id = ? AND result = 'approved'
+		ORDER BY created_event_id DESC LIMIT 1`, decision.DecisionClass, issueID).Scan(&outcomeID)
+	if outcomeErr != nil && outcomeErr != sql.ErrNoRows {
+		return fmt.Errorf("resolve protected Decision Human Outcome: %w", outcomeErr)
+	}
+	decision.DecisionRefID = nil
+	decision.HumanOutcomeID = nil
+	decision.Status = "unsatisfied"
+	if err == nil {
+		decision.DecisionRefID = &referenceID
+	}
+	if outcomeErr == nil {
+		decision.HumanOutcomeID = &outcomeID
+	}
+	if decision.DecisionRefID != nil && decision.HumanOutcomeID != nil {
+		decision.Status = "satisfied"
+	}
+	return nil
 }
 
 func evidenceAbsent(states []ObligationEvidenceState) bool {
@@ -535,11 +655,12 @@ func sortEvaluationReasons(reasons []EvaluationReason) []EvaluationReason {
 	precedence := map[string]int{
 		"authority-unavailable": 1, "envelope-inactive": 2, "claim-missing": 3, "claim-expired": 4,
 		"run-inactive": 5, "issue-revision-conflict": 6, "workflow-transition-invalid": 7,
-		"obligation-evidence-absent": 8, "human-outcome-absent": 9, "finding-unresolved": 10,
-		"review-not-independent": 11, "outcome-superseded": 12, "receipt-unsuccessful": 13,
-		"evidence-invalid": 14, "evidence-stale": 15, "artifact-unavailable": 16, "issue-not-terminal-success": 17,
-		"executor-liveness-unknown": 8, "recovery-state-conflict": 8, "budget-exhausted": 8,
-		"budget-data-unavailable": 8, "activation-incomplete": 8, "capability-unavailable": 8, "operator-stop": 8,
+		"protected-decision-required": 8,
+		"obligation-evidence-absent":  10, "human-outcome-absent": 11, "finding-unresolved": 12,
+		"review-not-independent": 13, "outcome-superseded": 14, "receipt-unsuccessful": 15,
+		"evidence-invalid": 16, "evidence-stale": 17, "artifact-unavailable": 18, "issue-not-terminal-success": 19,
+		"executor-liveness-unknown": 7, "recovery-state-conflict": 7, "budget-exhausted": 7,
+		"budget-data-unavailable": 7, "activation-incomplete": 7, "capability-unavailable": 7, "operator-stop": 7,
 	}
 	sort.Slice(ordered, func(left, right int) bool {
 		leftRank, rightRank := precedence[ordered[left].Code], precedence[ordered[right].Code]

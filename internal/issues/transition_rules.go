@@ -73,9 +73,32 @@ func evaluateTransitionRule(conn *sql.DB, current issueTransitionState, rule wor
 			return workflow.RuleResult{}, err
 		}
 		return workflow.AllChildTasksDoneOrCancelled(children), nil
+	case workflow.RuleLinkedToDecision:
+		ids, err := loadApprovedDecisionReferenceIDs(conn, current.ID)
+		if err != nil {
+			return workflow.RuleResult{}, err
+		}
+		return workflow.LinkedToDecision(current.ID, ids), nil
 	default:
 		return workflow.RuleResult{Unmet: []workflow.UnmetCondition{{Rule: rule.Name}}}, nil
 	}
+}
+
+func loadApprovedDecisionReferenceIDs(conn *sql.DB, issueID string) ([]string, error) {
+	rows, err := conn.Query(`SELECT id FROM decision_refs WHERE scope_issue_id=? AND outcome='approved' ORDER BY id`, issueID)
+	if err != nil {
+		return nil, fmt.Errorf("query approved Decision References for %q: %w", issueID, err)
+	}
+	defer func() { _ = rows.Close() }()
+	ids := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
 }
 
 func loadAcceptanceCriterionVerifications(conn *sql.DB, issueID string) ([]workflow.AcceptanceCriterionVerification, error) {

@@ -98,6 +98,8 @@ const (
 	CodeDeviationNotFound           Code = "deviation-not-found"
 	CodeConcernAlreadyDisposed      Code = "concern-already-disposed"
 	CodeIdempotencyConflict         Code = "idempotency-conflict"
+	CodeProtectedDecisionRequired   Code = "protected-decision-required"
+	CodeSourceDigestMismatch        Code = "source-digest-mismatch"
 )
 
 type SubjectType string
@@ -126,6 +128,7 @@ const (
 	SubjectFinding          SubjectType = "finding"
 	SubjectConcern          SubjectType = "concern"
 	SubjectDeviation        SubjectType = "deviation"
+	SubjectDecision         SubjectType = "decision"
 )
 
 type Subject struct {
@@ -248,6 +251,10 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 		stringField("concern_id"), stringField("disposed_at")),
 	CodeIdempotencyConflict: definition(CategoryConflict, false, nil,
 		stringField("operation_scope"), stringField("idempotency_key"), stringField("stored_request_digest"), stringField("supplied_request_digest")),
+	CodeProtectedDecisionRequired: definition(CategoryAuthority, false, []SubjectType{SubjectEnvelope},
+		stringField("envelope_id"), stringField("decision_class"), stringsField("required_capabilities"), stringsField("affected_actions")),
+	CodeSourceDigestMismatch: definition(CategoryPrecondition, false, nil,
+		stringField("display_label"), nullableStringField("path"), stringField("expected_digest"), nullableStringField("observed_digest")),
 	CodeInvalidArgument:     definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeUnsupportedKind:     definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeUnsupportedRelation: definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
@@ -366,6 +373,7 @@ var registeredCodes = []Code{
 	CodeImportTargetConflict,
 	CodeFindingNotFound, CodeFindingAlreadyDisposed,
 	CodeConcernNotFound, CodeDeviationNotFound, CodeConcernAlreadyDisposed,
+	CodeProtectedDecisionRequired, CodeSourceDigestMismatch,
 }
 
 func findingFields() []detailField {

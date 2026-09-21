@@ -152,6 +152,12 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeConcernNotFound, CategoryNotFound, false, []SubjectType{SubjectConcern}, stringDetails("id")},
 		{CodeDeviationNotFound, CategoryNotFound, false, []SubjectType{SubjectDeviation}, stringDetails("id")},
 		{CodeConcernAlreadyDisposed, CategoryConflict, false, []SubjectType{SubjectConcern}, []detailExpectation{stringDetail("concern_id"), stringDetail("disposed_at")}},
+		{CodeProtectedDecisionRequired, CategoryAuthority, false, []SubjectType{SubjectEnvelope}, []detailExpectation{
+			stringDetail("envelope_id"), stringDetail("decision_class"), {name: "required_capabilities", kind: detailStringsKind}, {name: "affected_actions", kind: detailStringsKind},
+		}},
+		{CodeSourceDigestMismatch, CategoryPrecondition, false, nil, []detailExpectation{
+			stringDetail("display_label"), nullableStringDetail("path"), stringDetail("expected_digest"), nullableStringDetail("observed_digest"),
+		}},
 	}
 
 	registered := RegisteredCodes()

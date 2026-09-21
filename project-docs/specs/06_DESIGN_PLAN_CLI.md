@@ -181,7 +181,7 @@ fid review record|get|list
 fid finding address|list
 fid concern record|dispose|list
 fid deviation record|list
-fid decision record-reference
+fid decision record-reference|list
 fid human-outcome record
 ```
 
@@ -194,6 +194,14 @@ Phase 23 Task 8 adds `concern dispose` for one irreversible, reasoned
 reads the append-only Deviation chain; a changed judgment is recorded with
 `deviation record` and an explicit predecessor reference rather than an update
 leaf.
+
+Phase 23 Task 9 adds operational Decision References. `decision
+record-reference` verifies a project-file Source digest while holding the write
+lock and stores the pointer, authority, outcome, and Issue scope without the
+decision prose. `decision list` is a read with optional class, outcome, Issue,
+and limit filters. An unsatisfied protected Decision raises one Stop and blocks
+only its declared affected actions until an approved reference with the exact
+required capabilities and an approved Human Outcome both exist.
 
 Phase 23 Task 5 adds optional `inapplicable_findings:[{finding_id,reason}]` to
 `review.record`, alongside retained `resolves_finding_ids` (DEC-242). The
@@ -241,6 +249,7 @@ activation-conflict
 authority-missing
 authority-forged
 protected-decision-required
+source-digest-mismatch
 state-conflict
 idempotency-conflict
 mutation-conflict
@@ -271,6 +280,13 @@ Codes accepted with the Phase 20 standalone Issue slice: `invalid-argument`,
 `authority-*` codes. Phase 21 replaces the V1 checks, but the semantic codes are
 not automatically removed: the generic authority contract may retain or refine
 them through its own accepted contract change.
+
+Phase 23 Task 9 adds `protected-decision-required` (authority, exit 5) with
+exact details `envelope_id`, `decision_class`, `required_capabilities`, and
+`affected_actions`; and `source-digest-mismatch` (precondition, exit 4) with
+exact details `display_label`, nullable `path`, `expected_digest`, and nullable
+`observed_digest`. A missing Source file is reported through the same digest
+mismatch code and appends no Event.
 
 ## 6. Removed Commands
 
@@ -355,4 +371,4 @@ Human recovery guidance without changing JSON or mutation authority; DEC-220
 records technical qualification and the accepted second Human checklist.
 CLI view polish and verbosity remain nonblocking CF-040.
 
-*Last updated: 2026-09-13 (Phase 22 accepted implementation; DEC-220)*
+*Last updated: 2026-09-21 (Phase 23 Decision Reference implementation; DEC-239)*

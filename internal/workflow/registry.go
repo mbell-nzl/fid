@@ -236,5 +236,5 @@ func requiredRolesFromParams(paramsJSON sql.NullString) ([]string, error) {
 }
 
 func isReservedUnimplementedRule(name string) bool {
-	return name == RuleRequiredGatesCurrent || name == RuleHasCompletion || name == RuleLinkedToDecision
+	return name == RuleRequiredGatesCurrent || name == RuleHasCompletion
 }

@@ -288,6 +288,7 @@ type p22ExecutionFixture struct {
 	Argv                []string
 	ExtraBudgets        []any
 	HumanObligations    bool
+	ProtectedDecisions  []any
 	ReviewObligation    bool
 	ReviewCyclesMaximum int
 }
@@ -373,6 +374,9 @@ func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, ac
 	})
 	envelopeRequest := map[string]any{"outcome": "Recover one interrupted Run", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "authority_grants": authorityGrants, "obligations": obligations, "budgets": []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}, map[string]any{"name": "tokens", "scope": "envelope", "unit": "input-tokens", "maximum": 10, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}}}
 	if len(execution) != 0 {
+		if execution[0].ProtectedDecisions != nil {
+			envelopeRequest["protected_decisions"] = execution[0].ProtectedDecisions
+		}
 		budgets := append(envelopeRequest["budgets"].([]any), execution[0].ExtraBudgets...)
 		if execution[0].ReviewCyclesMaximum != 0 {
 			budgets = append(budgets, map[string]any{"name": "review-cycles", "scope": "envelope", "unit": "review-cycles", "maximum": execution[0].ReviewCyclesMaximum, "warning_threshold": nil, "exhaustion_action": "review-rework-exhausted", "consumed": nil, "remaining": nil})
