@@ -5,11 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 3 same-task continuations recorded in
-  `project-docs/docs/phases/phase-23/run-ledger.md` (attempts 2-4) preceded
-  this session; this is the fourth session on this exact task
-  (`task-10:session-continuation:initial-dispatch-external-interruption`,
-  attempt 4).
+- Recovery attempts: 3
 - Next action: None.
 - Human attention required: no
 
@@ -261,56 +257,60 @@ dedicated fixture and the other two producers' proof sites.
 
 ## Tests run
 
-- `go test -race -timeout 30m -count=1 -coverprofile=coverage.out ./...` -
-  PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	209.135s	coverage:
-  62.3% of statements` (terminated `exit_code: 0`); full log tail confirms
-  every package `ok` (see Exact quality-gate results for durations).
-- `go test -tags integration -race -timeout 30m -count=1
-  ./cmd/fid/integration/...` - PASS - `ok
-  	github.com/mbell-nzl/fid/cmd/fid/integration	670.837s` (terminated
-  `exit_code: 0`).
-- Real entrypoint exercise: the tagged integration suite above drives the
-  actual built `fid` binary as a real process
-  (`integrationFIDBinary`/`closureRunCommand` in
-  `cmd/fid/integration/p23_human_outcome_test.go`), including
-  `human-outcome record` and `human-outcome list` through the real CLI leaf
-  (`p23RecordHumanOutcome`, and the `human-outcome list` call at line
-  159-169: `listed := a.p22Run(t, "human-outcome", "list", "--issue",
-  a.issueID)`, exit 0, 2 items). This satisfies the runtime-surface
-  entrypoint-exercise requirement; no separate manual CLI invocation was
-  additionally run in this session.
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	209.135s	coverage: 62.3% of statements` (terminated `exit_code: 0`)
+- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	670.837s` (terminated `exit_code: 0`)
+
+Real entrypoint exercise: the tagged integration suite above drives the
+actual built `fid` binary as a real process
+(`integrationFIDBinary`/`closureRunCommand` in
+`cmd/fid/integration/p23_human_outcome_test.go`), including
+`human-outcome record` and `human-outcome list` through the real CLI leaf
+(`p23RecordHumanOutcome`, and the `human-outcome list` call at line 159-169:
+`listed := a.p22Run(t, "human-outcome", "list", "--issue", a.issueID)`, exit
+0, 2 items). This satisfies the runtime-surface entrypoint-exercise
+requirement; no separate manual CLI invocation was additionally run in this
+session.
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated
-  `exit_code: 0`).
-- `goimports -l cmd internal` (applied before the gate, per task-spec
-  instruction to apply gofmt/goimports to edited files first) - PASS - `exit
-  0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -timeout 30m -count=1 -coverprofile=coverage.out ./...` -
-  PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	209.135s	coverage:
-  62.3% of statements` (terminated `exit_code: 0`; wall time `real
-  9m1.954s`). Per-package durations relevant to VAL-079/DEC-227 budgets
-  (ordinary package budget <600s): `cmd/fid` 539.822s (PASS), `internal/workflow`
-  209.135s (PASS). No ordinary package exceeded budget.
-- `go tool cover -func=coverage.out` - PASS - `total:
-  											(statements)					61.5%` (terminated `exit_code: 0`).
-- `go test -tags integration -race -timeout 30m -count=1
-  ./cmd/fid/integration/...` - PASS - `ok
-  	github.com/mbell-nzl/fid/cmd/fid/integration	670.837s` (terminated
-  `exit_code: 0`; wall time `real 11m12.143s`). Tagged-integration budget
-  <900s (VAL-079): 670.837s, PASS.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	209.135s	coverage: 62.3% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.5%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	670.837s` (terminated `exit_code: 0`)
 
-Note: an initial `go test -race -timeout 30m -coverprofile=coverage.out ./...`
-attempt (without `-count=1`) returned entirely from Go's test cache
-(`(cached)` on every package line) rather than executing in this session; it
-is not recorded above as evidence. It was immediately rerun with `-count=1`
-to force a real execution, and that rerun is the PASS recorded above.
+`goimports -l cmd internal` was also run (not a task-spec-required command,
+applied per the instruction to apply gofmt/goimports to edited files before
+the final gate): `exit 0 (no output)`, terminated `exit_code: 0`.
+
+Wall-clock durations (VAL-079/DEC-227 budgets: tagged integration <900s,
+ordinary packages <600s): `go test -race -timeout 30m -coverprofile=coverage.out
+./...` reported `real 9m1.954s`, with per-package `ok` durations `cmd/fid`
+539.822s (PASS, <600s) and `internal/workflow` 209.135s (PASS, <600s); no
+ordinary package exceeded budget. `go test -tags integration -race -timeout
+30m ./cmd/fid/integration/...` reported `real 11m12.143s`, with `ok
+cmd/fid/integration` 670.837s (PASS, <900s).
+
+Both `go test` commands above were actually invoked with `-count=1` appended
+(`go test -race -timeout 30m -count=1 -coverprofile=coverage.out ./...` and
+`go test -tags integration -race -timeout 30m -count=1
+./cmd/fid/integration/...`) to force a genuine execution in this session
+rather than Go's build/test cache; this is recorded as a deviation below. An
+initial `go test -race -timeout 30m -coverprofile=coverage.out ./...` attempt
+without `-count=1` returned entirely from cache (`(cached)` on every package
+line, no real execution in this session) and is not recorded as evidence; it
+was immediately rerun with `-count=1` added, and that rerun is the PASS
+recorded above with its own genuinely observed termination and durations.
 
 ## Deviations from spec
 
-- None.
+- Both required `go test` gate commands were actually invoked with `-count=1`
+  appended (see Exact quality-gate results) to force genuine execution rather
+  than serve results from Go's build/test cache. This does not change test
+  selection, flags, thresholds, or scope - it is a cache-bypass flag only -
+  and the recorded PASS rows cite the task-spec commands verbatim with
+  genuinely observed termination and duration evidence from the `-count=1`
+  runs.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
