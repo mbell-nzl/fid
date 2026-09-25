@@ -5,8 +5,11 @@ package integration
 import (
 	"context"
 	"encoding/json"
+	"path/filepath"
+	"reflect"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/evidence"
 )
@@ -15,11 +18,14 @@ import (
 // provenanced Human Outcome recording end to end through the built binary:
 // VAL-043 authority admission and its four negatives, VAL-045's deterministic
 // non-proof fields, VAL-046's readiness-Stop raising and resolution, VAL-025's
-// final nine-cell evidence-type closure, VAL-009's completing state, VAL-010's
+// final nine-cell evidence-type closure (both Human mismatches through the
+// real producer), VAL-009's completing state with one Envelope carrying
+// gate-evidence, review, and human-outcome Obligations at once, VAL-010's
 // linked-evidence re-verification, and VAL-081's re-confirmed nullable binding.
 func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T) {
-	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start"}
-	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, actions, p22ExecutionFixture{HumanObligations: true})
+	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "review.record", "run.close", "run.observe", "run.observe-budget", "run.start"}
+	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, actions, p22ExecutionFixture{HumanObligations: true, CoexistingReviewObligation: true})
+	assertP23ThreeObligationTypesCoexist(t, a)
 	// issue.transition-terminal-success (qa_pass) evaluates every required
 	// Obligation regardless of its own guarded_actions, so it is deferred
 	// until every Obligation this journey exercises is satisfied; the
@@ -29,25 +35,35 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 		assertP23HumanOutcomeCommandSuccess(t, "transition Issue to "+state, response)
 	}
 
-	// VAL-043 negative: agent actor type (actor-denied shares actor's exact
-	// capabilities but is staged actor_type "agent").
+	// VAL-043 request 1 of 5: agent actor type (actor-denied shares actor's
+	// exact capabilities but is staged actor_type "agent"). Each of requests 1-4
+	// exits 5 with authority-missing and leaves the journal length unchanged.
 	before := p21JournalEventCount(t, a.workspace)
 	agentAttempt := p23RecordHumanOutcome(t, a, "agent-actor", "actor-denied", "release", "approved")
-	assertP23AuthorityMissing(t, agentAttempt, before)
+	assertP23AuthorityMissing(t, agentAttempt, before, p21JournalEventCount(t, a.workspace))
 
-	// VAL-043 negative: standalone/unregistered actor. This is the same
-	// TrustedActorUnavailableError code path an unfinalized Activation
-	// produces, since neither actor ID resolves inside a finalized profile.
+	// VAL-043 request 2 of 5: a Kit Activation that was prepared but never
+	// finalized, whose human Actor DOES hold human-outcome.record. Two states
+	// are driven: prepared with its components staged, and committed but still
+	// not finalized. Neither may produce an authority-bearing Actor.
+	for _, unfinalized := range p23UnfinalizedActivationAttempts(t) {
+		assertP23AuthorityMissing(t, unfinalized.Response, unfinalized.Before, unfinalized.After)
+	}
+
+	// VAL-043 request 3 of 5: missing capability, proven with a dedicated
+	// minimal finalized Activation whose only human Actor omits
+	// human-outcome.record.
+	missing := p23RecordHumanOutcomeMissingCapability(t)
+	assertP23AuthorityMissing(t, missing.Response, missing.Before, missing.After)
+
+	// VAL-043 request 4 of 5: standalone Issue-inventory attribution. The
+	// attributed human:unregistered Actor resolves in no finalized profile.
 	before = p21JournalEventCount(t, a.workspace)
 	unregistered := p23RecordHumanOutcome(t, a, "unregistered-actor", "human:unregistered", "release", "approved")
-	assertP23AuthorityMissing(t, unregistered, before)
+	assertP23AuthorityMissing(t, unregistered, before, p21JournalEventCount(t, a.workspace))
 
-	// VAL-043 negative: missing capability, proven with a dedicated minimal
-	// finalized Activation whose only human Actor omits human-outcome.record.
-	assertP23AuthorityMissing(t, p23RecordHumanOutcomeMissingCapability(t), 0)
-
-	// VAL-043 valid case + VAL-045: the recorded Outcome and its Evidence
-	// never present deterministic proof.
+	// VAL-043 request 5 of 5 (valid Kit-mode case) + VAL-045: the recorded
+	// Outcome and its Evidence never present deterministic proof.
 	before = p21JournalEventCount(t, a.workspace)
 	release := p23RecordHumanOutcome(t, a, "release-approved", a.actor, "release", "approved")
 	assertP23HumanOutcomeSuccess(t, release)
@@ -65,10 +81,10 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	}
 
 	// VAL-025: link the real recorded approved Human Outcome to its matching
-	// human-outcome Obligation and re-prove the two mismatches with the real
-	// producer.
-	gateMismatch := p23LinkHumanOutcome(t, a, "release-vs-gate", "OBL-p22-corpus", releaseOutcomeID)
-	assertP23OutcomeNotPermitted(t, gateMismatch, "gate-evidence")
+	// human-outcome Obligation and re-prove both Human mismatches with the real
+	// producer, each bracketed by an unchanged journal length and projection.
+	assertP23OutcomeLinkNotPermitted(t, a, "release-vs-gate", "OBL-p22-corpus", releaseOutcomeID, "gate-evidence")
+	assertP23OutcomeLinkNotPermitted(t, a, "release-vs-review", "OBL-p23-review", releaseOutcomeID, "review")
 	matched := p23LinkHumanOutcome(t, a, "release-match", "OBL-human-release", releaseOutcomeID)
 	assertP23HumanOutcomeSuccess(t, matched)
 	linkedEnvelope := p23Envelope(t, matched.Stdout)
@@ -85,15 +101,27 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 		t.Fatalf("linked Evidence trust_source = %q, want activated-human", got)
 	}
 
+	// VAL-009 stage 1: the release Human Outcome is satisfied, but the
+	// gate-evidence, review, and security human-outcome Obligations are not, so
+	// both guarded actions are denied with no Event and no projection change.
+	assertP23GuardedActionsDenied(t, a, "human-outcome-stage-1", []string{"OBL-human-security", "OBL-p22-corpus", "OBL-p23-review"})
+
+	// VAL-009 stage 2: an independent Reviewer records a passing Review that is
+	// linked to the review Obligation. It still leaves gate-evidence and the
+	// security human-outcome Obligation unsatisfied, so the guarded actions stay
+	// denied. VAL-010: the linked review Evidence's evaluation reports the
+	// distinct not-applicable artifact availability, never available/missing.
+	reviewEvaluation := p23SatisfyCoexistingReview(t, a, "human-outcome-review")
+	if reviewEvaluation["status"] != "satisfied" || reviewEvaluation["artifact_availability"] != "not-applicable" {
+		t.Fatalf("linked review evaluation = %#v, want satisfied/not-applicable", reviewEvaluation)
+	}
+	assertP23GuardedActionsDenied(t, a, "human-outcome-stage-2", []string{"OBL-human-security", "OBL-p22-corpus"})
+
 	// VAL-046: recording the second class's approved Outcome makes it the
 	// last unsatisfied Obligation, and evidence.link (the ordinary DEC-224
-	// producer) raises human-outcome-required once the gate-evidence
-	// Obligation is also satisfied.
-	p22AcceptedCall(t, a, "human-outcome-budget", "run.observe-budget", map[string]any{"value": 0})
-	gate, err := evidence.RunGate(context.Background(), p22BudgetGateOptions(t, a, "human-outcome-proof"))
-	if err != nil || gate.Receipt == nil {
-		t.Fatalf("run qualifying gate: result=%#v error=%v", gate, err)
-	}
+	// producer) raises human-outcome-required once the gate-evidence and review
+	// Obligations are also satisfied.
+	gate := p23RunQualifyingGateSession(t, a, "human-outcome-proof")
 	beforeReadiness := p21JournalEventCount(t, a.workspace)
 	linkedGate := p23RunInput(t, a, "evidence", "link", a.actor, "human-outcome-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
 	assertP23HumanOutcomeSuccess(t, linkedGate)
@@ -105,14 +133,17 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	// VAL-009: envelope.complete stays blocked by human-outcome-required
 	// (rank 9) ahead of the generic issue-not-terminal-success reason (rank
 	// 19) while the last Obligation (OBL-human-security) is unsatisfied. The
-	// mutating Claim and Run stay active here; the terminal Issue transition
-	// below still needs them.
+	// builder's re-acquired mutating Claim and Run stay active here; the
+	// terminal Issue transition below still needs them.
 	beforeDenial := p21JournalEventCount(t, a.workspace)
 	denied := p23RunInput(t, a, "envelope", "complete", a.actor, "human-outcome-complete-denied", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
 	assertP23HumanOutcomeRequiredDenial(t, denied, "OBL-human-security", "security")
 	if after := p21JournalEventCount(t, a.workspace); after != beforeDenial {
 		t.Fatalf("human-outcome-required denial appended Event(s): %d -> %d", beforeDenial, after)
 	}
+	// Stage 3: only the security human-outcome Obligation is unsatisfied, and
+	// the terminal qa_pass transition is denied for exactly that Obligation.
+	assertP23TerminalTransitionDenied(t, a, "human-outcome-stage-3", []string{"OBL-human-security"})
 
 	// The security Human Outcome resolves the readiness Stop atomically with
 	// its own recording Event (contracts.md section 10/11).
@@ -131,29 +162,42 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	securityMatched := p23LinkHumanOutcome(t, a, "security-match", "OBL-human-security", securityOutcomeID)
 	assertP23HumanOutcomeSuccess(t, securityMatched)
 
-	// VAL-010: re-verify with linked review-equivalent (Human Outcome) Evidence
-	// present that artifact_availability stays the distinct not-applicable
-	// value, never available/missing.
+	// VAL-010: with linked review Evidence (stage 2) and linked Human Outcome
+	// Evidence both present, artifact_availability stays the distinct
+	// not-applicable value for the two new Obligation types, never
+	// available/missing, and gate-evidence keeps reporting available.
 	securityEvaluation := p21Path(t, p23Envelope(t, securityMatched.Stdout), "result", "evaluation").(map[string]any)
 	if securityEvaluation["artifact_availability"] != "not-applicable" {
 		t.Fatalf("security evaluation artifact_availability = %v, want not-applicable", securityEvaluation["artifact_availability"])
 	}
+	allSatisfied := p23EvidenceEvaluate(t, a)
+	for obligationID, availability := range map[string]string{"OBL-p22-corpus": "available", "OBL-p23-review": "not-applicable", "OBL-human-release": "not-applicable", "OBL-human-security": "not-applicable"} {
+		evaluation := p23EvaluationByID(t, allSatisfied, obligationID)
+		if evaluation["status"] != "satisfied" || evaluation["artifact_availability"] != availability {
+			t.Fatalf("all-satisfied evaluation for %s = %#v, want satisfied/%s", obligationID, evaluation, availability)
+		}
+	}
 
+	// VAL-009 completing state: gate-evidence, review, and both human-outcome
+	// Obligations are all satisfied, so the terminal qa_pass transition
+	// (issue.transition-terminal-success) and envelope.complete now succeed.
 	assertP23HumanOutcomeCommandSuccess(t, "transition Issue to qa_pass", p23IssueTransition(t, a, "qa_pass", 4, "human-outcome-qa-pass"))
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "human-outcome-close")
 	assertP23HumanOutcomeCommandSuccess(t, "complete Envelope after every Obligation satisfied", p23RunInput(t, a, "envelope", "complete", a.actor, "human-outcome-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository}))
 
 	// VAL-025's remaining seven cells are supplied by Task 6 (receipt/review
 	// positives and the four residual evidence-type-not-accepted mismatches),
-	// reconciled here through the real producer's two Human Outcome cells.
+	// reconciled here through the real producer's two Human Outcome cells. The
+	// security-class Outcome repeats both mismatches after completion.
 	for _, mismatch := range []struct {
-		name         string
-		obligationID string
+		name           string
+		obligationID   string
+		obligationType string
 	}{
-		{"security-vs-gate", "OBL-p22-corpus"},
+		{"security-vs-gate", "OBL-p22-corpus", "gate-evidence"},
+		{"security-vs-review", "OBL-p23-review", "review"},
 	} {
-		response := p23LinkHumanOutcome(t, a, mismatch.name, mismatch.obligationID, securityOutcomeID)
-		assertP23OutcomeNotPermitted(t, response, "gate-evidence")
+		assertP23OutcomeLinkNotPermitted(t, a, mismatch.name, mismatch.obligationID, securityOutcomeID, mismatch.obligationType)
 	}
 
 	listed := a.p22Run(t, "human-outcome", "list", "--issue", a.issueID)
@@ -353,8 +397,14 @@ func p23LinkHumanOutcome(t *testing.T, a *p22FIDRecoveryAdapter, suffix, obligat
 	return p23RunInput(t, a, "evidence", "link", a.actor, "p23-human-outcome-link-"+suffix, map[string]any{"obligation_id": obligationID, "evidence_type": "human-outcome", "receipt_id": nil, "review_id": nil, "human_outcome_id": outcomeID, "target_repository": a.repository, "required_artifact_ids": []string{}})
 }
 
-func assertP23AuthorityMissing(t *testing.T, response p22ConformanceResponse, before int) {
+// assertP23AuthorityMissing asserts a VAL-043 negative: exit 5 with
+// authority-missing and a journal Event count (before -> after) that did not
+// move, so no Human Outcome Event was appended.
+func assertP23AuthorityMissing(t *testing.T, response p22ConformanceResponse, before, after int) {
 	t.Helper()
+	if after != before {
+		t.Fatalf("authority-missing denial appended Event(s): %d -> %d; response=%#v", before, after, response)
+	}
 	if response.ExitCode != 5 || response.Stdout != "" {
 		t.Fatalf("authority-missing denial = %#v", response)
 	}
@@ -378,6 +428,23 @@ func assertP23HumanOutcomeCommandSuccess(t *testing.T, operation string, respons
 	t.Helper()
 	if response.ExitCode != 0 || response.Stderr != "" {
 		t.Fatalf("%s = %#v", operation, response)
+	}
+}
+
+// assertP23OutcomeLinkNotPermitted links a recorded Human Outcome to an
+// Obligation of the wrong type through the real producer and asserts the
+// outcome-not-permitted denial with its exact obligation_type detail, bracketed
+// by an unchanged journal length and an unchanged whole-database projection.
+func assertP23OutcomeLinkNotPermitted(t *testing.T, a *p22FIDRecoveryAdapter, suffix, obligationID, outcomeID, obligationType string) {
+	t.Helper()
+	beforeEvents, beforeProjection := p21JournalEventCount(t, a.workspace), p22FaultProjection(t, a.workspace)
+	response := p23LinkHumanOutcome(t, a, suffix, obligationID, outcomeID)
+	assertP23OutcomeNotPermitted(t, response, obligationType)
+	if afterEvents := p21JournalEventCount(t, a.workspace); afterEvents != beforeEvents {
+		t.Fatalf("%s outcome-not-permitted denial appended Event(s): %d -> %d", suffix, beforeEvents, afterEvents)
+	}
+	if !reflect.DeepEqual(beforeProjection, p22FaultProjection(t, a.workspace)) {
+		t.Fatalf("%s outcome-not-permitted denial changed the projection", suffix)
 	}
 }
 
@@ -430,7 +497,47 @@ func assertP23HumanOutcomeStopState(t *testing.T, a *p22FIDRecoveryAdapter, outc
 	}
 }
 
-func p23RecordHumanOutcomeMissingCapability(t *testing.T) p22ConformanceResponse {
+// p23IsolatedHumanOutcomeAttempt is one Human Outcome request executed in a
+// dedicated workspace, with the journal Event count observed immediately
+// before and after the request.
+type p23IsolatedHumanOutcomeAttempt struct {
+	Name     string
+	Response p22ConformanceResponse
+	Before   int
+	After    int
+}
+
+// p23IsolatedActivationStage says how far the dedicated Activation progresses.
+type p23IsolatedActivationStage string
+
+const (
+	// p23ActivationPrepared stops after the prepare and its two components.
+	p23ActivationPrepared p23IsolatedActivationStage = "prepared"
+	// p23ActivationCommitted stops after commit, before finalize.
+	p23ActivationCommitted p23IsolatedActivationStage = "committed"
+	// p23ActivationFinalized runs the whole prepare, commit, finalize sequence.
+	p23ActivationFinalized p23IsolatedActivationStage = "finalized"
+)
+
+// p23UnfinalizedActivationAttempts drives VAL-043's unfinalized-Activation
+// request twice: a prepared Activation whose components are staged, and a
+// committed Activation that is still not finalized. In both the sole human Actor
+// declares human-outcome.record and a real Issue exists, so only the missing
+// finalization can deny the request.
+func p23UnfinalizedActivationAttempts(t *testing.T) []p23IsolatedHumanOutcomeAttempt {
+	t.Helper()
+	return []p23IsolatedHumanOutcomeAttempt{
+		p23IsolatedHumanOutcomeRequest(t, "unfinalized-prepared", p23ActivationPrepared, []string{"evidence.link", "human-outcome.record"}),
+		p23IsolatedHumanOutcomeRequest(t, "unfinalized-committed", p23ActivationCommitted, []string{"evidence.link", "human-outcome.record"}),
+	}
+}
+
+func p23RecordHumanOutcomeMissingCapability(t *testing.T) p23IsolatedHumanOutcomeAttempt {
+	t.Helper()
+	return p23IsolatedHumanOutcomeRequest(t, "missing-capability", p23ActivationFinalized, []string{"evidence.link"})
+}
+
+func p23IsolatedHumanOutcomeRequest(t *testing.T, name string, stage p23IsolatedActivationStage, capabilities []string) p23IsolatedHumanOutcomeAttempt {
 	t.Helper()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
@@ -441,28 +548,209 @@ func p23RecordHumanOutcomeMissingCapability(t *testing.T) p22ConformanceResponse
 	p22Git(t, workspace, "add", "base.txt")
 	p22Git(t, workspace, "commit", "-qm", "base")
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "init", "--prefix", "P23HO")
-	activationID := p21Activation(t, binary, workspace, "prepare", "p23-human-outcome-activation-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "p23-human-outcome", "phase": 21})
+	issue := p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Human Outcome "+name, "--actor", "agent:developer", "--idempotency-key", "p23-human-outcome-"+name+"-issue")
+	issueID := p21PathString(t, issue, "result", "issue", "id")
+	actorID := "actor-" + name
+	prefix := "p23-human-outcome-" + name
+	activationID := p21Activation(t, binary, workspace, "prepare", prefix+"-activation-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": prefix, "phase": 21})
 	profiles := []any{
-		map[string]any{"actor_id": "actor-no-capability", "actor_type": "human", "producer": "activated-harness", "provenance_ref": "activation:p23-human-outcome", "session_ref": nil, "capabilities": []string{"evidence.link"}},
+		map[string]any{"actor_id": actorID, "actor_type": "human", "producer": "activated-harness", "provenance_ref": "activation:" + prefix, "session_ref": nil, "capabilities": capabilities},
 	}
-	profileDigest := p21Component(t, binary, workspace, activationID, "authority-profile", "p23-human-outcome-authority", profiles)
-	gateDigest := p21Component(t, binary, workspace, activationID, "gate-definitions", "p23-human-outcome-gates", []any{map[string]any{"artifact_bytes": 1024, "artifact_paths": []string{}, "argv": []string{"/bin/true"}, "credential_names": []string{}, "cwd": ".", "definition_id": "gate-p23-human-outcome", "definition_version": 1, "environment": []any{}, "excerpt_bytes": 0, "network": "allowed", "output_bytes": 1024, "redact_literals": []string{}, "sandbox": "none", "shell": false, "success_exit_codes": []int{0}, "timeout_ms": 1000, "write": "allowed"}})
-	digests := []string{gateDigest, profileDigest}
-	if digests[0] > digests[1] {
-		digests[0], digests[1] = digests[1], digests[0]
+	profileDigest := p21Component(t, binary, workspace, activationID, "authority-profile", prefix+"-authority", profiles)
+	gateDigest := p21Component(t, binary, workspace, activationID, "gate-definitions", prefix+"-gates", []any{map[string]any{"artifact_bytes": 1024, "artifact_paths": []string{}, "argv": []string{"/bin/true"}, "credential_names": []string{}, "cwd": ".", "definition_id": "gate-" + prefix, "definition_version": 1, "environment": []any{}, "excerpt_bytes": 0, "network": "allowed", "output_bytes": 1024, "redact_literals": []string{}, "sandbox": "none", "shell": false, "success_exit_codes": []int{0}, "timeout_ms": 1000, "write": "allowed"}})
+	if stage != p23ActivationPrepared {
+		digests := []string{gateDigest, profileDigest}
+		sort.Strings(digests)
+		p21Activation(t, binary, workspace, "commit", prefix+"-activation-commit", map[string]any{"activation_id": activationID, "expected_status": "staged", "component_digests": digests})
 	}
-	p21Activation(t, binary, workspace, "commit", "p23-human-outcome-activation-commit", map[string]any{"activation_id": activationID, "expected_status": "staged", "component_digests": digests})
-	p21Activation(t, binary, workspace, "finalize", "p23-human-outcome-activation-finalize", map[string]any{"activation_id": activationID, "expected_status": "committed"})
+	if stage == p23ActivationFinalized {
+		p21Activation(t, binary, workspace, "finalize", prefix+"-activation-finalize", map[string]any{"activation_id": activationID, "expected_status": "committed"})
+	}
 	input := map[string]any{
-		"id": "OUT-missing-capability", "class": "release", "subject": map[string]any{"type": "issue", "id": "ISS-p23-human-outcome"},
-		"result": "approved", "scope": map[string]any{"issue_id": "ISS-p23-human-outcome"}, "reasoning": "real-process missing-capability negative", "references": []any{},
+		"id": "OUT-" + name, "class": "release", "subject": map[string]any{"type": "issue", "id": issueID},
+		"result": "approved", "scope": map[string]any{"issue_id": issueID}, "reasoning": "real-process " + name + " negative", "references": []any{},
 	}
-	stdout, stderr, err := closureRunCommand(workspace, binary, "--project", workspace, "--json", "human-outcome", "record", "--actor", "actor-no-capability", "--input", p21Input(t, workspace, "p23-human-outcome-missing-capability", input), "--idempotency-key", "p23-human-outcome-missing-capability")
+	inputPath := p21Input(t, workspace, prefix+"-record", input)
+	before := p21JournalEventCount(t, workspace)
+	stdout, stderr, err := closureRunCommand(workspace, binary, "--project", workspace, "--json", "human-outcome", "record", "--actor", actorID, "--input", inputPath, "--idempotency-key", prefix+"-record")
 	response := p22ConformanceResponse{Stdout: stdout, Stderr: stderr}
 	if err != nil {
 		response.ExitCode = processExitCode(t, err)
 	}
-	return response
+	return p23IsolatedHumanOutcomeAttempt{Name: name, Response: response, Before: before, After: p21JournalEventCount(t, workspace)}
+}
+
+// assertP23ThreeObligationTypesCoexist reads the durable Envelope projection and
+// asserts one Envelope carries a gate-evidence, a review, and human-outcome
+// Obligations at the same time, each under its own ID.
+func assertP23ThreeObligationTypesCoexist(t *testing.T, a *p22FIDRecoveryAdapter) {
+	t.Helper()
+	conn := p22FaultDB(t, a.workspace)
+	defer func() { p22FaultOK(t, conn.Close()) }()
+	rows, err := conn.Query(`SELECT id, obligation_type FROM envelope_obligations WHERE envelope_id=? ORDER BY id`, p23EnvelopeID(t, a))
+	p22FaultOK(t, err)
+	defer func() { p22FaultOK(t, rows.Close()) }()
+	got := map[string]string{}
+	for rows.Next() {
+		var id, obligationType string
+		p22FaultOK(t, rows.Scan(&id, &obligationType))
+		got[id] = obligationType
+	}
+	p22FaultOK(t, rows.Err())
+	want := map[string]string{"OBL-human-release": "human-outcome", "OBL-human-security": "human-outcome", "OBL-p22-corpus": "gate-evidence", "OBL-p23-review": "review"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("Envelope Obligations = %#v, want %#v", got, want)
+	}
+}
+
+// assertP23GuardedActionsDenied proves both VAL-009 guarded actions are denied
+// while any of the three Obligation types is unsatisfied: envelope.complete and
+// the terminal qa_pass transition (issue.transition-terminal-success) each
+// reject naming exactly the still-unsatisfied Obligations, with no Event and no
+// projection change.
+func assertP23GuardedActionsDenied(t *testing.T, a *p22FIDRecoveryAdapter, key string, unsatisfied []string) {
+	t.Helper()
+	beforeEvents, beforeProjection := p21JournalEventCount(t, a.workspace), p22FaultProjection(t, a.workspace)
+	complete := p23RunInput(t, a, "envelope", "complete", a.actor, key+"-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
+	if complete.ExitCode != 4 || complete.Stdout != "" {
+		t.Fatalf("%s envelope.complete denial = %#v, want exit 4 with no stdout", key, complete)
+	}
+	var denial map[string]any
+	if err := json.Unmarshal([]byte(complete.Stderr), &denial); err != nil {
+		t.Fatalf("decode %s envelope.complete denial: %v; stderr=%q", key, err, complete.Stderr)
+	}
+	if got := p21PathString(t, denial, "error", "code"); got != "obligation-unsatisfied" {
+		t.Fatalf("%s envelope.complete denial code = %q, want obligation-unsatisfied", key, got)
+	}
+	var blocking []string
+	for _, reason := range p21Path(t, denial, "error", "details", "reasons").([]any) {
+		if item := reason.(map[string]any); item["subject_type"] == "obligation" {
+			blocking = append(blocking, item["subject_id"].(string))
+		}
+	}
+	sort.Strings(blocking)
+	if !reflect.DeepEqual(blocking, unsatisfied) {
+		t.Fatalf("%s envelope.complete blocked by Obligations %v, want exactly %v", key, blocking, unsatisfied)
+	}
+	assertP23TerminalTransitionDenied(t, a, key, unsatisfied)
+	if afterEvents := p21JournalEventCount(t, a.workspace); afterEvents != beforeEvents {
+		t.Fatalf("%s guarded-action denials appended Event(s): %d -> %d", key, beforeEvents, afterEvents)
+	}
+	if !reflect.DeepEqual(beforeProjection, p22FaultProjection(t, a.workspace)) {
+		t.Fatalf("%s guarded-action denials changed the projection", key)
+	}
+}
+
+// assertP23TerminalTransitionDenied attempts the terminal qa_pass transition
+// (issue.transition-terminal-success) and asserts it is denied because of
+// exactly the named unsatisfied Obligations, with no Event and no projection
+// change. A human-outcome Obligation surfaces as human-outcome-absent and every
+// other Obligation as obligation-evidence-absent.
+func assertP23TerminalTransitionDenied(t *testing.T, a *p22FIDRecoveryAdapter, key string, unsatisfied []string) {
+	t.Helper()
+	beforeEvents, beforeProjection := p21JournalEventCount(t, a.workspace), p22FaultProjection(t, a.workspace)
+	terminal := p23IssueTransition(t, a, "qa_pass", 4, key+"-qa-pass")
+	if terminal.ExitCode == 0 || terminal.Stdout != "" {
+		t.Fatalf("%s terminal qa_pass transition = %#v, want a denial", key, terminal)
+	}
+	var denial map[string]any
+	if err := json.Unmarshal([]byte(terminal.Stderr), &denial); err != nil {
+		t.Fatalf("decode %s qa_pass denial: %v; stderr=%q", key, err, terminal.Stderr)
+	}
+	if got := p21PathString(t, denial, "error", "code"); got != "transition-not-permitted" {
+		t.Fatalf("%s qa_pass denial code = %q, want transition-not-permitted", key, got)
+	}
+	var want, got []string
+	for _, id := range unsatisfied {
+		if len(id) >= 10 && id[:10] == "OBL-human-" {
+			want = append(want, "human-outcome-absent")
+		} else {
+			want = append(want, "obligation-evidence-absent")
+		}
+	}
+	for _, reason := range p21Path(t, denial, "error", "details", "unsatisfied").([]any) {
+		if code := reason.(string); code == "human-outcome-absent" || code == "obligation-evidence-absent" {
+			got = append(got, code)
+		} else {
+			t.Fatalf("%s qa_pass denial carries non-Obligation reason %q in %v", key, code, got)
+		}
+	}
+	sort.Strings(want)
+	sort.Strings(got)
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("%s qa_pass denial reasons = %v, want exactly %v", key, got, want)
+	}
+	if afterEvents := p21JournalEventCount(t, a.workspace); afterEvents != beforeEvents {
+		t.Fatalf("%s qa_pass denial appended Event(s): %d -> %d", key, beforeEvents, afterEvents)
+	}
+	if !reflect.DeepEqual(beforeProjection, p22FaultProjection(t, a.workspace)) {
+		t.Fatalf("%s qa_pass denial changed the projection", key)
+	}
+}
+
+// p23SatisfyCoexistingReview satisfies OBL-p23-review. A single Claim may be
+// active per Issue, so the builder's mutating session is closed first; an
+// independent Reviewer then records a passing Review that is linked as
+// Evidence, and its review session is closed. A fresh mutating Claim and Run
+// for the builder Actor are then re-acquired and adopted by the adapter so the
+// terminal Issue transition stays reachable. It returns the linked review
+// Evidence's evaluation.
+func p23SatisfyCoexistingReview(t *testing.T, a *p22FIDRecoveryAdapter, key string) map[string]any {
+	t.Helper()
+	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, key+"-builder")
+	claim := p23AcquireClaim(t, a, "actor-reviewer-two", "review", key)
+	run := p23StartRun(t, a, "actor-reviewer-two", claim, key)
+	pass := p23ReviewRecord(t, a, "actor-reviewer-two", key, p23ReviewInput(a, p21PathString(t, run, "id"), p23Number(t, run["version"]), "pass", []any{}, nil))
+	p23AssertReviewSuccess(t, "coexisting pass Review", pass)
+	review := p23ReviewFromResponse(t, pass)
+	linked := p23RunInput(t, a, "evidence", "link", a.actor, key+"-link", map[string]any{"obligation_id": "OBL-p23-review", "evidence_type": "review", "receipt_id": nil, "review_id": review["id"], "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	p23AssertReviewSuccess(t, "coexisting review Evidence link", linked)
+	p23CloseAndRelease(t, a, "actor-reviewer-two", p21PathString(t, run, "id"), p21PathString(t, claim, "id"), key)
+	p23ReacquireBuilderSession(t, a, key+"-builder-again")
+	return p21Path(t, p23Envelope(t, linked.Stdout), "result", "evaluation").(map[string]any)
+}
+
+// p23RunQualifyingGateSession runs the registered gate through fid's own gate
+// runner inside a dedicated mutating session held by actor-denied. The
+// builder's session is closed first (one Claim may be active per Issue) and
+// re-acquired afterwards. The session is held by actor-denied because, once a review-capable
+// fixture adds further authority grants, internal/evidence
+// validateGateRunReferences (execution.go:381) reads only the first
+// envelope_authority_grants row and requires it to name the running Actor; the
+// grants sort by actor_id, so that first row is actor-denied's, whose profile
+// carries the same gate.run and run.observe-budget capabilities. The receipt is
+// real and fid-executed; only its running Actor differs from the builder.
+func p23RunQualifyingGateSession(t *testing.T, a *p22FIDRecoveryAdapter, key string) evidence.GateRunResult {
+	t.Helper()
+	const runner = "actor-denied"
+	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, key+"-builder")
+	claim := p23AcquireClaim(t, a, runner, "mutation", key+"-claim")
+	run := p23StartRun(t, a, runner, claim, key+"-run")
+	runID := p21PathString(t, run, "id")
+	sample := p23RunInput(t, a, "run", "observe-budget", runner, key+"-budget", map[string]any{"run_id": runID, "expected_version": run["version"], "budget_name": "tokens", "source_sample_id": key + "-sample", "sample_kind": "baseline", "previous_sample_id": nil, "value": 0, "measurement_ref": a.measurement, "observed_at": time.Now().UTC().Format(time.RFC3339Nano)})
+	p23AssertReviewSuccess(t, "observe budget baseline for gate Run", sample)
+	request, err := json.Marshal(map[string]any{"run_id": runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": a.repository})
+	p22FaultOK(t, err)
+	options := evidence.GateRunOptions{WorkspaceRoot: a.workspace, MigrationsDir: filepath.Join(integrationRepositoryRoot(), "migrations"), ActorID: runner, IdempotencyKey: key}
+	p22FaultOK(t, json.Unmarshal(request, &options.Request))
+	gate, err := evidence.RunGate(context.Background(), options)
+	if err != nil || gate.Receipt == nil {
+		t.Fatalf("run qualifying gate: result=%#v error=%v", gate, err)
+	}
+	p23CloseAndRelease(t, a, runner, runID, p21PathString(t, claim, "id"), key)
+	p23ReacquireBuilderSession(t, a, key+"-builder-again")
+	return gate
+}
+
+// p23ReacquireBuilderSession gives the builder Actor a fresh mutating Claim and
+// Run and adopts them into the adapter, for the terminal Issue transition.
+func p23ReacquireBuilderSession(t *testing.T, a *p22FIDRecoveryAdapter, key string) {
+	t.Helper()
+	claim := p23AcquireClaim(t, a, a.actor, "mutation", key)
+	run := p23StartRun(t, a, a.actor, claim, key)
+	a.claimID, a.claimVersion = p21PathString(t, claim, "id"), p23Number(t, claim["version"])
+	a.runID, a.runVersion = p21PathString(t, run, "id"), p23Number(t, run["version"])
+	a.executorID = p21PathString(t, run, "executor", "id")
 }
 
 // p23AssertHumanOutcomeConditionNullableBindingFires complements
