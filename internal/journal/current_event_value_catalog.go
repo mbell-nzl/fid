@@ -65,6 +65,8 @@ var currentConditionShapes = map[string]string{
 	"work-ended":             "type:=work-ended subject:Subject budget_name:?ID capability_id:?ID",
 	"decision-satisfied":     "type:=decision-satisfied subject:Subject budget_name:?ID capability_id:?ID decision_class:ID",
 	"human-outcome-recorded": "type:=human-outcome-recorded subject:Subject budget_name:?ID capability_id:?ID outcome_class:ID",
+	"review-recorded":        "type:=review-recorded subject:Subject budget_name:?ID capability_id:?ID",
+	"finding-resolved":       "type:=finding-resolved subject:Subject budget_name:?ID capability_id:?ID finding_id:ID",
 }
 var currentStopDetailShapes = map[string]string{
 	"executor-liveness-unknown":   "run_id:ID executor_id:ID observation_id:?ID",

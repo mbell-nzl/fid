@@ -30,6 +30,7 @@ type Condition struct {
 	CapabilityID  *string `json:"capability_id"`
 	DecisionClass *string `json:"decision_class,omitempty"`
 	OutcomeClass  *string `json:"outcome_class,omitempty"`
+	FindingID     *string `json:"finding_id,omitempty"`
 }
 
 type Stop struct {
@@ -184,6 +185,7 @@ var conditionTypes = map[string]bool{
 	"executor-terminated": true, "run-recovered": true, "activation-recovered": true,
 	"capability-available": true, "budget-observed": true, "work-ended": true,
 	"decision-satisfied": true, "human-outcome-recorded": true,
+	"review-recorded": true, "finding-resolved": true,
 }
 
 var blockedActionSet = map[string]bool{
@@ -483,6 +485,9 @@ func validateCondition(condition Condition, subject Subject) error {
 	if (condition.Type == "human-outcome-recorded") != (condition.OutcomeClass != nil && *condition.OutcomeClass != "") {
 		return fmt.Errorf("stop resolution condition Human Outcome binding is invalid")
 	}
+	if (condition.Type == "finding-resolved") != (condition.FindingID != nil && *condition.FindingID != "") {
+		return fmt.Errorf("stop resolution condition Finding binding is invalid")
+	}
 	return nil
 }
 
@@ -621,12 +626,16 @@ func qualifyingFact(workspace string, conn *sql.DB, stop Stop, factEventID strin
 		return qualifyingBudgetCondition(conn, event, stop.ResolutionCondition)
 	case "work-ended":
 		return qualifyingWorkEnded(conn, event, stop.ResolutionCondition)
+	case "review-recorded":
+		return qualifyingReviewRecordedCondition(conn, event, stop.ResolutionCondition)
+	case "finding-resolved":
+		return qualifyingFindingResolvedCondition(conn, event, stop.ResolutionCondition)
 	}
 	return fmt.Errorf("unsupported Stop resolution condition")
 }
 
 func eventMatchesCondition(event journal.Event, condition Condition) bool {
-	want := map[string][]string{"executor-terminated": {"run.observed"}, "run-recovered": {"run.recovered"}, "activation-recovered": {"activation.recovery-completed", "activation.finalized"}, "capability-available": {"activation.finalized", "activation.recovery-completed"}, "budget-observed": {"run.budget-observed"}, "work-ended": {"run.closed", "run.abandoned", "envelope.completed"}}
+	want := map[string][]string{"executor-terminated": {"run.observed"}, "run-recovered": {"run.recovered"}, "activation-recovered": {"activation.recovery-completed", "activation.finalized"}, "capability-available": {"activation.finalized", "activation.recovery-completed"}, "budget-observed": {"run.budget-observed"}, "work-ended": {"run.closed", "run.abandoned", "envelope.completed"}, "review-recorded": {"review.recorded"}, "finding-resolved": {"review.recorded"}}
 	for _, eventType := range want[condition.Type] {
 		if event.EventType == eventType {
 			return true

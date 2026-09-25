@@ -172,6 +172,49 @@ func qualifyingWorkEnded(conn *sql.DB, event journal.Event, condition Condition)
 	return fmt.Errorf("terminal Run belongs to another condition subject")
 }
 
+// qualifyingReviewRecordedCondition proves a review.recorded Event belongs to
+// the Condition's own subject (its recording Run or its Envelope); the type
+// carries no further discriminant (contracts.md section 11).
+func qualifyingReviewRecordedCondition(conn *sql.DB, event journal.Event, condition Condition) error {
+	if !reviewRecordEffectMatchesSubject(event, condition.Subject) {
+		return fmt.Errorf("review record fact belongs to another subject")
+	}
+	return nil
+}
+
+// qualifyingFindingResolvedCondition additionally requires the review.recorded
+// Event to carry a 'resolved' disposition for the named Finding; 'addressed'
+// and 'inapplicable' dispositions never qualify.
+func qualifyingFindingResolvedCondition(conn *sql.DB, event journal.Event, condition Condition) error {
+	if condition.FindingID == nil {
+		return fmt.Errorf("finding-resolved condition has no named Finding")
+	}
+	if !reviewRecordEffectMatchesSubject(event, condition.Subject) {
+		return fmt.Errorf("review record fact belongs to another subject")
+	}
+	for _, effect := range event.Effects {
+		if effect.Op == "insert" && effect.Table == "finding_dispositions" && effect.Values["action"] == "resolved" && effect.Values["finding_id"] == *condition.FindingID {
+			return nil
+		}
+	}
+	return fmt.Errorf("review record fact does not resolve the named Finding")
+}
+
+func reviewRecordEffectMatchesSubject(event journal.Event, subject Subject) bool {
+	for _, effect := range event.Effects {
+		if effect.Op != "insert" || effect.Table != "review_records" {
+			continue
+		}
+		switch subject.Type {
+		case "run":
+			return effect.Values["run_id"] == subject.ID
+		case "envelope":
+			return effect.Values["envelope_id"] == subject.ID
+		}
+	}
+	return false
+}
+
 func requireNoActiveRun(conn *sql.DB, envelopeID string) error {
 	var count int
 	if err := conn.QueryRow(`SELECT COUNT(*) FROM runs WHERE envelope_id = ? AND status = 'active'`, envelopeID).Scan(&count); err != nil {
