@@ -351,7 +351,8 @@ schema, contract, or spec file changed. See the "QA repair" section below.
 
 QA repair attempt 1 additions:
 
-- `go test -tags integration -race -timeout 30m -count=1 -v ./cmd/fid/integration/... -run '^(TestP23ReviewRecordRealProcessJourney|TestP23FindingDispositionRealProcessJourney|TestP23ReviewEvidenceRealProcessJourney|TestP23ReviewCyclesRealProcessJourney|TestP23DecisionReferenceProtectedLifecycleRealProcess|TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess|TestP23HumanOutcomeRequiredRaisedByEnvelopeActivation|TestP23HumanOutcomeRequiredRaisedByReviewRecord|TestP23AttentionResolutionThroughReviewRecordedAndFindingResolvedRealProcess|TestP23AttentionResolutionHumanOutcomeReadinessRejectsWrongClassAndWrongResultAndLeavesUnrelatedStopsOpen)$'` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	52.041s` (terminated `exit_code: 0`; ten top-level journeys `--- PASS`)
+- `go test -tags integration -race -timeout 30m -count=1 -v ./cmd/fid/integration/... -run '^(TestP23ReviewRecordRealProcessJourney|TestP23FindingDispositionRealProcessJourney|TestP23ReviewEvidenceRealProcessJourney|TestP23ReviewCyclesRealProcessJourney|TestP23DecisionReferenceProtectedLifecycleRealProcess|TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess|TestP23HumanOutcomeRequiredRaisedByEnvelopeActivation|TestP23HumanOutcomeRequiredRaisedByReviewRecord|TestP23AttentionResolutionThroughReviewRecordedAndFindingResolvedRealProcess|TestP23AttentionResolutionHumanOutcomeReadinessRejectsWrongClassAndWrongResultAndLeavesUnrelatedStopsOpen)$'` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	52.041s` (terminated `exit_code: 0`)
+  (all ten top-level journeys printed `--- PASS`)
 
 Real entrypoint exercise: the tagged integration suite above drives the
 actual built `fid` binary as a real process
