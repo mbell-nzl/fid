@@ -146,21 +146,31 @@ func currentBudgetEventResult(tx *sql.Tx, event Event) (map[string]any, error) {
 	return result, nil
 }
 
+// currentReviewBudgetResult re-derives review.recorded's committed
+// budget/stops/attention from this Event's own Effects. budget is present
+// only when this Event consumed a review-cycles budget_samples row
+// (exhausting it can also raise a review-rework-exhausted Stop). stops and
+// attention are derived independently of budget: DEC-224 lets a review.record
+// call raise human-outcome-required through workflow.
+// HumanOutcomeReadinessStopEffects with no budget_samples Effect at all (a
+// pass-verdict Review satisfying the last blocking Finding), so gating the
+// Stop/Attention re-derivation on a budget sample being present would drop
+// that Stop from the expected result and reject the whole Event - task 10's
+// own new call site was not previously reachable without this generalization.
 func currentReviewBudgetResult(tx *sql.Tx, event Event) (map[string]any, error) {
-	result := map[string]any{"budget": nil, "stops": []any{}, "attention": []any{}}
-	sample := currentInserted(event, "budget_samples")
-	if sample == nil {
-		return result, nil
+	result := map[string]any{"budget": nil}
+	if sample := currentInserted(event, "budget_samples"); sample != nil {
+		budget, err := currentProjectedBudget(tx, sample["run_id"], sample["budget_name"])
+		if err != nil {
+			return nil, err
+		}
+		result["budget"] = budget
 	}
-	budget, err := currentProjectedBudget(tx, sample["run_id"], sample["budget_name"])
+	stops, err := currentEventObjects(tx, event, "stops", "Stop", "id")
 	if err != nil {
 		return nil, err
 	}
-	result["budget"] = budget
-	result["stops"], err = currentEventObjects(tx, event, "stops", "Stop", "id")
-	if err != nil {
-		return nil, err
-	}
+	result["stops"] = stops
 	attention := []any{}
 	for _, id := range currentEventIDs(event, "attention_stop_links", "attention_id") {
 		value, err := currentProjectedValue(tx, "Attention", "attention_items", map[string]any{"id": id})

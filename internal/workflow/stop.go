@@ -29,6 +29,7 @@ type Condition struct {
 	BudgetName    *string `json:"budget_name"`
 	CapabilityID  *string `json:"capability_id"`
 	DecisionClass *string `json:"decision_class,omitempty"`
+	OutcomeClass  *string `json:"outcome_class,omitempty"`
 }
 
 type Stop struct {
@@ -175,13 +176,14 @@ var stopCodes = map[string]bool{
 	"budget-exhausted": true, "budget-data-unavailable": true,
 	"review-rework-exhausted":     true,
 	"protected-decision-required": true,
+	"human-outcome-required":      true,
 	"activation-incomplete":       true, "capability-unavailable": true, "operator-stop": true,
 }
 
 var conditionTypes = map[string]bool{
 	"executor-terminated": true, "run-recovered": true, "activation-recovered": true,
 	"capability-available": true, "budget-observed": true, "work-ended": true,
-	"decision-satisfied": true,
+	"decision-satisfied": true, "human-outcome-recorded": true,
 }
 
 var blockedActionSet = map[string]bool{
@@ -478,11 +480,14 @@ func validateCondition(condition Condition, subject Subject) error {
 	if (condition.Type == "decision-satisfied") != (condition.DecisionClass != nil && *condition.DecisionClass != "") {
 		return fmt.Errorf("stop resolution condition Decision binding is invalid")
 	}
+	if (condition.Type == "human-outcome-recorded") != (condition.OutcomeClass != nil && *condition.OutcomeClass != "") {
+		return fmt.Errorf("stop resolution condition Human Outcome binding is invalid")
+	}
 	return nil
 }
 
 func validStopDetails(code string, details map[string]any) bool {
-	keys := map[string][]string{"executor-liveness-unknown": {"run_id", "executor_id", "observation_id"}, "recovery-state-conflict": {"run_id", "observation_digest", "paths", "reasons"}, "budget-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "budget-data-unavailable": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "review-rework-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining", "last_review_id"}, "protected-decision-required": {"envelope_id", "decision_class", "required_capabilities", "affected_actions"}, "activation-incomplete": {"activation_id", "point_of_no_return", "components"}, "capability-unavailable": {"capability_id", "available", "owner_phase"}, "operator-stop": {"reason", "reference"}}
+	keys := map[string][]string{"executor-liveness-unknown": {"run_id", "executor_id", "observation_id"}, "recovery-state-conflict": {"run_id", "observation_digest", "paths", "reasons"}, "budget-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "budget-data-unavailable": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "review-rework-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining", "last_review_id"}, "protected-decision-required": {"envelope_id", "decision_class", "required_capabilities", "affected_actions"}, "human-outcome-required": {"envelope_id", "obligation_id", "outcome_class"}, "activation-incomplete": {"activation_id", "point_of_no_return", "components"}, "capability-unavailable": {"capability_id", "available", "owner_phase"}, "operator-stop": {"reason", "reference"}}
 	want, ok := keys[code]
 	if !ok || len(details) != len(want) {
 		return false

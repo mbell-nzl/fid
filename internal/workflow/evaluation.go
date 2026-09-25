@@ -280,6 +280,17 @@ func ProtectedDecisionsForIssue(conn *sql.DB, issueID string) (Envelope, []Prote
 // execution-bound Issue denial. Command adapters use it to render the same
 // protected Decision facts as other guarded actions.
 func ProtectedDecisionBlockForIssue(workspaceRoot, migrationsDir, issueID, action string) (*StopBlockedError, error) {
+	return stopBlockForIssue(workspaceRoot, migrationsDir, issueID, action, "protected-decision-required")
+}
+
+// HumanOutcomeRequiredBlockForIssue reloads the immutable Stop that produced
+// an execution-bound Issue denial for the human-outcome-required precedence
+// case, mirroring ProtectedDecisionBlockForIssue.
+func HumanOutcomeRequiredBlockForIssue(workspaceRoot, migrationsDir, issueID, action string) (*StopBlockedError, error) {
+	return stopBlockForIssue(workspaceRoot, migrationsDir, issueID, action, "human-outcome-required")
+}
+
+func stopBlockForIssue(workspaceRoot, migrationsDir, issueID, action, code string) (*StopBlockedError, error) {
 	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
 		return nil, err
 	}
@@ -298,11 +309,11 @@ func ProtectedDecisionBlockForIssue(workspaceRoot, migrationsDir, issueID, actio
 		return nil, err
 	}
 	for _, stop := range stops {
-		if stop.Code == "protected-decision-required" {
+		if stop.Code == code {
 			return NewStopBlockedError(conn, action, []Stop{stop})
 		}
 	}
-	return nil, fmt.Errorf("protected Decision Stop is unavailable for issue %q", issueID)
+	return nil, fmt.Errorf("Stop %q is unavailable for issue %q", code, issueID)
 }
 
 func resolveProtectedDecision(conn *sql.DB, issueID string, decision *ProtectedDecision) error {
@@ -656,6 +667,7 @@ func sortEvaluationReasons(reasons []EvaluationReason) []EvaluationReason {
 		"authority-unavailable": 1, "envelope-inactive": 2, "claim-missing": 3, "claim-expired": 4,
 		"run-inactive": 5, "issue-revision-conflict": 6, "workflow-transition-invalid": 7,
 		"protected-decision-required": 8,
+		"human-outcome-required":      9,
 		"obligation-evidence-absent":  10, "human-outcome-absent": 11, "finding-unresolved": 12,
 		"review-not-independent": 13, "outcome-superseded": 14, "receipt-unsuccessful": 15,
 		"evidence-invalid": 16, "evidence-stale": 17, "artifact-unavailable": 18, "issue-not-terminal-success": 19,

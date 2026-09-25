@@ -75,8 +75,8 @@ func TestPhase22AttentionReadBoundary(t *testing.T) {
 	}
 
 	if got, want := phase21AttentionUnavailableSurfaceMatches(t), []string{
-		"cmd/fid/attention.go", "cmd/fid/decision.go", "cmd/fid/gate.go", "cmd/fid/live_output.go", "cmd/fid/resume_human.go", "cmd/fid/review.go", "cmd/fid/root.go", "cmd/fid/run.go", "cmd/fid/stop.go", "cmd/fid/stop_human.go",
-		"internal/workflow/activation.go", "internal/workflow/activation_recovery.go", "internal/workflow/budget.go", "internal/workflow/capabilities.go", "internal/workflow/envelope.go", "internal/workflow/resume.go", "internal/workflow/run_budget.go", "internal/workflow/stop.go", "internal/workflow/stop_errors.go", "internal/workflow/stop_read.go",
+		"cmd/fid/attention.go", "cmd/fid/decision.go", "cmd/fid/gate.go", "cmd/fid/human_outcome.go", "cmd/fid/live_output.go", "cmd/fid/resume_human.go", "cmd/fid/review.go", "cmd/fid/root.go", "cmd/fid/run.go", "cmd/fid/stop.go", "cmd/fid/stop_human.go",
+		"internal/workflow/activation.go", "internal/workflow/activation_recovery.go", "internal/workflow/budget.go", "internal/workflow/capabilities.go", "internal/workflow/envelope.go", "internal/workflow/human_outcome_readiness.go", "internal/workflow/resume.go", "internal/workflow/run_budget.go", "internal/workflow/stop.go", "internal/workflow/stop_errors.go", "internal/workflow/stop_read.go",
 	}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("production Attention paths = %v, want exactly %v", got, want)
 	}
@@ -210,6 +210,8 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"deviation list",
 		"decision list",
 		"decision record-reference",
+		"human-outcome record",
+		"human-outcome list",
 		"review record",
 		"review get",
 		"finding address",
@@ -220,8 +222,8 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	}
 	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 89 || len(legacy) != 2 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 89 and 2", len(retained), len(legacy))
+	if len(retained) != 91 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 91 and 2", len(retained), len(legacy))
 	}
 	want := append(append([]string{}, retained...), "export")
 	want = append(want, legacy...)

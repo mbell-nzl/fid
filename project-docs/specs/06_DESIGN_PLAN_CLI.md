@@ -182,7 +182,7 @@ fid finding address|list
 fid concern record|dispose|list
 fid deviation record|list
 fid decision record-reference|list
-fid human-outcome record
+fid human-outcome record|list
 ```
 
 Review and Outcome inputs are versioned structured records. Protected Human
@@ -211,6 +211,17 @@ the request digest, retaining Task 4 request compatibility; explicit null is
 invalid. No independent terminal-disposition leaf is added. The accepted
 [Phase 23 input contract](../docs/phases/phase-23/public-interface.md) fixes
 bounds, rejection codes and existing Finding disposition readback.
+
+Phase 23 Task 10 adds provenanced Human Outcomes. `human-outcome record`
+requires a human Actor type in a finalized Kit Activation profile carrying the
+`human-outcome.record` capability, established through that active provenance
+alone; a standalone Issue-inventory `--by` style attribution can never reach
+this leaf. It resolves the protected Decisions and the `human-outcome-required`
+readiness Stop this exact class and `approved` result qualify, atomically with
+its own recording Event. `human-outcome list` is a read with optional class,
+result, Issue, and limit filters. The stored Evidence and evaluation carry
+`producer:"human"`, `trust_source:"activated-human"`, and
+`artifact_availability:"not-applicable"`, never a deterministic-proof value.
 
 ### Activation and portable recovery
 
@@ -287,6 +298,14 @@ exact details `envelope_id`, `decision_class`, `required_capabilities`, and
 exact details `display_label`, nullable `path`, `expected_digest`, and nullable
 `observed_digest`. A missing Source file is reported through the same digest
 mismatch code and appends no Event.
+
+Phase 23 Task 10 adds `human-outcome-required` (precondition, exit 4) with
+exact details `envelope_id`, `obligation_id`, and `outcome_class`, returned by
+`envelope.complete` and `issue.transition-terminal-success` for the blocked
+actions of the open readiness Stop only; and `outcome-not-found`
+(not-found, exit 3) with exact detail `id`, returned by `evidence.link` for an
+unknown `human_outcome_id`. Task 10 reuses Task 6's `outcome-not-permitted`
+(precondition, exit 4) registration for its real recorded producer.
 
 ## 6. Removed Commands
 

@@ -14,7 +14,7 @@ import (
 )
 
 func TestP23DecisionReferenceProtectedLifecycleRealProcess(t *testing.T) {
-	actions := []string{"claim.acquire", "claim.release", "decision.record-reference", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start", "stop.resolve"}
+	actions := []string{"claim.acquire", "claim.release", "decision.record-reference", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start", "stop.resolve"}
 	decisions := []any{
 		map[string]any{"ordinal": 0, "decision_class": "release", "required_capabilities": []string{"decision.record-reference"}, "affected_actions": []string{"envelope.complete"}},
 		map[string]any{"ordinal": 1, "decision_class": "security", "required_capabilities": []string{"decision.record-reference"}, "affected_actions": []string{"issue.transition-terminal-success"}},
@@ -49,13 +49,24 @@ func TestP23DecisionReferenceProtectedLifecycleRealProcess(t *testing.T) {
 		t.Fatalf("decision live/replay parity: before=%q after=%#v", beforeRebuild.Stdout, afterRebuild)
 	}
 
-	seedP23HumanOutcome(t, a, "OUT-release-approved", "release", "approved", "2026-09-21T00:00:00Z", "EVT-20991231-910001", "")
+	// Task 10 converges these fixtures onto the real Human Outcome writer,
+	// superseding the seeded task 9 projection rows: recording provides the
+	// same durable human_outcomes facts protected-Decision satisfaction reads.
+	releaseOutcome := p23RecordHumanOutcome(t, a, "decision-release-approved", "actor-human-outcome", "release", "approved")
+	assertP23HumanOutcomeSuccess(t, releaseOutcome)
 	securityBeforeOutcome := p23RecordDecision(t, a, "security-reference-only", "security", "approved", []string{"decision.record-reference"}, p23DecisionSource(a, true))
 	assertP23DecisionSuccess(t, securityBeforeOutcome, 0)
 	assertP23DecisionStopStates(t, a, map[string]string{"release": "open", "security": "open"})
-	seedP23HumanOutcome(t, a, "OUT-security-approved", "security", "approved", "2026-09-21T00:00:01Z", "EVT-20991231-910002", "")
+	// Recording the real Human Outcome now resolves the security Stop
+	// atomically with this exact Event, because the approved Decision
+	// Reference from securityBeforeOutcome is already durable: the later of
+	// the two qualifying facts is the resolver (contracts.md section 9),
+	// which the old seeded-row fixture could never observe since seeding
+	// bypassed this resolution path entirely.
+	securityOutcome := p23RecordHumanOutcome(t, a, "decision-security-approved", "actor-human-outcome", "security", "approved")
+	assertP23DecisionSuccess(t, securityOutcome, 1)
 	security := p23RecordDecision(t, a, "security-approved", "security", "approved", []string{"decision.record-reference"}, p23DecisionSource(a, true))
-	assertP23DecisionSuccess(t, security, 1)
+	assertP23DecisionSuccess(t, security, 0)
 	assertP23DecisionStopStates(t, a, map[string]string{"release": "open", "security": "resolved"})
 
 	p22AcceptedCall(t, a, "task9-budget", "run.observe-budget", map[string]any{"value": 0})

@@ -270,14 +270,15 @@ func waitForArtifactMutationMarker(t *testing.T, path string, timeout time.Durat
 
 func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	// Task 10's readiness-Stop re-evaluation (DEC-224) makes artifact.verify
+	// observe the current repository whenever a flip to available reaches an
+	// Obligation with linked Evidence, so this journey needs a real Git
+	// worktree rather than the cheaper unobserved fixture's synthetic OIDs.
+	content := []byte("Artifact verification content\n")
+	workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeWithSourceForTest(t, "artifact.txt", content, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		definition["artifact_paths"] = []string{"artifact.txt"}
 	})
-	content := []byte("Artifact verification content\n")
-	if err := os.WriteFile(filepath.Join(workspace, "artifact.txt"), content, 0o600); err != nil {
-		t.Fatalf("write declared Artifact: %v", err)
-	}
 	terminal, result := executeGateRunForTest(t, workspace, issueID, envelopeID, "artifact-verify-source")
 	if result.err != nil || terminal.Data.ReceiptID == "" {
 		t.Fatalf("gate run = %#v, terminal=%#v, want successful Receipt", result, terminal)
@@ -461,6 +462,72 @@ func assertReceiptHasNoArtifacts(t *testing.T, workspace, receiptID string) {
 	if count != 0 {
 		t.Fatalf("rejected Receipt Artifact count = %d, want 0", count)
 	}
+}
+
+// observedGateReadyEvidenceEnvelopeWithSourceForTest builds a gate-ready
+// Evidence Envelope on a real observed Git worktree, exactly like
+// observedGateReadyEvidenceEnvelopeForTest, but declares sourcePath excluded
+// from the observed worktree from the Envelope's very first repository
+// capture onward, then writes it. Every repository-bound step downstream of
+// Envelope activation - run.start, gate.run, and now, since task 10's
+// artifact.availability-observed readiness re-evaluation (DEC-224),
+// artifact.verify itself - compares a fresh Git observation byte-for-byte
+// (including HeadOID) against a state captured earlier in the chain. Writing
+// or committing sourcePath after that first capture would change every later
+// observation and break that exact-match binding; declaring it ignored
+// before the first capture keeps every later observation identical no matter
+// when the file is written, removed, or restored.
+func observedGateReadyEvidenceEnvelopeWithSourceForTest(t *testing.T, sourcePath string, content []byte, modifyDefinition func(map[string]any)) (string, string, string) {
+	t.Helper()
+	definitions := gateDefinitionsForTest(modifyDefinition)
+	workspace, issueID, registration := finalizedObservedEnvelopeWorkspaceWithDefinitions(t, definitions)
+	ignorePath := filepath.Join(workspace, ".gitignore")
+	existing, err := os.ReadFile(ignorePath)
+	if err != nil {
+		t.Fatalf("read observed repository ignore: %v", err)
+	}
+	if err := os.WriteFile(ignorePath, append(existing, []byte(sourcePath+"\n")...), 0o600); err != nil {
+		t.Fatalf("extend observed repository ignore: %v", err)
+	}
+	for _, arguments := range [][]string{{"add", ".gitignore"}, {"commit", "-qm", "ignore declared Artifact source"}} {
+		if output, err := exec.Command("git", append([]string{"-C", workspace}, arguments...)...).CombinedOutput(); err != nil {
+			t.Fatalf("commit observed repository ignore %v: %v (%s)", arguments, err, output)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(workspace, sourcePath), content, 0o600); err != nil {
+		t.Fatalf("write declared Artifact source: %v", err)
+	}
+
+	input := envelopeCreateInput(t, workspace, issueID, registration)
+	grant := input["authority_grants"].([]any)[0].(map[string]any)
+	grant["actions"] = []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "evidence.link", "gate.run", "issue.transition", "run.close", "run.start"}
+	grant["actor_selector"] = map[string]any{"actor_id": "actor-builder", "required_capabilities": []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "evidence.link", "gate.run", "issue.transition", "run.close", "run.start"}}
+	input["authority_grants"] = append(input["authority_grants"].([]any), map[string]any{"actor_selector": map[string]any{"actor_id": "actor-harness", "required_capabilities": []string{"run.observe"}}, "actions": []string{"run.observe"}, "scope": map[string]any{"issue_id": issueID}})
+	createPath := filepath.Join(workspace, "evidence-envelope.json")
+	writeActivationInput(t, createPath, input)
+	created := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", createPath, "--idempotency-key", "evidence-envelope-create")
+	if created.err != nil {
+		t.Fatalf("create evidence envelope: %v; stderr=%q", created.err, created.stderr)
+	}
+	envelopeID := assertEnvelopeShape(t, created.stdout, "draft")
+	activatePath := filepath.Join(workspace, "evidence-envelope-activate.json")
+	writeActivationInput(t, activatePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
+	activated := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", "actor-builder", "--input", activatePath, "--idempotency-key", "evidence-envelope-activate")
+	if activated.err != nil {
+		t.Fatalf("activate evidence envelope: %v; stderr=%q", activated.err, activated.stderr)
+	}
+
+	claim, _ := acquireGenericClaimForTestWithTTL(t, workspace, issueID, envelopeID, "gate-ready-claim", 86400)
+	repository := testEnvelopeRepository(t, workspace)
+	runPath := filepath.Join(workspace, "gate-ready-run.json")
+	writeActivationInput(t, runPath, runStartInput(issueID, envelopeID, claim["id"], repository))
+	started := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", runPath, "--idempotency-key", "gate-ready-run")
+	if started.err != nil {
+		t.Fatalf("start observed gate-ready Run: %v; stderr=%q", started.err, started.stderr)
+	}
+	runID := runFromResponse(t, started.stdout)["id"].(string)
+	rememberEnvelopeBindingForTest(t, workspace, envelopeBindingForTest{registrationID: registration.ID, registrationVersion: registration.Version, obligationID: testEvidenceObligationID, runID: runID, claimID: claim["id"].(string)})
+	return workspace, issueID, envelopeID
 }
 
 func assertArtifactVerifyResult(t *testing.T, output, availability string, changed bool) {

@@ -332,6 +332,16 @@ func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, ac
 	if requiresAdditionalJudgmentActors(actions) {
 		profiles = append(profiles, map[string]any{"actor_id": "actor-reviewer-two", "actor_type": "agent", "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities})
 	}
+	// A fixture whose declared actions include human-outcome.record but whose
+	// primary Actor is not itself human-typed needs a dedicated human Actor:
+	// recording requires actor_type "human" in the finalized profile, which an
+	// "agent" primary Actor can never satisfy regardless of capability.
+	if actorType != "human" && containsAction(actions, "human-outcome.record") {
+		profiles = append(profiles, map[string]any{"actor_id": "actor-human-outcome", "actor_type": "human", "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities})
+	}
+	sort.Slice(profiles, func(i, j int) bool {
+		return profiles[i].(map[string]any)["actor_id"].(string) < profiles[j].(map[string]any)["actor_id"].(string)
+	})
 	profileDigest := p21Component(t, binary, workspace, activationID, "authority-profile", "p22-corpus-authority", profiles)
 	argv := []string{"/bin/true"}
 	if len(execution) != 0 && len(execution[0].Argv) != 0 {

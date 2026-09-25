@@ -10,7 +10,6 @@ import (
 )
 
 var unavailableJudgmentEvents = map[string]bool{
-	"human-outcome.recorded": true,
 	"requirement.referenced": true,
 	"requirement.linked":     true,
 }

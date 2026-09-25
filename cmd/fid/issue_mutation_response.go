@@ -199,12 +199,19 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 	var executionTransition *issues.ExecutionBoundTransitionError
 	if errors.As(mutationErr, &executionTransition) {
 		for _, reason := range executionTransition.Reasons {
-			if reason.Code != "protected-decision-required" {
+			if reason.Code != "protected-decision-required" && reason.Code != "human-outcome-required" {
 				continue
 			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return cli.Failure{}, err
+			}
+			if reason.Code == "human-outcome-required" {
+				blocked, err := workflow.HumanOutcomeRequiredBlockForIssue(workspaceRoot, issueMigrationsDir(), executionTransition.IssueID, "issue.transition-terminal-success")
+				if err != nil {
+					return cli.Failure{}, err
+				}
+				return humanOutcomeRequiredFailure(blocked)
 			}
 			blocked, err := workflow.ProtectedDecisionBlockForIssue(workspaceRoot, issueMigrationsDir(), executionTransition.IssueID, "issue.transition-terminal-success")
 			if err != nil {

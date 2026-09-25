@@ -139,8 +139,12 @@ func requiresAdditionalJudgmentActors(actions []string) bool {
 }
 
 func containsReviewRecordAction(actions []string) bool {
+	return containsAction(actions, "review.record")
+}
+
+func containsAction(actions []string, want string) bool {
 	for _, action := range actions {
-		if action == "review.record" {
+		if action == want {
 			return true
 		}
 	}

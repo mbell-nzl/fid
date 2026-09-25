@@ -258,6 +258,22 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 			return err
 		}
 		effects = append(effects, cycleEffects...)
+		// DEC-224: a later independent Review resolving the last blocking Finding
+		// can satisfy an already-evidenced review Obligation. This Event's own
+		// disposition inserts are not yet in the projection, so the override
+		// mirrors that exact resolution set onto the review Obligation(s) it
+		// completes before the shared readiness evaluator runs.
+		reviewOverrides, err := reviewObligationReadinessOverride(conn, binding, terminalResolvedFindingIDs(request))
+		if err != nil {
+			return err
+		}
+		readinessEffects, readinessStops, readinessAttention, err := workflow.HumanOutcomeReadinessStopEffects(conn, binding.EnvelopeID, binding.EnvelopeRevision, options.ActorID, workflowRepository(observed), reviewOverrides)
+		if err != nil {
+			return err
+		}
+		effects = append(effects, readinessEffects...)
+		stops = append(stops, readinessStops...)
+		attention = append(attention, readinessAttention...)
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "review.recorded", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: reviewID, Sequence: next, Type: "review"}, CommandName: "review.record", Repository: journalRepository(observed), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setReviewEventIdentity(review, prepared)
@@ -370,6 +386,72 @@ func reviewCycleEffects(conn *sql.DB, binding recordBinding, runID, actorID, rev
 	}
 	effects = append(effects, stopEffects...)
 	return effects, &admission.Budget, stops, attention, nil
+}
+
+func terminalResolvedFindingIDs(request RecordRequest) []string {
+	ids := append([]string{}, request.ResolvesFindingIDs...)
+	for _, inapplicable := range request.InapplicableFindings {
+		ids = append(ids, inapplicable.FindingID)
+	}
+	return ids
+}
+
+// reviewObligationReadinessOverride returns the Obligation-status override
+// for a review Obligation whose already-linked passing Evidence is now fully
+// unblocked: every one of its currently unresolved blocking Findings is in
+// resolvedFindingIDs, the exact set this Review's own (not yet projected)
+// dispositions resolve (DEC-224). It returns nil when no review Obligation
+// qualifies.
+func reviewObligationReadinessOverride(conn *sql.DB, binding recordBinding, resolvedFindingIDs []string) (map[string]string, error) {
+	resolved := map[string]bool{}
+	for _, id := range resolvedFindingIDs {
+		resolved[id] = true
+	}
+	rows, err := conn.Query(`SELECT DISTINCT o.id FROM envelope_obligations o JOIN evidence_records e ON e.obligation_id=o.id AND e.evidence_type='review' JOIN review_records rv ON rv.id=e.review_id WHERE o.envelope_id=? AND o.revision=? AND rv.issue_id=? AND rv.envelope_id=? AND rv.envelope_revision=? AND rv.verdict='pass'`, binding.EnvelopeID, binding.EnvelopeRevision, binding.IssueID, binding.EnvelopeID, binding.EnvelopeRevision)
+	if err != nil {
+		return nil, fmt.Errorf("load linked review Obligations: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	var obligationIDs []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		obligationIDs = append(obligationIDs, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(obligationIDs) == 0 {
+		return nil, nil
+	}
+	blockingRows, err := conn.Query(`SELECT f.id FROM review_findings f JOIN review_records r ON r.id=f.review_id WHERE r.issue_id=? AND r.envelope_id=? AND r.envelope_revision=? AND f.blocking=1 AND NOT EXISTS (SELECT 1 FROM finding_dispositions d WHERE d.finding_id=f.id AND d.action IN ('resolved','inapplicable'))`, binding.IssueID, binding.EnvelopeID, binding.EnvelopeRevision)
+	if err != nil {
+		return nil, fmt.Errorf("load unresolved blocking Findings: %w", err)
+	}
+	defer func() { _ = blockingRows.Close() }()
+	allResolved := true
+	for blockingRows.Next() {
+		var id string
+		if err := blockingRows.Scan(&id); err != nil {
+			return nil, err
+		}
+		if !resolved[id] {
+			allResolved = false
+		}
+	}
+	if err := blockingRows.Err(); err != nil {
+		return nil, err
+	}
+	if !allResolved {
+		return nil, nil
+	}
+	overrides := map[string]string{}
+	for _, id := range obligationIDs {
+		overrides[id] = "satisfied"
+	}
+	return overrides, nil
 }
 
 func reviewBudgetSamples(conn *sql.DB, binding recordBinding, name string) ([]workflow.BudgetSample, error) {
@@ -493,6 +575,10 @@ func sameString(left, right *string) bool {
 		return left == right
 	}
 	return *left == *right
+}
+
+func workflowRepository(repository Repository) workflow.Repository {
+	return workflow.Repository{BaseOID: repository.BaseOID, CaptureSource: repository.CaptureSource, Dirty: repository.Dirty, DirtyDigest: repository.DirtyDigest, HeadOID: repository.HeadOID, ProjectID: repository.ProjectID, TreeOID: repository.TreeOID, WorktreeID: repository.WorktreeID}
 }
 
 func journalRepository(repository Repository) *journal.Repository {

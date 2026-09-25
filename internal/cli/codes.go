@@ -100,6 +100,8 @@ const (
 	CodeIdempotencyConflict         Code = "idempotency-conflict"
 	CodeProtectedDecisionRequired   Code = "protected-decision-required"
 	CodeSourceDigestMismatch        Code = "source-digest-mismatch"
+	CodeHumanOutcomeRequired        Code = "human-outcome-required"
+	CodeOutcomeNotFound             Code = "outcome-not-found"
 )
 
 type SubjectType string
@@ -129,6 +131,7 @@ const (
 	SubjectConcern          SubjectType = "concern"
 	SubjectDeviation        SubjectType = "deviation"
 	SubjectDecision         SubjectType = "decision"
+	SubjectHumanOutcome     SubjectType = "human-outcome"
 )
 
 type Subject struct {
@@ -255,6 +258,9 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 		stringField("envelope_id"), stringField("decision_class"), stringsField("required_capabilities"), stringsField("affected_actions")),
 	CodeSourceDigestMismatch: definition(CategoryPrecondition, false, nil,
 		stringField("display_label"), nullableStringField("path"), stringField("expected_digest"), nullableStringField("observed_digest")),
+	CodeHumanOutcomeRequired: definition(CategoryPrecondition, false, []SubjectType{SubjectEnvelope},
+		stringField("envelope_id"), stringField("obligation_id"), stringField("outcome_class")),
+	CodeOutcomeNotFound:     definition(CategoryNotFound, false, []SubjectType{SubjectHumanOutcome}, stringField("id")),
 	CodeInvalidArgument:     definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeUnsupportedKind:     definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeUnsupportedRelation: definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),

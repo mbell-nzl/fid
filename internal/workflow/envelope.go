@@ -375,11 +375,22 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 		if err != nil {
 			return err
 		}
+		// A fresh git observation is unnecessary here: the only Obligation type
+		// that can be raised at activation time is human-outcome
+		// (freshness_target "none", artifact_policy "metadata-sufficient"), so
+		// its evaluation never consults the repository. Reusing the Envelope's
+		// already-loaded RepositoryScope avoids a new git dependency on
+		// envelope.activate, which is not otherwise repository-bound.
+		readinessEffects, _, _, err := humanOutcomeReadinessEffectsForEnvelope(conn, envelope, options.ActorID, envelope.RepositoryScope, nil)
+		if err != nil {
+			return err
+		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "envelope.activated", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: envelope.ID, Sequence: 2, Type: "envelope"}, CommandName: "envelope.activate", Repository: envelopeRepository(envelope.RepositoryScope), Effects: []journal.Effect{
 			{Op: "update", Table: "work_envelopes", PK: map[string]any{"id": envelope.ID}, Values: map[string]any{"status": "active"}},
 			{Op: "update", Table: "envelope_revisions", PK: map[string]any{"envelope_id": envelope.ID, "revision": 1}, Values: map[string]any{"status": "active", "activated_at": activatedAt}},
 		}}
 		event.Effects = append(event.Effects, stopEffects...)
+		event.Effects = append(event.Effects, readinessEffects...)
 		resultJSON, err := envelopeActivateResultJSON(envelope, activatedAt, options.IdempotencyKey)
 		if err != nil {
 			return err
@@ -443,13 +454,13 @@ func CompleteEnvelope(options EnvelopeOptions, request EnvelopeCompleteRequest) 
 		if err != nil {
 			return err
 		}
-		if len(reasons) > 0 && reasons[0].Code == "protected-decision-required" {
+		if len(reasons) > 0 && (reasons[0].Code == "protected-decision-required" || reasons[0].Code == "human-outcome-required") {
 			stops, err := ApplicableStops(conn, "envelope.complete", Subject{Type: "envelope", ID: envelope.ID})
 			if err != nil {
 				return err
 			}
 			for _, stop := range stops {
-				if stop.Code == "protected-decision-required" {
+				if stop.Code == reasons[0].Code {
 					blocked, err := NewStopBlockedError(conn, "envelope.complete", []Stop{stop})
 					if err != nil {
 						return err

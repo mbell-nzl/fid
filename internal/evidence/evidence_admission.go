@@ -3,14 +3,16 @@ package evidence
 import "fmt"
 
 type evidenceAdmission struct {
-	ObligationID          string
-	ObligationType        string
-	AcceptedEvidenceTypes []string
-	AcceptedTrustSources  []string
-	EvidenceType          string
-	TrustSource           string
-	HumanOutcomeID        string
-	HumanOutcomeResult    string
+	ObligationID           string
+	ObligationType         string
+	AcceptedEvidenceTypes  []string
+	AcceptedTrustSources   []string
+	EvidenceType           string
+	TrustSource            string
+	HumanOutcomeID         string
+	HumanOutcomeResult     string
+	HumanOutcomeClass      string
+	ObligationOutcomeClass string
 }
 
 type EvidenceTypeNotAcceptedError struct {
@@ -67,7 +69,7 @@ func (err *OutcomeNotFoundError) Error() string {
 
 func classifyEvidenceAdmission(input evidenceAdmission) error {
 	if input.EvidenceType == "human-outcome" &&
-		(input.ObligationType != "human-outcome" || input.HumanOutcomeResult != "approved") {
+		(input.ObligationType != "human-outcome" || input.HumanOutcomeResult != "approved" || input.HumanOutcomeClass != input.ObligationOutcomeClass) {
 		return &OutcomeNotPermittedError{
 			ObligationID:   input.ObligationID,
 			ObligationType: input.ObligationType,

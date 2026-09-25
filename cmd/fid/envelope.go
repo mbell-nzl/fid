@@ -234,7 +234,7 @@ func renderEnvelopeError(cmd *cobra.Command, operation string, cause error, acto
 		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityUnavailable, "finalized envelope authority is unavailable", nil, map[string]any{"operation": operation, "actor_id": actor, "required_actions": []string{authority.Capability}, "required_capabilities": []string{authority.Capability}})
 	}
 	if errors.As(cause, &protectedDecision) {
-		failure, err := protectedDecisionFailure(protectedDecision)
+		failure, err := envelopeStopBlockedFailure(protectedDecision)
 		if err != nil {
 			return err
 		}
@@ -248,6 +248,16 @@ func renderEnvelopeError(cmd *cobra.Command, operation string, cause error, acto
 		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeObligationUnsatisfied, "Envelope completion obligations are unsatisfied", &cli.Subject{Type: cli.SubjectEnvelope, ID: completion.EnvelopeID}, map[string]any{"reasons": envelopeReasonValues(completion.Reasons)})
 	}
 	return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid envelope input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+}
+
+// envelopeStopBlockedFailure renders whichever Stop-carried denial precedence
+// case reached envelope.complete: protected-decision-required (authority) or
+// human-outcome-required (precondition).
+func envelopeStopBlockedFailure(blocked *workflow.StopBlockedError) (cli.Failure, error) {
+	if blocked != nil && len(blocked.Stops) == 1 && blocked.Stops[0].Code == "human-outcome-required" {
+		return humanOutcomeRequiredFailure(blocked)
+	}
+	return protectedDecisionFailure(blocked)
 }
 
 func envelopeReasonValues(reasons []workflow.EvaluationReason) []any {

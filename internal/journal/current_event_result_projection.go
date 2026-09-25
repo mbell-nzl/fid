@@ -102,6 +102,14 @@ func currentExpectedResult(tx *sql.Tx, event Event) (map[string]any, error) {
 		if failure == nil {
 			result["stops"], result["attention"], failure = currentDecisionResolutionValues(tx, event)
 		}
+	case "human-outcome.recorded":
+		put("outcome", "HumanOutcome", "human_outcomes", id(event.Aggregate.ID))
+		if failure == nil {
+			result["protected_decisions"], failure = currentProtectedDecisions(tx, result["outcome"].(map[string]any)["scope"].(map[string]any)["issue_id"].(string))
+		}
+		if failure == nil {
+			result["stops"], result["attention"], failure = currentDecisionResolutionValues(tx, event)
+		}
 	case "run.started", "run.closed", "run.observed", "run.checkpointed", "run.abandoned":
 		put("run", "Run", "runs", id(event.Aggregate.ID))
 		if event.EventType == "run.abandoned" && failure == nil {
@@ -221,6 +229,8 @@ func currentProjectedValue(tx *sql.Tx, kind, table string, pk map[string]any) (m
 		err = currentFillDeviation(row)
 	case "DecisionRef":
 		err = currentFillDecisionRef(row)
+	case "HumanOutcome":
+		err = currentFillHumanOutcome(row)
 	}
 	if err != nil {
 		return nil, err
@@ -260,6 +270,13 @@ func currentFillDeviation(row map[string]any) error {
 func currentFillDecisionRef(row map[string]any) error {
 	row["authority"] = map[string]any{"actor_id": row["authority_actor_id"], "required_capabilities": row["authority_capabilities"]}
 	row["scope"] = map[string]any{"issue_id": row["scope_issue_id"]}
+	return nil
+}
+
+func currentFillHumanOutcome(row map[string]any) error {
+	row["subject"] = map[string]any{"type": row["subject_type"], "id": row["subject_id"]}
+	row["scope"] = map[string]any{"issue_id": row["scope_issue_id"]}
+	row["provenance"] = map[string]any{"activation_id": row["activation_id"], "activation_version": row["activation_version"], "profile_ref": row["profile_ref"]}
 	return nil
 }
 

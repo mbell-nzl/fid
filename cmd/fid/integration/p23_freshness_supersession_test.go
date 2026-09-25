@@ -3,14 +3,13 @@
 package integration
 
 import (
-	"encoding/json"
 	"reflect"
 	"strings"
 	"testing"
 )
 
 func TestP23FreshnessAndOutcomeSupersessionRealProcessJourney(t *testing.T) {
-	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "evidence.link", "gate.register", "review.record", "run.close", "run.observe", "run.start"}
+	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "evidence.link", "gate.register", "human-outcome.record", "review.record", "run.close", "run.observe", "run.start"}
 	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "mutation", p22ExecutionFixture{ReviewObligation: true, HumanObligations: true})
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "freshness-builder")
 
@@ -32,15 +31,27 @@ func TestP23FreshnessAndOutcomeSupersessionRealProcessJourney(t *testing.T) {
 		t.Fatalf("tree change rewrote Review: before=%#v after=%#v", beforeReview, afterReview)
 	}
 
-	seedP23HumanOutcome(t, a, "OUT-release-approved", "release", "approved", "2026-09-20T23:00:00Z", "EVT-20991231-900001", "EVD-release-approved")
-	seedP23HumanOutcome(t, a, "OUT-security-rejected", "security", "rejected", "2026-09-20T23:00:00Z", "EVT-20991231-900003", "")
+	// Task 10 converges these fixtures onto the real Human Outcome writer,
+	// superseding the seeded task 7 projection rows. Recording order alone
+	// governs supersession (real Event order, not a caller timestamp), so the
+	// two batches below reproduce the original seeded sequence exactly.
+	releaseApproved := p23RecordHumanOutcome(t, a, "release-approved", "actor-human-outcome", "release", "approved")
+	assertP23HumanOutcomeSuccess(t, releaseApproved)
+	releaseApprovedID := p21Path(t, p23Envelope(t, releaseApproved.Stdout), "result", "outcome").(map[string]any)["id"].(string)
+	assertP23HumanOutcomeSuccess(t, p23LinkHumanOutcome(t, a, "release-approved", "OBL-human-release", releaseApprovedID))
+	securityRejected := p23RecordHumanOutcome(t, a, "security-rejected", "actor-human-outcome", "security", "rejected")
+	assertP23HumanOutcomeSuccess(t, securityRejected)
 	initialOutcomes := p23OutcomeRows(t, a)
 	initial = p23EvidenceEvaluateTarget(t, a, "freshness-human-initial", changed)
 	p23AssertEvaluation(t, p23EvaluationByID(t, initial, "OBL-human-release"), "satisfied", "valid", "fresh", "not-applicable", "")
 	p23AssertEvaluation(t, p23EvaluationByID(t, initial, "OBL-human-security"), "unsatisfied", "invalid", "fresh", "not-applicable", "human-outcome-absent")
 
-	seedP23HumanOutcome(t, a, "OUT-release-rejected", "release", "rejected", "2026-09-20T01:00:00Z", "EVT-20991231-900002", "")
-	seedP23HumanOutcome(t, a, "OUT-security-approved", "security", "approved", "2026-09-20T01:00:00Z", "EVT-20991231-900004", "EVD-security-approved")
+	releaseRejected := p23RecordHumanOutcome(t, a, "release-rejected", "actor-human-outcome", "release", "rejected")
+	assertP23HumanOutcomeSuccess(t, releaseRejected)
+	securityApproved := p23RecordHumanOutcome(t, a, "security-approved", "actor-human-outcome", "security", "approved")
+	assertP23HumanOutcomeSuccess(t, securityApproved)
+	securityApprovedID := p21Path(t, p23Envelope(t, securityApproved.Stdout), "result", "outcome").(map[string]any)["id"].(string)
+	assertP23HumanOutcomeSuccess(t, p23LinkHumanOutcome(t, a, "security-approved", "OBL-human-security", securityApprovedID))
 	allOutcomes := p23OutcomeRows(t, a)
 	after := p23EvidenceEvaluateTarget(t, a, "freshness-human-superseded", changed)
 	p23AssertEvaluation(t, p23EvaluationByID(t, after, "OBL-human-release"), "unsatisfied", "valid", "fresh", "not-applicable", "outcome-superseded")
@@ -105,23 +116,6 @@ func p23AssertEvaluation(t *testing.T, evaluation map[string]any, status, validi
 	if reason != "" && (len(reasons) != 1 || reasons[0].(map[string]any)["code"] != reason) {
 		t.Fatalf("evaluation reasons = %#v, want %s", reasons, reason)
 	}
-}
-
-func seedP23HumanOutcome(t *testing.T, a *p22FIDRecoveryAdapter, id, class, result, createdAt, eventID, evidenceID string) {
-	t.Helper()
-	conn := p22FaultDB(t, a.workspace)
-	defer func() { p22FaultOK(t, conn.Close()) }()
-	var activationID string
-	p22FaultOK(t, conn.QueryRow(`SELECT id FROM kit_activations WHERE status='finalized'`).Scan(&activationID))
-	_, err := conn.Exec(`INSERT INTO human_outcomes (id,actor_id,activation_id,activation_version,profile_ref,class,subject_type,subject_id,result,scope_issue_id,reasoning,references_json,created_at,created_event_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, id, "human:task7-fixture", activationID, 1, "profile:task7-fixture", class, "issue", a.issueID, result, a.issueID, "seeded Task 7 projection fixture", `[]`, createdAt, eventID)
-	p22FaultOK(t, err)
-	if evidenceID == "" {
-		return
-	}
-	repositoryJSON, err := json.Marshal(a.repository)
-	p22FaultOK(t, err)
-	_, err = conn.Exec(`INSERT INTO evidence_records (id,obligation_id,evidence_type,receipt_id,review_id,human_outcome_id,producer,trust_source,target_repository_json,validity,created_at) VALUES (?,?, 'human-outcome',NULL,NULL,?,'human','activated-human',?,'valid',?)`, evidenceID, "OBL-human-"+class, id, string(repositoryJSON), createdAt)
-	p22FaultOK(t, err)
 }
 
 func p23OutcomeRows(t *testing.T, a *p22FIDRecoveryAdapter) [][]string {

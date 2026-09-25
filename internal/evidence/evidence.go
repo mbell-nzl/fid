@@ -166,8 +166,14 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 		for _, artifactID := range evidence.RequiredArtifactIDs {
 			effects = append(effects, journal.Effect{Op: "insert", Table: "evidence_artifact_links", PK: map[string]any{"evidence_id": evidence.ID, "artifact_id": artifactID}, Values: map[string]any{"required_material": true}})
 		}
+		readinessEffects, _, _, err := workflow.HumanOutcomeReadinessStopEffects(conn, binding.EnvelopeID, binding.Revision, actor.ActorID, workflowRepository(options.Request.TargetRepository), map[string]string{options.Request.ObligationID: evaluation.Status})
+		if err != nil {
+			return err
+		}
+		effects = append(effects, readinessEffects...)
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "evidence.linked", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: evidence.ID, Sequence: 1, Type: "evidence"}, CommandName: "evidence.link", CorrelationID: binding.CorrelationID, Repository: repositoryEventValue(evidence.TargetRepository), Effects: effects}
-		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
+			substituteEvidenceEventPlaceholders(prepared.Effects, prepared)
 			return journal.IdempotencyMutation{EntityID: evidence.ID, ResultJSON: string(resultJSON)}, nil
 		})
 		if err != nil {
@@ -233,6 +239,7 @@ type evidenceBinding struct {
 	ReceiptOutcome               string
 	ReviewVerdict                string
 	ReviewIndependent            bool
+	HumanOutcomeClass            string
 	UnresolvedBlockingFindingIDs []string
 	Repository                   Repository
 	Artifacts                    map[string]string
@@ -280,9 +287,6 @@ func loadEvidenceBinding(conn *sql.DB, request EvidenceLinkRequest) (evidenceBin
 	}
 	if err != nil {
 		return evidenceBinding{}, err
-	}
-	if request.EvidenceType == "human-outcome" {
-		return evidenceBinding{}, &EvidenceBindingError{Reason: "Human Outcome Evidence linking is unavailable"}
 	}
 	return binding, nil
 }
@@ -415,26 +419,22 @@ func loadHumanOutcomeEvidenceBinding(conn *sql.DB, request EvidenceLinkRequest, 
 	}
 	binding.EvidenceType, binding.HumanOutcomeID = "human-outcome", request.HumanOutcomeID
 	binding.Producer, binding.TrustSource = "human", "activated-human"
-	binding.Repository, binding.Artifacts = request.TargetRepository, map[string]string{}
-	if err := classifyBindingAdmission(request, binding); err != nil {
-		return err
-	}
-	if binding.Obligation.OutcomeClass == nil || class != *binding.Obligation.OutcomeClass {
-		return &EvidenceBindingError{Reason: "Human Outcome and Obligation binding is not exact"}
-	}
-	return nil
+	binding.Repository, binding.Artifacts, binding.HumanOutcomeClass = request.TargetRepository, map[string]string{}, class
+	return classifyBindingAdmission(request, binding)
 }
 
 func classifyBindingAdmission(request EvidenceLinkRequest, binding *evidenceBinding) error {
 	return classifyEvidenceAdmission(evidenceAdmission{
-		ObligationID:          request.ObligationID,
-		ObligationType:        binding.Obligation.Type,
-		AcceptedEvidenceTypes: binding.Obligation.AcceptedEvidenceTypes,
-		AcceptedTrustSources:  binding.Obligation.AcceptedTrustSources,
-		EvidenceType:          binding.EvidenceType,
-		TrustSource:           binding.TrustSource,
-		HumanOutcomeID:        pointerValue(binding.HumanOutcomeID),
-		HumanOutcomeResult:    binding.ReceiptOutcome,
+		ObligationID:           request.ObligationID,
+		ObligationType:         binding.Obligation.Type,
+		AcceptedEvidenceTypes:  binding.Obligation.AcceptedEvidenceTypes,
+		AcceptedTrustSources:   binding.Obligation.AcceptedTrustSources,
+		EvidenceType:           binding.EvidenceType,
+		TrustSource:            binding.TrustSource,
+		HumanOutcomeID:         pointerValue(binding.HumanOutcomeID),
+		HumanOutcomeResult:     binding.ReceiptOutcome,
+		HumanOutcomeClass:      binding.HumanOutcomeClass,
+		ObligationOutcomeClass: pointerValue(binding.Obligation.OutcomeClass),
 	})
 }
 
@@ -703,6 +703,32 @@ func freshnessForTarget(freshnessTarget string, evidence, target Repository) str
 		return "fresh"
 	}
 	return freshnessForRepository(evidence, target)
+}
+
+// workflowRepository converts the evidence package's own Repository shape to
+// the workflow package's identical wire shape, so the shared human-outcome
+// readiness helper can be reused across package boundaries without a type alias.
+func workflowRepository(repository Repository) workflow.Repository {
+	return workflow.Repository{BaseOID: repository.BaseOID, CaptureSource: repository.CaptureSource, Dirty: repository.Dirty, DirtyDigest: repository.DirtyDigest, HeadOID: repository.HeadOID, ProjectID: repository.ProjectID, TreeOID: repository.TreeOID, WorktreeID: repository.WorktreeID}
+}
+
+// substituteEvidenceEventPlaceholders resolves the "<event-id>"/"<occurred-at>"
+// convention used by optional readiness-Stop Effects appended to this Event,
+// mirroring the equivalent per-package helper in internal/review and
+// internal/workflow. Pre-existing evidence_records/evidence_artifact_links
+// Effects never use these placeholders, so this is a no-op for them.
+func substituteEvidenceEventPlaceholders(effects []journal.Effect, event journal.Event) {
+	occurredAt := event.OccurredAt.UTC().Format(time.RFC3339Nano)
+	for index := range effects {
+		for key, value := range effects[index].Values {
+			switch value {
+			case "<event-id>":
+				effects[index].Values[key] = event.EventID
+			case "<occurred-at>":
+				effects[index].Values[key] = occurredAt
+			}
+		}
+	}
 }
 
 func sortedUnique(values []string) bool {
