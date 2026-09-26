@@ -153,3 +153,10 @@ List any conditional command required by this task and why:
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
+
+## Planning Amendment - DEC-249, DEC-252 and DEC-254 (2026-09-26)
+
+- VAL-059 and VAL-071 fixtures follow DEC-249: an Obligation blocks only the
+  actions its `guarded_actions` name. DEC-252 lets any granted Actor run a
+  gate, not only the first-sorted one.
+- DEC-254 Part 1's `cmd/fid` breach-attribution rule applies to this task.

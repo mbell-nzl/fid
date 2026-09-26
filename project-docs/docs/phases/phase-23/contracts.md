@@ -90,8 +90,17 @@ already share a rank, so renumbering its values to insert these four is
 permitted and expected. What must not change is the relative order of the
 Phase 21/22 codes among themselves. A guarded action requires every
 applicable Obligation to be `satisfied`; a single unsatisfied Obligation blocks
-it and every unsatisfied reason from every Obligation is returned. Evidence
-absence, invalidity, and staleness never collapse into one reason code.
+it and every unsatisfied reason from every applicable Obligation is returned.
+Evidence absence, invalidity, and staleness never collapse into one reason code.
+
+**Applicable (DEC-249, Tech Lead 2026-09-26).** An Obligation is applicable to
+a guarded action exactly when its `applicability` is `required` and its
+`guarded_actions` contains that action. `issue.transition-terminal-success`
+and `envelope.complete` each evaluate only the Obligations that guard them, and
+a denial returns reasons only from those. Reads still report every Obligation.
+An unsatisfied Obligation never blocks an action it does not guard. Section
+10's readiness condition, which is not a guarded action, keeps its meaning:
+every other Obligation of the Envelope revision.
 
 ## 3. Review Runs And Independence
 
@@ -460,6 +469,30 @@ back-dates the original request (PRD-HUM-003).
 
 Recording a qualifying Human Outcome does not silently close unrelated
 Attention. Only Stops whose recorded condition matches are resolved.
+
+**Qualifying facts (DEC-250, Tech Lead 2026-09-26).** Each Condition type has
+exactly one qualifying-fact predicate. Manual `stop resolve` and atomic
+resolution inside the recording Event both use it. Resolution is keyed on the
+recorded Condition, not on the Stop's raising code, so an `operator-stop`
+carrying the Condition resolves exactly as a producer's Stop does.
+
+- `human-outcome-recorded` qualifies with a `human-outcome.recorded` Event
+  whose Outcome has the Condition's `outcome_class` and result `approved`, is
+  not superseded under section 7, and lies in the subject's scope. For an
+  `envelope` subject, the Outcome's scope Issue is selected in that Envelope's
+  current revision. For a `run` subject, it equals the Run's Issue. For an
+  `activation` subject, the Outcome's provenance activation is that
+  Activation.
+- `decision-satisfied` resolves to the subject Envelope (for a `run` subject,
+  the Run's Envelope). It qualifies with the pair-completing Event, meaning
+  the later-committed of the bound Decision Reference's `decision.referenced`
+  and Human Outcome's `human-outcome.recorded` Events, of a protected Decision
+  of that `decision_class` that is `satisfied` under section 9 at resolution
+  time. `stop raise` rejects a `decision-satisfied` Condition on an
+  `activation` subject with no Event, because no Envelope scope exists in
+  which it could ever qualify.
+- A non-qualifying fact rejects `resolution-invalid`, commits no Event, and
+  leaves the Stop open.
 
 ## 12. Requirement References
 

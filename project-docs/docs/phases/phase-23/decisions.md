@@ -1742,6 +1742,302 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   the scheduled window 7-9 QA review verifies both guarded adapters and the
   accepted precedence. No gate, threshold, interface, or product rule changes.
 
+### DEC-249 - An Obligation blocks only the guarded actions it declares (ESC-23-004 BC-1)
+
+- **Status:** ACCEPTED 2026-09-26, Tech Lead. This is a conformance ruling on
+  accepted text. It changes no accepted product rule, so no Human ruling is
+  required. The Human may overrule it.
+- **Question:** `contracts.md` section 2 says "A guarded action requires every
+  applicable Obligation to be `satisfied`" and never defines "applicable". The
+  shipped evaluator (`710db23`, task 2) blocks terminal success and completion
+  on every unsatisfied Obligation of the Envelope, whatever that Obligation's
+  `guarded_actions` says (`evaluation.go:436`, `envelope.go:521`).
+- **Ruling:** An Obligation is applicable to a guarded action exactly when its
+  `applicability` is `required` and its `guarded_actions` contains that action.
+  - `issue.transition-terminal-success` evaluates only the Obligations that
+    guard it, and `envelope.complete` evaluates only the Obligations that guard
+    it.
+  - Each denial returns every unsatisfied reason from every applicable
+    Obligation, and only from those.
+  - Reads (Envelope show, per-Obligation evaluations, `resume`) still report
+    every Obligation.
+  - An Envelope in which no Obligation guards an action puts no Obligation
+    requirement on that action. Which Obligations guard which actions is kit
+    policy that fid enforces and does not recalculate (PRD-AUTH-004).
+- **Why the global reading is rejected:** the accepted text works only under
+  the per-Obligation reading.
+  - PRD-ENV-010 has Obligations "directly encode ... guarded action".
+  - GLOSSARY defines an Obligation as a condition "for an applicable action".
+  - Section 2's rule "at most one Obligation of each type may guard
+    `issue.transition-terminal-success`" limits nothing if every Obligation
+    blocks that action.
+  - Section 10 says the readiness Stop blocks "exactly that Obligation's
+    guarded actions", and says those actions return `human-outcome-required`
+    while the Stop is open. Under the global reading, a Human Obligation
+    guarding only `envelope.complete` would still block terminal success,
+    through an evaluation reason and not the Stop. That breaks the accepted
+    precedence model.
+  - Phase 21/22 required `guarded_actions` to be exactly both actions, so the
+    two readings first diverge in Phase 23. No earlier behavior is at stake.
+- **Explicitly unchanged:**
+  - The section 10 readiness condition, "unsatisfied when every other
+    applicable Obligation is satisfied", is an Attention trigger, not a
+    guarded action. It keeps its accepted task-10 meaning: every other
+    Obligation of the Envelope revision. All Phase 23 Obligations are
+    `applicability:"required"`.
+  - `run.close`'s terminal status (`run_close.go:81`) is not a guarded action,
+    and this ruling does not change it.
+  - Protected-Decision affected actions and Stop blocked actions were already
+    per-action.
+- **Repair (task 2, bounded conformance):** Task 2 owns `evaluation.go` and
+  `envelope.go` (`task-2.md` Scope).
+  - Filter the Obligations passed to the evaluator by the action being
+    evaluated.
+  - Add the VAL-009 task-2 probes that `task-2-done.md:34` claimed but that do
+    not exist. On one Envelope, satisfy a `gate-evidence` Obligation and leave
+    unsatisfied a `review` Obligation that guards both actions. Both actions
+    must be denied, naming that Obligation.
+  - Also prove the contrast: an unsatisfied Obligation that does not guard an
+    action does not block that action, but still blocks the action it does
+    guard.
+  - Converge every retained assertion this change displaces, including the
+    task-10 journey's stage 1-3 `qa_pass` rows. Each converged row needs
+    introducing-commit provenance and the executing command (DEC-162).
+  - Task 2's unchanged exact commands are the gate. They include the full
+    ordinary suite, the tagged integration suite, and the `internal/workflow`
+    coverage run, so every owned scope executes.
+- **Assertions:** VAL-009 is not narrowed. Its notes cell records this
+  definition, and its task-2 evidence now needs both states. Task 13's VAL-056
+  precedence probe must pair the open Stop with an unsatisfied Obligation that
+  guards the probed action. VAL-059 and VAL-071 fixtures follow the same rule.
+- **Docs:** `contracts.md` section 2 (inline amendment), VAL-009 notes,
+  `GLOSSARY.md` Obligation entry, and `task-2.md`, `task-10.md` and
+  `task-13.md` amendments.
+- **Refs:** ESC-23-004, TRG-23-004, review-7 BC-1 and MF-5; PRD-ENV-008/010;
+  contracts sections 2 and 10.
+
+### DEC-250 - `stop resolve` qualifying rules for `human-outcome-recorded` and `decision-satisfied` (ESC-23-004 BC-3)
+
+- **Status:** ACCEPTED 2026-09-26, Tech Lead. It fills the resolution
+  semantics that section 11 leaves unstated, inside the accepted Condition
+  set. No code, Event, field or interface shape is added.
+- **R1, one predicate for both paths:** Each Condition type has exactly one
+  qualifying-fact predicate, in `internal/workflow`.
+  - Manual `stop resolve` and the atomic resolution inside the recording
+    Event call the same predicate, so the two paths cannot diverge.
+  - Resolution is keyed on the Stop's recorded **Condition**, not its raising
+    code (section 11: "Only Stops whose recorded condition matches are
+    resolved").
+  - `human-outcome.recorded` resolves, in its own Event, every open Stop whose
+    Condition is `human-outcome-recorded` and which the Outcome qualifies
+    under R2. The Stop may be a producer's readiness Stop or an
+    `operator-stop`.
+  - The Event that completes a protected Decision's pair likewise resolves
+    every open `decision-satisfied` Stop it qualifies under R3. That Event is
+    `decision.referenced` or `human-outcome.recorded`.
+  - Stops carrying any other Condition are never touched.
+- **R2, `human-outcome-recorded` {subject, outcome_class}:** A fact Event
+  qualifies iff all of the following hold:
+  1. it is a `human-outcome.recorded` Event;
+  2. its Outcome's `class` equals `outcome_class` and its `result` is
+     `approved` (section 10: only `approved` satisfies);
+  3. that Outcome is not superseded at resolution time, using the section 7
+     rule and the evaluator's own supersession predicate;
+  4. it is in the Condition's subject scope:
+     - `envelope`: the Outcome's `scope.issue_id` is selected in that
+       Envelope's current revision;
+     - `run`: the Outcome's `scope.issue_id` equals the Run's Issue;
+     - `activation`: the Outcome's provenance `activation_id` equals the
+       subject ID.
+- **R3, `decision-satisfied` {subject, decision_class}:**
+  - Scope: an `envelope` subject names that Envelope, and a `run` subject
+    names the Run's Envelope. An `activation` subject has no Envelope scope,
+    so `stop raise` rejects it through `validateCondition`'s existing
+    invalid-Condition failure, with no Event. Accepting it would store a Stop
+    that can never resolve, which is the BC-3 defect.
+  - A fact Event qualifies iff:
+    1. that Envelope's current revision declares a protected Decision of
+       `decision_class`;
+    2. that Decision is `satisfied` under section 9 at resolution time, as
+       derived by the same code the guarded actions use;
+    3. the Event is the pair-completing Event: whichever of the bound
+       Decision Reference's and Human Outcome's creating Events committed
+       later.
+  - This equals the `fact_event_id` the atomic path already writes.
+- **Rejection:** A non-qualifying fact rejects with exit 4
+  `resolution-invalid`, appends no Event and leaves the Stop open. This covers
+  a wrong Event type, wrong class, wrong result, superseded Outcome,
+  out-of-scope Outcome, the earlier half of a pair, and a rejected or deferred
+  reference.
+- **Task 11 repair:**
+  - Implement R1-R3 in `stop.go` and `stop_conditions.go` (DEC-253).
+  - Move the two producers' code-keyed scans (`human_outcome.go:239`,
+    `decision.go:243`) to the shared predicate.
+  - Add committed built-binary evidence:
+    - VAL-048: wrong-class and wrong-result `stop resolve` both reject, with
+      the Event count unchanged and the Stop open; the matching Outcome
+      resolves it.
+    - VAL-078: for each of the two types, a non-qualifying and a qualifying
+      fact, on both a producer-raised Stop and an `operator-stop` carrying the
+      Condition.
+    - VAL-050: add a matching-Condition `operator-stop` that the same Outcome
+      resolves, next to the existing different-Condition Stop that stays open.
+    - The R3 `activation`-subject raise rejection.
+- **Scope note:** If an Effect row needed for a `run`- or `activation`-subject
+  resolution is missing from a closed journal registry, that is the
+  expected-class registry family. Escalate it; do not add it locally.
+- **Docs:** `contracts.md` section 11 (inline amendment), VAL-048, VAL-050 and
+  VAL-078 notes, and a `task-11.md` amendment. Task 17's
+  `human_outcome_resolution:true` flip now has a complete path to prove.
+- **Refs:** ESC-23-004, review-7 BC-3; contracts sections 7, 9, 10, 11;
+  VAL-048/050/078.
+
+### DEC-251 - `human-outcome.record` Envelope-grant contradiction (ESC-23-004 BC-2)
+
+- **Status:** PROPOSED 2026-09-26. **Awaiting Human ruling.** This is a direct
+  contradiction inside the Human-accepted interface (DEC-222). Either answer
+  changes accepted text or product behavior.
+- **Contradiction:** `public-interface.md` section 4.1 says "Profile with
+  `actor_type:"human"` plus Envelope grant and active finalized Activation".
+  Section 4's body, `contracts.md` section 10 and VAL-043 name no grant.
+- **Option B, recommended (no grant):** Correct the section 4.1 cell to
+  "Profile with `actor_type:"human"` and active finalized Activation; no
+  Envelope grant (contracts 10)". No code, test or assertion changes.
+  - Section 10 closes the admission and rejection causes. Section 4's body
+    lists grant-bearing actions explicitly as "the first four". VAL-043's five
+    accepted requests contain no grant case. That is three accepted texts
+    against one table cell.
+  - PRD-AUTH-008 puts Human Outcome authority in Kit Activation provenance.
+    Envelope-scoped authority over a protected Decision is already enforced
+    on the Decision Reference half, because `decision.record-reference`
+    requires the grant when Envelope-scoped.
+  - The shipped product and the task-9 journey already behave this way.
+- **Option A (grant required):** Apply `authorizeJudgmentSubject`'s
+  conditional grant, as the other four judgment actions do, when the scope
+  Issue is Envelope-scoped.
+  - Work: a task-10 authorization repair, a sixth VAL-043 request (the missing
+    grant rejects with the existing Envelope-authority denial and no Event),
+    and a `human-outcome.record` grant for `actor-human-outcome` in the task-9
+    fixture. Task 14 and 18 fixtures follow.
+  - It is stricter: each Envelope names who may judge it.
+  - It reads PRD-AUTH-002 ("generic Actor capabilities and approved Work
+    Envelope grants") as applying to every backend-port operation. It also
+    matches the `finding.address` precedent, where the 4.1 cell added a grant
+    that the body omitted and the product implemented it.
+- **Blocks:** the fresh checkpoint re-review, not the DEC-255 repairs.
+- **Refs:** ESC-23-004, review-7 BC-2; public-interface sections 4 and 4.1;
+  contracts section 10; PRD-AUTH-002/007/008; VAL-043.
+
+### DEC-252 - Task 6 owns the multi-grant `gate.run` conformance repair (review-7 I-5)
+
+- **Status:** ACCEPTED 2026-09-26, Tech Lead (DEC-175/DEC-194 pattern).
+- **Defect:** `validateGateRunReferences` (`internal/evidence/execution.go:381`)
+  reads one unordered grant row and requires it to name the running Actor. So
+  only the Actor whose grant sorts first can run a gate.
+  - It fails closed.
+  - It dates from Phase 21 (`b694991`, `Refs: phase-21/task-15`).
+  - It breaks accepted Phase 21 contracts section 6: "exact action,
+    capability, Issue, Envelope, and revision Grant match; missing is deny".
+- **Owner:** Task 6, as a bounded conformance repair after MF-4.
+  - `execution.go` is in task 6's scope (`task-6.md:74`), and task 6's full
+    ordinary and tagged gates execute it.
+  - Repair now, not at task 14 or 18, so no later fixture has to route around
+    it.
+- **Repair:** Authorize `gate.run` against all of the Envelope's grants, with
+  the exact action, capability, Issue, Envelope and revision match that
+  `workflow/authority.go` already applies. Change no failure code or detail.
+- **Evidence:** One Envelope with two or more grants, checked through the
+  built binary:
+  - the first-sorted Actor's `fid gate run` succeeds;
+  - a later-sorted granted Actor's `fid gate run` succeeds;
+  - an Actor with no `gate.run` grant is denied, with no Event and no
+    projection change.
+  - Also add an in-package regression in `internal/evidence`.
+- **Report:** Add a dated section to `task-6-done.md` recording the Phase 21
+  provenance. The fresh checkpoint re-review covers it.
+- **Refs:** review-7 Required Judgment 1 and I-5.
+
+### DEC-253 - Ratify task 11's `stop_conditions.go` scope reading (review-7 I-2)
+
+- **Status:** ACCEPTED 2026-09-26, Tech Lead.
+- **Ruling:** `internal/workflow/stop_conditions.go` is the qualifying-fact
+  half of the closed Stop registry that `stop.go`'s `qualifyingFact`
+  dispatches to. It is in task 11's scope, and `task-11-done.md:257-270` read
+  it correctly.
+- **Scope added:** `task-11.md` now names it, with its matching tests, and
+  names `internal/review/decision.go` for the DEC-250 repair.
+- **Gates:** Task 11's full ordinary and tagged gates execute both files. No
+  gate changes.
+- **Refs:** review-7 I-2; DEC-167/173.
+
+### DEC-254 - `cmd/fid` time headroom before tasks 13 and 14 (review-7 I-1)
+
+- **Status:** Part 1 ACCEPTED 2026-09-26, Tech Lead. Part 2 PROPOSED,
+  **awaiting Human ruling** because it widens Human-accepted DEC-227.
+- **Facts:**
+  - `cmd/fid` takes 567.662 s of its 600 s budget: 32.3 s of headroom.
+  - Same-code runs vary by 39.3 s.
+  - Tasks 13 and 14 add `cmd/fid` tests.
+  - DEC-227 allows `t.Parallel()` in new Phase 23 journey files only.
+- **Part 1, attribution rule (accepted):** If `cmd/fid` exceeds 600 s in task
+  13 or 14, the Developer reruns the identical command once at the task's
+  base commit in the same session and records both times.
+  - The breach is the task's own speed repair under DEC-227 only if the base
+    run is under 600 s and the task's delta exceeds the overage.
+  - Otherwise it is a pre-existing cause and is escalated. It is never
+    recorded as PASS.
+- **Part 2, proposed pre-emptive headroom:** Before task 13 dispatches, run a
+  bounded, test-only `cmd/fid` speed item, targeting 480 s or less on the
+  exact command (over twice the observed spread).
+  - Allowed: `t.Parallel()` on existing `cmd/fid` tests shown to share no
+    process-global state (cwd, env, package vars), and fixture or binary
+    reuse.
+  - Not allowed: any assertion removed, weakened, skipped or moved out of a
+    required gate, or any budget change.
+  - Owner: task 13's first step.
+  - The alternative, keeping DEC-227 as it is, relies on Part 1 and accepts a
+    likely BLOCKED stop at task 13 or 14.
+- **Refs:** review-7 I-1; DEC-227; VAL-079.
+
+### DEC-255 - ESC-23-004 disposition, stop release and repair order
+
+- **Status:** ACCEPTED 2026-09-26, Tech Lead.
+- **Disposition:**
+  - BC-1 is resolved by DEC-249 and BC-3 by DEC-250.
+  - BC-2 remains open pending the Human ruling on DEC-251.
+  - MF-4 and MF-5 stand as review-7 bounded repairs.
+  - I-2 is resolved by DEC-253 and I-5 by DEC-252.
+  - I-6 is folded into MF-5.
+  - I-1 is covered by DEC-254.
+- **Stop release:** The Runner may resume the following repairs in this order,
+  citing this DEC. Each item runs its owning task's unchanged exact commands
+  and records the three DEC-227 package times.
+  1. **MF-4** (task 6, test-only, review-7 Repair Plan row). Independent of
+     every BC.
+  2. **BC-1 conformance repair** (task 2, DEC-249). It must precede MF-5,
+     because MF-5's `qa_pass` expectation is red until the evaluator
+     conforms.
+  3. **MF-5 plus I-6** (task 10, review-7 Repair Plan row, under the retained
+     review-7 trigger). Under DEC-249, the fixture's Obligations are these:
+     `OBL-p22-corpus` guards both actions, while `OBL-p23-review` and both
+     Human Obligations guard only `envelope.complete`. So in the state where
+     the gate is satisfied and the review is not:
+     - `envelope.complete` is denied, naming `OBL-p23-review` and any other
+       unsatisfied `envelope.complete` guard;
+     - `issue.transition-terminal-success` is not blocked by any Obligation.
+     A permitted `qa_pass` commits a one-way transition, so order it as the
+     journey's real terminal transition. Do not use it as a disposable probe.
+  4. **BC-3 repair** (task 11, DEC-250 and DEC-253).
+  5. **I-5 repair** (task 6, DEC-252).
+  6. **BC-2**, once the Human rules. Option B is a Tech Lead doc edit with no
+     dispatch. Option A adds a task-10 authorization repair here.
+- **Then:** Dispatch a fresh independent QA Lead re-review as
+  `qa/checkpoint-after-task-11-3.md`. It covers items 1-6 plus the retained
+  review-7 rows. Task 12 stays held until that review returns PASS with
+  Must-fix 0 (qa-plan section 8). No item above waives or narrows VAL-009,
+  VAL-043, VAL-048, VAL-050 or VAL-078.
+- **Refs:** ESC-23-004, TRG-23-004, review-7.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,
@@ -1761,7 +2057,7 @@ not the default.
 | `09_AI_WORKFLOW.md` | pending | |
 | `AGENTS.md` (Commands) | pending | DEC-227: decide at wrap-up whether the explicit `-timeout` bound becomes the project default |
 | `10_IMPLEMENTATION_ROADMAP.md` | pending | |
-| `GLOSSARY.md` | touched: DEC-226, DEC-242 | Failure code / Evaluation reason split; Review Finding distinguishes nonterminal addressed and Review-only terminal dispositions |
+| `GLOSSARY.md` | touched: DEC-226, DEC-242, DEC-249 | Failure code / Evaluation reason split; Review Finding distinguishes nonterminal addressed and Review-only terminal dispositions; Obligation gains the "applicable" definition |
 
 ## Triage-Log Audit
 

@@ -126,6 +126,9 @@ or outcome, including gate, evidence, review, acceptance, and Human judgment
 requirements.
 Use when: policy has been compiled into an enforceable condition.
 Avoid: “QA step,” “validation assertion,” or an untyped checklist item.
+Applicable: An Obligation is applicable to a guarded action exactly when it is
+`required` and its guarded actions include that action. It never blocks an
+action it does not guard (Phase 23 DEC-249).
 
 **Actor**
 Definition: A Human, agent, harness, or trusted producer identity recorded with

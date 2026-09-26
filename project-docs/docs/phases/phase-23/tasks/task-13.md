@@ -156,3 +156,12 @@ List any conditional command required by this task and why:
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
+
+## Planning Amendment - DEC-249 (2026-09-26)
+
+- In VAL-056's second precedence probe, the unsatisfied Obligation that
+  accompanies the open readiness Stop must guard the probed action. An
+  Obligation that does not guard it no longer contributes a reason.
+- Also read DEC-254 before dispatch. Part 1's `cmd/fid` breach-attribution
+  rule applies here, and Part 2 may add a first speed step if the Human
+  approves it.

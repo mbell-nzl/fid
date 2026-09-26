@@ -269,3 +269,25 @@ baseline receipts. Both unchanged after-runs remain required on Task 6 code.
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
+
+## Repair Amendments - review-7 MF-4 and DEC-252 (2026-09-26)
+
+These run as steps 1 and 5 of DEC-255's order. They are separate dispatches.
+
+- **MF-4 (VAL-027 linked-recovery leg):** Test-only. Follow review-7's Repair
+  Plan row exactly: boundary, required evidence and fresh re-review scope.
+- **I-5 conformance repair (DEC-252):** Change
+  `internal/evidence/execution.go` `validateGateRunReferences` so it
+  authorizes `gate.run` against every Envelope grant, using the exact action,
+  capability, Issue, Envelope and revision match of `workflow/authority.go`.
+  Change no code or details.
+  - Evidence, through the built binary on one Envelope with two or more
+    grants:
+    - the first-sorted granted Actor's gate run succeeds;
+    - a later-sorted granted Actor's gate run succeeds;
+    - an ungranted Actor is denied, with no Event and no projection change.
+  - Add an in-package regression.
+  - Record the Phase 21 provenance (`b694991`) in a dated `task-6-done.md`
+    section.
+- **Gates:** The unchanged exact commands above, plus the three DEC-227
+  package times.

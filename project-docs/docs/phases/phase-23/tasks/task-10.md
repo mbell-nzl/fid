@@ -297,3 +297,21 @@ List any conditional command required by this task and why:
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
+
+## Repair Amendment - review-7 MF-5 and I-6 under DEC-249 (2026-09-26)
+
+This runs as step 3 of DEC-255's order, after task 2's DEC-249 repair has
+landed.
+
+- Follow review-7's MF-5 Repair Plan row. Under DEC-249,
+  `issue.transition-terminal-success` is guarded only by `OBL-p22-corpus` in
+  this fixture.
+- In the state where the gate is satisfied and the review is not,
+  `envelope.complete` is denied naming `OBL-p23-review`, plus any other
+  unsatisfied `envelope.complete` guard. `qa_pass` is not blocked by any
+  Obligation.
+- A permitted `qa_pass` commits the one-way transition, so order it as the
+  journey's real terminal step.
+- Remove the report's "Task 2 probes" and "monotone / not reachable" claims.
+  Refresh the I-6 citations.
+- **Gates:** The five exact commands above.

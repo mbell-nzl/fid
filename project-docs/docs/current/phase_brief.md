@@ -13,11 +13,13 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 
 ## Status
 
-**Tasks 1-4 complete in their reports and Runner ledger; Task 5 in progress.**
-DEC-239 recovery closed Task 4's same-Reviewer, multiple-Finding, built-binary
-and fence-parity gaps. The Human authorizes ordered execution through
-Task 9 and its mid-phase review. Bounded DEC-237/240 QA confirmation is READY
-(`qa-plan.md` section 21); Tasks 10-11 remain held. Branch `phase-23`.
+**Tasks 1-11 complete; the post-task-11 checkpoint is BLOCKed (review-7).**
+ESC-23-004 is partly resolved. DEC-249 rules that an Obligation blocks only
+its declared guarded actions, and DEC-250 fixes the judgment-Condition
+qualifying facts. BC-2's Envelope-grant question awaits the Human (DEC-251).
+DEC-255 releases the ordered repairs: MF-4, task-2 BC-1, MF-5, task-11 BC-3,
+task-6 I-5. Then a fresh `checkpoint-after-task-11-3.md` review. Branch
+`phase-23`.
 
 Eight QA passes returned twenty-eight Must-fix revisions plus five the Tech Lead
 found while dispositioning them; **all are applied**. Six Human contract
@@ -25,18 +27,15 @@ amendments (DEC-223..227, DEC-235); Tech Lead dispositions DEC-228..234,
 DEC-236, DEC-237. **ESC-23-001 is resolved** (DEC-235, Human, Option A). Record:
 [phase decisions](../phases/phase-23/decisions.md).
 
-Pass 8's two independent reviews confirmed DEC-236 and requested the VAL-078
-split below; detailed outcomes remain in `qa-plan.md` sections 19-20.
-**DEC-237 split VAL-078 into resolution (VAL-078) and encoding (VAL-080) and
-gave the two DEC-235 preservation invariants an ID each - VAL-081, the Phase 22
-nullable binding still reached from the new dispatch, and VAL-082, the six-row
-compatibility bar. That brought the contract to 82 rows.** I-42..I-45 are
-applied. DEC-240 splits VAL-082's validation, replay and key observations into
-VAL-082/083/084 without losing cases; the contract is now 84 rows.
+Pass 8 confirmed DEC-236. DEC-237 split VAL-078 into resolution (VAL-078) and
+encoding (VAL-080) and added VAL-081/082. DEC-240 split VAL-082 into
+VAL-082/083/084. The contract now has **84 rows** (`qa-plan.md` sections
+19-21).
 
-Next action: close Task 5 under DEC-242, then continue Tasks 6-9 and
-the ordered task/review sequence through the window 7-9 review. **Task 9 has
-Human clearance and bounded QA readiness. Tasks 10-11 stay held.**
+Next action: the Runner resumes the DEC-255 repairs. Once the Human rules on
+DEC-251, the fresh checkpoint re-review follows. Task 12 dispatches only after
+it returns PASS. DEC-254 Part 2 (`cmd/fid` headroom) needs a Human ruling
+before task 13.
 
 ## Operating Mode
 
@@ -54,8 +53,8 @@ amendments inline with their DEC and approval state.
 
 ## Task Index
 
-Full specs and reports: `../phases/phase-23/tasks/`. Tasks 1-4 complete; Task 5
-in progress; 6-18 pending, sequential. Task 12 also needs the task-11 checkpoint.
+Full specs and reports: `../phases/phase-23/tasks/`. Tasks 1-11 complete; 12-18
+pending, sequential. Task 12 also needs the task-11 checkpoint to PASS.
 
 1 schema baseline; 2 typed multi-Obligation Envelope; 3 review Claim mode and
 Run; 4 Review Records and independence; 5 Finding dispositions; 6 review

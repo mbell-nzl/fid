@@ -155,3 +155,29 @@ List any conditional command required by this task and why:
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
+
+## Repair Amendment - DEC-249 (2026-09-26, ESC-23-004 BC-1)
+
+This is a bounded conformance repair after task close. It runs as step 2 of
+DEC-255's order.
+
+- **Change:** Make `issue.transition-terminal-success` (`evaluation.go`) and
+  `envelope.complete` (`envelope.go`) evaluate only the Obligations whose
+  `guarded_actions` contain that action. Reads keep reporting every
+  Obligation. Do not change readiness raising, `run.close`, reason codes,
+  precedence or denial shapes.
+- **Evidence (VAL-009 task-2 half):** Use one Envelope with a satisfied
+  `gate-evidence` Obligation and an unsatisfied `review` Obligation guarding
+  both actions.
+  - Both actions are denied, naming the review Obligation, with no Event and
+    no projection change.
+  - Contrast: an unsatisfied Obligation guarding only `envelope.complete`
+    leaves terminal success unblocked and still blocks completion.
+  - Provide both an in-package test and a built-binary observation.
+- **Convergence:** This change displaces retained assertions, including the
+  task-10 journey's stage 1-3 `qa_pass` rows. Converge each one here, with
+  introducing-commit provenance and its executing command.
+- **Scope and gates:** Use the existing Scope. The exact commands above are
+  unchanged and execute every touched file.
+- **Report:** Add a dated section to `task-2-done.md`. Replace the
+  unsupported `:34` probe claim with the new citations.

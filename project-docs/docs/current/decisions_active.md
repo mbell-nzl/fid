@@ -166,9 +166,23 @@
   owns the real positive Human link and final Human-row closure. Seeded/pure
   evidence is labelled intermediate. Task 6 registers the accepted
   `outcome-not-permitted` mismatch code and Task 10 reuses it. No gate changes.
-- Tasks 1-4 are recorded complete; DEC-239 recovery and ESC-23-003 are closed.
-  Task 5 is in progress; Tasks 6-8 follow. Task 9 has Human dispatch clearance
-  and bounded QA readiness under DEC-237/240; Tasks 10-11 remain held.
+- DEC-249 (Tech Lead 2026-09-26): an Obligation blocks only the guarded
+  actions it declares. "Applicable" means `required` and guarding that action.
+  Task 2 owns the evaluator conformance repair.
+- DEC-250 (Tech Lead 2026-09-26): `human-outcome-recorded` and
+  `decision-satisfied` qualifying facts. Resolution is keyed on the Condition,
+  not the raising code, with one predicate shared by the manual and atomic
+  paths. Task 11 implements it; DEC-253 ratifies its `stop_conditions.go`
+  scope.
+- DEC-251 (PROPOSED, awaiting Human): whether `human-outcome.record` needs an
+  Envelope grant. Option B, no grant, is recommended.
+- DEC-252: task 6 repairs multi-grant `gate.run`.
+- DEC-254: Part 1, `cmd/fid` breach attribution, is accepted. Part 2,
+  pre-emptive headroom that widens DEC-227, awaits the Human.
+- DEC-255 releases ESC-23-004's stop for ordered repairs. A fresh checkpoint
+  re-review must PASS before task 12.
+- Tasks 1-11 are recorded complete. The post-task-11 checkpoint is BLOCKed
+  (review-7) pending the DEC-255 repairs. Tasks 12-18 are held.
   See [phase brief](phase_brief.md) and
   [Phase 23 decisions](../phases/phase-23/decisions.md).
 

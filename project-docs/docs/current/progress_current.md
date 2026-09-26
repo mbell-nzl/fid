@@ -1,25 +1,16 @@
 # Progress — Current
 
-Updated 2026-09-21. **PAUSED at the Human's request before window 7-9 QA.**
-Branch: `phase-23`. Tasks 1-9 are recorded complete. Window 4-6 QA passed in
-`qa/review-4.md` (`0d4f3d6`); window 7-9 QA has not run.
+Updated 2026-09-26. **STOPPED at the post-task-11 checkpoint (review-7 BLOCK,
+ESC-23-004).** Branch: `phase-23`. Tasks 1-11 are recorded complete. The
+task-10 QA repair passed (`af0cbb2`, reports `90d921b`/`908080d`). The fresh
+re-review `qa/checkpoint-after-task-11-2.md` (`9cb9420`) returned BLOCK with
+BC-1..BC-3 and MF-4/MF-5.
 
-The canonical Terra Developer completed Task 9's DEC-248 CLI denial mappings,
-retained fixture repairs, and all five required gates. Implementation:
-`fec3bdf8a1665f3b79bfdcd0146ca16b51527a51`; report finalized at `99a4d0e`.
-Root's fresh report-lint check passed after a report-formatting-only correction.
-The serial ordinary run reports `cmd/fid 513.222s`; final tagged integration
-reports `713.194s`; coverage is `62.5%`. See
-`../phases/phase-23/tasks/task-9-done.md` for Developer-observed evidence.
-
-Next authorized work requires the Human to resume the independent Tasks 7-9
-mid-phase review; they may choose a Claude agent. Review task reports 7-9 using
-the phase QA plan and validation contract. The live-output failure observed
-under overlapping test load did not recur in isolation or the serial full run,
-but its cause remains unproven; retain it for review. Root's execution and
-report-control failures are recorded in
-`../phases/phase-23/qa/task-9-supervisor-execution.md`.
-Do not dispatch the review or Task 10 onward while this pause remains in effect.
+The Tech Lead recorded DEC-249..255 (2026-09-26). The stop is released for
+DEC-255's ordered repairs. BC-2 (DEC-251) and DEC-254 Part 2 await the Human.
+BC-2 must be ruled before the `checkpoint-after-task-11-3.md` re-review, and
+DEC-254 Part 2 before task 13. Task 12 stays held until that re-review
+returns PASS.
 
 ## Task 4 recovery authority - 2026-09-20
 

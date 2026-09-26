@@ -234,3 +234,30 @@ List any conditional command required by this task and why:
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
+
+## Repair Amendment - DEC-250 and DEC-253 (2026-09-26, ESC-23-004 BC-3, I-2)
+
+This runs as step 4 of DEC-255's order.
+
+- **Scope added (DEC-253):** `internal/workflow/stop_conditions.go` with its
+  matching tests (ratified), and `internal/review/decision.go`. Both are
+  executed by the unchanged full ordinary and tagged gates.
+- **Change:** Implement DEC-250 R1-R3.
+  - One qualifying-fact predicate per Condition type, shared by `stop resolve`
+    and by the atomic resolution in `human-outcome.recorded` and
+    `decision.referenced`.
+  - Resolution is keyed on the Condition, not the raising code.
+  - `stop raise` rejects a `decision-satisfied` Condition on an `activation`
+    subject.
+- **Acceptance (add):** Committed built-binary evidence for each of the
+  following:
+  - the VAL-048 wrong-class and wrong-result rejections (exit 4
+    `resolution-invalid`, Events unchanged, Stop open);
+  - VAL-078 non-qualifying and qualifying facts for `human-outcome-recorded`
+    and `decision-satisfied`, each on a producer-raised Stop and on an
+    `operator-stop`;
+  - VAL-050's matching-Condition `operator-stop` resolved by the same Outcome;
+  - the R3 raise rejection.
+- A registry rejection for a `run`- or `activation`-subject resolution Effect
+  is escalated, not fixed locally.
+- **Report:** Add a dated section to `task-11-done.md`.
