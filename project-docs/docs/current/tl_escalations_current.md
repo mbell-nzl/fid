@@ -2,7 +2,23 @@
 
 ## Open escalations
 
-None. ESC-23-003's protected contradiction is resolved under DEC-239; Task 4
+### ESC-23-004 - Post-task-11 checkpoint re-review: three protected blocker candidates (BC-1, BC-2, BC-3)
+
+- **Raised by:** TRG-23-004
+- **Status:** OPEN. Task 12 is held under qa-plan section 8 until the checkpoint PASSes. The Runner and QA cannot waive that rule.
+- **Originating task:** task-10
+- **Trigger signature:** task-10:qa-rework:review-7-BC-1-BC-2-BC-3
+- **Source:** `project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11-2.md` (review-7, commit 9cb9420516c461ddd9b4d22d1944759a416f7bb7)
+- **Category:** specification, product semantics and public interface. Each sub-item is separately resolvable.
+- **Sub-item BC-1 (product semantics, VAL-009):** contracts.md:91-92 says a guarded action requires "every applicable Obligation" to be satisfied, but "applicable" is undefined. contracts.md:60-63 and :408-409 imply per-Obligation guarded_actions, while the evaluator (internal/workflow/evaluation.go:436,496-512; envelope.go:521,546-556) blocks terminal success on any unsatisfied Obligation regardless of its guarded_actions. Decision needed: does an Obligation block only its declared guarded_actions? Option A (yes): a decision-free task-2 evaluator conformance repair, then VAL-009 (both halves), the journey stage 1-3 `qa_pass` assertions and task 13 VAL-056 are re-derived. Option B (no, global): record the reading in a DEC and a GLOSSARY entry, including what guarded_actions governs. The task-10 stage 3 assertion then stands and MF-5's `qa_pass` expectation is fixed. Affects tasks 2, 10, 13, 14 (VAL-059, VAL-071).
+- **Sub-item BC-2 (public interface / authorization, VAL-043):** public-interface.md:243 (section 4.1) requires an Envelope grant for `human-outcome.record`. public-interface.md:222-224 and contracts.md:391-396 do not, and the product and task-9 journey need none (internal/review/human_outcome.go:79-89). Decision needed: which text governs. Option A (grant required): a task-10 authorization repair plus a VAL-043 negative case, and the task-9 journey fixture gains a grant for `actor-human-outcome`. Option B (grant not required): correct the section 4.1 cell under a DEC. Human ruling needed if the interface changes (DEC-222). Affects tasks 9, 10, 14 (VAL-071) and 18 (VAL-067/068).
+- **Sub-item BC-3 (resolution semantics, VAL-048, VAL-050, VAL-078):** internal/workflow/stop.go `eventMatchesCondition` and `qualifyingFact` have no rule for `human-outcome-recorded` or `decision-satisfied`, so a Stop carrying such a Condition raised by a non-producer code can never be resolved. contracts.md:453-455 and :461-462 fix that a `human-outcome-recorded` Stop resolves with a class-and-result-matching Outcome Event and that matching Stops resolve. They do not fix the `decision-satisfied` qualifying fact (which fact of the pair, Envelope scope), subject scoping for `human-outcome-recorded`, or whether recording resolves every Condition-matching Stop regardless of raising code. Decision needed: the Tech Lead fixes both qualifying rules. Task 11 then implements them in its stop.go scope and evidences the VAL-048 reject clause and VAL-078 per type. Affects task 11 and task 17 (`human_outcome_resolution:true`).
+- **Independent bounded Must-fix items (not blocked by the candidates unless noted):** MF-4 (task-6, VAL-027 linked-recovery leg, test-only, independent of all three candidates, may dispatch once the Tech Lead releases the stop). MF-5 (task-10, VAL-009 evidence-method state plus I-6 citations, test/report-only, its `qa_pass` assertion waits on BC-1). Each has an owning task, bounded scope, required evidence and a fresh independent re-review in the review's Repair Plan.
+- **Carry items:** I-1 `cmd/fid` headroom, I-2 task-11 scope ratification, I-5 multi-grant `gate.run` owner, I-6 report citations. No action here.
+- **Constraints:** Do not choose any reading in code, tests or reports before the decision is recorded. Do not narrow VAL-009, VAL-043, VAL-048, VAL-050 or VAL-078. A fresh independent checkpoint re-review must PASS before task 12.
+- **References:** TRG-23-004 in `project-docs/docs/phases/phase-23/triage-log.md`; review-7 lines 661-776.
+
+ESC-23-003's protected contradiction is resolved under DEC-239; Task 4
 implementation and verification remain pending under the bounded recovery.
 
 ## Recently resolved

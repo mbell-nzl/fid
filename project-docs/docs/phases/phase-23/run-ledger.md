@@ -819,3 +819,302 @@
 - Closure scope: the required closure labels end this Runner session only; the phase is incomplete and is not ready for wrap-up
 - Pause reason: Human authorized canonical Terra Task 9 completion only and explicitly requested another stop before the mid-phase review, potentially to use Claude
 - Resume checkpoint: Task 9 implementation fec3bdf8a1665f3b79bfdcd0146ca16b51527a51 and report correction 99a4d0e; next work is independent review of Tasks 7-9 only after Human resumption, not another Task 9 implementation dispatch or Task 10
+
+### 2026-09-22 17:18 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-21 20:23 RUN-END; Human-requested pause after Task 9 pending independent window 7-9 review
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: clean phase-23 HEAD 2b33bb133a5712e39ef4c1c9d0614fe64ed627a8; commit adds project-docs/docs/phases/phase-23/qa/review-5.md only, verified by `git show --stat`; review-5 records VERDICT PASS, Must-fix 0, Improvement 2, blocker candidates 0, covering task-7, task-8, task-9; tl_escalations_current.md Open escalations remain none, matching the RUN-START ESC baseline
+- Resolution evidence: Runner independently read review-5.md and confirmed its literal `VERDICT: PASS` and `Must-fix: 0` final lines, confirmed the reviewing commit is clean and HEAD-verified, and confirmed no new Open ESC exists beyond the RUN-START baseline; window 7-9 QA cadence is satisfied and Task 10 may be dispatched
+- Resolution authority: N/A
+- Continuing task: task-10
+- Next recovery: N/A
+
+### 2026-09-22 17:19 REVIEW review-5
+
+- Path: project-docs/docs/phases/phase-23/qa/review-5.md
+- Tasks covered: task-7, task-8, task-9
+- Outcome: PASS
+- Owning task: none
+- Re-review of: none
+- Must-fix: 0 / Improvement: 2 / blocker candidates: 0; QA minted no ESC
+
+### 2026-09-23 09:05 TASK-RECOVERY task-10
+
+- Source: Developer agent dispatch for task-10 returned no typed result; the Runner's task-monitor notification reported status=failed: "Agent terminated early due to an API error: You've hit your session limit - resets 9:50pm (Pacific/Auckland) (error type rate_limit, HTTP 429, request id req_011CfHyxEV6k7AegjokmpVav, model sent to the API: claude-sonnet-5)"
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-10:session-continuation:initial-dispatch-external-interruption
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD unchanged at 2b33bb133a5712e39ef4c1c9d0614fe64ed627a8; no implementation or report commit was made; the worktree carries a durable uncommitted Task 10 diff (33 changed paths) touching internal/workflow/{authority,activation,envelope,evaluation,stop}.go, internal/journal/{current_event_catalog,current_event_json,current_event_result_projection,current_event_value_catalog,current_event_value_relations,project_effects,project_effects_test}.go, internal/evidence/{artifact,evidence}.go, internal/review/review.go, internal/export/archive_semantics_catalog.go, internal/cli/codes.go, cmd/fid/{envelope,evidence,issue_mutation_response,root,contract_surface_test}.go, cmd/fid/integration/{p22_fake_test,p23_decision_reference_test,p23_freshness_supersession_test,p23_review_record_test}.go, project-docs/specs/06_DESIGN_PLAN_CLI.md, plus untracked new files cmd/fid/human_outcome.go, cmd/fid/integration/p23_human_outcome_test.go, internal/journal/current_event_task10_values_test.go, internal/review/human_outcome.go, internal/workflow/human_outcome_readiness.go, internal/workflow/human_outcome_readiness_test.go; no project-docs/docs/phases/phase-23/tasks/task-10-done.md report exists yet; no required gate command was confirmed to have completed before interruption
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the listed Task 10 product/test/spec paths plus Runner-owned run-ledger.md are dirty; no other paths dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - same-task Developer continuation must inspect the preserved uncommitted diff against task-10.md's full acceptance checklist (including confirming task 9's nullable-binding relation still fires), complete any remaining implementation and test work, run the exact required commands with observed termination and package-time budgets, commit the implementation and completion report, and return a typed outcome
+- Next action: dispatch one same-task Developer continuation for task-10 only; it must first inspect the current uncommitted worktree diff before making further changes, complete the full acceptance checklist, run the unchanged exact gates, commit, and report
+- Human attention required: no
+
+### 2026-09-23 09:06 REPAIR task-10
+
+- Trigger signature: task-10:session-continuation:initial-dispatch-external-interruption
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD 2b33bb133a5712e39ef4c1c9d0614fe64ed627a8; no Task 10 commit yet; durable uncommitted Task 10 diff (33 changed paths) as recorded in the preceding TASK-RECOVERY
+- Ending checkpoint: unchanged from starting checkpoint; the same durable uncommitted diff persists with no further commit; no required gate command result was observed during this attempt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: INTERRUPTED
+- Interruption cause: The Developer agent session was terminated by an external API error before returning a typed outcome: "Agent terminated early due to an API error: You've hit your session limit - resets 9:50pm (Pacific/Auckland) (error type rate_limit, HTTP 429, request id req_011CfHyxEV6k7AegjokmpVav, model sent to the API: claude-sonnet-5)"
+- Elapsed session duration: unknown after external termination; the Runner received only the terminal failure notification with no session-duration field
+- Command in flight: unknown after external termination
+- Resolution evidence: No typed Developer result was produced; the preserved uncommitted worktree diff is durable partial work for the next same-task continuation; no required gate command was confirmed PASS during this attempt
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-23 09:07 TASK-RECOVERY task-10
+
+- Source: Runner-mediated same-task continuation after 2026-09-23 09:06 REPAIR task-10 recorded Outcome: INTERRUPTED (external API rate-limit termination, no typed Developer result)
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-10:session-continuation:initial-dispatch-external-interruption
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD unchanged at 2b33bb133a5712e39ef4c1c9d0614fe64ed627a8; the same durable uncommitted Task 10 diff (33 changed paths) recorded in attempt 1 persists unchanged; no project-docs/docs/phases/phase-23/tasks/task-10-done.md report exists yet
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the listed Task 10 product/test/spec paths plus Runner-owned run-ledger.md are dirty; no other paths dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - same-task Developer continuation inspects the preserved uncommitted diff against task-10.md's full acceptance checklist (including confirming task 9's nullable-binding relation still fires), completes any remaining implementation and test work, runs the exact required commands with observed termination and package-time budgets, commits the implementation and completion report, and returns a typed outcome
+- Next action: dispatch one same-task Developer continuation for task-10 only; it must first inspect the current uncommitted worktree diff before making further changes, complete the full acceptance checklist, run the unchanged exact gates, commit, and report
+- Human attention required: no
+
+### 2026-09-23 16:47 REPAIR task-10
+
+- Trigger signature: task-10:session-continuation:initial-dispatch-external-interruption
+- Attempt count: 2
+- Starting checkpoint: phase-23 HEAD 2b33bb133a5712e39ef4c1c9d0614fe64ed627a8; durable uncommitted Task 10 diff (33 changed paths) inherited from attempt 1, as recorded in the attempt 2 TASK-RECOVERY
+- Ending checkpoint: phase-23 HEAD unchanged at 2b33bb133a5712e39ef4c1c9d0614fe64ed627a8; no commit made; the uncommitted diff now spans 37 changed paths. The continuation reviewed the full inherited diff against contracts.md/public-interface.md/schema.md/task-10.md, confirmed most of it correct, fixed two real defects (a cmd/fid test fixture broken by the new artifact.availability-observed readiness re-evaluation's real-git dependency, and a production evidence-binding gap in internal/evidence/evidence.go and evidence_admission.go where a class-mismatched Human Outcome fell through to a generic invalid-argument instead of the spec-required outcome-not-permitted), added regression/coverage tests (internal/evidence/human_outcome_binding_test.go, internal/evidence/human_outcome_admission_test.go, an added envelope.activated raising-path case in cmd/fid/integration/p23_human_outcome_test.go), and independently confirmed task 9's nullable-binding relation still fires via internal/journal -run '^TestTask10'. gofmt, go vet, and golangci-lint were confirmed clean in-session. The full go test -race ./... suite was not confirmed clean end-to-end in one uninterrupted run (two reruns were corrupted by the session's own stray pkill killing the live test process, a fifth clean attempt was mid-flight and still running as an orphaned process at handback); the tagged integration gate was not run at all; the completion report was not written; nothing was committed
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: Two real in-scope defects were found and fixed with passing focused regression evidence (internal/evidence package full run green including the two new tests; cmd/fid -run '^TestArtifact|^TestGateRun' green), and task 9's nullable-binding relation was independently reproduced firing correctly for VAL-081. This narrows the remaining failure to: one clean uninterrupted full required-command sequence, the still-open VAL-046 review.recorded/artifact.availability-observed coverage decision, the completion report, and the commit
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-23 16:48 TASK-RECOVERY task-10
+
+- Source: Runner-mediated same-task continuation after 2026-09-23 16:47 REPAIR task-10 recorded Outcome: MATERIAL-PROGRESS (two real defects fixed, coverage added, gate sequence and report/commit still pending); the returning agent's own typed handback reported OUTCOME RECOVERY_REQUIRED
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-10:session-continuation:initial-dispatch-external-interruption
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD unchanged at 2b33bb133a5712e39ef4c1c9d0614fe64ed627a8; uncommitted Task 10 diff now spans 37 changed paths (inherited implementation plus the two defect fixes and added tests from attempt 2); no task-10-done.md report exists; a stray `go test -race -timeout 30m -coverprofile=coverage.out ./...` process from the terminated attempt-2 session (pid 4103416, started 16:44) is still running in the background and must be triaged before the next full-gate run
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Task 10 product/test/spec paths plus Runner-owned run-ledger.md are dirty; no other paths dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - same-task Developer continuation confirms or safely stops the orphaned background test process, decides the VAL-046 review.recorded/artifact.availability-observed coverage question, runs the full exact required-command sequence once cleanly end-to-end within its own session with observed termination and package-time budgets, writes the completion report, commits the implementation and report, and returns a typed outcome
+- Next action: dispatch one same-task Developer continuation for task-10 only; it must first run `git status`/`git diff --stat` to confirm the inherited 37-path diff, check `ps aux` for the orphaned pid-4103416 test process and safely stop it before starting its own fresh gate run (to avoid repeating the prior session's self-inflicted pkill corruption), complete the VAL-046 coverage decision, run the unchanged exact gates once cleanly, write the completion report, commit, and report
+- Human attention required: no
+
+### 2026-09-25 07:40 REPAIR task-10
+
+- Trigger signature: task-10:session-continuation:initial-dispatch-external-interruption
+- Attempt count: 3
+- Starting checkpoint: phase-23 HEAD 2b33bb133a5712e39ef4c1c9d0614fe64ed627a8; uncommitted Task 10 diff spanning 37 changed paths, as recorded in the attempt 3 TASK-RECOVERY (two real defects already fixed, gate sequence/report/commit still pending)
+- Ending checkpoint: phase-23 HEAD unchanged at 2b33bb133a5712e39ef4c1c9d0614fe64ed627a8; no commit made; the uncommitted diff now spans 38 changed paths (30 modified tracked files including a newly touched internal/journal/current_event_result_budgets.go, plus the same 8 untracked new files as before). No stray go test process was found running (ps aux confirmed clean). The session's final visible activity was mid-review of an `actor`-scope correctness question with no test-suite run yet confirmed in this attempt; no required gate command result, completion report, or commit was produced before external termination
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: INTERRUPTED
+- Interruption cause: The Developer agent session was terminated by an external API error before returning a typed outcome: "Agent terminated early due to an API error: You've hit your session limit - resets 9pm (Pacific/Auckland) (error type rate_limit, HTTP 429, request id req_011CfKo6sVmMZWb8cWM4xX1A, model sent to the API: claude-sonnet-5)"
+- Elapsed session duration: unknown after external termination; the Runner received only the terminal failure notification with no session-duration field
+- Command in flight: unknown after external termination
+- Resolution evidence: No typed Developer result was produced; the preserved uncommitted worktree diff (38 changed paths, HEAD unchanged) is durable partial work for the next same-task continuation; no required gate command was confirmed PASS during this attempt
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-25 07:41 TASK-RECOVERY task-10
+
+- Source: Runner-mediated same-task continuation after 2026-09-25 07:40 REPAIR task-10 recorded Outcome: INTERRUPTED (external API rate-limit termination, no typed Developer result; second interruption of this trigger overall, first since the attempt-2 MATERIAL-PROGRESS reset, so same-task recovery continues rather than orchestration session-liveness triage)
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-10:session-continuation:initial-dispatch-external-interruption
+- Attempt count: 4
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD unchanged at 2b33bb133a5712e39ef4c1c9d0614fe64ed627a8; uncommitted Task 10 diff spans 38 changed paths (30 modified tracked, 8 new untracked); no task-10-done.md report exists; no stray go test process running; two prior continuation sessions (attempts 2 and 3) independently reviewed the inherited implementation against spec and found it substantively correct, fixing two real defects along the way (documented in this ledger's attempt-2 REPAIR entry); remaining work is exclusively: one clean uninterrupted full required-command run, the VAL-046 review.recorded/artifact.availability-observed coverage decision, the completion report, and the commit
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Task 10 product/test/spec paths plus Runner-owned run-ledger.md are dirty; no other paths dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - same-task Developer continuation runs the full exact required-command sequence once cleanly end-to-end within its own session with observed termination and package-time budgets, resolves the VAL-046 coverage decision, writes the completion report, commits the implementation and report, and returns a typed outcome
+- Next action: dispatch one same-task Developer continuation for task-10 only, scoped narrowly to finishing (not re-reviewing) the already-verified implementation: confirm git state, run the gate once cleanly, decide VAL-046 coverage, write the report, commit, and report back
+- Human attention required: no
+
+### 2026-09-25 08:20 REPAIR task-10
+
+- Trigger signature: task-10:session-continuation:initial-dispatch-external-interruption
+- Attempt count: 4
+- Starting checkpoint: phase-23 HEAD 2b33bb133a5712e39ef4c1c9d0614fe64ed627a8; uncommitted Task 10 diff spanning 38 changed paths, as recorded in the attempt 4 TASK-RECOVERY (implementation and two defect fixes already verified correct by attempts 2-3; gate sequence, VAL-046 decision, report, and commit still pending)
+- Ending checkpoint: implementation commit 0ff2eeef66d4633309a43ae6a341aecd38def4d0 (feat(review): record provenanced Human Outcomes with readiness Stops); report finalized through commit 9f98168d34e2459b6806a20f1d1f0dfd38d68164 (docs(task): conform completion report fields for phase-23 task-10, superseding intermediate 2082098); Runner-independent report-lint returned OUTCOME COMPLETE (terminated exit_code: 0); all five exact gates PASS with cmd/fid 539.822s, internal/workflow 209.135s, tagged integration 670.837s, and total coverage 61.5%
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: The continuation confirmed the inherited internal/journal/current_event_result_budgets.go change (fixing currentReviewBudgetResult to always re-derive stops/attention from the Event's own Effects rather than short-circuiting when no budget_samples row exists, needed for a review.recorded Event raising human-outcome-required with no budget sample involved) was legitimate and in-scope, resolved the open VAL-046 decision by adopting a dedicated TestP23HumanOutcomeRequiredRaisedByReviewRecord fixture (review.recorded's override wiring is unique and not exercised by the other three producers' tests) rather than relying on shared-core code review alone, then ran all five exact required commands once cleanly with observed termination and package-time budgets, all PASS. Runner independently verified both commit hashes resolve and match their subjects, and fresh report-lint returned OUTCOME COMPLETE with no failures. Working tree is clean except the Runner-owned run-ledger.md.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-25 08:21 TASK task-10 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-10-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: 0ff2eeef66d4633309a43ae6a341aecd38def4d0 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-25 09:15 TASK task-11 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-11-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: c5bf0f89c69c57003ece353ef005a7596dd266e4 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-26 07:32 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-25 09:15 TASK task-11 COMPLETE; the prior Runner session ended after that entry with no RUN-END and no STOP pending; the post-task-11 checkpoint was authored afterwards outside the Runner
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: phase-23 HEAD 148c33234b2f50ee856cada663c6af9d8ab09f66 (docs(qa): repair verdict for phase 23 checkpoint after task 11), whose stat shows exactly one added file, project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11.md (516 lines); the only dirty path is the Runner-owned project-docs/docs/phases/phase-23/run-ledger.md, whose uncommitted diff is the 200-line Runner append from 2026-09-22 17:18 RUN-RESUME through 2026-09-25 09:15 TASK task-11 COMPLETE, reconciled as this Runner's own dirt; no staged changes and no hidden index flags; last accepted ledger entry before this RUN-RESUME is 2026-09-25 09:15 TASK task-11 COMPLETE and the ledger validated VALID state=ADVANCEABLE before this append
+- Resolution evidence: Runner independently reconciled the ledger against git history and reports: task-10 implementation 0ff2eeef66d4633309a43ae6a341aecd38def4d0 and report conformance 9f98168d34e2459b6806a20f1d1f0dfd38d68164, task-11 implementation c5bf0f89c69c57003ece353ef005a7596dd266e4 and report 777ee47d76990b73c88ff68bbdb9e6623b794de4 each resolved with git rev-parse --verify and subject-matched the ledger; fresh report-lint on task-10-done.md and task-11-done.md each returned PASS report-lint completed with no failures (terminated exit_code: 0); tl_escalations_current.md lists no Open ESC, matching the RUN-START baseline of none, so no ESC triage is triggered; the checkpoint file's literal final line is VERDICT: REPAIR with Must-fix 3, Improvement 4, Blocker candidates 0, and its Repair Plan assigns every Must-fix to task-10; the checkpoint was written in a session configured as Tech Lead rather than QA Lead (operator error), its findings stand until a fresh independent QA Lead re-review confirms or overturns them, and task 12 stays undispatched until that re-review records PASS
+- Resolution authority: N/A
+- Continuing task: task-10
+- Next recovery: N/A
+
+### 2026-09-26 07:33 REVIEW review-6
+
+- Path: project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11.md
+- Tasks covered: task-1, task-2, task-3, task-4, task-5, task-6, task-7, task-8, task-9, task-10, task-11 (checkpoint after task 11; all three Must-fix findings are owned by task-10, task-11 has none)
+- Outcome: REPAIR
+- Owning task: task-10
+- Re-review of: none
+- Must-fix: 3 / Improvement: 4 / blocker candidates: 0; QA minted no ESC; committed at 148c33234b2f50ee856cada663c6af9d8ab09f66; NOTE - this checkpoint was written in a session configured as Tech Lead rather than QA Lead (operator error), although its header names the reviewer as QA Lead; its findings and REPAIR verdict stand until a fresh independent QA Lead re-review (checkpoint-after-task-11-2.md) confirms or overturns them; Repair Plan MF-1, MF-2, MF-3 all owned by task-10, Improvement I-4 closed by the MF-1 fixture repair; I-1, I-2, I-3 carried to wrap-up with no action now
+
+### 2026-09-26 07:34 TASK-RECOVERY task-10
+
+- Source: project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11.md (review-6) Repair Plan rows MF-1, MF-2, and MF-3, repaired together, plus Improvement I-4 (VAL-010 re-verification with review and Human Outcome evidence), which the MF-1 fixture repair closes
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review
+- Triage disposition: N/A
+- Trigger signature: review-6:qa-rework:task-10-MF-1-MF-2-MF-3
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 148c33234b2f50ee856cada663c6af9d8ab09f66 with checkpoint-after-task-11.md committed and no product, schema, contract, or spec change pending; the only dirty path is the Runner-owned run-ledger.md; task-10 implementation 0ff2eeef66d4633309a43ae6a341aecd38def4d0 and report conformance 9f98168d34e2459b6806a20f1d1f0dfd38d68164 are the state under repair; the checkpoint records that the task-10 report's VAL-009, VAL-043, and VAL-025 claims are contradicted by the fixture code they cite
+- Phase worktree: /home/mark/projects/fid on branch phase-23; Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - MF-1 real-process journey with one Envelope carrying gate-evidence, review, and human-outcome Obligations, denied while any one is unsatisfied and permitted only after all three are satisfied, with the journal length unchanged on every denial; MF-2 all five VAL-043 requests executed through the built binary with the first four each rejecting authority-missing with an unchanged journal length and the valid case appending exactly one bound Event; MF-3 both real-producer mismatches (human-outcome to gate-evidence and human-outcome to review) rejecting outcome-not-permitted with exact obligation_type and unchanged journal length and projection; I-4 VAL-010 re-verified with review and Human Outcome evidence; task-10-done.md VAL-009, VAL-043, and VAL-025 entries corrected; the full unchanged five-command task-10 gate terminating PASS; then a fresh independent QA Lead re-review recorded as review-7 in checkpoint-after-task-11-2.md with Re-review of review-6
+- Next action: dispatch one same-task Developer continuation for task-10 only, editing exactly cmd/fid/integration/p23_human_outcome_test.go, cmd/fid/integration/p22_fake_test.go limited to the Obligation construction so a review Obligation gets its own ID and can coexist with gate-evidence, and the VAL-009, VAL-043, and VAL-025 entries of task-10-done.md; no product, schema, contract, or spec change and no assertion narrowed; the Developer runs the full exact required-command sequence from task-10.md, commits, writes the report, and returns a typed outcome; on RESOLVED spawn a fresh QA Lead for checkpoint-after-task-11-2.md
+- Human attention required: no
+
+### 2026-09-26 08:10 REPAIR task-10
+
+- Trigger signature: review-6:qa-rework:task-10-MF-1-MF-2-MF-3
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD 148c33234b2f50ee856cada663c6af9d8ab09f66 with checkpoint-after-task-11.md (review-6) committed and only the Runner-owned run-ledger.md dirty, as recorded in the attempt 1 TASK-RECOVERY
+- Ending checkpoint: phase-23 HEAD 908080d10c46f4ca9736f2a914035a3191a4ed8e; test commit af0cbb2c1448844ec7024cd823631533de655945 (test(integration): prove VAL-009, VAL-025, and VAL-043 with the complete real-producer fixture), report commit 90d921b8084e58f2415c812bf789128d9a343195 (docs(task): finalize completion report for phase-23 task-10 QA repair), report conformance commit 908080d10c46f4ca9736f2a914035a3191a4ed8e (docs(task): conform ten-journey result row for phase-23 task-10 QA repair); every commit carries Refs: phase-23/task-10; git diff --stat 148c332..HEAD lists exactly the three allowed files, cmd/fid/integration/p22_fake_test.go (7 added lines: one opt-in CoexistingReviewObligation fixture option and its single Obligation-construction branch, leaving the ReviewObligation replace-in-place behavior and IDs unchanged), cmd/fid/integration/p23_human_outcome_test.go, and project-docs/docs/phases/phase-23/tasks/task-10-done.md; no product, schema, contract, or spec file changed; coverage.out is not tracked; only run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: The Developer repaired MF-1, MF-2, MF-3, and I-4 together as a test-only change. MF-1 and I-4: one Envelope now carries OBL-p22-corpus (gate-evidence), OBL-p23-review (review), and OBL-human-release and OBL-human-security (human-outcome), with envelope.complete and the terminal qa_pass transition denied at three stages naming exactly the still-unsatisfied Obligations with journal length and projection unchanged, and permitted only once all are satisfied. MF-2: all five VAL-043 requests execute through the built binary including a real unfinalized-Activation request, and every negative compares its before and after journal counts. MF-3: a recorded approved Human Outcome linked to the gate-evidence Obligation and to the review Obligation each returns outcome-not-permitted with the matching obligation_type, each bracketed by journal-count and projection checks. Red evidence recorded (focused journey FAIL 1.619s exit_code 1 before the fixture consumed its option) and three reverted mutation checks failed as intended. Runner independently ran project-docs/tools/report-lint.sh on task-10-done.md and task-10.md: OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0), with all five required commands recorded PASS. Reported tokens: gofmt no output, golangci-lint 0 issues, go test -race ordinary gate last token ok internal/workflow 225.996s with cmd/fid 564.337s (94.1% of its 600s budget), coverage total 61.5%, tagged integration ok 693.638s of 900s, and the ten-journey checkpoint command ok 52.041s. The Runner's own verification is the commit, diff-scope, and report-lint check above; the QA re-review must independently confirm the evidence. Developer-reported concern carried to wrap-up and to the re-review, not verified by the Runner and not marked a blocker by the Developer: internal/evidence/execution.go validateGateRunReferences reads only the first envelope_authority_grants row, so in a multi-grant Envelope gate.run works only for the actor whose grant sorts first, and the journey works around it by running the gate as actor-denied
+- Next checkpoint: REVIEW
+
+### 2026-09-26 08:10 TASK task-10 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-10-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: af0cbb2c1448844ec7024cd823631533de655945 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-26 12:32 REVIEW review-7
+
+- Path: project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11-2.md
+- Tasks covered: task-6, task-10, task-11 (fresh independent QA Lead re-review of the post-task-11 checkpoint; also re-derives task-2 evaluator semantics and the tasks 1-11 checkpoint areas)
+- Outcome: BLOCK
+- Owning task: none
+- Re-review of: review-6
+- Must-fix: 2 / Improvement: 4 / blocker candidates: 3; QA minted no ESC; committed at 9cb9420516c461ddd9b4d22d1944759a416f7bb7 by a fresh QA Lead session (Claude Opus 5.5); repair verification of review-6 is positive (MF-1, MF-2, MF-3, I-4 RESOLVED against the original Required evidence, change set exactly the three authorised files, no assertion narrowed); new findings MF-4 (task-6, VAL-027 linked-recovery evidence, test-only), MF-5 (task-10, VAL-009 evidence-method state and false report claims, its qa_pass expectation waits on BC-1), and protected blocker candidates BC-1 (guarded_actions and applicable-Obligation semantics, public-interface/product semantics), BC-2 (human-outcome.record Envelope-grant contradiction between public-interface.md section 4.1 and section 4/contracts.md section 10), BC-3 (no stop resolve qualifying rule for human-outcome-recorded and decision-satisfied); Improvement I-1 (cmd/fid 567.662s of 600s, headroom smaller than same-code spread), I-2, I-5 (multi-grant gate.run classified an ordinary Phase 21 conformance concern needing a Tech Lead owner), I-6 (report citation drift); review-6 remains open until a fresh re-review records PASS
+
+### 2026-09-26 12:34 TRIAGE TRG-23-004
+
+- Trigger: QA BLOCK - the fresh independent QA Lead re-review of the post-task-11 checkpoint (review-7, commit 9cb9420516c461ddd9b4d22d1944759a416f7bb7) returned VERDICT: BLOCK with three protected blocker candidates (BC-1, BC-2, BC-3) and two bounded Must-fix evidence gaps (MF-4, MF-5); qa-plan section 8 requires the checkpoint to PASS before task 12 is dispatched
+- Originating task: task-10
+- Trigger signature: task-10:qa-rework:review-7-BC-1-BC-2-BC-3
+- Attempt count: 1
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: phase HEAD 9cb9420516c461ddd9b4d22d1944759a416f7bb7; review-7 committed (Runner verified rev-parse, subject, one added file, literal final lines Must-fix 2 Improvement 4 Blocker candidates 3 VERDICT: BLOCK); task-10 repair verified (test af0cbb2c1448844ec7024cd823631533de655945, reports 90d921b8084e58f2415c812bf789128d9a343195 and 908080d10c46f4ca9736f2a914035a3191a4ed8e) and TASK task-10 COMPLETE recorded; review-6 remains open awaiting a fresh re-review PASS; dirty paths are the Runner-owned run-ledger.md plus the TL-Lite triage artifacts triage-log.md and tl_escalations_current.md, both uncommitted
+- Verdict: BLOCK (escalated as ESC-23-004)
+- Resolution evidence: TL-Lite dispositioned all three candidates as class (ii) needing protected authority: BC-1 the undefined "applicable Obligation" reading of guarded_actions (contracts.md:91-92, 60-63, 408-409 against the evaluator's global reading), BC-2 the direct contradiction between public-interface.md:243 (section 4.1 requires an Envelope grant for human-outcome.record) and public-interface.md:222-224 and contracts.md:391-396 (no grant), and BC-3 the missing stop resolve qualifying rules for human-outcome-recorded and decision-satisfied (partly determined by contracts.md:453-455 and 461-462, but the decision-satisfied fact, Envelope scope, subject scoping, and match-regardless-of-code question are unfixed). TL-Lite decided no protected question and recorded MF-4 (task-6, test-only, independent of all three candidates) and MF-5 (task-10, test and report only, its qa_pass expectation waits on BC-1) as decision-free Repair Plan rows each with an owning task, bounded scope, required evidence, and fresh independent re-review, not dispatched under this BLOCK; I-1, I-2, I-5, and I-6 are carry items with no action. Neither the Runner nor TL-Lite verified the QA Lead's built-binary probe outputs or code citations. Triage log entry TRG-23-004 and ESC-23-004 in tl_escalations_current.md were confirmed on disk
+- Triage log: project-docs/docs/phases/phase-23/triage-log.md entry TRG-23-004 confirmed; ESC-23-004 raised in project-docs/docs/current/tl_escalations_current.md
+
+### 2026-09-26 12:34 STOP
+
+- Cause: review-7 / TRG-23-004; the post-task-11 checkpoint re-review returned QA BLOCK with three protected blocker candidates (BC-1 guarded_actions and applicable-Obligation semantics, BC-2 human-outcome.record Envelope-grant contradiction, BC-3 missing stop resolve qualifying rules), so the qa-plan section 8 checkpoint PASS required before task 12 cannot be reached and task 12 is not dispatched
+- Triage: TRG-23-004 (BLOCK, escalated as ESC-23-004)
+- Protected category: specification, product semantics, and public interface (acceptance-criteria ambiguity for VAL-009, a public-interface contradiction for VAL-043, and a closed-registry resolution-semantics gap for VAL-048, VAL-050, and VAL-078)
+- Next Human or external-authority action: The Tech Lead (and the Human where a product rule or the accepted interface changes) rules on each ESC-23-004 sub-item and records each as a DEC: BC-1 whether an Obligation blocks only its declared guarded_actions, BC-2 which text governs the human-outcome.record Envelope-grant requirement, BC-3 the stop resolve qualifying rules for human-outcome-recorded and decision-satisfied. Then resume with a RUN-RESUME carrying that DEC authority and dispatch MF-4 (task-6) and MF-5 (task-10) followed by a fresh independent QA Lead re-review recorded in the next unused checkpoint-after-task-11-<R>.md; task 12 dispatches only after that re-review records VERDICT: PASS with Must-fix 0
