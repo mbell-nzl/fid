@@ -2077,9 +2077,12 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 ### DEC-257: Ledger route for a decision-released repair after a BLOCK re-review
 
 - **Date:** 2026-09-26.
-- **Status:** **PROPOSED; needs Human approval.** It changes the protected
-  verifier `workflow-sequence-lint.sh`, which `09_AI_WORKFLOW.md` §2.4 keeps
-  out of the control-conformance route. Precedent: DEC-190 (Phase 22).
+- **Status:** ACCEPTED 2026-09-26 by Human (Option A); implemented in the
+  commit `fix(workflow): route decision-released repairs after a BLOCK
+  re-review`. It changes the protected verifier `workflow-sequence-lint.sh`,
+  which `09_AI_WORKFLOW.md` §2.4 keeps out of the control-conformance route.
+  Precedent: DEC-190 (Phase 22). Regression: drill-20
+  (`project-docs/tools/drills/review-block-owners.sh`).
 - **Defect:** The verifier has no valid sequence out of the Phase 23 STOP.
   1. review-6 (REPAIR, owner task-10) is open. Its only owner is complete,
      and review-7 is its re-review. A BLOCK outcome neither closes nor
@@ -2175,7 +2178,7 @@ not the default.
 | `06_DESIGN_PLAN_CLI.md` | touched: DEC-242 | Review optional inapplicability input; later task-owned sync remains |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: DEC-239, DEC-242 | same-independent-Reviewer resolution and reasoned inapplicability in one Review Event |
 | `08_QUALITY_PLAN.md` | touched: DEC-239 | section 8 records VAL-015 evidence-route boundary |
-| `09_AI_WORKFLOW.md` | pending | DEC-257 (if approved) edits §2.4 RUN-RESUME/REVIEW-owner rules |
+| `09_AI_WORKFLOW.md` | touched: DEC-257 | §2.4 REVIEW-owner paragraph and "Autonomous triage and resolved resume" gain the BLOCK re-review `Repair owners` route |
 | `AGENTS.md` (Commands) | pending | DEC-227: decide at wrap-up whether the explicit `-timeout` bound becomes the project default |
 | `10_IMPLEMENTATION_ROADMAP.md` | pending | |
 | `GLOSSARY.md` | touched: DEC-226, DEC-242, DEC-249 | Failure code / Evaluation reason split; Review Finding distinguishes nonterminal addressed and Review-only terminal dispositions; Obligation gains the "applicable" definition |

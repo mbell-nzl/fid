@@ -483,7 +483,10 @@ Responsibilities:
     review can be closed by a linked `PASS` or replaced by a linked `REPAIR`,
     and owners are repaired one at a time in list order. A linked re-review may
     transfer repair ownership to a task outside the list only after every listed
-    owner completes; it cannot overwrite an unresolved owner. A `CORRECTION` is
+    owner completes; it cannot overwrite an unresolved owner. After a linked
+    `BLOCK` re-review of a review whose owners are all complete, only a STOP
+    resume carrying its DEC-bound `Repair owners` makes that BLOCK review the
+    open review, with that ordered owner list (DEC-257). A `CORRECTION` is
     evidence only: it never changes review ownership, recovery state, or any
     other sequence state, and it is not a mechanism for selecting owners. An
     `INVALID` candidate is recoverable while the ledger remains valid. A
@@ -664,7 +667,10 @@ Autonomous triage and resolved resume:
   BLOCK. When a DEC converts it to control-conformance repair, append one
   unique separate H2 typed directive amendment naming the existing governing
   TRG before RUN-RESUME; parse it independently from the original BLOCK
-  section and retain its ESC.
+  section and retain its ESC. A STOP resume after a BLOCK re-review may carry
+  one `Repair owners` field, byte-identical to the `- Repair owners:` line in
+  its `Resolution authority` DEC, and its continuing task is the first owner
+  (DEC-257).
 - Validate every boundary-valid DEC citation in an authority field against the
   phase decisions file; a real citation cannot mask another nonexistent or
   embedded pseudo-ID.

@@ -124,6 +124,31 @@ function decision_exists(id, line) {
   return 0
 }
 
+function decision_repair_owners_match(id, owners, line, in_section, found) {
+  if (id == "" || decisions_file == "") {
+    return 0
+  }
+  while ((getline line < decisions_file) > 0) {
+    if (in_section && (index(line, "## ") == 1 || index(line, "### ") == 1)) {
+      break
+    }
+    if (index(line, "### " id ":") == 1) {
+      in_section = 1
+      continue
+    }
+    if (in_section && trim_surrounding_space(line) == "- Repair owners: " owners) {
+      found = 1
+    }
+  }
+  close(decisions_file)
+  return found
+}
+
+function first_owner(value, parts) {
+  split(value, parts, ",")
+  return trim_surrounding_space(parts[1])
+}
+
 function is_exact_triage_heading(line, id, prefix, rest) {
   prefix = "## " id
   if (index(line, prefix) != 1) {
@@ -521,6 +546,9 @@ function finish_event() {
          event_resolution_authority != "N/A" || event_next_recovery != "N/A")) {
       invalid("normal schema v2 RUN-RESUME must use N/A for STOP-only fields")
     }
+    if (!stopped && event_repair_owners_count) {
+      invalid("Repair owners are valid only on a RUN-RESUME after STOP")
+    }
   }
   if (event_directive_v2 && event == "TASK-RECOVERY") {
     if (!exact_once(event_source_count, event_source) ||
@@ -684,7 +712,16 @@ function finish_event() {
       }
     }
     if (resume_recovery_pending) {
-      if (event_task != resume_task || event_trigger_signature != resume_trigger ||
+      if (resume_owner_route) {
+        expected_resume_attempt = event_trigger_signature == resume_trigger ? resume_attempt : "1"
+        if (event_task != resume_task ||
+            !trigger_matches_task(event_trigger_signature, event_task) ||
+            event_attempt != expected_resume_attempt ||
+            !references_id(event_source, resume_triage) ||
+            !references_id(event_repair_authority, resume_triage)) {
+          invalid("TASK-RECOVERY does not preserve its RUN-RESUME Repair owners checkpoint")
+        }
+      } else if (event_task != resume_task || event_trigger_signature != resume_trigger ||
           event_attempt != resume_attempt || !references_id(event_source, resume_triage) ||
           !references_id(event_repair_authority, resume_triage)) {
         invalid("TASK-RECOVERY does not preserve its RUN-RESUME checkpoint")
@@ -995,6 +1032,7 @@ function finish_event() {
     }
   }
   if (event_strict && event_directive_strict && event == "RUN-RESUME" && stopped) {
+    resume_owner_route_ok = 0
     if (event_prior_run == "" || event_trigger_signature == "" ||
         event_attempt !~ /^[1-9][0-9]*$/ || event_checkpoint == "" ||
         event_resolution_evidence == "" || event_continuing_task !~ /^task-[0-9]+[a-z]*$/) {
@@ -1014,7 +1052,25 @@ function finish_event() {
       if (event_attempt + 0 != latest_triage_attempt + 1) {
         invalid("RUN-RESUME Attempt count must increment its governing TRIAGE")
       }
-      if (!trigger_matches_task(event_trigger_signature, event_continuing_task)) {
+      if (event_repair_owners_count) {
+        owner_route_errors = errors
+        if (event_repair_owners_count != 1 || !event_directive_v2) {
+          invalid("RUN-RESUME Repair owners must occur exactly once on a schema v2 RUN-RESUME")
+        }
+        valid_review_owner_list(event_repair_owners, "RUN-RESUME Repair owners")
+        if (block_rereview_id == "" || !review_open || !review_task_complete ||
+            latest_triage_verdict !~ /^BLOCK/ || latest_triage_id != block_rereview_triage) {
+          invalid("RUN-RESUME Repair owners require a STOP from a BLOCK re-review of a completed open QA repair")
+        }
+        if (event_resolution_authority !~ /^DEC-[0-9]+$/ ||
+            !decision_repair_owners_match(event_resolution_authority, event_repair_owners)) {
+          invalid("RUN-RESUME Repair owners do not match a Repair owners line in its Resolution authority decision")
+        }
+        if (event_continuing_task != first_owner(event_repair_owners)) {
+          invalid("RUN-RESUME Continuing task must be the first Repair owner")
+        }
+        resume_owner_route_ok = (errors == owner_route_errors)
+      } else if (!trigger_matches_task(event_trigger_signature, event_continuing_task)) {
         invalid("RUN-RESUME Continuing task does not match its Trigger signature")
       }
       if (event_directive_v2 &&
@@ -1059,7 +1115,10 @@ function finish_event() {
       recovery_head = ""
       recovery_consecutive_interruptions = 0
     }
-    if (review_open && !(event_task in review_owner_position)) {
+    if (review_open && review_task_complete) {
+      invalid("QA repair owners of " review_id " are complete; a linked re-review or a " \
+              "RUN-RESUME with Repair owners is required before recovery task " event_task)
+    } else if (review_open && !(event_task in review_owner_position)) {
       invalid("QA repair owner " review_owner " does not match recovery task " event_task)
     } else if (review_open && event_task != review_owner_tasks[review_next_owner]) {
       invalid("QA repair owner " review_owner " requires recovery task " \
@@ -1154,6 +1213,12 @@ function finish_event() {
       }
     }
   } else if (event == "REVIEW") {
+    block_rereview_id = ""
+    block_rereview_triage = ""
+    if (event_outcome == "BLOCK" && review_open && review_task_complete &&
+        event_rereview == review_id && event_id != review_id) {
+      block_rereview_id = event_id
+    }
     if (event_outcome == "REPAIR") {
       owner_list_valid = 0
       if (event_owner == "" || event_owner == "none") {
@@ -1219,6 +1284,9 @@ function finish_event() {
     latest_triage_authority = event_triage_authority
     latest_triage_esc = escalation_id(event_verdict)
     triage_seen[event_id] = 1
+    if (block_rereview_id != "" && block_rereview_triage == "") {
+      block_rereview_triage = event_id
+    }
     if (event_verdict ~ /^RESUME/) {
       triage_needed = 0
     } else if (event_verdict ~ /^REPAIR/) {
@@ -1263,6 +1331,16 @@ function finish_event() {
         resume_decision = decision_id(event_resolution_evidence " " event_resolution_authority)
         resume_resolution_authority = event_resolution_authority
         resume_next_recovery = event_next_recovery
+        resume_owner_route = event_repair_owners_count == 1 && resume_owner_route_ok
+        resume_owner_route_ok = 0
+        if (resume_owner_route) {
+          review_id = block_rereview_id
+          review_owner = event_repair_owners
+          review_task_complete = 0
+          set_review_owner_state(event_repair_owners)
+        }
+        block_rereview_id = ""
+        block_rereview_triage = ""
       }
     }
     stopped = 0
@@ -1333,6 +1411,7 @@ function finish_event() {
   event_governing_esc = ""
   event_resolution_authority = ""
   event_next_recovery = ""
+  event_repair_owners = ""
   event_branch = ""
   event_esc_baseline = ""
   event_warmup_state = ""
@@ -1381,6 +1460,7 @@ function finish_event() {
   event_governing_esc_count = 0
   event_resolution_authority_count = 0
   event_next_recovery_count = 0
+  event_repair_owners_count = 0
   event_source_count = 0
   event_category_count = 0
   event_repair_mode_count = 0
@@ -1569,6 +1649,10 @@ event == "RUN-RESUME" && /^- Resolution authority: / {
 event == "RUN-RESUME" && /^- Next recovery: / {
   event_next_recovery_count++
   event_next_recovery = substr($0, length("- Next recovery: ") + 1)
+}
+event == "RUN-RESUME" && /^- Repair owners: / {
+  event_repair_owners_count++
+  event_repair_owners = substr($0, length("- Repair owners: ") + 1)
 }
 event == "TASK-RECOVERY" && /^- Repair mode: / {
   event_repair_mode_count++

@@ -2,13 +2,12 @@
 
 ## Open escalations
 
-None newly minted. ESC-23-004 is resolved in substance (below), but its
-resume is **blocked**. The sequence verifier has no valid route out of the
-STOP: review-6 stays open with no next owner after the review-7 BLOCK.
-DEC-256 (Tech Lead) reshapes the repairs to four distinct owners. DEC-257
-(**PROPOSED, awaiting Human**) is the protected verifier change that lets the
-RUN-RESUME carry them. No new TRG/ESC: it is the same STOP and the same
-authority question.
+None newly minted. ESC-23-004 is resolved in substance (below). The sequence
+verifier had no valid route out of the STOP: review-6 stayed open with no next
+owner after the review-7 BLOCK. DEC-256 (Tech Lead) reshapes the repairs to
+four distinct owners. DEC-257 (Human, Option A) lets the RUN-RESUME carry them.
+DEC-257 implemented; Runner resumes the DEC-256 repairs. No new TRG/ESC: it is
+the same STOP and the same authority question.
 
 ## Recently resolved
 

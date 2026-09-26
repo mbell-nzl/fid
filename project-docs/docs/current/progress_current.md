@@ -13,8 +13,8 @@ Part 2 (task 13 opens with a `cmd/fid` speed step) and chose Option B for BC-2
 The Runner could not resume: the sequence verifier has no valid route out of a
 BLOCK re-review, and the DEC-244..255 headings were malformed (now fixed to
 `### DEC-NNN:`). DEC-256 reshapes the repairs to four distinct owners (task 6,
-task 2, task 10, task 11). The resume waits on Human approval of DEC-257, the
-verifier change. After the repairs comes the `checkpoint-after-task-11-3.md`
+task 2, task 10, task 11). DEC-257 implemented; Runner resumes the DEC-256
+repairs (drill-20 covers the verifier route). After the repairs comes the `checkpoint-after-task-11-3.md`
 re-review. Task 12 stays held until that re-review returns PASS.
 
 ## Task 4 recovery authority - 2026-09-20
