@@ -177,8 +177,10 @@
 - DEC-251 (PROPOSED, awaiting Human): whether `human-outcome.record` needs an
   Envelope grant. Option B, no grant, is recommended.
 - DEC-252: task 6 repairs multi-grant `gate.run`.
-- DEC-254: Part 1, `cmd/fid` breach attribution, is accepted. Part 2,
-  pre-emptive headroom that widens DEC-227, awaits the Human.
+- DEC-254: Part 1, `cmd/fid` breach attribution, is accepted (Tech Lead).
+  Part 2 was Human-accepted 2026-09-26: task 13's first step is a test-only
+  `cmd/fid` speed step to 480 s or less, widening DEC-227's `t.Parallel()`
+  allowance to existing `cmd/fid` tests.
 - DEC-255 releases ESC-23-004's stop for ordered repairs. A fresh checkpoint
   re-review must PASS before task 12.
 - Tasks 1-11 are recorded complete. The post-task-11 checkpoint is BLOCKed

@@ -1972,8 +1972,9 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 
 ### DEC-254 - `cmd/fid` time headroom before tasks 13 and 14 (review-7 I-1)
 
-- **Status:** Part 1 ACCEPTED 2026-09-26, Tech Lead. Part 2 PROPOSED,
-  **awaiting Human ruling** because it widens Human-accepted DEC-227.
+- **Status:** Part 1 ACCEPTED 2026-09-26, Tech Lead. Part 2 **ACCEPTED by
+  Human 2026-09-26**. It widens DEC-227's `t.Parallel()` allowance, for
+  existing `cmd/fid` tests only, under the constraints below.
 - **Facts:**
   - `cmd/fid` takes 567.662 s of its 600 s budget: 32.3 s of headroom.
   - Same-code runs vary by 39.3 s.
@@ -1994,9 +1995,12 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
     reuse.
   - Not allowed: any assertion removed, weakened, skipped or moved out of a
     required gate, or any budget change.
-  - Owner: task 13's first step.
-  - The alternative, keeping DEC-227 as it is, relies on Part 1 and accepts a
-    likely BLOCKED stop at task 13 or 14.
+  - Owner: task 13's first step, committed separately before any new task-13
+    test is added.
+  - Flake guard (DEC-189): run
+    `go test -race -timeout 30m -count=2 ./cmd/fid/` once after the step.
+  - If the target cannot be met within these constraints, record the achieved
+    time and escalate before adding new `cmd/fid` tests.
 - **Refs:** review-7 I-1; DEC-227; VAL-079.
 
 ### DEC-255 - ESC-23-004 disposition, stop release and repair order

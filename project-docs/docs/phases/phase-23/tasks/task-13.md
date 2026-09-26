@@ -162,6 +162,19 @@ List any conditional command required by this task and why:
 - In VAL-056's second precedence probe, the unsatisfied Obligation that
   accompanies the open readiness Stop must guard the probed action. An
   Obligation that does not guard it no longer contributes a reason.
-- Also read DEC-254 before dispatch. Part 1's `cmd/fid` breach-attribution
-  rule applies here, and Part 2 may add a first speed step if the Human
-  approves it.
+- **First step (DEC-254 Part 2, Human-approved):** make `cmd/fid` time
+  headroom. This step is test-only and committed separately, before any new
+  task-13 test is added.
+  - Scope: existing `cmd/fid/*_test.go` files, for `t.Parallel()` on tests
+    shown to share no process-global state (cwd, env, package vars), and for
+    fixture or binary reuse.
+  - Target: 480 s or less on
+    `go test -race -timeout 30m -coverprofile=coverage.out ./...` for the
+    `cmd/fid` package.
+  - Not allowed: removing, weakening, skipping or relocating any assertion.
+  - Then run `go test -race -timeout 30m -count=2 ./cmd/fid/` once as a flake
+    guard.
+  - Report the before and after times. If the target is missed, record the
+    achieved time and escalate before adding new `cmd/fid` tests.
+- DEC-254 Part 1's breach-attribution rule still applies to the rest of the
+  task.

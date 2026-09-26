@@ -11,7 +11,7 @@
   - The stop is released for the ordered repairs in DEC-255: MF-4, then task-2 BC-1, MF-5+I-6, task-11 BC-3, and task-6 I-5.
   - BC-2 must be ruled before the fresh re-review (`checkpoint-after-task-11-3.md`) is dispatched.
   - Task 12 stays held until that re-review returns PASS with Must-fix 0 (qa-plan section 8).
-  - Carry items: I-2 resolved by DEC-253, I-5 by DEC-252; I-1 Part 1 accepted, Part 2 awaiting the Human (DEC-254).
+  - Carry items: I-2 resolved by DEC-253, I-5 by DEC-252; I-1 resolved: both parts of DEC-254 accepted, Part 2 by the Human on 2026-09-26.
 - **Originating task:** task-10
 - **Trigger signature:** task-10:qa-rework:review-7-BC-1-BC-2-BC-3
 - **Source:** `project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11-2.md` (review-7, commit 9cb9420516c461ddd9b4d22d1944759a416f7bb7)

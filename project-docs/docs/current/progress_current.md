@@ -7,9 +7,9 @@ re-review `qa/checkpoint-after-task-11-2.md` (`9cb9420`) returned BLOCK with
 BC-1..BC-3 and MF-4/MF-5.
 
 The Tech Lead recorded DEC-249..255 (2026-09-26). The stop is released for
-DEC-255's ordered repairs. BC-2 (DEC-251) and DEC-254 Part 2 await the Human.
-BC-2 must be ruled before the `checkpoint-after-task-11-3.md` re-review, and
-DEC-254 Part 2 before task 13. Task 12 stays held until that re-review
+DEC-255's ordered repairs. The Human approved DEC-254 Part 2 (task 13 opens
+with a `cmd/fid` speed step). BC-2 (DEC-251) awaits the Human and must be
+ruled before the `checkpoint-after-task-11-3.md` re-review. Task 12 stays held until that re-review
 returns PASS.
 
 ## Task 4 recovery authority - 2026-09-20

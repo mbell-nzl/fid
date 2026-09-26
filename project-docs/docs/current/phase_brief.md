@@ -34,8 +34,8 @@ VAL-082/083/084. The contract now has **84 rows** (`qa-plan.md` sections
 
 Next action: the Runner resumes the DEC-255 repairs. Once the Human rules on
 DEC-251, the fresh checkpoint re-review follows. Task 12 dispatches only after
-it returns PASS. DEC-254 Part 2 (`cmd/fid` headroom) needs a Human ruling
-before task 13.
+it returns PASS. Task 13 opens with the Human-approved `cmd/fid` speed step
+(DEC-254).
 
 ## Operating Mode
 
