@@ -72,10 +72,10 @@ DEC-227 times from this continuation: `cmd/fid/integration` 778.278s (<900s), `c
 
 ## Commit hash
 
-- Pending commit
+- `15399a45e9c47a96af838e62aed3083e43b5967f`
 
 ## Commit subject
 
-- Pending commit
+- `docs(task): checkpoint phase-23 task-11 gate recovery`
 
 OUTCOME RECOVERY_REQUIRED
