@@ -88,10 +88,10 @@ Attempt-2 exact task-11 times: `cmd/fid/integration` 766.070s (<900s), `cmd/fid`
 
 ## Commit hash
 
-- Pending commit
+- `0061dde96f7e1c9809994f71abdbd3e3a09558c4`
 
 ## Commit subject
 
-- Pending commit
+- `docs(task): checkpoint phase-23 task-11 timing scope gap`
 
 OUTCOME RECOVERY_REQUIRED
