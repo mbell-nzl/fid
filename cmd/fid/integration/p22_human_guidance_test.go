@@ -10,6 +10,7 @@ import (
 )
 
 func TestP22HumanGuidance(t *testing.T) {
+	t.Parallel()
 	t.Run("inspection and imported observations", func(t *testing.T) {
 		a := p22NewFIDRecoveryAdapter(t)
 		p22AssertGuidanceOutput(t, a, []string{"run", "inspect", a.runID}, "No observation recorded", "unknown")

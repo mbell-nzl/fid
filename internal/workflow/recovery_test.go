@@ -15,6 +15,7 @@ import (
 )
 
 func TestRecoverRunCommitsExactlyOneSuccessorAfterLostResponse(t *testing.T) {
+	t.Parallel()
 	options, request := recoveryFixture(t)
 	beforeEnvelope, err := GetEnvelope(options.WorkspaceRoot, options.MigrationsDir, "ENV-recovery")
 	if err != nil {
@@ -80,6 +81,7 @@ func recoveryIssueStatus(t *testing.T, workspace string) string {
 }
 
 func TestRecoverRunRejectsUnknownLivenessForOrdinaryAndForce(t *testing.T) {
+	t.Parallel()
 	for _, mode := range []string{"ordinary", "force"} {
 		t.Run(mode, func(t *testing.T) {
 			options, request := recoveryFixture(t)
@@ -99,6 +101,7 @@ func TestRecoverRunRejectsUnknownLivenessForOrdinaryAndForce(t *testing.T) {
 }
 
 func TestRecoverRunRejectsApplicableStopWithoutEffects(t *testing.T) {
+	t.Parallel()
 	options, request := recoveryFixture(t)
 	conn, err := openWorkflowDB(options.WorkspaceRoot)
 	if err != nil {
@@ -132,6 +135,7 @@ func TestRecoverRunRejectsApplicableStopWithoutEffects(t *testing.T) {
 // are covered separately; this matrix isolates the recovery guard and verifies
 // that rejected requests do not append a recovery Event or successor Run.
 func TestRecoverRunAppliesStopsBeforeOrdinaryOrForceMutation(t *testing.T) {
+	t.Parallel()
 	for _, mode := range []string{"ordinary", "force"} {
 		for _, state := range []string{"applicable", "unrelated-subject", "unrelated-action", "resolved"} {
 			t.Run(mode+"/"+state, func(t *testing.T) {
@@ -236,6 +240,7 @@ func recoveryStopEvent(eventID, stopID, attentionID string) journal.Event {
 }
 
 func TestRecoverRunForceRequiresCurrentHumanAuthorityAndFencesPriorRun(t *testing.T) {
+	t.Parallel()
 	options, request := recoveryFixture(t)
 	setRecoveryObservationState(t, options.WorkspaceRoot, "live")
 	reference := "HUM-1"

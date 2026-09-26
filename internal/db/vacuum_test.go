@@ -6,6 +6,7 @@ import (
 )
 
 func TestVacuumCompactsSQLiteDatabaseWithoutChangingRows(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	if err := MigrateUp(dbPath, testMigrationsDir(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
@@ -34,6 +35,7 @@ func TestVacuumCompactsSQLiteDatabaseWithoutChangingRows(t *testing.T) {
 }
 
 func TestVacuumRejectsNilConnection(t *testing.T) {
+	t.Parallel()
 	if err := Vacuum(nil); err == nil {
 		t.Fatal("Vacuum(nil) error = nil, want connection error")
 	}

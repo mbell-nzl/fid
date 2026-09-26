@@ -112,6 +112,7 @@ func isTask9IntegrationMutation(args []string) bool {
 }
 
 func TestTask9IntegrationMutationRequestsUseActorAndIdempotency(t *testing.T) {
+	t.Parallel()
 	for _, args := range [][]string{
 		{"workflow", "define", "--by", "tl"},
 		{"workflow", "assign", "--by", "tl"},

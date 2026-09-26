@@ -11,6 +11,7 @@ import (
 )
 
 func TestDecisionReferenceSourceMustExistAndMatchDigest(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "decision.md"), []byte("approved decision\n"), 0o600); err != nil {
 		t.Fatal(err)

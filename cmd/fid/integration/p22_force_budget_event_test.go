@@ -12,6 +12,7 @@ import (
 )
 
 func TestP22ForceRecoveryBudgetConditionalEvents(t *testing.T) {
+	t.Parallel()
 	for _, maximum := range []int{1, 2} {
 		a := p22ForceBudgetFixture(t, maximum)
 		p22AcceptedCall(t, a, "force-event", "run.recover", p22ForceBudgetInput(t, a, "force-event"))

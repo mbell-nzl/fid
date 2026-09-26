@@ -11,7 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/evidence"
 )
 
-func TestLiveOutputGoldenFixtures(t *testing.T) {
+func TestLiveOutputGoldenFixtures(t *testing.T) { //nolint:paralleltest // runLiveGoldenFixture uses t.Setenv.
 	result := runLiveGoldenFixture(t)
 	machine := strings.Join(result.JSONLines(), "\n") + "\n"
 	human := renderLiveHuman(result, "unsatisfied")
@@ -93,6 +93,7 @@ func runLiveGoldenFixture(t *testing.T) evidence.LiveResult {
 }
 
 func TestLiveGoldenChild(t *testing.T) {
+	t.Parallel()
 	if !strings.Contains(strings.Join(os.Args, "\x00"), "--live-golden-child") {
 		return
 	}

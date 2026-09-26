@@ -8,6 +8,7 @@ import (
 )
 
 func TestP22RecoveryAdoptsChangedTargetForSuccessorEvidence(t *testing.T) {
+	t.Parallel()
 	adapter := p22NewResumeActionAdapter(t, "activated-harness")
 	priorRunID := adapter.runID
 	priorRepository := adapter.repository
@@ -62,6 +63,7 @@ func TestP22RecoveryAdoptsChangedTargetForSuccessorEvidence(t *testing.T) {
 }
 
 func TestP22RecoveryAdoptedTargetPermitsTerminalTransitionWithFreshSuccessorProof(t *testing.T) {
+	t.Parallel()
 	adapter := p22NewResumeActionAdapter(t, "activated-harness")
 	priorRunID := adapter.runID
 	priorRepository := adapter.repository

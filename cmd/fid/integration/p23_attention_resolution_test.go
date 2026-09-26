@@ -21,6 +21,7 @@ import (
 // review.recorded Event a second independent Review produces when it resolves
 // the Finding the first Review created.
 func TestP23AttentionResolutionThroughReviewRecordedAndFindingResolvedRealProcess(t *testing.T) {
+	t.Parallel()
 	actions := []string{
 		"attention.resolve", "claim.acquire", "claim.release", "envelope.activate", "envelope.create",
 		"gate.register", "review.record", "run.close", "run.observe", "run.start", "stop.raise", "stop.resolve",
@@ -127,6 +128,7 @@ func TestP23AttentionResolutionThroughReviewRecordedAndFindingResolvedRealProces
 // (recording a qualifying Outcome resolves exactly the matching Stop, never a
 // Stop raised on an unrelated condition).
 func TestP23AttentionResolutionHumanOutcomeReadinessRejectsWrongClassAndWrongResultAndLeavesUnrelatedStopsOpen(t *testing.T) {
+	t.Parallel()
 	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start", "stop.raise", "stop.resolve"}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, actions, p22ExecutionFixture{HumanObligations: true})
 	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {

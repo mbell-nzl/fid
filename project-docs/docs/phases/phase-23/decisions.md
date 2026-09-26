@@ -2162,6 +2162,65 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   - The implementation touches no product code, task gate or VAL row.
 - **Refs:** ESC-23-004, TRG-23-004, DEC-190, DEC-255, DEC-256.
 
+### DEC-258: Human delegates ESC-23-005 test-parallelism repair and task-11 closure
+
+- **Date:** 2026-09-27.
+- **Status:** ACCEPTED by explicit Human delegation, 2026-09-27. The Human
+  authorized this agent to act above the fixed role and workflow boundaries:
+  diagnose ESC-23-005, implement the repair directly rather than through a
+  Developer session, close ESC-23-005, and prepare the Runner handoff. Like
+  DEC-238 it is a bounded exception for this escalation. Items 4-6 below are
+  standing workflow rules that the Human approved in the same review.
+- **Diagnosis:**
+  - `cmd/fid` is serial-bound, not CPU-bound. Run alone under race and
+    coverage it took 535.1 s using 1.7 of 6 cores. 103 of 305 top-level tests
+    lacked `t.Parallel()`, and Go runs those one after another before any
+    parallel test resumes, so 370.6 s of the run used one core.
+  - The tagged suite had the same shape: all 85 top-level tests were serial.
+  - Under `./...`, `cmd/fid` shares the machine with the other packages. The
+    same code measured 468.7/564.3 s (task 10) and 593.8/614.6 s (task 11's
+    parent), so a 15-20% spread sat on a margin under 10%. That noise, not a
+    task-11 cause, produced the breach. The attribution-or-escalate route could
+    not be satisfied, which is why ESC-22-005, ESC-23-002, and ESC-23-005
+    recurred.
+- **Decision:**
+  1. **Test-only parallelism.** Existing top-level tests in `cmd/fid`,
+     `cmd/fid/integration`, and every `internal/*` package call `t.Parallel()`,
+     and the subtests of the long-running `cmd/fid` matrices do too. This
+     supersedes DEC-227's new-journey-only allowance and **satisfies DEC-254
+     Part 2 early and more broadly**, so task 13 does not repeat it. Tests stay
+     serial when they touch process-global state: `t.Setenv` users, the
+     `hashSuffixGenerator` stub, and the wall-clock maintenance-grace fixture,
+     each annotated with a reason.
+  2. **Enforcement.** Enable golangci-lint `paralleltest` for top-level tests.
+     This uses the already-required linter and adds no dependency.
+  3. **Unchanged controls.** The exact task commands, the 600 s ordinary and
+     900 s tagged budgets, VAL-079, and every assertion are unchanged. No test
+     is removed, skipped, narrowed, or moved out of a gate. DEC-254 Part 1
+     (breach attribution) still applies.
+  4. **Headroom warning.** A Developer reports any recorded package time at or
+     above 80% of its budget (480 s ordinary, 720 s tagged) under Tech Lead
+     notes. The Tech Lead schedules a speed item before the next task that adds
+     tests to that package, so a warning is handled before it becomes a breach.
+  5. **Tiered Developer loop** (`09_AI_WORKFLOW.md` §2.5 step 6, Developer
+     prompt, and `AGENTS.md` test style). Red/green uses the most specific
+     `-run`. Touched packages then run under race before the gate. The exact
+     full gate runs once on the final tree. Long gates never run concurrently.
+  6. **Tagged suite stays per task.** The Human considered and declined running
+     only the affected tagged tests per task. Hosted CI does not run the tagged
+     suite (CF-041), so each task's run is the only real-process regression net.
+- **Task 11 closure:** The repair commit touches test files and lint config
+  outside task 11's named scope; this decision authorizes that. Task 11's
+  report records fresh exact gates on the repair commit and preserves every
+  earlier failed timing attempt.
+- **Resume:** The Runner reconciles the committed delegated repair as under
+  DEC-238, following `qa/resume-after-esc-23-005.md`, with no implementation
+  redispatch. A fresh independent `qa/checkpoint-after-task-11-3.md` must PASS
+  with Must-fix 0 before task 12, as DEC-255 requires.
+- **Evidence:** `qa/esc-23-005-repair.md`.
+- **Refs:** ESC-23-005; TRG-23-005; DEC-227; DEC-238; DEC-254; DEC-255;
+  VAL-079; CF-041.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,
@@ -2178,8 +2237,8 @@ not the default.
 | `06_DESIGN_PLAN_CLI.md` | touched: DEC-242 | Review optional inapplicability input; later task-owned sync remains |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: DEC-239, DEC-242 | same-independent-Reviewer resolution and reasoned inapplicability in one Review Event |
 | `08_QUALITY_PLAN.md` | touched: DEC-239 | section 8 records VAL-015 evidence-route boundary |
-| `09_AI_WORKFLOW.md` | touched: DEC-257 | §2.4 REVIEW-owner paragraph and "Autonomous triage and resolved resume" gain the BLOCK re-review `Repair owners` route |
-| `AGENTS.md` (Commands) | pending | DEC-227: decide at wrap-up whether the explicit `-timeout` bound becomes the project default |
+| `09_AI_WORKFLOW.md` | touched: DEC-257, DEC-258 | §2.4 REVIEW-owner paragraph and "Autonomous triage and resolved resume" gain the BLOCK re-review `Repair owners` route; §2.5 step 6 gains the tiered test loop, `t.Parallel()` default and 80% headroom warning |
+| `AGENTS.md` (Commands) | pending; conventions touched: DEC-258 | DEC-227: decide at wrap-up whether the explicit `-timeout` bound becomes the project default. DEC-258 adds the `t.Parallel()`/`paralleltest` test-style rule |
 | `10_IMPLEMENTATION_ROADMAP.md` | pending | |
 | `GLOSSARY.md` | touched: DEC-226, DEC-242, DEC-249 | Failure code / Evaluation reason split; Review Finding distinguishes nonterminal addressed and Review-only terminal dispositions; Obligation gains the "applicable" definition |
 

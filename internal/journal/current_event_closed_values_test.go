@@ -7,6 +7,7 @@ import (
 )
 
 func TestCurrentActivationCompletionRejectsPendingResource(t *testing.T) {
+	t.Parallel()
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "current.sqlite"))
 	defer closeProjectDB(t, conn)
 	seedActivationRecoveryProjection(t, conn, "activation.recovery-completed")
@@ -33,6 +34,7 @@ func TestCurrentActivationCompletionRejectsPendingResource(t *testing.T) {
 }
 
 func TestCurrentValueDomains(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ name, kind, raw string }{
 		{"byte-bound", "Text", `"` + strings.Repeat("界", 1400) + `"`},
 		{"utc-time", "Timestamp", `"2026-09-09T00:00:00+02:00"`},
@@ -50,6 +52,7 @@ func TestCurrentValueDomains(t *testing.T) {
 }
 
 func TestCurrentNonJSONDomainsRejectMalformedIdentity(t *testing.T) {
+	t.Parallel()
 	for column, value := range map[string]any{"actor_id": "", "content_digest": "not-a-digest", "semantic_key": "plain-text", "declared_path": "../escape", "executor_id": "bad\nidentity"} {
 		t.Run(column, func(t *testing.T) {
 			if validateCurrentColumnDomain(column, value) == nil {
@@ -60,6 +63,7 @@ func TestCurrentNonJSONDomainsRejectMalformedIdentity(t *testing.T) {
 }
 
 func TestCurrentReconciliationDigestBindsCapturedContent(t *testing.T) {
+	t.Parallel()
 	value := projectionReconciliation()
 	raw := projectionFixtureJSON(value)
 	decoded, err := decodeCurrentJSON(raw)
@@ -74,6 +78,7 @@ func TestCurrentReconciliationDigestBindsCapturedContent(t *testing.T) {
 }
 
 func TestCurrentClosedValuesRejectIncompleteAndInvalidFacts(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name, family, table, column, raw string
 		values                           map[string]any
@@ -113,6 +118,7 @@ func TestCurrentClosedValuesRejectIncompleteAndInvalidFacts(t *testing.T) {
 const task9ConditionReference = "74c83b7033729785eb99403ecec9dcde30ac4280"
 
 func TestTask9ConditionDispatchRetainsPinnedPhase22Bytes(t *testing.T) {
+	t.Parallel()
 	canonical := map[string]string{
 		"executor-terminated":  `{"type":"executor-terminated","subject":{"type":"run","id":"RUN-pinned"},"budget_name":null,"capability_id":null}`,
 		"run-recovered":        `{"type":"run-recovered","subject":{"type":"run","id":"RUN-pinned"},"budget_name":null,"capability_id":null}`,
@@ -138,6 +144,7 @@ func TestTask9ConditionDispatchRetainsPinnedPhase22Bytes(t *testing.T) {
 }
 
 func TestTask9ConditionDispatchPreservesNullableBindings(t *testing.T) {
+	t.Parallel()
 	cases := []string{
 		`{"type":"work-ended","subject":{"type":"run","id":"RUN-pinned"},"budget_name":"attempts","capability_id":null}`,
 		`{"type":"budget-observed","subject":{"type":"run","id":"RUN-pinned"},"budget_name":null,"capability_id":null}`,
@@ -155,6 +162,7 @@ func TestTask9ConditionDispatchPreservesNullableBindings(t *testing.T) {
 }
 
 func TestTask9DecisionConditionShapeAndNonStringDiscriminant(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name string
 		raw  string

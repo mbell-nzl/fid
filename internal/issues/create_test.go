@@ -7,6 +7,7 @@ import (
 )
 
 func TestCreateAllowsLegalHierarchy(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 
 	epic := mustCreateHierarchyIssue(t, workspace, CreateOptions{
@@ -36,6 +37,7 @@ func TestCreateAllowsLegalHierarchy(t *testing.T) {
 }
 
 func TestCreateRejectsIllegalHierarchyBeforeAppend(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 
 	epic := mustCreateHierarchyIssue(t, workspace, CreateOptions{
@@ -174,6 +176,7 @@ func TestCreateRejectsIllegalHierarchyBeforeAppend(t *testing.T) {
 }
 
 func TestIssueMutationRequestsCannotChangeParent(t *testing.T) {
+	t.Parallel()
 	for _, request := range []any{UpdateOptions{}, TransitionOptions{}} {
 		requestType := reflect.TypeOf(request)
 		if _, exists := requestType.FieldByName("ParentID"); exists {

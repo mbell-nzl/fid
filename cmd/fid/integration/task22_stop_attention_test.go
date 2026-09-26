@@ -14,6 +14,7 @@ import (
 )
 
 func TestStopAttentionExternalBoundaryKeepsRoutineStatusAndWarningsEffectFree(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	binary := integrationFIDBinary(t)
 	closureRun(t, workspace, binary, "--json", "init", "--prefix", "P22")

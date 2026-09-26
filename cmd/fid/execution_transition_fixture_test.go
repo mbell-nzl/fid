@@ -3,6 +3,7 @@ package main
 import "testing"
 
 func TestExecutionTransitionFixtureDoesNotInheritExpiredClaim(t *testing.T) {
+	t.Parallel()
 	// This test is serial so no parallel case can clone the template while its
 	// age is simulated. No sleep or dependence on suite duration is necessary.
 	executionTransitionFixture(t)

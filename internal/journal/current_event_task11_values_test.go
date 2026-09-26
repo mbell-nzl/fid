@@ -10,6 +10,7 @@ import "testing"
 // required field for the wrong one, and invalid ID for a null own field -
 // never the nullable-binding relation message.
 func TestTask11ReviewRecordedAndFindingResolvedConditionShapes(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name string
 		raw  string
@@ -50,6 +51,7 @@ func TestTask11ReviewRecordedAndFindingResolvedConditionShapes(t *testing.T) {
 // adds (VAL-081): a finding-resolved Condition carrying a stray budget_name
 // is rejected with the exact observed relation message, not a shape error.
 func TestTask11FindingResolvedConditionDispatchPreservesNullableBinding(t *testing.T) {
+	t.Parallel()
 	raw := `{"type":"finding-resolved","subject":{"type":"run","id":"RUN-pinned"},"budget_name":"attempts","capability_id":null,"finding_id":"FND-pinned"}`
 	value, err := decodeCurrentJSON(raw)
 	if err != nil {
@@ -65,6 +67,7 @@ func TestTask11FindingResolvedConditionDispatchPreservesNullableBinding(t *testi
 // four-type judgment Condition set is complete: the six retained Phase 22
 // rows plus the four judgment rows task 9, 10, and 11 register between them.
 func TestTask11ConditionShapeRegistryIsClosedAtTenRows(t *testing.T) {
+	t.Parallel()
 	if len(currentConditionShapes) != 10 {
 		t.Fatalf("currentConditionShapes has %d rows, want 10", len(currentConditionShapes))
 	}

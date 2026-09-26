@@ -3,6 +3,7 @@ package journal
 import "testing"
 
 func TestConcernDisposedRequiresExactFieldsAndOpenGuard(t *testing.T) {
+	t.Parallel()
 	effect := Effect{Op: "update", Table: "judgment_concerns", PK: map[string]any{"id": "CON-1"}, Preconditions: map[string]any{"status": "open"}, Values: map[string]any{
 		"status": "disposed", "disposition_action": "rejected", "disposition_issue_id": nil,
 		"supersedes_concern_id": nil, "supersedes_finding_id": nil, "disposition_reason": "not applicable",
@@ -25,6 +26,7 @@ func TestConcernDisposedRequiresExactFieldsAndOpenGuard(t *testing.T) {
 }
 
 func TestTask8ValueShapesReuseJudgmentSubject(t *testing.T) {
+	t.Parallel()
 	for _, kind := range []string{"Concern", "ConcernDisposition", "Deviation"} {
 		if currentValueShapes[kind] == "" {
 			t.Fatalf("currentValueShapes[%q] is missing", kind)

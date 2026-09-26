@@ -21,6 +21,7 @@ import (
 )
 
 func TestImportPublishesIdentityAndReplaysLostResponse(t *testing.T) {
+	t.Parallel()
 	source := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
@@ -67,6 +68,7 @@ func TestImportPublishesIdentityAndReplaysLostResponse(t *testing.T) {
 }
 
 func TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem(t *testing.T) {
+	t.Parallel()
 	source := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
@@ -104,6 +106,7 @@ func TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem(t *testing.T) 
 }
 
 func TestImportAfterPublicationFaultReplaysInstalledResult(t *testing.T) {
+	t.Parallel()
 	source := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
@@ -130,6 +133,7 @@ func TestImportAfterPublicationFaultReplaysInstalledResult(t *testing.T) {
 }
 
 func TestImportSnapshotsInputPreservesExistingFilesAndRejectsTamperedMarker(t *testing.T) {
+	t.Parallel()
 	source := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
@@ -177,6 +181,7 @@ func TestImportSnapshotsInputPreservesExistingFilesAndRejectsTamperedMarker(t *t
 }
 
 func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
+	t.Parallel()
 	source := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)

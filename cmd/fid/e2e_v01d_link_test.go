@@ -12,6 +12,7 @@ import (
 )
 
 func TestV01DLinkFlowAndRebuildParity(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 

@@ -15,6 +15,7 @@ import (
 )
 
 func TestArchiveWithValidHashesButInvalidRecoveryReferenceRejects(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
@@ -142,6 +143,7 @@ func recoveryEventWithMissingReference() journal.Event {
 }
 
 func TestSemanticValidatorRejectsNestedDuplicateJSONKey(t *testing.T) {
+	t.Parallel()
 	validator, err := newSemanticValidator(testMigrationsDir(t), 17)
 	if err != nil {
 		t.Fatalf("new semantic validator: %v", err)
@@ -155,6 +157,7 @@ func TestSemanticValidatorRejectsNestedDuplicateJSONKey(t *testing.T) {
 }
 
 func TestSemanticValidatorRejectsMissingRecoveryReference(t *testing.T) {
+	t.Parallel()
 	validator, err := newSemanticValidator(testMigrationsDir(t), 17)
 	if err != nil {
 		t.Fatalf("new semantic validator: %v", err)
@@ -175,6 +178,7 @@ func TestSemanticValidatorRejectsMissingRecoveryReference(t *testing.T) {
 }
 
 func TestSemanticValidatorRejectsRecoveryEffectFamilyTampering(t *testing.T) {
+	t.Parallel()
 	for _, testCase := range []struct {
 		name   string
 		mutate func(*journal.Event)

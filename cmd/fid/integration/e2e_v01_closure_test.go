@@ -12,6 +12,7 @@ import (
 )
 
 func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
+	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	closureRun(t, workspace, "git", "init")

@@ -7,6 +7,7 @@ import (
 )
 
 func TestSameGateRepositoryMatchesEqualOptionalValues(t *testing.T) {
+	t.Parallel()
 	baseOID := "base-oid"
 	dirtyDigest := "sha256:dirty"
 	left := Repository{
@@ -31,6 +32,7 @@ func TestSameGateRepositoryMatchesEqualOptionalValues(t *testing.T) {
 }
 
 func TestFIDBudgetChargesDeriveOnlyObservedAttemptAndReceiptFacts(t *testing.T) {
+	t.Parallel()
 	budgets := []workflow.Budget{
 		{Name: "attempts", Unit: "attempts"},
 		{Name: "failures", Unit: "failures"},
@@ -64,6 +66,7 @@ func TestFIDBudgetChargesDeriveOnlyObservedAttemptAndReceiptFacts(t *testing.T) 
 }
 
 func TestBudgetAdmissionDeniesUnknownAndExhaustedChainsBeforeAttempt(t *testing.T) {
+	t.Parallel()
 	known := budgetChain{Budget: workflow.Budget{Name: "attempts", Unit: "attempts", Maximum: 1}}
 	if blocks, err := budgetAdmissionBlocks([]budgetChain{known}); err != nil || len(blocks) != 0 {
 		t.Fatalf("budgetAdmissionBlocks() known empty chain = %#v, %v; want admitted", blocks, err)
@@ -81,6 +84,7 @@ func TestBudgetAdmissionDeniesUnknownAndExhaustedChainsBeforeAttempt(t *testing.
 }
 
 func TestBudgetBoundaryBlocksOnlyOnFirstExhaustion(t *testing.T) {
+	t.Parallel()
 	available := workflow.Budget{Name: "attempts", Unit: "attempts", Maximum: 2, Consumed: int64Pointer(1), Remaining: int64Pointer(1)}
 	exhausted := available
 	exhausted.Consumed, exhausted.Remaining = int64Pointer(2), int64Pointer(0)

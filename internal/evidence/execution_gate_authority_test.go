@@ -14,6 +14,7 @@ import (
 // gate.run must be authorized by the Grant that names the running Actor, not
 // only by whichever Grant row the store happens to return first.
 func TestValidateGateRunReferencesAuthorizesAgainstEveryEnvelopeGrant(t *testing.T) {
+	t.Parallel()
 	conn := newGateAuthorityTestDB(t)
 	repository := task6EvidenceRepository()
 	registration := Registration{ID: "REG-1", Version: 1, Scope: GateScope{IssueID: "ISS-1"}}

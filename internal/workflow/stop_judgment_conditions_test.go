@@ -73,6 +73,7 @@ func decisionCondition(subject Subject, class string) Condition {
 // qualifies only when it is a human-outcome.recorded fact, of the Condition's
 // class, approved, not superseded, and inside the subject's scope.
 func TestHumanOutcomeConditionQualifyingFactRules(t *testing.T) {
+	t.Parallel()
 	conn := judgmentConditionFixture(t)
 	envelope := Subject{Type: "envelope", ID: "ENV-recovery"}
 	run := Subject{Type: "run", ID: "RUN-prior"}
@@ -127,6 +128,7 @@ func TestHumanOutcomeConditionQualifyingFactRules(t *testing.T) {
 // 9 qualifies, an Envelope or a Run's Envelope is the scope, and an activation
 // subject never qualifies.
 func TestDecisionSatisfiedConditionQualifyingFactRules(t *testing.T) {
+	t.Parallel()
 	conn := judgmentConditionFixture(t)
 	envelope := Subject{Type: "envelope", ID: "ENV-recovery"}
 	run := Subject{Type: "run", ID: "RUN-prior"}
@@ -185,6 +187,7 @@ func TestDecisionSatisfiedConditionQualifyingFactRules(t *testing.T) {
 // manual `stop resolve` judges the committed Event, through the same function.
 // For every fixture below both judgments must agree.
 func TestManualAndAtomicResolutionShareOnePredicate(t *testing.T) {
+	t.Parallel()
 	conn := judgmentConditionFixture(t)
 	envelope := Subject{Type: "envelope", ID: "ENV-recovery"}
 	run := Subject{Type: "run", ID: "RUN-prior"}
@@ -250,6 +253,7 @@ func TestManualAndAtomicResolutionShareOnePredicate(t *testing.T) {
 // carrying any other Condition, another class, or an already-resolved Stop is
 // never touched.
 func TestQualifyingJudgmentStopsKeysOnConditionNotRaisingCode(t *testing.T) {
+	t.Parallel()
 	conn := judgmentConditionFixture(t)
 	envelope := Subject{Type: "envelope", ID: "ENV-recovery"}
 	run := Subject{Type: "run", ID: "RUN-prior"}
@@ -297,6 +301,7 @@ func TestQualifyingJudgmentStopsKeysOnConditionNotRaisingCode(t *testing.T) {
 }
 
 func TestJudgmentFactFromEventReadsTheCommittedEffectRow(t *testing.T) {
+	t.Parallel()
 	outcome := journal.Event{EventID: "EVT-outcome", EventType: "human-outcome.recorded", Effects: []journal.Effect{{Op: "insert", Table: "human_outcomes", PK: map[string]any{"id": "OUT-1"}, Values: map[string]any{"class": "security", "result": "approved", "scope_issue_id": "ISS-1", "activation_id": "ACT-1"}}}}
 	fact, err := judgmentFactFromEvent(outcome)
 	if err != nil || fmt.Sprint(fact) != fmt.Sprint(outcomeFact("OUT-1", "security", "approved", "ISS-1", "ACT-1", "EVT-outcome")) {
@@ -313,6 +318,7 @@ func TestJudgmentFactFromEventReadsTheCommittedEffectRow(t *testing.T) {
 }
 
 func TestEventMatchesJudgmentConditionTypes(t *testing.T) {
+	t.Parallel()
 	envelope := Subject{Type: "envelope", ID: "ENV-recovery"}
 	for _, tc := range []struct {
 		condition Condition
@@ -336,6 +342,7 @@ func TestEventMatchesJudgmentConditionTypes(t *testing.T) {
 // raise rule: an activation subject has no Envelope scope, so such a Stop
 // could never resolve.
 func TestStopRaiseRejectsDecisionSatisfiedOnActivationSubject(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name    string
 		subject Subject

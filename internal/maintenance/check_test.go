@@ -124,6 +124,7 @@ func TestCheckReportsFrozenStateForRetainedV01FixtureWithoutStructuralErrors(t *
 }
 
 func TestCheckWorkflowStatesReadsProjectedWorkflowTables(t *testing.T) {
+	t.Parallel()
 
 	fixture := newMaintenanceFixture(t)
 	seedJournalEvent(t, fixture.journalPath, "EVT-20260715-000001")
@@ -148,6 +149,7 @@ func TestCheckWorkflowStatesReadsProjectedWorkflowTables(t *testing.T) {
 }
 
 func TestMaintenanceReportsBrokenRecoveryLinkWithoutMutation(t *testing.T) {
+	t.Parallel()
 	fixture := newMaintenanceFixture(t)
 	seedIssue(t, fixture.db, "FID-recovery-link", "task", nil, nil, "task-default", "todo")
 	seedIssue(t, fixture.db, "FID-final-schema", "task", nil, nil, "task-default", "todo")
@@ -186,6 +188,7 @@ func TestMaintenanceReportsBrokenRecoveryLinkWithoutMutation(t *testing.T) {
 }
 
 func TestMaintenanceRecoveryIntegrityMatrixDoesNotMutate(t *testing.T) {
+	t.Parallel()
 	t.Run("healthy controls", func(t *testing.T) {
 		fixture := newMaintenanceFixture(t)
 		beforeChanges := fixture.changeCount(t)
@@ -275,6 +278,7 @@ func TestMaintenanceRecoveryIntegrityMatrixDoesNotMutate(t *testing.T) {
 }
 
 func TestCheckReportsFinalSchemaIntegrityClassesWithoutRepair(t *testing.T) {
+	t.Parallel()
 	fixture := newMaintenanceFixture(t)
 	seedIssue(t, fixture.db, "FID-final-schema", "task", nil, nil, "task-default", "todo")
 	seedTask21CorruptJournal(t, fixture.journalPath)

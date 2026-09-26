@@ -13,6 +13,7 @@ import (
 )
 
 func TestChangesRequiredReviewChargesExactlyOneReviewCycle(t *testing.T) {
+	t.Parallel()
 	conn, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		t.Fatalf("open review-cycle database: %v", err)
@@ -54,6 +55,7 @@ func TestChangesRequiredReviewChargesExactlyOneReviewCycle(t *testing.T) {
 }
 
 func TestTerminalFindingDispositionAuthorityMatrix(t *testing.T) {
+	t.Parallel()
 	reason := "no longer applies"
 	for _, action := range []string{"resolved", "inapplicable"} {
 		action := action
@@ -122,6 +124,7 @@ func TestTerminalFindingDispositionAuthorityMatrix(t *testing.T) {
 }
 
 func TestValidateTerminalFindingInputBoundaries(t *testing.T) {
+	t.Parallel()
 	reason := "reason"
 	resolved64 := make([]string, 64)
 	for index := range resolved64 {
@@ -221,6 +224,7 @@ func terminalMatrixDB(t *testing.T, actor string, mutation bool, terminal string
 func stringPointer(value string) *string { return &value }
 
 func TestValidateVerdictFindingAgreement(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		verdict  string
@@ -251,6 +255,7 @@ func TestValidateVerdictFindingAgreement(t *testing.T) {
 }
 
 func TestValidateCoverageRejectsSourceInItemAndExclusion(t *testing.T) {
+	t.Parallel()
 	coverage := Coverage{
 		Items:      []CoverageItem{{Source: Source{Digest: "sha256:same"}, Assessed: true}},
 		Exclusions: []CoverageExclusion{{Source: Source{Digest: "sha256:same"}, Reason: "unavailable"}},
@@ -261,6 +266,7 @@ func TestValidateCoverageRejectsSourceInItemAndExclusion(t *testing.T) {
 }
 
 func TestCheckIndependenceRejectsClaimAndRunHistoryDirections(t *testing.T) {
+	t.Parallel()
 	conn, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		t.Fatalf("open test database: %v", err)

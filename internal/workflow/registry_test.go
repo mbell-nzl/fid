@@ -38,6 +38,7 @@ func TestRegistryEqualsV01Definitions(t *testing.T) {
 }
 
 func TestLoadReleasesWorkflowRowsBeforeNestedQueries(t *testing.T) {
+	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 	conn.SetMaxOpenConns(1)

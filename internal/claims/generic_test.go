@@ -12,6 +12,7 @@ import (
 )
 
 func TestClaimAcquireRejectsOpenReviewReworkStop(t *testing.T) {
+	t.Parallel()
 	conn, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "claim.db"))
 	if err != nil {
 		t.Fatal(err)
@@ -53,6 +54,7 @@ func TestClaimAcquireRejectsOpenReviewReworkStop(t *testing.T) {
 }
 
 func TestGenericClaimExpiresAtEqualityAndNeverBefore(t *testing.T) {
+	t.Parallel()
 	expiresAt := time.Date(2026, time.September, 5, 12, 0, 0, 0, time.UTC)
 	claim := GenericClaim{ExpiresAt: expiresAt.Format(time.RFC3339Nano)}
 	for _, testCase := range []struct {

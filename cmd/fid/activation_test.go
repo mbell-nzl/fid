@@ -299,6 +299,7 @@ func TestActivationComponentStagesValidatedProfilesAndRejectsCallerAugmentation(
 }
 
 func TestActivationComponentResponseDigestsRemainSortedAfterSmallerSecondStage(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	activationID := prepareActivationForTest(t, workspace)
 	profileContent := []any{map[string]any{"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/sorted", "session_ref": nil, "capabilities": []string{"claim.acquire"}}}
@@ -476,6 +477,7 @@ func TestActivationRecoveryPreservesDirectionAndIdentityAcrossReplay(t *testing.
 }
 
 func TestActivationStatusHumanAndJSONDescribeRecoveryDirectionAtCommitBoundary(t *testing.T) {
+	t.Parallel()
 	for _, testCase := range []struct {
 		name, status, direction, human string
 	}{
@@ -503,6 +505,7 @@ func TestActivationStatusHumanAndJSONDescribeRecoveryDirectionAtCommitBoundary(t
 }
 
 func TestActivationRecoveryLeavesRenderExistingNotFoundAndInvalidVariants(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	missing := executeCommandForTest(workspace, "--project", workspace, "--json", "activation", "status", "ACT-missing")
 	if missing.err == nil || !strings.Contains(missing.stderr, `"code":"activation-not-found"`) || !strings.Contains(missing.stderr, `"id":"ACT-missing"`) {

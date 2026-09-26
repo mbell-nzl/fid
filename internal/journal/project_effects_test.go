@@ -12,6 +12,7 @@ import (
 )
 
 func TestProjectEventFenceRejectsEveryUnavailablePhase23EventWithoutProjectionChange(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
@@ -48,6 +49,7 @@ func TestProjectEventFenceRejectsEveryUnavailablePhase23EventWithoutProjectionCh
 // implemented judgment Events take the strict current-Event path while every remaining
 // unavailable Phase 23 Event stays covered by the fence loop above.
 func TestConcernDeviationFenceConvergencePreservesEveryRemainingEvent(t *testing.T) {
+	t.Parallel()
 	if unavailableJudgmentEvents["review.recorded"] {
 		t.Fatal("review.recorded remains fenced after Task 4 implemented its strict event path")
 	}

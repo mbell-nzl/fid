@@ -13,6 +13,7 @@ import (
 )
 
 func TestP22CloseRunUsesObservedRepositoryAndQualifyingProof(t *testing.T) {
+	t.Parallel()
 	for _, kind := range []string{"qualifying", "missing", "stale", "failed", "outstanding", "forged-old-target", "live", "unknown", "missing-observation", "null-observation", "stale-version", "nil-base", "missing-base"} {
 		t.Run(kind, func(t *testing.T) {
 			a := p22CloseProofFixture(t, kind)

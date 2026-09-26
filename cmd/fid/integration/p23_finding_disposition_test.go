@@ -13,6 +13,7 @@ import (
 // the in-process contract tests, while exercising the externally observable
 // authority, terminal-action, replay, and projection paths together.
 func TestP23FindingDispositionRealProcessJourney(t *testing.T) {
+	t.Parallel()
 	actions := []string{
 		"claim.acquire", "claim.release", "envelope.activate", "envelope.create",
 		"finding.address", "gate.register", "review.record", "run.close", "run.observe", "run.start",

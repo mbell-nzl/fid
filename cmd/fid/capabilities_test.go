@@ -68,6 +68,7 @@ func TestCapabilitiesJSONGoldenAndProjectionRows(t *testing.T) {
 }
 
 func TestCapabilitiesAdvertiseOnlyFinalQualifiedRows(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	result := executeCommandForTest(workspace, "--json", "capabilities")
 	if result.err != nil || result.stderr != "" {

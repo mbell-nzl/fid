@@ -14,6 +14,7 @@ import (
 )
 
 func TestTask8IssueEventsUseFixedClockAndAggregateOrder(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	fixed := time.Now().UTC()
 	clock := func() time.Time { return fixed }
@@ -64,6 +65,7 @@ func TestTask8IssueEventsUseFixedClockAndAggregateOrder(t *testing.T) {
 }
 
 func TestTask8LegacyInProcessIssueMutationsReceiveIdempotencyKeys(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
@@ -109,6 +111,7 @@ func TestTask8LegacyInProcessIssueMutationsReceiveIdempotencyKeys(t *testing.T) 
 }
 
 func TestTask8IssueCreationSourceBudget(t *testing.T) {
+	t.Parallel()
 	_, sourceFile, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("runtime.Caller(0) failed")

@@ -3,6 +3,7 @@ package workflow
 import "testing"
 
 func TestEnvelopeCreateAcceptsTypedObligationSet(t *testing.T) {
+	t.Parallel()
 	request := testEnvelopeCreateRequest()
 	request.Obligations = []ObligationInput{
 		testObligation("OBL-gate", "gate-evidence", request.PrimaryIssueID),
@@ -18,6 +19,7 @@ func TestEnvelopeCreateAcceptsTypedObligationSet(t *testing.T) {
 }
 
 func TestEnvelopeCreateRejectsInvalidTypedObligationAndProtectedDecisionAuthoring(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		name   string
 		mutate func(*EnvelopeCreateRequest)
@@ -55,6 +57,7 @@ func TestEnvelopeCreateRejectsInvalidTypedObligationAndProtectedDecisionAuthorin
 }
 
 func TestEnvelopeCreatePersistsEveryTypedObligationAndProtectedDecision(t *testing.T) {
+	t.Parallel()
 	request := testEnvelopeCreateRequest()
 	request.Obligations = []ObligationInput{
 		testObligation("OBL-gate", "gate-evidence", request.PrimaryIssueID),
@@ -85,6 +88,7 @@ func TestEnvelopeCreatePersistsEveryTypedObligationAndProtectedDecision(t *testi
 }
 
 func TestEvaluateEnvelopeObligationsReturnsIndependentOrderedResults(t *testing.T) {
+	t.Parallel()
 	request := testEnvelopeCreateRequest()
 	request.Obligations = []ObligationInput{
 		testObligation("OBL-review", "review", request.PrimaryIssueID),
@@ -113,6 +117,7 @@ func TestEvaluateEnvelopeObligationsReturnsIndependentOrderedResults(t *testing.
 }
 
 func TestEnvelopeActivationEvaluationIncludesEveryObligation(t *testing.T) {
+	t.Parallel()
 	request := testEnvelopeCreateRequest()
 	request.Obligations = []ObligationInput{
 		testObligation("OBL-review", "review", request.PrimaryIssueID),
@@ -126,6 +131,7 @@ func TestEnvelopeActivationEvaluationIncludesEveryObligation(t *testing.T) {
 }
 
 func TestEnvelopeAuthoringObligationCardinalityAndTypeFieldMatrix(t *testing.T) {
+	t.Parallel()
 	request := testEnvelopeCreateRequest()
 	for _, test := range []struct {
 		name        string
@@ -157,6 +163,7 @@ func TestEnvelopeAuthoringObligationCardinalityAndTypeFieldMatrix(t *testing.T) 
 }
 
 func TestEnvelopeAuthoringAcceptedAndForbiddenTypedFieldCombinations(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		name           string
 		obligationType string
@@ -277,6 +284,7 @@ func TestEnvelopeAuthoringAcceptedAndForbiddenTypedFieldCombinations(t *testing.
 }
 
 func TestEnvelopeAuthoringReviewCycleBudgetMatrix(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		name       string
 		unit       string
@@ -311,6 +319,7 @@ func TestEnvelopeAuthoringReviewCycleBudgetMatrix(t *testing.T) {
 }
 
 func TestEnvelopeAuthoringReviewCycleAlongsideRetainedBudgets(t *testing.T) {
+	t.Parallel()
 	request := testEnvelopeCreateRequest()
 	review := testObligation("OBL-review", "review", request.PrimaryIssueID)
 	review.ReviewProfile = stringPointer("standard")
@@ -326,6 +335,7 @@ func TestEnvelopeAuthoringReviewCycleAlongsideRetainedBudgets(t *testing.T) {
 }
 
 func TestEnvelopeAuthoringProtectedDecisionMatrix(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		name      string
 		decisions func() []ProtectedDecisionInput
@@ -357,6 +367,7 @@ func TestEnvelopeAuthoringProtectedDecisionMatrix(t *testing.T) {
 }
 
 func TestEvaluateEnvelopeObligationsIncludesQualifyingValidFreshAvailableState(t *testing.T) {
+	t.Parallel()
 	request := testEnvelopeCreateRequest()
 	request.Obligations = []ObligationInput{
 		testObligation("OBL-gate", "gate-evidence", request.PrimaryIssueID),

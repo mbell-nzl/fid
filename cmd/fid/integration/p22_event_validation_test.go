@@ -20,6 +20,7 @@ import (
 // The input is emitted by real CLI journeys, including conditional recovery,
 // shared Attention, and first/upgrade activation. No relabeled positives.
 func TestP22CurrentEventFamiliesLiveReplayValidation(t *testing.T) {
+	t.Parallel()
 	seen := map[string]bool{}
 	a := p22CompleteOneIssueRecoveryJourney(t)
 	p22AcceptedCall(t, a, "validation-close-observation", "run.observe", nil)

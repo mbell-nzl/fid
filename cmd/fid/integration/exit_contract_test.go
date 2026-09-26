@@ -10,6 +10,7 @@ import (
 )
 
 func TestProcessExitContract(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	binary := integrationFIDBinary(t)
 	closureRun(t, workspace, binary, "init", "--prefix", "FID")

@@ -8,6 +8,7 @@ import (
 )
 
 func TestFinalSchemaNamedReadsAndExportMatchAfterRebuild(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID, evaluatePath := task21CompletedWorkspace(t)
 	archivePath := filepath.Join(t.TempDir(), "task21-export.zip")
 	before := task21SnapshotReads(t, workspace, issueID, envelopeID, evaluatePath, archivePath)

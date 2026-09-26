@@ -11,6 +11,7 @@ import (
 )
 
 func TestArchiveSmallStreamingBoundaries(t *testing.T) {
+	t.Parallel()
 	limits := archiveLimits{nonArtifactBytes: 16, artifactBytes: 32, expandedBytes: 48, entries: 10}
 	for _, artifact := range []bool{false, true} {
 		limit := int64(16)
@@ -68,6 +69,7 @@ func TestArchiveSmallStreamingBoundaries(t *testing.T) {
 }
 
 func TestArchiveSmallEntryCountBoundaries(t *testing.T) {
+	t.Parallel()
 	for _, count := range []int{2, 3, 4} {
 		t.Run(fmt.Sprint(count), func(t *testing.T) {
 			p := writeZeroZIP(t, make([]zipLimitMember, count))
@@ -103,6 +105,7 @@ func TestArchiveSmallEntryCountBoundaries(t *testing.T) {
 }
 
 func TestArchiveProductionBudgetUses64BitBoundaryAndStopsImmediately(t *testing.T) {
+	t.Parallel()
 	scan, checks := scanZIP(t, writeZeroZIP(t, []zipLimitMember{{size: 3}}))
 	if scan.ExpandedBytes != 3 || len(checks) != 0 {
 		t.Fatalf("production scan=%+v checks=%v", scan, checks)

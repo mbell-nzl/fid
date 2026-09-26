@@ -14,6 +14,7 @@ import (
 )
 
 func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	journalPath := workflowJournalPath(t, workspace)
 	beforeJournal := readWorkflowTestFile(t, journalPath)

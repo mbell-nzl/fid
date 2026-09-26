@@ -11,6 +11,7 @@ import (
 )
 
 func TestMaintenanceVacuumCommandIsUnavailableAndPreservesState(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	journalPath := mustJournalPath(t, workspace)
@@ -45,6 +46,7 @@ func TestMaintenanceVacuumCommandIsUnavailableAndPreservesState(t *testing.T) {
 }
 
 func TestMaintenanceVacuumCommandRejectsUnauthorizedRolesBeforeMutation(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	journalPath := mustJournalPath(t, workspace)
@@ -72,6 +74,7 @@ func TestMaintenanceVacuumCommandRejectsUnauthorizedRolesBeforeMutation(t *testi
 }
 
 func TestMaintenanceVacuumHasNoPublicPolicySurface(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	result := executeCommandForTest(workspace, "policy", "show")

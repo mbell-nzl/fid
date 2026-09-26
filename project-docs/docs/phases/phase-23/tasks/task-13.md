@@ -178,3 +178,13 @@ List any conditional command required by this task and why:
     achieved time and escalate before adding new `cmd/fid` tests.
 - DEC-254 Part 1's breach-attribution rule still applies to the rest of the
   task.
+
+## Planning Amendment - DEC-258 (2026-09-27)
+
+- The DEC-254 Part 2 first step above is **already satisfied** by the
+  ESC-23-005 repair. Do not repeat it. Record `cmd/fid`'s time from this task's
+  own exact gate as usual; `qa/esc-23-005-repair.md` holds the before and after
+  times.
+- New top-level tests call `t.Parallel()` unless they touch process-global
+  state; `golangci-lint`'s `paralleltest` enforces this. A long subtest matrix
+  whose cases build independent workspaces parallelizes its subtests.

@@ -13,6 +13,7 @@ import (
 )
 
 func TestListFiltersCountsAssignmentsAndOrdering(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
 	if err != nil {
@@ -48,6 +49,7 @@ func TestListFiltersCountsAssignmentsAndOrdering(t *testing.T) {
 }
 
 func TestListReturnsEmptySliceForNoMatch(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	items, err := List(ListOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, Kind: "missing"})
 	if err != nil {
@@ -59,6 +61,7 @@ func TestListReturnsEmptySliceForNoMatch(t *testing.T) {
 }
 
 func TestListOrdersWorkflowsByNameThenID(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
 	if err != nil {
@@ -87,6 +90,7 @@ func TestListOrdersWorkflowsByNameThenID(t *testing.T) {
 }
 
 func TestListRejectsCollectionAboveLimit(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
 	if err != nil {

@@ -13,6 +13,7 @@ import (
 )
 
 func TestImportProcessExitAtPublicationBoundaries(t *testing.T) {
+	t.Parallel()
 	fixture := newExportSourceFixture(t, nil)
 	for _, stage := range []ImportStage{ImportAfterValidation, ImportBeforeDurability, ImportBeforePublication, ImportAfterRename, ImportAfterPublication} {
 		t.Run(string(stage), func(t *testing.T) {
@@ -42,6 +43,7 @@ func TestImportProcessExitAtPublicationBoundaries(t *testing.T) {
 }
 
 func TestImportAbruptExitHelper(t *testing.T) {
+	t.Parallel()
 	archive := os.Getenv("FID_IMPORT_CRASH_ARCHIVE")
 	if archive == "" {
 		return
@@ -56,6 +58,7 @@ func TestImportAbruptExitHelper(t *testing.T) {
 }
 
 func TestImportRejectsChangedDigestAndInstalledHistory(t *testing.T) {
+	t.Parallel()
 	fixture := newExportSourceFixture(t, nil)
 	for _, corruption := range []string{"changed-digest", "journal-bytes", "journal-missing", "result-count", "symlink-workspace"} {
 		t.Run(corruption, func(t *testing.T) {
@@ -123,6 +126,7 @@ func TestImportRejectsChangedDigestAndInstalledHistory(t *testing.T) {
 }
 
 func TestImportLockExcludesRepeatedContenders(t *testing.T) {
+	t.Parallel()
 	target := t.TempDir()
 	err := withImportLock(target, func() error {
 		for attempt := 0; attempt < 2; attempt++ {
@@ -143,6 +147,7 @@ func TestImportLockExcludesRepeatedContenders(t *testing.T) {
 }
 
 func TestImportBindingRejectsAlteredHistoryIdentity(t *testing.T) {
+	t.Parallel()
 	archive, target := boundaryImportFixture(t)
 	if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "binding"}); err != nil {
 		t.Fatal(err)

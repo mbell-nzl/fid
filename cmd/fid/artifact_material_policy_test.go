@@ -9,6 +9,7 @@ import (
 )
 
 func TestArtifactLossHonorsRequiredMaterialAndPreservesProofIdentity(t *testing.T) {
+	t.Parallel()
 	for _, required := range []bool{false, true} {
 		name := "metadata-sufficient"
 		if required {

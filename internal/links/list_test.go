@@ -109,6 +109,7 @@ func TestListReturnsEmptySliceForEntityWithNoLinks(t *testing.T) {
 }
 
 func TestQueryLinkListHonorsAtAndOverResultLimitWithoutTruncation(t *testing.T) {
+	t.Parallel()
 	conn, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)

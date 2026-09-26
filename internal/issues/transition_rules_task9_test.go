@@ -9,6 +9,7 @@ import (
 )
 
 func TestLinkedToDecisionRequiresApprovedReferenceInIssueScope(t *testing.T) {
+	t.Parallel()
 	conn, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		t.Fatal(err)

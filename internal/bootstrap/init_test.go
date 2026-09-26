@@ -13,6 +13,7 @@ import (
 )
 
 func TestBuildProjectInitializedEventMatchesV2Golden(t *testing.T) {
+	t.Parallel()
 	event := BuildProjectInitializedEvent("project-1")
 	event.EventID = "EVT-20260822-000001"
 	event.OccurredAt = time.Date(2026, time.August, 22, 0, 0, 0, 0, time.UTC)
@@ -29,6 +30,7 @@ func TestBuildProjectInitializedEventMatchesV2Golden(t *testing.T) {
 }
 
 func TestInitializeFailureBeforeActivationLeavesNoWorkspace(t *testing.T) {
+	t.Parallel()
 	for _, step := range []initStage{
 		initStageValidated,
 		initStageStaged,

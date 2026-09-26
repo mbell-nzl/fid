@@ -8,6 +8,7 @@ import (
 )
 
 func TestArchiveRejectsSpecialEntriesAndExpandedMember(t *testing.T) {
+	t.Parallel()
 	fixture := newExportSourceFixture(t, nil)
 	for _, tc := range []struct {
 		name  string

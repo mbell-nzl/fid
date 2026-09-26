@@ -79,6 +79,7 @@ func (fixture exportSourceFixture) clone(t *testing.T) (string, string) {
 }
 
 func TestExportSourceFixtureCopiesKeepDatabaseAndArchiveMutationsIsolated(t *testing.T) {
+	t.Parallel()
 	fixture := newExportSourceFixture(t, nil)
 	sourceBefore := workspaceTreeDigest(t, fixture.workspace)
 	archiveBefore, err := os.ReadFile(fixture.archive)

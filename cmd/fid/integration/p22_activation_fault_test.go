@@ -28,6 +28,7 @@ type p22ActivationCrashInput struct {
 }
 
 func TestP22ActivationRecoverySurvivesAppendProjectionInterruption(t *testing.T) {
+	t.Parallel()
 	for _, direction := range []string{"restore-prior", "complete-forward"} {
 		for _, operation := range []string{"recover", "recover-complete"} {
 			for _, mode := range []string{"before-append", "after-append"} {
@@ -141,6 +142,7 @@ func p22InterruptActivation(t *testing.T, input p22ActivationCrashInput) {
 }
 
 func TestP22ActivationCrashProcess(t *testing.T) {
+	t.Parallel()
 	path := os.Getenv("FID_P22_ACTIVATION_CRASH")
 	if path == "" {
 		return

@@ -15,6 +15,7 @@ import (
 )
 
 func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
+	t.Parallel()
 	actions := []string{
 		"claim.acquire", "claim.release", "concern.dispose", "concern.record", "deviation.record",
 		"envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register",

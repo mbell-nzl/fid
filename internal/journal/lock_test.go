@@ -11,6 +11,7 @@ import (
 )
 
 func TestWithLockWritesOwnerMetadata(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
 
@@ -55,6 +56,7 @@ func TestWithLockWritesOwnerMetadata(t *testing.T) {
 }
 
 func TestWithLockTimesOutWithTypedUnavailableError(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
 
@@ -96,6 +98,7 @@ func TestWithLockTimesOutWithTypedUnavailableError(t *testing.T) {
 }
 
 func TestWithLockReturnsTypedUnavailableErrorForHeldLock(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
 
@@ -126,6 +129,7 @@ func TestWithLockReturnsTypedUnavailableErrorForHeldLock(t *testing.T) {
 }
 
 func TestWithLockDefaultWaitsForShortHeldLock(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
 

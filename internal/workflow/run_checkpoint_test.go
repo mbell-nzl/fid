@@ -12,6 +12,7 @@ import (
 )
 
 func TestRunCheckpointRecordsCurrentReconciliationAndReplays(t *testing.T) {
+	t.Parallel()
 	options, request := checkpointFixture(t)
 	result, err := RunCheckpoint(options, request)
 	if err != nil {
@@ -40,6 +41,7 @@ func TestRunCheckpointRecordsCurrentReconciliationAndReplays(t *testing.T) {
 }
 
 func TestRunCheckpointRejectsPreconditionsAndAuthority(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		prepare   func(*testing.T, RunOptions, *RunCheckpointRequest)

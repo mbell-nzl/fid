@@ -7,6 +7,7 @@ import (
 )
 
 func TestGenerateIDUsesDefaultSixHexChars(t *testing.T) {
+	t.Parallel()
 	got, err := GenerateID("FID", nil)
 	if err != nil {
 		t.Fatalf("GenerateID() error = %v", err)
@@ -18,6 +19,7 @@ func TestGenerateIDUsesDefaultSixHexChars(t *testing.T) {
 }
 
 func TestGenerateIDWithLengthSupportsEightHexChars(t *testing.T) {
+	t.Parallel()
 	got, err := GenerateIDWithLength("FID", 8, nil)
 	if err != nil {
 		t.Fatalf("GenerateIDWithLength() error = %v", err)
@@ -28,7 +30,7 @@ func TestGenerateIDWithLengthSupportsEightHexChars(t *testing.T) {
 	}
 }
 
-func TestGenerateIDRetriesOnCollision(t *testing.T) {
+func TestGenerateIDRetriesOnCollision(t *testing.T) { //nolint:paralleltest // swaps the package-level hashSuffixGenerator.
 	calls := 0
 	restore := stubHashSuffixGenerator(func(length int) (string, error) {
 		switch length {
@@ -63,6 +65,7 @@ func TestGenerateIDRetriesOnCollision(t *testing.T) {
 }
 
 func TestFormatEventIDUsesUTCDateAndZeroPaddedSequence(t *testing.T) {
+	t.Parallel()
 	occurredAt := time.Date(2026, time.June, 1, 1, 30, 0, 0, time.FixedZone("NZST", 12*60*60))
 
 	got, err := FormatEventID(occurredAt, 42)

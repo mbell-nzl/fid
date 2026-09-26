@@ -10,6 +10,7 @@ import (
 )
 
 func TestCheckpointedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
+	t.Parallel()
 	event := checkpointedProjectionEvent()
 
 	live := openReplayDB(t, filepath.Join(t.TempDir(), "live.sqlite"))
@@ -38,6 +39,7 @@ func TestCheckpointedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
 }
 
 func TestRecoveredEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
+	t.Parallel()
 	event := recoveredProjectionEvent()
 
 	live := openReplayDB(t, filepath.Join(t.TempDir(), "live-recovered.sqlite"))
@@ -66,6 +68,7 @@ func TestRecoveredEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
 }
 
 func TestBudgetObservedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
+	t.Parallel()
 	event := budgetObservedProjectionEvent()
 
 	live := openReplayDB(t, filepath.Join(t.TempDir(), "live-budget.sqlite"))
@@ -94,6 +97,7 @@ func TestBudgetObservedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
 }
 
 func TestExecutionBlockedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
+	t.Parallel()
 	event := executionBlockedProjectionEvent()
 
 	live := openReplayDB(t, filepath.Join(t.TempDir(), "live-blocked.sqlite"))
@@ -122,6 +126,7 @@ func TestExecutionBlockedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
 }
 
 func TestRunClosureEventsProjectIdenticallyLiveAndReplay(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name      string
 		eventType string
@@ -161,6 +166,7 @@ func TestRunClosureEventsProjectIdenticallyLiveAndReplay(t *testing.T) {
 }
 
 func TestActivationRecoveryEventsProjectIdenticallyLiveAndReplay(t *testing.T) {
+	t.Parallel()
 	for _, eventType := range []string{
 		"activation.resource-observed",
 		"activation.recovery-selected",

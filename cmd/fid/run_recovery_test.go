@@ -8,6 +8,7 @@ import (
 )
 
 func TestRunRecoveryErrorsUseClosedRecoveryEnvelopes(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		cause    error

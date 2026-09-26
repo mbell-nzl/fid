@@ -24,6 +24,7 @@ import (
 // operator-stop Stops of every subject type, through the manual path and
 // through the atomic path.
 func TestP23StopResolveHumanOutcomeConditionKeysOnConditionNotRaisingCode(t *testing.T) {
+	t.Parallel()
 	actions := []string{"attention.resolve", "claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start", "stop.raise", "stop.resolve"}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, actions, p22ExecutionFixture{HumanObligations: true})
 	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
@@ -128,6 +129,7 @@ func TestP23StopResolveHumanOutcomeConditionKeysOnConditionNotRaisingCode(t *tes
 // Stop and on operator-stop Stops, through the manual and atomic paths, and
 // proves `stop raise` rejects the same Condition on an activation subject.
 func TestP23StopResolveDecisionSatisfiedConditionKeysOnConditionNotRaisingCode(t *testing.T) {
+	t.Parallel()
 	actions := []string{"claim.acquire", "claim.release", "decision.record-reference", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start", "stop.raise", "stop.resolve"}
 	decisions := []any{
 		map[string]any{"ordinal": 0, "decision_class": "release", "required_capabilities": []string{"decision.record-reference"}, "affected_actions": []string{"envelope.complete"}},

@@ -102,6 +102,7 @@ func TestTerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState(t 
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 			workspace, issueID, _, evidenceID, artifactID := task18TerminalGuardFixture(t, testCase.withArtifact, testCase.name != "missing")
 			if testCase.mutate != nil {
 				testCase.mutate(t, workspace, evidenceID, artifactID)
@@ -181,6 +182,7 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 }
 
 func TestResumeReadsDurableFactsWithoutMutation(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := observedEvidenceEnvelopeForTest(t, nil)
 	beforeEvents := journalEventCount(t, workspace)
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "resume", issueID)
@@ -197,7 +199,9 @@ func TestResumeReadsDurableFactsWithoutMutation(t *testing.T) {
 }
 
 func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *testing.T) {
+	t.Parallel()
 	t.Run("active", func(t *testing.T) {
+		t.Parallel()
 		workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 			definition["argv"] = []string{"/bin/true"}
 		})
@@ -218,6 +222,7 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 	})
 
 	t.Run("completed", func(t *testing.T) {
+		t.Parallel()
 		workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 			definition["argv"] = []string{"/bin/true"}
 		})

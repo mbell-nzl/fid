@@ -25,6 +25,7 @@ func p23ObligationGuardActions() []string {
 // review Obligation, with no Event and no projection change, while the read
 // surface keeps reporting every Obligation.
 func TestP23ReviewObligationGuardingBothActionsBlocksBothRealProcess(t *testing.T) {
+	t.Parallel()
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, p23ObligationGuardActions(), p22ExecutionFixture{CoexistingReviewObligation: true, ReviewGuardsTerminalSuccess: true})
 	assertP23GuardedActionsGuardedBy(t, a, "guard-both-authoring", map[string][]string{"OBL-p22-corpus": {"envelope.complete", "issue.transition-terminal-success"}, "OBL-p23-review": {"envelope.complete", "issue.transition-terminal-success"}})
 	p23AdvanceToQAReview(t, a, "guard-both")
@@ -52,6 +53,7 @@ func TestP23ReviewObligationGuardingBothActionsBlocksBothRealProcess(t *testing.
 // owns a dedicated single-purpose fixture and performs qa_pass exactly once,
 // as its last transition.
 func TestP23UnsatisfiedObligationBlocksOnlyTheActionItGuardsRealProcess(t *testing.T) {
+	t.Parallel()
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, p23ObligationGuardActions(), p22ExecutionFixture{CoexistingReviewObligation: true})
 	assertP23GuardedActionsGuardedBy(t, a, "guard-contrast-authoring", map[string][]string{"OBL-p22-corpus": {"envelope.complete", "issue.transition-terminal-success"}, "OBL-p23-review": {"envelope.complete"}})
 	p23AdvanceToQAReview(t, a, "guard-contrast")

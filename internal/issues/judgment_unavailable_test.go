@@ -18,6 +18,7 @@ func assertJudgmentUnavailable(t *testing.T, capabilityID string, call func() er
 }
 
 func TestJudgmentMutationsAreUnavailableBeforeAnyWriterWork(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name string
 		call func() error

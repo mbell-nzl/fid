@@ -12,6 +12,7 @@ import (
 )
 
 func TestConcernDisposeCarriedForwardBindsExistingIssue(t *testing.T) {
+	t.Parallel()
 	conn, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		t.Fatalf("open target database: %v", err)
@@ -40,6 +41,7 @@ func TestConcernDisposeCarriedForwardBindsExistingIssue(t *testing.T) {
 }
 
 func TestConcernSubjectAndDispositionMatrix(t *testing.T) {
+	t.Parallel()
 	options := JudgmentOptions{WorkspaceRoot: "root", MigrationsDir: "migrations", ActorID: "actor-builder", IdempotencyKey: "key"}
 	for _, subjectType := range []string{"issue", "envelope", "run", "review", "finding", "requirement"} {
 		request := ConcernRecordRequest{ID: "CON-" + subjectType, Subject: Subject{Type: subjectType, ID: "unresolved-" + subjectType}, Scope: Scope{Paths: []string{}}, Severity: "blocker", Summary: "observation", Reasoning: "reason", References: []Source{}}
@@ -87,6 +89,7 @@ func TestConcernSubjectAndDispositionMatrix(t *testing.T) {
 }
 
 func TestConcernSelfDisposalKeepsRaisingAndDisposingActors(t *testing.T) {
+	t.Parallel()
 	value := map[string]any{"id": "CON-self", "actor_id": "actor-builder", "status": "open"}
 	event := journal.Event{EventID: "EVT-dispose", OccurredAt: time.Date(2026, 9, 21, 1, 2, 3, 0, time.UTC)}
 	got := disposedConcernValue(value, ConcernDisposeRequest{ConcernID: "CON-self", Action: "rejected", Reason: "cleared"}, "actor-builder", event)
@@ -99,6 +102,7 @@ func TestConcernSelfDisposalKeepsRaisingAndDisposingActors(t *testing.T) {
 }
 
 func TestDeviationAcceptsExplicitPredecessorReference(t *testing.T) {
+	t.Parallel()
 	options := JudgmentOptions{WorkspaceRoot: "root", MigrationsDir: "migrations", ActorID: "actor-builder", IdempotencyKey: "key"}
 	request := DeviationRecordRequest{ID: "DEV-next", Subject: Subject{Type: "requirement", ID: "REQ-unresolved"}, Expected: "accepted contract", Observed: "departure", Authority: DeviationAuthority{ActorID: "human-reviewer"}, Disposition: "accepted", Reasoning: "approved exception", References: []Source{}, SupersedesDeviationID: stringPointer("DEV-prior")}
 	if err := validateDeviationRecord(options, request); err != nil {

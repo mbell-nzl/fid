@@ -9,6 +9,7 @@ import (
 )
 
 func TestP22CompleteOneIssueRecoveryJourney(t *testing.T) {
+	t.Parallel()
 	p22CompleteOneIssueRecoveryJourney(t)
 }
 

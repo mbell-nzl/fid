@@ -14,6 +14,7 @@ import (
 )
 
 func TestP22DualAdapterActivationConformance(t *testing.T) {
+	t.Parallel()
 	contents, err := os.ReadFile(filepath.Join(p22CorpusDir, "manifest.json"))
 	if err != nil {
 		t.Fatal(err)

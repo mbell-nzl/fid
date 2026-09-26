@@ -21,6 +21,7 @@ import (
 // generic Evidence-binding-invalid error the pre-task-10 code path returned
 // while Human Outcome linking was still unconditionally blocked upstream.
 func TestLoadHumanOutcomeEvidenceBindingRejectsClassMismatchAsOutcomeNotPermitted(t *testing.T) {
+	t.Parallel()
 	conn := newHumanOutcomeEvidenceTestDB(t)
 	execHumanOutcomeEvidenceSQL(t, conn, `INSERT INTO human_outcomes VALUES ('OUT-security','security','issue','ISS-1','approved','ISS-1')`)
 

@@ -11,6 +11,7 @@ import (
 )
 
 func TestReconcileRepositoryRejectsMissingBaseEvenWithUnchangedHead(t *testing.T) {
+	t.Parallel()
 	root := reconciliationRepositoryFixture(t)
 	current, err := project.ObserveRepository(root)
 	if err != nil {
@@ -29,6 +30,7 @@ func TestReconcileRepositoryRejectsMissingBaseEvenWithUnchangedHead(t *testing.T
 }
 
 func TestReconcileRepositoryRequiresExactDirtyAdoption(t *testing.T) {
+	t.Parallel()
 	repository := reconciliationRepositoryFixture(t)
 	start, err := project.ObserveRepository(repository)
 	if err != nil {
@@ -58,6 +60,7 @@ func TestReconcileRepositoryRequiresExactDirtyAdoption(t *testing.T) {
 }
 
 func TestActivatedCapabilitiesAcceptRunCheckpoint(t *testing.T) {
+	t.Parallel()
 	if !sortedUniqueCapabilities([]string{"run.checkpoint"}) {
 		t.Fatal("activated capabilities reject run.checkpoint")
 	}

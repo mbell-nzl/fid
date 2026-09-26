@@ -13,6 +13,7 @@ import (
 )
 
 func TestArchiveExpandedByteBoundaries(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name     string
 		artifact bool
@@ -38,6 +39,7 @@ func TestArchiveExpandedByteBoundaries(t *testing.T) {
 	}
 }
 func TestArchiveCumulativeBoundary(t *testing.T) {
+	t.Parallel()
 	for _, size := range []int64{maxArchiveExpandedBytes - 1, maxArchiveExpandedBytes, maxArchiveExpandedBytes + 1} {
 		t.Run(fmt.Sprint(size), func(t *testing.T) {
 			members := make([]zipLimitMember, 0, 129)
@@ -65,6 +67,7 @@ func TestArchiveCumulativeBoundary(t *testing.T) {
 }
 
 func TestArchiveEntryCountBoundaries(t *testing.T) {
+	t.Parallel()
 	if err := os.MkdirAll("../../.cache", 0o755); err != nil {
 		t.Fatal(err)
 	}

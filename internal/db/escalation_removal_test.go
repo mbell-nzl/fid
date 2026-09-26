@@ -7,6 +7,7 @@ import (
 )
 
 func TestFinalSchemaHasNoEscalationsOrEscalationReferences(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), "fid.sqlite")
 	if err := MigrateUp(path, testMigrationsDir(t)); err != nil {
 		t.Fatal(err)
@@ -64,6 +65,7 @@ func TestFinalSchemaHasNoEscalationsOrEscalationReferences(t *testing.T) {
 }
 
 func TestFinalSchemaResetsThroughZeroWithoutRetiredAuthority(t *testing.T) {
+	t.Parallel()
 	path, migrations := filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t)
 	if err := MigrateUp(path, migrations); err != nil {
 		t.Fatal(err)

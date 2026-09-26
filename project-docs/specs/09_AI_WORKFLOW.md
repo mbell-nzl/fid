@@ -730,6 +730,19 @@ Responsibilities:
    unless the task explicitly says otherwise. The focused loop is the iteration
    loop and does not substitute for the full gate at close. If the task spec
    does not define a gate, use the standard fallback gate from `AGENTS.md`.
+   Iterate in tiers so the long gates run once, not per edit:
+   - Red/green: the most specific `go test ./<pkg> -run '<Test>' -count=1`.
+   - Pre-gate: `go test -race -count=1` over every touched package, plus the
+     touched tagged tests via `-tags integration -run`, until green.
+   - Full gate: the exact task-spec commands, once, on the final tree. On a
+     failure, repair with the narrower tiers, then rerun the full gate once.
+     Recorded package times come from this run. Never run two long gates, or
+     other heavy test work, concurrently.
+   New top-level tests call `t.Parallel()` unless they touch process-global
+   state (`t.Setenv`, package hooks); `paralleltest` lint enforces this. A
+   long subtest matrix whose cases build independent workspaces parallelizes
+   its subtests too. A recorded package time at or above 80% of its wall-time
+   budget is reported as a headroom warning under Tech Lead notes.
 7. If any gate fails, preserve its token and observed termination, diagnose the
    cause, and repair only when authorized by ordinary task scope or a written
    control-conformance directive. A failure alone never grants permission to

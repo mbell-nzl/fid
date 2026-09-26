@@ -14,6 +14,7 @@ import (
 // TestReviewRecordRejectsNonIndependentActor is the Task 4 vertical tracer:
 // recording under the mutating actor must be rejected before an Event is added.
 func TestReviewRecordRejectsNonIndependentActor(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "review-independent-builder")
 	repository := runRepositoryForTest(t, workspace)
@@ -40,6 +41,7 @@ func TestReviewRecordRejectsNonIndependentActor(t *testing.T) {
 }
 
 func TestReviewRecordCreatesImmutableReview(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, registration := finalizedObservedEnvelopeWorkspaceWithDefinitions(t, gateDefinitionsForTest(nil))
 	input := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := input["authority_grants"].([]any)[0].(map[string]any)
@@ -159,6 +161,7 @@ func TestReviewRecordCreatesImmutableReview(t *testing.T) {
 }
 
 func TestReviewRecordIndependentReworkAndReceiptBinding(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID, registration, source := reviewWorkspaceWithTwoActivatedReviewers(t)
 	repository := runRepositoryForTest(t, workspace)
 

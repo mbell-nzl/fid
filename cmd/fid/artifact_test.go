@@ -165,6 +165,7 @@ func TestGateRunUnsafeArtifactsEmitControlsAndRemainRequiredUnavailable(t *testi
 	for _, testCase := range cases {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 			workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 				definition["argv"] = []string{"/bin/true"}
 				definition["artifact_paths"] = []string{testCase.path}
@@ -194,6 +195,7 @@ func TestGateRunUnsafeArtifactsEmitControlsAndRemainRequiredUnavailable(t *testi
 }
 
 func TestArtifactMutationHelperProcess(t *testing.T) {
+	t.Parallel()
 	switch os.Getenv("FID_ARTIFACT_HELPER") {
 	case "writer":
 		candidate, err := os.OpenFile("changed.txt", os.O_CREATE|os.O_WRONLY, 0o600)

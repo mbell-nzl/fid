@@ -15,6 +15,7 @@ import (
 )
 
 func TestP22RecoveryPreservesRepositoryOnSuccessAndUnsafeRejection(t *testing.T) {
+	t.Parallel()
 	cases := []string{"clean", "dirty-in-scope", "staged-restored", "assume-unchanged", "skip-worktree", "unmerged", "missing-head", "unrelated-history", "foreign-worktree", "gitlink", "unreadable", "fifo", "escaping-parent", "protected-adoption", "MERGE_HEAD", "REBASE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "BISECT_LOG", "rebase-merge", "rebase-apply"}
 	for _, kind := range cases {
 		t.Run(kind, func(t *testing.T) {

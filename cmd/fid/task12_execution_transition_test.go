@@ -191,6 +191,7 @@ func TestExecutionBoundTransitionPredicateMatrix(t *testing.T) {
 
 	for _, row := range rows {
 		t.Run(row.name, func(t *testing.T) {
+			t.Parallel()
 			workspace, issueID, envelopeID, _ := executionTransitionFixture(t)
 			if row.prepare != nil {
 				row.prepare(t, workspace, issueID, envelopeID)

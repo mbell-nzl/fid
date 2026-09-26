@@ -7,6 +7,7 @@ import (
 )
 
 func TestRunInspectIsStableAndCheckpointBecomesComparisonBase(t *testing.T) {
+	t.Parallel()
 	options, request := checkpointFixture(t)
 	first, err := InspectRun(options.WorkspaceRoot, options.MigrationsDir, request.RunID, options.WorkspaceRoot)
 	if err != nil {
@@ -33,6 +34,7 @@ func TestRunInspectIsStableAndCheckpointBecomesComparisonBase(t *testing.T) {
 }
 
 func TestRunInspectLeavesRepositoryByteInert(t *testing.T) {
+	t.Parallel()
 	options, request := checkpointFixture(t)
 	before := inspectRepositorySnapshot(t, options.WorkspaceRoot)
 	if _, err := InspectRun(options.WorkspaceRoot, options.MigrationsDir, request.RunID, options.WorkspaceRoot); err != nil {

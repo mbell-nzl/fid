@@ -14,6 +14,7 @@ import (
 )
 
 func TestP23DecisionReferenceProtectedLifecycleRealProcess(t *testing.T) {
+	t.Parallel()
 	actions := []string{"claim.acquire", "claim.release", "decision.record-reference", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start", "stop.resolve"}
 	decisions := []any{
 		map[string]any{"ordinal": 0, "decision_class": "release", "required_capabilities": []string{"decision.record-reference"}, "affected_actions": []string{"envelope.complete"}},

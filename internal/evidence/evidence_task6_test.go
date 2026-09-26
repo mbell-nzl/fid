@@ -15,6 +15,7 @@ import (
 // TestEvidenceAdmissionTask6PureProductionClassifierMatrix is intermediate
 // DEC-243 evidence for Human Outcome cells; it does not claim a durable link.
 func TestEvidenceAdmissionTask6PureProductionClassifierMatrix(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		obligationType string
@@ -68,6 +69,7 @@ func TestEvidenceAdmissionTask6PureProductionClassifierMatrix(t *testing.T) {
 }
 
 func TestEvidenceAdmissionRejectsTrustMismatchWithAcceptedTypeDetails(t *testing.T) {
+	t.Parallel()
 	err := classifyEvidenceAdmission(evidenceAdmission{
 		ObligationID:          "OBL-review",
 		ObligationType:        "review",
@@ -83,6 +85,7 @@ func TestEvidenceAdmissionRejectsTrustMismatchWithAcceptedTypeDetails(t *testing
 }
 
 func TestEvidenceWireCarriesExactlyOneNullableSubject(t *testing.T) {
+	t.Parallel()
 	reviewID := "REV-pass"
 	record := Evidence{ID: "EVD-review", ObligationID: "OBL-review", EvidenceType: "review", ReviewID: &reviewID}
 	payload, err := json.Marshal(record)
@@ -99,6 +102,7 @@ func TestEvidenceWireCarriesExactlyOneNullableSubject(t *testing.T) {
 }
 
 func TestEvidenceLinkInputRequiresOneSubjectMatchingType(t *testing.T) {
+	t.Parallel()
 	receiptID, reviewID := "RCP-1", "REV-1"
 	base := EvidenceLinkOptions{WorkspaceRoot: "/workspace", MigrationsDir: "/migrations", ActorID: "ACT-1", IdempotencyKey: "key", Request: EvidenceLinkRequest{ObligationID: "OBL-1", EvidenceType: "receipt", ReceiptID: &receiptID, TargetRepository: task6EvidenceRepository(), RequiredArtifactIDs: []string{}}}
 	if err := validateEvidenceLinkOptions(base); err != nil {
@@ -124,6 +128,7 @@ func TestEvidenceLinkInputRequiresOneSubjectMatchingType(t *testing.T) {
 }
 
 func TestReviewAdmissionReturnsBlockingFindingIDs(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		verdict string
 		ids     []string
@@ -140,6 +145,7 @@ func TestReviewAdmissionReturnsBlockingFindingIDs(t *testing.T) {
 }
 
 func TestLoadReviewEvidenceBindingEnforcesVerdictTypeAndLinkTimeIndependence(t *testing.T) {
+	t.Parallel()
 	conn := newReviewEvidenceTestDB(t)
 	repository := task6EvidenceRepository()
 	repositoryJSON, err := json.Marshal(repository)

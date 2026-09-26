@@ -13,6 +13,7 @@ import (
 )
 
 func TestReviewEvidenceStalesOnTargetTreeChange(t *testing.T) {
+	t.Parallel()
 	bound := task6EvidenceRepository()
 	changed := bound
 	changed.TreeOID = strings.Repeat("f", 40)
@@ -26,6 +27,7 @@ func TestReviewEvidenceStalesOnTargetTreeChange(t *testing.T) {
 }
 
 func TestHumanOutcomeEvaluationKeepsFreshnessAndUsesSupersession(t *testing.T) {
+	t.Parallel()
 	conn := newTask7EvaluationDB(t)
 	bound := task6EvidenceRepository()
 	target := bound

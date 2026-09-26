@@ -10,6 +10,7 @@ import (
 )
 
 func TestP22QualifiedCapabilityMatrixMatchesFakeDiscoveryAndExport(t *testing.T) {
+	t.Parallel()
 	want := p22FakeQualifiedCapabilities(t)
 	adapter := p22NewFIDRecoveryAdapter(t)
 	discovery := p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "capabilities")

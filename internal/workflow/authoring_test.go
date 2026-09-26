@@ -13,6 +13,7 @@ import (
 )
 
 func TestValidateDefinitionRequestIdentifierMatrix(t *testing.T) {
+	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 
@@ -37,12 +38,14 @@ func TestValidateDefinitionRequestIdentifierMatrix(t *testing.T) {
 }
 
 func TestBuildDefinitionEffectsRequiresReadOnlyDatabase(t *testing.T) {
+	t.Parallel()
 	if _, err := BuildDefinitionEffects(nil, validDefinition()); err == nil || !strings.Contains(err.Error(), "database connection is required") {
 		t.Fatalf("BuildDefinitionEffects(nil) error = %v, want database connection error", err)
 	}
 }
 
 func TestValidateDefinitionRequestStatesAndTransitions(t *testing.T) {
+	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 	tests := []struct {
@@ -66,6 +69,7 @@ func TestValidateDefinitionRequestStatesAndTransitions(t *testing.T) {
 }
 
 func TestDefinitionRuleVocabularyAndParams(t *testing.T) {
+	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 	tests := []struct {
@@ -94,6 +98,7 @@ func TestDefinitionRuleVocabularyAndParams(t *testing.T) {
 }
 
 func TestValidateDefinitionRequestRequirementEdges(t *testing.T) {
+	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 	unknown := withDefinition(func(request *DefinitionRequest) {
@@ -108,6 +113,7 @@ func TestValidateDefinitionRequestRequirementEdges(t *testing.T) {
 }
 
 func TestBuildDefinitionEffectsCancelledStatePolicy(t *testing.T) {
+	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 	request := DefinitionRequest{
@@ -127,6 +133,7 @@ func TestBuildDefinitionEffectsCancelledStatePolicy(t *testing.T) {
 }
 
 func TestBuildDefinitionEffectsZeroCancelledApplicability(t *testing.T) {
+	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 	for _, appliesTo := range []string{"escalation", "qa_review"} {
@@ -150,6 +157,7 @@ func TestBuildDefinitionEffectsZeroCancelledApplicability(t *testing.T) {
 }
 
 func TestBuildDefinitionEffectsRejectsMultipleCancelledStates(t *testing.T) {
+	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 	request := withDefinition(func(request *DefinitionRequest) {
@@ -166,6 +174,7 @@ func TestBuildDefinitionEffectsRejectsMultipleCancelledStates(t *testing.T) {
 }
 
 func TestInitialState(t *testing.T) {
+	t.Parallel()
 	if got := InitialState([]State{{Name: "started", Category: "started"}, {Name: "todo", Category: "unstarted"}, {Name: "queued", Category: "unstarted"}}); got != "todo" {
 		t.Fatalf("InitialState(first unstarted) = %q, want todo", got)
 	}
@@ -175,6 +184,7 @@ func TestInitialState(t *testing.T) {
 }
 
 func TestAuthoringCoreDoesNotWrite(t *testing.T) {
+	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 	before := workflowTableSnapshot(t, conn)

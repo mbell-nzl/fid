@@ -121,6 +121,7 @@ func TestEnvelopeCreateAcceptsTypedObligationsAndProtectedDecisions(t *testing.T
 }
 
 func TestEnvelopeCreateCommandCoversObligationAndDecisionBoundaries(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		name            string
 		obligationCount int
@@ -154,6 +155,7 @@ func TestEnvelopeCreateCommandCoversObligationAndDecisionBoundaries(t *testing.T
 }
 
 func TestEnvelopeCreateCommandRejectsEveryTypedAuthoringNegativeWithoutPersistenceChange(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		name   string
 		mutate func(t *testing.T, input map[string]any, issueID string, registration gateRegistrationView)
@@ -222,6 +224,7 @@ func TestEnvelopeCreateCommandRejectsEveryTypedAuthoringNegativeWithoutPersisten
 }
 
 func TestEnvelopeCreateCommandRejectsEveryForbiddenTypedFieldCombinationWithoutPersistenceChange(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		name   string
 		mutate func(map[string]any)

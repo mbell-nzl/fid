@@ -99,7 +99,10 @@ Project-specific conventions:
 - Test style: use red/green TDD for behavior changes; prefer table-driven
   tests; test observable behavior and contracts, not implementation trivia;
   use temporary SQLite databases for integration tests and golden fixtures for
-  journal/event compatibility.
+  journal/event compatibility. Top-level tests call `t.Parallel()` unless they
+  touch process-global state (`t.Setenv`, package hooks), enforced by the
+  `paralleltest` linter; annotate exceptions with a `//nolint:paralleltest`
+  reason.
 - Public interface compatibility policy: before the first supported baseline,
   ADR-0011 permits replacement of current CLI flags, schemas, events,
   migrations, and generic formatters without a legacy mode. Accepted target

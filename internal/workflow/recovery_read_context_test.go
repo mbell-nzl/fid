@@ -3,6 +3,7 @@ package workflow
 import "testing"
 
 func TestRecoveryReadContextWithoutImportPreservesRecordedLiveness(t *testing.T) {
+	t.Parallel()
 	options, request := checkpointFixture(t)
 	before := inspectRepositorySnapshot(t, options.WorkspaceRoot)
 	context, err := ReadRecoveryContext(options.WorkspaceRoot, request.RunID)

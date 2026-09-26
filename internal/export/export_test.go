@@ -19,6 +19,7 @@ import (
 )
 
 func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
@@ -72,6 +73,7 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 }
 
 func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {
+	t.Parallel()
 	source := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
@@ -100,6 +102,7 @@ func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {
 }
 
 func TestValidateRejectsJournalAggregateSequenceCollisionWithoutMutation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize workspace: %v", err)
@@ -129,6 +132,7 @@ func TestValidateRejectsJournalAggregateSequenceCollisionWithoutMutation(t *test
 // This retained negative covers malformed Source metadata; the real Recovery
 // Event-reference regression is separate.
 func TestArchiveRejectsUnresolvedSourceMetadata(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
@@ -148,6 +152,7 @@ func TestArchiveRejectsUnresolvedSourceMetadata(t *testing.T) {
 }
 
 func TestValidateRejectsEveryArchiveInvalidCheckWithoutMutation(t *testing.T) {
+	t.Parallel()
 	fixture := newExportSourceFixture(t, addJournalBackedExportFixtureFacts)
 	for _, corruption := range []string{
 		"artifact-reference-invalid",

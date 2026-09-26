@@ -7,6 +7,7 @@ import (
 )
 
 func TestFinalAllowedAttemptChargesAndRaisesStopAtomically(t *testing.T) {
+	t.Parallel()
 	maximum := int64(1)
 	budget := Budget{Name: "attempt-budget", Scope: "envelope", Unit: "attempts", Maximum: maximum, ExhaustionAction: "budget-exhausted"}
 
@@ -27,6 +28,7 @@ func TestFinalAllowedAttemptChargesAndRaisesStopAtomically(t *testing.T) {
 func int64Pointer(value int64) *int64 { return &value }
 
 func TestBudgetSamplesAreIdempotentOrderedAndRecoverUnknownBaselines(t *testing.T) {
+	t.Parallel()
 	budget := Budget{Name: "external", Scope: "envelope", Unit: "input-tokens", Maximum: 100, ExhaustionAction: "budget-exhausted"}
 	unknown := BudgetSample{Source: "activated-harness", SourceSampleID: "sample-unknown", SampleKind: "delta", Value: nil}
 	first, err := AdmitBudgetSample(budget, nil, unknown)
@@ -57,6 +59,7 @@ func TestBudgetSamplesAreIdempotentOrderedAndRecoverUnknownBaselines(t *testing.
 }
 
 func TestBudgetSamplesRejectOverflow(t *testing.T) {
+	t.Parallel()
 	budget := Budget{Name: "attempt-budget", Scope: "envelope", Unit: "attempts", Maximum: math.MaxInt64, ExhaustionAction: "budget-exhausted"}
 	first := BudgetSample{ID: "one", Source: "fid", SourceSampleID: "one", SampleKind: "delta", Value: int64Pointer(math.MaxInt64)}
 	previous := "one"
@@ -67,6 +70,7 @@ func TestBudgetSamplesRejectOverflow(t *testing.T) {
 }
 
 func TestDeriveBudgetPreservesUnknownAndExhaustedChains(t *testing.T) {
+	t.Parallel()
 	budget := Budget{Name: "attempts", Scope: "envelope", Unit: "attempts", Maximum: 1, ExhaustionAction: "budget-exhausted"}
 	unknown, err := DeriveBudget(budget, []BudgetSample{{ID: "unknown", Source: "activated-harness", SourceSampleID: "unknown", SampleKind: "delta"}})
 	if err != nil || unknown.Consumed != nil || unknown.Remaining != nil {
@@ -79,6 +83,7 @@ func TestDeriveBudgetPreservesUnknownAndExhaustedChains(t *testing.T) {
 }
 
 func TestDeriveBudgetProjectsEveryAcceptedOutputState(t *testing.T) {
+	t.Parallel()
 	maximum := int64(10)
 	warning := int64(3)
 	budget := Budget{Name: "tokens", Scope: "envelope", Unit: "input-tokens", Maximum: maximum, WarningThreshold: &warning, ExhaustionAction: "budget-exhausted"}
@@ -107,6 +112,7 @@ func TestDeriveBudgetProjectsEveryAcceptedOutputState(t *testing.T) {
 }
 
 func TestBudgetAdmissionBlockAndEffectsUseExactBudgetStopShape(t *testing.T) {
+	t.Parallel()
 	workspace, _ := initializedWorkflowWorkspace(t)
 	conn, err := openWorkflowDB(workspace)
 	if err != nil {

@@ -15,6 +15,7 @@ import (
 // results reject outcome-not-permitted exactly like a mismatched Obligation
 // type does.
 func TestHumanOutcomeAdmissionSatisfiesOnlyMatchingClassWithApprovedResult(t *testing.T) {
+	t.Parallel()
 	for _, result := range []string{"approved", "rejected", "changes-required", "acknowledged"} {
 		t.Run(result, func(t *testing.T) {
 			err := classifyEvidenceAdmission(evidenceAdmission{

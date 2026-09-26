@@ -3,6 +3,7 @@ package workflow
 import "testing"
 
 func TestOnlyUnsatisfiedHumanOutcomeObligationRequiresExactlyOneRemainingHumanOutcome(t *testing.T) {
+	t.Parallel()
 	class := "release"
 	humanOutcome := Obligation{ObligationInput: ObligationInput{ID: "OBL-human", Type: "human-outcome", OutcomeClass: &class, GuardedActions: []string{"envelope.complete"}}}
 	gateEvidence := Obligation{ObligationInput: ObligationInput{ID: "OBL-gate", Type: "gate-evidence", GuardedActions: []string{"envelope.complete"}}}

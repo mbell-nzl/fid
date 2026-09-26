@@ -12,6 +12,7 @@ import (
 )
 
 func TestMigration0013OperationalKernelInventoryAndRoundTrip(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
 	defer closeMigrator(t, migrator, conn)
@@ -45,6 +46,7 @@ func TestMigration0013OperationalKernelInventoryAndRoundTrip(t *testing.T) {
 }
 
 func TestMigration0013CancelledReceiptTerminalConstraint(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
 	defer closeMigrator(t, migrator, conn)
@@ -88,6 +90,7 @@ func TestMigration0013CancelledReceiptTerminalConstraint(t *testing.T) {
 }
 
 func TestMigration0014RetiresV1AuthorityExecutionWithoutReconstruction(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
 	defer closeMigrator(t, migrator, conn)
@@ -162,6 +165,7 @@ func TestMigration0014RetiresV1AuthorityExecutionWithoutReconstruction(t *testin
 }
 
 func TestOperationalKernelInventoryComparisonRejectsSchemaDrift(t *testing.T) {
+	t.Parallel()
 	want := map[string]string{
 		"table:expected": "CREATE TABLE expected (id TEXT PRIMARY KEY)",
 	}

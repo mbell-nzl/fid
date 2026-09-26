@@ -7,6 +7,7 @@ import (
 )
 
 func TestMigration0015RecoverySchemaConstraintsAndRoundTrip(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	if err := MigrateUp(dbPath, testMigrationsDir(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)

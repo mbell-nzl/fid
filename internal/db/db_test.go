@@ -27,6 +27,7 @@ func TestOpenEnablesRequiredPragmas(t *testing.T) {
 }
 
 func TestOpenForRebuildRelaxesDurabilityWithoutChangingNormalOpen(t *testing.T) {
+	t.Parallel()
 	rebuildPath := t.TempDir() + "/rebuild.sqlite"
 	rebuildConn, err := OpenForRebuild(rebuildPath)
 	if err != nil {

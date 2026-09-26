@@ -12,6 +12,7 @@ import (
 )
 
 func TestEquivalentStopsShareAttentionButKeepDistinctFacts(t *testing.T) {
+	t.Parallel()
 	workspace, _ := initializedWorkflowWorkspace(t)
 	conn, err := openWorkflowDB(workspace)
 	if err != nil {
@@ -58,6 +59,7 @@ func TestEquivalentStopsShareAttentionButKeepDistinctFacts(t *testing.T) {
 }
 
 func TestRaiseStopUsesOneOpenAttentionAndRejectsRoutineReadsWithoutEffects(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	conn, err := openWorkflowDB(workspace)
 	if err != nil {
@@ -107,6 +109,7 @@ func TestRaiseStopUsesOneOpenAttentionAndRejectsRoutineReadsWithoutEffects(t *te
 }
 
 func TestRoutineStatusLeavesAttentionAndJournalUnchangedUntilExplicitStop(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	conn, err := openWorkflowDB(workspace)
 	if err != nil {
@@ -144,6 +147,7 @@ func TestRoutineStatusLeavesAttentionAndJournalUnchangedUntilExplicitStop(t *tes
 // stored verbatim: review-recorded carries no discriminator at all (DEC-236),
 // while finding-resolved requires exactly one, and rejects when it is absent.
 func TestRaiseStopAcceptsTheClosedFourTypeJudgmentConditionSet(t *testing.T) {
+	t.Parallel()
 	options, _ := recoveryFixture(t)
 	authorizeStopConditionRun(t, options)
 	stopOptions := StopOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, ActorID: options.ActorID, IdempotencyKey: testIdempotencyKey()}

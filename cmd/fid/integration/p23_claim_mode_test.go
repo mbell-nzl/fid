@@ -8,6 +8,7 @@ import (
 )
 
 func TestP23ReviewClaimRejectsDirtyPathAdoption(t *testing.T) {
+	t.Parallel()
 	t.Run("recover", func(t *testing.T) {
 		a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, nil, "review")
 		p22Write(t, a.workspace, "base.txt", "review recovery adoption\n")
@@ -36,6 +37,7 @@ func TestP23ReviewClaimRejectsDirtyPathAdoption(t *testing.T) {
 }
 
 func TestP23ReviewRunRetainsPhase22Lifecycle(t *testing.T) {
+	t.Parallel()
 	t.Run("close", func(t *testing.T) {
 		a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, nil, "review")
 		a.p22Observe(t, "terminated")

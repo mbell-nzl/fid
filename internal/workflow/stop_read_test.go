@@ -8,6 +8,7 @@ import (
 )
 
 func TestStopAndAttentionListsFilterLimitAndRemainReadOnly(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	conn, err := openWorkflowDB(workspace)
 	if err != nil {

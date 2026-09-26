@@ -16,6 +16,7 @@ import (
 )
 
 func TestRebuildJSONSucceedsWithoutActorAuthority(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 	journalPath := mustJournalPath(t, workspace)
@@ -61,6 +62,7 @@ func TestRebuildJSONSucceedsWithoutActorAuthority(t *testing.T) {
 }
 
 func TestRebuildRejectsRemovedByFlagWithoutMutation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
@@ -101,6 +103,7 @@ func TestRebuildRejectsRemovedByFlagWithoutMutation(t *testing.T) {
 }
 
 func TestRebuildRejectsEveryFormerByValueWithoutMutation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 	journalPath := mustJournalPath(t, workspace)
@@ -141,6 +144,7 @@ func TestRebuildRejectsEveryFormerByValueWithoutMutation(t *testing.T) {
 }
 
 func TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 	journalPath := mustJournalPath(t, workspace)
@@ -209,6 +213,7 @@ func TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork(t *testing.T) {
 }
 
 func TestRebuildJSONMapsExplicitMissingProjectToSelectedPath(t *testing.T) {
+	t.Parallel()
 	workingDirectory := t.TempDir()
 	missingProject := filepath.Join(t.TempDir(), "missing-project")
 	if err := os.Mkdir(missingProject, 0o755); err != nil {
@@ -252,6 +257,7 @@ func TestRebuildJSONMapsExplicitMissingProjectToSelectedPath(t *testing.T) {
 }
 
 func TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 	journalPath := mustJournalPath(t, workspace)
@@ -340,6 +346,7 @@ func TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease(t *testing.T
 }
 
 func TestRebuildJSONMapsReplayStopWithClosedDetails(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 	writeCommandFixture(t, workspace, "corrupt-tail.jsonl", "2026-06-05.jsonl")
@@ -385,6 +392,7 @@ func TestRebuildJSONMapsReplayStopWithClosedDetails(t *testing.T) {
 }
 
 func TestRebuildCommandReplaysJournalAndReportsCounts(t *testing.T) {
+	t.Parallel()
 	workspace := newRebuildWorkspace(t)
 	writeCommandFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
@@ -429,6 +437,7 @@ func TestRebuildCommandReplaysJournalAndReportsCounts(t *testing.T) {
 }
 
 func TestRebuildCommandReportsCorruptJournal(t *testing.T) {
+	t.Parallel()
 	workspace := newRebuildWorkspace(t)
 	writeCommandFixture(t, workspace, "corrupt-tail.jsonl", "2026-06-05.jsonl")
 
@@ -450,6 +459,7 @@ func TestRebuildCommandReportsCorruptJournal(t *testing.T) {
 }
 
 func TestRebuildCommandReportsPreconditionConflict(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 	writeCommandFixture(t, workspace, "conflicting-precondition.jsonl", "2026-06-05.jsonl")

@@ -584,6 +584,7 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 }
 
 func TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent(t *testing.T) {
+	t.Parallel()
 	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
 		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
 		return err
@@ -806,6 +807,7 @@ func TestLatestVerificationSelectionPrefersAppendOrderWithinTimestampTie(t *test
 }
 
 func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T) {
+	t.Parallel()
 	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
 		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
 		return err
@@ -972,6 +974,7 @@ func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T)
 }
 
 func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
+	t.Parallel()
 	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
 		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
 		return err
@@ -1090,6 +1093,7 @@ func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
 }
 
 func TestVerifyAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
+	t.Parallel()
 	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
 		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
 		return err
@@ -1326,6 +1330,7 @@ func TestAddAcceptanceCriterionNotFoundErrorShape(t *testing.T) {
 }
 
 func TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet(t *testing.T) {
+	t.Parallel()
 	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
 		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
 		return err

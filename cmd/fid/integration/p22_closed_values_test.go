@@ -55,6 +55,7 @@ func p22ValidateClosedFields(domain string, value map[string]any) error {
 }
 
 func TestP22ClosedValueSchemaCases(t *testing.T) {
+	t.Parallel()
 	data, err := os.ReadFile(filepath.Join(p22CorpusDir, "wire-inventory.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -123,6 +124,7 @@ func p22ClosedDomainKeys[T any](domains map[string]T) []string {
 // captured field proves that an unaccepted output fails this same conformance
 // assertion; it is not a claim that a caller can submit derived output fields.
 func TestP22ClosedValuesObserveRealResponses(t *testing.T) {
+	t.Parallel()
 	a := p22NewFIDRecoveryAdapterWithLease(t, "human", 3600)
 	run := p21Run(t, a.binary, a.workspace, "--json", "run", "get", a.runID)
 	// DEC-201 explicitly adds effective_status to the resume Claim projection;

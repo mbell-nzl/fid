@@ -106,6 +106,7 @@ func assertArray(t *testing.T, object map[string]any, key string, length int) {
 }
 
 func TestIssueGetJSONMatchesClosedSchema(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Closed read", "--actor", "agent:developer")

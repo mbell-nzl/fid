@@ -13,6 +13,7 @@ import (
 )
 
 func TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable(t *testing.T) {
+	t.Parallel()
 	options, activation, factID := finalizedStopConditionActivation(t)
 	workspace, migrationsDir := options.WorkspaceRoot, options.MigrationsDir
 	request := stopTestRequest()
@@ -107,6 +108,7 @@ func TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable
 }
 
 func TestAttentionResolutionRevalidatesCurrentBudget(t *testing.T) {
+	t.Parallel()
 	for _, exhaust := range []bool{false, true} {
 		t.Run(map[bool]string{false: "known budget", true: "later exhausted budget"}[exhaust], func(t *testing.T) {
 			options, _ := recoveryFixture(t)
@@ -164,6 +166,7 @@ func TestAttentionResolutionRevalidatesCurrentBudget(t *testing.T) {
 }
 
 func TestAttentionResolutionDeduplicatesContainingEventAndRevalidatesEveryStop(t *testing.T) {
+	t.Parallel()
 	for _, invalid := range []int{-1, 0, 1} {
 		t.Run([]string{"qualifying shared Event", "invalid first fact", "invalid second fact"}[invalid+1], func(t *testing.T) {
 			options, attention, factID, wrongFactID := sharedActivationDispositionFixture(t)

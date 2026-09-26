@@ -3,6 +3,7 @@ package journal
 import "testing"
 
 func TestTask10HumanOutcomeStopDetailsAndConditionAreStrict(t *testing.T) {
+	t.Parallel()
 	details := `{"envelope_id":"ENV-task10","obligation_id":"OBL-human-release","outcome_class":"release"}`
 	condition := `{"type":"human-outcome-recorded","subject":{"type":"envelope","id":"ENV-task10"},"budget_name":null,"capability_id":null,"outcome_class":"release"}`
 	effect := Effect{Table: "stops", Op: "insert", Values: map[string]any{"code": "human-outcome-required", "subject_type": "envelope", "subject_id": "ENV-task10"}}
@@ -41,6 +42,7 @@ func TestTask10HumanOutcomeStopDetailsAndConditionAreStrict(t *testing.T) {
 // a human-outcome-recorded Condition carrying a stray budget_name is rejected
 // exactly like the retained Phase 22 types (VAL-081, re-confirmed by task 10).
 func TestTask10HumanOutcomeConditionDispatchPreservesNullableBinding(t *testing.T) {
+	t.Parallel()
 	raw := `{"type":"human-outcome-recorded","subject":{"type":"envelope","id":"ENV-pinned"},"budget_name":"attempts","capability_id":null,"outcome_class":"release"}`
 	value, err := decodeCurrentJSON(raw)
 	if err != nil {
@@ -53,6 +55,7 @@ func TestTask10HumanOutcomeConditionDispatchPreservesNullableBinding(t *testing.
 }
 
 func TestTask10HumanOutcomeConditionShapeAndNonStringDiscriminant(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name string
 		raw  string

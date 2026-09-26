@@ -8,6 +8,7 @@ import (
 )
 
 func TestP22StopAttentionHumanListsNameReasonAndResolution(t *testing.T) {
+	t.Parallel()
 	adapter := p22NewFIDRecoveryAdapter(t)
 	fixture := p22ConformanceCase{Name: "human-stop", Operation: "stop.raise", Kind: "accepted"}
 	raised := adapter.Execute(t, fixture)

@@ -8,6 +8,7 @@ import (
 )
 
 func TestP23ReviewEvidenceRealProcessJourney(t *testing.T) {
+	t.Parallel()
 	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "evidence.link", "gate.register", "review.record", "run.close", "run.observe", "run.start"}
 	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "mutation", p22ExecutionFixture{ReviewObligation: true})
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "evidence-builder")
@@ -64,6 +65,7 @@ func TestP23ReviewEvidenceRealProcessJourney(t *testing.T) {
 }
 
 func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
+	t.Parallel()
 	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "gate.register", "review.record", "run.close", "run.observe", "run.observe-budget", "run.start"}
 	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "mutation", p22ExecutionFixture{ReviewObligation: true, ReviewCyclesMaximum: 1})
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "cycles-builder")
@@ -132,6 +134,7 @@ func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
 // review-cycles sample keyed on the Review ID, and neither run.recover into a
 // linked successor nor fid rebuild adds, removes, or changes that charge.
 func TestP23ReviewCycleChargeSurvivesLinkedRecoveryAndRebuild(t *testing.T) {
+	t.Parallel()
 	actions := []string{"claim.acquire", "claim.expire", "envelope.activate", "envelope.create", "gate.register", "review.record", "run.observe", "run.recover", "run.start"}
 	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "review", p22ExecutionFixture{ReviewObligation: true, ReviewCyclesMaximum: 3})
 	priorRunID := a.runID

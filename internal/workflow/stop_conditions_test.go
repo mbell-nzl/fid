@@ -11,6 +11,7 @@ import (
 )
 
 func TestStopResolutionRequiresTerminatedExecutorFact(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"live", "unknown", "terminated", "wrong Run", "missing fact", "changed executor", "changed liveness"} {
 		t.Run(name, func(t *testing.T) {
 			state := name
@@ -86,6 +87,7 @@ func TestStopResolutionRequiresTerminatedExecutorFact(t *testing.T) {
 }
 
 func TestStopResolutionChecksCurrentActivationAgreementAndCapability(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name       string
 		condition  string
@@ -198,6 +200,7 @@ func authorizeStopConditionRun(t *testing.T, options RunOptions) {
 }
 
 func TestEnvelopeStopResolutionUsesPrimaryIssueGrantAndCurrentBudget(t *testing.T) {
+	t.Parallel()
 	options, _ := recoveryFixture(t)
 	observeBudgetAuthorize(t, options.WorkspaceRoot, "input-tokens", 5)
 	authorizeStopConditionRun(t, options)
@@ -223,6 +226,7 @@ func TestEnvelopeStopResolutionUsesPrimaryIssueGrantAndCurrentBudget(t *testing.
 }
 
 func TestStopResolutionRecoveryFactNamesThePredecessor(t *testing.T) {
+	t.Parallel()
 	options, request := recoveryFixture(t)
 	recovered, err := RecoverRun(options, request)
 	if err != nil {
@@ -243,6 +247,7 @@ func TestStopResolutionRecoveryFactNamesThePredecessor(t *testing.T) {
 }
 
 func TestStopResolutionRequiresNamedKnownNonExhaustedBudget(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"known Run", "known Envelope", "unknown", "exhausted", "wrong budget", "wrong Envelope", "later exhausted"} {
 		t.Run(name, func(t *testing.T) {
 			options, recovery := recoveryFixture(t)
@@ -296,6 +301,7 @@ func TestStopResolutionRequiresNamedKnownNonExhaustedBudget(t *testing.T) {
 }
 
 func TestStopResolutionWorkEndedRequiresCurrentTerminalSubject(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"terminal Run", "terminal Envelope", "active Run", "Envelope has active Run", "wrong Run"} {
 		t.Run(name, func(t *testing.T) {
 			options, recovery := recoveryFixture(t)
@@ -331,6 +337,7 @@ func TestStopResolutionWorkEndedRequiresCurrentTerminalSubject(t *testing.T) {
 }
 
 func TestStopResolutionWorkEndedAcceptsCompletedEnvelopeFact(t *testing.T) {
+	t.Parallel()
 	options, recovery := recoveryFixture(t)
 	closeAuthorize(t, options.WorkspaceRoot)
 	if _, err := CloseRun(options, RunCloseRequest{RunID: recovery.PriorRunID, ExpectedVersion: 1, ObservationID: recovery.ObservationID, Repository: repositoryForRun(t, options, recovery.PriorRunID)}); err != nil {

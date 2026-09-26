@@ -69,6 +69,7 @@ func obligationGuardCases() []obligationGuardCase {
 }
 
 func TestGuardedActionsEvaluateOnlyObligationsThatGuardThem(t *testing.T) {
+	t.Parallel()
 	for _, test := range obligationGuardCases() {
 		t.Run(test.name, func(t *testing.T) {
 			fixture := newObligationGuardFixture(t, test)
@@ -105,6 +106,7 @@ func TestGuardedActionsEvaluateOnlyObligationsThatGuardThem(t *testing.T) {
 // denied naming it and leaves the journal and Envelope status unchanged. The
 // terminal-success half of the same denial is asserted by the table above.
 func TestCompleteEnvelopeDeniedByGuardingObligationCommitsNothing(t *testing.T) {
+	t.Parallel()
 	fixture := newObligationGuardFixture(t, obligationGuardCases()[0])
 	before := journalSnapshot(t, fixture.options.WorkspaceRoot)
 	_, err := CompleteEnvelope(EnvelopeOptions{WorkspaceRoot: fixture.options.WorkspaceRoot, MigrationsDir: fixture.options.MigrationsDir, ActorID: fixture.options.ActorID, IdempotencyKey: "guard-complete-denied"}, EnvelopeCompleteRequest{EnvelopeID: "ENV-recovery", ExpectedRevision: 1, Repository: fixture.repository})

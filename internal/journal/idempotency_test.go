@@ -13,6 +13,7 @@ import (
 )
 
 func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
+	t.Parallel()
 	workspace, conn := newIdempotencyWorkspace(t)
 	request := testIdempotencyRequest()
 
@@ -56,6 +57,7 @@ func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
 }
 
 func TestCommitIdempotentRejectsSameKeyWithDifferentDigest(t *testing.T) {
+	t.Parallel()
 	workspace, conn := newIdempotencyWorkspace(t)
 	defer closeIdempotencyDB(t, conn)
 
@@ -80,6 +82,7 @@ func TestCommitIdempotentRejectsSameKeyWithDifferentDigest(t *testing.T) {
 }
 
 func TestCommitIdempotentSerializesConcurrentSameKeyCalls(t *testing.T) {
+	t.Parallel()
 	workspace, conn := newIdempotencyWorkspace(t)
 	closeIdempotencyDB(t, conn)
 

@@ -26,6 +26,7 @@ var (
 )
 
 func TestPhase21ConformanceCorpusIsCompleteAndByteExact(t *testing.T) {
+	t.Parallel()
 	repoRoot := integrationRepositoryRoot()
 	publicInterface := string(readP21File(t, filepath.Join(repoRoot, "project-docs/docs/phases/phase-21/public-interface.md")))
 	expected := p21ExpectedCorpus(t, publicInterface)
@@ -74,6 +75,7 @@ func TestPhase21ConformanceCorpusIsCompleteAndByteExact(t *testing.T) {
 }
 
 func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
+	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	p22Git(t, workspace, "init", "-q")

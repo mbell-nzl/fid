@@ -127,6 +127,7 @@ func TestAcceptanceCriterionAddJSONUsesSpecificAtomicFailureCodes(t *testing.T) 
 }
 
 func TestIssueACAddCommandAddsAcceptanceCriterionAndPrintsConfirmation(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	journalPath := mustJournalPath(t, workspace)
 
@@ -337,6 +338,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 }
 
 func TestIssueACVerifyCommandPersistsVerificationAndPrintsConfirmation(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI AC verify")
@@ -344,6 +346,7 @@ func TestIssueACVerifyCommandPersistsVerificationAndPrintsConfirmation(t *testin
 }
 
 func TestIssueACVerifyCommandKeepsLatestPerRoleIndependent(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI multi-role verify")
@@ -352,6 +355,7 @@ func TestIssueACVerifyCommandKeepsLatestPerRoleIndependent(t *testing.T) {
 }
 
 func TestIssueACVerifyCommandPreservesFailToPassHistory(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI fail then pass")
@@ -360,6 +364,7 @@ func TestIssueACVerifyCommandPreservesFailToPassHistory(t *testing.T) {
 }
 
 func TestIssueACVerifyCommandLatestPerRoleSurvivesRebuild(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI rebuild AC parity")
@@ -381,6 +386,7 @@ func TestIssueACVerifyCommandRejectsBeforeAppend(t *testing.T) {
 }
 
 func TestIssueACVerifyCommandUsesRoleSpecificPermissionsAndHumanAttribution(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI verifier permissions")
@@ -415,6 +421,7 @@ func assertIssueACVerifyUnavailable(t *testing.T, workspace, issueID, criterionI
 }
 
 func TestIssueACListCommandMatchesClosedHumanAndJSONContracts(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI AC list")
@@ -477,6 +484,7 @@ func TestIssueACListCommandMatchesClosedHumanAndJSONContracts(t *testing.T) {
 }
 
 func TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	issueID, _ := seedIssueAcceptanceCriterion(t, workspace, "CLI AC transport replacement")

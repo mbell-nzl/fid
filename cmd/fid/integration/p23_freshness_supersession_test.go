@@ -9,6 +9,7 @@ import (
 )
 
 func TestP23FreshnessAndOutcomeSupersessionRealProcessJourney(t *testing.T) {
+	t.Parallel()
 	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "evidence.link", "gate.register", "human-outcome.record", "review.record", "run.close", "run.observe", "run.start"}
 	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "mutation", p22ExecutionFixture{ReviewObligation: true, HumanObligations: true})
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "freshness-builder")

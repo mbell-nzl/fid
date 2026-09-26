@@ -27,6 +27,7 @@ func mustP23JSON(t *testing.T, value any) string {
 // activated profile but has no gate.run Grant. Before the repair only the Actor
 // whose Grant sorts first could run a gate.
 func TestP23GateRunAuthorizesEveryEnvelopeGrantThroughBuiltBinary(t *testing.T) {
+	t.Parallel()
 	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "gate.register", "gate.run", "review.record", "run.close", "run.observe", "run.start"}
 	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "mutation")
 	issue := p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "create", "--kind", "task", "--title", "Multi-grant gate.run", "--actor", "agent:developer", "--idempotency-key", "p23-gate-grants-issue")

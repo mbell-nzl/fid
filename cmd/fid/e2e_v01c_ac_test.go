@@ -7,6 +7,7 @@ import (
 )
 
 func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 	assertRemovedV1CommandLeavesJournalUnchanged(t, workspace, "issue", "claim", "FID-legacy")

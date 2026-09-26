@@ -6,6 +6,7 @@ import (
 )
 
 func TestAddRejectsThreeNodeDependencyCycle(t *testing.T) {
+	t.Parallel()
 	workspace := newLinksWorkspace(t)
 	firstID := createLinksIssue(t, workspace, "First issue")
 	secondID := createLinksIssue(t, workspace, "Second issue")
@@ -47,6 +48,7 @@ func TestAddRejectsThreeNodeDependencyCycle(t *testing.T) {
 }
 
 func TestAddRejectsSelfDependencyCycle(t *testing.T) {
+	t.Parallel()
 	workspace := newLinksWorkspace(t)
 	issueID := createLinksIssue(t, workspace, "Self dependency")
 	beforeEvents := countLinksJournalEvents(t, workspace)
@@ -74,6 +76,7 @@ func TestAddRejectsSelfDependencyCycle(t *testing.T) {
 }
 
 func TestDependencyCycleTraversalMatrix(t *testing.T) {
+	t.Parallel()
 	t.Run("two-node cycle has ordered path and no append", func(t *testing.T) {
 		workspace := newLinksWorkspace(t)
 		firstID := createLinksIssue(t, workspace, "First issue")

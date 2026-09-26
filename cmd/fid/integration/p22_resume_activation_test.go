@@ -9,6 +9,7 @@ import (
 )
 
 func TestP22ResumeAndGateAgreeDuringIncompleteActivation(t *testing.T) {
+	t.Parallel()
 	adapter := p22NewFIDRecoveryAdapter(t)
 	p22ExecuteHumanSetup(t, adapter, p22ConformanceCase{Name: "activation-resume-budget", Operation: "run.observe-budget", Input: map[string]any{"value": 0}})
 	run := p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "run", "get", adapter.runID)

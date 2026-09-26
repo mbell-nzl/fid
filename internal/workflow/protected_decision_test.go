@@ -9,6 +9,7 @@ import (
 )
 
 func TestProtectedDecisionBlocksOnlyDeclaredAffectedActions(t *testing.T) {
+	t.Parallel()
 	conn, err := sql.Open("sqlite", ":memory:")
 	if err != nil {
 		t.Fatal(err)
@@ -43,6 +44,7 @@ func TestProtectedDecisionBlocksOnlyDeclaredAffectedActions(t *testing.T) {
 }
 
 func TestProtectedDecisionSatisfactionRequiresBothApprovedFactsAndExactAuthority(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name, referenceOutcome, outcomeResult string
 		referenceCapabilities                 string
@@ -85,6 +87,7 @@ func TestProtectedDecisionSatisfactionRequiresBothApprovedFactsAndExactAuthority
 }
 
 func TestDecisionConditionPreservesRetainedBytesAndSeparatesAttentionKeys(t *testing.T) {
+	t.Parallel()
 	subject := Subject{Type: "envelope", ID: "ENV-protected"}
 	retained := Condition{Type: "work-ended", Subject: subject}
 	raw, err := json.Marshal(retained)
@@ -116,6 +119,7 @@ func TestDecisionConditionPreservesRetainedBytesAndSeparatesAttentionKeys(t *tes
 }
 
 func TestTask9RetainedAttentionKeyMatchesPrechangeReference(t *testing.T) {
+	t.Parallel()
 	const reference = "74c83b7033729785eb99403ecec9dcde30ac4280"
 	name := "attempts"
 	subject := Subject{Type: "run", ID: "RUN-pinned"}

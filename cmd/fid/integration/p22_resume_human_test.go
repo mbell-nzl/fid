@@ -11,6 +11,7 @@ import (
 )
 
 func TestP22RecoveryHumanResultMatchesDurableJSON(t *testing.T) {
+	t.Parallel()
 	for _, mode := range []string{"ordinary", "force"} {
 		t.Run(mode, func(t *testing.T) {
 			adapter, fixture := p22HumanRecoveryFixture(t, mode)
@@ -40,6 +41,7 @@ func TestP22RecoveryHumanResultMatchesDurableJSON(t *testing.T) {
 }
 
 func TestP22ResumeHumanMatchesEligibleAndStoppedRecoveryState(t *testing.T) {
+	t.Parallel()
 	adapter, fixture := p22HumanRecoveryFixture(t, "ordinary")
 	response := adapter.Execute(t, fixture)
 	if response.ExitCode != 0 {
@@ -71,6 +73,7 @@ func TestP22ResumeHumanMatchesEligibleAndStoppedRecoveryState(t *testing.T) {
 }
 
 func TestP22ResumeHumanDistinguishesElapsedLeaseFromRecordedStatus(t *testing.T) {
+	t.Parallel()
 	adapter := p22NewFIDRecoveryAdapterWithLease(t, "agent", 5)
 	run := p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "run", "get", adapter.runID)
 	issueID := p21PathString(t, run, "result", "run", "issue_id")

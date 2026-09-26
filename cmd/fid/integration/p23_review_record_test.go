@@ -15,6 +15,7 @@ import (
 // deliberately absent: DEC-239 confines that otherwise unreachable state to
 // internal/review's isolated durable-history query fixture.
 func TestP23ReviewRecordRealProcessJourney(t *testing.T) {
+	t.Parallel()
 	actions := []string{
 		"claim.acquire", "claim.release", "envelope.activate", "envelope.create",
 		"gate.register", "review.record", "run.close", "run.observe", "run.start",

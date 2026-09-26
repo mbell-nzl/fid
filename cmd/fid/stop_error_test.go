@@ -10,6 +10,7 @@ import (
 )
 
 func TestRunAndGateStopErrorsUseStopUnresolvedEnvelope(t *testing.T) {
+	t.Parallel()
 	cause := &workflow.StopBlockedError{Action: "gate.run", Stops: []workflow.Stop{{ID: "STOP-guard", Code: "operator-stop"}}}
 	for name, render := range map[string]func(*cobra.Command, string, error) error{
 		"run":  renderRunError,
@@ -33,6 +34,7 @@ func TestRunAndGateStopErrorsUseStopUnresolvedEnvelope(t *testing.T) {
 }
 
 func TestReviewReworkStopErrorsRenderTypedBudgetDenial(t *testing.T) {
+	t.Parallel()
 	consumed, remaining := int64(1), int64(0)
 	cause := &workflow.StopBlockedError{
 		Action:       "claim.acquire",

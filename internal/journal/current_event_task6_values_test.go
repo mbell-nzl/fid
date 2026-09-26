@@ -7,6 +7,7 @@ import (
 )
 
 func TestCurrentBudgetValuesAdmitReviewCyclesPair(t *testing.T) {
+	t.Parallel()
 	immutable := map[string]any{"name": "review-cycles", "scope": "envelope", "unit": "review-cycles", "maximum": json.Number("1"), "warning_threshold": nil, "exhaustion_action": "review-rework-exhausted", "consumed": nil, "remaining": nil}
 	if err := validateCurrentValue("ImmutableBudget", immutable); err != nil {
 		t.Fatalf("validateCurrentValue(ImmutableBudget) error = %v", err)
@@ -22,6 +23,7 @@ func TestCurrentBudgetValuesAdmitReviewCyclesPair(t *testing.T) {
 }
 
 func TestCurrentReviewCycleProjectionStartsKnownAndOwnsFIDSample(t *testing.T) {
+	t.Parallel()
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "review-cycle.sqlite"))
 	defer closeProjectDB(t, conn)
 	seedBudgetProjection(t, conn)

@@ -9,6 +9,7 @@ import (
 )
 
 func TestArchiveWriterRejectsOversizedInventoryBeforePublication(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct {
 		name, path string
 		size       int64
@@ -26,6 +27,7 @@ func TestArchiveWriterRejectsOversizedInventoryBeforePublication(t *testing.T) {
 }
 
 func TestJournalWriterChunksAtLineBoundaryPreservingBytes(t *testing.T) {
+	t.Parallel()
 	w := &journalChunkWriter{directory: t.TempDir()}
 	defer w.close()
 	line := bytes.Repeat([]byte("x"), 1<<20)

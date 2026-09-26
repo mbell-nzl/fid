@@ -10,6 +10,7 @@ import (
 )
 
 func TestHumanOutcomeSupersessionFollowsRecordedEventOrderBothDirections(t *testing.T) {
+	t.Parallel()
 	conn, err := fiddb.Open(filepath.Join(t.TempDir(), "outcomes.sqlite"))
 	if err != nil {
 		t.Fatalf("open Outcome fixture: %v", err)
@@ -45,6 +46,7 @@ func TestHumanOutcomeSupersessionFollowsRecordedEventOrderBothDirections(t *test
 }
 
 func TestWorkflowEvaluationUsesHumanOutcomeFreshnessAndSupersession(t *testing.T) {
+	t.Parallel()
 	conn, err := fiddb.Open(filepath.Join(t.TempDir(), "workflow-outcomes.sqlite"))
 	if err != nil {
 		t.Fatalf("open workflow Outcome fixture: %v", err)
@@ -93,6 +95,7 @@ func TestWorkflowEvaluationUsesHumanOutcomeFreshnessAndSupersession(t *testing.T
 }
 
 func TestHumanOutcomeEvaluationUsesLaterDifferingResult(t *testing.T) {
+	t.Parallel()
 	class := "release"
 	obligation := Obligation{ObligationInput: ObligationInput{
 		ID: "OBL-human", Type: "human-outcome", OutcomeClass: &class,
@@ -141,6 +144,7 @@ func TestHumanOutcomeEvaluationUsesLaterDifferingResult(t *testing.T) {
 }
 
 func TestAbsentHumanOutcomeFreshnessRemainsFresh(t *testing.T) {
+	t.Parallel()
 	class := "release"
 	obligation := Obligation{ObligationInput: ObligationInput{ID: "OBL-human", Type: "human-outcome", OutcomeClass: &class, FreshnessTarget: "none", ArtifactPolicy: "metadata-sufficient"}}
 	got := EvaluateEnvelopeObligations([]Obligation{obligation}, nil)[0]

@@ -9,6 +9,7 @@ import (
 )
 
 func TestP22AbandonUsesExactHumanForceAndTypedObservationFailures(t *testing.T) {
+	t.Parallel()
 	for _, mode := range []string{"ordinary", "force"} {
 		cases := []string{"valid", "unknown", "missing-observation", "null-observation", "nonexistent-observation", "forged-target"}
 		if mode == "ordinary" {

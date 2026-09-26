@@ -43,6 +43,7 @@ type p22RecoveryAdapter interface {
 }
 
 func TestP22DualAdapterRecoveryConformance(t *testing.T) {
+	t.Parallel()
 	fixtures := p22RecoveryFixtures(t)
 	for _, newAdapter := range []func(*testing.T) p22RecoveryAdapter{
 		func(_ *testing.T) p22RecoveryAdapter { return p22NewFakeRecoveryAdapter() },
@@ -596,6 +597,7 @@ func (adapter *p22FIDRecoveryAdapter) p22Advance(t *testing.T, operation, stdout
 }
 
 func TestP22RealBinaryRecoveryFailureCorpus(t *testing.T) {
+	t.Parallel()
 	for _, fixture := range []struct {
 		name, operation, code string
 		exit                  int

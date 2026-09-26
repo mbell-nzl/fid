@@ -3,6 +3,7 @@ package journal
 import "testing"
 
 func TestTask9ProtectedDecisionStopDetailsAndConditionAreStrict(t *testing.T) {
+	t.Parallel()
 	details := `{"envelope_id":"ENV-task9","decision_class":"release","required_capabilities":["decision.record-reference"],"affected_actions":["envelope.complete"]}`
 	condition := `{"type":"decision-satisfied","subject":{"type":"envelope","id":"ENV-task9"},"budget_name":null,"capability_id":null,"decision_class":"release"}`
 	effect := Effect{Table: "stops", Op: "insert", Values: map[string]any{"code": "protected-decision-required", "subject_type": "envelope", "subject_id": "ENV-task9"}}

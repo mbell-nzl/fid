@@ -80,6 +80,7 @@ func TestRootCommandResolvesRelativeProjectFromInjectedWorkingDirectory(t *testi
 }
 
 func TestRootFlagsAllowRebuildForAnExplicitProject(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 

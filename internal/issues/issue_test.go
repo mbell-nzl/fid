@@ -169,6 +169,7 @@ func TestCreateRejectsUnsupportedKind(t *testing.T) {
 }
 
 func TestIssueCreateUsesAssignedWorkflowAndItsInitialState(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
@@ -260,6 +261,7 @@ func TestIssueCreateUsesAssignedWorkflowAndItsInitialState(t *testing.T) {
 }
 
 func TestIssueCreateResolvesKindAssignmentBeforeProjectAssignment(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
@@ -843,6 +845,7 @@ func TestCreateAndGetRoundTrip(t *testing.T) {
 }
 
 func TestCreateEventOmitsRetiredPhase20Fields(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,

@@ -7,6 +7,7 @@ import (
 )
 
 func TestRejectedArtifactsResolvePathsUnderExecutionCWD(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	if err := os.Mkdir(filepath.Join(workspace, "cwd"), 0o755); err != nil {
 		t.Fatalf("create execution cwd: %v", err)

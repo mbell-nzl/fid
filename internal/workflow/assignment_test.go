@@ -9,6 +9,7 @@ import (
 )
 
 func TestValidateAssignmentRequestRejectsAndAcceptsScopeMatrix(t *testing.T) {
+	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 
@@ -68,6 +69,7 @@ func TestValidateAssignmentRequestRejectsAndAcceptsScopeMatrix(t *testing.T) {
 }
 
 func TestValidateAssignmentRequestDoesNotWrite(t *testing.T) {
+	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 	before := workflowTableSnapshot(t, conn)

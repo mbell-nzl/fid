@@ -95,6 +95,7 @@ abandoned_attempt_grace_seconds = 0
 }
 
 func TestParseProjectConfigBoundaryDomains(t *testing.T) {
+	t.Parallel()
 	valid := strictProjectConfig(ProjectConfig{
 		ProjectID:                    "opaque-project-identity",
 		IssuePrefix:                  "FID",
@@ -192,6 +193,7 @@ func TestParseProjectConfigBoundaryDomains(t *testing.T) {
 }
 
 func TestProjectConfigWriterRoundTripsByteStableAtInt64Boundaries(t *testing.T) {
+	t.Parallel()
 	for _, project := range []ProjectConfig{
 		{ProjectID: "opaque-project-identity", IssuePrefix: "FID", ArtifactRoot: "artifacts", MaxOutputBytes: 10, MaxExcerptBytes: 10, AbandonedAttemptGraceSeconds: 0},
 		{ProjectID: strings.Repeat("x", 128), IssuePrefix: "A123456789012345", ArtifactRoot: maxArtifactRoot(), MaxOutputBytes: math.MaxInt64, MaxExcerptBytes: math.MaxInt64, AbandonedAttemptGraceSeconds: math.MaxInt64},
@@ -218,6 +220,7 @@ func TestProjectConfigWriterRoundTripsByteStableAtInt64Boundaries(t *testing.T) 
 }
 
 func TestReadProjectConfigRejectsArtifactRootSymlinkComponentEscape(t *testing.T) {
+	t.Parallel()
 	fidRoot := t.TempDir()
 	outside := t.TempDir()
 	if err := os.Symlink(outside, filepath.Join(fidRoot, "nested")); err != nil {
@@ -243,12 +246,14 @@ func maxArtifactRoot() string {
 }
 
 func TestValidateIssuePrefixRejectsInvalidBasename(t *testing.T) {
+	t.Parallel()
 	if err := ValidateIssuePrefix("INVALID_PREFIX"); err == nil {
 		t.Fatal("ValidateIssuePrefix() error = nil, want invalid underscore rejection")
 	}
 }
 
 func TestReadProjectConfigRejectsArtifactRootSymlinkEscape(t *testing.T) {
+	t.Parallel()
 	fidRoot := t.TempDir()
 	outside := t.TempDir()
 	if err := os.Symlink(outside, filepath.Join(fidRoot, "artifacts")); err != nil {

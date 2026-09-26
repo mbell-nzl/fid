@@ -10,6 +10,7 @@ import (
 )
 
 func TestDecodeClosedReviewInputRejectsMalformedInapplicability(t *testing.T) {
+	t.Parallel()
 	for _, payload := range []string{
 		`{"inapplicable_findings":null}`,
 		`{"inapplicable_findings":[],"inapplicable_findings":[]}`,
@@ -28,6 +29,7 @@ func TestDecodeClosedReviewInputRejectsMalformedInapplicability(t *testing.T) {
 }
 
 func TestFindingAddressDoesNotResolveOrUnblock(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID, _, source := reviewWorkspaceWithTwoActivatedReviewers(t)
 	repository := runRepositoryForTest(t, workspace)
 
@@ -96,6 +98,7 @@ func TestFindingAddressDoesNotResolveOrUnblock(t *testing.T) {
 }
 
 func TestReviewRecordMixedTerminalDispositions(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID, _, source := reviewWorkspaceWithTwoActivatedReviewers(t)
 	repository := runRepositoryForTest(t, workspace)
 

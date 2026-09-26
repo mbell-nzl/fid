@@ -106,8 +106,10 @@ func TestMaintenanceCheckWarningPromotionPreservesFindingsAndInfo(t *testing.T) 
 	}
 }
 
-func TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat(t *testing.T) {
-	t.Parallel()
+// Serial: the 299/300-second fixture ages against the wall clock across two
+// command runs, leaving about one second of margin that parallel CPU contention
+// can consume. The deterministic boundary is proven in internal/maintenance.
+func TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat(t *testing.T) { //nolint:paralleltest // wall-clock boundary fixture, see above.
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	configPath := filepath.Join(workspace, ".fid", "config.toml")
@@ -183,6 +185,7 @@ func TestMaintenanceCheckHumanSuccessAndVacuumJSONRejection(t *testing.T) {
 }
 
 func TestMaintenanceCheckUsesExplicitProjectRoot(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	stdout := &bytes.Buffer{}
@@ -201,6 +204,7 @@ func TestMaintenanceCheckUsesExplicitProjectRoot(t *testing.T) {
 }
 
 func TestMaintenanceCheckRejectsFindingLimitWithoutTruncation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))

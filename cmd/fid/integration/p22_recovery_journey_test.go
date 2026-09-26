@@ -16,6 +16,7 @@ import (
 )
 
 func TestP22RecoveryConformanceCorpusHasSharedCases(t *testing.T) {
+	t.Parallel()
 	fixture, err := os.ReadFile(filepath.Join("testdata", "p22_conformance", "manifest.json"))
 	if err != nil {
 		t.Fatalf("read Phase 22 recovery conformance manifest: %v", err)
@@ -32,6 +33,7 @@ func TestP22RecoveryConformanceCorpusHasSharedCases(t *testing.T) {
 }
 
 func TestP22EarlyRecoveryJourney(t *testing.T) {
+	t.Parallel()
 	for _, dirty := range []bool{false, true} {
 		name := "clean"
 		if dirty {

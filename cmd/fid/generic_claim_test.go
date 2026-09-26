@@ -295,6 +295,7 @@ func TestClaimConflictsExpiryAndWrongHolderFailWithoutMutation(t *testing.T) {
 }
 
 func TestExpiredClaimWithUnresolvedExecutorCannotBeReacquired(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "expired-unresolved-claim")
 	repository := runRepositoryForTest(t, workspace)
@@ -335,6 +336,7 @@ func TestExpiredClaimWithUnresolvedExecutorCannotBeReacquired(t *testing.T) {
 }
 
 func TestClaimRenewalAfterRunPreservesLineageAndFencesClaimVersions(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
 	envelopeInput := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := envelopeInput["authority_grants"].([]any)[0].(map[string]any)

@@ -19,6 +19,7 @@ const (
 )
 
 func TestTask9PrechangeBudgetObservedJournalReplaysWithoutMutation(t *testing.T) {
+	t.Parallel()
 	encoded, err := os.ReadFile(filepath.Join("testdata", "task9-prechange-budget-observed.jsonl.gz.b64"))
 	if err != nil {
 		t.Fatal(err)

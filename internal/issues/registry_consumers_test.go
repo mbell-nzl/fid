@@ -6,6 +6,7 @@ import (
 )
 
 func TestGetListAndReadyUseProjectedWorkflowCategories(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,

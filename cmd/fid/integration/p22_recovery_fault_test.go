@@ -30,6 +30,7 @@ type p22RecoveryCrashInput struct {
 }
 
 func TestP22RecoverySurvivesActualResponseLossAndAppendProjectionFault(t *testing.T) {
+	t.Parallel()
 	for _, mode := range []string{"before-append", "after-append", "lost-response"} {
 		t.Run(mode, func(t *testing.T) {
 			a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, p22FinalActions)
@@ -108,6 +109,7 @@ func TestP22RecoverySurvivesActualResponseLossAndAppendProjectionFault(t *testin
 // A stateful SQLite scalar in a test-only trigger passes dry-run and fails the
 // actual projection, so the after-append case uses a genuinely durable Event.
 func TestP22RecoveryCrashProcess(t *testing.T) {
+	t.Parallel()
 	path := os.Getenv("FID_P22_RECOVERY_CRASH")
 	if path == "" {
 		return

@@ -13,6 +13,7 @@ import (
 )
 
 func TestMigration0017CreatesExactlyTheAcceptedObjects(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
 	defer closeMigrator(t, migrator, conn)
@@ -61,6 +62,7 @@ func TestMigration0017CreatesExactlyTheAcceptedObjects(t *testing.T) {
 }
 
 func TestMigration0017ObligationRegistrationDiscriminator(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
 	defer closeMigrator(t, migrator, conn)
@@ -101,6 +103,7 @@ func TestMigration0017ObligationRegistrationDiscriminator(t *testing.T) {
 }
 
 func TestPhase23BaselineMigrationDiffIsExactlySevenAcceptedHunks(t *testing.T) {
+	t.Parallel()
 	_, currentFile, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("runtime.Caller(0) failed")
@@ -153,6 +156,7 @@ index 6bcffc4..715a384 100644
 }
 
 func TestMigration0017PreservesReceiptEvidenceAndArtifactLinksInPlace(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
 	defer closeMigrator(t, migrator, conn)

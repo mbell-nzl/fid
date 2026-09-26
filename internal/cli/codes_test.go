@@ -36,6 +36,7 @@ type reasonCodeExpectation struct {
 }
 
 func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
+	t.Parallel()
 	expectations := []reasonCodeExpectation{
 		{CodeInvalidArgument, CategoryInvalidInput, false, nil, argumentDetails()},
 		{CodeUnsupportedKind, CategoryInvalidInput, false, nil, argumentDetails()},
@@ -211,6 +212,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 }
 
 func TestImportTargetConflictAcceptsOnlyClosedReasons(t *testing.T) {
+	t.Parallel()
 	for _, reason := range []string{"populated", "different-import", "unsafe-path"} {
 		t.Run(reason, func(t *testing.T) {
 			_, err := NewFailure(CodeImportTargetConflict, "conflict", &Subject{Type: SubjectExport, ID: "archive.zip"}, map[string]any{"target_root": "/target", "reason": reason})

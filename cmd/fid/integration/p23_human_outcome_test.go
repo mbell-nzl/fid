@@ -26,6 +26,7 @@ import (
 // once, VAL-010's
 // linked-evidence re-verification, and VAL-081's re-confirmed nullable binding.
 func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T) {
+	t.Parallel()
 	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "review.record", "run.close", "run.observe", "run.observe-budget", "run.start"}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, actions, p22ExecutionFixture{HumanObligations: true, CoexistingReviewObligation: true})
 	assertP23ThreeObligationTypesCoexist(t, a)
@@ -259,6 +260,7 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 // three), and artifact.availability-observed is exercised in
 // cmd/fid/artifact_test.go.
 func TestP23HumanOutcomeRequiredRaisedByEnvelopeActivation(t *testing.T) {
+	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	p22Git(t, workspace, "init", "-q")
@@ -335,6 +337,7 @@ func TestP23HumanOutcomeRequiredRaisedByEnvelopeActivation(t *testing.T) {
 // inside that same Event, leaving the sole remaining human-outcome Obligation
 // as its target.
 func TestP23HumanOutcomeRequiredRaisedByReviewRecord(t *testing.T) {
+	t.Parallel()
 	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "evidence.link", "gate.register", "human-outcome.record", "review.record", "run.close", "run.observe", "run.start"}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, actions, p22ExecutionFixture{ReviewObligation: true, HumanObligations: true})
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "review-raise-builder")

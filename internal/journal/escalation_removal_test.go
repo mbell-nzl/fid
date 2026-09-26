@@ -7,6 +7,7 @@ import (
 )
 
 func TestLatestProjectionRejectsRetiredEscalationEffects(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		name   string
 		effect Effect

@@ -3,6 +3,7 @@ package workflow
 import "testing"
 
 func TestIsAllowedEdge(t *testing.T) {
+	t.Parallel()
 	if !IsAllowedEdge("task-default", "todo", "in_progress") {
 		t.Fatalf("expected todo -> in_progress to be allowed for task-default")
 	}

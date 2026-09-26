@@ -13,6 +13,7 @@ import (
 )
 
 func TestFinalBinaryInitAndRebuildRemainRoleFree(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	binary := integrationFIDBinary(t)
 
