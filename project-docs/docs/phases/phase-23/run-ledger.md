@@ -1297,3 +1297,133 @@
 - Resolution evidence: PENDING - DEC-250 R1-R3 implemented with one qualifying-fact predicate per Condition type in internal/workflow shared by stop resolve and by the atomic resolution inside human-outcome.recorded and decision.referenced, resolution keyed on the Stop's recorded Condition and not its raising code, and stop raise rejecting a decision-satisfied Condition on an activation subject through the existing invalid-Condition failure with no Event; committed built-binary evidence for the VAL-048 wrong-class and wrong-result stop resolve rejections (exit 4 resolution-invalid, Event count unchanged, Stop open) with the matching Outcome resolving, VAL-078 non-qualifying and qualifying facts for human-outcome-recorded and decision-satisfied each on a producer-raised Stop and on an operator-stop, VAL-050's matching-Condition operator-stop resolved by the same Outcome next to the existing different-Condition Stop that stays open, and the R3 activation-subject raise rejection; the two producers' code-keyed scans in human_outcome.go and decision.go moved to the shared predicate; a registry rejection of a resolution Effect for a run- or activation-subject Stop escalated and not added locally; the five unchanged task-11.md exact commands terminate PASS with the three DEC-227 package times recorded; a dated task-11-done.md section; report committed and report-lint OUTCOME COMPLETE; then the fresh independent re-review checkpoint-after-task-11-3.md
 - Next action: dispatch one same-task Developer for task-11 only, within the task-11 Scope as widened by DEC-253 (internal/workflow/stop.go, stop_conditions.go with its matching tests, internal/review/human_outcome.go and decision.go, their in-package tests, and cmd/fid/integration fixtures and tests for the new built-binary evidence); no Event, field, code, or interface shape is added and no assertion narrowed; the Developer runs the five exact commands from task-11.md, commits, writes the report, and returns a typed outcome
 - Human attention required: no
+
+### 2026-09-27 09:42 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-26 19:19 TASK-RECOVERY task-11; replacement Runner session resumed from the active recovery
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: phase-23 HEAD 23af01edb1caccef198e30ac316c7e50978800d5, clean; active ledger entry is 2026-09-26 19:19 TASK-RECOVERY task-11; implementation commit 466745f2dc4505d60eb67ac50193e004532b7239 is present; existing task-11 report still records the earlier c5bf0f89 implementation; no task-11 recovery verification or refreshed report has been recorded
+- Resolution evidence: Runner reconciled the updated current context, phase ledger, git history, and clean worktree; verified 466745f2dc4505d60eb67ac50193e004532b7239 with subject match; normal non-STOP resume preserves the active task-11 recovery and completed-owner progress
+- Resolution authority: N/A
+- Continuing task: task-11
+- Next recovery: N/A
+
+### 2026-09-27 10:32 REPAIR task-11
+
+- Trigger signature: review-7:qa-rework:task-11-BC-3
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD bc7e6f393450780137f3d89ad9763e382028ccd3 with the task-11 TASK-RECOVERY appended; only Runner-owned run-ledger.md dirty; DEC-250 implementation and required recovery verification were pending
+- Ending checkpoint: phase-23 HEAD 5c021f4d4c2e7e2b83249bd3fffe01dcf1404f60; implementation commit 466745f2dc4505d60eb67ac50193e004532b7239 is present; recovery report commit 5c021f4d4c2e7e2b83249bd3fffe01dcf1404f60 is committed and clean; only Runner-owned run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: The Developer produced and committed the DEC-250/DEC-253 implementation and built-binary focused evidence, refreshed task-11-done.md with preserved red/green and gate evidence, and report-lint returned OUTCOME RECOVERY_REQUIRED with PASS report-lint completed with no failures (terminated exit_code: 0). The exact ordinary race/coverage command terminated exit_code: 0 with all tests passing but breached the accepted cmd/fid 600-second budget at 686.386s; the tagged integration command passed at 778.278s under 900s. The attempted second TASK-RECOVERY append was rejected and left the ledger unchanged: INVALID overlapping TASK-RECOVERY precedes required REPAIR (terminated exit_code: 1); this corrected REPAIR event records that failed orchestration attempt.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-27 10:32 TASK-RECOVERY task-11
+
+- Source: project-docs/docs/phases/phase-23/tasks/task-11-done.md and the exact ordinary race/coverage gate attempt; report outcome RECOVERY_REQUIRED because cmd/fid measured 686.386s against the accepted 600s package budget
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: review-7:qa-rework:task-11-BC-3
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 5c021f4d4c2e7e2b83249bd3fffe01dcf1404f60; task-11 implementation 466745f2dc4505d60eb67ac50193e004532b7239 is committed; recovery report task-11-done.md is committed and report-lint returned OUTCOME RECOVERY_REQUIRED; only Runner-owned run-ledger.md is dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-23; Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - establish whether the 686.386s cmd/fid budget breach is caused by task-11 scope, apply only an in-scope causal speed repair if the accepted task contract authorizes it, rerun the unchanged five exact commands with observed termination and package-time budgets, finalize the report as COMPLETE, commit the report, and pass report-lint
+- Next action: same-task Developer continuation inspects the preserved failed budget attempt and task-11 changes, performs bounded timing attribution, makes any necessary task-scope speed repair without changing commands or budget semantics, reruns the byte-identical exact commands, finalizes task-11-done.md, commits, and returns the typed outcome
+- Human attention required: no
+
+### 2026-09-27 11:15 REPAIR task-11
+
+- Trigger signature: review-7:qa-rework:task-11-BC-3
+- Attempt count: 2
+- Starting checkpoint: phase-23 HEAD 5c021f4d4c2e7e2b83249bd3fffe01dcf1404f60 with task-11 attempt-2 TASK-RECOVERY appended; implementation and prior recovery report committed; only Runner-owned run-ledger.md dirty
+- Ending checkpoint: phase-23 HEAD b6e5cf3ce995d4a50cc0210c7e9636f1d39653f9; durable task-11 timing/report commits 0061dde96f7e1c9809994f71abdbd3e3a09558c4, 0e48f4d584dd644dd8cd67e0af705d3fe38ba848, and b6e5cf3ce995d4a50cc0210c7e9636f1d39653f9 are present; task-11-done.md has a further uncommitted report correction; Runner-owned run-ledger.md and task-11-done.md are dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: INTERRUPTED
+- Interruption cause: The Developer agent session was terminated externally by the agent service before returning a typed outcome: "Selected model is at capacity. Please try a different model."
+- Elapsed session duration: unknown after external termination; the Runner received no session-duration field
+- Command in flight: unknown after external termination
+- Resolution evidence: No typed Developer result was produced. Durable partial work records attempt-2 timing attribution: the exact ordinary gate measured cmd/fid at 630.927s, the same-session pre-repair parent measured 614.601s, and task-11 causal speed responsibility remains unproven; the tagged gate measured 766.070s and stayed under 900s. The report was corrected through b6e5cf3 but remains dirty after external termination, so no completion or report-lint result is accepted from this interrupted session.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-27 11:16 TASK-RECOVERY task-11
+
+- Source: Runner-mediated continuation after 2026-09-27 11:15 REPAIR task-11 recorded Outcome: INTERRUPTED (external model-capacity termination before typed result); durable task-11 report changes remain in the worktree
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: review-7:qa-rework:task-11-BC-3
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD b6e5cf3ce995d4a50cc0210c7e9636f1d39653f9; task-11-done.md has durable attempt-2 timing-attribution/report changes with an uncommitted final correction; no product or test changes are pending; Runner-owned run-ledger.md and task-11-done.md are the only dirty paths
+- Phase worktree: /home/mark/projects/fid on branch phase-23; Runner-owned run-ledger.md and task-11-done.md are the only dirty paths
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - same-task continuation reconciles the durable report correction, commits the accurate RECOVERY_REQUIRED report, runs report-lint with observed termination, and returns the typed outcome; the unresolved ordinary cmd/fid budget scope gap remains preserved for TL-Lite triage and no green gate may be claimed
+- Next action: same-task Developer continuation inspects the durable report diff, finalizes and commits only the task-11 completion report as RECOVERY_REQUIRED, runs report-lint against task-11.md, and returns the typed outcome; it must not change product/tests, alter gate semantics, or fabricate a passing budget result
+- Human attention required: no
+
+### 2026-09-27 11:18 REPAIR task-11
+
+- Trigger signature: review-7:qa-rework:task-11-BC-3
+- Attempt count: 3
+- Starting checkpoint: phase-23 HEAD b6e5cf3ce995d4a50cc0210c7e9636f1d39653f9 with task-11-done.md carrying a durable uncommitted report correction after the external interruption; Runner-owned run-ledger.md and task-11-done.md were dirty
+- Ending checkpoint: phase-23 HEAD c1588fc4389c7dc8210247fc48ede2618c783799; task-11-done.md is committed and clean; report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0); only Runner-owned run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: The same-task continuation reconciled and committed the accurate task-11 RECOVERY_REQUIRED report as c1588fc4389c7dc8210247fc48ede2618c783799 (subject matched). The report preserves exact ordinary cmd/fid budget failures at 686.386s and 630.927s, the same-session pre-repair parent at 614.601s, tagged integration at 766.070s under 900s, and the conclusion that no task-11 causal speed repair is established. Runner report-lint returned OUTCOME RECOVERY_REQUIRED with all required headings, command evidence, committed-report checks, and observed termination (terminated exit_code: 0). This narrows the remaining trigger to an unresolved gate/budget scope gap; it does not clear the task.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-27 11:21 TRIAGE TRG-23-005
+
+- Trigger: task-11 exact ordinary race/coverage gate passes tests but exceeds the accepted cmd/fid package-time budget twice, with a same-session pre-repair parent also over budget and no demonstrated task-11 causal speed repair
+- Originating task: task-11
+- Trigger signature: review-7:qa-rework:task-11-BC-3
+- Attempt count: 4
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: phase-23 HEAD c1588fc4389c7dc8210247fc48ede2618c783799; task-11 report committed and report-lint returned OUTCOME RECOVERY_REQUIRED with no failures; TRG-23-005 and ESC-23-005 are present; only Runner-owned run-ledger.md, triage-log.md, and tl_escalations_current.md are dirty
+- Verdict: BLOCK (escalated as ESC-23-005)
+- Resolution evidence: TL-Lite confirmed the unchanged exact ordinary command produced cmd/fid 686.386s and 630.927s (both terminated exit_code: 0) against the 600s budget, while the fresh same-session pre-repair parent produced 614.601s; task 11 added no ordinary cmd/fid test file and the focused Stop timing difference was 2.325s. The tagged gate produced 766.070s under 900s. No bounded task-11 causal repair or authorized owner/closure route exists under the current contract; the gate definition remains unchanged.
+- Triage log: project-docs/docs/phases/phase-23/triage-log.md entry TRG-23-005 confirmed
+
+### 2026-09-27 11:21 STOP
+
+- Cause: task-11 / TRG-23-005; the unchanged required ordinary race/coverage gate still exceeds the accepted cmd/fid 600-second package budget, and no bounded task-11 causal repair or authorized owner/closure route is established
+- Triage: TRG-23-005 (BLOCK, escalated as ESC-23-005)
+- Protected category: gate-repair scope and ownership authority; any change to the accepted command, 600-second budget, threshold, or pass semantics requires protected decision authority
+- Next Human or external-authority action: Full Tech Lead records a bounded repair owner and closure route under DEC-227 and VAL-079, or obtains the authority that owns any accepted gate-definition change; after resolution, complete task 11 and obtain a fresh independent checkpoint-after-task-11-3.md review with PASS and Must-fix 0 before task 12

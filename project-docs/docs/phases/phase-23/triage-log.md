@@ -169,3 +169,34 @@ not a control-conformance directive or a rewrite of either historical verdict.
 - **Human attention required:** yes
 - **Carry items (no action here):** I-1 `cmd/fid` at 567.662 s of the 600 s budget with a 39.3 s same-code spread, for a Tech Lead decision before tasks 13 and 14 (budget unchanged). I-2 ratify task-11's stop_conditions.go scope reading in decisions.md. I-5 multi-grant `gate.run` (internal/evidence/execution.go:381), a latent Phase 21 conformance defect needing a Tech Lead owner before task 14 VAL-071 or task 18. I-6 report citation drift, folded into the MF-5 continuation.
 - **References:** `project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11-2.md` lines 410-780; `project-docs/docs/phases/phase-23/contracts.md:60-63,91-92,391-396,407-411,453-462`; `project-docs/docs/phases/phase-23/public-interface.md:220-243`; qa-plan section 8; DEC-222, DEC-224, DEC-227; `project-docs/specs/09_AI_WORKFLOW.md` sections 2.3 and 9.
+
+---
+
+## TRG-23-005 - Task-11 ordinary gate exceeds accepted package-time budget without a bounded task-11 cause
+
+- **Trigger:** task-11's unchanged exact ordinary race/coverage gate terminates exit_code 0 with tests passing but breaches the accepted cmd/fid package-time budget. Attempt 1 measured cmd/fid 686.386s; attempt 2 measured cmd/fid 630.927s after clearing the test cache; a fresh same-session pre-repair parent measured 614.601s. The exact tagged integration gate passed at 766.070s under its 900s budget. Task-11's accepted changes add no ordinary cmd/fid test file; focused TestStop timing was 109.999s on the parent and 112.324s current. Unrelated packages also rose. The completion report concludes no task-11 causal speed repair is established and requests bounded disposition of the remaining scope gap.
+- **Originating task:** task-11
+- **Trigger signature:** review-7:qa-rework:task-11-BC-3
+- **Attempt count:** 4
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** `project-docs/docs/phases/phase-23/tasks/task-11-done.md`
+- **Candidate:** RECOVERY_REQUIRED / protected gate-repair scope gap
+- **Checkpoint:** attached verification of implementation commit `466745f2dc4505d60eb67ac50193e004532b7239` (rev-parse and subject match); attached report-lint `OUTCOME RECOVERY_REQUIRED` and `PASS report-lint completed with no failures` (terminated `exit_code: 0`); report commit `c1588fc4389c7dc8210247fc48ede2618c783799` supplied by Runner. These verify the checkpoint and report state, not the package-time budget.
+- **Verdict:** BLOCK
+- **Reasoning:** The accepted exact ordinary gate still breaches DEC-227 and VAL-079 despite test-process exit 0. The fresh same-session parent also exceeds 600 s; task 11 added no ordinary `cmd/fid` test file, its focused Stop timing increased only 2.325 s, and other packages slowed. This evidence does not identify a task-11 causal speed repair. Task-11's spec assigns speed repair to this task only when its own new journeys caused the breach and otherwise requires escalation. DEC-254 already authorizes a separate task-13 headroom step, but it does not clear task-11's failed gate or authorize TL-Lite to transfer its closure obligation. The gate and budget definition remain protected.
+- **Local decisions made:** none; no new owner, budget, threshold, command, or pass criterion assigned.
+- **Resolution evidence:** Not cleared. Exact `go test -race -timeout 30m -coverprofile=coverage.out ./...` produced `cmd/fid` 686.386 s and 630.927 s (both terminated `exit_code: 0`); the same-session parent produced 614.601 s (terminated `exit_code: 0`). The tagged integration gate produced 766.070 s, below its separate 900 s budget. Full Tech Lead disposition is needed for the out-of-task-11 speed cause and task-11 gate closure; any changed gate definition needs its protected decision authority. Preserve every failed timing attempt.
+- **If REPAIR:** N/A.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** Do not change the exact command, accepted 600-second ordinary or 900-second tagged budgets, assertion semantics, or policy; do not weaken tests, claim a later flaky green as clearing preserved failures, or assign a new task owner locally.
+- **Exact verification:** N/A
+- **Originating report:** project-docs/docs/phases/phase-23/tasks/task-11-done.md
+- **Control repair base:** N/A
+- **If BLOCK:** category protected gate-repair scope and ownership authority; ESC-23-005 raised in `tl_escalations_current.md`; resolution condition full Tech Lead records a bounded owner and closure route under the unchanged DEC-227/VAL-079 contract, or the authority owning the gate definition accepts an explicit change. Task 12 remains held pending the required fresh checkpoint PASS.
+- **Human attention required:** yes
+- **References:** `project-docs/docs/phases/phase-23/tasks/task-11.md` Exact Commands To Run; `project-docs/docs/phases/phase-23/tasks/task-11-done.md` Workflow outcome, Exact quality-gate results, and Concerns; `project-docs/docs/phases/phase-23/decisions.md` DEC-227 and DEC-254; `project-docs/docs/phases/phase-23/qa/validation-contract.md` VAL-079; `project-docs/specs/09_AI_WORKFLOW.md` sections 2.3 and 9.
