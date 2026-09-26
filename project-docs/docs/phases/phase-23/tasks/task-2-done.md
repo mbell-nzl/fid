@@ -4,8 +4,8 @@
 
 - Task outcome: COMPLETE
 - Category: none
-- Condition: MF-01 QA repair and the DEC-249 (review-7 BC-1) conformance repair are complete; all Task 2 required gates pass.
-- Recovery attempts: 2 (MF-01 QA repair; DEC-249 BC-1 conformance repair, attempt 1 of trigger `review-7:qa-rework:task-2-BC-1`)
+- Condition: MF-01 QA repair and the DEC-249 (review-7 BC-1) conformance repair (attempt 1 of trigger `review-7:qa-rework:task-2-BC-1`) are complete; all Task 2 required gates pass.
+- Recovery attempts: 2
 - Next action: Phase Runner review.
 - Human attention required: no
 
@@ -94,7 +94,7 @@
 - `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	209.816s	coverage: 64.0% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:											(statements)					62.0%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	691.913s` (terminated `exit_code: 0`)
-- `go test -race -timeout 30m -cover ./internal/workflow/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	188.151s	coverage: 64.0% of statements` (terminated `exit_code: 0`; uncached because the source changed)
+- `go test -race -timeout 30m -cover ./internal/workflow/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	188.151s	coverage: 64.0% of statements` (terminated `exit_code: 0`); uncached because the source changed
 - DEC-249 DEC-227 wall times (all uncached, from the runs above): `cmd/fid/integration` `691.913s` (budget 900 s); `cmd/fid` `490.783s` (repository-wide race/coverage run; budget 600 s); `internal/workflow` `209.816s` in the repository-wide run and `188.151s` in the dedicated run (budget 600 s). No budget breach; the new tagged tests take about 3.7 s each.
 - Gate 4 total statement coverage is `62.0%`; there is no threshold. The `65.9%` recorded by earlier repair sections was measured before later Phase 23 tasks and is not comparable.
 
