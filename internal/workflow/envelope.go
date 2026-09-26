@@ -522,8 +522,16 @@ func evaluateEnvelopeCompletion(options EnvelopeOptions, conn *sql.DB, envelope 
 	if err != nil {
 		return nil, nil, err
 	}
+	// Only Obligations that guard envelope.complete block it (DEC-249). The
+	// returned evaluation still reports every Obligation.
+	guarding := map[string]bool{}
+	for _, obligation := range obligationsGuarding(envelope.Obligations, "envelope.complete") {
+		guarding[obligation.ID] = true
+	}
 	for _, item := range evaluation {
-		reasons = append(reasons, item.Reasons...)
+		if guarding[item.ObligationID] {
+			reasons = append(reasons, item.Reasons...)
+		}
 	}
 	terminal, err := issueTerminalSuccess(conn, envelope.PrimaryIssueID)
 	if err != nil {

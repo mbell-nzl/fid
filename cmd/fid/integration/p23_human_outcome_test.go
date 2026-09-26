@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/evidence"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 // TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess proves
@@ -26,10 +27,14 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "review.record", "run.close", "run.observe", "run.observe-budget", "run.start"}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, actions, p22ExecutionFixture{HumanObligations: true, CoexistingReviewObligation: true})
 	assertP23ThreeObligationTypesCoexist(t, a)
-	// issue.transition-terminal-success (qa_pass) evaluates every required
-	// Obligation regardless of its own guarded_actions, so it is deferred
-	// until every Obligation this journey exercises is satisfied; the
-	// non-terminal states below do not evaluate Obligations at all.
+	// issue.transition-terminal-success (qa_pass) evaluates only the Obligations
+	// whose guarded_actions contain it (DEC-249). In this fixture that is
+	// OBL-p22-corpus alone; the review and both Human Obligations guard only
+	// envelope.complete. A permitted qa_pass commits a one-way transition, so it
+	// stays deferred until the journey's real terminal transition below and is
+	// never used as a disposable probe once the gate is satisfied (stage 3 uses
+	// the non-committing domain evaluator instead). The non-terminal states
+	// below do not evaluate Obligations at all.
 	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
 		response := p23IssueTransition(t, a, state, revision+1, "human-outcome-"+state)
 		assertP23HumanOutcomeCommandSuccess(t, "transition Issue to "+state, response)
@@ -102,9 +107,12 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	}
 
 	// VAL-009 stage 1: the release Human Outcome is satisfied, but the
-	// gate-evidence, review, and security human-outcome Obligations are not, so
-	// both guarded actions are denied with no Event and no projection change.
-	assertP23GuardedActionsDenied(t, a, "human-outcome-stage-1", []string{"OBL-human-security", "OBL-p22-corpus", "OBL-p23-review"})
+	// gate-evidence, review, and security human-outcome Obligations are not.
+	// envelope.complete is denied by all three; the terminal transition is
+	// denied by OBL-p22-corpus alone, the only unsatisfied Obligation that
+	// guards it (DEC-249). Neither denial appends an Event or changes the
+	// projection.
+	assertP23GuardedActionsDenied(t, a, "human-outcome-stage-1", []string{"OBL-human-security", "OBL-p22-corpus", "OBL-p23-review"}, []string{"OBL-p22-corpus"})
 
 	// VAL-009 stage 2: an independent Reviewer records a passing Review that is
 	// linked to the review Obligation. It still leaves gate-evidence and the
@@ -115,7 +123,7 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	if reviewEvaluation["status"] != "satisfied" || reviewEvaluation["artifact_availability"] != "not-applicable" {
 		t.Fatalf("linked review evaluation = %#v, want satisfied/not-applicable", reviewEvaluation)
 	}
-	assertP23GuardedActionsDenied(t, a, "human-outcome-stage-2", []string{"OBL-human-security", "OBL-p22-corpus"})
+	assertP23GuardedActionsDenied(t, a, "human-outcome-stage-2", []string{"OBL-human-security", "OBL-p22-corpus"}, []string{"OBL-p22-corpus"})
 
 	// VAL-046: recording the second class's approved Outcome makes it the
 	// last unsatisfied Obligation, and evidence.link (the ordinary DEC-224
@@ -141,9 +149,14 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	if after := p21JournalEventCount(t, a.workspace); after != beforeDenial {
 		t.Fatalf("human-outcome-required denial appended Event(s): %d -> %d", beforeDenial, after)
 	}
-	// Stage 3: only the security human-outcome Obligation is unsatisfied, and
-	// the terminal qa_pass transition is denied for exactly that Obligation.
-	assertP23TerminalTransitionDenied(t, a, "human-outcome-stage-3", []string{"OBL-human-security"})
+	// Stage 3: only the security human-outcome Obligation is unsatisfied. It
+	// guards envelope.complete alone, which the human-outcome-required denial
+	// above already proves it blocks. Under DEC-249 it does not guard the
+	// terminal transition, so qa_pass is not blocked by any Obligation here.
+	// Performing it would commit the one-way transition before the journey's
+	// real terminal step, so the non-committing domain evaluator is used.
+	assertP23OnlyObligationUnsatisfied(t, a, "OBL-human-security")
+	assertP23TerminalTransitionNotBlocked(t, a, "human-outcome-stage-3")
 
 	// The security Human Outcome resolves the readiness Stop atomically with
 	// its own recording Event (contracts.md section 10/11).
@@ -604,11 +617,12 @@ func assertP23ThreeObligationTypesCoexist(t *testing.T, a *p22FIDRecoveryAdapter
 }
 
 // assertP23GuardedActionsDenied proves both VAL-009 guarded actions are denied
-// while any of the three Obligation types is unsatisfied: envelope.complete and
-// the terminal qa_pass transition (issue.transition-terminal-success) each
-// reject naming exactly the still-unsatisfied Obligations, with no Event and no
-// projection change.
-func assertP23GuardedActionsDenied(t *testing.T, a *p22FIDRecoveryAdapter, key string, unsatisfied []string) {
+// while an Obligation that guards them is unsatisfied (DEC-249): envelope.complete
+// rejects naming exactly the completeUnsatisfied Obligations, and the terminal
+// qa_pass transition (issue.transition-terminal-success) rejects for exactly the
+// terminalUnsatisfied Obligations, which are the unsatisfied ones that guard it.
+// Neither denial appends an Event or changes the projection.
+func assertP23GuardedActionsDenied(t *testing.T, a *p22FIDRecoveryAdapter, key string, completeUnsatisfied, terminalUnsatisfied []string) {
 	t.Helper()
 	beforeEvents, beforeProjection := p21JournalEventCount(t, a.workspace), p22FaultProjection(t, a.workspace)
 	complete := p23RunInput(t, a, "envelope", "complete", a.actor, key+"-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
@@ -629,15 +643,55 @@ func assertP23GuardedActionsDenied(t *testing.T, a *p22FIDRecoveryAdapter, key s
 		}
 	}
 	sort.Strings(blocking)
-	if !reflect.DeepEqual(blocking, unsatisfied) {
-		t.Fatalf("%s envelope.complete blocked by Obligations %v, want exactly %v", key, blocking, unsatisfied)
+	if !reflect.DeepEqual(blocking, completeUnsatisfied) {
+		t.Fatalf("%s envelope.complete blocked by Obligations %v, want exactly %v", key, blocking, completeUnsatisfied)
 	}
-	assertP23TerminalTransitionDenied(t, a, key, unsatisfied)
+	assertP23TerminalTransitionDenied(t, a, key, terminalUnsatisfied)
 	if afterEvents := p21JournalEventCount(t, a.workspace); afterEvents != beforeEvents {
 		t.Fatalf("%s guarded-action denials appended Event(s): %d -> %d", key, beforeEvents, afterEvents)
 	}
 	if !reflect.DeepEqual(beforeProjection, p22FaultProjection(t, a.workspace)) {
 		t.Fatalf("%s guarded-action denials changed the projection", key)
+	}
+}
+
+// assertP23OnlyObligationUnsatisfied asserts the evidence.evaluate read reports
+// every Obligation and that exactly the named one is unsatisfied.
+func assertP23OnlyObligationUnsatisfied(t *testing.T, a *p22FIDRecoveryAdapter, unsatisfiedID string) {
+	t.Helper()
+	response := p23EvidenceEvaluate(t, a)
+	seen := 0
+	for _, item := range p21Path(t, p23Envelope(t, response.Stdout), "result", "evaluations").([]any) {
+		evaluation := item.(map[string]any)
+		seen++
+		want := "satisfied"
+		if evaluation["obligation_id"] == unsatisfiedID {
+			want = "unsatisfied"
+		}
+		if evaluation["status"] != want {
+			t.Fatalf("evaluation for %v = %v, want %s (only %s unsatisfied)", evaluation["obligation_id"], evaluation["status"], want, unsatisfiedID)
+		}
+	}
+	if seen != 4 {
+		t.Fatalf("evidence.evaluate reported %d Obligations, want every one of the 4", seen)
+	}
+}
+
+// assertP23TerminalTransitionNotBlocked evaluates the terminal qa_pass
+// transition with the domain evaluator, which reads durable state and commits
+// nothing, and asserts no reason at all blocks it. Journal and projection are
+// unchanged. It never performs the one-way transition.
+func assertP23TerminalTransitionNotBlocked(t *testing.T, a *p22FIDRecoveryAdapter, key string) {
+	t.Helper()
+	beforeEvents, beforeProjection := p21JournalEventCount(t, a.workspace), p22FaultProjection(t, a.workspace)
+	revision := 4
+	evaluation, err := workflow.EvaluateExecutionTransition(a.workspace, filepath.Join(integrationRepositoryRoot(), "migrations"), workflow.ExecutionTransitionRequest{IssueID: a.issueID, ActorID: a.actor, ExpectedIssueRevision: &revision, ActualIssueRevision: revision, WorkflowEdgeValid: true, TerminalSuccess: true})
+	p22FaultOK(t, err)
+	if !evaluation.Bound || len(evaluation.Reasons) != 0 {
+		t.Fatalf("%s terminal transition evaluation = %#v, want bound with no blocking reason", key, evaluation)
+	}
+	if afterEvents := p21JournalEventCount(t, a.workspace); afterEvents != beforeEvents || !reflect.DeepEqual(beforeProjection, p22FaultProjection(t, a.workspace)) {
+		t.Fatalf("%s terminal transition evaluation changed the journal (%d -> %d) or the projection", key, beforeEvents, afterEvents)
 	}
 }
 

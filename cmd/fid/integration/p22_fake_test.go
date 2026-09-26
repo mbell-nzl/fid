@@ -295,6 +295,11 @@ type p22ExecutionFixture struct {
 	// (OBL-p23-review) beside the gate-evidence Obligation instead of replacing
 	// it in place the way ReviewObligation does.
 	CoexistingReviewObligation bool
+	// ReviewGuardsTerminalSuccess makes the coexisting review Obligation guard
+	// issue.transition-terminal-success as well as envelope.complete (DEC-249:
+	// an Obligation blocks only the guarded actions it declares). It has no
+	// effect without CoexistingReviewObligation.
+	ReviewGuardsTerminalSuccess bool
 }
 
 // Explicit locations keep generated fixtures' repository identities durable.
@@ -379,7 +384,11 @@ func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, ac
 	}
 	obligations := []any{obligation}
 	if len(execution) != 0 && execution[0].CoexistingReviewObligation {
-		obligations = append(obligations, map[string]any{"id": "OBL-p23-review", "type": "review", "applicability": "required", "guarded_actions": []string{"envelope.complete"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "review_profile": "review-default", "accepted_evidence_types": []string{"review"}, "accepted_trust_sources": []string{"activated-actor"}, "freshness_target": "repository-tree", "artifact_policy": "metadata-sufficient", "independence": "distinct-actor", "required_lane": nil, "source": source})
+		reviewGuardedActions := []string{"envelope.complete"}
+		if execution[0].ReviewGuardsTerminalSuccess {
+			reviewGuardedActions = []string{"envelope.complete", "issue.transition-terminal-success"}
+		}
+		obligations = append(obligations, map[string]any{"id": "OBL-p23-review", "type": "review", "applicability": "required", "guarded_actions": reviewGuardedActions, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "review_profile": "review-default", "accepted_evidence_types": []string{"review"}, "accepted_trust_sources": []string{"activated-actor"}, "freshness_target": "repository-tree", "artifact_policy": "metadata-sufficient", "independence": "distinct-actor", "required_lane": nil, "source": source})
 	}
 	if len(execution) != 0 && execution[0].HumanObligations {
 		for _, outcomeClass := range []string{"release", "security"} {

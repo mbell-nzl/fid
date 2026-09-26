@@ -433,7 +433,7 @@ func evaluateExecutionTransition(conn *sql.DB, workspaceRoot, migrationsDir stri
 			return ExecutionTransitionEvaluation{}, err
 		}
 		reasons = append(reasons, stopReasons...)
-		obligationReasons, err := evaluateObligations(conn, envelope.Obligations, repository)
+		obligationReasons, err := evaluateObligations(conn, obligationsGuarding(envelope.Obligations, "issue.transition-terminal-success"), repository)
 		if err != nil {
 			return ExecutionTransitionEvaluation{}, err
 		}
@@ -491,6 +491,20 @@ func executionRunActive(conn *sql.DB, claim executionClaim, usableClaim bool, en
 	return json.Unmarshal([]byte(repositoryJSON), &repository) == nil &&
 		repository.ProjectID == envelope.RepositoryScope.ProjectID &&
 		repository.WorktreeID == envelope.RepositoryScope.WorktreeID
+}
+
+// obligationsGuarding returns the Obligations applicable to a guarded action: a
+// required Obligation whose guarded_actions contains that action (DEC-249). An
+// Envelope in which none guards the action puts no Obligation requirement on it.
+// Reads never use this filter; they report every Obligation.
+func obligationsGuarding(obligations []Obligation, action string) []Obligation {
+	guarding := make([]Obligation, 0, len(obligations))
+	for _, obligation := range obligations {
+		if obligation.Applicability == "required" && containsAction(obligation.GuardedActions, action) {
+			guarding = append(guarding, obligation)
+		}
+	}
+	return guarding
 }
 
 func evaluateObligations(conn *sql.DB, obligations []Obligation, current Repository) ([]EvaluationReason, error) {
