@@ -1118,3 +1118,182 @@
 - Triage: TRG-23-004 (BLOCK, escalated as ESC-23-004)
 - Protected category: specification, product semantics, and public interface (acceptance-criteria ambiguity for VAL-009, a public-interface contradiction for VAL-043, and a closed-registry resolution-semantics gap for VAL-048, VAL-050, and VAL-078)
 - Next Human or external-authority action: The Tech Lead (and the Human where a product rule or the accepted interface changes) rules on each ESC-23-004 sub-item and records each as a DEC: BC-1 whether an Obligation blocks only its declared guarded_actions, BC-2 which text governs the human-outcome.record Envelope-grant requirement, BC-3 the stop resolve qualifying rules for human-outcome-recorded and decision-satisfied. Then resume with a RUN-RESUME carrying that DEC authority and dispatch MF-4 (task-6) and MF-5 (task-10) followed by a fresh independent QA Lead re-review recorded in the next unused checkpoint-after-task-11-<R>.md; task 12 dispatches only after that re-review records VERDICT: PASS with Must-fix 0
+
+### 2026-09-26 17:38 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-26 12:34 STOP after TRG-23-004 (ESC-23-004)
+- Governing TRG: TRG-23-004
+- Governing ESC: ESC-23-004
+- Trigger signature: task-10:qa-rework:review-7-BC-1-BC-2-BC-3
+- Attempt count: 2
+- Checkpoint: phase-23 HEAD 7a0243e1b2e9f341008684437d5a7020e3ef8139 (fix(workflow): route decision-released repairs after a BLOCK re-review) atop db851bb1c97631c63253091abb708ae7ec7f227e; clean worktree with no staged changes and no hidden index flags before this append; last accepted ledger entry is 2026-09-26 12:34 STOP, validated VALID state=STOPPED before this append; tasks 1-11 complete, review-6 open, review-7 BLOCK re-review of review-6; tl_escalations_current.md lists no Open ESC (ESC-23-004 RESOLVED 2026-09-26), matching the RUN-START baseline of none
+- Resolution evidence: DEC-256 binds the ordered repair owners task-6, task-2, task-10, task-11 under the DEC-257 verifier route (7a0243e); DEC-255 as amended by DEC-256 releases the ESC-23-004 stop; BC-1 by DEC-249, BC-2 by DEC-251, BC-3 by DEC-250 and DEC-253, I-5 by DEC-252. Runner verified git rev-parse --verify 7a0243e1b2e9f341008684437d5a7020e3ef8139^{commit} resolved with subject match, DEC-255, DEC-256 and DEC-257 present in the phase decisions file, and the run-drills.sh mechanical drills including drill-20 passed.
+- Resolution authority: DEC-256
+- Continuing task: task-6
+- Repair owners: task-6, task-2, task-10, task-11
+- Next recovery: task-6 | qa-rework | task-scope | review-7:qa-rework:task-6-MF-4-I-5 | 1
+
+### 2026-09-26 17:39 TASK-RECOVERY task-6
+
+- Source: project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11-2.md (review-7) Repair Plan row MF-4 plus the DEC-252 I-5 conformance repair, released and ordered by TRG-23-004 DEC-256
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review (review-7 MF-4) and task-6.md Repair Amendments, released by TRG-23-004 DEC-256
+- Triage disposition: N/A
+- Trigger signature: review-7:qa-rework:task-6-MF-4-I-5
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 7a0243e1b2e9f341008684437d5a7020e3ef8139 with the decision-authorized RUN-RESUME appended; no product, schema, contract, or spec change pending; the only dirty path is the Runner-owned run-ledger.md
+- Phase worktree: /home/mark/projects/fid on branch phase-23; Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - MF-4 built-binary journey (a changes-required Review in a review Run gives exactly one review-cycles budget_samples row keyed on the Review ID with consumed 1; the Run is recovered through run.recover into a linked successor; the review-cycles sample count and consumed value are unchanged after recovery and after fid rebuild and no second sample appears) and I-5 (validateGateRunReferences authorizes gate.run against every Envelope grant; built binary on one Envelope with two or more grants: first-sorted granted Actor succeeds, later-sorted granted Actor succeeds, ungranted Actor denied with no Event and no projection change; in-package internal/evidence regression; dated task-6-done.md sections with the Phase 21 b694991 provenance), the seven unchanged task-6.md exact commands terminating PASS with the three DEC-227 package times recorded, report committed and report-lint OUTCOME COMPLETE; the fresh independent re-review checkpoint-after-task-11-3.md follows after all four owners
+- Next action: dispatch one same-task Developer for task-6 only, covering MF-4 test-only and the DEC-252 I-5 repair in one recovery (DEC-256 folds I-5 into this step, superseding the task-6.md Repair Amendment wording that separates them); no contract, schema, Event, gate, or failure code or detail change and no assertion narrowed; the Developer runs the seven exact commands from task-6.md, commits, writes the report, and returns a typed outcome
+- Human attention required: no
+
+### 2026-09-26 18:11 REPAIR task-6
+
+- Trigger signature: review-7:qa-rework:task-6-MF-4-I-5
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD 7a0243e1b2e9f341008684437d5a7020e3ef8139 with the decision-authorized RUN-RESUME and this task-6 TASK-RECOVERY appended; only the Runner-owned run-ledger.md dirty
+- Ending checkpoint: phase-23 HEAD d6542bfc093059c8c6e656fa25c26229e60408ee; implementation commit 8531522e9602b0f72717d6c9d889684228cfa2ee (fix(evidence): authorize gate.run against every Envelope grant, Refs: phase-23/task-6); report commits d98c02c and d6542bfc093059c8c6e656fa25c26229e60408ee (docs(task): finalize completion report for phase-23 task-6, the second reformatting one report row after the first failed the Developer's own report-lint); git diff --stat 7a0243e..HEAD lists exactly five files, cmd/fid/integration/p23_gate_grants_test.go (new), cmd/fid/integration/p23_review_evidence_budget_test.go, internal/evidence/execution.go, internal/evidence/execution_gate_authority_test.go (new), and project-docs/docs/phases/phase-23/tasks/task-6-done.md, all inside the recovery's allowed files; no contract, schema, spec, decision, task-spec, QA, or internal/workflow file changed; only run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Runner independently verified the implementation hash resolves via git rev-parse --verify with a matching subject, the diff scope above, and ran project-docs/tools/report-lint.sh on task-6-done.md and task-6.md, which returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0) with all seven required commands recorded PASS. Developer-reported evidence, not independently rerun by the Runner and left to the fresh re-review: MF-4 added TestP23ReviewCycleChargeSurvivesLinkedRecoveryAndRebuild (one review-cycles budget_samples row keyed on the Review ID with consumed 1, unchanged as count 1 and consumed 1 after run.recover into a linked successor and after fid rebuild; the product was already correct so no product change and the internal/workflow budget files are untouched; reverted mutations failed as intended except that the recovery double-charge mutation was refused fail-closed by the journal at the recover step, so it does not prove the count assertion, and no rebuild-only mutation was possible because rebuild replays the journal); I-5 changed internal/evidence/execution.go so validateGateRunReferences authorizes gate.run against every Envelope revision grant through authorizeGateRunGrants and gateRunGrantPermits (same failure message and no-rows wrapping), with the in-package regression TestValidateGateRunReferencesAuthorizesAgainstEveryEnvelopeGrant red before the fix and green after and the built-binary journey TestP23GateRunAuthorizesEveryEnvelopeGrantThroughBuiltBinary on one three-grant Envelope (first-sorted actor-denied succeeds, last-sorted actor-reviewer-two succeeds, actor-recovery with no gate.run grant denied with unchanged Event count and projection summary); Phase 21 provenance b694991 (Refs: phase-21/task-15, 2026-08-30, ancestor of HEAD, first Phase 23 commit 34bd90e on 2026-09-14) recorded in the report. Reported tokens: gofmt no output exit_code 0, golangci-lint 0 issues, repository-wide go test last line ok internal/workflow (cached) coverage 62.1%, coverage total 61.6%, tagged integration ok 681.447s of 900s, internal/evidence ok 2.338s, internal/workflow ok 185.338s. DEC-227 package times: cmd/fid/integration 681.447s, cmd/fid 478.295s, internal/workflow 185.338s (taken from the dedicated command because the repository-wide run printed cached), no breach. Concerns carried to the re-review and wrap-up, none marked a blocker by the Developer: the ungranted-Actor denial surfaces as invalid-argument exit 2 through the existing gate adapter mapping and DEC-252 forbids changing codes; an ungranted Actor cannot own a Run in the standard fixture so the journey builds a three-grant Envelope in which the third Actor holds claim.acquire and run.start grants but not gate.run
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-26 18:11 TASK task-6 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-6-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: 8531522e9602b0f72717d6c9d889684228cfa2ee - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-26 18:12 TASK-RECOVERY task-2
+
+- Source: project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11-2.md (review-7) blocker candidate BC-1 as resolved by DEC-249, with the task-2.md Repair Amendment; task-2 is the second ordered owner under DEC-256
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review (review-7 BC-1), DEC-249, and the task-2.md Repair Amendment, ordered by DEC-256
+- Triage disposition: N/A
+- Trigger signature: review-7:qa-rework:task-2-BC-1
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD d6542bfc093059c8c6e656fa25c26229e60408ee with task-6 COMPLETE recorded; no product, schema, contract, or spec change pending; the only dirty path is the Runner-owned run-ledger.md
+- Phase worktree: /home/mark/projects/fid on branch phase-23; Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - issue.transition-terminal-success and envelope.complete evaluate only the Obligations whose guarded_actions contain that action while reads still report every Obligation; VAL-009 task-2 probes in-package and through the built binary on one Envelope: satisfied gate-evidence plus an unsatisfied review Obligation guarding both actions denies both actions naming that review Obligation with no Event and no projection change, and the contrast where an unsatisfied Obligation guarding only envelope.complete leaves terminal success unblocked and still blocks completion; every displaced retained assertion converged with introducing-commit provenance, invalidating change and executing command per row, including the task-10 journey stage 1-3 qa_pass rows, with no assertion narrowed and no permitted qa_pass probe added ahead of the journey's real terminal transition; task-2-done.md gains a dated section replacing the unsupported line-34 probe claim with the new citations; the six unchanged task-2.md exact commands terminate PASS with the three DEC-227 package times recorded; report committed and report-lint OUTCOME COMPLETE
+- Next action: dispatch one same-task Developer for task-2 only; the change stays inside the task-2 Scope (internal/workflow/envelope.go and evaluation.go, matching tests, and the cmd/fid/integration fixtures invalidated by this change); no change to readiness raising, run.close, reason codes, precedence, denial shapes, contracts, schema, or gates; the Developer runs the six exact commands from task-2.md, commits, writes the report, and returns a typed outcome
+- Human attention required: no
+
+### 2026-09-26 18:47 REPAIR task-2
+
+- Trigger signature: review-7:qa-rework:task-2-BC-1
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD d6542bfc093059c8c6e656fa25c26229e60408ee with task-6 COMPLETE recorded and the task-2 TASK-RECOVERY appended; only the Runner-owned run-ledger.md dirty
+- Ending checkpoint: phase-23 HEAD 7077776135370ac121c658d80880c983cf365b77; implementation commit 613e45aad9b10445cffd6b113ee598ab493f183a (fix(workflow): evaluate only guarding Obligations per guarded action, Refs: phase-23/task-2); report commits 63b82ca, f43e1b4 and 7077776135370ac121c658d80880c983cf365b77 (docs(task): finalize completion report for phase-23 task-2, the first two reformatted rows after the Developer's own report-lint failed them); git diff --stat d6542bf..HEAD lists exactly seven files, internal/workflow/envelope.go, internal/workflow/evaluation.go, internal/workflow/obligation_guard_test.go (new), cmd/fid/integration/p23_obligation_guard_test.go (new), cmd/fid/integration/p23_human_outcome_test.go, cmd/fid/integration/p22_fake_test.go (one additive fixture option), and project-docs/docs/phases/phase-23/tasks/task-2-done.md; no contract, schema, spec, decision, task-spec, QA, run_close.go, or reason-code file changed; only run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Runner independently verified the implementation hash resolves with a matching subject, the diff scope above, read the product diff (obligationsGuarding keeps an Obligation only when it is required and its guarded_actions contains the action; evaluateExecutionTransition passes only those to evaluateObligations; evaluateEnvelopeCompletion keeps only the reasons of Obligations guarding envelope.complete while still returning every Obligation evaluation), and ran project-docs/tools/report-lint.sh on task-2-done.md and task-2.md, which returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0) with all six required commands recorded PASS. Developer-reported evidence, not independently rerun by the Runner and left to the fresh re-review: in-package TestGuardedActionsEvaluateOnlyObligationsThatGuardThem (five subtests over the real EvaluateExecutionTransition and evaluateEnvelopeCompletion, each also asserting reads report every Obligation) and TestCompleteEnvelopeDeniedByGuardingObligationCommitsNothing, built-binary TestP23ReviewObligationGuardingBothActionsBlocksBothRealProcess and TestP23UnsatisfiedObligationBlocksOnlyTheActionItGuardsRealProcess (single-purpose fixture with qa_pass as its last transition), red evidence FAIL internal/workflow 5.712s exit_code 1 and FAIL cmd/fid/integration 12.136s exit_code 1 against the unchanged product, two reverted filter mutations that failed as intended; converged retained rows all in p23_human_outcome_test.go, invalidated by 613e45a, introduced in af0cbb2 or 0ff2eee, executed by the tagged integration command: stage 1 and stage 2 qa_pass rows now expect denial by OBL-p22-corpus only while envelope.complete still names all unsatisfied Obligations, stage 3 no longer performs qa_pass early and instead asserts through an evidence read and the non-committing domain evaluator that no Obligation blocks terminal success while the existing human-outcome-required envelope.complete denial keeps the blocks-the-action-it-guards subject, the header comment and assertP23GuardedActionsDenied helper rewritten to the DEC-249 reading; the deeper MF-5 restructuring is left to task-10. Reported tokens: pre-edit baseline internal/workflow (cached) 62.1% then uncached ok 184.168s, gofmt no output exit_code 0, golangci-lint 0 issues, repository-wide go test ok internal/workflow 209.816s, coverage total 62.0%, tagged integration ok 691.913s of 900s, post-edit internal/workflow ok 188.151s. DEC-227 package times: cmd/fid/integration 691.913s, cmd/fid 490.783s (81.8 percent of its 600s budget), internal/workflow 209.816s in the repository-wide run and 188.151s in the dedicated run, no breach. Concerns carried to the re-review and wrap-up, none marked a blocker by the Developer: the CLI terminal-success denial carries reason codes and not Obligation IDs so the built binary cannot name the blocking Obligation for issue.transition-terminal-success and the in-package test names it; the one additive ReviewGuardsTerminalSuccess option in p22_fake_test.go is the only edit to a file the change did not itself displace
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-26 18:47 TASK task-2 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-2-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: 613e45aad9b10445cffd6b113ee598ab493f183a - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-26 18:47 TASK-RECOVERY task-10
+
+- Source: project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11-2.md (review-7) Repair Plan row MF-5 plus Improvement I-6, under the retained trigger of TRG-23-004, with the task-10.md Repair Amendment; task-10 is the third ordered owner under DEC-256
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review (review-7 MF-5 and I-6), DEC-249, and the task-10.md Repair Amendment, ordered by DEC-256
+- Triage disposition: N/A
+- Trigger signature: task-10:qa-rework:review-7-BC-1-BC-2-BC-3
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 7077776135370ac121c658d80880c983cf365b77 with task-2 COMPLETE recorded and the task-2 DEC-249 evaluator repair landed; no product, schema, contract, or spec change pending; the only dirty path is the Runner-owned run-ledger.md; task-10 test af0cbb2c1448844ec7024cd823631533de655945 and reports 90d921b8084e58f2415c812bf789128d9a343195 and 908080d10c46f4ca9736f2a914035a3191a4ed8e are the state under repair, with the journey's stage 1-3 qa_pass rows already minimally converged by task-2 commit 613e45aad9b10445cffd6b113ee598ab493f183a
+- Phase worktree: /home/mark/projects/fid on branch phase-23; Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - MF-5 a stage on the three-type Envelope where OBL-p22-corpus is satisfied and OBL-p23-review is unsatisfied, preferably with both Human Obligations satisfied: envelope.complete is denied naming OBL-p23-review and any other unsatisfied envelope.complete guard with journal and projection unchanged, and issue.transition-terminal-success at that stage is not blocked by any Obligation per DEC-249, with the permitted qa_pass ordered as the journey's real one-way terminal transition and never used as a disposable probe; the task-10-done.md Task 2 probes and monotone or not reachable claims removed and the new stage cited; I-6 every VAL-009 citation resolves to existing code; the five unchanged task-10.md exact commands terminate PASS with the three DEC-227 package times recorded; report committed and report-lint OUTCOME COMPLETE
+- Next action: dispatch one same-task Developer continuation for task-10 only, editing cmd/fid/integration/p23_human_outcome_test.go ordering and assertions only (the existing CoexistingReviewObligation and ReviewGuardsTerminalSuccess fixture options already construct the states, no product or fixture-builder change) plus the VAL-009 entry and I-6 citations of task-10-done.md; no product, schema, contract, or spec change and no assertion narrowed; the Developer runs the five exact commands from task-10.md, commits, writes the report, and returns a typed outcome
+- Human attention required: no
+
+### 2026-09-26 19:19 REPAIR task-10
+
+- Trigger signature: task-10:qa-rework:review-7-BC-1-BC-2-BC-3
+- Attempt count: 2
+- Starting checkpoint: phase-23 HEAD 7077776135370ac121c658d80880c983cf365b77 with task-2 COMPLETE recorded and the task-10 attempt 2 TASK-RECOVERY appended; only the Runner-owned run-ledger.md dirty
+- Ending checkpoint: phase-23 HEAD bc7e6f393450780137f3d89ad9763e382028ccd3; implementation commit a425ffe22ec12558e953bbbb5cb265d22f28779e (test(integration): prove VAL-009 gate-satisfied review-unsatisfied stage under DEC-249, Refs: phase-23/task-10); report commits a8e8090 and bc7e6f393450780137f3d89ad9763e382028ccd3 (docs(task): finalize completion report for phase-23 task-10, the second reformatting two supplementary rows after the Developer's own report-lint failed them); git diff --stat 7077776..HEAD lists exactly two files, cmd/fid/integration/p23_human_outcome_test.go and project-docs/docs/phases/phase-23/tasks/task-10-done.md, both inside the recovery's allowed files, and the implementation commit alone changes only p23_human_outcome_test.go; no product, fixture-builder, contract, schema, spec, decision, task-spec, QA, or task-2 report file changed; only run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Runner independently verified the implementation hash resolves with a matching subject, the two-file diff scope above, and ran project-docs/tools/report-lint.sh on task-10-done.md and task-10.md, which returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0) with all five required commands recorded PASS. Developer-reported evidence, not independently rerun by the Runner and left to the fresh re-review: the journey TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess now links the gate-evidence receipt before the review Evidence and adds a stage with OBL-p22-corpus satisfied and the review and security Human Obligation unsatisfied, asserting via evidence evaluate exactly OBL-human-security and OBL-p23-review unsatisfied, zero readiness Stops, envelope.complete denied naming exactly OBL-human-security and OBL-p23-review with journal count and whole projection unchanged, and issue.transition-terminal-success not blocked by any Obligation checked with the non-committing workflow.EvaluateExecutionTransition, while the one real qa_pass stays the journey's last transition followed by close and release, envelope.complete, the VAL-025 mismatches, the human-outcome list and the VAL-081 confirmation; the review Evidence link now raises the human-outcome-required Stop for security and the VAL-046 raise and atomic-resolution proofs are retained; red evidence FAIL cmd/fid/integration 9.645s exit_code 1 when the new stage was first inserted in the old step order and failed at the stale old stage-2 expectation, green 12.740s and 12.696s; two reverted mutations failed as intended, one showing the real built-binary qa_pass at that state exits 0 and commits, corroborating DEC-249 through the CLI; retained rows converged with DEC-162 provenance (old stage-2 denial from af0cbb2 via 613e45a, VAL-046 raise assertion from 0ff2eee moved to the review link); I-6 removed the Task 2 probes and monotone or not reachable claims and re-resolved every VAL-009 citation by grep. Reported tokens: gofmt no output exit_code 0, golangci-lint 0 issues, repository-wide go test last line ok internal/workflow (cached) 64.0%, coverage total 62.0%, tagged integration ok 689.526s of 900s. DEC-227 package times: cmd/fid/integration 689.526s, cmd/fid 468.708s uncached, internal/workflow 192.775s from a supplementary count=1 run because the repository-wide run printed cached, no breach. Concerns carried to the re-review and wrap-up, none marked a blocker by the Developer: stage 2 keeps OBL-human-security unsatisfied so its envelope.complete denial names OBL-p23-review together with OBL-human-security and not the review alone, whereas the review-7 MF-5 row said preferably with both Human Obligations satisfied; satisfying both first would have removed the retained VAL-046 raise and atomic-resolve proofs from this journey and review-alone isolation is task 2's built-binary test on a fixture without Human Obligations, so a both-Humans-satisfied variant needs its own journey if the re-review wants it and the Developer did not decide that; stage 2's terminal assertion uses the non-committing evaluator and not a real qa_pass
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-26 19:19 TASK task-10 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-10-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: a425ffe22ec12558e953bbbb5cb265d22f28779e - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-26 19:19 TASK-RECOVERY task-11
+
+- Source: project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11-2.md (review-7) blocker candidate BC-3 as resolved by DEC-250, with the DEC-253 scope ratification and the task-11.md Repair Amendment; task-11 is the fourth and last ordered owner under DEC-256
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review (review-7 BC-3), DEC-250, DEC-253, and the task-11.md Repair Amendment, ordered by DEC-256
+- Triage disposition: N/A
+- Trigger signature: review-7:qa-rework:task-11-BC-3
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD bc7e6f393450780137f3d89ad9763e382028ccd3 with task-10 COMPLETE recorded; no product, schema, contract, or spec change pending; the only dirty path is the Runner-owned run-ledger.md; task-11 implementation c5bf0f89c69c57003ece353ef005a7596dd266e4 and report 777ee47d76990b73c88ff68bbdb9e6623b794de4 are the state under repair
+- Phase worktree: /home/mark/projects/fid on branch phase-23; Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - DEC-250 R1-R3 implemented with one qualifying-fact predicate per Condition type in internal/workflow shared by stop resolve and by the atomic resolution inside human-outcome.recorded and decision.referenced, resolution keyed on the Stop's recorded Condition and not its raising code, and stop raise rejecting a decision-satisfied Condition on an activation subject through the existing invalid-Condition failure with no Event; committed built-binary evidence for the VAL-048 wrong-class and wrong-result stop resolve rejections (exit 4 resolution-invalid, Event count unchanged, Stop open) with the matching Outcome resolving, VAL-078 non-qualifying and qualifying facts for human-outcome-recorded and decision-satisfied each on a producer-raised Stop and on an operator-stop, VAL-050's matching-Condition operator-stop resolved by the same Outcome next to the existing different-Condition Stop that stays open, and the R3 activation-subject raise rejection; the two producers' code-keyed scans in human_outcome.go and decision.go moved to the shared predicate; a registry rejection of a resolution Effect for a run- or activation-subject Stop escalated and not added locally; the five unchanged task-11.md exact commands terminate PASS with the three DEC-227 package times recorded; a dated task-11-done.md section; report committed and report-lint OUTCOME COMPLETE; then the fresh independent re-review checkpoint-after-task-11-3.md
+- Next action: dispatch one same-task Developer for task-11 only, within the task-11 Scope as widened by DEC-253 (internal/workflow/stop.go, stop_conditions.go with its matching tests, internal/review/human_outcome.go and decision.go, their in-package tests, and cmd/fid/integration fixtures and tests for the new built-binary evidence); no Event, field, code, or interface shape is added and no assertion narrowed; the Developer runs the five exact commands from task-11.md, commits, writes the report, and returns a typed outcome
+- Human attention required: no
