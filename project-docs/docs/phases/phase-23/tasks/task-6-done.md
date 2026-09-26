@@ -96,7 +96,8 @@ These rows are this recovery's runs; the rows above are the original session's h
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`); the same run printed `ok  	github.com/mbell-nzl/fid/cmd/fid	478.295s	coverage: 69.3% of statements`, `ok  	github.com/mbell-nzl/fid/internal/evidence	2.350s	coverage: 29.2% of statements`, and `ok  	github.com/mbell-nzl/fid/internal/export	232.335s`; no package line failed.
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`)
+- Same run, other package lines: `ok  	github.com/mbell-nzl/fid/cmd/fid	478.295s	coverage: 69.3% of statements`, `ok  	github.com/mbell-nzl/fid/internal/evidence	2.350s	coverage: 29.2% of statements`, and `ok  	github.com/mbell-nzl/fid/internal/export	232.335s`; no package line failed.
 - `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.6%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	681.447s` (terminated `exit_code: 0`)
 - `go test -race -timeout 30m -cover ./internal/evidence/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/evidence	2.338s	coverage: 29.2% of statements` (terminated `exit_code: 0`)
