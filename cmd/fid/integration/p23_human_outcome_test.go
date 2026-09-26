@@ -20,8 +20,10 @@ import (
 // VAL-043 authority admission and its four negatives, VAL-045's deterministic
 // non-proof fields, VAL-046's readiness-Stop raising and resolution, VAL-025's
 // final nine-cell evidence-type closure (both Human mismatches through the
-// real producer), VAL-009's completing state with one Envelope carrying
-// gate-evidence, review, and human-outcome Obligations at once, VAL-010's
+// real producer), VAL-009's blocking stages (including the DEC-249 stage where
+// the gate is satisfied and the review is not) and completing state with one
+// Envelope carrying gate-evidence, review, and human-outcome Obligations at
+// once, VAL-010's
 // linked-evidence re-verification, and VAL-081's re-confirmed nullable binding.
 func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T) {
 	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "review.record", "run.close", "run.observe", "run.observe-budget", "run.start"}
@@ -32,8 +34,8 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	// OBL-p22-corpus alone; the review and both Human Obligations guard only
 	// envelope.complete. A permitted qa_pass commits a one-way transition, so it
 	// stays deferred until the journey's real terminal transition below and is
-	// never used as a disposable probe once the gate is satisfied (stage 3 uses
-	// the non-committing domain evaluator instead). The non-terminal states
+	// never used as a disposable probe once the gate is satisfied (stages 2 and 3
+	// use the non-committing domain evaluator instead). The non-terminal states
 	// below do not evaluate Obligations at all.
 	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
 		response := p23IssueTransition(t, a, state, revision+1, "human-outcome-"+state)
@@ -114,27 +116,39 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	// projection.
 	assertP23GuardedActionsDenied(t, a, "human-outcome-stage-1", []string{"OBL-human-security", "OBL-p22-corpus", "OBL-p23-review"}, []string{"OBL-p22-corpus"})
 
-	// VAL-009 stage 2: an independent Reviewer records a passing Review that is
-	// linked to the review Obligation. It still leaves gate-evidence and the
-	// security human-outcome Obligation unsatisfied, so the guarded actions stay
-	// denied. VAL-010: the linked review Evidence's evaluation reports the
-	// distinct not-applicable artifact availability, never available/missing.
+	// VAL-009 stage 2 (review-7 MF-5, DEC-249): the gate-evidence Obligation is
+	// satisfied by a real fid-executed receipt, and the review Obligation is not
+	// (the security human-outcome Obligation is also still unsatisfied, which is
+	// what keeps the readiness Stop unraised, see below). OBL-p23-review and
+	// OBL-human-security guard envelope.complete alone, so it is denied naming
+	// exactly those two with no Event and no projection change, while
+	// issue.transition-terminal-success (guarded only by the now-satisfied
+	// OBL-p22-corpus) is not blocked by any Obligation. The permitted qa_pass is
+	// the journey's one real terminal transition further below; it is not used as
+	// a disposable probe here, so the non-committing domain evaluator asserts the
+	// terminal outcome. Satisfaction is never revoked, so this gate-satisfied,
+	// review-unsatisfied state is only reachable before the review is linked.
+	gate := p23RunQualifyingGateSession(t, a, "human-outcome-proof")
+	beforeGateLink := p21JournalEventCount(t, a.workspace)
+	linkedGate := p23RunInput(t, a, "evidence", "link", a.actor, "human-outcome-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	assertP23HumanOutcomeSuccess(t, linkedGate)
+	if after := p21JournalEventCount(t, a.workspace); after != beforeGateLink+1 {
+		t.Fatalf("gate evidence.link appended %d Event(s), want 1", after-beforeGateLink)
+	}
+	assertP23ObligationsUnsatisfied(t, a, "OBL-human-security", "OBL-p23-review")
+	assertP23NoHumanOutcomeStop(t, a)
+	assertP23EnvelopeCompleteDenied(t, a, "human-outcome-stage-2", []string{"OBL-human-security", "OBL-p23-review"})
+	assertP23TerminalTransitionNotBlocked(t, a, "human-outcome-stage-2")
+
+	// VAL-046: an independent Reviewer records a passing Review that is linked
+	// to the review Obligation. That evidence.link (the ordinary DEC-224
+	// producer) leaves the security human-outcome Obligation as the last
+	// unsatisfied one, so it raises human-outcome-required atomically inside its
+	// own single Event. VAL-010: the linked review Evidence's evaluation reports
+	// the distinct not-applicable artifact availability, never available/missing.
 	reviewEvaluation := p23SatisfyCoexistingReview(t, a, "human-outcome-review")
 	if reviewEvaluation["status"] != "satisfied" || reviewEvaluation["artifact_availability"] != "not-applicable" {
 		t.Fatalf("linked review evaluation = %#v, want satisfied/not-applicable", reviewEvaluation)
-	}
-	assertP23GuardedActionsDenied(t, a, "human-outcome-stage-2", []string{"OBL-human-security", "OBL-p22-corpus"}, []string{"OBL-p22-corpus"})
-
-	// VAL-046: recording the second class's approved Outcome makes it the
-	// last unsatisfied Obligation, and evidence.link (the ordinary DEC-224
-	// producer) raises human-outcome-required once the gate-evidence and review
-	// Obligations are also satisfied.
-	gate := p23RunQualifyingGateSession(t, a, "human-outcome-proof")
-	beforeReadiness := p21JournalEventCount(t, a.workspace)
-	linkedGate := p23RunInput(t, a, "evidence", "link", a.actor, "human-outcome-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
-	assertP23HumanOutcomeSuccess(t, linkedGate)
-	if after := p21JournalEventCount(t, a.workspace); after != beforeReadiness+1 {
-		t.Fatalf("evidence.link appended %d Event(s), want 1", after-beforeReadiness)
 	}
 	assertP23HumanOutcomeStopState(t, a, "security", "open")
 
@@ -153,9 +167,9 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	// guards envelope.complete alone, which the human-outcome-required denial
 	// above already proves it blocks. Under DEC-249 it does not guard the
 	// terminal transition, so qa_pass is not blocked by any Obligation here.
-	// Performing it would commit the one-way transition before the journey's
-	// real terminal step, so the non-committing domain evaluator is used.
-	assertP23OnlyObligationUnsatisfied(t, a, "OBL-human-security")
+	// The one-way qa_pass is still reserved for the journey's real terminal step,
+	// so the non-committing domain evaluator is used.
+	assertP23ObligationsUnsatisfied(t, a, "OBL-human-security")
 	assertP23TerminalTransitionNotBlocked(t, a, "human-outcome-stage-3")
 
 	// The security Human Outcome resolves the readiness Stop atomically with
@@ -655,25 +669,61 @@ func assertP23GuardedActionsDenied(t *testing.T, a *p22FIDRecoveryAdapter, key s
 	}
 }
 
-// assertP23OnlyObligationUnsatisfied asserts the evidence.evaluate read reports
-// every Obligation and that exactly the named one is unsatisfied.
-func assertP23OnlyObligationUnsatisfied(t *testing.T, a *p22FIDRecoveryAdapter, unsatisfiedID string) {
+// assertP23ObligationsUnsatisfied asserts the evidence.evaluate read reports
+// every Obligation and that exactly the named ones are unsatisfied.
+func assertP23ObligationsUnsatisfied(t *testing.T, a *p22FIDRecoveryAdapter, unsatisfiedIDs ...string) {
 	t.Helper()
 	response := p23EvidenceEvaluate(t, a)
+	unsatisfied := map[string]bool{}
+	for _, id := range unsatisfiedIDs {
+		unsatisfied[id] = true
+	}
 	seen := 0
 	for _, item := range p21Path(t, p23Envelope(t, response.Stdout), "result", "evaluations").([]any) {
 		evaluation := item.(map[string]any)
 		seen++
 		want := "satisfied"
-		if evaluation["obligation_id"] == unsatisfiedID {
+		if unsatisfied[evaluation["obligation_id"].(string)] {
 			want = "unsatisfied"
 		}
 		if evaluation["status"] != want {
-			t.Fatalf("evaluation for %v = %v, want %s (only %s unsatisfied)", evaluation["obligation_id"], evaluation["status"], want, unsatisfiedID)
+			t.Fatalf("evaluation for %v = %v, want %s (only %v unsatisfied)", evaluation["obligation_id"], evaluation["status"], want, unsatisfiedIDs)
 		}
 	}
 	if seen != 4 {
 		t.Fatalf("evidence.evaluate reported %d Obligations, want every one of the 4", seen)
+	}
+}
+
+// assertP23EnvelopeCompleteDenied attempts envelope.complete and asserts it is
+// denied because of exactly the named unsatisfied Obligations, each of which
+// guards envelope.complete (DEC-249), bracketed by an unchanged journal length
+// and an unchanged whole-database projection.
+func assertP23EnvelopeCompleteDenied(t *testing.T, a *p22FIDRecoveryAdapter, key string, want []string) {
+	t.Helper()
+	beforeEvents, beforeProjection := p21JournalEventCount(t, a.workspace), p22FaultProjection(t, a.workspace)
+	if got := p23CompleteDenialObligationIDs(t, a, key+"-complete"); !reflect.DeepEqual(got, want) {
+		t.Fatalf("%s envelope.complete blocked by Obligations %v, want exactly %v", key, got, want)
+	}
+	if afterEvents := p21JournalEventCount(t, a.workspace); afterEvents != beforeEvents {
+		t.Fatalf("%s envelope.complete denial appended Event(s): %d -> %d", key, beforeEvents, afterEvents)
+	}
+	if !reflect.DeepEqual(beforeProjection, p22FaultProjection(t, a.workspace)) {
+		t.Fatalf("%s envelope.complete denial changed the projection", key)
+	}
+}
+
+// assertP23NoHumanOutcomeStop asserts no human-outcome-required Stop exists:
+// the readiness Stop is raised only when a Human Obligation is the sole
+// unsatisfied Obligation, never while other Obligations are also unsatisfied.
+func assertP23NoHumanOutcomeStop(t *testing.T, a *p22FIDRecoveryAdapter) {
+	t.Helper()
+	conn := p22FaultDB(t, a.workspace)
+	defer func() { p22FaultOK(t, conn.Close()) }()
+	var count int
+	p22FaultOK(t, conn.QueryRow(`SELECT COUNT(*) FROM stops WHERE code='human-outcome-required'`).Scan(&count))
+	if count != 0 {
+		t.Fatalf("human-outcome-required Stop count = %d, want 0 while other Obligations remain unsatisfied", count)
 	}
 }
 
@@ -757,8 +807,12 @@ func p23SatisfyCoexistingReview(t *testing.T, a *p22FIDRecoveryAdapter, key stri
 	pass := p23ReviewRecord(t, a, "actor-reviewer-two", key, p23ReviewInput(a, p21PathString(t, run, "id"), p23Number(t, run["version"]), "pass", []any{}, nil))
 	p23AssertReviewSuccess(t, "coexisting pass Review", pass)
 	review := p23ReviewFromResponse(t, pass)
+	beforeLink := p21JournalEventCount(t, a.workspace)
 	linked := p23RunInput(t, a, "evidence", "link", a.actor, key+"-link", map[string]any{"obligation_id": "OBL-p23-review", "evidence_type": "review", "receipt_id": nil, "review_id": review["id"], "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
 	p23AssertReviewSuccess(t, "coexisting review Evidence link", linked)
+	if after := p21JournalEventCount(t, a.workspace); after != beforeLink+1 {
+		t.Fatalf("review evidence.link appended %d Event(s), want 1", after-beforeLink)
+	}
 	p23CloseAndRelease(t, a, "actor-reviewer-two", p21PathString(t, run, "id"), p21PathString(t, claim, "id"), key)
 	p23ReacquireBuilderSession(t, a, key+"-builder-again")
 	return p21Path(t, p23Envelope(t, linked.Stdout), "result", "evaluation").(map[string]any)
