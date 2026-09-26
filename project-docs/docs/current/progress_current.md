@@ -8,8 +8,8 @@ BC-1..BC-3 and MF-4/MF-5.
 
 The Tech Lead recorded DEC-249..255 (2026-09-26). The stop is released for
 DEC-255's ordered repairs. The Human approved DEC-254 Part 2 (task 13 opens
-with a `cmd/fid` speed step). BC-2 (DEC-251) awaits the Human and must be
-ruled before the `checkpoint-after-task-11-3.md` re-review. Task 12 stays held until that re-review
+with a `cmd/fid` speed step) and chose Option B for BC-2 (DEC-251). After the
+repairs, the `checkpoint-after-task-11-3.md` re-review follows. Task 12 stays held until that re-review
 returns PASS.
 
 ## Task 4 recovery authority - 2026-09-20

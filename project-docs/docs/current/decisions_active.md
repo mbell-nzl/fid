@@ -174,8 +174,9 @@
   not the raising code, with one predicate shared by the manual and atomic
   paths. Task 11 implements it; DEC-253 ratifies its `stop_conditions.go`
   scope.
-- DEC-251 (PROPOSED, awaiting Human): whether `human-outcome.record` needs an
-  Envelope grant. Option B, no grant, is recommended.
+- DEC-251 (Human, Option B, 2026-09-26): `human-outcome.record` needs no
+  Envelope grant. Human authority comes from the Activation profile. The
+  section 4.1 cell is corrected.
 - DEC-252: task 6 repairs multi-grant `gate.run`.
 - DEC-254: Part 1, `cmd/fid` breach attribution, is accepted (Tech Lead).
   Part 2 was Human-accepted 2026-09-26: task 13's first step is a test-only

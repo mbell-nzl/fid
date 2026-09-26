@@ -16,7 +16,7 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 **Tasks 1-11 complete; the post-task-11 checkpoint is BLOCKed (review-7).**
 ESC-23-004 is partly resolved. DEC-249 rules that an Obligation blocks only
 its declared guarded actions, and DEC-250 fixes the judgment-Condition
-qualifying facts. BC-2's Envelope-grant question awaits the Human (DEC-251).
+qualifying facts. DEC-251 (Human, Option B) needs no grant for Human Outcomes.
 DEC-255 releases the ordered repairs: MF-4, task-2 BC-1, MF-5, task-11 BC-3,
 task-6 I-5. Then a fresh `checkpoint-after-task-11-3.md` review. Branch
 `phase-23`.
@@ -32,8 +32,8 @@ encoding (VAL-080) and added VAL-081/082. DEC-240 split VAL-082 into
 VAL-082/083/084. The contract now has **84 rows** (`qa-plan.md` sections
 19-21).
 
-Next action: the Runner resumes the DEC-255 repairs. Once the Human rules on
-DEC-251, the fresh checkpoint re-review follows. Task 12 dispatches only after
+Next action: the Runner resumes the DEC-255 repairs, then dispatches the fresh
+checkpoint re-review. Task 12 dispatches only after
 it returns PASS. Task 13 opens with the Human-approved `cmd/fid` speed step
 (DEC-254).
 

@@ -2,16 +2,20 @@
 
 ## Open escalations
 
+None. ESC-23-004 is resolved (below); its DEC-255 repairs are pending.
+
+## Recently resolved
+
 ### ESC-23-004 - Post-task-11 checkpoint re-review: three protected blocker candidates (BC-1, BC-2, BC-3)
 
 - **Raised by:** TRG-23-004
-- **Status:** PARTIALLY RESOLVED 2026-09-26.
-  - Resolved: BC-1 by DEC-249 and BC-3 by DEC-250.
-  - Still open: BC-2, awaiting the Human ruling on DEC-251 (Option B recommended).
-  - The stop is released for the ordered repairs in DEC-255: MF-4, then task-2 BC-1, MF-5+I-6, task-11 BC-3, and task-6 I-5.
-  - BC-2 must be ruled before the fresh re-review (`checkpoint-after-task-11-3.md`) is dispatched.
+- **Status:** RESOLVED 2026-09-26.
+  - BC-1 by DEC-249 and BC-3 by DEC-250 (Tech Lead).
+  - BC-2 by DEC-251 (Human, Option B).
+  - Carry items: I-1 by DEC-254 (Part 2 Human-approved), I-2 by DEC-253, I-5 by DEC-252.
+  - DEC-255 releases the ordered repairs: MF-4, task-2 BC-1, MF-5+I-6, task-11 BC-3, task-6 I-5.
+  - Next: a fresh `checkpoint-after-task-11-3.md` re-review.
   - Task 12 stays held until that re-review returns PASS with Must-fix 0 (qa-plan section 8).
-  - Carry items: I-2 resolved by DEC-253, I-5 by DEC-252; I-1 resolved: both parts of DEC-254 accepted, Part 2 by the Human on 2026-09-26.
 - **Originating task:** task-10
 - **Trigger signature:** task-10:qa-rework:review-7-BC-1-BC-2-BC-3
 - **Source:** `project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11-2.md` (review-7, commit 9cb9420516c461ddd9b4d22d1944759a416f7bb7)
@@ -23,11 +27,6 @@
 - **Carry items:** I-1 `cmd/fid` headroom, I-2 task-11 scope ratification, I-5 multi-grant `gate.run` owner, I-6 report citations. No action here.
 - **Constraints:** Do not choose any reading in code, tests or reports before the decision is recorded. Do not narrow VAL-009, VAL-043, VAL-048, VAL-050 or VAL-078. A fresh independent checkpoint re-review must PASS before task 12.
 - **References:** TRG-23-004 in `project-docs/docs/phases/phase-23/triage-log.md`; review-7 lines 661-776.
-
-ESC-23-003's protected contradiction is resolved under DEC-239; Task 4
-implementation and verification remain pending under the bounded recovery.
-
-## Recently resolved
 
 ### ESC-23-003 - VAL-015 Run-holder-only CLI evidence is unrepresentable under the accepted lifecycle
 

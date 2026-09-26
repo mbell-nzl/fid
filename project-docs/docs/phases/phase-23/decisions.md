@@ -1894,9 +1894,9 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 
 ### DEC-251 - `human-outcome.record` Envelope-grant contradiction (ESC-23-004 BC-2)
 
-- **Status:** PROPOSED 2026-09-26. **Awaiting Human ruling.** This is a direct
-  contradiction inside the Human-accepted interface (DEC-222). Either answer
-  changes accepted text or product behavior.
+- **Status:** **ACCEPTED by Human 2026-09-26: Option B.** The Human judged
+  that Option A would add per-job setup without meaningful protection. The
+  section 4.1 cell is corrected, and no code, test or assertion changes.
 - **Contradiction:** `public-interface.md` section 4.1 says "Profile with
   `actor_type:"human"` plus Envelope grant and active finalized Activation".
   Section 4's body, `contracts.md` section 10 and VAL-043 name no grant.
@@ -1924,7 +1924,10 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
     Envelope grants") as applying to every backend-port operation. It also
     matches the `finding.address` precedent, where the 4.1 cell added a grant
     that the body omitted and the product implemented it.
-- **Blocks:** the fresh checkpoint re-review, not the DEC-255 repairs.
+- **Applied:** `public-interface.md` section 4.1 cell corrected. VAL-043's
+  five requests stand unchanged. The task-9 journey needs no grant. Tasks 14
+  and 18 add no grant for `actor-human-outcome`. The name stays in the
+  30-name grant-action allowlist.
 - **Refs:** ESC-23-004, review-7 BC-2; public-interface sections 4 and 4.1;
   contracts section 10; PRD-AUTH-002/007/008; VAL-043.
 
@@ -2008,7 +2011,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 - **Status:** ACCEPTED 2026-09-26, Tech Lead.
 - **Disposition:**
   - BC-1 is resolved by DEC-249 and BC-3 by DEC-250.
-  - BC-2 remains open pending the Human ruling on DEC-251.
+  - BC-2 is resolved by DEC-251 (Human, Option B, 2026-09-26).
   - MF-4 and MF-5 stand as review-7 bounded repairs.
   - I-2 is resolved by DEC-253 and I-5 by DEC-252.
   - I-6 is folded into MF-5.
@@ -2033,8 +2036,8 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
      journey's real terminal transition. Do not use it as a disposable probe.
   4. **BC-3 repair** (task 11, DEC-250 and DEC-253).
   5. **I-5 repair** (task 6, DEC-252).
-  6. **BC-2**, once the Human rules. Option B is a Tech Lead doc edit with no
-     dispatch. Option A adds a task-10 authorization repair here.
+  6. **BC-2**: resolved by DEC-251 Option B. It was a doc correction only,
+     so nothing is dispatched.
 - **Then:** Dispatch a fresh independent QA Lead re-review as
   `qa/checkpoint-after-task-11-3.md`. It covers items 1-6 plus the retained
   review-7 rows. Task 12 stays held until that review returns PASS with

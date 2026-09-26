@@ -240,7 +240,7 @@ activated profile and an Envelope grant:
 | `concern.dispose` | Profile plus Envelope grant; task 8 |
 | `deviation.record` | Profile plus Envelope grant; task 8 |
 | `decision.record-reference` | Profile plus Envelope grant; task 9 |
-| `human-outcome.record` | Profile with `actor_type:"human"` plus Envelope grant and active finalized Activation; task 10 |
+| `human-outcome.record` | Profile with `actor_type:"human"` and active finalized Activation; no Envelope grant (`contracts.md` section 10; corrected under DEC-251, Human 2026-09-26). The name stays legal in a grant's action list. Task 10 |
 
 `requirement.record-reference`, `requirement.link`, and every Phase 23 read are
 operation IDs only and stay out of the allowlist, matching the existing
