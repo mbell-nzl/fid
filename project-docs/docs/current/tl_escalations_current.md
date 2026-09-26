@@ -2,12 +2,12 @@
 
 ## Open escalations
 
-None newly minted. ESC-23-004 is resolved in substance (below). The sequence
-verifier had no valid route out of the STOP: review-6 stayed open with no next
-owner after the review-7 BLOCK. DEC-256 (Tech Lead) reshapes the repairs to
-four distinct owners. DEC-257 (Human, Option A) lets the RUN-RESUME carry them.
-DEC-257 implemented; Runner resumes the DEC-256 repairs. No new TRG/ESC: it is
-the same STOP and the same authority question.
+None. ESC-23-004 is resolved (below). The DEC-256 RUN-RESUME was accepted on
+2026-09-26 at 17:38 under DEC-257; its STOP is consumed. The ledger records
+tasks 6, 2, and 10's repairs complete and task 11's recovery active. Current
+state: `REPAIR_PENDING`. A replacement Runner uses a normal session resume,
+omits `Repair owners`, and continues that recovery. See
+[current progress](progress_current.md); no new TRG/ESC is needed.
 
 ## Recently resolved
 
@@ -18,7 +18,7 @@ the same STOP and the same authority question.
   - BC-1 by DEC-249 and BC-3 by DEC-250 (Tech Lead).
   - BC-2 by DEC-251 (Human, Option B).
   - Carry items: I-1 by DEC-254 (Part 2 Human-approved), I-2 by DEC-253, I-5 by DEC-252.
-  - DEC-255 releases the ordered repairs: MF-4, task-2 BC-1, MF-5+I-6, task-11 BC-3, task-6 I-5.
+  - DEC-255/256 release ordered repairs: task 6 MF-4+I-5, task 2 BC-1, task 10 MF-5+I-6, task 11 BC-3. The first three owners are complete in the ledger.
   - Next: a fresh `checkpoint-after-task-11-3.md` re-review.
   - Task 12 stays held until that re-review returns PASS with Must-fix 0 (qa-plan section 8).
 - **Originating task:** task-10

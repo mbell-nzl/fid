@@ -439,8 +439,13 @@ Responsibilities:
     result leaves the ledger byte-for-byte unchanged. Require exit zero and
     literal `APPEND_CONFIRMED state=<state>`. If termination or receipt is
     missing, retry the byte-identical candidate; an exact EOF match confirms it
-    without another append. Do not advance, submit a different entry, or perform
-    a separate `apply_patch`, redirect, or editor mutation. This validator and
+    without another append. Do not advance, submit a different entry, or dispatch
+    work while that append result is ambiguous. A terminated `INVALID` rejection
+    is conclusive: validate the unchanged ledger, correct the candidate against
+    that state, and resubmit through the append command, preserving the rejected
+    output and exit status in the corrected event's reconciliation evidence.
+    A rejected candidate with a valid ledger does not require a stop. Never
+    perform a separate `apply_patch`, redirect, or editor mutation. This validator and
     append transaction does not choose
     the next action; `workflow-route.sh` does. Run it without `--append-stdin`
     to read current state, and require literal `VALID state=ADVANCEABLE` before
@@ -654,7 +659,18 @@ Autonomous triage and resolved resume:
 
 - Autonomous TL-Lite `RESUME` and `REPAIR` are enabled. Only
   `BLOCK` creates a Human-visible STOP.
-- When a prior STOP has a later decision, verified commit, or restored
+- Choose the resume form from the current validated ledger state. A historical
+  STOP already followed by an accepted RUN-RESUME is consumed, even if current
+  summaries still describe it as stopped. A normal session resume uses `N/A`
+  for `Governing TRG`, `Governing ESC`, `Trigger signature`, `Attempt count`,
+  `Resolution authority`, and `Next recovery`, and omits `Repair owners`.
+  During an active TASK-RECOVERY it preserves the task, trigger, attempt,
+  authority, and review-owner progress. Reconcile existing commits, report, and
+  child-session state, then continue that recovery without duplicating its
+  dispatch event or restarting completed owners. `REPAIR_PENDING` permits
+  continuing the repair, not advancing to the next task.
+- When the current ledger state is `STOPPED` and that STOP has a later decision,
+  verified commit, or restored
   capability, verify it and append `RUN-RESUME` retaining the
   governing TRG/ESC, trigger, next attempt, continuing task, and exact next
   recovery. That tuple binds the next TASK-RECOVERY. Record exactly one

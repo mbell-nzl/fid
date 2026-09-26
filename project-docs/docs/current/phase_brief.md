@@ -13,13 +13,18 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 
 ## Status
 
-**Tasks 1-11 complete; the post-task-11 checkpoint is BLOCKed (review-7).**
+**Tasks 1-11 initially complete; review-7 repairs are in progress.**
 ESC-23-004 is partly resolved. DEC-249 rules that an Obligation blocks only
 its declared guarded actions, and DEC-250 fixes the judgment-Condition
 qualifying facts. DEC-251 (Human, Option B) needs no grant for Human Outcomes.
 DEC-255/256 release four ordered repairs: task 6 (MF-4 + I-5), task 2
-(BC-1), task 10 (MF-5 + I-6), task 11 (BC-3). **DEC-257 implemented; Runner
-resumes the DEC-256 repairs** (the RUN-RESUME carries their `Repair owners`).
+(BC-1), task 10 (MF-5 + I-6), task 11 (BC-3). **The DEC-256 RUN-RESUME was
+accepted on 2026-09-26 at 17:38.** The ledger records tasks 6, 2, and 10's
+repairs complete and the active task-11 TASK-RECOVERY at 19:19. On 2026-09-27,
+standalone sequence validation returns `REPAIR_PENDING`; there is no active
+STOP. Resume task 11 with a normal session RUN-RESUME (STOP-only fields `N/A`,
+`Repair owners` omitted), preserving the existing recovery. Implementation
+commit `466745f` exists; its recovery verification/report remain outstanding.
 Then `checkpoint-after-task-11-3.md`. Branch `phase-23`.
 
 Eight QA passes returned twenty-eight Must-fix revisions plus five the Tech Lead
@@ -33,8 +38,8 @@ encoding (VAL-080) and added VAL-081/082. DEC-240 split VAL-082 into
 VAL-082/083/084. The contract now has **84 rows** (`qa-plan.md` sections
 19-21).
 
-Next action: DEC-257 implemented; Runner resumes the DEC-256 repairs, then the
-fresh checkpoint re-review. Task 12 dispatches only after
+Next action: finish the active task-11 recovery's verification and report, then
+the fresh checkpoint re-review. Task 12 dispatches only after
 it returns PASS. Task 13 opens with the Human-approved `cmd/fid` speed step
 (DEC-254).
 

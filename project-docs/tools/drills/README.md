@@ -79,7 +79,12 @@ STOP after a BLOCK re-review. It proves that a STOP resume can bind the
 ordered `Repair owners` line of its resolving DEC. The owners then recover one
 at a time, and a linked PASS closes the review. It also rejects every drift:
 a mismatched or duplicated list, a STOP that was not a BLOCK re-review, a
-wrong first owner, out-of-order recovery, and an early PASS:
+wrong first owner, out-of-order recovery, and an early PASS.
+
+The same drill covers a replacement Runner during a later owner's recovery:
+repeated STOP authority and `Repair owners` are rejected without mutation, a
+corrected normal resume preserves pending work and completed owners, receipt
+retry is idempotent, and the original recovery can finish through linked PASS.
 
 ```sh
 sh project-docs/tools/drills/review-block-owners.sh

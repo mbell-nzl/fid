@@ -9,7 +9,7 @@ claude:
 codex:
   name: tl_lite
   description: Single-use tactical Tech Lead for mid-phase questions and soft-blocker triage. Escalates anything cross-cutting.
-  model: gpt-5.6-terra
+  model: gpt-6-sol
   model_reasoning_effort: medium
 ---
 <!-- body: shared -->

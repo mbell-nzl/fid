@@ -102,7 +102,12 @@ Execution rules:
   INVALID leaves the ledger byte-for-byte unchanged. Require exit zero and
   literal APPEND_CONFIRMED state=<state>. If termination or receipt is missing,
   retry the byte-identical candidate; an exact EOF match confirms it without a
-  duplicate. Do not advance, submit a different event, or separately mutate the
+  duplicate. Do not advance, submit a different event, or dispatch work while
+  that append result is ambiguous. A terminated INVALID rejection is conclusive:
+  validate the unchanged ledger, correct the candidate against that state, and
+  resubmit through the append command. Preserve the rejected output and exit
+  status in the corrected event's reconciliation evidence; a rejected candidate
+  with a valid ledger does not require a stop. Never separately mutate the
   ledger with apply_patch, redirection, or another editor. workflow-route.sh
   still chooses the action.
   Run sequence lint without --append-stdin to read current state and require
@@ -286,14 +291,27 @@ Current state:
 
 Execution rules:
 - Reconcile the run ledger against completion reports and git history before
-  executing anything. If the ledger and reports disagree, stop and report the
-  discrepancy. If the ledger is missing for an in-progress phase, reconstruct
+  executing anything. An active recovery can have newer implementation commits
+  than its report; continue that recovery to finish verification and reporting.
+  Stop only if branch/worktree state cannot be reconciled non-destructively.
+  If the ledger is missing for an in-progress phase, reconstruct
   a RUN-START entry from task reports and git history and note the gap.
 - Audit the QA plan's mid-phase review cadence against the run ledger and QA
   review artifacts before spawning any Developer. If a scheduled review is
   overdue, spawn `qa_reviewer` for that review first, append a REVIEW entry, and
   apply the normal TL-Lite/STOP rules before continuing implementation.
-- If a prior STOP has a later decision, verified commit, or restored
+- Choose the resume form from standalone sequence validation and the ledger,
+  ahead of stale current-context summaries. A historical STOP with an accepted
+  RUN-RESUME is already consumed. For a normal session resume, use N/A for
+  Governing TRG, Governing ESC, Trigger signature, Attempt count, Resolution
+  authority, and Next recovery; omit Repair owners entirely. Keep Continuing
+  task and checkpoint concrete. An existing TASK-RECOVERY keeps its task,
+  trigger, attempt, authority, and review-owner progress. Reconcile its commits,
+  report, and child-session state, then continue it without a duplicate
+  TASK-RECOVERY or rerunning completed owners. REPAIR_PENDING permits continuing
+  the active repair, not advancing to the next task.
+- If the current ledger state is STOPPED and that STOP has a later decision,
+  verified commit, or restored
   capability, verify it and append RUN-RESUME retaining the
   STOP's governing phase-scoped TRG/ESC, trigger, next attempt, continuing task,
   and exact Next recovery tuple. Record `Resolution authority` as exactly one of

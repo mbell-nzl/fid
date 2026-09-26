@@ -234,6 +234,36 @@ accept 'second owner repair resolves' "$scratch/rep2" COMPLETION_PENDING
 accept 'second owner completes' "$scratch/done2" REREVIEW_PENDING
 accept 'linked PASS closes the BLOCK re-review' "$scratch/pass3" ADVANCEABLE
 
+# A replacement runner resumes an active later owner without replaying the
+# consumed STOP or resetting completed owners. Both bad appends are conclusive;
+# a corrected candidate can be submitted against the unchanged valid ledger.
+set_ledger start review1 fix3 review2 triage stop resume rec6 rep6 done6 rec2
+sed 's/2026-09-06 10:08/2026-09-06 10:13/' "$scratch/resume" > "$scratch/repeated-stop"
+reject 'session restart cannot replay consumed STOP authority' "$scratch/repeated-stop" \
+  'normal schema v2 RUN-RESUME must use N/A for STOP-only fields'
+sed -e 's/2026-09-06 10:08/2026-09-06 10:13/' \
+    -e 's/Continuing task: task-6/Continuing task: task-2/' \
+    "$scratch/normal-resume" > "$scratch/owner-restart"
+reject 'session restart cannot reinstall completed Repair owners' "$scratch/owner-restart" \
+  'Repair owners are valid only on a RUN-RESUME after STOP'
+sed '/^- Repair owners: /d' "$scratch/owner-restart" > "$scratch/session-resume"
+accept 'corrected normal resume preserves active second owner' "$scratch/session-resume"
+cp "$ledger" "$scratch/before-retry"
+accept 'normal resume receipt retry confirms the same event' "$scratch/session-resume"
+if cmp -s "$ledger" "$scratch/before-retry"; then
+  pass 'normal resume receipt retry preserves bytes'
+else
+  fail 'normal resume receipt retry duplicated the event'
+fi
+sed 's/2026-09-06 10:12/2026-09-06 10:13/' "$scratch/rec2" > "$scratch/duplicate-recovery"
+reject 'session resume does not permit a duplicate active recovery' "$scratch/duplicate-recovery" \
+  'overlapping TASK-RECOVERY precedes required REPAIR'
+reject 'session resume does not clear pending repair before PASS' "$scratch/pass3" \
+  'QA re-review passed before owning task completed'
+accept 'resumed second owner records its existing repair outcome' "$scratch/rep2" COMPLETION_PENDING
+accept 'resumed second owner completes without replaying first owner' "$scratch/done2" REREVIEW_PENDING
+accept 'linked PASS closes review after the session restart' "$scratch/pass3" ADVANCEABLE
+
 # (a) A later owner may be the trigger task under its retained signature.
 stopped_prefix
 sed -e 's/DEC-901/DEC-904/g' -e 's/Repair owners: task-6, task-2/Repair owners: task-6, task-3/' \

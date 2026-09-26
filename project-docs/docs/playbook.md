@@ -144,7 +144,10 @@ Record recovery in the append-only run ledger. Submit each single event to
 validates and atomically appends at EOF with an
 `APPEND_CONFIRMED state=<state>` receipt. `INVALID` leaves the ledger unchanged;
 if the receipt is lost, retry the byte-identical candidate to confirm it without
-duplication. Do not mutate the ledger separately.
+duplication. A terminated `INVALID` rejection is conclusive: validate the
+unchanged ledger, correct the candidate, and resubmit, preserving the rejected
+output and exit status in the corrected event's evidence. A rejected candidate
+with a valid ledger does not require a stop. Do not mutate the ledger separately.
 
 1. `TASK-RECOVERY` captures the trigger signature, attempt count, durable
    checkpoint, repair mode/authority, allowed files, and next action. Every
@@ -166,7 +169,13 @@ attempt. Its authority is exactly `verified-commit:<40hex>`,
 `restored-capability:<stable-id>`, or `DEC-<NNN>`; evidence remains
 Runner-verified, the next recovery's source and repair authority retain that
 exact value, and a protected decision change/resolution requires DEC. A
-normal resume uses `N/A` governing IDs and `Next recovery`. A DEC-resolved
+normal resume uses `N/A` for governing IDs, trigger, attempt, resolution
+authority, and `Next recovery`, and omits `Repair owners`. Choose this form when
+the historical STOP already has an accepted RUN-RESUME. An active TASK-RECOVERY
+keeps its task, trigger, attempt, authority, and owner progress across the
+session restart; reconcile its commits/report and continue it without a
+duplicate recovery event. `REPAIR_PENDING` does not permit task advancement.
+A DEC-resolved
 BLOCK uses one unique separate H2 directive amendment naming the existing TRG,
 parsed independently from its retained BLOCK verdict, and then RUN-RESUME,
 never a new TRG. Verify every boundary-valid DEC citation in an authority field
