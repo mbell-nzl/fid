@@ -127,6 +127,85 @@ func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
 	}
 }
 
+// TestP23ReviewCycleChargeSurvivesLinkedRecoveryAndRebuild is the VAL-027
+// linked-recovery leg (review-7 MF-4): one changes-required Review charges one
+// review-cycles sample keyed on the Review ID, and neither run.recover into a
+// linked successor nor fid rebuild adds, removes, or changes that charge.
+func TestP23ReviewCycleChargeSurvivesLinkedRecoveryAndRebuild(t *testing.T) {
+	actions := []string{"claim.acquire", "claim.expire", "envelope.activate", "envelope.create", "gate.register", "review.record", "run.observe", "run.recover", "run.start"}
+	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "review", p22ExecutionFixture{ReviewObligation: true, ReviewCyclesMaximum: 3})
+	priorRunID := a.runID
+	run := p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "run", "get", priorRunID)
+	a.runVersion = p23Number(t, p21Path(t, run, "result", "run", "version"))
+
+	recorded := p23ReviewRecord(t, a, a.actor, "cycles-recovery-review", p23ReviewInput(a, priorRunID, a.runVersion, "changes-required", []any{p23Finding(a.issueID, "FND-cycle-recovery", "major", true)}, nil))
+	p23AssertReviewSuccess(t, "changes-required Review in the review Run", recorded)
+	reviewID := p23ReviewFromResponse(t, recorded)["id"].(string)
+	charged := p23ReviewCycleSamples(t, a)
+	if len(charged) != 1 || charged[0].SourceSampleID != reviewID || charged[0].Source != "fid" || charged[0].Value != 1 || charged[0].RunID != priorRunID {
+		t.Fatalf("review-cycles samples after recording = %#v, want exactly one fid sample keyed on Review %q with consumed 1 on Run %q", charged, reviewID, priorRunID)
+	}
+
+	run = p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "run", "get", priorRunID)
+	a.runVersion = p23Number(t, p21Path(t, run, "result", "run", "version"))
+	a.p22Observe(t, "terminated")
+	a.p22Expire(t)
+	recovered := a.p22Recover(t)
+	p23AssertRunSuccess(t, "run.recover of the review Run", recovered)
+	recoveredEnvelope := p23Envelope(t, recovered.Stdout)
+	successorID := p21PathString(t, recoveredEnvelope, "result", "run", "id")
+	if p21PathString(t, recoveredEnvelope, "result", "recovery", "prior_run_id") != priorRunID || successorID == priorRunID {
+		t.Fatalf("recovery = %q, want a linked successor of Run %q", recovered.Stdout, priorRunID)
+	}
+	p23AssertReviewCyclesUnchanged(t, "after linked recovery", charged, p23ReviewCycleSamples(t, a))
+
+	rebuilt := a.p22Run(t, "rebuild")
+	p23AssertReviewSuccess(t, "rebuild after linked recovery", rebuilt)
+	p23AssertReviewCyclesUnchanged(t, "after rebuild", charged, p23ReviewCycleSamples(t, a))
+}
+
+type p23ReviewCycleSample struct {
+	ID, RunID, Source, SourceSampleID string
+	Value                             int
+}
+
+func p23ReviewCycleSamples(t *testing.T, a *p22FIDRecoveryAdapter) []p23ReviewCycleSample {
+	t.Helper()
+	conn := p22FaultDB(t, a.workspace)
+	defer func() { p22FaultOK(t, conn.Close()) }()
+	rows, err := conn.Query(`SELECT id, run_id, source, source_sample_id, value FROM budget_samples WHERE envelope_id=? AND budget_name='review-cycles' ORDER BY id`, p23EnvelopeID(t, a))
+	p22FaultOK(t, err)
+	defer func() { p22FaultOK(t, rows.Close()) }()
+	var samples []p23ReviewCycleSample
+	for rows.Next() {
+		var sample p23ReviewCycleSample
+		p22FaultOK(t, rows.Scan(&sample.ID, &sample.RunID, &sample.Source, &sample.SourceSampleID, &sample.Value))
+		samples = append(samples, sample)
+	}
+	p22FaultOK(t, rows.Err())
+	return samples
+}
+
+// p23AssertReviewCyclesUnchanged compares the sample count and the consumed sum,
+// then the exact rows, so a second charge or a re-keyed charge both fail.
+func p23AssertReviewCyclesUnchanged(t *testing.T, stage string, want, got []p23ReviewCycleSample) {
+	t.Helper()
+	consumed := func(samples []p23ReviewCycleSample) (total int) {
+		for _, sample := range samples {
+			total += sample.Value
+		}
+		return total
+	}
+	if len(got) != len(want) || consumed(got) != consumed(want) {
+		t.Fatalf("review-cycles %s = count %d consumed %d, want count %d consumed %d; rows %#v", stage, len(got), consumed(got), len(want), consumed(want), got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("review-cycles %s row %d = %#v, want %#v", stage, i, got[i], want[i])
+		}
+	}
+}
+
 func p23EvidenceLink(t *testing.T, a *p22FIDRecoveryAdapter, key, reviewID string) p22ConformanceResponse {
 	t.Helper()
 	return p23RunInput(t, a, "evidence", "link", "actor-recovery", key, map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil, "review_id": reviewID, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})

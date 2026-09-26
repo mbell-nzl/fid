@@ -377,21 +377,47 @@ func validateGateRunReferences(conn *sql.DB, registration Registration, actorID 
 	if err := json.Unmarshal([]byte(repositoryJSON), &runRepository); err != nil || !sameGateRepository(runRepository, request.Repository) {
 		return fmt.Errorf("run gate: repository does not match active Run")
 	}
-	var actionsJSON, selectorJSON, scopeJSON string
-	err = conn.QueryRow(`SELECT actions_json, actor_selector_json, scope_json FROM envelope_authority_grants WHERE envelope_id = ? AND revision = ?`, envelopeID, revision).Scan(&actionsJSON, &selectorJSON, &scopeJSON)
+	return authorizeGateRunGrants(conn, envelopeID, revision, actorID, issueID)
+}
+
+// authorizeGateRunGrants applies the exact action, capability, Issue, Envelope,
+// and revision Grant match to every Grant of the Envelope revision, so gate.run
+// does not depend on which Grant row the store returns first. Missing is deny.
+func authorizeGateRunGrants(conn *sql.DB, envelopeID string, revision int, actorID, issueID string) error {
+	rows, err := conn.Query(`SELECT actions_json, actor_selector_json, scope_json FROM envelope_authority_grants WHERE envelope_id = ? AND revision = ? ORDER BY ordinal`, envelopeID, revision)
 	if err != nil {
 		return fmt.Errorf("run gate: load authority grant: %w", err)
 	}
+	defer func() { _ = rows.Close() }()
+	loaded := false
+	for rows.Next() {
+		loaded = true
+		var actionsJSON, selectorJSON, scopeJSON string
+		if err := rows.Scan(&actionsJSON, &selectorJSON, &scopeJSON); err != nil {
+			return fmt.Errorf("run gate: load authority grant: %w", err)
+		}
+		if gateRunGrantPermits(actionsJSON, selectorJSON, scopeJSON, actorID, issueID) {
+			return nil
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("run gate: load authority grant: %w", err)
+	}
+	if !loaded {
+		return fmt.Errorf("run gate: load authority grant: %w", sql.ErrNoRows)
+	}
+	return fmt.Errorf("run gate: authority grant does not permit gate.run")
+}
+
+func gateRunGrantPermits(actionsJSON, selectorJSON, scopeJSON, actorID, issueID string) bool {
 	var actions []string
 	var selector struct {
 		ActorID              string   `json:"actor_id"`
 		RequiredCapabilities []string `json:"required_capabilities"`
 	}
 	var scope GateScope
-	if json.Unmarshal([]byte(actionsJSON), &actions) != nil || json.Unmarshal([]byte(selectorJSON), &selector) != nil || json.Unmarshal([]byte(scopeJSON), &scope) != nil || selector.ActorID != actorID || scope.IssueID != issueID || !hasCapability(actions, "gate.run") || !hasCapability(selector.RequiredCapabilities, "gate.run") {
-		return fmt.Errorf("run gate: authority grant does not permit gate.run")
-	}
-	return nil
+	return json.Unmarshal([]byte(actionsJSON), &actions) == nil && json.Unmarshal([]byte(selectorJSON), &selector) == nil && json.Unmarshal([]byte(scopeJSON), &scope) == nil &&
+		selector.ActorID == actorID && scope.IssueID == issueID && hasCapability(actions, "gate.run") && hasCapability(selector.RequiredCapabilities, "gate.run")
 }
 
 func sameGateRepository(left, right Repository) bool {
