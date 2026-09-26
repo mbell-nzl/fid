@@ -5,7 +5,7 @@
 - Task outcome: RECOVERY_REQUIRED
 - Category: gate-repair
 - Condition: The exact ordinary race/coverage command exited 0, but `cmd/fid` took 686.386s and breached the accepted 600s package budget. Attribution and a passing budget gate remain unresolved.
-- Recovery attempts: 1 (review-7:qa-rework:task-11-BC-3)
+- Recovery attempts: 1
 - Next action: Continue task 11 with bounded timing attribution and an authorized causal speed repair if the DEC-250 implementation is responsible; retain the 686.386s failure and rerun the byte-identical required gate after repair. If the cause is outside task-11 scope, report the scope gap for Tech Lead disposition.
 - Human attention required: no
 
@@ -49,8 +49,8 @@ Working directory for these five ordered commands: `/home/mark/projects/fid`.
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - FAIL (600s package budget) - `ok  	github.com/mbell-nzl/fid/internal/workflow	277.603s	coverage: 64.6% of statements` (terminated `exit_code: 0`). The same output reports `cmd/fid` 686.386s, above 600s; all tests themselves passed.
-- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - BLOCKED (accepted 600s ordinary-package budget not met; task-11 speed attribution and repair pending) - prior attempt `ok  	github.com/mbell-nzl/fid/internal/workflow	277.603s	coverage: 64.6% of statements` (terminated `exit_code: 0`). This row records pending gate status, not a second execution.
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - FAIL - `ok  	github.com/mbell-nzl/fid/internal/workflow	277.603s	coverage: 64.6% of statements` (terminated `exit_code: 0`). The same output reports `cmd/fid` 686.386s, above 600s; all tests themselves passed.
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - BLOCKED - `ok  	github.com/mbell-nzl/fid/internal/workflow	277.603s	coverage: 64.6% of statements` (terminated `exit_code: 0`). This row records pending budget status from the prior attempt, not a second execution; task-11 speed attribution and repair remain open.
 - `go tool cover -func=coverage.out` - PASS - `total:											(statements)					62.4%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	778.278s` (terminated `exit_code: 0`)
 
