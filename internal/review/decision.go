@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -107,11 +108,8 @@ func RecordDecisionReference(options JudgmentOptions, request DecisionReferenceR
 		} else if exists {
 			return fmt.Errorf("decision reference %q already exists", request.ID)
 		}
-		envelope, decisions, err := plannedDecisionStates(conn, request)
-		if err != nil {
-			return err
-		}
-		stops, attention, resolutionEffects, err := plannedDecisionResolutions(conn, envelope, decisions, request.Class, options.ActorID)
+		fact := workflow.PendingDecisionReferenceFact(request.ID, request.Class, request.Outcome, request.Scope.IssueID, request.Authority.RequiredCapabilities)
+		decisions, stops, attention, resolutionEffects, err := plannedJudgmentResolutions(conn, request.Scope.IssueID, fact, options.ActorID, false)
 		if err != nil {
 			return err
 		}
@@ -212,53 +210,34 @@ func verifyDecisionSource(root string, source Source) error {
 	return nil
 }
 
-func plannedDecisionStates(conn *sql.DB, request DecisionReferenceRequest) (workflow.Envelope, []workflow.ProtectedDecision, error) {
-	envelope, decisions, err := workflow.ProtectedDecisionsForIssue(conn, request.Scope.IssueID)
+// plannedJudgmentResolutions computes, for a judgment Event that has not
+// committed yet, the protected-Decision statuses it leaves behind and the
+// resolution Effects for every open Stop it qualifies. Resolution is keyed on
+// each Stop's recorded Condition through the one shared predicate
+// (workflow.QualifyingJudgmentStops, DEC-250 R1), never on the code that raised
+// the Stop, so a producer's Stop and an operator-stop resolve identically.
+func plannedJudgmentResolutions(conn *sql.DB, issueID string, fact workflow.JudgmentFact, actorID string, tolerateNoEnvelope bool) ([]workflow.ProtectedDecision, []workflow.Stop, []workflow.Attention, []journal.Effect, error) {
+	_, decisions, err := workflow.ProtectedDecisionsForIssueWithFact(conn, issueID, &fact)
 	if err != nil {
-		return workflow.Envelope{}, nil, err
-	}
-	for index := range decisions {
-		decision := &decisions[index]
-		if decision.DecisionClass != request.Class || request.Outcome != "approved" || !equalStrings(decision.RequiredCapabilities, request.Authority.RequiredCapabilities) {
-			continue
+		if !tolerateNoEnvelope || !errors.Is(err, sql.ErrNoRows) {
+			return nil, nil, nil, nil, err
 		}
-		decision.DecisionRefID = &request.ID
-		if decision.HumanOutcomeID != nil {
-			decision.Status = "satisfied"
-		}
+		decisions = []workflow.ProtectedDecision{}
 	}
-	return envelope, decisions, nil
+	qualified, err := workflow.QualifyingJudgmentStops(conn, fact)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	stops, attention, effects, err := resolutionsForStops(conn, qualified, actorID)
+	return decisions, stops, attention, effects, err
 }
 
-func plannedDecisionResolutions(conn *sql.DB, envelope workflow.Envelope, decisions []workflow.ProtectedDecision, class, actorID string) ([]workflow.Stop, []workflow.Attention, []journal.Effect, error) {
-	satisfied := false
-	for _, decision := range decisions {
-		if decision.DecisionClass == class && decision.Status == "satisfied" {
-			satisfied = true
-		}
-	}
-	if !satisfied {
-		return []workflow.Stop{}, []workflow.Attention{}, nil, nil
-	}
-	rows, err := conn.Query(`SELECT id FROM stops WHERE subject_type='envelope' AND subject_id=? AND code='protected-decision-required' AND id NOT IN (SELECT stop_id FROM stop_resolutions) ORDER BY id`, envelope.ID)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	defer func() { _ = rows.Close() }()
+// resolutionsForStops builds the stop_resolutions and attention_items Effects
+// that resolve the given Stops, and their Attention, in the caller's own Event.
+func resolutionsForStops(conn *sql.DB, qualified []workflow.Stop, actorID string) ([]workflow.Stop, []workflow.Attention, []journal.Effect, error) {
 	stops, attention, effects := []workflow.Stop{}, []workflow.Attention{}, []journal.Effect{}
 	seenAttention := map[string]bool{}
-	for rows.Next() {
-		var stopID string
-		if err := rows.Scan(&stopID); err != nil {
-			return nil, nil, nil, err
-		}
-		stop, err := workflow.GetStopFromProjection(conn, stopID)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		if stop.ResolutionCondition.DecisionClass == nil || *stop.ResolutionCondition.DecisionClass != class {
-			continue
-		}
+	for _, stop := range qualified {
 		stop.Resolution = &workflow.StopResolution{ActorID: actorID, FactEventID: "<event-id>", ResolvedAt: "<occurred-at>", EventID: "<event-id>"}
 		stops = append(stops, stop)
 		effects = append(effects, journal.Effect{Op: "insert", Table: "stop_resolutions", PK: map[string]any{"stop_id": stop.ID}, Values: map[string]any{"actor_id": actorID, "fact_event_id": "<event-id>", "resolved_at": "<occurred-at>", "created_event_id": "<event-id>"}})
@@ -273,7 +252,7 @@ func plannedDecisionResolutions(conn *sql.DB, envelope workflow.Envelope, decisi
 			seenAttention[item.ID] = true
 		}
 	}
-	return stops, attention, effects, rows.Err()
+	return stops, attention, effects, nil
 }
 
 func finalizeDecisionResolutionValues(stops []workflow.Stop, attention []workflow.Attention, event journal.Event) {
@@ -313,18 +292,6 @@ func replayDecision(outcome journal.IdempotencyOutcome, key string, result *Deci
 	decoded.IdempotencyKey, decoded.Replayed, decoded.EventID = key, outcome.Replayed, outcome.EventID
 	*result = decoded
 	return nil
-}
-
-func equalStrings(left, right []string) bool {
-	if len(left) != len(right) {
-		return false
-	}
-	for index := range left {
-		if left[index] != right[index] {
-			return false
-		}
-	}
-	return true
 }
 
 func stringPointerValue(value string) *string { return &value }

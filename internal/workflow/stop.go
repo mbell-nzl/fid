@@ -473,6 +473,11 @@ func validateCondition(condition Condition, subject Subject) error {
 	if !conditionTypes[condition.Type] || condition.Subject != subject {
 		return fmt.Errorf("stop resolution condition is invalid")
 	}
+	if condition.Type == "decision-satisfied" && subject.Type == "activation" {
+		// An activation has no Envelope scope, so this Condition could never
+		// qualify (contracts.md section 11, DEC-250 R3).
+		return fmt.Errorf("stop resolution condition is invalid")
+	}
 	if (condition.Type == "budget-observed") != (condition.BudgetName != nil && *condition.BudgetName != "") {
 		return fmt.Errorf("stop resolution condition budget binding is invalid")
 	}
@@ -630,12 +635,14 @@ func qualifyingFact(workspace string, conn *sql.DB, stop Stop, factEventID strin
 		return qualifyingReviewRecordedCondition(conn, event, stop.ResolutionCondition)
 	case "finding-resolved":
 		return qualifyingFindingResolvedCondition(conn, event, stop.ResolutionCondition)
+	case "human-outcome-recorded", "decision-satisfied":
+		return qualifyingJudgmentCondition(conn, event, stop.ResolutionCondition)
 	}
 	return fmt.Errorf("unsupported Stop resolution condition")
 }
 
 func eventMatchesCondition(event journal.Event, condition Condition) bool {
-	want := map[string][]string{"executor-terminated": {"run.observed"}, "run-recovered": {"run.recovered"}, "activation-recovered": {"activation.recovery-completed", "activation.finalized"}, "capability-available": {"activation.finalized", "activation.recovery-completed"}, "budget-observed": {"run.budget-observed"}, "work-ended": {"run.closed", "run.abandoned", "envelope.completed"}, "review-recorded": {"review.recorded"}, "finding-resolved": {"review.recorded"}}
+	want := map[string][]string{"executor-terminated": {"run.observed"}, "run-recovered": {"run.recovered"}, "activation-recovered": {"activation.recovery-completed", "activation.finalized"}, "capability-available": {"activation.finalized", "activation.recovery-completed"}, "budget-observed": {"run.budget-observed"}, "work-ended": {"run.closed", "run.abandoned", "envelope.completed"}, "review-recorded": {"review.recorded"}, "finding-resolved": {"review.recorded"}, "human-outcome-recorded": {"human-outcome.recorded"}, "decision-satisfied": {"decision.referenced", "human-outcome.recorded"}}
 	for _, eventType := range want[condition.Type] {
 		if event.EventType == eventType {
 			return true

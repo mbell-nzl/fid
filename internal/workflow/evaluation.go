@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 	"time"
 
@@ -253,6 +254,13 @@ func evaluateProtectedDecisions(conn *sql.DB, envelope Envelope, action string) 
 // ProtectedDecisionsForIssue derives the current status of every protected
 // Decision on the Issue's active or draft Envelope revision.
 func ProtectedDecisionsForIssue(conn *sql.DB, issueID string) (Envelope, []ProtectedDecision, error) {
+	return ProtectedDecisionsForIssueWithFact(conn, issueID, nil)
+}
+
+// ProtectedDecisionsForIssueWithFact is ProtectedDecisionsForIssue with the
+// judgment fact of a not-yet-committed Event applied, so a producer reports the
+// statuses its own Event will leave behind (DEC-250 R1).
+func ProtectedDecisionsForIssueWithFact(conn *sql.DB, issueID string, pending *JudgmentFact) (Envelope, []ProtectedDecision, error) {
 	var envelopeID string
 	err := conn.QueryRow(`
 		SELECT e.id
@@ -269,7 +277,7 @@ func ProtectedDecisionsForIssue(conn *sql.DB, issueID string) (Envelope, []Prote
 		return Envelope{}, nil, err
 	}
 	for index := range envelope.ProtectedDecisions {
-		if err := resolveProtectedDecision(conn, envelope.PrimaryIssueID, &envelope.ProtectedDecisions[index]); err != nil {
+		if _, err := deriveProtectedDecision(conn, envelope.PrimaryIssueID, &envelope.ProtectedDecisions[index], pending); err != nil {
 			return Envelope{}, nil, err
 		}
 	}
@@ -317,41 +325,69 @@ func stopBlockForIssue(workspaceRoot, migrationsDir, issueID, action, code strin
 }
 
 func resolveProtectedDecision(conn *sql.DB, issueID string, decision *ProtectedDecision) error {
+	_, err := deriveProtectedDecision(conn, issueID, decision, nil)
+	return err
+}
+
+// protectedDecisionBinding records which Events created the Decision Reference
+// and Human Outcome bound to a protected Decision, so a Stop predicate can name
+// the pair-completing Event. A half that comes from the pending fact has no
+// committed Event yet and is by construction the later one.
+type protectedDecisionBinding struct {
+	RefEventID, OutcomeEventID string
+	RefPending, OutcomePending bool
+}
+
+// deriveProtectedDecision is the one section 9 derivation, used by every
+// guarded action and every Decision-satisfied Stop predicate. pending is the
+// judgment fact of an Event that has not committed yet: it competes as the
+// newest fact of its kind, exactly as it will once committed.
+func deriveProtectedDecision(conn *sql.DB, issueID string, decision *ProtectedDecision, pending *JudgmentFact) (protectedDecisionBinding, error) {
 	required, err := journal.MarshalCanonicalJSON(decision.RequiredCapabilities)
 	if err != nil {
-		return fmt.Errorf("encode protected Decision authority: %w", err)
+		return protectedDecisionBinding{}, fmt.Errorf("encode protected Decision authority: %w", err)
 	}
-	var referenceID string
+	var binding protectedDecisionBinding
+	var referenceID, outcomeID string
 	err = conn.QueryRow(`
-		SELECT id FROM decision_refs
+		SELECT id, created_event_id FROM decision_refs
 		WHERE class = ? AND scope_issue_id = ? AND outcome = 'approved'
 		  AND authority_capabilities_json = ?
 		ORDER BY created_event_id DESC LIMIT 1`,
-		decision.DecisionClass, issueID, string(required)).Scan(&referenceID)
+		decision.DecisionClass, issueID, string(required)).Scan(&referenceID, &binding.RefEventID)
 	if err != nil && err != sql.ErrNoRows {
-		return fmt.Errorf("resolve protected Decision reference: %w", err)
+		return protectedDecisionBinding{}, fmt.Errorf("resolve protected Decision reference: %w", err)
 	}
-	var outcomeID string
+	referenceFound := err == nil
 	outcomeErr := conn.QueryRow(`
-		SELECT id FROM human_outcomes
+		SELECT id, created_event_id FROM human_outcomes
 		WHERE class = ? AND scope_issue_id = ? AND result = 'approved'
-		ORDER BY created_event_id DESC LIMIT 1`, decision.DecisionClass, issueID).Scan(&outcomeID)
+		ORDER BY created_event_id DESC LIMIT 1`, decision.DecisionClass, issueID).Scan(&outcomeID, &binding.OutcomeEventID)
 	if outcomeErr != nil && outcomeErr != sql.ErrNoRows {
-		return fmt.Errorf("resolve protected Decision Human Outcome: %w", outcomeErr)
+		return protectedDecisionBinding{}, fmt.Errorf("resolve protected Decision Human Outcome: %w", outcomeErr)
+	}
+	outcomeFound := outcomeErr == nil
+	if pending != nil && pending.approved() && pending.Class == decision.DecisionClass && pending.ScopeIssueID == issueID {
+		switch {
+		case pending.EventType == "decision.referenced" && slices.Equal(pending.RequiredCapabilities, decision.RequiredCapabilities):
+			referenceID, referenceFound, binding.RefEventID, binding.RefPending = pending.ID, true, "", true
+		case pending.EventType == "human-outcome.recorded":
+			outcomeID, outcomeFound, binding.OutcomeEventID, binding.OutcomePending = pending.ID, true, "", true
+		}
 	}
 	decision.DecisionRefID = nil
 	decision.HumanOutcomeID = nil
 	decision.Status = "unsatisfied"
-	if err == nil {
+	if referenceFound {
 		decision.DecisionRefID = &referenceID
 	}
-	if outcomeErr == nil {
+	if outcomeFound {
 		decision.HumanOutcomeID = &outcomeID
 	}
-	if decision.DecisionRefID != nil && decision.HumanOutcomeID != nil {
+	if referenceFound && outcomeFound {
 		decision.Status = "satisfied"
 	}
-	return nil
+	return binding, nil
 }
 
 func evidenceAbsent(states []ObligationEvidenceState) bool {
@@ -565,7 +601,7 @@ func loadObligationEvidenceStates(conn *sql.DB, obligationID string, current Rep
 			if err != nil {
 				return nil, err
 			}
-			state.OutcomeSuperseded = governing.ID != humanOutcomeID && governing.Result != humanOutcomeResult
+			state.OutcomeSuperseded = HumanOutcomeSuperseded(governing, humanOutcomeID, humanOutcomeResult)
 		}
 		if evidenceType == "review" {
 			state.ReviewIndependent = true

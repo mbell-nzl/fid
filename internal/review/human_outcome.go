@@ -106,7 +106,8 @@ func RecordHumanOutcome(options JudgmentOptions, request HumanOutcomeRequest) (H
 		if err != nil {
 			return fmt.Errorf("load Human Outcome provenance: %w", err)
 		}
-		decisions, stops, attention, resolutionEffects, err := plannedHumanOutcomeResolutions(conn, request, options.ActorID)
+		fact := workflow.PendingHumanOutcomeFact(request.ID, request.Class, request.Result, request.Scope.IssueID, provenance.ActivationID)
+		decisions, stops, attention, resolutionEffects, err := plannedJudgmentResolutions(conn, request.Scope.IssueID, fact, options.ActorID, true)
 		if err != nil {
 			return err
 		}
@@ -190,86 +191,6 @@ func loadActorProvenance(conn *sql.DB, actorID string) (actorProvenance, error) 
 	var provenance actorProvenance
 	err := conn.QueryRow(`SELECT a.id,a.version,p.provenance_ref FROM kit_activations a JOIN activation_actor_profiles p ON p.activation_id=a.id WHERE a.status='finalized' AND p.actor_id=? LIMIT 1`, actorID).Scan(&provenance.ActivationID, &provenance.ActivationVersion, &provenance.ProfileRef)
 	return provenance, err
-}
-
-// plannedHumanOutcomeResolutions computes the in-memory protected-Decision
-// status this Outcome contributes to, and every open Stop (protected-Decision
-// and human-outcome-required) it resolves - both atomically, in the same
-// Event, the same pattern task 9 used for Decision References.
-func plannedHumanOutcomeResolutions(conn *sql.DB, request HumanOutcomeRequest, actorID string) ([]workflow.ProtectedDecision, []workflow.Stop, []workflow.Attention, []journal.Effect, error) {
-	envelope, decisions, err := workflow.ProtectedDecisionsForIssue(conn, request.Scope.IssueID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return []workflow.ProtectedDecision{}, []workflow.Stop{}, []workflow.Attention{}, nil, nil
-		}
-		return nil, nil, nil, nil, err
-	}
-	for index := range decisions {
-		decision := &decisions[index]
-		if decision.DecisionClass != request.Class || request.Result != "approved" {
-			continue
-		}
-		decision.HumanOutcomeID = &request.ID
-		if decision.DecisionRefID != nil {
-			decision.Status = "satisfied"
-		}
-	}
-	decisionStops, decisionAttention, decisionEffects, err := plannedDecisionResolutions(conn, envelope, decisions, request.Class, actorID)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	readinessStops, readinessAttention, readinessEffects, err := plannedHumanOutcomeReadinessResolutions(conn, envelope.ID, request, actorID)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	stops := append(decisionStops, readinessStops...)
-	attention := append(decisionAttention, readinessAttention...)
-	effects := append(decisionEffects, readinessEffects...)
-	return decisions, stops, attention, effects, nil
-}
-
-// plannedHumanOutcomeReadinessResolutions resolves every open
-// human-outcome-required Stop on the Envelope whose Condition names this
-// exact class, when and only when the recorded result is approved
-// (contracts.md section 11).
-func plannedHumanOutcomeReadinessResolutions(conn *sql.DB, envelopeID string, request HumanOutcomeRequest, actorID string) ([]workflow.Stop, []workflow.Attention, []journal.Effect, error) {
-	if request.Result != "approved" {
-		return []workflow.Stop{}, []workflow.Attention{}, nil, nil
-	}
-	rows, err := conn.Query(`SELECT id FROM stops WHERE subject_type='envelope' AND subject_id=? AND code='human-outcome-required' AND id NOT IN (SELECT stop_id FROM stop_resolutions) ORDER BY id`, envelopeID)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	defer func() { _ = rows.Close() }()
-	stops, attention, effects := []workflow.Stop{}, []workflow.Attention{}, []journal.Effect{}
-	seenAttention := map[string]bool{}
-	for rows.Next() {
-		var stopID string
-		if err := rows.Scan(&stopID); err != nil {
-			return nil, nil, nil, err
-		}
-		stop, err := workflow.GetStopFromProjection(conn, stopID)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		if stop.ResolutionCondition.OutcomeClass == nil || *stop.ResolutionCondition.OutcomeClass != request.Class {
-			continue
-		}
-		stop.Resolution = &workflow.StopResolution{ActorID: actorID, FactEventID: "<event-id>", ResolvedAt: "<occurred-at>", EventID: "<event-id>"}
-		stops = append(stops, stop)
-		effects = append(effects, journal.Effect{Op: "insert", Table: "stop_resolutions", PK: map[string]any{"stop_id": stop.ID}, Values: map[string]any{"actor_id": actorID, "fact_event_id": "<event-id>", "resolved_at": "<occurred-at>", "created_event_id": "<event-id>"}})
-		item, err := workflow.AttentionForStopFromProjection(conn, stop.ID)
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		if !seenAttention[item.ID] {
-			item.Status, item.Version, item.ResolutionEventID = "resolved", item.Version+1, stringPointerValue("<event-id>")
-			attention = append(attention, item)
-			effects = append(effects, journal.Effect{Op: "update", Table: "attention_items", PK: map[string]any{"id": item.ID}, Values: map[string]any{"status": "resolved", "version": item.Version, "resolution_event_id": "<event-id>"}, Preconditions: map[string]any{"status": "open", "version": item.Version - 1}})
-			seenAttention[item.ID] = true
-		}
-	}
-	return stops, attention, effects, rows.Err()
 }
 
 func humanOutcomeValue(request HumanOutcomeRequest, provenance actorProvenance, event journal.Event) map[string]any {

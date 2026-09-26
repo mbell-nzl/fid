@@ -37,6 +37,14 @@ func ResolveGoverningHumanOutcome(conn *sql.DB, class, scopeIssueID string) (Gov
 	return outcome, nil
 }
 
+// HumanOutcomeSuperseded is the single supersession predicate (contracts.md
+// section 7): an Outcome is superseded exactly when the governing Outcome for
+// its class and scope is a different Outcome with a different result. Both the
+// Obligation evaluator and the Stop resolution predicates call it.
+func HumanOutcomeSuperseded(governing GoverningHumanOutcome, outcomeID, result string) bool {
+	return governing.ID != outcomeID && governing.Result != result
+}
+
 // ResolveIssueWorkflow resolves kind, project, then built-in workflow assignment precedence.
 func ResolveIssueWorkflow(conn *sql.DB, kind string) (ResolvedIssueWorkflow, error) {
 	workflowID, err := assignedWorkflowID(conn, kind)

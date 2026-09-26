@@ -127,7 +127,7 @@ func TestP23AttentionResolutionThroughReviewRecordedAndFindingResolvedRealProces
 // (recording a qualifying Outcome resolves exactly the matching Stop, never a
 // Stop raised on an unrelated condition).
 func TestP23AttentionResolutionHumanOutcomeReadinessRejectsWrongClassAndWrongResultAndLeavesUnrelatedStopsOpen(t *testing.T) {
-	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start", "stop.raise"}
+	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start", "stop.raise", "stop.resolve"}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, actions, p22ExecutionFixture{HumanObligations: true})
 	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
 		assertP23HumanOutcomeCommandSuccess(t, "transition Issue to "+state, p23IssueTransition(t, a, state, revision+1, "attn-human-outcome-"+state))
@@ -156,6 +156,14 @@ func TestP23AttentionResolutionHumanOutcomeReadinessRejectsWrongClassAndWrongRes
 	assertP23HumanOutcomeSuccess(t, unrelated)
 	unrelatedStopID := p21PathString(t, p23Envelope(t, unrelated.Stdout), "result", "stop", "id")
 
+	// DEC-250 R1 (VAL-050): an operator-stop carrying the same
+	// human-outcome-recorded Condition as the producer's readiness Stop. Only the
+	// recorded Condition decides resolution, never the raising code, so the same
+	// qualifying Outcome resolves it too.
+	securitySubject := map[string]any{"type": "envelope", "id": envelopeID}
+	matchingStopID := p23RaiseConditionStopID(t, a, "attn-matching-operator-stop", securitySubject, p23HumanOutcomeCondition(securitySubject, "security"))
+	producerStopID := p23StopIDByDetail(t, a, "human-outcome-required", "outcome_class", "security")
+
 	// VAL-048 negative one: an approved Outcome of an unrelated class never
 	// matches the "security" Condition's outcome_class and resolves nothing.
 	wrongClass := p23RecordHumanOutcome(t, a, "attn-wrong-class", a.actor, "unrelated-class", "approved")
@@ -175,13 +183,28 @@ func TestP23AttentionResolutionHumanOutcomeReadinessRejectsWrongClassAndWrongRes
 	assertP23HumanOutcomeStopState(t, a, "security", "open")
 	assertP23AttentionStopUnresolved(t, a, unrelatedStopID)
 
-	// The matching class and result resolves exactly the "security" Stop.
+	// VAL-048 through the manual path (DEC-250 R1/R2): `fid stop resolve` with
+	// the wrong-class Outcome Event and with the wrong-result Outcome Event each
+	// reject exit 4 resolution-invalid, append no Event, and leave both the
+	// producer's Stop and the matching operator-stop open.
+	for _, target := range []struct{ name, stopID string }{{"producer", producerStopID}, {"operator", matchingStopID}} {
+		assertP23StopResolveRejected(t, a, "attn-manual-wrong-class-"+target.name, target.stopID, p23EventID(t, wrongClass))
+		assertP23StopResolveRejected(t, a, "attn-manual-wrong-result-"+target.name, target.stopID, p23EventID(t, wrongResult))
+	}
+
+	// The matching class and result resolves exactly the Stops whose recorded
+	// Condition matches: the producer's Stop and the matching operator-stop, and
+	// never the unrelated review-recorded Stop.
 	security := p23RecordHumanOutcome(t, a, "attn-security-approved", a.actor, "security", "approved")
 	assertP23HumanOutcomeSuccess(t, security)
-	if stops := p21Path(t, p23Envelope(t, security.Stdout), "result", "stops").([]any); len(stops) != 1 {
-		t.Fatalf("qualifying Outcome resolved %d Stop(s), want exactly 1", len(stops))
+	if stops := p21Path(t, p23Envelope(t, security.Stdout), "result", "stops").([]any); len(stops) != 2 {
+		t.Fatalf("qualifying Outcome resolved %d Stop(s), want exactly the 2 matching-Condition Stops", len(stops))
 	}
 	assertP23HumanOutcomeStopState(t, a, "security", "resolved")
+	assertP23StopOpen(t, a, matchingStopID, false)
+	if got := p23StopResolutionFactEvent(t, a, matchingStopID); got != p23EventID(t, security) {
+		t.Fatalf("matching operator-stop resolved by Event %q, want the recording Event %q", got, p23EventID(t, security))
+	}
 	assertP23AttentionStopUnresolved(t, a, unrelatedStopID)
 }
 
