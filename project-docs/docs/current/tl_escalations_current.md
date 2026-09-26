@@ -2,7 +2,13 @@
 
 ## Open escalations
 
-None. ESC-23-004 is resolved (below); its DEC-255 repairs are pending.
+None newly minted. ESC-23-004 is resolved in substance (below), but its
+resume is **blocked**. The sequence verifier has no valid route out of the
+STOP: review-6 stays open with no next owner after the review-7 BLOCK.
+DEC-256 (Tech Lead) reshapes the repairs to four distinct owners. DEC-257
+(**PROPOSED, awaiting Human**) is the protected verifier change that lets the
+RUN-RESUME carry them. No new TRG/ESC: it is the same STOP and the same
+authority question.
 
 ## Recently resolved
 

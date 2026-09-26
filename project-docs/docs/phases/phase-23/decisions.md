@@ -1631,7 +1631,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   assignment does not dispatch it.
 - **Refs:** VAL-025/044; DEC-226; tasks 6 and 10; contracts section 13.
 
-### DEC-244 - Task 6 owns atomic Claim admission for review exhaustion
+### DEC-244: Task 6 owns atomic Claim admission for review exhaustion
 
 - **Authority:** Human-delegated super-agent authority for Phase 23 through
   Task 9 and its review; root resolves a concrete task-scope omission.
@@ -1653,7 +1653,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   report records this scope repair; window 4-6 QA verifies the behavior. No new
   planning review or Human escalation is required.
 
-### DEC-245 - Task 6 projects its accepted Review budget result
+### DEC-245: Task 6 projects its accepted Review budget result
 
 - **Authority:** Human-delegated super-agent authority; root resolves an
   executable task-scope omission without changing the accepted interface.
@@ -1675,7 +1675,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   only to the Run and Claim adapters. This changes no requirement or file
   ownership beyond the already-dispatched Evidence slice.
 
-### DEC-246 - Reconstruct the missed Task 6 coverage baseline explicitly
+### DEC-246: Reconstruct the missed Task 6 coverage baseline explicitly
 
 - **Authority:** Human-delegated super-agent authority; root makes the
   verification-method exception explicit rather than fabricating chronology.
@@ -1696,7 +1696,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 - **Review:** Window 4-6 QA explicitly checks the omission, authorized baseline
   source, actual receipts, and post-change results. Cleanup is not gate evidence.
 
-### DEC-247 - Task 6 converges retained strict-journal budget projections
+### DEC-247: Task 6 converges retained strict-journal budget projections
 
 - **Authority:** Human-delegated super-agent authority; root assigns the exact
   missing implementation paths for accepted Task 6 behavior.
@@ -1721,7 +1721,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   Task 6's unchanged full gates and VAL-027/029 remain mandatory. Record the
   scope correction in its report; window 4-6 QA examines these strict paths.
 
-### DEC-248 - Task 9 owns protected-Decision denial adapters
+### DEC-248: Task 9 owns protected-Decision denial adapters
 
 - **Authority:** Human-delegated super-agent authority; root resolves the
   minimal executable task-scope omission for an already accepted interface.
@@ -1742,7 +1742,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   the scheduled window 7-9 QA review verifies both guarded adapters and the
   accepted precedence. No gate, threshold, interface, or product rule changes.
 
-### DEC-249 - An Obligation blocks only the guarded actions it declares (ESC-23-004 BC-1)
+### DEC-249: An Obligation blocks only the guarded actions it declares (ESC-23-004 BC-1)
 
 - **Status:** ACCEPTED 2026-09-26, Tech Lead. This is a conformance ruling on
   accepted text. It changes no accepted product rule, so no Human ruling is
@@ -1816,7 +1816,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 - **Refs:** ESC-23-004, TRG-23-004, review-7 BC-1 and MF-5; PRD-ENV-008/010;
   contracts sections 2 and 10.
 
-### DEC-250 - `stop resolve` qualifying rules for `human-outcome-recorded` and `decision-satisfied` (ESC-23-004 BC-3)
+### DEC-250: `stop resolve` qualifying rules for `human-outcome-recorded` and `decision-satisfied` (ESC-23-004 BC-3)
 
 - **Status:** ACCEPTED 2026-09-26, Tech Lead. It fills the resolution
   semantics that section 11 leaves unstated, inside the accepted Condition
@@ -1892,7 +1892,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 - **Refs:** ESC-23-004, review-7 BC-3; contracts sections 7, 9, 10, 11;
   VAL-048/050/078.
 
-### DEC-251 - `human-outcome.record` Envelope-grant contradiction (ESC-23-004 BC-2)
+### DEC-251: `human-outcome.record` Envelope-grant contradiction (ESC-23-004 BC-2)
 
 - **Status:** **ACCEPTED by Human 2026-09-26: Option B.** The Human judged
   that Option A would add per-job setup without meaningful protection. The
@@ -1931,7 +1931,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 - **Refs:** ESC-23-004, review-7 BC-2; public-interface sections 4 and 4.1;
   contracts section 10; PRD-AUTH-002/007/008; VAL-043.
 
-### DEC-252 - Task 6 owns the multi-grant `gate.run` conformance repair (review-7 I-5)
+### DEC-252: Task 6 owns the multi-grant `gate.run` conformance repair (review-7 I-5)
 
 - **Status:** ACCEPTED 2026-09-26, Tech Lead (DEC-175/DEC-194 pattern).
 - **Defect:** `validateGateRunReferences` (`internal/evidence/execution.go:381`)
@@ -1960,7 +1960,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   provenance. The fresh checkpoint re-review covers it.
 - **Refs:** review-7 Required Judgment 1 and I-5.
 
-### DEC-253 - Ratify task 11's `stop_conditions.go` scope reading (review-7 I-2)
+### DEC-253: Ratify task 11's `stop_conditions.go` scope reading (review-7 I-2)
 
 - **Status:** ACCEPTED 2026-09-26, Tech Lead.
 - **Ruling:** `internal/workflow/stop_conditions.go` is the qualifying-fact
@@ -1973,7 +1973,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   gate changes.
 - **Refs:** review-7 I-2; DEC-167/173.
 
-### DEC-254 - `cmd/fid` time headroom before tasks 13 and 14 (review-7 I-1)
+### DEC-254: `cmd/fid` time headroom before tasks 13 and 14 (review-7 I-1)
 
 - **Status:** Part 1 ACCEPTED 2026-09-26, Tech Lead. Part 2 **ACCEPTED by
   Human 2026-09-26**. It widens DEC-227's `t.Parallel()` allowance, for
@@ -2006,7 +2006,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
     time and escalate before adding new `cmd/fid` tests.
 - **Refs:** review-7 I-1; DEC-227; VAL-079.
 
-### DEC-255 - ESC-23-004 disposition, stop release and repair order
+### DEC-255: ESC-23-004 disposition, stop release and repair order
 
 - **Status:** ACCEPTED 2026-09-26, Tech Lead.
 - **Disposition:**
@@ -2044,6 +2044,120 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   Must-fix 0 (qa-plan section 8). No item above waives or narrows VAL-009,
   VAL-043, VAL-048, VAL-050 or VAL-078.
 - **Refs:** ESC-23-004, TRG-23-004, review-7.
+- **Amended by:** DEC-256 (repair order) and DEC-257 (ledger route).
+
+### DEC-256: Reshape the DEC-255 repair order to four distinct owners
+
+- **Date:** 2026-09-26.
+- **Status:** ACCEPTED, Tech Lead.
+- **Context:** The Runner could not record the DEC-255 order in the ledger.
+  Task 6 appears twice (MF-4 at step 1, I-5 at step 5), and a REVIEW owner
+  list takes distinct tasks only (`09_AI_WORKFLOW.md` §2.4, item 10).
+- **Decision:** Fold I-5 (DEC-252) into step 1. The order becomes:
+  1. **task-6:** MF-4 and I-5 in one recovery.
+  2. **task-2:** BC-1 conformance repair (DEC-249).
+  3. **task-10:** MF-5 plus I-6.
+  4. **task-11:** BC-3 repair (DEC-250, DEC-253).
+- **Why this is safe:** Nothing in steps 2-4 needs I-5 to come late.
+  - I-5 fixes a fail-closed Phase 21 defect in `internal/evidence/execution.go`.
+    Both of its tasks are task 6's, and the task-6 gates execute them.
+  - The task-10 journey's workaround (running the gate as the first-sorted
+    Actor) still passes after the fix. MF-5 may drop that workaround, but it
+    does not have to.
+  - DEC-252 already says to repair it early so that no later fixture routes
+    around it.
+- **Unchanged:** Each item's scope, evidence and exact commands are the same
+  as in DEC-252 and DEC-255. The follow-up re-review is still
+  `checkpoint-after-task-11-3.md`. BC-2 still dispatches nothing. Task 12 is
+  still held until that re-review returns PASS with Must-fix 0.
+- **Ledger binding:** This is the order the ledger records under DEC-257:
+  - Repair owners: task-6, task-2, task-10, task-11
+- **Refs:** DEC-252, DEC-255, ESC-23-004.
+
+### DEC-257: Ledger route for a decision-released repair after a BLOCK re-review
+
+- **Date:** 2026-09-26.
+- **Status:** **PROPOSED; needs Human approval.** It changes the protected
+  verifier `workflow-sequence-lint.sh`, which `09_AI_WORKFLOW.md` §2.4 keeps
+  out of the control-conformance route. Precedent: DEC-190 (Phase 22).
+- **Defect:** The verifier has no valid sequence out of the Phase 23 STOP.
+  1. review-6 (REPAIR, owner task-10) is open. Its only owner is complete,
+     and review-7 is its re-review. A BLOCK outcome neither closes nor
+     replaces an open review, so review-6 stays open with no next owner.
+  2. While review-6 is open, every TASK-RECOVERY is rejected, task-10's
+     included. The error names a blank task (`requires recovery task  before
+     task-10`).
+  3. A RUN-RESUME after STOP must be followed immediately by a TASK-RECOVERY
+     for the trigger's task. That recovery is forbidden by point 2, so the
+     ledger is deadlocked whatever the plan.
+  4. Even without point 2, the first recovery must be for the trigger's task
+     (task-10). But DEC-256 needs task-6 and task-2 to go first.
+  - Points 1-3 are a gap in the tool's model, not in the plan: "BLOCK on a
+    re-review, then a DEC releases the repairs" is a sequence the workflow
+    allows, and the tool has no route for it.
+- **Option A (recommended): the RUN-RESUME carries the repair owners that
+  the DEC binds.**
+  - A decision-authorized RUN-RESUME after a STOP may add one field:
+    `- Repair owners: <ordered, distinct task list>`.
+  - The field is accepted only when all of these hold:
+    - the governing TRIAGE BLOCK came from a REVIEW BLOCK;
+    - that BLOCK re-reviews the open review, and every owner of the open
+      review is complete;
+    - the cited `Resolution authority` DEC section contains a line
+      `- Repair owners: <list>` whose value is byte-identical to the field.
+  - When it is accepted:
+    - the BLOCK review (review-7) becomes the open review, with that owner
+      list and no owner complete;
+    - `Continuing task` and the bound `Next recovery` name the first owner.
+      The RUN-RESUME still restates the TRG's trigger and next attempt.
+  - Each owner's TASK-RECOVERY may use either signature form:
+    - a review-form signature (`review-7:qa-rework:task-N-...`, attempt 1,
+      no-progress 0/2);
+    - the retained task signature at its next attempt. Task-10 uses
+      `task-10:qa-rework:review-7-BC-1-BC-2-BC-3`, attempt 2, as DEC-255
+      requires.
+  - The existing rules stay as they are:
+    - repairs run one at a time, in list order, each needing TASK-RECOVERY,
+      REPAIR and TASK complete;
+    - only a linked PASS (`Re-review of: review-7`) closes the review, and
+      only after every owner is complete;
+    - a CORRECTION changes nothing;
+    - repeated owners stay invalid.
+  - Also fix the blank-task error. When every owner is complete, the error
+    for a TASK-RECOVERY should say that a re-review is required first.
+- **Option B: a QA transcription re-review.** After the RUN-RESUME, the next
+  event may be a linked REVIEW REPAIR (`Re-review of: review-6`) instead of a
+  TASK-RECOVERY. That review would state the DEC-256 owner list as its Repair
+  Plan. The tool change is smaller, but it spends a QA Lead session copying
+  out a Tech Lead decision, and QA gets the job of turning DEC order into
+  owners.
+- **Rejected:**
+  - The Runner starting with a fresh RUN-START. That bypasses the STOP.
+  - A CORRECTION entry. The spec forbids it from changing sequence state.
+  - Letting the tool accept `### DEC-NNN - title` headings. The template
+    uses the colon form, the drift was the Tech Lead's own, and it has been
+    corrected in this file.
+- **Implementation (after approval):** A separately dispatched maintenance
+  Developer session, outside the Runner's control-conformance route.
+  - Allowed files:
+    - `project-docs/tools/workflow-sequence-lint.sh`;
+    - its regression drills under `project-docs/tools/drills/`
+      (`review-recovery.sh` and fixtures);
+    - `09_AI_WORKFLOW.md` §2.4 (the RUN-RESUME and REVIEW-owner paragraphs).
+  - The regression drills must cover:
+    - (a) the Phase 23 shape validates. This means review-6 REPAIR, then
+      review-7 BLOCK, TRIAGE BLOCK, STOP, RUN-RESUME with the DEC-256
+      owners, and ordered recoveries through a linked PASS;
+    - (b) an owner list that differs from the DEC line is rejected;
+    - (c) the field is rejected when the open review has an incomplete owner,
+      or when the STOP was not a review BLOCK;
+    - (d) an out-of-order owner recovery is rejected;
+    - (e) a PASS before every owner completes is rejected;
+    - (f) every existing drill passes unchanged.
+  - Gate: `project-docs/tools/drills/run-drills.sh`, plus standalone
+    validation of the real Phase 23 ledger.
+  - The implementation touches no product code, task gate or VAL row.
+- **Refs:** ESC-23-004, TRG-23-004, DEC-190, DEC-255, DEC-256.
 
 ## Spec Sync Verdict
 
@@ -2061,7 +2175,7 @@ not the default.
 | `06_DESIGN_PLAN_CLI.md` | touched: DEC-242 | Review optional inapplicability input; later task-owned sync remains |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: DEC-239, DEC-242 | same-independent-Reviewer resolution and reasoned inapplicability in one Review Event |
 | `08_QUALITY_PLAN.md` | touched: DEC-239 | section 8 records VAL-015 evidence-route boundary |
-| `09_AI_WORKFLOW.md` | pending | |
+| `09_AI_WORKFLOW.md` | pending | DEC-257 (if approved) edits §2.4 RUN-RESUME/REVIEW-owner rules |
 | `AGENTS.md` (Commands) | pending | DEC-227: decide at wrap-up whether the explicit `-timeout` bound becomes the project default |
 | `10_IMPLEMENTATION_ROADMAP.md` | pending | |
 | `GLOSSARY.md` | touched: DEC-226, DEC-242, DEC-249 | Failure code / Evaluation reason split; Review Finding distinguishes nonterminal addressed and Review-only terminal dispositions; Obligation gains the "applicable" definition |

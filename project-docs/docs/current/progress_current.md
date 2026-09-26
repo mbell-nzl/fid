@@ -6,11 +6,16 @@ task-10 QA repair passed (`af0cbb2`, reports `90d921b`/`908080d`). The fresh
 re-review `qa/checkpoint-after-task-11-2.md` (`9cb9420`) returned BLOCK with
 BC-1..BC-3 and MF-4/MF-5.
 
-The Tech Lead recorded DEC-249..255 (2026-09-26). The stop is released for
-DEC-255's ordered repairs. The Human approved DEC-254 Part 2 (task 13 opens
-with a `cmd/fid` speed step) and chose Option B for BC-2 (DEC-251). After the
-repairs, the `checkpoint-after-task-11-3.md` re-review follows. Task 12 stays held until that re-review
-returns PASS.
+The Tech Lead recorded DEC-249..255 (2026-09-26). The Human approved DEC-254
+Part 2 (task 13 opens with a `cmd/fid` speed step) and chose Option B for BC-2
+(DEC-251).
+
+The Runner could not resume: the sequence verifier has no valid route out of a
+BLOCK re-review, and the DEC-244..255 headings were malformed (now fixed to
+`### DEC-NNN:`). DEC-256 reshapes the repairs to four distinct owners (task 6,
+task 2, task 10, task 11). The resume waits on Human approval of DEC-257, the
+verifier change. After the repairs comes the `checkpoint-after-task-11-3.md`
+re-review. Task 12 stays held until that re-review returns PASS.
 
 ## Task 4 recovery authority - 2026-09-20
 
