@@ -437,8 +437,10 @@ QA repair attempt 1 additions:
 
 QA repair attempt 2 additions (all run from `/home/mark/projects/fid` at commit `a425ffe22ec12558e953bbbb5cb265d22f28779e`):
 
-- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/ -run '^TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess$' -count=1 -v` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	12.696s` (terminated `exit_code: 0`; `--- PASS: TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess (11.19s)`); the red and mutation runs of the same command are in the attempt-2 section below
-- `go test -race -timeout 30m -count=1 ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	192.775s` (terminated `exit_code: 0`); supplementary uncached timing run, not a substitute for any required command
+- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/ -run '^TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess$' -count=1 -v` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	12.696s` (terminated `exit_code: 0`)
+  (`--- PASS: TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess (11.19s)`; the red and mutation runs of the same command are in the attempt-2 section below)
+- `go test -race -timeout 30m -count=1 ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	192.775s` (terminated `exit_code: 0`)
+  (supplementary uncached timing run, not a substitute for any required command)
 
 Real entrypoint exercise: the tagged integration suite above drives the
 actual built `fid` binary as a real process
