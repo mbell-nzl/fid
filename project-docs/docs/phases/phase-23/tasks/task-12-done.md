@@ -42,24 +42,26 @@
 Working directory for every command below: `/home/mark/projects/fid`. Each termination is copied from that command's result.
 
 - `go test -run '^TestRequirementRecordReferenceSupersedesPriorActiveRow$' ./internal/review` - FAIL - `FAIL` (terminated `exit_code: 1`); earlier compiler detail: `undefined: requirementReferenceEffects`.
-- `go test -run '^TestRequirementRecordReferenceSupersedesPriorActiveRow$' ./internal/review` - PASS - `ok  	github.com/mbell-nzl/fid/internal/review	0.005s` (terminated `exit_code: 0`).
+- `go test -run '^TestRequirementRecordReferenceSupersedesPriorActiveRow$' ./internal/review` - PASS - `ok  	github.com/mbell-nzl/fid/internal/review	0.005s` (terminated `exit_code: 0`)
 - `go test -run '^TestRequirementCommandHasReferenceLeaves$' ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`); earlier four leaves were missing and `sync` remained.
-- `go test -run '^TestRequirementCommandHasReferenceLeaves$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.131s` (terminated `exit_code: 0`).
+- `go test -run '^TestRequirementCommandHasReferenceLeaves$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.131s` (terminated `exit_code: 0`)
 - `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); earlier Activation profile returned `invalid activation input`.
 - `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); earlier expanded profile still returned `invalid activation input` because both requirement names were absent from the closed registry.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^(TestRequirementRecordReferenceSupersedesPriorActiveRow|TestRequirementCommandHasReferenceLeaves)$' ./internal/review ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.041s` (terminated `exit_code: 0`); earlier output also reported `internal/review 1.021s`.
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^(TestRequirementRecordReferenceSupersedesPriorActiveRow|TestRequirementCommandHasReferenceLeaves)$' ./internal/review ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.041s` (terminated `exit_code: 0`)
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-12-done.md project-docs/docs/phases/phase-23/tasks/task-12.md` - FAIL - `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`); earlier report punctuation plus the task-spec grammar mismatch.
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-12-done.md project-docs/docs/phases/phase-23/tasks/task-12.md` - FAIL - `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`); the remaining task-spec grammar mismatch was resolved by DEC-260 in the spec.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-12-done.md project-docs/docs/phases/phase-23/tasks/task-12.md` - FAIL - `FAIL report-lint found 21 failure(s)` (terminated `exit_code: 21`); this continuation's first finalized report put prose or punctuation after PASS termination receipts.
 - `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); this session's red test reached `authority-denied` without either requirement capability.
 - `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); after removing the capability checks, supersession reached `missing or reordered Effect stage 1`.
 - `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); after correcting stage order, the supersession pointer hit `FOREIGN KEY constraint failed (787)`.
-- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.668s` (terminated `exit_code: 0`); the final expanded journey rerun also passed with `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.539s` (terminated `exit_code: 0`).
+- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.668s` (terminated `exit_code: 0`)
+- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.539s` (terminated `exit_code: 0`)
 - `go test -run '^TestRegistryHelpersCoverEndpointAndCompatibilityRules$' ./internal/links` - FAIL - `FAIL` (terminated `exit_code: 1`); old endpoint registry admitted Requirement.
-- `go test -run '^TestRegistryHelpersCoverEndpointAndCompatibilityRules$' ./internal/links` - PASS - `ok  	github.com/mbell-nzl/fid/internal/links	0.005s` (terminated `exit_code: 0`).
+- `go test -run '^TestRegistryHelpersCoverEndpointAndCompatibilityRules$' ./internal/links` - PASS - `ok  	github.com/mbell-nzl/fid/internal/links	0.005s` (terminated `exit_code: 0`)
 - `go test -tags integration -run '^TestV01ClosureJourneyAndRebuildParity$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); the first converged fixture invoked `sync` without its removed flags and the parent command returned success/help.
-- `go test -tags integration -run '^TestV01ClosureJourneyAndRebuildParity$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.427s` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/review ./internal/journal ./internal/links ./internal/export ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	221.383s` (terminated `exit_code: 0`).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.300s` (terminated `exit_code: 0`).
+- `go test -tags integration -run '^TestV01ClosureJourneyAndRebuildParity$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.427s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/review ./internal/journal ./internal/links ./internal/export ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	221.383s` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.300s` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
@@ -76,29 +78,30 @@ Earlier checkpoint: the following seven BLOCKED rows were retained as failed-att
 First exact attempt in this continuation:
 
 - `gofmt -l cmd internal` - FAIL - `internal/journal/project_effects_test.go` (terminated `exit_code: 0`); gofmt reports unformatted files with a successful process exit.
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	100.258s	coverage: 64.6% of statements` (terminated `exit_code: 0`); `cmd/fid 285.237s`.
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.5%` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	100.258s	coverage: 64.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.5%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`); `TestV01ClosureJourneyAndRebuildParity` still called removed `requirement sync`.
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	24.893s` (terminated `exit_code: 0`).
-- `rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`).
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	24.893s` (terminated `exit_code: 0`)
+- `rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
 
 Final exact attempt on the repaired tree, in task-spec order:
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 64.6% of statements` (terminated `exit_code: 0`); `cmd/fid 189.843s`.
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.5%` (terminated `exit_code: 0`).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	208.862s` (terminated `exit_code: 0`).
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	24.913s` (terminated `exit_code: 0`); benchmark output `BenchmarkRebuildWorkspace100kEvents-6   	       1	22257904775 ns/op	     22258 ms/rebuild	2296246672 B/op	34581693 allocs/op`.
-- `rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 64.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.5%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	208.862s` (terminated `exit_code: 0`)
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	24.913s` (terminated `exit_code: 0`)
+- `rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
 
 ## Deviations from spec
 
 - DEC-260 resolved ESC-23-006: requirement writes use a trusted Actor from finalized Kit Activation without an Actor-profile capability or Envelope grant. The closed thirty-name registry and both allowlist copies remained unchanged. DEC-260 also corrected the task spec's one-line expected-nonzero declaration; this continuation changed neither the task spec nor `report-lint.sh`.
 - Earlier report-lint attempt 1 ended `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`); report punctuation was corrected. Attempt 2 ended `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`), caused by the task-spec grammar that DEC-260 corrected. Both failures remain above.
 - The first exact tagged gate ended `FAIL` (terminated `exit_code: 1`): retained V1 closure fixture called removed `requirement sync`. The fixture was converged within task 12 scope to require rejection and no journal change; its focused rerun and the byte-identical tagged gate then passed. The first format check printed `internal/journal/project_effects_test.go` (terminated `exit_code: 0`); `gofmt -w` corrected it, and the byte-identical check returned no output.
+- The first finalized report-lint attempt ended `FAIL report-lint found 21 failure(s)` (terminated `exit_code: 21`): PASS rows carried prose or punctuation after their observed termination receipts. This report correction keeps receipts as the final text on each PASS row; the byte-identical control is rerun after committing this correction.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
