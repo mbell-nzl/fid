@@ -200,3 +200,32 @@ not a control-conformance directive or a rewrite of either historical verdict.
 - **If BLOCK:** category protected gate-repair scope and ownership authority; ESC-23-005 raised in `tl_escalations_current.md`; resolution condition full Tech Lead records a bounded owner and closure route under the unchanged DEC-227/VAL-079 contract, or the authority owning the gate definition accepts an explicit change. Task 12 remains held pending the required fresh checkpoint PASS.
 - **Human attention required:** yes
 - **References:** `project-docs/docs/phases/phase-23/tasks/task-11.md` Exact Commands To Run; `project-docs/docs/phases/phase-23/tasks/task-11-done.md` Workflow outcome, Exact quality-gate results, and Concerns; `project-docs/docs/phases/phase-23/decisions.md` DEC-227 and DEC-254; `project-docs/docs/phases/phase-23/qa/validation-contract.md` VAL-079; `project-docs/specs/09_AI_WORKFLOW.md` sections 2.3 and 9.
+
+## TRG-23-006 - Task 12 requirement authority and report-lint contract conflict
+
+- **Trigger:** Phase 23 task 12 cannot reach its real-process requirement reference journey because the accepted capability contract and closed activation registry disagree; the task spec's expected-nonzero declaration also fails the canonical report-lint grammar.
+- **Originating task:** task-12
+- **Trigger signature:** task-12:protected-contract:requirement-capability-registry-and-report-lint-grammar
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-23/tasks/task-12-done.md
+- **Candidate:** RECOVERY_REQUIRED / protected contract contradiction
+- **Checkpoint:** Runner-supplied verification of implementation commit 0e4bb33cbe32fa9d4d83955b3121a4135edf78cd and report commit 32848694d6f46cf8f8bd7ed17d1e5425efb11a17 by git rev-parse --verify and subject match; independently observed report-lint exit_code: 1 with `FAIL expected non-zero declaration has invalid grammar`. Runner-recorded phase HEAD: 32848694d6f46cf8f8bd7ed17d1e5425efb11a17.
+- **Verdict:** BLOCK
+- **Reasoning:** Public-interface section 4 requires matching Actor-profile capabilities for the two requirement writes, while section 4.1, execution-scope section 6, and the accepted R-19 disposition explicitly exclude both names from the closed 30-name capability set. Adding them to activation would change that accepted public authority contract; removing the Actor-profile requirement would also change it. Neither is a uniquely determined control implementation repair. Separately, task-12's two-line expected-nonzero declaration contradicts the canonical report-lint parser's same-bullet grammar; changing the task declaration or accepted control grammar needs its owning authority. Incomplete task work remains for same-task continuation after resolution, but does not itself justify BLOCK.
+- **Local decisions made:** none; no capability list, authority semantics, task-spec declaration, or report-lint grammar authorized for change.
+- **Resolution evidence:** Not cleared. `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` failed twice at Activation staging with `invalid activation input` (each terminated exit_code: 1), before the requirement writer. `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-12-done.md project-docs/docs/phases/phase-23/tasks/task-12.md` failed with `FAIL expected non-zero declaration has invalid grammar` (terminated exit_code: 1). Attached verified commits establish the checkpoint, not resolution of either mismatch.
+- **If REPAIR:** N/A.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A; protected contract contradiction requires a decision.
+- **Control mismatch:** N/A; both reproduced failures are recorded above.
+- **Allowed files:** N/A
+- **Forbidden changes:** Do not change internal/workflow/activation.go, the closed capability set, task-12.md, project-docs/tools/report-lint.sh, product/spec/QA/ledger/decision files, or accepted authority and gate semantics without the owning protected authority. Preserve failed attempts.
+- **Exact verification:** N/A pending protected authority.
+- **Originating report:** project-docs/docs/phases/phase-23/tasks/task-12-done.md
+- **Control repair base:** N/A; supplied phase HEAD is recorded in Checkpoint, and no control directive is granted.
+- **If BLOCK:** category public-interface/specification contradiction and protected task/control definition authority; ESC-23-006 raised in tl_escalations_current.md. Resolution condition: full Tech Lead obtains the necessary Human/contract-owner ruling on requirement write authority and the closed capability set, plus the task-spec or report-lint grammar authority needed for the expected-nonzero declaration. Then Runner resumes task 12 under the recorded resolution and reruns the real-process and report-lint commands before ordinary completion gates.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-23/public-interface.md sections 4 and 4.1; project-docs/docs/phases/phase-23/execution-scope.md section 6; project-docs/docs/phases/phase-23/decisions.md R-19; project-docs/docs/phases/phase-23/tasks/task-12.md Scope, Expected Non-Zero Commands; project-docs/tools/report-lint.sh:104; project-docs/docs/phases/phase-23/tasks/task-12-done.md Tests run and Deviations; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.

@@ -1427,3 +1427,107 @@
 - Triage: TRG-23-005 (BLOCK, escalated as ESC-23-005)
 - Protected category: gate-repair scope and ownership authority; any change to the accepted command, 600-second budget, threshold, or pass semantics requires protected decision authority
 - Next Human or external-authority action: Full Tech Lead records a bounded repair owner and closure route under DEC-227 and VAL-079, or obtains the authority that owns any accepted gate-definition change; after resolution, complete task 11 and obtain a fresh independent checkpoint-after-task-11-3.md review with PASS and Must-fix 0 before task 12
+
+### 2026-09-27 17:14 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-27 11:21 STOP after TRG-23-005 (ESC-23-005)
+- Governing TRG: TRG-23-005
+- Governing ESC: ESC-23-005
+- Trigger signature: review-7:qa-rework:task-11-BC-3
+- Attempt count: 5
+- Checkpoint: phase-23 HEAD 92ea1e509198466b9c0a497b82f80710ca2a8d4d, clean except the Runner-owned ledger; DEC-258 delegated repair commit 3dff4574a71438900100449e36d7044969ba9162 is verified with matching subject; task-11 completion report and ESC-23-005 repair evidence are present; report-lint returned OUTCOME COMPLETE and PASS with terminated exit_code: 0; retained ledger validation returned VALID state=STOPPED with terminated exit_code: 0
+- Resolution evidence: DEC-258 resolves ESC-23-005 by authorizing the committed test-parallelism repair and task-11 closure without changing the accepted gate, 600-second budget, or pass semantics; ESC-23-005 is recorded RESOLVED; Runner verified the delegated repair commit and subject, the committed task-11 report and repair evidence, and independently ran report-lint and standalone sequence-lint with observed exit_code: 0
+- Resolution authority: DEC-258
+- Continuing task: task-11
+- Next recovery: task-11 | gate-repair | task-scope | review-7:qa-rework:task-11-BC-3 | 5
+### 2026-09-27 17:15 TASK-RECOVERY task-11
+
+- Source: DEC-258 and TRG-23-005; qa/esc-23-005-repair.md and the committed task-11 completion report; resolved STOP resume reconciliation
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: DEC-258 and TRG-23-005
+- Triage disposition: N/A
+- Trigger signature: review-7:qa-rework:task-11-BC-3
+- Attempt count: 5
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 92ea1e509198466b9c0a497b82f80710ca2a8d4d, clean except the Runner-owned ledger; DEC-258 delegated repair commit 3dff4574a71438900100449e36d7044969ba9162 is verified with matching subject; task-11 completion report and ESC-23-005 repair evidence are present; report-lint returned OUTCOME COMPLETE and PASS with terminated exit_code: 0; retained ledger validation returned VALID state=STOPPED with terminated exit_code: 0
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - reconcile the DEC-258 delegated repair and committed task-11 completion report without implementation redispatch; preserve the repair agent's exact gate evidence and the earlier failed attempts; record REPAIR Outcome RESOLVED with Next checkpoint VERIFY/REPORT, then complete task-11 after report-lint verification
+- Next action: append REPAIR task-11 with Outcome RESOLVED and Next checkpoint VERIFY/REPORT, then append TASK task-11 COMPLETE after the already verified report-lint result
+- Human attention required: no
+
+### 2026-09-27 17:15 REPAIR task-11
+
+- Trigger signature: review-7:qa-rework:task-11-BC-3
+- Attempt count: 5
+- Starting checkpoint: phase-23 HEAD 92ea1e509198466b9c0a497b82f80710ca2a8d4d, clean except the Runner-owned ledger; DEC-258 delegated repair commit 3dff4574a71438900100449e36d7044969ba9162 is verified with matching subject; task-11 completion report and ESC-23-005 repair evidence are present; report-lint returned OUTCOME COMPLETE and PASS with terminated exit_code: 0; retained ledger validation returned VALID state=STOPPED with terminated exit_code: 0
+- Ending checkpoint: phase-23 HEAD 92ea1e509198466b9c0a497b82f80710ca2a8d4d; delegated repair commit 3dff4574a71438900100449e36d7044969ba9162, task-11 completion report, and ESC-23-005 repair evidence are committed and clean; only Runner-owned run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: DEC-258-authorized delegated repair commit 3dff4574a71438900100449e36d7044969ba9162 has the matching subject and is the verified task-11 repair commit. Its committed evidence records the unchanged exact commands and observed terminated results: gofmt PASS exit_code: 0, golangci-lint PASS exit_code: 0, ordinary race/coverage PASS with cmd/fid 531.533s and internal/workflow 165.920s exit_code: 0, cover PASS exit_code: 0, and tagged integration PASS at 326.421s exit_code: 0; the earlier failed budget and midnight-fixture attempts remain preserved in the report. Runner did not rerun the long gates; Runner independently verified the commit identity, report and evidence presence, report-lint OUTCOME COMPLETE with terminated exit_code: 0, and standalone sequence-lint with terminated exit_code: 0.
+- Next checkpoint: VERIFY/REPORT
+
+### 2026-09-27 17:15 TASK task-11 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-11-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: 3dff4574a71438900100449e36d7044969ba9162 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-27 18:10 REVIEW review-8
+
+- Path: project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11-3.md
+- Tasks covered: task-1, task-2, task-3, task-4, task-5, task-6, task-7, task-8, task-9, task-10, task-11 (fresh independent QA Lead re-review of review-7; checkpoint after task 11)
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-7
+- Must-fix: 0 / Improvement: 1 / blocker candidates: 0
+
+### 2026-09-27 18:44 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-27 18:10 REVIEW review-8; task-12 release recorded by current context commit 403d5c7
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: phase-23 HEAD 403d5c782c2580fd9fc96f2e41f85521586ff57e, clean except the Runner-owned ledger; review-8 is recorded PASS; checkpoint-after-task-11-3.md is committed at 8cd44ae867fe1c53ef7dd6960a6bee3211a4d751 and reviewed HEAD 92ea1e509198466b9c0a497b82f80710ca2a8d4d; the current phase brief and escalation context release task-12; no Open ESC remains
+- Resolution evidence: Runner independently verified the review-8 ledger entry, the QA Lead artifact commit and PASS counts, current HEAD 403d5c7 with matching updated phase context, and standalone sequence validation before continuing; QA plan section 8 and DEC-255/256 hold conditions are satisfied
+- Resolution authority: N/A
+- Continuing task: task-12
+- Next recovery: N/A
+
+### 2026-09-27 19:01 TRIAGE TRG-23-006
+
+- Trigger: task-12 cannot reach its real-process requirement reference journey because the accepted Actor-profile capability contract conflicts with the closed activation registry, and task-12's expected-nonzero declaration fails the canonical report-lint grammar
+- Originating task: task-12
+- Trigger signature: task-12:protected-contract:requirement-capability-registry-and-report-lint-grammar
+- Attempt count: 1
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: phase-23 HEAD 32848694d6f46cf8f8bd7ed17d1e5425efb11a17; task-12 implementation and RECOVERY_REQUIRED report are committed; report-lint independently returned OUTCOME RECOVERY_REQUIRED with FAIL expected non-zero declaration has invalid grammar (terminated exit_code: 1); TRG-23-006 and ESC-23-006 are present; Runner-owned run-ledger.md and TL-Lite triage artifacts are dirty
+- Verdict: BLOCK (escalated as ESC-23-006)
+- Resolution evidence: TL-Lite confirmed that public-interface section 4 requires matching Actor-profile capabilities for requirement.record-reference and requirement.link while section 4.1, execution-scope section 6, and accepted R-19 exclude them from the closed capability set. The focused real-process journey failed twice at Activation staging with invalid activation input (each terminated exit_code: 1). The task-12 expected-nonzero command and expected status are on separate bullets, and report-lint rejected that declaration with FAIL expected non-zero declaration has invalid grammar (terminated exit_code: 1). Resolving either authority contradiction requires the owning protected authority; no local decision or repair was authorized.
+- Triage log: project-docs/docs/phases/phase-23/triage-log.md entry TRG-23-006 confirmed
+
+### 2026-09-27 19:01 STOP
+
+- Cause: task-12 / TRG-23-006; the requirement Actor-profile authority contract conflicts with the closed capability set, and the task's expected-nonzero declaration conflicts with report-lint grammar
+- Triage: TRG-23-006 (BLOCK, escalated as ESC-23-006)
+- Protected category: public-interface/specification contradiction and protected task/control definition authority
+- Next Human or external-authority action: Full Tech Lead resolves ESC-23-006 by obtaining the protected ruling for requirement write authority and the closed capability set, and the owning authority resolves the task-12 expected-nonzero/report-lint grammar; then resume task 12, rerun the focused real-process and report-lint checks, finish its exact gates, and run the window 10-12 QA review before task 13
