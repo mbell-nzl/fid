@@ -6,6 +6,7 @@
 - Category: none
 - Condition: None.
 - Recovery attempts: 4
+- QA repair continuation: review-9 MF-1, attempt 1 (DEC-261).
 - Next action: None.
 - Human attention required: no
 
@@ -110,6 +111,20 @@ re-resolved. No product, fixture-builder, contract, schema, spec, decision,
 task-spec, QA, or ledger file changed. See "QA repair (review-7 MF-5 and I-6,
 attempt 2)" below.
 
+### QA repair (review-9 MF-1, attempt 1) - summary
+
+`TestP23HumanOutcomeRequiredRaisedByArtifactAvailability` now supplies the
+missing VAL-046 artifact producer sequence through the real fid process. Its
+Envelope has one gate-evidence and two Human Obligations; an approved security
+Outcome satisfies one Human Obligation before the required Artifact flips. In
+the preceding `missing` state, the gate and release Human Obligations are
+unsatisfied and no readiness Stop or Attention exists. The first
+`missing -> available` `artifact.availability-observed` Event leaves release as
+the only unsatisfied Obligation and raises exactly one Stop and Attention. A
+second distinct qualifying Event while the Stop is open raises neither again.
+The matching approved release Outcome resolves the Stop. No production file
+changed; the other three producer proofs remain in place.
+
 ## Files created or modified
 
 - `internal/review/human_outcome.go` (new) - Human Outcome recording rules,
@@ -194,6 +209,9 @@ attempt 2)" below.
   `assertP23EnvelopeCompleteDenied`, `assertP23NoHumanOutcomeStop`; the review
   helper now asserts its `evidence.link` appends exactly one Event); this
   report. `p22_fake_test.go` and every product file are unchanged.
+- QA repair attempt 1 (review-9 MF-1):
+  `cmd/fid/integration/p23_human_outcome_test.go` (artifact availability
+  sequence and repeat while open) and this report.
 - `project-docs/docs/phases/phase-23/run-ledger.md` - recovery ledger entries
   from prior sessions (Runner-owned; not edited by this session beyond what
   was already committed-pending).
@@ -206,11 +224,12 @@ attempt 2)" below.
 
 ## Validation Contract Coverage
 
-Citation note (I-6). Every `file:line` below was re-resolved against commit
-`a425ffe22ec12558e953bbbb5cb265d22f28779e` in QA repair attempt 2. Entries marked
-SUPERSEDED keep the original sessions' text; the line numbers inside that
-quoted text are those of the commit named beside it and are history, not
-current citations. The corrected and PASS entries use current lines only.
+Citation note (I-6). Earlier corrected `file:line` entries were re-resolved
+against commit `a425ffe22ec12558e953bbbb5cb265d22f28779e` in QA repair
+attempt 2 and remain that attempt's evidence. Entries marked SUPERSEDED keep
+their original historical text. The corrected review-9 VAL-046 entry below
+cites the final source tree for this repair; its earlier VAL-046 entry remains
+as the historical claim that review-9 overturned.
 `cmd/fid/integration/p23_human_outcome_test.go` is written `journey:N` and the
 journey is `TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess`
 (`:28`).
@@ -252,7 +271,8 @@ journey is `TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess`
   `journey:196-199` (VAL-010). No field or reasoning text in
   `internal/review/human_outcome.go` or the Evidence rendering path claims
   deterministic or fid-executed proof.
-- VAL-046: PASS - four dedicated raising-path assertions, one per DEC-224
+- VAL-046: SUPERSEDED (original result: PASS; review-9 MF-1 found its artifact
+  citation did not create a Human Obligation) - four dedicated raising-path assertions, one per DEC-224
   producer, plus the non-raising guard:
   - `envelope.activated`: `TestP23HumanOutcomeRequiredRaisedByEnvelopeActivation`
     (`cmd/fid/integration/p23_human_outcome_test.go:261-321`) - activating an
@@ -282,6 +302,35 @@ journey is `TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess`
     resolves the Stop inside its own Event (`journey:177-187`, exactly one
     resolved Stop in the response), and every earlier Obligation-satisfying step
     raises no Stop (`journey:139` for the gate link; the exact counts above).
+- VAL-046 (corrected, review-9 MF-1): PASS. Four producer sequences retain
+  their separate observations:
+  - `envelope.activated`: `TestP23HumanOutcomeRequiredRaisedByEnvelopeActivation`
+    (`cmd/fid/integration/p23_human_outcome_test.go:264`) activates the
+    Human-only Envelope and asserts one Stop and Attention with matching
+    details (`:308-324`).
+  - `evidence.linked`: the real-process compatibility journey (`:30`), with
+    no Stop while review and security remain unsatisfied (`:142`), raises the
+    Stop when the review Evidence link leaves security last (`:145-156`), and
+    resolves it with the approved security Outcome (`:180-190`).
+  - `review.recorded`: `TestP23HumanOutcomeRequiredRaisedByReviewRecord`
+    (`:341`) resolves the last blocking Finding in the Review Event, observes
+    one Stop and Attention in that Event's response (`:382-400`), then
+    resolves the Stop with the matching release Outcome (`:407-410`).
+  - `artifact.availability-observed`:
+    `TestP23HumanOutcomeRequiredRaisedByArtifactAvailability` (`:891`) links
+    the real Receipt to a gate-evidence Obligation requiring the Artifact and
+    links an approved security Outcome (`:927-932`). The preceding missing
+    state has exactly two unsatisfied Obligations, gate and release, and zero
+    Stops/Attention (`:961-962`). The first distinct
+    `artifact.availability-observed` `missing -> available` Event (`:966`;
+    Event type asserted in `verify`, `:907-925`) leaves release as the sole
+    unsatisfied Obligation (`:968`) and raises one Stop and one Attention
+    (`:967`) with `OBL-human-release`/`release` details (`:969-976`). After
+    a missing observation, the second `missing -> available` Event has a new
+    Event ID (`:985-988`) while the Stop is open, and counts remain 1/1
+    (`:989-990`). The approved release Outcome resolves that Stop (`:991-993`).
+    The retained `cmd/fid/artifact_test.go:273` checks Artifact identity and
+    availability separately; it is no longer cited as the Human Stop proof.
 - VAL-009 (SUPERSEDED, original session, all-satisfied half contradicted by review-6 and superseded again by attempt 1 and attempt 2; corrected entry below): the original text cited `cmd/fid/integration/p23_human_outcome_test.go:110-115` and lines 142-144 of commit `0ff2eee`. `assertP23HumanOutcomeRequiredDenial` showed `envelope.complete` rejecting `human-outcome-required` with `obligation_id:"OBL-human-security"`, `outcome_class:"security"` while that Obligation was the last unsatisfied one, with no Event. Its claim that the all-satisfied state was reached with gate-evidence, review, and human-outcome Obligations was false (review-6 MF-1). The attempt-1 corrected entry's two further claims (that "the Task 2 probes remain the unsatisfied-review-with-satisfied-gate evidence" and that an isolated review-only state "is not reachable" because satisfaction is monotone) were contradicted by review-7 MF-5 and are removed, not restated.
 - VAL-009 (corrected, QA repair attempt 2, review-7 MF-5 and I-6): PASS.
   - Coexistence: one Envelope carries `OBL-p22-corpus` (gate-evidence),
@@ -442,6 +491,18 @@ QA repair attempt 2 additions (all run from `/home/mark/projects/fid` at commit 
 - `go test -race -timeout 30m -count=1 ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	192.775s` (terminated `exit_code: 0`)
   (supplementary uncached timing run, not a substitute for any required command)
 
+QA repair review-9 MF-1, attempt 1, from `/home/mark/projects/fid`:
+
+- Red fixture attempt: `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -count=1 ./cmd/fid/integration/... -run '^TestP23HumanOutcomeRequiredRaisedByArtifactAvailability$' -v` - FAIL - `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration	3.059s` (terminated `exit_code: 1`); the initial fixture lacked the independent `actor-denied` grant and `claim.acquire` rejected `authority-denied`.
+- Red observation-shape attempt: same command - FAIL - `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration	3.152s` (terminated `exit_code: 1`); the CLI EventRef carries an ID, so the test now reads that ID's journal Event to assert `artifact.availability-observed`.
+- Expected behavior red: same command - FAIL - `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration	3.412s` (terminated `exit_code: 1`); `readiness Stop/Attention counts = 0/0, want 1/1` after the first flip because the fixture still left security as a second unsatisfied Human Obligation. Linking the matching approved security Outcome repaired the fixture.
+- Green after that fixture repair: same command - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.890s` (terminated `exit_code: 0`).
+- Assertion refinement red: same command - FAIL - `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration	3.328s` (terminated `exit_code: 1`); a reused helper expected four Obligations from another fixture, while this Envelope has three. The local assertion now checks all three by ID and status.
+- Final focused green: same command - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.939s` (terminated `exit_code: 0`).
+- Focused green after placing the test at the end of the file to retain earlier citations: same command - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.931s` (terminated `exit_code: 0`).
+- Four-producer focused command: `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -count=1 ./cmd/fid/integration/... -run '^TestP23HumanOutcomeRequiredRaisedBy(ArtifactAvailability|EnvelopeActivation|ReviewRecord)$|^TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess$' -v` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	11.628s` (terminated `exit_code: 0`); all four top-level tests printed `--- PASS`.
+- Supplemental uncached VAL-079 timing: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -count=1 ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	56.273s` (terminated `exit_code: 0`).
+
 Real entrypoint exercise: the tagged integration suite above drives the
 actual built `fid` binary as a real process
 (`integrationFIDBinary`/`closureRunCommand` in
@@ -452,6 +513,10 @@ actual built `fid` binary as a real process
 0, 2 items). This satisfies the runtime-surface entrypoint-exercise
 requirement; no separate manual CLI invocation was additionally run in this
 session.
+The review-9 artifact sequence also invokes `artifact verify`, `evidence link`,
+and `human-outcome record` through that built binary; its final focused run
+printed `--- PASS: TestP23HumanOutcomeRequiredRaisedByArtifactAvailability
+(3.43s)` and terminated `exit_code: 0`.
 
 ## Exact quality-gate results
 
@@ -530,6 +595,44 @@ code is unchanged, so its time is taken from the uncached run of that package,
 `real 3m13.238s`). No package exceeded budget. The total statement coverage is
 62.0% (no threshold). `goimports -l cmd internal` printed nothing
 (terminated `exit_code: 0`).
+
+### QA repair review-9 MF-1 first passing gate set (DEC-261 / DEC-259 form)
+
+All five exact commands below ran in the task-spec order from
+`/home/mark/projects/fid` before the new test was moved to the end of the
+same file to preserve earlier citation lines. They remain passing history;
+the final-tree gate set follows.
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 64.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.5%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	239.929s` (terminated `exit_code: 0`)
+
+VAL-079 package times: `cmd/fid/integration` 239.929 s against the unchanged
+900 s tagged budget; `cmd/fid` 189.472 s against the unchanged 600 s ordinary
+budget (the ordinary gate's own `ok` line); `internal/workflow` was cached in
+the ordinary gate, so the supplemental uncached run above reports 56.273 s
+against the unchanged 600 s budget. All three are below 80% of budget; no
+headroom warning applies. The supplemental command does not replace any of
+the five exact gates.
+
+### QA repair review-9 MF-1 final-tree gate set (DEC-261 / DEC-259 form)
+
+After the test relocation, the five byte-identical task-spec commands ran
+again, in order, from `/home/mark/projects/fid`:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 64.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.5%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	222.073s` (terminated `exit_code: 0`)
+
+Final-tree VAL-079 times: tagged `cmd/fid/integration` 222.073 s (<900 s),
+ordinary `cmd/fid` 187.764 s (<600 s) from its printed package line, and
+`internal/workflow` 56.273 s (<600 s) from the uncached run above because
+both ordinary exact gates printed `(cached)` for that unchanged package.
+Each is below 80% of budget.
 
 ## QA repair (review-6 / checkpoint-after-task-11, attempt 1)
 
@@ -741,6 +844,16 @@ history that does not describe the repair rows.
   link) is recorded with provenance above. The supplementary uncached
   `internal/workflow` run exists only to record its DEC-227 time.
 
+- QA repair review-9 MF-1 (attempt 1): DEC-261 applies the Human-approved
+  DEC-259 `-gcflags=modernc.org/...=-d=checkptr=0` form to both race gates for
+  this reopened task. The five gate rows above use that exact amended command
+  text; the earlier gate results keep their pre-DEC-259 form as history. The
+  600 s and 900 s VAL-079 budgets and VAL-046 semantics are unchanged. The
+  original VAL-046 artifact citation was unsupported because its Envelope had
+  only gate-evidence; the corrected test and citations above replace that
+  claim. No production, gate, budget, validation-contract, or task-spec file
+  changed in this continuation.
+
 ## Concerns, technical debt, or notes for the Tech Lead
 
 - `internal/journal/current_event_result_budgets.go`'s
@@ -788,8 +901,8 @@ history that does not describe the repair rows.
 
 ## Commit hash
 
-- `a425ffe22ec12558e953bbbb5cb265d22f28779e`
+- Pending commit
 
 ## Commit subject
 
-- `test(integration): prove VAL-009 gate-satisfied review-unsatisfied stage under DEC-249`
+- Pending commit

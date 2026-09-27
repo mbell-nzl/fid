@@ -5,6 +5,7 @@ package integration
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/evidence"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -257,8 +259,8 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 // above, review.recorded has its own dedicated fixture in
 // TestP23HumanOutcomeRequiredRaisedByReviewRecord (its one producer-specific
 // override, reviewObligationReadinessOverride, is not shared with the other
-// three), and artifact.availability-observed is exercised in
-// cmd/fid/artifact_test.go.
+// three), and artifact.availability-observed has its own dedicated fixture in
+// TestP23HumanOutcomeRequiredRaisedByArtifactAvailability.
 func TestP23HumanOutcomeRequiredRaisedByEnvelopeActivation(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
@@ -881,4 +883,112 @@ func p23AssertHumanOutcomeConditionNullableBindingFires(t *testing.T, a *p22FIDR
 	if count == 0 {
 		t.Fatal("no recorded human-outcome-required Stop carries the canonical null-bound Condition")
 	}
+}
+
+// TestP23HumanOutcomeRequiredRaisedByArtifactAvailability proves that the
+// artifact.availability-observed producer raises once when its Artifact becomes
+// available and the release Human Obligation is the only one still unsatisfied.
+func TestP23HumanOutcomeRequiredRaisedByArtifactAvailability(t *testing.T) {
+	t.Parallel()
+	const artifactName = "artifact.json" // ignored by the fixture Git worktree
+	actions := []string{"artifact.verify", "claim.acquire", "claim.release", "envelope.activate", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "review.record", "run.close", "run.observe", "run.observe-budget", "run.start"}
+	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{artifactName}, actions, p22ExecutionFixture{HumanObligations: true})
+	content := []byte("readiness artifact\n")
+	p22Write(t, a.workspace, artifactName, string(content))
+	gate := p23RunQualifyingGateSession(t, a, "artifact-readiness-gate")
+	if len(gate.Receipt.Artifacts) != 1 {
+		t.Fatalf("gate Receipt Artifacts = %#v, want one", gate.Receipt.Artifacts)
+	}
+	artifact := gate.Receipt.Artifacts[0]
+	path := filepath.Join(a.workspace, ".fid", "artifacts", artifact.Digest[len("sha256:"):])
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	verify := func(key, availability string) string {
+		t.Helper()
+		response := p23RunInput(t, a, "artifact", "verify", a.actor, key, map[string]any{"artifact_id": artifact.ID})
+		assertP23HumanOutcomeSuccess(t, response)
+		envelope := p23Envelope(t, response.Stdout)
+		if got := p21PathString(t, envelope, "result", "artifact", "availability"); got != availability {
+			t.Fatalf("artifact.verify availability = %q, want %q", got, availability)
+		}
+		if changed := p21Path(t, envelope, "result", "changed"); changed != true {
+			t.Fatalf("artifact.verify changed = %v, want true", changed)
+		}
+		eventID := p21PathString(t, envelope, "event", "id")
+		event, err := journal.FindEvent(filepath.Join(a.workspace, ".fid", "journal"), eventID)
+		p22FaultOK(t, err)
+		if event.Event.EventType != "artifact.availability-observed" {
+			t.Fatalf("artifact.verify Event type = %q", event.Event.EventType)
+		}
+		return eventID
+	}
+	verify("artifact-readiness-missing", "missing")
+	linked := p23RunInput(t, a, "evidence", "link", a.actor, "artifact-readiness-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{artifact.ID}})
+	assertP23HumanOutcomeSuccess(t, linked)
+	security := p23RecordHumanOutcome(t, a, "artifact-readiness-security", a.actor, "security", "approved")
+	assertP23HumanOutcomeSuccess(t, security)
+	securityID := p21PathString(t, p23Envelope(t, security.Stdout), "result", "outcome", "id")
+	assertP23HumanOutcomeSuccess(t, p23LinkHumanOutcome(t, a, "artifact-readiness-security", "OBL-human-security", securityID))
+
+	conn := p22FaultDB(t, a.workspace)
+	defer func() { p22FaultOK(t, conn.Close()) }()
+	assertCounts := func(want int) {
+		t.Helper()
+		var stops, attention int
+		envelopeID := p23EnvelopeID(t, a)
+		p22FaultOK(t, conn.QueryRow(`SELECT COUNT(*) FROM stops WHERE code='human-outcome-required' AND subject_id=?`, envelopeID).Scan(&stops))
+		p22FaultOK(t, conn.QueryRow(`SELECT COUNT(*) FROM attention_items WHERE code='human-outcome-required' AND subject_id=?`, envelopeID).Scan(&attention))
+		if stops != want || attention != want {
+			t.Fatalf("readiness Stop/Attention counts = %d/%d, want %d/%d", stops, attention, want, want)
+		}
+	}
+	assertEvaluations := func(gateStatus string) {
+		t.Helper()
+		evaluations := p21Path(t, p23Envelope(t, p23EvidenceEvaluate(t, a).Stdout), "result", "evaluations").([]any)
+		want := map[string]string{"OBL-p22-corpus": gateStatus, "OBL-human-security": "satisfied", "OBL-human-release": "unsatisfied"}
+		if len(evaluations) != len(want) {
+			t.Fatalf("artifact readiness evaluations = %d, want %d", len(evaluations), len(want))
+		}
+		for _, item := range evaluations {
+			evaluation := item.(map[string]any)
+			id := evaluation["obligation_id"].(string)
+			if evaluation["status"] != want[id] {
+				t.Fatalf("artifact readiness evaluation for %s = %v, want %s", id, evaluation["status"], want[id])
+			}
+		}
+	}
+	assertCounts(0)
+	assertEvaluations("unsatisfied")
+	if err := os.WriteFile(path, content, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	firstAvailable := verify("artifact-readiness-available", "available")
+	assertCounts(1)
+	assertEvaluations("satisfied")
+	var detailsJSON string
+	p22FaultOK(t, conn.QueryRow(`SELECT details_json FROM stops WHERE code='human-outcome-required' AND subject_id=?`, p23EnvelopeID(t, a)).Scan(&detailsJSON))
+	var details map[string]any
+	p22FaultOK(t, json.Unmarshal([]byte(detailsJSON), &details))
+	if details["obligation_id"] != "OBL-human-release" || details["outcome_class"] != "release" {
+		t.Fatalf("artifact readiness Stop details = %#v", details)
+	}
+	assertP23HumanOutcomeStopState(t, a, "release", "open")
+	if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+	verify("artifact-readiness-missing-again", "missing")
+	assertCounts(1)
+	if err := os.WriteFile(path, content, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	secondAvailable := verify("artifact-readiness-available-again", "available")
+	if secondAvailable == firstAvailable {
+		t.Fatal("repeat qualifying availability flip reused the first Event")
+	}
+	assertCounts(1)
+	assertP23HumanOutcomeStopState(t, a, "release", "open")
+	release := p23RecordHumanOutcome(t, a, "artifact-readiness-release", a.actor, "release", "approved")
+	assertP23HumanOutcomeSuccess(t, release)
+	assertP23HumanOutcomeStopState(t, a, "release", "resolved")
 }
