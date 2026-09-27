@@ -103,7 +103,8 @@ project-docs/tools/drills/run-drills.sh
 `ci_tests.py` requires the repository's Go version, Git and Python 3.10+ standard
 library. Run from the repository root. It does not install dependencies or change
 product data. It runs the ordinary Go suite with race and coverage instrumentation,
-using fresh output directories and the unchanged default package timeout.
+using fresh output directories and the unchanged default package timeout. Race
+builds disable `checkptr` for `modernc.org/...` only (DEC-259), matching the local gate.
 
 ```bash
 python3 -m unittest discover -s project-docs/tools -p test_ci_tests.py -v

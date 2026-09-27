@@ -68,7 +68,7 @@ lives in `09_AI_WORKFLOW.md` §2.5
   commands are failed gates.
 - Iterate in tiers so the long gates run once per attempt, not per edit
   (`09_AI_WORKFLOW.md` §2.5 step 6): the most specific `-run` for red/green;
-  `go test -race -count=1` over touched packages (and touched tagged tests)
+  `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1` over touched packages (and touched tagged tests)
   before the gate; then the exact task-spec commands once on the final tree.
   Never run two long gates, or other heavy test work, concurrently. New
   top-level tests call `t.Parallel()` unless they touch process-global state.

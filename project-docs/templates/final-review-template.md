@@ -34,9 +34,9 @@ PASS / REPAIR / BLOCK
 |---|---|---|---|
 | Format | `gofmt -l cmd internal` | PASS/FAIL/N/A | <output excerpt or reason> |
 | Lint/static analysis | `golangci-lint run ./...` | PASS/FAIL/N/A | <output excerpt or reason> |
-| Coverage/confidence | `go test -race -coverprofile=coverage.out ./...` | PASS/FAIL/N/A | <output excerpt or reason> |
+| Coverage/confidence | `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...` | PASS/FAIL/N/A | <output excerpt or reason> |
 | Coverage report | `go tool cover -func=coverage.out` | PASS/FAIL/N/A | <output excerpt or reason> |
-| Integration | `go test -tags integration -race ./cmd/fid/integration/...` | PASS/FAIL/N/A | <output excerpt or reason> |
+| Integration | `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 ./cmd/fid/integration/...` | PASS/FAIL/N/A | <output excerpt or reason> |
 | End-to-end | `<E2E_COMMAND>` | PASS/FAIL/N/A | <output excerpt or reason> |
 | Benchmarks | `go test -bench . -benchmem ./...` | PASS/FAIL/N/A | <output excerpt or reason> |
 | Build/package | `go build -o /tmp/fid ./cmd/fid` | PASS/FAIL/N/A | <output excerpt or reason> |

@@ -16,8 +16,9 @@ Next: the Runner resumes from the STOP using
 [the handoff](../phases/phase-23/qa/resume-after-esc-23-005.md) (attempt 5,
 DEC-258) and records task 11 complete. It then runs
 `checkpoint-after-task-11-3.md`. Task 12 stays held until that re-review
-returns PASS. Before task 13 adds `cmd/fid` tests, the Tech Lead schedules a
-speed item for DEC-258's headroom warning.
+returns PASS. DEC-259 (Human) adds a modernc-only `checkptr` exclusion to both
+race gates for tasks 12-18: `cmd/fid` 299.6 s, tagged 239.2 s. That clears
+DEC-258's headroom warning.
 
 Earlier history: DEC-249..257 dispositioned review-7 (ESC-23-004). The DEC-256
 owners (tasks 6, 2, and 10) are repaired and complete.

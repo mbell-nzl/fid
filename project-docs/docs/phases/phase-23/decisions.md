@@ -2221,6 +2221,42 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 - **Refs:** ESC-23-005; TRG-23-005; DEC-227; DEC-238; DEC-254; DEC-255;
   VAL-079; CF-041.
 
+### DEC-259: Race gates build modernc SQLite without `checkptr`
+
+- **Date:** 2026-09-27.
+- **Status:** ACCEPTED by Human, 2026-09-27. This changes the text of two
+  required gate commands, which is protected; the Human approved it directly.
+- **Context:** After DEC-258, `cmd/fid` passed at 531.533 s, which is 88.6% of
+  its budget and trips the headroom warning. A CPU profile attributed about 32%
+  of `cmd/fid` CPU to `checkptr`, which `-race` enables. All of it ran inside
+  modernc's machine-translated SQLite (`qa/esc-23-005-repair.md`). fid
+  production code imports no `unsafe`.
+- **Decision:** Both race gates add `-gcflags=modernc.org/...=-d=checkptr=0`:
+  - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...`
+  - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...`
+  - The same flag applies to the Makefile targets, `AGENTS.md` defaults,
+    `08_QUALITY_PLAN.md` §7, `09_AI_WORKFLOW.md`, the templates, the
+    Developer prompt, task specs 12-18, and the hosted CI shard runner
+    (`ci_tests.py`).
+  - Kept: the race detector everywhere, including inside SQLite. `checkptr`
+    stays on for fid and every other dependency. All tests, assertions,
+    budgets, and VAL-079 are unchanged.
+  - Given up: detection of unsafe-pointer rule violations inside
+    `modernc.org/...` code, which fid cannot fix except by pinning or upgrading.
+  - **Control run:** `go test -race -timeout 30m ./...`, without the flag, is
+    required at phase end and in any task that changes a `modernc.org`
+    version in `go.mod`. It must PASS. It is not held to the VAL-079 budgets.
+- **Measured:** the flag was profiled on `cmd/fid` alone, where CPU fell from
+  943 s to 597 s and `checkptr` from about 32% to under 1%. The exact new
+  gates, on unchanged Go sources at `21f60f2`, gave `cmd/fid` 299.562 s,
+  `internal/workflow` 96.706 s, and tagged 239.187 s, all terminated
+  `exit_code: 0` (`qa/esc-23-005-evidence/dec-259-gates.log`). The DEC-258
+  headroom warning clears.
+- **Considered and deferred:** opening one SQLite connection per command,
+  where schema re-parse costs about 33% of race-test CPU. That is a product
+  persistence refactor, recorded as CF-043.
+- **Refs:** DEC-227; DEC-258; VAL-079; CF-043.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,
@@ -2236,9 +2272,9 @@ not the default.
 | `05_DESIGN_PLAN.md` | pending | |
 | `06_DESIGN_PLAN_CLI.md` | touched: DEC-242 | Review optional inapplicability input; later task-owned sync remains |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: DEC-239, DEC-242 | same-independent-Reviewer resolution and reasoned inapplicability in one Review Event |
-| `08_QUALITY_PLAN.md` | touched: DEC-239 | section 8 records VAL-015 evidence-route boundary |
-| `09_AI_WORKFLOW.md` | touched: DEC-257, DEC-258 | §2.4 REVIEW-owner paragraph and "Autonomous triage and resolved resume" gain the BLOCK re-review `Repair owners` route; §2.5 step 6 gains the tiered test loop, `t.Parallel()` default and 80% headroom warning |
-| `AGENTS.md` (Commands) | pending; conventions touched: DEC-258 | DEC-227: decide at wrap-up whether the explicit `-timeout` bound becomes the project default. DEC-258 adds the `t.Parallel()`/`paralleltest` test-style rule |
+| `08_QUALITY_PLAN.md` | touched: DEC-239, DEC-259 | section 8 records VAL-015 evidence-route boundary; section 7 race gates carry the modernc `checkptr` exclusion |
+| `09_AI_WORKFLOW.md` | touched: DEC-257, DEC-258, DEC-259 | §2.4 REVIEW-owner paragraph and "Autonomous triage and resolved resume" gain the BLOCK re-review `Repair owners` route; §2.5 step 6 gains the tiered test loop, `t.Parallel()` default and 80% headroom warning |
+| `AGENTS.md` (Commands) | pending; conventions touched: DEC-258 | DEC-227: decide at wrap-up whether the explicit `-timeout` bound becomes the project default. DEC-258 adds the `t.Parallel()`/`paralleltest` test-style rule; DEC-259 adds the modernc `checkptr` exclusion to the default race commands |
 | `10_IMPLEMENTATION_ROADMAP.md` | pending | |
 | `GLOSSARY.md` | touched: DEC-226, DEC-242, DEC-249 | Failure code / Evaluation reason split; Review Finding distinguishes nonterminal addressed and Review-only terminal dispositions; Obligation gains the "applicable" definition |
 

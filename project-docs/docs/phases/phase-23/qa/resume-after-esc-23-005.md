@@ -49,9 +49,13 @@ independent QA Lead for `qa/checkpoint-after-task-11-3.md`, the fresh re-review
 of review-7 required by DEC-255. **Task 12 stays held until it returns PASS
 with Must-fix 0.**
 
-Tell the reviewer that DEC-258 records a headroom warning: `cmd/fid` is at
-531.533 s, which is 88.6% of its budget. This passes VAL-079, but the Tech
-Lead must schedule a speed item before task 13 adds `cmd/fid` tests.
+Tell the reviewer about the budget history. Task 11 closed on the DEC-227
+command form with `cmd/fid` at 531.533 s, 88.6% of budget, which triggered
+DEC-258's warning. DEC-259 (Human) then added
+`-gcflags=modernc.org/...=-d=checkptr=0` to both race gates for tasks 12-18.
+On unchanged sources that gave `cmd/fid` 299.562 s and tagged 239.187 s, which
+clears the warning. `qa-plan.md` section 22 adds the phase-end full-`checkptr`
+control run.
 
 ## Simulation check
 

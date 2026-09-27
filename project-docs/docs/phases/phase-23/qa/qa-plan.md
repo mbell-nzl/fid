@@ -3215,3 +3215,24 @@ A separate comparison with the committed plan printed `PASS artifact scope:
 sections 1-20 preserved except authorized EVID-13/QA-13 sync` (terminated
 `exit_code: 0`). QA owns and commits only this plan; concurrent product, ledger,
 and Tech Lead edits are outside this confirmation's write scope.
+
+## 22. DEC-258/DEC-259 Command Amendment (Tech Lead record, 2026-09-27)
+
+Human-approved; recorded by the delegated repair agent, not by QA. From task 12
+on, the two long gates are:
+
+```text
+go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...
+go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...
+```
+
+- VAL-079's phase-end budget run uses these exact forms. The 600 s and 900 s
+  budgets are unchanged.
+- **Phase-end control (new):** `go test -race -timeout 30m ./...` without the
+  flag, so `checkptr` also covers `modernc.org/...`. It must PASS and is not
+  held to VAL-079 budgets. Any task that changes a `modernc.org` version in
+  `go.mod` also runs it.
+- Earlier task reports keep their original command text. Task 11 closed on the
+  DEC-227 form (DEC-258).
+- Reference measurements (DEC-259): `cmd/fid` 299.562 s, `internal/workflow`
+  96.706 s, tagged 239.187 s.

@@ -14,7 +14,7 @@ then runs `checkpoint-after-task-11-3.md`. Task 12 stays held until it PASSes.
 - **Status:** RESOLVED 2026-09-27 under DEC-258 (Human-delegated repair).
   The cause was serial test structure plus measurement spread, not task 11.
   Test-only `t.Parallel()` across the suites; gate definition unchanged. Final
-  exact gates at `3dff457`: `cmd/fid` 531.533 s (headroom warning: over 480 s),
+  exact gates at `3dff457`: `cmd/fid` 531.533 s (later 299.6 s under DEC-259),
   `internal/workflow` 165.920 s, tagged 326.421 s. See
   [repair evidence](../phases/phase-23/qa/esc-23-005-repair.md) and the
   [full record](../phases/phase-23/tl-escalations.md).

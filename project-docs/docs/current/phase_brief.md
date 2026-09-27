@@ -41,8 +41,8 @@ VAL-082/083/084. The contract now has **84 rows** (`qa-plan.md` sections
 Next action: resume from the TRG-23-005 STOP under DEC-258
 (`qa/resume-after-esc-23-005.md`), record task 11 complete, then run the fresh
 checkpoint re-review. Task 12 dispatches only after it returns PASS. DEC-258
-already satisfies DEC-254 Part 2. Its headroom warning (`cmd/fid` 531.5 s)
-needs a Tech Lead speed item before task 13 adds `cmd/fid` tests.
+satisfies DEC-254 Part 2. DEC-259's gate flag clears the headroom warning
+(`cmd/fid` 299.6 s); tasks 12-18 use the amended commands.
 
 ## Operating Mode
 

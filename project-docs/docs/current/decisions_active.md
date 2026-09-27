@@ -155,10 +155,11 @@
 - DEC-256 orders the repairs as tasks 6, 2, 10, and 11; DEC-257 supplies the
   ledger route. Tasks 6, 2, and 10 are complete. Tasks 12-18 stay held pending
   the fresh checkpoint.
-- DEC-258 (Human-delegated) resolves ESC-23-005 (task-11 STOP): parallel tests
-  plus `paralleltest`, gates unchanged, a tiered test loop, and an 80% headroom
-  warning (active: `cmd/fid` 531.5 s). The Runner resumes via
-  `qa/resume-after-esc-23-005.md`. See [phase brief](phase_brief.md) and
+- DEC-258 (Human-delegated) resolves ESC-23-005 (task-11 STOP): parallel tests,
+  `paralleltest`, a tiered test loop, and an 80% headroom warning. The Runner
+  resumes via `qa/resume-after-esc-23-005.md`. DEC-259 (Human) adds
+  `-gcflags=modernc.org/...=-d=checkptr=0` to both race gates, with a phase-end
+  full-`checkptr` control run. See [phase brief](phase_brief.md) and
   [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Prior Phase and Future Qualification
@@ -187,10 +188,11 @@
 | CF-040 | Partially scheduled in Phase 23 task 14 (VAL-073) for the Human views that phase introduces; polish/verbosity review of pre-existing views stays with Phase 25 operating-experience qualification. |
 | CF-041 | Workflow/CI maintainer: hosted CI runs only format, lint, build, shard verification, and the ordinary race/coverage shards. The tagged integration suite and the rebuild benchmark are local-only gates, so a green PR is not phase-level evidence. Dedicated maintenance. |
 | CF-042 | Workflow/test-infra maintainer: `cmd/fid/integration/main_test.go` leaks built-binary directories. Cause corrected under R-15/DEC-229: five tests re-execute the test binary, each child rebuilds its own ~16 MB binary, and the crash-process children never reach `RemoveAll`, so one clean run (exit 0, no kill) leaks 20 directories and 306 MB into a RAM-backed `/tmp`. Phase 23 task 1 makes children reuse the parent's published binary and keeps a 24-hour prune only as the residual safety net for a parent killed mid-run; the durable cleanup-on-kill design stays in dedicated maintenance. |
+| CF-043 | Future TL (after Phase 23): open one SQLite connection per command. Each command re-opens the projection several times (`journal.ensureProjectionFresh`, `workflow.openWorkflowDB` at 32 sites), and each open re-parses the schema, about 33% of race-test CPU (`qa/esc-23-005-repair.md`). Needs planning plus VAL coverage for rebuild/catch-up file replacement, transaction scope and locking. |
+| CF-044 | Future causal editor of `cmd/fid` test helpers: `mustJournalPath` assumes one journal file, but journals split per UTC day. A gate crossing 00:00 UTC fails with `journal files = 2, want 1` (ESC-23-005 attempt 1). |
 
-CF-024/034/035 are closed; do not reuse their IDs. DEC-222 re-defers the retained
-items, partly schedules CF-040, and registers CF-041. DEC-227/228/229 register
-and correct CF-042. Full dispositions: [phase decisions](../phases/phase-23/decisions.md).
+CF-024/034/035 closed (IDs retired). DEC-222: CF-040/041; DEC-227/229: CF-042;
+DEC-258/259: CF-043/044. See [phase decisions](../phases/phase-23/decisions.md).
 
 ## Environment
 

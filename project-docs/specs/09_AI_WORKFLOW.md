@@ -732,7 +732,7 @@ Responsibilities:
    does not define a gate, use the standard fallback gate from `AGENTS.md`.
    Iterate in tiers so the long gates run once, not per edit:
    - Red/green: the most specific `go test ./<pkg> -run '<Test>' -count=1`.
-   - Pre-gate: `go test -race -count=1` over every touched package, plus the
+   - Pre-gate: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1` over every touched package, plus the
      touched tagged tests via `-tags integration -run`, until green.
    - Full gate: the exact task-spec commands, once, on the final tree. On a
      failure, repair with the narrower tiers, then rerun the full gate once.
@@ -1480,7 +1480,7 @@ heavy-mode phases may add task-spec sections for them when the phase brief
 requires it.
 
 The canonical integration command targets the dedicated real-process package,
-`go test -tags integration -race ./cmd/fid/integration/...`. Ordinary
+`go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 ./cmd/fid/integration/...`. Ordinary
 in-process command and persistence tests run under the default race/coverage
 gate. Expanding the integration command to `./...` is not additional evidence;
 it duplicates the ordinary suite under a build tag and is a gate-definition
@@ -1579,7 +1579,7 @@ Task-level default gate:
 ```bash
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
 ```
 
