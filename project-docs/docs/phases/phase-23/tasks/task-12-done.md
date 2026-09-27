@@ -40,12 +40,15 @@
 Working directory for all commands: `/home/mark/projects/fid`. Each result below is from the command's observed termination.
 
 - `go test -run '^TestRequirementRecordReferenceSupersedesPriorActiveRow$' ./internal/review` - FAIL - `FAIL` (terminated `exit_code: 1`); compiler detail: `undefined: requirementReferenceEffects`.
-- `go test -run '^TestRequirementRecordReferenceSupersedesPriorActiveRow$' ./internal/review` - PASS - `ok  	github.com/mbell-nzl/fid/internal/review	0.005s` (terminated `exit_code: 0`).
+- `go test -run '^TestRequirementRecordReferenceSupersedesPriorActiveRow$' ./internal/review` - PASS - `ok  	github.com/mbell-nzl/fid/internal/review	0.005s` (terminated `exit_code: 0`)
 - `go test -run '^TestRequirementCommandHasReferenceLeaves$' ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`); all four new leaves were missing and `sync` remained.
-- `go test -run '^TestRequirementCommandHasReferenceLeaves$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.131s` (terminated `exit_code: 0`).
+- `go test -run '^TestRequirementCommandHasReferenceLeaves$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.131s` (terminated `exit_code: 0`)
 - `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); first authority-profile setup returned `invalid activation input`.
 - `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); the expanded baseline action set still returned `invalid activation input`. The closed registry at `internal/workflow/activation.go:832` omits both requirement actions.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^(TestRequirementRecordReferenceSupersedesPriorActiveRow|TestRequirementCommandHasReferenceLeaves)$' ./internal/review ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.041s` (terminated `exit_code: 0`); `internal/review` also reported `1.021s`.
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^(TestRequirementRecordReferenceSupersedesPriorActiveRow|TestRequirementCommandHasReferenceLeaves)$' ./internal/review ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.041s` (terminated `exit_code: 0`)
+
+The focused race command also reported `ok  github.com/mbell-nzl/fid/internal/review 1.021s`.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-12-done.md project-docs/docs/phases/phase-23/tasks/task-12.md` - FAIL - `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`). Three were report punctuation or trailing commentary and are corrected here. The fourth is the task spec's expected-nonzero declaration, whose two-line form does not match the control's one-line grammar at `project-docs/tools/report-lint.sh:104`.
 
 ## Exact quality-gate results
 
@@ -68,6 +71,7 @@ DEC-227 package times for `cmd/fid/integration`, `cmd/fid`, and `internal/workfl
 ## Concerns, technical debt, or notes for the Tech Lead
 
 - The accepted contract requires the two requirement capabilities, while `internal/workflow/activation.go:832` rejects them and is absent from task 12's named scope. The QA plan's earlier scope review listed that file for other Phase 23 capability additions, but not task 12. This is a scope gap, not an owner assignment by this report.
+- Report lint cannot pass against the current task spec: `FAIL expected non-zero declaration has invalid grammar` (first attempt, terminated `exit_code: 4`). Its parser requires the command and expected exit code on one bullet; task 12 puts the expected exit code on the following bullet. The task spec and control are outside this session's write scope.
 - The current checkpoint is intentionally red outside the two focused green tests. In particular, retained sync and link assertions, replay fixtures, and the task-1 fence test need the accepted convergence work. No DEC-227 headroom claim is possible yet.
 
 ## Dependency-budget note
