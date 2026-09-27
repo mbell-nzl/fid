@@ -128,7 +128,7 @@ Envelope revision, expected Issue revision, Actor authority, and active Claim.
 ### Requirement references
 
 ```text
-fid requirement sync|list
+fid requirement record-reference|link|get|list
 ```
 
 This surface stores stable identity, source reference/digest, status, and Issue

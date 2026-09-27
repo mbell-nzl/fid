@@ -12,10 +12,9 @@ import (
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
-	"github.com/mbell-nzl/fid/internal/requirements"
 )
 
-func TestRelationInverseMapMatchesDocumentedV01Set(t *testing.T) {
+func TestRelationInverseMapMatchesIssueOnlySet(t *testing.T) {
 	t.Parallel()
 
 	if got, want := SupportedRelations(), []string{
@@ -26,8 +25,6 @@ func TestRelationInverseMapMatchesDocumentedV01Set(t *testing.T) {
 		"duplicated_by",
 		"supersedes",
 		"superseded_by",
-		"implements",
-		"implemented_by",
 		"caused_by",
 		"causes",
 		"discovered_from",
@@ -44,8 +41,6 @@ func TestRelationInverseMapMatchesDocumentedV01Set(t *testing.T) {
 		"duplicated_by":   "duplicates",
 		"supersedes":      "superseded_by",
 		"superseded_by":   "supersedes",
-		"implements":      "implemented_by",
-		"implemented_by":  "implements",
 		"caused_by":       "causes",
 		"causes":          "caused_by",
 		"discovered_from": "discovered",
@@ -57,7 +52,7 @@ func TestRelationInverseMapMatchesDocumentedV01Set(t *testing.T) {
 	}
 }
 
-func TestAddSupportsInverseDeclaredRelationAndRequirementEndpoints(t *testing.T) {
+func TestAddSupportsInverseDeclaredRelationAndRejectsRequirementEndpoints(t *testing.T) {
 	t.Parallel()
 
 	t.Run("declared inverse relation", func(t *testing.T) {
@@ -100,32 +95,19 @@ func TestAddSupportsInverseDeclaredRelationAndRequirementEndpoints(t *testing.T)
 	t.Run("issue implements requirement", func(t *testing.T) {
 		workspace := newLinksWorkspace(t)
 		issueID := createLinksIssue(t, workspace, "Implements issue")
-		requirementID := syncLinksRequirement(t, workspace, "PRD-LINK-002")
-
-		result, err := Add(AddOptions{
+		before := countLinksJournalEvents(t, workspace)
+		_, err := Add(AddOptions{
 			WorkspaceRoot: workspace,
 			MigrationsDir: testLinksMigrationsDir(t),
 			FromID:        issueID,
 			Relation:      "implements",
-			ToID:          requirementID,
+			ToType:        "requirement",
+			ToID:          "PRD-LINK-002",
 			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		})
-		if err != nil {
-			t.Fatalf("Add(implements) error = %v", err)
-		}
-		if result.Inverse.Relation != "implemented_by" {
-			t.Fatalf("inverse relation = %q, want %q", result.Inverse.Relation, "implemented_by")
-		}
-
-		conn := openLinksDB(t, workspace)
-		defer closeLinksDB(t, conn)
-
-		rows := loadLinkRows(t, conn)
-		if !containsLink(rows, Link{FromType: "issue", FromID: issueID, Relation: "implements", ToType: "requirement", ToID: requirementID}) {
-			t.Fatalf("links rows = %#v, want implements row", rows)
-		}
-		if !containsLink(rows, Link{FromType: "requirement", FromID: requirementID, Relation: "implemented_by", ToType: "issue", ToID: issueID}) {
-			t.Fatalf("links rows = %#v, want implemented_by row", rows)
+		var invalid *InvalidEndpointTypeError
+		if !errors.As(err, &invalid) || countLinksJournalEvents(t, workspace) != before {
+			t.Fatalf("removed requirement endpoint = %v; Event count %d -> %d", err, before, countLinksJournalEvents(t, workspace))
 		}
 	})
 }
@@ -223,9 +205,9 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 						Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 					}, func(t *testing.T, err error) {
 						t.Helper()
-						var target *IncompatibleRelationError
+						var target *UnknownRelationError
 						if !errors.As(err, &target) {
-							t.Fatalf("error = %T, want *IncompatibleRelationError", err)
+							t.Fatalf("error = %T, want *UnknownRelationError", err)
 						}
 					}
 			},
@@ -245,9 +227,9 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 						Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 					}, func(t *testing.T, err error) {
 						t.Helper()
-						var target *EndpointNotFoundError
+						var target *InvalidEndpointTypeError
 						if !errors.As(err, &target) {
-							t.Fatalf("error = %T, want *EndpointNotFoundError", err)
+							t.Fatalf("error = %T, want *InvalidEndpointTypeError", err)
 						}
 					}
 			},
@@ -310,38 +292,6 @@ func createLinksIssue(t *testing.T, workspace, title string) string {
 		t.Fatalf("Create(%q) error = %v", title, err)
 	}
 	return result.ID
-}
-
-func syncLinksRequirement(t *testing.T, workspace, requirementID string) string {
-	t.Helper()
-
-	sourceDoc := filepath.ToSlash(filepath.Join("project-docs", "specs", "links_requirements.md"))
-	path := filepath.Join(workspace, filepath.FromSlash(sourceDoc))
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		t.Fatalf("MkdirAll(%q) error = %v", filepath.Dir(path), err)
-	}
-	body := `# Requirements
-
-## 3.8 Cross-Entity Links
-
-| ID | Requirement | Priority | Notes |
-|---|---|---|---|
-| PRD-LINK-002 | The system shall support links from issues to requirements. | Must | v0.1 |
-`
-	if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
-		t.Fatalf("WriteFile(%q) error = %v", path, err)
-	}
-
-	if _, err := requirements.Sync(requirements.SyncOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
-		SourceDoc:     sourceDoc,
-		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
-		RequirementID: requirementID,
-	}); err != nil {
-		t.Fatalf("Sync(%q) error = %v", requirementID, err)
-	}
-	return requirementID
 }
 
 func countLinksJournalEvents(t *testing.T, workspace string) int {

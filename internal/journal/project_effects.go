@@ -13,6 +13,14 @@ func applyEventEffects(tx *sql.Tx, input ProjectionInput, executor fiddb.Project
 	if err := validateCurrentEvent(tx, input.Event); err != nil {
 		return err
 	}
+	if input.Event.EventType == "requirement.referenced" {
+		// Supersede the old row before inserting its successor so the unique
+		// active-reference index holds throughout the transaction. SQLite checks
+		// the old row's successor foreign key when the transaction commits.
+		if _, err := tx.Exec(`PRAGMA defer_foreign_keys = ON`); err != nil {
+			return fmt.Errorf("defer requirement reference foreign key: %w", err)
+		}
+	}
 	for _, effect := range input.Event.Effects {
 		if err := applyEffect(tx, input, effect, executor); err != nil {
 			return err

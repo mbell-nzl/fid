@@ -11,7 +11,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
-func TestProjectEventFenceRejectsEveryUnavailablePhase23EventWithoutProjectionChange(t *testing.T) {
+func TestProjectEventFenceRejectsMalformedPhase23EventsWithoutProjectionChange(t *testing.T) {
 	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
@@ -23,7 +23,11 @@ func TestProjectEventFenceRejectsEveryUnavailablePhase23EventWithoutProjectionCh
 	}
 	defer closeProjectDB(t, conn)
 
-	for eventType := range unavailableJudgmentEvents {
+	for _, eventType := range []string{
+		"review.recorded", "finding.addressed", "concern.recorded", "concern.disposed",
+		"deviation.recorded", "decision.referenced", "human-outcome.recorded",
+		"requirement.referenced", "requirement.linked", "unimplemented.phase23-event",
+	} {
 		t.Run(eventType, func(t *testing.T) {
 			before := fencedProjectionState(t, conn)
 			event := Event{
@@ -31,11 +35,11 @@ func TestProjectEventFenceRejectsEveryUnavailablePhase23EventWithoutProjectionCh
 				EventSchema: EventSchemaV2,
 				EventType:   eventType,
 				OccurredAt:  time.Date(2026, time.September, 20, 0, 0, 0, 0, time.UTC),
+				Effects:     []Effect{{Op: "insert", Table: "labels", PK: map[string]any{"name": "fence"}, Values: map[string]any{"colour": "#000000"}}},
 			}
 			err := ProjectEvent(conn, ProjectionInput{Event: event, EventHash: "sha256:fence"})
-			want := `project event "` + event.EventID + `": Phase 23 Event "` + eventType + `" is unavailable`
-			if err == nil || err.Error() != want {
-				t.Fatalf("ProjectEvent() error = %v, want %q", err, want)
+			if err == nil {
+				t.Fatal("malformed Phase 23 Event applied")
 			}
 			if after := fencedProjectionState(t, conn); after != before {
 				t.Fatalf("fenced event changed projection: before %q, after %q", before, after)
@@ -44,38 +48,17 @@ func TestProjectEventFenceRejectsEveryUnavailablePhase23EventWithoutProjectionCh
 	}
 }
 
-// TestConcernDeviationFenceConvergencePreservesEveryRemainingEvent retains
-// VAL-003's convergence boundary:
-// implemented judgment Events take the strict current-Event path while every remaining
-// unavailable Phase 23 Event stays covered by the fence loop above.
+// The progressive fence is now the strict current-Event registry. Every
+// implemented family remains registered, including the final requirement pair.
 func TestConcernDeviationFenceConvergencePreservesEveryRemainingEvent(t *testing.T) {
 	t.Parallel()
-	if unavailableJudgmentEvents["review.recorded"] {
-		t.Fatal("review.recorded remains fenced after Task 4 implemented its strict event path")
-	}
-	if unavailableJudgmentEvents["finding.addressed"] {
-		t.Fatal("finding.addressed remains fenced after Task 5 implemented its strict event path")
-	}
-	for _, eventType := range []string{"concern.recorded", "concern.disposed", "deviation.recorded"} {
-		if unavailableJudgmentEvents[eventType] {
-			t.Fatalf("%s remains fenced after Task 8 implemented its strict event path", eventType)
-		}
-	}
-	if unavailableJudgmentEvents["decision.referenced"] {
-		t.Fatal("decision.referenced remains fenced after Task 9 implemented its strict event path")
-	}
-	if unavailableJudgmentEvents["human-outcome.recorded"] {
-		t.Fatal("human-outcome.recorded remains fenced after Task 10 implemented its strict event path")
-	}
-	want := []string{
-		"requirement.linked", "requirement.referenced",
-	}
-	if len(unavailableJudgmentEvents) != len(want) {
-		t.Fatalf("remaining unavailable Event count = %d, want %d", len(unavailableJudgmentEvents), len(want))
-	}
-	for _, eventType := range want {
-		if !unavailableJudgmentEvents[eventType] {
-			t.Errorf("remaining Event %q lost its progressive fence", eventType)
+	for _, eventType := range []string{
+		"review.recorded", "finding.addressed", "concern.recorded", "concern.disposed",
+		"deviation.recorded", "decision.referenced", "human-outcome.recorded",
+		"requirement.referenced", "requirement.linked",
+	} {
+		if _, ok := currentEventRules[eventType]; !ok {
+			t.Errorf("Phase 23 Event %q lost its strict current-Event rule", eventType)
 		}
 	}
 }

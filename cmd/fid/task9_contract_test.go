@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -59,18 +57,10 @@ func TestTask9RetainedInventorySurface(t *testing.T) {
 			want: `"idempotency_key":"task-9-link"`,
 		},
 		{
-			name: "requirement sync accepts standalone actor and idempotency",
-			args: func() []string {
-				path := filepath.Join(workspace, "project-docs", "specs", "task-9.md")
-				if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-					t.Fatalf("MkdirAll(%q): %v", path, err)
-				}
-				if err := os.WriteFile(path, []byte("# Task 9\n\n| ID | Requirement | Priority | Notes |\n|---|---|---|---|\n| PRD-TASK-009 | Retained inventory attribution is durable. | Must | task 9 |\n"), 0o644); err != nil {
-					t.Fatalf("WriteFile(%q): %v", path, err)
-				}
-				return []string{"--project", workspace, "--json", "requirement", "sync", "--source-doc", "project-docs/specs/task-9.md", "--actor", "agent:task-9", "--idempotency-key", "task-9-requirement"}
-			}(),
-			want: `"idempotency_key":"task-9-requirement"`,
+			name:    "requirement sync is removed",
+			args:    []string{"--project", workspace, "--json", "requirement", "sync"},
+			want:    "unknown flag: --idempotency-key",
+			wantErr: true,
 		},
 		{
 			name:    "AC verification is fail closed",

@@ -315,10 +315,13 @@ func assertClosureLinkReadback(t *testing.T, binary, workspace, mainIssueID, pee
 	t.Helper()
 
 	mainLinks, _ := closureRunFID(t, binary, workspace, "--json", "link", "list", mainIssueID, "--type", "issue")
-	for _, want := range []string{"PRD-LINK-002", peerIssueID, "implements", "discovered_from"} {
+	for _, want := range []string{peerIssueID, "discovered_from"} {
 		if !strings.Contains(mainLinks, want) {
 			t.Fatalf("main link list = %q, want %q", mainLinks, want)
 		}
+	}
+	if strings.Contains(mainLinks, "PRD-LINK-002") || strings.Contains(mainLinks, "implements") {
+		t.Fatalf("removed requirement link appears in list: %q", mainLinks)
 	}
 	peerLinks, _ := closureRunFID(t, binary, workspace, "--json", "link", "list", peerIssueID, "--type", "issue")
 	if !strings.Contains(peerLinks, mainIssueID) || !strings.Contains(peerLinks, "discovered_from") {

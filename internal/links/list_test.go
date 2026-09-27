@@ -14,7 +14,6 @@ func TestListReturnsOutgoingAndIncomingLinksWithResolvedTitlesInStableOrder(t *t
 	primaryIssueID := createLinksIssue(t, workspace, "Primary issue")
 	outgoingIssueID := createLinksIssue(t, workspace, "Schema migration runner")
 	incomingIssueID := createLinksIssue(t, workspace, "Add index on concerns(issue_id, status)")
-	requirementID := syncLinksRequirement(t, workspace, "PRD-LINK-002")
 
 	if _, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
@@ -26,15 +25,17 @@ func TestListReturnsOutgoingAndIncomingLinksWithResolvedTitlesInStableOrder(t *t
 	}); err != nil {
 		t.Fatalf("seed Add(blocks) error = %v", err)
 	}
+	beforeRejected := countLinksJournalEvents(t, workspace)
 	if _, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testLinksMigrationsDir(t),
 		FromID:        primaryIssueID,
 		Relation:      "implements",
-		ToID:          requirementID,
+		ToType:        "requirement",
+		ToID:          "PRD-LINK-002",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
-	}); err != nil {
-		t.Fatalf("seed Add(implements) error = %v", err)
+	}); err == nil || countLinksJournalEvents(t, workspace) != beforeRejected {
+		t.Fatalf("removed requirement link changed Event state: %v", err)
 	}
 	if _, err := Add(AddOptions{
 		WorkspaceRoot: workspace,
@@ -63,13 +64,6 @@ func TestListReturnsOutgoingAndIncomingLinksWithResolvedTitlesInStableOrder(t *t
 			EntityType:  "issue",
 			EntityID:    outgoingIssueID,
 			EntityTitle: stringPointer("Schema migration runner"),
-		},
-		{
-			Direction:   "outgoing",
-			Relation:    "implements",
-			EntityType:  "requirement",
-			EntityID:    requirementID,
-			EntityTitle: stringPointer("The system shall support links from issues to requirements."),
 		},
 		{
 			Direction:   "incoming",

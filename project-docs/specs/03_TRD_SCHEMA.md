@@ -81,9 +81,9 @@ indexes, checks, and migration numbers are accepted with the owning slice.
 | `acceptance_criteria` | ID, Issue, ordinal, text, created Event | Unique ordinal per Issue. No verification role columns. |
 | `labels` | name, colour, description | Stable project label identity. |
 | `issue_labels` | Issue, label | Composite primary key. |
-| `links` | from type/ID, relation, to type/ID, created Event | Endpoints use a closed supported type registry; dedicated lifecycle fields are not duplicated. |
+| `links` | from type/ID, relation, to type/ID, created Event | Both endpoints are Issues. The closed relation registry excludes `implements` and `implemented_by`; dedicated lifecycle fields are not duplicated. |
 | `requirement_refs` | stable requirement ID, source reference/digest, status | Project files remain canonical. |
-| `requirement_issue_links` | requirement ID, Issue ID, relation | Traceability only. |
+| `requirement_issue_links` | requirement ID, Issue ID, relation | Traceability only; relation is exactly `implements`, `verifies`, or `relates-to`. |
 
 ### 3.3 Issue workflow registry
 

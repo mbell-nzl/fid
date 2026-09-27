@@ -201,7 +201,7 @@ func resolveEndpointType(conn *sql.DB, suppliedType, endpointID string) (string,
 		return suppliedType, nil
 	}
 	matches := []string{}
-	for _, candidate := range []string{"issue", "requirement"} {
+	for _, candidate := range []string{"issue"} {
 		exists, err := endpointExists(conn, candidate, endpointID)
 		if err != nil {
 			return "", err
@@ -288,8 +288,6 @@ func endpointExists(conn *sql.DB, endpointType, endpointID string) (bool, error)
 	switch endpointType {
 	case "issue":
 		query = `SELECT 1 FROM issues WHERE id = ? LIMIT 1`
-	case "requirement":
-		query = `SELECT 1 FROM requirements WHERE id = ? LIMIT 1`
 	default:
 		return false, fmt.Errorf("link add: unsupported endpoint type %q", endpointType)
 	}

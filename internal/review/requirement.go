@@ -10,7 +10,6 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 )
 
 type RequirementReferenceRequest struct {
@@ -58,9 +57,6 @@ func RecordRequirementReference(options JudgmentOptions, request RequirementRefe
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-		if !contains(actor.Capabilities, "requirement.record-reference") {
-			return &policy.EnvelopeAuthorityDeniedError{ActorID: options.ActorID, Action: "requirement.record-reference", Capability: "requirement.record-reference"}
-		}
 		digest, err := judgmentDigest("requirement.record-reference", projectID, options.ActorID, request)
 		if err != nil {
 			return err
@@ -128,9 +124,6 @@ func LinkRequirement(options JudgmentOptions, request RequirementLinkRequest) (R
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-		if !contains(actor.Capabilities, "requirement.link") {
-			return &policy.EnvelopeAuthorityDeniedError{ActorID: options.ActorID, Action: "requirement.link", Capability: "requirement.link"}
-		}
 		digest, err := judgmentDigest("requirement.link", projectID, options.ActorID, request)
 		if err != nil {
 			return err

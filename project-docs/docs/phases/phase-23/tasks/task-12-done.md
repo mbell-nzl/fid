@@ -2,79 +2,108 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: session-continuation
-- Condition: The real-process requirement journey is rejected while creating its Activation authority profile. The closed capability registry at `internal/workflow/activation.go:832` omits `requirement.record-reference` and `requirement.link`. That file is outside task 12's named write scope, and the task explicitly routes an unowned closed-registry rejection to Runner triage.
-- Recovery attempts: 1
-- Next action: Runner triages the registry scope gap and supplies authority for a same-task continuation. Continue task 12, converge retained tests and fixtures, complete the V1 removals and documentation, then run every exact gate in order.
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 2
+- Next action: None.
 - Human attention required: no
 
 ## Summary of what was implemented
 
-- Added a reference writer with Source digest verification under the journal write lock, an effect plan that supersedes the prior active row, a link writer, and read paths. This is partial: the real-process journey has not passed.
-- Registered the two requirement result shapes, Source JSON column, projection result branches, and supersession update fields in the current Event validators; removed the two remaining judgment fence keys and the empty guard. Removed the V1 sync Event rules from the current and archive catalogs.
-- Replaced the `requirement sync` command tree with `record-reference`, `link`, `get`, and `list`. The V1 package and its retained tests remain pending convergence.
+- Replaced V1 markdown requirement authoring with digest-verified Requirement References and requirement-to-Issue links. A trusted finalized-Activation Actor can record and link without either removed capability name or an Envelope grant (DEC-260). Supersession retains the old row, points it to the successor, and keeps one active row.
+- Removed the V1 `internal/requirements` parser and writer, `requirement sync` leaf, and `requirement.synced` rules from both Event catalogs. The `links` adapter now admits Issue endpoints only and excludes `implements` and `implemented_by`; traceability uses `requirement_issue_links`.
+- Converged retained command, journal, and real-process fixtures to the accepted rejection and no-state-change behavior. The requirement journey observes digest mismatch, supersession, all three stored relations, and both unknown-link rejections.
 
 ## Files created or modified
 
-- `internal/review/requirement.go`, `internal/review/requirement_test.go`.
-- `cmd/fid/requirement.go`, `cmd/fid/requirement_surface_test.go`, `cmd/fid/integration/p23_requirement_reference_test.go`.
-- `internal/journal/current_event_catalog.go`, `current_event_json.go`, `current_event_result_projection.go`, `current_event_updates.go`, `current_event_value_catalog.go`, `project_effects.go`.
-- `internal/export/archive_semantics_catalog.go`.
+- `internal/review/requirement.go`; `internal/journal/project_effects.go`, `project_effects_test.go`, `current_event_catalog.go`; `internal/export/archive_semantics_catalog.go`.
+- `internal/links/add.go`, `list.go`, `registry.go`, `errors.go` and their matching `*_test.go` files.
+- `cmd/fid/link_response.go`, `link_test.go`, `link_limit_test.go`, `e2e_v01d_link_test.go`, `requirement_test.go`, `contract_surface_test.go`, `task9_contract_test.go`; `cmd/fid/integration/p23_requirement_reference_test.go`, `e2e_v01_closure_test.go`, `e2e_v01_closure_helpers_test.go`.
+- Deleted `internal/requirements/` with its V1 parser, sync writer, and package tests. The new reference journey and converged retained tests cover the accepted replacement behavior.
 - `project-docs/docs/phases/phase-23/tasks/task-12-done.md`.
 
 ## Documentation updated
 
-- This checkpoint report only. The task's two named specs remain to be updated in the continuation.
+- `project-docs/specs/03_TRD_SCHEMA.md` section 3.2 now states Issue-only `links` endpoints and the three `requirement_issue_links` relations.
+- `project-docs/specs/06_DESIGN_PLAN_CLI.md` section 3 names `requirement record-reference|link|get|list`.
 
 ## Validation Contract Coverage
 
-- VAL-003: BLOCKED - The fence keys and guard were removed from `internal/journal/project_effects.go`; the retained parity test and full replay proof remain to be converged.
-- VAL-051: BLOCKED - `TestRequirementRecordReferenceSupersedesPriorActiveRow` passes for the effect plan, but `TestP23RequirementReferenceAndLinkRealProcess` fails during Activation setup before the writer can run. Digest rejection, readable supersession, and exactly one active row remain unverified.
-- VAL-052: BLOCKED - The link writer and typed relation set are present; the real-process journey stops before its first reference, so accepted and rejected link cases remain unverified.
-- VAL-053: BLOCKED - The sync leaf was removed from `cmd/fid/requirement.go` and its Event rules from both catalogs. `internal/requirements` and retained corpus fixtures still require removal; the declared absence search has not run.
-- VAL-054: BLOCKED - The `links` endpoint registry and retained tests have not yet been converged to Issue-only endpoints.
+- VAL-003: PASS - `TestProjectEventFenceRejectsMalformedPhase23EventsWithoutProjectionChange` at `internal/journal/project_effects_test.go:14` rejects each of the nine Phase 23 families plus an unknown family and compares projection state before/after; `TestConcernDeviationFenceConvergencePreservesEveryRemainingEvent` at `:53` asserts all nine strict current-Event rules remain registered. The focused journal command passed.
+- VAL-051: PASS - `TestP23RequirementReferenceAndLinkRealProcess` at `cmd/fid/integration/p23_requirement_reference_test.go:16` records twice through the real binary; `:40` checks `source-digest-mismatch` with unchanged Event count; `:45` reads the old row and successor pointer; `:55` reads exactly one active row with the new ID. The focused journey and tagged gate passed.
+- VAL-052: PASS - The same real-process test at `cmd/fid/integration/p23_requirement_reference_test.go:67` records `implements`, `verifies`, and `relates-to`; `:83` reads back all three stored values; `:106` rejects an unknown requirement and relation with no new Event.
+- VAL-053: PASS - `TestRequirementCommandHasReferenceLeaves` at `cmd/fid/requirement_surface_test.go:5` asserts the `sync` leaf absent; `TestV01ClosureJourneyAndRebuildParity` at `cmd/fid/integration/e2e_v01_closure_test.go:14` runs the removed leaf through the built binary and checks unchanged journal bytes; `internal/requirements/` is deleted; `internal/journal/current_event_catalog.go:34` and `internal/export/archive_semantics_catalog.go:46` contain only the replacement rules. The exact declared source search returned `exit 1 (no output)` (expected and terminated `exit_code: 1`). The V1 table column remains until task 15 as the contract states.
+- VAL-054: PASS - `TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend` at `cmd/fid/link_test.go:119` checks endpoint and removed-relation rejection without rows or Events; `TestV01ClosureJourneyAndRebuildParity` at `cmd/fid/integration/e2e_v01_closure_test.go:14` checks a real-process requirement-endpoint rejection and a retained Issue link with rebuild parity; the requirement journey at `cmd/fid/integration/p23_requirement_reference_test.go:111` checks both removed relation names through the binary with unchanged Event counts.
+- VAL-079 (task-12 report part): PASS - Exact ordinary gate reported `cmd/fid` 189.843s (first passing attempt 285.237s) and `internal/workflow` 100.258s on the first passing attempt, then `(cached)` on the final tree. Exact tagged integration reported 208.862s. All observed times are below the ordinary 600s and tagged 900s budgets; neither gate timed out.
 
 ## Tests run
 
-Working directory for all commands: `/home/mark/projects/fid`. Each result below is from the command's observed termination.
+Working directory for every command below: `/home/mark/projects/fid`. Each termination is copied from that command's result.
 
-- `go test -run '^TestRequirementRecordReferenceSupersedesPriorActiveRow$' ./internal/review` - FAIL - `FAIL` (terminated `exit_code: 1`); compiler detail: `undefined: requirementReferenceEffects`.
-- `go test -run '^TestRequirementRecordReferenceSupersedesPriorActiveRow$' ./internal/review` - PASS - `ok  	github.com/mbell-nzl/fid/internal/review	0.005s` (terminated `exit_code: 0`)
-- `go test -run '^TestRequirementCommandHasReferenceLeaves$' ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`); all four new leaves were missing and `sync` remained.
-- `go test -run '^TestRequirementCommandHasReferenceLeaves$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.131s` (terminated `exit_code: 0`)
-- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); first authority-profile setup returned `invalid activation input`.
-- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); the expanded baseline action set still returned `invalid activation input`. The closed registry at `internal/workflow/activation.go:832` omits both requirement actions.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^(TestRequirementRecordReferenceSupersedesPriorActiveRow|TestRequirementCommandHasReferenceLeaves)$' ./internal/review ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.041s` (terminated `exit_code: 0`)
-
-The focused race command also reported `ok  github.com/mbell-nzl/fid/internal/review 1.021s`.
-- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-12-done.md project-docs/docs/phases/phase-23/tasks/task-12.md` - FAIL - `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`). Three were report punctuation or trailing commentary and are corrected here. The fourth is the task spec's expected-nonzero declaration, whose two-line form does not match the control's one-line grammar at `project-docs/tools/report-lint.sh:104`.
-- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-12-done.md project-docs/docs/phases/phase-23/tasks/task-12.md` - FAIL - `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`). The report evidence format passed; the remaining failure is the task-spec declaration grammar.
+- `go test -run '^TestRequirementRecordReferenceSupersedesPriorActiveRow$' ./internal/review` - FAIL - `FAIL` (terminated `exit_code: 1`); earlier compiler detail: `undefined: requirementReferenceEffects`.
+- `go test -run '^TestRequirementRecordReferenceSupersedesPriorActiveRow$' ./internal/review` - PASS - `ok  	github.com/mbell-nzl/fid/internal/review	0.005s` (terminated `exit_code: 0`).
+- `go test -run '^TestRequirementCommandHasReferenceLeaves$' ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`); earlier four leaves were missing and `sync` remained.
+- `go test -run '^TestRequirementCommandHasReferenceLeaves$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.131s` (terminated `exit_code: 0`).
+- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); earlier Activation profile returned `invalid activation input`.
+- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); earlier expanded profile still returned `invalid activation input` because both requirement names were absent from the closed registry.
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^(TestRequirementRecordReferenceSupersedesPriorActiveRow|TestRequirementCommandHasReferenceLeaves)$' ./internal/review ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.041s` (terminated `exit_code: 0`); earlier output also reported `internal/review 1.021s`.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-12-done.md project-docs/docs/phases/phase-23/tasks/task-12.md` - FAIL - `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`); earlier report punctuation plus the task-spec grammar mismatch.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-12-done.md project-docs/docs/phases/phase-23/tasks/task-12.md` - FAIL - `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`); the remaining task-spec grammar mismatch was resolved by DEC-260 in the spec.
+- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); this session's red test reached `authority-denied` without either requirement capability.
+- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); after removing the capability checks, supersession reached `missing or reordered Effect stage 1`.
+- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); after correcting stage order, the supersession pointer hit `FOREIGN KEY constraint failed (787)`.
+- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.668s` (terminated `exit_code: 0`); the final expanded journey rerun also passed with `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.539s` (terminated `exit_code: 0`).
+- `go test -run '^TestRegistryHelpersCoverEndpointAndCompatibilityRules$' ./internal/links` - FAIL - `FAIL` (terminated `exit_code: 1`); old endpoint registry admitted Requirement.
+- `go test -run '^TestRegistryHelpersCoverEndpointAndCompatibilityRules$' ./internal/links` - PASS - `ok  	github.com/mbell-nzl/fid/internal/links	0.005s` (terminated `exit_code: 0`).
+- `go test -tags integration -run '^TestV01ClosureJourneyAndRebuildParity$' ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); the first converged fixture invoked `sync` without its removed flags and the parent command returned success/help.
+- `go test -tags integration -run '^TestV01ClosureJourneyAndRebuildParity$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.427s` (terminated `exit_code: 0`).
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/review ./internal/journal ./internal/links ./internal/export ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	221.383s` (terminated `exit_code: 0`).
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP23RequirementReferenceAndLinkRealProcess$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.300s` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
 
-The implementation is unfinished and the closed-registry rejection prevents the required real-process acceptance journey. No exact task gate was run or claimed as a pass in this checkpoint. All seven commands remain mandatory for the continuation, in this order:
+Earlier checkpoint: the following seven BLOCKED rows were retained as failed-attempt history. None had a termination result in that checkpoint.
 
 - `gofmt -l cmd internal` - BLOCKED - not executed; task incomplete and scope gap pending Runner triage (no termination observed).
 - `golangci-lint run ./...` - BLOCKED - not executed; task incomplete and scope gap pending Runner triage (no termination observed).
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - BLOCKED - not executed; task incomplete and scope gap pending Runner triage (no termination observed).
-- `go tool cover -func=coverage.out` - BLOCKED - not executed; no task coverage profile exists (no termination observed).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - BLOCKED - not executed; the focused real-process journey fails during Activation setup (no termination observed).
+- `go tool cover -func=coverage.out` - BLOCKED - not executed; no task coverage profile existed (no termination observed).
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - BLOCKED - not executed; focused journey rejected at Activation (no termination observed).
 - `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - BLOCKED - not executed; task incomplete and scope gap pending Runner triage (no termination observed).
-- `rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal` - BLOCKED - not executed; `internal/requirements` still contains the V1 writer, so the expected exit-1 absence proof cannot yet pass (no termination observed).
+- `rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal` - BLOCKED - not executed; V1 writer still existed (no termination observed).
 
-DEC-227 package times for `cmd/fid/integration`, `cmd/fid`, and `internal/workflow` are not measured by this checkpoint. The continuation must run the exact DEC-259 race commands and enforce the 900-second tagged and 600-second ordinary budgets.
+First exact attempt in this continuation:
+
+- `gofmt -l cmd internal` - FAIL - `internal/journal/project_effects_test.go` (terminated `exit_code: 0`); gofmt reports unformatted files with a successful process exit.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	100.258s	coverage: 64.6% of statements` (terminated `exit_code: 0`); `cmd/fid 285.237s`.
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.5%` (terminated `exit_code: 0`).
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`); `TestV01ClosureJourneyAndRebuildParity` still called removed `requirement sync`.
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	24.893s` (terminated `exit_code: 0`).
+- `rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`).
+
+Final exact attempt on the repaired tree, in task-spec order:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 64.6% of statements` (terminated `exit_code: 0`); `cmd/fid 189.843s`.
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.5%` (terminated `exit_code: 0`).
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	208.862s` (terminated `exit_code: 0`).
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	24.913s` (terminated `exit_code: 0`); benchmark output `BenchmarkRebuildWorkspace100kEvents-6   	       1	22257904775 ns/op	     22258 ms/rebuild	2296246672 B/op	34581693 allocs/op`.
+- `rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`).
 
 ## Deviations from spec
 
-- The declared real-process test exposed an unowned closed capability registry. No registry or control was changed. The task remains incomplete and requires Runner triage before its exact gate.
-- Report-lint attempt 1 ended `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`). Three failures came from report-line punctuation and trailing commentary; the report was corrected and committed. The byte-identical command then ended `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`), retaining only the task-spec grammar mismatch. No task spec or control definition was changed.
+- DEC-260 resolved ESC-23-006: requirement writes use a trusted Actor from finalized Kit Activation without an Actor-profile capability or Envelope grant. The closed thirty-name registry and both allowlist copies remained unchanged. DEC-260 also corrected the task spec's one-line expected-nonzero declaration; this continuation changed neither the task spec nor `report-lint.sh`.
+- Earlier report-lint attempt 1 ended `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`); report punctuation was corrected. Attempt 2 ended `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`), caused by the task-spec grammar that DEC-260 corrected. Both failures remain above.
+- The first exact tagged gate ended `FAIL` (terminated `exit_code: 1`): retained V1 closure fixture called removed `requirement sync`. The fixture was converged within task 12 scope to require rejection and no journal change; its focused rerun and the byte-identical tagged gate then passed. The first format check printed `internal/journal/project_effects_test.go` (terminated `exit_code: 0`); `gofmt -w` corrected it, and the byte-identical check returned no output.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- The accepted contract requires the two requirement capabilities, while `internal/workflow/activation.go:832` rejects them and is absent from task 12's named scope. The QA plan's earlier scope review listed that file for other Phase 23 capability additions, but not task 12. This is a scope gap, not an owner assignment by this report.
-- Report lint cannot pass against the current task spec: `FAIL expected non-zero declaration has invalid grammar` (first attempt, terminated `exit_code: 4`). Its parser requires the command and expected exit code on one bullet; task 12 puts the expected exit code on the following bullet. The task spec and control are outside this session's write scope.
-- The current checkpoint is intentionally red outside the two focused green tests. In particular, retained sync and link assertions, replay fixtures, and the task-1 fence test need the accepted convergence work. No DEC-227 headroom claim is possible yet.
+- Provenance checked against introducing commits and the accepted task pack: the task-12 fixture was introduced by `0e4bb33`; its only capability-related assertion was the Actor-profile action list, now removed. The displaced V1 requirement tests originated in `e236591`; retained `links` tests trace to `0abe93e` and `e30e40e`; the Phase 23 fence parity test originated in `3c0b520`. Convergence follows inventory rows 21-22 and task 12's VAL-003 instruction. No historical task number was used as ownership authority.
+- VAL-079 headroom: the final tagged 208.862s is below 80% of 900s; ordinary `cmd/fid` 189.843s and earlier measured `internal/workflow` 100.258s are below 80% of 600s. No headroom warning is triggered.
 
 ## Dependency-budget note
 
@@ -82,8 +111,8 @@ DEC-227 package times for `cmd/fid/integration`, `cmd/fid`, and `internal/workfl
 
 ## Commit hash
 
-- `0e4bb33cbe32fa9d4d83955b3121a4135edf78cd`
+- Pending commit
 
 ## Commit subject
 
-- `feat(requirement): checkpoint task 12 reference convergence`
+- Pending commit
