@@ -138,8 +138,8 @@ DEC-261 MF-2 exact attempt on the final tree, in task-spec order:
 
 ## Commit hash
 
-- Pending commit
+- `07e0109c27820c39f531194b83d124cc6f2d2b62`
 
 ## Commit subject
 
-- Pending commit
+- `test(requirement): reject removed event in portable fake`
