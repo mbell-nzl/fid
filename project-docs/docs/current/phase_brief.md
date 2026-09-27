@@ -13,19 +13,14 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 
 ## Status
 
-**Tasks 1-11 initially complete; review-7 repairs are in progress.**
-ESC-23-004 is partly resolved. DEC-249 rules that an Obligation blocks only
-its declared guarded actions, and DEC-250 fixes the judgment-Condition
-qualifying facts. DEC-251 (Human, Option B) needs no grant for Human Outcomes.
-DEC-255/256 release four ordered repairs: task 6 (MF-4 + I-5), task 2
-(BC-1), task 10 (MF-5 + I-6), task 11 (BC-3). **The DEC-256 RUN-RESUME was
-accepted on 2026-09-26 at 17:38.** The ledger records tasks 6, 2, and 10's
-repairs complete and the active task-11 TASK-RECOVERY at 19:19. On 2026-09-27,
-standalone sequence validation returns `REPAIR_PENDING`; there is no active
-STOP. Resume task 11 with a normal session RUN-RESUME (STOP-only fields `N/A`,
-`Repair owners` omitted), preserving the existing recovery. Implementation
-commit `466745f` exists; its recovery verification/report remain outstanding.
-Then `checkpoint-after-task-11-3.md`. Branch `phase-23`.
+**Tasks 1-11 complete; task 12 released.** ESC-23-004 and ESC-23-005 are
+resolved (DEC-249..259). The four DEC-256 repairs (tasks 6, 2, 10, 11) are
+complete, and task 11 closed under DEC-258 at `3dff457`. The fresh independent
+`qa/checkpoint-after-task-11-3.md` (commit `8cd44ae`, reviewed HEAD `92ea1e5`)
+returned **PASS: Must-fix 0, Improvement 1, blocker candidates 0**. This
+satisfies the QA-plan section 8 hold. Improvement I-7 (label the stale
+"over budget" paragraph in `task-11-done.md` historical) is **deferred to phase
+wrap-up**. It is wording only, with no dispatch and no VAL. Branch `phase-23`.
 
 Eight QA passes returned twenty-eight Must-fix revisions plus five the Tech Lead
 found while dispositioning them; **all are applied**. Six Human contract
@@ -38,11 +33,10 @@ encoding (VAL-080) and added VAL-081/082. DEC-240 split VAL-082 into
 VAL-082/083/084. The contract now has **84 rows** (`qa-plan.md` sections
 19-21).
 
-Next action: resume from the TRG-23-005 STOP under DEC-258
-(`qa/resume-after-esc-23-005.md`), record task 11 complete, then run the fresh
-checkpoint re-review. Task 12 dispatches only after it returns PASS. DEC-258
-satisfies DEC-254 Part 2. DEC-259's gate flag clears the headroom warning
-(`cmd/fid` 299.6 s); tasks 12-18 use the amended commands.
+Next action: the Runner dispatches task 12 (requirement references), then tasks
+13-18 in order, using the DEC-259 amended race-gate commands in each task spec.
+Mid-phase review window 10-12 follows task 12. DEC-254 Part 2 is already
+satisfied (DEC-258), so task 13 must not repeat it.
 
 ## Operating Mode
 
@@ -61,7 +55,7 @@ amendments inline with their DEC and approval state.
 ## Task Index
 
 Full specs and reports: `../phases/phase-23/tasks/`. Tasks 1-11 complete; 12-18
-pending, sequential. Task 12 also needs the task-11 checkpoint to PASS.
+pending, sequential. The task-11 checkpoint passed (`checkpoint-after-task-11-3.md`).
 
 1 schema baseline; 2 typed multi-Obligation Envelope; 3 review Claim mode and
 Run; 4 Review Records and independence; 5 Finding dispositions; 6 review
@@ -79,7 +73,7 @@ task. Validators are QA Lead or QA Reviewer except VAL-070..073, the Human rows,
 whose fixtures come from task 14. QA plan section 21 confirms DEC-237/240 READY
 in commit `74c83b7`. DEC-242 adds executable inapplicability evidence for Task 5;
 window 4-6 reviews it. Mid-phase `review-M.md` for windows 1-3, 4-6,
-7-9, 10-12, 13-15, 16-18; `checkpoint-after-task-11.md` must PASS before task 12.
+7-9, 10-12, 13-15, 16-18; the task-11 checkpoint passed at re-review 3.
 
 ## Active Constraints
 

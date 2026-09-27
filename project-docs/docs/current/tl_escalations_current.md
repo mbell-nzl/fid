@@ -2,10 +2,9 @@
 
 ## Open escalations
 
-None open. ESC-23-005 is resolved (below). Current state: STOPPED on
-TRG-23-005; the Runner resumes under DEC-258 using
-[the handoff](../phases/phase-23/qa/resume-after-esc-23-005.md), closes task 11,
-then runs `checkpoint-after-task-11-3.md`. Task 12 stays held until it PASSes.
+None open. ESC-23-004 and ESC-23-005 are resolved (below). The fresh
+`checkpoint-after-task-11-3.md` returned PASS with 0 Must-fix (`8cd44ae`), so
+task 12 is released.
 
 ## Recently resolved
 
