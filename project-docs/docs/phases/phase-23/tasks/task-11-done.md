@@ -2,11 +2,11 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: gate-repair
-- Condition: The exact ordinary race/coverage command exited 0 twice but `cmd/fid` took 686.386s and then 630.927s, both above the accepted 600s package budget. A fresh same-session run at task 11's pre-repair parent also breached at 614.601s. No task-11 causal speed repair is established; this is a scope gap for the still-failed budget gate.
-- Recovery attempts: 3
-- Next action: The Phase Runner obtains bounded Tech Lead disposition of the `cmd/fid` speed scope gap while retaining all three budget failures. A same-task continuation may repair only a demonstrated task-11 cause under its accepted file scope and must rerun the unchanged five-command gate before closure.
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 4
+- Next action: None.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -15,15 +15,19 @@ The original task-11 commit `c5bf0f89c69c57003ece353ef005a7596dd266e4` completed
 
 The review-7 BC-3 red observation remains preserved at `qa/checkpoint-after-task-11-2.md:744-755`: a matching approved Outcome resolved the readiness Stop but left the matching `operator-stop` open, and manual resolution rejected `EVT-20260925-000026` with `resolution-invalid` and Event count `26->26`. The current focused built-binary tests are green (Tests run). This report replaces the earlier COMPLETE claim, whose pre-repair implementation was `c5bf0f8` and whose recorded Go gates appended `-count=1`.
 
+ESC-23-005 closure (DEC-258, Human-delegated repair above role boundaries): the budget breach was not a task-11 cause. It came from serial test structure plus measurement spread (`qa/esc-23-005-repair.md`). Repair commit `3dff4574a71438900100449e36d7044969ba9162` adds `t.Parallel()` to existing serial tests and enables `paralleltest`, and changes no assertion, command, or budget. The five exact commands then passed on that commit, with `cmd/fid` at 531.533s. The earlier failed budget attempts below remain failed evidence.
+
 ## Files created or modified
 
 - Original task: `internal/workflow/stop.go`, `stop_conditions.go`, `stop_test.go`; `internal/journal/current_event_value_catalog.go` and `current_event_task11_values_test.go`; `cmd/fid/integration/p23_attention_resolution_test.go`.
 - DEC-250 repair: `internal/workflow/stop.go`, `stop_conditions.go`, `stop_judgment_conditions_test.go`, `evaluation.go`, `resolve.go`; `internal/review/human_outcome.go` and `decision.go`; `cmd/fid/integration/p23_attention_resolution_test.go` and `p23_stop_resolution_conditions_test.go`.
 - This attempt-2 continuation: `project-docs/docs/phases/phase-23/tasks/task-11-done.md` only; no product or test change.
+- DEC-258 repair (outside task-11's named scope, authorized by DEC-258): test files across `cmd/fid`, `cmd/fid/integration`, and `internal/*` (`t.Parallel()` only, plus serial annotations), and `.golangci.yml`. It also updates `AGENTS.md`, `09_AI_WORKFLOW.md`, the Developer prompt and its generated copies, `decisions.md` (DEC-258), and `tasks/task-13.md`. No product source changed.
 
 ## Documentation updated
 
-- This report records DEC-250/253 repair evidence, both exact task-11 budget failures, and the same-session parent timing comparison. Accepted specifications and QA artifacts remain unchanged.
+- This report records DEC-250/253 repair evidence, both exact task-11 budget failures, and the same-session parent timing comparison.
+- DEC-258 documentation: `qa/esc-23-005-repair.md` and its `esc-23-005-evidence/` gate logs, the tiered test loop in `09_AI_WORKFLOW.md` §2.5 step 6 and the Developer prompt, and the `AGENTS.md` test-style rule.
 
 ## Validation Contract Coverage
 
@@ -34,7 +38,7 @@ The review-7 BC-3 red observation remains preserved at `qa/checkpoint-after-task
 - VAL-078: `TestP23AttentionResolutionThroughReviewRecordedAndFindingResolvedRealProcess` at `cmd/fid/integration/p23_attention_resolution_test.go:52-81` covers non-qualifying and qualifying Review facts for `review-recorded` and `finding-resolved`. `TestP23StopResolveHumanOutcomeConditionKeysOnConditionNotRaisingCode` at `cmd/fid/integration/p23_stop_resolution_conditions_test.go:26-128` covers non-qualifying and qualifying Outcome facts on producer and operator Stops, including envelope, run, and activation subjects. `TestP23StopResolveDecisionSatisfiedConditionKeysOnConditionNotRaisingCode` at `cmd/fid/integration/p23_stop_resolution_conditions_test.go:130-228` covers rejected/deferred/earlier-half facts and both orders of the qualifying pair on producer and operator Stops, plus the activation-subject raise rejection with no Event. `TestHumanOutcomeConditionQualifyingFactRules` and `TestDecisionSatisfiedConditionQualifyingFactRules` at `internal/workflow/stop_judgment_conditions_test.go:75` and `:129` cover scope, supersession, and pair semantics.
 - VAL-080: `TestTask11ReviewRecordedAndFindingResolvedConditionShapes` at `internal/journal/current_event_task11_values_test.go:12` covers canonical, extra, wrong, missing, and null discriminator shapes; `TestTask11ConditionShapeRegistryIsClosedAtTenRows` at `:67` checks the ten-row registry. The original task-11 evidence for the task-9/10 types remains in their committed tests. Malformed shapes reject through shape validation; no relation rule was added.
 - VAL-081: `TestTask11FindingResolvedConditionDispatchPreservesNullableBinding` at `internal/journal/current_event_task11_values_test.go:52-62` observes the exact error `condition nullable binding mismatch` for a `finding-resolved` Condition with stray `budget_name` after task-9 dispatch. `TestTask9ConditionDispatchPreservesNullableBindings` at `internal/journal/current_event_closed_values_test.go:140` retains the three Phase 22 negatives and canonical positives. The relation was unchanged.
-- VAL-079: FAIL. The exact ordinary race/coverage command's `cmd/fid` package line was `630.927s` in this attempt, exceeding 600s; the earlier task-11 attempt was `686.386s`. The exact tagged integration gate took `766.070s`, under 900s. A fresh pre-repair parent run took `614.601s` for `cmd/fid`, so this attempt does not establish a task-11 causal repair.
+- VAL-079: PASS on the final exact gates at `3dff457` (DEC-258 attempt 2): `cmd/fid` `531.533s` (<600s), `internal/workflow` `165.920s` (<600s), and tagged `cmd/fid/integration` `326.421s` (<900s). None terminated by timeout. Earlier failures are retained. Task-11 attempts measured `cmd/fid` at `686.386s` and `630.927s` (FAIL), and the pre-repair parent at `614.601s`. DEC-258 attempt 1 failed on the midnight journal-file flake recorded below. `cmd/fid` sits at 88.6% of its budget, which triggers DEC-258's headroom warning (see Concerns).
 
 ## Tests run
 
@@ -48,14 +52,34 @@ The review-7 BC-3 red observation remains preserved at `qa/checkpoint-after-task
 
 ## Exact quality-gate results
 
-Working directory for these five ordered commands: `/home/mark/projects/fid`.
+### Final DEC-258 verification (repair commit `3dff4574a71438900100449e36d7044969ba9162`)
 
+Working directory: `/home/mark/projects/fid`. Each attempt ran the five commands in order after `go clean -testcache`. Full logs are in `qa/esc-23-005-evidence/exact-gates-attempt-1.log` and `exact-gates-attempt-2.log`.
+
+- DEC-258 attempt 1 `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- DEC-258 attempt 1 `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- DEC-258 attempt 1 `go test -race -timeout 30m -coverprofile=coverage.out ./...` - FAIL - `FAIL	github.com/mbell-nzl/fid/cmd/fid	525.379s` (terminated `exit_code: 1`). All 14 failures were `journal files = 2, want 1` from `mustJournalPath`. The run crossed 00:00 UTC, and journal files are per UTC day. This is a pre-existing midnight fixture flake, independent of the repair.
+- DEC-258 attempt 1 `go tool cover -func=coverage.out` - PASS - `total:											(statements)					62.4%` (terminated `exit_code: 0`)
+- DEC-258 attempt 1 `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	335.029s` (terminated `exit_code: 0`)
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - FAIL - `ok  	github.com/mbell-nzl/fid/internal/workflow	277.603s	coverage: 64.6% of statements` (terminated `exit_code: 0`). The same output reports `cmd/fid` 686.386s, above 600s; all tests themselves passed.
-- Attempt 1's ordinary gate remains failed on budget; its `BLOCKED` disposition was pending attribution, not a second execution.
+- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	165.920s	coverage: 64.6% of statements` (terminated `exit_code: 0`)
+- The same attempt-2 ordinary output reports `cmd/fid` at 531.533s.
 - `go tool cover -func=coverage.out` - PASS - `total:											(statements)					62.4%` (terminated `exit_code: 0`)
-- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	778.278s` (terminated `exit_code: 0`)
+- `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	326.421s` (terminated `exit_code: 0`)
+
+Final DEC-227 times: `cmd/fid/integration` 326.421s (<900s), `cmd/fid` 531.533s (<600s), `internal/workflow` 165.920s (<600s).
+
+### Earlier task-11 attempts (retained)
+
+Working directory for these five ordered commands: `/home/mark/projects/fid`.
+
+- Task-11 attempt 1 `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- Task-11 attempt 1 `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- Task-11 attempt 1 `go test -race -timeout 30m -coverprofile=coverage.out ./...` - FAIL - `ok  	github.com/mbell-nzl/fid/internal/workflow	277.603s	coverage: 64.6% of statements` (terminated `exit_code: 0`). The same output reports `cmd/fid` 686.386s, above 600s; all tests themselves passed.
+- Attempt 1's ordinary gate remains failed on budget; its `BLOCKED` disposition was pending attribution, not a second execution.
+- Task-11 attempt 1 `go tool cover -func=coverage.out` - PASS - `total:											(statements)					62.4%` (terminated `exit_code: 0`)
+- Task-11 attempt 1 `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	778.278s` (terminated `exit_code: 0`)
 
 Attempt 2 ran the five exact task-spec commands in order at `/home/mark/projects/fid`. Its first ordinary run was cached. After the five-command sequence, `go clean -testcache` invalidated only Go test results and the byte-identical ordinary command ran again for a measured package time.
 
@@ -63,7 +87,7 @@ Attempt 2 ran the five exact task-spec commands in order at `/home/mark/projects
 - Attempt 2 `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - Attempt 2 `go test -race -timeout 30m -coverprofile=coverage.out ./...` - BLOCKED - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 64.6% of statements` (terminated `exit_code: 0`). Every package was cached, so the run supplied no new wall-time evidence.
 - Attempt 2 `go test -race -timeout 30m -coverprofile=coverage.out ./...` - FAIL - `ok  	github.com/mbell-nzl/fid/internal/workflow	252.947s	coverage: 64.6% of statements` (terminated `exit_code: 0`). Fresh `cmd/fid` time: 630.927s, over 600s.
-- `go test -race -timeout 30m -coverprofile=coverage.out ./...` - BLOCKED - `ok  	github.com/mbell-nzl/fid/internal/workflow	252.947s	coverage: 64.6% of statements` (terminated `exit_code: 0`). This is the unresolved budget disposition of the immediately preceding observed attempt, not another execution; the 630.927s `cmd/fid` result remains FAIL.
+- Task-11 attempt 2 disposition `go test -race -timeout 30m -coverprofile=coverage.out ./...` - BLOCKED - `ok  	github.com/mbell-nzl/fid/internal/workflow	252.947s	coverage: 64.6% of statements` (terminated `exit_code: 0`). This is the unresolved budget disposition of the immediately preceding observed attempt, not another execution; the 630.927s `cmd/fid` result remains FAIL.
 - Attempt 2 `go tool cover -func=coverage.out` - PASS - `total:											(statements)					62.4%` (terminated `exit_code: 0`)
 - Attempt 2 `go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	766.070s` (terminated `exit_code: 0`)
 
@@ -72,6 +96,9 @@ DEC-227 times from this continuation: `cmd/fid/integration` 778.278s (<900s), `c
 Attempt-2 exact task-11 times: `cmd/fid/integration` 766.070s (<900s), `cmd/fid` 630.927s (>600s), `internal/workflow` 252.947s (<600s). The fresh same-session pre-repair parent took 614.601s for `cmd/fid`, itself above budget. The first attempt-2 ordinary result was cached and had no measured package time. The non-cached attempt still fails VAL-079; an unmodified rerun does not erase the earlier failed attempt.
 
 ## Deviations from spec
+
+- DEC-258: the delegated repair edits files outside task-11's named scope. It adds only `t.Parallel()` and serial annotations to tests, plus lint config and workflow docs. No assertion, command, budget, or product source changed.
+- `TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat` was already parallel. It failed once during repair measurement (`maintenance warnings differs across fixed-grace branches`) because its 299/300-second fixture ages against the wall clock across two command runs. It now runs serial with its assertions unchanged. The deterministic boundary is covered in `internal/maintenance`.
 
 - Report-lint first attempt: `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`). The recovery-attempt value contained trigger text, and the two ordinary-gate status fields contained reasons rather than the exact `FAIL` and `BLOCKED` values. I kept the trigger in the summary and the reasons after the output tokens, then reran the byte-identical report-lint command: `PASS report-lint completed with no failures` (terminated `exit_code: 0`), with `OUTCOME RECOVERY_REQUIRED`.
 - No command, assertion, threshold, or budget was changed in this recovery. The original report's `-count=1` command substitution is retained as historical deviation; this continuation ran all five task-spec commands byte-for-byte.
@@ -82,6 +109,9 @@ Attempt-2 exact task-11 times: `cmd/fid/integration` 766.070s (<900s), `cmd/fid`
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
+- DEC-258 headroom warning: `cmd/fid` recorded 531.533s, 88.6% of its 600s budget and above the 480s warning line. With every package parallel, the ordinary gate is CPU-throughput bound, so package times now track total suite CPU. A profile attributes 33% of `cmd/fid` CPU to SQLite re-parsing the schema on each connection open (several opens per command, mainly `journal.ensureProjectionFresh` and `workflow.openWorkflowDB`), and 32% to race-implied `checkptr` inside modernc SQLite. Tasks 13 and 14 add `cmd/fid` tests. Schedule a speed item first; the options and authority needed are in `qa/esc-23-005-repair.md`.
+- Carry-forward: `mustJournalPath` (`cmd/fid/init_test.go:698`) assumes one journal file, but journals are split per UTC day. Any gate that crosses 00:00 UTC (13:00 NZDT) can fail with `journal files = 2, want 1`. This is pre-existing and was not changed here.
+
 - The exact ordinary gate remains over budget. A same-session parent run also breached at 614.601s; task 11's accepted changes add no ordinary `cmd/fid` test file, and the measured Stop subset rose only 2.325s in the prior diagnostic. No task-11 causal speed repair can be justified from this evidence. The remaining speed work lies outside the named task-11 source/test scope unless a future diagnostic proves a task-11 path; the Phase Runner needs bounded scope disposition. This report does not assign that work to another task.
 
 ## Dependency-budget note
@@ -90,10 +120,10 @@ Attempt-2 exact task-11 times: `cmd/fid/integration` 766.070s (<900s), `cmd/fid`
 
 ## Commit hash
 
-- `0061dde96f7e1c9809994f71abdbd3e3a09558c4`
+- `3dff4574a71438900100449e36d7044969ba9162`
 
 ## Commit subject
 
-- `docs(task): checkpoint phase-23 task-11 timing scope gap`
+- `perf(test): parallelize serial test suites for ESC-23-005`
 
-OUTCOME RECOVERY_REQUIRED
+OUTCOME COMPLETE

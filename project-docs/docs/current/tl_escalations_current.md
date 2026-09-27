@@ -2,24 +2,22 @@
 
 ## Open escalations
 
-### ESC-23-005: Task-11 ordinary gate budget has no authorized task-scope repair
-
-- **Raised:** 2026-09-27
-- **Allocated by:** TL-Lite, TRG-23-005
-- **Candidate source:** `project-docs/docs/phases/phase-23/tasks/task-11-done.md`; Phase Runner triage trigger
-- **Protected category:** gate-repair scope and ownership authority; an accepted gate-definition change would require protected decision authority
-- **Trigger:** Task-11's unchanged ordinary race/coverage gate passed tests but exceeded the accepted 600-second `cmd/fid` package budget twice, with no demonstrated task-11 causal speed repair.
-- **Trigger signature:** review-7:qa-rework:task-11-BC-3
-- **Recovery attempts:** next mediated attempt 4; measured ordinary-gate attempts 686.386 s and 630.927 s; both remain failed against VAL-079.
-- **Checkpoint:** attached verification of implementation commit `466745f2dc4505d60eb67ac50193e004532b7239` with subject match; attached report-lint returned `OUTCOME RECOVERY_REQUIRED` and `PASS report-lint completed with no failures` (terminated `exit_code: 0`); Runner supplied report commit `c1588fc4389c7dc8210247fc48ede2618c783799`.
-- **Evidence:** Exact `go test -race -timeout 30m -coverprofile=coverage.out ./...` terminated `exit_code: 0`, but `cmd/fid` took 686.386 s and then 630.927 s. A fresh same-session pre-repair parent took 614.601 s. Task 11 added no ordinary `cmd/fid` test file; focused TestStop timing was 109.999 s on the parent and 112.324 s current, while unrelated packages also rose. The tagged integration gate passed at 766.070 s, under 900 s. Neither a task-11 cause nor a passing ordinary budget result is established.
-- **Question / proposed direction:** Full Tech Lead: determine bounded ownership and a closure route for the ordinary-gate speed cause under DEC-227 and VAL-079, accounting for the separate DEC-254 task-13 headroom authorization. If the accepted command, 600-second budget, or pass criterion must change, seek the authority that owns that definition. Do not treat passing tests or an isolated later green as resolution of the retained failed attempts.
-- **Resolution condition:** Recorded full Tech Lead disposition assigning an authorized bounded repair and fresh exact verification under the unchanged gate, or an accepted protected decision changing the gate definition; then the required fresh independent checkpoint review must PASS before task 12.
-- **Links:** TRG-23-005 in `project-docs/docs/phases/phase-23/triage-log.md`; `project-docs/docs/phases/phase-23/tasks/task-11.md` Exact Commands To Run; `project-docs/docs/phases/phase-23/tasks/task-11-done.md`; `project-docs/docs/phases/phase-23/decisions.md` DEC-227 and DEC-254; `project-docs/docs/phases/phase-23/qa/validation-contract.md` VAL-079.
-- **Human attention required:** yes
-- **Status:** Open
+None open. ESC-23-005 is resolved (below). Current state: STOPPED on
+TRG-23-005; the Runner resumes under DEC-258 using
+[the handoff](../phases/phase-23/qa/resume-after-esc-23-005.md), closes task 11,
+then runs `checkpoint-after-task-11-3.md`. Task 12 stays held until it PASSes.
 
 ## Recently resolved
+
+### ESC-23-005 - Task-11 ordinary gate budget
+
+- **Status:** RESOLVED 2026-09-27 under DEC-258 (Human-delegated repair).
+  The cause was serial test structure plus measurement spread, not task 11.
+  Test-only `t.Parallel()` across the suites; gate definition unchanged. Final
+  exact gates at `3dff457`: `cmd/fid` 531.533 s (headroom warning: over 480 s),
+  `internal/workflow` 165.920 s, tagged 326.421 s. See
+  [repair evidence](../phases/phase-23/qa/esc-23-005-repair.md) and the
+  [full record](../phases/phase-23/tl-escalations.md).
 
 ### ESC-23-004 - Post-task-11 checkpoint re-review: three protected blocker candidates (BC-1, BC-2, BC-3)
 

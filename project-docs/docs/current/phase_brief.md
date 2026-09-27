@@ -38,10 +38,11 @@ encoding (VAL-080) and added VAL-081/082. DEC-240 split VAL-082 into
 VAL-082/083/084. The contract now has **84 rows** (`qa-plan.md` sections
 19-21).
 
-Next action: finish the active task-11 recovery's verification and report, then
-the fresh checkpoint re-review. Task 12 dispatches only after
-it returns PASS. Task 13 opens with the Human-approved `cmd/fid` speed step
-(DEC-254).
+Next action: resume from the TRG-23-005 STOP under DEC-258
+(`qa/resume-after-esc-23-005.md`), record task 11 complete, then run the fresh
+checkpoint re-review. Task 12 dispatches only after it returns PASS. DEC-258
+already satisfies DEC-254 Part 2. Its headroom warning (`cmd/fid` 531.5 s)
+needs a Tech Lead speed item before task 13 adds `cmd/fid` tests.
 
 ## Operating Mode
 

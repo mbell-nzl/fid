@@ -1,35 +1,33 @@
 # Progress — Current
 
-Updated 2026-09-27. **REPAIR_PENDING: task 11's recovery is active; no active
-STOP.** Branch: `phase-23`. Tasks 1-11 initially completed. The post-task-11
-re-review `qa/checkpoint-after-task-11-2.md` (`9cb9420`) returned BLOCK with
-BC-1..BC-3 and MF-4/MF-5; the resulting STOP was consumed by the accepted
-DEC-256 RUN-RESUME on 2026-09-26 at 17:38.
+Updated 2026-09-27. **STOPPED on TRG-23-005, resolved by DEC-258; ready to
+resume.** Branch: `phase-23`. Task 11's exact gate passed its tests but breached
+the 600 s `cmd/fid` budget (686.386 s, then 630.927 s), and the ledger STOPPED
+under ESC-23-005.
 
-The Tech Lead recorded DEC-249..255 (2026-09-26). The Human approved DEC-254
-Part 2 (task 13 opens with a `cmd/fid` speed step) and chose Option B for BC-2
-(DEC-251).
+The Human delegated the repair (DEC-258). The breach came from serial test
+structure plus measurement spread, not from task 11. Repair `3dff457` makes
+existing tests parallel and enables `paralleltest`; gates and budgets are
+unchanged. The final exact gates passed: `cmd/fid` 531.533 s,
+`internal/workflow` 165.920 s, tagged 326.421 s (was 766 s). Task 11's report is
+COMPLETE. See [repair evidence](../phases/phase-23/qa/esc-23-005-repair.md).
 
-DEC-257 implemented the route for DEC-256's four ordered owners. The ledger
-records tasks 6, 2, and 10 repaired and complete, then TASK-RECOVERY task-11
-at 19:19. Commit `466745f` implements the task-11 repair; the existing completion
-report still describes the earlier `c5bf0f8` implementation. Finish the active
-recovery's exact verification and report before recording its result.
+Next: the Runner resumes from the STOP using
+[the handoff](../phases/phase-23/qa/resume-after-esc-23-005.md) (attempt 5,
+DEC-258) and records task 11 complete. It then runs
+`checkpoint-after-task-11-3.md`. Task 12 stays held until that re-review
+returns PASS. Before task 13 adds `cmd/fid` tests, the Tech Lead schedules a
+speed item for DEC-258's headroom warning.
 
-A replacement Runner uses a normal session RUN-RESUME: STOP-only fields `N/A`,
-`Repair owners` omitted, `Continuing task: task-11`. Preserve the existing
-recovery and completed-owner progress. The rejected repeated STOP resume did
-not change the ledger. See the
-[resume diagnosis](../reviews/2026-09-27-phase-runner-resume.md).
-After task 11 closes, run `checkpoint-after-task-11-3.md`; task 12 stays held
-until that re-review returns PASS.
+Earlier history: DEC-249..257 dispositioned review-7 (ESC-23-004). The DEC-256
+owners (tasks 6, 2, and 10) are repaired and complete.
 
 ## Current phase contract
 
 Phase 23 is Heavy, approved under DEC-222, with 18 tasks and 84 validation
 assertions (80 deterministic, 4 Human). The accepted contracts and task pack
-are indexed in the [phase brief](phase_brief.md). Task 13 opens with the
-Human-approved test-speed step (DEC-254); task 12 awaits the checkpoint PASS.
+are indexed in the [phase brief](phase_brief.md). DEC-258 satisfies DEC-254's
+test-speed step; task 12 awaits the checkpoint PASS.
 
 Retain these constraints while finishing the repairs:
 

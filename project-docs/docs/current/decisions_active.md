@@ -148,19 +148,17 @@
   Envelope grant. Human authority comes from the Activation profile. The
   section 4.1 cell is corrected.
 - DEC-252: task 6 repairs multi-grant `gate.run`.
-- DEC-254: Part 1, `cmd/fid` breach attribution, is accepted (Tech Lead).
-  Part 2 was Human-accepted 2026-09-26: task 13's first step is a test-only
-  `cmd/fid` speed step to 480 s or less, widening DEC-227's `t.Parallel()`
-  allowance to existing `cmd/fid` tests.
+- DEC-254: Part 1 (`cmd/fid` breach attribution) stands; DEC-258 satisfies
+  Part 2.
 - DEC-255 releases ESC-23-004's stop for ordered repairs. A fresh checkpoint
   re-review must PASS before task 12.
 - DEC-256 orders the repairs as tasks 6, 2, 10, and 11; DEC-257 supplies the
-  ledger route. Its RUN-RESUME was accepted on 2026-09-26 at 17:38. Repairs for
-  tasks 6, 2, and 10 are recorded complete; task 11's recovery is active.
-  The current state is `REPAIR_PENDING`, with no active STOP. A session resume
-  preserves that recovery and omits `Repair owners`; it does not repeat the
-  DEC-256 STOP resolution. Tasks 12-18 remain held pending the fresh checkpoint.
-  See [phase brief](phase_brief.md) and
+  ledger route. Tasks 6, 2, and 10 are complete. Tasks 12-18 stay held pending
+  the fresh checkpoint.
+- DEC-258 (Human-delegated) resolves ESC-23-005 (task-11 STOP): parallel tests
+  plus `paralleltest`, gates unchanged, a tiered test loop, and an 80% headroom
+  warning (active: `cmd/fid` 531.5 s). The Runner resumes via
+  `qa/resume-after-esc-23-005.md`. See [phase brief](phase_brief.md) and
   [Phase 23 decisions](../phases/phase-23/decisions.md).
 
 ## Prior Phase and Future Qualification
