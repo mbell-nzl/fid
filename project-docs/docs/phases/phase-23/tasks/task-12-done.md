@@ -49,6 +49,7 @@ Working directory for all commands: `/home/mark/projects/fid`. Each result below
 
 The focused race command also reported `ok  github.com/mbell-nzl/fid/internal/review 1.021s`.
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-12-done.md project-docs/docs/phases/phase-23/tasks/task-12.md` - FAIL - `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`). Three were report punctuation or trailing commentary and are corrected here. The fourth is the task spec's expected-nonzero declaration, whose two-line form does not match the control's one-line grammar at `project-docs/tools/report-lint.sh:104`.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-12-done.md project-docs/docs/phases/phase-23/tasks/task-12.md` - FAIL - `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`). The report evidence format passed; the remaining failure is the task-spec declaration grammar.
 
 ## Exact quality-gate results
 
@@ -67,6 +68,7 @@ DEC-227 package times for `cmd/fid/integration`, `cmd/fid`, and `internal/workfl
 ## Deviations from spec
 
 - The declared real-process test exposed an unowned closed capability registry. No registry or control was changed. The task remains incomplete and requires Runner triage before its exact gate.
+- Report-lint attempt 1 ended `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`). Three failures came from report-line punctuation and trailing commentary; the report was corrected and committed. The byte-identical command then ended `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`), retaining only the task-spec grammar mismatch. No task spec or control definition was changed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
