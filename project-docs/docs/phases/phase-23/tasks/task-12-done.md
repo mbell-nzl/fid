@@ -76,8 +76,8 @@ DEC-227 package times for `cmd/fid/integration`, `cmd/fid`, and `internal/workfl
 
 ## Commit hash
 
-- Pending commit
+- `0e4bb33cbe32fa9d4d83955b3121a4135edf78cd`
 
 ## Commit subject
 
-- Pending commit
+- `feat(requirement): checkpoint task 12 reference convergence`
