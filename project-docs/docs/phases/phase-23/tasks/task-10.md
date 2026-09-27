@@ -262,10 +262,16 @@ The tagged integration gate is mandatory and is never substituted.
 ```text
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -timeout 30m -coverprofile=coverage.out ./...
+go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race -timeout 30m ./cmd/fid/integration/...
+go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...
 ```
+
+The two race commands above use the DEC-259 form, applied to this reopened
+task by DEC-261 (2026-09-28). Results recorded before DEC-261 under
+`go test -race -timeout 30m -coverprofile=coverage.out ./...` and
+`go test -tags integration -race -timeout 30m ./cmd/fid/integration/...` stay
+as history. Every rerun from DEC-261 onward uses the block above.
 
 Two gates run for minutes and are explicitly bounded (DEC-227): the `-timeout
 30m` above replaces Go's implicit 10-minute per-binary default, which the tagged
@@ -315,3 +321,27 @@ landed.
 - Remove the report's "Task 2 probes" and "monotone / not reachable" claims.
   Refresh the I-6 citations.
 - **Gates:** The five exact commands above.
+
+## Repair Amendment - review-9 MF-1 under DEC-261 (2026-09-28)
+
+This is the first owner in review-9's Repair Plan. Task 12's MF-2 follows it.
+
+- Follow review-9's MF-1 row (VAL-046). Build the
+  `artifact.availability-observed` sequence on an Envelope whose only
+  remaining unsatisfied Obligation, after the Artifact flips, is the Human
+  Obligation. Observe:
+  - the preceding non-qualifying state, with no Stop and no Attention;
+  - exactly one `human-outcome-required` Stop and one Attention after the
+    qualifying flip;
+  - a repeat qualifying Event while the Stop is open, with no second Stop or
+    Attention;
+  - resolution by the matching Human Outcome.
+- Add the repeat-while-open observation for VAL-046 once, on any one of the
+  four producer sequences. Keep the other three producer proofs and all
+  accepted semantics.
+- Change production code only if the new test exposes a task-10 defect in
+  the artifact readiness path. That path is in this task's scope.
+- In `task-10-done.md`, correct the VAL-046 per-sequence citations; the
+  artifact test currently cited does not create a Human Obligation. Keep
+  every earlier result, and disclose DEC-261's gate form under Deviations.
+- **Gates:** the five exact commands above, in their DEC-261 form.

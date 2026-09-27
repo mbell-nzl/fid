@@ -209,3 +209,21 @@ List any conditional command required by this task and why:
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
+
+## Repair Amendment - review-9 MF-2 under DEC-261 (2026-09-28)
+
+This runs after task 10's MF-1 repair completes.
+
+- Follow review-9's MF-2 row (VAL-053). Remove `requirement.synced` from
+  `p22PortableEventTypes` in `cmd/fid/integration/p22_portable_fake_test.go`.
+  The entry was introduced in `5ec69e6`, before Phase 23; task 12's removal
+  of the Event invalidated it.
+- Add a focused assertion: the fake reader rejects an archive line of type
+  `requirement.synced` and still accepts a retained family.
+- Do not add Phase 23 families to the fake or re-pin it. That is task 16's
+  portable-recovery scope (DEC-261 Part 2).
+- In `task-12-done.md`, correct the source-tree absence claim. Record an
+  inventory that includes test files, for example
+  `rg -n "requirement\.synced" cmd internal`, and classify any remaining hit.
+  Keep every earlier result.
+- **Gates:** all seven exact commands above, unchanged.

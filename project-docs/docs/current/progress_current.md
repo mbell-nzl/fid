@@ -1,22 +1,27 @@
 # Progress — Current
 
-Updated 2026-09-27. **STOPPED on TRG-23-006, resolved by DEC-260; ready to
-resume task 12.** Branch: `phase-23`. Tasks 1-11 are complete, and
-`checkpoint-after-task-11-3.md` passed (`8cd44ae`).
+Updated 2026-09-28. **Tasks 1-12 are complete, and review window 10-12 is
+in QA REPAIR. The Runner is ready to resume.** Branch: `phase-23`.
 
-Task 12's real-process journey could not stage an Actor profile that held the
-requirement capabilities. `public-interface.md` section 4 required those
-capabilities, but section 4.1 and R-19 exclude them from the closed set. Its
-expected-nonzero declaration also failed report-lint grammar (ESC-23-006).
+Review-9 (`3dbf5c6`) found two bounded Must-fix items and no blocker
+candidates:
+- MF-1: task 10, VAL-046 artifact-producer evidence.
+- MF-2: task 12, VAL-053 portable-fake `requirement.synced`.
 
-DEC-260 made two corrections:
-- Requirement writes need a trusted Actor but no capability, so the set stays
-  at thirty.
-- The task-12 declaration is corrected to one line.
+The previous Runner session ended before it recorded REVIEW. The ledger is
+still valid and advanceable.
 
-Next: the Runner resumes task 12 at attempt 2 using
-[the handoff](../phases/phase-23/qa/resume-after-esc-23-006.md). Review window
-10-12 follows task 12.
+DEC-261 makes two changes:
+- Reopened task 10 runs the DEC-259 race gates.
+- Both repairs are bounded.
+
+Next: the Runner resumes using
+[the handoff](../phases/phase-23/qa/resume-after-review-9.md). It repairs
+task 10, then task 12. A fresh re-review follows in `review-10.md`, which
+must PASS before task 13.
+
+Earlier, ESC-23-006 was resolved by DEC-260. Under DEC-260, task 12 closed
+at `b763127`. Requirement writes need a trusted Actor but no capability.
 
 Earlier: ESC-23-005 was resolved by DEC-258/259, which closed task 11.
 Earlier history: DEC-249..257 dispositioned review-7 (ESC-23-004). The DEC-256

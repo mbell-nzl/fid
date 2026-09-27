@@ -2326,6 +2326,64 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   VAL-067; PRD-AUTH-001/002/007; `project-docs/templates/task-spec-template.md`
   (Expected Non-Zero Commands).
 
+### DEC-261: Review-9 repair route; reopened tasks run DEC-259 race gates
+
+- **Date:** 2026-09-28.
+- **Status:** ACCEPTED by Tech Lead under the Human's request to make the
+  Runner resumable after review-9. Part 1 applies the command text the Human
+  already approved in DEC-259. It adds no new gate text, budget or assertion.
+  The Human may reverse Part 1. The effect of reversing it is under
+  "Not taken".
+- **Context:** Review-9 (`qa/review-9.md`, commit `3dbf5c6`) returned
+  `VERDICT: REPAIR` with Must-fix 2, Improvement 0, and no blocker candidates:
+  - MF-1 is owned by task 10 (VAL-046, artifact producer and
+    repeat-while-open evidence).
+  - MF-2 is owned by task 12 (VAL-053, `requirement.synced` in the portable
+    fake).
+
+  The Runner session ended after the review commit and before it recorded
+  REVIEW. The ledger is `VALID state=ADVANCEABLE`. A scratch dry run of
+  `REVIEW review-9` with `Owning task: task-10, task-12`, followed by
+  `TASK-RECOVERY task-10`, returned `APPEND_CONFIRMED state=REPAIR_PENDING`
+  both times. The route is ordinary QA REPAIR and needs no TRG or ESC.
+- **Hazard:** DEC-259 amended task specs 12-18 only, because tasks 1-11 were
+  closed. Task 10's exact block still holds the pre-DEC-259 race commands.
+  Under those commands, `cmd/fid` measured 531.533 s at DEC-258, which is
+  88.6% of its 600 s budget, with an earlier spread up to 686 s. Tasks 11 and
+  12 have added tests since then. A byte-identical rerun is therefore likely
+  to breach VAL-079 for causes outside task 10. Task 10's own rule would then
+  require stop-and-escalate: a predictable second STOP.
+- **Part 1 - reopened tasks use the DEC-259 race gates.** Any exact-gate rerun
+  of tasks 1-11 after DEC-259 uses the two DEC-259 race commands in place of
+  their pre-DEC-259 forms. The other commands, the budgets and VAL-079 are
+  unchanged. The task spec is amended when the task is reopened, and task 10
+  is amended now. Earlier results under the old form remain valid history
+  for the tasks that closed before DEC-259. The unflagged control run
+  (`go test -race -timeout 30m ./...`) remains a phase-end QA Lead
+  obligation under DEC-259; it is not moved into task 10.
+- **Part 2 - bounded repair readings.**
+  - MF-1 (task 10) is test and report work. The production producer exists
+    (`internal/evidence/artifact.go` DEC-224 readiness call). A production
+    change is in scope only if the new test exposes a task-10 defect in the
+    `artifact.availability-observed` readiness path, which task 10's scope
+    names.
+  - MF-2 (task 12): remove `requirement.synced` from
+    `p22PortableEventTypes`. Add a focused assertion that the fake reader
+    rejects an archive line of that type and still accepts a retained
+    family. The fake models the Phase 22 portable archive. Adding Phase 23
+    families or re-pinning it is task 16's portable-recovery scope
+    (`v1-convergence-inventory.md` row for `p22_portable_*`), not MF-2. In
+    this repair, "catalog parity" means parity for the removed family.
+  - Order is review-9's Repair Plan order: task 10, then task 12. A fresh,
+    independent `qa/review-10.md` with `Re-review of: review-9` follows.
+    Task 13 dispatches only after that re-review records PASS.
+- **Not taken:** keep task 10 on the pre-DEC-259 commands. A `cmd/fid` breach
+  would then be an out-of-task cause under task 10's budget rule, so it
+  would escalate. It would reopen the ESC-23-005 question that DEC-259
+  already settled.
+- **Resume:** `qa/resume-after-review-9.md`.
+- **Refs:** review-9; DEC-227; DEC-258; DEC-259; VAL-046; VAL-053; VAL-079.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,

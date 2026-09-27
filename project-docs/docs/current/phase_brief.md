@@ -13,28 +13,28 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 
 ## Status
 
-**Tasks 1-11 complete; task 12 in recovery (DEC-260).** ESC-23-004 and ESC-23-005 are
-resolved (DEC-249..259). The four DEC-256 repairs (tasks 6, 2, 10, 11) are
-complete, and task 11 closed under DEC-258 at `3dff457`. The fresh independent
-`qa/checkpoint-after-task-11-3.md` (commit `8cd44ae`, reviewed HEAD `92ea1e5`)
-returned **PASS: Must-fix 0, Improvement 1, blocker candidates 0**. This
-satisfies the QA-plan section 8 hold. Improvement I-7 (label the stale
-"over budget" paragraph in `task-11-done.md` historical) is **deferred to phase
-wrap-up**. It is wording only, with no dispatch and no VAL. Branch `phase-23`.
+**Tasks 1-12 complete; review window 10-12 is in QA REPAIR (DEC-261).** Branch
+`phase-23`. Review-9 (`qa/review-9.md`, `3dbf5c6`) returned REPAIR: Must-fix 2,
+Improvement 0, blocker candidates 0. No TRG, ESC or STOP is involved. The
+previous Runner session ended before it recorded the REVIEW event.
+- MF-1: task 10, VAL-046. Prove the artifact readiness producer and the
+  repeat-while-open behavior.
+- MF-2: task 12, VAL-053. Remove `requirement.synced` from the portable fake.
 
-Planning history: eight QA passes and all revisions are applied. Human amendments
-are DEC-223..227 and DEC-235; the contract has **84 rows** (`qa-plan.md` sections
-19-21). See [phase decisions](../phases/phase-23/decisions.md).
+DEC-261 applies the DEC-259 race-gate form to reopened task 10, which avoids
+a predictable `cmd/fid` budget breach. It also bounds both repairs.
 
-Task 12 STOPPED on TRG-23-006 and is resolved by DEC-260 (ESC-23-006). Requirement
-writes need a trusted Actor but no profile capability; the set stays at thirty.
-Task 12's expected-nonzero declaration is now one line.
+Earlier: ESC-23-004/005/006 are resolved (DEC-249..260), and
+`checkpoint-after-task-11-3.md` passed. I-7 (task-11 report wording) is
+deferred to wrap-up. The contract has **84 rows**, with Human amendments
+DEC-223..227 and DEC-235; see [decisions](../phases/phase-23/decisions.md).
 
-Next action: the Runner resumes task 12 at attempt 2 using
-`qa/resume-after-esc-23-006.md`. It then runs tasks 13-18 in order, using the
-DEC-259 amended race-gate commands in each task spec.
-Mid-phase review window 10-12 follows task 12. DEC-254 Part 2 is already
-satisfied (DEC-258), so task 13 must not repeat it.
+Next action: the Runner resumes using `qa/resume-after-review-9.md`:
+1. Record REVIEW review-9 with owners task-10 then task-12.
+2. Repair task 10, then task 12.
+3. Run a fresh re-review in `qa/review-10.md`.
+4. Only after review-10 records PASS, run tasks 13-18 using the DEC-259
+   commands. Task 13 must not repeat DEC-254 Part 2 (DEC-258).
 
 ## Operating Mode
 
@@ -52,8 +52,8 @@ amendments inline with their DEC and approval state.
 
 ## Task Index
 
-Full specs and reports: `../phases/phase-23/tasks/`. Tasks 1-11 complete; 12-18
-pending, sequential. The task-11 checkpoint passed (`checkpoint-after-task-11-3.md`).
+Full specs and reports: `../phases/phase-23/tasks/`. Tasks 1-12 complete (10 and 12
+reopened for review-9 repair); 13-18 pending, sequential.
 
 1 schema baseline; 2 typed multi-Obligation Envelope; 3 review Claim mode and
 Run; 4 Review Records and independence; 5 Finding dispositions; 6 review
