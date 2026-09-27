@@ -1,5 +1,38 @@
 # Phase 23 Escalations
 
+## ESC-23-006 - Task-12 requirement authority and report-lint contract conflict
+
+- **Raised:** 2026-09-27
+- **Allocated by:** TL-Lite, TRG-23-006
+- **Candidate source:** `project-docs/docs/phases/phase-23/tasks/task-12-done.md` (RECOVERY_REQUIRED)
+- **Protected category:** a public-interface/specification contradiction, plus authority over the task and control definitions.
+- **Trigger:** Two texts conflicted.
+  - `public-interface.md` section 4 required Actor-profile capabilities for
+    `requirement.record-reference` and `requirement.link`.
+  - Section 4.1, execution-scope section 6 row 7 and R-19 exclude both names
+    from the closed 30-name set.
+
+  The real-process journey then failed twice at Activation staging with
+  `invalid activation input` (each terminated `exit_code: 1`). Separately,
+  task 12's expected-nonzero declaration was wrapped over two lines, and
+  report-lint rejected it with `FAIL expected non-zero declaration has
+  invalid grammar` (terminated `exit_code: 1`).
+- **Trigger signature:** task-12:protected-contract:requirement-capability-registry-and-report-lint-grammar
+- **Checkpoint:** implementation commit `0e4bb33`, report commit `3284869`.
+- **Links:** TRG-23-006; `public-interface.md` sections 4 and 4.1; `execution-scope.md` section 6; R-19; `tasks/task-12.md`; `project-docs/tools/report-lint.sh:104`.
+- **Human attention required:** yes. The Human delegated the resolution to the Tech Lead on 2026-09-27.
+- **Status:** RESOLVED 2026-09-27 under DEC-260.
+  - **Part 1 (Option B):** requirement writes need a trusted Actor from the
+    finalized Kit Activation, but no Actor-profile capability and no Envelope
+    grant. Only the section 4 paragraph is corrected; the thirty-name set,
+    section 4.1, R-19, VAL-067 and task 18 are unchanged.
+  - **Part 2:** the report-lint grammar is intended. Task 12's declaration was
+    a Tech Lead authoring defect and is rewritten on one line. Report-lint on
+    the retained report and the corrected spec now passes (terminated
+    `exit_code: 0`).
+  - **Continuation:** same-task `in-scope-implementation` at attempt 2.
+    Handoff: `qa/resume-after-esc-23-006.md`.
+
 ## ESC-23-005 - Task-11 ordinary gate budget has no authorized task-scope repair
 
 - **Raised:** 2026-09-27

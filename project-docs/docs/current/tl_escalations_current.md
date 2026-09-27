@@ -2,11 +2,20 @@
 
 ## Open escalations
 
-None open. ESC-23-004 and ESC-23-005 are resolved (below). The fresh
-`checkpoint-after-task-11-3.md` returned PASS with 0 Must-fix (`8cd44ae`), so
-task 12 is released.
+None open. ESC-23-006 is resolved under DEC-260 (below); task 12 resumes
+under [resume-after-esc-23-006.md](../phases/phase-23/qa/resume-after-esc-23-006.md).
 
 ## Recently resolved
+
+### ESC-23-006 - Task-12 requirement authority and report-lint contract conflict
+
+- **Status:** RESOLVED 2026-09-27 under DEC-260 (Tech Lead, Human-delegated).
+  Requirement writes need a trusted Actor but no Actor-profile capability or
+  grant. `public-interface.md` section 4 is corrected, and the closed set
+  stays at thirty. Report-lint grammar is unchanged. Task 12's expected-nonzero
+  declaration is rewritten on one line. Task 12 continues same-task at
+  attempt 2 (`in-scope-implementation`). See the
+  [full record](../phases/phase-23/tl-escalations.md).
 
 ### ESC-23-005 - Task-11 ordinary gate budget
 

@@ -222,10 +222,13 @@ Task 4's existing input, criteria and commands remain unchanged.
 the `finding.address` capability. `human-outcome.record` requires an Actor whose
 profile `actor_type` is `human`, the `human-outcome.record` capability, and
 active finalized Kit Activation provenance. `concern.record`,
-`concern.dispose`, `deviation.record`, `decision.record-reference`,
-`requirement.record-reference`, and `requirement.link` require their matching
-capability in the Actor profile; the first four additionally require an
+`concern.dispose`, `deviation.record`, and `decision.record-reference` require
+their matching capability in the Actor profile, and additionally require an
 Envelope grant when their subject resolves to an Envelope-scoped Issue.
+`requirement.record-reference` and `requirement.link` require a trusted Actor
+resolved from the finalized Kit Activation, but no Actor-profile capability and
+no Envelope grant. They are operation IDs only (section 4.1; corrected under
+DEC-260, 2026-09-27).
 
 ### 4.1 Activated Capabilities And Grant Actions
 

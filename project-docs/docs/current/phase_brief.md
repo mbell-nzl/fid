@@ -13,7 +13,7 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 
 ## Status
 
-**Tasks 1-11 complete; task 12 released.** ESC-23-004 and ESC-23-005 are
+**Tasks 1-11 complete; task 12 in recovery (DEC-260).** ESC-23-004 and ESC-23-005 are
 resolved (DEC-249..259). The four DEC-256 repairs (tasks 6, 2, 10, 11) are
 complete, and task 11 closed under DEC-258 at `3dff457`. The fresh independent
 `qa/checkpoint-after-task-11-3.md` (commit `8cd44ae`, reviewed HEAD `92ea1e5`)
@@ -22,19 +22,17 @@ satisfies the QA-plan section 8 hold. Improvement I-7 (label the stale
 "over budget" paragraph in `task-11-done.md` historical) is **deferred to phase
 wrap-up**. It is wording only, with no dispatch and no VAL. Branch `phase-23`.
 
-Eight QA passes returned twenty-eight Must-fix revisions plus five the Tech Lead
-found while dispositioning them; **all are applied**. Six Human contract
-amendments (DEC-223..227, DEC-235); Tech Lead dispositions DEC-228..234,
-DEC-236, DEC-237. **ESC-23-001 is resolved** (DEC-235, Human, Option A). Record:
-[phase decisions](../phases/phase-23/decisions.md).
+Planning history: eight QA passes and all revisions are applied. Human amendments
+are DEC-223..227 and DEC-235; the contract has **84 rows** (`qa-plan.md` sections
+19-21). See [phase decisions](../phases/phase-23/decisions.md).
 
-Pass 8 confirmed DEC-236. DEC-237 split VAL-078 into resolution (VAL-078) and
-encoding (VAL-080) and added VAL-081/082. DEC-240 split VAL-082 into
-VAL-082/083/084. The contract now has **84 rows** (`qa-plan.md` sections
-19-21).
+Task 12 STOPPED on TRG-23-006 and is resolved by DEC-260 (ESC-23-006). Requirement
+writes need a trusted Actor but no profile capability; the set stays at thirty.
+Task 12's expected-nonzero declaration is now one line.
 
-Next action: the Runner dispatches task 12 (requirement references), then tasks
-13-18 in order, using the DEC-259 amended race-gate commands in each task spec.
+Next action: the Runner resumes task 12 at attempt 2 using
+`qa/resume-after-esc-23-006.md`. It then runs tasks 13-18 in order, using the
+DEC-259 amended race-gate commands in each task spec.
 Mid-phase review window 10-12 follows task 12. DEC-254 Part 2 is already
 satisfied (DEC-258), so task 13 must not repeat it.
 

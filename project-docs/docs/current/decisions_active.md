@@ -161,6 +161,10 @@
   `-gcflags=modernc.org/...=-d=checkptr=0` to both race gates, with a phase-end
   full-`checkptr` control run. See [phase brief](phase_brief.md) and
   [Phase 23 decisions](../phases/phase-23/decisions.md).
+- DEC-260 (Tech Lead, Human-delegated) resolves ESC-23-006. Requirement writes
+  need a trusted Actor but no Actor-profile capability or grant. The closed
+  capability set stays at thirty. Report-lint grammar is unchanged; task 12's
+  declaration is corrected to one line.
 
 ## Prior Phase and Future Qualification
 

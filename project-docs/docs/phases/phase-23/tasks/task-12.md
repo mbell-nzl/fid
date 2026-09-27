@@ -45,6 +45,12 @@ its Event, and restrict `links` to Issue endpoints so one fact has one model.
 - The V1 `requirements` table itself is dropped by migration 0018 in task 15.
   Until then the table exists but has no writer; do not add a temporary one.
 - `execution-scope.md` is incorporated on the usual convergence terms.
+- DEC-260: `requirement.record-reference` and `requirement.link` need a
+  trusted Actor resolved from the finalized Kit Activation, but no
+  Actor-profile capability and no Envelope grant. Do not add either name to
+  either allowlist copy (`internal/workflow/activation.go`,
+  `internal/journal/current_event_value_relations.go`); the closed set stays
+  at thirty. The real-process journey's Actor profile holds neither name.
 
 ## Scope
 
@@ -143,10 +149,12 @@ absent requirement reference writer.
 
 ## Expected Non-Zero Commands
 
-- `rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal`
-  - expected `exit_code: 1`; no match is the pass condition. Record it as
-  `PASS - exit 1 (no output) (expected exit_code: 1; terminated exit_code: 1)`.
-  Never convert it to `exit 0 (no output)`. At the planning base the matches are
+- `rg -n --glob '!*_test.go' "requirement\.synced|last_synced_hash" cmd internal` - expected `exit_code: 1` - no match is the pass condition.
+
+Record it as
+`PASS - exit 1 (no output) (expected exit_code: 1; terminated exit_code: 1)`.
+Never convert it to `exit 0 (no output)`. The declaration above is one line, as
+the template grammar requires (DEC-260). At the planning base the matches are
   `internal/requirements/sync.go`, `internal/journal/current_event_catalog.go`,
   and `internal/export/archive_semantics_catalog.go`; all three are removed by
   this task's own scope.

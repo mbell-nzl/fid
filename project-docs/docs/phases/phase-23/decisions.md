@@ -2257,6 +2257,75 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   persistence refactor, recorded as CF-043.
 - **Refs:** DEC-227; DEC-258; VAL-079; CF-043.
 
+### DEC-260: Requirement writes need no Actor-profile capability; task 12's declaration is one line (ESC-23-006)
+
+- **Date:** 2026-09-27.
+- **Status:** ACCEPTED by Tech Lead under explicit Human delegation,
+  2026-09-27. The Human directed the Tech Lead to resolve ESC-23-006 and
+  unblock the Runner. Part 1 corrects a public-interface sentence, which is
+  protected (DEC-222); it follows the DEC-251 pattern of keeping the reading
+  that most accepted texts already state. The Human may reverse Part 1 before
+  task 12 closes. The effect of reversing it is recorded under Option A below.
+- **Part 1 - requirement write authority.**
+  - **Contradiction:** the last paragraph of `public-interface.md` section 4
+    requires a matching Actor-profile capability for
+    `requirement.record-reference` and `requirement.link`. Several other texts
+    say the opposite:
+    - section 4.1 keeps both names out of the closed allowlist as "operation
+      IDs only";
+    - `execution-scope.md` section 6 row 7 and R-19 do the same;
+    - VAL-067 accepts exactly thirty names;
+    - `qa-plan.md` confirms the exclusion three times.
+
+    A profile is validated against that allowlist when it is staged, so a
+    profile holding either name can never be activated. The section 4 rule
+    cannot be satisfied.
+  - **Decision (Option B):** requirement writes require a trusted Actor. The
+    Actor is resolved from the finalized Kit Activation as it is today, so
+    the write is attributed (PRD-AUTH-001). The write needs no Actor-profile
+    capability and no Envelope grant. Requirement references and their Issue
+    links are project traceability, not Envelope execution or judgment. They
+    replace V1 `links` requirement endpoints, which needed no capability.
+    PRD-AUTH-007 allows project-local attributed authority for inventory of
+    this kind. The closed set stays at thirty names in both copies.
+  - **Option A (not taken):** add both names to both allowlist copies as
+    profile-only capabilities. That would make the set 32 and would require
+    rewriting section 4.1, R-19, execution-scope row 7, VAL-067, the QA plan
+    rows and task 18. Task 12 would also gain `internal/workflow/activation.go`
+    and `internal/journal/current_event_value_relations.go`, and a QA
+    re-confirmation of VAL-067 would be needed. It adds protection for which
+    no PRD requirement asks.
+  - **Applied:** the paragraph in `public-interface.md` section 4 is
+    corrected. The two requirement writes now say "trusted Actor; no
+    capability or grant". Nothing changes in section 4.1, execution-scope,
+    VAL-051/052/067, R-19 or task 18. Task 12 gains a binding constraint.
+- **Part 2 - task 12 expected-nonzero declaration.** The report-lint grammar
+  (`report-lint.sh:104`) is intended. It is the one-line form stated in the
+  task-spec template ("Never wrap before the expected field") and used by
+  task 15. Task 12's declaration wrapped its expected field onto a second
+  bullet, which was a Tech Lead authoring defect. The declaration is rewritten
+  on one line with the same command and `exit_code: 1`. Report-lint and the
+  template are unchanged.
+- **Task 12 continuation (ordinary task scope, category
+  `in-scope-implementation`):**
+  1. In `internal/review/requirement.go`, remove the two
+     `contains(actor.Capabilities, ...)` admission checks. Keep trusted-Actor
+     resolution, the digest check under the lock, idempotency and every
+     retained failure.
+  2. The real-process journey fixture's Actor profile must hold **neither**
+     requirement name. Its successful record, supersede and link then prove
+     that admission needs no capability. Keep the `rg` exclusion unchanged.
+  3. Converge any unit or CLI test that asserted a requirement capability
+     denial. Establish its provenance first; it is task 12's own and was
+     added in `0e4bb33`.
+  4. Keep the two failed journey attempts and the failed report-lint result in
+     `task-12-done.md`. Disclose this decision under Deviations.
+  5. Rerun the focused journey, then every command in the exact command block.
+- **Resume:** `qa/resume-after-esc-23-006.md`.
+- **Refs:** ESC-23-006; TRG-23-006; DEC-222; DEC-251; R-19; VAL-051, VAL-052,
+  VAL-067; PRD-AUTH-001/002/007; `project-docs/templates/task-spec-template.md`
+  (Expected Non-Zero Commands).
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,

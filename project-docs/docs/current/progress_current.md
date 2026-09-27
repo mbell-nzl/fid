@@ -1,25 +1,24 @@
 # Progress — Current
 
-Updated 2026-09-27. **STOPPED on TRG-23-005, resolved by DEC-258; ready to
-resume.** Branch: `phase-23`. Task 11's exact gate passed its tests but breached
-the 600 s `cmd/fid` budget (686.386 s, then 630.927 s), and the ledger STOPPED
-under ESC-23-005.
+Updated 2026-09-27. **STOPPED on TRG-23-006, resolved by DEC-260; ready to
+resume task 12.** Branch: `phase-23`. Tasks 1-11 are complete, and
+`checkpoint-after-task-11-3.md` passed (`8cd44ae`).
 
-The Human delegated the repair (DEC-258). The breach came from serial test
-structure plus measurement spread, not from task 11. Repair `3dff457` makes
-existing tests parallel and enables `paralleltest`; gates and budgets are
-unchanged. The final exact gates passed: `cmd/fid` 531.533 s,
-`internal/workflow` 165.920 s, tagged 326.421 s (was 766 s). Task 11's report is
-COMPLETE. See [repair evidence](../phases/phase-23/qa/esc-23-005-repair.md).
+Task 12's real-process journey could not stage an Actor profile that held the
+requirement capabilities. `public-interface.md` section 4 required those
+capabilities, but section 4.1 and R-19 exclude them from the closed set. Its
+expected-nonzero declaration also failed report-lint grammar (ESC-23-006).
 
-Next: the Runner resumes from the STOP using
-[the handoff](../phases/phase-23/qa/resume-after-esc-23-005.md) (attempt 5,
-DEC-258) and records task 11 complete. It then runs
-`checkpoint-after-task-11-3.md`. Task 12 stays held until that re-review
-returns PASS. DEC-259 (Human) adds a modernc-only `checkptr` exclusion to both
-race gates for tasks 12-18: `cmd/fid` 299.6 s, tagged 239.2 s. That clears
-DEC-258's headroom warning.
+DEC-260 made two corrections:
+- Requirement writes need a trusted Actor but no capability, so the set stays
+  at thirty.
+- The task-12 declaration is corrected to one line.
 
+Next: the Runner resumes task 12 at attempt 2 using
+[the handoff](../phases/phase-23/qa/resume-after-esc-23-006.md). Review window
+10-12 follows task 12.
+
+Earlier: ESC-23-005 was resolved by DEC-258/259, which closed task 11.
 Earlier history: DEC-249..257 dispositioned review-7 (ESC-23-004). The DEC-256
 owners (tasks 6, 2, and 10) are repaired and complete.
 
