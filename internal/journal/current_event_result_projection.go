@@ -110,6 +110,14 @@ func currentExpectedResult(tx *sql.Tx, event Event) (map[string]any, error) {
 		if failure == nil {
 			result["stops"], result["attention"], failure = currentDecisionResolutionValues(tx, event)
 		}
+	case "requirement.referenced":
+		put("requirement", "RequirementRef", "requirement_refs", id(event.Aggregate.ID))
+	case "requirement.linked":
+		for _, effect := range event.Effects {
+			if effect.Table == "requirement_issue_links" && effect.Op == "insert" {
+				put("link", "RequirementLink", "requirement_issue_links", effect.PK)
+			}
+		}
 	case "run.started", "run.closed", "run.observed", "run.checkpointed", "run.abandoned":
 		put("run", "Run", "runs", id(event.Aggregate.ID))
 		if event.EventType == "run.abandoned" && failure == nil {
@@ -231,6 +239,8 @@ func currentProjectedValue(tx *sql.Tx, kind, table string, pk map[string]any) (m
 		err = currentFillDecisionRef(row)
 	case "HumanOutcome":
 		err = currentFillHumanOutcome(row)
+	case "RequirementRef":
+		delete(row, "requirement_id")
 	}
 	if err != nil {
 		return nil, err

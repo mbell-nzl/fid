@@ -54,6 +54,8 @@ var currentValueShapes = map[string]string{
 	"ProtectedDecision":  "ordinal:Nonnegative decision_class:ID required_capabilities:[]ID affected_actions:BlockedActions status:=satisfied,unsatisfied decision_ref_id:?ID human_outcome_id:?ID",
 	"Provenance":         "activation_id:ID activation_version:Positive profile_ref:Nonempty",
 	"HumanOutcome":       "id:ID actor_id:ID provenance:Provenance class:ID subject:JudgmentSubject result:=approved,rejected,changes-required,acknowledged scope:DecisionScope reasoning:Text references:[]Source created_at:Timestamp event_id:ID",
+	"RequirementRef":     "id:ID source:Source status:=active,superseded,withdrawn superseded_by_id:?ID created_at:Timestamp event_id:ID",
+	"RequirementLink":    "requirement_id:ID issue_id:ID relation:=implements,verifies,relates-to created_at:Timestamp event_id:ID",
 	"Denial":             "budget:Budget stop_ids:[]ID attention_ids:[]ID event_id:ID event_occurred_at:Timestamp",
 }
 var currentConditionShapes = map[string]string{

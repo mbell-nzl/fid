@@ -9,15 +9,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
-var unavailableJudgmentEvents = map[string]bool{
-	"requirement.referenced": true,
-	"requirement.linked":     true,
-}
-
 func applyEventEffects(tx *sql.Tx, input ProjectionInput, executor fiddb.ProjectionMetaExecutor) error {
-	if unavailableJudgmentEvents[input.Event.EventType] {
-		return fmt.Errorf("project event %q: Phase 23 Event %q is unavailable", input.Event.EventID, input.Event.EventType)
-	}
 	if err := validateCurrentEvent(tx, input.Event); err != nil {
 		return err
 	}

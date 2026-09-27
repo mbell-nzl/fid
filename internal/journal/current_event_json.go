@@ -82,6 +82,8 @@ func validateCurrentJSON(event Event, effect Effect, column, raw string) error {
 		kind = "[]Source"
 	case "decision_refs.source_json":
 		kind = "Source"
+	case "requirement_refs.source_json":
+		kind = "Source"
 	case "decision_refs.authority_capabilities_json":
 		kind = "[]ID"
 	case "human_outcomes.references_json":
@@ -160,6 +162,8 @@ func validateCurrentResultJSON(event Event, value any) error {
 		"deviation.recorded":     "deviation:Deviation",
 		"decision.referenced":    "decision:DecisionRef protected_decisions:[]ProtectedDecision stops:[]Stop attention:[]Attention",
 		"human-outcome.recorded": "outcome:HumanOutcome protected_decisions:[]ProtectedDecision stops:[]Stop attention:[]Attention",
+		"requirement.referenced": "requirement:RequirementRef",
+		"requirement.linked":     "link:RequirementLink",
 		"run.started":            "run:Run", "run.observed": "observation:Observation run:Run", "run.checkpointed": "checkpoint:Checkpoint run:Run",
 		"run.recovered": "recovery:Recovery run:Run claim:Claim", "run.abandoned": "run:Run claim:Claim", "run.closed": "run:Run", "claim.expired": "claim:Claim",
 		"run.budget-observed": "sample:BudgetSample budget:Budget stops:[]Stop attention:[]Attention", "run.execution-blocked": "denial:Denial",

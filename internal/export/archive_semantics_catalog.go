@@ -88,7 +88,6 @@ var semanticEventRules = map[string]semanticEventRule{
 	"link.removed":                   semanticRule("link", semanticStage(1, semanticEffectKey("links", "delete")), semanticStage(0, semanticEffectKey("issues", "update")), semanticStage(1, semanticEffectKey("activity_log", "activity")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
 	"workflow.defined":               semanticRule("workflow", semanticStage(1, semanticEffectKey("workflows", "insert")), semanticStage(1, semanticEffectKey("workflow_states", "insert")), semanticStage(0, semanticEffectKey("workflow_transitions", "insert")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
 	"workflow.assigned":              semanticRule("workflow-assignment", semanticStage(0, semanticEffectKey("workflow_assignments", "delete")), semanticStage(1, semanticEffectKey("workflow_assignments", "insert")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
-	"requirement.synced":             semanticRule("requirement-sync", semanticStage(0, semanticEffectKey("requirements", "insert"), semanticEffectKey("requirements", "update")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
 }
 
 var semanticPost14Events = map[string]bool{
