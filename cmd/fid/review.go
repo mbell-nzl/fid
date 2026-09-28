@@ -18,12 +18,63 @@ import (
 func init() {
 	rootFlagCapabilities["review record"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["review get"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["review list"] = rootFlagCapability{Project: true, JSON: true}
 }
 
 func newReviewCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "review", Short: "Record immutable Reviews."}
-	cmd.AddCommand(newReviewRecordCommand(), newReviewGetCommand())
+	cmd.AddCommand(newReviewRecordCommand(), newReviewGetCommand(), newReviewListCommand())
 	return cmd
+}
+
+func newReviewListCommand() *cobra.Command {
+	var issueID, envelopeID, verdict string
+	var limit int
+	cmd := &cobra.Command{Use: "list", Short: "List Reviews.", Args: canonicalNoArgs("review.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderReviewListError(cmd, err)
+		}
+		items, err := review.ListReviews(review.ReviewListOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), IssueID: issueID, EnvelopeID: envelopeID, Verdict: verdict, Limit: limit})
+		if err != nil {
+			return renderReviewListError(cmd, err)
+		}
+		jsonMode, err := readJSONMode(cmd)
+		if err != nil {
+			return err
+		}
+		if jsonMode {
+			values := make([]any, len(items))
+			for index := range items {
+				values[index] = items[index]
+			}
+			return cli.WriteSuccess(cmd.OutOrStdout(), "review.list", map[string]any{"items": values}, nil)
+		}
+		for _, item := range items {
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", item["id"], item["verdict"]); err != nil {
+				return err
+			}
+		}
+		return nil
+	}}
+	cmd.Flags().StringVar(&issueID, "issue", "", "Filter by Issue")
+	cmd.Flags().StringVar(&envelopeID, "envelope", "", "Filter by Envelope")
+	cmd.Flags().StringVar(&verdict, "verdict", "", "Filter by verdict")
+	cmd.Flags().IntVar(&limit, "limit", 100, "Maximum Reviews to return")
+	cmd.SetFlagErrorFunc(canonicalFlagError("review.list"))
+	return cmd
+}
+
+func renderReviewListError(cmd *cobra.Command, cause error) error {
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	var limit *review.ResultLimitExceededError
+	if errors.As(cause, &limit) {
+		return writeClaimFailure(cmd, jsonMode, "review.list", cause, cli.CodeResultLimitExceeded, "review result limit exceeded", nil, map[string]any{"collection": "items", "limit": limit.Limit, "observed": limit.Observed})
+	}
+	return writeClaimFailure(cmd, jsonMode, "review.list", cause, cli.CodeInvalidArgument, "invalid review list request", nil, map[string]any{"argument": "filter", "value": nil, "allowed": []string{"accepted review.list filters"}})
 }
 
 func newReviewGetCommand() *cobra.Command {

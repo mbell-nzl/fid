@@ -39,6 +39,15 @@ type RecordOptions struct {
 	IdempotencyKey string
 }
 
+type ReviewListOptions struct {
+	WorkspaceRoot string
+	MigrationsDir string
+	IssueID       string
+	EnvelopeID    string
+	Verdict       string
+	Limit         int
+}
+
 type Repository struct {
 	BaseOID       *string `json:"base_oid"`
 	CaptureSource string  `json:"capture_source"`
@@ -152,6 +161,48 @@ func Get(workspaceRoot, migrationsDir, reviewID string) (map[string]any, error) 
 	}
 	defer func() { _ = conn.Close() }()
 	return loadReview(conn, reviewID)
+}
+
+// ListReviews returns the complete bounded Review projection in ID order.
+func ListReviews(options ReviewListOptions) ([]map[string]any, error) {
+	if options.Limit == 0 {
+		options.Limit = 100
+	}
+	if options.Limit < 1 || options.Limit > 10000 || (options.Verdict != "" && !oneOf(options.Verdict, "pass", "changes-required", "blocked")) {
+		return nil, fmt.Errorf("review list input is invalid")
+	}
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+		return nil, err
+	}
+	conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	if err != nil {
+		return nil, fmt.Errorf("open review projection: %w", err)
+	}
+	defer func() { _ = conn.Close() }()
+	rows, err := conn.Query(`SELECT id FROM review_records WHERE (?='' OR issue_id=?) AND (?='' OR envelope_id=?) AND (?='' OR verdict=?) ORDER BY id LIMIT ?`, options.IssueID, options.IssueID, options.EnvelopeID, options.EnvelopeID, options.Verdict, options.Verdict, options.Limit+1)
+	if err != nil {
+		return nil, fmt.Errorf("list Reviews: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	items := []map[string]any{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		item, err := loadReview(conn, id)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(items) > options.Limit {
+		return nil, &ResultLimitExceededError{Limit: options.Limit, Observed: len(items)}
+	}
+	return items, nil
 }
 
 // Record currently establishes the durable independence admission boundary.
