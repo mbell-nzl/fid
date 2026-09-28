@@ -258,3 +258,32 @@ not a control-conformance directive or a rewrite of either historical verdict.
 - **If BLOCK:** category data-model/persistence-contract and protected cross-task migration ownership; ESC-23-007 raised in `tl_escalations_current.md`; resolution condition full Tech Lead obtains the required schema and task-order authority for the accepted ActivityEvent effects and requirement-reference integrity before task 13 resumes.
 - **Human attention required:** yes
 - **References:** project-docs/docs/phases/phase-23/tasks/task-13.md Objective, VAL-055, Files To Create Or Modify; project-docs/docs/phases/phase-23/tasks/task-13-done.md Validation Contract Coverage, Exact quality-gate results, Concerns; project-docs/docs/phases/phase-23/schema.md sections 4 and 6.2; project-docs/docs/phases/phase-23/contract-coverage.md public-interface 2 ActivityEvent row; project-docs/docs/phases/phase-23/qa/validation-contract.md VAL-055 and VAL-079; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## TRG-23-008 - Task 13 protected-decision denial conflicts with closed failure schema
+
+- **Trigger:** Task 13's VAL-057 protected-decision denial replay probe contradicts the accepted public failure schema.
+- **Originating task:** task-13
+- **Trigger signature:** task-13:protected-contract:protected-decision-denial-envelope-val-057
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-23/tasks/task-13-done.md
+- **Candidate:** BLOCKED / protected public-interface and acceptance-contract contradiction
+- **Checkpoint:** Runner-supplied verification: `git rev-parse HEAD^{commit}` returned 348a538167f94bd1d5a5f9a9ef798a90698565e7; subject matched `docs(task): finalize completion report for phase-23 task-13`; report-lint returned `OUTCOME BLOCKED` (terminated `exit_code: 0`).
+- **Verdict:** BLOCK
+- **Reasoning:** The accepted public-interface section 5 closes `protected-decision-required` details to `envelope_id`, `decision_class`, `required_capabilities`, and `affected_actions`; section 1 retains the closed `fid-cli.v1` error envelope. Section 5.2, DEC-226, and VAL-057 also demand immutable Stop/Attention IDs, null EventRef, and `replayed:false` in the denial response. The built binary returns the declared closed failure but omits those additional fields. Satisfying both readings needs protected authority over the public response contract or validation assertion semantics; this is not a verification-control implementation mismatch. The focused and full tagged gates failed (each terminated `exit_code: 1`). DEC-262 resolved the separate activity boundary and does not resolve this interface contradiction. DEC-227 timings remain within budget.
+- **Local decisions made:** none; retain the failing assertion and original failed gate evidence.
+- **Resolution evidence:** Not cleared. The focused `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^(TestP23DecisionReferenceProtectedLifecycleRealProcess|TestP23ReviewCyclesRealProcessJourney)$' -count=1 ./cmd/fid/integration` returned `FAIL` (terminated `exit_code: 1`), and the full exact tagged task-13 gate returned `FAIL` (terminated `exit_code: 1`). The accepted sources do not identify an unambiguous closed response shape satisfying both requirements.
+- **If REPAIR:** N/A pending protected authority. After resolution, task 13 continues under the recorded contract, preserves the red evidence, and reruns the byte-identical required commands and any affected independent review.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** Do not alter the public failure envelope, closed details, VAL-057 or VAL-056 assertion semantics, tests, gates, task-15 ownership, or Runner ledger under this triage alone.
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** N/A
+- **If BLOCK:** category public-interface/specification contradiction; ESC-23-008 raised in `tl_escalations_current.md`; resolution condition full Tech Lead obtains the Human or accepted contract owner's ruling on the protected-decision denial response shape and aligns the public-interface contract, validation assertion, and task-13 verification before the Runner resumes.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-23/public-interface.md sections 1, 5, and 5.2; project-docs/docs/phases/phase-23/qa/validation-contract.md VAL-056 and VAL-057; project-docs/docs/phases/phase-23/decisions.md DEC-226 and DEC-262; project-docs/docs/phases/phase-23/tasks/task-13-done.md Workflow outcome, Validation Contract Coverage, Exact quality-gate results; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.

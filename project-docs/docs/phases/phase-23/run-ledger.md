@@ -1762,3 +1762,63 @@
 - Triage: TRG-23-007 (BLOCK, escalated as ESC-23-007)
 - Protected category: data-model/persistence contract and cross-task migration ownership
 - Next Human or external-authority action: Full Tech Lead resolves ESC-23-007 by obtaining protected authority for the journal activity_log effect and requirement_refs trigger/migration ordering, then authorizes bounded task-13 producer completion under unchanged VAL-055, exact gates, and preserved failed evidence
+
+### 2026-09-28 21:06 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-28 20:46 STOP after TRG-23-007 (ESC-23-007)
+- Governing TRG: TRG-23-007
+- Governing ESC: ESC-23-007
+- Trigger signature: task-13:scope-gap:review-list-and-activity-producers
+- Attempt count: 2
+- Checkpoint: phase-23 HEAD f7e55b6d478ab4908cee6b864de0aea621f9a9b5, clean; 20:46 STOP, TRG-23-007, ESC-23-007, and the task-13 BLOCKED report with failed evidence retained
+- Resolution evidence: DEC-262 is recorded in phase-23 decisions and resolves the protected persistence and task-order boundary; commit f7e55b6d478ab4908cee6b864de0aea621f9a9b5 is verified with subject docs(phase-23): resolve ESC-23-007 under DEC-262; ESC-23-007 is marked RESOLVED in tl_escalations_current.md; the resume-after-esc-23-007 handoff is present; the retained ledger validates as VALID state=STOPPED before this append
+- Resolution authority: DEC-262
+- Continuing task: task-13
+- Next recovery: task-13 | in-scope-implementation | task-scope | task-13:scope-gap:review-list-and-activity-producers | 2
+
+### 2026-09-28 21:06 TASK-RECOVERY task-13
+
+- Source: DEC-262 and TRG-23-007; project-docs/docs/phases/phase-23/qa/resume-after-esc-23-007.md
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: DEC-262 and TRG-23-007
+- Triage disposition: N/A
+- Trigger signature: task-13:scope-gap:review-list-and-activity-producers
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD f7e55b6d478ab4908cee6b864de0aea621f9a9b5; DEC-262, ESC-23-007 resolution, and resume handoff verified; the retained 20:46 STOP and task-13 BLOCKED report with failed evidence remain; worktree is clean before this Runner-owned ledger append; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - DEC-262 authorizes task 13 to register activity_log on the strict journal path and emit only the seven issue-subject ActivityEvent rows; requirement/decision rows remain deferred to task 15; the prior BLOCKED report and failed activity/tagged-gate evidence must remain preserved
+- Next action: same-task Developer continuation follows the task-13 Planning Amendment - DEC-262, registers activity_log from migrations/0002 without loosening checks, admits only the required activity Effect cardinality/details checks, emits issue-subject rows from review.go, finding.go, concern.go, deviation.go, and human_outcome.go, does not edit decision.go or requirement.go, completes VAL-056 and VAL-057, runs the focused journeys and all five unchanged exact commands, updates task-13-done.md with DEC-262 and task-15 deferrals, runs report-lint, commits implementation and report, and returns a typed outcome
+- Human attention required: no
+
+### 2026-09-28 21:57 TRIAGE TRG-23-008
+
+- Trigger: Task 13's protected-decision denial replay response conflicts with the accepted closed public failure schema and VAL-057
+- Originating task: task-13
+- Trigger signature: task-13:protected-contract:protected-decision-denial-envelope-val-057
+- Attempt count: 1
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: phase-23 HEAD 348a538167f94bd1d5a5f9a9ef798a90698565e7; task-13 BLOCKED report and report-lint are verified; DEC-262 and the resolved TRG-23-007/ESC-23-007 remain retained; TL-Lite TRG-23-008 and ESC-23-008 are confirmed; Runner ledger and TL-Lite triage/escalation records are the dirty paths
+- Verdict: BLOCK (escalated as ESC-23-008)
+- Resolution evidence: TL-Lite confirmed that public-interface section 5 and the closed fid-cli.v1 envelope omit Stop/Attention IDs, EventRef, and replayed fields while section 5.2 and VAL-057 require them. The focused and full tagged task-13 gates failed with observed exit_code: 1; DEC-227 timings remain below VAL-079 budgets; reconciling the response shape or VAL-057 requires protected authority.
+- Triage log: project-docs/docs/phases/phase-23/triage-log.md entry TRG-23-008 confirmed
+
+### 2026-09-28 21:57 STOP
+
+- Cause: task-13 / TRG-23-008 / ESC-23-008; repeated protected-decision-required denials cannot simultaneously satisfy the closed public failure schema and VAL-057's required Stop/Attention, EventRef, and replay fields
+- Triage: TRG-23-008 (BLOCK, escalated as ESC-23-008)
+- Protected category: public-interface/specification contradiction and validation assertion semantics
+- Next Human or external-authority action: Full Tech Lead obtains the protected ruling for the protected-decision denial response shape or VAL-057, aligns public-interface sections 1, 5, and 5.2 with VAL-056/VAL-057, records the exact task-13 continuation scope, and then resumes task 13 with the failed evidence preserved
