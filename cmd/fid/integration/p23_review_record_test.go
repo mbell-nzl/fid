@@ -18,9 +18,10 @@ func TestP23ReviewRecordRealProcessJourney(t *testing.T) {
 	t.Parallel()
 	actions := []string{
 		"claim.acquire", "claim.release", "envelope.activate", "envelope.create",
-		"gate.register", "review.record", "run.close", "run.observe", "run.start",
+		"evidence.link", "gate.register", "review.record", "run.close", "run.observe", "run.start",
 	}
 	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "mutation")
+	a.task13ReplayCorpus = true
 
 	t.Run("mutating_claim_actor_is_rejected_without_an_event", func(t *testing.T) {
 		before := p21JournalEventCount(t, a.workspace)
@@ -76,6 +77,8 @@ func TestP23ReviewRecordRealProcessJourney(t *testing.T) {
 		t.Fatalf("first Review Event count = %d, want %d", after, beforeFirst+1)
 	}
 	firstReview := p23ReviewFromResponse(t, first)
+	missingReview := a.p22Run(t, "review", "get", "REV-missing")
+	assertP22ProcessFailure(t, "review.get", "review-not-found", 3, missingReview)
 
 	t.Run("replay_duplicate_and_digest_conflict_preserve_history", func(t *testing.T) {
 		before := p21JournalEventCount(t, a.workspace)
@@ -113,10 +116,18 @@ func TestP23ReviewRecordRealProcessJourney(t *testing.T) {
 	beforeSecond := p21JournalEventCount(t, a.workspace)
 	second := p23ReviewRecord(t, a, "actor-denied", "reviewer-second", p23ReviewInput(a, p21PathString(t, secondRun, "id"), p23Number(t, secondRun["version"]), "pass", []any{}, []any{"FND-prior", "FND-prior-two"}))
 	p23AssertReviewSuccess(t, "same Reviewer post-rework Review", second)
+	p23AssertActivity(t, a.workspace, second, "review-recorded", a.issueID, 1)
+	p23AssertActivity(t, a.workspace, second, "finding-resolved", a.issueID, 2)
 	if after := p21JournalEventCount(t, a.workspace); after != beforeSecond+1 {
 		t.Fatalf("second Review plus two resolutions changed Event count %d -> %d, want one atomic Event", beforeSecond, after)
 	}
 	secondReview := p23ReviewFromResponse(t, second)
+	beforeTypeMismatch := p21JournalEventCount(t, a.workspace)
+	wrongEvidenceType := p23RunInput(t, a, "evidence", "link", "actor-recovery", "review-on-gate-obligation", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil, "review_id": secondReview["id"], "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	assertP22ProcessFailure(t, "evidence.link", "evidence-type-not-accepted", 4, wrongEvidenceType)
+	if p21JournalEventCount(t, a.workspace) != beforeTypeMismatch {
+		t.Fatal("wrong Evidence type appended an Event")
+	}
 	listed := a.p22Run(t, "review", "list", "--issue", a.issueID)
 	p23AssertReviewSuccess(t, "review list by Issue", listed)
 	items := p21Path(t, p23Envelope(t, listed.Stdout), "result", "items").([]any)
@@ -144,6 +155,38 @@ func TestP23ReviewRecordRealProcessJourney(t *testing.T) {
 	if !reflect.DeepEqual(secondRead, secondReview) || !reflect.DeepEqual(secondRead["resolved_finding_ids"], []any{"FND-prior", "FND-prior-two"}) {
 		t.Fatalf("second review readback = %#v, want exact record result %#v with both resolved Finding IDs", secondRead, secondReview)
 	}
+}
+
+func p23AssertActivity(t *testing.T, workspace string, response p22ConformanceResponse, name, issueID string, want int) {
+	t.Helper()
+	conn := p22FaultDB(t, workspace)
+	defer func() { p22FaultOK(t, conn.Close()) }()
+	eventID := p21PathString(t, p23Envelope(t, response.Stdout), "event", "id")
+	var total, matching int
+	p22FaultOK(t, conn.QueryRow(`SELECT COUNT(*), COALESCE(SUM(CASE WHEN ref_type='issue' AND ref_id=? THEN 1 ELSE 0 END),0) FROM activity_log WHERE journal_event_id=? AND event=?`, issueID, eventID, name).Scan(&total, &matching))
+	if total != want || matching != want {
+		t.Fatalf("%s activity for %s = %d rows, %d with issue %s; want %d", name, eventID, total, matching, issueID, want)
+	}
+	rows, err := conn.Query(`SELECT event, ref_type FROM activity_log WHERE journal_event_id=?`, eventID)
+	p22FaultOK(t, err)
+	defer func() { p22FaultOK(t, rows.Close()) }()
+	accepted := map[string]bool{
+		"review-recorded": true, "finding-resolved": true, "finding-addressed": true,
+		"human-outcome-recorded": true, "concern-recorded": true, "concern-disposed": true,
+		"deviation-recorded": true, "requirement-referenced": true, "requirement-linked": true,
+		"decision-referenced": true,
+	}
+	for rows.Next() {
+		var event, refType string
+		p22FaultOK(t, rows.Scan(&event, &refType))
+		if !accepted[event] {
+			t.Fatalf("Event %s wrote unaccepted ActivityEvent name %q", eventID, event)
+		}
+		if refType != "issue" || event == "requirement-referenced" || event == "requirement-linked" || event == "decision-referenced" {
+			t.Fatalf("Event %s wrote deferred ActivityEvent %q on %q", eventID, event, refType)
+		}
+	}
+	p22FaultOK(t, rows.Err())
 }
 
 func requiresAdditionalJudgmentActors(actions []string) bool {
@@ -189,7 +232,85 @@ func p23RunInput(t *testing.T, a *p22FIDRecoveryAdapter, group, command, actor, 
 	if err != nil {
 		response.ExitCode = processExitCode(t, err)
 	}
+	if a.task13ReplayCorpus && response.ExitCode == 0 {
+		before := p21JournalEventCount(t, a.workspace)
+		replayedStdout, replayedStderr, replayErr := closureRunCommand(a.workspace, a.binary, args...)
+		if replayErr != nil || replayedStderr != "" || p21JournalEventCount(t, a.workspace) != before {
+			t.Fatalf("%s.%s same-key replay changed state or failed: error=%v stderr=%q", group, command, replayErr, replayedStderr)
+		}
+		original := p23Envelope(t, response.Stdout)
+		replayed := p23Envelope(t, replayedStdout)
+		originalResult := original["result"].(map[string]any)
+		originalResult["replayed"] = true
+		if !reflect.DeepEqual(original, replayed) {
+			t.Fatalf("%s.%s replay changed typed snapshot: first=%#v replay=%#v", group, command, original, replayed)
+		}
+		if conflictInput := p23ConflictInput(group+"."+command, input); conflictInput != nil {
+			conflictArgs := []string{"--project", a.workspace, "--json", group, command, "--actor", actor, "--input", p21Input(t, a.workspace, "p23-"+key+"-digest-conflict", conflictInput), "--idempotency-key", key}
+			conflictStdout, conflictStderr, conflictErr := closureRunCommand(a.workspace, a.binary, conflictArgs...)
+			conflict := p22ConformanceResponse{Stdout: conflictStdout, Stderr: conflictStderr}
+			if conflictErr != nil {
+				conflict.ExitCode = processExitCode(t, conflictErr)
+			}
+			assertP22ProcessFailure(t, group+"."+command, "idempotency-conflict", 4, conflict)
+			if p21JournalEventCount(t, a.workspace) != before {
+				t.Fatalf("%s.%s digest conflict appended an Event", group, command)
+			}
+		}
+	}
 	return response
+}
+
+func p23ConflictInput(operation string, input map[string]any) map[string]any {
+	mutated := p23Clone(input)
+	switch operation {
+	case "review.record":
+		mutated["profile"] = "review-alternate"
+	case "finding.address", "concern.dispose":
+		mutated["reason"] = input["reason"].(string) + " (different)"
+	case "concern.record":
+		mutated["summary"] = input["summary"].(string) + " (different)"
+	case "deviation.record", "human-outcome.record":
+		mutated["reasoning"] = input["reasoning"].(string) + " (different)"
+	case "decision.record-reference":
+		if input["outcome"] == "approved" {
+			mutated["outcome"] = "rejected"
+		} else {
+			mutated["outcome"] = "approved"
+		}
+	case "requirement.record-reference":
+		if input["status"] == "active" {
+			mutated["status"] = "withdrawn"
+		} else {
+			mutated["status"] = "active"
+		}
+	case "requirement.link":
+		if input["relation"] == "implements" {
+			mutated["relation"] = "verifies"
+		} else {
+			mutated["relation"] = "implements"
+		}
+	case "claim.acquire":
+		mutated["ttl_seconds"] = p23NumberValue(input["ttl_seconds"]) + 1
+	case "claim.release":
+		mutated["reason"] = "failed"
+	case "envelope.complete":
+		repository := mutated["repository"].(map[string]any)
+		repository["head_oid"] = strings.Repeat("0", 40)
+	default:
+		return nil
+	}
+	return mutated
+}
+
+func p23NumberValue(value any) int {
+	switch n := value.(type) {
+	case int:
+		return n
+	case float64:
+		return int(n)
+	}
+	return 0
 }
 
 func p23AcquireClaim(t *testing.T, a *p22FIDRecoveryAdapter, actor, mode, key string) map[string]any {

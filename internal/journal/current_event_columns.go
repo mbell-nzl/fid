@@ -3,6 +3,7 @@ package journal
 // Column domains copied from the accepted migration baseline. No per-Event
 // schema introspection is performed. The contract test checks these against DDL.
 var currentEventTables = map[string]currentTable{
+	"activity_log":                 currentTableColumns("id", "id:s journal_event_id:s ref_type:s ref_id:s event:s details:s? actor:s? occurred_at:s?"),
 	"activation_actor_profiles":    currentTableColumns("activation_id actor_id", "activation_id:s actor_id:s actor_type:s producer:s provenance_ref:s session_ref:s? capabilities_json:s"),
 	"activation_components":        currentTableColumns("activation_id component_type component_id component_version", "activation_id:s component_type:s component_id:s component_version:i content_digest:s expected_prior_digest:s? status:s evidence_json:s error_code:s?"),
 	"activation_gate_definitions":  currentTableColumns("activation_id definition_id definition_version", "activation_id:s definition_id:s definition_version:i definition_digest:s definition_json:s"),

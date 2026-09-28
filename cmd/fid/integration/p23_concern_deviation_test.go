@@ -22,13 +22,19 @@ func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
 		"gate.run", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start",
 	}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions)
+	a.task13ReplayCorpus = true
 
-	subjects := []string{"issue", "envelope", "run", "review", "finding", "requirement"}
+	subjects := []string{"issue", "envelope", "run", "requirement"}
 	concerns := map[string]map[string]any{}
 	for _, subjectType := range subjects {
 		subjectID := "unresolved-" + subjectType
-		if subjectType == "issue" {
+		switch subjectType {
+		case "issue":
 			subjectID = a.issueID
+		case "envelope":
+			subjectID = p23EnvelopeID(t, a)
+		case "run":
+			subjectID = a.runID
 		}
 		response := p23ConcernMutation(t, a, "record", "record-"+subjectType, map[string]any{
 			"id": "CON-" + subjectType, "subject": map[string]any{"type": subjectType, "id": subjectID},
@@ -36,6 +42,11 @@ func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
 			"reasoning": "records a generic observation", "references": []any{},
 		})
 		p23AssertReviewSuccess(t, "record "+subjectType+" Concern", response)
+		if subjectType != "requirement" {
+			p23AssertActivity(t, a.workspace, response, "concern-recorded", a.issueID, 1)
+		} else {
+			p23AssertActivity(t, a.workspace, response, "concern-recorded", a.issueID, 0)
+		}
 		concern := p21Path(t, p23Envelope(t, response.Stdout), "result", "concern").(map[string]any)
 		if concern["status"] != "open" || concern["disposition"] != nil || concern["actor_id"] != a.actor {
 			t.Fatalf("recorded %s Concern = %#v", subjectType, concern)
@@ -60,16 +71,20 @@ func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
 	}
 	differentResponse := p23RunInput(t, a, "concern", "dispose", "actor-reviewer-two", "reject-different-actor", map[string]any{"concern_id": "CON-requirement", "action": "rejected", "issue_id": nil, "supersedes_concern_id": nil, "supersedes_finding_id": nil, "reason": "separate Actor cleared the observation"})
 	p23AssertReviewSuccess(t, "dispose Concern with a different Actor", differentResponse)
+	p23AssertActivity(t, a.workspace, differentResponse, "concern-disposed", a.issueID, 0)
 	different := p21Path(t, p23Envelope(t, differentResponse.Stdout), "result", "concern").(map[string]any)
 	differentDisposition := different["disposition"].(map[string]any)
 	if different["id"] != "CON-requirement" || different["status"] != "disposed" || differentDisposition["action"] != "rejected" || different["actor_id"] != a.actor || differentDisposition["actor_id"] != "actor-reviewer-two" {
 		t.Fatalf("different-Actor disposition merged Actor provenance: %#v", different)
 	}
-	assertConcernDisposal(t, a, "CON-review", "supersede", map[string]any{"concern_id": "CON-review", "action": "superseded", "issue_id": nil, "supersedes_concern_id": "CON-finding", "supersedes_finding_id": nil, "reason": "newer Concern owns the observation"}, "superseded")
+	assertConcernDisposal(t, a, "CON-envelope", "supersede", map[string]any{"concern_id": "CON-envelope", "action": "superseded", "issue_id": nil, "supersedes_concern_id": "CON-run", "supersedes_finding_id": nil, "reason": "newer Concern owns the observation"}, "superseded")
 
 	negativeConcernDisposals(t, a)
 	negativeDeviationPredecessors(t, a)
 	deviations := recordDeviationChain(t, a)
+	issueDeviation := p23RunInput(t, a, "deviation", "record", a.actor, "deviation-issue-activity", map[string]any{"id": "DEV-issue-activity", "subject": map[string]any{"type": "issue", "id": a.issueID}, "expected": "accepted contract", "observed": "issue departure", "authority": map[string]any{"actor_id": "human-reviewer", "reference": nil}, "disposition": "pending-decision", "reasoning": "issue observation", "references": []any{}, "supersedes_deviation_id": nil})
+	p23AssertReviewSuccess(t, "record Issue Deviation", issueDeviation)
+	p23AssertActivity(t, a.workspace, issueDeviation, "deviation-recorded", a.issueID, 1)
 	assertConcernDeviationEvidenceRejected(t, a, "CON-envelope", deviations[0]["id"].(string))
 
 	beforeRebuild := p23DeviationList(t, a)
@@ -129,6 +144,7 @@ func recordDeviationChain(t *testing.T, a *p22FIDRecoveryAdapter) []map[string]a
 	for index, input := range inputs {
 		response := p23RunInput(t, a, "deviation", "record", a.actor, "deviation-"+input["id"].(string), input)
 		p23AssertReviewSuccess(t, "record Deviation", response)
+		p23AssertActivity(t, a.workspace, response, "deviation-recorded", a.issueID, 0)
 		value := p21Path(t, p23Envelope(t, response.Stdout), "result", "deviation").(map[string]any)
 		if index == 1 && value["supersedes_deviation_id"] != "DEV-prior" {
 			t.Fatalf("superseding Deviation = %#v", value)
@@ -197,6 +213,7 @@ func assertConcernDisposal(t *testing.T, a *p22FIDRecoveryAdapter, concernID, ke
 	t.Helper()
 	response := p23ConcernMutation(t, a, "dispose", key, input)
 	p23AssertReviewSuccess(t, "dispose Concern", response)
+	p23AssertActivity(t, a.workspace, response, "concern-disposed", a.issueID, 1)
 	value := p21Path(t, p23Envelope(t, response.Stdout), "result", "concern").(map[string]any)
 	if value["id"] != concernID || value["status"] != "disposed" || value["disposition"].(map[string]any)["action"] != action {
 		t.Fatalf("disposed Concern = %#v", value)

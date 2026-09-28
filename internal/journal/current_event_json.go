@@ -12,6 +12,11 @@ func validateCurrentJSON(event Event, effect Effect, column, raw string) error {
 	}
 	kind := ""
 	switch effect.Table + "." + column {
+	case "activity_log.details":
+		if _, ok := value.(map[string]any); !ok {
+			return fmt.Errorf("activity details must be a JSON object")
+		}
+		return nil
 	case "run_observations.observation_json":
 		return validateCurrentObservation(value, effect)
 	case "run_recoveries.reconciliation_json":

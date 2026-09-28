@@ -10,6 +10,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
@@ -206,6 +207,10 @@ func renderClaimError(cmd *cobra.Command, operation string, cause error) error {
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	var idempotency *journal.IdempotencyConflictError
+	if errors.As(cause, &idempotency) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": idempotency.OperationScope, "idempotency_key": idempotency.IdempotencyKey, "stored_request_digest": idempotency.StoredRequestDigest, "supplied_request_digest": idempotency.SuppliedRequestDigest})
 	}
 	var notFound *claims.ClaimNotFoundError
 	if errors.As(cause, &notFound) {

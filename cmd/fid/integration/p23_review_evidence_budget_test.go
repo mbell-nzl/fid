@@ -126,13 +126,21 @@ func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
 
 	beforeDenials := p21JournalEventCount(t, a.workspace)
 	beforeClaims, beforeRuns := p23EntityCounts(t, a)
-	deniedClaim := p23RunInput(t, a, "claim", "acquire", a.actor, "cycles-denied-claim", map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "worktree_id": a.repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60})
+	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "worktree_id": a.repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
+	deniedClaim := p23RunInput(t, a, "claim", "acquire", a.actor, "cycles-denied-claim", claimInput)
 	assertP22ProcessFailure(t, "claim.acquire", "review-rework-exhausted", 4, deniedClaim)
 	if !p23HasJSON(deniedClaim.Stderr, `"event":null`) || !p23HasJSON(deniedClaim.Stderr, `"replayed":false`) || p21JournalEventCount(t, a.workspace) != beforeDenials {
 		t.Fatalf("exhausted Claim denial = %q, want non-committing response", deniedClaim.Stderr)
 	}
-	deniedRun := p23RunInput(t, a, "run", "start", a.actor, "cycles-denied-run", map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "claim_id": "CLM-would-be-rework", "claim_version": 1, "executor": map[string]any{"id": "executor-would-be-rework", "source": "activated-harness"}, "obligation_id": nil, "repository": a.repository})
+	p23AssertNoncommittingDenialRetry(t, a, deniedClaim, func() p22ConformanceResponse {
+		return p23RunInput(t, a, "claim", "acquire", a.actor, "cycles-denied-claim", claimInput)
+	})
+	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "claim_id": "CLM-would-be-rework", "claim_version": 1, "executor": map[string]any{"id": "executor-would-be-rework", "source": "activated-harness"}, "obligation_id": nil, "repository": a.repository}
+	deniedRun := p23RunInput(t, a, "run", "start", a.actor, "cycles-denied-run", runInput)
 	assertP22ProcessFailure(t, "run.start", "review-rework-exhausted", 4, deniedRun)
+	p23AssertNoncommittingDenialRetry(t, a, deniedRun, func() p22ConformanceResponse {
+		return p23RunInput(t, a, "run", "start", a.actor, "cycles-denied-run", runInput)
+	})
 	afterClaims, afterRuns := p23EntityCounts(t, a)
 	if p21JournalEventCount(t, a.workspace) != beforeDenials || afterClaims != beforeClaims || afterRuns != beforeRuns {
 		t.Fatalf("exhausted denials changed Event or entity counts: events %d -> %d, claims %d -> %d, runs %d -> %d", beforeDenials, p21JournalEventCount(t, a.workspace), beforeClaims, afterClaims, beforeRuns, afterRuns)

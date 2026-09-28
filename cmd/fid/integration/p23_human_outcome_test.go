@@ -31,6 +31,9 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	t.Parallel()
 	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "review.record", "run.close", "run.observe", "run.observe-budget", "run.start"}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, actions, p22ExecutionFixture{HumanObligations: true, CoexistingReviewObligation: true})
+	a.task13ReplayCorpus = true
+	missingOutcome := p23LinkHumanOutcome(t, a, "missing-outcome", "OBL-human-release", "OUT-missing")
+	assertP22ProcessFailure(t, "evidence.link", "outcome-not-found", 3, missingOutcome)
 	assertP23ThreeObligationTypesCoexist(t, a)
 	// issue.transition-terminal-success (qa_pass) evaluates only the Obligations
 	// whose guarded_actions contain it (DEC-249). In this fixture that is
@@ -77,6 +80,7 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	before = p21JournalEventCount(t, a.workspace)
 	release := p23RecordHumanOutcome(t, a, "release-approved", a.actor, "release", "approved")
 	assertP23HumanOutcomeSuccess(t, release)
+	p23AssertActivity(t, a.workspace, release, "human-outcome-recorded", a.issueID, 1)
 	if after := p21JournalEventCount(t, a.workspace); after != before+1 {
 		t.Fatalf("valid Human Outcome appended %d Event(s), want 1", after-before)
 	}
@@ -416,12 +420,7 @@ func p23RecordHumanOutcome(t *testing.T, a *p22FIDRecoveryAdapter, suffix, actor
 		"id": "OUT-" + suffix, "class": class, "subject": map[string]any{"type": "issue", "id": a.issueID},
 		"result": result, "scope": map[string]any{"issue_id": a.issueID}, "reasoning": "real-process Human Outcome " + suffix, "references": []any{},
 	}
-	stdout, stderr, err := closureRunCommand(a.workspace, a.binary, "--project", a.workspace, "--json", "human-outcome", "record", "--actor", actor, "--input", p21Input(t, a.workspace, "p23-human-outcome-"+suffix, input), "--idempotency-key", "p23-human-outcome-"+suffix)
-	response := p22ConformanceResponse{Stdout: stdout, Stderr: stderr}
-	if err != nil {
-		response.ExitCode = processExitCode(t, err)
-	}
-	return response
+	return p23RunInput(t, a, "human-outcome", "record", actor, "p23-human-outcome-"+suffix, input)
 }
 
 func p23LinkHumanOutcome(t *testing.T, a *p22FIDRecoveryAdapter, suffix, obligationID, outcomeID string) p22ConformanceResponse {
@@ -471,6 +470,7 @@ func assertP23OutcomeLinkNotPermitted(t *testing.T, a *p22FIDRecoveryAdapter, su
 	t.Helper()
 	beforeEvents, beforeProjection := p21JournalEventCount(t, a.workspace), p22FaultProjection(t, a.workspace)
 	response := p23LinkHumanOutcome(t, a, suffix, obligationID, outcomeID)
+	assertP22ProcessFailure(t, "evidence.link", "outcome-not-permitted", 4, response)
 	assertP23OutcomeNotPermitted(t, response, obligationType)
 	if afterEvents := p21JournalEventCount(t, a.workspace); afterEvents != beforeEvents {
 		t.Fatalf("%s outcome-not-permitted denial appended Event(s): %d -> %d", suffix, beforeEvents, afterEvents)
@@ -499,6 +499,7 @@ func assertP23OutcomeNotPermitted(t *testing.T, response p22ConformanceResponse,
 
 func assertP23HumanOutcomeRequiredDenial(t *testing.T, response p22ConformanceResponse, obligationID, outcomeClass string) {
 	t.Helper()
+	assertP22ProcessFailure(t, "envelope.complete", "human-outcome-required", 4, response)
 	if response.ExitCode != 4 || response.Stdout != "" {
 		t.Fatalf("human-outcome-required denial = %#v", response)
 	}

@@ -149,9 +149,15 @@ func Address(options AddressOptions, request AddressRequest) (AddressResult, err
 			return err
 		}
 		effect := journal.Effect{Op: "insert", Table: "finding_dispositions", PK: map[string]any{"id": dispositionID}, Values: map[string]any{"finding_id": request.FindingID, "action": "addressed", "actor_id": options.ActorID, "claim_id": request.ClaimID, "qualifying_review_id": nil, "reason": request.Reason, "disposed_at": "<occurred-at>", "created_event_id": "<event-id>"}}
-		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "finding.addressed", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: request.FindingID, Sequence: next, Type: "finding"}, CommandName: "finding.address", Repository: workflowJournalRepository(envelope.RepositoryScope), Effects: []journal.Effect{effect}}
+		activity, err := reviewActivityEffect(conn, binding.IssueID, "finding-addressed", options.ActorID, map[string]any{"finding_id": request.FindingID})
+		if err != nil {
+			return err
+		}
+		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "finding.addressed", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: request.FindingID, Sequence: next, Type: "finding"}, CommandName: "finding.address", Repository: workflowJournalRepository(envelope.RepositoryScope), Effects: []journal.Effect{effect, activity}}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
-			setEffectIdentity(&prepared.Effects[0], prepared)
+			for index := range prepared.Effects {
+				setEffectIdentity(&prepared.Effects[index], prepared)
+			}
 			finding, err := loadFinding(conn, request.FindingID)
 			if err != nil {
 				return journal.IdempotencyMutation{}, err

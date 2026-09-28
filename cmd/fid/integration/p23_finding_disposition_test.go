@@ -16,9 +16,10 @@ func TestP23FindingDispositionRealProcessJourney(t *testing.T) {
 	t.Parallel()
 	actions := []string{
 		"claim.acquire", "claim.release", "envelope.activate", "envelope.create",
-		"finding.address", "gate.register", "review.record", "run.close", "run.observe", "run.start",
+		"concern.dispose", "concern.record", "finding.address", "gate.register", "review.record", "run.close", "run.observe", "run.start",
 	}
 	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "mutation")
+	a.task13ReplayCorpus = true
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "builder-before-review")
 
 	firstClaim := p23AcquireClaim(t, a, "actor-denied", "review", "finding-creator")
@@ -54,7 +55,14 @@ func TestP23FindingDispositionRealProcessJourney(t *testing.T) {
 
 	first := p23ReviewRecord(t, a, "actor-denied", "finding-creator", firstInput)
 	p23AssertReviewSuccess(t, "create Findings", first)
+	p23AssertActivity(t, a.workspace, first, "review-recorded", a.issueID, 1)
 	firstReview := p23ReviewFromResponse(t, first)
+	for _, subject := range []struct{ kind, id string }{{"review", firstReview["id"].(string)}, {"finding", "FND-addressed"}} {
+		input := map[string]any{"id": "CON-subject-" + subject.kind, "subject": map[string]any{"type": subject.kind, "id": subject.id}, "scope": map[string]any{"paths": []string{}}, "severity": "minor", "summary": "subject mapping", "reasoning": "Issue attribution", "references": []any{}}
+		response := p23RunInput(t, a, "concern", "record", a.actor, "concern-subject-"+subject.kind, input)
+		p23AssertReviewSuccess(t, "record "+subject.kind+" Concern", response)
+		p23AssertActivity(t, a.workspace, response, "concern-recorded", a.issueID, 1)
+	}
 	if got := p23ReviewGet(t, a, firstReview["id"].(string)); !reflect.DeepEqual(got, firstReview) {
 		t.Fatalf("first Review get result differs from its recorded typed result: got=%#v want=%#v", got, firstReview)
 	}
@@ -90,6 +98,7 @@ func TestP23FindingDispositionRealProcessJourney(t *testing.T) {
 		mutationClaim := p23AcquireClaim(t, a, a.actor, "mutation", "finding-address-builder")
 		addressed := p23FindingAddress(t, a, a.actor, "finding-address-builder", map[string]any{"finding_id": "FND-addressed", "claim_id": mutationClaim["id"], "expected_claim_version": mutationClaim["version"], "reason": "implemented the requested correction"})
 		p23AssertReviewSuccess(t, "address Finding", addressed)
+		p23AssertActivity(t, a.workspace, addressed, "finding-addressed", a.issueID, 1)
 		addressedFinding := p23FindingByID(t, a, "FND-addressed")
 		if addressedFinding["state"] != "addressed" || addressedFinding["blocking"] != true || !p23HasDisposition(t, addressedFinding, "addressed", a.actor, "", "implemented the requested correction") {
 			t.Fatalf("address Finding projection = %#v, want unresolved blocking addressed disposition", addressedFinding)
@@ -126,6 +135,7 @@ func TestP23FindingDispositionRealProcessJourney(t *testing.T) {
 	beforeMixed := p21JournalEventCount(t, a.workspace)
 	mixed := p23ReviewRecord(t, a, "actor-reviewer-two", "finding-mixed", mixedInput)
 	p23AssertReviewSuccess(t, "mixed terminal Review", mixed)
+	p23AssertActivity(t, a.workspace, mixed, "finding-resolved", a.issueID, 1)
 	if after := p21JournalEventCount(t, a.workspace); after != beforeMixed+1 {
 		t.Fatalf("mixed terminal Review changed Event count %d -> %d, want one atomic Event", beforeMixed, after)
 	}

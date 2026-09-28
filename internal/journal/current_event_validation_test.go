@@ -230,6 +230,9 @@ func TestCurrentEventRejectsConditionalBindingCorruption(t *testing.T) {
 
 func TestCurrentEventColumnDomainsMatchAcceptedDDL(t *testing.T) {
 	t.Parallel()
+	if _, ok := currentEventTables["activity_log"]; !ok {
+		t.Fatal("activity_log is missing from the strict current Event table registry")
+	}
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "columns.sqlite"))
 	defer closeProjectDB(t, conn)
 	for table, definition := range currentEventTables {

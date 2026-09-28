@@ -126,6 +126,11 @@ func RecordHumanOutcome(options JudgmentOptions, request HumanOutcomeRequest) (H
 			"created_at": "<occurred-at>", "created_event_id": "<event-id>",
 		}}}
 		effects = append(effects, resolutionEffects...)
+		activity, err := reviewActivityEffect(conn, request.Scope.IssueID, "human-outcome-recorded", options.ActorID, map[string]any{"outcome_id": request.ID, "outcome_class": request.Class})
+		if err != nil {
+			return err
+		}
+		effects = append(effects, activity)
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "human-outcome.recorded", ActorV2: judgmentActor(actor), Aggregate: journal.Aggregate{ID: request.ID, Sequence: 1, Type: "human-outcome"}, CommandName: "human-outcome.record", Repository: journalRepository(repository), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setJudgmentEventIdentity(prepared.Effects, prepared)

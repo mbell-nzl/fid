@@ -235,6 +235,7 @@ func p22FixtureResponse(t *testing.T, envelope map[string]any, stdout bool, exit
 }
 
 type p22FIDRecoveryAdapter struct {
+	task13ReplayCorpus                                             bool
 	activation                                                     map[string]any
 	registrationID                                                 string
 	registrationVersion                                            any
@@ -695,4 +696,5 @@ func assertP22ProcessFailure(t *testing.T, operation, code string, exit int, res
 	if fmt.Sprint(errorValue["code"]) != code {
 		t.Fatalf("%s failure code = %#v, want %q", operation, errorValue["code"], code)
 	}
+	assertP23AddedFailureContract(t, operation, code, envelope)
 }

@@ -21,6 +21,7 @@ func TestP23DecisionReferenceProtectedLifecycleRealProcess(t *testing.T) {
 		map[string]any{"ordinal": 1, "decision_class": "security", "required_capabilities": []string{"decision.record-reference"}, "affected_actions": []string{"issue.transition-terminal-success"}},
 	}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, p22ExecutionFixture{ProtectedDecisions: decisions})
+	a.task13ReplayCorpus = true
 	assertP23DecisionProjectionShape(t, a)
 	assertP23DecisionStopStates(t, a, map[string]string{"release": "open", "security": "open"})
 	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
@@ -28,7 +29,11 @@ func TestP23DecisionReferenceProtectedLifecycleRealProcess(t *testing.T) {
 		assertP23DecisionCommandSuccess(t, "transition Issue to "+state, response)
 	}
 	beforeSecurityDenial := p21JournalEventCount(t, a.workspace)
-	assertP23ProtectedDecisionDenial(t, a, beforeSecurityDenial, "issue.transition", p23IssueTransition(t, a, "qa_pass", 4, "task9-security-denial"), "security", []string{"issue.transition-terminal-success"})
+	securityDenial := p23IssueTransition(t, a, "qa_pass", 4, "task9-security-denial")
+	assertP23ProtectedDecisionDenial(t, a, beforeSecurityDenial, "issue.transition", securityDenial, "security", []string{"issue.transition-terminal-success"})
+	p23AssertNoncommittingDenialRetry(t, a, securityDenial, func() p22ConformanceResponse {
+		return p23IssueTransition(t, a, "qa_pass", 4, "task9-security-denial")
+	})
 
 	for _, outcome := range []string{"rejected", "deferred"} {
 		response := p23RecordDecision(t, a, "release-"+outcome, "release", outcome, []string{"decision.record-reference"}, p23DecisionSource(a, true))
@@ -80,7 +85,12 @@ func TestP23DecisionReferenceProtectedLifecycleRealProcess(t *testing.T) {
 	assertP23DecisionCommandSuccess(t, "transition terminal with unrelated release Decision open", p23IssueTransition(t, a, "qa_pass", 4, "task9-qa-pass"))
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "task9-close")
 	beforeReleaseDenial := p21JournalEventCount(t, a.workspace)
-	assertP23ProtectedDecisionDenial(t, a, beforeReleaseDenial, "envelope.complete", p23RunInput(t, a, "envelope", "complete", a.actor, "task9-release-denial", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository}), "release", []string{"envelope.complete"})
+	releaseDenialInput := map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository}
+	releaseDenial := p23RunInput(t, a, "envelope", "complete", a.actor, "task9-release-denial", releaseDenialInput)
+	assertP23ProtectedDecisionDenial(t, a, beforeReleaseDenial, "envelope.complete", releaseDenial, "release", []string{"envelope.complete"})
+	p23AssertNoncommittingDenialRetry(t, a, releaseDenial, func() p22ConformanceResponse {
+		return p23RunInput(t, a, "envelope", "complete", a.actor, "task9-release-denial", releaseDenialInput)
+	})
 
 	release := p23RecordDecision(t, a, "release-approved", "release", "approved", []string{"decision.record-reference"}, p23DecisionSource(a, true))
 	assertP23DecisionSuccess(t, release, 1)
@@ -108,6 +118,7 @@ func TestP23DecisionReferenceProtectedLifecycleRealProcess(t *testing.T) {
 	} {
 		before := p21JournalEventCount(t, a.workspace)
 		response := p23RecordDecision(t, a, failure.name, "release", "approved", []string{"decision.record-reference"}, failure.source)
+		assertP22ProcessFailure(t, "decision.record-reference", "source-digest-mismatch", 4, response)
 		if response.ExitCode != 4 || response.Stdout != "" || !p23HasJSON(response.Stderr, `"code":"source-digest-mismatch"`) || p21JournalEventCount(t, a.workspace) != before {
 			t.Fatalf("%s response = %#v; events %d -> %d", failure.name, response, before, p21JournalEventCount(t, a.workspace))
 		}
@@ -133,6 +144,7 @@ func assertP23DecisionCommandSuccess(t *testing.T, operation string, response p2
 
 func assertP23ProtectedDecisionDenial(t *testing.T, a *p22FIDRecoveryAdapter, before int, operation string, response p22ConformanceResponse, class string, actions []string) {
 	t.Helper()
+	assertP22ProcessFailure(t, operation, "protected-decision-required", 5, response)
 	if response.ExitCode != 5 || response.Stdout != "" {
 		t.Fatalf("%s protected Decision denial = %#v", operation, response)
 	}
@@ -168,12 +180,7 @@ func p23RecordDecision(t *testing.T, a *p22FIDRecoveryAdapter, suffix, class, ou
 		"authority": map[string]any{"actor_id": a.actor, "required_capabilities": capabilities},
 		"outcome":   outcome, "scope": map[string]any{"issue_id": a.issueID},
 	}
-	stdout, stderr, err := closureRunCommand(a.workspace, a.binary, "--project", a.workspace, "--json", "decision", "record-reference", "--actor", a.actor, "--input", p21Input(t, a.workspace, "p23-decision-"+suffix, input), "--idempotency-key", "p23-decision-"+suffix)
-	response := p22ConformanceResponse{Stdout: stdout, Stderr: stderr}
-	if err != nil {
-		response.ExitCode = processExitCode(t, err)
-	}
-	return response
+	return p23RunInput(t, a, "decision", "record-reference", a.actor, "p23-decision-"+suffix, input)
 }
 
 func p23DecisionSource(a *p22FIDRecoveryAdapter, matching bool) map[string]any {

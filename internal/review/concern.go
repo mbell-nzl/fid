@@ -98,6 +98,17 @@ func RecordConcern(options JudgmentOptions, request ConcernRecordRequest) (Conce
 			return err
 		}
 		event := concernRecordEvent(request, options.ActorID, actor, repository)
+		if request.Subject.Type != "requirement" {
+			issueID, err := judgmentActivityIssueID(conn, request.Subject)
+			if err != nil {
+				return err
+			}
+			activity, err := reviewActivityEffect(conn, issueID, "concern-recorded", options.ActorID, map[string]any{"concern_id": request.ID})
+			if err != nil {
+				return err
+			}
+			event.Effects = append(event.Effects, activity)
+		}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			concern := concernRecordValue(request, options.ActorID, prepared)
 			setJudgmentEventIdentity(prepared.Effects, prepared)
@@ -164,6 +175,18 @@ func DisposeConcern(options JudgmentOptions, request ConcernDisposeRequest) (Con
 			return err
 		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "concern.disposed", ActorV2: judgmentActor(actor), Aggregate: journal.Aggregate{ID: request.ConcernID, Sequence: next, Type: "concern"}, CommandName: "concern.dispose", Repository: journalRepository(repository), Effects: []journal.Effect{concernDisposeEffect(request)}}
+		subject := subjectFromValue(concern)
+		if subject.Type != "requirement" {
+			issueID, err := judgmentActivityIssueID(conn, subject)
+			if err != nil {
+				return err
+			}
+			activity, err := reviewActivityEffect(conn, issueID, "concern-disposed", options.ActorID, map[string]any{"concern_id": request.ConcernID})
+			if err != nil {
+				return err
+			}
+			event.Effects = append(event.Effects, activity)
+		}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setJudgmentEventIdentity(prepared.Effects, prepared)
 			value := disposedConcernValue(concern, request, options.ActorID, prepared)
@@ -244,6 +267,35 @@ func concernRecordEvent(request ConcernRecordRequest, actorID string, actor work
 	references, _ := journal.MarshalCanonicalJSON(request.References)
 	effect := journal.Effect{Op: "insert", Table: "judgment_concerns", PK: map[string]any{"id": request.ID}, Values: map[string]any{"subject_type": request.Subject.Type, "subject_id": request.Subject.ID, "actor_id": actorID, "scope_json": string(scope), "severity": request.Severity, "summary": request.Summary, "reasoning": request.Reasoning, "references_json": string(references), "status": "open", "disposition_action": nil, "disposition_issue_id": nil, "supersedes_concern_id": nil, "supersedes_finding_id": nil, "disposition_reason": nil, "disposed_actor_id": nil, "disposed_at": nil, "disposed_event_id": nil, "created_at": "<occurred-at>", "created_event_id": "<event-id>"}}
 	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: "concern.recorded", ActorV2: judgmentActor(actor), Aggregate: journal.Aggregate{ID: request.ID, Sequence: 1, Type: "concern"}, CommandName: "concern.record", Repository: journalRepository(repository), Effects: []journal.Effect{effect}}
+}
+
+func judgmentActivityIssueID(conn *sql.DB, subject Subject) (string, error) {
+	if subject.Type == "issue" {
+		return subject.ID, nil
+	}
+	binding, found, err := judgmentEnvelopeBinding(conn, subject)
+	if err != nil {
+		return "", fmt.Errorf("resolve activity Issue: %w", err)
+	}
+	if !found {
+		return "", fmt.Errorf("resolve activity Issue for %s %s: missing subject", subject.Type, subject.ID)
+	}
+	return binding.IssueID, nil
+}
+
+func reviewActivityEffect(conn *sql.DB, issueID, name, actorID string, details map[string]any) (journal.Effect, error) {
+	id, err := journal.GenerateID("ACT", func(candidate string) (bool, error) { return rowExists(conn, "activity_log", candidate) })
+	if err != nil {
+		return journal.Effect{}, err
+	}
+	raw, err := journal.MarshalCanonicalJSON(details)
+	if err != nil {
+		return journal.Effect{}, err
+	}
+	return journal.Effect{Op: "activity", Table: "activity_log", PK: map[string]any{"id": id}, Values: map[string]any{
+		"journal_event_id": "<event-id>", "ref_type": "issue", "ref_id": issueID,
+		"event": name, "details": string(raw), "actor": actorID, "occurred_at": "<occurred-at>",
+	}}, nil
 }
 
 func concernDisposeEffect(request ConcernDisposeRequest) journal.Effect {

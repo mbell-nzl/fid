@@ -101,7 +101,7 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	}
 	for _, effect := range event.Effects {
 		for column, value := range effect.Values {
-			if strings.HasSuffix(column, "_json") && currentEventValue(value) != nil {
+			if (strings.HasSuffix(column, "_json") || effect.Table == "activity_log" && column == "details") && currentEventValue(value) != nil {
 				if err := validateCurrentJSON(event, effect, column, currentEventValue(value).(string)); err != nil {
 					return fmt.Errorf("current Event %s %s/%s: invalid JSON column %q: %w", event.EventType, effect.Table, effect.Op, column, err)
 				}

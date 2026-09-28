@@ -11,6 +11,7 @@ func TestP23RequirementReferenceAndLinkRealProcess(t *testing.T) {
 	t.Parallel()
 	actions := []string{"claim.acquire", "claim.release", "decision.record-reference", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start", "stop.resolve"}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, p22ExecutionFixture{})
+	a.task13ReplayCorpus = true
 	source := p23DecisionSource(a, true)
 	seed := map[string]any{"id": "PRD-TRACE-001", "source": source, "status": "active"}
 	first := p23RunInput(t, a, "requirement", "record-reference", a.actor, "task12-first", seed)
@@ -38,6 +39,7 @@ func TestP23RequirementReferenceAndLinkRealProcess(t *testing.T) {
 	}
 	beforeMismatch := p21JournalEventCount(t, a.workspace)
 	mismatch := p23RunInput(t, a, "requirement", "record-reference", a.actor, "task12-mismatch", map[string]any{"id": "PRD-TRACE-001", "source": p23DecisionSource(a, false), "status": "active"})
+	assertP22ProcessFailure(t, "requirement.record-reference", "source-digest-mismatch", 4, mismatch)
 	if mismatch.ExitCode != 4 || mismatch.Stdout != "" || !p23HasJSON(mismatch.Stderr, `"code":"source-digest-mismatch"`) || p21JournalEventCount(t, a.workspace) != beforeMismatch {
 		t.Fatalf("digest mismatch = %#v; events %d -> %d", mismatch, beforeMismatch, p21JournalEventCount(t, a.workspace))
 	}
@@ -104,6 +106,7 @@ func TestP23RequirementReferenceAndLinkRealProcess(t *testing.T) {
 	}
 	beforeUnknown := p21JournalEventCount(t, a.workspace)
 	unknownID := p23RunInput(t, a, "requirement", "link", a.actor, "task12-unknown-id", map[string]any{"requirement_id": "PRD-UNKNOWN", "issue_id": a.issueID, "relation": "verifies"})
+	assertP22ProcessFailure(t, "requirement.link", "requirement-not-found", 3, unknownID)
 	unknownRelation := p23RunInput(t, a, "requirement", "link", a.actor, "task12-unknown-relation", map[string]any{"requirement_id": "PRD-TRACE-001", "issue_id": a.issueID, "relation": "unknown"})
 	if unknownID.ExitCode == 0 || !p23HasJSON(unknownID.Stderr, `"code":"requirement-not-found"`) || unknownRelation.ExitCode == 0 || p21JournalEventCount(t, a.workspace) != beforeUnknown {
 		t.Fatalf("unknown links = %#v, %#v; events %d -> %d", unknownID, unknownRelation, beforeUnknown, p21JournalEventCount(t, a.workspace))

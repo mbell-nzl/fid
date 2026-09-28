@@ -325,6 +325,22 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		effects = append(effects, readinessEffects...)
 		stops = append(stops, readinessStops...)
 		attention = append(attention, readinessAttention...)
+		activity, err := reviewActivityEffect(conn, binding.IssueID, "review-recorded", options.ActorID, map[string]any{"review_id": reviewID})
+		if err != nil {
+			return err
+		}
+		effects = append(effects, activity)
+		for _, disposition := range resolutionEffects {
+			if disposition.Values["action"] != "resolved" {
+				continue
+			}
+			findingID := disposition.Values["finding_id"].(string)
+			activity, err := reviewActivityEffect(conn, binding.IssueID, "finding-resolved", options.ActorID, map[string]any{"finding_id": findingID})
+			if err != nil {
+				return err
+			}
+			effects = append(effects, activity)
+		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "review.recorded", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: reviewID, Sequence: next, Type: "review"}, CommandName: "review.record", Repository: journalRepository(observed), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setReviewEventIdentity(review, prepared)
