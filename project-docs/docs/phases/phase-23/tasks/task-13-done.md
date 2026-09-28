@@ -82,8 +82,8 @@ Working directory: `/home/mark/projects/fid`. The two short exact commands ran i
 
 ## Commit hash
 
-- Pending commit
+- `472ed645a6eff5847712759f74b1aa50d43e48c2`
 
 ## Commit subject
 
-- Pending commit
+- `feat(cli): checkpoint Phase 23 leaf conformance work`
