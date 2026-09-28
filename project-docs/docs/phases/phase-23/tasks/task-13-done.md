@@ -105,8 +105,8 @@ Recovery attempt 1, on the list-converged checkpoint, ran all five byte-identica
 
 ## Commit hash
 
-- Pending commit
+- `838fc32e37ce1f3a5352f0e371fc09f65590007a`
 
 ## Commit subject
 
-- Pending commit
+- `feat(review): add bounded review list projection`
