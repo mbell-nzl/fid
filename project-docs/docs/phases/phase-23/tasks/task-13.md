@@ -246,3 +246,63 @@ Continue as attempt 2 of `task-13:scope-gap:review-list-and-activity-producers`.
 - **Acceptance criterion added:** the seven `issue`-subject names appear from
   their producing leaves with the `schema.md` section 6.2 subject, and no
   `requirement` or `decision` activity row is written. (VAL-055, DEC-262)
+
+## Planning Amendment - DEC-263 (2026-09-29, ESC-23-008)
+
+The contradiction is a drafting defect in the accepted set, not a task-13
+defect. Continue as attempt 2 of
+`task-13:protected-contract:protected-decision-denial-envelope-val-057`.
+
+- **Accepted shape** (`public-interface.md` sections 5 and 5.2). Put the four
+  denial fields inside `details`, in the same form as
+  `review-rework-exhausted`. The envelope does not change.
+  - `protected-decision-required`:
+    `{envelope_id,decision_class,required_capabilities,affected_actions,stop_ids,attention_ids,event,replayed}`
+  - `human-outcome-required`:
+    `{envelope_id,obligation_id,outcome_class,stop_ids,attention_ids,event,replayed}`
+  - Values:
+    - `stop_ids`: the blocking Stops the details describe, sorted by ID.
+    - `attention_ids`: the Attention linked to those Stops, sorted by ID.
+    - `event`: always `null`.
+    - `replayed`: always `false`.
+- **Scope added:**
+  - `internal/cli/codes.go`: extend both definitions with the existing
+    `stop_ids`/`attention_ids`/`event`/`replayed` field helpers.
+  - `cmd/fid/decision.go` `protectedDecisionFailure` and
+    `cmd/fid/human_outcome.go` `humanOutcomeRequiredFailure`: add the four
+    fields from the `StopBlockedError` the adapters already receive (`Stops`
+    and `AttentionIDs`). Do not create a second response path.
+  - `cmd/fid/issue_mutation_response.go` and `cmd/fid/envelope.go`: edit
+    only if a caller must pass that `StopBlockedError` through unchanged.
+  - Matching tests in `internal/cli`, `cmd/fid`, and `cmd/fid/integration`.
+- **Converge the retained exact-details rows** that pin the old four-key or
+  three-key shapes. These are rows from tasks 9, 10, 11, and 13, for example
+  `assertP23ProtectedDecisionDenial` and the `human-outcome-required` and
+  precedence probes.
+  - Keep every existing key and value check.
+  - Add `stop_ids` and `attention_ids` equal to the durable Stop and its
+    linked Attention, plus `event:null` and `replayed:false`.
+  - Record each row's provenance (introducing commit and task) and its
+    executing command in `task-13-done.md`.
+- **Strengthen VAL-057.** The protected-Decision repeat-denial probe must
+  also assert that `stop_ids` and `attention_ids` equal the durable blocking
+  Stop and its Attention. A byte-identical repeat alone is not enough.
+- **Forbidden:**
+  - editing StopDetails, Stop rows, or
+    `internal/journal/current_event_value_catalog.go`;
+  - editing the StopDetails keys in `internal/workflow/stop.go`;
+  - changing any category, exit, subject, producer, or precedence;
+  - changing the `fid-cli.v1` envelope;
+  - removing or weakening any assertion;
+  - changing any command.
+
+  If any of these is needed, return `RECOVERY_REQUIRED`.
+- **Retain** the attempt-2 BLOCKED report, the failing
+  `TestP23DecisionReferenceProtectedLifecycleRealProcess` run, and the failed
+  tagged gate in `task-13-done.md`. Disclose DEC-263 under Deviations. Then
+  run the focused command from `qa/resume-after-esc-23-008.md` and all five
+  exact commands unchanged.
+- **Acceptance criterion added:** both Stop-blocked codes return their
+  DEC-263 details exactly, with the IDs equal to the durable Stop and
+  Attention, and no StopDetails or Stop projection changes. (VAL-056,
+  VAL-057, DEC-263)

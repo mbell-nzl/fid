@@ -293,14 +293,16 @@ not automatically removed: the generic authority contract may retain or refine
 them through its own accepted contract change.
 
 Phase 23 Task 9 adds `protected-decision-required` (authority, exit 5) with
-exact details `envelope_id`, `decision_class`, `required_capabilities`, and
-`affected_actions`; and `source-digest-mismatch` (precondition, exit 4) with
+exact details `envelope_id`, `decision_class`, `required_capabilities`,
+`affected_actions`, and (DEC-263) the Stop-blocked denial fields `stop_ids`,
+`attention_ids`, `event` (always null), and `replayed` (always `false`); and `source-digest-mismatch` (precondition, exit 4) with
 exact details `display_label`, nullable `path`, `expected_digest`, and nullable
 `observed_digest`. A missing Source file is reported through the same digest
 mismatch code and appends no Event.
 
 Phase 23 Task 10 adds `human-outcome-required` (precondition, exit 4) with
-exact details `envelope_id`, `obligation_id`, and `outcome_class`, returned by
+exact details `envelope_id`, `obligation_id`, `outcome_class`, and (DEC-263)
+the same four Stop-blocked denial fields, returned by
 `envelope.complete` and `issue.transition-terminal-success` for the blocked
 actions of the open readiness Stop only; and `outcome-not-found`
 (not-found, exit 3) with exact detail `id`, returned by `evidence.link` for an
@@ -327,12 +329,12 @@ the entity ID in the producing rejection. All are `retryable:false`.
 | `outcome-not-found` | not-found / 3 | human-outcome | `id` |
 | `concern-already-disposed` | conflict / 4 | concern | `concern_id`, `disposed_at` |
 | `claim-mode-invalid` | precondition / 4 | claim | `claim_id`, `mode`, `required_mode` |
-| `protected-decision-required` | authority / 5 | envelope | `envelope_id`, `decision_class`, `required_capabilities`, `affected_actions` |
+| `protected-decision-required` | authority / 5 | envelope | `envelope_id`, `decision_class`, `required_capabilities`, `affected_actions`, `stop_ids`, `attention_ids`, `event`, `replayed` |
 | `outcome-not-permitted` | precondition / 4 | null | `obligation_id`, `obligation_type`, `outcome_id`, `result` |
 | `evidence-type-not-accepted` | precondition / 4 | null | `obligation_id`, `evidence_type`, `accepted_evidence_types` |
 | `source-digest-mismatch` | precondition / 4 | null | `display_label`, `path`, `expected_digest`, `observed_digest` |
 | `repository-mismatch` | conflict / 4 | null | `expected`, `observed` |
-| `human-outcome-required` | precondition / 4 | envelope | `envelope_id`, `obligation_id`, `outcome_class` |
+| `human-outcome-required` | precondition / 4 | envelope | `envelope_id`, `obligation_id`, `outcome_class`, `stop_ids`, `attention_ids`, `event`, `replayed` |
 
 `requirement-not-found` retains its earlier not-found / 3 registration with
 subject `requirement` and detail `id`; the Phase 23 requirement leaves now

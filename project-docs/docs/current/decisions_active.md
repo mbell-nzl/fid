@@ -121,21 +121,13 @@
   `review-recorded` has no discriminator; `finding_id` is for `finding-resolved`.
 - DEC-237: resolution (VAL-078) and Condition encoding (VAL-080) are separate.
   VAL-081 preserves nullable binding; VAL-082 preserves retained-type bytes.
-- DEC-240 (ACCEPTED, Tech Lead 2026-09-20): bounded QA finding R-29 splits
-  VAL-082's validation, recorded-journal replay and Attention-key stability
-  into VAL-082/083/084, retaining every case, Task 9 ownership and QA Lead
-  validation. Current count is **84**: 80 deterministic, 4 Human. QA Lead
-  confirmation is READY in qa-plan section 21 (`74c83b7`).
-- DEC-242: Task 5 adds optional reasoned `inapplicable_findings` input to
-  `review.record`; omitted/empty preserve existing request digests. Existing
-  Finding disposition output and DDL are sufficient; terminal dispositions
-  belong to the qualifying Review Event, and addressed is nonterminal. Task 5
-  owns both-action evidence and the strict resolved-only projection filter.
-- DEC-243: VAL-025 retains all nine compatibility cells. Task 6 delivers
-  receipt/review durable links and production mismatch classification; Task 10
-  owns the real positive Human link and final Human-row closure. Seeded/pure
-  evidence is labelled intermediate. Task 6 registers the accepted
-  `outcome-not-permitted` mismatch code and Task 10 reuses it. No gate changes.
+- DEC-240: VAL-082 splits into VAL-082/083/084. Current count is **84**:
+  80 deterministic, 4 Human.
+- DEC-242: Task 5 adds optional reasoned `inapplicable_findings` to
+  `review.record`; addressed is nonterminal, terminal dispositions belong to
+  the qualifying Review Event.
+- DEC-243: VAL-025 keeps all nine compatibility cells; Task 6 delivers the
+  receipt/review links and Task 10 the real Human link and final closure.
 - DEC-249 (Tech Lead 2026-09-26): an Obligation blocks only the guarded
   actions it declares. "Applicable" means `required` and guarding that action.
   Task 2 owns the evaluator conformance repair.
@@ -147,20 +139,11 @@
 - DEC-251 (Human, Option B, 2026-09-26): `human-outcome.record` needs no
   Envelope grant. Human authority comes from the Activation profile. The
   section 4.1 cell is corrected.
-- DEC-252: task 6 repairs multi-grant `gate.run`.
-- DEC-254: Part 1 (`cmd/fid` breach attribution) stands; DEC-258 satisfies
-  Part 2.
-- DEC-255 releases ESC-23-004's stop for ordered repairs. A fresh checkpoint
-  re-review must PASS before task 12.
-- DEC-256 orders the repairs as tasks 6, 2, 10, and 11; DEC-257 supplies the
-  ledger route. Tasks 6, 2, and 10 are complete. Tasks 12-18 stay held pending
-  the fresh checkpoint.
-- DEC-258 (Human-delegated) resolves ESC-23-005 (task-11 STOP): parallel tests,
-  `paralleltest`, a tiered test loop, and an 80% headroom warning. The Runner
-  resumes via `qa/resume-after-esc-23-005.md`. DEC-259 (Human) adds
-  `-gcflags=modernc.org/...=-d=checkptr=0` to both race gates, with a phase-end
-  full-`checkptr` control run. See [phase brief](phase_brief.md) and
-  [Phase 23 decisions](../phases/phase-23/decisions.md).
+- DEC-252..257 closed ESC-23-004's repairs (tasks 6, 2, 10, 11 complete);
+  DEC-254 Part 1 (`cmd/fid` breach attribution) still stands.
+- DEC-258 (Human-delegated): parallel tests, `paralleltest`, tiered test loop,
+  80% headroom warning. DEC-259 (Human): both race gates carry
+  `-gcflags=modernc.org/...=-d=checkptr=0`, plus a phase-end full-`checkptr` run.
 - DEC-260 (Tech Lead, Human-delegated) resolves ESC-23-006. Requirement writes
   need a trusted Actor but no Actor-profile capability or grant. The closed
   capability set stays at thirty. Report-lint grammar is unchanged; task 12's
@@ -171,6 +154,11 @@
   `issue`-subject ActivityEvent rows. Task 15 writes the
   `requirement`/`decision`-subject rows with 0018 and closes VAL-055. The
   subjects are in `schema.md` section 6.2.
+- DEC-263 (Tech Lead, Human-delegated) resolves ESC-23-008. The
+  `protected-decision-required` and `human-outcome-required` failure details
+  are their StopDetails plus `stop_ids`, `attention_ids`, `event` (null), and
+  `replayed` (`false`), as DEC-226 part 4 intended. The envelope, StopDetails,
+  and VAL-056/057 text are unchanged.
 
 ## Prior Phase and Future Qualification
 

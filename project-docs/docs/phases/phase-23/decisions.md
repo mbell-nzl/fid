@@ -2519,6 +2519,137 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   VAL-055; VAL-062; `schema.md` sections 4 and 6.2; `execution-scope.md`
   section 6.
 
+### DEC-263: Stop-blocked denial details carry the Stop, Attention, and EventRef fields (ESC-23-008)
+
+- **Date:** 2026-09-29.
+- **Status:** ACCEPTED by the Tech Lead under explicit Human delegation,
+  2026-09-29. The Human told the Tech Lead to resolve ESC-23-008. This
+  decision carries out semantics the Human already approved in DEC-226
+  part 4 (2026-09-19). It widens two failure-detail shapes to match them. The
+  Human may reverse it; "Not taken" below says what reversing it costs.
+  - **Unchanged:**
+    - the `fid-cli.v1` error envelope and exit mapping;
+    - every StopDetails variant (`public-interface.md` section 2), the Stop
+      rows, and the journal StopDetails catalog;
+    - failure categories, exits, and subjects;
+    - the section 5.1 producers and precedence;
+    - when either code is returned;
+    - VAL-056's and VAL-057's pass and fail text;
+    - gates, budgets, and task 14's Human text.
+  - **Changed:**
+    - `public-interface.md` section 5: the closed details of
+      `protected-decision-required` and `human-outcome-required`;
+    - `public-interface.md` section 5.2: one clarifying paragraph;
+    - `06_DESIGN_PLAN_CLI.md` section 5;
+    - task 13 scope (Planning Amendment - DEC-263).
+- **Finding (Tech Lead, verified at `348a538`).**
+  - DEC-226 part 4 (Human-approved), `public-interface.md` section 5.2,
+    `schema.md` section 6.3, and VAL-057 all say that a Stop-blocked denial
+    returns the immutable Stop and Attention IDs, a null `EventRef`, and
+    `replayed:false`.
+  - Section 5 carries those fields only for `review-rework-exhausted`,
+    following the Phase 22 `budget-exhausted` precedent
+    (`{budget,stop_ids,attention_ids,event,replayed}`).
+  - The `protected-decision-required` and `human-outcome-required` rows copy
+    their **StopDetails** verbatim (section 2) and never gained the denial
+    fields. This is a drafting defect in the accepted set, not a task-13
+    defect. The envelope has no other place for these values: every Phase 22
+    and Phase 23 precedent puts them in `details`.
+  - `human-outcome-required` has the same defect. The same 5.2 rule governs
+    it, and VAL-056 asserts its exact details at task 13. Fixing only
+    `protected-decision-required` would leave a known contradiction to fail
+    later.
+  - Today both adapters (`cmd/fid/decision.go` `protectedDecisionFailure`
+    and `cmd/fid/human_outcome.go` `humanOutcomeRequiredFailure`) return the
+    decoded Stop details unchanged. `workflow.StopBlockedError` already
+    carries the blocking Stops and `AttentionIDs`, which
+    `NewStopBlockedError` loads from `attention_stop_links` in ID order.
+- **Decision.**
+  1. **Shape.** Each code's failure details are its StopDetails followed by
+     the four denial fields, in the same form as `review-rework-exhausted`:
+     - `protected-decision-required`:
+       `{envelope_id:ID,decision_class:ID,required_capabilities:ID[],affected_actions:text[],stop_ids:ID[],attention_ids:ID[],event:?EventRef,replayed:boolean}`
+     - `human-outcome-required`:
+       `{envelope_id:ID,obligation_id:ID,outcome_class:ID,stop_ids:ID[],attention_ids:ID[],event:?EventRef,replayed:boolean}`
+  2. **Values.**
+     - `stop_ids` holds the unresolved Stops of that code that block the
+       requested action and that the returned details describe, sorted by ID.
+     - `attention_ids` holds the Attention items linked to those Stops,
+       sorted by ID.
+     - `event` is always `null` and `replayed` is always `false`, because
+       these denials commit nothing. The fields stay present so the closed
+       shape is fixed, exactly as for `review-rework-exhausted`.
+     - Repeating the request while the Stop is unresolved returns the same
+       IDs and a byte-identical failure.
+  3. **StopDetails do not change.** The four fields belong to the failure
+     response only. They are never stored on a Stop, and the Stop's own
+     `details` in Stop, Attention, resume, and export projections is
+     unchanged.
+  4. **Out of scope.** This decision does not change which requests return
+     either code. Both adapters already require exactly one blocking Stop.
+     The decision does not settle how a protected Decision that becomes
+     unsatisfied again after its Stop resolved should be reported (for
+     example, after section 7 Outcome supersession). That was not decided
+     before, it is not exercised by VAL-057, and it is carried to wrap-up
+     as a QA note, not a task-13 requirement.
+- **Task 13 continuation scope** (Planning Amendment - DEC-263):
+  - **Production:**
+    - `internal/cli/codes.go`: add the four fields to both definitions,
+      reusing the existing `stop_ids`/`attention_ids`/`event`/`replayed`
+      field helpers.
+    - `cmd/fid/decision.go` `protectedDecisionFailure` and
+      `cmd/fid/human_outcome.go` `humanOutcomeRequiredFailure`: add the
+      fields from the `StopBlockedError` the adapters already receive. No
+      second response path.
+    - `cmd/fid/issue_mutation_response.go` and `cmd/fid/envelope.go`:
+      edit only if a caller must pass the existing `StopBlockedError`
+      through unchanged.
+  - **Converge retained exact-details rows** in `internal/cli` tests,
+    `cmd/fid` tests, and `cmd/fid/integration`. These are the rows from
+    tasks 9, 10, 11, and 13 that pin the old four-key or three-key shape,
+    for example `assertP23ProtectedDecisionDenial`.
+    - Keep every existing key and value check.
+    - Add equality of `stop_ids`/`attention_ids` with the durable Stop and
+      its linked Attention, `event:null`, and `replayed:false`.
+    - Record per-row provenance (introducing commit and task) and the
+      executing command.
+  - **Strengthen VAL-057.** `p23AssertNoncommittingDenialRetry`, or the
+    protected-Decision caller, asserts that the returned `stop_ids` and
+    `attention_ids` equal the durable blocking Stop and its Attention. A
+    byte-identical repeat alone is not enough.
+  - **Forbidden:**
+    - changing StopDetails, Stop rows, the journal value catalog
+      (`internal/journal/current_event_value_catalog.go`), or
+      `internal/workflow/stop.go` StopDetails keys;
+    - changing any category, exit, subject, producer, or precedence;
+    - removing or weakening any assertion;
+    - changing any command.
+- **Gate coverage.** Task 13's five commands already execute every file
+  named here: `internal/cli` and `cmd/fid` run in the ordinary race gate,
+  and `cmd/fid/integration` runs in the tagged gate. No command changes.
+- **Attempt accounting.** This is attempt 1 of the new signature
+  `task-13:protected-contract:protected-decision-denial-envelope-val-057`,
+  resumed as attempt 2 with no-progress `0/2`. Attempt 1 made material
+  progress: VAL-055's DEC-262 subset and VAL-056 passed. It was not
+  authorized to widen the closed schema that caused its only remaining
+  failure.
+- **Not taken.**
+  - **A: amend VAL-057 so the IDs are not returned.** Determinism would then
+    rest on byte-identical repeats plus `stop list`. This contradicts the
+    Human-approved DEC-226 part 4, and it weakens the failing assertion.
+  - **B: top-level envelope fields.** This changes the retained `fid-cli.v1`
+    envelope for every code and breaks the Phase 22 precedent.
+  - **C: widen only `protected-decision-required`.** This leaves the same
+    contradiction for `human-outcome-required` under VAL-056.
+  - If the Human prefers A, task 13 instead reverts the retry probe to
+    byte-identity plus journal and idempotency counts, and VAL-057 and
+    section 5.2 are amended.
+- **Resume:** `qa/resume-after-esc-23-008.md`.
+- **Refs:** ESC-23-008; TRG-23-008; DEC-226; DEC-248; DEC-262; VAL-039;
+  VAL-056; VAL-057; `public-interface.md` sections 2, 5, and 5.2;
+  `schema.md` section 6.3; Phase 22 `public-interface.md` section 5
+  (`budget-exhausted`).
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,
@@ -2532,7 +2663,7 @@ not the default.
 | `03_TRD_SCHEMA.md` | touched: DEC-242 | section 3.7 removes conflicting Human-Outcome Finding resolution; task 1's section 8.4 sync still audited at wrap |
 | `04_TRD_CONFIG.md` | pending | |
 | `05_DESIGN_PLAN.md` | pending | |
-| `06_DESIGN_PLAN_CLI.md` | touched: DEC-242 | Review optional inapplicability input; later task-owned sync remains |
+| `06_DESIGN_PLAN_CLI.md` | touched: DEC-242, DEC-263 | Review optional inapplicability input; DEC-263 adds the Stop-blocked denial fields to `protected-decision-required` and `human-outcome-required`; later task-owned sync remains |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: DEC-239, DEC-242 | same-independent-Reviewer resolution and reasoned inapplicability in one Review Event |
 | `08_QUALITY_PLAN.md` | touched: DEC-239, DEC-259 | section 8 records VAL-015 evidence-route boundary; section 7 race gates carry the modernc `checkptr` exclusion |
 | `09_AI_WORKFLOW.md` | touched: DEC-257, DEC-258, DEC-259 | §2.4 REVIEW-owner paragraph and "Autonomous triage and resolved resume" gain the BLOCK re-review `Repair owners` route; §2.5 step 6 gains the tiered test loop, `t.Parallel()` default and 80% headroom warning |

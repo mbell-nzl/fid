@@ -1,5 +1,40 @@
 # Phase 23 Escalations
 
+## ESC-23-008 - Task-13 protected-decision denial response contradicts closed failure schema
+
+- **Raised:** 2026-09-28
+- **Allocated by:** TL-Lite, TRG-23-008
+- **Candidate source:** `project-docs/docs/phases/phase-23/tasks/task-13-done.md` (BLOCKED)
+- **Protected category:** public-interface/specification contradiction and validation assertion semantics.
+- **Trigger:** `protected-decision-required` has four exact closed detail fields under accepted `public-interface.md` section 5 and retains the closed `fid-cli.v1` error envelope under section 1. The same accepted section 5.2 and VAL-057 require the repeated denial response to expose immutable Stop/Attention IDs, null EventRef, and `replayed:false`. The built binary returns the closed failure without those additional fields; the focused replay probe and full tagged task-13 gate each returned `FAIL` (terminated `exit_code: 1`).
+- **Trigger signature:** task-13:protected-contract:protected-decision-denial-envelope-val-057
+- **Attempt count:** 1
+- **Checkpoint:** verified report commit `348a538167f94bd1d5a5f9a9ef798a90698565e7` with matching subject; report-lint `OUTCOME BLOCKED` (terminated `exit_code: 0`). DEC-262 closed the unrelated ActivityEvent scope gap; the issue-subject rows now pass, while task 15 retains the requirement/decision rows. DEC-227 package times are within budget.
+- **Question / proposed direction:** Full Tech Lead: obtain the Human or accepted contract owner's decision on how the closed failure response represents the Stop/Attention IDs, null EventRef, and replay value, or explicitly amend VAL-057's accepted response requirement. Align `public-interface.md` sections 1, 5, and 5.2 with VAL-056/VAL-057 and task-13 acceptance without silently widening the public schema or weakening the failing assertion.
+- **Resolution condition:** Record the protected contract decision and exact task-13 continuation scope; the Runner then resumes task 13, preserves failed evidence, reruns unchanged required verification, and requests any affected independent re-review.
+- **Links:** TRG-23-008 in `project-docs/docs/phases/phase-23/triage-log.md`; `project-docs/docs/phases/phase-23/public-interface.md` sections 1, 5, 5.2; `project-docs/docs/phases/phase-23/qa/validation-contract.md` VAL-056 and VAL-057; DEC-226; `project-docs/docs/phases/phase-23/tasks/task-13-done.md`.
+- **Human attention required:** yes. The Human delegated the resolution to the Tech Lead on 2026-09-29.
+- **Status:** RESOLVED 2026-09-29 under DEC-263.
+  - **Tech Lead finding:**
+    - Section 5 copied the two codes' StopDetails verbatim as their failure
+      details. It never added the denial fields that DEC-226 part 4
+      (Human-approved), section 5.2, `schema.md` 6.3, and VAL-057 require.
+      This is a drafting defect in the accepted set, not a task-13 defect.
+    - `human-outcome-required` has the same defect under VAL-056. Triage
+      named only the protected-Decision half.
+  - **Resolution:** both codes' details become their StopDetails followed by
+    `stop_ids`, `attention_ids`, `event` (always null), and `replayed`
+    (always `false`). This is the `review-rework-exhausted` and Phase 22
+    `budget-exhausted` form.
+    - Unchanged: the envelope, StopDetails, Stop projections, codes,
+      producers, precedence, VAL-056/057 text, and gates.
+    - Aligned: `public-interface.md` 5 and 5.2 and `06_DESIGN_PLAN_CLI.md`
+      section 5.
+  - **Continuation:** same-task `in-scope-implementation` at attempt 2,
+    no-progress 0/2. Attempt 1 made material progress, and it was not
+    authorized to widen the closed schema. Handoff:
+    `qa/resume-after-esc-23-008.md`.
+
 ## ESC-23-007 - Task-13 ActivityEvent journal and requirement-reference schema boundary
 
 - **Raised:** 2026-09-28
@@ -85,6 +120,28 @@
 - **Links:** TRG-23-005 in `project-docs/docs/phases/phase-23/triage-log.md`; `project-docs/docs/phases/phase-23/tasks/task-11.md` Exact Commands To Run; `project-docs/docs/phases/phase-23/tasks/task-11-done.md`; `project-docs/docs/phases/phase-23/decisions.md` DEC-227 and DEC-254; `project-docs/docs/phases/phase-23/qa/validation-contract.md` VAL-079.
 - **Human attention required:** yes
 - **Status:** RESOLVED 2026-09-27 under DEC-258 (Human-delegated repair). The cause was serial test structure plus measurement spread, not task 11. Test-only `t.Parallel()` across the suites, with the gate definition unchanged. The final exact gates at `3dff457` passed: `cmd/fid` 531.533 s, `internal/workflow` 165.920 s, tagged 326.421 s. Evidence: `qa/esc-23-005-repair.md`; handoff: `qa/resume-after-esc-23-005.md`.
+
+## ESC-23-004 - Post-task-11 checkpoint re-review: three protected blocker candidates (BC-1, BC-2, BC-3)
+
+- **Raised by:** TRG-23-004
+- **Status:** RESOLVED 2026-09-26.
+  - BC-1 by DEC-249 and BC-3 by DEC-250 (Tech Lead).
+  - BC-2 by DEC-251 (Human, Option B).
+  - Carry items: I-1 by DEC-254 (Part 2 Human-approved), I-2 by DEC-253, I-5 by DEC-252.
+  - DEC-255/256 release ordered repairs: task 6 MF-4+I-5, task 2 BC-1, task 10 MF-5+I-6, task 11 BC-3. The first three owners are complete in the ledger.
+  - Next: a fresh `checkpoint-after-task-11-3.md` re-review.
+  - Task 12 stays held until that re-review returns PASS with Must-fix 0 (qa-plan section 8).
+- **Originating task:** task-10
+- **Trigger signature:** task-10:qa-rework:review-7-BC-1-BC-2-BC-3
+- **Source:** `project-docs/docs/phases/phase-23/qa/checkpoint-after-task-11-2.md` (review-7, commit 9cb9420516c461ddd9b4d22d1944759a416f7bb7)
+- **Category:** specification, product semantics and public interface. Each sub-item is separately resolvable.
+- **Sub-item BC-1 (product semantics, VAL-009):** contracts.md:91-92 says a guarded action requires "every applicable Obligation" to be satisfied, but "applicable" is undefined. contracts.md:60-63 and :408-409 imply per-Obligation guarded_actions, while the evaluator (internal/workflow/evaluation.go:436,496-512; envelope.go:521,546-556) blocks terminal success on any unsatisfied Obligation regardless of its guarded_actions. Decision needed: does an Obligation block only its declared guarded_actions? Option A (yes): a decision-free task-2 evaluator conformance repair, then VAL-009 (both halves), the journey stage 1-3 `qa_pass` assertions and task 13 VAL-056 are re-derived. Option B (no, global): record the reading in a DEC and a GLOSSARY entry, including what guarded_actions governs. The task-10 stage 3 assertion then stands and MF-5's `qa_pass` expectation is fixed. Affects tasks 2, 10, 13, 14 (VAL-059, VAL-071).
+- **Sub-item BC-2 (public interface / authorization, VAL-043):** public-interface.md:243 (section 4.1) requires an Envelope grant for `human-outcome.record`. public-interface.md:222-224 and contracts.md:391-396 do not, and the product and task-9 journey need none (internal/review/human_outcome.go:79-89). Decision needed: which text governs. Option A (grant required): a task-10 authorization repair plus a VAL-043 negative case, and the task-9 journey fixture gains a grant for `actor-human-outcome`. Option B (grant not required): correct the section 4.1 cell under a DEC. Human ruling needed if the interface changes (DEC-222). Affects tasks 9, 10, 14 (VAL-071) and 18 (VAL-067/068).
+- **Sub-item BC-3 (resolution semantics, VAL-048, VAL-050, VAL-078):** internal/workflow/stop.go `eventMatchesCondition` and `qualifyingFact` have no rule for `human-outcome-recorded` or `decision-satisfied`, so a Stop carrying such a Condition raised by a non-producer code can never be resolved. contracts.md:453-455 and :461-462 fix that a `human-outcome-recorded` Stop resolves with a class-and-result-matching Outcome Event and that matching Stops resolve. They do not fix the `decision-satisfied` qualifying fact (which fact of the pair, Envelope scope), subject scoping for `human-outcome-recorded`, or whether recording resolves every Condition-matching Stop regardless of raising code. Decision needed: the Tech Lead fixes both qualifying rules. Task 11 then implements them in its stop.go scope and evidences the VAL-048 reject clause and VAL-078 per type. Affects task 11 and task 17 (`human_outcome_resolution:true`).
+- **Independent bounded Must-fix items (not blocked by the candidates unless noted):** MF-4 (task-6, VAL-027 linked-recovery leg, test-only, independent of all three candidates, may dispatch once the Tech Lead releases the stop). MF-5 (task-10, VAL-009 evidence-method state plus I-6 citations, test/report-only, its `qa_pass` assertion waits on BC-1). Each has an owning task, bounded scope, required evidence and a fresh independent re-review in the review's Repair Plan.
+- **Carry items:** I-1 `cmd/fid` headroom, I-2 task-11 scope ratification, I-5 multi-grant `gate.run` owner, I-6 report citations. No action here.
+- **Constraints:** Do not choose any reading in code, tests or reports before the decision is recorded. Do not narrow VAL-009, VAL-043, VAL-048, VAL-050 or VAL-078. A fresh independent checkpoint re-review must PASS before task 12.
+- **References:** TRG-23-004 in `project-docs/docs/phases/phase-23/triage-log.md`; review-7 lines 661-776.
 
 ## ESC-23-003 - Unreachable Run-holder-only CLI evidence
 

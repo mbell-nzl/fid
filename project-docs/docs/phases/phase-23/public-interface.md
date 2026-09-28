@@ -3,10 +3,11 @@
 > ACCEPTED under DEC-222 with `contracts.md` and `schema.md`.
 > Amended 2026-09-15 by DEC-226 (failure-code producers, precedence, and
 > non-committing denial semantics) and DEC-224 (`human-outcome-required`
-> producers), both **approved by the Human 2026-09-19**; amended passages name
-> their DEC inline. `GLOSSARY.md` defines **Failure code** and **Evaluation
-> reason**: section 5 lists the failure set, and the `ReasonCode` paragraph the
-> evaluation set.
+> producers), both **approved by the Human 2026-09-19**, and by DEC-263
+> (Stop-blocked denial details, Tech Lead under Human delegation 2026-09-29);
+> amended passages name their DEC inline. `GLOSSARY.md` defines **Failure
+> code** and **Evaluation reason**: section 5 lists the failure set, and the
+> `ReasonCode` paragraph the evaluation set.
 > Phase 21 and Phase 22 `public-interface.md` remain the baseline for every
 > leaf, value, code, and exit this document does not replace.
 
@@ -266,12 +267,12 @@ Added codes are closed, all `retryable:false`, subject as named.
 | finding-not-found / review-not-found / concern-not-found / deviation-not-found / outcome-not-found / requirement-not-found | not-found / 3 | `{id:ID}` |
 | concern-already-disposed | conflict / 4 | `{concern_id:ID,disposed_at:timestamp}` |
 | claim-mode-invalid | precondition / 4 | `{claim_id:ID,mode:text,required_mode:text}` |
-| protected-decision-required | authority / 5 | `{envelope_id:ID,decision_class:ID,required_capabilities:ID[],affected_actions:text[]}` |
+| protected-decision-required | authority / 5 | `{envelope_id:ID,decision_class:ID,required_capabilities:ID[],affected_actions:text[],stop_ids:ID[],attention_ids:ID[],event:?EventRef,replayed:boolean}` (DEC-263) |
 | outcome-not-permitted | precondition / 4 | `{obligation_id:ID,obligation_type:text,outcome_id:ID,result:text}` |
 | evidence-type-not-accepted | precondition / 4 | `{obligation_id:ID,evidence_type:text,accepted_evidence_types:text[]}` |
 | source-digest-mismatch | precondition / 4 | `{display_label:text,path:?text,expected_digest:digest,observed_digest:?digest}` |
 | repository-mismatch | conflict / 4 | `{expected:Repository,observed:Repository}` |
-| human-outcome-required | precondition / 4 | `{envelope_id:ID,obligation_id:ID,outcome_class:ID}` |
+| human-outcome-required | precondition / 4 | `{envelope_id:ID,obligation_id:ID,outcome_class:ID,stop_ids:ID[],attention_ids:ID[],event:?EventRef,replayed:boolean}` (DEC-263) |
 
 `decision-not-found` is **removed** from the added set (DEC-230). Pinning each
 `*-not-found` producer under I-25 showed that no Phase 23 leaf takes a Decision
@@ -361,6 +362,20 @@ which does durably raise its Stop and does store its Denial snapshot.
 `review-rework-exhausted` keeps its declared detail shape, and under this rule
 its `event` is always null and its `replayed` always `false`; the fields stay
 present so the closed shape is unchanged. VAL-056 asserts exactly that.
+
+**These fields go in `details` (DEC-263).** The Stop and Attention IDs, the
+`EventRef`, and the replay flag are carried as the `stop_ids`, `attention_ids`,
+`event`, and `replayed` detail fields of all three Stop-blocked codes. The
+`fid-cli.v1` envelope does not change. `protected-decision-required` and
+`human-outcome-required` details are their section 2 StopDetails followed by
+those four fields:
+- `stop_ids` holds the unresolved Stops of that code that block the requested
+  action and that the details describe, sorted by ID.
+- `attention_ids` holds the Attention linked to those Stops, sorted by ID.
+- `event` is always null and `replayed` always `false`.
+
+The fields belong to the failure response only. StopDetails, and every
+projection of a Stop, are unchanged.
 
 ## 6. Manifest And Availability
 

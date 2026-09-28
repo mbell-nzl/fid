@@ -14,22 +14,23 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 ## Status
 
 **Tasks 1-12 complete; review-10 PASS (window 10-12). Task 13 is in
-same-task recovery under DEC-262.** Branch `phase-23`.
+same-task recovery under DEC-263.** Branch `phase-23`.
 
-ESC-23-007 (TRG-23-007) is resolved by DEC-262. The strict journal lacked an
-`activity_log` table entry, which was a planning gap. Separately, the 0016
-activity trigger cannot resolve `requirement` or `decision` refs until 0018.
-- Task 13 now owns the registry entry (execution-scope row 11) and emits the
-  seven `issue`-subject ActivityEvent names.
-- Task 15 emits the `requirement`/`decision`-subject rows with 0018 and closes
-  VAL-055's ten-name inventory.
-- The subjects are fixed in `schema.md` section 6.2.
+ESC-23-008 (TRG-23-008) is resolved by DEC-263. Section 5 gave
+`protected-decision-required` and `human-outcome-required` their StopDetails
+as failure details, without the denial fields that DEC-226 and VAL-057
+require. Both codes now carry `stop_ids`, `attention_ids`, `event` (null), and
+`replayed` (`false`) in `details`. The envelope, StopDetails, and VAL text are
+unchanged.
 
-Earlier: ESC-23-004..006 are resolved (DEC-249..260), and review-9's
+Earlier: ESC-23-007 was resolved by DEC-262. Task 13 owns the `activity_log`
+registry entry and the seven `issue`-subject ActivityEvent names. Task 15
+emits the `requirement`/`decision` rows with 0018 and closes VAL-055.
+ESC-23-004..006 are resolved (DEC-249..260), and review-9's
 repairs closed under DEC-261. I-7 is deferred to wrap-up. The contract has
 **84 rows**; see [decisions](../phases/phase-23/decisions.md).
 
-Next action: the Runner resumes using `qa/resume-after-esc-23-007.md`
+Next action: the Runner resumes using `qa/resume-after-esc-23-008.md`
 (task 13 attempt 2). It then runs tasks 14-18 on the DEC-259 commands.
 
 ## Operating Mode
@@ -49,7 +50,7 @@ amendments inline with their DEC and approval state.
 ## Task Index
 
 Full specs and reports: `../phases/phase-23/tasks/`. Tasks 1-12 complete; 13 in
-recovery (DEC-262); 14-18 pending, sequential.
+recovery (DEC-263); 14-18 pending, sequential.
 
 1 schema baseline; 2 typed multi-Obligation Envelope; 3 review Claim mode and
 Run; 4 Review Records and independence; 5 Finding dispositions; 6 review

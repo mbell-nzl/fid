@@ -1,11 +1,21 @@
 # Progress — Current
 
-Updated 2026-09-28. **Tasks 1-12 are complete, and review-10 passed window
-10-12. Task 13 stopped on ESC-23-007, which DEC-262 resolves. The Runner is
+Updated 2026-09-29. **Tasks 1-12 are complete, and review-10 passed window
+10-12. Task 13 stopped on ESC-23-008, which DEC-263 resolves. The Runner is
 ready to resume.** Branch: `phase-23`.
 
-Task 13 attempt 1 added `review.list`, the failure codes, and request
-closure. Its ActivityEvent effects could not commit, for two reasons:
+Task 13 under DEC-262 passed VAL-055's issue-subject rows and VAL-056. It
+stopped because the `protected-decision-required` denial could not carry the
+Stop/Attention IDs, null EventRef, and `replayed:false` that VAL-057
+requires. Section 5 had copied StopDetails as the failure details. DEC-263
+adds the four fields to that code's details and to `human-outcome-required`'s.
+
+Next: the Runner resumes using
+[the handoff](../phases/phase-23/qa/resume-after-esc-23-008.md) (task 13
+attempt 2), then runs tasks 14-18.
+
+Earlier, under ESC-23-007, task 13 attempt 1 added `review.list`, the
+failure codes, and request closure. Its ActivityEvent effects could not commit, for two reasons:
 - `activity_log` is missing from the strict journal table registry, which
   was a planning gap.
 - The 0016 trigger cannot resolve `requirement` or `decision` refs until
@@ -14,10 +24,6 @@ closure. Its ActivityEvent effects could not commit, for two reasons:
 DEC-262 splits the work at 0018:
 - Task 13 registers the table and emits the `issue`-subject names.
 - Task 15 emits the `requirement`/`decision` rows and closes VAL-055.
-
-Next: the Runner resumes using
-[the handoff](../phases/phase-23/qa/resume-after-esc-23-007.md) (task 13
-attempt 2), then runs tasks 14-18.
 
 Earlier, review-9's two Must-fix repairs closed under DEC-261, and
 review-10 recorded PASS.
@@ -46,6 +52,10 @@ Retain these constraints:
   supplies no fresh gate evidence.
 - DEC-262: task 13 writes no `requirement`/`decision` activity row;
   task 15 does, alongside 0018's trigger.
+- DEC-263: Stop-blocked denial fields live in failure `details` only.
+  StopDetails are unchanged. Wrap-up note: DEC-263 does not decide how a
+  protected Decision that becomes unsatisfied again after its Stop resolved
+  (Outcome supersession) is reported.
 - DEC-243: VAL-025 closes with real durable Human Outcome links and all nine
   compatibility cells; the checkpoint must independently review the evidence.
 
