@@ -35,7 +35,7 @@ func WriteFailure(writer io.Writer, operation string, failure Failure) error {
 	if writer == nil {
 		return fmt.Errorf("write failure envelope: writer is nil")
 	}
-	definition, ok := reasonCodeDefinitions[failure.Code]
+	definition, ok := failureCodeDefinitions[failure.Code]
 	if !ok {
 		return fmt.Errorf("write failure envelope: unknown code %q", failure.Code)
 	}

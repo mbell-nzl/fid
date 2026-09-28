@@ -64,6 +64,14 @@ func TestP23ReviewRecordRealProcessJourney(t *testing.T) {
 	beforeFirst := p21JournalEventCount(t, a.workspace)
 	first := p23ReviewRecord(t, a, "actor-denied", "reviewer-first", firstInput)
 	p23AssertReviewSuccess(t, "first independent Review", first)
+	activity := p22FaultDB(t, a.workspace)
+	var reviewActivityCount int
+	p22FaultOK(t, activity.QueryRow(`SELECT count(*) FROM activity_log WHERE event='review-recorded' AND journal_event_id=?`,
+		p21PathString(t, p23Envelope(t, first.Stdout), "event", "id")).Scan(&reviewActivityCount))
+	p22FaultOK(t, activity.Close())
+	if reviewActivityCount != 1 {
+		t.Fatalf("review.record activity rows = %d, want one review-recorded row from its Event", reviewActivityCount)
+	}
 	if after := p21JournalEventCount(t, a.workspace); after != beforeFirst+1 {
 		t.Fatalf("first Review Event count = %d, want %d", after, beforeFirst+1)
 	}
@@ -109,6 +117,14 @@ func TestP23ReviewRecordRealProcessJourney(t *testing.T) {
 		t.Fatalf("second Review plus two resolutions changed Event count %d -> %d, want one atomic Event", beforeSecond, after)
 	}
 	secondReview := p23ReviewFromResponse(t, second)
+	listed := a.p22Run(t, "review", "list", "--issue", a.issueID)
+	p23AssertReviewSuccess(t, "review list by Issue", listed)
+	items := p21Path(t, p23Envelope(t, listed.Stdout), "result", "items").([]any)
+	if len(items) != 2 || items[0].(map[string]any)["id"] != firstReview["id"] && items[1].(map[string]any)["id"] != firstReview["id"] {
+		t.Fatalf("review list = %#v, want both recorded Reviews", items)
+	}
+	bounded := a.p22Run(t, "review", "list", "--issue", a.issueID, "--limit", "1")
+	assertP22ProcessFailure(t, "review.list", "result-limit-exceeded", 6, bounded)
 
 	firstRead := p23ReviewGet(t, a, firstReview["id"].(string))
 	secondRead := p23ReviewGet(t, a, secondReview["id"].(string))

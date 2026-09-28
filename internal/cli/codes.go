@@ -229,7 +229,7 @@ func definition(category Category, retryable bool, subjects []SubjectType, detai
 	}
 }
 
-var reasonCodeDefinitions = map[Code]reasonDefinition{
+var failureCodeDefinitions = map[Code]reasonDefinition{
 	CodeReviewNotIndependent: definition(CategoryPrecondition, false, nil,
 		stringField("review_actor_id"), objectField("conflicting_subject", stringField("type"), stringField("id")), stringField("conflicting_actor_id")),
 	CodeReviewVerdictInvalid: definition(CategoryInvalidInput, false, nil,
@@ -370,7 +370,8 @@ var registeredCodes = []Code{
 	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeClaimModeInvalid, CodeRunNotFound, CodeRunInactive, CodeRunVersionConflict,
 	CodeExecutorLivenessUnknown, CodeExecutorStillLive, CodeRecoveryStateConflict, CodeObservationNotFound, CodeRecoveryAlreadyLinked,
 	CodeReceiptNotFound, CodeEvidenceNotFound,
-	CodeReviewChangesRequired, CodeReviewReworkExhausted, CodeEvidenceTypeNotAccepted, CodeOutcomeNotPermitted,
+	CodeReviewNotIndependent, CodeReviewVerdictInvalid, CodeReviewChangesRequired, CodeReviewReworkExhausted,
+	CodeEvidenceTypeNotAccepted, CodeOutcomeNotPermitted, CodeRepositoryMismatch, CodeReviewNotFound,
 	CodeGateUnsuccessful,
 	CodeBudgetExhausted, CodeBudgetDataUnavailable, CodeBudgetSampleConflict,
 	CodeStopNotFound, CodeAttentionNotFound, CodeAttentionVersionConflict, CodeStopUnresolved, CodeResolutionInvalid,
@@ -379,7 +380,7 @@ var registeredCodes = []Code{
 	CodeImportTargetConflict,
 	CodeFindingNotFound, CodeFindingAlreadyDisposed,
 	CodeConcernNotFound, CodeDeviationNotFound, CodeConcernAlreadyDisposed,
-	CodeProtectedDecisionRequired, CodeSourceDigestMismatch,
+	CodeProtectedDecisionRequired, CodeSourceDigestMismatch, CodeHumanOutcomeRequired, CodeOutcomeNotFound,
 }
 
 func findingFields() []detailField {
@@ -393,7 +394,7 @@ func infoFields() []detailField {
 func RegisteredCodes() []Code { return append([]Code(nil), registeredCodes...) }
 
 func LookupCode(code Code) (ReasonSpec, bool) {
-	definition, ok := reasonCodeDefinitions[code]
+	definition, ok := failureCodeDefinitions[code]
 	if !ok {
 		return ReasonSpec{}, false
 	}
@@ -404,7 +405,7 @@ func LookupCode(code Code) (ReasonSpec, bool) {
 }
 
 func NewFailure(code Code, message string, subject *Subject, details map[string]any) (Failure, error) {
-	definition, ok := reasonCodeDefinitions[code]
+	definition, ok := failureCodeDefinitions[code]
 	if !ok {
 		return Failure{}, fmt.Errorf("new failure: unknown code %q", code)
 	}

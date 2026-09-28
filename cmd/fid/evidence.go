@@ -6,6 +6,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/evidence"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/spf13/cobra"
 )
 
@@ -128,6 +129,10 @@ func renderEvidenceError(cmd *cobra.Command, operation string, cause error) erro
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	var conflict *journal.IdempotencyConflictError
+	if errors.As(cause, &conflict) {
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
 	}
 	var notFound *evidence.EvidenceNotFoundError
 	if errors.As(cause, &notFound) {

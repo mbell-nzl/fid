@@ -49,6 +49,16 @@ func TestP23ReviewEvidenceRealProcessJourney(t *testing.T) {
 	if p21Path(t, p23Envelope(t, linked.Stdout), "result", "evidence", "evidence_type") != "review" {
 		t.Fatalf("pass Review Evidence = %q, want review evidence", linked.Stdout)
 	}
+	before = p21JournalEventCount(t, a.workspace)
+	conflict := p23RunInput(t, a, "evidence", "link", "actor-recovery", "evidence-pass", map[string]any{
+		"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil,
+		"review_id": passReview["id"], "human_outcome_id": nil,
+		"target_repository": a.repository, "required_artifact_ids": []string{"ART-conflicting"},
+	})
+	assertP22ProcessFailure(t, "evidence.link", "idempotency-conflict", 4, conflict)
+	if after := p21JournalEventCount(t, a.workspace); after != before {
+		t.Fatalf("Evidence key conflict appended Event(s): %d -> %d", before, after)
+	}
 	evaluation := p23EvidenceEvaluate(t, a)
 	if !p23HasJSON(evaluation.Stdout, `"code":"finding-unresolved"`) || !p23HasJSON(evaluation.Stdout, `"subject_id":"FND-evidence"`) {
 		t.Fatalf("linked pass evaluation = %q, want unresolved blocking Finding", evaluation.Stdout)

@@ -248,7 +248,7 @@ Every mutation:
 Validation failure appends nothing. A projection failure after append is a
 detectable catch-up state and never a reason to append a duplicate Event.
 
-## 5. Typed Reason Codes
+## 5. Typed Failure Codes
 
 Initial cross-cutting codes include:
 
@@ -306,6 +306,40 @@ actions of the open readiness Stop only; and `outcome-not-found`
 (not-found, exit 3) with exact detail `id`, returned by `evidence.link` for an
 unknown `human_outcome_id`. Task 10 reuses Task 6's `outcome-not-permitted`
 (precondition, exit 4) registration for its real recorded producer.
+
+The complete Phase 23 added failure-code set is closed by
+`project-docs/docs/phases/phase-23/public-interface.md` section 5. The table
+below records each code's category, exit status, subject, and exact detail
+keys. `null` means the failure-envelope subject is null; a subject type names
+the entity ID in the producing rejection. All are `retryable:false`.
+
+| Code | Category / exit | Subject | Exact detail keys |
+|---|---|---|---|
+| `review-not-independent` | precondition / 4 | null | `review_actor_id`, `conflicting_subject`, `conflicting_actor_id` |
+| `review-verdict-invalid` | invalid-input / 2 | null | `verdict`, `reason` |
+| `review-changes-required` | precondition / 4 | null | `review_id`, `obligation_id`, `blocking_finding_ids` |
+| `review-rework-exhausted` | precondition / 4 | envelope | `budget`, `stop_ids`, `attention_ids`, `event`, `replayed` |
+| `finding-already-disposed` | conflict / 4 | finding | `finding_id`, `state` |
+| `finding-not-found` | not-found / 3 | finding | `id` |
+| `review-not-found` | not-found / 3 | review | `id` |
+| `concern-not-found` | not-found / 3 | concern | `id` |
+| `deviation-not-found` | not-found / 3 | deviation | `id` |
+| `outcome-not-found` | not-found / 3 | human-outcome | `id` |
+| `concern-already-disposed` | conflict / 4 | concern | `concern_id`, `disposed_at` |
+| `claim-mode-invalid` | precondition / 4 | claim | `claim_id`, `mode`, `required_mode` |
+| `protected-decision-required` | authority / 5 | envelope | `envelope_id`, `decision_class`, `required_capabilities`, `affected_actions` |
+| `outcome-not-permitted` | precondition / 4 | null | `obligation_id`, `obligation_type`, `outcome_id`, `result` |
+| `evidence-type-not-accepted` | precondition / 4 | null | `obligation_id`, `evidence_type`, `accepted_evidence_types` |
+| `source-digest-mismatch` | precondition / 4 | null | `display_label`, `path`, `expected_digest`, `observed_digest` |
+| `repository-mismatch` | conflict / 4 | null | `expected`, `observed` |
+| `human-outcome-required` | precondition / 4 | envelope | `envelope_id`, `obligation_id`, `outcome_class` |
+
+`requirement-not-found` retains its earlier not-found / 3 registration with
+subject `requirement` and detail `id`; the Phase 23 requirement leaves now
+produce it. `finding-unresolved` belongs to the Evaluation reason set and is
+absent from the failure-code set. The nested `budget`, `event`, `expected`,
+`observed`, and `conflicting_subject` objects use the exact closed shapes in
+the accepted interface contract.
 
 ## 6. Removed Commands
 
