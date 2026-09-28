@@ -64,10 +64,12 @@
 - `go test -tags integration -run '^(TestPhase23LeavesRejectUnknownRequestFields|TestP23ReviewRecordRealProcessJourney)$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); initial recovery red: list absent and activity count zero.
 - `go test -tags integration -run '^(TestPhase23LeavesRejectUnknownRequestFields|TestP23ReviewRecordRealProcessJourney)$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); list green, Review write failed while trial activity effect was present.
 - `go test -tags integration -run '^TestP23ReviewRecordRealProcessJourney$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); temporary local diagnostic exposed `DEBUG REVIEW: unknown table` from the journal validator. Diagnostic was removed.
-- `go test -tags integration -run '^TestPhase23LeavesRejectUnknownRequestFields$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.028s` (terminated `exit_code: 0`); built binary ran `review list` and returned `review.list`.
+- `go test -tags integration -run '^TestPhase23LeavesRejectUnknownRequestFields$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.028s` (terminated `exit_code: 0`)
 - `go test -tags integration -run '^TestP23ReviewRecordRealProcessJourney$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); preserved activity count zero after trial effect removal.
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid ./internal/review` - FAIL - `FAIL` (terminated `exit_code: 1`); retained leaf inventory omitted newly accepted `review list`.
-- `go test -run '^TestLiveLeafCommandsMatchContractInventories$' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.147s` (terminated `exit_code: 0`); inventory converged on accepted leaf.
+- `go test -run '^TestLiveLeafCommandsMatchContractInventories$' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.147s` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-13-done.md project-docs/docs/phases/phase-23/tasks/task-13.md` - FAIL - `FAIL report-lint found 3 failure(s)` (terminated `exit_code: 3`)
 
 ## Exact quality-gate results
 
@@ -85,7 +87,7 @@ Recovery attempt 1, on the list-converged checkpoint, ran all five byte-identica
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	116.083s	coverage: 64.6% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.3%` (terminated `exit_code: 0`)
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`); `TestP23ReviewRecordRealProcessJourney` observed zero `review-recorded` rows.
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`); `TestP23ReviewRecordRealProcessJourney` observed zero `review-recorded` rows. The accepted activity contract cannot be made green under the current journal registry and migration order.
 
 ## Deviations from spec
 
@@ -93,6 +95,7 @@ Recovery attempt 1, on the list-converged checkpoint, ran all five byte-identica
 - The first evidence conflict probe used an unchanged digest and correctly replayed. Changing a request field exposed the generic error adapter, which was repaired and rerun green. The first failing outputs remain recorded above.
 - Recovery attempt 1 added the missing `review.list` leaf and converged the retained exact leaf inventory. The first touched-package race command failed on that inventory (`FAIL`, exit 1); after adding the accepted leaf to the inventory, the focused test passed (`ok  	github.com/mbell-nzl/fid/cmd/fid	0.147s`, exit 0). The original failure remains in Tests run.
 - The scoped Review activity trial failed at `internal/journal/current_event_validation.go:161` with `unknown table`, before projection or ref-integrity checks. The trial and its temporary diagnostic were removed; the producing-leaf probe remained red (`FAIL`, exit 1) and the fifth exact gate remained red (`FAIL`, exit 1). No event catalog, journal table registry, migration, threshold, assertion, or command was changed.
+- The first report-lint attempt failed with `FAIL report-lint found 3 failure(s)` (exit 3): two PASS rows had explanatory prose after the termination field, and the failed tagged required command was marked FAIL instead of BLOCKED in a blocker report. The PASS rows were reduced to their observed results; the tagged gate's original FAIL result is retained in Tests run and recorded as BLOCKED with its reason in the exact-gate section.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
