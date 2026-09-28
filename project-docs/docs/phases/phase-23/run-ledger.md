@@ -1531,3 +1531,234 @@
 - Triage: TRG-23-006 (BLOCK, escalated as ESC-23-006)
 - Protected category: public-interface/specification contradiction and protected task/control definition authority
 - Next Human or external-authority action: Full Tech Lead resolves ESC-23-006 by obtaining the protected ruling for requirement write authority and the closed capability set, and the owning authority resolves the task-12 expected-nonzero/report-lint grammar; then resume task 12, rerun the focused real-process and report-lint checks, finish its exact gates, and run the window 10-12 QA review before task 13
+
+### 2026-09-27 19:41 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-27 19:01 STOP after TRG-23-006 (ESC-23-006)
+- Governing TRG: TRG-23-006
+- Governing ESC: ESC-23-006
+- Trigger signature: task-12:protected-contract:requirement-capability-registry-and-report-lint-grammar
+- Attempt count: 2
+- Checkpoint: phase-23 HEAD 4fc08e95d2c60766a6717445b82d853eaf6e303c, clean; DEC-260 resolution commit verified
+- Resolution evidence: DEC-260 is recorded in phase-23 decisions; commit 4fc08e95d2c60766a6717445b82d853eaf6e303c is verified with subject docs(phase-23): resolve ESC-23-006 under DEC-260; ESC-23-006 is marked RESOLVED in tl_escalations_current.md; the retained TRG-23-006 record preserves both failed journey attempts and the failed report-lint result
+- Resolution authority: DEC-260
+- Continuing task: task-12
+- Next recovery: task-12 | in-scope-implementation | task-scope | task-12:protected-contract:requirement-capability-registry-and-report-lint-grammar | 2
+
+### 2026-09-27 19:41 TASK-RECOVERY task-12
+
+- Source: DEC-260 and TRG-23-006; project-docs/docs/phases/phase-23/qa/resume-after-esc-23-006.md
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: DEC-260 and TRG-23-006
+- Triage disposition: N/A
+- Trigger signature: task-12:protected-contract:requirement-capability-registry-and-report-lint-grammar
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 4fc08e95d2c60766a6717445b82d853eaf6e303c; DEC-260 resolution and resume handoff verified; worktree clean before this Runner-owned ledger append; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: DEC-260 resolves the protected requirement-authority and report-lint contract trigger; the retained TRG-23-006 and 19:01 STOP remain governing; the two failed focused journey attempts and failed report-lint result remain preserved
+- Next action: same-task Developer continuation removes the two requirement capability checks, removes both requirement names from the journey Actor profile, completes VAL-051/052 observations, runs the focused journey and all seven exact task-12 commands unchanged, updates task-12-done.md while preserving earlier failures and disclosing DEC-260, commits implementation and report, and returns a typed outcome
+- Human attention required: no
+
+### 2026-09-27 21:25 REPAIR task-12
+
+- Trigger signature: task-12:protected-contract:requirement-capability-registry-and-report-lint-grammar
+- Attempt count: 2
+- Starting checkpoint: phase-23 HEAD 4fc08e95d2c60766a6717445b82d853eaf6e303c with task-12 attempt-2 TASK-RECOVERY appended; DEC-260 and the resume handoff are verified; only Runner-owned run-ledger.md dirty
+- Ending checkpoint: phase-23 HEAD b76312762867f18bf70798243991ef77567ba001; implementation commit 1679230ee4dca4d1cbffbb5b2732b7d1a9dbd06d and committed task-12 report are present; only Runner-owned run-ledger.md dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task Developer returned OUTCOME COMPLETE; requirement writes now use trusted finalized-Activation Actor authority without capability checks; the journey covers VAL-051/052 and the task-12 VAL-003 part; all seven unchanged exact commands passed with observed termination, including the expected rg exit_code: 1 and tagged integration 208.862s; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); implementation commit 1679230ee4dca4d1cbffbb5b2732b7d1a9dbd06d and report commit b76312762867f18bf70798243991ef77567ba001 are verified with matching subjects
+- Next checkpoint: VERIFY/REPORT
+
+### 2026-09-27 21:25 TASK task-12 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-12-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: b76312762867f18bf70798243991ef77567ba001 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-28 04:15 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-27 21:25 TASK task-12 COMPLETE; previous session ended before REVIEW review-9
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: phase-23 HEAD d242fc7e4fc7c737f3e33d2d62431c8b81f5724d, clean except the Runner-owned run-ledger.md; DEC-261 resolution commit verified with matching subject; review-9 commit 3dbf5c6bd6a5c83503f481301158490aa38979ff verified; no Open ESC remains
+- Resolution evidence: Runner independently verified DEC-261 in phase-23 decisions, Tech Lead commit d242fc7e4fc7c737f3e33d2d62431c8b81f5724d, review-9 commit 3dbf5c6bd6a5c83503f481301158490aa38979ff, and the retained ledger state VALID state=ADVANCEABLE
+- Resolution authority: N/A
+- Continuing task: task-10
+- Next recovery: N/A
+
+### 2026-09-28 04:15 REVIEW review-9
+
+- Path: project-docs/docs/phases/phase-23/qa/review-9.md
+- Tasks covered: task-10, task-11, task-12
+- Outcome: REPAIR
+- Owning task: task-10, task-12
+- Re-review of: none
+- Must-fix: 2 / Improvement: 0 / blocker candidates: 0; QA minted no ESC
+
+### 2026-09-28 04:15 TASK-RECOVERY task-10
+
+- Source: project-docs/docs/phases/phase-23/qa/review-9.md
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review
+- Triage disposition: N/A
+- Trigger signature: review-9:qa-rework:task-10-MF-1
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD d242fc7e4fc7c737f3e33d2d62431c8b81f5724d; review-9 commit 3dbf5c6bd6a5c83503f481301158490aa38979ff and DEC-261 are verified; worktree is clean before this Runner-owned ledger append; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: Review-9 MF-1 is a bounded task-10 VAL-046 repair; DEC-261 reopens task 10 with the five exact commands in their DEC-259 form; no protected authority or escalation is required
+- Next action: same-task Developer continuation follows the task-10 Repair Amendment - review-9 MF-1 under DEC-261, proves the artifact.availability-observed Human-Obligation sequence and repeat-while-open deduplication, corrects task-10-done.md citations while preserving earlier evidence, runs the five exact commands unchanged, runs report-lint, commits implementation and report, and returns a typed outcome
+- Human attention required: no
+
+### 2026-09-28 04:44 REPAIR task-10
+
+- Trigger signature: review-9:qa-rework:task-10-MF-1
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD d242fc7e4fc7c737f3e33d2d62431c8b81f5724d with task-10 TASK-RECOVERY appended; review-9 and DEC-261 verified; only Runner-owned run-ledger.md dirty
+- Ending checkpoint: phase-23 HEAD f4171bbbf9d15fd1bc6919b174bf45b7ff6bddda; implementation commit 56a51dbd04556a0862722f939be41766b1cf3788 and committed task-10 report are present; only Runner-owned run-ledger.md dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task Developer returned OUTCOME COMPLETE; the VAL-046 artifact.availability-observed journey now proves the non-qualifying state, one Stop and Attention after availability returns, no duplicate on a repeated qualifying Event while Stop is open, and resolution by the matching Human Outcome; all five amended DEC-259 exact commands passed with observed termination; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); implementation commit 56a51dbd04556a0862722f939be41766b1cf3788 and report commit f4171bbbf9d15fd1bc6919b174bf45b7ff6bddda are verified with matching subjects
+- Next checkpoint: VERIFY/REPORT
+
+### 2026-09-28 04:44 TASK task-10 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-10-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: f4171bbbf9d15fd1bc6919b174bf45b7ff6bddda - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-28 04:44 TASK-RECOVERY task-12
+
+- Source: project-docs/docs/phases/phase-23/qa/review-9.md
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review
+- Triage disposition: N/A
+- Trigger signature: review-9:qa-rework:task-12-MF-2
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD f4171bbbf9d15fd1bc6919b174bf45b7ff6bddda; task-10 repair and report are verified complete; review-9 and DEC-261 remain verified; worktree is clean before this Runner-owned ledger append; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - task-12 MF-2 requires removal of the pre-Phase-23 requirement.synced entry from the portable fake, a focused reject/retained-family assertion, corrected source inventory, all seven unchanged exact commands, report-lint, and fresh task/report commits
+- Next action: same-task Developer continuation follows the task-12 Repair Amendment - review-9 MF-2 under DEC-261, removes only the obsolete requirement.synced fake entry, proves rejection while retaining a retained family, corrects task-12-done.md while preserving earlier evidence, runs all seven exact commands unchanged, runs report-lint, commits implementation and report, and returns a typed outcome
+- Human attention required: no
+
+### 2026-09-28 04:59 REPAIR task-12
+
+- Trigger signature: review-9:qa-rework:task-12-MF-2
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD f4171bbbf9d15fd1bc6919b174bf45b7ff6bddda with task-12 TASK-RECOVERY appended; task-10 repair and report verified; only Runner-owned run-ledger.md dirty
+- Ending checkpoint: phase-23 HEAD 3bb3481afaf931759f29e4394f19dc3783fb4a36; implementation commit 07e0109c27820c39f531194b83d124cc6f2d2b62 and committed task-12 report are present; only Runner-owned run-ledger.md dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task Developer returned OUTCOME COMPLETE; the portable fake now rejects requirement.synced while accepting a retained Event family, and the focused assertion passed after the catalog repair; all seven unchanged exact commands passed with observed termination, including the expected rg exit_code: 1 absence check and DEC-227 timing records; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); implementation commit 07e0109c27820c39f531194b83d124cc6f2d2b62 and report commit 3bb3481afaf931759f29e4394f19dc3783fb4a36 are verified with matching subjects
+- Next checkpoint: VERIFY/REPORT
+
+### 2026-09-28 04:59 TASK task-12 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-12-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: 3bb3481afaf931759f29e4394f19dc3783fb4a36 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-28 19:56 REVIEW review-10
+
+- Path: project-docs/docs/phases/phase-23/qa/review-10.md
+- Tasks covered: task-10, task-11, task-12
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-9
+- Must-fix: 0 / Improvement: 0 / blocker candidates: 0; QA minted no ESC
+
+### 2026-09-28 20:16 TASK-RECOVERY task-13
+
+- Source: project-docs/docs/phases/phase-23/tasks/task-13-done.md
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-13:scope-gap:review-list-and-activity-producers
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD d0d793a874cb3f932400a50c406f4e49b86404e2; task-13 implementation and recovery report are committed; report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0; worktree is clean before this Runner-owned ledger append; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - the real-process review.list and review-recorded ActivityEvent obligations remain red; the accepted task-13 objective owns VAL-055..057, execution-scope convergence is incorporated by task-13, and contract-coverage assigns the added ActivityEvent names to tasks 8 and 13
+- Next action: same-task Developer continuation completes the bounded task-13 convergence in internal/review/review.go and the owning internal/review producer files named in the recovery report, preserves the red evidence, reruns the focused journeys, runs all five exact task-13 commands including DEC-259 flags and the 30m bound, updates the recovery report to a complete report, commits the implementation and report, and returns a typed outcome
+- Human attention required: no
+
+### 2026-09-28 20:46 TRIAGE TRG-23-007
+
+- Trigger: Task 13's accepted ActivityEvent effects are blocked by the current journal table and requirement-reference migration boundary
+- Originating task: task-13
+- Trigger signature: task-13:scope-gap:review-list-and-activity-producers
+- Attempt count: 1
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: phase-23 HEAD 007c9487863f5eb3cf037a0f0affd290742fed56; task-13 blocker report and report-lint are verified; TL-Lite triage TRG-23-007 and ESC-23-007 are confirmed; only Runner-owned run-ledger.md is dirty
+- Verdict: BLOCK (escalated as ESC-23-007)
+- Resolution evidence: TL-Lite confirmed that the accepted activity_log effect is rejected as an unknown table and requirement.record-reference needs the migration 0018 requirement_refs trigger; moving journal/schema and migration-order work into task 13 requires protected persistence and task-order authority. The focused and exact tagged task-13 gates failed with observed exit_code: 1, while DEC-227 package timings remain below VAL-079 budgets.
+- Triage log: project-docs/docs/phases/phase-23/triage-log.md entry TRG-23-007 confirmed
+
+### 2026-09-28 20:46 STOP
+
+- Cause: task-13 / TRG-23-007 / ESC-23-007; accepted ActivityEvent effects cannot pass journal validation and requirement-reference activity crosses the protected migration 0018 and task-order boundary
+- Triage: TRG-23-007 (BLOCK, escalated as ESC-23-007)
+- Protected category: data-model/persistence contract and cross-task migration ownership
+- Next Human or external-authority action: Full Tech Lead resolves ESC-23-007 by obtaining protected authority for the journal activity_log effect and requirement_refs trigger/migration ordering, then authorizes bounded task-13 producer completion under unchanged VAL-055, exact gates, and preserved failed evidence

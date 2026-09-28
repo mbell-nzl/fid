@@ -229,3 +229,32 @@ not a control-conformance directive or a rewrite of either historical verdict.
 - **If BLOCK:** category public-interface/specification contradiction and protected task/control definition authority; ESC-23-006 raised in tl_escalations_current.md. Resolution condition: full Tech Lead obtains the necessary Human/contract-owner ruling on requirement write authority and the closed capability set, plus the task-spec or report-lint grammar authority needed for the expected-nonzero declaration. Then Runner resumes task 12 under the recorded resolution and reruns the real-process and report-lint commands before ordinary completion gates.
 - **Human attention required:** yes
 - **References:** project-docs/docs/phases/phase-23/public-interface.md sections 4 and 4.1; project-docs/docs/phases/phase-23/execution-scope.md section 6; project-docs/docs/phases/phase-23/decisions.md R-19; project-docs/docs/phases/phase-23/tasks/task-12.md Scope, Expected Non-Zero Commands; project-docs/tools/report-lint.sh:104; project-docs/docs/phases/phase-23/tasks/task-12-done.md Tests run and Deviations; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## TRG-23-007 - Task 13 ActivityEvent producers cross the journal and migration boundary
+
+- **Trigger:** Task 13's accepted real-process ActivityEvent behavior is blocked by journal schema/effect ownership: activity_log is rejected as an unknown table, and the requirement.record-reference producer cannot reference the requirement_refs row under the current trigger schema.
+- **Originating task:** task-13
+- **Trigger signature:** task-13:scope-gap:review-list-and-activity-producers
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-23/tasks/task-13-done.md
+- **Candidate:** RECOVERY_REQUIRED / protected persistence and task-order scope gap
+- **Checkpoint:** Runner-supplied commit-verification evidence: `git rev-parse HEAD^{commit}` returned 007c9487863f5eb3cf037a0f0affd290742fed56, subject matched `docs(task): correct phase-23 task-13 blocker evidence format`; report-lint returned `OUTCOME BLOCKED` (terminated `exit_code: 0`). Task-13 recovery attempt 1 added `review.list`; the ActivityEvent probe and full tagged gate remain failed.
+- **Verdict:** BLOCK
+- **Reasoning:** VAL-055 and schema section 6.2 require ActivityEvent effects from their producing leaves. The focused real-process probe failed (terminated `exit_code: 1`): the journal validator rejects `activity_log/activity` as `unknown table`. The requirement-reference producer also needs a reference to its new `requirement_refs` row, while the current activity trigger resolves the V1 `requirements` table and the accepted replacement trigger is in task 15's migration 0018. Repairing that persistence contract before task 13 closes would change migration/schema and cross-task ownership; no task-13 scope or accepted decision authorizes that move. A bounded journal registry fix may be decision-free after the protected ordering is resolved, but it does not clear the trigger by itself. Incomplete producer implementation remains same-task work after resolution. The attached package times are below VAL-079 budgets, so timing is not a blocker.
+- **Local decisions made:** none; no schema, migration order, ActivityEvent set, or validation criterion changed.
+- **Resolution evidence:** Not cleared. The focused `go test -tags integration -run '^TestP23ReviewRecordRealProcessJourney$' -count=1 ./cmd/fid/integration` returned `FAIL` (terminated `exit_code: 1`); the full exact tagged task-13 gate also returned `FAIL` (terminated `exit_code: 1`). The accepted 0018 activity trigger references `requirement_refs`; the current trigger does not. The verified checkpoint and passing report-lint establish durable blocker evidence, not a passing VAL-055 result.
+- **If REPAIR:** N/A pending protected authority. After resolution, task 13 continues under the authorized scope, preserves failed evidence, reruns the exact required gates, and obtains any affected independent review.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** Do not change the journal table registry, migration or trigger schema, task order/scope, accepted Event effects or ActivityEvent names, public interface, tests, gates, thresholds, validation contract, or Runner ledger under this triage alone. Do not use a temporary V1 requirement row or invented Issue reference to bypass the accepted model.
+- **Exact verification:** N/A pending protected authority.
+- **Originating report:** project-docs/docs/phases/phase-23/tasks/task-13-done.md
+- **Control repair base:** N/A; Runner supplied 007c9487863f5eb3cf037a0f0affd290742fed56, but no control-conformance directive is proposed.
+- **If BLOCK:** category data-model/persistence-contract and protected cross-task migration ownership; ESC-23-007 raised in `tl_escalations_current.md`; resolution condition full Tech Lead obtains the required schema and task-order authority for the accepted ActivityEvent effects and requirement-reference integrity before task 13 resumes.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-23/tasks/task-13.md Objective, VAL-055, Files To Create Or Modify; project-docs/docs/phases/phase-23/tasks/task-13-done.md Validation Contract Coverage, Exact quality-gate results, Concerns; project-docs/docs/phases/phase-23/schema.md sections 4 and 6.2; project-docs/docs/phases/phase-23/contract-coverage.md public-interface 2 ActivityEvent row; project-docs/docs/phases/phase-23/qa/validation-contract.md VAL-055 and VAL-079; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
