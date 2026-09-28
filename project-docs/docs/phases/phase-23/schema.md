@@ -649,6 +649,25 @@ is also mirrored into `semanticEventRules`
 | `evidence.linked` | record shape widens (task 6); add optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` for the readiness Stop (DEC-224) | task 6 shape; task 10 Stop rows |
 | `artifact.availability-observed` | add optional `stops/insert`, `attention_items/insert`, `attention_stop_links/insert` for the readiness Stop (DEC-224) | task 10 |
 
+**Activity subject (DEC-262).** Each `activity_log/activity` Effect takes the
+most specific subject the 0018 trigger admits and never invents an Issue:
+
+| ActivityEvent | `ref_type` | `ref_id` |
+|---|---|---|
+| `requirement-referenced`, `requirement-linked` | `requirement` | `requirement_id` |
+| `decision-referenced` | `decision` | `decision_refs.id` |
+| `review-recorded` | `issue` | the Review's `issue_id` |
+| `finding-addressed`, `finding-resolved` | `issue` | the `issue_id` of the Finding's Review |
+| `human-outcome-recorded` | `issue` | `scope_issue_id` |
+| `concern-recorded`, `concern-disposed`, `deviation-recorded` | by subject | `issue` itself; `envelope` its primary Issue; `run` `runs.issue_id`; `review`/`finding` the Review's `issue_id`; `requirement` -> (`requirement`, `subject_id`) |
+
+Each producing Event writes one row. The exception is `review.recorded`: it
+writes one `review-recorded` row plus one `finding-resolved` row per Finding it
+disposes `resolved`, and an `inapplicable` disposition writes none. A
+`requirement` or `decision` row is written only once 0018's trigger exists,
+because the 0016 trigger resolves those types against the V1 tables. Those rows
+are therefore task 15's, and every `issue` row is task 13's.
+
 After task 15 renames `judgment_concerns` to `concerns`, the two concern effect
 rules name `concerns`. Task 15 owns that single-word rule change and its
 fixtures; no other effect row moves.

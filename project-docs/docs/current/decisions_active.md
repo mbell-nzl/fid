@@ -165,6 +165,12 @@
   need a trusted Actor but no Actor-profile capability or grant. The closed
   capability set stays at thirty. Report-lint grammar is unchanged; task 12's
   declaration is corrected to one line.
+- DEC-261 routes review-9's repairs. Reopened tasks run the DEC-259 race gates.
+- DEC-262 (Tech Lead, Human-delegated) resolves ESC-23-007. Task 13 owns the
+  strict-path `activity_log` registry entry (execution-scope row 11) and the
+  `issue`-subject ActivityEvent rows. Task 15 writes the
+  `requirement`/`decision`-subject rows with 0018 and closes VAL-055. The
+  subjects are in `schema.md` section 6.2.
 
 ## Prior Phase and Future Qualification
 

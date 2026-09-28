@@ -1,5 +1,41 @@
 # Phase 23 Escalations
 
+## ESC-23-007 - Task-13 ActivityEvent journal and requirement-reference schema boundary
+
+- **Raised:** 2026-09-28
+- **Allocated by:** TL-Lite, TRG-23-007
+- **Candidate source:** `project-docs/docs/phases/phase-23/tasks/task-13-done.md` (BLOCKED)
+- **Protected category:** data-model/persistence contract and cross-task migration ownership.
+- **Trigger:** A scoped `review-recorded` activity trial was rejected by the
+  strict journal validator with `unknown table` for `activity_log/activity`.
+  `requirement.record-reference` activity cannot resolve `requirement_refs`
+  under the 0016 trigger. The replacement trigger is in task 15's 0018. The
+  focused journey and the exact tagged gate each returned `FAIL`
+  (terminated `exit_code: 1`).
+- **Trigger signature:** task-13:scope-gap:review-list-and-activity-producers
+- **Checkpoint:** `838fc32` (implementation), `007c948` (report).
+- **Links:** TRG-23-007; `tasks/task-13.md` VAL-055; `schema.md` sections 4 and 6.2; `execution-scope.md` section 6.
+- **Human attention required:** yes. The Human delegated the resolution to the Tech Lead on 2026-09-28.
+- **Status:** RESOLVED 2026-09-28 under DEC-262.
+  - **Tech Lead finding:**
+    - The `unknown table` rejection is a planning gap of the DEC-167/173
+      family. Execution-scope section 6 registered only the ten new tables,
+      but all nine strict-path families declare `activity_log/activity`.
+    - The trigger half also affects `decision-referenced`. Triage named only
+      the requirement half.
+  - **Resolution:** no DDL, migration, order, rule, or name changes.
+    - Task 13 gains the `activity_log` registry entry (row 11) and the five
+      Review-package producers, and emits only `issue`-subject rows.
+    - Task 15 emits the `requirement`/`decision`-subject rows with 0018 and
+      closes VAL-055's ten-name inventory.
+    - VAL-055's owner cell names both tasks; its pass and fail text is
+      unchanged.
+    - The activity subjects are fixed in `schema.md` section 6.2.
+  - **Continuation:** same-task `in-scope-implementation` at attempt 2,
+    no-progress 0/2. Attempt 1 made material progress, and it was not
+    authorized to touch the registry that caused its remaining failure.
+    Handoff: `qa/resume-after-esc-23-007.md`.
+
 ## ESC-23-006 - Task-12 requirement authority and report-lint contract conflict
 
 - **Raised:** 2026-09-27

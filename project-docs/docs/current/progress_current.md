@@ -1,25 +1,26 @@
 # Progress — Current
 
-Updated 2026-09-28. **Tasks 1-12 are complete, and review window 10-12 is
-in QA REPAIR. The Runner is ready to resume.** Branch: `phase-23`.
+Updated 2026-09-28. **Tasks 1-12 are complete, and review-10 passed window
+10-12. Task 13 stopped on ESC-23-007, which DEC-262 resolves. The Runner is
+ready to resume.** Branch: `phase-23`.
 
-Review-9 (`3dbf5c6`) found two bounded Must-fix items and no blocker
-candidates:
-- MF-1: task 10, VAL-046 artifact-producer evidence.
-- MF-2: task 12, VAL-053 portable-fake `requirement.synced`.
+Task 13 attempt 1 added `review.list`, the failure codes, and request
+closure. Its ActivityEvent effects could not commit, for two reasons:
+- `activity_log` is missing from the strict journal table registry, which
+  was a planning gap.
+- The 0016 trigger cannot resolve `requirement` or `decision` refs until
+  task 15's 0018.
 
-The previous Runner session ended before it recorded REVIEW. The ledger is
-still valid and advanceable.
-
-DEC-261 makes two changes:
-- Reopened task 10 runs the DEC-259 race gates.
-- Both repairs are bounded.
+DEC-262 splits the work at 0018:
+- Task 13 registers the table and emits the `issue`-subject names.
+- Task 15 emits the `requirement`/`decision` rows and closes VAL-055.
 
 Next: the Runner resumes using
-[the handoff](../phases/phase-23/qa/resume-after-review-9.md). It repairs
-task 10, then task 12. A fresh re-review follows in `review-10.md`, which
-must PASS before task 13.
+[the handoff](../phases/phase-23/qa/resume-after-esc-23-007.md) (task 13
+attempt 2), then runs tasks 14-18.
 
+Earlier, review-9's two Must-fix repairs closed under DEC-261, and
+review-10 recorded PASS.
 Earlier, ESC-23-006 was resolved by DEC-260. Under DEC-260, task 12 closed
 at `b763127`. Requirement writes need a trusted Actor but no capability.
 
@@ -32,9 +33,9 @@ owners (tasks 6, 2, and 10) are repaired and complete.
 Phase 23 is Heavy, approved under DEC-222, with 18 tasks and 84 validation
 assertions (80 deterministic, 4 Human). The accepted contracts and task pack
 are indexed in the [phase brief](phase_brief.md). DEC-258 satisfies DEC-254's
-test-speed step; task 12 awaits the checkpoint PASS.
+test-speed step.
 
-Retain these constraints while finishing the repairs:
+Retain these constraints:
 
 - DEC-249: only required Obligations guarding the requested action block it.
 - DEC-250/253: Stop resolution uses shared qualifying-fact predicates keyed on
@@ -43,6 +44,8 @@ Retain these constraints while finishing the repairs:
 - DEC-227: exact task commands and 600-second ordinary-package / 900-second
   tagged-integration budgets remain binding. A prior implementation commit
   supplies no fresh gate evidence.
+- DEC-262: task 13 writes no `requirement`/`decision` activity row;
+  task 15 does, alongside 0018's trigger.
 - DEC-243: VAL-025 closes with real durable Human Outcome links and all nine
   compatibility cells; the checkpoint must independently review the evidence.
 

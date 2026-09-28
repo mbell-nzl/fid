@@ -188,3 +188,61 @@ List any conditional command required by this task and why:
 - New top-level tests call `t.Parallel()` unless they touch process-global
   state; `golangci-lint`'s `paralleltest` enforces this. A long subtest matrix
   whose cases build independent workspaces parallelizes its subtests.
+
+## Planning Amendment - DEC-262 (2026-09-28, ESC-23-007)
+
+The `activity_log` gap is a planning defect. It was not caused by this task.
+Continue as attempt 2 of `task-13:scope-gap:review-list-and-activity-producers`.
+
+- **Scope added:**
+  - `internal/journal/current_event_columns.go`: add the `activity_log`
+    entry, derived from `migrations/0002` DDL and proven by
+    `TestCurrentEventColumnDomainsMatchAcceptedDDL`.
+  - If the `activity` Effect reaches them on the strict path, also:
+    - `current_event_cardinality.go`: `review.recorded` alone may carry more
+      than one `activity_log/activity`;
+    - the `current_event_json.go` column switch, for `activity_log.details`;
+    - any other `internal/journal/current_event_*.go` check that rejects it.
+
+    This is `execution-scope.md` section 6 row 11.
+  - `internal/review/review.go`, `finding.go`, `concern.go`, `deviation.go`,
+    and `human_outcome.go`, which are the activity producers.
+  - Matching tests.
+- **Emit** the `issue`-subject rows in `schema.md` section 6.2:
+  - `review-recorded`;
+  - `finding-resolved` (one per `resolved` disposition; none for
+    `inapplicable`);
+  - `finding-addressed`;
+  - `human-outcome-recorded`;
+  - `concern-recorded`, `concern-disposed`, and `deviation-recorded` for
+    `issue`, `envelope`, `run`, `review`, and `finding` subjects.
+- **Do not emit** any `requirement`- or `decision`-subject row. Under the
+  0016 trigger it aborts the Event. Leave `decision.go` and `requirement.go`
+  unchanged.
+  - The following rows are **task 15's**:
+    - `requirement-referenced`;
+    - `requirement-linked`;
+    - `decision-referenced`;
+    - the `requirement`-subject Concern/Deviation rows.
+  - Report them under VAL-055 as "deferred to task 15 (DEC-262)", never as
+    `PASS` and never as `BLOCKED`.
+  - The activity-log inventory at this task asserts the seven `issue`-subject
+    names. It also asserts that no name outside the accepted ten appears.
+- **Forbidden:**
+  - loosening any journal check;
+  - editing any effect rule, stage, or `semanticEventRules` row;
+  - editing migrations or triggers;
+  - editing ActivityEvent names;
+  - using an invented Issue or a V1 row.
+
+  All retained writers already declare `activity_log/activity`. If one is
+  rejected once the table is registered, or a registry outside
+  `internal/journal` rejects, return `RECOVERY_REQUIRED`. Do not edit the
+  rule.
+- **Retain** the failed trial, the zero-row probes, the failed tagged gate,
+  and the failed report-lint in `task-13-done.md`. Disclose DEC-262 under
+  Deviations. Then complete VAL-056 and VAL-057 as specified and run all five
+  exact commands unchanged.
+- **Acceptance criterion added:** the seven `issue`-subject names appear from
+  their producing leaves with the `schema.md` section 6.2 subject, and no
+  `requirement` or `decision` activity row is written. (VAL-055, DEC-262)

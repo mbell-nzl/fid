@@ -181,7 +181,10 @@ task's scope:
   for an effect on an unregistered table, and
   `TestCurrentEventColumnDomainsMatchAcceptedDDL` proves the registration
   against the 0017 DDL in the same task that ships it. Task 15 renames the
-  `judgment_concerns` key with its table; no other task edits this map.
+  `judgment_concerns` key with its table. Task 13 adds the pre-existing
+  `activity_log` table, which every Phase 23 family's optional
+  `activity_log/activity` Effect reaches on the strict path (row 11, DEC-262).
+  No other task edits this map.
 - `internal/export/archive_semantics_catalog.go` mirrors the journal catalogs
   for `export validate` and `import`, and no test asserts parity between them.
   Standing rule: **a task that adds, amends, or removes a journal Event rule
@@ -255,6 +258,7 @@ general rule with a closed inventory:
 | 8 | `case "Condition"` nullable-binding relation in the same function | `current_event_value_relations.go:49` | none - **fails open** | **none** - restated by DEC-235; see below |
 | 9 | `validateCurrentBudgetFacts` family switch | `current_event_budget_values.go:34` | none - **fails open** at its `default` | 6 (DEC-234) |
 | 10 | per-type `Condition` shape map and its `validateCurrentValue` dispatch | `current_event_value_catalog.go`; `current_event_value_types.go:39` | `Condition: closed object has wrong shape` / `missing required field "<own>"` | 9 (creates), 10, 11 (DEC-235) |
+| 11 | `currentEventTables` entry for the pre-existing `activity_log`, plus any strict-path check the `activity` Effect then reaches (`review.recorded` cardinality; `activity_log.details` JSON column) | `current_event_columns.go`; `current_event_cardinality.go:14`; `current_event_json.go:14` | `unknown table` / `too many activity_log/activity Effects` | 13 (DEC-262; missed by planning, found by task 13) |
 
 - **Row 7 (R-19), the second copy of the capability allowlist.** The closed
   23-name set exists **twice** in non-test code: `sortedUniqueCapabilities`

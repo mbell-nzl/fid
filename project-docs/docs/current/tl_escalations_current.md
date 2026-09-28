@@ -2,10 +2,28 @@
 
 ## Open escalations
 
-None open. ESC-23-006 is resolved under DEC-260 (below); task 12 resumes
-under [resume-after-esc-23-006.md](../phases/phase-23/qa/resume-after-esc-23-006.md).
+None. ESC-23-007 is resolved under DEC-262; the Runner resumes task 13 via
+`qa/resume-after-esc-23-007.md`.
 
 ## Recently resolved
+
+### ESC-23-007 - Task-13 ActivityEvent journal and requirement-reference schema boundary
+
+- **Status:** RESOLVED 2026-09-28 under DEC-262 (Tech Lead, Human-delegated).
+  - **Cause 1:** `activity_log` was missing from the strict-path
+    `currentEventTables`. This was a planning gap; task 1 was given only the
+    new tables.
+  - **Cause 2:** the 0016 trigger resolves `requirement` and `decision` refs
+    against V1 tables until 0018. `decision-referenced` is affected too.
+  - **Split at 0018** (no DDL or migration change):
+    - Task 13 owns the registry entry (execution-scope row 11) and emits the
+      seven `issue`-subject names.
+    - Task 15 emits the `requirement`/`decision`-subject rows with 0018's
+      trigger and records VAL-055's final ten-name inventory.
+  - The activity subjects are now fixed in `schema.md` section 6.2.
+  - Task 13 continues same-task at attempt 2 (`in-scope-implementation`,
+    no-progress 0/2). See the
+    [full record](../phases/phase-23/tl-escalations.md).
 
 ### ESC-23-006 - Task-12 requirement authority and report-lint contract conflict
 

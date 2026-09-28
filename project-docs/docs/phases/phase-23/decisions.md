@@ -2384,6 +2384,141 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 - **Resume:** `qa/resume-after-review-9.md`.
 - **Refs:** review-9; DEC-227; DEC-258; DEC-259; VAL-046; VAL-053; VAL-079.
 
+### DEC-262: ActivityEvent rows split at migration 0018; task 13 owns the strict-path `activity_log` entry (ESC-23-007)
+
+- **Date:** 2026-09-28.
+- **Status:** ACCEPTED by Tech Lead under explicit Human delegation,
+  2026-09-28. The Human directed the Tech Lead to resolve ESC-23-007.
+  - **Unchanged:** DDL, migrations 0017/0018 and their order, Event types,
+    effect rules and stages, `semanticEventRules`, ActivityEvent names, the
+    public-interface fields, gates, budgets, and VAL-055's pass and fail text.
+  - **Changed:**
+    - task 13 and task 15 scope;
+    - VAL-055's owning-task cell;
+    - `execution-scope.md` section 6 gains inventory row 11;
+    - `schema.md` section 6.2 gains an activity subject table. No accepted
+      text fixed the activity subject.
+  - The Human may reverse this. The effect of reversing it is under
+    "Not taken".
+- **Findings (Tech Lead, verified at `007c948`).**
+  1. **Registry gap (a Tech Lead planning defect, not a task-13 defect).**
+     - `activity_log` is absent from `currentEventTables`
+       (`internal/journal/current_event_columns.go`).
+     - All nine Phase 23 families are on the strict path, and each declares
+       optional `activity_log/activity`. Any activity Effect they carry
+       therefore returns `unknown table` at `validateCurrentEffect`
+       (`current_event_validation.go:161`).
+     - Execution-scope section 6 gave task 1 only the ten *new* tables and
+       stated "no other task edits this map". `activity_log` is a
+       pre-existing table that Phase 23 Effects reach. This is the
+       recurring DEC-167/173 family again.
+     - Retained issue, label, and link writers are unaffected today. The
+       retained path skips tables that are absent from `currentEventTables`
+       (`:53`).
+  2. **Trigger timing.**
+     - The live trigger (`migrations/0016...up.sql:9-24`) resolves
+       `requirement` refs against V1 `requirements` and `decision` refs
+       against V1 `decisions`.
+     - The accepted replacement, which resolves against
+       `requirement_refs.requirement_id` and `decision_refs.id`, is created
+       only by 0018 (task 15).
+     - Before 0018, any `ref_type` `requirement` or `decision` row aborts its
+       whole Event. TRG-23-007 named only the requirement half. The same
+       defect applies to `decision-referenced`.
+  3. **Subject unspecified.** No accepted text says which `ref_type`/`ref_id`
+     each of the ten names carries. `schema.md` section 4 says only that
+     `requirement` and `decision` subjects come from the new Events.
+- **Part 1 - activity subject (added to `schema.md` section 6.2).** Each
+  row takes the most specific subject that the 0018 trigger admits, and never
+  invents an Issue.
+
+  | Name | `ref_type` | `ref_id` |
+  |---|---|---|
+  | `requirement-referenced`, `requirement-linked` | `requirement` | `requirement_id` |
+  | `decision-referenced` | `decision` | `decision_refs.id` |
+  | `review-recorded` | `issue` | the Review's `issue_id` |
+  | `finding-addressed`, `finding-resolved` | `issue` | the `issue_id` of the Finding's Review |
+  | `human-outcome-recorded` | `issue` | `scope_issue_id` |
+  | `concern-recorded`, `concern-disposed`, `deviation-recorded` | per subject | see below |
+
+  - A Concern or Deviation subject maps as follows:
+    - `issue` maps to itself.
+    - `envelope` maps to its single primary Issue
+      (`envelope_issue_selection`).
+    - `run` maps to `runs.issue_id`.
+    - `review` maps to the Review's `issue_id`.
+    - `finding` maps to its Review's `issue_id`.
+    - `requirement` maps to (`requirement`, `subject_id`).
+  - Each producing Event writes exactly one row, with one exception.
+    `review.recorded` writes one `review-recorded` row plus one
+    `finding-resolved` row for each Finding it disposes `resolved`.
+    An `inapplicable` disposition writes no row.
+- **Part 2 - split at 0018.**
+  - **Task 13 (continuation):**
+    - Own the strict-path registry entries for `activity_log/activity`
+      (inventory row 11).
+    - Emit every Issue-subject row in Part 1.
+    - Emit **no** `requirement` or `decision` row. It would abort the Event
+      under the 0016 trigger.
+    - At task 13 close, these rows are absent by design and are reported as
+      "deferred to task 15 (DEC-262)", never as `PASS`:
+      - `requirement-referenced`;
+      - `requirement-linked`;
+      - `decision-referenced`;
+      - the `requirement`-subject Concern/Deviation rows.
+  - **Task 15:** in the same change that lands 0018's activity trigger,
+    emit those rows and run VAL-055's full ten-name activity-log inventory
+    after the corpus.
+  - **VAL-055:** its owner cell becomes "task 13; task 15 for the DEC-262
+    rows". Its final outcome is recorded at task 15. Its pass and fail text
+    is unchanged.
+- **Part 3 - task 13 continuation scope.**
+  - **Journal:** `internal/journal/current_event_columns.go` gains the
+    `activity_log` entry, derived from `0002` DDL and proven by
+    `TestCurrentEventColumnDomainsMatchAcceptedDDL`.
+  - **Journal, if the activity Effect reaches them:**
+    - `current_event_cardinality.go`: `review.recorded` may carry more than
+      one `activity_log/activity`. Every other family keeps a maximum of 1.
+    - The `current_event_json.go` column switch, for `activity_log.details`.
+    - Any other `internal/journal/current_event_*.go` check that rejects an
+      `activity` Effect on the strict path.
+  - **Producers:** `internal/review/review.go`, `finding.go`, `concern.go`,
+    `deviation.go`, and `human_outcome.go`.
+  - **Tests:** matching tests.
+  - **Constraints:**
+    - Derive every entry from DDL and the accepted rules. Loosen nothing.
+    - Change no effect rule, stage, or `semanticEventRules` row.
+    - Retained writers must stay green. Registering the table makes their
+      activity Effects visible at `:53`, and every retained writer already
+      declares `activity_log/activity`. Any rejection there, or from a
+      registry outside `internal/journal`, is an escalation, not a rule
+      edit.
+- **Attempt accounting.** This continuation is attempt 2 of
+  `task-13:scope-gap:review-list-and-activity-producers`, with no-progress
+  `0/2`. Attempt 1 made material progress (`review.list`). The journal
+  registry that caused its remaining failure was outside its authorization.
+- **Gate coverage.** Task 13's five commands already exercise every file
+  added here: the journal package through the ordinary gate, and the
+  producers through the tagged gate. Task 15's tagged gate exercises its
+  producer additions. No command changes.
+- **Not taken.**
+  - **A:** add a migration before 0018 for the trigger. This renumbers 0018
+    across the accepted contract set. It is a protected schema-order change
+    that would hold task 13 until a Human ruling.
+  - **B:** edit shipped 0017 in place. This invalidates task 1's
+    parity/down proofs and splits workspaces already at 0017.
+  - **C:** attach requirement or decision rows to an Issue. This invents an
+    Issue for `requirement.record-reference`, which the ESC constraints
+    forbid.
+  - **D:** close VAL-055 at task 13 on a journal-only fix. The ESC
+    constraints forbid this too.
+  - If the Human prefers A, task 13 holds and `schema.md` sections 4-5 are
+    renumbered.
+- **Resume:** `qa/resume-after-esc-23-007.md`.
+- **Refs:** ESC-23-007; TRG-23-007; DEC-167/173; DEC-229..233; DEC-194;
+  VAL-055; VAL-062; `schema.md` sections 4 and 6.2; `execution-scope.md`
+  section 6.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,

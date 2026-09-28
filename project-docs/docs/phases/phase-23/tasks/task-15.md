@@ -25,6 +25,9 @@ removed surface absent.
   the non-Issue rows.
 - VAL-063: Maintenance checks over removed tables are removed and the remaining
   checks pass.
+- VAL-055 (DEC-262 part): the `requirement`/`decision`-subject activity rows
+  land with 0018's trigger, and the full ten-name activity-log inventory is
+  recorded here as VAL-055's final outcome.
 
 ## Binding Constraints
 
@@ -104,6 +107,11 @@ removed surface absent.
   (VAL-062)
 - [ ] No maintenance check references a removed table and the command reports no
   unexpected finding. (VAL-063)
+- [ ] `requirement-referenced`, `requirement-linked`, `decision-referenced`,
+  and `requirement`-subject Concern/Deviation rows are written with the
+  `schema.md` section 6.2 subject, and the corpus's activity log holds all ten
+  added names from their producing leaves with no name outside the set.
+  (VAL-055, DEC-262)
 - [ ] Full required commands terminate with preserved red/green evidence.
 - [ ] Every converged retained row records its provenance and executing command.
 
@@ -185,3 +193,23 @@ match, it is a real finding: repair the production reader or return
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
+
+## Planning Amendment - DEC-262 (2026-09-28, ESC-23-007)
+
+- **Scope added:**
+  - `internal/review/requirement.go` and `decision.go`: emit
+    `requirement-referenced`, `requirement-linked`, and `decision-referenced`.
+  - `internal/review/concern.go` and `deviation.go`: emit the
+    `requirement`-subject branch.
+  - Use the `schema.md` section 6.2 subjects. Land these in the same change
+    as 0018's `activity_log_ref_integrity_guard_insert`, never before it.
+  - Matching tests and the tagged activity-log inventory.
+- The strict-path `activity_log` registry entry is task 13's
+  (`execution-scope.md` row 11). The `judgment_concerns` rename does not
+  touch it.
+- VAL-062's trigger probe must show:
+  - a `requirement` row resolving through `requirement_refs`;
+  - a `decision` row resolving through `decision_refs`;
+  - a `requirement` or `decision` `ref_id` with no row in its new table
+    rejected.
+- No command changes. The tagged gate exercises every file added here.
