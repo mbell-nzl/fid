@@ -58,17 +58,17 @@ The V1 Concern list tests in `cmd/fid/concern_test.go` began at `f35b3febd7a9976
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestPhase22AttentionReadBoundary$' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.259s` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); CLI returned exit 2 for `concern list --subject`.
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); continuation reproduced the same `--subject` exit 2 before repair.
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.098s` (terminated `exit_code: 0`); the retained real-process Human/JSON assertion passed after generic routing.
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.098s` (terminated `exit_code: 0`)
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestConcernList' -count=1 ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`); the Phase 9 direct-array V1 assertions were displaced by generic no-filter output.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestConcernList' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.467s` (terminated `exit_code: 0`); the converged tests check generic V1-row exclusion and preserve Issue-scoped V1 reads.
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestConcernList' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.467s` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); the added limit case revealed `invalid-argument` where the accepted bound requires `result-limit-exceeded`.
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.101s` (terminated `exit_code: 0`); the typed bound response now passes.
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.101s` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); the new disposal fixture lacked `concern.dispose` authority and returned `authority-denied`.
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.833s` (terminated `exit_code: 0`); the authorized fixture checks both open and disposed status filters.
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.833s` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); mixing V1 `--issue` with generic `--severity` silently ignored the severity filter.
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.258s` (terminated `exit_code: 0`); mixed modes now reject without an Event.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid ./internal/review` - PASS - `ok  	github.com/mbell-nzl/fid/internal/review	1.086s` (terminated `exit_code: 0`); final-tree touched-package run also reported `cmd/fid 198.697s`.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid ./internal/review` - PASS - `ok  	github.com/mbell-nzl/fid/internal/review	1.085s` (terminated `exit_code: 0`); preceding continuation attempt also reported `cmd/fid 195.400s`.
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ConcernListHumanProjection$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.258s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid ./internal/review` - PASS - `ok  	github.com/mbell-nzl/fid/internal/review	1.086s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid ./internal/review` - PASS - `ok  	github.com/mbell-nzl/fid/internal/review	1.085s` (terminated `exit_code: 0`)
 - `FID_P23_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/phase-23-human go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23HumanFixtures$' -count=1 -v ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	20.787s` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23ResumeRejectsJudgmentSectionOverflow$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	17.879s` (terminated `exit_code: 0`)
 - Real `fid` fixture interaction: protected action denied with `protected-decision-required` (exit 5); `human-outcome record` succeeded (exit 0); repeated action succeeded (exit 0). The invoked absolute binary, workspaces, and arguments are in `qa/human-fixtures.md` under VAL-071.
@@ -85,16 +85,16 @@ Working directory: `/home/mark/projects/fid`. Each group below was run byte-iden
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	117.669s	coverage: 62.5% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:											(statements)					60.7%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`); `TestP23ConcernListHumanProjection` failed because `concern list --subject` returned exit 2 through the old reader. The package reported 226.499s.
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); first continuation attempt.
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`); first continuation attempt.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.5% of statements` (terminated `exit_code: 0`); first continuation attempt reported `cmd/fid 195.005s`.
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					60.7%` (terminated `exit_code: 0`); first continuation attempt.
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	243.997s` (terminated `exit_code: 0`); first continuation attempt.
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); final-tree attempt after TRG-23-009.
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`); final-tree attempt after TRG-23-009.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.5% of statements` (terminated `exit_code: 0`); final-tree attempt, with `cmd/fid 196.303s`.
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					60.7%` (terminated `exit_code: 0`); final-tree attempt.
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	229.795s` (terminated `exit_code: 0`); final-tree attempt, under the 900s budget.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					60.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	243.997s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					60.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	229.795s` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
