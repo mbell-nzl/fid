@@ -3,9 +3,6 @@ package workflow
 import "strings"
 
 const (
-	RuleAllACsVerified              = "all_acs_verified"
-	RuleHasCompletionReport         = "has_completion_report"
-	RuleConcernsAddressed           = "concerns_addressed"
 	RuleAllChildTasksDoneOrCanceled = "all_child_tasks_done_or_cancelled"
 	// RuleRequiredGatesCurrent is reserved for the v0.2b trusted-gate path.
 	// It has no evaluator in this phase.
@@ -18,10 +15,7 @@ const (
 
 // IsImplementedRule reports whether a rule has an evaluator in this release.
 func IsImplementedRule(name string) bool {
-	return name == RuleAllACsVerified ||
-		name == RuleHasCompletionReport ||
-		name == RuleConcernsAddressed ||
-		name == RuleAllChildTasksDoneOrCanceled ||
+	return name == RuleAllChildTasksDoneOrCanceled ||
 		name == RuleLinkedToDecision
 }
 
@@ -36,56 +30,9 @@ type UnmetCondition struct {
 	MissingRoles []string
 }
 
-type AcceptanceCriterionVerification struct {
-	AcceptanceCriterionID string
-	PassingRoles          []string
-}
-
-type CompletionReportStatus struct {
-	IssueID string
-	Exists  bool
-}
-
-type ConcernStatus struct {
-	OpenConcernIDs []string
-}
-
 type ChildTaskStatus struct {
 	IssueID string
 	State   string
-}
-
-func AllACsVerified(requiredRoles []string, criteria []AcceptanceCriterionVerification) RuleResult {
-	required := uniqueNonEmpty(requiredRoles)
-	unmet := make([]UnmetCondition, 0)
-	for _, criterion := range criteria {
-		passingRoles := stringSet(criterion.PassingRoles)
-		missingRoles := make([]string, 0)
-		for _, role := range required {
-			if !passingRoles[role] {
-				missingRoles = append(missingRoles, role)
-			}
-		}
-		if len(missingRoles) == 0 {
-			continue
-		}
-		unmet = append(unmet, UnmetCondition{
-			Rule:         RuleAllACsVerified,
-			EntityIDs:    singleEntityID(criterion.AcceptanceCriterionID),
-			MissingRoles: missingRoles,
-		})
-	}
-	return newRuleResult(unmet)
-}
-
-func HasCompletionReport(status CompletionReportStatus) RuleResult {
-	if status.Exists {
-		return RuleResult{Satisfied: true}
-	}
-	return newRuleResult([]UnmetCondition{{
-		Rule:      RuleHasCompletionReport,
-		EntityIDs: singleEntityID(status.IssueID),
-	}})
 }
 
 func LinkedToDecision(issueID string, decisionReferenceIDs []string) RuleResult {
@@ -94,17 +41,6 @@ func LinkedToDecision(issueID string, decisionReferenceIDs []string) RuleResult 
 		return RuleResult{Satisfied: true}
 	}
 	return newRuleResult([]UnmetCondition{{Rule: RuleLinkedToDecision, EntityIDs: singleEntityID(issueID)}})
-}
-
-func ConcernsAddressed(status ConcernStatus) RuleResult {
-	openConcernIDs := uniqueNonEmpty(status.OpenConcernIDs)
-	if len(openConcernIDs) == 0 {
-		return RuleResult{Satisfied: true}
-	}
-	return newRuleResult([]UnmetCondition{{
-		Rule:      RuleConcernsAddressed,
-		EntityIDs: openConcernIDs,
-	}})
 }
 
 func AllChildTasksDoneOrCancelled(children []ChildTaskStatus) RuleResult {

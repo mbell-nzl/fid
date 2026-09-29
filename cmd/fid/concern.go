@@ -10,7 +10,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/mbell-nzl/fid/internal/cli"
-	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/review"
@@ -23,18 +22,14 @@ func newConcernCommand() *cobra.Command {
 		Short: "Manage concerns.",
 	}
 
-	cmd.AddCommand(newConcernAddressCommand())
 	cmd.AddCommand(newConcernDisposeCommand())
 	cmd.AddCommand(newConcernListCommand())
 	cmd.AddCommand(newConcernRecordCommand())
-	cmd.AddCommand(newConcernRaiseCommand())
 	return cmd
 }
 
 func init() {
 	rootFlagCapabilities["concern list"] = rootFlagCapability{Project: true, JSON: true}
-	rootFlagCapabilities["concern raise"] = rootFlagCapability{Project: true, JSON: true}
-	rootFlagCapabilities["concern address"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["concern record"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["concern dispose"] = rootFlagCapability{Project: true, JSON: true}
 }
@@ -173,8 +168,8 @@ func decodeClosedJudgmentInput(stdin io.Reader, path string, required []string, 
 
 func newConcernListCommand() *cobra.Command {
 	var (
-		issueID, subject, status, severity string
-		limit                              int
+		subject, status, severity string
+		limit                     int
 	)
 
 	cmd := &cobra.Command{
@@ -187,27 +182,6 @@ func newConcernListCommand() *cobra.Command {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
 
-			if cmd.Flags().Changed("issue") {
-				if cmd.Flags().Changed("subject") || cmd.Flags().Changed("severity") || cmd.Flags().Changed("limit") {
-					return renderConcernError(cmd, "concern.list", fmt.Errorf("issue filter cannot be combined with generic Concern filters"))
-				}
-				items, err := issues.ListConcerns(issues.ConcernListOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), IssueID: issueID, Status: status})
-				if err != nil {
-					if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-						return renderErr
-					}
-					return err
-				}
-				encoder := json.NewEncoder(cmd.OutOrStdout())
-				encoder.SetEscapeHTML(false)
-				if err := encoder.Encode(items); err != nil {
-					if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-						return renderErr
-					}
-					return err
-				}
-				return nil
-			}
 			items, err := review.ListConcerns(review.ConcernListOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), Subject: subject, Status: status, Severity: severity, Limit: limit})
 			if err != nil {
 				return renderConcernError(cmd, "concern.list", err)
@@ -227,50 +201,10 @@ func newConcernListCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&issueID, "issue", "", "Filter by issue ID")
 	cmd.Flags().StringVar(&subject, "subject", "", "Filter by type:id subject")
 	cmd.Flags().StringVar(&status, "status", "", "Filter by concern status")
 	cmd.Flags().StringVar(&severity, "severity", "", "Filter by severity")
 	cmd.Flags().IntVar(&limit, "limit", 100, "Maximum Concerns to return")
 	cmd.SetFlagErrorFunc(canonicalFlagError("concern.list"))
-	return cmd
-}
-
-func newConcernAddressCommand() *cobra.Command {
-	var actor, completionID string
-
-	cmd := &cobra.Command{
-		Use:   "address <concern-id>",
-		Short: "Address an open concern from a later completion.",
-		Args:  canonicalExactArgs("concern.address", 1),
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return writeCapabilityUnavailable(cmd, "concern.address", "human.outcomes.v1", 23)
-		},
-	}
-
-	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
-	cmd.Flags().StringVar(&completionID, "in-completion", "", "Completion ID that addressed the concern")
-	cmd.SetFlagErrorFunc(canonicalFlagError("concern.address"))
-	return cmd
-}
-
-func newConcernRaiseCommand() *cobra.Command {
-	var actor, issueID, completionID, summary, bodyMDPath string
-
-	cmd := &cobra.Command{
-		Use:   "raise",
-		Short: "Raise a concern against a completed issue.",
-		Args:  canonicalNoArgs("concern.raise"),
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return writeCapabilityUnavailable(cmd, "concern.raise", "human.outcomes.v1", 23)
-		},
-	}
-
-	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
-	cmd.Flags().StringVar(&issueID, "on", "", "Issue ID")
-	cmd.Flags().StringVar(&completionID, "in-completion", "", "Completion ID this concern was raised in")
-	cmd.Flags().StringVar(&summary, "summary", "", "One-line concern summary")
-	cmd.Flags().StringVar(&bodyMDPath, "body-md", "", "Path to detailed concern body")
-	cmd.SetFlagErrorFunc(canonicalFlagError("concern.raise"))
 	return cmd
 }

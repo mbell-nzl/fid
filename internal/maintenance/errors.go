@@ -59,10 +59,8 @@ func hierarchyFinding(id, kind string, parentID, parentKind sql.NullString) (Fin
 func checkDependentRowKinds(db *sql.DB, _ string) ([]Finding, error) {
 	checks := []dependentRowCheck{
 		{table: "acceptance_criteria", idColumn: "id", issueColumn: "issue_id", allowedKinds: []string{"task", "subtask"}},
-		{table: "task_completions", idColumn: "id", issueColumn: "issue_id", allowedKinds: []string{"task", "subtask"}},
 		{table: "epic_metadata", idColumn: "issue_id", issueColumn: "issue_id", allowedKinds: []string{"epic"}},
 		{table: "triage_events", idColumn: "id", issueColumn: "epic_id", allowedKinds: []string{"epic"}},
-		{table: "decisions", idColumn: "id", issueColumn: "epic_id", allowedKinds: []string{"epic"}, optional: true},
 	}
 	findings := make([]Finding, 0)
 	for _, check := range checks {
@@ -252,17 +250,11 @@ func linkFindings(db *sql.DB, fromType, fromID, relation, toType, toID string) (
 	return findings, nil
 }
 
-func validLinkType(refType string) bool { return refType == "issue" || refType == "requirement" }
+func validLinkType(refType string) bool { return refType == "issue" }
 
 func linkRelationAllowed(fromType, relation, toType string) bool {
 	if relation == "relates_to" {
 		return true
-	}
-	if relation == "implements" {
-		return fromType == "issue" && toType == "requirement"
-	}
-	if relation == "implemented_by" {
-		return fromType == "requirement" && toType == "issue"
 	}
 	return fromType == "issue" && toType == "issue" && map[string]bool{
 		"blocks": true, "blocked_by": true, "duplicates": true, "duplicated_by": true,
@@ -281,7 +273,11 @@ func referencedEntityExists(db *sql.DB, refType, refID string) (bool, error) {
 		return false, nil
 	}
 	var exists bool
-	if err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM "+table+" WHERE id = ?)", refID).Scan(&exists); err != nil {
+	column := "id"
+	if refType == "requirement" {
+		column = "requirement_id"
+	}
+	if err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM "+table+" WHERE "+column+" = ?)", refID).Scan(&exists); err != nil {
 		return false, err
 	}
 	return exists, nil
@@ -292,9 +288,9 @@ func referenceTable(refType string) (string, bool) {
 	case "issue":
 		return "issues", true
 	case "requirement":
-		return "requirements", true
+		return "requirement_refs", true
 	case "decision":
-		return "decisions", true
+		return "decision_refs", true
 	default:
 		return "", false
 	}

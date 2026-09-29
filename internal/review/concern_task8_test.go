@@ -20,7 +20,7 @@ func TestConcernDisposeCarriedForwardBindsExistingIssue(t *testing.T) {
 	defer func() { _ = conn.Close() }()
 	for _, statement := range []string{
 		`CREATE TABLE issues (id TEXT PRIMARY KEY)`,
-		`CREATE TABLE judgment_concerns (id TEXT PRIMARY KEY)`,
+		`CREATE TABLE concerns (id TEXT PRIMARY KEY)`,
 		`CREATE TABLE review_findings (id TEXT PRIMARY KEY)`,
 		`INSERT INTO issues VALUES ('ISS-future-work')`,
 	} {
@@ -118,10 +118,10 @@ func concernTargetMatrixDB(t *testing.T) *sql.DB {
 	}
 	for _, statement := range []string{
 		`CREATE TABLE issues (id TEXT PRIMARY KEY)`,
-		`CREATE TABLE judgment_concerns (id TEXT PRIMARY KEY)`,
+		`CREATE TABLE concerns (id TEXT PRIMARY KEY)`,
 		`CREATE TABLE review_findings (id TEXT PRIMARY KEY)`,
 		`INSERT INTO issues VALUES ('ISS-existing')`,
-		`INSERT INTO judgment_concerns VALUES ('CON-existing')`,
+		`INSERT INTO concerns VALUES ('CON-existing')`,
 		`INSERT INTO review_findings VALUES ('FND-existing')`,
 	} {
 		if _, err := conn.Exec(statement); err != nil {

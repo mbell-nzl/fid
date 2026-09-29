@@ -99,15 +99,11 @@ func Get(options GetOptions) (Issue, error) {
 	if err != nil {
 		return Issue{}, err
 	}
-	record.AcceptanceCriteria, err = issueAcceptanceCriteria(conn, record.ID, record.OwnerRole)
+	record.AcceptanceCriteria, err = issueAcceptanceCriteria(conn, record.ID)
 	if err != nil {
 		return Issue{}, err
 	}
 	record.Concerns, err = issueConcerns(conn, record.ID)
-	if err != nil {
-		return Issue{}, err
-	}
-	record.Completions, err = issueCompletions(conn, record.ID)
 	if err != nil {
 		return Issue{}, err
 	}

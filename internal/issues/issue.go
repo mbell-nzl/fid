@@ -134,15 +134,13 @@ type Issue struct {
 	UpdatedAt          *string               `json:"updated_at"`
 	ParentTitle        *string               `json:"-"`
 	Concerns           []IssueConcern        `json:"-"`
-	Completions        []IssueCompletion     `json:"completions"`
 	Links              []IssueLink           `json:"-"`
 }
 
 type AcceptanceCriterion struct {
-	ID                  string         `json:"id"`
-	Ordinal             int            `json:"ordinal"`
-	Text                string         `json:"text"`
-	LatestVerifications map[string]any `json:"latest_verifications"`
+	ID      string `json:"id"`
+	Ordinal int    `json:"ordinal"`
+	Text    string `json:"text"`
 }
 
 func countJournalLines(path string) int {

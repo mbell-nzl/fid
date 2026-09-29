@@ -67,7 +67,7 @@ func TestBuildDefinitionEffectsRejectsRetiredRequirement(t *testing.T) {
 		Categories:  []string{"unstarted", "completed", "cancelled"},
 		Transitions: []Transition{{From: "todo", To: "done"}},
 		Requirements: []Requirement{{
-			From: "done", To: "cancelled", Rule: RuleHasCompletionReport,
+			From: "done", To: "cancelled", Rule: "has_completion_report",
 		}},
 	}
 

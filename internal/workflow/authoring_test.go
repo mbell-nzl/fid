@@ -81,8 +81,8 @@ func TestDefinitionRuleVocabularyAndParams(t *testing.T) {
 		{"reserved v0.2c", Requirement{From: "todo", To: "done", Rule: RuleHasCompletion}, "requirements are unavailable"},
 		{"reserved v0.2d", Requirement{From: "todo", To: "done", Rule: RuleLinkedToDecision}, "requirements are unavailable"},
 		{"unknown rule", Requirement{From: "todo", To: "done", Rule: "invented_rule"}, "requirements are unavailable"},
-		{"invalid json", Requirement{From: "todo", To: "done", Rule: RuleHasCompletionReport, ParamsJSON: "{"}, "requirements are unavailable"},
-		{"all acs without roles", Requirement{From: "todo", To: "done", Rule: RuleAllACsVerified, ParamsJSON: `{"roles":[]}`}, "requirements are unavailable"},
+		{"invalid json", Requirement{From: "todo", To: "done", Rule: "has_completion_report", ParamsJSON: "{"}, "requirements are unavailable"},
+		{"all acs without roles", Requirement{From: "todo", To: "done", Rule: "all_acs_verified", ParamsJSON: `{"roles":[]}`}, "requirements are unavailable"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -92,7 +92,7 @@ func TestDefinitionRuleVocabularyAndParams(t *testing.T) {
 	}
 
 	request := withDefinition(func(request *DefinitionRequest) {
-		request.Requirements = []Requirement{{From: "todo", To: "done", Rule: RuleAllACsVerified, ParamsJSON: `{"roles":["developer"]}`}}
+		request.Requirements = []Requirement{{From: "todo", To: "done", Rule: "all_acs_verified", ParamsJSON: `{"roles":["developer"]}`}}
 	})
 	assertDefinitionError(t, conn, request, "requirements are unavailable")
 }
@@ -102,12 +102,12 @@ func TestValidateDefinitionRequestRequirementEdges(t *testing.T) {
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 	unknown := withDefinition(func(request *DefinitionRequest) {
-		request.Requirements = []Requirement{{From: "done", To: "todo", Rule: RuleHasCompletionReport}}
+		request.Requirements = []Requirement{{From: "done", To: "todo", Rule: "has_completion_report"}}
 	})
 	assertDefinitionError(t, conn, unknown, "requirements are unavailable")
 
 	declared := withDefinition(func(request *DefinitionRequest) {
-		request.Requirements = []Requirement{{From: "todo", To: "done", Rule: RuleHasCompletionReport}}
+		request.Requirements = []Requirement{{From: "todo", To: "done", Rule: "has_completion_report"}}
 	})
 	assertDefinitionError(t, conn, declared, "requirements are unavailable")
 }

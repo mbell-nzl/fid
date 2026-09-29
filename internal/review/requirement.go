@@ -86,6 +86,11 @@ func RecordRequirementReference(options JudgmentOptions, request RequirementRefe
 		effects[len(effects)-1].Values["superseded_by_id"] = nil
 		effects[len(effects)-1].Values["created_at"] = "<occurred-at>"
 		effects[len(effects)-1].Values["created_event_id"] = "<event-id>"
+		activity, err := reviewSubjectActivityEffect(conn, "requirement", request.ID, "requirement-referenced", options.ActorID, map[string]any{"requirement_id": request.ID, "reference_id": refID})
+		if err != nil {
+			return err
+		}
+		effects = append(effects, activity)
 		repository, err := observedRepository(options.WorkspaceRoot, projectID)
 		if err != nil {
 			return err
@@ -143,6 +148,11 @@ func LinkRequirement(options JudgmentOptions, request RequirementLinkRequest) (R
 		}
 		key := request.RequirementID + ":" + request.IssueID + ":" + request.Relation
 		effects := []journal.Effect{{Op: "insert", Table: "requirement_issue_links", PK: map[string]any{"requirement_id": request.RequirementID, "issue_id": request.IssueID, "relation": request.Relation}, Values: map[string]any{"created_at": "<occurred-at>", "created_event_id": "<event-id>"}}}
+		activity, err := reviewSubjectActivityEffect(conn, "requirement", request.RequirementID, "requirement-linked", options.ActorID, map[string]any{"requirement_id": request.RequirementID, "issue_id": request.IssueID, "relation": request.Relation})
+		if err != nil {
+			return err
+		}
+		effects = append(effects, activity)
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "requirement.linked", ActorV2: judgmentActor(actor), Aggregate: journal.Aggregate{ID: key, Sequence: 1, Type: "requirement"}, CommandName: "requirement.link", Repository: journalRepository(repository), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setJudgmentEventIdentity(prepared.Effects, prepared)

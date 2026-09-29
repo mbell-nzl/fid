@@ -25,17 +25,8 @@ func checkWarnings(db *sql.DB, now time.Time, graceSeconds int) ([]Finding, erro
 	if err != nil {
 		return nil, err
 	}
-	verifications, err := staleVerificationFindings(db)
-	if err != nil {
-		return nil, err
-	}
-	telemetry, err := telemetryGapFindings(db)
-	if err != nil {
-		return nil, err
-	}
 	findings = append(findings, started...)
-	findings = append(findings, verifications...)
-	return append(findings, telemetry...), nil
+	return findings, nil
 }
 
 func loadClaims(db *sql.DB) ([]claimRecord, error) {
@@ -156,58 +147,4 @@ func liveIssueClaims(claims []claimRecord, now time.Time) (map[string]bool, erro
 		}
 	}
 	return live, nil
-}
-
-func staleVerificationFindings(db *sql.DB) ([]Finding, error) {
-	rows, err := db.Query(`
-		SELECT verification.id, verification.completion_id
-		FROM ac_verifications AS verification
-		JOIN task_completions AS completion ON completion.id = verification.completion_id
-		WHERE completion.status = 'superseded'
-		ORDER BY verification.id
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("check stale verifications: query verifications: %w", err)
-	}
-	defer func() { _ = rows.Close() }()
-
-	findings := make([]Finding, 0)
-	for rows.Next() {
-		var id, completionID string
-		if err := rows.Scan(&id, &completionID); err != nil {
-			return nil, fmt.Errorf("check stale verifications: scan verification: %w", err)
-		}
-		findings = append(findings, Finding{Check: "stale_verifications", EntityID: id, Message: fmt.Sprintf("AC verification %s references superseded completion %s", id, completionID)})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("check stale verifications: iterate verifications: %w", err)
-	}
-	return findings, nil
-}
-
-func telemetryGapFindings(db *sql.DB) ([]Finding, error) {
-	rows, err := db.Query(`
-		SELECT completion.id
-		FROM task_completions AS completion
-		LEFT JOIN agent_runs AS run ON run.completion_id = completion.id
-		WHERE run.id IS NULL
-		ORDER BY completion.id
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("check telemetry gaps: query completions: %w", err)
-	}
-	defer func() { _ = rows.Close() }()
-
-	findings := make([]Finding, 0)
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, fmt.Errorf("check telemetry gaps: scan completion: %w", err)
-		}
-		findings = append(findings, Finding{Check: "telemetry_gaps", EntityID: id, Message: fmt.Sprintf("completion %s has no completion-linked agent run", id)})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("check telemetry gaps: iterate completions: %w", err)
-	}
-	return findings, nil
 }

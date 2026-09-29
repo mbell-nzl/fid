@@ -2,7 +2,6 @@ package workflow
 
 type RuleReference struct {
 	Name          string
-	RequiredRoles []string
 	Unimplemented bool
 }
 
@@ -72,7 +71,6 @@ func cloneRuleReferences(rules []RuleReference) []RuleReference {
 	for index, rule := range rules {
 		cloned[index] = RuleReference{
 			Name:          rule.Name,
-			RequiredRoles: append([]string(nil), rule.RequiredRoles...),
 			Unimplemented: rule.Unimplemented,
 		}
 	}

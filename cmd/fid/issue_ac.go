@@ -14,7 +14,6 @@ func newIssueACCommand() *cobra.Command {
 
 	cmd.AddCommand(newIssueACAddCommand())
 	cmd.AddCommand(newIssueACListCommand())
-	cmd.AddCommand(newIssueACVerifyCommand())
 	return cmd
 }
 
@@ -96,24 +95,6 @@ func newIssueACAddCommand() *cobra.Command {
 func init() {
 	rootFlagCapabilities["issue ac add"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["issue ac list"] = rootFlagCapability{Project: true, JSON: true}
-	rootFlagCapabilities["issue ac verify"] = rootFlagCapability{Project: true, JSON: true}
-}
-
-func newIssueACVerifyCommand() *cobra.Command {
-	var actor string
-
-	cmd := &cobra.Command{
-		Use:   "verify <issue-id> <ac-id>",
-		Short: "Verify an acceptance criterion.",
-		Args:  canonicalExactArgs("issue.ac.verify", 2),
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return writeCapabilityUnavailable(cmd, "issue.ac.verify", "reviews.coverage.v1", 23)
-		},
-	}
-
-	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
-	cmd.SetFlagErrorFunc(canonicalFlagError("issue.ac.verify"))
-	return cmd
 }
 
 func newIssueACListCommand() *cobra.Command {

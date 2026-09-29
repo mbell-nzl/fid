@@ -110,13 +110,8 @@ func TestRulesForEdgeMatchesTRDRequirements(t *testing.T) {
 				if got[i].Name != tt.want[i].Name {
 					t.Fatalf("RulesForEdge(%q, %q, %q)[%d].Name = %q, want %q", tt.workflowID, tt.fromState, tt.toState, i, got[i].Name, tt.want[i].Name)
 				}
-				if len(got[i].RequiredRoles) != len(tt.want[i].RequiredRoles) {
-					t.Fatalf("RulesForEdge(%q, %q, %q)[%d].RequiredRoles len = %d, want %d", tt.workflowID, tt.fromState, tt.toState, i, len(got[i].RequiredRoles), len(tt.want[i].RequiredRoles))
-				}
-				for roleIndex := range got[i].RequiredRoles {
-					if got[i].RequiredRoles[roleIndex] != tt.want[i].RequiredRoles[roleIndex] {
-						t.Fatalf("RulesForEdge(%q, %q, %q)[%d].RequiredRoles[%d] = %q, want %q", tt.workflowID, tt.fromState, tt.toState, i, roleIndex, got[i].RequiredRoles[roleIndex], tt.want[i].RequiredRoles[roleIndex])
-					}
+				if got[i].Unimplemented != tt.want[i].Unimplemented {
+					t.Fatalf("rule %d unimplemented = %v, want %v", i, got[i].Unimplemented, tt.want[i].Unimplemented)
 				}
 			}
 		})
@@ -286,13 +281,8 @@ func assertRuleReferencesEqual(t *testing.T, workflowID, fromState, toState stri
 		if got[i].Name != want[i].Name {
 			t.Fatalf("RulesForEdge(%q, %q, %q)[%d].Name = %q, want %q", workflowID, fromState, toState, i, got[i].Name, want[i].Name)
 		}
-		if len(got[i].RequiredRoles) != len(want[i].RequiredRoles) {
-			t.Fatalf("RulesForEdge(%q, %q, %q)[%d].RequiredRoles len = %d, want %d", workflowID, fromState, toState, i, len(got[i].RequiredRoles), len(want[i].RequiredRoles))
-		}
-		for roleIndex := range got[i].RequiredRoles {
-			if got[i].RequiredRoles[roleIndex] != want[i].RequiredRoles[roleIndex] {
-				t.Fatalf("RulesForEdge(%q, %q, %q)[%d].RequiredRoles[%d] = %q, want %q", workflowID, fromState, toState, i, roleIndex, got[i].RequiredRoles[roleIndex], want[i].RequiredRoles[roleIndex])
-			}
+		if got[i].Unimplemented != want[i].Unimplemented {
+			t.Fatalf("rule %d unimplemented = %v, want %v", i, got[i].Unimplemented, want[i].Unimplemented)
 		}
 	}
 }

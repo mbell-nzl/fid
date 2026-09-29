@@ -3,7 +3,6 @@ package issues
 import (
 	"database/sql"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/workflow"
@@ -49,24 +48,6 @@ func evaluateTransitionRules(conn *sql.DB, current issueTransitionState, rules [
 
 func evaluateTransitionRule(conn *sql.DB, current issueTransitionState, rule workflow.RuleReference) (workflow.RuleResult, error) {
 	switch rule.Name {
-	case workflow.RuleAllACsVerified:
-		criteria, err := loadAcceptanceCriterionVerifications(conn, current.ID)
-		if err != nil {
-			return workflow.RuleResult{}, err
-		}
-		return workflow.AllACsVerified(rule.RequiredRoles, criteria), nil
-	case workflow.RuleHasCompletionReport:
-		status, err := loadCompletionReportStatus(conn, current.ID)
-		if err != nil {
-			return workflow.RuleResult{}, err
-		}
-		return workflow.HasCompletionReport(status), nil
-	case workflow.RuleConcernsAddressed:
-		status, err := loadConcernStatus(conn, current.ID)
-		if err != nil {
-			return workflow.RuleResult{}, err
-		}
-		return workflow.ConcernsAddressed(status), nil
 	case workflow.RuleAllChildTasksDoneOrCanceled:
 		children, err := loadChildTaskStatuses(conn, current.ID)
 		if err != nil {
@@ -99,74 +80,6 @@ func loadApprovedDecisionReferenceIDs(conn *sql.DB, issueID string) ([]string, e
 		ids = append(ids, id)
 	}
 	return ids, rows.Err()
-}
-
-func loadAcceptanceCriterionVerifications(conn *sql.DB, issueID string) ([]workflow.AcceptanceCriterionVerification, error) {
-	criteria, err := issueAcceptanceCriteria(conn, issueID, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]workflow.AcceptanceCriterionVerification, 0, len(criteria))
-	for _, criterion := range criteria {
-		passingRoles := make([]string, 0, len(criterion.LatestVerifications))
-		for role, raw := range criterion.LatestVerifications {
-			verification, ok := raw.(map[string]any)
-			if !ok {
-				continue
-			}
-			status, _ := verification["status"].(string)
-			if strings.TrimSpace(status) == "pass" {
-				passingRoles = append(passingRoles, role)
-			}
-		}
-		sort.Strings(passingRoles)
-		result = append(result, workflow.AcceptanceCriterionVerification{
-			AcceptanceCriterionID: criterion.ID,
-			PassingRoles:          passingRoles,
-		})
-	}
-
-	return result, nil
-}
-
-func loadCompletionReportStatus(conn *sql.DB, issueID string) (workflow.CompletionReportStatus, error) {
-	var count int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM task_completions WHERE issue_id = ?`, issueID).Scan(&count); err != nil {
-		return workflow.CompletionReportStatus{}, fmt.Errorf("query completion reports for %q: %w", issueID, err)
-	}
-
-	return workflow.CompletionReportStatus{
-		IssueID: issueID,
-		Exists:  count > 0,
-	}, nil
-}
-
-func loadConcernStatus(conn *sql.DB, issueID string) (workflow.ConcernStatus, error) {
-	rows, err := conn.Query(`
-		SELECT id
-		FROM concerns
-		WHERE issue_id = ? AND status = ?
-		ORDER BY id
-	`, issueID, "open")
-	if err != nil {
-		return workflow.ConcernStatus{}, fmt.Errorf("query open concerns for %q: %w", issueID, err)
-	}
-	defer closeIssueRows(rows)
-
-	openConcernIDs := []string{}
-	for rows.Next() {
-		var concernID string
-		if err := rows.Scan(&concernID); err != nil {
-			return workflow.ConcernStatus{}, fmt.Errorf("scan open concern for %q: %w", issueID, err)
-		}
-		openConcernIDs = append(openConcernIDs, concernID)
-	}
-	if err := rows.Err(); err != nil {
-		return workflow.ConcernStatus{}, fmt.Errorf("iterate open concerns for %q: %w", issueID, err)
-	}
-
-	return workflow.ConcernStatus{OpenConcernIDs: openConcernIDs}, nil
 }
 
 func loadChildTaskStatuses(conn *sql.DB, issueID string) ([]workflow.ChildTaskStatus, error) {

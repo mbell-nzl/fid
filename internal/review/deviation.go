@@ -100,17 +100,11 @@ func RecordDeviation(options JudgmentOptions, request DeviationRecordRequest) (D
 		}
 		effect := journal.Effect{Op: "insert", Table: "deviations", PK: map[string]any{"id": request.ID}, Values: map[string]any{"subject_type": request.Subject.Type, "subject_id": request.Subject.ID, "actor_id": options.ActorID, "expected": request.Expected, "observed": request.Observed, "authority_actor_id": request.Authority.ActorID, "authority_reference": request.Authority.Reference, "disposition": request.Disposition, "reasoning": request.Reasoning, "references_json": string(references), "supersedes_deviation_id": request.SupersedesDeviationID, "created_at": "<occurred-at>", "created_event_id": "<event-id>"}}
 		effects := []journal.Effect{effect}
-		if request.Subject.Type != "requirement" {
-			issueID, err := judgmentActivityIssueID(conn, request.Subject)
-			if err != nil {
-				return err
-			}
-			activity, err := reviewActivityEffect(conn, issueID, "deviation-recorded", options.ActorID, map[string]any{"deviation_id": request.ID})
-			if err != nil {
-				return err
-			}
-			effects = append(effects, activity)
+		activity, err := judgmentSubjectActivityEffect(conn, request.Subject, "deviation-recorded", options.ActorID, map[string]any{"deviation_id": request.ID})
+		if err != nil {
+			return err
 		}
+		effects = append(effects, activity)
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "deviation.recorded", ActorV2: judgmentActor(actor), Aggregate: journal.Aggregate{ID: request.ID, Sequence: 1, Type: "deviation"}, CommandName: "deviation.record", Repository: journalRepository(repository), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setJudgmentEventIdentity(prepared.Effects, prepared)

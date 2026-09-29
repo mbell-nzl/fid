@@ -121,6 +121,11 @@ func RecordDecisionReference(options JudgmentOptions, request DecisionReferenceR
 			"scope_issue_id": request.Scope.IssueID, "created_at": "<occurred-at>", "created_event_id": "<event-id>",
 		}}}
 		effects = append(effects, resolutionEffects...)
+		activity, err := reviewSubjectActivityEffect(conn, "decision", request.ID, "decision-referenced", options.ActorID, map[string]any{"decision_id": request.ID})
+		if err != nil {
+			return err
+		}
+		effects = append(effects, activity)
 		repository, err := observedRepository(options.WorkspaceRoot, projectID)
 		if err != nil {
 			return err
