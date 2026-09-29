@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -27,6 +28,14 @@ func protectedDecisionFailure(blocked *workflow.StopBlockedError) (cli.Failure, 
 	if err := json.Unmarshal(stop.Details, &details); err != nil {
 		return cli.Failure{}, fmt.Errorf("decode protected Decision details: %w", err)
 	}
+	stopIDs := []string{stop.ID}
+	attentionIDs := append([]string{}, blocked.AttentionIDs...)
+	sort.Strings(stopIDs)
+	sort.Strings(attentionIDs)
+	details["stop_ids"] = stopIDs
+	details["attention_ids"] = attentionIDs
+	details["event"] = nil
+	details["replayed"] = false
 	return cli.NewFailure(cli.CodeProtectedDecisionRequired, "protected Decision requires an approved reference and Human Outcome", &cli.Subject{Type: cli.SubjectEnvelope, ID: stop.Subject.ID}, details)
 }
 

@@ -156,10 +156,11 @@ func assertP23ProtectedDecisionDenial(t *testing.T, a *p22FIDRecoveryAdapter, be
 		t.Fatalf("%s denial code = %q", operation, got)
 	}
 	details := p21Path(t, envelope, "error", "details").(map[string]any)
-	want := map[string]any{"envelope_id": p23EnvelopeID(t, a), "decision_class": class, "required_capabilities": []any{"decision.record-reference"}, "affected_actions": stringSliceAsAny(actions)}
+	want := map[string]any{"envelope_id": p23EnvelopeID(t, a), "decision_class": class, "required_capabilities": []any{"decision.record-reference"}, "affected_actions": stringSliceAsAny(actions), "stop_ids": details["stop_ids"], "attention_ids": details["attention_ids"], "event": nil, "replayed": false}
 	if fmt.Sprint(details) != fmt.Sprint(want) {
 		t.Fatalf("%s denial details = %v, want %v", operation, details, want)
 	}
+	p23AssertStopBlockedDetails(t, a, response, "protected-decision-required", "decision_class", class)
 	if after := p21JournalEventCount(t, a.workspace); after != before {
 		t.Fatalf("%s denial appended Event(s): %d -> %d", operation, before, after)
 	}

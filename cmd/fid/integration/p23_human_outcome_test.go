@@ -166,7 +166,7 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	// terminal Issue transition below still needs them.
 	beforeDenial := p21JournalEventCount(t, a.workspace)
 	denied := p23RunInput(t, a, "envelope", "complete", a.actor, "human-outcome-complete-denied", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
-	assertP23HumanOutcomeRequiredDenial(t, denied, "OBL-human-security", "security")
+	assertP23HumanOutcomeRequiredDenial(t, a, denied, "OBL-human-security", "security")
 	if after := p21JournalEventCount(t, a.workspace); after != beforeDenial {
 		t.Fatalf("human-outcome-required denial appended Event(s): %d -> %d", beforeDenial, after)
 	}
@@ -497,7 +497,7 @@ func assertP23OutcomeNotPermitted(t *testing.T, response p22ConformanceResponse,
 	}
 }
 
-func assertP23HumanOutcomeRequiredDenial(t *testing.T, response p22ConformanceResponse, obligationID, outcomeClass string) {
+func assertP23HumanOutcomeRequiredDenial(t *testing.T, a *p22FIDRecoveryAdapter, response p22ConformanceResponse, obligationID, outcomeClass string) {
 	t.Helper()
 	assertP22ProcessFailure(t, "envelope.complete", "human-outcome-required", 4, response)
 	if response.ExitCode != 4 || response.Stdout != "" {
@@ -516,6 +516,7 @@ func assertP23HumanOutcomeRequiredDenial(t *testing.T, response p22ConformanceRe
 	if got := p21PathString(t, envelope, "error", "details", "outcome_class"); got != outcomeClass {
 		t.Fatalf("denial outcome_class = %q, want %q", got, outcomeClass)
 	}
+	p23AssertStopBlockedDetails(t, a, response, "human-outcome-required", "outcome_class", outcomeClass)
 }
 
 func assertP23HumanOutcomeStopState(t *testing.T, a *p22FIDRecoveryAdapter, outcomeClass, want string) {

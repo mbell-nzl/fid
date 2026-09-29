@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -29,6 +30,14 @@ func humanOutcomeRequiredFailure(blocked *workflow.StopBlockedError) (cli.Failur
 	if err := json.Unmarshal(stop.Details, &details); err != nil {
 		return cli.Failure{}, fmt.Errorf("decode human-outcome-required details: %w", err)
 	}
+	stopIDs := []string{stop.ID}
+	attentionIDs := append([]string{}, blocked.AttentionIDs...)
+	sort.Strings(stopIDs)
+	sort.Strings(attentionIDs)
+	details["stop_ids"] = stopIDs
+	details["attention_ids"] = attentionIDs
+	details["event"] = nil
+	details["replayed"] = false
 	return cli.NewFailure(cli.CodeHumanOutcomeRequired, "human-outcome Obligation is unsatisfied", &cli.Subject{Type: cli.SubjectEnvelope, ID: stop.Subject.ID}, details)
 }
 

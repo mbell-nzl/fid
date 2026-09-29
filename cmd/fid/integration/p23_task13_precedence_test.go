@@ -18,6 +18,7 @@ func TestP23FailurePrecedenceWithProtectedDecisionAndObligation(t *testing.T) {
 	beforeEvents, beforeProjection := p21JournalEventCount(t, a.workspace), p22FaultProjection(t, a.workspace)
 	denied := p23IssueTransition(t, a, "qa_pass", 4, "task13-protected-and-obligation")
 	assertP22ProcessFailure(t, "issue.transition", "protected-decision-required", 5, denied)
+	p23AssertStopBlockedDetails(t, a, denied, "protected-decision-required", "decision_class", "security")
 	if p21JournalEventCount(t, a.workspace) != beforeEvents || !reflect.DeepEqual(p22FaultProjection(t, a.workspace), beforeProjection) {
 		t.Fatal("protected Decision precedence denial changed the journal or projection")
 	}
@@ -44,6 +45,7 @@ func TestP23FailurePrecedenceWithReadinessStopAndObligation(t *testing.T) {
 	beforeEvents, beforeProjection := p21JournalEventCount(t, a.workspace), p22FaultProjection(t, a.workspace)
 	denied := p23RunInput(t, a, "envelope", "complete", a.actor, "precedence-stop-and-obligation", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
 	assertP22ProcessFailure(t, "envelope.complete", "human-outcome-required", 4, denied)
+	p23AssertStopBlockedDetails(t, a, denied, "human-outcome-required", "outcome_class", "security")
 	if p21JournalEventCount(t, a.workspace) != beforeEvents || !reflect.DeepEqual(p22FaultProjection(t, a.workspace), beforeProjection) {
 		t.Fatal("readiness Stop precedence denial changed the journal or projection")
 	}
