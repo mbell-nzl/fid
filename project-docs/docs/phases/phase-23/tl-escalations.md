@@ -1,5 +1,55 @@
 # Phase 23 Escalations
 
+## ESC-23-009 - Migration 0018 down conflicts with the accepted 0016 rollback
+
+- **Raised:** 2026-09-30
+- **Allocated by:** TL-Lite, TRG-23-010
+- **Candidate source:** `project-docs/docs/phases/phase-23/tasks/task-15-done.md` (BLOCKED)
+- **Protected category:** schema/persistence contract and specification contradiction.
+- **Trigger:**
+  - `schema.md` section 5 required 0018 down to restore the byte-identical
+    0002 `concerns` definition, including `escalated_to_esc_id`.
+  - Migration 0016 down then runs
+    `ALTER TABLE concerns ADD COLUMN escalated_to_esc_id`, so the literal
+    down chain duplicates the column.
+  - The focused rollback test returned `FAIL` (terminated `exit_code: 1`)
+    because 0018 down is absent.
+- **Trigger signature:** task-15:protected-contract:0018-down-concerns-column-duplication
+- **Attempt count:** 1
+- **Checkpoint:** implementation checkpoint `fa6355a`; report `7884725`,
+  corrected at `b1f0028`; report-lint `OUTCOME BLOCKED` (terminated
+  `exit_code: 0`).
+- **Question / proposed direction:** Choose and record the exact 0018-down
+  `concerns` definition. Reconcile section 5 with 0016 down and keep the
+  full down chain executable.
+- **Resolution condition:** Record the decision and task-15 continuation
+  scope. The Runner resumes task 15 from the preserved checkpoint and keeps
+  the failed evidence.
+- **Links:** TRG-23-010; `schema.md` section 5;
+  `migrations/0002_v01_tables.up.sql`;
+  `migrations/0016_p22_remove_escalations.down.sql`; `tasks/task-15-done.md`.
+- **Human attention required:** yes. The Human asked the Tech Lead to resolve
+  it, approved DEC-264, and approved the `schema.md` edit on 2026-09-30.
+- **Status:** RESOLVED 2026-09-30 under DEC-264.
+  - **Tech Lead finding:** section 5 restored objects as first created, not
+    as they stood at schema 17. The defect has three instances; triage
+    named only the first:
+    - `concerns` with `escalated_to_esc_id`;
+    - `issues_enriched` from 0003 instead of 0011;
+    - the two implicitly dropped 0004 kind triggers, which were omitted.
+  - **Resolution:** 0018 down restores each object's fresh-schema-17
+    definition. The only accepted difference is SQLite's rename quoting.
+    - Section 5 now lists nine ordered steps, including an `agent_runs`
+      rebuild that keeps rows.
+    - The Tech Lead ran the full chain on a scratch database: 17 -> 18 -> 17
+      gave a `sqlite_master` identical to a fresh 17, then 0017 through 0001
+      down ran to empty.
+    - Unchanged: migrations 0001-0017, section 4, VAL text, ownership, and
+      commands.
+  - **Continuation:** same-task `in-scope-implementation` at attempt 2,
+    no-progress 0/2. Attempt 1 could not author the down file under a
+    contradictory definition. Handoff: `qa/resume-after-esc-23-009.md`.
+
 ## ESC-23-008 - Task-13 protected-decision denial response contradicts closed failure schema
 
 - **Raised:** 2026-09-28

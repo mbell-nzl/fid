@@ -144,21 +144,18 @@
 - DEC-258 (Human-delegated): parallel tests, `paralleltest`, tiered test loop,
   80% headroom warning. DEC-259 (Human): both race gates carry
   `-gcflags=modernc.org/...=-d=checkptr=0`, plus a phase-end full-`checkptr` run.
-- DEC-260 (Tech Lead, Human-delegated) resolves ESC-23-006. Requirement writes
-  need a trusted Actor but no Actor-profile capability or grant. The closed
-  capability set stays at thirty. Report-lint grammar is unchanged; task 12's
-  declaration is corrected to one line.
-- DEC-261 routes review-9's repairs. Reopened tasks run the DEC-259 race gates.
-- DEC-262 (Tech Lead, Human-delegated) resolves ESC-23-007. Task 13 owns the
-  strict-path `activity_log` registry entry (execution-scope row 11) and the
-  `issue`-subject ActivityEvent rows. Task 15 writes the
-  `requirement`/`decision`-subject rows with 0018 and closes VAL-055. The
-  subjects are in `schema.md` section 6.2.
-- DEC-263 (Tech Lead, Human-delegated) resolves ESC-23-008. The
-  `protected-decision-required` and `human-outcome-required` failure details
-  are their StopDetails plus `stop_ids`, `attention_ids`, `event` (null), and
-  `replayed` (`false`), as DEC-226 part 4 intended. The envelope, StopDetails,
-  and VAL-056/057 text are unchanged.
+- DEC-260 (ESC-23-006): requirement writes need a trusted Actor, with no
+  capability or grant; the closed capability set stays at thirty.
+  DEC-261: reopened tasks run the DEC-259 race gates.
+- DEC-262 (ESC-23-007): task 13 owns the `activity_log` registry entry and the
+  `issue`-subject rows. Task 15 writes the `requirement`/`decision` rows with
+  0018 and closes VAL-055 (`schema.md` section 6.2).
+- DEC-263 (ESC-23-008): the `protected-decision-required` and
+  `human-outcome-required` details are their StopDetails plus `stop_ids`,
+  `attention_ids`, `event` (null), and `replayed` (`false`).
+- DEC-264 (ESC-23-009, Human-approved): a down migration restores the prior
+  version's live state, not first-creation text. `schema.md` section 5 gives
+  0018 down's exact steps; migrations 0001-0017 are unchanged.
 
 ## Prior Phase and Future Qualification
 

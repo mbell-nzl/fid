@@ -4,6 +4,8 @@
 > Amended 2026-09-15 by DEC-223 (link-preserving `evidence_records` rebuild),
 > DEC-224 (readiness Stop effect rows), and DEC-226 (denial semantics), all
 > **approved by the Human 2026-09-19**. Amended passages name their DEC inline.
+> Section 5 corrected 2026-09-30 by DEC-264 (ESC-23-009), **approved by the
+> Human 2026-09-30**: 0018 down restores the schema-17 state, not first-creation text.
 > Task 1 incorporates it by `03_TRD_SCHEMA.md` section 8.4.
 > No implementation may infer additional tables, columns, indexes, triggers,
 > Event families, or effect rows beyond what is written here.
@@ -546,26 +548,132 @@ Events.
 
 ## 5. Migration 0018 Down
 
-```sql
-DROP TRIGGER activity_log_ref_integrity_guard_insert;
-DROP TRIGGER links_relation_compatibility_guard_insert;
-DROP TRIGGER links_to_ref_integrity_guard_insert;
-DROP TRIGGER links_from_ref_integrity_guard_insert;
-DROP TRIGGER links_endpoint_scope_guard_insert;
-DROP VIEW issues_enriched;
-DROP INDEX concerns_by_subject_status;
-ALTER TABLE concerns RENAME TO judgment_concerns;
-CREATE INDEX judgment_concerns_by_subject
-  ON judgment_concerns(subject_type, subject_id, status, created_at, id);
-```
+> Corrected by DEC-264 (ESC-23-009). The earlier text restored "byte-identical
+> `0002`" definitions and the "`0003` `issues_enriched`". That is wrong,
+> because migrations 0011 and 0016 changed those objects before schema 17.
+> Restoring 0002 `concerns` with `escalated_to_esc_id` makes 0016 down fail
+> with `duplicate column name`. The earlier text also omitted the two 0004
+> kind triggers that 0018 up drops implicitly.
 
-followed by the byte-identical `0002` definitions of `requirements`,
-`decisions`, `task_completions`, `ac_verifications`, and `concerns`, the
-byte-identical `0003` `idx_concerns_issue_status` and `issues_enriched`, the
-byte-identical `0005`/`0016` link and activity trigger definitions, and an
-`agent_runs` rebuild that restores its `completion_id` column. Down restores
-empty V1 tables; it does not reconstruct deleted rows, and task 15 records that
-explicitly.
+**Rule.** 0018 down restores the exact schema-17 definition of every object
+that 0018 up drops, renames, rebuilds, or implicitly removes. It restores the
+definition that a fresh init to version 17 leaves, not the definition the
+object was first created with. For each object, that is the text of the
+**last** migration at or before 0017 that defined it. The only accepted
+difference is SQLite's own double-quoting of a name written by
+`ALTER TABLE ... RENAME` (`"agent_runs"`, `"judgment_concerns"`). The same
+effect is already present on `"issues"` and `"evidence_records"`. Migrations
+0017 through 0001 must still roll down in order after it. No earlier migration
+changes.
+
+The file contains exactly these statements, in this order:
+
+1. The teardown and rename, verbatim:
+
+   ```sql
+   DROP TRIGGER activity_log_ref_integrity_guard_insert;
+   DROP TRIGGER links_relation_compatibility_guard_insert;
+   DROP TRIGGER links_to_ref_integrity_guard_insert;
+   DROP TRIGGER links_from_ref_integrity_guard_insert;
+   DROP TRIGGER links_endpoint_scope_guard_insert;
+   DROP VIEW issues_enriched;
+   DROP INDEX concerns_by_subject_status;
+   ALTER TABLE concerns RENAME TO judgment_concerns;
+   CREATE INDEX judgment_concerns_by_subject
+     ON judgment_concerns(subject_type, subject_id, status, created_at, id);
+   ```
+
+   `legacy_alter_table` stays at its default (OFF) for this rename, so SQLite
+   rewrites the self reference `supersedes_concern_id` back to
+   `judgment_concerns`.
+2. The `requirements`, `decisions`, `task_completions`, and `ac_verifications`
+   `CREATE TABLE` statements, byte-identical to
+   `migrations/0002_v01_tables.up.sql`. No later migration changed them.
+3. The V1 `concerns` table in its post-0016 form. This is the 0002 statement
+   without its `escalated_to_esc_id` line, which 0016 up dropped and 0016
+   down re-adds:
+
+   ```sql
+   CREATE TABLE concerns (
+     id                         TEXT PRIMARY KEY,
+     issue_id                   TEXT NOT NULL REFERENCES issues(id),
+     raised_in_completion_id    TEXT NOT NULL REFERENCES task_completions(id),
+     raised_by_role             TEXT NOT NULL,
+     summary                    TEXT NOT NULL,
+     body_md_path               TEXT,
+     status                     TEXT NOT NULL,
+     addressed_in_completion_id TEXT REFERENCES task_completions(id),
+     triaged_in_event_id        TEXT REFERENCES triage_events(id),
+     created_at                 DATETIME,
+     updated_at                 DATETIME
+   );
+   ```
+
+4. `task_completions_issue_kind_guard_insert` and
+   `decisions_epic_kind_guard_insert`, byte-identical to
+   `migrations/0004_v01_kind_triggers.up.sql`.
+5. `CREATE INDEX idx_concerns_issue_status ON concerns(issue_id, status);`,
+   byte-identical to 0003.
+6. The `agent_runs` rebuild. It follows the migration 0011 `issues` precedent
+   and keeps every row, with `completion_id` null:
+
+   ```sql
+   PRAGMA foreign_keys=OFF;
+   PRAGMA legacy_alter_table=ON;
+   PRAGMA defer_foreign_keys=ON;
+   ```
+
+   then the 0002 `agent_runs` statement, byte-identical except that the table
+   is named `agent_runs_new`, then:
+
+   ```sql
+   INSERT INTO agent_runs_new (
+     id, issue_id, role, model, tokens_in, tokens_out, price_in_per_mtok,
+     price_out_per_mtok, cost_usd, token_breakdown_json, tool_call_count,
+     provider_run_id, provider_cost_usd, started_at, ended_at
+   )
+   SELECT
+     id, issue_id, role, model, tokens_in, tokens_out, price_in_per_mtok,
+     price_out_per_mtok, cost_usd, token_breakdown_json, tool_call_count,
+     provider_run_id, provider_cost_usd, started_at, ended_at
+   FROM agent_runs;
+
+   DROP TABLE agent_runs;
+   ALTER TABLE agent_runs_new RENAME TO agent_runs;
+
+   PRAGMA foreign_keys=ON;
+   PRAGMA legacy_alter_table=OFF;
+   PRAGMA defer_foreign_keys=OFF;
+   ```
+
+   The rebuild comes after step 1, so it cannot affect the
+   `judgment_concerns` rename.
+7. `issues_enriched`, byte-identical to
+   `migrations/0011_p20_remove_issue_fields.up.sql` (not 0003). At schema 17,
+   0011's text is the live definition.
+8. The four `links_*` triggers, byte-identical to
+   `migrations/0005_v01_ref_triggers.up.sql`. No later migration redefined
+   them.
+9. `activity_log_ref_integrity_guard_insert`, byte-identical to
+   `migrations/0016_p22_remove_escalations.up.sql`.
+
+Down restores empty V1 tables. It does not reconstruct deleted rows, and task
+15 records that explicitly. `agent_runs` rows survive with a null
+`completion_id`.
+
+**Proof obligations (task 15, `internal/db`, ordinary race gate):**
+
+- 18 -> 17 leaves a `sqlite_master` set (`type`, `name`, `tbl_name`, `sql`)
+  equal to a fresh init at 17, apart from the rename quoting above;
+- an `agent_runs` row survives 18 -> 17;
+- a full `MigrateDown` from 18 to empty succeeds;
+- 17 -> 18 -> 17 -> 18 succeeds with clean `foreign_key_check` and
+  `integrity_check`.
+
+The Tech Lead verified this statement list on a scratch schema-17 database
+built from the shipped migrations 0001-0017 and the task-15 0018 up. The
+literal earlier text fails at 0016 down with
+`duplicate column name: escalated_to_esc_id`.
 
 ## 6. Event Contract
 

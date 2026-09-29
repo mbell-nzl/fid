@@ -2650,6 +2650,95 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   `schema.md` section 6.3; Phase 22 `public-interface.md` section 5
   (`budget-exhausted`).
 
+### DEC-264: Migration 0018 down restores the schema-17 state (ESC-23-009)
+
+- **Date:** 2026-09-30.
+- **Status:** ACCEPTED. The Tech Lead proposed it, and the Human approved it
+  and the `schema.md` edit on 2026-09-30.
+  - **Unchanged:**
+    - every shipped migration from 0001 to 0017;
+    - `schema.md` section 4 (0018 up) and the task-15 0018 up file;
+    - every VAL row's text, validator, and owner;
+    - task ownership and all nine task-15 commands.
+  - **Changed:**
+    - `schema.md` header and section 5;
+    - task 15 scope (Planning Amendment - DEC-264).
+- **Finding (Tech Lead, verified at `b1f0028`).**
+  - Section 5 lists the objects that 0018 down restores by where they were
+    **first created**. A rollback must restore them as they stood at
+    **schema 17**. That is a drafting defect in the accepted set, not a
+    task-15 defect. It has three instances; triage named only the first.
+    1. **`concerns`:** 0016 up dropped `escalated_to_esc_id`, and 0016 down
+       re-adds it. Restoring the 0002 text makes 0016 down fail with
+       `duplicate column name: escalated_to_esc_id`. The Tech Lead reproduced
+       that failure on a scratch database.
+    2. **`issues_enriched`:** section 5 cites 0003, but 0008 and then 0011
+       redefined the view. At schema 17 the live text is 0011's.
+    3. **Kind triggers:** section 5 omits `task_completions_issue_kind_guard_insert`
+       and `decisions_epic_kind_guard_insert` (0004). 0018 up drops both
+       implicitly with their tables (VAL-061), so a down that does not
+       recreate them leaves schema 17 incomplete.
+  - The `requirements`, `decisions`, `task_completions`, `ac_verifications`,
+    and `agent_runs` tables, `idx_concerns_issue_status`, the 0005 link
+    triggers, and the 0016 activity trigger all match their cited source at
+    schema 17. The only other objects that reference the dropped tables are
+    those triggers and the Phase 23 `envelope_protected_decisions`, which
+    0018 does not touch.
+- **Decision.**
+  1. **Rule.** 0018 down restores each object that 0018 up drops, renames,
+     rebuilds, or implicitly removes. It uses that object's definition in a
+     fresh schema-17 init, taken from the last migration at or before 0017
+     that defined it. The only accepted difference is SQLite's quoting of a
+     name written by `RENAME`. No earlier migration changes; in particular,
+     0016 down keeps its `ADD COLUMN`.
+  2. **Exact statements.** `schema.md` section 5 now lists the nine ordered
+     steps. The V1 `concerns` table is written out in full without
+     `escalated_to_esc_id`. The view comes from 0011, and the two 0004
+     triggers are added. The `agent_runs` rebuild follows the 0011 `issues`
+     pragma precedent and keeps rows. The `judgment_concerns` rename stays
+     at the default `legacy_alter_table` OFF, so its self reference is
+     rewritten.
+  3. **Proof.** Task 15 adds four `internal/db` assertions to the ordinary
+     race gate:
+     - 18 -> 17 `sqlite_master` equality with a fresh 17;
+     - an `agent_runs` row survives;
+     - the full down chain to empty succeeds;
+     - an 18/17 round trip leaves both pragmas clean.
+
+     These are task-level acceptance criteria. VAL-004's text is unchanged.
+- **Verification (Tech Lead, scratch database only; not a gate).** Using
+  sqlite 3.50.6, `foreign_keys=ON`, and each migration in its own
+  transaction:
+  - Fresh 0001-0017, then the task-15 0018 up, then the section-5
+    statements, gave a `sqlite_master` identical to the fresh 17. The only
+    difference was the quoting of `"judgment_concerns"` and `"agent_runs"`.
+  - The `supersedes_concern_id` reference resolves to `judgment_concerns`.
+  - A seeded `agent_runs` row survived.
+  - All down migrations from 0017 to 0001 then ran to an empty schema.
+  - Two 18/17 round trips and a final 18 passed both pragmas.
+  - The literal earlier text failed at 0016 down as reported.
+- **Attempt accounting.** Attempt 1 was signature
+  `task-15:protected-contract:0018-down-concerns-column-duplication`, and it
+  resumes as attempt 2 with no-progress `0/2`. Attempt 1 made no progress,
+  and it does not count against the budget: no one could author the down
+  file while the definition was contradictory. The earlier external
+  interruption also consumed no budget.
+- **Not taken.**
+  - **A: keep the 0002 `concerns` text and delete 0016 down's `ADD COLUMN`.**
+    This edits a shipped migration outside the section 1 baseline, and it
+    leaves the 0016 down chain unable to restore schema 15.
+  - **B: amend section 5's `concerns` line only.** This leaves the wrong
+    view source and the missing triggers to fail the fidelity proof later.
+  - **C: `ADD COLUMN completion_id` instead of the rebuild.** This appends the
+    column out of order, so `agent_runs` would differ from schema 17.
+- **Spec impact.** `03_TRD_SCHEMA.md` section 8.4 incorporates only
+  `schema.md` sections 1-3 and 6-7 and does not cite 0018, so it needs no
+  change now. It remains in the phase-end spec sync as before.
+- **Resume:** `qa/resume-after-esc-23-009.md`.
+- **Refs:** ESC-23-009; TRG-23-010; DEC-178; DEC-262; VAL-004; VAL-061;
+  VAL-062; `schema.md` sections 1, 4, and 5; migrations 0002, 0003, 0004,
+  0005, 0011, and 0016.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,

@@ -213,3 +213,43 @@ match, it is a real finding: repair the production reader or return
   - a `requirement` or `decision` `ref_id` with no row in its new table
     rejected.
 - No command changes. The tagged gate exercises every file added here.
+
+## Planning Amendment - DEC-264 (2026-09-30, ESC-23-009)
+
+- **Authority:** corrected `schema.md` section 5. Its nine ordered steps are
+  the exact SQL for `migrations/0018_p23_remove_v1_judgment.down.sql`. The
+  rule is to restore each object's schema-17 definition, not its
+  first-creation text:
+  - V1 `concerns` without `escalated_to_esc_id`;
+  - `issues_enriched` from 0011;
+  - the two 0004 kind triggers restored;
+  - the `agent_runs` rebuild keeps its rows.
+- **Scope added:**
+  - `migrations/0018_p23_remove_v1_judgment.down.sql`, already listed, now
+    with its exact content fixed;
+  - `internal/db/migration0018_test.go`, which is extended with the section 5
+    proof obligations:
+    - 18 -> 17 `sqlite_master` (`type`, `name`, `tbl_name`, `sql`) equals a
+      fresh init at 17, apart from the SQLite rename quoting of
+      `"judgment_concerns"` and `"agent_runs"`;
+    - a seeded `agent_runs` row survives 18 -> 17 with a null
+      `completion_id`;
+    - a full `MigrateDown` from 18 to empty succeeds;
+    - 17 -> 18 -> 17 -> 18 leaves `foreign_key_check` and `integrity_check`
+      clean.
+- **Keep** `TestMigration0018DownRestoresEmptyV1Tables`, and record its
+  attempt-1 failure as red evidence.
+- **Forbidden:**
+  - editing any migration from 0001 to 0017, including 0016 down;
+  - changing `schema.md` section 4 or the 0018 up file beyond what section 4
+    already requires;
+  - any statement not listed in section 5;
+  - weakening any assertion;
+  - changing any command.
+
+  If any of these is needed, return `RECOVERY_REQUIRED`.
+- **Gate coverage:** the ordinary race gate runs `internal/db`, which
+  executes every added assertion. No command changes.
+- **Acceptance (added):**
+  - [ ] Migration 0018 down matches `schema.md` section 5, and all four
+    proof obligations pass. (DEC-264; supports VAL-004)

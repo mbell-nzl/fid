@@ -2,17 +2,28 @@
 
 ## Open escalations
 
-### ESC-23-009 - Migration 0018 down conflicts with the accepted 0016 rollback
-
-- **Status:** OPEN 2026-09-30; governing TRG-23-010; originating task task-15.
-- **Trigger:** task-15:protected-contract:0018-down-concerns-column-duplication (attempt 1). Task 15 cannot author migration 0018 down without choosing between two contradictory accepted schema authorities.
-- **Category:** protected schema/persistence-contract and specification contradiction.
-- **Evidence:** `schema.md` section 5 requires 0018 down to restore the byte-identical migration 0002 `concerns` definition, including `escalated_to_esc_id`. Migration 0016 down then executes `ALTER TABLE concerns ADD COLUMN escalated_to_esc_id`, so the literal full down chain duplicates the column. Omitting it from 0018 down violates section 5. The focused rollback test failed (terminated exit_code: 1) because 0018 down is absent; no required task gate passed.
-- **Resolution needed:** Full Tech Lead or delegated Human decision authority must choose and record the exact 0018-down `concerns` definition, reconcile section 5's byte-identity requirement with migration 0016 down, and preserve an executable full down chain. Then the Phase Runner may resume task-15 from the preserved checkpoint under the decision, retaining failed evidence and all unchanged required commands.
-- **Scope guard:** Do not silently change schema authority, migration order, SQL byte identity, validation assertions, task ownership, gate commands, or the Runner ledger. No control-conformance repair applies.
-- **Source:** project-docs/docs/phases/phase-23/tasks/task-15-done.md; project-docs/docs/phases/phase-23/triage-log.md TRG-23-010; project-docs/docs/phases/phase-23/schema.md section 5; migrations/0002_v01_tables.up.sql:125-138; migrations/0016_p22_remove_escalations.down.sql:12.
+None. The Runner resumes task 15 from
+[the handoff](../phases/phase-23/qa/resume-after-esc-23-009.md).
 
 ## Recently resolved
+
+### ESC-23-009 - Migration 0018 down conflicts with the accepted 0016 rollback
+
+- **Status:** RESOLVED 2026-09-30 under DEC-264 (Tech Lead proposal,
+  Human-approved).
+  - **Cause:** `schema.md` section 5 restored objects as they were first
+    created, not as they stood at schema 17. As a result:
+    - V1 `concerns` kept `escalated_to_esc_id`, so 0016 down failed with a
+      duplicate column;
+    - `issues_enriched` cited 0003 instead of 0011;
+    - the two 0004 kind triggers were missing.
+  - **Fix:** 0018 down restores the fresh-schema-17 definition of each object.
+    Section 5 now lists nine exact steps, and the Tech Lead verified them
+    through the full down chain on a scratch database. Migrations 0001-0017,
+    0018 up, VAL text, and all commands are unchanged.
+  - Task 15 continues same-task at attempt 2 (`in-scope-implementation`,
+    no-progress 0/2). See the
+    [full record](../phases/phase-23/tl-escalations.md).
 
 ### ESC-23-008 - Task-13 protected-decision denial response contradicts closed failure schema
 
@@ -55,22 +66,11 @@
   [repair evidence](../phases/phase-23/qa/esc-23-005-repair.md) and the
   [full record](../phases/phase-23/tl-escalations.md).
 
-### ESC-23-004 - Post-task-11 checkpoint re-review: three protected blocker candidates (BC-1, BC-2, BC-3)
-
-- **Status:** RESOLVED 2026-09-26. BC-1 by DEC-249, BC-2 by DEC-251 (Human,
-  Option B), BC-3 by DEC-250; carry items by DEC-252..254; repair order by
-  DEC-255/256. See the [full record](../phases/phase-23/tl-escalations.md).
-
-### ESC-23-003 - VAL-015 Run-holder-only CLI evidence is unrepresentable under the accepted lifecycle
-
-- **Status:** RESOLVED 2026-09-20 under DEC-239 (Human-delegated through
-  Task 9). Run/Claim Actor binding and durable history are retained; only the
-  impossible Run-holder-only CLI evidence route became an isolated query
-  fixture. See the [full record](../phases/phase-23/tl-escalations.md) and
-  [resume handoff](../phases/phase-23/qa/resume-after-esc-23-003.md).
-
 Older, all resolved and archived in
 [Phase 23 escalations](../phases/phase-23/tl-escalations.md):
+- ESC-23-004 (checkpoint BC-1..3) under DEC-249..256.
+- ESC-23-003 under DEC-239 (VAL-015 evidence route; see the
+  [resume handoff](../phases/phase-23/qa/resume-after-esc-23-003.md)).
 - ESC-23-002 under DEC-238 (task 1 gate closure;
   [repair evidence](../phases/phase-23/qa/esc-23-002-repair.md)).
 - ESC-23-001 under DEC-235 (Human Option A: `omitempty` on the three new
