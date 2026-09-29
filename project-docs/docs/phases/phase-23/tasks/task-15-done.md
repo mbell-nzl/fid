@@ -5,7 +5,7 @@
 - Task outcome: BLOCKED
 - Category: specification-contradiction
 - Condition: `schema.md` section 5 requires the byte-identical 0002 `concerns` definition in migration 0018 down. That definition contains `escalated_to_esc_id`, but the next rollback, migration 0016 down, adds `escalated_to_esc_id` to `concerns`. Implementing section 5 literally makes the full down chain fail with a duplicate column; omitting the column changes the accepted SQL authority.
-- Recovery attempts: 1 session continuation after an external interruption; this attempt reproduced the missing-down failure and traced the conflicting DDL. The interrupted child returned no typed result or command termination, so none is treated as green evidence.
+- Recovery attempts: 1
 - Next action: Tech Lead must resolve the 0018-down `concerns` definition against migration 0016 down under protected schema authority. Then resume this same task from the committed partial tree, complete the V1 removal and VAL proofs, and run all nine unchanged required commands.
 - Human attention required: yes
 
@@ -63,12 +63,14 @@ Working directory: `/home/mark/projects/fid`. No required gate was started on a 
 
 - No accepted contract was changed. The blocker is internal to the accepted down-migration instructions: `schema.md` section 5 says the 0018 down `concerns` definition is byte-identical to `migrations/0002_v01_tables.up.sql:125`, including `escalated_to_esc_id`; `migrations/0016_p22_remove_escalations.down.sql:13` then adds that same column. A task-scope choice between these definitions would silently revise the schema contract.
 - The first focused rollback attempt ended `FAIL` (terminated `exit_code: 1`), with `restored V1 table "judgment_concerns" is missing` as a verbatim diagnostic. The root cause is the absent 0018 down file; a repair was withheld because the governing definition is contradictory. No later passing rollback result exists.
+- The first committed-report lint attempt returned `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`) because the Recovery attempts field included prose instead of an integer. The field is now `1`; the interruption explanation remains under Workflow outcome. The unchanged lint command is rerun against this correction.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
 - Resolve the exact 0018-down definition, including whether the restored V1 `concerns` table should match post-0016 schema without `escalated_to_esc_id`. The decision must also keep migration 0016 down executable, and should address whether its `ALTER TABLE concerns ADD COLUMN` or section 5's byte-identity requirement changes.
 - The preserved partial migration removes V1 tables before the Issue and maintenance readers, CLI leaves, retained fixtures, and activity producers have converged. The touched-package command exposed these as unfinished task-15 work, not green evidence or another task's assignment.
 - The external interruption consumed no no-progress budget per the Runner's TASK-RECOVERY binding. No provenance-based ownership claim is made for the retained tests before their introducing commits are checked during continuation.
+- The interrupted child returned no typed result or command termination; none is treated as green evidence.
 
 ## Dependency-budget note
 
