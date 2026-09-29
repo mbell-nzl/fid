@@ -164,8 +164,8 @@ DEC-263 continuation, working directory `/home/mark/projects/fid`, on the final 
 
 ## Commit hash
 
-- Pending commit
+- `bfee063f4cd1abb7a8d884b66802bb0136228db9`
 
 ## Commit subject
 
-- Pending commit
+- `fix(cli): include durable stop details in denials`
