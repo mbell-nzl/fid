@@ -91,8 +91,7 @@ func newConcernMutationCommand(name string, mutate concernMutation) *cobra.Comma
 			}
 			return cli.WriteSuccess(cmd.OutOrStdout(), operation, map[string]any{"concern": result.Concern, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: occurredAt})
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s concern %s\n", name, result.Concern["id"])
-		return err
+		return writeP23Human(cmd, operation, result.Concern)
 	}}
 	cmd.Flags().StringVar(&inputPath, "input", "", "Concern JSON input")
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")

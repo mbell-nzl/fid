@@ -50,12 +50,7 @@ func newReviewListCommand() *cobra.Command {
 			}
 			return cli.WriteSuccess(cmd.OutOrStdout(), "review.list", map[string]any{"items": values}, nil)
 		}
-		for _, item := range items {
-			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", item["id"], item["verdict"]); err != nil {
-				return err
-			}
-		}
-		return nil
+		return writeP23Human(cmd, "review.list", items...)
 	}}
 	cmd.Flags().StringVar(&issueID, "issue", "", "Filter by Issue")
 	cmd.Flags().StringVar(&envelopeID, "envelope", "", "Filter by Envelope")
@@ -94,8 +89,7 @@ func newReviewGetCommand() *cobra.Command {
 		if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), "review.get", map[string]any{"review": value}, nil)
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", value["id"], value["verdict"])
-		return err
+		return writeP23Human(cmd, "review.get", value)
 	}}
 	cmd.SetFlagErrorFunc(canonicalFlagError("review.get"))
 	return cmd
@@ -128,8 +122,7 @@ func newReviewRecordCommand() *cobra.Command {
 		if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), "review.record", map[string]any{"review": result.Review, "budget": result.Budget, "stops": result.Stops, "attention": result.Attention, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.Review["recorded_at"].(string)})
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "recorded review %s\n", result.Review["id"])
-		return err
+		return writeP23MutationHuman(cmd, "review.record", result.Review, result.Budget, nil, result.Stops, result.Attention)
 	}}
 	cmd.Flags().StringVar(&inputPath, "input", "", "Review JSON input")
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")

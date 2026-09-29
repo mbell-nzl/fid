@@ -73,8 +73,7 @@ func newDecisionRecordReferenceCommand() *cobra.Command {
 			value := map[string]any{"decision": result.Decision, "protected_decisions": result.ProtectedDecisions, "stops": result.Stops, "attention": result.Attention, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}
 			return cli.WriteSuccess(cmd.OutOrStdout(), "decision.record-reference", value, &cli.Event{ID: result.EventID, OccurredAt: result.Decision["created_at"].(string)})
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "recorded Decision Reference %s\n", result.Decision["id"])
-		return err
+		return writeP23MutationHuman(cmd, "decision.record-reference", result.Decision, nil, result.ProtectedDecisions, result.Stops, result.Attention)
 	}}
 	command.Flags().StringVar(&inputPath, "input", "", "Decision Reference JSON input")
 	command.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
@@ -106,12 +105,7 @@ func newDecisionListCommand() *cobra.Command {
 			}
 			return cli.WriteSuccess(cmd.OutOrStdout(), "decision.list", map[string]any{"items": values}, nil)
 		}
-		for _, item := range items {
-			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", item["id"], item["outcome"]); err != nil {
-				return err
-			}
-		}
-		return nil
+		return writeP23Human(cmd, "decision.list", items...)
 	}}
 	command.Flags().StringVar(&class, "class", "", "Filter by Decision class")
 	command.Flags().StringVar(&outcome, "outcome", "", "Filter by outcome")

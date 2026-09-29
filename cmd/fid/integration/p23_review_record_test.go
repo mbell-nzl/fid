@@ -77,6 +77,18 @@ func TestP23ReviewRecordRealProcessJourney(t *testing.T) {
 		t.Fatalf("first Review Event count = %d, want %d", after, beforeFirst+1)
 	}
 	firstReview := p23ReviewFromResponse(t, first)
+	humanReview, humanErr := closureRun(t, a.workspace, a.binary, "--project", a.workspace, "review", "get", firstReview["id"].(string))
+	if humanErr != "" || !strings.Contains(humanReview, "Purpose: Inspect independent Review") || !strings.Contains(humanReview, "Independence: distinct-actor") || !strings.Contains(humanReview, "Findings by severity:") {
+		t.Fatalf("Review Human projection = %q / %q", humanReview, humanErr)
+	}
+	resumeAfterFirst := p21Run(t, a.binary, a.workspace, "--json", "resume", a.issueID, "--repository", a.workspace)
+	firstProjection := p21Path(t, resumeAfterFirst, "result", "resume").(map[string]any)
+	if got := firstProjection["reviews"].([]any); len(got) != 1 || !reflect.DeepEqual(got[0], firstReview) {
+		t.Fatalf("resume Reviews = %#v, want exact recorded Review %#v", got, firstReview)
+	}
+	if got := firstProjection["findings"].([]any); len(got) != 2 {
+		t.Fatalf("resume open Findings = %#v, want both blocking Findings", got)
+	}
 	missingReview := a.p22Run(t, "review", "get", "REV-missing")
 	assertP22ProcessFailure(t, "review.get", "review-not-found", 3, missingReview)
 

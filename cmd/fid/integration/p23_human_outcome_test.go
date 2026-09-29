@@ -35,6 +35,16 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	missingOutcome := p23LinkHumanOutcome(t, a, "missing-outcome", "OBL-human-release", "OUT-missing")
 	assertP22ProcessFailure(t, "evidence.link", "outcome-not-found", 3, missingOutcome)
 	assertP23ThreeObligationTypesCoexist(t, a)
+	resume := p21Run(t, a.binary, a.workspace, "--json", "resume", a.issueID, "--repository", a.workspace)
+	evaluations := p21Path(t, resume, "result", "resume", "obligations").([]any)
+	if len(evaluations) != 4 {
+		t.Fatalf("resume Obligation evaluations = %#v, want all four", evaluations)
+	}
+	for index, want := range []string{"OBL-human-release", "OBL-human-security", "OBL-p22-corpus", "OBL-p23-review"} {
+		if evaluations[index].(map[string]any)["obligation_id"] != want {
+			t.Fatalf("resume Obligation order = %#v, want %s at %d", evaluations, want, index)
+		}
+	}
 	// issue.transition-terminal-success (qa_pass) evaluates only the Obligations
 	// whose guarded_actions contain it (DEC-249). In this fixture that is
 	// OBL-p22-corpus alone; the review and both Human Obligations guard only

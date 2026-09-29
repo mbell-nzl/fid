@@ -24,6 +24,21 @@ func TestP23DecisionReferenceProtectedLifecycleRealProcess(t *testing.T) {
 	a.task13ReplayCorpus = true
 	assertP23DecisionProjectionShape(t, a)
 	assertP23DecisionStopStates(t, a, map[string]string{"release": "open", "security": "open"})
+	initialResume := p21Run(t, a.binary, a.workspace, "--json", "resume", a.issueID, "--repository", a.workspace)
+	resumeActions := p21Path(t, initialResume, "result", "resume", "next_actions").([]any)
+	foundOutcomeAction := false
+	for _, raw := range resumeActions {
+		action := raw.(map[string]any)
+		if action["operation"] == "human-outcome.record" {
+			foundOutcomeAction = true
+			if len(action["reasons"].([]any)) != 0 {
+				t.Fatalf("activated Human Outcome action should be executable: %#v", action)
+			}
+		}
+	}
+	if !foundOutcomeAction {
+		t.Fatal("resume omits Human Outcome recording action")
+	}
 	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
 		response := p23IssueTransition(t, a, state, revision+1, "task9-"+state)
 		assertP23DecisionCommandSuccess(t, "transition Issue to "+state, response)

@@ -55,25 +55,26 @@ type NextAction struct {
 	Reasons              []EvaluationReason `json:"reasons"`
 }
 
-type ResumeFindings struct {
-	Available bool  `json:"available"`
-	Items     []any `json:"items"`
-}
-
 type Resume struct {
-	Envelope    Envelope               `json:"envelope"`
-	Issue       ResumeIssue            `json:"issue"`
-	Claim       *ResumeClaim           `json:"claim"`
-	Run         *Run                   `json:"run"`
-	Repository  Repository             `json:"repository"`
-	Obligations []ObligationEvaluation `json:"obligations"`
-	Completion  ResumeCompletion       `json:"completion"`
-	Stops       []Stop                 `json:"stops"`
-	Attention   []Attention            `json:"attention"`
-	Budgets     []Budget               `json:"budgets"`
-	Recoveries  []Recovery             `json:"recoveries"`
-	Findings    ResumeFindings         `json:"findings"`
-	NextActions []NextAction           `json:"next_actions"`
+	Envelope           Envelope               `json:"envelope"`
+	Issue              ResumeIssue            `json:"issue"`
+	Claim              *ResumeClaim           `json:"claim"`
+	Run                *Run                   `json:"run"`
+	Repository         Repository             `json:"repository"`
+	Obligations        []ObligationEvaluation `json:"obligations"`
+	Completion         ResumeCompletion       `json:"completion"`
+	Stops              []Stop                 `json:"stops"`
+	Attention          []Attention            `json:"attention"`
+	Budgets            []Budget               `json:"budgets"`
+	Recoveries         []Recovery             `json:"recoveries"`
+	Findings           []map[string]any       `json:"findings"`
+	Reviews            []map[string]any       `json:"reviews"`
+	Concerns           []map[string]any       `json:"concerns"`
+	Deviations         []map[string]any       `json:"deviations"`
+	Decisions          []map[string]any       `json:"decisions"`
+	HumanOutcomes      []map[string]any       `json:"human_outcomes"`
+	ProtectedDecisions []ProtectedDecision    `json:"protected_decisions"`
+	NextActions        []NextAction           `json:"next_actions"`
 }
 
 func ResumeIssueState(workspaceRoot, migrationsDir, issueID, repositoryRoot string) (Resume, error) {
@@ -134,7 +135,14 @@ func resumeIssueState(conn *sql.DB, issueID string, repository Repository) (Resu
 	if err != nil {
 		return Resume{}, err
 	}
-	evaluation, err := currentEnvelopeEvaluation(conn, envelope, repository)
+	evaluations, err := currentEnvelopeEvaluations(conn, envelope, repository)
+	if err != nil {
+		return Resume{}, err
+	}
+	if len(evaluations) == 0 {
+		return Resume{}, fmt.Errorf("resume has no Obligation evaluations")
+	}
+	primaryEvaluation, err := currentEnvelopeEvaluation(conn, envelope, repository)
 	if err != nil {
 		return Resume{}, err
 	}
@@ -154,7 +162,10 @@ func resumeIssueState(conn *sql.DB, issueID string, repository Repository) (Resu
 	if err != nil {
 		return Resume{}, err
 	}
-	completion := ResumeCompletion{Status: "incomplete", Reasons: append([]EvaluationReason(nil), evaluation.Reasons...)}
+	completion := ResumeCompletion{Status: "incomplete", Reasons: []EvaluationReason{}}
+	for _, evaluation := range evaluations {
+		completion.Reasons = append(completion.Reasons, evaluation.Reasons...)
+	}
 	if !terminal {
 		completion.Reasons = append(completion.Reasons, evaluationReason("issue-not-terminal-success", "completed workflow category", issue.ID, "issue"))
 	}
@@ -166,11 +177,132 @@ func resumeIssueState(conn *sql.DB, issueID string, repository Repository) (Resu
 	if run != nil {
 		budgets = append([]Budget(nil), run.Budgets...)
 	}
-	nextActions, err := resumeNextActions(conn, envelope, terminal, evaluation, claim, run, repository)
+	nextActions, err := resumeNextActions(conn, issueID, envelope, terminal, primaryEvaluation, claim, run, repository)
 	if err != nil {
 		return Resume{}, err
 	}
-	return Resume{Envelope: envelope, Issue: issue, Claim: claim, Run: run, Repository: repository, Obligations: []ObligationEvaluation{evaluation}, Completion: completion, Stops: stops, Attention: attention, Budgets: budgets, Recoveries: recoveries, Findings: ResumeFindings{Available: false, Items: []any{}}, NextActions: nextActions}, nil
+	judgment, err := resumeJudgment(conn, issue.ID, envelope)
+	if err != nil {
+		return Resume{}, err
+	}
+	return Resume{Envelope: envelope, Issue: issue, Claim: claim, Run: run, Repository: repository, Obligations: evaluations, Completion: completion, Stops: stops, Attention: attention, Budgets: budgets, Recoveries: recoveries, Findings: judgment.Findings, Reviews: judgment.Reviews, Concerns: judgment.Concerns, Deviations: judgment.Deviations, Decisions: judgment.Decisions, HumanOutcomes: judgment.HumanOutcomes, ProtectedDecisions: judgment.ProtectedDecisions, NextActions: nextActions}, nil
+}
+
+const resumeJudgmentLimit = 100
+
+type resumeJudgmentState struct {
+	Findings, Reviews, Concerns, Deviations, Decisions, HumanOutcomes []map[string]any
+	ProtectedDecisions                                                []ProtectedDecision
+}
+
+func resumeJudgment(conn *sql.DB, issueID string, envelope Envelope) (resumeJudgmentState, error) {
+	state := resumeJudgmentState{ProtectedDecisions: append([]ProtectedDecision{}, envelope.ProtectedDecisions...)}
+	var err error
+	state.Findings, err = resumeJSONRows(conn, "findings", `
+		SELECT json_object('id',f.id,'review_id',f.review_id,'subject',json_object('type',f.subject_type,'id',f.subject_id),
+		'scope',json(f.scope_json),'severity',f.severity,'summary',f.summary,'blocking',json(CASE f.blocking WHEN 1 THEN 'true' ELSE 'false' END),
+		'created_at',f.created_at,'dispositions',json(COALESCE((SELECT json_group_array(json_object('id',d.id,'action',d.action,
+		'actor_id',d.actor_id,'qualifying_review_id',d.qualifying_review_id,'reason',d.reason,'disposed_at',d.disposed_at,
+		'event_id',d.created_event_id)) FROM finding_dispositions d WHERE d.finding_id=f.id ORDER BY d.disposed_at,d.id),'[]')),
+		'state',COALESCE((SELECT action FROM finding_dispositions d WHERE d.finding_id=f.id ORDER BY disposed_at DESC,id DESC LIMIT 1),'open'))
+		FROM review_findings f JOIN review_records r ON r.id=f.review_id WHERE r.issue_id=?
+		AND COALESCE((SELECT action FROM finding_dispositions d WHERE d.finding_id=f.id ORDER BY disposed_at DESC,id DESC LIMIT 1),'open')
+		IN ('open','addressed') ORDER BY f.id LIMIT ?`, issueID, resumeJudgmentLimit+1)
+	if err != nil {
+		return state, err
+	}
+	state.Reviews, err = resumeJSONRows(conn, "reviews", `
+		SELECT json_object('id',r.id,'run_id',r.run_id,'issue_id',r.issue_id,'envelope_id',r.envelope_id,
+		'envelope_revision',r.envelope_revision,'actor_id',r.actor_id,'profile',r.profile,'repository',json(r.repository_json),
+		'coverage',json(r.coverage_json),'verdict',r.verdict,'evidence_refs',json(r.evidence_refs_json),
+		'receipt_ids',json(r.receipt_ids_json),'findings',json(COALESCE((SELECT json_group_array(json_object('id',f.id,
+		'subject',json_object('type',f.subject_type,'id',f.subject_id),'scope',json(f.scope_json),'severity',f.severity,
+		'summary',f.summary,'blocking',json(CASE f.blocking WHEN 1 THEN 'true' ELSE 'false' END),'review_id',r.id,
+		'created_at',f.created_at,'dispositions',json(COALESCE((SELECT json_group_array(json_object('id',d.id,'action',d.action,
+		'actor_id',d.actor_id,'qualifying_review_id',d.qualifying_review_id,'reason',d.reason,'disposed_at',d.disposed_at,
+		'event_id',d.created_event_id)) FROM finding_dispositions d WHERE d.finding_id=f.id),'[]')),
+		'state',COALESCE((SELECT action FROM finding_dispositions d WHERE d.finding_id=f.id ORDER BY disposed_at DESC,id DESC LIMIT 1),'open')))
+		FROM review_findings f WHERE f.review_id=r.id),'[]')),
+		'resolved_finding_ids',json(COALESCE((SELECT json_group_array(finding_id) FROM finding_dispositions d
+		WHERE d.qualifying_review_id=r.id AND d.action='resolved'),'[]')),
+		'independence',r.independence,'recorded_at',r.recorded_at,'event_id',r.created_event_id)
+		FROM review_records r WHERE r.issue_id=? ORDER BY r.id LIMIT ?`, issueID, resumeJudgmentLimit+1)
+	if err != nil {
+		return state, err
+	}
+	state.Concerns, err = resumeJSONRows(conn, "concerns", `
+		SELECT json_object('id',id,'subject',json_object('type',subject_type,'id',subject_id),'actor_id',actor_id,
+		'scope',json(scope_json),'severity',severity,'summary',summary,'reasoning',reasoning,'references',json(references_json),
+		'status',status,'disposition',CASE WHEN disposition_action IS NULL THEN NULL ELSE json_object('action',disposition_action,
+		'issue_id',disposition_issue_id,'supersedes_concern_id',supersedes_concern_id,'supersedes_finding_id',supersedes_finding_id,
+		'reason',disposition_reason,'actor_id',disposed_actor_id,'disposed_at',disposed_at,'event_id',disposed_event_id) END,
+		'created_at',created_at,'event_id',created_event_id) FROM judgment_concerns c
+		WHERE `+resumeJudgmentSubjectFilter("c")+` ORDER BY id LIMIT ?`,
+		issueID, issueID, issueID, issueID, issueID, issueID, resumeJudgmentLimit+1)
+	if err != nil {
+		return state, err
+	}
+	state.Deviations, err = resumeJSONRows(conn, "deviations", `
+		SELECT json_object('id',id,'subject',json_object('type',subject_type,'id',subject_id),'actor_id',actor_id,
+		'expected',expected,'observed',observed,'authority',json_object('actor_id',authority_actor_id,'reference',authority_reference),
+		'disposition',disposition,'reasoning',reasoning,'references',json(references_json),'supersedes_deviation_id',supersedes_deviation_id,
+		'created_at',created_at,'event_id',created_event_id) FROM deviations d
+		WHERE `+resumeJudgmentSubjectFilter("d")+` ORDER BY id LIMIT ?`,
+		issueID, issueID, issueID, issueID, issueID, issueID, resumeJudgmentLimit+1)
+	if err != nil {
+		return state, err
+	}
+	state.Decisions, err = resumeJSONRows(conn, "decisions", `
+		SELECT json_object('id',id,'class',class,'source',json(source_json),'authority',json_object('actor_id',authority_actor_id,
+		'required_capabilities',json(authority_capabilities_json)),'outcome',outcome,'scope',json_object('issue_id',scope_issue_id),
+		'created_at',created_at,'event_id',created_event_id) FROM decision_refs WHERE scope_issue_id=? ORDER BY id LIMIT ?`, issueID, resumeJudgmentLimit+1)
+	if err != nil {
+		return state, err
+	}
+	state.HumanOutcomes, err = resumeJSONRows(conn, "human_outcomes", `
+		SELECT json_object('id',id,'actor_id',actor_id,'provenance',json_object('activation_id',activation_id,
+		'activation_version',activation_version,'profile_ref',profile_ref),'class',class,
+		'subject',json_object('type',subject_type,'id',subject_id),'result',result,'scope',json_object('issue_id',scope_issue_id),
+		'reasoning',reasoning,'references',json(references_json),'created_at',created_at,'event_id',created_event_id)
+		FROM human_outcomes WHERE scope_issue_id=? ORDER BY id LIMIT ?`, issueID, resumeJudgmentLimit+1)
+	return state, err
+}
+
+func resumeJudgmentSubjectFilter(alias string) string {
+	subjectType, subjectID := alias+".subject_type", alias+".subject_id"
+	return fmt.Sprintf(`(%[1]s='issue' AND %[2]s=?)
+		OR (%[1]s='envelope' AND EXISTS(SELECT 1 FROM envelope_issue_selection s WHERE s.envelope_id=%[2]s AND s.issue_id=?))
+		OR (%[1]s='run' AND EXISTS(SELECT 1 FROM runs r WHERE r.id=%[2]s AND r.issue_id=?))
+		OR (%[1]s='review' AND EXISTS(SELECT 1 FROM review_records r WHERE r.id=%[2]s AND r.issue_id=?))
+		OR (%[1]s='finding' AND EXISTS(SELECT 1 FROM review_findings f JOIN review_records r ON r.id=f.review_id WHERE f.id=%[2]s AND r.issue_id=?))
+		OR (%[1]s='requirement' AND EXISTS(SELECT 1 FROM requirement_issue_links l WHERE l.requirement_id=%[2]s AND l.issue_id=?))`, subjectType, subjectID)
+}
+
+func resumeJSONRows(conn *sql.DB, collection, query string, args ...any) ([]map[string]any, error) {
+	rows, err := conn.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("resume %s: %w", collection, err)
+	}
+	defer func() { _ = rows.Close() }()
+	items := []map[string]any{}
+	for rows.Next() {
+		var value []byte
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+		var item map[string]any
+		if err := json.Unmarshal(value, &item); err != nil {
+			return nil, fmt.Errorf("resume %s JSON: %w", collection, err)
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(items) > resumeJudgmentLimit {
+		return nil, &ResultLimitExceededError{Collection: collection, Limit: resumeJudgmentLimit, Observed: len(items)}
+	}
+	return items, nil
 }
 
 func resumeIssue(conn *sql.DB, issueID string) (ResumeIssue, bool, error) {

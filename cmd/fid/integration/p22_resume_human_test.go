@@ -115,9 +115,9 @@ func p22AssertHumanResume(t *testing.T, human string, resume map[string]any, blo
 			t.Errorf("Human resume missing JSON fact %v: %q", value, human)
 		}
 	}
-	findings, ok := resume["findings"].(map[string]any)
-	if !ok || findings["available"] != false || !strings.Contains(human, "Findings: unavailable") {
-		t.Errorf("Findings availability contradicts JSON: %#v / %q", findings, human)
+	findings, ok := resume["findings"].([]any)
+	if !ok || !strings.Contains(human, fmt.Sprintf("Open Findings: %d", len(findings))) {
+		t.Errorf("Findings projection contradicts JSON: %#v / %q", resume["findings"], human)
 	}
 	actions, ok := resume["next_actions"].([]any)
 	if !ok {

@@ -75,8 +75,7 @@ func newHumanOutcomeRecordCommand() *cobra.Command {
 			value := map[string]any{"outcome": result.Outcome, "protected_decisions": result.ProtectedDecisions, "stops": result.Stops, "attention": result.Attention, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}
 			return cli.WriteSuccess(cmd.OutOrStdout(), "human-outcome.record", value, &cli.Event{ID: result.EventID, OccurredAt: result.Outcome["created_at"].(string)})
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "recorded Human Outcome %s\n", result.Outcome["id"])
-		return err
+		return writeP23MutationHuman(cmd, "human-outcome.record", result.Outcome, nil, result.ProtectedDecisions, result.Stops, result.Attention)
 	}}
 	command.Flags().StringVar(&inputPath, "input", "", "Human Outcome JSON input")
 	command.Flags().StringVar(&actor, "actor", "", "Finalized activation human actor ID")
@@ -108,12 +107,7 @@ func newHumanOutcomeListCommand() *cobra.Command {
 			}
 			return cli.WriteSuccess(cmd.OutOrStdout(), "human-outcome.list", map[string]any{"items": values}, nil)
 		}
-		for _, item := range items {
-			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", item["id"], item["result"]); err != nil {
-				return err
-			}
-		}
-		return nil
+		return writeP23Human(cmd, "human-outcome.list", items...)
 	}}
 	command.Flags().StringVar(&class, "class", "", "Filter by Human Outcome class")
 	command.Flags().StringVar(&result, "result", "", "Filter by result")

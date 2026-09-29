@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/review"
@@ -65,8 +64,7 @@ func newRequirementMutationCommand(leaf string) *cobra.Command {
 		if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), operation, map[string]any{name: value, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: value["created_at"].(string)})
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s recorded\n", operation)
-		return err
+		return writeP23Human(cmd, operation, value)
 	}}
 	command.Flags().StringVar(&inputPath, "input", "", "JSON input")
 	command.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
@@ -100,8 +98,7 @@ func newRequirementGetCommand() *cobra.Command {
 		if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), "requirement.get", map[string]any{"requirement": value, "links": links}, nil)
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", value["id"], value["status"])
-		return err
+		return writeP23Human(cmd, "requirement.get", append([]map[string]any{value}, links...)...)
 	}}
 }
 
@@ -124,12 +121,7 @@ func newRequirementListCommand() *cobra.Command {
 		if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), "requirement.list", map[string]any{"items": items}, nil)
 		}
-		for _, item := range items {
-			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", item["id"], item["status"]); err != nil {
-				return err
-			}
-		}
-		return nil
+		return writeP23Human(cmd, "requirement.list", items...)
 	}}
 	command.Flags().StringVar(&status, "status", "", "Filter by status")
 	command.Flags().StringVar(&issueID, "issue", "", "Filter by linked Issue")

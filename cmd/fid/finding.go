@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/cli"
@@ -53,8 +52,7 @@ func newFindingAddressCommand() *cobra.Command {
 			occurredAt := dispositions[len(dispositions)-1].(map[string]any)["disposed_at"].(string)
 			return cli.WriteSuccess(cmd.OutOrStdout(), "finding.address", map[string]any{"finding": result.Finding, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: occurredAt})
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "addressed finding %s\n", result.Finding["id"])
-		return err
+		return writeP23Human(cmd, "finding.address", result.Finding)
 	}}
 	cmd.Flags().StringVar(&inputPath, "input", "", "Finding JSON input")
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
@@ -86,12 +84,7 @@ func newFindingListCommand() *cobra.Command {
 			}
 			return cli.WriteSuccess(cmd.OutOrStdout(), "finding.list", map[string]any{"items": values}, nil)
 		}
-		for _, item := range items {
-			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", item["id"], item["state"]); err != nil {
-				return err
-			}
-		}
-		return nil
+		return writeP23Human(cmd, "finding.list", items...)
 	}}
 	cmd.Flags().StringVar(&issueID, "issue", "", "Filter by Issue ID")
 	cmd.Flags().StringVar(&reviewID, "review", "", "Filter by Review ID")

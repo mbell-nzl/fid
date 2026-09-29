@@ -96,6 +96,17 @@ func TestP23FindingDispositionRealProcessJourney(t *testing.T) {
 		p23ReleaseClaim(t, a, "actor-denied", reviewClaim, "finding-address-review")
 
 		mutationClaim := p23AcquireClaim(t, a, a.actor, "mutation", "finding-address-builder")
+		beforeAddressResume := p21Run(t, a.binary, a.workspace, "--json", "resume", a.issueID, "--repository", a.workspace)
+		addressReady := false
+		for _, raw := range p21Path(t, beforeAddressResume, "result", "resume", "next_actions").([]any) {
+			action := raw.(map[string]any)
+			if action["operation"] == "finding.address" && action["subject"].(map[string]any)["id"] == "FND-addressed" && len(action["reasons"].([]any)) == 0 {
+				addressReady = true
+			}
+		}
+		if !addressReady {
+			t.Fatal("resume omits executable Finding address action")
+		}
 		addressed := p23FindingAddress(t, a, a.actor, "finding-address-builder", map[string]any{"finding_id": "FND-addressed", "claim_id": mutationClaim["id"], "expected_claim_version": mutationClaim["version"], "reason": "implemented the requested correction"})
 		p23AssertReviewSuccess(t, "address Finding", addressed)
 		p23AssertActivity(t, a.workspace, addressed, "finding-addressed", a.issueID, 1)

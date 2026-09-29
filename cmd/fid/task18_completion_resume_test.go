@@ -198,6 +198,21 @@ func TestResumeReadsDurableFactsWithoutMutation(t *testing.T) {
 	}
 }
 
+func TestResumeReportsRealFindingsAndJudgmentSections(t *testing.T) {
+	t.Parallel()
+	workspace, issueID, _ := observedEvidenceEnvelopeForTest(t, nil)
+	result := executeCommandForTest(workspace, "--project", workspace, "--json", "resume", issueID)
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("resume command = %#v", result)
+	}
+	resume := decodeCanonicalResult(t, result.stdout)["resume"].(map[string]any)
+	for _, section := range []string{"findings", "reviews", "concerns", "deviations", "decisions", "human_outcomes", "protected_decisions"} {
+		if _, ok := resume[section].([]any); !ok {
+			t.Errorf("resume %s = %#v, want array", section, resume[section])
+		}
+	}
+}
+
 func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *testing.T) {
 	t.Parallel()
 	t.Run("active", func(t *testing.T) {
@@ -215,7 +230,7 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 			t.Fatalf("active resume command = %#v, want bounded read", result)
 		}
 		resume := decodeCanonicalResult(t, result.stdout)["resume"].(map[string]any)
-		assertTask18ResumeProjection(t, resume, envelopeID, issueID, "active", "todo", 1, true, "active", "incomplete", []string{"obligation-evidence-absent"}, []string{"obligation-evidence-absent", "issue-not-terminal-success"}, []string{"run.inspect", "run.observe", "gate.run", "claim.renew", "claim.release"})
+		assertTask18ResumeProjection(t, resume, envelopeID, issueID, "active", "todo", 1, true, "active", "incomplete", []string{"obligation-evidence-absent"}, []string{"obligation-evidence-absent", "issue-not-terminal-success"}, []string{"run.inspect", "run.observe", "gate.run", "claim.renew", "claim.release", "concern.record", "deviation.record", "decision.record-reference", "human-outcome.record"})
 		if afterEvents := journalEventCount(t, workspace); afterEvents != beforeEvents {
 			t.Fatalf("active resume Event count = %d, want unchanged %d", afterEvents, beforeEvents)
 		}

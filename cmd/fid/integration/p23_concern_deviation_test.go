@@ -64,6 +64,21 @@ func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
 		})
 	}
 	p23AssertConcernHasNoCompletionColumn(t, a.workspace)
+	judgmentResume := p21Run(t, a.binary, a.workspace, "--json", "resume", a.issueID, "--repository", a.workspace)
+	resumeConcerns := p21Path(t, judgmentResume, "result", "resume", "concerns").([]any)
+	if len(resumeConcerns) != 3 {
+		t.Fatalf("resume issue-scoped Concerns = %#v, want issue, envelope, and run subjects", resumeConcerns)
+	}
+	disposeReady := false
+	for _, raw := range p21Path(t, judgmentResume, "result", "resume", "next_actions").([]any) {
+		action := raw.(map[string]any)
+		if action["operation"] == "concern.dispose" && action["subject"].(map[string]any)["id"] == "CON-issue" && len(action["reasons"].([]any)) == 0 {
+			disposeReady = true
+		}
+	}
+	if !disposeReady {
+		t.Fatal("resume omits executable Concern disposition action")
+	}
 
 	self := assertConcernDisposal(t, a, "CON-issue", "carry", map[string]any{"concern_id": "CON-issue", "action": "carried-forward", "issue_id": a.issueID, "supersedes_concern_id": nil, "supersedes_finding_id": nil, "reason": "continue as this Issue"}, "carried-forward")
 	if self["actor_id"] != a.actor || self["disposition"].(map[string]any)["actor_id"] != a.actor {

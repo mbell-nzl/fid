@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -50,8 +49,7 @@ func newDeviationRecordCommand() *cobra.Command {
 		if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), "deviation.record", map[string]any{"deviation": result.Deviation, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.Deviation["created_at"].(string)})
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "recorded deviation %s\n", result.Deviation["id"])
-		return err
+		return writeP23Human(cmd, "deviation.record", result.Deviation)
 	}}
 	cmd.Flags().StringVar(&inputPath, "input", "", "Deviation JSON input")
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
@@ -83,12 +81,7 @@ func newDeviationListCommand() *cobra.Command {
 			}
 			return cli.WriteSuccess(cmd.OutOrStdout(), "deviation.list", map[string]any{"items": values}, nil)
 		}
-		for _, item := range items {
-			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", item["id"], item["disposition"]); err != nil {
-				return err
-			}
-		}
-		return nil
+		return writeP23Human(cmd, "deviation.list", items...)
 	}}
 	cmd.Flags().StringVar(&subject, "subject", "", "Filter by type:id subject")
 	cmd.Flags().StringVar(&disposition, "disposition", "", "Filter by disposition")

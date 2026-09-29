@@ -94,6 +94,11 @@ func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
 	before := p21JournalEventCount(t, a.workspace)
 	result := p23ReviewRecord(t, a, "actor-denied", "cycles-review", input)
 	p23AssertReviewSuccess(t, "exhausting changes-required Review", result)
+	humanInput := p21Input(t, a.workspace, "cycles-human-replay", input)
+	human, humanStderr, humanErr := closureRunCommand(a.workspace, a.binary, "--project", a.workspace, "review", "record", "--actor", "actor-denied", "--input", humanInput, "--idempotency-key", "cycles-review")
+	if humanErr != nil || humanStderr != "" || !strings.Contains(human, "review-rework-exhausted") || !strings.Contains(human, "budget-observed") {
+		t.Fatalf("exhausted Review Human result = %q / %q / %v", human, humanStderr, humanErr)
+	}
 	if after := p21JournalEventCount(t, a.workspace); after != before+1 {
 		t.Fatalf("exhausting Review Event count = %d, want %d", after, before+1)
 	}
