@@ -81,9 +81,9 @@ func validateCurrentJSON(event Event, effect Effect, column, raw string) error {
 		kind = "[]ID"
 	case "review_findings.scope_json":
 		kind = "Scope"
-	case "judgment_concerns.scope_json":
+	case "concerns.scope_json":
 		kind = "Scope"
-	case "judgment_concerns.references_json", "deviations.references_json":
+	case "concerns.references_json", "deviations.references_json":
 		kind = "[]Source"
 	case "decision_refs.source_json":
 		kind = "Source"

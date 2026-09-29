@@ -132,7 +132,7 @@ func resumeFindingAddressActions(conn *sql.DB, issueID string, envelope Envelope
 }
 
 func resumeConcernDisposeActions(conn *sql.DB, issueID string, envelope Envelope) ([]NextAction, error) {
-	rows, err := conn.Query(`SELECT c.id FROM judgment_concerns c WHERE c.status='open' AND (`+resumeJudgmentSubjectFilter("c")+`) ORDER BY c.id LIMIT ?`,
+	rows, err := conn.Query(`SELECT c.id FROM concerns c WHERE c.status='open' AND (`+resumeJudgmentSubjectFilter("c")+`) ORDER BY c.id LIMIT ?`,
 		issueID, issueID, issueID, issueID, issueID, issueID, resumeJudgmentLimit+1)
 	if err != nil {
 		return nil, err

@@ -236,7 +236,7 @@ func resumeJudgment(conn *sql.DB, issueID string, envelope Envelope) (resumeJudg
 		'status',status,'disposition',CASE WHEN disposition_action IS NULL THEN NULL ELSE json_object('action',disposition_action,
 		'issue_id',disposition_issue_id,'supersedes_concern_id',supersedes_concern_id,'supersedes_finding_id',supersedes_finding_id,
 		'reason',disposition_reason,'actor_id',disposed_actor_id,'disposed_at',disposed_at,'event_id',disposed_event_id) END,
-		'created_at',created_at,'event_id',created_event_id) FROM judgment_concerns c
+		'created_at',created_at,'event_id',created_event_id) FROM concerns c
 		WHERE `+resumeJudgmentSubjectFilter("c")+` ORDER BY id LIMIT ?`,
 		issueID, issueID, issueID, issueID, issueID, issueID, resumeJudgmentLimit+1)
 	if err != nil {

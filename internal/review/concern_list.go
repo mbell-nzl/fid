@@ -37,7 +37,7 @@ func ListConcerns(options ConcernListOptions) ([]map[string]any, error) {
 		return nil, err
 	}
 	defer func() { _ = conn.Close() }()
-	rows, err := conn.Query(`SELECT id FROM judgment_concerns WHERE (?='' OR (subject_type=? AND subject_id=?)) AND (?='' OR status=?) AND (?='' OR severity=?) ORDER BY created_at,id LIMIT ?`, options.Subject, subjectType, subjectID, options.Status, options.Status, options.Severity, options.Severity, options.Limit+1)
+	rows, err := conn.Query(`SELECT id FROM concerns WHERE (?='' OR (subject_type=? AND subject_id=?)) AND (?='' OR status=?) AND (?='' OR severity=?) ORDER BY created_at,id LIMIT ?`, options.Subject, subjectType, subjectID, options.Status, options.Status, options.Severity, options.Severity, options.Limit+1)
 	if err != nil {
 		return nil, err
 	}

@@ -91,7 +91,7 @@ func currentExpectedResult(tx *sql.Tx, event Event) (map[string]any, error) {
 	case "finding.addressed":
 		put("finding", "Finding", "review_findings", id(event.Aggregate.ID))
 	case "concern.recorded", "concern.disposed":
-		put("concern", "Concern", "judgment_concerns", id(event.Aggregate.ID))
+		put("concern", "Concern", "concerns", id(event.Aggregate.ID))
 	case "deviation.recorded":
 		put("deviation", "Deviation", "deviations", id(event.Aggregate.ID))
 	case "decision.referenced":

@@ -88,7 +88,7 @@ func RecordConcern(options JudgmentOptions, request ConcernRecordRequest) (Conce
 		} else if found {
 			return replayConcern(replay, options.IdempotencyKey, &result)
 		}
-		if exists, err := rowExists(conn, "judgment_concerns", request.ID); err != nil {
+		if exists, err := rowExists(conn, "concerns", request.ID); err != nil {
 			return err
 		} else if exists {
 			return fmt.Errorf("concern %q already exists", request.ID)
@@ -246,7 +246,7 @@ func validateConcernDispositionTargets(conn *sql.DB, request ConcernDisposeReque
 			if *request.SupersedesConcernID == request.ConcernID {
 				return fmt.Errorf("concern cannot supersede itself")
 			}
-			if ok, err := rowExists(conn, "judgment_concerns", *request.SupersedesConcernID); err != nil {
+			if ok, err := rowExists(conn, "concerns", *request.SupersedesConcernID); err != nil {
 				return err
 			} else if !ok {
 				return &ConcernNotFoundError{ID: *request.SupersedesConcernID}
@@ -265,7 +265,7 @@ func validateConcernDispositionTargets(conn *sql.DB, request ConcernDisposeReque
 func concernRecordEvent(request ConcernRecordRequest, actorID string, actor workflow.ActorProfile, repository Repository) journal.Event {
 	scope, _ := journal.MarshalCanonicalJSON(request.Scope)
 	references, _ := journal.MarshalCanonicalJSON(request.References)
-	effect := journal.Effect{Op: "insert", Table: "judgment_concerns", PK: map[string]any{"id": request.ID}, Values: map[string]any{"subject_type": request.Subject.Type, "subject_id": request.Subject.ID, "actor_id": actorID, "scope_json": string(scope), "severity": request.Severity, "summary": request.Summary, "reasoning": request.Reasoning, "references_json": string(references), "status": "open", "disposition_action": nil, "disposition_issue_id": nil, "supersedes_concern_id": nil, "supersedes_finding_id": nil, "disposition_reason": nil, "disposed_actor_id": nil, "disposed_at": nil, "disposed_event_id": nil, "created_at": "<occurred-at>", "created_event_id": "<event-id>"}}
+	effect := journal.Effect{Op: "insert", Table: "concerns", PK: map[string]any{"id": request.ID}, Values: map[string]any{"subject_type": request.Subject.Type, "subject_id": request.Subject.ID, "actor_id": actorID, "scope_json": string(scope), "severity": request.Severity, "summary": request.Summary, "reasoning": request.Reasoning, "references_json": string(references), "status": "open", "disposition_action": nil, "disposition_issue_id": nil, "supersedes_concern_id": nil, "supersedes_finding_id": nil, "disposition_reason": nil, "disposed_actor_id": nil, "disposed_at": nil, "disposed_event_id": nil, "created_at": "<occurred-at>", "created_event_id": "<event-id>"}}
 	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: "concern.recorded", ActorV2: judgmentActor(actor), Aggregate: journal.Aggregate{ID: request.ID, Sequence: 1, Type: "concern"}, CommandName: "concern.record", Repository: journalRepository(repository), Effects: []journal.Effect{effect}}
 }
 
@@ -299,7 +299,7 @@ func reviewActivityEffect(conn *sql.DB, issueID, name, actorID string, details m
 }
 
 func concernDisposeEffect(request ConcernDisposeRequest) journal.Effect {
-	return journal.Effect{Op: "update", Table: "judgment_concerns", PK: map[string]any{"id": request.ConcernID}, Preconditions: map[string]any{"status": "open"}, Values: map[string]any{"status": "disposed", "disposition_action": request.Action, "disposition_issue_id": request.IssueID, "supersedes_concern_id": request.SupersedesConcernID, "supersedes_finding_id": request.SupersedesFindingID, "disposition_reason": request.Reason, "disposed_actor_id": "<actor-id>", "disposed_at": "<occurred-at>", "disposed_event_id": "<event-id>"}}
+	return journal.Effect{Op: "update", Table: "concerns", PK: map[string]any{"id": request.ConcernID}, Preconditions: map[string]any{"status": "open"}, Values: map[string]any{"status": "disposed", "disposition_action": request.Action, "disposition_issue_id": request.IssueID, "supersedes_concern_id": request.SupersedesConcernID, "supersedes_finding_id": request.SupersedesFindingID, "disposition_reason": request.Reason, "disposed_actor_id": "<actor-id>", "disposed_at": "<occurred-at>", "disposed_event_id": "<event-id>"}}
 }
 
 func concernRecordValue(request ConcernRecordRequest, actorID string, event journal.Event) map[string]any {
@@ -319,7 +319,7 @@ func disposedConcernValue(value map[string]any, request ConcernDisposeRequest, a
 func loadConcern(conn *sql.DB, id string) (map[string]any, error) {
 	var subjectType, subjectID, actorID, scopeJSON, severity, summary, reasoning, refsJSON, status, createdAt, eventID string
 	var action, issueID, concernID, findingID, reason, disposedActor, disposedAt, disposedEvent sql.NullString
-	err := conn.QueryRow(`SELECT subject_type,subject_id,actor_id,scope_json,severity,summary,reasoning,references_json,status,disposition_action,disposition_issue_id,supersedes_concern_id,supersedes_finding_id,disposition_reason,disposed_actor_id,disposed_at,disposed_event_id,created_at,created_event_id FROM judgment_concerns WHERE id=?`, id).Scan(&subjectType, &subjectID, &actorID, &scopeJSON, &severity, &summary, &reasoning, &refsJSON, &status, &action, &issueID, &concernID, &findingID, &reason, &disposedActor, &disposedAt, &disposedEvent, &createdAt, &eventID)
+	err := conn.QueryRow(`SELECT subject_type,subject_id,actor_id,scope_json,severity,summary,reasoning,references_json,status,disposition_action,disposition_issue_id,supersedes_concern_id,supersedes_finding_id,disposition_reason,disposed_actor_id,disposed_at,disposed_event_id,created_at,created_event_id FROM concerns WHERE id=?`, id).Scan(&subjectType, &subjectID, &actorID, &scopeJSON, &severity, &summary, &reasoning, &refsJSON, &status, &action, &issueID, &concernID, &findingID, &reason, &disposedActor, &disposedAt, &disposedEvent, &createdAt, &eventID)
 	if err == sql.ErrNoRows {
 		return nil, &ConcernNotFoundError{ID: id}
 	}
