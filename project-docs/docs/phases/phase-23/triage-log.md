@@ -287,3 +287,61 @@ not a control-conformance directive or a rewrite of either historical verdict.
 - **If BLOCK:** category public-interface/specification contradiction; ESC-23-008 raised in `tl_escalations_current.md`; resolution condition full Tech Lead obtains the Human or accepted contract owner's ruling on the protected-decision denial response shape and aligns the public-interface contract, validation assertion, and task-13 verification before the Runner resumes.
 - **Human attention required:** yes
 - **References:** project-docs/docs/phases/phase-23/public-interface.md sections 1, 5, and 5.2; project-docs/docs/phases/phase-23/qa/validation-contract.md VAL-056 and VAL-057; project-docs/docs/phases/phase-23/decisions.md DEC-226 and DEC-262; project-docs/docs/phases/phase-23/tasks/task-13-done.md Workflow outcome, Validation Contract Coverage, Exact quality-gate results; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## TRG-23-009 - Task 14 generic Concern list read path needs bounded convergence
+
+- **Trigger:** Task 14's required tagged integration gate fails because the new Human projection test exercises the accepted generic concern.list --subject leaf, but cmd/fid/concern.go still routes through the V1 Issue-only reader.
+- **Originating task:** task-14
+- **Trigger signature:** task-14:scope-gap:generic-concern-list-reader
+- **Attempt count:** 1
+- **Repair category:** gate-repair
+- **Repair authority:** project-docs/docs/phases/phase-23/tasks/task-14.md Objective and Binding Constraints; project-docs/docs/phases/phase-23/execution-scope.md section 1
+- **Source:** project-docs/docs/phases/phase-23/tasks/task-14-done.md
+- **Candidate:** RECOVERY_REQUIRED / bounded product reader scope gap
+- **Checkpoint:** Runner-attached verification names implementation commit 59d2653da7cfe14699dc4d1cd85ef032bec26a5c and report commit eb6f4f110b30a72b4203d30605217b80613df776 with matching subjects; report-lint returned OUTCOME RECOVERY_REQUIRED (terminated exit_code: 0). Phase HEAD is eb6f4f110b30a72b4203d30605217b80613df776; only the Runner ledger is dirty.
+- **Verdict:** REPAIR
+- **Reasoning:** Task 14 owns every Phase 23 leaf's Human projection and introduced the tagged integration assertion for generic Concern list. The accepted public-interface section 2 already fixes its read flags and `{items:Concern[]}` result. The V1 Issue-only adapter is an undelivered accepted read path that this task's required gate now exposes; execution-scope section 1 and the standing DEC-175/194 convergence rules support minimum causal same-task repair. The public-interface row's earlier task 8/13 allocation does not move this failing task-14 gate to another task. No accepted definition or persistence contract needs to change.
+- **Local decisions made:** Authorize only the generic Concern list reader and CLI routing needed for the existing task-14 every-leaf assertion; preserve task 15's separate V1 removal and table rename.
+- **Resolution evidence:** Trigger remains real. The focused `TestP23ConcernListHumanProjection` command and the exact tagged integration gate each returned `FAIL` (terminated `exit_code: 1`): `concern list --subject` exits 2 through `issues.ListConcerns`. The ordinary race gate, format, lint, and coverage commands passed, but they do not clear this required tagged gate. The verified checkpoint and report-lint result establish durable recovery evidence, not task completion.
+- **If REPAIR:** Owning task task-14; category gate-repair; dispatch same-task Developer continuation. Implement the accepted generic `--subject`, `--status`, `--severity`, and `--limit` read through `internal/review`, return the accepted Concern list projection, and retain the red Human/JSON integration assertion. Preserve the first failed results, rerun the focused red/green test and all five byte-identical required task commands, update the originating report with deviation and termination evidence, then repeat any affected independent window 13-15 re-review. Do not advance before resolution; no ESC.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A; this is an ordinary product task repair.
+- **Control mismatch:** N/A; the reproduced product gate failure is recorded above.
+- **Allowed files:** N/A for ordinary task-scope triage. Minimum causal recovery scope: `cmd/fid/concern.go`, `internal/review/concern.go` or a new `internal/review/concern_list.go` and matching in-package tests, `cmd/fid/integration/p23_concern_list_human_test.go`, and `project-docs/docs/phases/phase-23/tasks/task-14-done.md`.
+- **Forbidden changes:** Do not change the accepted public-interface contract, validation assertions, exact commands, task ownership, persistence schema or journal contracts. Do not weaken or remove the retained red test or gate; do not perform task 15's V1 reader removal or table rename.
+- **Exact verification:** N/A for ordinary task-scope triage; rerun the five exact commands in task-14.md from `/home/mark/projects/fid` (or the Runner-recorded same-task worktree root) and the focused test recorded in task-14-done.md.
+- **Originating report:** project-docs/docs/phases/phase-23/tasks/task-14-done.md
+- **Control repair base:** N/A
+- **If BLOCK:** N/A; no protected category or exhausted no-progress budget is established.
+- **Human attention required:** no
+- **References:** project-docs/docs/phases/phase-23/tasks/task-14.md Objective, Binding Constraints, Scope, Exact Commands To Run; project-docs/docs/phases/phase-23/tasks/task-14-done.md Workflow outcome, Tests run, Exact quality-gate results, Deviations; project-docs/docs/phases/phase-23/public-interface.md section 2 concern.list row; project-docs/docs/phases/phase-23/execution-scope.md section 1; project-docs/docs/phases/phase-23/v1-convergence-inventory.md sections 1-2; project-docs/docs/current/decisions_active.md DEC-175/194; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## TRG-23-010 - Task 15 migration 0018 down contradicts the accepted rollback chain
+
+- **Trigger:** Task 15 cannot author migration 0018 down without choosing between two contradictory accepted schema authorities.
+- **Originating task:** task-15
+- **Trigger signature:** task-15:protected-contract:0018-down-concerns-column-duplication
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-23/tasks/task-15-done.md
+- **Candidate:** BLOCKED / protected schema and persistence-contract contradiction
+- **Checkpoint:** Runner-attached verification identifies checkpoint commit fa6355a0e221d97d7785b1e2718e134bb5609509 and report commit b1f00284de12be4c9c3403b8ad9433fa9f6ff4c8 with matching subjects; report-lint returned OUTCOME BLOCKED and PASS report-lint completed with no failures (terminated exit_code: 0). Runner reports phase HEAD b1f00284de12be4c9c3403b8ad9433fa9f6ff4c8.
+- **Verdict:** BLOCK
+- **Reasoning:** Accepted schema.md section 5 requires the 0018 down concerns definition to be byte-identical to migration 0002, which includes escalated_to_esc_id. The next rollback through migration 0016 down adds escalated_to_esc_id to concerns, so the literal section 5 definition makes that rollback fail with a duplicate column. Omitting the column revises the accepted byte-identity requirement. No accepted authority uniquely chooses a repair; this is a protected schema/persistence-contract contradiction, not a workflow-control defect.
+- **Local decisions made:** none; no schema definition or migration order was selected.
+- **Resolution evidence:** Not cleared. The focused `go test -run '^TestMigration0018DownRestoresEmptyV1Tables$' -count=1 ./internal/db` returned FAIL (terminated exit_code: 1) because 0018 down is absent. The test failure alone is ordinary incomplete work; the incompatible accepted definitions require a protected decision. The nine required task commands remain BLOCKED/unrun, with no green gate inferred from report-lint.
+- **If REPAIR:** N/A pending protected schema authority. After resolution, resume task-15 from the preserved partial tree and verify the full down chain and all nine unchanged required commands; preserve failed evidence and obtain affected independent re-review.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A for ordinary task-scope triage.
+- **Forbidden changes:** Do not silently choose or alter schema authority, migration ordering, accepted SQL byte identity, task ownership, validation assertions, exact commands, or the Runner ledger; do not claim blocked commands passed.
+- **Exact verification:** N/A for ordinary task-scope triage.
+- **Originating report:** project-docs/docs/phases/phase-23/tasks/task-15-done.md
+- **Control repair base:** N/A
+- **If BLOCK:** category protected schema/persistence-contract and specification contradiction; ESC-23-009 raised in `tl_escalations_current.md`; resolution condition the Tech Lead or delegated Human decision authority specifies the exact 0018-down concerns definition and keeps migration 0016 down and the full rollback chain executable, then authorizes same-task continuation.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-23/schema.md section 5; migrations/0002_v01_tables.up.sql:125-138; migrations/0016_p22_remove_escalations.down.sql:12; project-docs/docs/phases/phase-23/tasks/task-15.md Objective and Exact Commands To Run; project-docs/docs/phases/phase-23/tasks/task-15-done.md Workflow outcome, Tests run, Exact quality-gate results, Deviations; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.

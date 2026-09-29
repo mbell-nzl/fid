@@ -2,8 +2,15 @@
 
 ## Open escalations
 
-None. ESC-23-008 is resolved under DEC-263; the Runner resumes task 13 via
-`qa/resume-after-esc-23-008.md`.
+### ESC-23-009 - Migration 0018 down conflicts with the accepted 0016 rollback
+
+- **Status:** OPEN 2026-09-30; governing TRG-23-010; originating task task-15.
+- **Trigger:** task-15:protected-contract:0018-down-concerns-column-duplication (attempt 1). Task 15 cannot author migration 0018 down without choosing between two contradictory accepted schema authorities.
+- **Category:** protected schema/persistence-contract and specification contradiction.
+- **Evidence:** `schema.md` section 5 requires 0018 down to restore the byte-identical migration 0002 `concerns` definition, including `escalated_to_esc_id`. Migration 0016 down then executes `ALTER TABLE concerns ADD COLUMN escalated_to_esc_id`, so the literal full down chain duplicates the column. Omitting it from 0018 down violates section 5. The focused rollback test failed (terminated exit_code: 1) because 0018 down is absent; no required task gate passed.
+- **Resolution needed:** Full Tech Lead or delegated Human decision authority must choose and record the exact 0018-down `concerns` definition, reconcile section 5's byte-identity requirement with migration 0016 down, and preserve an executable full down chain. Then the Phase Runner may resume task-15 from the preserved checkpoint under the decision, retaining failed evidence and all unchanged required commands.
+- **Scope guard:** Do not silently change schema authority, migration order, SQL byte identity, validation assertions, task ownership, gate commands, or the Runner ledger. No control-conformance repair applies.
+- **Source:** project-docs/docs/phases/phase-23/tasks/task-15-done.md; project-docs/docs/phases/phase-23/triage-log.md TRG-23-010; project-docs/docs/phases/phase-23/schema.md section 5; migrations/0002_v01_tables.up.sql:125-138; migrations/0016_p22_remove_escalations.down.sql:12.
 
 ## Recently resolved
 

@@ -1822,3 +1822,195 @@
 - Triage: TRG-23-008 (BLOCK, escalated as ESC-23-008)
 - Protected category: public-interface/specification contradiction and validation assertion semantics
 - Next Human or external-authority action: Full Tech Lead obtains the protected ruling for the protected-decision denial response shape or VAL-057, aligns public-interface sections 1, 5, and 5.2 with VAL-056/VAL-057, records the exact task-13 continuation scope, and then resumes task 13 with the failed evidence preserved
+
+### 2026-09-29 19:53 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-28 21:57 STOP after TRG-23-008 (ESC-23-008)
+- Governing TRG: TRG-23-008
+- Governing ESC: ESC-23-008
+- Trigger signature: task-13:protected-contract:protected-decision-denial-envelope-val-057
+- Attempt count: 2
+- Checkpoint: phase-23 HEAD 898f9ced86214c8a3f0232e414d61eea9c8350a6; clean before this Runner-owned ledger append; the 21:57 STOP, TRG-23-008, ESC-23-008, and task-13 attempt-2 BLOCKED report with failed evidence are retained
+- Resolution evidence: git rev-parse --verify 898f9ced86214c8a3f0232e414d61eea9c8350a6^{commit} returned 898f9ced86214c8a3f0232e414d61eea9c8350a6; subject matched docs(phase-23): resolve ESC-23-008 under DEC-263; DEC-263 is present in phase-23 decisions; ESC-23-008 is marked RESOLVED in tl_escalations_current.md; resume-after-esc-23-008.md is present; retained ledger validated as VALID state=STOPPED before this append
+- Resolution authority: DEC-263
+- Continuing task: task-13
+- Next recovery: task-13 | in-scope-implementation | task-scope | task-13:protected-contract:protected-decision-denial-envelope-val-057 | 2
+
+
+### 2026-09-29 19:53 TASK-RECOVERY task-13
+
+- Source: DEC-263 and TRG-23-008; project-docs/docs/phases/phase-23/qa/resume-after-esc-23-008.md
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: DEC-263 and TRG-23-008
+- Triage disposition: N/A
+- Trigger signature: task-13:protected-contract:protected-decision-denial-envelope-val-057
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 898f9ced86214c8a3f0232e414d61eea9c8350a6; DEC-263, its resolution commit and subject, ESC-23-008 resolution, and the resume handoff are verified; the retained 21:57 STOP, TRG-23-008, and task-13 attempt-2 BLOCKED report with failed evidence remain; only Runner-owned run-ledger.md is dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - DEC-263 authorizes task 13 to add the four denial fields to both protected-decision-required and human-outcome-required details, converge retained exact-details rows with per-row provenance, and strengthen VAL-057 against the durable Stop and Attention; the prior BLOCKED report, failing repeat-denial run, and failed tagged gate remain preserved
+- Next action: same-task Developer continuation follows the task-13 Planning Amendment - DEC-263, adds stop_ids, attention_ids, event:null, and replayed:false through the existing adapters without changing Stop fields, the envelope, codes, precedence, or commands; converges retained exact-details rows with provenance and the executing command; strengthens the VAL-057 repeat-denial probe; runs the focused journey and all five unchanged exact commands with DEC-263 deviation and timings; updates task-13-done.md, runs report-lint, commits implementation and report, and returns a typed outcome
+- Human attention required: no
+
+
+### 2026-09-29 20:17 REPAIR task-13
+
+- Trigger signature: task-13:protected-contract:protected-decision-denial-envelope-val-057
+- Attempt count: 2
+- Starting checkpoint: phase-23 HEAD 898f9ced86214c8a3f0232e414d61eea9c8350a6 with task-13 TASK-RECOVERY appended; DEC-263 and ESC-23-008 resolution verified; only Runner-owned run-ledger.md dirty
+- Ending checkpoint: phase-23 HEAD df24c0cf832e6c29a0f0a743150c91ff178d841a; implementation commit bfee063f4cd1abb7a8d884b66802bb0136228db9, finalized report commit ffa64ff092c8dec27ebc044b0f8af35eacb660d1, and report-lint correction commit df24c0cf832e6c29a0f0a743150c91ff178d841a are present; only Runner-owned run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task Developer returned OUTCOME COMPLETE; DEC-263 now supplies stop_ids, attention_ids, event:null, and replayed:false for both Stop-blocked failure details, and the protected-Decision repeat probe compares both ID sets with the durable Stop and Attention while preserving byte identity and no-write behavior; the focused command passed with ok  github.com/mbell-nzl/fid/cmd/fid/integration 15.601s (terminated exit_code: 0); all five unchanged exact task commands passed with observed termination, including tagged integration ok  github.com/mbell-nzl/fid/cmd/fid/integration 265.793s (terminated exit_code: 0); report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); all three commits resolve and subject-match
+- Next checkpoint: VERIFY/REPORT
+
+
+### 2026-09-29 20:17 TASK task-13 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-13-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: df24c0cf832e6c29a0f0a743150c91ff178d841a - verified, subject matched: docs(task): correct completion report evidence for phase-23 task-13
+- QA-plan commands beyond the task spec: none required
+
+
+### 2026-09-29 21:18 TRIAGE TRG-23-009
+
+- Trigger: Task 14s required tagged integration gate fails because the new Human projection test exercises the accepted generic concern.list --subject leaf, but cmd/fid/concern.go still routes through the V1 Issue-only reader
+- Originating task: task-14
+- Trigger signature: task-14:scope-gap:generic-concern-list-reader
+- Attempt count: 1
+- Repair category: gate-repair
+- Repair authority: project-docs/docs/phases/phase-23/tasks/task-14.md Objective and Binding Constraints; project-docs/docs/phases/phase-23/execution-scope.md section 1
+- Checkpoint: phase-23 HEAD eb6f4f110b30a72b4203d30605217b80613df776; task-14 recovery report and report-lint are verified; TL-Lite TRG-23-009 is confirmed; the phase triage log and Runner ledger are the dirty paths
+- Verdict: REPAIR
+- Resolution evidence: The focused TestP23ConcernListHumanProjection command and exact tagged gate each returned FAIL with terminated exit_code: 1 because concern list --subject exits 2 through the Issue-only reader; the ordinary task gates passed; TRG-23-009 authorizes the minimum causal generic Concern reader and CLI routing in the same task while preserving the accepted contract, red assertion, commands, task ownership, persistence schema, and task-15 V1 removal boundary
+- Triage log: project-docs/docs/phases/phase-23/triage-log.md entry TRG-23-009 confirmed
+
+
+### 2026-09-29 21:18 TASK-RECOVERY task-14
+
+- Source: TRG-23-009; project-docs/docs/phases/phase-23/tasks/task-14-done.md
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: project-docs/docs/phases/phase-23/tasks/task-14.md Objective and Binding Constraints; project-docs/docs/phases/phase-23/execution-scope.md section 1
+- Triage disposition: N/A
+- Trigger signature: task-14:scope-gap:generic-concern-list-reader
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: Do not change the accepted public-interface contract, validation assertions, exact commands, task ownership, persistence schema or journal contracts. Do not weaken or remove the retained red test or gate; do not perform task 15s V1 reader removal or table rename.
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD eb6f4f110b30a72b4203d30605217b80613df776; task-14 implementation and recovery report are committed; report-lint returned OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0; TRG-23-009 is verified; the phase triage log and Runner ledger are the dirty paths; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md and TL-Lite triage-log.md are the only dirty paths
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - the generic Concern reader and CLI routing needed by the accepted concern.list --subject, --status, --severity, and --limit contract must be implemented within the TRG-23-009 minimum causal scope; the retained focused FAIL, tagged-gate FAIL, and recovery report remain preserved; then all five exact task-14 commands and report-lint must pass
+- Next action: same-task Developer continuation follows TRG-23-009, implements only the bounded generic Concern reader and CLI routing in cmd/fid/concern.go, internal/review/concern.go or internal/review/concern_list.go, matching tests, the retained integration assertion, and task-14-done.md; preserves failed evidence; runs the focused Concern projection test and all five unchanged exact commands; updates the recovery report; commits implementation and report; and returns a typed outcome
+- Human attention required: no
+
+
+### 2026-09-29 21:52 REPAIR task-14
+
+- Trigger signature: task-14:scope-gap:generic-concern-list-reader
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD eb6f4f110b30a72b4203d30605217b80613df776 with task-14 TASK-RECOVERY appended; TRG-23-009 is verified; the Runner ledger and TL-Lite triage log are the only dirty paths
+- Ending checkpoint: phase-23 HEAD 24e204b4d6df3df95d1e27a3379a6808b1548f24; implementation commit cdcc4f01fb2060d4fa5721a4108b9fda1dde328a8 and finalized report commits 1b8c594b7e555193601c96b9793bfef2d066f9a4, 3b116cd5a273e99ee0915875576e1ddf9392a9a8, and 24e204b4d6df3df95d1e27a3379a6808b1548f24 are present; the Runner ledger and TL-Lite triage log are the only dirty paths
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task Developer returned OUTCOME COMPLETE under TRG-23-009; the generic Concern reader now supports accepted subject, status, severity, and limit filters while preserving the Issue-scoped V1 reader for task 15; the retained focused Concern projection test passed with ok  github.com/mbell-nzl/fid/cmd/fid/integration 3.258s (terminated exit_code: 0); all five unchanged exact task-14 commands passed, including tagged integration ok  github.com/mbell-nzl/fid/cmd/fid/integration 229.795s (terminated exit_code: 0); report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); implementation and report commits resolve with matching subjects and earlier FAIL evidence remains in the committed report
+- Next checkpoint: VERIFY/REPORT
+
+
+### 2026-09-29 21:55 TASK task-14 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-14-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: 24e204b4d6df3df95d1e27a3379a6808b1548f24 - verified, subject matched: docs(task): retain report-lint recovery evidence for phase-23 task-14
+- QA-plan commands beyond the task spec: none required
+
+
+### 2026-09-30 04:21 TASK-RECOVERY task-15
+
+- Source: first external Task 15 interruption; durable task-15 implementation state
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-15:session-continuation:external-interruption
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 24e204b4d6df3df95d1e27a3379a6808b1548f24; no task-15 implementation or report commit was made; durable partial task-15 edits remain in internal/db/projection_meta.go, internal/db/migration0018_test.go, internal/export/archive_semantics_catalog.go, internal/journal/current_event_catalog.go, internal/journal/current_event_columns.go, internal/journal/current_event_json.go, internal/journal/current_event_result_projection.go, internal/journal/current_event_updates.go, internal/journal/current_event_validation.go, internal/review/concern.go, internal/review/concern_list.go, internal/workflow/resume.go, internal/workflow/resume_actions.go, and migrations/0018_p23_remove_v1_judgment.up.sql; task-15 report is absent; child returned no typed outcome
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the listed durable task-15 paths plus Runner-owned run-ledger.md and TL-Lite triage-log.md are dirty; no hidden-index flags
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - same-task continuation must inspect the preserved task-15 diff, complete the migration 0018 and V1-removal acceptance contract, run all nine unchanged exact commands including the three declared non-zero absence searches with observed termination, commit the implementation and report, run report-lint, and return a typed outcome. Reconciliation evidence for the rejected preceding append attempt: workflow-sequence-lint.sh --append-stdin terminated exit_code: 1 with output `INVALID REPAIR Trigger signature does not match TASK-RECOVERY` and `INVALID REPAIR has no preceding TASK-RECOVERY`; the ledger was unchanged.
+- Next action: dispatch one same-task task-15 Developer continuation from the current worktree; it must inspect the durable partial diff first, preserve all prior evidence, complete the task in scope, run the unchanged exact commands, commit, report, and return a typed outcome
+- Human attention required: no
+
+
+### 2026-09-30 04:22 REPAIR task-15
+
+- Trigger signature: task-15:session-continuation:external-interruption
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD 24e204b4d6df3df95d1e27a3379a6808b1548f24 with task-15 TASK-RECOVERY appended; durable partial task-15 implementation edits remain; task-15 report is absent; Runner ledger and TL-Lite triage log are dirty
+- Ending checkpoint: unchanged phase-23 HEAD 24e204b4d6df3df95d1e27a8; external child session was not present and no task-15 report or commit was produced; durable partial task-15 paths remain available for continuation
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: INTERRUPTED
+- Interruption cause: Task 15 Developer child was not found after the parent session resumed, before returning a typed outcome; no external termination result or child-authored report was available
+- Elapsed session duration: approximately 6 hours 26 minutes from the task-15 dispatch recorded near 2026-09-29 21:55 to interruption observed at 2026-09-30 04:21; exact child-internal duration unavailable
+- Command in flight: unknown after external termination
+- Resolution evidence: No typed Developer result was produced and no command result is accepted. This first actual interruption does not consume the recovery budget; durable partial implementation remains for the next continuation and Consecutive no-progress attempts remain 0/2. The rejected append reconciliation is preserved in the preceding TASK-RECOVERY event.
+- Next checkpoint: another TASK-RECOVERY
+
+
+### 2026-09-30 04:33 TRIAGE TRG-23-010
+
+- Trigger: Task 15 cannot author migration 0018 down without choosing between two contradictory accepted schema authorities
+- Originating task: task-15
+- Trigger signature: task-15:protected-contract:0018-down-concerns-column-duplication
+- Attempt count: 1
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: phase-23 HEAD b1f00284de12be4c9c3403b8ad9433fa9f6ff4c8; task-15 BLOCKED report and report-lint are verified; TL-Lite TRG-23-010 and ESC-23-009 are confirmed; Runner ledger, phase triage log, and current escalation register are the dirty paths
+- Verdict: BLOCK (escalated as ESC-23-009)
+- Resolution evidence: TL-Lite confirmed that schema.md section 5 requires the 0018 down concerns definition to be byte-identical to migration 0002, including escalated_to_esc_id, while migration 0016 down adds that column again. The focused rollback test failed with observed exit_code: 1 because 0018 down is absent; selecting either schema authority requires a protected schema and persistence-contract decision. The nine required task-15 commands remain BLOCKED or unrun, and no passing gate is inferred from report-lint.
+- Triage log: project-docs/docs/phases/phase-23/triage-log.md entry TRG-23-010 confirmed
+
+### 2026-09-30 04:34 STOP
+
+- Cause: task-15 / TRG-23-010 / ESC-23-009; migration 0018 down cannot satisfy the accepted byte-identical concerns definition and the existing 0016 rollback addition simultaneously
+- Triage: TRG-23-010 (BLOCK, escalated as ESC-23-009)
+- Protected category: schema/persistence contract and specification contradiction
+- Next Human or external-authority action: Full Tech Lead obtains the protected ruling for the exact migration 0018 down concerns definition and rollback ordering, records the task-15 continuation authority, and then resumes task 15 with the failed evidence preserved
