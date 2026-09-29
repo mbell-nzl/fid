@@ -88,10 +88,10 @@ The V1 Concern list tests in `cmd/fid/concern_test.go` began at `f35b3febd7a9976
 
 ### 2026-09-30 review-11 MF-1 red/green and runtime evidence
 
-- `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - BLOCKED - `FAIL` (terminated `exit_code: 1`); new inventory found zero of 18 required leaf pairs.
-- `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - BLOCKED - `FAIL` (terminated `exit_code: 1`); first leaf workspace incorrectly put `requirement.link` in the closed Actor action set.
-- `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - BLOCKED - `FAIL` (terminated `exit_code: 1`); fixture passed a nil artifact-path collection to Activation.
-- `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - BLOCKED - `FAIL` (terminated `exit_code: 1`); Review IDs are generated, so the initial fixed `REV-leaf` read had no row.
+- `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); new inventory found zero of 18 required leaf pairs.
+- `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); first leaf workspace incorrectly put `requirement.link` in the closed Actor action set.
+- `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); fixture passed a nil artifact-path collection to Activation.
+- `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); Review IDs are generated, so the initial fixed `REV-leaf` read had no row.
 - `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	9.881s` (terminated `exit_code: 0`)
 - `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	10.664s` (terminated `exit_code: 0`)
 - `go test -run '^TestPhase23HumanLeafTextMatchesRecordedFacts$' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.185s` (terminated `exit_code: 0`).
