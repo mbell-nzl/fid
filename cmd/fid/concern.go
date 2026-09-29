@@ -129,6 +129,10 @@ func renderConcernError(cmd *cobra.Command, operation string, cause error) error
 	if errors.As(cause, &conflict) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
 	}
+	var resultLimit *review.ResultLimitExceededError
+	if errors.As(cause, &resultLimit) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeResultLimitExceeded, "Concern result limit exceeded", nil, map[string]any{"collection": "items", "limit": resultLimit.Limit, "observed": resultLimit.Observed})
+	}
 	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Concern request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
@@ -169,8 +173,8 @@ func decodeClosedJudgmentInput(stdin io.Reader, path string, required []string, 
 
 func newConcernListCommand() *cobra.Command {
 	var (
-		issueID string
-		status  string
+		issueID, subject, status, severity string
+		limit                              int
 	)
 
 	cmd := &cobra.Command{
@@ -183,33 +187,52 @@ func newConcernListCommand() *cobra.Command {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
 
-			items, err := issues.ListConcerns(issues.ConcernListOptions{
-				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
-				IssueID:       issueID,
-				Status:        status,
-			})
+			if cmd.Flags().Changed("issue") {
+				if cmd.Flags().Changed("subject") || cmd.Flags().Changed("severity") || cmd.Flags().Changed("limit") {
+					return renderConcernError(cmd, "concern.list", fmt.Errorf("issue filter cannot be combined with generic Concern filters"))
+				}
+				items, err := issues.ListConcerns(issues.ConcernListOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), IssueID: issueID, Status: status})
+				if err != nil {
+					if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+						return renderErr
+					}
+					return err
+				}
+				encoder := json.NewEncoder(cmd.OutOrStdout())
+				encoder.SetEscapeHTML(false)
+				if err := encoder.Encode(items); err != nil {
+					if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+						return renderErr
+					}
+					return err
+				}
+				return nil
+			}
+			items, err := review.ListConcerns(review.ConcernListOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), Subject: subject, Status: status, Severity: severity, Limit: limit})
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
+				return renderConcernError(cmd, "concern.list", err)
+			}
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
 				return err
 			}
-
-			encoder := json.NewEncoder(cmd.OutOrStdout())
-			encoder.SetEscapeHTML(false)
-			if err := encoder.Encode(items); err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
+			if jsonMode {
+				values := make([]any, len(items))
+				for index := range items {
+					values[index] = items[index]
 				}
-				return err
+				return cli.WriteSuccess(cmd.OutOrStdout(), "concern.list", map[string]any{"items": values}, nil)
 			}
-			return nil
+			return writeP23Human(cmd, "concern.list", items...)
 		},
 	}
 
 	cmd.Flags().StringVar(&issueID, "issue", "", "Filter by issue ID")
+	cmd.Flags().StringVar(&subject, "subject", "", "Filter by type:id subject")
 	cmd.Flags().StringVar(&status, "status", "", "Filter by concern status")
+	cmd.Flags().StringVar(&severity, "severity", "", "Filter by severity")
+	cmd.Flags().IntVar(&limit, "limit", 100, "Maximum Concerns to return")
+	cmd.SetFlagErrorFunc(canonicalFlagError("concern.list"))
 	return cmd
 }
 

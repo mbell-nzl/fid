@@ -71,7 +71,7 @@ func TestConcernAddressRequiresCompletionFlag(t *testing.T) {
 	}
 }
 
-func TestConcernListFiltersByIssueAndStatus(t *testing.T) {
+func TestConcernListRetainsIssueScopedV1ReadUntilRemoval(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -85,19 +85,9 @@ func TestConcernListFiltersByIssueAndStatus(t *testing.T) {
 		wantIDs []string
 	}{
 		{
-			name:    "all concerns",
-			args:    []string{"concern", "list"},
-			wantIDs: []string{secondConcernID, firstConcernID},
-		},
-		{
 			name:    "filter by issue",
 			args:    []string{"concern", "list", "--issue", firstIssueID},
 			wantIDs: []string{firstConcernID},
-		},
-		{
-			name:    "filter by status",
-			args:    []string{"concern", "list", "--status", "open"},
-			wantIDs: []string{secondConcernID},
 		},
 		{
 			name:    "combined filters",
@@ -123,42 +113,33 @@ func TestConcernListFiltersByIssueAndStatus(t *testing.T) {
 				t.Fatalf("stdout ids = %#v, want %#v", gotIDs, tt.wantIDs)
 			}
 
-			if tt.name == "all concerns" {
-				first := rows[0].(map[string]any)
-				if got := first["issue_id"]; got != secondIssueID {
-					t.Fatalf("first concern issue_id = %v, want %q", got, secondIssueID)
-				}
-				if got := first["status"]; got != "open" {
-					t.Fatalf("first concern status = %v, want open", got)
-				}
-			}
 		})
 	}
 }
 
-func TestConcernListUsesDirectLegacyJSON(t *testing.T) {
+func TestConcernListGenericReadExcludesV1Rows(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
 	_, _ = seedConcernListIssueAndConcern(t, workspace, "First concern", true)
-	secondIssueID, _ := seedConcernListIssueAndConcern(t, workspace, "Second concern", false)
+	_, _ = seedConcernListIssueAndConcern(t, workspace, "Second concern", false)
 
-	stdout, stderr := runFIDCommand(t, workspace, "concern", "list")
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "concern", "list")
 	if stderr != "" {
 		t.Fatalf("stderr = %q, want empty", stderr)
 	}
-	want := decodeCommandJSONStructure(t, stdout)
-	if got := want.([]any); len(got) != 2 {
-		t.Fatalf("concern list length = %d, want 2", len(got))
+	result := decodeCommandJSONStructure(t, stdout).(map[string]any)
+	if got := result["operation"]; got != "concern.list" {
+		t.Fatalf("operation = %v, want concern.list", got)
 	}
-
-	emptyStdout, emptyStderr := runFIDCommand(t, workspace, "concern", "list", "--issue", secondIssueID, "--status", "addressed")
-	if emptyStderr != "" {
-		t.Fatalf("empty stderr = %q, want empty", emptyStderr)
+	items := result["result"].(map[string]any)["items"]
+	if !commandStructuresEqual([]any{}, items) {
+		t.Fatalf("generic items = %#v, want no V1 rows", items)
 	}
-	if got := decodeCommandJSONStructure(t, emptyStdout); !commandStructuresEqual([]any{}, got) {
-		t.Fatalf("empty JSON structure = %#v, want empty list", got)
+	human, stderr := runFIDCommand(t, workspace, "concern", "list")
+	if stderr != "" || !strings.Contains(human, "Purpose: Inspect a raised concern") || !strings.Contains(human, "None.") {
+		t.Fatalf("generic Human list = %q / %q", human, stderr)
 	}
 }
 
