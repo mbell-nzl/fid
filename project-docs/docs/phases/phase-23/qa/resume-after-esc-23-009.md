@@ -122,5 +122,18 @@ first. Then complete the whole task, not only the down file:
    - the 0018 down fidelity proofs against `schema.md` section 5;
    - the converged rows' provenance.
 
-This handoff grants authority and scope. It is not a verification receipt.
-The Tech Lead ran no implementation gate.
+## Simulation check
+
+The binding was checked on a scratch copy of the `phase-23` docs with DEC-264
+recorded (`532032b`). A RUN-RESUME and a TASK-RECOVERY, both labelled
+STRUCTURE SIMULATION ONLY, were appended one at a time through
+`workflow-sequence-lint.sh --append-stdin`.
+
+- The unmodified ledger returned `VALID state=STOPPED`.
+- Each append returned `APPEND_CONFIRMED state=REPAIR_PENDING`.
+- The simulated ledger returned `VALID state=REPAIR_PENDING`.
+
+Each run terminated `exit_code: 0`. This proves only the event binding;
+replace the simulation values with real checkpoints and receipts. The Tech
+Lead ran no implementation gate. This handoff grants authority and scope.
+It is not a verification receipt.
