@@ -117,8 +117,8 @@ Working directory: `/home/mark/projects/fid`. Each group below was run byte-iden
 
 ## Commit hash
 
-- Pending commit
+- `cdcc4f01fb2060d4fa5721a4108b9fda1dde328a`
 
 ## Commit subject
 
-- Pending commit
+- `feat(review): complete generic Concern list projection`
