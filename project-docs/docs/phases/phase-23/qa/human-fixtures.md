@@ -651,3 +651,1241 @@ Run these in order after recording the initial reading. The supplied Outcome rea
 - VAL-072: Inspect the rework denial, Stop, and Attention. Identify the exhausted budget and exact qualifying resolution.
 
 Record Human judgments in the phase-end checklist. Keep `.fid/` internals out of the inspection.
+
+## 2026-09-30 QA repair — review-11 MF-1 every-leaf Human/JSON pairs
+
+The original three VAL-070..072 Human checkpoints above remain available. This additional retained workspace exercises all 18 Phase 23 leaves through the built `fid` process. Each Human block below is byte-for-byte stdout. Each JSON block contains the result facts returned by the paired `--json` command, with free-form project prose fields omitted from the guide. The tagged test compares the full JSON result, reconstructs every Human fact line from its JSON fields, and reruns both modes after the generator exits. The ordinary test pins exact text for all 18 operation names against JSON-decoded facts.
+
+- Manifest: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/manifest.json`
+- Binary: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/fid`
+- Binary SHA-256: `sha256:f11fa4c7873600e34ab5310fd2e059349eb279bbb02a196323dff6ae9b3a5a6d`
+- Source commit: `44556095af20058b84d93957597456e7741d626f`; source dirty: `true`
+- Leaf workspace: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Judgment checks: every Concern, Deviation, and Human Outcome view carries its non-proof qualifier; addressed Findings say that addressed is a Builder assertion; no Human block contains the `PRIVATE_` project prose sentinels seeded in the JSON facts.
+
+### `requirement.record-reference`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "requirement", "record-reference", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-requirement.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-requirement"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "requirement", "record-reference", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-requirement.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-requirement"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect Requirement References and Issue links.
+
+Requirement References and links
+  Requirement RREF-dad9dc
+    Status: active
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "idempotency_key": "leaf-requirement",
+  "replayed": true,
+  "requirement": {
+    "created_at": "2026-09-29T23:39:27.851042559Z",
+    "event_id": "EVT-20260929-000018",
+    "id": "RREF-dad9dc",
+    "source": {
+      "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+      "display_label": "Task 9 decision",
+      "external_id": null,
+      "path": "base.txt",
+      "repository": {
+        "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+        "capture_source": "git",
+        "dirty": false,
+        "dirty_digest": null,
+        "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+        "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+        "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+        "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+      },
+      "section": null,
+      "source_type": "project-file"
+    },
+    "status": "active",
+    "superseded_by_id": null
+  }
+}
+```
+
+### `requirement.link`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "requirement", "link", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-link.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-link"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "requirement", "link", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-link.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-link"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect Requirement References and Issue links.
+
+Requirement References and links
+  Requirement REQ-leaf
+    Requirement: REQ-leaf; Issue: P22-b8865b; Relation: implements
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "idempotency_key": "leaf-link",
+  "link": {
+    "created_at": "2026-09-29T23:39:27.991208446Z",
+    "event_id": "EVT-20260929-000019",
+    "issue_id": "P22-b8865b",
+    "relation": "implements",
+    "requirement_id": "REQ-leaf"
+  },
+  "replayed": true
+}
+```
+
+### `concern.record`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "concern", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-concern.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-concern"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "concern", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-concern.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-concern"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect a raised concern and its disposition as judgment.
+
+Concerns
+  Concern CON-leaf
+    Subject: issue:P22-b8865b
+    Severity: major; Status: open; Raised by: actor-recovery
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+    This Concern is recorded judgment, not deterministic proof.
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "concern": {
+    "actor_id": "actor-recovery",
+    "created_at": "2026-09-29T23:39:28.149301929Z",
+    "disposition": null,
+    "event_id": "EVT-20260929-000020",
+    "id": "CON-leaf",
+    "references": [
+      {
+        "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+        "display_label": "Task 9 decision",
+        "external_id": null,
+        "path": "base.txt",
+        "repository": {
+          "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "capture_source": "git",
+          "dirty": false,
+          "dirty_digest": null,
+          "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+          "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+          "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+        },
+        "section": null,
+        "source_type": "project-file"
+      }
+    ],
+    "scope": {
+      "paths": []
+    },
+    "severity": "major",
+    "status": "open",
+    "subject": {
+      "id": "P22-b8865b",
+      "type": "issue"
+    }
+  },
+  "idempotency_key": "leaf-concern",
+  "replayed": true
+}
+```
+
+### `concern.dispose`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "concern", "dispose", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-dispose.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-dispose"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "concern", "dispose", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-dispose.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-dispose"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect a raised concern and its disposition as judgment.
+
+Concerns
+  Concern CON-leaf
+    Subject: issue:P22-b8865b
+    Severity: major; Status: disposed; Raised by: actor-recovery
+    Disposition: carried-forward; Disposed by: actor-recovery
+    Work now owned by Issue: P22-b8865b
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+    This Concern is recorded judgment, not deterministic proof.
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "concern": {
+    "actor_id": "actor-recovery",
+    "created_at": "2026-09-29T23:39:28.149301929Z",
+    "disposition": {
+      "action": "carried-forward",
+      "actor_id": "actor-recovery",
+      "disposed_at": "2026-09-29T23:39:28.364091417Z",
+      "event_id": "EVT-20260929-000021",
+      "issue_id": "P22-b8865b",
+      "supersedes_concern_id": null,
+      "supersedes_finding_id": null
+    },
+    "event_id": "EVT-20260929-000020",
+    "id": "CON-leaf",
+    "references": [
+      {
+        "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+        "display_label": "Task 9 decision",
+        "external_id": null,
+        "path": "base.txt",
+        "repository": {
+          "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "capture_source": "git",
+          "dirty": false,
+          "dirty_digest": null,
+          "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+          "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+          "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+        },
+        "section": null,
+        "source_type": "project-file"
+      }
+    ],
+    "scope": {
+      "paths": []
+    },
+    "severity": "major",
+    "status": "disposed",
+    "subject": {
+      "id": "P22-b8865b",
+      "type": "issue"
+    }
+  },
+  "idempotency_key": "leaf-dispose",
+  "replayed": true
+}
+```
+
+### `deviation.record`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "deviation", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-deviation.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-deviation"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "deviation", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-deviation.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-deviation"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect a recorded deviation as judgment.
+
+Deviations
+  Deviation DEV-leaf
+    Subject: issue:P22-b8865b
+    Disposition: pending-decision; Authority Actor: actor-recovery
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+    This Deviation is recorded judgment, not deterministic proof.
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "deviation": {
+    "actor_id": "actor-recovery",
+    "authority": {
+      "actor_id": "actor-recovery",
+      "reference": null
+    },
+    "created_at": "2026-09-29T23:39:28.528957533Z",
+    "disposition": "pending-decision",
+    "event_id": "EVT-20260929-000022",
+    "id": "DEV-leaf",
+    "references": [
+      {
+        "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+        "display_label": "Task 9 decision",
+        "external_id": null,
+        "path": "base.txt",
+        "repository": {
+          "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "capture_source": "git",
+          "dirty": false,
+          "dirty_digest": null,
+          "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+          "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+          "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+        },
+        "section": null,
+        "source_type": "project-file"
+      }
+    ],
+    "subject": {
+      "id": "P22-b8865b",
+      "type": "issue"
+    },
+    "supersedes_deviation_id": null
+  },
+  "idempotency_key": "leaf-deviation",
+  "replayed": true
+}
+```
+
+### `decision.record-reference`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "decision", "record-reference", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-decision.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-decision"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "decision", "record-reference", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-decision.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-decision"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect Decision References and their authority.
+
+Decision References
+  Decision Reference DREF-leaf
+    Class: security; Outcome: approved; Authority Actor: actor-recovery
+    Required capabilities: decision.record-reference
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "attention": [],
+  "decision": {
+    "authority": {
+      "actor_id": "actor-recovery",
+      "required_capabilities": [
+        "decision.record-reference"
+      ]
+    },
+    "class": "security",
+    "created_at": "2026-09-29T23:39:28.741456268Z",
+    "event_id": "EVT-20260929-000023",
+    "id": "DREF-leaf",
+    "outcome": "approved",
+    "scope": {
+      "issue_id": "P22-b8865b"
+    },
+    "source": {
+      "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+      "display_label": "Task 9 decision",
+      "external_id": null,
+      "path": "base.txt",
+      "repository": {
+        "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+        "capture_source": "git",
+        "dirty": false,
+        "dirty_digest": null,
+        "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+        "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+        "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+        "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+      },
+      "section": null,
+      "source_type": "project-file"
+    }
+  },
+  "idempotency_key": "leaf-decision",
+  "protected_decisions": [],
+  "replayed": true,
+  "stops": []
+}
+```
+
+### `human-outcome.record`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "human-outcome", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-outcome.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-outcome"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "human-outcome", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-outcome.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-outcome"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect authorized Human judgments and their provenance.
+
+Human Outcomes
+  Human Outcome OUT-leaf
+    Actor: actor-recovery; Class: security; Result: approved
+    Activation: ACT-baf0ec revision 10; Profile: activation:p22-corpus
+    This Outcome is authorized Human judgment, not deterministic proof.
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "attention": [],
+  "idempotency_key": "leaf-outcome",
+  "outcome": {
+    "actor_id": "actor-recovery",
+    "class": "security",
+    "created_at": "2026-09-29T23:39:28.940351293Z",
+    "event_id": "EVT-20260929-000024",
+    "id": "OUT-leaf",
+    "provenance": {
+      "activation_id": "ACT-baf0ec",
+      "activation_version": 10,
+      "profile_ref": "activation:p22-corpus"
+    },
+    "references": [
+      {
+        "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+        "display_label": "Task 9 decision",
+        "external_id": null,
+        "path": "base.txt",
+        "repository": {
+          "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "capture_source": "git",
+          "dirty": false,
+          "dirty_digest": null,
+          "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+          "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+          "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+        },
+        "section": null,
+        "source_type": "project-file"
+      }
+    ],
+    "result": "approved",
+    "scope": {
+      "issue_id": "P22-b8865b"
+    },
+    "subject": {
+      "id": "P22-b8865b",
+      "type": "issue"
+    }
+  },
+  "protected_decisions": [],
+  "replayed": true,
+  "stops": []
+}
+```
+
+### `review.record`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "review", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-review.json", "--actor", "actor-denied", "--idempotency-key", "leaf-review"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "review", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-review.json", "--actor", "actor-denied", "--idempotency-key", "leaf-review"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Record an independent Review of a Run and its bound Issue.
+
+Reviews
+  Review REV-93ace4
+    Issue: P22-b8865b; Envelope: ENV-c45f4a revision 1
+    Run: RUN-8664f6; Reviewer: actor-denied; Profile: review-default
+    Verdict: changes-required; Independence: distinct-actor
+    Repository: project project-c38e61c97b0200742aa4a3e766c8c02e; worktree sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600; HEAD 02e5a80e8429bc8f939cae2e8fdb691ad7571947; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
+    Repository capture: git; base 02e5a80e8429bc8f939cae2e8fdb691ad7571947; dirty false; dirty digest <nil>
+    Findings by severity: blocker 0; major 1; minor 0; nit 0
+  Finding FND-leaf
+    Review: REV-93ace4; Severity: major; Blocking: true; Disposition: open
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "attention": [],
+  "budget": null,
+  "idempotency_key": "leaf-review",
+  "replayed": true,
+  "review": {
+    "actor_id": "actor-denied",
+    "coverage": {
+      "exclusions": [],
+      "items": [
+        {
+          "assessed": true,
+          "source": {
+            "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "display_label": "Phase 22 corpus",
+            "external_id": null,
+            "path": "project-docs/p22-corpus.md",
+            "repository": {
+              "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+              "capture_source": "git",
+              "dirty": false,
+              "dirty_digest": null,
+              "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+              "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+              "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+              "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+            },
+            "section": null,
+            "source_type": "project-file"
+          }
+        }
+      ]
+    },
+    "envelope_id": "ENV-c45f4a",
+    "envelope_revision": 1,
+    "event_id": "EVT-20260929-000030",
+    "evidence_refs": [],
+    "findings": [
+      {
+        "blocking": true,
+        "created_at": "2026-09-29T23:39:29.730679427Z",
+        "dispositions": [],
+        "id": "FND-leaf",
+        "review_id": "REV-93ace4",
+        "scope": {
+          "paths": []
+        },
+        "severity": "major",
+        "state": "open",
+        "subject": {
+          "id": "P22-b8865b",
+          "type": "issue"
+        }
+      }
+    ],
+    "id": "REV-93ace4",
+    "independence": "distinct-actor",
+    "issue_id": "P22-b8865b",
+    "profile": "review-default",
+    "receipt_ids": [],
+    "recorded_at": "2026-09-29T23:39:29.730679427Z",
+    "repository": {
+      "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+      "capture_source": "git",
+      "dirty": false,
+      "dirty_digest": null,
+      "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+      "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+      "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+      "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+    },
+    "resolved_finding_ids": [],
+    "run_id": "RUN-8664f6",
+    "verdict": "changes-required"
+  },
+  "stops": []
+}
+```
+
+### `finding.address`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "finding", "address", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-address.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-address"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "finding", "address", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-address.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-address"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Record a Builder assertion that a Finding was addressed.
+
+Findings
+  Finding FND-leaf
+    Review: REV-93ace4; Severity: major; Blocking: true; Disposition: addressed
+    Addressed is a Builder assertion, not a resolution.
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "finding": {
+    "blocking": true,
+    "created_at": "2026-09-29T23:39:29.730679427Z",
+    "dispositions": [
+      {
+        "action": "addressed",
+        "actor_id": "actor-recovery",
+        "disposed_at": "2026-09-29T23:39:30.408258957Z",
+        "event_id": "EVT-20260929-000035",
+        "id": "FDP-0baf38",
+        "qualifying_review_id": null
+      }
+    ],
+    "id": "FND-leaf",
+    "review_id": "REV-93ace4",
+    "scope": {
+      "paths": []
+    },
+    "severity": "major",
+    "state": "addressed",
+    "subject": {
+      "id": "P22-b8865b",
+      "type": "issue"
+    }
+  },
+  "idempotency_key": "leaf-address",
+  "replayed": true
+}
+```
+
+### `review.get`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "review", "get", "REV-93ace4"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "review", "get", "REV-93ace4"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect independent Reviews and their Findings.
+
+Reviews
+  Review REV-93ace4
+    Issue: P22-b8865b; Envelope: ENV-c45f4a revision 1
+    Run: RUN-8664f6; Reviewer: actor-denied; Profile: review-default
+    Verdict: changes-required; Independence: distinct-actor
+    Repository: project project-c38e61c97b0200742aa4a3e766c8c02e; worktree sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600; HEAD 02e5a80e8429bc8f939cae2e8fdb691ad7571947; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
+    Repository capture: git; base 02e5a80e8429bc8f939cae2e8fdb691ad7571947; dirty false; dirty digest <nil>
+    Findings by severity: blocker 0; major 1; minor 0; nit 0
+  Finding FND-leaf
+    Review: REV-93ace4; Severity: major; Blocking: true; Disposition: addressed
+    Addressed is a Builder assertion, not a resolution.
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "review": {
+    "actor_id": "actor-denied",
+    "coverage": {
+      "exclusions": [],
+      "items": [
+        {
+          "assessed": true,
+          "source": {
+            "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "display_label": "Phase 22 corpus",
+            "external_id": null,
+            "path": "project-docs/p22-corpus.md",
+            "repository": {
+              "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+              "capture_source": "git",
+              "dirty": false,
+              "dirty_digest": null,
+              "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+              "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+              "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+              "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+            },
+            "section": null,
+            "source_type": "project-file"
+          }
+        }
+      ]
+    },
+    "envelope_id": "ENV-c45f4a",
+    "envelope_revision": 1,
+    "event_id": "EVT-20260929-000030",
+    "evidence_refs": [],
+    "findings": [
+      {
+        "blocking": true,
+        "created_at": "2026-09-29T23:39:29.730679427Z",
+        "dispositions": [
+          {
+            "action": "addressed",
+            "actor_id": "actor-recovery",
+            "disposed_at": "2026-09-29T23:39:30.408258957Z",
+            "event_id": "EVT-20260929-000035",
+            "id": "FDP-0baf38",
+            "qualifying_review_id": null
+          }
+        ],
+        "id": "FND-leaf",
+        "review_id": "REV-93ace4",
+        "scope": {
+          "paths": []
+        },
+        "severity": "major",
+        "state": "addressed",
+        "subject": {
+          "id": "P22-b8865b",
+          "type": "issue"
+        }
+      }
+    ],
+    "id": "REV-93ace4",
+    "independence": "distinct-actor",
+    "issue_id": "P22-b8865b",
+    "profile": "review-default",
+    "receipt_ids": [],
+    "recorded_at": "2026-09-29T23:39:29.730679427Z",
+    "repository": {
+      "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+      "capture_source": "git",
+      "dirty": false,
+      "dirty_digest": null,
+      "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+      "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+      "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+      "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+    },
+    "resolved_finding_ids": [],
+    "run_id": "RUN-8664f6",
+    "verdict": "changes-required"
+  }
+}
+```
+
+### `review.list`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "review", "list", "--issue", "P22-b8865b"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "review", "list", "--issue", "P22-b8865b"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect independent Reviews and their Findings.
+
+Reviews
+  Review REV-93ace4
+    Issue: P22-b8865b; Envelope: ENV-c45f4a revision 1
+    Run: RUN-8664f6; Reviewer: actor-denied; Profile: review-default
+    Verdict: changes-required; Independence: distinct-actor
+    Repository: project project-c38e61c97b0200742aa4a3e766c8c02e; worktree sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600; HEAD 02e5a80e8429bc8f939cae2e8fdb691ad7571947; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
+    Repository capture: git; base 02e5a80e8429bc8f939cae2e8fdb691ad7571947; dirty false; dirty digest <nil>
+    Findings by severity: blocker 0; major 1; minor 0; nit 0
+  Finding FND-leaf
+    Review: REV-93ace4; Severity: major; Blocking: true; Disposition: addressed
+    Addressed is a Builder assertion, not a resolution.
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "items": [
+    {
+      "actor_id": "actor-denied",
+      "coverage": {
+        "exclusions": [],
+        "items": [
+          {
+            "assessed": true,
+            "source": {
+              "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+              "display_label": "Phase 22 corpus",
+              "external_id": null,
+              "path": "project-docs/p22-corpus.md",
+              "repository": {
+                "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+                "capture_source": "git",
+                "dirty": false,
+                "dirty_digest": null,
+                "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+                "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+                "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+                "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+              },
+              "section": null,
+              "source_type": "project-file"
+            }
+          }
+        ]
+      },
+      "envelope_id": "ENV-c45f4a",
+      "envelope_revision": 1,
+      "event_id": "EVT-20260929-000030",
+      "evidence_refs": [],
+      "findings": [
+        {
+          "blocking": true,
+          "created_at": "2026-09-29T23:39:29.730679427Z",
+          "dispositions": [
+            {
+              "action": "addressed",
+              "actor_id": "actor-recovery",
+              "disposed_at": "2026-09-29T23:39:30.408258957Z",
+              "event_id": "EVT-20260929-000035",
+              "id": "FDP-0baf38",
+              "qualifying_review_id": null
+            }
+          ],
+          "id": "FND-leaf",
+          "review_id": "REV-93ace4",
+          "scope": {
+            "paths": []
+          },
+          "severity": "major",
+          "state": "addressed",
+          "subject": {
+            "id": "P22-b8865b",
+            "type": "issue"
+          }
+        }
+      ],
+      "id": "REV-93ace4",
+      "independence": "distinct-actor",
+      "issue_id": "P22-b8865b",
+      "profile": "review-default",
+      "receipt_ids": [],
+      "recorded_at": "2026-09-29T23:39:29.730679427Z",
+      "repository": {
+        "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+        "capture_source": "git",
+        "dirty": false,
+        "dirty_digest": null,
+        "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+        "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+        "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+        "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+      },
+      "resolved_finding_ids": [],
+      "run_id": "RUN-8664f6",
+      "verdict": "changes-required"
+    }
+  ]
+}
+```
+
+### `finding.list`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "finding", "list", "--issue", "P22-b8865b"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "finding", "list", "--issue", "P22-b8865b"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect Finding dispositions and current blocking state.
+
+Findings
+  Finding FND-leaf
+    Review: REV-93ace4; Severity: major; Blocking: true; Disposition: addressed
+    Addressed is a Builder assertion, not a resolution.
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "items": [
+    {
+      "blocking": true,
+      "created_at": "2026-09-29T23:39:29.730679427Z",
+      "dispositions": [
+        {
+          "action": "addressed",
+          "actor_id": "actor-recovery",
+          "disposed_at": "2026-09-29T23:39:30.408258957Z",
+          "event_id": "EVT-20260929-000035",
+          "id": "FDP-0baf38",
+          "qualifying_review_id": null
+        }
+      ],
+      "id": "FND-leaf",
+      "review_id": "REV-93ace4",
+      "scope": {
+        "paths": []
+      },
+      "severity": "major",
+      "state": "addressed",
+      "subject": {
+        "id": "P22-b8865b",
+        "type": "issue"
+      }
+    }
+  ]
+}
+```
+
+### `concern.list`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "concern", "list", "--subject", "issue:P22-b8865b"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "concern", "list", "--subject", "issue:P22-b8865b"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect a raised concern and its disposition as judgment.
+
+Concerns
+  Concern CON-leaf
+    Subject: issue:P22-b8865b
+    Severity: major; Status: disposed; Raised by: actor-recovery
+    Disposition: carried-forward; Disposed by: actor-recovery
+    Work now owned by Issue: P22-b8865b
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+    This Concern is recorded judgment, not deterministic proof.
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "items": [
+    {
+      "actor_id": "actor-recovery",
+      "created_at": "2026-09-29T23:39:28.149301929Z",
+      "disposition": {
+        "action": "carried-forward",
+        "actor_id": "actor-recovery",
+        "disposed_at": "2026-09-29T23:39:28.364091417Z",
+        "event_id": "EVT-20260929-000021",
+        "issue_id": "P22-b8865b",
+        "supersedes_concern_id": null,
+        "supersedes_finding_id": null
+      },
+      "event_id": "EVT-20260929-000020",
+      "id": "CON-leaf",
+      "references": [
+        {
+          "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+          "display_label": "Task 9 decision",
+          "external_id": null,
+          "path": "base.txt",
+          "repository": {
+            "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+            "capture_source": "git",
+            "dirty": false,
+            "dirty_digest": null,
+            "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+            "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+            "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+            "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+          },
+          "section": null,
+          "source_type": "project-file"
+        }
+      ],
+      "scope": {
+        "paths": []
+      },
+      "severity": "major",
+      "status": "disposed",
+      "subject": {
+        "id": "P22-b8865b",
+        "type": "issue"
+      }
+    }
+  ]
+}
+```
+
+### `deviation.list`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "deviation", "list", "--subject", "issue:P22-b8865b"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "deviation", "list", "--subject", "issue:P22-b8865b"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect a recorded deviation as judgment.
+
+Deviations
+  Deviation DEV-leaf
+    Subject: issue:P22-b8865b
+    Disposition: pending-decision; Authority Actor: actor-recovery
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+    This Deviation is recorded judgment, not deterministic proof.
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "items": [
+    {
+      "actor_id": "actor-recovery",
+      "authority": {
+        "actor_id": "actor-recovery",
+        "reference": null
+      },
+      "created_at": "2026-09-29T23:39:28.528957533Z",
+      "disposition": "pending-decision",
+      "event_id": "EVT-20260929-000022",
+      "id": "DEV-leaf",
+      "references": [
+        {
+          "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+          "display_label": "Task 9 decision",
+          "external_id": null,
+          "path": "base.txt",
+          "repository": {
+            "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+            "capture_source": "git",
+            "dirty": false,
+            "dirty_digest": null,
+            "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+            "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+            "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+            "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+          },
+          "section": null,
+          "source_type": "project-file"
+        }
+      ],
+      "subject": {
+        "id": "P22-b8865b",
+        "type": "issue"
+      },
+      "supersedes_deviation_id": null
+    }
+  ]
+}
+```
+
+### `decision.list`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "decision", "list", "--issue", "P22-b8865b"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "decision", "list", "--issue", "P22-b8865b"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect Decision References and their authority.
+
+Decision References
+  Decision Reference DREF-leaf
+    Class: security; Outcome: approved; Authority Actor: actor-recovery
+    Required capabilities: decision.record-reference
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "items": [
+    {
+      "authority": {
+        "actor_id": "actor-recovery",
+        "required_capabilities": [
+          "decision.record-reference"
+        ]
+      },
+      "class": "security",
+      "created_at": "2026-09-29T23:39:28.741456268Z",
+      "event_id": "EVT-20260929-000023",
+      "id": "DREF-leaf",
+      "outcome": "approved",
+      "scope": {
+        "issue_id": "P22-b8865b"
+      },
+      "source": {
+        "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+        "display_label": "Task 9 decision",
+        "external_id": null,
+        "path": "base.txt",
+        "repository": {
+          "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "capture_source": "git",
+          "dirty": false,
+          "dirty_digest": null,
+          "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+          "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+          "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+        },
+        "section": null,
+        "source_type": "project-file"
+      }
+    }
+  ]
+}
+```
+
+### `human-outcome.list`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "human-outcome", "list", "--issue", "P22-b8865b"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "human-outcome", "list", "--issue", "P22-b8865b"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect authorized Human judgments and their provenance.
+
+Human Outcomes
+  Human Outcome OUT-leaf
+    Actor: actor-recovery; Class: security; Result: approved
+    Activation: ACT-baf0ec revision 10; Profile: activation:p22-corpus
+    This Outcome is authorized Human judgment, not deterministic proof.
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "items": [
+    {
+      "actor_id": "actor-recovery",
+      "class": "security",
+      "created_at": "2026-09-29T23:39:28.940351293Z",
+      "event_id": "EVT-20260929-000024",
+      "id": "OUT-leaf",
+      "provenance": {
+        "activation_id": "ACT-baf0ec",
+        "activation_version": 10,
+        "profile_ref": "activation:p22-corpus"
+      },
+      "references": [
+        {
+          "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+          "display_label": "Task 9 decision",
+          "external_id": null,
+          "path": "base.txt",
+          "repository": {
+            "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+            "capture_source": "git",
+            "dirty": false,
+            "dirty_digest": null,
+            "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+            "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+            "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+            "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+          },
+          "section": null,
+          "source_type": "project-file"
+        }
+      ],
+      "result": "approved",
+      "scope": {
+        "issue_id": "P22-b8865b"
+      },
+      "subject": {
+        "id": "P22-b8865b",
+        "type": "issue"
+      }
+    }
+  ]
+}
+```
+
+### `requirement.get`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "requirement", "get", "REQ-leaf"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "requirement", "get", "REQ-leaf"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect Requirement References and Issue links.
+
+Requirement References and links
+  Requirement RREF-dad9dc
+    Status: active
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+  Requirement REQ-leaf
+    Requirement: REQ-leaf; Issue: P22-b8865b; Relation: implements
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "links": [
+    {
+      "created_at": "2026-09-29T23:39:27.991208446Z",
+      "event_id": "EVT-20260929-000019",
+      "issue_id": "P22-b8865b",
+      "relation": "implements",
+      "requirement_id": "REQ-leaf"
+    }
+  ],
+  "requirement": {
+    "created_at": "2026-09-29T23:39:27.851042559Z",
+    "event_id": "EVT-20260929-000018",
+    "id": "RREF-dad9dc",
+    "source": {
+      "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+      "display_label": "Task 9 decision",
+      "external_id": null,
+      "path": "base.txt",
+      "repository": {
+        "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+        "capture_source": "git",
+        "dirty": false,
+        "dirty_digest": null,
+        "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+        "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+        "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+        "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+      },
+      "section": null,
+      "source_type": "project-file"
+    },
+    "status": "active",
+    "superseded_by_id": null
+  }
+}
+```
+
+### `requirement.list`
+
+- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
+- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "requirement", "list"]`
+- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "requirement", "list"]`
+
+Verbatim Human stdout:
+
+```text
+Purpose: Inspect Requirement References and Issue links.
+
+Requirement References and links
+  Requirement RREF-dad9dc
+    Status: active
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+```
+
+JSON result facts for comparison (project prose omitted):
+
+```json
+{
+  "items": [
+    {
+      "created_at": "2026-09-29T23:39:27.851042559Z",
+      "event_id": "EVT-20260929-000018",
+      "id": "RREF-dad9dc",
+      "source": {
+        "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
+        "display_label": "Task 9 decision",
+        "external_id": null,
+        "path": "base.txt",
+        "repository": {
+          "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "capture_source": "git",
+          "dirty": false,
+          "dirty_digest": null,
+          "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+          "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
+          "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+        },
+        "section": null,
+        "source_type": "project-file"
+      },
+      "status": "active",
+      "superseded_by_id": null
+    }
+  ]
+}
+```

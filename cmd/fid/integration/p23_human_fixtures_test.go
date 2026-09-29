@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -41,6 +42,16 @@ type p23HumanManifest struct {
 	Binary       string               `json:"binary"`
 	BinarySHA256 string               `json:"binary_sha256"`
 	Checkpoints  []p23HumanCheckpoint `json:"checkpoints"`
+	LeafPairs    []p23HumanLeafPair   `json:"leaf_pairs"`
+}
+
+type p23HumanLeafPair struct {
+	Operation     string         `json:"operation"`
+	CWD           string         `json:"cwd"`
+	HumanArgs     []string       `json:"human_args"`
+	JSONArgs      []string       `json:"json_args"`
+	ExpectedHuman string         `json:"expected_human"`
+	JSONFacts     map[string]any `json:"json_facts"`
 }
 
 func TestP23HumanFixtures(t *testing.T) {
@@ -90,6 +101,50 @@ func TestP23HumanFixtures(t *testing.T) {
 	if len(manifest.Checkpoints) != 3 {
 		t.Fatalf("checkpoint count = %d, want 3", len(manifest.Checkpoints))
 	}
+	wantLeaves := []string{"review.record", "review.get", "review.list", "finding.address", "finding.list", "concern.record", "concern.dispose", "concern.list", "deviation.record", "deviation.list", "decision.record-reference", "decision.list", "human-outcome.record", "human-outcome.list", "requirement.record-reference", "requirement.link", "requirement.get", "requirement.list"}
+	seenLeaves := map[string]bool{}
+	for _, pair := range manifest.LeafPairs {
+		if seenLeaves[pair.Operation] {
+			t.Fatalf("duplicate Human/JSON leaf pair %s", pair.Operation)
+		}
+		seenLeaves[pair.Operation] = true
+	}
+	for _, operation := range wantLeaves {
+		if !seenLeaves[operation] {
+			t.Errorf("missing Human/JSON leaf pair %s", operation)
+		}
+	}
+	if len(manifest.LeafPairs) != len(wantLeaves) {
+		t.Errorf("Human/JSON leaf pair count = %d, want %d", len(manifest.LeafPairs), len(wantLeaves))
+	}
+	for _, pair := range manifest.LeafPairs {
+		if pair.CWD == "" || len(pair.HumanArgs) == 0 || len(pair.JSONArgs) == 0 || pair.ExpectedHuman == "" || len(pair.JSONFacts) == 0 {
+			t.Fatalf("incomplete Human/JSON leaf pair %s", pair.Operation)
+		}
+		human, stderr, err := closureRunCommand(pair.CWD, manifest.Binary, pair.HumanArgs...)
+		if err != nil || stderr != "" || human != pair.ExpectedHuman {
+			t.Fatalf("post-exit %s Human: error=%v stderr=%q got=%q want=%q", pair.Operation, err, stderr, human, pair.ExpectedHuman)
+		}
+		jsonText, stderr, err := closureRunCommand(pair.CWD, manifest.Binary, pair.JSONArgs...)
+		if err != nil || stderr != "" {
+			t.Fatalf("post-exit %s JSON: error=%v stderr=%q", pair.Operation, err, stderr)
+		}
+		var envelope map[string]any
+		if err := json.Unmarshal([]byte(jsonText), &envelope); err != nil {
+			t.Fatal(err)
+		}
+		facts, ok := envelope["result"].(map[string]any)
+		if envelope["operation"] != pair.Operation || !ok || !reflect.DeepEqual(facts, pair.JSONFacts) {
+			t.Fatalf("post-exit %s JSON facts drifted: got=%#v want=%#v", pair.Operation, facts, pair.JSONFacts)
+		}
+		if want := p23ExpectedLeafText(t, pair.Operation, facts); human != want {
+			t.Fatalf("post-exit %s Human/JSON fact mismatch: got=%q want=%q", pair.Operation, human, want)
+		}
+		if strings.Contains(human, "PRIVATE_") {
+			t.Fatalf("post-exit %s leaked project prose", pair.Operation)
+		}
+		p23CheckJudgmentQualifiers(t, pair.Operation, human)
+	}
 	for _, checkpoint := range manifest.Checkpoints {
 		if checkpoint.Project == "" || len(checkpoint.IDs) == 0 || len(checkpoint.Inspections) < 2 {
 			t.Fatalf("incomplete checkpoint: %#v", checkpoint)
@@ -127,6 +182,7 @@ func p23GenerateHumanFixtures(t *testing.T, root string) {
 	manifest.Checkpoints = append(manifest.Checkpoints, p23MixedFindingFixture(t, binary, root))
 	manifest.Checkpoints = append(manifest.Checkpoints, p23ProtectedDecisionFixture(t, binary, root))
 	manifest.Checkpoints = append(manifest.Checkpoints, p23ReviewExhaustionFixture(t, binary, root))
+	manifest.LeafPairs = p23GenerateLeafPairs(t, binary, root)
 	for index := range manifest.Checkpoints {
 		checkpoint := &manifest.Checkpoints[index]
 		checkpoint.ExpectedHuman = map[string]string{}

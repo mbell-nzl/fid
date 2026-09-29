@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -52,10 +53,40 @@ func TestPhase23HumanLeafTextMatchesRecordedFacts(t *testing.T) {
 	for _, tc := range operations {
 		t.Run(tc.operation, func(t *testing.T) {
 			t.Parallel()
+			encoded, err := json.Marshal(items[tc.kind])
+			if err != nil {
+				t.Fatal(err)
+			}
+			var jsonFact map[string]any
+			if err := json.Unmarshal(encoded, &jsonFact); err != nil {
+				t.Fatal(err)
+			}
+			paths := map[string][]string{
+				"review":        {"id", "issue_id", "envelope_id", "envelope_revision", "run_id", "actor_id", "profile", "verdict", "independence", "repository.project_id", "repository.worktree_id", "repository.head_oid", "repository.tree_oid", "repository.base_oid", "repository.capture_source", "repository.dirty", "repository.dirty_digest", "findings"},
+				"finding":       {"id", "review_id", "severity", "blocking", "state"},
+				"concern":       {"id", "subject.type", "subject.id", "severity", "status", "actor_id", "disposition.action", "disposition.actor_id", "disposition.issue_id", "references"},
+				"deviation":     {"id", "subject.type", "subject.id", "disposition", "authority.actor_id", "references"},
+				"decision":      {"id", "class", "outcome", "authority.actor_id", "authority.required_capabilities", "source.display_label", "source.path", "source.digest"},
+				"human-outcome": {"id", "actor_id", "class", "result", "provenance.activation_id", "provenance.activation_version", "provenance.profile_ref", "references"},
+				"requirement":   {"id", "status", "source.display_label", "source.path", "source.digest"},
+			}
+			for _, path := range paths[tc.kind] {
+				value := any(jsonFact)
+				for _, part := range strings.Split(path, ".") {
+					fact, ok := value.(map[string]any)
+					if !ok {
+						t.Fatalf("%s Human fact %s has no JSON object", tc.operation, path)
+					}
+					value, ok = fact[part]
+					if !ok {
+						t.Fatalf("%s Human fact %s is absent from JSON", tc.operation, path)
+					}
+				}
+			}
 			var output bytes.Buffer
 			cmd := &cobra.Command{}
 			cmd.SetOut(&output)
-			if err := writeP23Human(cmd, tc.operation, items[tc.kind]); err != nil {
+			if err := writeP23Human(cmd, tc.operation, jsonFact); err != nil {
 				t.Fatal(err)
 			}
 			want := "Purpose: " + tc.purpose + "\n\n" + bodies[tc.kind] + "\n"
@@ -64,6 +95,11 @@ func TestPhase23HumanLeafTextMatchesRecordedFacts(t *testing.T) {
 			}
 			if strings.Contains(output.String(), "PRIVATE") {
 				t.Fatal("Human text reproduced project prose")
+			}
+			if tc.kind == "concern" || tc.kind == "deviation" || tc.kind == "human-outcome" {
+				if !strings.Contains(output.String(), "not deterministic proof.") {
+					t.Fatal("judgment view omitted non-proof qualifier")
+				}
 			}
 		})
 	}
