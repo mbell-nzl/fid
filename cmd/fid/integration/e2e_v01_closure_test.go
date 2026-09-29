@@ -34,9 +34,9 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "in_progress", "--actor", "agent:qa_reviewer")
 	acID := closureAddAcceptanceCriterion(t, binary, workspace, mainIssueID)
 	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "dev_complete", "--actor", "agent:developer")
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"--json", "issue", "ac", "verify", mainIssueID, acID, "--actor", "agent:qa_lead"},
-		`"code":"capability-unavailable"`)
+	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, journalPath,
+		[]string{"issue", "ac", "verify"})
+	_ = acID
 	assertClosureConcernMutationsUnavailable(t, binary, workspace, mainIssueID, "TC-unavailable")
 	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
 		[]string{"--json", "link", "add", mainIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},

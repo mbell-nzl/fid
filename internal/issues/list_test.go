@@ -476,56 +476,22 @@ func seedIssueListFixture(t *testing.T, conn *sql.DB) {
 			},
 		},
 		{
-			query: `
-				INSERT INTO task_completions (
-					id, issue_id, attempt_number, developer_role, model, status, gate_results, human_intervention, completed_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"TC-open01",
-				"FID-task01",
-				1,
-				"developer",
-				"gpt-5",
-				"dev_complete",
-				`["go test ./..."]`,
-				false,
-				"2026-06-09T09:05:00Z",
-				"TC-addressed01",
-				"FID-task03",
-				1,
-				"developer",
-				"gpt-5",
-				"done",
-				`["go test ./..."]`,
-				false,
-				"2026-06-09T09:06:00Z",
-			},
+			query: `INSERT INTO concerns
+				(id, subject_type, subject_id, actor_id, scope_json, severity, summary, reasoning, references_json,
+				 status, created_at, created_event_id)
+				VALUES (?, 'issue', ?, 'developer', '{"paths":[]}', 'major', ?, 'Needs review', '[]',
+				        'open', ?, ?)`,
+			args: []any{"CON-open01", "FID-task01", "Needs triage", "2026-06-09T09:05:00Z", "EVT-open01"},
 		},
 		{
-			query: `
-				INSERT INTO concerns (
-					id, issue_id, raised_in_completion_id, raised_by_role, summary, status, created_at, updated_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"CON-open01",
-				"FID-task01",
-				"TC-open01",
-				"developer",
-				"Needs triage",
-				"open",
-				"2026-06-09T09:05:00Z",
-				"2026-06-09T09:05:00Z",
-				"CON-addressed01",
-				"FID-task03",
-				"TC-addressed01",
-				"developer",
-				"Already addressed",
-				"addressed",
-				"2026-06-09T09:06:00Z",
-				"2026-06-09T09:06:00Z",
-			},
+			query: `INSERT INTO concerns
+				(id, subject_type, subject_id, actor_id, scope_json, severity, summary, reasoning, references_json,
+				 status, disposition_action, disposition_reason, disposed_actor_id, disposed_at,
+				 disposed_event_id, created_at, created_event_id)
+				VALUES (?, 'issue', ?, 'developer', '{"paths":[]}', 'major', ?, 'Needs review', '[]',
+				        'disposed', 'rejected', 'Addressed', 'qa_lead', ?, ?, ?, ?)`,
+			args: []any{"CON-addressed01", "FID-task03", "Already addressed", "2026-06-09T09:06:00Z",
+				"EVT-dispose01", "2026-06-09T09:06:00Z", "EVT-addressed01"},
 		},
 	}
 

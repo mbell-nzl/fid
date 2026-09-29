@@ -319,7 +319,7 @@ func TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation(t *testing.T) {
 	beforeEnvelope := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "get", envelopeID).stdout
 	beforeIssue := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "get", issueID).stdout
 	beforeEvents := journalEventCount(t, workspace)
-	beforeEvidence, beforeLegacy := task18TableCounts(t, workspace)
+	beforeEvidence, beforeConcerns := task18TableCounts(t, workspace)
 	path := filepath.Join(workspace, "task18-incomplete-envelope.json")
 	writeActivationInput(t, path, map[string]any{"envelope_id": envelopeID, "expected_revision": 1, "repository": repository})
 
@@ -348,9 +348,9 @@ func TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation(t *testing.T) {
 	if after := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "get", issueID).stdout; after != beforeIssue {
 		t.Fatalf("Issue changed after failed completion")
 	}
-	afterEvidence, afterLegacy := task18TableCounts(t, workspace)
-	if afterEvidence != beforeEvidence || afterLegacy != beforeLegacy || journalEventCount(t, workspace) != beforeEvents {
-		t.Fatalf("failed completion mutated counts Evidence/legacy/Events = %d/%d/%d, want %d/%d/%d", afterEvidence, afterLegacy, journalEventCount(t, workspace), beforeEvidence, beforeLegacy, beforeEvents)
+	afterEvidence, afterConcerns := task18TableCounts(t, workspace)
+	if afterEvidence != beforeEvidence || afterConcerns != beforeConcerns || journalEventCount(t, workspace) != beforeEvents {
+		t.Fatalf("failed completion mutated counts Evidence/Concerns/Events = %d/%d/%d, want %d/%d/%d", afterEvidence, afterConcerns, journalEventCount(t, workspace), beforeEvidence, beforeConcerns, beforeEvents)
 	}
 }
 
@@ -379,14 +379,14 @@ func task18TableCounts(t *testing.T, workspace string) (int, int) {
 		t.Fatalf("open task 18 count projection: %v", err)
 	}
 	defer func() { _ = conn.Close() }()
-	var evidence, legacy int
+	var evidence, concerns int
 	if err := conn.QueryRow(`SELECT COUNT(*) FROM evidence_records`).Scan(&evidence); err != nil {
 		t.Fatalf("count Evidence: %v", err)
 	}
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM task_completions`).Scan(&legacy); err != nil {
-		t.Fatalf("count legacy completions: %v", err)
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM concerns`).Scan(&concerns); err != nil {
+		t.Fatalf("count generic Concerns: %v", err)
 	}
-	return evidence, legacy
+	return evidence, concerns
 }
 
 func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence bool) (string, string, string, string, string) {

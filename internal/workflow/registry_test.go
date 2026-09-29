@@ -69,8 +69,8 @@ func TestLoadSurfacesReservedRulesAsUnimplementedWithoutWriting(t *testing.T) {
 		name       string
 		paramsJSON string
 	}{
-		{name: RuleRequiredGatesCurrent, paramsJSON: `{"gates":[{"id":"gate-test","version":1}]}`},
-		{name: RuleHasCompletion, paramsJSON: `{"completion":"required"}`},
+		{name: RuleRequiredGatesCurrent},
+		{name: RuleHasCompletion},
 	} {
 		if _, err := conn.Exec(`
 			INSERT INTO workflow_transition_requires (workflow_id, from_state, to_state, rule, params_json)

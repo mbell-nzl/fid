@@ -516,10 +516,10 @@ func TestLinkAddUsesSuppliedTypeForAmbiguousSameIDEndpoints(t *testing.T) {
 	}
 	defer closeCommandDB(t, conn)
 	if _, err := conn.Exec(`
-		INSERT INTO requirements (id, type, summary, source_doc, source_section, status)
-		VALUES (?, 'PRD', 'Requirement with the same opaque ID', 'project-docs/specs/link_requirements.md', '3.8', 'active')
+		INSERT INTO requirement_refs (id, requirement_id, source_json, status, created_at, created_event_id)
+		VALUES ('RREF-same', ?, '{}', 'active', '2026-09-20T00:00:00Z', 'EVT-same')
 	`, issueID); err != nil {
-		t.Fatalf("insert same-ID requirement: %v", err)
+		t.Fatalf("insert same-ID generic requirement reference: %v", err)
 	}
 	journalPath := mustJournalPath(t, workspace)
 	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))

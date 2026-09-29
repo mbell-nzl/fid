@@ -486,36 +486,16 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 			},
 			{
 				Op:    "insert",
-				Table: "task_completions",
-				PK: map[string]any{
-					"id": "TC-CMD-001",
-				},
-				Values: map[string]any{
-					"issue_id":           issueID,
-					"attempt_number":     1,
-					"developer_role":     "developer",
-					"model":              "gpt-5",
-					"status":             "dev_complete",
-					"gate_results":       `["go test ./..."]`,
-					"human_intervention": false,
-					"completed_at":       "2026-06-07T14:01:00Z",
-				},
-			},
-			{
-				Op:    "insert",
 				Table: "concerns",
 				PK: map[string]any{
 					"id": "CON-CMD-001",
 				},
 				Values: map[string]any{
-					"issue_id":                issueID,
-					"raised_in_completion_id": "TC-CMD-001",
-					"raised_by_role":          "developer",
-					"summary":                 "CLI concern",
-					"body_md_path":            "project-docs/concerns/CON-CMD-001.md",
-					"status":                  "open",
-					"created_at":              "2026-06-07T14:01:30Z",
-					"updated_at":              "2026-06-07T14:01:30Z",
+					"subject_type": "issue", "subject_id": issueID,
+					"actor_id": "developer", "scope_json": `{"paths":[]}`,
+					"severity": "major", "summary": "CLI concern", "reasoning": "Needs review",
+					"references_json": "[]", "status": "open",
+					"created_at": "2026-06-07T14:01:30Z", "created_event_id": "EVT-CON-CMD-001",
 				},
 			},
 			{
@@ -528,8 +508,8 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 					"epic_id":       "FID-epiccmd",
 					"issue_id":      issueID,
 					"triager_role":  "qa_lead",
-					"source":        "task_completion",
-					"source_ref_id": "TC-CMD-001",
+					"source":        "manual",
+					"source_ref_id": "REV-CMD-001",
 					"verdict":       "RESUME",
 					"reasoning_md":  "project-docs/triage/TRG-CMD-001.md",
 					"created_at":    "2026-06-07T14:02:00Z",
@@ -545,8 +525,8 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 					"epic_id":       "FID-epiccmd",
 					"issue_id":      issueID,
 					"triager_role":  "qa_lead",
-					"source":        "task_completion",
-					"source_ref_id": "TC-CMD-001",
+					"source":        "manual",
+					"source_ref_id": "REV-CMD-001",
 					"verdict":       "BLOCK",
 					"reasoning_md":  "project-docs/triage/TRG-CMD-002.md",
 					"created_at":    "2026-06-07T14:03:00Z",
@@ -914,15 +894,19 @@ type issueConcernListItem struct {
 func mustGetConcernListJSONForIssue(t *testing.T, workspace, issueID string) []issueConcernListItem {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "concern", "list", "--issue", issueID)
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "concern", "list", "--subject", "issue:"+issueID)
 	if stderr != "" {
 		t.Fatalf("concern list for %s stderr = %q, want empty", issueID, stderr)
 	}
-	var concerns []issueConcernListItem
-	if err := json.Unmarshal([]byte(stdout), &concerns); err != nil {
+	var envelope struct {
+		Result struct {
+			Items []issueConcernListItem `json:"items"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
 		t.Fatalf("Unmarshal(concern list for %s) error = %v", issueID, err)
 	}
-	return concerns
+	return envelope.Result.Items
 }
 
 func mustIssueTriageStatus(t *testing.T, workspace, issueID string) *string {

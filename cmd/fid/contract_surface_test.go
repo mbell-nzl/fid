@@ -185,7 +185,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"issue transition",
 		"issue ac add",
 		"issue ac list",
-		"issue ac verify",
+		"issue ac",
 		"issue label add",
 		"issue label remove",
 		"issue",
@@ -202,8 +202,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"maintenance vacuum",
 		"activity list",
 		"concern list",
-		"concern address",
-		"concern raise",
+		"concern",
 		"concern record",
 		"concern dispose",
 		"deviation record",
@@ -226,8 +225,8 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	}
 	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 95 || len(legacy) != 2 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 95 and 2", len(retained), len(legacy))
+	if len(retained) != 94 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 94 and 2", len(retained), len(legacy))
 	}
 	want := append(append([]string{}, retained...), "export")
 	want = append(want, legacy...)
@@ -239,7 +238,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 
 	wantCapabilities := make(map[string]rootFlagCapability, len(retained))
 	for _, command := range retained {
-		if command == "issue" || command == "run" {
+		if command == "issue" || command == "run" || command == "issue ac" || command == "concern" {
 			continue
 		}
 		wantCapabilities[command] = rootFlagCapability{Project: true, JSON: true}

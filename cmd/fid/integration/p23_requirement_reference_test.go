@@ -18,6 +18,7 @@ func TestP23RequirementReferenceAndLinkRealProcess(t *testing.T) {
 	if first.ExitCode != 0 || first.Stderr != "" {
 		t.Fatalf("first reference = %#v", first)
 	}
+	p23AssertActivitySubject(t, a.workspace, first, "requirement-referenced", "requirement", "PRD-TRACE-001", 1)
 	var firstEnvelope map[string]any
 	if err := json.Unmarshal([]byte(first.Stdout), &firstEnvelope); err != nil {
 		t.Fatal(err)
@@ -29,6 +30,7 @@ func TestP23RequirementReferenceAndLinkRealProcess(t *testing.T) {
 	if second.ExitCode != 0 || second.Stderr != "" {
 		t.Fatalf("second reference = %#v", second)
 	}
+	p23AssertActivitySubject(t, a.workspace, second, "requirement-referenced", "requirement", "PRD-TRACE-001", 1)
 	var secondEnvelope map[string]any
 	if err := json.Unmarshal([]byte(second.Stdout), &secondEnvelope); err != nil {
 		t.Fatal(err)
@@ -71,6 +73,7 @@ func TestP23RequirementReferenceAndLinkRealProcess(t *testing.T) {
 		if linked.ExitCode != 0 || linked.Stderr != "" {
 			t.Fatalf("link %s = %#v", relation, linked)
 		}
+		p23AssertActivitySubject(t, a.workspace, linked, "requirement-linked", "requirement", "PRD-TRACE-001", 1)
 		var envelope map[string]any
 		if err := json.Unmarshal([]byte(linked.Stdout), &envelope); err != nil {
 			t.Fatal(err)

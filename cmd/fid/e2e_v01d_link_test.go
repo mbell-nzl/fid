@@ -87,13 +87,10 @@ type e2eLinkRow struct {
 }
 
 type e2eRequirementRow struct {
-	ID             string
-	Type           string
-	Summary        string
-	SourceDoc      string
-	SourceSection  string
-	LastSyncedHash string
-	Status         string
+	ID            string
+	RequirementID string
+	SourceJSON    string
+	Status        string
 }
 
 func assertNoNestedLockFailure(t *testing.T, stderr string) {
@@ -171,20 +168,20 @@ func mustSnapshotE2ERequirements(t *testing.T, workspace string) []e2eRequiremen
 	defer closeCommandDB(t, conn)
 
 	rows, err := conn.Query(`
-		SELECT id, type, summary, source_doc, COALESCE(source_section, ''), COALESCE(last_synced_hash, ''), COALESCE(status, '')
-		FROM requirements
+		SELECT id, requirement_id, source_json, status
+		FROM requirement_refs
 		ORDER BY id
 	`)
 	if err != nil {
-		t.Fatalf("query requirements snapshot: %v", err)
+		t.Fatalf("query requirement refs snapshot: %v", err)
 	}
 	defer closeE2ERows(t, rows)
 
 	var snapshot []e2eRequirementRow
 	for rows.Next() {
 		var row e2eRequirementRow
-		if err := rows.Scan(&row.ID, &row.Type, &row.Summary, &row.SourceDoc, &row.SourceSection, &row.LastSyncedHash, &row.Status); err != nil {
-			t.Fatalf("scan requirements snapshot: %v", err)
+		if err := rows.Scan(&row.ID, &row.RequirementID, &row.SourceJSON, &row.Status); err != nil {
+			t.Fatalf("scan requirement refs snapshot: %v", err)
 		}
 		snapshot = append(snapshot, row)
 	}

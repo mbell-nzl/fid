@@ -212,9 +212,9 @@ func TestIssueACVerifyRemainsGuardedLegacyLeaf(t *testing.T) {
 	journalPath := mustJournalPath(t, workspace)
 	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-	result := executeCommandForTest(workspace, "--json", "issue", "ac", "verify", issueID, criterionID, "--by", "developer", "--status", "pass")
-	if result.err == nil || result.stdout != "" || result.stderr == "" {
-		t.Fatalf("result = %#v, want guarded legacy rejection", result)
+	result := executeCommandForTest(workspace, "issue", "ac", "verify")
+	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "verify"`) {
+		t.Fatalf("result = %#v, want removed-leaf rejection for %s/%s", result, issueID, criterionID)
 	}
 	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
 		t.Fatalf("journal lines after guarded rejection = %d, want %d", got, before)

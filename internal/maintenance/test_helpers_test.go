@@ -114,12 +114,8 @@ func seedImpossibleStructuralRows(t *testing.T, db *sql.DB) {
 	seedIssue(t, db, "FID-workflow-unknown", "task", nil, nil, "unknown", "todo")
 
 	seedAcceptanceCriterion(t, db, "AC-invalid", "FID-parent-epic")
-	seedCompletion(t, db, "CMP-invalid", "FID-parent-epic")
 	seedEpicMetadata(t, db, "FID-parent-task", "prioritised")
-	seedDecision(t, db, "DEC-valid", "FID-parent-epic")
-	seedDecision(t, db, "DEC-invalid", "FID-parent-task")
 	seedTriageEvent(t, db, "TRI-invalid", "FID-parent-task", "FID-parent-task")
-	seedRequirement(t, db, "REQ-valid")
 
 	seedLink(t, db, "issue", "FID-missing-link-from", "relates_to", "issue", "FID-parent-task")
 	seedLink(t, db, "issue", "FID-parent-task", "relates_to", "requirement", "REQ-missing-link-to")
@@ -146,14 +142,12 @@ func seedValidStructuralRows(t *testing.T, db *sql.DB) {
 	seedIssue(t, db, "FID-subtask", "subtask", stringPtr("FID-task-sequential"), intPtr(1), "subtask-default", "todo")
 	seedAcceptanceCriterion(t, db, "AC-task", "FID-task-sequential")
 	seedAcceptanceCriterion(t, db, "AC-subtask", "FID-subtask")
-	seedCompletion(t, db, "CMP-task", "FID-task-sequential")
-	seedCompletion(t, db, "CMP-subtask", "FID-subtask")
-	seedDecision(t, db, "DEC-valid", "FID-epic-sequential")
 	seedTriageEvent(t, db, "TRI-valid", "FID-epic-sequential", "FID-task-sequential")
-	seedRequirement(t, db, "REQ-valid")
-	seedLink(t, db, "issue", "FID-task-sequential", "implements", "requirement", "REQ-valid")
-	seedLink(t, db, "requirement", "REQ-valid", "implemented_by", "issue", "FID-task-sequential")
-	seedLink(t, db, "issue", "FID-task-prioritised", "relates_to", "requirement", "REQ-valid")
+	seedRequirementRef(t, db, "REQ-valid")
+	seedDecisionRef(t, db, "DEC-valid", "FID-task-sequential")
+	seedLink(t, db, "issue", "FID-task-sequential", "blocks", "issue", "FID-task-prioritised")
+	seedLink(t, db, "issue", "FID-task-prioritised", "relates_to", "issue", "FID-task-sequential")
+	seedLink(t, db, "issue", "FID-subtask", "discovered_from", "issue", "FID-task-sequential")
 	seedActivity(t, db, "ACT-issue", "EVT-20260715-000001", "issue", "FID-task-sequential")
 	seedActivity(t, db, "ACT-requirement", "EVT-20260715-000001", "requirement", "REQ-valid")
 	seedActivity(t, db, "ACT-decision", "EVT-20260715-000001", "decision", "DEC-valid")
@@ -166,9 +160,9 @@ func dropStructuralTriggers(t *testing.T, db *sql.DB) {
 
 	triggers := []string{
 		"issues_parent_kind_guard_insert", "issues_parent_kind_guard_update",
-		"acceptance_criteria_issue_kind_guard_insert", "task_completions_issue_kind_guard_insert",
+		"acceptance_criteria_issue_kind_guard_insert",
 		"epic_metadata_issue_kind_guard_insert", "triage_events_epic_kind_guard_insert",
-		"decisions_epic_kind_guard_insert", "issues_kind_immutable",
+		"issues_kind_immutable",
 		"links_endpoint_scope_guard_insert",
 		"links_from_ref_integrity_guard_insert", "links_to_ref_integrity_guard_insert",
 		"links_relation_compatibility_guard_insert", "activity_log_ref_integrity_guard_insert",
@@ -226,20 +220,25 @@ func seedAcceptanceCriterion(t *testing.T, db *sql.DB, id, issueID string) {
 	}
 }
 
-func seedCompletion(t *testing.T, db *sql.DB, id, issueID string) {
+func seedRequirementRef(t *testing.T, db *sql.DB, requirementID string) {
 	t.Helper()
-	if _, err := db.Exec(`INSERT INTO task_completions (id, issue_id, attempt_number) VALUES (?, ?, 1)`, id, issueID); err != nil {
-		t.Fatalf("insert completion %q: %v", id, err)
+	_, err := db.Exec(`INSERT INTO requirement_refs
+		(id,requirement_id,source_json,status,created_at,created_event_id)
+		VALUES (?,?,'{}','active','2026-07-15T00:00:00Z',?)`,
+		"RREF-"+requirementID, requirementID, "EVT-"+requirementID)
+	if err != nil {
+		t.Fatalf("insert requirement ref %q: %v", requirementID, err)
 	}
 }
 
-func seedDecision(t *testing.T, db *sql.DB, id, epicID string) {
+func seedDecisionRef(t *testing.T, db *sql.DB, decisionID, issueID string) {
 	t.Helper()
-	if _, err := db.Exec(`
-		INSERT INTO decisions (id, epic_id, author_role, summary, body_md_path, status)
-		VALUES (?, ?, 'tl', 'decision', 'decision.md', 'active')
-	`, id, epicID); err != nil {
-		t.Fatalf("insert decision %q: %v", id, err)
+	_, err := db.Exec(`INSERT INTO decision_refs
+		(id,class,source_json,authority_actor_id,authority_capabilities_json,outcome,scope_issue_id,created_at,created_event_id)
+		VALUES (?,'product','{}','actor-tl','[]','approved',?,'2026-07-15T00:00:00Z',?)`,
+		decisionID, issueID, "EVT-"+decisionID)
+	if err != nil {
+		t.Fatalf("insert decision ref %q: %v", decisionID, err)
 	}
 }
 
@@ -250,16 +249,6 @@ func seedTriageEvent(t *testing.T, db *sql.DB, id, epicID, issueID string) {
 		VALUES (?, ?, ?, 'tl_lite', 'manual', 'resume')
 	`, id, epicID, issueID); err != nil {
 		t.Fatalf("insert triage event %q: %v", id, err)
-	}
-}
-
-func seedRequirement(t *testing.T, db *sql.DB, id string) {
-	t.Helper()
-	if _, err := db.Exec(`
-		INSERT INTO requirements (id, type, summary, source_doc)
-		VALUES (?, 'functional', 'requirement', '01_PRD.md')
-	`, id); err != nil {
-		t.Fatalf("insert requirement %q: %v", id, err)
 	}
 }
 
@@ -394,19 +383,6 @@ func newWarningFixture(t *testing.T, now time.Time) structuralFixture {
 	seedActivityAt(t, fixture.db, "ACT-start-update", "FID-start-non-status-update", "status_changed", now.Add(-300*time.Second))
 	seedActivityAt(t, fixture.db, "ACT-non-status-update", "FID-start-non-status-update", "issue_updated", now.Add(-time.Second))
 
-	seedCompletionWithStatus(t, fixture.db, "TC-superseded", "FID-completion", 1, "superseded")
-	seedCompletionWithStatus(t, fixture.db, "TC-current", "FID-completion", 2, "dev_complete")
-	seedCompletionWithStatus(t, fixture.db, "TC-missing-run", "FID-completion", 3, "dev_complete")
-	seedCompletionWithStatus(t, fixture.db, "TC-issue-only-run", "FID-completion", 4, "dev_complete")
-	seedCompletionWithStatus(t, fixture.db, "TC-linked-run", "FID-completion", 5, "dev_complete")
-	seedAcceptanceCriterion(t, fixture.db, "AC-warning", "FID-completion")
-	seedVerification(t, fixture.db, "AV-stale", "AC-warning", stringPtr("TC-superseded"))
-	seedVerification(t, fixture.db, "AV-current", "AC-warning", stringPtr("TC-current"))
-	seedVerification(t, fixture.db, "AV-nil", "AC-warning", nil)
-	seedAgentRun(t, fixture.db, "RUN-superseded", "FID-completion", stringPtr("TC-superseded"))
-	seedAgentRun(t, fixture.db, "RUN-current", "FID-completion", stringPtr("TC-current"))
-	seedAgentRun(t, fixture.db, "RUN-issue-only", "FID-completion", nil)
-	seedAgentRun(t, fixture.db, "RUN-linked", "FID-completion", stringPtr("TC-linked-run"))
 	return fixture
 }
 
@@ -473,36 +449,6 @@ func seedActivityAt(t *testing.T, db *sql.DB, id, issueID, event string, occurre
 		VALUES (?, 'EVT-20260715-000001', 'issue', ?, ?, ?)
 	`, id, issueID, event, occurredAt.Format(time.RFC3339)); err != nil {
 		t.Fatalf("insert activity %q: %v", id, err)
-	}
-}
-
-func seedCompletionWithStatus(t *testing.T, db *sql.DB, id, issueID string, attempt int, status string) {
-	t.Helper()
-	if _, err := db.Exec(`
-		INSERT INTO task_completions (id, issue_id, attempt_number, status)
-		VALUES (?, ?, ?, ?)
-	`, id, issueID, attempt, status); err != nil {
-		t.Fatalf("insert completion %q: %v", id, err)
-	}
-}
-
-func seedVerification(t *testing.T, db *sql.DB, id, acID string, completionID *string) {
-	t.Helper()
-	if _, err := db.Exec(`
-		INSERT INTO ac_verifications (id, ac_id, verifier_role, status, completion_id, verified_at)
-		VALUES (?, ?, 'qa_reviewer', 'verified', ?, '2026-07-15T12:00:00Z')
-	`, id, acID, completionID); err != nil {
-		t.Fatalf("insert verification %q: %v", id, err)
-	}
-}
-
-func seedAgentRun(t *testing.T, db *sql.DB, id, issueID string, completionID *string) {
-	t.Helper()
-	if _, err := db.Exec(`
-		INSERT INTO agent_runs (id, issue_id, completion_id, role, model)
-		VALUES (?, ?, ?, 'developer', 'gpt-5.4-mini')
-	`, id, issueID, completionID); err != nil {
-		t.Fatalf("insert agent run %q: %v", id, err)
 	}
 }
 

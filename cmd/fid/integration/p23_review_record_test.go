@@ -171,13 +171,18 @@ func TestP23ReviewRecordRealProcessJourney(t *testing.T) {
 
 func p23AssertActivity(t *testing.T, workspace string, response p22ConformanceResponse, name, issueID string, want int) {
 	t.Helper()
+	p23AssertActivitySubject(t, workspace, response, name, "issue", issueID, want)
+}
+
+func p23AssertActivitySubject(t *testing.T, workspace string, response p22ConformanceResponse, name, refType, refID string, want int) {
+	t.Helper()
 	conn := p22FaultDB(t, workspace)
 	defer func() { p22FaultOK(t, conn.Close()) }()
 	eventID := p21PathString(t, p23Envelope(t, response.Stdout), "event", "id")
 	var total, matching int
-	p22FaultOK(t, conn.QueryRow(`SELECT COUNT(*), COALESCE(SUM(CASE WHEN ref_type='issue' AND ref_id=? THEN 1 ELSE 0 END),0) FROM activity_log WHERE journal_event_id=? AND event=?`, issueID, eventID, name).Scan(&total, &matching))
+	p22FaultOK(t, conn.QueryRow(`SELECT COUNT(*), COALESCE(SUM(CASE WHEN ref_type=? AND ref_id=? THEN 1 ELSE 0 END),0) FROM activity_log WHERE journal_event_id=? AND event=?`, refType, refID, eventID, name).Scan(&total, &matching))
 	if total != want || matching != want {
-		t.Fatalf("%s activity for %s = %d rows, %d with issue %s; want %d", name, eventID, total, matching, issueID, want)
+		t.Fatalf("%s activity for %s = %d rows, %d with %s %s; want %d", name, eventID, total, matching, refType, refID, want)
 	}
 	rows, err := conn.Query(`SELECT event, ref_type FROM activity_log WHERE journal_event_id=?`, eventID)
 	p22FaultOK(t, err)
@@ -194,8 +199,8 @@ func p23AssertActivity(t *testing.T, workspace string, response p22ConformanceRe
 		if !accepted[event] {
 			t.Fatalf("Event %s wrote unaccepted ActivityEvent name %q", eventID, event)
 		}
-		if refType != "issue" || event == "requirement-referenced" || event == "requirement-linked" || event == "decision-referenced" {
-			t.Fatalf("Event %s wrote deferred ActivityEvent %q on %q", eventID, event, refType)
+		if refType != "issue" && refType != "requirement" && refType != "decision" {
+			t.Fatalf("Event %s wrote invalid ActivityEvent %q on %q", eventID, event, refType)
 		}
 	}
 	p22FaultOK(t, rows.Err())

@@ -383,7 +383,7 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 	if _, err := conn.Exec(`
 		INSERT INTO workflow_transition_requires (workflow_id, from_state, to_state, rule, params_json)
 		VALUES (?, ?, ?, ?, ?)
-	`, "task-default", "todo", "in_progress", workflow.RuleRequiredGatesCurrent, `{"gates":[{"id":"gate-test","version":1}]}`); err != nil {
+	`, "task-default", "todo", "in_progress", workflow.RuleRequiredGatesCurrent, nil); err != nil {
 		closeIssueTestDB(t, conn)
 		t.Fatalf("insert reserved workflow rule: %v", err)
 	}

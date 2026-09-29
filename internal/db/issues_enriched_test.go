@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -121,7 +120,7 @@ func TestIssuesEnrichedQueryPlanUsesConcernAndTriageIndexes(t *testing.T) {
 		t.Fatalf("iterate EXPLAIN QUERY PLAN rows: %v", err)
 	}
 
-	assertPlanContainsIndex(t, details, "idx_concerns_issue_status")
+	assertPlanContainsIndex(t, details, "concerns_by_subject_status")
 	assertPlanContainsIndex(t, details, "idx_triage_issue_created")
 	assertPlanLacksScan(t, details, "concerns")
 	assertPlanLacksScan(t, details, "triage_events")
@@ -144,271 +143,37 @@ func openIssuesEnrichedDB(t *testing.T) *sql.DB {
 
 func projectIssuesEnrichedFixture(t *testing.T, conn *sql.DB) {
 	t.Helper()
-
-	event := journal.Event{
-		EventID:     "EVT-20260607-000501",
-		EventSchema: journal.EventSchemaV1,
-		EventType:   "phase2.enriched.seeded",
-		OccurredAt:  time.Date(2026, time.June, 7, 13, 0, 0, 0, time.UTC),
-		Actor: journal.Actor{
-			Role: "developer",
-		},
-		Command: journal.Command{
-			Argv:       []string{"fid", "maintenance", "replay"},
-			CWD:        ".",
-			FIDVersion: "0.1.0",
-		},
-		Effects: []journal.Effect{
-			{
-				Op:    "insert",
-				Table: "issues",
-				PK: map[string]any{
-					"id": "FID-epic01",
-				},
-				Values: map[string]any{
-					"kind":        "epic",
-					"title":       "Phase 2 enriched epic",
-					"workflow_id": "epic-default",
-					"status":      "todo",
-					"created_at":  "2026-06-07T13:00:00Z",
-					"updated_at":  "2026-06-07T13:00:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "issues",
-				PK: map[string]any{
-					"id": "FID-open",
-				},
-				Values: map[string]any{
-					"kind":        "task",
-					"title":       "Open concern issue",
-					"workflow_id": "task-default",
-					"status":      "todo",
-					"created_at":  "2026-06-07T13:01:00Z",
-					"updated_at":  "2026-06-07T13:01:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "issues",
-				PK: map[string]any{
-					"id": "FID-addressed",
-				},
-				Values: map[string]any{
-					"kind":        "task",
-					"title":       "Addressed concern issue",
-					"workflow_id": "task-default",
-					"status":      "todo",
-					"created_at":  "2026-06-07T13:02:00Z",
-					"updated_at":  "2026-06-07T13:02:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "issues",
-				PK: map[string]any{
-					"id": "FID-none",
-				},
-				Values: map[string]any{
-					"kind":        "task",
-					"title":       "No concern issue",
-					"workflow_id": "task-default",
-					"status":      "todo",
-					"created_at":  "2026-06-07T13:03:00Z",
-					"updated_at":  "2026-06-07T13:03:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "issues",
-				PK: map[string]any{
-					"id": "FID-blocked",
-				},
-				Values: map[string]any{
-					"kind":        "task",
-					"title":       "Blocked triage issue",
-					"workflow_id": "task-default",
-					"status":      "todo",
-					"created_at":  "2026-06-07T13:04:00Z",
-					"updated_at":  "2026-06-07T13:04:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "task_completions",
-				PK: map[string]any{
-					"id": "TC-000501",
-				},
-				Values: map[string]any{
-					"issue_id":           "FID-open",
-					"attempt_number":     1,
-					"developer_role":     "developer",
-					"model":              "gpt-5",
-					"status":             "dev_complete",
-					"gate_results":       `["go test ./..."]`,
-					"human_intervention": false,
-					"completed_at":       "2026-06-07T13:05:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "task_completions",
-				PK: map[string]any{
-					"id": "TC-000502",
-				},
-				Values: map[string]any{
-					"issue_id":           "FID-addressed",
-					"attempt_number":     1,
-					"developer_role":     "developer",
-					"model":              "gpt-5",
-					"status":             "dev_complete",
-					"gate_results":       `["go test ./..."]`,
-					"human_intervention": false,
-					"completed_at":       "2026-06-07T13:06:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "task_completions",
-				PK: map[string]any{
-					"id": "TC-000503",
-				},
-				Values: map[string]any{
-					"issue_id":           "FID-addressed",
-					"attempt_number":     2,
-					"developer_role":     "developer",
-					"model":              "gpt-5",
-					"status":             "qa_pass",
-					"gate_results":       `["go test ./..."]`,
-					"human_intervention": false,
-					"completed_at":       "2026-06-07T13:07:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "concerns",
-				PK: map[string]any{
-					"id": "CON-000501",
-				},
-				Values: map[string]any{
-					"issue_id":                "FID-open",
-					"raised_in_completion_id": "TC-000501",
-					"raised_by_role":          "developer",
-					"summary":                 "First open concern",
-					"body_md_path":            "project-docs/concerns/CON-000501.md",
-					"status":                  "open",
-					"created_at":              "2026-06-07T13:05:30Z",
-					"updated_at":              "2026-06-07T13:05:30Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "concerns",
-				PK: map[string]any{
-					"id": "CON-000502",
-				},
-				Values: map[string]any{
-					"issue_id":                "FID-open",
-					"raised_in_completion_id": "TC-000501",
-					"raised_by_role":          "developer",
-					"summary":                 "Second open concern",
-					"body_md_path":            "project-docs/concerns/CON-000502.md",
-					"status":                  "open",
-					"created_at":              "2026-06-07T13:05:45Z",
-					"updated_at":              "2026-06-07T13:05:45Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "concerns",
-				PK: map[string]any{
-					"id": "CON-000503",
-				},
-				Values: map[string]any{
-					"issue_id":                   "FID-addressed",
-					"raised_in_completion_id":    "TC-000502",
-					"raised_by_role":             "developer",
-					"summary":                    "Addressed concern",
-					"body_md_path":               "project-docs/concerns/CON-000503.md",
-					"status":                     "addressed",
-					"addressed_in_completion_id": "TC-000503",
-					"created_at":                 "2026-06-07T13:06:30Z",
-					"updated_at":                 "2026-06-07T13:07:30Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "triage_events",
-				PK: map[string]any{
-					"id": "TRG-000501",
-				},
-				Values: map[string]any{
-					"epic_id":       "FID-epic01",
-					"issue_id":      "FID-open",
-					"triager_role":  "qa_lead",
-					"source":        "task_completion",
-					"source_ref_id": "TC-000501",
-					"verdict":       "BLOCK",
-					"reasoning_md":  "project-docs/triage/TRG-000501.md",
-					"created_at":    "2026-06-07T13:08:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "triage_events",
-				PK: map[string]any{
-					"id": "TRG-000502",
-				},
-				Values: map[string]any{
-					"epic_id":       "FID-epic01",
-					"issue_id":      "FID-open",
-					"triager_role":  "qa_lead",
-					"source":        "task_completion",
-					"source_ref_id": "TC-000501",
-					"verdict":       "RESUME",
-					"reasoning_md":  "project-docs/triage/TRG-000502.md",
-					"created_at":    "2026-06-07T13:09:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "triage_events",
-				PK: map[string]any{
-					"id": "TRG-000503",
-				},
-				Values: map[string]any{
-					"epic_id":       "FID-epic01",
-					"issue_id":      "FID-blocked",
-					"triager_role":  "qa_lead",
-					"source":        "task_completion",
-					"source_ref_id": "TC-000501",
-					"verdict":       "RESUME",
-					"reasoning_md":  "project-docs/triage/TRG-000503.md",
-					"created_at":    "2026-06-07T13:10:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "triage_events",
-				PK: map[string]any{
-					"id": "TRG-000504",
-				},
-				Values: map[string]any{
-					"epic_id":       "FID-epic01",
-					"issue_id":      "FID-blocked",
-					"triager_role":  "qa_lead",
-					"source":        "task_completion",
-					"source_ref_id": "TC-000501",
-					"verdict":       "BLOCK",
-					"reasoning_md":  "project-docs/triage/TRG-000504.md",
-					"created_at":    "2026-06-07T13:11:00Z",
-				},
-			},
-		},
+	statements := []string{
+		`INSERT INTO issues (id,kind,title,workflow_id,status,created_at,updated_at) VALUES
+		 ('FID-epic01','epic','Enriched epic','epic-default','todo','2026-06-07T13:00:00Z','2026-06-07T13:00:00Z'),
+		 ('FID-open','task','Open concern issue','task-default','todo','2026-06-07T13:01:00Z','2026-06-07T13:01:00Z'),
+		 ('FID-addressed','task','Disposed concern issue','task-default','todo','2026-06-07T13:02:00Z','2026-06-07T13:02:00Z'),
+		 ('FID-none','task','No concern issue','task-default','todo','2026-06-07T13:03:00Z','2026-06-07T13:03:00Z'),
+		 ('FID-blocked','task','Blocked triage issue','task-default','todo','2026-06-07T13:04:00Z','2026-06-07T13:04:00Z')`,
+		`INSERT INTO epic_metadata(issue_id,scheduling) VALUES('FID-epic01','sequential')`,
+		`INSERT INTO concerns
+		 (id,subject_type,subject_id,actor_id,scope_json,severity,summary,reasoning,references_json,status,created_at,created_event_id)
+		 VALUES
+		 ('CON-000501','issue','FID-open','developer','{"paths":[]}','major','First open concern','Needs review','[]','open','2026-06-07T13:05:30Z','EVT-501'),
+		 ('CON-000502','issue','FID-open','developer','{"paths":[]}','major','Second open concern','Needs review','[]','open','2026-06-07T13:05:45Z','EVT-502'),
+		 ('CON-000504','requirement','REQ-open','developer','{"paths":[]}','major','Non-Issue concern','Needs review','[]','open','2026-06-07T13:05:46Z','EVT-504')`,
+		`INSERT INTO concerns
+		 (id,subject_type,subject_id,actor_id,scope_json,severity,summary,reasoning,references_json,status,
+		  disposition_action,disposition_reason,disposed_actor_id,disposed_at,disposed_event_id,created_at,created_event_id)
+		 VALUES ('CON-000503','issue','FID-addressed','developer','{"paths":[]}','major','Disposed concern','Reviewed','[]',
+		 'disposed','rejected','Resolved','qa_lead','2026-06-07T13:07:30Z','EVT-dispose-503','2026-06-07T13:06:30Z','EVT-503')`,
+		`INSERT INTO triage_events (id,epic_id,issue_id,triager_role,source,source_ref_id,verdict,reasoning_md,created_at)
+		 VALUES
+		 ('TRG-000501','FID-epic01','FID-open','qa_lead','manual','REV-501','BLOCK','project-docs/triage/TRG-000501.md','2026-06-07T13:08:00Z'),
+		 ('TRG-000502','FID-epic01','FID-open','qa_lead','manual','REV-502','RESUME','project-docs/triage/TRG-000502.md','2026-06-07T13:09:00Z'),
+		 ('TRG-000503','FID-epic01','FID-blocked','qa_lead','manual','REV-503','RESUME','project-docs/triage/TRG-000503.md','2026-06-07T13:10:00Z'),
+		 ('TRG-000504','FID-epic01','FID-blocked','qa_lead','manual','REV-504','BLOCK','project-docs/triage/TRG-000504.md','2026-06-07T13:11:00Z')`,
 	}
-
-	projectDBEvent(t, conn, event)
+	for _, statement := range statements {
+		if _, err := conn.Exec(statement); err != nil {
+			t.Fatalf("seed issues_enriched: %v; SQL=%s", err, statement)
+		}
+	}
 }
 
 func projectDBEvent(t *testing.T, conn *sql.DB, event journal.Event) {

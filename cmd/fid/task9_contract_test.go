@@ -63,15 +63,15 @@ func TestTask9RetainedInventorySurface(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "AC verification is fail closed",
-			args:    []string{"--project", workspace, "--json", "issue", "ac", "verify", "FID-1", "AC-1", "--actor", "agent:task-9"},
-			want:    `"code":"capability-unavailable"`,
+			name:    "AC verification leaf is removed",
+			args:    []string{"issue", "ac", "verify"},
+			want:    `unknown command "verify"`,
 			wantErr: true,
 		},
 		{
-			name:    "concern raise is fail closed",
-			args:    []string{"--project", workspace, "--json", "concern", "raise", "--on", "FID-1", "--actor", "agent:task-9"},
-			want:    `"code":"capability-unavailable"`,
+			name:    "concern raise leaf is removed",
+			args:    []string{"concern", "raise"},
+			want:    `unknown command "raise"`,
 			wantErr: true,
 		},
 		{

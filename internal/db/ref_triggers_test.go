@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -246,17 +245,7 @@ func TestValidJournalProjectedLinkAndActivityRowsStillApplyWithRefTriggersActive
 func openRefTriggerDB(t *testing.T) *sql.DB {
 	t.Helper()
 
-	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testRefTriggerMigrationsDir(t)); err != nil {
-		t.Fatalf("MigrateUp() error = %v", err)
-	}
-
-	conn, err := fiddb.Open(dbPath)
-	if err != nil {
-		t.Fatalf("Open() error = %v", err)
-	}
-
-	return conn
+	return openSchema17DB(t, testRefTriggerMigrationsDir(t))
 }
 
 func testRefTriggerMigrationsDir(t *testing.T) string {

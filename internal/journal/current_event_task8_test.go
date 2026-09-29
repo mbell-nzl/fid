@@ -4,7 +4,7 @@ import "testing"
 
 func TestConcernDisposedRequiresExactFieldsAndOpenGuard(t *testing.T) {
 	t.Parallel()
-	effect := Effect{Op: "update", Table: "judgment_concerns", PK: map[string]any{"id": "CON-1"}, Preconditions: map[string]any{"status": "open"}, Values: map[string]any{
+	effect := Effect{Op: "update", Table: "concerns", PK: map[string]any{"id": "CON-1"}, Preconditions: map[string]any{"status": "open"}, Values: map[string]any{
 		"status": "disposed", "disposition_action": "rejected", "disposition_issue_id": nil,
 		"supersedes_concern_id": nil, "supersedes_finding_id": nil, "disposition_reason": "not applicable",
 		"disposed_actor_id": "actor-builder", "disposed_at": "2026-09-21T00:00:00Z", "disposed_event_id": "EVT-1",

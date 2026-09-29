@@ -83,7 +83,7 @@ func EnforceReadCollectionLimit(collection string, observed int) error {
 func issueDetailFromIssue(issue Issue) IssueDetail {
 	criteria := make([]ReadAcceptanceCriterion, 0, len(issue.AcceptanceCriteria))
 	for _, criterion := range issue.AcceptanceCriteria {
-		criteria = append(criteria, ReadAcceptanceCriterion{ID: criterion.ID, Ordinal: criterion.Ordinal, Text: criterion.Text})
+		criteria = append(criteria, ReadAcceptanceCriterion(criterion))
 	}
 	return IssueDetail{
 		IssueSummary: IssueSummary{

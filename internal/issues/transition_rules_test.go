@@ -1,11 +1,19 @@
 package issues
 
-import "testing"
+import (
+	"path/filepath"
+	"testing"
+)
 
-func TestEvaluateTransitionRuleConcernsAddressedUsesRealConcernWrites(t *testing.T) {
+func TestRemovedConcernTransitionRuleHasNoSeededRequirement(t *testing.T) {
 	t.Parallel()
-	assertJudgmentUnavailable(t, "human.outcomes.v1", func() error {
-		_, err := RaiseConcern(RaiseConcernOptions{IssueID: "FID-1", RaisedInCompletionID: "TC-1", Summary: "deferred"})
-		return err
-	})
+	workspace := newIssueWorkspace(t)
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+	for _, rule := range []string{"all_acs_verified", "has_completion_report", "concerns_addressed"} {
+		var count int
+		if err := conn.QueryRow(`SELECT COUNT(*) FROM workflow_transition_requires WHERE rule=?`, rule).Scan(&count); err != nil || count != 0 {
+			t.Fatalf("removed rule %q count = %d, error %v", rule, count, err)
+		}
+	}
 }

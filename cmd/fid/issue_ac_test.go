@@ -399,9 +399,9 @@ func assertIssueACVerifyUnavailable(t *testing.T, workspace, issueID, criterionI
 	t.Helper()
 	journalPath := mustJournalPath(t, workspace)
 	before := mustReadCommandFile(t, journalPath)
-	result := executeCommandForTest(workspace, "issue", "ac", "verify", issueID, criterionID, "--actor", actor)
-	if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, "capability is unavailable") {
-		t.Fatalf("issue ac verify actor %s = %#v, want typed capability-unavailable rejection", actor, result)
+	result := executeCommandForTest(workspace, "issue", "ac", "verify")
+	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "verify"`) {
+		t.Fatalf("removed issue ac verify for %s/%s/%s = %#v, want unknown-command rejection", issueID, criterionID, actor, result)
 	}
 	if after := mustReadCommandFile(t, journalPath); !bytes.Equal(after, before) {
 		t.Fatalf("issue ac verify actor %s changed journal bytes", actor)
@@ -412,8 +412,8 @@ func assertIssueACVerifyUnavailable(t *testing.T, workspace, issueID, criterionI
 	}
 	defer closeCommandDB(t, conn)
 	var count int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM ac_verifications WHERE ac_id = ?`, criterionID).Scan(&count); err != nil {
-		t.Fatalf("count AC verifications: %v", err)
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='ac_verifications'`).Scan(&count); err != nil {
+		t.Fatalf("count removed AC verification tables: %v", err)
 	}
 	if count != 0 {
 		t.Fatalf("AC verification rows = %d, want no writer rows", count)

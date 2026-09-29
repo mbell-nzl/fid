@@ -26,9 +26,6 @@ func TestConcernRaiseRequiresSummaryFlag(t *testing.T) {
 		t,
 		workspace,
 		"concern", "raise",
-		"--on", "FID-task01",
-		"--actor", "agent:developer",
-		"--in-completion", "TC-000001",
 	)
 	if err == nil {
 		t.Fatal("Execute() error = nil, want missing summary rejection")
@@ -36,8 +33,8 @@ func TestConcernRaiseRequiresSummaryFlag(t *testing.T) {
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	if !strings.Contains(stderr, "capability is unavailable") {
-		t.Fatalf("stderr = %q, want typed capability-unavailable error", stderr)
+	if !strings.Contains(err.Error(), "unknown command") {
+		t.Fatalf("error = %v, stderr = %q, want removed-leaf rejection", err, stderr)
 	}
 }
 
@@ -57,8 +54,7 @@ func TestConcernAddressRequiresCompletionFlag(t *testing.T) {
 	stdout, stderr, err := runFIDCommandExpectError(
 		t,
 		workspace,
-		"concern", "address", "CON-test",
-		"--actor", "agent:developer",
+		"concern", "address",
 	)
 	if err == nil {
 		t.Fatal("Execute() error = nil, want missing completion rejection")
@@ -66,8 +62,8 @@ func TestConcernAddressRequiresCompletionFlag(t *testing.T) {
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	if !strings.Contains(stderr, "capability is unavailable") {
-		t.Fatalf("stderr = %q, want typed capability-unavailable error", stderr)
+	if !strings.Contains(err.Error(), "unknown command") {
+		t.Fatalf("error = %v, stderr = %q, want removed-leaf rejection", err, stderr)
 	}
 }
 
@@ -86,17 +82,17 @@ func TestConcernListRetainsIssueScopedV1ReadUntilRemoval(t *testing.T) {
 	}{
 		{
 			name:    "filter by issue",
-			args:    []string{"concern", "list", "--issue", firstIssueID},
+			args:    []string{"--json", "concern", "list", "--subject", "issue:" + firstIssueID},
 			wantIDs: []string{firstConcernID},
 		},
 		{
 			name:    "combined filters",
-			args:    []string{"concern", "list", "--issue", secondIssueID, "--status", "open"},
+			args:    []string{"--json", "concern", "list", "--subject", "issue:" + secondIssueID, "--status", "open"},
 			wantIDs: []string{secondConcernID},
 		},
 		{
 			name:    "empty result",
-			args:    []string{"concern", "list", "--issue", secondIssueID, "--status", "addressed"},
+			args:    []string{"--json", "concern", "list", "--subject", "issue:" + secondIssueID, "--status", "disposed"},
 			wantIDs: []string{},
 		},
 	}
@@ -108,7 +104,7 @@ func TestConcernListRetainsIssueScopedV1ReadUntilRemoval(t *testing.T) {
 				t.Fatalf("stderr = %q, want empty", stderr)
 			}
 
-			rows := decodeCommandJSONStructure(t, stdout).([]any)
+			rows := decodeCommandJSONStructure(t, stdout).(map[string]any)["result"].(map[string]any)["items"].([]any)
 			if gotIDs := commandConcernListIDs(rows); !equalIssueIDs(gotIDs, tt.wantIDs) {
 				t.Fatalf("stdout ids = %#v, want %#v", gotIDs, tt.wantIDs)
 			}
@@ -134,11 +130,11 @@ func TestConcernListGenericReadExcludesV1Rows(t *testing.T) {
 		t.Fatalf("operation = %v, want concern.list", got)
 	}
 	items := result["result"].(map[string]any)["items"]
-	if !commandStructuresEqual([]any{}, items) {
-		t.Fatalf("generic items = %#v, want no V1 rows", items)
+	if got := commandConcernListIDs(items.([]any)); len(got) != 2 {
+		t.Fatalf("generic items = %#v, want both generic Concerns", items)
 	}
 	human, stderr := runFIDCommand(t, workspace, "concern", "list")
-	if stderr != "" || !strings.Contains(human, "Purpose: Inspect a raised concern") || !strings.Contains(human, "None.") {
+	if stderr != "" || !strings.Contains(human, "CON-FIRSTCONCERN") || !strings.Contains(human, "CON-SECONDCONCERN") {
 		t.Fatalf("generic Human list = %q / %q", human, stderr)
 	}
 }
@@ -147,72 +143,47 @@ func assertConcernMutationUnavailable(t *testing.T, workspace string, args []str
 	t.Helper()
 	journalPath := mustJournalPath(t, workspace)
 	before := mustReadCommandFile(t, journalPath)
-	result := executeCommandForTest(workspace, args...)
-	if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, "capability is unavailable") {
-		t.Fatalf("concern mutation %v = %#v, want typed capability-unavailable rejection", args, result)
+	result := executeCommandForTest(workspace, args[:2]...)
+	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), "unknown command") {
+		t.Fatalf("removed concern mutation %v = %#v, want unknown-command rejection", args, result)
 	}
 	if after := mustReadCommandFile(t, journalPath); !bytes.Equal(after, before) {
 		t.Fatalf("concern mutation %v changed journal bytes", args)
 	}
 }
 
-func seedConcernListIssueAndConcern(t *testing.T, workspace, summary string, address bool) (string, string) {
+func seedConcernListIssueAndConcern(t *testing.T, workspace, summary string, dispose bool) (string, string) {
 	t.Helper()
-
-	_, createStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "create",
-		"--kind", "task",
-		"--title", summary,
-		"--actor", "agent:developer",
-	)
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create",
+		"--kind", "task", "--title", summary, "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
-
-	firstCompletionID := fmt.Sprintf("TC-%s-raised", strings.ToUpper(strings.ReplaceAll(summary, " ", "")))
-	seedFrozenTaskCompletion(t, workspace, firstCompletionID, issueID)
-
 	concernID := fmt.Sprintf("CON-%s", strings.ToUpper(strings.ReplaceAll(summary, " ", "")))
-	addressCompletionID := ""
-	if address {
-		addressCompletionID = fmt.Sprintf("TC-%s-addressed", strings.ToUpper(strings.ReplaceAll(summary, " ", "")))
-		seedFrozenTaskCompletion(t, workspace, addressCompletionID, issueID)
-	}
-	status := "open"
-	var addressed any
-	if address {
-		status = "addressed"
-		addressed = addressCompletionID
-	}
-	seedConcernProjection(t, workspace, concernID, issueID, firstCompletionID, summary, status, addressed)
-	return issueID, concernID
-}
-
-func seedFrozenTaskCompletion(t *testing.T, workspace, completionID, issueID string) {
-	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("open frozen completion projection: %v", err)
-	}
-	defer closeCommandDB(t, conn)
-	if _, err := conn.Exec(`INSERT INTO task_completions (id, issue_id, attempt_number, developer_role, status, completed_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`, completionID, issueID, 1, "developer", "dev_complete"); err != nil {
-		t.Fatalf("seed frozen completion projection: %v", err)
-	}
-}
-
-func seedConcernProjection(t *testing.T, workspace, concernID, issueID, raisedCompletionID, summary, status string, addressedCompletionID any) {
-	t.Helper()
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open concern projection: %v", err)
 	}
 	defer closeCommandDB(t, conn)
-	if _, err := conn.Exec(`
-		INSERT INTO concerns (id, issue_id, raised_in_completion_id, raised_by_role, summary, status, addressed_in_completion_id, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-	`, concernID, issueID, raisedCompletionID, "developer", summary, status, addressedCompletionID); err != nil {
-		t.Fatalf("seed concern projection: %v", err)
+	status := "open"
+	if dispose {
+		status = "disposed"
 	}
+	if status == "open" {
+		_, err = conn.Exec(`INSERT INTO concerns
+			(id,subject_type,subject_id,actor_id,scope_json,severity,summary,reasoning,references_json,status,created_at,created_event_id)
+			VALUES (?,'issue',?,'developer','{"paths":[]}','major',?,'Needs review','[]','open','2026-09-20T00:00:00Z',?)`,
+			concernID, issueID, summary, "EVT-"+concernID)
+	} else {
+		_, err = conn.Exec(`INSERT INTO concerns
+			(id,subject_type,subject_id,actor_id,scope_json,severity,summary,reasoning,references_json,status,
+			 disposition_action,disposition_reason,disposed_actor_id,disposed_at,disposed_event_id,created_at,created_event_id)
+			VALUES (?,'issue',?,'developer','{"paths":[]}','major',?,'Needs review','[]','disposed',
+			 'rejected','Addressed','qa_lead','2026-09-21T00:00:00Z',?,'2026-09-20T00:00:00Z',?)`,
+			concernID, issueID, summary, "EVT-dispose-"+concernID, "EVT-"+concernID)
+	}
+	if err != nil {
+		t.Fatalf("seed generic Concern: %v", err)
+	}
+	return issueID, concernID
 }
 
 func commandConcernListIDs(rows []any) []string {

@@ -32,8 +32,7 @@ func TestCheckErrorsReportsAllSeededStructuralViolationFamilies(t *testing.T) {
 		"activity_journal_events",
 		"activity_refs",
 		"activity_refs",
-		"dependent_row_kind",
-		"dependent_row_kind",
+		"activity_refs",
 		"dependent_row_kind",
 		"dependent_row_kind",
 		"dependent_row_kind",
@@ -42,13 +41,12 @@ func TestCheckErrorsReportsAllSeededStructuralViolationFamilies(t *testing.T) {
 		"foreign_key_integrity",
 		"foreign_key_integrity",
 		"foreign_key_integrity",
-		"frozen-state-present",
 		"kind_hierarchy",
 		"kind_hierarchy",
 		"kind_hierarchy",
-		"link_refs",
 		"link_refs",
 		"link_relation_compatibility",
+		"link_scope",
 		"link_scope",
 		"sequence_scheduling",
 		"sequence_scheduling",
@@ -105,21 +103,15 @@ func assertActionableFindings(t *testing.T, findings []Finding) {
 	}
 }
 
-func TestCheckReportsFrozenStateForRetainedV01FixtureWithoutStructuralErrors(t *testing.T) {
+func TestCheckAcceptsPopulatedGenericReferencesWithoutStructuralErrors(t *testing.T) {
 	t.Parallel()
-
 	fixture := newValidStructuralFixture(t)
 	got, err := Check(CheckOptions{DB: fixture.db, JournalDir: fixture.journalDir})
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
-	want := []Finding{{
-		Check:    "frozen-state-present",
-		EntityID: "task_completions",
-		Message:  "task_completions has 2 row(s); frozen state is non-authoritative",
-	}}
-	if !reflect.DeepEqual(got.Errors, want) {
-		t.Fatalf("Check().Errors = %#v, want %#v", got.Errors, want)
+	if len(got.Errors) != 0 {
+		t.Fatalf("Check().Errors = %#v, want no errors for valid generic references", got.Errors)
 	}
 }
 
@@ -297,7 +289,6 @@ func TestCheckReportsFinalSchemaIntegrityClassesWithoutRepair(t *testing.T) {
 		{Check: "attempt-receipt-integrity", EntityID: "ATT-1", Message: "Attempt has no terminal Receipt"},
 		{Check: "event-binding", EntityID: "task21:binding", Message: "idempotency result does not bind its journal Event"},
 		{Check: "event-sequence", EntityID: "EVT-20260822-000001", Message: "Event ID occurs more than once"},
-		{Check: "frozen-state-present", EntityID: "task_completions", Message: "task_completions has 1 row(s); frozen state is non-authoritative"},
 		{Check: "removed-state-residue", EntityID: "roles", Message: "removed table is present"},
 	}
 	if !reflect.DeepEqual(result.Errors, want) {
@@ -364,7 +355,6 @@ func seedTask21CorruptProjection(t *testing.T, db *sql.DB) {
 		`INSERT INTO runs (id, issue_id, envelope_id, envelope_revision, claim_id, claim_version, actor_id, start_repository_json, status, started_at) VALUES ('RUN-1', 'FID-final-schema', 'ENV-1', 1, 'CLM-1', 1, 'actor-maintenance', '{}', 'active', '2026-08-22T00:00:00Z')`,
 		`INSERT INTO execution_attempts (id, registration_id, registration_version, obligation_id, run_id, actor_id, start_repository_json, resolved_policy_digest, producer, started_at) VALUES ('ATT-1', 'REG-1', 1, 'OBL-1', 'RUN-1', 'actor-maintenance', '{}', 'sha256:policy', 'fid', '2026-08-22T00:00:00Z')`,
 		`INSERT INTO referenced_artifacts (id, digest, media_type, size_bytes, retention_class, availability, location_policy, created_at) VALUES ('ART-1', 'sha256:missing', 'text/plain', 0, 'evidence', 'missing', 'content-addressed', '2026-08-22T00:00:00Z')`,
-		`INSERT INTO task_completions (id, issue_id, attempt_number) VALUES ('TC-final-schema', 'FID-final-schema', 1)`,
 		`CREATE TABLE roles (name TEXT PRIMARY KEY)`,
 	}
 	for _, statement := range statements {

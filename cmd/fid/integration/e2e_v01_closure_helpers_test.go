@@ -260,12 +260,11 @@ func closureCompleteIssue(t *testing.T, binary, workspace, issueID string) strin
 
 func assertClosureConcernMutationsUnavailable(t *testing.T, binary, workspace, issueID, completionID string) {
 	t.Helper()
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, closureJournalPath(t, workspace),
-		[]string{"--json", "concern", "raise", "--on", issueID, "--actor", "agent:developer", "--in-completion", completionID, "--summary", "Closure concern"},
-		`"code":"capability-unavailable"`)
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, closureJournalPath(t, workspace),
-		[]string{"--json", "concern", "address", issueID, "--in-completion", completionID, "--actor", "agent:developer"},
-		`"code":"capability-unavailable"`)
+	for _, leaf := range []string{"raise", "address"} {
+		assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, closureJournalPath(t, workspace),
+			[]string{"concern", leaf})
+	}
+	_, _ = issueID, completionID
 }
 
 func closureIDAfterWord(t *testing.T, text, word string) string {
@@ -444,10 +443,6 @@ var closureProjectedTableQueries = []struct {
 		query: "SELECT * FROM acceptance_criteria ORDER BY id",
 	},
 	{
-		name:  "ac_verifications",
-		query: "SELECT * FROM ac_verifications ORDER BY id",
-	},
-	{
 		name:  "activity_log",
 		query: "SELECT * FROM activity_log ORDER BY occurred_at, id",
 	},
@@ -464,8 +459,8 @@ var closureProjectedTableQueries = []struct {
 		query: "SELECT * FROM concerns ORDER BY id",
 	},
 	{
-		name:  "decisions",
-		query: "SELECT * FROM decisions ORDER BY id",
+		name:  "decision_refs",
+		query: "SELECT * FROM decision_refs ORDER BY id",
 	},
 	{
 		name:  "epic_metadata",
@@ -492,12 +487,16 @@ var closureProjectedTableQueries = []struct {
 		query: "SELECT * FROM projection_meta",
 	},
 	{
-		name:  "requirements",
-		query: "SELECT * FROM requirements ORDER BY id",
+		name:  "requirement_refs",
+		query: "SELECT * FROM requirement_refs ORDER BY id",
 	},
 	{
-		name:  "task_completions",
-		query: "SELECT * FROM task_completions ORDER BY id",
+		name:  "requirement_issue_links",
+		query: "SELECT * FROM requirement_issue_links ORDER BY requirement_id, issue_id, relation",
+	},
+	{
+		name:  "review_records",
+		query: "SELECT * FROM review_records ORDER BY id",
 	},
 	{
 		name:  "triage_events",

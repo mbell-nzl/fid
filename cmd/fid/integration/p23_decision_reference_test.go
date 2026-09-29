@@ -196,7 +196,11 @@ func p23RecordDecision(t *testing.T, a *p22FIDRecoveryAdapter, suffix, class, ou
 		"authority": map[string]any{"actor_id": a.actor, "required_capabilities": capabilities},
 		"outcome":   outcome, "scope": map[string]any{"issue_id": a.issueID},
 	}
-	return p23RunInput(t, a, "decision", "record-reference", a.actor, "p23-decision-"+suffix, input)
+	response := p23RunInput(t, a, "decision", "record-reference", a.actor, "p23-decision-"+suffix, input)
+	if response.ExitCode == 0 {
+		p23AssertActivitySubject(t, a.workspace, response, "decision-referenced", "decision", "DREF-"+suffix, 1)
+	}
+	return response
 }
 
 func p23DecisionSource(a *p22FIDRecoveryAdapter, matching bool) map[string]any {

@@ -12,7 +12,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func TestMigrateUpCreatesRetainedFrozenAndGenericClaimTables(t *testing.T) {
+func TestMigrateUpCreatesRetainedAndGenericTables(t *testing.T) {
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
@@ -43,28 +43,13 @@ func TestMigrateUpCreatesRetainedFrozenAndGenericClaimTables(t *testing.T) {
 			foreignKeyContains: []string{"issue_id->issues.id"},
 		},
 		{
-			table:              "ac_verifications",
-			columns:            []string{"id", "ac_id", "verifier_role", "status", "completion_id", "verified_at"},
-			foreignKeyContains: []string{"ac_id->acceptance_criteria.id", "completion_id->task_completions.id"},
-		},
-		{
-			table:              "task_completions",
-			columns:            []string{"id", "issue_id", "attempt_number", "status", "gate_results", "human_intervention", "completed_at"},
-			foreignKeyContains: []string{"issue_id->issues.id"},
-		},
-		{
-			table:              "concerns",
-			columns:            []string{"id", "issue_id", "raised_in_completion_id", "status", "triaged_in_event_id"},
-			foreignKeyContains: []string{"issue_id->issues.id", "raised_in_completion_id->task_completions.id", "triaged_in_event_id->triage_events.id"},
-		},
-		{
-			table:   "requirements",
-			columns: []string{"id", "type", "summary", "source_doc", "source_section", "last_synced_hash", "status"},
+			table:   "concerns",
+			columns: []string{"id", "subject_type", "subject_id", "actor_id", "scope_json", "severity", "summary", "reasoning", "references_json", "status", "disposition_action", "created_event_id"},
 		},
 		{
 			table:              "agent_runs",
-			columns:            []string{"id", "issue_id", "completion_id", "role", "model", "token_breakdown_json", "provider_cost_usd"},
-			foreignKeyContains: []string{"issue_id->issues.id", "completion_id->task_completions.id"},
+			columns:            []string{"id", "issue_id", "role", "model", "token_breakdown_json", "provider_cost_usd"},
+			foreignKeyContains: []string{"issue_id->issues.id"},
 		},
 		{
 			table:   "labels",
@@ -89,11 +74,6 @@ func TestMigrateUpCreatesRetainedFrozenAndGenericClaimTables(t *testing.T) {
 			columns: []string{"id", "journal_event_id", "ref_type", "ref_id", "event", "details", "actor", "occurred_at"},
 		},
 		{
-			table:              "decisions",
-			columns:            []string{"id", "epic_id", "author_role", "summary", "body_md_path", "area", "status", "created_at"},
-			foreignKeyContains: []string{"epic_id->issues.id"},
-		},
-		{
 			table:              "triage_events",
 			columns:            []string{"id", "epic_id", "issue_id", "triager_role", "source", "source_ref_id", "verdict", "reasoning_md", "created_at"},
 			foreignKeyContains: []string{"epic_id->issues.id", "issue_id->issues.id"},
@@ -114,6 +94,9 @@ func TestMigrateUpCreatesRetainedFrozenAndGenericClaimTables(t *testing.T) {
 	}
 	assertTableDoesNotExist(t, conn, "gate_runs")
 	assertTableDoesNotExist(t, conn, "escalations")
+	for _, name := range []string{"ac_verifications", "task_completions", "requirements", "decisions", "judgment_concerns"} {
+		assertTableDoesNotExist(t, conn, name)
+	}
 }
 
 func TestMigration0002DownLeavesPhaseOneSchemaAndUpRestoresPhaseTwoTables(t *testing.T) {

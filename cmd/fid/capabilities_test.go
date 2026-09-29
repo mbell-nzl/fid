@@ -207,15 +207,15 @@ func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.
 		},
 		{
 			capabilityID: "reviews.coverage.v1",
-			surface:      "fail-closed AC judgment",
-			args:         []string{"--json", "issue", "ac", "verify", "ISS-1", "AC-1"},
-			errorText:    `"code":"capability-unavailable"`,
+			surface:      "removed AC verification leaf",
+			args:         []string{"issue", "ac", "verify"},
+			errorText:    `unknown command "verify"`,
 		},
 		{
 			capabilityID: "human.outcomes.v1",
-			surface:      "fail-closed Concern judgment",
-			args:         []string{"--json", "concern", "raise"},
-			errorText:    `"code":"capability-unavailable"`,
+			surface:      "removed Concern raise leaf",
+			args:         []string{"concern", "raise"},
+			errorText:    `unknown command "raise"`,
 		},
 	} {
 		probe := probe

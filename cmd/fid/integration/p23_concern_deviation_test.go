@@ -23,11 +23,15 @@ func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
 	}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions)
 	a.task13ReplayCorpus = true
+	requirementID := "REQ-unresolved"
+	requirement := p23RunInput(t, a, "requirement", "record-reference", a.actor, "concern-requirement", map[string]any{"id": requirementID, "source": p23DecisionSource(a, true), "status": "active"})
+	p23AssertReviewSuccess(t, "record Requirement reference", requirement)
+	p23AssertActivitySubject(t, a.workspace, requirement, "requirement-referenced", "requirement", requirementID, 1)
 
 	subjects := []string{"issue", "envelope", "run", "requirement"}
 	concerns := map[string]map[string]any{}
 	for _, subjectType := range subjects {
-		subjectID := "unresolved-" + subjectType
+		subjectID := requirementID
 		switch subjectType {
 		case "issue":
 			subjectID = a.issueID
@@ -42,10 +46,10 @@ func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
 			"reasoning": "records a generic observation", "references": []any{},
 		})
 		p23AssertReviewSuccess(t, "record "+subjectType+" Concern", response)
-		if subjectType != "requirement" {
-			p23AssertActivity(t, a.workspace, response, "concern-recorded", a.issueID, 1)
+		if subjectType == "requirement" {
+			p23AssertActivitySubject(t, a.workspace, response, "concern-recorded", "requirement", requirementID, 1)
 		} else {
-			p23AssertActivity(t, a.workspace, response, "concern-recorded", a.issueID, 0)
+			p23AssertActivity(t, a.workspace, response, "concern-recorded", a.issueID, 1)
 		}
 		concern := p21Path(t, p23Envelope(t, response.Stdout), "result", "concern").(map[string]any)
 		if concern["status"] != "open" || concern["disposition"] != nil || concern["actor_id"] != a.actor {
@@ -86,7 +90,7 @@ func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
 	}
 	differentResponse := p23RunInput(t, a, "concern", "dispose", "actor-reviewer-two", "reject-different-actor", map[string]any{"concern_id": "CON-requirement", "action": "rejected", "issue_id": nil, "supersedes_concern_id": nil, "supersedes_finding_id": nil, "reason": "separate Actor cleared the observation"})
 	p23AssertReviewSuccess(t, "dispose Concern with a different Actor", differentResponse)
-	p23AssertActivity(t, a.workspace, differentResponse, "concern-disposed", a.issueID, 0)
+	p23AssertActivitySubject(t, a.workspace, differentResponse, "concern-disposed", "requirement", requirementID, 1)
 	different := p21Path(t, p23Envelope(t, differentResponse.Stdout), "result", "concern").(map[string]any)
 	differentDisposition := different["disposition"].(map[string]any)
 	if different["id"] != "CON-requirement" || different["status"] != "disposed" || differentDisposition["action"] != "rejected" || different["actor_id"] != a.actor || differentDisposition["actor_id"] != "actor-reviewer-two" {
@@ -107,6 +111,7 @@ func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
 	if after := p23DeviationList(t, a); !reflect.DeepEqual(after, beforeRebuild) {
 		t.Fatalf("Deviation chain changed across rebuild: before=%#v after=%#v", beforeRebuild, after)
 	}
+	p23AssertRebuiltProjectionIntegrity(t, a.workspace)
 
 	p22AcceptedCall(t, a, "task8-budget", "run.observe-budget", map[string]any{"value": 0})
 	gate, err := evidence.RunGate(context.Background(), p22BudgetGateOptions(t, a, "task8-proof"))
@@ -122,6 +127,24 @@ func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "task8-close")
 	completed := p23RunInput(t, a, "envelope", "complete", a.actor, "task8-envelope-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
 	p23AssertReviewSuccess(t, "complete Envelope with open blocker Concern", completed)
+}
+
+func p23AssertRebuiltProjectionIntegrity(t *testing.T, workspace string) {
+	t.Helper()
+	conn := p22FaultDB(t, workspace)
+	defer func() { p22FaultOK(t, conn.Close()) }()
+	rows, err := conn.Query(`PRAGMA foreign_key_check`)
+	p22FaultOK(t, err)
+	if rows.Next() {
+		t.Fatal("rebuilt projection has a foreign key violation")
+	}
+	p22FaultOK(t, rows.Err())
+	p22FaultOK(t, rows.Close())
+	var integrity string
+	p22FaultOK(t, conn.QueryRow(`PRAGMA integrity_check`).Scan(&integrity))
+	if integrity != "ok" {
+		t.Fatalf("rebuilt projection integrity = %q, want ok", integrity)
+	}
 }
 
 func negativeConcernDisposals(t *testing.T, a *p22FIDRecoveryAdapter) {
@@ -159,7 +182,7 @@ func recordDeviationChain(t *testing.T, a *p22FIDRecoveryAdapter) []map[string]a
 	for index, input := range inputs {
 		response := p23RunInput(t, a, "deviation", "record", a.actor, "deviation-"+input["id"].(string), input)
 		p23AssertReviewSuccess(t, "record Deviation", response)
-		p23AssertActivity(t, a.workspace, response, "deviation-recorded", a.issueID, 0)
+		p23AssertActivitySubject(t, a.workspace, response, "deviation-recorded", "requirement", "REQ-unresolved", 1)
 		value := p21Path(t, p23Envelope(t, response.Stdout), "result", "deviation").(map[string]any)
 		if index == 1 && value["supersedes_deviation_id"] != "DEV-prior" {
 			t.Fatalf("superseding Deviation = %#v", value)

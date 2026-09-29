@@ -1,11 +1,15 @@
 package issues
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/mbell-nzl/fid/internal/review"
+)
 
 func TestListConcernsFiltersByIssueAndStatus(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
-	items, err := ListConcerns(ConcernListOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t)})
+	items, err := review.ListConcerns(review.ConcernListOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t)})
 	if err != nil {
 		t.Fatalf("ListConcerns() error = %v", err)
 	}
@@ -17,7 +21,7 @@ func TestListConcernsFiltersByIssueAndStatus(t *testing.T) {
 func TestListConcernsOrdersSameSecondRowsByAppendOrder(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
-	items, err := ListConcerns(ConcernListOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Status: "open"})
+	items, err := review.ListConcerns(review.ConcernListOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Status: "open"})
 	if err != nil {
 		t.Fatalf("ListConcerns(open) error = %v", err)
 	}

@@ -95,14 +95,6 @@ func uniqueNonEmpty(values []string) []string {
 	return result
 }
 
-func stringSet(values []string) map[string]bool {
-	set := make(map[string]bool, len(values))
-	for _, value := range uniqueNonEmpty(values) {
-		set[value] = true
-	}
-	return set
-}
-
 func singleEntityID(value string) []string {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {
