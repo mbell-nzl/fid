@@ -94,12 +94,12 @@ The V1 Concern list tests in `cmd/fid/concern_test.go` began at `f35b3febd7a9976
 - `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`); Review IDs are generated, so the initial fixed `REV-leaf` read had no row.
 - `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	9.881s` (terminated `exit_code: 0`)
 - `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	10.664s` (terminated `exit_code: 0`)
-- `go test -run '^TestPhase23HumanLeafTextMatchesRecordedFacts$' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.185s` (terminated `exit_code: 0`).
+- `go test -run '^TestPhase23HumanLeafTextMatchesRecordedFacts$' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.185s` (terminated `exit_code: 0`)
 - `FID_P23_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/phase-23-human-repair go test -tags integration -run '^TestP23HumanFixtures$' -count=1 -v ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	23.685s` (terminated `exit_code: 0`)
-- `gofmt -w cmd/fid/p23_human_test.go cmd/fid/integration/p23_human_fixtures_test.go cmd/fid/integration/p23_human_leaf_pairs_test.go` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `goimports -w cmd/fid/p23_human_test.go cmd/fid/integration/p23_human_fixtures_test.go cmd/fid/integration/p23_human_leaf_pairs_test.go` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	190.909s` (terminated `exit_code: 0`).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	14.839s` (terminated `exit_code: 0`).
+- `gofmt -w cmd/fid/p23_human_test.go cmd/fid/integration/p23_human_fixtures_test.go cmd/fid/integration/p23_human_leaf_pairs_test.go` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `goimports -w cmd/fid/p23_human_test.go cmd/fid/integration/p23_human_fixtures_test.go cmd/fid/integration/p23_human_leaf_pairs_test.go` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	190.909s` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	14.839s` (terminated `exit_code: 0`)
 - Real `fid` entrypoint: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/fid --project /home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract review get REV-93ace4` - PASS - `    Addressed is a Builder assertion, not a resolution.` (terminated `exit_code: 0`)
 
 The retained manifest is `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/manifest.json`. Its 18 pairs passed both initial and post-exit comparison. The direct CLI output named Review `REV-93ace4` and Finding `FND-leaf`, matching the guide.
