@@ -212,14 +212,6 @@ The nineteen `failures.json` rows each name one pre-existing producing `Test...`
 
 ## Exact quality-gate results
 
-Report attempt 7 exact commands ran from `/home/mark/projects/fid` in the task-spec order after DEC-266 convergence. The historical attempts below remain unchanged evidence for the earlier failure.
-
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`)
-- `go tool cover -func=coverage.out` - PASS - `total:									(statements)			60.5%` (terminated `exit_code: 0`)
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	249.568s` (terminated `exit_code: 0`)
-
 Attempt 5 exact commands ran in task-spec order from `/home/mark/projects/fid` on the checkpoint test tree. The final tagged gate terminated and failed on the retained `claim.acquire` authority-details contract; the first four commands passed. The ordinary gate recorded `cmd/fid` at 196.537s; its workflow result was cached. The tagged gate recorded `cmd/fid/integration` at 252.227s. An uncached `internal/workflow` measurement of 58.366s appears under Tests run. The task remains `RECOVERY_REQUIRED`.
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
@@ -279,6 +271,14 @@ Attempt 6 final exact sequence ran in task-spec order from `/home/mark/projects/
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:											(statements)				60.5%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`); preceding package line `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration	209.231s`. The sole failing subtest is `TestP23SharedAmendedLeafConformance/claim.acquire`, whose expected four authority-detail fields differ from fid's two fields.
+
+Report attempt 7 exact commands ran from `/home/mark/projects/fid` in the task-spec order after DEC-266 convergence. The historical attempts above remain unchanged evidence for the earlier failure.
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:									(statements)			60.5%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	249.568s` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
