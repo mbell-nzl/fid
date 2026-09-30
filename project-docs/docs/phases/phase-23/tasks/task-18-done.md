@@ -308,8 +308,8 @@ Attempt 6 final exact sequence ran in task-spec order from `/home/mark/projects/
 
 ## Commit hash
 
-- Pending commit
+- `5fe02e15c508a9b18721dbcff0e463feb53147c7`
 
 ## Commit subject
 
-- Pending commit
+- `fix(cli): converge authority failure details`
