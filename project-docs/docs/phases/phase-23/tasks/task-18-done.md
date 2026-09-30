@@ -5,7 +5,7 @@
 - Task outcome: BLOCKED
 - Category: specification-contradiction
 - Condition: `public-interface.md` section 5 enumerates 19 distinct added Failure codes, but its own prose and DEC-230 say the added set is exactly 18. The existing `p23FailureContracts` table also has 19. Certifying the exact set would choose between conflicting protected authorities.
-- Recovery attempts: 0 protected-authority attempts. The in-scope audit and all five exact gates completed; no contract, code, or gate definition was changed to resolve the count.
+- Recovery attempts: 0
 - Next action: The contract owner must identify the exact accepted Failure-code members/count and record the protected disposition. The Phase Runner can then resume this same task to finish full semantic fake/fid parity and close its report.
 - Human attention required: yes
 
@@ -97,6 +97,7 @@ Working directory `/home/mark/projects/fid`; commands executed in the task-spec 
 
 - The full semantic fake/fid equality required by VAL-068 is unfinished. The current fake models exact top-level fields, replay, and selected rejection codes; earlier producer tests separately exercise domain facts. A same-task continuation must extend the shared cases to compare accepted semantic values and the required rejection classes across every applicable operation without deriving fake expectations from fid output.
 - The section 5/DEC-230 18-versus-19 conflict prevents a final exact Failure-code corpus claim. The first failed audit attempts and their later green results remain recorded above; no failure code or protected threshold was changed.
+- The first `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-18-done.md project-docs/docs/phases/phase-23/tasks/task-18.md` attempt reported `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`): the Recovery attempts field included prose after `0`. This report keeps the attempt count as the required integer and retains the explanation in the outcome and concerns sections.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
