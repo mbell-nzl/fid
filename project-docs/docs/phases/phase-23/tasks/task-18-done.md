@@ -331,8 +331,8 @@ Review-13 MF-2 final exact commands ran from `/home/mark/projects/fid` in task-s
 
 ## Commit hash
 
-- Pending commit
+- `3227197d5f190528825cca3a8c01a480c06712e2`
 
 ## Commit subject
 
-- Pending commit
+- `test(conformance): preserve caller-provided IDs`
