@@ -102,14 +102,14 @@ type capabilityMatrixRow struct {
 }
 
 var capabilityMatrix = []capabilityMatrixRow{
-	{"attention.v1", true, `{"human_outcome_resolution":false,"state":true}`, "fid-journal"},
+	{"attention.v1", true, `{"human_outcome_resolution":true,"state":true}`, "fid-journal"},
 	{"evidence.freshness.v1", true, `{"branch_labels":false,"target":"repository-tree"}`, "fid-git-observation"},
 	{"evidence.gate-definitions.v1", true, `{"executor_policy":"standard-library","network":"allowed","sandbox":"none","write":"allowed"}`, "active-kit-activation"},
 	{"evidence.receipts.v1", true, `{"attestation":false,"producer":"fid","terminal_receipts":true}`, "fid-executed"},
 	{"export.portable.v1", true, `{"create":true,"import":true,"import_mode":"empty-target","validate":true}`, "fid-journal"},
-	{"human.outcomes.v1", false, `{"record":false}`, "phase-23-unavailable"},
+	{"human.outcomes.v1", true, `{"record":true,"provenance":"active-kit-activation"}`, "active-kit-activation"},
 	{"kit.activation.v1", true, `{"abort_before_commit":true,"automatic_respawn":false,"finalize":true,"recover":true}`, "active-kit-activation"},
-	{"reviews.coverage.v1", false, `{"record":false}`, "phase-23-unavailable"},
+	{"reviews.coverage.v1", true, `{"record":true,"independence":"distinct-actor","findings":true}`, "fid-journal"},
 	{"telemetry.trajectory.v1", false, `{"ingest":false}`, "phase-25-unavailable"},
 	{"work.claims.v1", false, `{"max_active_per_issue":1,"parallelism":false,"recover":true}`, "phase-24-unavailable"},
 	{"workflow.state.v1", true, `{"max_envelope_revisions":1,"max_primary_issues":1,"related_issues":false}`, "fid-journal"},

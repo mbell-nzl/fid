@@ -151,6 +151,15 @@ recovery does not by itself qualify `work.claims.v1`: parallel scope semantics
 remain Phase 24, so that capability remains unavailable. Phase 22 final
 acceptance is recorded in `../docs/phases/phase-22/qa/final-acceptance.md`.
 
+Phase 23 qualifies `reviews.coverage.v1` and `human.outcomes.v1` after the
+Review, Finding, Human Outcome, Attention resolution, V1 removal, and portable
+recovery proofs in `../docs/phases/phase-23/tasks/task-4-done.md` through
+`task-16-done.md`. The final `attention.v1` limit reports
+`human_outcome_resolution:true`. Its three changed rows use the exact limits
+and trust sources in `../docs/phases/phase-23/contracts.md` section 15.
+`work.claims.v1` remains unavailable under Phase 24 ownership and
+`telemetry.trajectory.v1` under Phase 25 ownership.
+
 - JSON objects include a schema or contract version at the operation envelope
   or record level.
 - IDs are opaque stable strings. Consumers do not parse prefixes for behavior.

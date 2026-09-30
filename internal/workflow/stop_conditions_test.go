@@ -101,7 +101,7 @@ func TestStopResolutionChecksCurrentActivationAgreementAndCapability(t *testing.
 		{"missing component", "activation-recovered", "", `DELETE FROM activation_resources WHERE component = 'provider'`, false},
 		{"nonterminal activation", "activation-recovered", "", `UPDATE kit_activations SET status = 'committed'`, false},
 		{"available capability", "capability-available", "workflow.state.v1", "", true},
-		{"unavailable capability", "capability-available", "human.outcomes.v1", "", false},
+		{"unavailable capability", "capability-available", "telemetry.trajectory.v1", "", false},
 		{"unknown capability", "capability-available", "invented.v1", "", false},
 		{"superseded selection", "capability-available", "workflow.state.v1", `UPDATE kit_activations SET status = 'superseded'`, false},
 		{"different backend", "capability-available", "workflow.state.v1", `UPDATE kit_activations SET backend_identity = 'another-backend'`, false},

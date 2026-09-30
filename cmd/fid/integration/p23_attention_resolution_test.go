@@ -114,11 +114,10 @@ func TestP23AttentionResolutionThroughReviewRecordedAndFindingResolvedRealProces
 		t.Fatalf("finding-resolved Stop resolution fact = %q, want the qualifying Event %q", factEventID, secondEventID)
 	}
 
-	// VAL-047, first half: the capability limit stays false until task 17
-	// delivers the working path's replacement proof.
+	// VAL-047: the qualified capability reports the exercised resolution path.
 	capabilities := a.p22Run(t, "capabilities")
-	if !strings.Contains(capabilities.Stdout, `"capability_id":"attention.v1"`) || !strings.Contains(capabilities.Stdout, `"human_outcome_resolution":false`) {
-		t.Fatalf("capabilities = %q, want attention.v1 human_outcome_resolution:false", capabilities.Stdout)
+	if !strings.Contains(capabilities.Stdout, `"capability_id":"attention.v1"`) || !strings.Contains(capabilities.Stdout, `"human_outcome_resolution":true`) {
+		t.Fatalf("capabilities = %q, want attention.v1 human_outcome_resolution:true", capabilities.Stdout)
 	}
 }
 

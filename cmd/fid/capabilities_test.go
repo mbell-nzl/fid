@@ -18,7 +18,11 @@ const legacyCapabilitiesGolden = `{"contract_version":"fid-cli.v1","event":null,
 
 var capabilitiesGolden = strings.NewReplacer(
 	`{"available":false,"capability_id":"attention.v1","limits":{"state":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"}`,
-	`{"available":true,"capability_id":"attention.v1","limits":{"human_outcome_resolution":false,"state":true},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"}`,
+	`{"available":true,"capability_id":"attention.v1","limits":{"human_outcome_resolution":true,"state":true},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"}`,
+	`{"available":false,"capability_id":"human.outcomes.v1","limits":{"record":false},"schema_max":1,"schema_min":1,"trust_source":"phase-23-unavailable"}`,
+	`{"available":true,"capability_id":"human.outcomes.v1","limits":{"provenance":"active-kit-activation","record":true},"schema_max":1,"schema_min":1,"trust_source":"active-kit-activation"}`,
+	`{"available":false,"capability_id":"reviews.coverage.v1","limits":{"record":false},"schema_max":1,"schema_min":1,"trust_source":"phase-23-unavailable"}`,
+	`{"available":true,"capability_id":"reviews.coverage.v1","limits":{"findings":true,"independence":"distinct-actor","record":true},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"}`,
 	`{"available":false,"capability_id":"export.portable.v1","limits":{"create":true,"import":false,"validate":true},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"}`,
 	`{"available":true,"capability_id":"export.portable.v1","limits":{"create":true,"import":true,"import_mode":"empty-target","validate":true},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"}`,
 	`{"available":false,"capability_id":"kit.activation.v1","limits":{"abort_before_commit":true,"automatic_respawn":false,"finalize":true,"recover":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"}`,
@@ -104,10 +108,12 @@ func TestCapabilitiesAdvertiseOnlyFinalQualifiedRows(t *testing.T) {
 		limits    map[string]any
 		trust     string
 	}{
-		"attention.v1":       {true, map[string]any{"state": true, "human_outcome_resolution": false}, "fid-journal"},
-		"kit.activation.v1":  {true, map[string]any{"abort_before_commit": true, "automatic_respawn": false, "finalize": true, "recover": true}, "active-kit-activation"},
-		"export.portable.v1": {true, map[string]any{"create": true, "import": true, "validate": true, "import_mode": "empty-target"}, "fid-journal"},
-		"work.claims.v1":     {false, map[string]any{"max_active_per_issue": float64(1), "parallelism": false, "recover": true}, "phase-24-unavailable"},
+		"attention.v1":        {true, map[string]any{"state": true, "human_outcome_resolution": true}, "fid-journal"},
+		"human.outcomes.v1":   {true, map[string]any{"record": true, "provenance": "active-kit-activation"}, "active-kit-activation"},
+		"reviews.coverage.v1": {true, map[string]any{"record": true, "independence": "distinct-actor", "findings": true}, "fid-journal"},
+		"kit.activation.v1":   {true, map[string]any{"abort_before_commit": true, "automatic_respawn": false, "finalize": true, "recover": true}, "active-kit-activation"},
+		"export.portable.v1":  {true, map[string]any{"create": true, "import": true, "validate": true, "import_mode": "empty-target"}, "fid-journal"},
+		"work.claims.v1":      {false, map[string]any{"max_active_per_issue": float64(1), "parallelism": false, "recover": true}, "phase-24-unavailable"},
 	} {
 		if actual, ok := got[id]; !ok || actual.available != want.available || actual.trust != want.trust || !reflect.DeepEqual(actual.limits, want.limits) {
 			t.Fatalf("%s = %#v, want %#v", id, actual, want)
@@ -140,8 +146,8 @@ func TestCapabilitiesRejectsOverridesAndKeepsDeferredRowsUnavailable(t *testing.
 		{"kit.activation.v1", "Activation lifecycle"},
 		{"work.claims.v1", "Claim lifecycle and list"},
 		{"export.portable.v1", "export create and validate"},
-		{"reviews.coverage.v1", "fail-closed AC and Concern judgment"},
-		{"human.outcomes.v1", "fail-closed AC and Concern judgment"},
+		{"reviews.coverage.v1", "Review coverage and Findings"},
+		{"human.outcomes.v1", "Human Outcome judgment"},
 		{"telemetry.trajectory.v1", "historical stats"},
 		{"attention.v1", "Attention state surfaces"},
 	} {
@@ -153,14 +159,14 @@ func TestCapabilitiesRejectsOverridesAndKeepsDeferredRowsUnavailable(t *testing.
 			if result.err != nil || result.stderr != "" {
 				t.Fatalf("capabilities after %s override = %#v", fixture.capabilityID, result)
 			}
-			if available := capabilityAvailability(t, result.stdout, fixture.capabilityID); available != (fixture.capabilityID == "kit.activation.v1" || fixture.capabilityID == "export.portable.v1" || fixture.capabilityID == "attention.v1") {
+			if available := capabilityAvailability(t, result.stdout, fixture.capabilityID); available != (fixture.capabilityID != "work.claims.v1" && fixture.capabilityID != "telemetry.trajectory.v1") {
 				t.Fatalf("%s availability = %t after optimistic projection write, want binary-qualified state for %s", fixture.capabilityID, available, fixture.surfaces)
 			}
 		})
 	}
 }
 
-func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.T) {
+func TestRemovedLeavesRejectWithoutSideEffectsAndDeferredRowsStayUnavailable(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	initial := executeCommandForTest(workspace, "--json", "capabilities")
@@ -177,9 +183,9 @@ func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.
 		{"evidence.gate-definitions.v1", true},
 		{"evidence.receipts.v1", true},
 		{"export.portable.v1", true},
-		{"human.outcomes.v1", false},
+		{"human.outcomes.v1", true},
 		{"kit.activation.v1", true},
-		{"reviews.coverage.v1", false},
+		{"reviews.coverage.v1", true},
 		{"telemetry.trajectory.v1", false},
 		{"work.claims.v1", false},
 		{"workflow.state.v1", true},
@@ -242,7 +248,7 @@ func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.
 			if result.err != nil || result.stderr != "" {
 				t.Fatalf("capability discovery after %s probe = %#v", probe.surface, result)
 			}
-			if available := capabilityAvailability(t, result.stdout, probe.capabilityID); available != (probe.capabilityID == "export.portable.v1") {
+			if available := capabilityAvailability(t, result.stdout, probe.capabilityID); !available {
 				t.Fatalf("%s availability = %t after %s probe, want binary-qualified state", probe.capabilityID, available, probe.surface)
 			}
 		})
