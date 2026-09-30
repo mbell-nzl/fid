@@ -143,8 +143,8 @@ Attempt 2 exact commands, run in task-spec order from `/home/mark/projects/fid` 
 
 ## Commit hash
 
-- Pending commit
+- `38efa3b8252c661f6260ccd7436e1bc0328db5d0`
 
 ## Commit subject
 
-- Pending commit
+- `test(conformance): pin Phase 23 partition and semantic checks`
