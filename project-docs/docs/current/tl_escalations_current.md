@@ -2,18 +2,25 @@
 
 ## Open escalations
 
-### ESC-23-010 - Task 18 Failure-code count contradicts the named public set
-
-- **Status:** OPEN 2026-09-30; governing triage TRG-23-011.
-- **Category:** protected public-interface and specification contradiction.
-- **Source:** `project-docs/docs/phases/phase-23/tasks/task-18-done.md`; task-18 closure and VAL-068 remain blocked.
-- **Conflict:** `public-interface.md` section 5 names nineteen distinct added Failure codes while its prose and accepted DEC-230 require exactly eighteen. The existing nineteen-row task-18 corpus reflects the named table. No local choice of a member or new count is authorized.
-- **Decision needed:** The contract owner must state the exact accepted member set and count, then reconcile the protected public-interface text and DEC-230 under the proper authority. Keep the original task-18 audit and all exact gate results as evidence.
-- **Independent ordinary work:** The shared fake/fid audit compares fields and replay but not complete semantic result values. Once the protected contract is resolved, task 18 continues within its existing scope to prove VAL-068 using independent fake expectations, reruns the unchanged required verification, updates its report, and obtains affected independent review. No contract choice or VAL-068 weakening is authorized by this escalation.
-- **Next:** invoke full Tech Lead with prompt: "Resolve ESC-23-010 in tl_escalations_current.md."
-- **References:** [TRG-23-011](../phases/phase-23/triage-log.md), [DEC-230](../phases/phase-23/decisions.md), [public interface section 5](../phases/phase-23/public-interface.md), [task-18 report](../phases/phase-23/tasks/task-18-done.md).
+None. The Runner resumes task 18 from
+[the handoff](../phases/phase-23/qa/resume-after-esc-23-010.md).
 
 ## Recently resolved
+
+### ESC-23-010 - Task 18 Failure-code count contradicts the named public set
+
+- **Status:** RESOLVED 2026-09-30 under DEC-265 (Tech Lead, Human-delegated).
+  - **Cause:** there was no member conflict. Section 5, section 5.1,
+    `p23FailureContracts`, and `failures.json` all name the same 19 codes.
+    DEC-230's "18" counts the codes new to `codes.go`, and
+    `requirement-not-found` is a retained Phase 20 code whose Phase 23
+    producers section 5 re-pins. The contradiction came from section 5's
+    lead sentence, which called all 19 "added".
+  - **Fix:** a wording-only clarification that 19 are declared, 18 added
+    and 1 retained. Codes, VAL text, ownership, and commands are unchanged.
+  - Task 18 continues same-task at attempt 2 (`in-scope-implementation`,
+    no-progress 0/2) to finish VAL-068 semantic parity and VAL-067
+    provenance. See the [full record](../phases/phase-23/tl-escalations.md).
 
 ### ESC-23-009 - Migration 0018 down conflicts with the accepted 0016 rollback
 
@@ -54,28 +61,12 @@
   rows; task 15 writes the `requirement`/`decision` rows with 0018 and closes
   VAL-055. See the [full record](../phases/phase-23/tl-escalations.md).
 
-### ESC-23-006 - Task-12 requirement authority and report-lint contract conflict
-
-- **Status:** RESOLVED 2026-09-27 under DEC-260 (Tech Lead, Human-delegated).
-  Requirement writes need a trusted Actor but no Actor-profile capability or
-  grant. `public-interface.md` section 4 is corrected, and the closed set
-  stays at thirty. Report-lint grammar is unchanged. Task 12's expected-nonzero
-  declaration is rewritten on one line. Task 12 continues same-task at
-  attempt 2 (`in-scope-implementation`). See the
-  [full record](../phases/phase-23/tl-escalations.md).
-
-### ESC-23-005 - Task-11 ordinary gate budget
-
-- **Status:** RESOLVED 2026-09-27 under DEC-258 (Human-delegated repair).
-  The cause was serial test structure plus measurement spread, not task 11.
-  Test-only `t.Parallel()` across the suites; gate definition unchanged. Final
-  exact gates at `3dff457`: `cmd/fid` 531.533 s (later 299.6 s under DEC-259),
-  `internal/workflow` 165.920 s, tagged 326.421 s. See
-  [repair evidence](../phases/phase-23/qa/esc-23-005-repair.md) and the
-  [full record](../phases/phase-23/tl-escalations.md).
-
 Older, all resolved and archived in
 [Phase 23 escalations](../phases/phase-23/tl-escalations.md):
+- ESC-23-006 under DEC-260 (requirement writes need a trusted Actor only;
+  closed set stays thirty).
+- ESC-23-005 under DEC-258 (parallel tests; gate definition unchanged; see
+  [repair evidence](../phases/phase-23/qa/esc-23-005-repair.md)).
 - ESC-23-004 (checkpoint BC-1..3) under DEC-249..256.
 - ESC-23-003 under DEC-239 (VAL-015 evidence route; see the
   [resume handoff](../phases/phase-23/qa/resume-after-esc-23-003.md)).

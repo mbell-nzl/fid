@@ -4,8 +4,9 @@
 > Amended 2026-09-15 by DEC-226 (failure-code producers, precedence, and
 > non-committing denial semantics) and DEC-224 (`human-outcome-required`
 > producers), both **approved by the Human 2026-09-19**, and by DEC-263
-> (Stop-blocked denial details, Tech Lead under Human delegation 2026-09-29);
-> amended passages name their DEC inline. `GLOSSARY.md` defines **Failure
+> (Stop-blocked denial details, Tech Lead under Human delegation 2026-09-29),
+> and clarified by DEC-265 (section 5 declared-versus-added count, wording
+> only, 2026-09-30); amended passages name their DEC inline. `GLOSSARY.md` defines **Failure
 > code** and **Evaluation reason**: section 5 lists the failure set, and the
 > `ReasonCode` paragraph the evaluation set.
 > Phase 21 and Phase 22 `public-interface.md` remain the baseline for every
@@ -255,7 +256,14 @@ and actual values cannot pass.
 
 ## 5. Failure Codes
 
-Added codes are closed, all `retryable:false`, subject as named.
+Section 5 declares **19** codes, all closed, all `retryable:false`, subject as
+named (DEC-265). **18** of them are added by Phase 23. The nineteenth,
+`requirement-not-found`, is **retained**. It has been in `internal/cli/codes.go`
+since the Phase 20 response contract (`ab4ac8f`, phase-20/task-1), and its
+category, exit, subject, and `{id:ID}` details are unchanged. It is declared here because Phase 23 removes
+its V1 producers and pins new ones, `requirement.get` and `requirement.link`
+(section 5.1). A conformance corpus for this section covers all 19; a claim
+about the *added* set counts 18.
 
 | Code | Category / exit | Exact details |
 |---|---|---|
@@ -279,9 +287,10 @@ Added codes are closed, all `retryable:false`, subject as named.
 Reference ID as input: there is no `decision get`, and no mutation names one.
 DEC-226's own criterion is that every added code has a producing operation, so a
 code nothing can return is dead vocabulary rather than an unimplemented one. The
-added set is therefore 18 codes, not 19. Reading a Decision Reference stays
-`decision.list --class`. If a `decision.get` leaf is ever added, the code
-returns with it.
+added set is therefore 18 codes, not 19; with the retained
+`requirement-not-found`, the section declares 19 (DEC-265). Reading a Decision
+Reference stays `decision.list --class`. If a `decision.get` leaf is ever
+added, the code returns with it.
 
 `finding-unresolved` is a `ReasonCode` only and is **not** a failure code
 (DEC-226). No leaf rejects on it: linking a `pass` Review that leaves an earlier

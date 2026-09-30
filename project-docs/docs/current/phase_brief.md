@@ -13,27 +13,27 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 
 ## Status
 
-**Tasks 1-14 complete; review-10 PASS (window 10-12). Task 15 is in
-same-task recovery under DEC-264.** Branch `phase-23`.
+**Tasks 1-17 complete; review-12 PASS (window 13-15). Task 18 is in
+same-task recovery under DEC-265.** Branch `phase-23`.
 
-ESC-23-009 (TRG-23-010) is resolved by DEC-264. `schema.md` section 5 restored
-the objects dropped by 0018 in their first-creation form, not their schema-17
-form. Its 0002 `concerns` kept `escalated_to_esc_id`, which 0016 down adds
-again. It cited 0003's view instead of 0011's and omitted the two 0004 kind
-triggers. Section 5 now lists the exact nine steps, which the Tech Lead
-verified through the full down chain. No earlier migration and no VAL text
-changes.
+ESC-23-010 (TRG-23-011) is resolved by DEC-265. `public-interface.md`
+section 5 called all 19 of its codes "added", while DEC-230 said 18. There
+is no member conflict:
+- 18 codes are added.
+- `requirement-not-found` is a retained Phase 20 code whose producers
+  Phase 23 re-pins.
 
-Earlier: DEC-263 (ESC-23-008) added the Stop-blocked denial fields, and task
-13 closed under it. Task 14 closed after the TRG-23-009 bounded repair.
-DEC-262 left task 15 to emit the `requirement`/`decision` activity rows with
-0018 and to close VAL-055. ESC-23-004..006 are resolved (DEC-249..260), and
-review-9's repairs closed under DEC-261. I-7 is deferred to wrap-up. The
-contract has **84 rows**; see [decisions](../phases/phase-23/decisions.md).
+The fix is wording only; no code, VAL text, or command changes. Task 18
+still owes full semantic fake/fid parity (VAL-068) and VAL-067 at-or-after
+provenance.
 
-Next action: the Runner resumes using `qa/resume-after-esc-23-009.md`
-(task 15 attempt 2). QA window 13-15 follows, then tasks 16-18 on the
-DEC-259 commands.
+Earlier: DEC-264 (ESC-23-009) corrected 0018 down, and task 15 closed under
+it. DEC-263 added the Stop-blocked denial fields. ESC-23-004..008 are
+resolved (DEC-249..264). I-7 is deferred to wrap-up. The contract has
+**84 rows**; see [decisions](../phases/phase-23/decisions.md).
+
+Next action: the Runner resumes using `qa/resume-after-esc-23-010.md`
+(task 18 attempt 2). QA window 16-18 (review-13) follows, then phase-end QA.
 
 ## Operating Mode
 
@@ -51,8 +51,8 @@ amendments inline with their DEC and approval state.
 
 ## Task Index
 
-Full specs and reports: `../phases/phase-23/tasks/`. Tasks 1-14 complete; 15 in
-recovery (DEC-264); 16-18 pending, sequential.
+Full specs and reports: `../phases/phase-23/tasks/`. Tasks 1-17 complete; 18 in
+recovery (DEC-265).
 
 1 schema baseline; 2 typed multi-Obligation Envelope; 3 review Claim mode and
 Run; 4 Review Records and independence; 5 Finding dispositions; 6 review

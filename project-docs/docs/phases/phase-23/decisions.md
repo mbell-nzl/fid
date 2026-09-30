@@ -371,6 +371,9 @@ separate DECs.
 - **Status:** ACCEPTED by Tech Lead 2026-09-19 under planning authority,
   applying DEC-226's own acceptance criterion. Reversible in one line if the
   Human prefers the alternative below; flagged to the Human with this batch.
+  **Clarified 2026-09-30 by DEC-265:** "the added set becomes 18" counts codes
+  new to `internal/cli/codes.go`. Section 5 declares 19, the 18 added plus the
+  retained `requirement-not-found`. The substance of this decision is unchanged.
 - **Context:** Pinning each `*-not-found` producer under I-25 showed that six
   of the seven codes have a real producing leaf, and `decision-not-found` has
   none. No Phase 23 leaf takes a Decision Reference ID as input: section 4 gives
@@ -2738,6 +2741,85 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 - **Refs:** ESC-23-009; TRG-23-010; DEC-178; DEC-262; VAL-004; VAL-061;
   VAL-062; `schema.md` sections 1, 4, and 5; migrations 0002, 0003, 0004,
   0005, 0011, and 0016.
+
+### DEC-265: Section 5 declares 19 Failure codes, 18 added and 1 retained (ESC-23-010)
+
+- **Date:** 2026-09-30.
+- **Status:** ACCEPTED by the Tech Lead under Human delegation (the Human
+  asked the Tech Lead to resolve ESC-23-010 on 2026-09-30). This is a wording
+  clarification only. It changes no code member, count of implemented codes,
+  category, exit, details shape, producer, precedence, VAL text, validator,
+  owner, or command. It is reversible, and it is flagged to the Human.
+- **Finding (Tech Lead, verified at `bb47d25`).** The member set was never in
+  conflict. Four independent enumerations agree on the same 19 names:
+  - the `public-interface.md` section 5 table (13 single rows plus the six in
+    the grouped not-found row);
+  - the section 5.1 producer table (19 rows);
+  - `p23FailureContracts` in `cmd/fid/integration/p23_failure_contract_test.go`;
+  - `cmd/fid/integration/testdata/p23_conformance/failures.json`.
+
+  The count "18" in DEC-230 and the section 5 prose counts codes **new** to
+  `internal/cli/codes.go`. `requirement-not-found` already existed there: it
+  was added by `ab4ac8f` (phase-20/task-1). Its category (`not-found`), subject
+  (`requirement`), and `{id}` details (`codes.go:29`, `:272`) are unchanged,
+  and canonical `06_DESIGN_PLAN_CLI.md` section 5 already lists it among the
+  pre-Phase-23 codes. Section 5 re-declares it because Phase 23 removes its V1
+  producers and pins new ones (`requirement.get`, `requirement.link`). QA plan
+  13.2 had already re-derived "19 declared, 18 new", and 13.4 recorded that
+  DEC-230 "uses the same sense and agrees". The defect was that section 5's
+  lead sentence called every row "added", and DEC-230 never named the retained
+  member. Read together, they looked like 19 against 18.
+- **Decision.**
+  1. **Accepted declared set (19):** `review-not-independent`,
+     `review-verdict-invalid`, `review-changes-required`,
+     `review-rework-exhausted`, `finding-already-disposed`, `finding-not-found`,
+     `review-not-found`, `concern-not-found`, `deviation-not-found`,
+     `outcome-not-found`, `requirement-not-found`, `concern-already-disposed`,
+     `claim-mode-invalid`, `protected-decision-required`,
+     `human-outcome-required`, `outcome-not-permitted`,
+     `evidence-type-not-accepted`, `source-digest-mismatch`,
+     `repository-mismatch`.
+  2. **Added subset (18):** the declared set minus `requirement-not-found`.
+     **Retained (1):** `requirement-not-found`, with its contract unchanged and
+     its Phase 23 producers as section 5.1 pins them.
+  3. `decision-not-found` stays removed (DEC-230). `finding-unresolved` stays
+     an Evaluation reason only (DEC-226).
+  4. **Evidence scope.** VAL-056 and VAL-068 cover all 19 declared codes.
+     Covering the retained code is required: section 5.1 pins its Phase 23
+     producers. A claim about the *added* set counts 18.
+  5. **Text edits.** The `public-interface.md` header, section 5's lead
+     paragraph, and its DEC-230 paragraph now state 19 declared = 18 added +
+     1 retained. DEC-230 gains a clarification line.
+- **Task 18 continuation (same task, attempt 2).**
+  - **Signature:**
+    `task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality`.
+  - **Category and budget:** `in-scope-implementation`, no-progress 0/2.
+    Attempt 1 made material progress (the VAL-067 set equality, the VAL-069
+    audit, the Condition extension, and the corpus). It could not certify the
+    code set while the contract text read as contradictory, so it does not
+    count against the budget.
+  - **Work:** keep the 19-row corpus, and pin the added/retained partition in
+    it as independent literals. Complete the full semantic fake/fid parity for
+    VAL-068 and the row-by-row at-or-after provenance for VAL-067, then rerun
+    the unchanged five commands. The exact bounds are in
+    `qa/resume-after-esc-23-010.md`.
+- **Not taken.**
+  - **A: drop `requirement-not-found` from section 5.** This would un-pin the
+    Phase 23 producers of a code that Phase 23 rewired (`requirement.get`,
+    `requirement.link`). VAL-056's evidence for those producers would then
+    have no declared contract.
+  - **B: call all 19 "added".** This is false: the code predates Phase 23.
+  - **C: restore `decision-not-found` to make 19 added codes.** This
+    contradicts DEC-230's accepted finding that no leaf can return it.
+- **Spec impact.** Canonical specs are verified-no-change:
+  `06_DESIGN_PLAN_CLI.md` section 5 already lists `requirement-not-found`
+  among the retained codes, and the `GLOSSARY.md` Failure code entry states
+  no count. The validation contract gains a note-only change-log row for
+  VAL-056 and VAL-068.
+- **Resume:** `qa/resume-after-esc-23-010.md`.
+- **Refs:** ESC-23-010; TRG-23-011; DEC-226; DEC-230; VAL-056; VAL-067;
+  VAL-068; `public-interface.md` sections 5 and 5.1; `qa-plan.md` 13.2 and
+  13.4; `tasks/task-18-done.md`; `internal/cli/codes.go`.
 
 ## Spec Sync Verdict
 

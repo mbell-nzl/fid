@@ -1,22 +1,26 @@
 # Progress — Current
 
-Updated 2026-09-30. **Tasks 1-14 are complete, and review-10 passed window
-10-12. Task 15 stopped on ESC-23-009, which DEC-264 resolves. The Runner is
+Updated 2026-09-30. **Tasks 1-17 are complete, and review-12 passed window
+13-15. Task 18 stopped on ESC-23-010, which DEC-265 resolves. The Runner is
 ready to resume.** Branch: `phase-23`.
 
-Task 13 closed under DEC-263. Task 14 closed after TRG-23-009's bounded
-generic Concern-list repair. Task 15's first continuation left a partial
-checkpoint (`fa6355a`) that includes 0018 up. It blocked because `schema.md`
-section 5 restored 0002 `concerns` with `escalated_to_esc_id`, which 0016
-down adds again. DEC-264 changes section 5 to restore the schema-17 state,
-fixing the view source and the missing kind triggers as well. The Tech Lead
-verified the section 5 steps through the full down chain on a scratch
-database.
+Task 18's audit passed all five exact commands. It closed VAL-069, but its
+report is BLOCKED for two reasons:
+- `public-interface.md` section 5 listed 19 codes under the lead "Added
+  codes", while DEC-230 says 18.
+- Its fake/fid audit compared field sets and replay, not full values.
+
+DEC-265 finds that there is no member conflict. Nineteen codes are
+declared: 18 added and the retained `requirement-not-found` (Phase 20),
+which section 5.1 re-pins. The fix is wording only.
 
 Next: the Runner resumes using
-[the handoff](../phases/phase-23/qa/resume-after-esc-23-009.md) (task 15
-attempt 2), then QA window 13-15, then tasks 16-18.
+[the handoff](../phases/phase-23/qa/resume-after-esc-23-010.md) (task 18
+attempt 2: full VAL-068 semantic parity and VAL-067 provenance), then QA
+window 16-18 (review-13), then phase-end QA.
 
+Earlier, task 15 closed under DEC-264 (0018 down restores schema 17), and
+tasks 16 and 17 closed without escalation.
 Earlier, under ESC-23-007, task 13 attempt 1 added `review.list`, the
 failure codes, and request closure. Its ActivityEvent effects could not commit, for two reasons:
 - `activity_log` is missing from the strict journal table registry, which
@@ -61,6 +65,8 @@ Retain these constraints:
   (Outcome supersession) is reported.
 - DEC-264: 0018 down follows `schema.md` section 5 exactly. It restores the
   schema-17 state and edits no migration from 0001 to 0017.
+- DEC-265: section 5 declares 19 Failure codes (18 added, 1 retained).
+  Corpora cover all 19; claims about the added set count 18.
 - DEC-243: VAL-025 closes with real durable Human Outcome links and all nine
   compatibility cells; the checkpoint must independently review the evidence.
 

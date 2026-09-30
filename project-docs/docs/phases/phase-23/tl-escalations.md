@@ -1,5 +1,53 @@
 # Phase 23 Escalations
 
+## ESC-23-010 - Task 18 Failure-code count contradicts the named public set
+
+- **Raised:** 2026-09-30
+- **Allocated by:** TL-Lite, TRG-23-011
+- **Candidate source:** `project-docs/docs/phases/phase-23/tasks/task-18-done.md` (BLOCKED)
+- **Protected category:** public-interface and specification contradiction.
+- **Trigger:**
+  - `public-interface.md` section 5 names 19 Failure codes under the lead
+    "Added codes".
+  - The same section's DEC-230 paragraph and DEC-230 say the added set is 18.
+  - The task-18 corpus and `p23FailureContracts` both hold 19 rows.
+  - Separately, the shared fake/fid audit compared result field sets and
+    replay, not complete semantic values, so VAL-068 stayed open.
+- **Trigger signature:** task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- **Attempt count:** 1
+- **Checkpoint:** report `333514946`, corrected at `dac84a1` and `a156691`;
+  report-lint `OUTCOME BLOCKED` (terminated `exit_code: 0`). All five exact
+  task commands passed.
+- **Question:** Record the exact accepted Failure-code members and count,
+  and reconcile section 5 with DEC-230.
+- **Resolution condition:** The decision and the task-18 continuation scope
+  are recorded. The Runner resumes task 18 and keeps its attempt-1 evidence.
+- **Links:** TRG-23-011; DEC-230; `public-interface.md` sections 5 and 5.1;
+  `tasks/task-18-done.md`; VAL-056; VAL-068.
+- **Human attention required:** yes. The Human asked the Tech Lead to
+  resolve it on 2026-09-30.
+- **Status:** RESOLVED 2026-09-30 under DEC-265.
+  - **Tech Lead finding:** there is no member conflict. The section 5 table,
+    the 5.1 producers, `p23FailureContracts`, and `failures.json` all name
+    the same 19 codes. "18" counts codes new to `codes.go`, and
+    `requirement-not-found` predates the phase (`ab4ac8f`, phase-20/task-1).
+    QA plan 13.2 had already recorded "19 declared, 18 new". The defect was
+    section 5's lead sentence, which called all 19 "added".
+  - **Resolution:** Section 5 declares 19 codes: 18 added and 1 retained.
+    Only the wording in the section 5 header, lead, and DEC-230 paragraph
+    changes. DEC-230 gains a clarification line, and the validation contract
+    gains a note-only row. Codes, contracts, VAL text, ownership, and
+    commands are unchanged.
+  - **Continuation:** same-task `in-scope-implementation` at attempt 2,
+    no-progress 0/2. The work is:
+    - pin the 19/18/1 partition;
+    - complete the full semantic fake/fid parity and rejection classes for
+      VAL-068;
+    - record the VAL-067 at-or-after provenance;
+    - rerun the five unchanged commands.
+
+    QA window 16-18 then follows. Handoff: `qa/resume-after-esc-23-010.md`.
+
 ## ESC-23-009 - Migration 0018 down conflicts with the accepted 0016 rollback
 
 - **Raised:** 2026-09-30

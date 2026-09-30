@@ -156,6 +156,9 @@
 - DEC-264 (ESC-23-009, Human-approved): a down migration restores the prior
   version's live state, not first-creation text. `schema.md` section 5 gives
   0018 down's exact steps; migrations 0001-0017 are unchanged.
+- DEC-265 (ESC-23-010): `public-interface.md` section 5 declares 19 Failure
+  codes, 18 added plus the retained `requirement-not-found`; DEC-230's "18"
+  counts the added set. Wording only; the task-18 continuation pins the partition.
 
 ## Prior Phase and Future Qualification
 
