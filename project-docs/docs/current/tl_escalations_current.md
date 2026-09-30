@@ -3,7 +3,7 @@
 ## Open escalations
 
 None. The Runner resumes task 18 from
-[the handoff](../phases/phase-23/qa/resume-after-esc-23-010.md).
+[the DEC-266 handoff](../phases/phase-23/qa/resume-after-dec-266.md).
 
 ## Recently resolved
 
@@ -21,6 +21,15 @@ None. The Runner resumes task 18 from
   - Task 18 continues same-task at attempt 2 (`in-scope-implementation`,
     no-progress 0/2) to finish VAL-068 semantic parity and VAL-067
     provenance. See the [full record](../phases/phase-23/tl-escalations.md).
+  - **Second disposition, RESOLVED under DEC-266:**
+    - `claim.acquire` returned Phase 20 `{operation,actor}` authority
+      details. The cause is the registry, which was never converged to
+      Phase 21 section 7 for `authority-missing`, `authority-unknown-actor`,
+      and `authority-denied`; eight producers followed it, and the
+      `gate.go` four-field paths are latent defects.
+    - The contract governs. A task-18 planning amendment converges the
+      registry and the producers, and fixes the fake's two-field rows.
+    - Task 18 continues at attempt 7, no-progress 0/2.
 
 ### ESC-23-009 - Migration 0018 down conflicts with the accepted 0016 rollback
 

@@ -157,3 +157,57 @@ List any conditional command required by this task and why:
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
+
+## Planning Amendment - DEC-266 (2026-09-30, ESC-23-010 second disposition)
+
+- **Authority:** Phase 21 `public-interface.md` section 7, retained by Phase
+  23 section 1. All four `authority-*` codes return exactly
+  `{operation, actor_id (nullable), required_actions, required_capabilities}`
+  with a null subject (Phase 23 section 2 / DEC-233). This is convergence to
+  a retained contract, not new behavior; the Out Of Scope exclusion of new
+  product behavior and contract change still holds.
+- **Scope added (bounded product convergence):**
+  - `internal/cli/codes.go`: the `authority-missing`,
+    `authority-unknown-actor`, and `authority-denied` registry entries take
+    the `authority-unavailable` four-field definition.
+  - `internal/cli/codes_test.go`: converge `authorityDetails()` for those
+    three codes (introduced by `ab4ac8f`, phase-20/task-1).
+  - The eight producer lines in DEC-266 finding 3:
+    - `cmd/fid/claim.go:232`, `run.go:319`, `finding.go:126`,
+      `concern.go:128`, `deviation.go:104`, `decision.go:129`;
+    - `human_outcome.go:127` and `:131`.
+
+    Fill the fields from the existing error values as DEC-266 decision 3
+    states.
+  - `cmd/fid/gate_test.go` (or a new `cmd/fid` test file): add regression
+    tests showing that one gate operation returns typed
+    `authority-unknown-actor` and `authority-denied` failures with the four
+    fields, exit 5, and no Event. They exercise the latent `gate.go:325/327`
+    paths. `gate.go` itself is unchanged.
+  - In `cmd/fid/integration/`, correct the fake's `MissingCapability` and
+    `human-outcome.record` `authority-missing` expectations to the four
+    contract fields.
+- **Inventory:** before editing, rerun
+  `grep -rn 'CodeAuthority\(Missing\|UnknownActor\|Denied\)' --include=*.go cmd internal`.
+  Record every non-test producer in the report. If it finds a producer
+  beyond the ten lines named in DEC-266, converge it too, and record it.
+- **Retained tests:** any retained test that fails only because of the
+  shape change converges with per-row provenance: its introducing commit,
+  its `Refs:` trailer, and its executing command.
+- **Forbidden:**
+  - any other product change;
+  - adding a `SubjectType`;
+  - changing a code, category, exit, or contract text;
+  - deriving any fake expectation from fid output;
+  - changing a command.
+
+  If any of these is needed, return `RECOVERY_REQUIRED`.
+- **Gate coverage:** the ordinary race gate runs `internal/cli` and
+  `cmd/fid`. The tagged gate runs `cmd/fid/integration`. No command changes.
+- **Acceptance (added):**
+  - [ ] All ten authority producers return the four-field details, the
+    registry accepts only that shape for all four `authority-*` codes, and
+    the gate regression tests pass. (DEC-266; supports VAL-068)
+  - [ ] The report records each changed producer as a finding against its
+    introducing task, with provenance.
+

@@ -47,6 +47,28 @@
     - rerun the five unchanged commands.
 
     QA window 16-18 then follows. Handoff: `qa/resume-after-esc-23-010.md`.
+- **Second disposition (2026-09-30):** TL-Lite recorded a BLOCK under
+  TRG-23-011 / ESC-23-010, deliberately allocating no new ID, after task-18
+  attempts 2-6 (STOP 18:58).
+  - **Trigger:** the fake expected the retained Phase 21 four-field
+    `authority-denied` details from `claim.acquire`, while fid returned
+    `{operation,actor}` (`claim.go:232`, phase-21/task-10), which is outside
+    task-18 scope. The focused and tagged commands failed (terminated
+    `exit_code: 1`) only on that subtest.
+  - **Status:** RESOLVED 2026-09-30 under DEC-266.
+  - **Tech Lead finding:** the registry (`codes.go:286-288`, phase-20/task-1)
+    was never converged to Phase 21 section 7 for three of the four
+    `authority-*` codes.
+    - Eight producers emit the Phase 20 shape.
+    - `gate.go:325/327` emit the contract shape, and the registry rejects
+      it. A scratch probe showed this; those paths are latent defects.
+    - The fake's other authority rows matched fid's non-conforming shape.
+  - **Resolution:** the contract governs, and no contract, VAL, or command
+    changes. A task-18 planning amendment converges the registry, the eight
+    producers, `codes_test.go`, and the fake's two-field rows. It adds gate
+    regression tests.
+  - **Continuation:** same-task attempt 7, no-progress 0/2. Handoff:
+    `qa/resume-after-dec-266.md`.
 
 ## ESC-23-009 - Migration 0018 down conflicts with the accepted 0016 rollback
 

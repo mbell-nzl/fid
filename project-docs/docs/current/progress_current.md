@@ -1,24 +1,29 @@
 # Progress — Current
 
 Updated 2026-09-30. **Tasks 1-17 are complete, and review-12 passed window
-13-15. Task 18 stopped on ESC-23-010, which DEC-265 resolves. The Runner is
-ready to resume.** Branch: `phase-23`.
+13-15. Task 18 stopped at attempt 6 on an authority-details divergence,
+which DEC-266 resolves. The Runner is ready to resume.** Branch: `phase-23`.
 
-Task 18's audit passed all five exact commands. It closed VAL-069, but its
-report is BLOCKED for two reasons:
-- `public-interface.md` section 5 listed 19 codes under the lead "Added
-  codes", while DEC-230 says 18.
-- Its fake/fid audit compared field sets and replay, not full values.
+Task 18, attempts 2-6, pinned DEC-265's 19/18/1 partition. It also
+completed the full semantic fake/fid comparison for all 23 operations, the
+rejection matrix, and the VAL-067 provenance. One comparison stayed red:
+`claim.acquire` returned `authority-denied` as `{operation,actor}`.
+DEC-266 finds that the registry never converged three `authority-*` codes
+to the Phase 21 four-field contract:
+- eight producers followed the registry;
+- `gate.go`'s four-field paths are rejected at construction, a latent
+  defect;
+- the fake's other authority rows shared the wrong shape.
 
-DEC-265 finds that there is no member conflict. Nineteen codes are
-declared: 18 added and the retained `requirement-not-found` (Phase 20),
-which section 5.1 re-pins. The fix is wording only.
+The contract governs. Task 18 converges the registry and producers under a
+planning amendment.
 
 Next: the Runner resumes using
-[the handoff](../phases/phase-23/qa/resume-after-esc-23-010.md) (task 18
-attempt 2: full VAL-068 semantic parity and VAL-067 provenance), then QA
-window 16-18 (review-13), then phase-end QA.
+[the handoff](../phases/phase-23/qa/resume-after-dec-266.md) (task 18
+attempt 7), then QA window 16-18 (review-13), then phase-end QA.
 
+Earlier, DEC-265 clarified 19 declared Failure codes (18 added and 1
+retained).
 Earlier, task 15 closed under DEC-264 (0018 down restores schema 17), and
 tasks 16 and 17 closed without escalation.
 Earlier, under ESC-23-007, task 13 attempt 1 added `review.list`, the
@@ -67,6 +72,8 @@ Retain these constraints:
   schema-17 state and edits no migration from 0001 to 0017.
 - DEC-265: section 5 declares 19 Failure codes (18 added, 1 retained).
   Corpora cover all 19; claims about the added set count 18.
+- DEC-266: all four `authority-*` codes carry the Phase 21 details
+  `{operation,actor_id,required_actions,required_capabilities}`, null subject.
 - DEC-243: VAL-025 closes with real durable Human Outcome links and all nine
   compatibility cells; the checkpoint must independently review the evidence.
 

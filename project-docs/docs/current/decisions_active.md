@@ -159,6 +159,9 @@
 - DEC-265 (ESC-23-010): `public-interface.md` section 5 declares 19 Failure
   codes, 18 added plus the retained `requirement-not-found`; DEC-230's "18"
   counts the added set. Wording only; the task-18 continuation pins the partition.
+- DEC-266 (ESC-23-010, second disposition): the `authority-*` Failure details
+  follow Phase 21 section 7 (four fields, null subject). The registry and eight
+  producers converge under a task-18 planning amendment; the contract is unchanged.
 
 ## Prior Phase and Future Qualification
 

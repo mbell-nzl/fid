@@ -2821,6 +2821,107 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   VAL-068; `public-interface.md` sections 5 and 5.1; `qa-plan.md` 13.2 and
   13.4; `tasks/task-18-done.md`; `internal/cli/codes.go`.
 
+### DEC-266: Authority failure details converge to the retained Phase 21 contract (ESC-23-010, second disposition)
+
+- **Date:** 2026-09-30.
+- **Status:** ACCEPTED by the Tech Lead under Human delegation (the Human
+  asked the Tech Lead to resolve the task-18 stop on 2026-09-30). The product
+  converges to an accepted contract that has been in force since Phase 21.
+  This decision changes no contract text, VAL text, validator, or command.
+  It amends task 18's file scope, and it is flagged to the Human.
+- **Finding (Tech Lead, verified at `2ab3976`).** The drift is wider than
+  `claim.acquire`, and it predates this phase.
+  1. **Contract.** Phase 21 `public-interface.md` section 7 closes all four
+     `authority-*` codes at
+     `{operation:string,actor_id:string|null,required_actions:string[],required_capabilities:string[]}`.
+     This refines Phase 20 `contracts.md`'s `{operation, actor?}`, as
+     `06_DESIGN_PLAN_CLI.md` section 5 anticipated. Phase 23 section 1
+     retains it.
+  2. **Registry.** `internal/cli/codes.go:286-288` still closes
+     `authority-missing`, `authority-unknown-actor`, and `authority-denied`
+     at the Phase 20 `{operation, actor}` shape (`ab4ac8f`, phase-20/task-1).
+     Phase 21 task 5 (`0c4c04e`) converged only `authority-unavailable`.
+  3. **Producers.** Eight lines emit the Phase 20 shape, because the registry
+     accepts only that shape:
+     - `claim.go:232` (phase-21/task-10);
+     - `run.go:319` (phase-21/task-11);
+     - `finding.go:126` (phase-23/task-5);
+     - `concern.go:128` and `deviation.go:104` (phase-23/task-8);
+     - `decision.go:129` (phase-23/task-9);
+     - `human_outcome.go:127` and `:131` (phase-23/task-10).
+  4. **Latent defect.** `gate.go:325` (`authority-unknown-actor`) and `:327`
+     (`authority-denied`) already emit the contract's four fields, and the
+     registry rejects them. A Tech Lead overlay probe of `cli.NewFailure`
+     (scratch only, not a gate) returned
+     `details must contain exactly 2 fields` for all three codes, and
+     accepted the four fields for `authority-unavailable`. Those gate paths
+     can never return a typed failure, and no test exercises them.
+  5. **The task-18 fake is inconsistent.** Its `claim.acquire` case expects
+     the contract's four fields. Its `MissingCapability` case (all nine new
+     mutations) and its `human-outcome.record` `authority-missing` case
+     expect the Phase 20 two fields. Those rows pass only because the fake
+     and fid share the non-conforming shape, so VAL-068's green authority
+     rows other than `claim.acquire` are not yet contract evidence.
+  6. **Subject.** Phase 21's "subject = the supplied Actor" does not apply.
+     Phase 23 section 2 (ErrorSubjectType, I-34, DEC-233) already makes the
+     implemented `SubjectType` authoritative, and `actor` was never
+     implemented. The subject stays `null` for all four codes. That prose
+     reconciliation is already a phase-end spec-sync item.
+- **Decision.**
+  1. **Contract governs.** All four `authority-*` codes return exactly
+     `{operation, actor_id (nullable), required_actions, required_capabilities}`,
+     with a null subject. No contract text changes.
+  2. **Registry.** `codes.go` gives `authority-missing`,
+     `authority-unknown-actor`, and `authority-denied` the same four fields
+     as `authority-unavailable`.
+  3. **Producers.** Each of the eight lines fills the fields from the error
+     it already has:
+     - `EnvelopeAuthorityDeniedError`: `actor_id` = `ActorID`,
+       `required_actions` = [`Action`], `required_capabilities` =
+       [`Capability`].
+     - `review.AuthorityMissingError`: `actor_id` = `ActorID`, and both
+       arrays = [`Operation`]. `human-outcome.record` is both the action and
+       the required capability (section 4.1).
+
+     `gate.go` is unchanged; the registry fix makes it valid.
+  4. **Owner: task 18, by planning amendment.** No single earlier owner
+     exists. The drift spans Phase 21 tasks 5, 10, and 11 (all closed) and
+     Phase 23 tasks 5, 8, 9, and 10, each of which copied the shape the
+     registry forced. Reopening four tasks for one-line edits is
+     disproportionate. Task 18 already runs the ordinary gate (`internal/cli`,
+     `cmd/fid`) and the tagged gate (`cmd/fid/integration`), so it executes
+     every added file. Its report records each changed line as a finding
+     against its introducing task, with provenance.
+  5. **Fake.** Correct the `MissingCapability` and `human-outcome.record`
+     `authority-missing` expectations to the contract's four fields. This
+     corrects the fake to the contract, not to fid. `claim.acquire` stays as
+     authored.
+- **Attempt accounting.** Attempt 7 continues the same signature, with
+  no-progress 0/2. Attempts 5 and 6 made material progress: they completed
+  the rejection matrix. Both were forbidden from editing `claim.go`, so the
+  failure could not count against them.
+- **Not taken.**
+  - **A: amend the contract to `{operation, actor}`.** This would weaken a
+    two-phase accepted contract to match a registry that was never
+    converged. It would split the `authority-*` family (the `unavailable`
+    code keeps four fields) and drop the missing-capability information.
+    It would also still leave `gate.go` broken.
+  - **B: repair `claim.go` only.** The registry rejects the four fields, so
+    `claim.go` alone cannot comply. The other seven producers and the fake's
+    two-field rows would stay non-conforming.
+  - **C: a new task 19, or reopening tasks 5, 8, 9, and 10.** Either would
+    add ledger and review cost for about eleven mechanical lines that task
+    18's gate already covers.
+- **Spec impact.** Canonical specs are verified-no-change: the accepted
+  shape already lives in the Phase 21 contract, which 06 section 5 defers
+  to. The subject-prose reconciliation stays the existing phase-end item.
+  The validation contract gains a note-only row for VAL-068.
+- **Resume:** `qa/resume-after-dec-266.md`.
+- **Refs:** ESC-23-010; TRG-23-011 (second disposition); DEC-233; DEC-265;
+  VAL-068; Phase 21 `public-interface.md` section 7; Phase 20 `contracts.md`;
+  `internal/cli/codes.go`; `internal/policy/envelope_authority.go`;
+  `tasks/task-18.md` Planning Amendment - DEC-266.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,

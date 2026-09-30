@@ -14,26 +14,25 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 ## Status
 
 **Tasks 1-17 complete; review-12 PASS (window 13-15). Task 18 is in
-same-task recovery under DEC-265.** Branch `phase-23`.
+same-task recovery under DEC-266 (attempt 7).** Branch `phase-23`.
 
-ESC-23-010 (TRG-23-011) is resolved by DEC-265. `public-interface.md`
-section 5 called all 19 of its codes "added", while DEC-230 said 18. There
-is no member conflict:
-- 18 codes are added.
-- `requirement-not-found` is a retained Phase 20 code whose producers
-  Phase 23 re-pins.
-
-The fix is wording only; no code, VAL text, or command changes. Task 18
-still owes full semantic fake/fid parity (VAL-068) and VAL-067 at-or-after
-provenance.
+The task-18 audit is complete except for one issue. `claim.acquire`
+returned the Phase 20 `{operation,actor}` authority details, not the
+retained Phase 21 four-field shape. DEC-266 traces the cause to the
+registry: three `authority-*` codes were never converged, eight producers
+followed it, and the `gate.go` four-field paths are latent defects. The
+contract governs. A task-18 planning amendment converges the registry and
+producers and corrects the fake's two-field rows. No contract, VAL text,
+or command changes. DEC-265 (ESC-23-010) earlier clarified 19 declared
+Failure codes (18 added, 1 retained).
 
 Earlier: DEC-264 (ESC-23-009) corrected 0018 down, and task 15 closed under
 it. DEC-263 added the Stop-blocked denial fields. ESC-23-004..008 are
 resolved (DEC-249..264). I-7 is deferred to wrap-up. The contract has
 **84 rows**; see [decisions](../phases/phase-23/decisions.md).
 
-Next action: the Runner resumes using `qa/resume-after-esc-23-010.md`
-(task 18 attempt 2). QA window 16-18 (review-13) follows, then phase-end QA.
+Next action: the Runner resumes using `qa/resume-after-dec-266.md`
+(task 18 attempt 7). QA window 16-18 (review-13) follows, then phase-end QA.
 
 ## Operating Mode
 
@@ -52,7 +51,7 @@ amendments inline with their DEC and approval state.
 ## Task Index
 
 Full specs and reports: `../phases/phase-23/tasks/`. Tasks 1-17 complete; 18 in
-recovery (DEC-265).
+recovery (DEC-266).
 
 1 schema baseline; 2 typed multi-Obligation Envelope; 3 review Claim mode and
 Run; 4 Review Records and independence; 5 Finding dispositions; 6 review
