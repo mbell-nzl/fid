@@ -43,7 +43,7 @@ func validateSemanticMap(tableName string, table semanticTable, values map[strin
 
 func semanticBooleanColumn(table, column string) bool {
 	switch table + "." + column {
-	case "kit_activations.point_of_no_return", "execution_receipts.timed_out", "execution_receipts.output_truncated", "execution_receipts.redaction_applied", "evidence_artifact_links.required_material":
+	case "kit_activations.point_of_no_return", "execution_receipts.timed_out", "execution_receipts.output_truncated", "execution_receipts.redaction_applied", "evidence_artifact_links.required_material", "review_findings.blocking":
 		return true
 	default:
 		return false
