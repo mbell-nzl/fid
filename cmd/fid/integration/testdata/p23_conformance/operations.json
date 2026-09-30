@@ -48,6 +48,9 @@
   },
   {
     "operation": "finding.address",
+    "not_found_cases": [
+      {"name":"claim", "id":"CLM-missing", "field":"claim_id", "code":"claim-not-found", "subject_type":"claim"}
+    ],
     "not_found_id": "FND-missing",
     "not_found_field": "finding_id",
     "fields": [
@@ -156,6 +159,9 @@
   },
   {
     "operation": "decision.record-reference",
+    "not_found_cases": [
+      {"name":"scope-issue", "id":"ISS-missing", "field":"scope.issue_id", "code":"invalid-argument", "subject_type":"issue"}
+    ],
     "fields": [
       "decision",
       "protected_decisions",
@@ -187,6 +193,9 @@
   },
   {
     "operation": "human-outcome.record",
+    "not_found_cases": [
+      {"name":"scope-issue", "id":"ISS-missing", "field":"scope.issue_id", "code":"invalid-argument", "subject_type":"issue"}
+    ],
     "fields": [
       "outcome",
       "protected_decisions",
@@ -232,6 +241,9 @@
   },
   {
     "operation": "requirement.link",
+    "not_found_cases": [
+      {"name":"issue", "id":"ISS-missing", "field":"issue_id", "code":"invalid-argument", "subject_type":"issue"}
+    ],
     "not_found_id": "REQ-missing",
     "not_found_field": "requirement_id",
     "fields": [
@@ -274,6 +286,9 @@
   },
   {
     "operation": "envelope.create",
+    "not_found_cases": [
+      {"name":"primary-issue", "id":"ISS-missing", "field":"primary_issue_id", "code":"invalid-argument", "subject_type":"issue"}
+    ],
     "fields": [
       "envelope",
       "idempotency_key",
@@ -289,6 +304,9 @@
   },
   {
     "operation": "envelope.activate",
+    "not_found_cases": [
+      {"name":"envelope", "id":"ENV-missing", "field":"envelope_id", "code":"envelope-not-found", "subject_type":"envelope"}
+    ],
     "fields": [
       "envelope",
       "evaluation",
@@ -304,6 +322,10 @@
   },
   {
     "operation": "claim.acquire",
+    "not_found_cases": [
+      {"name":"issue", "id":"ISS-missing", "field":"issue_id", "code":"invalid-argument", "subject_type":"issue"},
+      {"name":"envelope", "id":"ENV-missing", "field":"envelope_id", "code":"invalid-argument", "subject_type":"envelope"}
+    ],
     "fields": [
       "claim",
       "idempotency_key",
@@ -320,6 +342,8 @@
   {
     "operation": "evidence.link",
     "not_found_cases": [
+      {"name":"obligation", "id":"OBL-missing", "field":"obligation_id", "code":"invalid-argument", "subject_type":"obligation"},
+      {"name":"receipt", "id":"RCP-missing", "field":"receipt_id", "code":"invalid-argument", "subject_type":"receipt"},
       {"name":"review", "id":"REV-missing", "field":"review_id", "code":"review-not-found", "subject_type":"review"},
       {"name":"human-outcome", "id":"OUT-missing", "field":"human_outcome_id", "code":"outcome-not-found", "subject_type":"human-outcome"}
     ],
@@ -339,6 +363,9 @@
   },
   {
     "operation": "evidence.evaluate",
+    "not_found_cases": [
+      {"name":"obligation", "id":"OBL-missing", "field":"obligation_id", "code":"invalid-argument", "subject_type":"obligation"}
+    ],
     "fields": [
       "evaluations"
     ],

@@ -163,6 +163,25 @@ func TestP23SharedLeafConformance(t *testing.T) {
 			if fixture.NotFoundID != "" && fixture.Operation != "review.record" {
 				p23CompareLeafOutcome(t, "not-found", fake.NotFound(), fid.NotFound(t))
 			}
+			for _, missing := range fixture.NotFoundCases {
+				p23CompareLeafOutcome(t, "not-found/"+missing.Name, p23ExpectedNotFound(fixture.Operation, missing), fid.NotFoundVariant(t, missing))
+			}
+			if fixture.Operation == "finding.address" {
+				request := p23LeafRequest(t, pair)
+				issue := p23LeafRequest(t, byOperation["concern.record"])["subject"].(map[string]any)["id"]
+				args := append([]string{}, pair.JSONArgs...)
+				for i, arg := range args {
+					if arg == "--idempotency-key" {
+						args[i+1] += "-stale-claim"
+					}
+				}
+				p23CompareLeafOutcome(t, "stale-claim", p23LeafOutcome{Operation: fixture.Operation,
+					Code: "claim-stale", Category: "conflict", Exit: 4,
+					Subject: map[string]any{"type": "claim", "id": request["claim_id"]},
+					Details: map[string]any{"issue_id": issue, "claim_id": request["claim_id"],
+						"expected_version": request["expected_claim_version"], "actual_version": float64(2),
+						"expires_at": "<generated:timestamp>"}}, fid.rejection(t, args))
+			}
 		})
 	}
 	p23CheckRequirementIdentity(t, accepted)
@@ -178,14 +197,19 @@ func TestP23SharedLeafConformance(t *testing.T) {
 		var failure struct {
 			Operation string `json:"operation"`
 			Error     struct {
-				Code string `json:"code"`
+				Code     string         `json:"code"`
+				Category string         `json:"category"`
+				Subject  any            `json:"subject"`
+				Details  map[string]any `json:"details"`
 			} `json:"error"`
 		}
 		if err := json.Unmarshal([]byte(response.Stderr), &failure); err != nil {
 			t.Fatal(err)
 		}
-		p23CompareLeafOutcome(t, "authority", p23LeafOutcome{Operation: "requirement.record-reference", Code: "invalid-argument", Exit: 2},
-			p23LeafOutcome{Operation: failure.Operation, Code: failure.Error.Code, Exit: response.ExitCode})
+		p23CompareLeafOutcome(t, "authority", p23LeafOutcome{Operation: "requirement.record-reference", Code: "invalid-argument", Category: "invalid-input", Exit: 2,
+			Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted requirement.record-reference input"}}},
+			p23LeafOutcome{Operation: failure.Operation, Code: failure.Error.Code, Category: failure.Error.Category,
+				Subject: failure.Error.Subject, Details: failure.Error.Details, Exit: response.ExitCode})
 		if got := p21JournalEventCount(t, a.workspace); got != before {
 			t.Fatalf("authority denial appended Event %d -> %d", before, got)
 		}
@@ -201,14 +225,19 @@ func TestP23SharedLeafConformance(t *testing.T) {
 		var failure struct {
 			Operation string `json:"operation"`
 			Error     struct {
-				Code string `json:"code"`
+				Code     string         `json:"code"`
+				Category string         `json:"category"`
+				Subject  any            `json:"subject"`
+				Details  map[string]any `json:"details"`
 			} `json:"error"`
 		}
 		if err := json.Unmarshal([]byte(response.Stderr), &failure); err != nil {
 			t.Fatal(err)
 		}
-		p23CompareLeafOutcome(t, "stale-version", p23LeafOutcome{Operation: "review.record", Code: "invalid-argument", Exit: 2},
-			p23LeafOutcome{Operation: failure.Operation, Code: failure.Error.Code, Exit: response.ExitCode})
+		p23CompareLeafOutcome(t, "stale-version", p23LeafOutcome{Operation: "review.record", Code: "invalid-argument", Category: "invalid-input", Exit: 2,
+			Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted review.record input"}}},
+			p23LeafOutcome{Operation: failure.Operation, Code: failure.Error.Code, Category: failure.Error.Category,
+				Subject: failure.Error.Subject, Details: failure.Error.Details, Exit: response.ExitCode})
 		if got := p21JournalEventCount(t, a.workspace); got != before {
 			t.Fatalf("stale-version denial appended Event %d -> %d", before, got)
 		}
@@ -341,10 +370,28 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 			if leaf.Mutation {
 				p23CompareLeafOutcome(t, "unknown-field", fake.UnknownField(), fid.UnknownField(t))
 				p23CompareLeafOutcome(t, "different-payload", fake.Conflict(fid.pair), fid.Conflict(t))
-				p23CompareLeafOutcome(t, "untrusted-actor", fake.UntrustedActor(), fid.UntrustedActor(t))
 			}
 			for _, missing := range leaf.NotFoundCases {
 				p23CompareLeafOutcome(t, "not-found/"+missing.Name, p23ExpectedNotFound(fixture.operation, missing), fid.NotFoundVariant(t, missing))
+			}
+			if fixture.operation == "claim.acquire" || fixture.operation == "envelope.activate" {
+				field, value := "envelope_revision", float64(2)
+				if fixture.operation == "envelope.activate" {
+					field, value = "expected_revision", float64(2)
+				}
+				p23CompareLeafOutcome(t, "stale-binding", p23LeafOutcome{Operation: fixture.operation,
+					Code: "invalid-argument", Category: "invalid-input", Exit: 2,
+					Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted " + fixture.operation + " input"}}},
+					fid.InvalidBinding(t, field, value))
+			}
+			if fixture.operation == "evidence.link" {
+				p23CompareLeafOutcome(t, "repository-binding", p23LeafOutcome{Operation: fixture.operation,
+					Code: "invalid-argument", Category: "invalid-input", Exit: 2,
+					Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted evidence.link input"}}},
+					fid.InvalidBinding(t, "target_repository.worktree_id", "worktree-other"))
+			}
+			if leaf.Mutation {
+				p23CompareLeafOutcome(t, "untrusted-actor", fake.UntrustedActor(), fid.UntrustedActor(t))
 			}
 		})
 	}
@@ -430,6 +477,10 @@ func (a p23FakeLeafAdapter) NotFound() p23LeafOutcome {
 }
 
 func p23ExpectedNotFound(operation string, missing p23NotFoundCase) p23LeafOutcome {
+	if missing.Code == "invalid-argument" {
+		return p23LeafOutcome{Operation: operation, Code: "invalid-argument", Category: "invalid-input", Exit: 2,
+			Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted " + operation + " input"}}}
+	}
 	return p23LeafOutcome{Operation: operation, Code: missing.Code, Category: "not-found", Exit: 3,
 		Subject: map[string]any{"type": missing.SubjectType, "id": missing.ID},
 		Details: map[string]any{"id": missing.ID}}
@@ -446,9 +497,20 @@ func (a p23FIDLeafAdapter) NotFoundVariant(t *testing.T, missing p23NotFoundCase
 	t.Helper()
 	args := append([]string{}, a.pair.JSONArgs...)
 	request := p23LeafRequest(t, a.pair)
-	request["evidence_type"] = missing.Name
-	request["receipt_id"] = nil
-	request[missing.Field] = missing.ID
+	if a.fixture.Operation == "evidence.link" && missing.Name != "obligation" {
+		request["evidence_type"] = missing.Name
+		request["receipt_id"] = nil
+	}
+	fields := strings.Split(missing.Field, ".")
+	target := request
+	for _, field := range fields[:len(fields)-1] {
+		nested, ok := target[field].(map[string]any)
+		if !ok {
+			t.Fatalf("%s has no object %s", a.fixture.Operation, field)
+		}
+		target = nested
+	}
+	target[fields[len(fields)-1]] = missing.ID
 	for i, arg := range args {
 		if arg == "--input" && i+1 < len(args) {
 			args[i+1] = p21Input(t, a.pair.CWD, "p23-missing-"+missing.Name, request)
@@ -485,6 +547,31 @@ func (a p23FIDLeafAdapter) NotFound(t *testing.T) p23LeafOutcome {
 		}
 		if arg == "--idempotency-key" && i+1 < len(args) {
 			args[i+1] += "-missing"
+		}
+	}
+	return a.rejection(t, args)
+}
+
+func (a p23FIDLeafAdapter) InvalidBinding(t *testing.T, field string, value any) p23LeafOutcome {
+	t.Helper()
+	args := append([]string{}, a.pair.JSONArgs...)
+	request := p23LeafRequest(t, a.pair)
+	fields := strings.Split(field, ".")
+	target := request
+	for _, part := range fields[:len(fields)-1] {
+		nested, ok := target[part].(map[string]any)
+		if !ok {
+			t.Fatalf("%s has no object %s", a.fixture.Operation, part)
+		}
+		target = nested
+	}
+	target[fields[len(fields)-1]] = value
+	for i, arg := range args {
+		if arg == "--input" {
+			args[i+1] = p21Input(t, a.pair.CWD, "p23-invalid-binding-"+strings.ReplaceAll(a.fixture.Operation, ".", "-"), request)
+		}
+		if arg == "--idempotency-key" {
+			args[i+1] += "-invalid-binding"
 		}
 	}
 	return a.rejection(t, args)
