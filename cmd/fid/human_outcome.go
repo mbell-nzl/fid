@@ -124,11 +124,11 @@ func renderHumanOutcomeError(cmd *cobra.Command, operation string, cause error) 
 	}
 	var authorityMissing *review.AuthorityMissingError
 	if errors.As(cause, &authorityMissing) {
-		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityMissing, "active Kit Activation authority is missing", nil, map[string]any{"operation": authorityMissing.Operation, "actor": authorityMissing.ActorID})
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityMissing, "active Kit Activation authority is missing", nil, map[string]any{"operation": authorityMissing.Operation, "actor_id": authorityMissing.ActorID, "required_actions": []string{authorityMissing.Operation}, "required_capabilities": []string{authorityMissing.Operation}})
 	}
 	var denied *policy.EnvelopeAuthorityDeniedError
 	if errors.As(cause, &denied) {
-		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor": denied.ActorID})
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor_id": denied.ActorID, "required_actions": []string{denied.Action}, "required_capabilities": []string{denied.Capability}})
 	}
 	var conflict *journal.IdempotencyConflictError
 	if errors.As(cause, &conflict) {

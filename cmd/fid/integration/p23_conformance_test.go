@@ -432,7 +432,8 @@ func (a p23FakeLeafAdapter) UntrustedActor() p23LeafOutcome {
 	}
 	if a.fixture.Operation == "human-outcome.record" {
 		return p23LeafOutcome{Operation: a.fixture.Operation, Code: "authority-missing", Category: "authority", Exit: 5,
-			Details: map[string]any{"operation": a.fixture.Operation, "actor": "actor-not-activated"}}
+			Details: map[string]any{"operation": a.fixture.Operation, "actor_id": "actor-not-activated",
+				"required_actions": []any{a.fixture.Operation}, "required_capabilities": []any{a.fixture.Operation}}}
 	}
 	return p23LeafOutcome{Operation: a.fixture.Operation, Code: "invalid-argument", Category: "invalid-input", Exit: 2,
 		Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted " + a.fixture.Operation + " input"}}}
@@ -440,7 +441,8 @@ func (a p23FakeLeafAdapter) UntrustedActor() p23LeafOutcome {
 
 func (a p23FakeLeafAdapter) MissingCapability(actor string) p23LeafOutcome {
 	return p23LeafOutcome{Operation: a.fixture.Operation, Code: "authority-denied", Category: "authority", Exit: 5,
-		Details: map[string]any{"operation": a.fixture.Operation, "actor": actor}}
+		Details: map[string]any{"operation": a.fixture.Operation, "actor_id": actor,
+			"required_actions": []any{a.fixture.Operation}, "required_capabilities": []any{a.fixture.Operation}}}
 }
 
 func (a p23FakeLeafAdapter) Conflict(pair p23HumanLeafPair) p23LeafOutcome {

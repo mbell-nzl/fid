@@ -251,7 +251,8 @@ func argumentDetails() []detailExpectation {
 }
 
 func authorityDetails() []detailExpectation {
-	return []detailExpectation{stringDetail("operation"), nullableStringDetail("actor")}
+	return []detailExpectation{nullableStringDetail("actor_id"), stringDetail("operation"),
+		{name: "required_actions", kind: detailStringsKind}, {name: "required_capabilities", kind: detailStringsKind}}
 }
 
 func claimConflictDetails() []detailExpectation {
