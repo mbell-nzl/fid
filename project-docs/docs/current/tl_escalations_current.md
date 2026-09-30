@@ -2,8 +2,16 @@
 
 ## Open escalations
 
-None. The Runner resumes task 15 from
-[the handoff](../phases/phase-23/qa/resume-after-esc-23-009.md).
+### ESC-23-010 - Task 18 Failure-code count contradicts the named public set
+
+- **Status:** OPEN 2026-09-30; governing triage TRG-23-011.
+- **Category:** protected public-interface and specification contradiction.
+- **Source:** `project-docs/docs/phases/phase-23/tasks/task-18-done.md`; task-18 closure and VAL-068 remain blocked.
+- **Conflict:** `public-interface.md` section 5 names nineteen distinct added Failure codes while its prose and accepted DEC-230 require exactly eighteen. The existing nineteen-row task-18 corpus reflects the named table. No local choice of a member or new count is authorized.
+- **Decision needed:** The contract owner must state the exact accepted member set and count, then reconcile the protected public-interface text and DEC-230 under the proper authority. Keep the original task-18 audit and all exact gate results as evidence.
+- **Independent ordinary work:** The shared fake/fid audit compares fields and replay but not complete semantic result values. Once the protected contract is resolved, task 18 continues within its existing scope to prove VAL-068 using independent fake expectations, reruns the unchanged required verification, updates its report, and obtains affected independent review. No contract choice or VAL-068 weakening is authorized by this escalation.
+- **Next:** invoke full Tech Lead with prompt: "Resolve ESC-23-010 in tl_escalations_current.md."
+- **References:** [TRG-23-011](../phases/phase-23/triage-log.md), [DEC-230](../phases/phase-23/decisions.md), [public interface section 5](../phases/phase-23/public-interface.md), [task-18 report](../phases/phase-23/tasks/task-18-done.md).
 
 ## Recently resolved
 

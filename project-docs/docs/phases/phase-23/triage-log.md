@@ -345,3 +345,32 @@ not a control-conformance directive or a rewrite of either historical verdict.
 - **If BLOCK:** category protected schema/persistence-contract and specification contradiction; ESC-23-009 raised in `tl_escalations_current.md`; resolution condition the Tech Lead or delegated Human decision authority specifies the exact 0018-down concerns definition and keeps migration 0016 down and the full rollback chain executable, then authorizes same-task continuation.
 - **Human attention required:** yes
 - **References:** project-docs/docs/phases/phase-23/schema.md section 5; migrations/0002_v01_tables.up.sql:125-138; migrations/0016_p22_remove_escalations.down.sql:12; project-docs/docs/phases/phase-23/tasks/task-15.md Objective and Exact Commands To Run; project-docs/docs/phases/phase-23/tasks/task-15-done.md Workflow outcome, Tests run, Exact quality-gate results, Deviations; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## TRG-23-011 - Task 18 added Failure-code set contradicts DEC-230
+
+- **Trigger:** Phase 23 task-18 cannot close because public-interface.md section 5 names nineteen distinct added Failure-code members while its prose and DEC-230 say the added set is exactly eighteen; the task report also records that its shared fake/fid audit compares result fields and replay but not complete semantic result values, so VAL-068 remains open.
+- **Originating task:** task-18
+- **Trigger signature:** task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-23/tasks/task-18-done.md
+- **Candidate:** BLOCKED / protected public-interface contradiction with separable ordinary task work
+- **Checkpoint:** Runner-attached `git rev-parse --verify 333514946aeab8328fa618f0f619fdce84694f9a^{commit}` returned 333514946aeab8328fa618f0f619fdce84694f9a; `git show` subject matched `test(conformance): audit Phase 23 wire surface`; report-lint returned `OUTCOME BLOCKED` (terminated `exit_code: 0`). Runner-recorded control repair base a156691874e8cad72bcd3fdabf9d4bfe4bfe7125 is context only; no control directive is granted.
+- **Verdict:** BLOCK
+- **Reasoning:** Section 5's table names nineteen distinct added Failure codes, including the six names in its grouped not-found row. DEC-230 and the section 5 prose explicitly fix the accepted added set at eighteen after removing `decision-not-found`. The current table and pinned nineteen-row audit cannot both certify that protected count; choosing a member or changing the count changes the public-interface contract and requires its owner. The shared fake/fid corpus separately checks result fields and replay but not complete semantic values, so VAL-068 is unfinished ordinary task-18 work. That gap does not resolve the contract contradiction and does not justify changing VAL-068.
+- **Local decisions made:** No contract member, count, assertion, or task owner chosen. The semantic parity gap is eligible for bounded same-task repair under task-18.md after protected resolution; preserve independent fake expectations rather than deriving them from fid output.
+- **Resolution evidence:** Not cleared. The attached verified commit and report-lint outcome establish the committed BLOCKED report, not an accepted eighteen-member exact corpus or full semantic fake/fid equality. The exact tagged gate's prior PASS in the report does not establish the missing VAL-068 comparison.
+- **If REPAIR:** N/A until the protected set is resolved. Then resume task 18 to compare complete accepted semantic results and rejection classes across applicable operations with independently pinned fake expectations, reconcile the corpus to the authorized exact set, rerun unchanged required commands, update the report, and repeat affected independent review. Preserve all recorded attempts and gate results.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** Do not choose between the 18-member DEC-230 authority and the 19-member section-5 table, change the accepted contract, Failure-code count, command, threshold, or VAL-068 semantics, derive the fake from fid output, or rewrite committed task-18 audit and exact gate evidence.
+- **Exact verification:** N/A for control-conformance. After resolution, use task-18.md's exact required commands and the applicable focused shared-corpus tests from the repository root, retaining their actual output and termination evidence.
+- **Originating report:** project-docs/docs/phases/phase-23/tasks/task-18-done.md
+- **Control repair base:** N/A; runner supplied a156691874e8cad72bcd3fdabf9d4bfe4bfe7125, but this is not a control-conformance repair.
+- **If BLOCK:** category protected public-interface/specification contradiction; ESC-23-010 raised in `tl_escalations_current.md`. Resolution condition: the contract owner records the exact accepted Failure-code members and count, reconciles section 5 and DEC-230 through protected authority, and authorizes same-task task-18 continuation for the independently repairable VAL-068 gap.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-23/public-interface.md section 5; project-docs/docs/phases/phase-23/decisions.md DEC-230; project-docs/docs/phases/phase-23/tasks/task-18.md Binding Constraints, Scope, Acceptance Criteria; project-docs/docs/phases/phase-23/tasks/task-18-done.md Workflow outcome, Validation Contract Coverage, Deviations; project-docs/docs/phases/phase-23/qa/validation-contract.md VAL-068; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
