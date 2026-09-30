@@ -93,8 +93,8 @@ Working directory for all six commands: `/home/mark/projects/fid`. These are the
 
 ## Commit hash
 
-- Pending commit
+- `d02614e6c26757076a91d8a12e08dfa328fe699d`
 
 ## Commit subject
 
-- Pending commit
+- `fix(export): validate portable Phase 23 review recovery`
