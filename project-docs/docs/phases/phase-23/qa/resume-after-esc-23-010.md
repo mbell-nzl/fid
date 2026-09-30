@@ -160,5 +160,18 @@ first. Complete the task, not only the count:
    - the 19/18/1 partition against DEC-265;
    - the `N/A` rejection-class citations and the VAL-067 provenance rows.
 
-This handoff grants authority and scope. It is not a verification receipt.
-The Tech Lead ran no implementation gate.
+## Simulation check
+
+The binding was checked on a scratch copy of the `phase-23` docs with DEC-265
+recorded (`22b1495`). A RUN-RESUME and a TASK-RECOVERY, both labelled
+STRUCTURE SIMULATION ONLY, were appended one at a time through
+`workflow-sequence-lint.sh --append-stdin`.
+
+- The unmodified ledger returned `VALID state=STOPPED`.
+- Each append returned `APPEND_CONFIRMED state=REPAIR_PENDING`.
+- The simulated ledger returned `VALID state=REPAIR_PENDING`.
+
+Each run terminated `exit_code: 0`. This proves only the event binding;
+replace the simulation values with real checkpoints and receipts. The Tech
+Lead ran no implementation gate. This handoff grants authority and scope.
+It is not a verification receipt.
