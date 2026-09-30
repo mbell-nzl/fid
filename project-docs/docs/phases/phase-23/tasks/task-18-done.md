@@ -245,8 +245,8 @@ The ordinary gate also reported `cmd/fid` at 199.423s. Its `internal/workflow` l
 
 ## Commit hash
 
-- Pending commit
+- `1b8a67d699dfd7ae559d7ec193c10f498420a645`
 
 ## Commit subject
 
-- Pending commit
+- `test(conformance): checkpoint paired rejection matrix`
