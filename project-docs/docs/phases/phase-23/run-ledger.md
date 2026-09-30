@@ -2339,3 +2339,220 @@
 - Triage: TRG-23-011 (BLOCK, escalated as ESC-23-010)
 - Protected category: public-interface/specification contract and failure-code set cardinality
 - Next Human or external-authority action: Full Tech Lead or delegated Human resolves ESC-23-010 by recording the exact accepted Failure-code members and count, reconciling public-interface.md section 5 with DEC-230, and authorizing same-task task-18 continuation; the continuation must preserve the committed audit and exact gate evidence, complete full semantic fake/fid parity for VAL-068, and rerun the unchanged task-18 gate before the phase can advance
+
+### 2026-09-30 16:14 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-30 15:03 STOP after TRG-23-011 (ESC-23-010)
+- Governing TRG: TRG-23-011
+- Governing ESC: ESC-23-010
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 2
+- Checkpoint: phase-23 HEAD ae97ac228e7eae5f432da3c510372bd564b646ae on branch phase-23; clean before this Runner-owned append; the 15:03 STOP, TRG-23-011, ESC-23-010, BLOCKED task-18 report 333514946 and corrections dac84a1/a156691 remain retained
+- Resolution evidence: git rev-parse --verify 22b149558679fba0ea0f0b88db355272c4c51eb2^{commit} returned 22b149558679fba0ea0f0b88db355272c4c51eb2; subject matched docs(phase-23): resolve ESC-23-010 under DEC-265; DEC-265 is present in phase-23 decisions; ESC-23-010 is marked RESOLVED in tl_escalations_current.md; resume-after-esc-23-010.md is present; the retained ledger validated as VALID state=STOPPED before this append
+- Resolution authority: DEC-265
+- Continuing task: task-18
+- Next recovery: task-18 | in-scope-implementation | task-scope | task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality | 2
+
+### 2026-09-30 16:15 TASK-RECOVERY task-18
+
+- Source: DEC-265 and TRG-23-011; project-docs/docs/phases/phase-23/qa/resume-after-esc-23-010.md
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: DEC-265 and TRG-23-011
+- Triage disposition: N/A
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD ae97ac228e7eae5f432da3c510372bd564b646ae; DEC-265 resolution commit 22b149558679fba0ea0f0b88db355272c4c51eb2 and handoff are verified; the 15:03 STOP, TRG-23-011, ESC-23-010, BLOCKED task-18 report 333514946 and corrections dac84a1/a156691 remain; the phase worktree had only Runner-owned run-ledger.md dirty before this append; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md is the only dirty path; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - same-task Developer continuation must inspect task-18-done.md and committed task-18 test files first, preserve all attempt-1 red/intermediate/exact-gate evidence, pin the 19 declared = 18 added + 1 retained partition with independent literals, complete VAL-068 full semantic accepted-result and applicable rejection-class parity for all 23 operations using contract-authored fake expectations and one declared normalization rule set, record VAL-067 introducing-commit provenance for the seven Phase 23 grant actions, run the focused command first and then all five unchanged task-18 commands, update and commit task-18-done.md, and return a typed outcome
+- Next action: dispatch one same-task task-18 Developer continuation from the current phase HEAD; it must follow DEC-265 and the resume handoff, complete the whole task, preserve attempt-1 evidence, run the focused command before the five exact commands, update and commit the report, and return a typed outcome
+- Human attention required: no
+
+### 2026-09-30 16:42 REPAIR task-18
+
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 2
+- Starting checkpoint: phase-23 HEAD 5cee6fee9fec1f3263f7cd959bf5cc979f8d8560 with task-18 TASK-RECOVERY attempt 2 active; DEC-265 and the resume binding were verified; only Runner-owned run-ledger.md was dirty
+- Ending checkpoint: phase-23 HEAD remains 5cee6fee9fec1f3263f7cd959bf5cc979f8d8560; attempt-2 implementation commit 38efa3b8252c661f6260ccd7436e1bc0328db5d0 and finalized report commit 5cee6fee9fec1f3263f7cd959bf5cc979f8d8560 are present; the independent 19/18/1 partition is pinned and tested; the focused command and all five exact task-18 commands passed; only Runner-owned run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: The same-task continuation made material in-scope progress by pinning DEC-265s independent 19 declared = 18 added + 1 retained partition, sharing the 23-operation inventory, and preserving all attempt-1 evidence. Report-lint returned OUTCOME RECOVERY_REQUIRED with PASS report-lint completed with no failures (terminated exit_code: 0) because VAL-068 full semantic equality and complete rejection-class coverage remain unfinished. The rejected attempt-3 TASK-RECOVERY append was left byte-for-byte unchanged: workflow-sequence-lint.sh --append-stdin terminated exit_code: 1 with output `INVALID overlapping TASK-RECOVERY precedes required REPAIR`; this corrected REPAIR event records that orchestration attempt.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-30 16:43 TASK-RECOVERY task-18
+
+- Source: Runner-mediated same-task continuation after 2026-09-30 16:42 REPAIR task-18 recorded Outcome: MATERIAL-PROGRESS; DEC-265 and TRG-23-011 remain governing authority
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: DEC-265 and TRG-23-011
+- Triage disposition: N/A
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: do not change product behavior, contract, code count, VAL text, owner, commands, thresholds, or fake expectations to match fid output; preserve all attempt-1 evidence and the attempt-2 partition, focused command, five exact gates, and report evidence
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 5cee6fee9fec1f3263f7cd959bf5cc979f8d8560; task-18 attempt-2 implementation and report commits are present; DEC-265 and the 16:14 resume binding remain verified; attempt-2 focused command and all five unchanged task commands passed; report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0); only Runner-owned run-ledger.md is dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md is the only dirty path; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - same-task continuation must preserve the new independent 19/18/1 partition and all attempt-1/attempt-2 evidence, complete VAL-068 full semantic accepted-result equality, generated-value consistency, and every applicable rejection class for all 23 operations using contract-authored fake expectations and one normalization rule set, record cited N/A classes, run the focused command first and then all five unchanged task-18 commands, update the report, run report-lint, commit, and return a typed outcome
+- Next action: dispatch one same-task task-18 continuation for attempt 3; it must inspect the committed attempt-2 tests/report first, finish only the remaining VAL-068 work within task scope, preserve all prior evidence, and return a typed outcome
+- Human attention required: no
+
+### 2026-09-30 17:22 REPAIR task-18
+
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 3
+- Starting checkpoint: phase-23 HEAD 5cee6fee9fec1f3263f7cd959bf5cc979f8d8560 with task-18 TASK-RECOVERY attempt 3 active; attempt-2 partition and report were committed; only Runner-owned run-ledger.md was dirty
+- Ending checkpoint: phase-23 HEAD 930f9a49c015f061685e46a04b9c404f2ba07783; attempt-3 test/report commits and report-lint correction are present; complete accepted result maps cover all 23 operations and mutation unknown/conflicting-payload checks compare unchanged Event counts; only Runner-owned run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: Attempt-3 same-task work completed the full accepted-result map comparison for all 23 operations and preserved the focused command, all five exact gates, and earlier evidence. The remaining VAL-068 obligations are per-operation authority/stale/not-found classes, amended-leaf first/replay equality, and stronger generated-value syntax checks. Independent report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0); report commit and worktree are clean.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-30 17:23 TASK-RECOVERY task-18
+
+- Source: Runner-mediated same-task continuation after 2026-09-30 17:22 REPAIR task-18 recorded Outcome: MATERIAL-PROGRESS; DEC-265 and TRG-23-011 remain governing authority
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: DEC-265 and TRG-23-011
+- Triage disposition: N/A
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 4
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: do not change product behavior, contract, code count, VAL text, owner, commands, thresholds, or fake expectations to match fid output; preserve all attempt-1, attempt-2, and attempt-3 evidence and the independent 19/18/1 partition
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 930f9a49c015f061685e46a04b9c404f2ba07783; task-18 attempt-3 tests and report are committed; complete accepted-result maps cover all 23 operations; focused and all five unchanged commands passed; report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0); only Runner-owned run-ledger.md is dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md is the only dirty path; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - same-task continuation must finish VAL-068 by adding per-operation authority, stale-version/binding, and not-found rejection classes with cited N/A rows, first-response/replay equality for all amended leaves, and stronger syntax/cross-case checks for fid-generated values; preserve all prior evidence, run the focused command first and then all five unchanged task-18 commands, update the report, run report-lint, commit, and return a typed outcome
+- Next action: dispatch one same-task task-18 continuation for attempt 4; it must inspect the committed attempt-3 tests/report first, finish only the remaining VAL-068 obligations within task scope, preserve all prior evidence, and return a typed outcome
+- Human attention required: no
+
+### 2026-09-30 17:43 REPAIR task-18
+
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 4
+- Starting checkpoint: phase-23 HEAD 930f9a49c015f061685e46a04b9c404f2ba07783 with task-18 TASK-RECOVERY attempt 4 active; attempt-3 complete-result maps and report were committed; only Runner-owned run-ledger.md was dirty
+- Ending checkpoint: phase-23 HEAD 0a5e62f9b379a50154faaf48b637fd19920b9df1; attempt-4 added first-response/replay equality for four amended mutations, repeated-read equality for evidence.evaluate, stricter generated-value checks, and shared not-found cases for review.get and requirement.get; focused and all five exact commands passed; only Runner-owned run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: Attempt-4 same-task work preserved all prior evidence and narrowed VAL-068 to per-operation authority and stale-binding cases, the remaining ID-taking not-found cases, and cited N/A classifications. Report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0); report commit and worktree are clean.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-30 17:44 TASK-RECOVERY task-18
+
+- Source: Runner-mediated same-task continuation after 2026-09-30 17:43 REPAIR task-18 recorded Outcome: MATERIAL-PROGRESS; DEC-265 and TRG-23-011 remain governing authority
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: DEC-265 and TRG-23-011
+- Triage disposition: N/A
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 5
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: do not change product behavior, contract, code count, VAL text, owner, commands, thresholds, or fake expectations to match fid output; preserve all attempt-1 through attempt-4 evidence and the independent 19/18/1 partition
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 0a5e62f9b379a50154faaf48b637fd19920b9df1; task-18 attempt-4 tests and report are committed; first-response/replay equality and two shared not-found cases are present; focused and all five unchanged commands passed; report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0); only Runner-owned run-ledger.md is dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md is the only dirty path; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - same-task continuation must finish the remaining VAL-068 authority, stale-version/binding, and ID-taking not-found cases, add cited N/A classifications for every non-applicable rejection class, preserve all prior evidence, run the focused command first and then all five unchanged task-18 commands, update the report, run report-lint, commit, and return a typed outcome
+- Next action: dispatch one same-task task-18 continuation for attempt 5; it must inspect the committed attempt-4 tests/report first, finish only the remaining VAL-068 obligations within task scope, preserve all prior evidence, and return a typed outcome
+- Human attention required: no
+
+### 2026-09-30 18:09 REPAIR task-18
+
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 5
+- Starting checkpoint: phase-23 HEAD 0a5e62f9b379a50154faaf48b637fd19920b9df1 with task-18 TASK-RECOVERY attempt 5 active; attempt-4 replay, generated-value, and not-found evidence were committed; only Runner-owned run-ledger.md was dirty
+- Ending checkpoint: phase-23 HEAD 715db17d71e165af78b730aaaf4760e79d0c3b0b; attempt-5 paired authority and additional not-found cases plus the recovery report are committed; the focused command passed before the final tree exposed the claim.acquire authority-details mismatch; the final tagged gate failed on that same mismatch; only Runner-owned run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: Attempt-5 added paired authority and not-found cases while preserving all prior evidence and the 19/18/1 partition. The independent fake follows the retained Phase 21 authority Failure contract, while fid claim.acquire returns authority-denied details `{operation,actor}` instead of `{operation,actor_id,required_actions,required_capabilities}`. Runner provenance verifies the producing line was introduced by 0b67c8304a84e4e5bcb8df44d79f899e40a16acb with subject feat(claims): add generic mutation claim lifecycle and Refs: phase-21/task-10; it is outside task-18 scope. Report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0). The product divergence is preserved; no product or fake change is authorized.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-30 18:10 TASK-RECOVERY task-18
+
+- Source: Runner-mediated same-task continuation after 2026-09-30 18:09 REPAIR task-18 recorded Outcome: MATERIAL-PROGRESS; DEC-265 and TRG-23-011 remain governing authority
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: DEC-265 and TRG-23-011
+- Triage disposition: N/A
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 6
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: preserve the claim.acquire product divergence and the independent fake expectation as failing evidence; do not edit cmd/fid/claim.go or any other product file, do not alter the retained Phase 21 contract, do not weaken the conformance assertion, do not derive fake output from fid, and preserve all attempt-1 through attempt-5 evidence and the DEC-265 partition
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 715db17d71e165af78b730aaaf4760e79d0c3b0b; task-18 attempt-5 paired authority/not-found tests and report are committed; the focused command passed before the final claim.acquire mismatch; the final tagged gate failed on that mismatch; report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0); provenance identifies 0b67c830 phase-21/task-10 as the introducing product commit; only Runner-owned run-ledger.md is dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the Runner-owned run-ledger.md is the only dirty path; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - same-task continuation must complete any remaining in-scope stale-version/binding, ID-taking not-found, rejection-class N/A citations, and report provenance without touching the claim.acquire product divergence or fake expectation; it must preserve the failing focused/tagged evidence, run the focused command first and then the five unchanged task-18 commands, update the report as RECOVERY_REQUIRED if the divergence remains, run report-lint, commit, and return a typed outcome
+- Next action: dispatch one same-task task-18 continuation for attempt 6 to finish the remaining audit rows while preserving the proven product divergence; no product or fake repair is authorized and no new TRG or ESC may be allocated
+- Human attention required: no
+
+### 2026-09-30 18:53 REPAIR task-18
+
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 6
+- Starting checkpoint: phase-23 HEAD 715db17d71e165af78b730aaaf4760e79d0c3b0b with task-18 TASK-RECOVERY attempt 6 active; attempt-5 preserved the claim.acquire divergence and remaining audit obligations; only Runner-owned run-ledger.md was dirty
+- Ending checkpoint: phase-23 HEAD 117625d696c3c7fd05a3ff60fccda5c9f3867a8f; attempt-6 completed the remaining in-scope ID and binding cases, cited N/A classifications, and VAL-067 provenance without touching product code or the fake; the focused and tagged commands remain red solely on claim.acquire; only Runner-owned run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: Attempt-6 completed the in-scope rejection audit and preserved the claim.acquire product/contract divergence as failed evidence. The introducing commit 0b67c8304a84e4e5bcb8df44d79f899e40a16acb is verified as feat(claims): add generic mutation claim lifecycle with Refs: phase-21/task-10; cmd/fid/claim.go remains outside task-18 scope. The focused command and tagged gate failed solely on that divergence, while format, lint, ordinary race/coverage, and coverage summary passed with observed termination. Report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0). The task is at a stopping point requiring TL-Lite scope/contract disposition.
+- Next checkpoint: TL-Lite disposition
+
+### 2026-09-30 18:58 STOP
+
+- Cause: task-18 / TRG-23-011 / ESC-23-010 disposition; all in-scope conformance audit rows are complete, but claim.acquire returns authority-denied details {operation,actor} while the retained Phase 21 contract requires {operation,actor_id,required_actions,required_capabilities}, so VAL-068 and the focused/tagged gates remain red
+- Triage: TRG-23-011 (BLOCK, existing ESC-23-010 disposition; no new identifier allocated)
+- Protected category: cross-task product behavior against retained public-interface contract and scope/ownership authority
+- Next Human or external-authority action: Full Tech Lead or the owner of the retained Phase 21 contract resolves the claim.acquire authority envelope and assigns the exact owning repair route; preserve the independent fake expectation, all task-18 attempts, and failed focused/tagged evidence. After that authority resolves the divergence, resume task 18, rerun the unchanged focused and five exact commands, pass report-lint, complete the required task closure, and dispatch QA review-13 for window 16-18.
