@@ -162,6 +162,33 @@ func TestP23HumanFixtures(t *testing.T) {
 	t.Logf("Retained Human fixture manifest: %s", manifestPath)
 }
 
+func TestP23HumanFixtureStepsRemainRunnable(t *testing.T) {
+	t.Parallel()
+	binary := integrationFIDBinary(t)
+	root := t.TempDir()
+	checkpoints := []p23HumanCheckpoint{
+		p23ProtectedDecisionFixture(t, binary, root),
+		p23ReviewExhaustionFixture(t, binary, root),
+	}
+	count := 0
+	for _, checkpoint := range checkpoints {
+		for _, step := range checkpoint.Steps {
+			stdout, stderr, err := closureRunCommand(step.CWD, binary, step.Args...)
+			exit := 0
+			if err != nil {
+				exit = processExitCode(t, err)
+			}
+			if exit != step.ExpectedExit || stdout == "" && stderr == "" {
+				t.Fatalf("%s / %s: exit=%d want=%d stdout=%q stderr=%q", checkpoint.Name, step.Name, exit, step.ExpectedExit, stdout, stderr)
+			}
+			count++
+		}
+	}
+	if count != 4 {
+		t.Fatalf("Human fixture steps exercised = %d, want 4", count)
+	}
+}
+
 func p23GenerateHumanFixtures(t *testing.T, root string) {
 	t.Helper()
 	existing, err := os.ReadDir(root)

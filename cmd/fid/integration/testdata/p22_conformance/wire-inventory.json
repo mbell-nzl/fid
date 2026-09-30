@@ -110,7 +110,11 @@
         "activation-recovered",
         "capability-available",
         "budget-observed",
-        "work-ended"
+        "work-ended",
+        "review-recorded",
+        "finding-resolved",
+        "decision-satisfied",
+        "human-outcome-recorded"
       ]
     },
     "Executor": {
@@ -197,7 +201,11 @@
       "activation-recovered",
       "budget-observed",
       "capability-available",
+      "decision-satisfied",
       "executor-terminated",
+      "finding-resolved",
+      "human-outcome-recorded",
+      "review-recorded",
       "run-recovered",
       "work-ended"
     ],

@@ -1,0 +1,21 @@
+[
+  {"code":"review-not-independent","owner_task":4,"behavioral_test":"cmd/fid/integration/p23_review_record_test.go#TestP23ReviewRecordRealProcessJourney"},
+  {"code":"review-verdict-invalid","owner_task":5,"behavioral_test":"cmd/fid/integration/p23_finding_disposition_test.go#TestP23FindingDispositionRealProcessJourney"},
+  {"code":"review-changes-required","owner_task":6,"behavioral_test":"cmd/fid/integration/p23_review_evidence_budget_test.go#TestP23ReviewEvidenceRealProcessJourney"},
+  {"code":"review-rework-exhausted","owner_task":6,"behavioral_test":"cmd/fid/integration/p23_review_evidence_budget_test.go#TestP23ReviewCyclesRealProcessJourney"},
+  {"code":"finding-already-disposed","owner_task":5,"behavioral_test":"cmd/fid/integration/p23_finding_disposition_test.go#TestP23FindingDispositionRealProcessJourney"},
+  {"code":"finding-not-found","owner_task":5,"behavioral_test":"cmd/fid/integration/p23_finding_disposition_test.go#TestP23FindingDispositionRealProcessJourney"},
+  {"code":"review-not-found","owner_task":13,"behavioral_test":"cmd/fid/integration/p23_review_record_test.go#TestP23ReviewRecordRealProcessJourney"},
+  {"code":"concern-not-found","owner_task":8,"behavioral_test":"cmd/fid/integration/p23_concern_deviation_test.go#TestP23ConcernDeviationRealProcessJourney"},
+  {"code":"deviation-not-found","owner_task":8,"behavioral_test":"cmd/fid/integration/p23_concern_deviation_test.go#TestP23ConcernDeviationRealProcessJourney"},
+  {"code":"outcome-not-found","owner_task":10,"behavioral_test":"cmd/fid/integration/p23_human_outcome_test.go#TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess"},
+  {"code":"requirement-not-found","owner_task":12,"behavioral_test":"cmd/fid/integration/p23_requirement_reference_test.go#TestP23RequirementReferenceAndLinkRealProcess"},
+  {"code":"concern-already-disposed","owner_task":8,"behavioral_test":"cmd/fid/integration/p23_concern_deviation_test.go#TestP23ConcernDeviationRealProcessJourney"},
+  {"code":"claim-mode-invalid","owner_task":3,"behavioral_test":"cmd/fid/integration/p23_claim_mode_test.go#TestP23ReviewClaimRejectsDirtyPathAdoption"},
+  {"code":"protected-decision-required","owner_task":9,"behavioral_test":"cmd/fid/integration/p23_decision_reference_test.go#TestP23DecisionReferenceProtectedLifecycleRealProcess"},
+  {"code":"human-outcome-required","owner_task":10,"behavioral_test":"cmd/fid/integration/p23_human_outcome_test.go#TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess"},
+  {"code":"outcome-not-permitted","owner_task":10,"behavioral_test":"cmd/fid/integration/p23_human_outcome_test.go#TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess"},
+  {"code":"evidence-type-not-accepted","owner_task":6,"behavioral_test":"cmd/fid/integration/p23_review_record_test.go#TestP23ReviewRecordRealProcessJourney"},
+  {"code":"source-digest-mismatch","owner_task":9,"behavioral_test":"cmd/fid/integration/p23_decision_reference_test.go#TestP23DecisionReferenceProtectedLifecycleRealProcess"},
+  {"code":"repository-mismatch","owner_task":4,"behavioral_test":"cmd/fid/integration/p23_review_record_test.go#TestP23ReviewRecordRealProcessJourney"}
+]

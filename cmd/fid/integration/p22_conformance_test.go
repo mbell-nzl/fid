@@ -110,6 +110,11 @@ func TestP22ConformanceCorpusHasEveryAcceptedOperationAndFailure(t *testing.T) {
 		sort.Strings(values)
 		wantClosed[row[1]] = values
 	}
+	// The Phase 22 document remains the historical base. Phase 23 adds these
+	// four Condition types; the retained fixture now covers the final wire set.
+	wantClosed["Condition"] = append(wantClosed["Condition"],
+		"review-recorded", "finding-resolved", "decision-satisfied", "human-outcome-recorded")
+	sort.Strings(wantClosed["Condition"])
 	if len(wantClosed) != 12 || !reflect.DeepEqual(wantClosed, inventory.ClosedValues) {
 		t.Fatalf("closed-value snapshot differs: doc=%#v fixture=%#v", wantClosed, inventory.ClosedValues)
 	}

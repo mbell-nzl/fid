@@ -1,0 +1,20 @@
+[
+  {"operation":"review.record","fields":["review","budget","stops","attention","idempotency_key","replayed"],"mutation":true,"owner_task":4},
+  {"operation":"review.get","fields":["review"],"mutation":false,"owner_task":13},
+  {"operation":"review.list","fields":["items"],"mutation":false,"owner_task":13},
+  {"operation":"finding.address","fields":["finding","idempotency_key","replayed"],"mutation":true,"owner_task":5},
+  {"operation":"finding.list","fields":["items"],"mutation":false,"owner_task":5},
+  {"operation":"concern.record","fields":["concern","idempotency_key","replayed"],"mutation":true,"owner_task":8},
+  {"operation":"concern.dispose","fields":["concern","idempotency_key","replayed"],"mutation":true,"owner_task":8},
+  {"operation":"concern.list","fields":["items"],"mutation":false,"owner_task":8},
+  {"operation":"deviation.record","fields":["deviation","idempotency_key","replayed"],"mutation":true,"owner_task":8},
+  {"operation":"deviation.list","fields":["items"],"mutation":false,"owner_task":8},
+  {"operation":"decision.record-reference","fields":["decision","protected_decisions","stops","attention","idempotency_key","replayed"],"mutation":true,"owner_task":9},
+  {"operation":"decision.list","fields":["items"],"mutation":false,"owner_task":9},
+  {"operation":"human-outcome.record","fields":["outcome","protected_decisions","stops","attention","idempotency_key","replayed"],"mutation":true,"owner_task":10},
+  {"operation":"human-outcome.list","fields":["items"],"mutation":false,"owner_task":10},
+  {"operation":"requirement.record-reference","fields":["requirement","idempotency_key","replayed"],"mutation":true,"owner_task":12},
+  {"operation":"requirement.link","fields":["link","idempotency_key","replayed"],"mutation":true,"owner_task":12},
+  {"operation":"requirement.get","fields":["requirement","links"],"mutation":false,"owner_task":13},
+  {"operation":"requirement.list","fields":["items"],"mutation":false,"owner_task":12}
+]
