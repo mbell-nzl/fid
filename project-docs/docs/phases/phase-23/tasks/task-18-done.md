@@ -272,8 +272,8 @@ Attempt 6 final exact sequence ran in task-spec order from `/home/mark/projects/
 
 ## Commit hash
 
-- Pending commit
+- `72113dde93558f1738f5fca36a4323fab44a1bf5`
 
 ## Commit subject
 
-- Pending commit
+- `test(conformance): checkpoint remaining rejection audit`
