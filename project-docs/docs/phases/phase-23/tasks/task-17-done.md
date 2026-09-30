@@ -64,8 +64,10 @@ Retained assertion provenance and convergence: `cmd/fid/capabilities_test.go` ex
 - Focused Stop repair: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestStopResolutionChecksCurrentActivationAgreementAndCapability/unavailable_capability$' ./internal/workflow/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	3.181s` (terminated `exit_code: 0`).
 - Touched-package race rerun, byte-identical to the failed command - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	231.658s` (terminated `exit_code: 0`); `internal/workflow 85.367s` and `internal/export 117.755s` also passed.
 - Focused tagged race: `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^(TestFinalCapabilityMatrixMatchesAcceptedTable|TestP23AttentionResolutionThroughReviewRecordedAndFindingResolvedRealProcess)$' ./cmd/fid/integration/` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.974s` (terminated `exit_code: 0`).
-- `go build -o /tmp/fid-task17 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `/tmp/fid-task17 --project /tmp/fid-task17-cli-hHF8rK capabilities` - PASS - `workflow.transitions.v1	true` (terminated `exit_code: 0`); the same output listed `attention.v1`, `human.outcomes.v1`, and `reviews.coverage.v1` as true, and `work.claims.v1` and `telemetry.trajectory.v1` as false. The preceding JSON invocation showed the exact new limits and trust sources.
+- `go build -o /tmp/fid-task17 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `/tmp/fid-task17 --project /tmp/fid-task17-cli-hHF8rK capabilities` - PASS - `workflow.transitions.v1	true` (terminated `exit_code: 0`)
+
+The direct CLI output listed `attention.v1`, `human.outcomes.v1`, and `reviews.coverage.v1` as true, and `work.claims.v1` and `telemetry.trajectory.v1` as false. The JSON invocation showed the exact new limits and trust sources.
 - Source absence observation: `rg -n 'phase-23-unavailable|V1JudgmentUnavailable|judgmentUnavailable' internal/workflow internal/review internal/issues cmd/fid --glob '*.go' --glob '!**/*_test.go'` found no match (`exit_code: 1`, no output). This is an inventory observation, not a declared non-zero PASS gate. `rg -n 'writeCapabilityUnavailable\(' cmd/fid --glob '!**/*_test.go'` found only the helper and the Phase-25 maintenance call (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
@@ -81,6 +83,7 @@ All five commands ran in order from `/home/mark/projects/fid` on the final produ
 ## Deviations from spec
 
 - No scope or contract deviation. The first touched-package race attempt failed with `FAIL` (`exit_code: 1`) because a retained Phase 22 test treated `human.outcomes.v1` as unavailable. Its original subject is rejection of an unavailable capability; the accepted task-17 matrix invalidated only that example row. Replacing it with the still-unavailable `telemetry.trajectory.v1` kept the assertion and its no-journal-change check. The byte-identical touched-package race command later passed with `ok  	github.com/mbell-nzl/fid/cmd/fid	231.658s` (`exit_code: 0`).
+- The first committed report-lint attempt ended `FAIL report-lint found 2 failure(s)` (`exit_code: 2`) because the two optional CLI PASS rows had prose after their termination fields. The repair puts that observation in a separate paragraph and preserves the recorded results.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
