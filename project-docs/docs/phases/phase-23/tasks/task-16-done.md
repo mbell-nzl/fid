@@ -14,11 +14,13 @@
 - The archive semantic validator accepts the existing boolean representation of `review_findings.blocking`. This lets `export validate` and `export import` replay real Phase 23 Review Events against projection schema 18.
 - A built-binary integration journey exports, validates, rebuilds, and imports four populated Phase 23 workspaces. It compares every application table row and every canonical archive entry between live, rebuilt, and imported state, and verifies the schema-18 projection integrity. The four workspaces collectively populate every table named below and emit all nine Phase 23 Event types.
 - The journey verifies non-mutating validation, exact schema-18 import and schema-17 rejection, one `review-cycles` sample keyed to its Review ID, and rejection with no projection change for three corrupt payloads per Phase 23 Event type plus an unknown type.
+- Review-13 MF-1 repair: each of those 28 corrupt Event probes now clones the same clean `.fid` workspace into its own temporary directory, opens a separate projection connection, verifies its complete starting projection against the source, and checks the complete projection again after current-Event rejection. A named test runs all 28 probes independently and logs each workspace, validator error, and before/after projection digest.
+- The original implementation commit was `d02614e6c26757076a91d8a12e08dfa328fe699d` (`fix(export): validate portable Phase 23 review recovery`); this repair preserves that implementation and its prior report evidence.
 
 ## Files created or modified
 
 - `internal/export/archive_semantics_values.go`: accept `review_findings.blocking` as a JSON boolean in the archive semantic replay.
-- `cmd/fid/integration/p23_portable_recovery_test.go`: portable parity, corruption, schema, and charge journey.
+- `cmd/fid/integration/p23_portable_recovery_test.go`: portable parity, corruption, schema, and charge journey; review-13 MF-1 isolation repair and named corruption test.
 - `project-docs/docs/phases/phase-23/tasks/task-16-done.md`: this report.
 
 ## Documentation updated
@@ -31,8 +33,8 @@
 - VAL-027 (import leg): PASS - `TestPortableRoundTripCoversEveryPhase23Table/review-exhaustion` asserts one `review-cycles` row, consumed value 1, and a `source_sample_id` matching `review_records.id` (`p23_portable_recovery_test.go:88`). Its exact `budget_samples` row is compared after rebuild and import (`:219`); the imported state has no duplicate charge. Task 6's recording, replay, and linked-recovery legs remain covered by `TestP23ReviewCycleChargeSurvivesLinkedRecoveryAndRebuild` in the full tagged gate.
 - VAL-064: PASS - `TestPortableRoundTripCoversEveryPhase23Table` compares every application table's complete sorted rows (`p23_portable_recovery_test.go:254`, `:288`) and canonical archive entries including ordered Event bytes (`:219`) across live, rebuilt, and imported workspaces. It checks `.fid` file bytes before and after `export validate` (`:300`), and asserts every named table has populated rows (`:22`, `:34`). Archive entry equality also preserves project, entity, and Event identities and history. The direct CLI create, validate, and import below additionally returned the same project ID and terminal Event hash.
 - VAL-065: PASS - the current archive imports and reports `projection_schema:18` (`p23_portable_recovery_test.go:219`); `p23PortableAssertPriorSchemaRejected` changes only the manifest projection schema to 17, then checks `archive-invalid` with `schema-unsupported` and absence of a published `.fid` (`:173`). The current manifest remains `fid.export-manifest.v2`.
-- VAL-076: PASS - `p23PortableAssertCorruptEventsRejected` (`p23_portable_recovery_test.go:104`) uses real exported Events for all nine named types. Each is tried with an unknown Effect table, a missing required Effect, and a malformed scalar body; the unknown type is also tried. Each rejection comes from the current Event validator, and a complete projection snapshot is unchanged after each attempt.
-- VAL-079: PASS - ordinary `cmd/fid` took `246.504s` and `internal/workflow` took `100.101s` (each under 600s); tagged `cmd/fid/integration` took `269.692s` (under 900s). All three are below 80% of budget; neither gate timed out.
+- VAL-076: PASS after review-13 MF-1 repair - the original `p23PortableAssertCorruptEventsRejected` (`p23_portable_recovery_test.go:104` in the original task commit) used real exported Events for all nine named types, with unknown Effect table, missing required Effect, and malformed scalar body cases, plus one unknown type. It asserted current-Event rejection and complete projection equality, but reused one workspace and connection, so its isolation evidence was insufficient. The repaired helper (`p23_portable_recovery_test.go:129`) clones a clean workspace and opens a new connection in each subtest (`:147-158`), verifies each clone equals the source before injection (`:159-162`), retains the validator assertion (`:187-190`), and compares every table after rejection (`:191-198`). `TestPortableAssertCorruptEventsRejected` (`:88`) supplied 28 passing subtests with distinct workspace paths and per-probe validator output and digest pairs; the 28-case record below names each case. The complete 59-table snapshot SHA-256 was `6a279ff389b35e1d3689116706d3d24677bf9a2fe76942f69a8505277cb853f9` both before and after **each** probe in the verbose run.
+- VAL-079: PASS - original ordinary `cmd/fid` took `246.504s` and `internal/workflow` took `100.101s` (each under 600s); tagged `cmd/fid/integration` took `269.692s` (under 900s). The review-13 repair gate reported uncached `cmd/fid` `196.206s`, uncached `internal/workflow` `57.597s` (the ordinary gate's workflow result was cached), and tagged `cmd/fid/integration` `232.525s`. All original and repair measurements are below 80% of their respective budgets; neither gate timed out.
 
 The table provenance is the accepted Phase 23 task that introduced or changed the projected row, as recorded in `contract-coverage.md`. Each row below is executed by `TestPortableRoundTripCoversEveryPhase23Table` under `go test -tags integration -run '^TestPortableRoundTripCoversEveryPhase23Table$' -count=1 -v ./cmd/fid/integration/` (PASS, `exit_code: 0`) and the mandatory tagged race gate. The named subcase supplies non-empty rows; `p23PortableRoundTrip` compares the entire row set across all three projections, and compares the complete archive.
 
@@ -55,6 +57,21 @@ The table provenance is the accepted Phase 23 task that introduced or changed th
 
 The same executing command checks these nine exported Event types in `p23PortableJournalEvents` (`p23_portable_recovery_test.go:324`) and the three corruption subcases in `p23PortableAssertCorruptEventsRejected` (`:104`): `review.recorded` (task 4), `finding.addressed` (task 5), `concern.recorded` and `concern.disposed` (task 8, rename converged by task 15), `deviation.recorded` (task 8), `decision.referenced` (task 9), `human-outcome.recorded` (task 10), `requirement.referenced` and `requirement.linked` (task 12). An `unknown.phase23` type is rejected by that command too. No retained test row was changed or converged; this task adds new rows and preserves the existing assertions.
 
+Review-13 MF-1 repair evidence: the named verbose test below printed one distinct `workspace=/tmp/TestPortableAssertCorruptEventsRejected...` path, the quoted `current Event` validator error, `tables=59`, and the full before/after SHA-256 pair stated above for **each** populated cell. `stage 1` and `stage 2` abbreviate the verbatim `missing or reordered Effect stage 1/2` errors; `invalid id` abbreviates the verbatim `invalid column or scalar "id"` error with the table named in the cell. Each cell is a separately cloned workspace and connection, checked against the same clean baseline before injection; the complete row snapshot was identical afterwards.
+
+| Event type | Unknown effect table | Missing required effect | Malformed body |
+|---|---|---|---|
+| `review.recorded` | `stage 1` | `stage 1` | `review_records/insert: invalid id` |
+| `finding.addressed` | `stage 1` | `stage 1` | `finding_dispositions/insert: invalid id` |
+| `concern.recorded` | `stage 1` | `stage 1` | `concerns/insert: invalid id` |
+| `concern.disposed` | `stage 1` | `stage 1` | `concerns/update: invalid id` |
+| `deviation.recorded` | `stage 1` | `stage 1` | `deviations/insert: invalid id` |
+| `decision.referenced` | `stage 1` | `stage 1` | `decision_refs/insert: invalid id` |
+| `human-outcome.recorded` | `stage 1` | `stage 1` | `human_outcomes/insert: invalid id` |
+| `requirement.referenced` | `stage 2` | `stage 2` | `requirement_refs/insert: invalid id` |
+| `requirement.linked` | `stage 1` | `stage 1` | `requirement_issue_links/insert: invalid id` |
+| `unknown.phase23` | `unsupported Event family "unknown.phase23"` | N/A | N/A |
+
 ## Tests run
 
 - Focused red: `go test -tags integration -run '^TestPortableRoundTripCoversEveryPhase23Table$' -count=1 -v ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`). The diagnostic was `review_findings.blocking requires an integer, not a boolean` in `export validate`; this is the first expected TDD failure.
@@ -68,9 +85,20 @@ The same executing command checks these nine exported Event types in `p23Portabl
 - Direct CLI `/tmp/fid-task16 --project /tmp/fid-task16-cli-KjxBpO/source --json export validate /tmp/fid-task16-cli-KjxBpO/archive.zip` - PASS - `{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"export.validate","result":{"validation":{"archive_path":"/tmp/fid-task16-cli-KjxBpO/archive.zip","archive_digest":"sha256:bfc37ca738c91111eaae92d7b200ac2622e50584a2e3d9f238a14721304bb0b0","status":"valid","manifest_schema":"fid.export-manifest.v2","entry_count":2}}}` (terminated `exit_code: 0`)
 - Direct CLI `/tmp/fid-task16 --json export import /tmp/fid-task16-cli-KjxBpO/archive.zip --repository /tmp/fid-task16-cli-KjxBpO/target --idempotency-key task16-direct-cli` - PASS - `{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"export.import","result":{"import":{"project_id":"project-0b7bf012d95afc763c9b5a706b4c8a47","archive_digest":"sha256:bfc37ca738c91111eaae92d7b200ac2622e50584a2e3d9f238a14721304bb0b0","event_count":1,"terminal_event_hash":"sha256:826a110a565da6901e0f173e7d85164f044c60d2c6f0ba0a63d944116627a8bd","projection_schema":18,"target_root":"/tmp/fid-task16-cli-KjxBpO/target","replayed":false}}}` (terminated `exit_code: 0`)
 
+Review-13 MF-1 repair tests, working directory `/home/mark/projects/fid`:
+
+- Initial named command before adding its test: `go test -tags integration -run '^TestPortableAssertCorruptEventsRejected$' -count=1 ./cmd/fid/integration/` - PASS as a command, no test executed - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	0.970s [no tests to run]` (terminated `exit_code: 0`). This was not behavior evidence.
+- Red after adding the named test and the connection-isolation assertion: the same command - FAIL - `FAIL` (terminated `exit_code: 1`); 27 subtests reported `corruption probe reused a projection connection` after the first probe.
+- First green after cloning per case: the same command - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.134s` (terminated `exit_code: 0`).
+- Per-probe evidence: `go test -tags integration -run '^TestPortableAssertCorruptEventsRejected$' -count=1 -v ./cmd/fid/integration/` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.197s` (terminated `exit_code: 0`). Its 28 named subtests each logged a distinct workspace path, current-Event rejection, and equal full-projection digest pair over 59 tables; the case matrix above records the validator output for all 28.
+- Final byte-identical named command on the logged implementation: `go test -tags integration -run '^TestPortableAssertCorruptEventsRejected$' -count=1 ./cmd/fid/integration/` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.156s` (terminated `exit_code: 0`).
+- Tagged pre-gate race check: `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestPortableAssertCorruptEventsRejected$' ./cmd/fid/integration/` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	11.158s` (terminated `exit_code: 0`).
+- Uncached VAL-079 workflow measurement after the six exact gates: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	57.597s` (terminated `exit_code: 0`). The ordinary gate reported workflow as cached, so this supplies its current uncached package time.
+- Report-lint expectation after the finalized report commit: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-16-done.md project-docs/docs/phases/phase-23/tasks/task-16.md` must terminate with `OUTCOME COMPLETE`. The post-commit observed result is returned to the Phase Runner.
+
 ## Exact quality-gate results
 
-Working directory for all six commands: `/home/mark/projects/fid`. These are the task-spec commands in order and were run on the final implementation tree.
+Working directory for all six commands: `/home/mark/projects/fid`. The six original task-spec commands below ran in order on the original task implementation tree. Their evidence is retained unchanged.
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
@@ -81,9 +109,18 @@ Working directory for all six commands: `/home/mark/projects/fid`. These are the
 
 Benchmark row: `22689 ms/rebuild` (reported by the same command).
 
+Review-13 MF-1 repair gate: the same six commands ran byte-identically, in the task-spec order, on the repaired fixture tree. No QA-plan command beyond the task spec was required of this Developer; QA-41 and QA-44 are phase-end QA Lead checks.
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`); `cmd/fid` reported `196.206s` uncached.
+- `go tool cover -func=coverage.out` - PASS - `total:									(statements)			60.5%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	232.525s` (terminated `exit_code: 0`)
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	25.218s` (terminated `exit_code: 0`); benchmark row `22542 ms/rebuild`.
+
 ## Deviations from spec
 
-- None. The initial focused failure was the missing archive boolean allowance; adding `review_findings.blocking` to the accepted semantic boolean columns produced the passing focused and full gates. The two intermediate focused failures were new test-fixture defects and were repaired in the same test file. All failed attempts above remain recorded; the exact same focused command later passed.
+- None. The initial focused failure was the missing archive boolean allowance; adding `review_findings.blocking` to the accepted semantic boolean columns produced the passing focused and full gates. The two intermediate focused failures were new test-fixture defects and were repaired in the same test file. All failed attempts above remain recorded; the exact same focused command later passed. Review-13 MF-1 identified that the original corruption assertion reused one projection: the new named test failed with the copied terminal token `FAIL` (terminated `exit_code: 1`) because 27 cases reused the connection. Cloning the clean workspace and opening a new connection inside each case repaired that cause; the byte-identical command later returned `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.156s` (terminated `exit_code: 0`). No accepted contract, command, threshold, or product behavior changed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -95,8 +132,8 @@ Benchmark row: `22689 ms/rebuild` (reported by the same command).
 
 ## Commit hash
 
-- `d02614e6c26757076a91d8a12e08dfa328fe699d`
+- Pending commit
 
 ## Commit subject
 
-- `fix(export): validate portable Phase 23 review recovery`
+- Pending commit

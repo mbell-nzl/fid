@@ -85,6 +85,31 @@ func TestPortableRoundTripCoversEveryPhase23Table(t *testing.T) {
 	p23PortableAssertPriorSchemaRejected(t, binary, validationWorkspace)
 }
 
+func TestPortableAssertCorruptEventsRejected(t *testing.T) {
+	t.Parallel()
+	binary := integrationFIDBinary(t)
+	root := t.TempDir()
+	events := map[string]journal.Event{}
+	workspaces := []string{
+		p23MixedFindingFixture(t, binary, root).Project,
+		p23ReviewExhaustionFixture(t, binary, root).Project,
+		p23PortableJudgmentFixture(t, binary, root),
+	}
+	protected := p23ProtectedDecisionFixture(t, binary, root)
+	step := protected.Steps[1]
+	stdout, stderr, err := closureRunCommand(step.CWD, binary, step.Args...)
+	if err != nil || stderr != "" || stdout == "" {
+		t.Fatalf("record Human Outcome: %v stdout=%q stderr=%q", err, stdout, stderr)
+	}
+	workspaces = append(workspaces, protected.Project)
+	for _, workspace := range workspaces {
+		for kind, event := range p23PortableJournalEvents(t, workspace) {
+			events[kind] = event
+		}
+	}
+	p23PortableAssertCorruptEventsRejected(t, workspaces[2], events)
+}
+
 func p23PortableAssertSingleReviewCharge(t *testing.T, workspace string) {
 	t.Helper()
 	conn := p22FaultDB(t, workspace)
@@ -103,9 +128,11 @@ func p23PortableAssertSingleReviewCharge(t *testing.T, workspace string) {
 
 func p23PortableAssertCorruptEventsRejected(t *testing.T, workspace string, events map[string]journal.Event) {
 	t.Helper()
-	conn := p22FaultDB(t, workspace)
-	defer func() { p22FaultOK(t, conn.Close()) }()
-	before := p23PortableAllRows(t, conn)
+	source := p22FaultDB(t, workspace)
+	baseline := p23PortableAllRows(t, source)
+	p22FaultOK(t, source.Close())
+	seenConnections := map[*sql.DB]bool{}
+	seenWorkspaces := map[string]bool{}
 	for _, eventType := range append(append([]string{}, p23PortableEvents...), "unknown.phase23") {
 		base := events[eventType]
 		if eventType == "unknown.phase23" {
@@ -117,6 +144,22 @@ func p23PortableAssertCorruptEventsRejected(t *testing.T, workspace string, even
 				continue
 			}
 			t.Run(eventType+"/"+corruption, func(t *testing.T) {
+				clone := t.TempDir()
+				copyParityFixture(t, filepath.Join(workspace, ".fid"), filepath.Join(clone, ".fid"))
+				if seenWorkspaces[clone] {
+					t.Fatal("corruption probe reused a workspace")
+				}
+				seenWorkspaces[clone] = true
+				conn := p22FaultDB(t, clone)
+				defer func() { p22FaultOK(t, conn.Close()) }()
+				if seenConnections[conn] {
+					t.Fatal("corruption probe reused a projection connection")
+				}
+				seenConnections[conn] = true
+				before := p23PortableAllRows(t, conn)
+				if !reflect.DeepEqual(baseline, before) {
+					t.Fatal("corruption probe did not start from the clean projection")
+				}
 				encoded, err := json.Marshal(base)
 				p22FaultOK(t, err)
 				var damaged journal.Event
@@ -140,12 +183,19 @@ func p23PortableAssertCorruptEventsRejected(t *testing.T, workspace string, even
 				}
 				hash, err := journal.HashEvent(damaged)
 				p22FaultOK(t, err)
-				if err := journal.ProjectEvent(conn, journal.ProjectionInput{Event: damaged, EventHash: hash, File: "corrupt.jsonl", Line: 1, Offset: 1}); err == nil || !strings.Contains(err.Error(), "current Event") {
-					t.Fatalf("current Event validator failed to reject payload: %v", err)
+				rejection := journal.ProjectEvent(conn, journal.ProjectionInput{Event: damaged, EventHash: hash, File: "corrupt.jsonl", Line: 1, Offset: 1})
+				if rejection == nil || !strings.Contains(rejection.Error(), "current Event") {
+					t.Fatalf("current Event validator failed to reject payload: %v", rejection)
 				}
-				if after := p23PortableAllRows(t, conn); !reflect.DeepEqual(before, after) {
+				after := p23PortableAllRows(t, conn)
+				if !reflect.DeepEqual(before, after) {
 					t.Fatal("rejected Event changed projection")
 				}
+				beforeBytes, err := json.Marshal(before)
+				p22FaultOK(t, err)
+				afterBytes, err := json.Marshal(after)
+				p22FaultOK(t, err)
+				t.Logf("workspace=%s validator=%q full projection SHA-256 before=%x after=%x tables=%d", clone, rejection, sha256.Sum256(beforeBytes), sha256.Sum256(afterBytes), len(before))
 			})
 		}
 	}
