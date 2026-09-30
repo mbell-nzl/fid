@@ -109,8 +109,8 @@ Working directory `/home/mark/projects/fid`; commands executed in the task-spec 
 
 ## Commit hash
 
-- Pending commit
+- `333514946aeab8328fa618f0f619fdce84694f9a`
 
 ## Commit subject
 
-- Pending commit
+- `test(conformance): audit Phase 23 wire surface`
