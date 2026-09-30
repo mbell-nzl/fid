@@ -198,8 +198,8 @@ Attempt 3 exact commands, run in task-spec order from `/home/mark/projects/fid` 
 
 ## Commit hash
 
-- Pending commit
+- `2e7fd2f9fa05bce648510789453c8d2ed8633b1d`
 
 ## Commit subject
 
-- Pending commit
+- `test(conformance): compare Phase 23 leaf results`
