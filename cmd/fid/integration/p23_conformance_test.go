@@ -11,19 +11,23 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 )
 
 type p23LeafCase struct {
-	Operation string   `json:"operation"`
-	Fields    []string `json:"fields"`
-	Mutation  bool     `json:"mutation"`
-	OwnerTask int      `json:"owner_task"`
+	Operation string         `json:"operation"`
+	Fields    []string       `json:"fields"`
+	Mutation  bool           `json:"mutation"`
+	OwnerTask int            `json:"owner_task"`
+	Semantics map[string]any `json:"semantics,omitempty"`
+	Amended   bool           `json:"amended,omitempty"`
 }
 
 type p23FailureCase struct {
 	Code           string `json:"code"`
+	Partition      string `json:"partition"`
 	OwnerTask      int    `json:"owner_task"`
 	BehavioralTest string `json:"behavioral_test"`
 }
@@ -39,6 +43,7 @@ func TestP23FailureCorpusHasEveryAcceptedCode(t *testing.T) {
 		t.Fatal(err)
 	}
 	var actual, expected []string
+	added, retained := 0, 0
 	for code := range p23FailureContracts {
 		actual = append(actual, code)
 	}
@@ -48,11 +53,25 @@ func TestP23FailureCorpusHasEveryAcceptedCode(t *testing.T) {
 			t.Fatalf("unowned failure %s", fixture.Code)
 		}
 		expected = append(expected, fixture.Code)
+		switch fixture.Partition {
+		case "added":
+			added++
+			if fixture.Code == "requirement-not-found" {
+				t.Fatal("requirement-not-found must be retained")
+			}
+		case "retained":
+			retained++
+			if fixture.Code != "requirement-not-found" {
+				t.Fatalf("unexpected retained failure %s", fixture.Code)
+			}
+		default:
+			t.Fatalf("unpartitioned failure %s", fixture.Code)
+		}
 		p22CheckBehavioralReference(t, fixture.BehavioralTest, parsed)
 	}
 	p22SameMembers(t, "accepted failure-code inventory", actual, expected)
-	if len(cases) != 19 {
-		t.Fatalf("enumerated Phase 23 failure codes = %d, want 19", len(cases))
+	if len(cases) != 19 || added != 18 || retained != 1 {
+		t.Fatalf("declared/added/retained = %d/%d/%d, want 19/18/1", len(cases), added, retained)
 	}
 }
 
@@ -62,6 +81,7 @@ type p23LeafOutcome struct {
 	Replay    bool
 	Code      string
 	Exit      int
+	Semantics map[string]any
 }
 
 func TestP23SharedLeafConformance(t *testing.T) {
@@ -74,8 +94,8 @@ func TestP23SharedLeafConformance(t *testing.T) {
 	if err := json.Unmarshal(data, &cases); err != nil {
 		t.Fatal(err)
 	}
-	if len(cases) != 18 {
-		t.Fatalf("Phase 23 leaf corpus has %d operations, want 18", len(cases))
+	if len(cases) != 23 {
+		t.Fatalf("Phase 23 leaf corpus has %d operations, want 23", len(cases))
 	}
 	root := t.TempDir()
 	pairs := p23GenerateLeafPairs(t, integrationFIDBinary(t), root)
@@ -83,12 +103,18 @@ func TestP23SharedLeafConformance(t *testing.T) {
 	for _, pair := range pairs {
 		byOperation[pair.Operation] = pair
 	}
-	if len(byOperation) != len(cases) {
-		t.Fatalf("Human fixture has %d leaves, corpus has %d", len(byOperation), len(cases))
+	if len(byOperation) != 18 {
+		t.Fatalf("Human fixture has %d new leaves, want 18", len(byOperation))
 	}
 	for _, fixture := range cases {
+		if fixture.Amended {
+			continue
+		}
 		fixture := fixture
 		t.Run(fixture.Operation, func(t *testing.T) {
+			if len(fixture.Semantics) == 0 {
+				t.Fatalf("%s lacks contract-authored semantic expectations", fixture.Operation)
+			}
 			pair, found := byOperation[fixture.Operation]
 			if !found {
 				t.Fatalf("no real invocation for %s", fixture.Operation)
@@ -97,7 +123,7 @@ func TestP23SharedLeafConformance(t *testing.T) {
 				t.Fatalf("unowned %s", fixture.Operation)
 			}
 			fake := p23FakeLeafAdapter{fixture: fixture}
-			fid := p23FIDLeafAdapter{pair: pair, binary: integrationFIDBinary(t)}
+			fid := p23FIDLeafAdapter{pair: pair, binary: integrationFIDBinary(t), fixture: fixture}
 			p23CompareLeafOutcome(t, "accepted", fake.Accepted(), fid.Accepted(t))
 			if fixture.Mutation {
 				p23CompareLeafOutcome(t, "unknown-field", fake.UnknownField(), fid.UnknownField(t))
@@ -152,33 +178,52 @@ func TestP23SharedLeafConformance(t *testing.T) {
 
 func TestP23SharedAmendedLeafConformance(t *testing.T) {
 	t.Parallel()
+	data, err := os.ReadFile(filepath.Join("testdata", "p23_conformance", "operations.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var shared []p23LeafCase
+	if err := json.Unmarshal(data, &shared); err != nil {
+		t.Fatal(err)
+	}
+	amended := map[string]p23LeafCase{}
+	for _, fixture := range shared {
+		if fixture.Amended {
+			amended[fixture.Operation] = fixture
+		}
+	}
+	if len(shared) != 23 || len(amended) != 5 {
+		t.Fatalf("shared operations = %d, amended = %d; want 23 and 5", len(shared), len(amended))
+	}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{},
 		[]string{"claim.acquire", "envelope.activate", "envelope.create", "evidence.link", "gate.register", "gate.run", "run.observe-budget", "run.start"})
 	p22AcceptedCall(t, a, "p23-shared-budget", "run.observe-budget", map[string]any{"value": 0})
 	p22JourneyProof(t, a, "p23-shared-proof")
 	cases := []struct {
 		operation, file, key string
-		fields               []string
-		mutation             bool
 	}{
-		{"envelope.create", "p22-corpus-envelope", "p22-corpus-envelope-create", []string{"envelope", "idempotency_key", "replayed"}, true},
-		{"envelope.activate", "p22-corpus-envelope-activate", "p22-corpus-envelope-activate", []string{"envelope", "evaluation", "idempotency_key", "replayed"}, true},
-		{"claim.acquire", "p22-corpus-claim", "p22-corpus-claim-acquire", []string{"claim", "idempotency_key", "replayed"}, true},
-		{"evidence.link", "p23-shared-proof-proof", "p23-shared-proof-proof", []string{"evidence", "evaluation", "idempotency_key", "replayed"}, true},
-		{"evidence.evaluate", "p23-evaluate", "", []string{"evaluations"}, false},
+		{"envelope.create", "p22-corpus-envelope", "p22-corpus-envelope-create"},
+		{"envelope.activate", "p22-corpus-envelope-activate", "p22-corpus-envelope-activate"},
+		{"claim.acquire", "p22-corpus-claim", "p22-corpus-claim-acquire"},
+		{"evidence.link", "p23-shared-proof-proof", "p23-shared-proof-proof"},
+		{"evidence.evaluate", "p23-evaluate", ""},
 	}
 	p23EvidenceEvaluate(t, a)
 	for _, fixture := range cases {
 		t.Run(fixture.operation, func(t *testing.T) {
+			leaf, found := amended[fixture.operation]
+			if !found || len(leaf.Semantics) == 0 {
+				t.Fatalf("%s lacks contract-authored semantic expectations", fixture.operation)
+			}
 			parts := strings.Split(fixture.operation, ".")
 			args := []string{"--project", a.workspace, "--json", parts[0], parts[1], "--input", filepath.Join(a.workspace, fixture.file+".json")}
-			if fixture.mutation {
+			if leaf.Mutation {
 				args = append(args, "--actor", a.actor, "--idempotency-key", fixture.key)
 			}
-			fake := p23FakeLeafAdapter{fixture: p23LeafCase{Operation: fixture.operation, Fields: fixture.fields, Mutation: fixture.mutation}}
-			fid := p23FIDLeafAdapter{pair: p23HumanLeafPair{Operation: fixture.operation, CWD: a.workspace, JSONArgs: args}, binary: a.binary}
+			fake := p23FakeLeafAdapter{fixture: leaf}
+			fid := p23FIDLeafAdapter{pair: p23HumanLeafPair{Operation: fixture.operation, CWD: a.workspace, JSONArgs: args}, binary: a.binary, fixture: leaf}
 			p23CompareLeafOutcome(t, "accepted", fake.Accepted(), fid.Accepted(t))
-			if fixture.mutation {
+			if leaf.Mutation {
 				p23CompareLeafOutcome(t, "unknown-field", fake.UnknownField(), fid.UnknownField(t))
 			}
 		})
@@ -188,7 +233,7 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 type p23FakeLeafAdapter struct{ fixture p23LeafCase }
 
 func (a p23FakeLeafAdapter) Accepted() p23LeafOutcome {
-	return p23LeafOutcome{Operation: a.fixture.Operation, Fields: append([]string{}, a.fixture.Fields...), Replay: a.fixture.Mutation}
+	return p23LeafOutcome{Operation: a.fixture.Operation, Fields: append([]string{}, a.fixture.Fields...), Replay: a.fixture.Mutation, Semantics: a.fixture.Semantics}
 }
 
 func (a p23FakeLeafAdapter) UnknownField() p23LeafOutcome {
@@ -196,8 +241,9 @@ func (a p23FakeLeafAdapter) UnknownField() p23LeafOutcome {
 }
 
 type p23FIDLeafAdapter struct {
-	pair   p23HumanLeafPair
-	binary string
+	pair    p23HumanLeafPair
+	binary  string
+	fixture p23LeafCase
 }
 
 func (a p23FIDLeafAdapter) Accepted(t *testing.T) p23LeafOutcome {
@@ -222,7 +268,29 @@ func (a p23FIDLeafAdapter) Accepted(t *testing.T) p23LeafOutcome {
 	}
 	sort.Strings(fields)
 	replay, _ := envelope.Result["replayed"].(bool)
-	return p23LeafOutcome{Operation: envelope.Operation, Fields: fields, Replay: replay}
+	semantics := map[string]any(nil)
+	if len(a.fixture.Semantics) > 0 {
+		semantics = map[string]any{}
+		for path := range a.fixture.Semantics {
+			value := any(envelope.Result)
+			for _, segment := range strings.Split(path, ".") {
+				switch current := value.(type) {
+				case map[string]any:
+					value = current[segment]
+				case []any:
+					index, err := strconv.Atoi(segment)
+					if err != nil || index < 0 || index >= len(current) {
+						t.Fatalf("%s semantic path %s has no index %s", a.pair.Operation, path, segment)
+					}
+					value = current[index]
+				default:
+					t.Fatalf("%s semantic path %s stopped at %s", a.pair.Operation, path, segment)
+				}
+			}
+			semantics[path] = value
+		}
+	}
+	return p23LeafOutcome{Operation: envelope.Operation, Fields: fields, Replay: replay, Semantics: semantics}
 }
 
 func (a p23FIDLeafAdapter) UnknownField(t *testing.T) p23LeafOutcome {

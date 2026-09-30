@@ -2,18 +2,19 @@
 
 ## Workflow outcome
 
-- Task outcome: BLOCKED
-- Category: specification-contradiction
-- Condition: `public-interface.md` section 5 enumerates 19 distinct added Failure codes, but its own prose and DEC-230 say the added set is exactly 18. The existing `p23FailureContracts` table also has 19. Certifying the exact set would choose between conflicting protected authorities.
-- Recovery attempts: 0
-- Next action: The contract owner must identify the exact accepted Failure-code members/count and record the protected disposition. The Phase Runner can then resume this same task to finish full semantic fake/fid parity and close its report.
-- Human attention required: yes
+- Task outcome: RECOVERY_REQUIRED
+- Category: in-scope-implementation
+- Condition: DEC-265 resolves the Failure-code count and the corpus now pins 19 declared = 18 added + 1 retained. VAL-068 still lacks complete semantic fake/fid result equality and the per-operation rejection-class matrix required by the task handoff. The attempt-2 gates pass, but passing gates do not close that missing assertion.
+- Recovery attempts: 2
+- Next action: Continue task 18 from this checkpoint. Build independently authored complete expected results and one structural normalization for generated values, use the shared 23-operation case list to compare every applicable rejection class with full failure details and Event invariance, then rerun the focused command and all five exact gates before a COMPLETE report. Do not edit product code or derive fake expectations from fid output.
+- Human attention required: no
 
 ## Summary of what was implemented
 
 - Added an independently pinned thirty-action corpus. `TestGrantActionSetIsExactlyThirtyNames` compares it separately with the workflow `sortedUniqueCapabilities` map and the journal `const actions`, then compares the two implementations directly. A real activated profile and Envelope grant accept all thirty; five unknown or operation-only names reject without an Event.
 - Extended the retained Condition fixture from six to ten types, with 54 accepted and 90 invalid/missing member cases. The per-type shape oracle checks the journal catalog, including the four-field `review-recorded` shape and each exclusive judgment discriminator. The Phase 22 document-snapshot assertion now retains its six historical types and adds the four accepted Phase 23 members.
-- Added a shared operation inventory for the eighteen new leaves and five amended leaves. A static fake supplies the pinned accepted result-field set and replay expectation; built fid supplies the actual response. All nine new mutations and four amended mutations also reject an unknown field without changing the Event count. The corpus has fresh-state authority and stale-version rejection cases; retained producer tests cover the other named failure cases. The fake currently compares field sets and replay flags, not complete semantic result values, so VAL-068 remains open.
+- Attempt 1 added the shared leaf audit, field-set and replay comparison, and mutation unknown-field probes. Attempt 2 expanded `operations.json` to all 23 operations and made both shared tests consume it. The fake now pins selected contract-authored scalar values for all 23 results. These are partial semantic checks; complete result values, normalization and rejection parity remain open.
+- DEC-265's independent literal marker in `failures.json` classifies every declared row. `TestP23FailureCorpusHasEveryAcceptedCode` asserts 19 declared = 18 added + 1 retained, with `requirement-not-found` the sole retained member.
 - Pinned the latest product table names and the built command tree. The test traverses real `--help` output, including commands without a short description, and inspects aliases; it compares the complete table and command inventories with the fixture. No cancelled product family was found. The task's `v1-convergence-inventory.md` section 1 already assigns this proof to task 18, so no correction was needed.
 - Regenerated task 14's Human fixture manifest with the current binary. Its eighteen Human/JSON leaf pairs and all checkpoint inspections ran after generation; a fresh-state test ran all four recorded interactive steps at their expected exits. Human comprehension and presentation judgments remain for the Human.
 
@@ -22,54 +23,78 @@
 - `cmd/fid/integration/p22_closed_values_test.go`, `cmd/fid/integration/p22_conformance_test.go`, `cmd/fid/integration/testdata/p22_conformance/wire-inventory.json`.
 - `cmd/fid/integration/p23_conformance_test.go`, `p23_grant_action_audit_test.go`, `p23_cancelled_family_audit_test.go`, and `p23_human_fixtures_test.go`.
 - `cmd/fid/integration/testdata/p23_conformance/operations.json`, `grant-actions.json`, `failures.json`, and `product-surface.json`.
+- Attempt 2 changed `cmd/fid/integration/p23_conformance_test.go` and the `operations.json` and `failures.json` fixtures; no product file changed.
 - This report. The Runner-owned `project-docs/docs/phases/phase-23/run-ledger.md` was not edited.
 
 ## Documentation updated
 
-- This report records the audit inventory, exact gates, fixture location, and protected count discrepancy. `v1-convergence-inventory.md` section 1 was already correct (I-10); no documentation change there was required.
+- This report preserves attempt 1's evidence and records DEC-265, attempt 2's partial semantic audit, provenance, and exact gates. `v1-convergence-inventory.md` section 1 was already correct (I-10).
 
 ## Validation Contract Coverage
 
-- VAL-067: PARTIAL - `TestGrantActionSetIsExactlyThirtyNames` (`cmd/fid/integration/p23_grant_action_audit_test.go:23`) passes the independent thirty-member set equality, real profile/grant acceptance, and unknown-action rejection. The seven Phase 23 owner task numbers are pinned in `grant-actions.json`; historical at-or-after commit provenance still needs an explicit row-by-row audit in the continuation.
-- VAL-068: BLOCKED for closure - `TestP23SharedLeafConformance` (`cmd/fid/integration/p23_conformance_test.go:67`) and `TestP23SharedAmendedLeafConformance` (line 153) pass result-field/replay and unknown-field comparisons for all 23 operations; they do not yet compare complete semantic results. The nineteen named failure-code rows in `failures.json` expose the section 5/DEC-230 count conflict. `TestP23FailureCorpusHasEveryAcceptedCode` (line 31) checks every named row against its existing producer test, without deciding which conflicting count governs.
+- VAL-067: PASS for the task-18 audit - `TestGrantActionSetIsExactlyThirtyNames` (`cmd/fid/integration/p23_grant_action_audit_test.go:23`) verifies independent thirty-member profile/journal equality and real allow/reject behavior. The seven Phase 23 names have introducing commits and matching `Refs:` trailers in the provenance table below, all at their owning task. The final tagged gate executed the test.
+- VAL-068: PARTIAL - `TestP23SharedLeafConformance` and `TestP23SharedAmendedLeafConformance` in `cmd/fid/integration/p23_conformance_test.go` consume the same 23-row inventory and compare top-level fields, replay, unknown-field code/exit on mutations, and pinned semantic paths. The final focused selection and tagged gate pass. The fake still omits many deterministic nested values and generated-value consistency checks; several rejection classes are missing or only tested in separate producer journeys. The 19/18/1 Failure-code partition is now proved by `TestP23FailureCorpusHasEveryAcceptedCode`, but VAL-068 cannot pass until all result and rejection comparisons are complete.
 - VAL-069: PASS - `TestP23CancelledFamiliesAbsentFromProduct` (`cmd/fid/integration/p23_cancelled_family_audit_test.go:22`) compares 59 latest-schema tables and 125 real command paths with a pinned full inventory and checks cancelled names and aliases. The exact tagged gate below executes it.
 - VAL-070: FIXTURE READY, HUMAN PENDING - regenerated manifest `checkpoints-3135624237/manifest.json` has the mixed-Finding Review, Finding, and resume inspections; `TestP23HumanFixtures` reran each recorded inspection and leaf pair. Only a Human can judge whether resolved, addressed, and still-blocking are understood.
 - VAL-071: FIXTURE READY, HUMAN PENDING - the same manifest records blocked action, Human Outcome, and retry steps. `TestP23HumanFixtureStepsRemainRunnable` (`p23_human_fixtures_test.go:165`) ran all three on a fresh protected-Decision checkpoint at exits 5, 0, 0. Human explanation judgment remains pending.
 - VAL-072: FIXTURE READY, HUMAN PENDING - the manifest records the exhaustion Stop and Attention inspections; the fresh-state step test ran the exhausted rework denial at exit 4. Human comprehension judgment remains pending.
 - VAL-073: FIXTURE READY, HUMAN PENDING - `TestP23HumanFixtures` reran exact Human text for eighteen leaves against the JSON facts, including purpose and qualifiers. Human acceptance of the presentation remains pending.
-- VAL-079: PASS for the measured gate and report-inventory part - ordinary `cmd/fid` took 214.615s; an uncached race run reported `internal/workflow` 55.279s because the exact ordinary gate used cached workflow output; tagged `cmd/fid/integration` took 229.859s. These are below 600/600/900s and below 80% headroom. A read-only inventory over task 1-17 reports found all three package-time records in each report; no required gate timed out in this task.
+- VAL-079: PASS for the measured gate and report-inventory part. Attempt 1 recorded ordinary `cmd/fid` 214.615s, uncached `internal/workflow` 55.279s, and tagged `cmd/fid/integration` 229.859s. Attempt 2 recorded `cmd/fid` 202.293s, uncached `internal/workflow` 57.091s, and tagged `cmd/fid/integration` 273.836s. All are below the 600/600/900s budgets and below 80% headroom. The attempt-1 read-only inventory over task 1-17 reports found all three times in each report.
 
-The executing command for every operation and Failure-code row below is the final exact tagged gate, `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` (PASS, `cmd/fid/integration 229.859s`, exit 0). The focused shared audit command is recorded under Tests run. Owner provenance for new leaves is the accepted `public-interface.md` section 4 task column; `operations.json` pins it per row. The earlier producer test and owning task for each named Failure-code row are pinned in `failures.json` and checked by `TestP23FailureCorpusHasEveryAcceptedCode`.
+The attempt-2 executing commands for the rows below were the exact focused command in Tests run and the exact tagged gate in Exact quality-gate results. The owner task for each new leaf comes from `public-interface.md` section 4 and is pinned in `operations.json`. These rows report actual partial checks, not completed VAL-068 equality. The earlier producer tests and owners for the 19 declared Failure codes remain pinned in `failures.json`; its new literal partition marks 18 `added` and only `requirement-not-found` `retained`.
 
-| Operation | Owner task | Fake/fid comparison executed |
-|---|---:|---|
-| `review.record` | 4 | accepted keys/replay; unknown-field, fresh stale-version denial |
-| `review.get` | 13 | accepted keys |
-| `review.list` | 13 | accepted keys |
-| `finding.address` | 5 | accepted keys/replay; unknown-field |
-| `finding.list` | 5 | accepted keys |
-| `concern.record` | 8 | accepted keys/replay; unknown-field |
-| `concern.dispose` | 8 | accepted keys/replay; unknown-field |
-| `concern.list` | 8 | accepted keys |
-| `deviation.record` | 8 | accepted keys/replay; unknown-field |
-| `deviation.list` | 8 | accepted keys |
-| `decision.record-reference` | 9 | accepted keys/replay; unknown-field |
-| `decision.list` | 9 | accepted keys |
-| `human-outcome.record` | 10 | accepted keys/replay; unknown-field |
-| `human-outcome.list` | 10 | accepted keys |
-| `requirement.record-reference` | 12 | accepted keys/replay; unknown-field and fresh unauthorized Actor denial |
-| `requirement.link` | 12 | accepted keys/replay; unknown-field |
-| `requirement.get` | 13 | accepted keys |
-| `requirement.list` | 12 | accepted keys |
-| `envelope.create` | 2 | accepted keys/replay; unknown-field |
-| `envelope.activate` | 2, 9 | accepted keys/replay; unknown-field |
-| `claim.acquire` | 3 | accepted keys/replay; unknown-field |
-| `evidence.link` | 6, 10 | accepted keys/replay; unknown-field |
-| `evidence.evaluate` | 6, 13 | accepted `evaluations` result keys |
+VAL-067 introduction evidence: for each row, `git log --reverse --format='%H %s%n%b' -S'<name>' -- internal/workflow/activation.go` used the literal name in the first column. Each result printed the listed commit and `Refs:` trailer. The same complete seven-name set is in `public-interface.md` section 4.1 and `grant-actions.json`.
+
+| Grant action (`-S` argument) | First introducing commit | Trailer / owner |
+|---|---|---|
+| `review.record` | `b500ab45406dd1cbd79153232d2add3ca8a74021` | `Refs: phase-23/task-4` / 4 |
+| `finding.address` | `0be596e9068795ceb3a0a89bdac50d538f8e8791` | `Refs: phase-23/task-5` / 5 |
+| `concern.record` | `3a0aed9d35ca2d43540e686a5cbbaa245177ea0f` | `Refs: phase-23/task-8` / 8 |
+| `concern.dispose` | `3a0aed9d35ca2d43540e686a5cbbaa245177ea0f` | `Refs: phase-23/task-8` / 8 |
+| `deviation.record` | `3a0aed9d35ca2d43540e686a5cbbaa245177ea0f` | `Refs: phase-23/task-8` / 8 |
+| `decision.record-reference` | `828eb18f422ebbfacbe4e65c62d53a061b7e9b9f` | `Refs: phase-23/task-9` / 9 |
+| `human-outcome.record` | `0ff2eeef66d4633309a43ae6a341aecd38def4d0` | `Refs: phase-23/task-10` / 10 |
+
+For the table, `U` means an unknown-field rejection compared by operation/code/exit and unchanged Event count; `D` means same-key replay compared by field set and replay flag; `A` and `S` are the two shared fresh-state rejection probes, each compared by operation/code/exit and unchanged Event count. `R` means the necessary full result/failure equality remains unimplemented. A read's mutation-only `U` and `D` are N/A under `public-interface.md` sections 1 and 4; its mutation authority/stale-version checks are likewise N/A. The continuation must classify list filters and every other ID-taking input for not-found behavior under section 4 and the retained Phase 21/22 baseline. This table does not claim full details or generated-value normalization.
+
+| Operation | Owner | Accepted semantic values compared beyond fields | Rejection comparison / remaining |
+|---|---:|---|---|
+| `review.record` | 4 | verdict `changes-required`, independence `distinct-actor`, Finding `FND-leaf` open and blocking | U, D, S shared; A/not-found/full details R |
+| `review.get` | 13 | verdict `changes-required`, Finding addressed after later disposition | U/D/A/S N/A §§1,4; not-found/full details R |
+| `review.list` | 13 | first Review verdict and addressed Finding | U/D/A/S N/A §§1,4; ID-filter/full values R |
+| `finding.address` | 5 | `FND-leaf` addressed with reason `PRIVATE_FINDING_REASON` | U, D; A/S/not-found/full details R |
+| `finding.list` | 5 | `FND-leaf` addressed and blocking | U/D/A/S N/A §§1,4; ID-filter/full values R |
+| `concern.record` | 8 | `CON-leaf` open, major, null disposition | U, D; A/not-found/full details R |
+| `concern.dispose` | 8 | `CON-leaf` disposed, carried forward with caller reason | U, D; A/not-found/full details R |
+| `concern.list` | 8 | `CON-leaf` disposed, carried forward | U/D/A/S N/A §§1,4; ID-filter/full values R |
+| `deviation.record` | 8 | `DEV-leaf`, pending decision, caller expected/observed text | U, D; A/not-found/full details R |
+| `deviation.list` | 8 | `DEV-leaf`, pending decision | U/D/A/S N/A §§1,4; ID-filter/full values R |
+| `decision.record-reference` | 9 | `DREF-leaf`, security, approved | U, D; A/not-found/full details R |
+| `decision.list` | 9 | `DREF-leaf`, security, approved | U/D/A/S N/A §§1,4; ID-filter/full values R |
+| `human-outcome.record` | 10 | `OUT-leaf`, security, approved | U, D; A/not-found/full details R |
+| `human-outcome.list` | 10 | `OUT-leaf`, security, approved | U/D/A/S N/A §§1,4; ID-filter/full values R |
+| `requirement.record-reference` | 12 | active, null supersession | U, D, A shared; not-found/full details R |
+| `requirement.link` | 12 | `REQ-leaf`, implements | U, D; A/not-found/full details R |
+| `requirement.get` | 13 | active Requirement, `REQ-leaf` implements link | U/D/A/S N/A §§1,4; not-found/full details R |
+| `requirement.list` | 12 | first Requirement active | U/D/A/S N/A §§1,4; ID-filter/full values R |
+| `envelope.create` | 2 | caller key and current revision 1 | U, D; A/not-found/full details R |
+| `envelope.activate` | 2,9 | caller key | U, D; A/S/not-found/full details R |
+| `claim.acquire` | 3 | caller key and mutation mode | U, D; A/not-found/full details R |
+| `evidence.link` | 6,10 | caller key and receipt type | U, D; A/not-found/full details R |
+| `evidence.evaluate` | 6,13 | first evaluation Obligation `OBL-p22-corpus` | U/D/A/S N/A §§1,4 and contracts §13; optional Obligation not-found/full values R |
 
 The nineteen `failures.json` rows each name one pre-existing producing `Test...` declaration and its Phase 23 owner task. They are: `review-not-independent` (4), `review-verdict-invalid` (5), `review-changes-required` (6), `review-rework-exhausted` (6), `finding-already-disposed` (5), `finding-not-found` (5), `review-not-found` (13), `concern-not-found` (8), `deviation-not-found` (8), `outcome-not-found` (10), `requirement-not-found` (12), `concern-already-disposed` (8), `claim-mode-invalid` (3), `protected-decision-required` (9), `human-outcome-required` (10), `outcome-not-permitted` (10), `evidence-type-not-accepted` (6), `source-digest-mismatch` (9), and `repository-mismatch` (4). The tagged gate executes their named producer tests; `assertP22ProcessFailure` calls the pinned `p23FailureContracts` fake envelope oracle for those tests.
 
 ## Tests run
+
+- Attempt 2 initial focused command: `go test -tags integration -run '^(TestP23FailureCorpusHasEveryAcceptedCode|TestP23SharedLeafConformance|TestP23SharedAmendedLeafConformance|TestGrantActionSetIsExactlyThirtyNames)$' -count=1 ./cmd/fid/integration/` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.028s` (terminated `exit_code: 0`).
+- Partition RED: `go test -tags integration -run '^TestP23FailureCorpusHasEveryAcceptedCode$' -count=1 ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`), first row lacked a marker. Its byte-identical rerun passed: `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	0.647s` (terminated `exit_code: 0`).
+- New-leaf semantic RED: `go test -tags integration -run '^TestP23SharedLeafConformance$' -count=1 ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`) for the four missing Requirement expectations; a later identical run failed `FAIL` (`exit_code: 1`) for the other fourteen. It passed after all eighteen had literal expected paths: `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	6.335s` (terminated `exit_code: 0`).
+- Amended-leaf semantic RED: `go test -tags integration -run '^TestP23SharedAmendedLeafConformance$' -count=1 ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`) after the case type gained a field but positional cases had not been extended. After that correction, the same command failed `FAIL` (`exit_code: 1`) for five missing expectations. An intermediate run failed `FAIL` (`exit_code: 1`) on `envelope.revision`; the retained Phase 21 contract names `current_revision`. Its final identical rerun passed: `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.535s` (terminated `exit_code: 0`).
+- Shared-inventory RED: `go test -tags integration -run '^TestP23SharedLeafConformance$' -count=1 ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`) when the 23-row assertion met the old 18-row fixture. The combined shared-test command first failed `FAIL` (`exit_code: 1`) while the Human fixture count still compared against all 23; after selecting its eighteen new leaves, `go test -tags integration -run '^(TestP23SharedLeafConformance|TestP23SharedAmendedLeafConformance)$' -count=1 ./cmd/fid/integration/` passed: `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	6.459s` (terminated `exit_code: 0`).
+- Attempt 2 final focused command: `go test -tags integration -run '^(TestP23FailureCorpusHasEveryAcceptedCode|TestP23SharedLeafConformance|TestP23SharedAmendedLeafConformance|TestGrantActionSetIsExactlyThirtyNames)$' -count=1 ./cmd/fid/integration/` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	6.400s` (terminated `exit_code: 0`).
+- Attempt 2 touched tagged race: `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^(TestP23FailureCorpusHasEveryAcceptedCode|TestP23SharedLeafConformance|TestP23SharedAmendedLeafConformance|TestGrantActionSetIsExactlyThirtyNames)$' ./cmd/fid/integration/` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.641s` (terminated `exit_code: 0`).
+- Attempt 2 uncached workflow measurement: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	57.091s` (terminated `exit_code: 0`).
 
 - First RED: `go test -tags integration -run '^TestP23ConditionWireGrammarMatchesJournalAndFixtures$' -count=1 ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`); the retained grammar had six Condition types. After extending the grammar and fixture, the combined focused `TestP23ConditionWireGrammarMatchesJournalAndFixtures|TestP22ClosedValueSchemaCases` command passed with `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	0.510s` (terminated `exit_code: 0`).
 - First grant RED: `go test -tags integration -run '^TestGrantActionSetIsExactlyThirtyNames$' -count=1 ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`); the pinned corpus file was absent. Its final same-command rerun passed with `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.179s` (terminated `exit_code: 0`). An intermediate run failed `FAIL` (`exit_code: 1`) because the test passed a nil artifact-path array into the existing Activation fixture; `[]string{}` corrected that fixture input.
@@ -85,7 +110,7 @@ The nineteen `failures.json` rows each name one pre-existing producing `Test...`
 
 ## Exact quality-gate results
 
-Working directory `/home/mark/projects/fid`; commands executed in the task-spec order on the final test tree. The ordinary gate's workflow package output was cached, so the separate uncached timing command above supplies its current measured time.
+Attempt 1 exact commands ran from `/home/mark/projects/fid` in task-spec order on its then-final test tree. The ordinary workflow package result was cached; the attempt-1 uncached measurement appears under Tests run. Every attempt-1 result below is retained unchanged.
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
@@ -93,15 +118,23 @@ Working directory `/home/mark/projects/fid`; commands executed in the task-spec 
 - `go tool cover -func=coverage.out` - PASS - `total:											(statements)			60.5%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	229.859s` (terminated `exit_code: 0`)
 
+Attempt 2 exact commands, run in task-spec order from `/home/mark/projects/fid` on the partial semantic fixture:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)			60.5%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	273.836s` (terminated `exit_code: 0`)
+
 ## Deviations from spec
 
-- The full semantic fake/fid equality required by VAL-068 is unfinished. The current fake models exact top-level fields, replay, and selected rejection codes; earlier producer tests separately exercise domain facts. A same-task continuation must extend the shared cases to compare accepted semantic values and the required rejection classes across every applicable operation without deriving fake expectations from fid output.
-- The section 5/DEC-230 18-versus-19 conflict prevents a final exact Failure-code corpus claim. The first failed audit attempts and their later green results remain recorded above; no failure code or protected threshold was changed.
+- Attempt 1 deviation: the full semantic fake/fid equality required by VAL-068 was unfinished. The fake then modeled top-level fields, replay and selected rejection codes. Attempt 2 added partial literal semantic checks for all 23 operations, but complete values and rejection classes remain unfinished. A same-task continuation must finish them without deriving fake expectations from fid output.
+- Attempt 1 protected discrepancy: section 5/DEC-230's 18-versus-19 wording prevented an exact Failure-code claim. DEC-265 resolved it without a member or semantic change: 19 declared, 18 Phase-23-added, one retained `requirement-not-found` from `ab4ac8f` (`Refs: phase-20/task-1`). Attempt 2 pins and tests that partition. The original failed evidence remains above.
 - The first `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-18-done.md project-docs/docs/phases/phase-23/tasks/task-18.md` attempt reported `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`): the Recovery attempts field included prose after `0`. This report keeps the attempt count as the required integer and retains the explanation in the outcome and concerns sections.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- Protected decision needed: section 5 enumerates nineteen named codes after deleting `finding-unresolved` and `decision-not-found` from the draft, while the same section and DEC-230 say eighteen. The current implementation and `p23FailureContracts` have nineteen. Identify the exact intended member set before task closure; this report does not assign a different task to repair it.
+- Attempt 1 concern is resolved by DEC-265. The open task-18 concern is the remaining VAL-068 audit work: full independently authored result values, one shared generated-value normalization, cross-case ID and list consistency, and each applicable rejection's complete typed failure and unchanged Event count. No product divergence has been established by the partial checks.
 - Historical task reports show `cmd/fid` package times at or above 80% of the 600s budget: task 2's later 490.783s, task 4's 496.639s, task 5's 588.268s, tasks 6-9's 535.185/499.695/538.754/513.222s, task 10's 564.337s attempt, and task 11's 531.533s final pass. This task's 214.615s and tagged 229.859s have ample headroom; the earlier measurements remain phase-level warnings.
 
 ## Dependency-budget note
@@ -110,8 +143,8 @@ Working directory `/home/mark/projects/fid`; commands executed in the task-spec 
 
 ## Commit hash
 
-- `333514946aeab8328fa618f0f619fdce84694f9a`
+- Pending commit
 
 ## Commit subject
 
-- `test(conformance): audit Phase 23 wire surface`
+- Pending commit
