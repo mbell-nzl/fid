@@ -1,6 +1,8 @@
 [
   {
     "operation": "review.record",
+    "not_found_id": "FND-missing",
+    "not_found_field": "resolves_finding_ids",
     "fields": [
       "review",
       "budget",
@@ -46,6 +48,8 @@
   },
   {
     "operation": "finding.address",
+    "not_found_id": "FND-missing",
+    "not_found_field": "finding_id",
     "fields": [
       "finding",
       "idempotency_key",
@@ -91,6 +95,8 @@
   },
   {
     "operation": "concern.dispose",
+    "not_found_id": "CON-missing",
+    "not_found_field": "concern_id",
     "fields": [
       "concern",
       "idempotency_key",
@@ -120,6 +126,8 @@
   },
   {
     "operation": "deviation.record",
+    "not_found_id": "DEV-missing",
+    "not_found_field": "supersedes_deviation_id",
     "fields": [
       "deviation",
       "idempotency_key",
@@ -224,6 +232,8 @@
   },
   {
     "operation": "requirement.link",
+    "not_found_id": "REQ-missing",
+    "not_found_field": "requirement_id",
     "fields": [
       "link",
       "idempotency_key",
@@ -309,6 +319,10 @@
   },
   {
     "operation": "evidence.link",
+    "not_found_cases": [
+      {"name":"review", "id":"REV-missing", "field":"review_id", "code":"review-not-found", "subject_type":"review"},
+      {"name":"human-outcome", "id":"OUT-missing", "field":"human_outcome_id", "code":"outcome-not-found", "subject_type":"human-outcome"}
+    ],
     "fields": [
       "evidence",
       "evaluation",

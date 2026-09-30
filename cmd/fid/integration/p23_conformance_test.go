@@ -20,13 +20,23 @@ import (
 )
 
 type p23LeafCase struct {
-	Operation  string         `json:"operation"`
-	Fields     []string       `json:"fields"`
-	Mutation   bool           `json:"mutation"`
-	OwnerTask  int            `json:"owner_task"`
-	Semantics  map[string]any `json:"semantics,omitempty"`
-	Amended    bool           `json:"amended,omitempty"`
-	NotFoundID string         `json:"not_found_id,omitempty"`
+	Operation     string            `json:"operation"`
+	Fields        []string          `json:"fields"`
+	Mutation      bool              `json:"mutation"`
+	OwnerTask     int               `json:"owner_task"`
+	Semantics     map[string]any    `json:"semantics,omitempty"`
+	Amended       bool              `json:"amended,omitempty"`
+	NotFoundID    string            `json:"not_found_id,omitempty"`
+	NotFoundField string            `json:"not_found_field,omitempty"`
+	NotFoundCases []p23NotFoundCase `json:"not_found_cases,omitempty"`
+}
+
+type p23NotFoundCase struct {
+	Name        string `json:"name"`
+	ID          string `json:"id"`
+	Field       string `json:"field"`
+	Code        string `json:"code"`
+	SubjectType string `json:"subject_type"`
 }
 
 type p23FailureCase struct {
@@ -146,8 +156,11 @@ func TestP23SharedLeafConformance(t *testing.T) {
 			if fixture.Mutation {
 				p23CompareLeafOutcome(t, "unknown-field", fake.UnknownField(), fid.UnknownField(t))
 				p23CompareLeafOutcome(t, "different-payload", fake.Conflict(pair), fid.Conflict(t))
+				if fixture.Operation != "review.record" && fixture.Operation != "finding.address" {
+					p23CompareLeafOutcome(t, "untrusted-actor", fake.UntrustedActor(), fid.UntrustedActor(t))
+				}
 			}
-			if fixture.NotFoundID != "" {
+			if fixture.NotFoundID != "" && fixture.Operation != "review.record" {
 				p23CompareLeafOutcome(t, "not-found", fake.NotFound(), fid.NotFound(t))
 			}
 		})
@@ -199,6 +212,55 @@ func TestP23SharedLeafConformance(t *testing.T) {
 		if got := p21JournalEventCount(t, a.workspace); got != before {
 			t.Fatalf("stale-version denial appended Event %d -> %d", before, got)
 		}
+	})
+	t.Run("review.record/not-found", func(t *testing.T) {
+		var fixture p23LeafCase
+		for _, candidate := range cases {
+			if candidate.Operation == "review.record" {
+				fixture = candidate
+				break
+			}
+		}
+		a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{},
+			[]string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "gate.register", "review.record", "run.close", "run.observe", "run.start"})
+		p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "p23-shared-missing-before-review")
+		claim := p23AcquireClaim(t, a, "actor-denied", "review", "p23-shared-missing-review-claim")
+		run := p23StartRun(t, a, "actor-denied", claim, "p23-shared-missing-review-run")
+		input := p23ReviewInput(a, run["id"].(string), p23Number(t, run["version"]), "pass", []any{}, []any{})
+		args := []string{"--project", a.workspace, "--json", "review", "record", "--input", p21Input(t, a.workspace, "p23-shared-missing-review", input),
+			"--actor", "actor-denied", "--idempotency-key", "p23-shared-missing-review"}
+		pair := p23HumanLeafPair{Operation: fixture.Operation, CWD: a.workspace, JSONArgs: args}
+		fake := p23FakeLeafAdapter{fixture: fixture}
+		fid := p23FIDLeafAdapter{pair: pair, binary: a.binary, fixture: fixture}
+		p23CompareLeafOutcome(t, "untrusted-actor", fake.UntrustedActor(), fid.UntrustedActor(t))
+		p23CompareLeafOutcome(t, "not-found", fake.NotFound(), fid.NotFound(t))
+	})
+	t.Run("finding.address/missing-capability", func(t *testing.T) {
+		var fixture p23LeafCase
+		for _, candidate := range cases {
+			if candidate.Operation == "finding.address" {
+				fixture = candidate
+				break
+			}
+		}
+		a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{},
+			[]string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "gate.register", "review.record", "run.close", "run.observe", "run.start"})
+		p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "p23-shared-finding-before-review")
+		reviewClaim := p23AcquireClaim(t, a, "actor-denied", "review", "p23-shared-finding-review-claim")
+		reviewRun := p23StartRun(t, a, "actor-denied", reviewClaim, "p23-shared-finding-review-run")
+		p23ReviewRecord(t, a, "actor-denied", "p23-shared-finding-review", p23ReviewInput(a,
+			reviewRun["id"].(string), p23Number(t, reviewRun["version"]), "changes-required",
+			[]any{p23Finding(a.issueID, "FND-p23-shared-authority", "major", true)}, nil))
+		p23CloseAndRelease(t, a, "actor-denied", reviewRun["id"].(string), reviewClaim["id"].(string), "p23-shared-finding-review")
+		claim := p23AcquireClaim(t, a, a.actor, "mutation", "p23-shared-finding-mutation-claim")
+		input := map[string]any{"finding_id": "FND-p23-shared-authority", "claim_id": claim["id"],
+			"expected_claim_version": claim["version"], "reason": "authority probe"}
+		args := []string{"--project", a.workspace, "--json", "finding", "address", "--input", p21Input(t, a.workspace, "p23-shared-finding-authority", input),
+			"--actor", a.actor, "--idempotency-key", "p23-shared-finding-authority"}
+		pair := p23HumanLeafPair{Operation: fixture.Operation, CWD: a.workspace, JSONArgs: args}
+		fake := p23FakeLeafAdapter{fixture: fixture}
+		fid := p23FIDLeafAdapter{pair: pair, binary: a.binary, fixture: fixture}
+		p23CompareLeafOutcome(t, "missing-capability", fake.MissingCapability(a.actor), fid.rejection(t, args))
 	})
 }
 
@@ -279,6 +341,10 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 			if leaf.Mutation {
 				p23CompareLeafOutcome(t, "unknown-field", fake.UnknownField(), fid.UnknownField(t))
 				p23CompareLeafOutcome(t, "different-payload", fake.Conflict(fid.pair), fid.Conflict(t))
+				p23CompareLeafOutcome(t, "untrusted-actor", fake.UntrustedActor(), fid.UntrustedActor(t))
+			}
+			for _, missing := range leaf.NotFoundCases {
+				p23CompareLeafOutcome(t, "not-found/"+missing.Name, p23ExpectedNotFound(fixture.operation, missing), fid.NotFoundVariant(t, missing))
 			}
 		})
 	}
@@ -306,6 +372,30 @@ func (a p23FakeLeafAdapter) UnknownField() p23LeafOutcome {
 		Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted " + a.fixture.Operation + " input"}}}
 }
 
+func (a p23FakeLeafAdapter) UntrustedActor() p23LeafOutcome {
+	switch a.fixture.Operation {
+	case "envelope.create", "envelope.activate":
+		return p23LeafOutcome{Operation: a.fixture.Operation, Code: "authority-unavailable", Category: "authority", Exit: 5,
+			Details: map[string]any{"operation": a.fixture.Operation, "actor_id": "actor-not-activated",
+				"required_actions": []any{a.fixture.Operation}, "required_capabilities": []any{a.fixture.Operation}}}
+	case "claim.acquire":
+		return p23LeafOutcome{Operation: a.fixture.Operation, Code: "authority-denied", Category: "authority", Exit: 5,
+			Details: map[string]any{"operation": a.fixture.Operation, "actor_id": "actor-not-activated",
+				"required_actions": []any{a.fixture.Operation}, "required_capabilities": []any{a.fixture.Operation}}}
+	}
+	if a.fixture.Operation == "human-outcome.record" {
+		return p23LeafOutcome{Operation: a.fixture.Operation, Code: "authority-missing", Category: "authority", Exit: 5,
+			Details: map[string]any{"operation": a.fixture.Operation, "actor": "actor-not-activated"}}
+	}
+	return p23LeafOutcome{Operation: a.fixture.Operation, Code: "invalid-argument", Category: "invalid-input", Exit: 2,
+		Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted " + a.fixture.Operation + " input"}}}
+}
+
+func (a p23FakeLeafAdapter) MissingCapability(actor string) p23LeafOutcome {
+	return p23LeafOutcome{Operation: a.fixture.Operation, Code: "authority-denied", Category: "authority", Exit: 5,
+		Details: map[string]any{"operation": a.fixture.Operation, "actor": actor}}
+}
+
 func (a p23FakeLeafAdapter) Conflict(pair p23HumanLeafPair) p23LeafOutcome {
 	key := ""
 	for i, arg := range pair.JSONArgs {
@@ -325,10 +415,24 @@ func (a p23FakeLeafAdapter) NotFound() p23LeafOutcome {
 		code, subjectType = "review-not-found", "review"
 	case "requirement.get":
 		code, subjectType = "requirement-not-found", "requirement"
+	case "review.record", "finding.address":
+		code, subjectType = "finding-not-found", "finding"
+	case "concern.dispose":
+		code, subjectType = "concern-not-found", "concern"
+	case "deviation.record":
+		code, subjectType = "deviation-not-found", "deviation"
+	case "requirement.link":
+		code, subjectType = "requirement-not-found", "requirement"
 	}
 	return p23LeafOutcome{Operation: a.fixture.Operation, Code: code, Category: "not-found", Exit: 3,
 		Subject: map[string]any{"type": subjectType, "id": a.fixture.NotFoundID},
 		Details: map[string]any{"id": a.fixture.NotFoundID}}
+}
+
+func p23ExpectedNotFound(operation string, missing p23NotFoundCase) p23LeafOutcome {
+	return p23LeafOutcome{Operation: operation, Code: missing.Code, Category: "not-found", Exit: 3,
+		Subject: map[string]any{"type": missing.SubjectType, "id": missing.ID},
+		Details: map[string]any{"id": missing.ID}}
 }
 
 type p23FIDLeafAdapter struct {
@@ -338,13 +442,51 @@ type p23FIDLeafAdapter struct {
 	alternateReceiptID string
 }
 
+func (a p23FIDLeafAdapter) NotFoundVariant(t *testing.T, missing p23NotFoundCase) p23LeafOutcome {
+	t.Helper()
+	args := append([]string{}, a.pair.JSONArgs...)
+	request := p23LeafRequest(t, a.pair)
+	request["evidence_type"] = missing.Name
+	request["receipt_id"] = nil
+	request[missing.Field] = missing.ID
+	for i, arg := range args {
+		if arg == "--input" && i+1 < len(args) {
+			args[i+1] = p21Input(t, a.pair.CWD, "p23-missing-"+missing.Name, request)
+		}
+		if arg == "--idempotency-key" && i+1 < len(args) {
+			args[i+1] += "-missing-" + missing.Name
+		}
+	}
+	return a.rejection(t, args)
+}
+
 func (a p23FIDLeafAdapter) NotFound(t *testing.T) p23LeafOutcome {
 	t.Helper()
 	args := append([]string{}, a.pair.JSONArgs...)
 	if len(args) == 0 || a.fixture.NotFoundID == "" {
-		t.Fatal("missing ID-taking read case")
+		t.Fatal("missing ID-taking case")
 	}
-	args[len(args)-1] = a.fixture.NotFoundID
+	if a.fixture.NotFoundField == "" {
+		args[len(args)-1] = a.fixture.NotFoundID
+		return a.rejection(t, args)
+	}
+	request := p23LeafRequest(t, a.pair)
+	if a.fixture.NotFoundField == "resolves_finding_ids" {
+		request[a.fixture.NotFoundField] = []string{a.fixture.NotFoundID}
+	} else {
+		request[a.fixture.NotFoundField] = a.fixture.NotFoundID
+	}
+	if a.fixture.Operation == "deviation.record" {
+		request["id"] = "DEV-missing-reference-probe"
+	}
+	for i, arg := range args {
+		if arg == "--input" && i+1 < len(args) {
+			args[i+1] = p21Input(t, a.pair.CWD, "p23-missing-"+strings.ReplaceAll(a.fixture.Operation, ".", "-"), request)
+		}
+		if arg == "--idempotency-key" && i+1 < len(args) {
+			args[i+1] += "-missing"
+		}
+	}
 	return a.rejection(t, args)
 }
 
@@ -434,6 +576,20 @@ func (a p23FIDLeafAdapter) UnknownField(t *testing.T) p23LeafOutcome {
 	for i, arg := range args {
 		if arg == "--idempotency-key" && i+1 < len(args) {
 			args[i+1] += "-unknown"
+		}
+	}
+	return a.rejection(t, args)
+}
+
+func (a p23FIDLeafAdapter) UntrustedActor(t *testing.T) p23LeafOutcome {
+	t.Helper()
+	args := append([]string{}, a.pair.JSONArgs...)
+	for i, arg := range args {
+		if arg == "--actor" && i+1 < len(args) {
+			args[i+1] = "actor-not-activated"
+		}
+		if arg == "--idempotency-key" && i+1 < len(args) {
+			args[i+1] += "-untrusted"
 		}
 	}
 	return a.rejection(t, args)
