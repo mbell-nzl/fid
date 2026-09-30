@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 type p23LeafCase struct {
@@ -80,6 +81,9 @@ type p23LeafOutcome struct {
 	Fields    []string
 	Replay    bool
 	Code      string
+	Category  string
+	Subject   any
+	Details   map[string]any
 	Exit      int
 	Semantics map[string]any
 }
@@ -103,6 +107,15 @@ func TestP23SharedLeafConformance(t *testing.T) {
 	for _, pair := range pairs {
 		byOperation[pair.Operation] = pair
 	}
+	model := p23RequirementModel(t, byOperation)
+	concerns := p23ConcernModel(t, byOperation)
+	for operation, result := range p23JudgmentModel(t, byOperation) {
+		concerns[operation] = result
+	}
+	for operation, result := range p23ReviewFindingModel(t, byOperation) {
+		concerns[operation] = result
+	}
+	accepted := map[string]p23LeafOutcome{}
 	if len(byOperation) != 18 {
 		t.Fatalf("Human fixture has %d new leaves, want 18", len(byOperation))
 	}
@@ -122,14 +135,21 @@ func TestP23SharedLeafConformance(t *testing.T) {
 			if fixture.OwnerTask < 4 || fixture.OwnerTask > 13 {
 				t.Fatalf("unowned %s", fixture.Operation)
 			}
-			fake := p23FakeLeafAdapter{fixture: fixture}
+			fake := p23FakeLeafAdapter{fixture: fixture, requirement: model, other: concerns}
 			fid := p23FIDLeafAdapter{pair: pair, binary: integrationFIDBinary(t), fixture: fixture}
-			p23CompareLeafOutcome(t, "accepted", fake.Accepted(), fid.Accepted(t))
+			actual := fid.Accepted(t)
+			accepted[fixture.Operation] = actual
+			p23CompareLeafOutcome(t, "accepted", fake.Accepted(), actual)
 			if fixture.Mutation {
 				p23CompareLeafOutcome(t, "unknown-field", fake.UnknownField(), fid.UnknownField(t))
+				p23CompareLeafOutcome(t, "different-payload", fake.Conflict(pair), fid.Conflict(t))
 			}
 		})
 	}
+	p23CheckRequirementIdentity(t, accepted)
+	p23CheckConcernIdentity(t, accepted)
+	p23CheckJudgmentIdentity(t, accepted)
+	p23CheckReviewFindingIdentity(t, accepted)
 	t.Run("authority", func(t *testing.T) {
 		a := p22NewFIDRecoveryAdapter(t)
 		before := p21JournalEventCount(t, a.workspace)
@@ -209,6 +229,13 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 		{"evidence.evaluate", "p23-evaluate", ""},
 	}
 	p23EvidenceEvaluate(t, a)
+	altGate := p22GateRun(t, a.binary, a.workspace, a.actor,
+		p21Input(t, a.workspace, "p23-shared-alt-gate", map[string]any{
+			"run_id": a.runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion,
+			"obligation_id": "OBL-p22-corpus", "repository": a.repository,
+		}), "p23-shared-alt-gate")
+	altReceiptID := p21PathString(t, altGate, "result", "receipt", "id")
+	accepted := map[string]p23LeafOutcome{}
 	for _, fixture := range cases {
 		t.Run(fixture.operation, func(t *testing.T) {
 			leaf, found := amended[fixture.operation]
@@ -220,30 +247,61 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 			if leaf.Mutation {
 				args = append(args, "--actor", a.actor, "--idempotency-key", fixture.key)
 			}
-			fake := p23FakeLeafAdapter{fixture: leaf}
-			fid := p23FIDLeafAdapter{pair: p23HumanLeafPair{Operation: fixture.operation, CWD: a.workspace, JSONArgs: args}, binary: a.binary, fixture: leaf}
-			p23CompareLeafOutcome(t, "accepted", fake.Accepted(), fid.Accepted(t))
+			fake := p23FakeLeafAdapter{fixture: leaf, other: p23AmendedModel(t, fixture.operation, p23HumanLeafPair{Operation: fixture.operation, CWD: a.workspace, JSONArgs: args})}
+			fid := p23FIDLeafAdapter{pair: p23HumanLeafPair{Operation: fixture.operation, CWD: a.workspace, JSONArgs: args}, binary: a.binary, fixture: leaf, alternateReceiptID: altReceiptID}
+			actual := fid.Accepted(t)
+			accepted[fixture.operation] = actual
+			p23CompareLeafOutcome(t, "accepted", fake.Accepted(), actual)
+			if fixture.operation == "claim.acquire" {
+				p23CheckClaimLease(t, actual)
+			}
 			if leaf.Mutation {
 				p23CompareLeafOutcome(t, "unknown-field", fake.UnknownField(), fid.UnknownField(t))
+				p23CompareLeafOutcome(t, "different-payload", fake.Conflict(fid.pair), fid.Conflict(t))
 			}
 		})
 	}
+	p23CheckAmendedIdentity(t, accepted)
 }
 
-type p23FakeLeafAdapter struct{ fixture p23LeafCase }
+type p23FakeLeafAdapter struct {
+	fixture     p23LeafCase
+	requirement p23RequirementExpectation
+	other       map[string]map[string]any
+}
 
 func (a p23FakeLeafAdapter) Accepted() p23LeafOutcome {
+	if result, ok := a.requirement.results[a.fixture.Operation]; ok {
+		return p23LeafOutcome{Operation: a.fixture.Operation, Fields: append([]string{}, a.fixture.Fields...), Replay: a.fixture.Mutation, Semantics: result}
+	}
+	if result, ok := a.other[a.fixture.Operation]; ok {
+		return p23LeafOutcome{Operation: a.fixture.Operation, Fields: append([]string{}, a.fixture.Fields...), Replay: a.fixture.Mutation, Semantics: result}
+	}
 	return p23LeafOutcome{Operation: a.fixture.Operation, Fields: append([]string{}, a.fixture.Fields...), Replay: a.fixture.Mutation, Semantics: a.fixture.Semantics}
 }
 
 func (a p23FakeLeafAdapter) UnknownField() p23LeafOutcome {
-	return p23LeafOutcome{Operation: a.fixture.Operation, Code: "invalid-argument", Exit: 2}
+	return p23LeafOutcome{Operation: a.fixture.Operation, Code: "invalid-argument", Category: "invalid-input", Exit: 2,
+		Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted " + a.fixture.Operation + " input"}}}
+}
+
+func (a p23FakeLeafAdapter) Conflict(pair p23HumanLeafPair) p23LeafOutcome {
+	key := ""
+	for i, arg := range pair.JSONArgs {
+		if arg == "--idempotency-key" && i+1 < len(pair.JSONArgs) {
+			key = pair.JSONArgs[i+1]
+		}
+	}
+	return p23LeafOutcome{Operation: a.fixture.Operation, Code: "idempotency-conflict", Category: "conflict", Exit: 4,
+		Details: map[string]any{"operation_scope": a.fixture.Operation + ":<generated:project>", "idempotency_key": key,
+			"stored_request_digest": "<generated:digest>", "supplied_request_digest": "<generated:digest>"}}
 }
 
 type p23FIDLeafAdapter struct {
-	pair    p23HumanLeafPair
-	binary  string
-	fixture p23LeafCase
+	pair               p23HumanLeafPair
+	binary             string
+	fixture            p23LeafCase
+	alternateReceiptID string
 }
 
 func (a p23FIDLeafAdapter) Accepted(t *testing.T) p23LeafOutcome {
@@ -268,29 +326,41 @@ func (a p23FIDLeafAdapter) Accepted(t *testing.T) p23LeafOutcome {
 	}
 	sort.Strings(fields)
 	replay, _ := envelope.Result["replayed"].(bool)
-	semantics := map[string]any(nil)
-	if len(a.fixture.Semantics) > 0 {
-		semantics = map[string]any{}
-		for path := range a.fixture.Semantics {
-			value := any(envelope.Result)
-			for _, segment := range strings.Split(path, ".") {
-				switch current := value.(type) {
-				case map[string]any:
-					value = current[segment]
-				case []any:
-					index, err := strconv.Atoi(segment)
-					if err != nil || index < 0 || index >= len(current) {
-						t.Fatalf("%s semantic path %s has no index %s", a.pair.Operation, path, segment)
-					}
-					value = current[index]
-				default:
-					t.Fatalf("%s semantic path %s stopped at %s", a.pair.Operation, path, segment)
-				}
-			}
-			semantics[path] = value
-		}
+	semantics := envelope.Result
+	full := strings.HasPrefix(a.fixture.Operation, "requirement.") || strings.HasPrefix(a.fixture.Operation, "concern.") ||
+		strings.HasPrefix(a.fixture.Operation, "deviation.") || strings.HasPrefix(a.fixture.Operation, "decision.") ||
+		strings.HasPrefix(a.fixture.Operation, "human-outcome.") || strings.HasPrefix(a.fixture.Operation, "review.") ||
+		strings.HasPrefix(a.fixture.Operation, "finding.") || a.fixture.Operation == "claim.acquire" ||
+		a.fixture.Operation == "evidence.evaluate" || strings.HasPrefix(a.fixture.Operation, "envelope.") ||
+		a.fixture.Operation == "evidence.link"
+	if !full {
+		semantics = p23SelectedSemantics(t, envelope.Result, a.fixture.Semantics)
 	}
 	return p23LeafOutcome{Operation: envelope.Operation, Fields: fields, Replay: replay, Semantics: semantics}
+}
+
+func p23SelectedSemantics(t *testing.T, result, paths map[string]any) map[string]any {
+	t.Helper()
+	selected := map[string]any{}
+	for path := range paths {
+		value := any(result)
+		for _, segment := range strings.Split(path, ".") {
+			switch current := value.(type) {
+			case map[string]any:
+				value = current[segment]
+			case []any:
+				index, err := strconv.Atoi(segment)
+				if err != nil || index < 0 || index >= len(current) {
+					t.Fatalf("semantic path %s has no index %s", path, segment)
+				}
+				value = current[index]
+			default:
+				t.Fatalf("semantic path %s stopped at %s", path, segment)
+			}
+		}
+		selected[path] = value
+	}
+	return selected
 }
 
 func (a p23FIDLeafAdapter) UnknownField(t *testing.T) p23LeafOutcome {
@@ -325,6 +395,43 @@ func (a p23FIDLeafAdapter) UnknownField(t *testing.T) p23LeafOutcome {
 	return a.rejection(t, args)
 }
 
+func (a p23FIDLeafAdapter) Conflict(t *testing.T) p23LeafOutcome {
+	t.Helper()
+	args := append([]string{}, a.pair.JSONArgs...)
+	input := p23LeafRequest(t, a.pair)
+	changed := p23ConflictInput(a.fixture.Operation, input)
+	if changed == nil {
+		changed = p23Clone(input)
+		switch a.fixture.Operation {
+		case "envelope.create":
+			changed["outcome"] = input["outcome"].(string) + " different"
+		case "envelope.activate":
+			for i, arg := range args {
+				if arg == "--actor" && i+1 < len(args) {
+					args[i+1] = "actor-denied"
+				}
+			}
+		case "evidence.link":
+			if a.alternateReceiptID == "" {
+				t.Fatal("missing alternative receipt")
+			}
+			changed["receipt_id"] = a.alternateReceiptID
+		default:
+			t.Fatalf("%s has no independent conflicting input", a.fixture.Operation)
+		}
+	}
+	for i, arg := range args {
+		if arg == "--input" && i+1 < len(args) {
+			args[i+1] = p21Input(t, a.pair.CWD, "p23-conflict-"+strings.ReplaceAll(a.fixture.Operation, ".", "-"), changed)
+		}
+	}
+	result := a.rejection(t, args)
+	if result.Code == "idempotency-conflict" && result.Details["stored_request_digest"] == result.Details["supplied_request_digest"] {
+		t.Fatalf("%s conflicting payload has equal request digests", a.fixture.Operation)
+	}
+	return result
+}
+
 func (a p23FIDLeafAdapter) rejection(t *testing.T, args []string) p23LeafOutcome {
 	t.Helper()
 	before := p21JournalEventCount(t, a.pair.CWD)
@@ -332,7 +439,10 @@ func (a p23FIDLeafAdapter) rejection(t *testing.T, args []string) p23LeafOutcome
 	var failure struct {
 		Operation string `json:"operation"`
 		Error     struct {
-			Code string `json:"code"`
+			Code     string         `json:"code"`
+			Category string         `json:"category"`
+			Subject  any            `json:"subject"`
+			Details  map[string]any `json:"details"`
 		} `json:"error"`
 	}
 	if json.Unmarshal([]byte(stderr), &failure) != nil {
@@ -345,13 +455,103 @@ func (a p23FIDLeafAdapter) rejection(t *testing.T, args []string) p23LeafOutcome
 	if after := p21JournalEventCount(t, a.pair.CWD); after != before {
 		t.Fatalf("%s rejection appended Event %d -> %d", a.pair.Operation, before, after)
 	}
-	return p23LeafOutcome{Operation: failure.Operation, Code: failure.Error.Code, Exit: exit.ExitCode()}
+	return p23LeafOutcome{Operation: failure.Operation, Code: failure.Error.Code, Category: failure.Error.Category,
+		Subject: failure.Error.Subject, Details: failure.Error.Details, Exit: exit.ExitCode()}
 }
 
 func p23CompareLeafOutcome(t *testing.T, name string, fake, fid p23LeafOutcome) {
 	t.Helper()
 	sort.Strings(fake.Fields)
+	fake.Semantics = p23NormalizeLeafValues(t, fake.Semantics)
+	fid.Semantics = p23NormalizeLeafValues(t, fid.Semantics)
+	fake.Details = p23NormalizeLeafValues(t, fake.Details)
+	fid.Details = p23NormalizeLeafValues(t, fid.Details)
 	if !reflect.DeepEqual(fake, fid) {
 		t.Fatalf("%s fake=%#v fid=%#v", name, fake, fid)
 	}
+}
+
+// The only normalized result members here are the generated Requirement row ID,
+// EventRef, and creation time. Both adapters pass through this same traversal.
+func p23NormalizeLeafValues(t *testing.T, raw map[string]any) map[string]any {
+	t.Helper()
+	if raw == nil {
+		return nil
+	}
+	return p23NormalizeLeafValue(t, "", raw).(map[string]any)
+}
+
+func p23NormalizeLeafValue(t *testing.T, key string, raw any) any {
+	t.Helper()
+	switch value := raw.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(value))
+		for child, item := range value {
+			out[child] = p23NormalizeLeafValue(t, child, item)
+		}
+		return out
+	case []any:
+		out := make([]any, len(value))
+		for i, item := range value {
+			out[i] = p23NormalizeLeafValue(t, key, item)
+		}
+		return out
+	case string:
+		switch key {
+		case "operation_scope":
+			parts := strings.SplitN(value, ":", 2)
+			if len(parts) == 2 && (parts[1] == "<generated:project>" || strings.HasPrefix(parts[1], "project-")) {
+				return parts[0] + ":<generated:project>"
+			}
+		case "stored_request_digest", "supplied_request_digest":
+			if value != "<generated:digest>" && (!strings.HasPrefix(value, "sha256:") || len(value) != len("sha256:")+64) {
+				t.Fatalf("invalid generated request digest %q", value)
+			}
+			return "<generated:digest>"
+		case "created_at", "disposed_at", "recorded_at", "acquired_at", "expires_at", "activated_at":
+			if value != "<generated:timestamp>" {
+				if _, err := time.Parse(time.RFC3339Nano, value); err != nil {
+					t.Fatalf("invalid generated timestamp %q: %v", value, err)
+				}
+			}
+			return "<generated:timestamp>"
+		case "event_id":
+			if value != "<generated:EventRef>" && !strings.HasPrefix(value, "EVT-") {
+				t.Fatalf("invalid generated EventRef %q", value)
+			}
+			return "<generated:EventRef>"
+		case "id":
+			if value == "<generated:RREF>" || strings.HasPrefix(value, "RREF-") {
+				return "<generated:RREF>"
+			}
+			if value == "<generated:REV>" || strings.HasPrefix(value, "REV-") {
+				return "<generated:REV>"
+			}
+			if value == "<generated:FDP>" || strings.HasPrefix(value, "FDP-") {
+				return "<generated:FDP>"
+			}
+			if value == "<generated:CLM>" || strings.HasPrefix(value, "CLM-") {
+				return "<generated:CLM>"
+			}
+			if value == "<generated:ENV>" || strings.HasPrefix(value, "ENV-") {
+				return "<generated:ENV>"
+			}
+			if value == "<generated:EVD>" || strings.HasPrefix(value, "EVD-") {
+				return "<generated:EVD>"
+			}
+		case "review_id":
+			if value == "<generated:REV>" || strings.HasPrefix(value, "REV-") {
+				return "<generated:REV>"
+			}
+		case "envelope_id":
+			if value == "<generated:ENV>" || strings.HasPrefix(value, "ENV-") {
+				return "<generated:ENV>"
+			}
+		case "activation_id":
+			if value == "<generated:ACT>" || strings.HasPrefix(value, "ACT-") {
+				return "<generated:ACT>"
+			}
+		}
+	}
+	return raw
 }
