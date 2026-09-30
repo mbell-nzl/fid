@@ -132,8 +132,8 @@ Review-13 MF-1 repair gate: the same six commands ran byte-identically, in the t
 
 ## Commit hash
 
-- Pending commit
+- `4261575c3c84de1acf0089d70cf50fbe310a16c8`
 
 ## Commit subject
 
-- Pending commit
+- `test(integration): isolate Phase 23 corrupt Event probes`
