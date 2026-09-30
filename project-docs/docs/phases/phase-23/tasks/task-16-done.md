@@ -95,6 +95,7 @@ Review-13 MF-1 repair tests, working directory `/home/mark/projects/fid`:
 - Tagged pre-gate race check: `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestPortableAssertCorruptEventsRejected$' ./cmd/fid/integration/` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	11.158s` (terminated `exit_code: 0`).
 - Uncached VAL-079 workflow measurement after the six exact gates: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	57.597s` (terminated `exit_code: 0`). The ordinary gate reported workflow as cached, so this supplies its current uncached package time.
 - Report-lint expectation after the finalized report commit: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-16-done.md project-docs/docs/phases/phase-23/tasks/task-16.md` must terminate with `OUTCOME COMPLETE`. The post-commit observed result is returned to the Phase Runner.
+- Report-lint attempt 1 on finalized report commit `e25fa2d`: the same command - FAIL - `FAIL report-lint found 2 failure(s)` (terminated `exit_code: 2`). Two new gate result lines had explanatory prose after their termination fields. The entries below now end at the observed termination, with those notes on separate lines; the original failed control evidence is retained here.
 
 ## Exact quality-gate results
 
@@ -113,14 +114,16 @@ Review-13 MF-1 repair gate: the same six commands ran byte-identically, in the t
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`); `cmd/fid` reported `196.206s` uncached.
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:									(statements)			60.5%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	232.525s` (terminated `exit_code: 0`)
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	25.218s` (terminated `exit_code: 0`); benchmark row `22542 ms/rebuild`.
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	25.218s` (terminated `exit_code: 0`)
+
+The repair gate reported `cmd/fid` `196.206s` uncached; the benchmark row was `22542 ms/rebuild`.
 
 ## Deviations from spec
 
-- None. The initial focused failure was the missing archive boolean allowance; adding `review_findings.blocking` to the accepted semantic boolean columns produced the passing focused and full gates. The two intermediate focused failures were new test-fixture defects and were repaired in the same test file. All failed attempts above remain recorded; the exact same focused command later passed. Review-13 MF-1 identified that the original corruption assertion reused one projection: the new named test failed with the copied terminal token `FAIL` (terminated `exit_code: 1`) because 27 cases reused the connection. Cloning the clean workspace and opening a new connection inside each case repaired that cause; the byte-identical command later returned `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.156s` (terminated `exit_code: 0`). No accepted contract, command, threshold, or product behavior changed.
+- None. The initial focused failure was the missing archive boolean allowance; adding `review_findings.blocking` to the accepted semantic boolean columns produced the passing focused and full gates. The two intermediate focused failures were new test-fixture defects and were repaired in the same test file. All failed attempts above remain recorded; the exact same focused command later passed. Review-13 MF-1 identified that the original corruption assertion reused one projection: the new named test failed with the copied terminal token `FAIL` (terminated `exit_code: 1`) because 27 cases reused the connection. Cloning the clean workspace and opening a new connection inside each case repaired that cause; the byte-identical command later returned `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.156s` (terminated `exit_code: 0`). The first report-lint attempt failed with `FAIL report-lint found 2 failure(s)` (terminated `exit_code: 2`) because two PASS lines had trailing prose; moving those notes after the six-command list lets the unchanged control parse each observed termination. No accepted contract, command, threshold, or product behavior changed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
