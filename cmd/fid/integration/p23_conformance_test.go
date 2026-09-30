@@ -101,6 +101,42 @@ type p23LeafOutcome struct {
 	Semantics map[string]any
 }
 
+func TestP23CallerProvidedReviewIDsRemainDistinct(t *testing.T) {
+	t.Parallel()
+	const first, second = "REV-abcdef", "REV-123456"
+	var models []map[string]any
+	for _, reviewID := range []string{first, second} {
+		request := map[string]any{
+			"obligation_id": "OBL-input", "evidence_type": "receipt", "receipt_id": "RCT-input",
+			"review_id": reviewID, "human_outcome_id": nil, "target_repository": "repo",
+			"required_artifact_ids": []any{},
+		}
+		workspace := t.TempDir()
+		pair := p23HumanLeafPair{Operation: "evidence.link", CWD: workspace, JSONArgs: []string{
+			"--input", p21Input(t, workspace, "evidence", request), "--idempotency-key", "key",
+		}}
+		model := p23EvidenceLinkModel(t, pair)["evidence.link"]
+		if got := model["evidence"].(map[string]any)["review_id"]; got != reviewID {
+			t.Fatalf("Evidence review_id = %v, input = %s", got, reviewID)
+		}
+		models = append(models, model)
+		got := p23NormalizeLeafValues(t, model, model)["evidence"].(map[string]any)["review_id"]
+		if got != reviewID {
+			t.Fatalf("normalized Evidence review_id = %v, input = %s", got, reviewID)
+		}
+	}
+	if reflect.DeepEqual(p23NormalizeLeafValues(t, models[0], models[0]), p23NormalizeLeafValues(t, models[0], models[1])) {
+		t.Fatal("different caller-provided Review IDs compare equal")
+	}
+	for _, field := range []string{"id", "envelope_id"} {
+		firstValue := map[string]any{"input": map[string]any{field: "ENV-abcdef"}}
+		secondValue := map[string]any{"input": map[string]any{field: "ENV-123456"}}
+		if reflect.DeepEqual(p23NormalizeLeafValues(t, firstValue, firstValue), p23NormalizeLeafValues(t, firstValue, secondValue)) {
+			t.Fatalf("caller-provided %s values compare equal", field)
+		}
+	}
+}
+
 func TestP23SharedLeafConformance(t *testing.T) {
 	t.Parallel()
 	data, err := os.ReadFile(filepath.Join("testdata", "p23_conformance", "operations.json"))
@@ -751,93 +787,64 @@ func (a p23FIDLeafAdapter) rejection(t *testing.T, args []string) p23LeafOutcome
 func p23CompareLeafOutcome(t *testing.T, name string, fake, fid p23LeafOutcome) {
 	t.Helper()
 	sort.Strings(fake.Fields)
-	fake.Semantics = p23NormalizeLeafValues(t, fake.Semantics)
-	fid.Semantics = p23NormalizeLeafValues(t, fid.Semantics)
-	fake.Details = p23NormalizeLeafValues(t, fake.Details)
-	fid.Details = p23NormalizeLeafValues(t, fid.Details)
+	fid.Semantics = p23NormalizeLeafValues(t, fake.Semantics, fid.Semantics)
+	fake.Semantics = p23NormalizeLeafValues(t, fake.Semantics, fake.Semantics)
+	fid.Details = p23NormalizeLeafValues(t, fake.Details, fid.Details)
+	fake.Details = p23NormalizeLeafValues(t, fake.Details, fake.Details)
 	if !reflect.DeepEqual(fake, fid) {
 		t.Fatalf("%s fake=%#v fid=%#v", name, fake, fid)
 	}
 }
 
-// The only normalized result members here are the generated Requirement row ID,
-// EventRef, and creation time. Both adapters pass through this same traversal.
-func p23NormalizeLeafValues(t *testing.T, raw map[string]any) map[string]any {
+// The independent fake marks fid-generated positions with placeholders. Use
+// those positions for both adapters; every unmarked caller value stays exact.
+func p23NormalizeLeafValues(t *testing.T, expected, raw map[string]any) map[string]any {
 	t.Helper()
 	if raw == nil {
 		return nil
 	}
-	return p23NormalizeLeafValue(t, "", raw).(map[string]any)
+	return p23NormalizeLeafValue(t, expected, raw).(map[string]any)
 }
 
-func p23NormalizeLeafValue(t *testing.T, key string, raw any) any {
+func p23NormalizeLeafValue(t *testing.T, expected, raw any) any {
 	t.Helper()
 	switch value := raw.(type) {
 	case map[string]any:
+		declared, _ := expected.(map[string]any)
 		out := make(map[string]any, len(value))
 		for child, item := range value {
-			out[child] = p23NormalizeLeafValue(t, child, item)
+			out[child] = p23NormalizeLeafValue(t, declared[child], item)
 		}
 		return out
 	case []any:
+		declared, _ := expected.([]any)
 		out := make([]any, len(value))
 		for i, item := range value {
-			out[i] = p23NormalizeLeafValue(t, key, item)
+			if i < len(declared) {
+				out[i] = p23NormalizeLeafValue(t, declared[i], item)
+			} else {
+				out[i] = item
+			}
 		}
 		return out
 	case string:
-		switch key {
-		case "operation_scope":
-			parts := strings.SplitN(value, ":", 2)
-			if len(parts) == 2 && (parts[1] == "<generated:project>" || p23ValidGeneratedToken("project", parts[1])) {
-				return parts[0] + ":<generated:project>"
+		marker, ok := expected.(string)
+		if !ok {
+			return raw
+		}
+		if strings.HasSuffix(marker, ":<generated:project>") {
+			prefix := strings.TrimSuffix(marker, "<generated:project>")
+			if value != marker && (!strings.HasPrefix(value, prefix) || !p23ValidGeneratedToken("project", strings.TrimPrefix(value, prefix))) {
+				t.Fatalf("invalid generated project scope %q", value)
 			}
-		case "stored_request_digest", "supplied_request_digest":
-			if value != "<generated:digest>" && !p23ValidGeneratedToken("digest", value) {
-				t.Fatalf("invalid generated request digest %q", value)
+			return marker
+		}
+		if strings.HasPrefix(marker, "<generated:") && strings.HasSuffix(marker, ">") {
+			kind := strings.TrimSuffix(strings.TrimPrefix(marker, "<generated:"), ">")
+			if value != marker && !p23ValidGeneratedToken(kind, value) {
+				t.Fatalf("invalid generated %s %q", kind, value)
 			}
-			return "<generated:digest>"
-		case "created_at", "disposed_at", "recorded_at", "acquired_at", "expires_at", "activated_at":
-			if value != "<generated:timestamp>" && !p23ValidGeneratedToken("timestamp", value) {
-				t.Fatalf("invalid generated timestamp %q", value)
-			}
-			return "<generated:timestamp>"
-		case "event_id":
-			if value != "<generated:EventRef>" && !p23ValidGeneratedToken("EventRef", value) {
-				t.Fatalf("invalid generated EventRef %q", value)
-			}
-			return "<generated:EventRef>"
-		case "id":
-			if value == "<generated:RREF>" || p23ValidGeneratedToken("RREF", value) {
-				return "<generated:RREF>"
-			}
-			if value == "<generated:REV>" || p23ValidGeneratedToken("REV", value) {
-				return "<generated:REV>"
-			}
-			if value == "<generated:FDP>" || p23ValidGeneratedToken("FDP", value) {
-				return "<generated:FDP>"
-			}
-			if value == "<generated:CLM>" || p23ValidGeneratedToken("CLM", value) {
-				return "<generated:CLM>"
-			}
-			if value == "<generated:ENV>" || p23ValidGeneratedToken("ENV", value) {
-				return "<generated:ENV>"
-			}
-			if value == "<generated:EVD>" || p23ValidGeneratedToken("EVD", value) {
-				return "<generated:EVD>"
-			}
-		case "review_id":
-			if value == "<generated:REV>" || p23ValidGeneratedToken("REV", value) {
-				return "<generated:REV>"
-			}
-		case "envelope_id":
-			if value == "<generated:ENV>" || p23ValidGeneratedToken("ENV", value) {
-				return "<generated:ENV>"
-			}
-		case "activation_id":
-			if value == "<generated:ACT>" || p23ValidGeneratedToken("ACT", value) {
-				return "<generated:ACT>"
-			}
+			return marker
 		}
 	}
 	return raw
