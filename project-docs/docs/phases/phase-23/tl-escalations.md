@@ -67,7 +67,8 @@
     changes. A task-18 planning amendment converges the registry, the eight
     producers, `codes_test.go`, and the fake's two-field rows. It adds gate
     regression tests.
-  - **Continuation:** same-task attempt 7, no-progress 0/2. Handoff:
+  - **Continuation:** same-task ledger attempt 2 (report attempt 7),
+    no-progress 0/2. Handoff:
     `qa/resume-after-dec-266.md`.
 
 ## ESC-23-009 - Migration 0018 down conflicts with the accepted 0016 rollback

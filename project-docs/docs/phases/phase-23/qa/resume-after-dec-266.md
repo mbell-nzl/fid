@@ -36,13 +36,25 @@ Do not allocate a replacement TRG or ESC.
 
 ## Resume binding
 
+**Binding correction (2026-09-30).** The first issue of this handoff
+prescribed attempt 7, taken from TL-Lite's narrative count. The sequence
+validator binds a post-STOP RUN-RESUME to its governing ledger TRIAGE plus
+one. The 18:58 STOP governs through the 15:02 TRIAGE TRG-23-011, whose
+`Attempt count` is 1, so the ledger attempt is **2**. The Runner correctly
+refused attempt 7: `INVALID RUN-RESUME Attempt count must increment its
+governing TRIAGE` (terminated `exit_code: 1`), and the ledger stayed
+`VALID state=STOPPED`. Ledger attempts 2-6 before the 18:58 STOP remain as
+recorded. The ledger restarts its count at each post-STOP resume, and the
+event timestamps disambiguate the repeats. In the task-18 report, call this
+continuation "report attempt 7 (ledger attempt 2 after the 18:58 STOP)".
+
 - Governing TRG: TRG-23-011
 - Governing ESC: ESC-23-010
 - Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
-- Attempt count: 7
+- Attempt count: 2
 - Resolution authority: DEC-266
 - Continuing task: task-18
-- Next recovery: task-18 | in-scope-implementation | task-scope | task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality | 7
+- Next recovery: task-18 | in-scope-implementation | task-scope | task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality | 2
 
 Include `Sequence contract: v2` and `Recovery directive schema: v2`. In the
 prior-STOP reference, name the 18:58 STOP, TRG-23-011, and ESC-23-010.
@@ -55,8 +67,10 @@ evidence:
 - the ESC-23-010 second disposition marked RESOLVED;
 - this handoff present.
 
-The next event is a TASK-RECOVERY for task-18 with the same trigger and
-attempt 7. Its fields are:
+The next event is a TASK-RECOVERY for task-18 that repeats the resume tuple
+exactly: the same trigger, attempt 2, and a `Checkpoint` byte-identical to
+the RUN-RESUME `Checkpoint`. The validator rejects a TASK-RECOVERY that
+changes either. Its fields are:
 
 - Category: `in-scope-implementation`
 - Repair mode: `task-scope`
@@ -130,6 +144,27 @@ Start from HEAD, and read `task-18-done.md` and the DEC-266 amendment first.
    - that the gate regression tests exercise `gate.go:325/327`;
    - that every authority fake row matches the contract and none was
      derived from fid.
+
+## Simulation check
+
+The corrected binding was checked on a scratch copy of the `phase-23` docs at
+`e439d37` plus this correction, through
+`workflow-sequence-lint.sh --append-stdin`:
+
+- The unmodified ledger returned `VALID state=STOPPED`.
+- A RUN-RESUME at attempt 2 with the tuple above returned
+  `APPEND_CONFIRMED state=REPAIR_PENDING`.
+- A TASK-RECOVERY at attempt 7 was rejected:
+  `INVALID TASK-RECOVERY does not match the exact schema v2 RUN-RESUME
+  recovery tuple`. So was a changed checkpoint:
+  `INVALID TASK-RECOVERY does not preserve its RUN-RESUME checkpoint`.
+- A TASK-RECOVERY at attempt 2 with the identical checkpoint returned
+  `APPEND_CONFIRMED state=REPAIR_PENDING`, and the ledger then returned
+  `VALID state=REPAIR_PENDING`.
+
+Each passing run terminated `exit_code: 0`, and each rejection
+`exit_code: 1`. This proves only the event binding; use real checkpoints
+and receipts.
 
 This handoff grants authority and scope. It is not a verification receipt.
 The Tech Lead ran no implementation gate; the registry probe cited in

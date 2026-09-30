@@ -20,7 +20,7 @@ planning amendment.
 
 Next: the Runner resumes using
 [the handoff](../phases/phase-23/qa/resume-after-dec-266.md) (task 18
-attempt 7), then QA window 16-18 (review-13), then phase-end QA.
+ledger attempt 2), then QA window 16-18 (review-13), then phase-end QA.
 
 Earlier, DEC-265 clarified 19 declared Failure codes (18 added and 1
 retained).

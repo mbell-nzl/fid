@@ -29,7 +29,8 @@ None. The Runner resumes task 18 from
       `gate.go` four-field paths are latent defects.
     - The contract governs. A task-18 planning amendment converges the
       registry and the producers, and fixes the fake's two-field rows.
-    - Task 18 continues at attempt 7, no-progress 0/2.
+    - Task 18 continues at ledger attempt 2 (report attempt 7),
+      no-progress 0/2.
 
 ### ESC-23-009 - Migration 0018 down conflicts with the accepted 0016 rollback
 

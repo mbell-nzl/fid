@@ -2896,8 +2896,12 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
      `authority-missing` expectations to the contract's four fields. This
      corrects the fake to the contract, not to fid. `claim.acquire` stays as
      authored.
-- **Attempt accounting.** Attempt 7 continues the same signature, with
-  no-progress 0/2. Attempts 5 and 6 made material progress: they completed
+- **Attempt accounting.** The continuation is ledger attempt **2** on the
+  same signature (report attempt 7), with no-progress 0/2. The 18:58 STOP
+  governs through the 15:02 TRIAGE (attempt 1), and the validator binds a
+  resume to that TRIAGE plus one. The first issue of the handoff said 7, and
+  the Runner correctly refused it; see the binding correction in
+  `qa/resume-after-dec-266.md`. Attempts 5 and 6 made material progress: they completed
   the rejection matrix. Both were forbidden from editing `claim.go`, so the
   failure could not count against them.
 - **Not taken.**

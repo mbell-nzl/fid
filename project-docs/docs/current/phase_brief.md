@@ -14,7 +14,7 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 ## Status
 
 **Tasks 1-17 complete; review-12 PASS (window 13-15). Task 18 is in
-same-task recovery under DEC-266 (attempt 7).** Branch `phase-23`.
+same-task recovery under DEC-266 (ledger attempt 2).** Branch `phase-23`.
 
 The task-18 audit is complete except for one issue. `claim.acquire`
 returned the Phase 20 `{operation,actor}` authority details, not the
@@ -32,7 +32,8 @@ resolved (DEC-249..264). I-7 is deferred to wrap-up. The contract has
 **84 rows**; see [decisions](../phases/phase-23/decisions.md).
 
 Next action: the Runner resumes using `qa/resume-after-dec-266.md`
-(task 18 attempt 7). QA window 16-18 (review-13) follows, then phase-end QA.
+(task 18, ledger attempt 2). QA window 16-18 (review-13) follows, then
+phase-end QA.
 
 ## Operating Mode
 
