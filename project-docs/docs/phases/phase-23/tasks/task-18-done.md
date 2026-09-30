@@ -223,8 +223,8 @@ The ordinary gate also reported `cmd/fid` at 199.423s. Its `internal/workflow` l
 
 ## Commit hash
 
-- Pending commit
+- `ad52a63a46d8ff912700a0e5b4e644e6cb3615a5`
 
 ## Commit subject
 
-- Pending commit
+- `test(conformance): retain amended replay and missing-ID evidence`
