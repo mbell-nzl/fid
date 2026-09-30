@@ -235,6 +235,7 @@ func p22FixtureResponse(t *testing.T, envelope map[string]any, stdout bool, exit
 }
 
 type p22FIDRecoveryAdapter struct {
+	firstResults                                                   map[string]map[string]any
 	task13ReplayCorpus                                             bool
 	activation                                                     map[string]any
 	registrationID                                                 string
@@ -417,11 +418,16 @@ func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, ac
 	envelopeInput := p21Input(t, workspace, "p22-corpus-envelope", envelopeRequest)
 	created := p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "create", "--actor", actor, "--input", envelopeInput, "--idempotency-key", "p22-corpus-envelope-create")
 	envelopeID := p21PathString(t, created, "result", "envelope", "id")
-	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-envelope-activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1}), "--idempotency-key", "p22-corpus-envelope-activate")
+	activated := p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-envelope-activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1}), "--idempotency-key", "p22-corpus-envelope-activate")
 	claim := p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-claim", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": claimMode, "ttl_seconds": leaseSeconds}), "--idempotency-key", "p22-corpus-claim-acquire")
 	claimID := p21PathString(t, claim, "result", "claim", "id")
 	run := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "start", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-run", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-corpus-prior", "source": "activated-harness"}, "obligation_id": nil, "repository": repository}), "--idempotency-key", "p22-corpus-run-start")
-	return &p22FIDRecoveryAdapter{activation: map[string]any{"id": activationID}, binary: binary, workspace: workspace, projectID: projectID, issueID: issueID, actor: actor, repository: repository, claimID: claimID, claimVersion: 1, runID: p21PathString(t, run, "result", "run", "id"), runVersion: 1, executorID: "executor-corpus-prior", measurement: source, registrationID: registrationID, registrationVersion: registrationVersion}
+	return &p22FIDRecoveryAdapter{activation: map[string]any{"id": activationID}, binary: binary, workspace: workspace, projectID: projectID, issueID: issueID, actor: actor, repository: repository, claimID: claimID, claimVersion: 1, runID: p21PathString(t, run, "result", "run", "id"), runVersion: 1, executorID: "executor-corpus-prior", measurement: source, registrationID: registrationID, registrationVersion: registrationVersion,
+		firstResults: map[string]map[string]any{
+			"envelope.create":   created["result"].(map[string]any),
+			"envelope.activate": activated["result"].(map[string]any),
+			"claim.acquire":     claim["result"].(map[string]any),
+		}}
 }
 
 func p22CorpusRepository(t *testing.T, workspace, projectID string) map[string]any {

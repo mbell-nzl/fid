@@ -3,6 +3,7 @@
 package integration
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"go/ast"
@@ -10,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,12 +20,13 @@ import (
 )
 
 type p23LeafCase struct {
-	Operation string         `json:"operation"`
-	Fields    []string       `json:"fields"`
-	Mutation  bool           `json:"mutation"`
-	OwnerTask int            `json:"owner_task"`
-	Semantics map[string]any `json:"semantics,omitempty"`
-	Amended   bool           `json:"amended,omitempty"`
+	Operation  string         `json:"operation"`
+	Fields     []string       `json:"fields"`
+	Mutation   bool           `json:"mutation"`
+	OwnerTask  int            `json:"owner_task"`
+	Semantics  map[string]any `json:"semantics,omitempty"`
+	Amended    bool           `json:"amended,omitempty"`
+	NotFoundID string         `json:"not_found_id,omitempty"`
 }
 
 type p23FailureCase struct {
@@ -144,6 +147,9 @@ func TestP23SharedLeafConformance(t *testing.T) {
 				p23CompareLeafOutcome(t, "unknown-field", fake.UnknownField(), fid.UnknownField(t))
 				p23CompareLeafOutcome(t, "different-payload", fake.Conflict(pair), fid.Conflict(t))
 			}
+			if fixture.NotFoundID != "" {
+				p23CompareLeafOutcome(t, "not-found", fake.NotFound(), fid.NotFound(t))
+			}
 		})
 	}
 	p23CheckRequirementIdentity(t, accepted)
@@ -251,6 +257,21 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 			fid := p23FIDLeafAdapter{pair: p23HumanLeafPair{Operation: fixture.operation, CWD: a.workspace, JSONArgs: args}, binary: a.binary, fixture: leaf, alternateReceiptID: altReceiptID}
 			actual := fid.Accepted(t)
 			accepted[fixture.operation] = actual
+			if leaf.Mutation {
+				first, found := a.firstResults[fixture.operation]
+				if !found {
+					t.Fatalf("%s has no captured first response", fixture.operation)
+				}
+				first["replayed"] = true
+				if !reflect.DeepEqual(first, actual.Semantics) {
+					t.Fatalf("%s first response differs from replay", fixture.operation)
+				}
+			} else {
+				second := fid.Accepted(t)
+				if !reflect.DeepEqual(actual, second) {
+					t.Fatalf("%s repeated read changed result", fixture.operation)
+				}
+			}
 			p23CompareLeafOutcome(t, "accepted", fake.Accepted(), actual)
 			if fixture.operation == "claim.acquire" {
 				p23CheckClaimLease(t, actual)
@@ -297,11 +318,34 @@ func (a p23FakeLeafAdapter) Conflict(pair p23HumanLeafPair) p23LeafOutcome {
 			"stored_request_digest": "<generated:digest>", "supplied_request_digest": "<generated:digest>"}}
 }
 
+func (a p23FakeLeafAdapter) NotFound() p23LeafOutcome {
+	code, subjectType := "", ""
+	switch a.fixture.Operation {
+	case "review.get":
+		code, subjectType = "review-not-found", "review"
+	case "requirement.get":
+		code, subjectType = "requirement-not-found", "requirement"
+	}
+	return p23LeafOutcome{Operation: a.fixture.Operation, Code: code, Category: "not-found", Exit: 3,
+		Subject: map[string]any{"type": subjectType, "id": a.fixture.NotFoundID},
+		Details: map[string]any{"id": a.fixture.NotFoundID}}
+}
+
 type p23FIDLeafAdapter struct {
 	pair               p23HumanLeafPair
 	binary             string
 	fixture            p23LeafCase
 	alternateReceiptID string
+}
+
+func (a p23FIDLeafAdapter) NotFound(t *testing.T) p23LeafOutcome {
+	t.Helper()
+	args := append([]string{}, a.pair.JSONArgs...)
+	if len(args) == 0 || a.fixture.NotFoundID == "" {
+		t.Fatal("missing ID-taking read case")
+	}
+	args[len(args)-1] = a.fixture.NotFoundID
+	return a.rejection(t, args)
 }
 
 func (a p23FIDLeafAdapter) Accepted(t *testing.T) p23LeafOutcome {
@@ -500,58 +544,88 @@ func p23NormalizeLeafValue(t *testing.T, key string, raw any) any {
 		switch key {
 		case "operation_scope":
 			parts := strings.SplitN(value, ":", 2)
-			if len(parts) == 2 && (parts[1] == "<generated:project>" || strings.HasPrefix(parts[1], "project-")) {
+			if len(parts) == 2 && (parts[1] == "<generated:project>" || p23ValidGeneratedToken("project", parts[1])) {
 				return parts[0] + ":<generated:project>"
 			}
 		case "stored_request_digest", "supplied_request_digest":
-			if value != "<generated:digest>" && (!strings.HasPrefix(value, "sha256:") || len(value) != len("sha256:")+64) {
+			if value != "<generated:digest>" && !p23ValidGeneratedToken("digest", value) {
 				t.Fatalf("invalid generated request digest %q", value)
 			}
 			return "<generated:digest>"
 		case "created_at", "disposed_at", "recorded_at", "acquired_at", "expires_at", "activated_at":
-			if value != "<generated:timestamp>" {
-				if _, err := time.Parse(time.RFC3339Nano, value); err != nil {
-					t.Fatalf("invalid generated timestamp %q: %v", value, err)
-				}
+			if value != "<generated:timestamp>" && !p23ValidGeneratedToken("timestamp", value) {
+				t.Fatalf("invalid generated timestamp %q", value)
 			}
 			return "<generated:timestamp>"
 		case "event_id":
-			if value != "<generated:EventRef>" && !strings.HasPrefix(value, "EVT-") {
+			if value != "<generated:EventRef>" && !p23ValidGeneratedToken("EventRef", value) {
 				t.Fatalf("invalid generated EventRef %q", value)
 			}
 			return "<generated:EventRef>"
 		case "id":
-			if value == "<generated:RREF>" || strings.HasPrefix(value, "RREF-") {
+			if value == "<generated:RREF>" || p23ValidGeneratedToken("RREF", value) {
 				return "<generated:RREF>"
 			}
-			if value == "<generated:REV>" || strings.HasPrefix(value, "REV-") {
+			if value == "<generated:REV>" || p23ValidGeneratedToken("REV", value) {
 				return "<generated:REV>"
 			}
-			if value == "<generated:FDP>" || strings.HasPrefix(value, "FDP-") {
+			if value == "<generated:FDP>" || p23ValidGeneratedToken("FDP", value) {
 				return "<generated:FDP>"
 			}
-			if value == "<generated:CLM>" || strings.HasPrefix(value, "CLM-") {
+			if value == "<generated:CLM>" || p23ValidGeneratedToken("CLM", value) {
 				return "<generated:CLM>"
 			}
-			if value == "<generated:ENV>" || strings.HasPrefix(value, "ENV-") {
+			if value == "<generated:ENV>" || p23ValidGeneratedToken("ENV", value) {
 				return "<generated:ENV>"
 			}
-			if value == "<generated:EVD>" || strings.HasPrefix(value, "EVD-") {
+			if value == "<generated:EVD>" || p23ValidGeneratedToken("EVD", value) {
 				return "<generated:EVD>"
 			}
 		case "review_id":
-			if value == "<generated:REV>" || strings.HasPrefix(value, "REV-") {
+			if value == "<generated:REV>" || p23ValidGeneratedToken("REV", value) {
 				return "<generated:REV>"
 			}
 		case "envelope_id":
-			if value == "<generated:ENV>" || strings.HasPrefix(value, "ENV-") {
+			if value == "<generated:ENV>" || p23ValidGeneratedToken("ENV", value) {
 				return "<generated:ENV>"
 			}
 		case "activation_id":
-			if value == "<generated:ACT>" || strings.HasPrefix(value, "ACT-") {
+			if value == "<generated:ACT>" || p23ValidGeneratedToken("ACT", value) {
 				return "<generated:ACT>"
 			}
 		}
 	}
 	return raw
+}
+
+var p23GeneratedIDPattern = regexp.MustCompile(`^[0-9a-f]{6}([0-9a-f]{2})?$`)
+var p23EventRefPattern = regexp.MustCompile(`^EVT-([0-9]{8})-([0-9]{6,})$`)
+
+func p23ValidGeneratedToken(kind, value string) bool {
+	switch kind {
+	case "digest":
+		if !strings.HasPrefix(value, "sha256:") || len(value) != 71 {
+			return false
+		}
+		_, err := hex.DecodeString(strings.TrimPrefix(value, "sha256:"))
+		return err == nil && value == strings.ToLower(value)
+	case "timestamp":
+		_, err := time.Parse(time.RFC3339Nano, value)
+		return err == nil
+	case "EventRef":
+		parts := p23EventRefPattern.FindStringSubmatch(value)
+		if parts == nil {
+			return false
+		}
+		_, err := time.Parse("20060102", parts[1])
+		return err == nil && strings.TrimLeft(parts[2], "0") != ""
+	case "project":
+		if !strings.HasPrefix(value, "project-") || len(value) != len("project-")+32 {
+			return false
+		}
+		_, err := hex.DecodeString(strings.TrimPrefix(value, "project-"))
+		return err == nil && value == strings.ToLower(value)
+	default:
+		return strings.HasPrefix(value, kind+"-") && p23GeneratedIDPattern.MatchString(strings.TrimPrefix(value, kind+"-"))
+	}
 }

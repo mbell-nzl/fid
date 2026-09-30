@@ -89,6 +89,9 @@ func p22JourneyProof(t *testing.T, a *p22FIDRecoveryAdapter, key string) string 
 	t.Helper()
 	gate := p22GateRun(t, a.binary, a.workspace, a.actor, p21Input(t, a.workspace, key+"-gate", map[string]any{"run_id": a.runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": a.repository}), key+"-gate")
 	proof := p21Run(t, a.binary, a.workspace, "--json", "evidence", "link", "--actor", a.actor, "--input", p21Input(t, a.workspace, key+"-proof", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": p21PathString(t, gate, "result", "receipt", "id"), "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}}), "--idempotency-key", key+"-proof")
+	if a.firstResults != nil {
+		a.firstResults["evidence.link"] = proof["result"].(map[string]any)
+	}
 	run := p21Run(t, a.binary, a.workspace, "--json", "run", "get", a.runID)
 	a.runVersion = p22Number(p21Path(t, run, "result", "run", "version"))
 	return p21PathString(t, proof, "result", "evidence", "id")
