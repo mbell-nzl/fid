@@ -47,14 +47,15 @@ The workflow package's uncached run supplies its wall time because the exact ord
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`)
-- `go tool cover -func=coverage.out` - PASS - `60.5%` (last-line token; terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `60.5%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	215.530s` (terminated `exit_code: 0`)
 
-`cmd/fid` reported 215.387s in the ordinary gate; `internal/workflow` was cached there and reported no wall time. Its uncached run above reported 55.842s. No ordinary package exceeded 600s; tagged integration was below its 900s budget.
+The cover token is copied from its final `total:` line. `cmd/fid` reported 215.387s in the ordinary gate; `internal/workflow` was cached there and reported no wall time. Its uncached run above reported 55.842s. No ordinary package exceeded 600s; tagged integration was below its 900s budget.
 
 ## Deviations from spec
 
-- None. The gate fixture needed a baseline budget observation so `gate run` reached the intended Stop denial; the initial table red result is preserved above.
+- The gate fixture needed a baseline budget observation so `gate run` reached the intended Stop denial; the initial table red result is preserved above.
+- Report-lint attempt 1 failed with `FAIL report-lint found 9 failure(s)` (terminated `exit_code: 9`): trailing prose after otherwise valid PASS termination tokens violated its row grammar. Moving that prose to separate paragraphs fixed eight rows. Attempt 2 failed with `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`): the coverage row still had a parenthetical token label before its termination marker. That label is now in prose outside the row.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
