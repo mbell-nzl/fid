@@ -19,9 +19,9 @@ Phase 23.** Branch: `phase-23`.
   - **A3:** `RequirementRef` does not show the stable `requirement_id`.
 
 Next: DEC-269 plans the A1-A3 repairs as supplemental tasks 19 (A2), 20
-(A3), and 21 (A1), adding VAL-085..089 (89 rows). The A1 resolution design
-and the A3 interface amendment **await Human approval**. Once DEC-269 reads
-ACCEPTED, the Runner resumes using
+(A3), and 21 (A1), adding VAL-085..089 (89 rows). The Human approved
+DEC-269 on 2026-10-02 (option 1: one rework approval per Envelope revision).
+The Runner resumes using
 [the handoff](../phases/phase-23/qa/resume-after-dec-269.md). The order is:
 tasks 19-21, then `review-15`, then a fresh QA Lead `final-review-1.md`
 (recorded as review-16, which regenerates the fixtures and authors

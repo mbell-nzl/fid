@@ -8,7 +8,7 @@
 > Tech Lead planning clarifications under DEC-228 are marked the same way.
 > Amended 2026-10-01 by DEC-269 (sections 6 and 12: rework-exhaustion resolution
 > through a Human Outcome, rework budget excluded from generic admission, both
-> requirement identities on every reference). **Human approval pending.**
+> requirement identities on every reference), **approved by the Human 2026-10-02**.
 > Author: Tech Lead, 2026-09-14. Read with `public-interface.md` and `schema.md`.
 > Planning base: `0195897a347dfe1872db0f7be3800c5c3ccdefcf`.
 > Roadmap slice 23 of ADR-0012; Phase 21/22 contracts remain authoritative

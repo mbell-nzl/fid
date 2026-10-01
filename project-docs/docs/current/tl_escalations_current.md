@@ -14,8 +14,8 @@
     partial, overall FAIL. DEC-268 (Human-directed) repairs A1 (the
     rework Stop cannot be resolved), A2 (Human-mode `claim acquire` is
     silent), and A3 (the `requirement_id` is not shown) in Phase 23. The
-    plan is DEC-269 (tasks 19-21, VAL-085..089). The A1 and A3 designs are
-    pending Human approval. Resume via `qa/resume-after-dec-269.md`.
+    plan is DEC-269 (tasks 19-21, VAL-085..089). DEC-269 was Human-approved on
+    2026-10-02 (option 1). Resume via `qa/resume-after-dec-269.md`.
 - **Resolution condition (remaining):** the A1-A3 repairs land, and the
   Human re-checks the affected rows. Then one fresh independent QA Lead
   writes `final-review-1.md` covering MF-1, VAL-005, A1-A3, and the Human

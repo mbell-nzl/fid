@@ -3121,11 +3121,10 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 ### DEC-269: A1-A3 repair plan - supplemental tasks 19-21
 
 - **Date:** 2026-10-01.
-- **Status:** PROPOSED by the Tech Lead, 2026-10-01. **Human approval
-  pending** for Part 1 (the A1 resolution design) and Part 3 (the A3
-  interface amendment). Both amend accepted Phase 23 contracts. Part 2 (A2)
-  changes no contract. The Runner does not dispatch task 19 until this line
-  reads ACCEPTED.
+- **Status:** ACCEPTED by Human, 2026-10-02 ("approve DEC-269 option 1").
+  This covers Part 1 with option 1 (one approval per Envelope revision),
+  Part 2, and Part 3. Proposed by the Tech Lead on 2026-10-01; Parts 1 and 3
+  amend accepted Phase 23 contracts. The Runner may dispatch task 19.
 - **Authority:** DEC-268 (Human direction to repair A1-A3 in Phase 23);
   DEC-195 (supply the missing authority; never weaken an assertion).
 - **Evidence:** Tech Lead source reading at `671f358`, plus scratch-copy
@@ -3154,7 +3153,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
      `claim.acquire` and `run.start`. The defect can be reached today by a
      Builder Run that is still active when the exhausting Review commits,
      and it would make any A1 repair ineffective.
-- **Decision (proposed).**
+- **Decision (accepted; option 1).**
   - **Condition.** The `review-rework-exhausted` Stop is raised with
     condition `human-outcome-recorded`, subject the Envelope, and
     `outcome_class: "review-rework-extension"`. StopDetails, blocked actions,
@@ -3186,7 +3185,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
     guidance line naming the qualifying action and the Stop list command.
     This is within Phase 21 section 1's allowance of up to two guidance
     lines. JSON is unchanged.
-- **Options considered (Human to choose).**
+- **Options considered (the Human chose option 1).**
   1. **Recommended: one Human approval per Envelope revision.** No
      predicate change. It reuses DEC-250's shared predicate and the atomic
      path that already serves `human-outcome-required`, and it matches the
@@ -3237,7 +3236,7 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   reference and the link line both "Requirement". `requirement get` accepts
   either ID. `requirement list` therefore never shows the ID the project
   actually uses.
-- **Decision (proposed).**
+- **Decision (accepted).**
   - `RequirementRef` gains `requirement_id:ID` immediately after `id`, in
     the record-reference result, `get`, and `list`. Request shapes, the DDL,
     Events, Effects, semantic keys, and request digests are unchanged.

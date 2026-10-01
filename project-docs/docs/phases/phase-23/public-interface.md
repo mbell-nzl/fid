@@ -5,7 +5,7 @@
 > non-committing denial semantics) and DEC-224 (`human-outcome-required`
 > producers), both **approved by the Human 2026-09-19**, and by DEC-263
 > (Stop-blocked denial details, Tech Lead under Human delegation 2026-09-29),
-> amended by DEC-269 (`RequirementRef.requirement_id`, Human approval pending),
+> amended by DEC-269 (`RequirementRef.requirement_id`, approved by the Human 2026-10-02),
 > and clarified by DEC-265 (section 5 declared-versus-added count, wording
 > only, 2026-09-30); amended passages name their DEC inline. `GLOSSARY.md` defines **Failure
 > code** and **Evaluation reason**: section 5 lists the failure set, and the
@@ -119,7 +119,7 @@ ProtectedDecision = ProtectedDecisionInput + {status:"satisfied"|"unsatisfied",
 RequirementRef = {id:ID,requirement_id:ID,source:Source,
                   status:"active"|"superseded"|"withdrawn",
                   superseded_by_id:?ID,created_at:timestamp,event_id:ID}
-                  -- requirement_id added by DEC-269 (pending Human approval)
+                  -- requirement_id added by DEC-269 (Human-approved 2026-10-02)
 RequirementLink = {requirement_id:ID,issue_id:ID,
                   relation:"implements"|"verifies"|"relates-to",
                   created_at:timestamp,event_id:ID}

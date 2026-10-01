@@ -14,8 +14,8 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 ## Status
 
 **Tasks 1-18 complete. The Human checklist FAILED (55/2/6). DEC-268 repairs
-A1-A3 in Phase 23 as supplemental tasks 19-21 (DEC-269; the A1 and A3 designs
-await Human approval).** Branch `phase-23`.
+A1-A3 in Phase 23 as supplemental tasks 19-21 (DEC-269, Human-approved
+2026-10-02, option 1).** Branch `phase-23`.
 
 - DEC-267 resolved the final review's MF-2/BC-A. Task 18 repaired MF-1
   (`b84b17c`, `b37c169`).
@@ -24,7 +24,7 @@ await Human approval).** Branch `phase-23`.
 - Task 21 (A1): the rework Stop resolves through a `review-rework-extension`
   Human Outcome; the rework budget is excluded from generic admission.
 
-Next action: once DEC-269 reads ACCEPTED, the Runner resumes using
+Next action: the Runner resumes using
 `qa/resume-after-dec-269.md`. Order: tasks 19, 20, 21, then `review-15`
 (window 19-21), then a fresh QA Lead `final-review-1.md` (recorded as
 review-16) that regenerates the fixtures and authors `human-checklist-2.md`,

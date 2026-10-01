@@ -48,7 +48,7 @@
 > VAL-085..089 are added for supplemental tasks 19-21 (A1-A3). The contract now
 > holds **89** rows: 85 deterministic and 4 Human. No row was removed,
 > renumbered, or weakened. VAL-029 still holds while the rework Stop is open.
-> DEC-269 Parts 1 and 3 are **pending Human approval**.
+> DEC-269 was **approved by the Human on 2026-10-02** (Part 1, option 1).
 >
 > Sources are `01_PRD.md`, `02_TRD.md`, `03_TRD_SCHEMA.md`,
 > `06_DESIGN_PLAN_CLI.md`, `07_DESIGN_PLAN_FLOWS.md`,

@@ -42,7 +42,7 @@
     the affected rows, and one fresh `final-review-1.md` is written.
   - A4-A8 are on the wrap-up agenda, undecided.
   - DEC-269 (2026-10-01) plans tasks 19-21 and adds VAL-085..089. Its A1 and
-    A3 designs await Human approval. Resume via `qa/resume-after-dec-269.md`.
+    A3 designs were Human-approved on 2026-10-02 (option 1). Resume via `qa/resume-after-dec-269.md`.
 - **Links:** TRG-23-016; DEC-178; DEC-223; DEC-259; DEC-261; DEC-267;
   DEC-268; `schema.md` section 2; VAL-005; VAL-070..073;
   `qa/human-checklist.md`.

@@ -157,7 +157,7 @@
 - DEC-267: VAL-005 names the two added Evidence columns; MF-1 is task 18's.
 - DEC-268 (Human): checklist FAIL. A1-A3 are repaired in Phase 23; the A4-A8
   Human operating experience is on the wrap-up agenda.
-- DEC-269 (A1/A3 pending Human approval): tasks 19 (silent Stop-family Human
+- DEC-269 (Human, option 1): tasks 19 (silent Stop-family Human
   failures), 20 (`RequirementRef.requirement_id`), and 21 (rework Stop resolved
   by a `review-rework-extension` Human Outcome; rework budget excluded from
   generic admission). VAL-085..089 bring the contract to 89 rows.
