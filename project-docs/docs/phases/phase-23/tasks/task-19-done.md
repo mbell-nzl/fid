@@ -34,19 +34,23 @@
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/... -run '^TestP23StopFailureHumanAndJSONParity$' -count=1` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`). The built `claim acquire` exited 4 with stdout `""` and stderr `""`; the test expected `error: review rework budget is exhausted\n`.
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/... -run '^TestP23StopFailureCodeMatrix$' -count=1` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`). The table exposed silent Human failures for the Stop-error family; its first gate fixture also exposed budget admission precedence and was corrected before the green run.
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/... -run '^TestP23StopFailureCodeMatrix/gate/open-stop$' -count=1` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`). With an observed budget baseline, the real pre-frame gate Stop denial exited 4 with empty Human stderr.
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/... -run '^TestP23StopFailure(HumanAndJSONParity|CodeMatrix)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	5.638s` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	196.778s` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	55.842s` (terminated `exit_code: 0`). This uncached measurement supplies the workflow wall time because the exact ordinary gate reported it as cached.
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/... -run '^TestP23StopFailure(HumanAndJSONParity|CodeMatrix)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	5.638s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	196.778s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	55.842s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+
+The workflow package's uncached run supplies its wall time because the exact ordinary gate reported that package as cached.
 - Built CLI in fresh `/tmp/fid-task19-aD2m7t`: `/tmp/fid --project /tmp/fid-task19-aD2m7t attention list --subject issue:ISS-1` - observed `error: invalid Stop request` (terminated `exit_code: 2`); `--json` twin returned code `invalid-argument`, message `invalid Stop request`, and the same `exit_code: 2`.
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`). `cmd/fid` reported 215.387s; `internal/workflow` was cached in this command and reported no wall time. Its uncached package run above reported 55.842s. No ordinary package exceeded 600s.
-- `go tool cover -func=coverage.out` - PASS - `60.5%` (last-line token; terminated `exit_code: 0`).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	215.530s` (terminated `exit_code: 0`), below the 900s budget.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `60.5%` (last-line token; terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	215.530s` (terminated `exit_code: 0`)
+
+`cmd/fid` reported 215.387s in the ordinary gate; `internal/workflow` was cached there and reported no wall time. Its uncached run above reported 55.842s. No ordinary package exceeded 600s; tagged integration was below its 900s budget.
 
 ## Deviations from spec
 
