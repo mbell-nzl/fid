@@ -62,8 +62,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `180f5168e3f1338cb758f8388f1c26fd6f8428d3`
 
 ## Commit subject
 
-- Pending commit
+- `fix(stop): render Human failures on stderr`
