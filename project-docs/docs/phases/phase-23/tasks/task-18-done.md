@@ -356,8 +356,8 @@ DEC-267 exact commands ran from `/home/mark/projects/fid` in task-spec order on 
 
 ## Commit hash
 
-- Pending commit
+- `b84b17c7b7218f981f368f908225bd139fab926e`
 
 ## Commit subject
 
-- Pending commit
+- `test(fid): skip suite bootstrap for live golden child`
