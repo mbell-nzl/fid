@@ -66,6 +66,10 @@ func TestMain(m *testing.M) {
 }
 
 func runCommandTestSuite(m interface{ Run() int }) int {
+	if containsTestArgument(os.Args, "--live-golden-child") {
+		return m.Run()
+	}
+
 	templateRoot, err := os.MkdirTemp("", "fid-pristine-workspace-")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "create pristine workspace root: %v\n", err)
