@@ -1,0 +1,394 @@
+[
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedreview.recordedunknown-594434287/001",
+    "validator": "\"current Event review.recorded: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedreview.recordedmissing-2321596141/001",
+    "validator": "\"current Event review.recorded: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedreview.recordedmalforme2824597422/001",
+    "validator": "\"current Event review.recorded review_records/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedfinding.addressedunknow4161891907/001",
+    "validator": "\"current Event finding.addressed: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedfinding.addressedmissin3070992360/001",
+    "validator": "\"current Event finding.addressed: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedfinding.addressedmalfor202272454/001",
+    "validator": "\"current Event finding.addressed finding_dispositions/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedconcern.recordedunknown1429043656/001",
+    "validator": "\"current Event concern.recorded: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedconcern.recordedmissing3467293515/001",
+    "validator": "\"current Event concern.recorded: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedconcern.recordedmalform323548549/001",
+    "validator": "\"current Event concern.recorded concerns/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedconcern.disposedunknown3034712485/001",
+    "validator": "\"current Event concern.disposed: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedconcern.disposedmissing1113688208/001",
+    "validator": "\"current Event concern.disposed: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedconcern.disposedmalform2131405082/001",
+    "validator": "\"current Event concern.disposed concerns/update: invalid column or scalar \\\"id\\\"\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejecteddeviation.recordedunkno2345522483/001",
+    "validator": "\"current Event deviation.recorded: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejecteddeviation.recordedmissi4116455167/001",
+    "validator": "\"current Event deviation.recorded: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejecteddeviation.recordedmalfo1755237671/001",
+    "validator": "\"current Event deviation.recorded deviations/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejecteddecision.referencedunkn2360151014/001",
+    "validator": "\"current Event decision.referenced: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejecteddecision.referencedmiss3785657641/001",
+    "validator": "\"current Event decision.referenced: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejecteddecision.referencedmalf420038683/001",
+    "validator": "\"current Event decision.referenced decision_refs/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedhuman-outcome.recordedu2555168730/001",
+    "validator": "\"current Event human-outcome.recorded: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedhuman-outcome.recordedm2686446692/001",
+    "validator": "\"current Event human-outcome.recorded: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedhuman-outcome.recordedm266443915/001",
+    "validator": "\"current Event human-outcome.recorded human_outcomes/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedrequirement.referencedu3535659290/001",
+    "validator": "\"current Event requirement.referenced: missing or reordered Effect stage 2\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedrequirement.referencedm3283273450/001",
+    "validator": "\"current Event requirement.referenced: missing or reordered Effect stage 2\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedrequirement.referencedm784197378/001",
+    "validator": "\"current Event requirement.referenced requirement_refs/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedrequirement.linkedunkno1898352319/001",
+    "validator": "\"current Event requirement.linked: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedrequirement.linkedmissi1643454803/001",
+    "validator": "\"current Event requirement.linked: missing or reordered Effect stage 1\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedrequirement.linkedmalfo1586319945/001",
+    "validator": "\"current Event requirement.linked requirement_issue_links/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableAssertCorruptEventsRejectedunknown.phase23unknown-910156001/001",
+    "validator": "\"current Event: unsupported Event family \\\"unknown.phase23\\\"\"",
+    "before": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "after": "afc9b08e6fd2d0ac16a0d543b1eab6d57f63778138b9b6cecf0d12971f285b15",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablereview.recordedunk3288022157/001",
+    "validator": "\"current Event review.recorded: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablereview.recordedmis466027165/001",
+    "validator": "\"current Event review.recorded: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablereview.recordedmal2118389539/001",
+    "validator": "\"current Event review.recorded review_records/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablefinding.addressedu1132280109/001",
+    "validator": "\"current Event finding.addressed: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablefinding.addressedm1875930594/001",
+    "validator": "\"current Event finding.addressed: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablefinding.addressedm2411395042/001",
+    "validator": "\"current Event finding.addressed finding_dispositions/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tableconcern.recordedun3536942446/001",
+    "validator": "\"current Event concern.recorded: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tableconcern.recordedmi3047495373/001",
+    "validator": "\"current Event concern.recorded: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tableconcern.recordedma3548031806/001",
+    "validator": "\"current Event concern.recorded concerns/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tableconcern.disposedun4038275920/001",
+    "validator": "\"current Event concern.disposed: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tableconcern.disposedmi71719873/001",
+    "validator": "\"current Event concern.disposed: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tableconcern.disposedma1641313091/001",
+    "validator": "\"current Event concern.disposed concerns/update: invalid column or scalar \\\"id\\\"\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tabledeviation.recorded1418825511/001",
+    "validator": "\"current Event deviation.recorded: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tabledeviation.recorded2146405667/001",
+    "validator": "\"current Event deviation.recorded: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tabledeviation.recorded2847613517/001",
+    "validator": "\"current Event deviation.recorded deviations/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tabledecision.referenced2134293156/001",
+    "validator": "\"current Event decision.referenced: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tabledecision.referenced3333699447/001",
+    "validator": "\"current Event decision.referenced: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tabledecision.referenced4182416277/001",
+    "validator": "\"current Event decision.referenced decision_refs/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablehuman-outcome.recor2234742072/001",
+    "validator": "\"current Event human-outcome.recorded: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablehuman-outcome.recor2305246658/001",
+    "validator": "\"current Event human-outcome.recorded: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablehuman-outcome.recor788263035/001",
+    "validator": "\"current Event human-outcome.recorded human_outcomes/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablerequirement.referen3097886214/001",
+    "validator": "\"current Event requirement.referenced: missing or reordered Effect stage 2\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablerequirement.referen280631123/001",
+    "validator": "\"current Event requirement.referenced: missing or reordered Effect stage 2\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablerequirement.referen982401863/001",
+    "validator": "\"current Event requirement.referenced requirement_refs/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablerequirement.linked3822481985/001",
+    "validator": "\"current Event requirement.linked: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablerequirement.linked1363766046/001",
+    "validator": "\"current Event requirement.linked: missing or reordered Effect stage 1\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tablerequirement.linked339968627/001",
+    "validator": "\"current Event requirement.linked requirement_issue_links/insert: invalid column or scalar \\\"id\\\"\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  },
+  {
+    "workspace": "/tmp/TestPortableRoundTripCoversEveryPhase23Tableunknown.phase23unk961544432/001",
+    "validator": "\"current Event: unsupported Event family \\\"unknown.phase23\\\"\"",
+    "before": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "after": "519877757c98c3f45096afc9a30148f9a99c5376febcc240976302b7e277a3c6",
+    "tables": "59"
+  }
+]

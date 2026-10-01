@@ -1,0 +1,1 @@
+{"id":"setup-testcache","cmd":"go clean -testcache","results":[{"chunk_id":"98d982","wall_time_seconds":0.001005056,"exit_code":0,"original_token_count":0,"output":""}]}

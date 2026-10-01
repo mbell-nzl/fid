@@ -1,0 +1,1049 @@
+[
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+      "review",
+      "get",
+      "REV-bab716"
+    ],
+    "stdout": "Purpose: Inspect independent Reviews and their Findings.\n\nReviews\n  Review REV-bab716\n    Issue: P22-364fce; Envelope: ENV-68e981 revision 1\n    Run: RUN-bd1e04; Reviewer: actor-denied; Profile: review-default\n    Verdict: changes-required; Independence: distinct-actor\n    Repository: project project-1dfe5eec5482445f619cf2c5ecc3d9e8; worktree sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d; HEAD 4f31c3c30e16eab8d3452ac9f73b50fc246d6129; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503\n    Repository capture: git; base 4f31c3c30e16eab8d3452ac9f73b50fc246d6129; dirty false; dirty digest <nil>\n    Findings by severity: blocker 0; major 3; minor 0; nit 0\n  Finding FND-fixture-addressed\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: addressed\n    Addressed is a Builder assertion, not a resolution.\n  Finding FND-fixture-blocking\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: open\n  Finding FND-fixture-resolved\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: resolved\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+      "--json",
+      "review",
+      "get",
+      "REV-bab716"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"review.get\",\"result\":{\"review\":{\"actor_id\":\"actor-denied\",\"coverage\":{\"exclusions\":[],\"items\":[{\"assessed\":true,\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"section\":null,\"source_type\":\"project-file\"}}]},\"envelope_id\":\"ENV-68e981\",\"envelope_revision\":1,\"event_id\":\"EVT-20261001-000023\",\"evidence_refs\":[],\"findings\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[{\"action\":\"addressed\",\"actor_id\":\"actor-recovery\",\"disposed_at\":\"2026-10-01T01:27:02.333698464Z\",\"event_id\":\"EVT-20261001-000028\",\"id\":\"FDP-f8870e\",\"qualifying_review_id\":null,\"reason\":\"Builder says correction was made\"}],\"id\":\"FND-fixture-addressed\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"addressed\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"},{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[],\"id\":\"FND-fixture-blocking\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"open\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"},{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[{\"action\":\"resolved\",\"actor_id\":\"actor-reviewer-two\",\"disposed_at\":\"2026-10-01T01:27:02.86293906Z\",\"event_id\":\"EVT-20261001-000032\",\"id\":\"FDP-c4fe9e\",\"qualifying_review_id\":\"REV-0ab4fd\",\"reason\":\"resolved by qualifying Review\"}],\"id\":\"FND-fixture-resolved\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"resolved\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}],\"id\":\"REV-bab716\",\"independence\":\"distinct-actor\",\"issue_id\":\"P22-364fce\",\"profile\":\"review-default\",\"receipt_ids\":[],\"recorded_at\":\"2026-10-01T01:27:01.695562849Z\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"resolved_finding_ids\":[],\"run_id\":\"RUN-bd1e04\",\"verdict\":\"changes-required\"}}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+      "review",
+      "list",
+      "--issue",
+      "P22-364fce"
+    ],
+    "stdout": "Purpose: Inspect independent Reviews and their Findings.\n\nReviews\n  Review REV-0ab4fd\n    Issue: P22-364fce; Envelope: ENV-68e981 revision 1\n    Run: RUN-f919cc; Reviewer: actor-reviewer-two; Profile: review-default\n    Verdict: changes-required; Independence: distinct-actor\n    Repository: project project-1dfe5eec5482445f619cf2c5ecc3d9e8; worktree sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d; HEAD 4f31c3c30e16eab8d3452ac9f73b50fc246d6129; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503\n    Repository capture: git; base 4f31c3c30e16eab8d3452ac9f73b50fc246d6129; dirty false; dirty digest <nil>\n    Findings by severity: blocker 0; major 1; minor 0; nit 0\n  Finding FND-fixture-new\n    Review: REV-0ab4fd; Severity: major; Blocking: true; Disposition: open\n  Review REV-bab716\n    Issue: P22-364fce; Envelope: ENV-68e981 revision 1\n    Run: RUN-bd1e04; Reviewer: actor-denied; Profile: review-default\n    Verdict: changes-required; Independence: distinct-actor\n    Repository: project project-1dfe5eec5482445f619cf2c5ecc3d9e8; worktree sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d; HEAD 4f31c3c30e16eab8d3452ac9f73b50fc246d6129; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503\n    Repository capture: git; base 4f31c3c30e16eab8d3452ac9f73b50fc246d6129; dirty false; dirty digest <nil>\n    Findings by severity: blocker 0; major 3; minor 0; nit 0\n  Finding FND-fixture-addressed\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: addressed\n    Addressed is a Builder assertion, not a resolution.\n  Finding FND-fixture-blocking\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: open\n  Finding FND-fixture-resolved\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: resolved\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+      "--json",
+      "review",
+      "list",
+      "--issue",
+      "P22-364fce"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"review.list\",\"result\":{\"items\":[{\"actor_id\":\"actor-reviewer-two\",\"coverage\":{\"exclusions\":[],\"items\":[{\"assessed\":true,\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"section\":null,\"source_type\":\"project-file\"}}]},\"envelope_id\":\"ENV-68e981\",\"envelope_revision\":1,\"event_id\":\"EVT-20261001-000032\",\"evidence_refs\":[],\"findings\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:02.86293906Z\",\"dispositions\":[],\"id\":\"FND-fixture-new\",\"review_id\":\"REV-0ab4fd\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"open\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}],\"id\":\"REV-0ab4fd\",\"independence\":\"distinct-actor\",\"issue_id\":\"P22-364fce\",\"profile\":\"review-default\",\"receipt_ids\":[],\"recorded_at\":\"2026-10-01T01:27:02.86293906Z\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"resolved_finding_ids\":[\"FND-fixture-resolved\"],\"run_id\":\"RUN-f919cc\",\"verdict\":\"changes-required\"},{\"actor_id\":\"actor-denied\",\"coverage\":{\"exclusions\":[],\"items\":[{\"assessed\":true,\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"section\":null,\"source_type\":\"project-file\"}}]},\"envelope_id\":\"ENV-68e981\",\"envelope_revision\":1,\"event_id\":\"EVT-20261001-000023\",\"evidence_refs\":[],\"findings\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[{\"action\":\"addressed\",\"actor_id\":\"actor-recovery\",\"disposed_at\":\"2026-10-01T01:27:02.333698464Z\",\"event_id\":\"EVT-20261001-000028\",\"id\":\"FDP-f8870e\",\"qualifying_review_id\":null,\"reason\":\"Builder says correction was made\"}],\"id\":\"FND-fixture-addressed\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"addressed\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"},{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[],\"id\":\"FND-fixture-blocking\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"open\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"},{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[{\"action\":\"resolved\",\"actor_id\":\"actor-reviewer-two\",\"disposed_at\":\"2026-10-01T01:27:02.86293906Z\",\"event_id\":\"EVT-20261001-000032\",\"id\":\"FDP-c4fe9e\",\"qualifying_review_id\":\"REV-0ab4fd\",\"reason\":\"resolved by qualifying Review\"}],\"id\":\"FND-fixture-resolved\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"resolved\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}],\"id\":\"REV-bab716\",\"independence\":\"distinct-actor\",\"issue_id\":\"P22-364fce\",\"profile\":\"review-default\",\"receipt_ids\":[],\"recorded_at\":\"2026-10-01T01:27:01.695562849Z\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"resolved_finding_ids\":[],\"run_id\":\"RUN-bd1e04\",\"verdict\":\"changes-required\"}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+      "finding",
+      "list",
+      "--issue",
+      "P22-364fce"
+    ],
+    "stdout": "Purpose: Inspect Finding dispositions and current blocking state.\n\nFindings\n  Finding FND-fixture-addressed\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: addressed\n    Addressed is a Builder assertion, not a resolution.\n  Finding FND-fixture-blocking\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: open\n  Finding FND-fixture-new\n    Review: REV-0ab4fd; Severity: major; Blocking: true; Disposition: open\n  Finding FND-fixture-resolved\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: resolved\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+      "--json",
+      "finding",
+      "list",
+      "--issue",
+      "P22-364fce"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"finding.list\",\"result\":{\"items\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[{\"action\":\"addressed\",\"actor_id\":\"actor-recovery\",\"disposed_at\":\"2026-10-01T01:27:02.333698464Z\",\"event_id\":\"EVT-20261001-000028\",\"id\":\"FDP-f8870e\",\"qualifying_review_id\":null,\"reason\":\"Builder says correction was made\"}],\"id\":\"FND-fixture-addressed\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"addressed\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"},{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[],\"id\":\"FND-fixture-blocking\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"open\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"},{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:02.86293906Z\",\"dispositions\":[],\"id\":\"FND-fixture-new\",\"review_id\":\"REV-0ab4fd\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"open\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"},{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[{\"action\":\"resolved\",\"actor_id\":\"actor-reviewer-two\",\"disposed_at\":\"2026-10-01T01:27:02.86293906Z\",\"event_id\":\"EVT-20261001-000032\",\"id\":\"FDP-c4fe9e\",\"qualifying_review_id\":\"REV-0ab4fd\",\"reason\":\"resolved by qualifying Review\"}],\"id\":\"FND-fixture-resolved\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"resolved\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+      "resume",
+      "P22-364fce",
+      "--repository",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings"
+    ],
+    "stdout": "Issue P22-364fce\n  Status: todo\n  Completion: incomplete\n  Envelope: ENV-68e981 (revision 1, active)\n\nCurrent Run: RUN-f919cc\n  Status: active\n  Actor ID: actor-reviewer-two\n  Executor ID: executor-fixture-second-review\n\nClaim CLM-a2b0e3\n  Lease status now: active\n  Recorded status: active\n  Expires: 2026-10-01T02:27:02.545850491Z\n  An active lease alone does not authorize an operation; its authority and repository checks still apply.\n\nRepository\n  Project: project-1dfe5eec5482445f619cf2c5ecc3d9e8\n  Current worktree: sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\n  HEAD: 4f31c3c30e16eab8d3452ac9f73b50fc246d6129\n  Uncommitted changes: false\n  Run's recorded worktree: sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\n\nNext steps\n  Candidate operations below are not an execution sequence.\n  Ready means the recorded prerequisites permit a request; supplied inputs and authority are checked when it runs.\n  Action run.inspect run:RUN-f919cc: ready\n    Purpose: Compare this repository with the Run's recorded start or checkpoint; inspect changed paths without recording a checkpoint.\n  Action run.observe run:RUN-f919cc: ready\n    Purpose: Have the activated harness record a fresh observation of whether this Run's executor is live, terminated or unknown.\n    Requires: run.observe\n  Action gate.run run:RUN-f919cc: blocked\n    Purpose: Execute the configured check to produce Evidence for the current work.\n    Requires: gate.run\n  authority-unavailable for actor:actor-reviewer-two: gate.run\n  budget-data-unavailable for envelope:ENV-68e981: tokens\n  Action claim.renew claim:CLM-a2b0e3: blocked\n    Purpose: Extend an eligible work lease after checking authority.\n    Requires: claim.renew\n  authority-unavailable for actor:actor-reviewer-two: claim.renew\n  Action claim.release claim:CLM-a2b0e3: ready\n    Purpose: Give up an eligible work lease after checking authority; this does not prove the work complete.\n    Requires: claim.release\n  Action concern.record issue:P22-364fce: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: concern.record\n  authority-unavailable for issue:P22-364fce: concern.record\n  Action deviation.record issue:P22-364fce: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: deviation.record\n  authority-unavailable for issue:P22-364fce: deviation.record\n  Action decision.record-reference issue:P22-364fce: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: decision.record-reference\n  authority-unavailable for issue:P22-364fce: decision.record-reference\n  Action human-outcome.record issue:P22-364fce: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: human-outcome.record\n  authority-unavailable for issue:P22-364fce: human-outcome.record\n  Action review.record run:RUN-f919cc: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: review.record\n  review-not-independent for run:RUN-f919cc: Run already reviewed\n\nCompletion requirements\n  These describe what is needed to finish the Issue, separately from recovery checks above.\n  Obligation OBL-p22-corpus: unsatisfied\n    Evidence validity: invalid; freshness: stale; Artifacts: missing\n  obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent\n  Overall completion: incomplete\n  obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent\n  issue-not-terminal-success for issue:P22-364fce: completed workflow category\n  Open Findings: 3\n\nReview and judgment\nReviews\n  Review REV-0ab4fd\n    Issue: P22-364fce; Envelope: ENV-68e981 revision 1\n    Run: RUN-f919cc; Reviewer: actor-reviewer-two; Profile: review-default\n    Verdict: changes-required; Independence: distinct-actor\n    Repository: project project-1dfe5eec5482445f619cf2c5ecc3d9e8; worktree sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d; HEAD 4f31c3c30e16eab8d3452ac9f73b50fc246d6129; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503\n    Repository capture: git; base 4f31c3c30e16eab8d3452ac9f73b50fc246d6129; dirty false; dirty digest <nil>\n    Findings by severity: blocker 0; major 1; minor 0; nit 0\n  Finding FND-fixture-new\n    Review: REV-0ab4fd; Severity: major; Blocking: true; Disposition: open\n  Review REV-bab716\n    Issue: P22-364fce; Envelope: ENV-68e981 revision 1\n    Run: RUN-bd1e04; Reviewer: actor-denied; Profile: review-default\n    Verdict: changes-required; Independence: distinct-actor\n    Repository: project project-1dfe5eec5482445f619cf2c5ecc3d9e8; worktree sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d; HEAD 4f31c3c30e16eab8d3452ac9f73b50fc246d6129; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503\n    Repository capture: git; base 4f31c3c30e16eab8d3452ac9f73b50fc246d6129; dirty false; dirty digest <nil>\n    Findings by severity: blocker 0; major 3; minor 0; nit 0\n  Finding FND-fixture-addressed\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: addressed\n    Addressed is a Builder assertion, not a resolution.\n  Finding FND-fixture-blocking\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: open\n  Finding FND-fixture-resolved\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: resolved\nOpen Findings\n  Finding FND-fixture-addressed\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: addressed\n    Addressed is a Builder assertion, not a resolution.\n  Finding FND-fixture-blocking\n    Review: REV-bab716; Severity: major; Blocking: true; Disposition: open\n  Finding FND-fixture-new\n    Review: REV-0ab4fd; Severity: major; Blocking: true; Disposition: open\nConcerns\n  None.\nDeviations\n  None.\nDecision References\n  None.\nHuman Outcomes\n  None.\nProtected Decisions\n  None.\n\nBudgets\nBudget attempts: remaining 3 attempts; consumed 0; maximum 3; state available\nBudget tokens: remaining unknown input-tokens; consumed unknown; maximum 10; state unknown\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings",
+      "--json",
+      "resume",
+      "P22-364fce",
+      "--repository",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/mixed-findings"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"projection.resume\",\"result\":{\"resume\":{\"envelope\":{\"id\":\"ENV-68e981\",\"current_revision\":1,\"status\":\"active\",\"outcome\":\"Recover one interrupted Run\",\"non_goals\":[],\"risk_result\":{\"result_digest\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"section\":null,\"source_type\":\"project-file\"}},\"repository_scope\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"sources\":[{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"section\":null,\"source_type\":\"project-file\"}],\"primary_issue_id\":\"P22-364fce\",\"related_issue_ids\":[],\"authority_grants\":[{\"actions\":[\"claim.acquire\",\"claim.release\",\"envelope.activate\",\"envelope.create\",\"finding.address\",\"gate.register\",\"review.record\",\"run.close\",\"run.observe\",\"run.start\"],\"actor_selector\":{\"actor_id\":\"actor-denied\",\"required_capabilities\":[\"claim.acquire\",\"claim.release\",\"envelope.activate\",\"envelope.create\",\"finding.address\",\"gate.register\",\"review.record\",\"run.close\",\"run.observe\",\"run.start\"]},\"scope\":{\"issue_id\":\"P22-364fce\"}},{\"actions\":[\"claim.acquire\",\"claim.release\",\"envelope.activate\",\"envelope.create\",\"finding.address\",\"gate.register\",\"review.record\",\"run.close\",\"run.observe\",\"run.start\"],\"actor_selector\":{\"actor_id\":\"actor-recovery\",\"required_capabilities\":[\"claim.acquire\",\"claim.release\",\"envelope.activate\",\"envelope.create\",\"finding.address\",\"gate.register\",\"review.record\",\"run.close\",\"run.observe\",\"run.start\"]},\"scope\":{\"issue_id\":\"P22-364fce\"}},{\"actions\":[\"claim.acquire\",\"claim.release\",\"envelope.activate\",\"envelope.create\",\"finding.address\",\"gate.register\",\"review.record\",\"run.close\",\"run.observe\",\"run.start\"],\"actor_selector\":{\"actor_id\":\"actor-reviewer-two\",\"required_capabilities\":[\"claim.acquire\",\"claim.release\",\"envelope.activate\",\"envelope.create\",\"finding.address\",\"gate.register\",\"review.record\",\"run.close\",\"run.observe\",\"run.start\"]},\"scope\":{\"issue_id\":\"P22-364fce\"}}],\"obligations\":[{\"accepted_evidence_types\":[\"receipt\"],\"accepted_trust_sources\":[\"fid-executed\"],\"applicability\":\"required\",\"artifact_policy\":\"required-available\",\"derived_status\":\"unsatisfied\",\"freshness_target\":\"repository-tree\",\"guarded_actions\":[\"envelope.complete\",\"issue.transition-terminal-success\"],\"id\":\"OBL-p22-corpus\",\"independence\":\"fid-executed\",\"reasons\":[],\"registration\":{\"id\":\"REG-121f15\",\"version\":1},\"required_lane\":null,\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"section\":null,\"source_type\":\"project-file\"},\"subject\":{\"type\":\"issue\",\"id\":\"P22-364fce\"},\"type\":\"gate-evidence\"}],\"protected_decisions\":[],\"budgets\":[{\"name\":\"attempts\",\"scope\":\"envelope\",\"unit\":\"attempts\",\"maximum\":3,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":0,\"remaining\":3,\"state\":\"available\"},{\"name\":\"tokens\",\"scope\":\"envelope\",\"unit\":\"input-tokens\",\"maximum\":10,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":null,\"remaining\":null,\"state\":\"unknown\"}],\"created_actor_id\":\"actor-recovery\",\"approved_actor_id\":null,\"created_at\":\"2026-10-01T01:27:00.70141178Z\",\"activated_at\":\"2026-10-01T01:27:00.764751919Z\",\"completed_at\":null},\"issue\":{\"id\":\"P22-364fce\",\"status\":\"todo\",\"status_category\":\"unstarted\",\"revision\":1},\"claim\":{\"id\":\"CLM-a2b0e3\",\"issue_id\":\"P22-364fce\",\"envelope_id\":\"ENV-68e981\",\"envelope_revision\":1,\"actor_id\":\"actor-reviewer-two\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\",\"scope\":{\"paths\":[\"base.txt\"]},\"mode\":\"review\",\"version\":1,\"status\":\"active\",\"acquired_at\":\"2026-10-01T01:27:02.545850491Z\",\"expires_at\":\"2026-10-01T02:27:02.545850491Z\",\"released_at\":null,\"release_reason\":null,\"effective_status\":\"active\"},\"run\":{\"id\":\"RUN-f919cc\",\"issue_id\":\"P22-364fce\",\"envelope_id\":\"ENV-68e981\",\"envelope_revision\":1,\"claim_id\":\"CLM-a2b0e3\",\"claim_version\":1,\"version\":1,\"executor\":{\"id\":\"executor-fixture-second-review\",\"source\":\"activated-harness\"},\"obligation_id\":null,\"predecessor_run_id\":null,\"successor_run_id\":null,\"actor_id\":\"actor-reviewer-two\",\"start_repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"terminal_repository\":null,\"status\":\"active\",\"budgets\":[{\"name\":\"attempts\",\"scope\":\"envelope\",\"unit\":\"attempts\",\"maximum\":3,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":0,\"remaining\":3,\"state\":\"available\"},{\"name\":\"tokens\",\"scope\":\"envelope\",\"unit\":\"input-tokens\",\"maximum\":10,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":null,\"remaining\":null,\"state\":\"unknown\"}],\"started_at\":\"2026-10-01T01:27:02.680690097Z\",\"ended_at\":null},\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"obligations\":[{\"obligation_id\":\"OBL-p22-corpus\",\"status\":\"unsatisfied\",\"validity\":\"invalid\",\"freshness\":\"stale\",\"artifact_availability\":\"missing\",\"reasons\":[{\"code\":\"obligation-evidence-absent\",\"detail\":\"qualifying Evidence is absent\",\"subject_id\":\"OBL-p22-corpus\",\"subject_type\":\"obligation\"}]}],\"completion\":{\"status\":\"incomplete\",\"reasons\":[{\"code\":\"obligation-evidence-absent\",\"detail\":\"qualifying Evidence is absent\",\"subject_id\":\"OBL-p22-corpus\",\"subject_type\":\"obligation\"},{\"code\":\"issue-not-terminal-success\",\"detail\":\"completed workflow category\",\"subject_id\":\"P22-364fce\",\"subject_type\":\"issue\"}]},\"stops\":[],\"attention\":[],\"budgets\":[{\"name\":\"attempts\",\"scope\":\"envelope\",\"unit\":\"attempts\",\"maximum\":3,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":0,\"remaining\":3,\"state\":\"available\"},{\"name\":\"tokens\",\"scope\":\"envelope\",\"unit\":\"input-tokens\",\"maximum\":10,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":null,\"remaining\":null,\"state\":\"unknown\"}],\"recoveries\":[],\"findings\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[{\"action\":\"addressed\",\"actor_id\":\"actor-recovery\",\"disposed_at\":\"2026-10-01T01:27:02.333698464Z\",\"event_id\":\"EVT-20261001-000028\",\"id\":\"FDP-f8870e\",\"qualifying_review_id\":null,\"reason\":\"Builder says correction was made\"}],\"id\":\"FND-fixture-addressed\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"addressed\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"},{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[],\"id\":\"FND-fixture-blocking\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"open\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"},{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:02.86293906Z\",\"dispositions\":[],\"id\":\"FND-fixture-new\",\"review_id\":\"REV-0ab4fd\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"open\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}],\"reviews\":[{\"actor_id\":\"actor-reviewer-two\",\"coverage\":{\"exclusions\":[],\"items\":[{\"assessed\":true,\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"section\":null,\"source_type\":\"project-file\"}}]},\"envelope_id\":\"ENV-68e981\",\"envelope_revision\":1,\"event_id\":\"EVT-20261001-000032\",\"evidence_refs\":[],\"findings\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:02.86293906Z\",\"dispositions\":[],\"id\":\"FND-fixture-new\",\"review_id\":\"REV-0ab4fd\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"open\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}],\"id\":\"REV-0ab4fd\",\"independence\":\"distinct-actor\",\"issue_id\":\"P22-364fce\",\"profile\":\"review-default\",\"receipt_ids\":[],\"recorded_at\":\"2026-10-01T01:27:02.86293906Z\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"resolved_finding_ids\":[\"FND-fixture-resolved\"],\"run_id\":\"RUN-f919cc\",\"verdict\":\"changes-required\"},{\"actor_id\":\"actor-denied\",\"coverage\":{\"exclusions\":[],\"items\":[{\"assessed\":true,\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"section\":null,\"source_type\":\"project-file\"}}]},\"envelope_id\":\"ENV-68e981\",\"envelope_revision\":1,\"event_id\":\"EVT-20261001-000023\",\"evidence_refs\":[],\"findings\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[{\"action\":\"addressed\",\"actor_id\":\"actor-recovery\",\"disposed_at\":\"2026-10-01T01:27:02.333698464Z\",\"event_id\":\"EVT-20261001-000028\",\"id\":\"FDP-f8870e\",\"qualifying_review_id\":null,\"reason\":\"Builder says correction was made\"}],\"id\":\"FND-fixture-addressed\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"addressed\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"},{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[],\"id\":\"FND-fixture-blocking\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"open\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"},{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:01.695562849Z\",\"dispositions\":[{\"action\":\"resolved\",\"actor_id\":\"actor-reviewer-two\",\"disposed_at\":\"2026-10-01T01:27:02.86293906Z\",\"event_id\":\"EVT-20261001-000032\",\"id\":\"FDP-c4fe9e\",\"qualifying_review_id\":\"REV-0ab4fd\",\"reason\":\"resolved by qualifying Review\"}],\"id\":\"FND-fixture-resolved\",\"review_id\":\"REV-bab716\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"resolved\",\"subject\":{\"id\":\"P22-364fce\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}],\"id\":\"REV-bab716\",\"independence\":\"distinct-actor\",\"issue_id\":\"P22-364fce\",\"profile\":\"review-default\",\"receipt_ids\":[],\"recorded_at\":\"2026-10-01T01:27:01.695562849Z\",\"repository\":{\"base_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"4f31c3c30e16eab8d3452ac9f73b50fc246d6129\",\"project_id\":\"project-1dfe5eec5482445f619cf2c5ecc3d9e8\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:a129c8794555e528b7a21dd5e04c75e1ad222dff6f69e5e483229cdd6e3fbe5d\"},\"resolved_finding_ids\":[],\"run_id\":\"RUN-bd1e04\",\"verdict\":\"changes-required\"}],\"concerns\":[],\"deviations\":[],\"decisions\":[],\"human_outcomes\":[],\"protected_decisions\":[],\"next_actions\":[{\"operation\":\"run.inspect\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-f919cc\"},\"required_capabilities\":[],\"reasons\":[]},{\"operation\":\"run.observe\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-f919cc\"},\"required_capabilities\":[\"run.observe\"],\"reasons\":[]},{\"operation\":\"gate.run\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-f919cc\"},\"required_capabilities\":[\"gate.run\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"gate.run\",\"subject_id\":\"actor-reviewer-two\",\"subject_type\":\"actor\"},{\"code\":\"budget-data-unavailable\",\"detail\":\"tokens\",\"subject_id\":\"ENV-68e981\",\"subject_type\":\"envelope\"}]},{\"operation\":\"claim.renew\",\"subject\":{\"type\":\"claim\",\"id\":\"CLM-a2b0e3\"},\"required_capabilities\":[\"claim.renew\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"claim.renew\",\"subject_id\":\"actor-reviewer-two\",\"subject_type\":\"actor\"}]},{\"operation\":\"claim.release\",\"subject\":{\"type\":\"claim\",\"id\":\"CLM-a2b0e3\"},\"required_capabilities\":[\"claim.release\"],\"reasons\":[]},{\"operation\":\"concern.record\",\"subject\":{\"type\":\"issue\",\"id\":\"P22-364fce\"},\"required_capabilities\":[\"concern.record\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"concern.record\",\"subject_id\":\"P22-364fce\",\"subject_type\":\"issue\"}]},{\"operation\":\"deviation.record\",\"subject\":{\"type\":\"issue\",\"id\":\"P22-364fce\"},\"required_capabilities\":[\"deviation.record\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"deviation.record\",\"subject_id\":\"P22-364fce\",\"subject_type\":\"issue\"}]},{\"operation\":\"decision.record-reference\",\"subject\":{\"type\":\"issue\",\"id\":\"P22-364fce\"},\"required_capabilities\":[\"decision.record-reference\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"decision.record-reference\",\"subject_id\":\"P22-364fce\",\"subject_type\":\"issue\"}]},{\"operation\":\"human-outcome.record\",\"subject\":{\"type\":\"issue\",\"id\":\"P22-364fce\"},\"required_capabilities\":[\"human-outcome.record\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"human-outcome.record\",\"subject_id\":\"P22-364fce\",\"subject_type\":\"issue\"}]},{\"operation\":\"review.record\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-f919cc\"},\"required_capabilities\":[\"review.record\"],\"reasons\":[{\"code\":\"review-not-independent\",\"detail\":\"Run already reviewed\",\"subject_id\":\"RUN-f919cc\",\"subject_type\":\"run\"}]}]}}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision",
+      "resume",
+      "P22-f2c375",
+      "--repository",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision"
+    ],
+    "stdout": "Issue P22-f2c375\n  Status: qa_review\n  Completion: incomplete\n  Envelope: ENV-dbf029 (revision 1, active)\n\nCurrent Run: RUN-aa8f6b\n  Status: active\n  Actor ID: actor-recovery\n  Executor ID: executor-corpus-prior\n\nClaim CLM-862722\n  Lease status now: active\n  Recorded status: active\n  Expires: 2026-10-01T02:27:07.173218729Z\n  An active lease alone does not authorize an operation; its authority and repository checks still apply.\n\nRepository\n  Project: project-6d96f660024936f6fe4820452a06d0be\n  Current worktree: sha256:2eea41aa1887882b0a86cd654e920407090a02f47e06dab828581f094c6d8efe\n  HEAD: 25853d0150ef28d22f1a22e2f83a65a2d5f97808\n  Uncommitted changes: false\n  Run's recorded worktree: sha256:2eea41aa1887882b0a86cd654e920407090a02f47e06dab828581f094c6d8efe\n\nNext steps\n  To collect proof for unfinished work, run the configured Gate (gate.run).\n  A successful execution can supply Evidence; it does not itself complete the Issue.\n  Candidate operations below are not an execution sequence.\n  Ready means the recorded prerequisites permit a request; supplied inputs and authority are checked when it runs.\n  Action run.inspect run:RUN-aa8f6b: ready\n    Purpose: Compare this repository with the Run's recorded start or checkpoint; inspect changed paths without recording a checkpoint.\n  Action run.observe run:RUN-aa8f6b: ready\n    Purpose: Have the activated harness record a fresh observation of whether this Run's executor is live, terminated or unknown.\n    Requires: run.observe\n  Action gate.run run:RUN-aa8f6b: ready\n    Purpose: Execute the configured check to produce Evidence for the current work.\n    Requires: gate.run\n  Action claim.renew claim:CLM-862722: blocked\n    Purpose: Extend an eligible work lease after checking authority.\n    Requires: claim.renew\n  authority-unavailable for actor:actor-recovery: claim.renew\n  Action claim.release claim:CLM-862722: ready\n    Purpose: Give up an eligible work lease after checking authority; this does not prove the work complete.\n    Requires: claim.release\n  Action concern.record issue:P22-f2c375: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: concern.record\n  authority-unavailable for issue:P22-f2c375: concern.record\n  Action deviation.record issue:P22-f2c375: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: deviation.record\n  authority-unavailable for issue:P22-f2c375: deviation.record\n  Action decision.record-reference issue:P22-f2c375: ready\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: decision.record-reference\n  Action human-outcome.record issue:P22-f2c375: ready\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: human-outcome.record\n\nBlockers and attention\nStop STP-770648 blocks issue.transition-terminal-success because protected-decision-required: {\"affected_actions\":[\"issue.transition-terminal-success\"],\"decision_class\":\"security\",\"envelope_id\":\"ENV-dbf029\",\"required_capabilities\":[\"decision.record-reference\"]}; qualifying resolution: decision-satisfied for envelope:ENV-dbf029 decision class security (resolver capability stop.resolve).\nAttention ATT-4ccad7: open; protected-decision-required; linked Stops: STP-770648\n\nCompletion requirements\n  These describe what is needed to finish the Issue, separately from recovery checks above.\n  Obligation OBL-p22-corpus: satisfied\n    Evidence validity: valid; freshness: fresh; Artifacts: available\n  Overall completion: incomplete\n  issue-not-terminal-success for issue:P22-f2c375: completed workflow category\n  Open Findings: 0\n\nReview and judgment\nReviews\n  None.\nOpen Findings\n  None.\nConcerns\n  None.\nDeviations\n  None.\nDecision References\n  Decision Reference DREF-fixture-security\n    Class: security; Outcome: approved; Authority Actor: actor-recovery\n    Required capabilities: decision.record-reference\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\nHuman Outcomes\n  None.\nProtected Decisions\n  Class security: unsatisfied; affected actions: issue.transition-terminal-success\n    Resolution requires an approved Decision Reference with the required capabilities and an approved Human Outcome of the same class.\n\nBudgets\nBudget attempts: remaining 2 attempts; consumed 1; maximum 3; state available\nBudget tokens: remaining 10 input-tokens; consumed 0; maximum 10; state available\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision",
+      "--json",
+      "resume",
+      "P22-f2c375",
+      "--repository",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"projection.resume\",\"result\":{\"resume\":{\"envelope\":{\"id\":\"ENV-dbf029\",\"current_revision\":1,\"status\":\"active\",\"outcome\":\"Recover one interrupted Run\",\"non_goals\":[],\"risk_result\":{\"result_digest\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"project_id\":\"project-6d96f660024936f6fe4820452a06d0be\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:2eea41aa1887882b0a86cd654e920407090a02f47e06dab828581f094c6d8efe\"},\"section\":null,\"source_type\":\"project-file\"}},\"repository_scope\":{\"base_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"project_id\":\"project-6d96f660024936f6fe4820452a06d0be\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:2eea41aa1887882b0a86cd654e920407090a02f47e06dab828581f094c6d8efe\"},\"sources\":[{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"project_id\":\"project-6d96f660024936f6fe4820452a06d0be\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:2eea41aa1887882b0a86cd654e920407090a02f47e06dab828581f094c6d8efe\"},\"section\":null,\"source_type\":\"project-file\"}],\"primary_issue_id\":\"P22-f2c375\",\"related_issue_ids\":[],\"authority_grants\":[{\"actions\":[\"claim.acquire\",\"claim.release\",\"decision.record-reference\",\"envelope.activate\",\"envelope.create\",\"evidence.link\",\"gate.register\",\"gate.run\",\"human-outcome.record\",\"issue.transition\",\"run.close\",\"run.observe\",\"run.observe-budget\",\"run.start\"],\"actor_selector\":{\"actor_id\":\"actor-recovery\",\"required_capabilities\":[\"claim.acquire\",\"claim.release\",\"decision.record-reference\",\"envelope.activate\",\"envelope.create\",\"evidence.link\",\"gate.register\",\"gate.run\",\"human-outcome.record\",\"issue.transition\",\"run.close\",\"run.observe\",\"run.observe-budget\",\"run.start\"]},\"scope\":{\"issue_id\":\"P22-f2c375\"}}],\"obligations\":[{\"accepted_evidence_types\":[\"receipt\"],\"accepted_trust_sources\":[\"fid-executed\"],\"applicability\":\"required\",\"artifact_policy\":\"required-available\",\"derived_status\":\"unsatisfied\",\"freshness_target\":\"repository-tree\",\"guarded_actions\":[\"envelope.complete\",\"issue.transition-terminal-success\"],\"id\":\"OBL-p22-corpus\",\"independence\":\"fid-executed\",\"reasons\":[],\"registration\":{\"id\":\"REG-845682\",\"version\":1},\"required_lane\":null,\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"project_id\":\"project-6d96f660024936f6fe4820452a06d0be\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:2eea41aa1887882b0a86cd654e920407090a02f47e06dab828581f094c6d8efe\"},\"section\":null,\"source_type\":\"project-file\"},\"subject\":{\"type\":\"issue\",\"id\":\"P22-f2c375\"},\"type\":\"gate-evidence\"}],\"protected_decisions\":[{\"ordinal\":0,\"decision_class\":\"security\",\"required_capabilities\":[\"decision.record-reference\"],\"affected_actions\":[\"issue.transition-terminal-success\"],\"status\":\"unsatisfied\",\"decision_ref_id\":\"DREF-fixture-security\",\"human_outcome_id\":null}],\"budgets\":[{\"name\":\"attempts\",\"scope\":\"envelope\",\"unit\":\"attempts\",\"maximum\":3,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":1,\"remaining\":2,\"state\":\"available\"},{\"name\":\"tokens\",\"scope\":\"envelope\",\"unit\":\"input-tokens\",\"maximum\":10,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":0,\"remaining\":10,\"state\":\"available\"}],\"created_actor_id\":\"actor-recovery\",\"approved_actor_id\":null,\"created_at\":\"2026-10-01T01:27:07.068654324Z\",\"activated_at\":\"2026-10-01T01:27:07.122294975Z\",\"completed_at\":null},\"issue\":{\"id\":\"P22-f2c375\",\"status\":\"qa_review\",\"status_category\":\"started\",\"revision\":4},\"claim\":{\"id\":\"CLM-862722\",\"issue_id\":\"P22-f2c375\",\"envelope_id\":\"ENV-dbf029\",\"envelope_revision\":1,\"actor_id\":\"actor-recovery\",\"worktree_id\":\"sha256:2eea41aa1887882b0a86cd654e920407090a02f47e06dab828581f094c6d8efe\",\"scope\":{\"paths\":[\"base.txt\"]},\"mode\":\"mutation\",\"version\":1,\"status\":\"active\",\"acquired_at\":\"2026-10-01T01:27:07.173218729Z\",\"expires_at\":\"2026-10-01T02:27:07.173218729Z\",\"released_at\":null,\"release_reason\":null,\"effective_status\":\"active\"},\"run\":{\"id\":\"RUN-aa8f6b\",\"issue_id\":\"P22-f2c375\",\"envelope_id\":\"ENV-dbf029\",\"envelope_revision\":1,\"claim_id\":\"CLM-862722\",\"claim_version\":1,\"version\":3,\"executor\":{\"id\":\"executor-corpus-prior\",\"source\":\"activated-harness\"},\"obligation_id\":null,\"predecessor_run_id\":null,\"successor_run_id\":null,\"actor_id\":\"actor-recovery\",\"start_repository\":{\"base_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"project_id\":\"project-6d96f660024936f6fe4820452a06d0be\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:2eea41aa1887882b0a86cd654e920407090a02f47e06dab828581f094c6d8efe\"},\"terminal_repository\":null,\"status\":\"active\",\"budgets\":[{\"name\":\"attempts\",\"scope\":\"envelope\",\"unit\":\"attempts\",\"maximum\":3,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":1,\"remaining\":2,\"state\":\"available\"},{\"name\":\"tokens\",\"scope\":\"envelope\",\"unit\":\"input-tokens\",\"maximum\":10,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":0,\"remaining\":10,\"state\":\"available\"}],\"started_at\":\"2026-10-01T01:27:07.259867165Z\",\"ended_at\":null},\"repository\":{\"base_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"project_id\":\"project-6d96f660024936f6fe4820452a06d0be\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:2eea41aa1887882b0a86cd654e920407090a02f47e06dab828581f094c6d8efe\"},\"obligations\":[{\"obligation_id\":\"OBL-p22-corpus\",\"status\":\"satisfied\",\"validity\":\"valid\",\"freshness\":\"fresh\",\"artifact_availability\":\"available\",\"reasons\":[]}],\"completion\":{\"status\":\"incomplete\",\"reasons\":[{\"code\":\"issue-not-terminal-success\",\"detail\":\"completed workflow category\",\"subject_id\":\"P22-f2c375\",\"subject_type\":\"issue\"}]},\"stops\":[{\"id\":\"STP-770648\",\"subject\":{\"type\":\"envelope\",\"id\":\"ENV-dbf029\"},\"code\":\"protected-decision-required\",\"blocked_actions\":[\"issue.transition-terminal-success\"],\"details\":{\"affected_actions\":[\"issue.transition-terminal-success\"],\"decision_class\":\"security\",\"envelope_id\":\"ENV-dbf029\",\"required_capabilities\":[\"decision.record-reference\"]},\"resolution_condition\":{\"type\":\"decision-satisfied\",\"subject\":{\"type\":\"envelope\",\"id\":\"ENV-dbf029\"},\"budget_name\":null,\"capability_id\":null,\"decision_class\":\"security\"},\"resolver_capability\":\"stop.resolve\",\"actor_id\":\"actor-recovery\",\"raised_at\":\"2026-10-01T01:27:07.123165339Z\",\"resolution\":null}],\"attention\":[{\"id\":\"ATT-4ccad7\",\"semantic_key\":\"sha256:e32210f2b5950b8431623d5b1811b6b4f93fe9b9543063e6411a9d45adac6592\",\"subject\":{\"type\":\"envelope\",\"id\":\"ENV-dbf029\"},\"code\":\"protected-decision-required\",\"status\":\"open\",\"version\":1,\"stop_ids\":[\"STP-770648\"],\"raised_at\":\"2026-10-01T01:27:07.123165339Z\",\"resolution_event_id\":null}],\"budgets\":[{\"name\":\"attempts\",\"scope\":\"envelope\",\"unit\":\"attempts\",\"maximum\":3,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":1,\"remaining\":2,\"state\":\"available\"},{\"name\":\"tokens\",\"scope\":\"envelope\",\"unit\":\"input-tokens\",\"maximum\":10,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":0,\"remaining\":10,\"state\":\"available\"}],\"recoveries\":[],\"findings\":[],\"reviews\":[],\"concerns\":[],\"deviations\":[],\"decisions\":[{\"authority\":{\"actor_id\":\"actor-recovery\",\"required_capabilities\":[\"decision.record-reference\"]},\"class\":\"security\",\"created_at\":\"2026-10-01T01:27:08.396472299Z\",\"event_id\":\"EVT-20261001-000025\",\"id\":\"DREF-fixture-security\",\"outcome\":\"approved\",\"scope\":{\"issue_id\":\"P22-f2c375\"},\"source\":{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"project_id\":\"project-6d96f660024936f6fe4820452a06d0be\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:2eea41aa1887882b0a86cd654e920407090a02f47e06dab828581f094c6d8efe\"},\"section\":null,\"source_type\":\"project-file\"}}],\"human_outcomes\":[],\"protected_decisions\":[{\"ordinal\":0,\"decision_class\":\"security\",\"required_capabilities\":[\"decision.record-reference\"],\"affected_actions\":[\"issue.transition-terminal-success\"],\"status\":\"unsatisfied\",\"decision_ref_id\":\"DREF-fixture-security\",\"human_outcome_id\":null}],\"next_actions\":[{\"operation\":\"run.inspect\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-aa8f6b\"},\"required_capabilities\":[],\"reasons\":[]},{\"operation\":\"run.observe\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-aa8f6b\"},\"required_capabilities\":[\"run.observe\"],\"reasons\":[]},{\"operation\":\"gate.run\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-aa8f6b\"},\"required_capabilities\":[\"gate.run\"],\"reasons\":[]},{\"operation\":\"claim.renew\",\"subject\":{\"type\":\"claim\",\"id\":\"CLM-862722\"},\"required_capabilities\":[\"claim.renew\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"claim.renew\",\"subject_id\":\"actor-recovery\",\"subject_type\":\"actor\"}]},{\"operation\":\"claim.release\",\"subject\":{\"type\":\"claim\",\"id\":\"CLM-862722\"},\"required_capabilities\":[\"claim.release\"],\"reasons\":[]},{\"operation\":\"concern.record\",\"subject\":{\"type\":\"issue\",\"id\":\"P22-f2c375\"},\"required_capabilities\":[\"concern.record\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"concern.record\",\"subject_id\":\"P22-f2c375\",\"subject_type\":\"issue\"}]},{\"operation\":\"deviation.record\",\"subject\":{\"type\":\"issue\",\"id\":\"P22-f2c375\"},\"required_capabilities\":[\"deviation.record\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"deviation.record\",\"subject_id\":\"P22-f2c375\",\"subject_type\":\"issue\"}]},{\"operation\":\"decision.record-reference\",\"subject\":{\"type\":\"issue\",\"id\":\"P22-f2c375\"},\"required_capabilities\":[\"decision.record-reference\"],\"reasons\":[]},{\"operation\":\"human-outcome.record\",\"subject\":{\"type\":\"issue\",\"id\":\"P22-f2c375\"},\"required_capabilities\":[\"human-outcome.record\"],\"reasons\":[]}]}}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision",
+      "decision",
+      "list",
+      "--issue",
+      "P22-f2c375"
+    ],
+    "stdout": "Purpose: Inspect Decision References and their authority.\n\nDecision References\n  Decision Reference DREF-fixture-security\n    Class: security; Outcome: approved; Authority Actor: actor-recovery\n    Required capabilities: decision.record-reference\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision",
+      "--json",
+      "decision",
+      "list",
+      "--issue",
+      "P22-f2c375"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"decision.list\",\"result\":{\"items\":[{\"authority\":{\"actor_id\":\"actor-recovery\",\"required_capabilities\":[\"decision.record-reference\"]},\"class\":\"security\",\"created_at\":\"2026-10-01T01:27:08.396472299Z\",\"event_id\":\"EVT-20261001-000025\",\"id\":\"DREF-fixture-security\",\"outcome\":\"approved\",\"scope\":{\"issue_id\":\"P22-f2c375\"},\"source\":{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"25853d0150ef28d22f1a22e2f83a65a2d5f97808\",\"project_id\":\"project-6d96f660024936f6fe4820452a06d0be\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:2eea41aa1887882b0a86cd654e920407090a02f47e06dab828581f094c6d8efe\"},\"section\":null,\"source_type\":\"project-file\"}}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision",
+      "stop",
+      "list",
+      "--subject",
+      "envelope:ENV-dbf029"
+    ],
+    "stdout": "stop.list\nStop STP-770648 blocks issue.transition-terminal-success because protected-decision-required: {\"affected_actions\":[\"issue.transition-terminal-success\"],\"decision_class\":\"security\",\"envelope_id\":\"ENV-dbf029\",\"required_capabilities\":[\"decision.record-reference\"]}; qualifying resolution: decision-satisfied for envelope:ENV-dbf029 decision class security (resolver capability stop.resolve).\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/protected-decision",
+      "--json",
+      "stop",
+      "list",
+      "--subject",
+      "envelope:ENV-dbf029"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"stop.list\",\"result\":{\"items\":[{\"id\":\"STP-770648\",\"subject\":{\"type\":\"envelope\",\"id\":\"ENV-dbf029\"},\"code\":\"protected-decision-required\",\"blocked_actions\":[\"issue.transition-terminal-success\"],\"details\":{\"affected_actions\":[\"issue.transition-terminal-success\"],\"decision_class\":\"security\",\"envelope_id\":\"ENV-dbf029\",\"required_capabilities\":[\"decision.record-reference\"]},\"resolution_condition\":{\"type\":\"decision-satisfied\",\"subject\":{\"type\":\"envelope\",\"id\":\"ENV-dbf029\"},\"budget_name\":null,\"capability_id\":null,\"decision_class\":\"security\"},\"resolver_capability\":\"stop.resolve\",\"actor_id\":\"actor-recovery\",\"raised_at\":\"2026-10-01T01:27:07.123165339Z\",\"resolution\":null}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion",
+      "resume",
+      "P22-30b087",
+      "--repository",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion"
+    ],
+    "stdout": "Issue P22-30b087\n  Status: todo\n  Completion: incomplete\n  Envelope: ENV-99f2cc (revision 1, active)\n\nCurrent Run: RUN-a47edb\n  Status: failed\n  Actor ID: actor-denied\n  Executor ID: executor-fixture-cycle\n\nCurrent Claim: none.\n\nRepository\n  Project: project-c01322a7eaff82fe6df8d98dd3ddc707\n  Current worktree: sha256:b2a4fdb33d81f94da384d24b1d30f150f97afd0e6a51e12db612ea54d137037f\n  HEAD: 0f400f2081e2e5825979e7648b5425e6a4588035\n  Uncommitted changes: false\n  Run's recorded worktree: sha256:b2a4fdb33d81f94da384d24b1d30f150f97afd0e6a51e12db612ea54d137037f\n\nNext steps\n  Candidate operations below are not an execution sequence.\n  Ready means the recorded prerequisites permit a request; supplied inputs and authority are checked when it runs.\n  Action run.inspect run:RUN-a47edb: ready\n    Purpose: Compare this repository with the Run's recorded start or checkpoint; inspect changed paths without recording a checkpoint.\n  Action run.observe run:RUN-a47edb: blocked\n    Purpose: Have the activated harness record a fresh observation of whether this Run's executor is live, terminated or unknown.\n    Requires: run.observe\n  run-inactive for run:RUN-a47edb: failed\n  Action gate.run run:RUN-a47edb: blocked\n    Purpose: Execute the configured check to produce Evidence for the current work.\n    Requires: gate.run\n  authority-unavailable for actor:actor-denied: gate.run\n  run-inactive for run:RUN-a47edb: failed\n  budget-exhausted for envelope:ENV-99f2cc: review-cycles\n  budget-data-unavailable for envelope:ENV-99f2cc: tokens\n  Action concern.record issue:P22-30b087: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: concern.record\n  authority-unavailable for issue:P22-30b087: concern.record\n  Action deviation.record issue:P22-30b087: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: deviation.record\n  authority-unavailable for issue:P22-30b087: deviation.record\n  Action decision.record-reference issue:P22-30b087: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: decision.record-reference\n  authority-unavailable for issue:P22-30b087: decision.record-reference\n  Action human-outcome.record issue:P22-30b087: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: human-outcome.record\n  authority-unavailable for issue:P22-30b087: human-outcome.record\n\nBlockers and attention\nStop STP-87f1f2 blocks claim.acquire, run.start because review-rework-exhausted: {\"budget_name\":\"review-cycles\",\"consumed\":1,\"envelope_id\":\"ENV-99f2cc\",\"last_review_id\":\"REV-bc9a57\",\"maximum\":1,\"remaining\":0,\"unit\":\"review-cycles\"}; qualifying resolution: budget-observed for envelope:ENV-99f2cc budget review-cycles (resolver capability stop.resolve).\nAttention ATT-9cafba: open; review-rework-exhausted; linked Stops: STP-87f1f2\n\nCompletion requirements\n  These describe what is needed to finish the Issue, separately from recovery checks above.\n  Obligation OBL-p22-corpus: unsatisfied\n    Evidence validity: invalid; freshness: stale; Artifacts: not-applicable\n  obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent\n  Overall completion: incomplete\n  obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent\n  issue-not-terminal-success for issue:P22-30b087: completed workflow category\n  Open Findings: 1\n\nReview and judgment\nReviews\n  Review REV-bc9a57\n    Issue: P22-30b087; Envelope: ENV-99f2cc revision 1\n    Run: RUN-a47edb; Reviewer: actor-denied; Profile: review-default\n    Verdict: changes-required; Independence: distinct-actor\n    Repository: project project-c01322a7eaff82fe6df8d98dd3ddc707; worktree sha256:b2a4fdb33d81f94da384d24b1d30f150f97afd0e6a51e12db612ea54d137037f; HEAD 0f400f2081e2e5825979e7648b5425e6a4588035; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503\n    Repository capture: git; base 0f400f2081e2e5825979e7648b5425e6a4588035; dirty false; dirty digest <nil>\n    Findings by severity: blocker 0; major 1; minor 0; nit 0\n  Finding FND-fixture-cycle\n    Review: REV-bc9a57; Severity: major; Blocking: true; Disposition: open\nOpen Findings\n  Finding FND-fixture-cycle\n    Review: REV-bc9a57; Severity: major; Blocking: true; Disposition: open\nConcerns\n  None.\nDeviations\n  None.\nDecision References\n  None.\nHuman Outcomes\n  None.\nProtected Decisions\n  None.\n\nBudgets\nBudget attempts: remaining 3 attempts; consumed 0; maximum 3; state available\nBudget review-cycles: remaining 0 review-cycles; consumed 1; maximum 1; state exhausted\nBudget tokens: remaining unknown input-tokens; consumed unknown; maximum 10; state unknown\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion",
+      "--json",
+      "resume",
+      "P22-30b087",
+      "--repository",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"projection.resume\",\"result\":{\"resume\":{\"envelope\":{\"id\":\"ENV-99f2cc\",\"current_revision\":1,\"status\":\"active\",\"outcome\":\"Recover one interrupted Run\",\"non_goals\":[],\"risk_result\":{\"result_digest\":\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"project_id\":\"project-c01322a7eaff82fe6df8d98dd3ddc707\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:b2a4fdb33d81f94da384d24b1d30f150f97afd0e6a51e12db612ea54d137037f\"},\"section\":null,\"source_type\":\"project-file\"}},\"repository_scope\":{\"base_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"project_id\":\"project-c01322a7eaff82fe6df8d98dd3ddc707\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:b2a4fdb33d81f94da384d24b1d30f150f97afd0e6a51e12db612ea54d137037f\"},\"sources\":[{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"project_id\":\"project-c01322a7eaff82fe6df8d98dd3ddc707\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:b2a4fdb33d81f94da384d24b1d30f150f97afd0e6a51e12db612ea54d137037f\"},\"section\":null,\"source_type\":\"project-file\"}],\"primary_issue_id\":\"P22-30b087\",\"related_issue_ids\":[],\"authority_grants\":[{\"actions\":[\"claim.acquire\",\"claim.release\",\"envelope.activate\",\"envelope.create\",\"gate.register\",\"review.record\",\"run.close\",\"run.observe\",\"run.start\"],\"actor_selector\":{\"actor_id\":\"actor-denied\",\"required_capabilities\":[\"claim.acquire\",\"claim.release\",\"envelope.activate\",\"envelope.create\",\"gate.register\",\"review.record\",\"run.close\",\"run.observe\",\"run.start\"]},\"scope\":{\"issue_id\":\"P22-30b087\"}},{\"actions\":[\"claim.acquire\",\"claim.release\",\"envelope.activate\",\"envelope.create\",\"gate.register\",\"review.record\",\"run.close\",\"run.observe\",\"run.start\"],\"actor_selector\":{\"actor_id\":\"actor-recovery\",\"required_capabilities\":[\"claim.acquire\",\"claim.release\",\"envelope.activate\",\"envelope.create\",\"gate.register\",\"review.record\",\"run.close\",\"run.observe\",\"run.start\"]},\"scope\":{\"issue_id\":\"P22-30b087\"}},{\"actions\":[\"claim.acquire\",\"claim.release\",\"envelope.activate\",\"envelope.create\",\"gate.register\",\"review.record\",\"run.close\",\"run.observe\",\"run.start\"],\"actor_selector\":{\"actor_id\":\"actor-reviewer-two\",\"required_capabilities\":[\"claim.acquire\",\"claim.release\",\"envelope.activate\",\"envelope.create\",\"gate.register\",\"review.record\",\"run.close\",\"run.observe\",\"run.start\"]},\"scope\":{\"issue_id\":\"P22-30b087\"}}],\"obligations\":[{\"accepted_evidence_types\":[\"review\"],\"accepted_trust_sources\":[\"activated-actor\"],\"applicability\":\"required\",\"artifact_policy\":\"metadata-sufficient\",\"derived_status\":\"unsatisfied\",\"freshness_target\":\"repository-tree\",\"guarded_actions\":[\"envelope.complete\"],\"id\":\"OBL-p22-corpus\",\"independence\":\"distinct-actor\",\"reasons\":[],\"registration\":null,\"required_lane\":null,\"review_profile\":\"review-default\",\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"project_id\":\"project-c01322a7eaff82fe6df8d98dd3ddc707\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:b2a4fdb33d81f94da384d24b1d30f150f97afd0e6a51e12db612ea54d137037f\"},\"section\":null,\"source_type\":\"project-file\"},\"subject\":{\"type\":\"issue\",\"id\":\"P22-30b087\"},\"type\":\"review\"}],\"protected_decisions\":[],\"budgets\":[{\"name\":\"attempts\",\"scope\":\"envelope\",\"unit\":\"attempts\",\"maximum\":3,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":0,\"remaining\":3,\"state\":\"available\"},{\"name\":\"review-cycles\",\"scope\":\"envelope\",\"unit\":\"review-cycles\",\"maximum\":1,\"warning_threshold\":null,\"exhaustion_action\":\"review-rework-exhausted\",\"consumed\":1,\"remaining\":0,\"state\":\"exhausted\"},{\"name\":\"tokens\",\"scope\":\"envelope\",\"unit\":\"input-tokens\",\"maximum\":10,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":null,\"remaining\":null,\"state\":\"unknown\"}],\"created_actor_id\":\"actor-recovery\",\"approved_actor_id\":null,\"created_at\":\"2026-10-01T01:27:11.896340854Z\",\"activated_at\":\"2026-10-01T01:27:11.950804196Z\",\"completed_at\":null},\"issue\":{\"id\":\"P22-30b087\",\"status\":\"todo\",\"status_category\":\"unstarted\",\"revision\":1},\"claim\":null,\"run\":{\"id\":\"RUN-a47edb\",\"issue_id\":\"P22-30b087\",\"envelope_id\":\"ENV-99f2cc\",\"envelope_revision\":1,\"claim_id\":\"CLM-2ef52c\",\"claim_version\":1,\"version\":3,\"executor\":{\"id\":\"executor-fixture-cycle\",\"source\":\"activated-harness\"},\"obligation_id\":null,\"predecessor_run_id\":null,\"successor_run_id\":null,\"actor_id\":\"actor-denied\",\"start_repository\":{\"base_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"project_id\":\"project-c01322a7eaff82fe6df8d98dd3ddc707\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:b2a4fdb33d81f94da384d24b1d30f150f97afd0e6a51e12db612ea54d137037f\"},\"terminal_repository\":{\"base_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"project_id\":\"project-c01322a7eaff82fe6df8d98dd3ddc707\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:b2a4fdb33d81f94da384d24b1d30f150f97afd0e6a51e12db612ea54d137037f\"},\"status\":\"failed\",\"budgets\":[{\"name\":\"attempts\",\"scope\":\"envelope\",\"unit\":\"attempts\",\"maximum\":3,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":0,\"remaining\":3,\"state\":\"available\"},{\"name\":\"review-cycles\",\"scope\":\"envelope\",\"unit\":\"review-cycles\",\"maximum\":1,\"warning_threshold\":null,\"exhaustion_action\":\"review-rework-exhausted\",\"consumed\":1,\"remaining\":0,\"state\":\"exhausted\"},{\"name\":\"tokens\",\"scope\":\"envelope\",\"unit\":\"input-tokens\",\"maximum\":10,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":null,\"remaining\":null,\"state\":\"unknown\"}],\"started_at\":\"2026-10-01T01:27:12.625432442Z\",\"ended_at\":\"2026-10-01T01:27:12.957982953Z\"},\"repository\":{\"base_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"project_id\":\"project-c01322a7eaff82fe6df8d98dd3ddc707\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:b2a4fdb33d81f94da384d24b1d30f150f97afd0e6a51e12db612ea54d137037f\"},\"obligations\":[{\"obligation_id\":\"OBL-p22-corpus\",\"status\":\"unsatisfied\",\"validity\":\"invalid\",\"freshness\":\"stale\",\"artifact_availability\":\"not-applicable\",\"reasons\":[{\"code\":\"obligation-evidence-absent\",\"detail\":\"qualifying Evidence is absent\",\"subject_id\":\"OBL-p22-corpus\",\"subject_type\":\"obligation\"}]}],\"completion\":{\"status\":\"incomplete\",\"reasons\":[{\"code\":\"obligation-evidence-absent\",\"detail\":\"qualifying Evidence is absent\",\"subject_id\":\"OBL-p22-corpus\",\"subject_type\":\"obligation\"},{\"code\":\"issue-not-terminal-success\",\"detail\":\"completed workflow category\",\"subject_id\":\"P22-30b087\",\"subject_type\":\"issue\"}]},\"stops\":[{\"id\":\"STP-87f1f2\",\"subject\":{\"type\":\"envelope\",\"id\":\"ENV-99f2cc\"},\"code\":\"review-rework-exhausted\",\"blocked_actions\":[\"claim.acquire\",\"run.start\"],\"details\":{\"budget_name\":\"review-cycles\",\"consumed\":1,\"envelope_id\":\"ENV-99f2cc\",\"last_review_id\":\"REV-bc9a57\",\"maximum\":1,\"remaining\":0,\"unit\":\"review-cycles\"},\"resolution_condition\":{\"type\":\"budget-observed\",\"subject\":{\"type\":\"envelope\",\"id\":\"ENV-99f2cc\"},\"budget_name\":\"review-cycles\",\"capability_id\":null},\"resolver_capability\":\"stop.resolve\",\"actor_id\":\"actor-denied\",\"raised_at\":\"2026-10-01T01:27:12.782357293Z\",\"resolution\":null}],\"attention\":[{\"id\":\"ATT-9cafba\",\"semantic_key\":\"sha256:bd18475dce69e90a03823d25722699199d082e1bae3f0b886fbcbc550c2bf47b\",\"subject\":{\"type\":\"envelope\",\"id\":\"ENV-99f2cc\"},\"code\":\"review-rework-exhausted\",\"status\":\"open\",\"version\":1,\"stop_ids\":[\"STP-87f1f2\"],\"raised_at\":\"2026-10-01T01:27:12.782357293Z\",\"resolution_event_id\":null}],\"budgets\":[{\"name\":\"attempts\",\"scope\":\"envelope\",\"unit\":\"attempts\",\"maximum\":3,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":0,\"remaining\":3,\"state\":\"available\"},{\"name\":\"review-cycles\",\"scope\":\"envelope\",\"unit\":\"review-cycles\",\"maximum\":1,\"warning_threshold\":null,\"exhaustion_action\":\"review-rework-exhausted\",\"consumed\":1,\"remaining\":0,\"state\":\"exhausted\"},{\"name\":\"tokens\",\"scope\":\"envelope\",\"unit\":\"input-tokens\",\"maximum\":10,\"warning_threshold\":null,\"exhaustion_action\":\"budget-exhausted\",\"consumed\":null,\"remaining\":null,\"state\":\"unknown\"}],\"recoveries\":[],\"findings\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:12.782357293Z\",\"dispositions\":[],\"id\":\"FND-fixture-cycle\",\"review_id\":\"REV-bc9a57\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"open\",\"subject\":{\"id\":\"P22-30b087\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}],\"reviews\":[{\"actor_id\":\"actor-denied\",\"coverage\":{\"exclusions\":[],\"items\":[{\"assessed\":true,\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"project_id\":\"project-c01322a7eaff82fe6df8d98dd3ddc707\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:b2a4fdb33d81f94da384d24b1d30f150f97afd0e6a51e12db612ea54d137037f\"},\"section\":null,\"source_type\":\"project-file\"}}]},\"envelope_id\":\"ENV-99f2cc\",\"envelope_revision\":1,\"event_id\":\"EVT-20261001-000023\",\"evidence_refs\":[],\"findings\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:12.782357293Z\",\"dispositions\":[],\"id\":\"FND-fixture-cycle\",\"review_id\":\"REV-bc9a57\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"open\",\"subject\":{\"id\":\"P22-30b087\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}],\"id\":\"REV-bc9a57\",\"independence\":\"distinct-actor\",\"issue_id\":\"P22-30b087\",\"profile\":\"review-default\",\"receipt_ids\":[],\"recorded_at\":\"2026-10-01T01:27:12.782357293Z\",\"repository\":{\"base_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"0f400f2081e2e5825979e7648b5425e6a4588035\",\"project_id\":\"project-c01322a7eaff82fe6df8d98dd3ddc707\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:b2a4fdb33d81f94da384d24b1d30f150f97afd0e6a51e12db612ea54d137037f\"},\"resolved_finding_ids\":[],\"run_id\":\"RUN-a47edb\",\"verdict\":\"changes-required\"}],\"concerns\":[],\"deviations\":[],\"decisions\":[],\"human_outcomes\":[],\"protected_decisions\":[],\"next_actions\":[{\"operation\":\"run.inspect\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-a47edb\"},\"required_capabilities\":[],\"reasons\":[]},{\"operation\":\"run.observe\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-a47edb\"},\"required_capabilities\":[\"run.observe\"],\"reasons\":[{\"code\":\"run-inactive\",\"detail\":\"failed\",\"subject_id\":\"RUN-a47edb\",\"subject_type\":\"run\"}]},{\"operation\":\"gate.run\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-a47edb\"},\"required_capabilities\":[\"gate.run\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"gate.run\",\"subject_id\":\"actor-denied\",\"subject_type\":\"actor\"},{\"code\":\"run-inactive\",\"detail\":\"failed\",\"subject_id\":\"RUN-a47edb\",\"subject_type\":\"run\"},{\"code\":\"budget-exhausted\",\"detail\":\"review-cycles\",\"subject_id\":\"ENV-99f2cc\",\"subject_type\":\"envelope\"},{\"code\":\"budget-data-unavailable\",\"detail\":\"tokens\",\"subject_id\":\"ENV-99f2cc\",\"subject_type\":\"envelope\"}]},{\"operation\":\"concern.record\",\"subject\":{\"type\":\"issue\",\"id\":\"P22-30b087\"},\"required_capabilities\":[\"concern.record\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"concern.record\",\"subject_id\":\"P22-30b087\",\"subject_type\":\"issue\"}]},{\"operation\":\"deviation.record\",\"subject\":{\"type\":\"issue\",\"id\":\"P22-30b087\"},\"required_capabilities\":[\"deviation.record\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"deviation.record\",\"subject_id\":\"P22-30b087\",\"subject_type\":\"issue\"}]},{\"operation\":\"decision.record-reference\",\"subject\":{\"type\":\"issue\",\"id\":\"P22-30b087\"},\"required_capabilities\":[\"decision.record-reference\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"decision.record-reference\",\"subject_id\":\"P22-30b087\",\"subject_type\":\"issue\"}]},{\"operation\":\"human-outcome.record\",\"subject\":{\"type\":\"issue\",\"id\":\"P22-30b087\"},\"required_capabilities\":[\"human-outcome.record\"],\"reasons\":[{\"code\":\"authority-unavailable\",\"detail\":\"human-outcome.record\",\"subject_id\":\"P22-30b087\",\"subject_type\":\"issue\"}]}]}}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion",
+      "stop",
+      "list",
+      "--subject",
+      "envelope:ENV-99f2cc"
+    ],
+    "stdout": "stop.list\nStop STP-87f1f2 blocks claim.acquire, run.start because review-rework-exhausted: {\"budget_name\":\"review-cycles\",\"consumed\":1,\"envelope_id\":\"ENV-99f2cc\",\"last_review_id\":\"REV-bc9a57\",\"maximum\":1,\"remaining\":0,\"unit\":\"review-cycles\"}; qualifying resolution: budget-observed for envelope:ENV-99f2cc budget review-cycles (resolver capability stop.resolve).\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion",
+      "--json",
+      "stop",
+      "list",
+      "--subject",
+      "envelope:ENV-99f2cc"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"stop.list\",\"result\":{\"items\":[{\"id\":\"STP-87f1f2\",\"subject\":{\"type\":\"envelope\",\"id\":\"ENV-99f2cc\"},\"code\":\"review-rework-exhausted\",\"blocked_actions\":[\"claim.acquire\",\"run.start\"],\"details\":{\"budget_name\":\"review-cycles\",\"consumed\":1,\"envelope_id\":\"ENV-99f2cc\",\"last_review_id\":\"REV-bc9a57\",\"maximum\":1,\"remaining\":0,\"unit\":\"review-cycles\"},\"resolution_condition\":{\"type\":\"budget-observed\",\"subject\":{\"type\":\"envelope\",\"id\":\"ENV-99f2cc\"},\"budget_name\":\"review-cycles\",\"capability_id\":null},\"resolver_capability\":\"stop.resolve\",\"actor_id\":\"actor-denied\",\"raised_at\":\"2026-10-01T01:27:12.782357293Z\",\"resolution\":null}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion",
+      "attention",
+      "list",
+      "--subject",
+      "envelope:ENV-99f2cc"
+    ],
+    "stdout": "attention.list\nAttention ATT-9cafba open for review-rework-exhausted; qualifying resolution requires dispositions for every linked Stop:\n  Stop STP-87f1f2 blocks claim.acquire, run.start because review-rework-exhausted: {\"budget_name\":\"review-cycles\",\"consumed\":1,\"envelope_id\":\"ENV-99f2cc\",\"last_review_id\":\"REV-bc9a57\",\"maximum\":1,\"remaining\":0,\"unit\":\"review-cycles\"}; qualifying resolution: budget-observed for envelope:ENV-99f2cc budget review-cycles (resolver capability stop.resolve).\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/review-exhaustion",
+      "--json",
+      "attention",
+      "list",
+      "--subject",
+      "envelope:ENV-99f2cc"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"attention.list\",\"result\":{\"items\":[{\"id\":\"ATT-9cafba\",\"semantic_key\":\"sha256:bd18475dce69e90a03823d25722699199d082e1bae3f0b886fbcbc550c2bf47b\",\"subject\":{\"type\":\"envelope\",\"id\":\"ENV-99f2cc\"},\"code\":\"review-rework-exhausted\",\"status\":\"open\",\"version\":1,\"stop_ids\":[\"STP-87f1f2\"],\"raised_at\":\"2026-10-01T01:27:12.782357293Z\",\"resolution_event_id\":null}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "requirement",
+      "record-reference",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-requirement.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-requirement"
+    ],
+    "stdout": "Purpose: Inspect Requirement References and Issue links.\n\nRequirement References and links\n  Requirement RREF-6fa8ab\n    Status: active\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "requirement",
+      "record-reference",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-requirement.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-requirement"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20261001-000018\",\"occurred_at\":\"2026-10-01T01:27:16.589171563Z\"},\"ok\":true,\"operation\":\"requirement.record-reference\",\"result\":{\"idempotency_key\":\"leaf-requirement\",\"replayed\":true,\"requirement\":{\"created_at\":\"2026-10-01T01:27:16.589171563Z\",\"event_id\":\"EVT-20261001-000018\",\"id\":\"RREF-6fa8ab\",\"source\":{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"},\"status\":\"active\",\"superseded_by_id\":null}}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "requirement",
+      "link",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-link.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-link"
+    ],
+    "stdout": "Purpose: Inspect Requirement References and Issue links.\n\nRequirement References and links\n  Requirement REQ-leaf\n    Requirement: REQ-leaf; Issue: P22-2df764; Relation: implements\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "requirement",
+      "link",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-link.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-link"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20261001-000019\",\"occurred_at\":\"2026-10-01T01:27:16.736829617Z\"},\"ok\":true,\"operation\":\"requirement.link\",\"result\":{\"idempotency_key\":\"leaf-link\",\"link\":{\"created_at\":\"2026-10-01T01:27:16.736829617Z\",\"event_id\":\"EVT-20261001-000019\",\"issue_id\":\"P22-2df764\",\"relation\":\"implements\",\"requirement_id\":\"REQ-leaf\"},\"replayed\":true}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "concern",
+      "record",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-concern.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-concern"
+    ],
+    "stdout": "Purpose: Inspect a raised concern and its disposition as judgment.\n\nConcerns\n  Concern CON-leaf\n    Subject: issue:P22-2df764\n    Severity: major; Status: open; Raised by: actor-recovery\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n    This Concern is recorded judgment, not deterministic proof.\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "concern",
+      "record",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-concern.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-concern"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20261001-000020\",\"occurred_at\":\"2026-10-01T01:27:16.901910713Z\"},\"ok\":true,\"operation\":\"concern.record\",\"result\":{\"concern\":{\"actor_id\":\"actor-recovery\",\"created_at\":\"2026-10-01T01:27:16.901910713Z\",\"disposition\":null,\"event_id\":\"EVT-20261001-000020\",\"id\":\"CON-leaf\",\"reasoning\":\"PRIVATE_CONCERN_REASONING\",\"references\":[{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"}],\"scope\":{\"paths\":[]},\"severity\":\"major\",\"status\":\"open\",\"subject\":{\"id\":\"P22-2df764\",\"type\":\"issue\"},\"summary\":\"PRIVATE_CONCERN_SUMMARY\"},\"idempotency_key\":\"leaf-concern\",\"replayed\":true}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "concern",
+      "dispose",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-dispose.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-dispose"
+    ],
+    "stdout": "Purpose: Inspect a raised concern and its disposition as judgment.\n\nConcerns\n  Concern CON-leaf\n    Subject: issue:P22-2df764\n    Severity: major; Status: disposed; Raised by: actor-recovery\n    Disposition: carried-forward; Disposed by: actor-recovery\n    Work now owned by Issue: P22-2df764\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n    This Concern is recorded judgment, not deterministic proof.\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "concern",
+      "dispose",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-dispose.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-dispose"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20261001-000021\",\"occurred_at\":\"2026-10-01T01:27:17.132072746Z\"},\"ok\":true,\"operation\":\"concern.dispose\",\"result\":{\"concern\":{\"actor_id\":\"actor-recovery\",\"created_at\":\"2026-10-01T01:27:16.901910713Z\",\"disposition\":{\"action\":\"carried-forward\",\"actor_id\":\"actor-recovery\",\"disposed_at\":\"2026-10-01T01:27:17.132072746Z\",\"event_id\":\"EVT-20261001-000021\",\"issue_id\":\"P22-2df764\",\"reason\":\"PRIVATE_DISPOSITION_REASON\",\"supersedes_concern_id\":null,\"supersedes_finding_id\":null},\"event_id\":\"EVT-20261001-000020\",\"id\":\"CON-leaf\",\"reasoning\":\"PRIVATE_CONCERN_REASONING\",\"references\":[{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"}],\"scope\":{\"paths\":[]},\"severity\":\"major\",\"status\":\"disposed\",\"subject\":{\"id\":\"P22-2df764\",\"type\":\"issue\"},\"summary\":\"PRIVATE_CONCERN_SUMMARY\"},\"idempotency_key\":\"leaf-dispose\",\"replayed\":true}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "deviation",
+      "record",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-deviation.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-deviation"
+    ],
+    "stdout": "Purpose: Inspect a recorded deviation as judgment.\n\nDeviations\n  Deviation DEV-leaf\n    Subject: issue:P22-2df764\n    Disposition: pending-decision; Authority Actor: actor-recovery\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n    This Deviation is recorded judgment, not deterministic proof.\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "deviation",
+      "record",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-deviation.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-deviation"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20261001-000022\",\"occurred_at\":\"2026-10-01T01:27:17.30934145Z\"},\"ok\":true,\"operation\":\"deviation.record\",\"result\":{\"deviation\":{\"actor_id\":\"actor-recovery\",\"authority\":{\"actor_id\":\"actor-recovery\",\"reference\":null},\"created_at\":\"2026-10-01T01:27:17.30934145Z\",\"disposition\":\"pending-decision\",\"event_id\":\"EVT-20261001-000022\",\"expected\":\"PRIVATE_EXPECTED\",\"id\":\"DEV-leaf\",\"observed\":\"PRIVATE_OBSERVED\",\"reasoning\":\"PRIVATE_DEVIATION_REASONING\",\"references\":[{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"}],\"subject\":{\"id\":\"P22-2df764\",\"type\":\"issue\"},\"supersedes_deviation_id\":null},\"idempotency_key\":\"leaf-deviation\",\"replayed\":true}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "decision",
+      "record-reference",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-decision.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-decision"
+    ],
+    "stdout": "Purpose: Inspect Decision References and their authority.\n\nDecision References\n  Decision Reference DREF-leaf\n    Class: security; Outcome: approved; Authority Actor: actor-recovery\n    Required capabilities: decision.record-reference\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "decision",
+      "record-reference",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-decision.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-decision"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20261001-000023\",\"occurred_at\":\"2026-10-01T01:27:17.521737545Z\"},\"ok\":true,\"operation\":\"decision.record-reference\",\"result\":{\"attention\":[],\"decision\":{\"authority\":{\"actor_id\":\"actor-recovery\",\"required_capabilities\":[\"decision.record-reference\"]},\"class\":\"security\",\"created_at\":\"2026-10-01T01:27:17.521737545Z\",\"event_id\":\"EVT-20261001-000023\",\"id\":\"DREF-leaf\",\"outcome\":\"approved\",\"scope\":{\"issue_id\":\"P22-2df764\"},\"source\":{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"}},\"idempotency_key\":\"leaf-decision\",\"protected_decisions\":[],\"replayed\":true,\"stops\":[]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "human-outcome",
+      "record",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-outcome.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-outcome"
+    ],
+    "stdout": "Purpose: Inspect authorized Human judgments and their provenance.\n\nHuman Outcomes\n  Human Outcome OUT-leaf\n    Actor: actor-recovery; Class: security; Result: approved\n    Activation: ACT-21f85f revision 10; Profile: activation:p22-corpus\n    This Outcome is authorized Human judgment, not deterministic proof.\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "human-outcome",
+      "record",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-outcome.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-outcome"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20261001-000024\",\"occurred_at\":\"2026-10-01T01:27:17.716952299Z\"},\"ok\":true,\"operation\":\"human-outcome.record\",\"result\":{\"attention\":[],\"idempotency_key\":\"leaf-outcome\",\"outcome\":{\"actor_id\":\"actor-recovery\",\"class\":\"security\",\"created_at\":\"2026-10-01T01:27:17.716952299Z\",\"event_id\":\"EVT-20261001-000024\",\"id\":\"OUT-leaf\",\"provenance\":{\"activation_id\":\"ACT-21f85f\",\"activation_version\":10,\"profile_ref\":\"activation:p22-corpus\"},\"reasoning\":\"PRIVATE_OUTCOME_REASONING\",\"references\":[{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"}],\"result\":\"approved\",\"scope\":{\"issue_id\":\"P22-2df764\"},\"subject\":{\"id\":\"P22-2df764\",\"type\":\"issue\"}},\"protected_decisions\":[],\"replayed\":true,\"stops\":[]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "review",
+      "record",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-review.json",
+      "--actor",
+      "actor-denied",
+      "--idempotency-key",
+      "leaf-review"
+    ],
+    "stdout": "Purpose: Record an independent Review of a Run and its bound Issue.\n\nReviews\n  Review REV-4f9c55\n    Issue: P22-2df764; Envelope: ENV-96e125 revision 1\n    Run: RUN-d909c0; Reviewer: actor-denied; Profile: review-default\n    Verdict: changes-required; Independence: distinct-actor\n    Repository: project project-9622fce12c51ef658b2eda1633b117de; worktree sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f; HEAD e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503\n    Repository capture: git; base e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58; dirty false; dirty digest <nil>\n    Findings by severity: blocker 0; major 1; minor 0; nit 0\n  Finding FND-leaf\n    Review: REV-4f9c55; Severity: major; Blocking: true; Disposition: open\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "review",
+      "record",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-review.json",
+      "--actor",
+      "actor-denied",
+      "--idempotency-key",
+      "leaf-review"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20261001-000030\",\"occurred_at\":\"2026-10-01T01:27:18.493846192Z\"},\"ok\":true,\"operation\":\"review.record\",\"result\":{\"attention\":[],\"budget\":null,\"idempotency_key\":\"leaf-review\",\"replayed\":true,\"review\":{\"actor_id\":\"actor-denied\",\"coverage\":{\"exclusions\":[],\"items\":[{\"assessed\":true,\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"}}]},\"envelope_id\":\"ENV-96e125\",\"envelope_revision\":1,\"event_id\":\"EVT-20261001-000030\",\"evidence_refs\":[],\"findings\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:18.493846192Z\",\"dispositions\":[],\"id\":\"FND-leaf\",\"review_id\":\"REV-4f9c55\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"open\",\"subject\":{\"id\":\"P22-2df764\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}],\"id\":\"REV-4f9c55\",\"independence\":\"distinct-actor\",\"issue_id\":\"P22-2df764\",\"profile\":\"review-default\",\"receipt_ids\":[],\"recorded_at\":\"2026-10-01T01:27:18.493846192Z\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"resolved_finding_ids\":[],\"run_id\":\"RUN-d909c0\",\"verdict\":\"changes-required\"},\"stops\":[]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "finding",
+      "address",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-address.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-address"
+    ],
+    "stdout": "Purpose: Record a Builder assertion that a Finding was addressed.\n\nFindings\n  Finding FND-leaf\n    Review: REV-4f9c55; Severity: major; Blocking: true; Disposition: addressed\n    Addressed is a Builder assertion, not a resolution.\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "finding",
+      "address",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract/leaf-leaf-address.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-address"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20261001-000035\",\"occurred_at\":\"2026-10-01T01:27:19.171359214Z\"},\"ok\":true,\"operation\":\"finding.address\",\"result\":{\"finding\":{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:18.493846192Z\",\"dispositions\":[{\"action\":\"addressed\",\"actor_id\":\"actor-recovery\",\"disposed_at\":\"2026-10-01T01:27:19.171359214Z\",\"event_id\":\"EVT-20261001-000035\",\"id\":\"FDP-0acb81\",\"qualifying_review_id\":null,\"reason\":\"PRIVATE_FINDING_REASON\"}],\"id\":\"FND-leaf\",\"review_id\":\"REV-4f9c55\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"addressed\",\"subject\":{\"id\":\"P22-2df764\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"},\"idempotency_key\":\"leaf-address\",\"replayed\":true}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "review",
+      "get",
+      "REV-4f9c55"
+    ],
+    "stdout": "Purpose: Inspect independent Reviews and their Findings.\n\nReviews\n  Review REV-4f9c55\n    Issue: P22-2df764; Envelope: ENV-96e125 revision 1\n    Run: RUN-d909c0; Reviewer: actor-denied; Profile: review-default\n    Verdict: changes-required; Independence: distinct-actor\n    Repository: project project-9622fce12c51ef658b2eda1633b117de; worktree sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f; HEAD e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503\n    Repository capture: git; base e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58; dirty false; dirty digest <nil>\n    Findings by severity: blocker 0; major 1; minor 0; nit 0\n  Finding FND-leaf\n    Review: REV-4f9c55; Severity: major; Blocking: true; Disposition: addressed\n    Addressed is a Builder assertion, not a resolution.\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "review",
+      "get",
+      "REV-4f9c55"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"review.get\",\"result\":{\"review\":{\"actor_id\":\"actor-denied\",\"coverage\":{\"exclusions\":[],\"items\":[{\"assessed\":true,\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"}}]},\"envelope_id\":\"ENV-96e125\",\"envelope_revision\":1,\"event_id\":\"EVT-20261001-000030\",\"evidence_refs\":[],\"findings\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:18.493846192Z\",\"dispositions\":[{\"action\":\"addressed\",\"actor_id\":\"actor-recovery\",\"disposed_at\":\"2026-10-01T01:27:19.171359214Z\",\"event_id\":\"EVT-20261001-000035\",\"id\":\"FDP-0acb81\",\"qualifying_review_id\":null,\"reason\":\"PRIVATE_FINDING_REASON\"}],\"id\":\"FND-leaf\",\"review_id\":\"REV-4f9c55\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"addressed\",\"subject\":{\"id\":\"P22-2df764\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}],\"id\":\"REV-4f9c55\",\"independence\":\"distinct-actor\",\"issue_id\":\"P22-2df764\",\"profile\":\"review-default\",\"receipt_ids\":[],\"recorded_at\":\"2026-10-01T01:27:18.493846192Z\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"resolved_finding_ids\":[],\"run_id\":\"RUN-d909c0\",\"verdict\":\"changes-required\"}}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "review",
+      "list",
+      "--issue",
+      "P22-2df764"
+    ],
+    "stdout": "Purpose: Inspect independent Reviews and their Findings.\n\nReviews\n  Review REV-4f9c55\n    Issue: P22-2df764; Envelope: ENV-96e125 revision 1\n    Run: RUN-d909c0; Reviewer: actor-denied; Profile: review-default\n    Verdict: changes-required; Independence: distinct-actor\n    Repository: project project-9622fce12c51ef658b2eda1633b117de; worktree sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f; HEAD e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503\n    Repository capture: git; base e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58; dirty false; dirty digest <nil>\n    Findings by severity: blocker 0; major 1; minor 0; nit 0\n  Finding FND-leaf\n    Review: REV-4f9c55; Severity: major; Blocking: true; Disposition: addressed\n    Addressed is a Builder assertion, not a resolution.\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "review",
+      "list",
+      "--issue",
+      "P22-2df764"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"review.list\",\"result\":{\"items\":[{\"actor_id\":\"actor-denied\",\"coverage\":{\"exclusions\":[],\"items\":[{\"assessed\":true,\"source\":{\"digest\":\"sha256:0000000000000000000000000000000000000000000000000000000000000000\",\"display_label\":\"Phase 22 corpus\",\"external_id\":null,\"path\":\"project-docs/p22-corpus.md\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"}}]},\"envelope_id\":\"ENV-96e125\",\"envelope_revision\":1,\"event_id\":\"EVT-20261001-000030\",\"evidence_refs\":[],\"findings\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:18.493846192Z\",\"dispositions\":[{\"action\":\"addressed\",\"actor_id\":\"actor-recovery\",\"disposed_at\":\"2026-10-01T01:27:19.171359214Z\",\"event_id\":\"EVT-20261001-000035\",\"id\":\"FDP-0acb81\",\"qualifying_review_id\":null,\"reason\":\"PRIVATE_FINDING_REASON\"}],\"id\":\"FND-leaf\",\"review_id\":\"REV-4f9c55\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"addressed\",\"subject\":{\"id\":\"P22-2df764\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}],\"id\":\"REV-4f9c55\",\"independence\":\"distinct-actor\",\"issue_id\":\"P22-2df764\",\"profile\":\"review-default\",\"receipt_ids\":[],\"recorded_at\":\"2026-10-01T01:27:18.493846192Z\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"resolved_finding_ids\":[],\"run_id\":\"RUN-d909c0\",\"verdict\":\"changes-required\"}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "finding",
+      "list",
+      "--issue",
+      "P22-2df764"
+    ],
+    "stdout": "Purpose: Inspect Finding dispositions and current blocking state.\n\nFindings\n  Finding FND-leaf\n    Review: REV-4f9c55; Severity: major; Blocking: true; Disposition: addressed\n    Addressed is a Builder assertion, not a resolution.\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "finding",
+      "list",
+      "--issue",
+      "P22-2df764"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"finding.list\",\"result\":{\"items\":[{\"blocking\":true,\"created_at\":\"2026-10-01T01:27:18.493846192Z\",\"dispositions\":[{\"action\":\"addressed\",\"actor_id\":\"actor-recovery\",\"disposed_at\":\"2026-10-01T01:27:19.171359214Z\",\"event_id\":\"EVT-20261001-000035\",\"id\":\"FDP-0acb81\",\"qualifying_review_id\":null,\"reason\":\"PRIVATE_FINDING_REASON\"}],\"id\":\"FND-leaf\",\"review_id\":\"REV-4f9c55\",\"scope\":{\"paths\":[]},\"severity\":\"major\",\"state\":\"addressed\",\"subject\":{\"id\":\"P22-2df764\",\"type\":\"issue\"},\"summary\":\"real-process Review finding\"}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "concern",
+      "list",
+      "--subject",
+      "issue:P22-2df764"
+    ],
+    "stdout": "Purpose: Inspect a raised concern and its disposition as judgment.\n\nConcerns\n  Concern CON-leaf\n    Subject: issue:P22-2df764\n    Severity: major; Status: disposed; Raised by: actor-recovery\n    Disposition: carried-forward; Disposed by: actor-recovery\n    Work now owned by Issue: P22-2df764\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n    This Concern is recorded judgment, not deterministic proof.\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "concern",
+      "list",
+      "--subject",
+      "issue:P22-2df764"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"concern.list\",\"result\":{\"items\":[{\"actor_id\":\"actor-recovery\",\"created_at\":\"2026-10-01T01:27:16.901910713Z\",\"disposition\":{\"action\":\"carried-forward\",\"actor_id\":\"actor-recovery\",\"disposed_at\":\"2026-10-01T01:27:17.132072746Z\",\"event_id\":\"EVT-20261001-000021\",\"issue_id\":\"P22-2df764\",\"reason\":\"PRIVATE_DISPOSITION_REASON\",\"supersedes_concern_id\":null,\"supersedes_finding_id\":null},\"event_id\":\"EVT-20261001-000020\",\"id\":\"CON-leaf\",\"reasoning\":\"PRIVATE_CONCERN_REASONING\",\"references\":[{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"}],\"scope\":{\"paths\":[]},\"severity\":\"major\",\"status\":\"disposed\",\"subject\":{\"id\":\"P22-2df764\",\"type\":\"issue\"},\"summary\":\"PRIVATE_CONCERN_SUMMARY\"}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "deviation",
+      "list",
+      "--subject",
+      "issue:P22-2df764"
+    ],
+    "stdout": "Purpose: Inspect a recorded deviation as judgment.\n\nDeviations\n  Deviation DEV-leaf\n    Subject: issue:P22-2df764\n    Disposition: pending-decision; Authority Actor: actor-recovery\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n    This Deviation is recorded judgment, not deterministic proof.\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "deviation",
+      "list",
+      "--subject",
+      "issue:P22-2df764"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"deviation.list\",\"result\":{\"items\":[{\"actor_id\":\"actor-recovery\",\"authority\":{\"actor_id\":\"actor-recovery\",\"reference\":null},\"created_at\":\"2026-10-01T01:27:17.30934145Z\",\"disposition\":\"pending-decision\",\"event_id\":\"EVT-20261001-000022\",\"expected\":\"PRIVATE_EXPECTED\",\"id\":\"DEV-leaf\",\"observed\":\"PRIVATE_OBSERVED\",\"reasoning\":\"PRIVATE_DEVIATION_REASONING\",\"references\":[{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"}],\"subject\":{\"id\":\"P22-2df764\",\"type\":\"issue\"},\"supersedes_deviation_id\":null}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "decision",
+      "list",
+      "--issue",
+      "P22-2df764"
+    ],
+    "stdout": "Purpose: Inspect Decision References and their authority.\n\nDecision References\n  Decision Reference DREF-leaf\n    Class: security; Outcome: approved; Authority Actor: actor-recovery\n    Required capabilities: decision.record-reference\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "decision",
+      "list",
+      "--issue",
+      "P22-2df764"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"decision.list\",\"result\":{\"items\":[{\"authority\":{\"actor_id\":\"actor-recovery\",\"required_capabilities\":[\"decision.record-reference\"]},\"class\":\"security\",\"created_at\":\"2026-10-01T01:27:17.521737545Z\",\"event_id\":\"EVT-20261001-000023\",\"id\":\"DREF-leaf\",\"outcome\":\"approved\",\"scope\":{\"issue_id\":\"P22-2df764\"},\"source\":{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"}}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "human-outcome",
+      "list",
+      "--issue",
+      "P22-2df764"
+    ],
+    "stdout": "Purpose: Inspect authorized Human judgments and their provenance.\n\nHuman Outcomes\n  Human Outcome OUT-leaf\n    Actor: actor-recovery; Class: security; Result: approved\n    Activation: ACT-21f85f revision 10; Profile: activation:p22-corpus\n    This Outcome is authorized Human judgment, not deterministic proof.\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "human-outcome",
+      "list",
+      "--issue",
+      "P22-2df764"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"human-outcome.list\",\"result\":{\"items\":[{\"actor_id\":\"actor-recovery\",\"class\":\"security\",\"created_at\":\"2026-10-01T01:27:17.716952299Z\",\"event_id\":\"EVT-20261001-000024\",\"id\":\"OUT-leaf\",\"provenance\":{\"activation_id\":\"ACT-21f85f\",\"activation_version\":10,\"profile_ref\":\"activation:p22-corpus\"},\"reasoning\":\"PRIVATE_OUTCOME_REASONING\",\"references\":[{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"}],\"result\":\"approved\",\"scope\":{\"issue_id\":\"P22-2df764\"},\"subject\":{\"id\":\"P22-2df764\",\"type\":\"issue\"}}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "requirement",
+      "get",
+      "REQ-leaf"
+    ],
+    "stdout": "Purpose: Inspect Requirement References and Issue links.\n\nRequirement References and links\n  Requirement RREF-6fa8ab\n    Status: active\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n  Requirement REQ-leaf\n    Requirement: REQ-leaf; Issue: P22-2df764; Relation: implements\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "requirement",
+      "get",
+      "REQ-leaf"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"requirement.get\",\"result\":{\"links\":[{\"created_at\":\"2026-10-01T01:27:16.736829617Z\",\"event_id\":\"EVT-20261001-000019\",\"issue_id\":\"P22-2df764\",\"relation\":\"implements\",\"requirement_id\":\"REQ-leaf\"}],\"requirement\":{\"created_at\":\"2026-10-01T01:27:16.589171563Z\",\"event_id\":\"EVT-20261001-000018\",\"id\":\"RREF-6fa8ab\",\"source\":{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"},\"status\":\"active\",\"superseded_by_id\":null}}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "requirement",
+      "list"
+    ],
+    "stdout": "Purpose: Inspect Requirement References and Issue links.\n\nRequirement References and links\n  Requirement RREF-6fa8ab\n    Status: active\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-526363314/leaf-contract",
+      "--json",
+      "requirement",
+      "list"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":null,\"ok\":true,\"operation\":\"requirement.list\",\"result\":{\"items\":[{\"created_at\":\"2026-10-01T01:27:16.589171563Z\",\"event_id\":\"EVT-20261001-000018\",\"id\":\"RREF-6fa8ab\",\"source\":{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"e9e843cbcaa2943d5ef82d517b9b48e4c86a3b58\",\"project_id\":\"project-9622fce12c51ef658b2eda1633b117de\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:e77428f8217ebb59f1ffb402460fcedae0f0ae85620f3756574c5e6c64987a0f\"},\"section\":null,\"source_type\":\"project-file\"},\"status\":\"active\",\"superseded_by_id\":null}]}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract",
+      "requirement",
+      "record-reference",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-requirement.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-requirement"
+    ],
+    "stdout": "Purpose: Inspect Requirement References and Issue links.\n\nRequirement References and links\n  Requirement RREF-dad9dc\n    Status: active\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract",
+      "--json",
+      "requirement",
+      "record-reference",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-requirement.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-requirement"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20260929-000018\",\"occurred_at\":\"2026-09-29T23:39:27.851042559Z\"},\"ok\":true,\"operation\":\"requirement.record-reference\",\"result\":{\"idempotency_key\":\"leaf-requirement\",\"replayed\":true,\"requirement\":{\"created_at\":\"2026-09-29T23:39:27.851042559Z\",\"event_id\":\"EVT-20260929-000018\",\"id\":\"RREF-dad9dc\",\"source\":{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"02e5a80e8429bc8f939cae2e8fdb691ad7571947\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"02e5a80e8429bc8f939cae2e8fdb691ad7571947\",\"project_id\":\"project-c38e61c97b0200742aa4a3e766c8c02e\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600\"},\"section\":null,\"source_type\":\"project-file\"},\"status\":\"active\",\"superseded_by_id\":null}}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract",
+      "requirement",
+      "link",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-link.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-link"
+    ],
+    "stdout": "Purpose: Inspect Requirement References and Issue links.\n\nRequirement References and links\n  Requirement REQ-leaf\n    Requirement: REQ-leaf; Issue: P22-b8865b; Relation: implements\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract",
+      "--json",
+      "requirement",
+      "link",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-link.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-link"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20260929-000019\",\"occurred_at\":\"2026-09-29T23:39:27.991208446Z\"},\"ok\":true,\"operation\":\"requirement.link\",\"result\":{\"idempotency_key\":\"leaf-link\",\"link\":{\"created_at\":\"2026-09-29T23:39:27.991208446Z\",\"event_id\":\"EVT-20260929-000019\",\"issue_id\":\"P22-b8865b\",\"relation\":\"implements\",\"requirement_id\":\"REQ-leaf\"},\"replayed\":true}}\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract",
+      "concern",
+      "record",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-concern.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-concern"
+    ],
+    "stdout": "Purpose: Inspect a raised concern and its disposition as judgment.\n\nConcerns\n  Concern CON-leaf\n    Subject: issue:P22-b8865b\n    Severity: major; Status: open; Raised by: actor-recovery\n    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\n    This Concern is recorded judgment, not deterministic proof.\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  {
+    "cwd": "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract",
+    "command": [
+      "/tmp/fid",
+      "--project",
+      "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract",
+      "--json",
+      "concern",
+      "record",
+      "--input",
+      "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-concern.json",
+      "--actor",
+      "actor-recovery",
+      "--idempotency-key",
+      "leaf-concern"
+    ],
+    "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20260929-000020\",\"occurred_at\":\"2026-09-29T23:39:28.149301929Z\"},\"ok\":true,\"operation\":\"concern.record\",\"result\":{\"concern\":{\"actor_id\":\"actor-recovery\",\"created_at\":\"2026-09-29T23:39:28.149301929Z\",\"disposition\":null,\"event_id\":\"EVT-20260929-000020\",\"id\":\"CON-leaf\",\"reasoning\":\"PRIVATE_CONCERN_REASONING\",\"references\":[{\"digest\":\"sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac\",\"display_label\":\"Task 9 decision\",\"external_id\":null,\"path\":\"base.txt\",\"repository\":{\"base_oid\":\"02e5a80e8429bc8f939cae2e8fdb691ad7571947\",\"capture_source\":\"git\",\"dirty\":false,\"dirty_digest\":null,\"head_oid\":\"02e5a80e8429bc8f939cae2e8fdb691ad7571947\",\"project_id\":\"project-c38e61c97b0200742aa4a3e766c8c02e\",\"tree_oid\":\"720e5c7e58f0ed980bdde2d8743e3755ef4a8503\",\"worktree_id\":\"sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600\"},\"section\":null,\"source_type\":\"project-file\"}],\"scope\":{\"paths\":[]},\"severity\":\"major\",\"status\":\"open\",\"subject\":{\"id\":\"P22-b8865b\",\"type\":\"issue\"},\"summary\":\"PRIVATE_CONCERN_SUMMARY\"},\"idempotency_key\":\"leaf-concern\",\"replayed\":true}}\n",
+    "stderr": "",
+    "exit_code": 0
+  }
+]

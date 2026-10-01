@@ -1,0 +1,1 @@
+{"id":"reference-task11-git-status","cmd":"git status --porcelain","cwd":"/tmp/fid-p23-qa-reference-PgIz9Jst/task11","started_at":"2026-10-01T01:23:32.937Z","results":[{"chunk_id":"6b247d","wall_time_seconds":0.056125062,"exit_code":0,"original_token_count":0,"output":""}]}

@@ -1,0 +1,1 @@
+{"id":"identity-memory","cmd":"grep -m1 '^MemTotal:' /proc/meminfo","results":[{"chunk_id":"b10bc8","wall_time_seconds":0.000011512,"exit_code":0,"original_token_count":7,"output":"MemTotal:        8133236 kB\n"}]}
