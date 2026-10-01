@@ -321,7 +321,7 @@ DEC-267 exact commands ran from `/home/mark/projects/fid` in task-spec order on 
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:											(statements)			60.5%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	252.669s` (terminated `exit_code: 0`)
-- `go test -race -timeout 30m ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)` (terminated `exit_code: 0`); `cmd/fid` reported `ok  	github.com/mbell-nzl/fid/cmd/fid	333.284s`.
+- `go test -race -timeout 30m ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
