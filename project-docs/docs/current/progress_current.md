@@ -1,27 +1,27 @@
 # Progress — Current
 
-Updated 2026-09-30. **Tasks 1-17 are complete, and review-12 passed window
-13-15. Task 18 stopped at attempt 6 on an authority-details divergence,
-which DEC-266 resolves. The Runner is ready to resume.** Branch: `phase-23`.
+Updated 2026-10-01. **All 18 tasks are complete and review-14 passed
+window 16-18. The phase-end final review (`74182db`) returned BLOCK, and
+the Runner STOPPED under TRG-23-016 / ESC-23-012. DEC-267 disposes it.**
+Branch: `phase-23`.
 
-Task 18, attempts 2-6, pinned DEC-265's 19/18/1 partition. It also
-completed the full semantic fake/fid comparison for all 23 operations, the
-rejection matrix, and the VAL-067 provenance. One comparison stayed red:
-`claim.acquire` returned `authority-denied` as `{operation,actor}`.
-DEC-266 finds that the registry never converged three `authority-*` codes
-to the Phase 21 four-field contract:
-- eight producers followed the registry;
-- `gate.go`'s four-field paths are rejected at construction, a latent
-  defect;
-- the fake's other authority rows shared the wrong shape.
-
-The contract governs. Task 18 converges the registry and producers under a
-planning amendment.
+Final review: the seven-command gate passed, and 79 of 84 rows PASS.
+- **MF-2 / BC-A (VAL-005):** the criterion said three new Evidence columns,
+  but the accepted DDL adds two. DEC-267 keeps the DDL and corrects the text,
+  so there is no implementation work.
+- **MF-1:** the section 22 unflagged-checkptr control failed in
+  `TestLiveOutputGoldenFixtures`. Likely cause: `cmd/fid` TestMain
+  bootstraps SQLite inside the helper child, which has a 5 s deadline.
+  Task 18 owns the test-harness repair by planning amendment.
+- **BC-B (VAL-070..073):** the Human is completing the checklist.
 
 Next: the Runner resumes using
-[the handoff](../phases/phase-23/qa/resume-after-dec-266.md) (task 18
-ledger attempt 2), then QA window 16-18 (review-13), then phase-end QA.
+[the handoff](../phases/phase-23/qa/resume-after-dec-267.md) (task 18,
+ledger attempt 2). Once the Human checklist is recorded, a fresh
+independent QA Lead writes `final-review-1.md`. Wrap-up follows a PASS.
 
+Earlier, task 18 converged the `authority-*` details under DEC-266,
+completed after ESC-23-011's model-capacity stop, and closed review-13 MF-2.
 Earlier, DEC-265 clarified 19 declared Failure codes (18 added and 1
 retained).
 Earlier, task 15 closed under DEC-264 (0018 down restores schema 17), and
@@ -76,6 +76,9 @@ Retain these constraints:
   `{operation,actor_id,required_actions,required_capabilities}`, null subject.
 - DEC-243: VAL-025 closes with real durable Human Outcome links and all nine
   compatibility cells; the checkpoint must independently review the evidence.
+- DEC-267: VAL-005's criterion names the two added Evidence columns. MF-1
+  is a task-18 test-harness repair; the 5000 ms deadline, golden bytes, and
+  commands are preserved.
 
 ## Earlier work and carry-forwards
 

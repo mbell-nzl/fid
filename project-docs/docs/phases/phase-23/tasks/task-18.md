@@ -211,3 +211,86 @@ List any conditional command required by this task and why:
   - [ ] The report records each changed producer as a finding against its
     introducing task, with provenance.
 
+
+## Planning Amendment - DEC-267 (2026-10-01, final-review MF-1)
+
+- **Trigger:** the phase-end final review (`qa/final-review.md`, `74182db`)
+  failed the QA plan section 22 control `go test -race -timeout 30m ./...`.
+  `TestLiveOutputGoldenFixtures` failed after 5.01 s with
+  `AppendTerminal() error = append live terminal: terminal observation does not match process result`
+  (terminated `exit_code: 1`). That failed run stays as evidence. Do not
+  rerun it to get a green.
+- **Why task 18:** see DEC-267 Part 2. No task displaced this phase-wide
+  control. Task 18 is the phase's conformance task, and the TRG-23-016
+  resume binds to it. The tests' provenance is pre-phase: `f0eec23`
+  (phase-21/task-14) and `bca799f` (phase-20/task-3h).
+- **Working hypothesis (confirm it before repairing):**
+  - The child re-runs `cmd/fid`'s `TestMain`, which bootstraps a pristine
+    workspace through the whole migration chain before `TestLiveGoldenChild`
+    runs.
+  - Under race plus unflagged `checkptr` and full-suite load, that bootstrap
+    can use up the 5000 ms child deadline.
+  - The terminal then records a timeout or signal, which the fixed
+    exit-23/no-timeout expectation rejects.
+- **Diagnosis (record it in the report):**
+  1. Build the unflagged race test binary into fresh scratch:
+     `go test -race -c -o <scratch>/fid.test ./cmd/fid`.
+  2. Time a direct child invocation:
+     `<scratch>/fid.test -test.run='^TestLiveGoldenChild$' -- --live-golden-child`.
+  3. Record its wall time, exit status, and whether the bootstrap ran.
+
+  These are diagnostics, not gates. If the cause is not the child's test
+  harness startup, return `RECOVERY_REQUIRED` with the evidence.
+- **Scope added (test harness only):**
+  - `cmd/fid/workspace_fixture_test.go`: the helper-child invocation must
+    not pay for suite-level fixture bootstrap that it never uses. For
+    example, `TestMain` / `runCommandTestSuite` detects the
+    `--live-golden-child` argument and runs the child without creating the
+    pristine workspace. The Developer chooses the mechanism, within these
+    two files.
+  - `cmd/fid/live_output_test.go`: only as far as the mechanism needs.
+  - A new `cmd/fid/*_test.go` file for the regression, if needed.
+  - `project-docs/docs/phases/phase-23/tasks/task-18-done.md`.
+- **Red/green:** the regression must be **deterministic** and fail before
+  the fix. For example, it can assert that the helper-child path through
+  `runCommandTestSuite` creates no pristine workspace. A timing assertion
+  or a retry is not acceptable red/green evidence.
+- **Forbidden:**
+  - any non-`_test.go` file;
+  - `internal/evidence/`;
+  - the `TimeoutMS: 5000` value;
+  - the expected bytes under `cmd/fid/testdata/val-036/`;
+  - any output, redaction, terminal, or golden assertion in
+    `TestLiveOutputGoldenFixtures`;
+  - `go.mod`, any command, flag, budget, or threshold;
+  - removing `t.Parallel()` annotations, or adding skips or build tags that
+    exclude the test from either race run.
+
+  If the cause needs any of these, return `RECOVERY_REQUIRED` and do not
+  widen the repair.
+- **Commands (in order, from the repository root):**
+  1. Focused, for the red and the green:
+     `go test -race -run '^TestLiveOutputGoldenFixtures$' -count=1 -v ./cmd/fid`,
+     plus the new regression test by name.
+  2. All five task-18 `## Exact Commands To Run`, unchanged and in order.
+  3. The section 22 control, byte-identical to QA's failed run:
+
+     ```text
+     go test -race -timeout 30m ./...
+     ```
+
+     It must PASS. It is not held to the VAL-079 budgets (DEC-259).
+     Record the `cmd/fid` time it reports anyway.
+
+  Record each command with its own output token and observed termination.
+  The five commands keep their VAL-079 timing records.
+- **Gate coverage:** the ordinary race gate and the section 22 control both
+  compile and run `cmd/fid`, so they execute every file this amendment adds.
+- **Acceptance (added):**
+  - [ ] Diagnosis recorded; the cause is confirmed inside the test harness.
+  - [ ] A deterministic regression fails before the fix and passes after it.
+  - [ ] `go test -race -timeout 30m ./...` passes with observed
+    termination. The report keeps QA's failed run, with its token,
+    termination, root cause, repair, and later result (AGENTS.md deviation
+    note).
+  - [ ] All five task-18 commands pass. No preserved item changed.

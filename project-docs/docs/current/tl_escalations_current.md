@@ -2,90 +2,45 @@
 
 ## Open escalations
 
-None. The Runner resumes task 18 from
-[the DEC-266 handoff](../phases/phase-23/qa/resume-after-dec-266.md).
+### ESC-23-012 - Phase-end accepted Evidence column count conflicts and Human judgments remain pending
+
+- **Status:** PARTIALLY RESOLVED 2026-10-01 under DEC-267 (Tech Lead,
+  Human-delegated). It stays open for BC-B only. Governing triage:
+  TRG-23-016.
+  - **BC-A / MF-2, resolved:** the accepted DDL governs. 0017 adds two
+    Evidence columns, `review_id` and `human_outcome_id`. "Three" was a
+    planning miscount from `f94e354`. The VAL-005 criterion, the task-1
+    criterion, and DEC-223 now name the two columns. No implementation
+    change is needed.
+  - **MF-1, routed:** task 18 owns it by planning amendment, under the same
+    repair boundary QA set. The Runner resumes with
+    [the handoff](../phases/phase-23/qa/resume-after-dec-267.md)
+    (task-18 ledger attempt 2).
+  - **BC-B, open:** the Human records VAL-070..073 in the
+    [Human checklist](../phases/phase-23/qa/human-checklist.md).
+- **Resolution condition (remaining):** the Human records all VAL-070..073
+  outcomes. A fresh independent QA Lead then writes `final-review-1.md`,
+  which covers the MF-1 repair, VAL-005 under DEC-267, and the Human
+  results. Phase advance needs that review.
+- **References:** [TRG-23-016](../phases/phase-23/triage-log.md);
+  [final review](../phases/phase-23/qa/final-review.md);
+  [DEC-267](../phases/phase-23/decisions.md); VAL-005, VAL-070..073;
+  [full record](../phases/phase-23/tl-escalations.md).
 
 ## Recently resolved
 
-### ESC-23-010 - Task 18 Failure-code count contradicts the named public set
-
-- **Status:** RESOLVED 2026-09-30 under DEC-265 (Tech Lead, Human-delegated).
-  - **Cause:** there was no member conflict. Section 5, section 5.1,
-    `p23FailureContracts`, and `failures.json` all name the same 19 codes.
-    DEC-230's "18" counts the codes new to `codes.go`, and
-    `requirement-not-found` is a retained Phase 20 code whose Phase 23
-    producers section 5 re-pins. The contradiction came from section 5's
-    lead sentence, which called all 19 "added".
-  - **Fix:** a wording-only clarification that 19 are declared, 18 added
-    and 1 retained. Codes, VAL text, ownership, and commands are unchanged.
-  - Task 18 continues same-task at attempt 2 (`in-scope-implementation`,
-    no-progress 0/2) to finish VAL-068 semantic parity and VAL-067
-    provenance. See the [full record](../phases/phase-23/tl-escalations.md).
-  - **Second disposition, RESOLVED under DEC-266:**
-    - `claim.acquire` returned Phase 20 `{operation,actor}` authority
-      details. The cause is the registry, which was never converged to
-      Phase 21 section 7 for `authority-missing`, `authority-unknown-actor`,
-      and `authority-denied`; eight producers followed it, and the
-      `gate.go` four-field paths are latent defects.
-    - The contract governs. A task-18 planning amendment converges the
-      registry and the producers, and fixes the fake's two-field rows.
-    - Task 18 continues at ledger attempt 2 (report attempt 7),
-      no-progress 0/2.
-
-### ESC-23-009 - Migration 0018 down conflicts with the accepted 0016 rollback
-
-- **Status:** RESOLVED 2026-09-30 under DEC-264 (Tech Lead proposal,
-  Human-approved).
-  - **Cause:** `schema.md` section 5 restored objects as they were first
-    created, not as they stood at schema 17. As a result:
-    - V1 `concerns` kept `escalated_to_esc_id`, so 0016 down failed with a
-      duplicate column;
-    - `issues_enriched` cited 0003 instead of 0011;
-    - the two 0004 kind triggers were missing.
-  - **Fix:** 0018 down restores the fresh-schema-17 definition of each object.
-    Section 5 now lists nine exact steps, and the Tech Lead verified them
-    through the full down chain on a scratch database. Migrations 0001-0017,
-    0018 up, VAL text, and all commands are unchanged.
-  - Task 15 continues same-task at attempt 2 (`in-scope-implementation`,
-    no-progress 0/2). See the
-    [full record](../phases/phase-23/tl-escalations.md).
-
-### ESC-23-008 - Task-13 protected-decision denial response contradicts closed failure schema
-
-- **Status:** RESOLVED 2026-09-29 under DEC-263 (Tech Lead, Human-delegated).
-  - **Cause:** section 5 copied the StopDetails of `protected-decision-required`
-    and `human-outcome-required` as their failure details. It never added the
-    denial fields that DEC-226 part 4 and VAL-057 require.
-  - **Fix:** both codes' details gain `stop_ids`, `attention_ids`, `event`
-    (null), and `replayed` (`false`), in the `review-rework-exhausted` form.
-    The envelope, StopDetails, codes, precedence, VAL text, and gates are
-    unchanged.
-  - Task 13 continues same-task at attempt 2 (`in-scope-implementation`,
-    no-progress 0/2). See the
-    [full record](../phases/phase-23/tl-escalations.md).
-
-### ESC-23-007 - Task-13 ActivityEvent journal and requirement-reference schema boundary
-
-- **Status:** RESOLVED 2026-09-28 under DEC-262 (Tech Lead, Human-delegated).
-  Task 13 owns the strict-path `activity_log` entry and the `issue`-subject
-  rows; task 15 writes the `requirement`/`decision` rows with 0018 and closes
-  VAL-055. See the [full record](../phases/phase-23/tl-escalations.md).
-
-Older, all resolved and archived in
+All resolved and archived in
 [Phase 23 escalations](../phases/phase-23/tl-escalations.md):
-- ESC-23-006 under DEC-260 (requirement writes need a trusted Actor only;
-  closed set stays thirty).
-- ESC-23-005 under DEC-258 (parallel tests; gate definition unchanged; see
-  [repair evidence](../phases/phase-23/qa/esc-23-005-repair.md)).
-- ESC-23-004 (checkpoint BC-1..3) under DEC-249..256.
-- ESC-23-003 under DEC-239 (VAL-015 evidence route; see the
-  [resume handoff](../phases/phase-23/qa/resume-after-esc-23-003.md)).
-- ESC-23-002 under DEC-238 (task 1 gate closure;
-  [repair evidence](../phases/phase-23/qa/esc-23-002-repair.md)).
-- ESC-23-001 under DEC-235 (Human Option A: `omitempty` on the three new
-  `Condition` fields only).
-- R-28 was a blocker candidate with no identifier, correctly dispositioned
-  under DEC-237 without an escalation.
+- ESC-23-011: Developer model capacity; resolved 2026-10-01 by restored
+  capability (07:19 RUN-RESUME), and task 18 then completed.
+- ESC-23-010 under DEC-265 (19 Failure codes: 18 added, 1 retained) and
+  DEC-266 (`authority-*` details converged to the Phase 21 four fields).
+- ESC-23-009 under DEC-264 (0018 down restores the schema-17 state).
+- ESC-23-008 under DEC-263 (Stop-blocked denial fields in failure details).
+- ESC-23-007 under DEC-262 (ActivityEvent rows split at 0018).
+- ESC-23-006 under DEC-260; ESC-23-005 under DEC-258; ESC-23-004 under
+  DEC-249..256; ESC-23-003 under DEC-239; ESC-23-002 under DEC-238;
+  ESC-23-001 under DEC-235. R-28 was dispositioned under DEC-237 without an ID.
 - ESC-22-005 under DEC-221; see
   [Phase 22 escalations](../phases/phase-22/tl-escalations.md).
 

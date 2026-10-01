@@ -120,6 +120,9 @@ separate DECs.
   mechanism with the CLI, not of the shipped migration under
   `modernc.org/sqlite`; task 1 still proves it on the real chain, and VAL-005 is
   where that proof is recorded.
+- **Erratum (DEC-267, 2026-10-01):** "the three new columns" above is a
+  miscount. The accepted DDL adds two columns, `review_id` and
+  `human_outcome_id`, and makes the existing `receipt_id` nullable.
 - **Refs:** `qa-plan.md` R-01 and sections 2.4, 6.4; `schema.md` sections 2, 3.
 
 ### DEC-224: Named raising Events for the `human-outcome-required` Stop
@@ -2925,6 +2928,141 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   VAL-068; Phase 21 `public-interface.md` section 7; Phase 20 `contracts.md`;
   `internal/cli/codes.go`; `internal/policy/envelope_authority.go`;
   `tasks/task-18.md` Planning Amendment - DEC-266.
+
+### DEC-267: Phase-end final review disposition (ESC-23-012)
+
+- **Date:** 2026-10-01.
+- **Status:** ACCEPTED by the Tech Lead under Human delegation. On
+  2026-10-01 the Human asked the Tech Lead to "sort these out" and kept the
+  Human checklist for themselves.
+  - Part 1 corrects one count in the VAL-005 pass criterion, which is
+    protected text. It is flagged to the Human, who may reverse it.
+  - Part 2 changes MF-1's owner from the one QA proposed. Its repair
+    boundary and evidence are QA's, unchanged.
+  - No contract, DDL, product code, command, budget, or threshold changes.
+- **Source:** `qa/final-review.md` at `74182db` (OUTCOME BLOCKED): MF-1,
+  MF-2/BC-A, BC-B, I-1, I-2. TRG-23-016 (BLOCK) and ESC-23-012.
+
+#### Part 1 - MF-2 / BC-A: the accepted DDL governs; "three" was a miscount
+
+- **Finding (Tech Lead, verified at `74182db`).**
+  1. `schema.md` section 2 rebuilds `evidence_records` from nine columns to
+     eleven. It adds exactly `review_id` and `human_outcome_id`, and makes
+     the existing `receipt_id` nullable. Migration
+     `0017_p23_review_judgment.up.sql` ships that DDL exactly (DEC-178).
+  2. The two-column DDL and the phrase "the three new columns are null"
+     both entered in the **same** planning commit, `f94e354`. The phrase
+     appears in VAL-005, the task-1 criterion, and later DEC-223's sandbox
+     note. `git log -S` shows no version of `schema.md` with a third added
+     column. The likely source is the **three** nullable reference columns
+     (`receipt_id`, `review_id`, `human_outcome_id`), of which only two are
+     new.
+  3. VAL-005's own assertion column already says "adds only the **declared**
+     columns". The contract, PRD, and TRD declare no third column.
+  4. Task 1's test `TestMigration0017PreservesReceiptEvidenceAndArtifactLinksInPlace`
+     reads exactly `review_id` and `human_outcome_id` as the new values.
+     QA's fresh migration evidence agrees: nine prior columns preserved,
+     both additions null, links and `required_material` restored, and
+     `foreign_key_check` empty.
+- **Decision.** The accepted DDL governs. In the VAL-005 pass criterion,
+  "the three new columns are null" becomes "the two added columns,
+  `review_id` and `human_outcome_id`, are null". The task-1 criterion gets
+  the same edit, and DEC-223 gets an erratum line.
+  - This makes the criterion more precise: it names the columns. Everything
+    else in VAL-005 is unchanged: its assertion, its linked seed, its
+    in-place catch-up, `foreign_key_check`, its fail criteria, its validator,
+    and its owner.
+  - A preserved `receipt_id` is already covered by "every prior Evidence row
+    is identical column by column".
+- **No implementation.** MF-2 needs no task. QA did not mark VAL-005 PASS
+  under the old text, and that review's evidence is not reused as a PASS.
+  The next independent final review re-evaluates VAL-005 under the corrected
+  criterion and reruns the linked-seed migration evidence, as the review's
+  Repair Plan requires.
+- **Not taken: add a third column.** No requirement names one, so it would
+  be a data-model change with no product reason. It would also break
+  DEC-178 parity with shipped 0017 and invalidate 0018's accepted down path.
+
+#### Part 2 - MF-1: full-checkptr golden child; owner task 18 by planning amendment
+
+- **Finding.** QA plan section 22 (DEC-259) requires the unflagged control
+  `go test -race -timeout 30m ./...` at phase end. It failed in
+  `TestLiveOutputGoldenFixtures` after 5.01 s: the terminal observation did
+  not match the process result.
+  1. That test re-executes the `cmd/fid` test binary as a child, with
+     `TimeoutMS: 5000`.
+  2. The child enters `TestMain` (`workspace_fixture_test.go`). There,
+     `runCommandTestSuite` applies the whole migration chain to a pristine
+     workspace before the one-line child test runs.
+  3. Under race plus unflagged `checkptr` inside modernc SQLite, and with
+     every other package running at once (`cmd/fid` took 516.718 s here, against 306.827 s
+     flagged), that bootstrap can use up the child's deadline.
+  4. The focused run passed in isolation (3.22 s).
+
+  This is the Tech Lead's reading of QA's source and timing evidence. The
+  Developer confirms it before repairing anything.
+- **Provenance.** The 5000 ms deadline comes from `f0eec23`
+  (phase-21/task-14), and the TestMain bootstrap from `bca799f`
+  (phase-20/task-3h). Both predate the phase. The phase grew the bootstrap
+  (0017 from task 1, 0018 from task 15) and the package load (every task).
+  The control first became required at phase end, and no task ran it.
+- **Owner: task 18, not task 1.** QA proposed task 1 under DEC-238. Task 18
+  owns MF-1 instead, for four reasons:
+  1. DEC-238 was a bounded Human exception for ESC-23-002's budgets, not a
+     standing scope.
+  2. No single task displaced the control. The convergence is phase-wide,
+     and it belongs to the phase's final conformance task, as in DEC-266.
+  3. A reopened task 1 runs the DEC-259 flagged race forms (DEC-261 Part 1),
+     which never execute the failing control. So either owner needs the
+     control added to its commands.
+  4. The sequence validator binds the TRG-23-016 STOP resume to task 18. A
+     scratch dry run of the task-1 continuation returned
+     `INVALID RUN-RESUME Continuing task does not match its Trigger signature`
+     (exit 1). Routing to task 1 would need a new TRG for a resolved BLOCK,
+     which workflow section 2.4 forbids. The task-18 route validated through
+     `RUN-END` (`VALID state=ADVANCEABLE`).
+- **Repair boundary.** This is QA's Repair Plan row, unchanged except for
+  the owner. Files: `cmd/fid/live_output_test.go`,
+  `cmd/fid/workspace_fixture_test.go`, a new `cmd/fid` `_test.go` file if
+  needed, and `task-18-done.md`.
+  - **Preserve:** the 5000 ms deadline, the golden bytes under
+    `cmd/fid/testdata/val-036/`, every output, redaction, and terminal
+    assertion, all product code, every command and flag, and the 600/900 s
+    budgets.
+  - **Commands:** task 18's five commands, plus the unflagged control,
+    byte-identical to QA's failed run. The control is not held to VAL-079.
+  - **Out of bounds:** if the cause lies in product code or needs any
+    preserved item changed, return `RECOVERY_REQUIRED` or `BLOCKED`. Do not
+    widen the repair.
+  - **Details:** `tasks/task-18.md` "Planning Amendment - DEC-267".
+
+#### Part 3 - BC-B and improvements
+
+- **BC-B (VAL-070..073):** the Human runs the checklist. A test-only repair
+  leaves the product source unchanged. The Human may therefore use fixtures
+  generated at the current HEAD, as long as the next QA Lead confirms that
+  no non-test file changed between the fixture HEAD and the reviewed HEAD.
+  Otherwise the Human regenerates the fixtures.
+- **I-1 (refresh current context):** do now; done in this commit.
+- **I-2 (`internal/workflow/resume.go` size):** carried to the next
+  authorized edit of that file. It is recorded at wrap-up, and no task is
+  opened for it.
+
+#### Sequence and ledger
+
+1. The Runner resumes from the 16:20 STOP under DEC-267 with
+   `qa/resume-after-dec-267.md`, at task-18 ledger attempt 2.
+2. The Runner records REPAIR and then TASK task-18 COMPLETE.
+3. The fresh independent QA Lead final review (`qa/final-review-1.md`) is
+   dispatched only after the Human has recorded VAL-070..073.
+4. ESC-23-012 stays open for BC-B only.
+
+- **Spec impact.** Canonical specs are verified-no-change: the accepted DDL
+  already matches `03_TRD_SCHEMA.md`. The phase-local validation contract
+  and task 1 are corrected as stated above. Task 18 gains an amendment.
+- **Refs:** ESC-23-012; TRG-23-016; DEC-178; DEC-223; DEC-238; DEC-259;
+  DEC-261; DEC-266; VAL-005; VAL-070..073; `schema.md` section 2;
+  `qa/final-review.md`.
 
 ## Spec Sync Verdict
 

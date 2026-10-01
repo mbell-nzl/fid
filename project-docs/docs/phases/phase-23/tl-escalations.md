@@ -1,5 +1,56 @@
 # Phase 23 Escalations
 
+## ESC-23-012 - Phase-end accepted Evidence column count conflicts and Human judgments remain pending
+
+- **Raised:** 2026-10-01
+- **Allocated by:** TL-Lite, TRG-23-016
+- **Candidate source:** `qa/final-review.md` at `74182db` (OUTCOME BLOCKED):
+  MF-1, MF-2/BC-A, BC-B.
+- **Protected category:** a specification/validation-contract contradiction
+  that might have meant a data-model change, plus pending Human-only
+  product judgment.
+- **Trigger signature:** task-18:qa-block:phase-end-final-review
+- **Attempt count:** 1
+- **Trigger:**
+  - VAL-005, the task-1 criterion, and DEC-223 said three new Evidence
+    columns, but the accepted DDL adds two.
+  - VAL-070..073 were unanswered.
+  - Separately, the section 22 full-checkptr control failed in
+    `TestLiveOutputGoldenFixtures` (MF-1).
+- **Status:** PARTIALLY RESOLVED 2026-10-01 under DEC-267. It stays open
+  for BC-B.
+  - **Tech Lead finding:** the DDL and the "three" phrase entered together
+    in planning commit `f94e354`, and no third column was ever declared.
+    The miscount most likely counted the three nullable reference columns,
+    including the existing `receipt_id`.
+  - **Resolution:**
+    - BC-A: the DDL governs, and the criterion text names the two columns.
+    - MF-1: owned by task 18 by planning amendment, within QA's repair
+      boundary. The validator binds the STOP resume to task 18, and a
+      task-1 route was rejected in a dry run.
+    - BC-B: the Human records VAL-070..073.
+  - **Resume:** `qa/resume-after-dec-267.md`.
+- **Links:** TRG-23-016; DEC-178; DEC-223; DEC-259; DEC-261; DEC-267;
+  `schema.md` section 2; VAL-005; VAL-070..073.
+
+## ESC-23-011 - Task 18 Developer role unavailable after bounded model-capacity retry
+
+- **Raised:** 2026-09-30
+- **Allocated by:** TL-Lite, TRG-23-013, following TRG-23-012
+- **Protected category:** unrepairable external infrastructure, because a
+  required child-role capability stayed unavailable after bounded recovery.
+- **Trigger signature:** task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- **Trigger:** three task-18 Developer child sessions ended with "Selected
+  model is at capacity". No typed result came back, and the DEC-266 partial
+  edits were preserved.
+- **Status:** RESOLVED 2026-10-01. At the 07:19 RUN-RESUME, the Runner
+  recorded the restored Developer child capability
+  (`restored-capability:developer-child-role-01a0f38a-74af-7481-8f3a-07931626c07e`).
+  Task 18 completed at 07:39. Its review-13 MF-2 repair completed at 09:05,
+  and review-14 recorded PASS. No no-progress attempt was consumed.
+- **Links:** TRG-23-012; TRG-23-013; DEC-266; `run-ledger.md` 2026-10-01
+  07:19 RUN-RESUME.
+
 ## ESC-23-010 - Task 18 Failure-code count contradicts the named public set
 
 - **Raised:** 2026-09-30

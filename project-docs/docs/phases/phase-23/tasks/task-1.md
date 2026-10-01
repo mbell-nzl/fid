@@ -166,7 +166,8 @@ Full sources, pass and fail criteria, and validator ownership are in
 - [ ] On a seeded schema-16 workspace whose receipt Evidence carries
   `evidence_artifact_links` rows, migrated in place through the ordinary
   catch-up path, the migration succeeds, every Evidence row is identical column
-  by column with the three new columns null, every link row is restored with its
+  by column with the two added columns (`review_id`, `human_outcome_id`) null
+  (count corrected by DEC-267), every link row is restored with its
   exact `required_material`, and `PRAGMA foreign_key_check` is empty. A
   link-free seed alone does not satisfy this criterion. (VAL-005)
 - [ ] A crafted legacy archive at `ProjectionSchema` 14 carrying a

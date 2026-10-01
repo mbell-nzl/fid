@@ -156,12 +156,10 @@
 - DEC-264 (ESC-23-009, Human-approved): a down migration restores the prior
   version's live state, not first-creation text. `schema.md` section 5 gives
   0018 down's exact steps; migrations 0001-0017 are unchanged.
-- DEC-265 (ESC-23-010): `public-interface.md` section 5 declares 19 Failure
-  codes, 18 added plus the retained `requirement-not-found`; DEC-230's "18"
-  counts the added set. Wording only; the task-18 continuation pins the partition.
-- DEC-266 (ESC-23-010, second disposition): the `authority-*` Failure details
-  follow Phase 21 section 7 (four fields, null subject). The registry and eight
-  producers converge under a task-18 planning amendment; the contract is unchanged.
+- DEC-265/266 (ESC-23-010): 19 Failure codes (18 added, 1 retained); the
+  `authority-*` details follow Phase 21 section 7 (four fields, null subject).
+- DEC-267 (ESC-23-012): VAL-005 names the two added Evidence columns, per the
+  DDL. Final-review MF-1 is a task-18 test-harness repair.
 
 ## Prior Phase and Future Qualification
 
