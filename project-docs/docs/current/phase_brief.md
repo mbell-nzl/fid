@@ -13,25 +13,23 @@ what is merely addressed, what still blocks, and which judgment unblocked it.
 
 ## Status
 
-**All 18 tasks complete; review-14 PASS (window 16-18). Phase-end final
-review BLOCKED at `74182db` and STOPPED (TRG-23-016, ESC-23-012); DEC-267
-disposes it.** Branch `phase-23`.
+**Tasks 1-18 complete. The Human checklist FAILED (55/2/6). DEC-268 repairs
+A1-A3 in Phase 23 as supplemental tasks 19-21 (DEC-269; the A1 and A3 designs
+await Human approval).** Branch `phase-23`.
 
-- The seven-command gate passed. 79 of 84 rows PASS; VAL-005 and
-  VAL-070..073 are BLOCKED.
-- **MF-2 / BC-A, resolved:** VAL-005 said "three new columns", but the
-  accepted DDL adds two (`review_id`, `human_outcome_id`). DEC-267 keeps
-  the DDL and corrects the criterion text. No code changes.
-- **MF-1, routed:** the section 22 unflagged-checkptr control failed in
-  `TestLiveOutputGoldenFixtures`. The suite-level SQLite bootstrap probably
-  uses up the helper child's 5 s deadline. Task 18 owns the test-harness
-  repair by planning amendment.
-- **BC-B, open:** the Human records VAL-070..073.
+- DEC-267 resolved the final review's MF-2/BC-A. Task 18 repaired MF-1
+  (`b84b17c`, `b37c169`).
+- Task 19 (A2): Human-mode Stop-family failures are silent.
+- Task 20 (A3): `RequirementRef` gains `requirement_id`; the views are fixed.
+- Task 21 (A1): the rework Stop resolves through a `review-rework-extension`
+  Human Outcome; the rework budget is excluded from generic admission.
 
-Next action: the Runner resumes using `qa/resume-after-dec-267.md` (task 18,
-ledger attempt 2). After the Human checklist is recorded, a fresh
-independent QA Lead writes `qa/final-review-1.md`. Wrap-up follows a PASS.
-I-2 (`resume.go` size) and I-7 are deferred to wrap-up.
+Next action: once DEC-269 reads ACCEPTED, the Runner resumes using
+`qa/resume-after-dec-269.md`. Order: tasks 19, 20, 21, then `review-15`
+(window 19-21), then a fresh QA Lead `final-review-1.md` (recorded as
+review-16) that regenerates the fixtures and authors `human-checklist-2.md`,
+then the Human re-check, then RUN-END. The A4-A8 Human operating experience is
+on the wrap-up agenda (DEC-268).
 
 ## Operating Mode
 
@@ -49,8 +47,8 @@ amendments inline with their DEC and approval state.
 
 ## Task Index
 
-Full specs and reports: `../phases/phase-23/tasks/`. All 18 complete; task 18
-reopened for final-review MF-1 (DEC-267).
+Full specs and reports: `../phases/phase-23/tasks/`. Tasks 1-18 are complete;
+19-21 are supplemental under DEC-269.
 
 1 schema baseline; 2 typed multi-Obligation Envelope; 3 review Claim mode and
 Run; 4 Review Records and independence; 5 Finding dispositions; 6 review
@@ -58,18 +56,20 @@ evidence, cycles, exhaustion; 7 freshness and supersession; 8 Concerns and
 Deviations; 9 Decision References and protected Decisions; 10 Human Outcomes; 11
 Attention resolution; 12 requirement references; 13 CLI, codes, idempotency; 14
 Human projections; 15 migration 0018 and V1 removal; 16 portable recovery; 17
-capability matrix; 18 conformance audit.
+capability matrix; 18 conformance audit; 19 Stop-family Human failures; 20
+requirement identity; 21 resolvable rework exhaustion.
 
 ## Validation Contract And QA Artifacts
 
-All under `../phases/phase-23/qa/`. `validation-contract.md` holds **84**
-assertions (80 deterministic, 4 Human), all `Ready`; every row names its owning
+All under `../phases/phase-23/qa/`. `validation-contract.md` holds **89**
+assertions (85 deterministic, 4 Human; VAL-085..089 under DEC-269), all `Ready`; every row names its owning
 task. Validators are QA Lead or QA Reviewer except VAL-070..073, the Human rows,
 whose fixtures come from task 14. QA plan section 21 confirms DEC-237/240 READY
 in commit `74c83b7`. DEC-242 adds executable inapplicability evidence for Task 5;
 window 4-6 reviews it. Mid-phase `review-M.md` for windows 1-3, 4-6,
-7-9, 10-12, 13-15, 16-18 (review-14 PASS); the task-11 checkpoint passed at
-re-review 3. Final: `final-review.md` BLOCK; next `final-review-1.md`.
+7-9, 10-12, 13-15, 16-18 (review-14 PASS), 19-21 (`review-15`). The task-11
+checkpoint passed at re-review 3. Final: `final-review.md` BLOCK; next
+`final-review-1.md`.
 
 ## Active Constraints
 
@@ -138,8 +138,9 @@ discovery in window 13-15; removal ordering; and test-time headroom (DEC-227).
 
 ## Success / Exit Criteria
 
-- [ ] All 18 tasks complete with green quality gates.
-- [ ] All 84 `VAL-NNN` outcomes recorded with cited evidence.
+- [ ] All 21 tasks complete with green quality gates.
+- [ ] All 89 `VAL-NNN` outcomes recorded with cited evidence.
 - [ ] Final QA review has no unresolved blocking finding.
-- [ ] Human checklist accepted, including VAL-070 to VAL-073.
+- [ ] Human checklists accepted, including VAL-070 to VAL-073 (re-check in
+  `human-checklist-2.md`).
 - [ ] Sign-off recorded and all twelve canonical specs synced.

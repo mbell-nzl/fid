@@ -5,6 +5,7 @@
 > non-committing denial semantics) and DEC-224 (`human-outcome-required`
 > producers), both **approved by the Human 2026-09-19**, and by DEC-263
 > (Stop-blocked denial details, Tech Lead under Human delegation 2026-09-29),
+> amended by DEC-269 (`RequirementRef.requirement_id`, Human approval pending),
 > and clarified by DEC-265 (section 5 declared-versus-added count, wording
 > only, 2026-09-30); amended passages name their DEC inline. `GLOSSARY.md` defines **Failure
 > code** and **Evaluation reason**: section 5 lists the failure set, and the
@@ -115,8 +116,10 @@ ProtectedDecisionInput = {ordinal:int>=0,decision_class:ID,
                   affected_actions:text[1..2] sorted-unique}
 ProtectedDecision = ProtectedDecisionInput + {status:"satisfied"|"unsatisfied",
                   decision_ref_id:?ID,human_outcome_id:?ID}
-RequirementRef = {id:ID,source:Source,status:"active"|"superseded"|"withdrawn",
+RequirementRef = {id:ID,requirement_id:ID,source:Source,
+                  status:"active"|"superseded"|"withdrawn",
                   superseded_by_id:?ID,created_at:timestamp,event_id:ID}
+                  -- requirement_id added by DEC-269 (pending Human approval)
 RequirementLink = {requirement_id:ID,issue_id:ID,
                   relation:"implements"|"verifies"|"relates-to",
                   created_at:timestamp,event_id:ID}
@@ -181,7 +184,7 @@ flags follow section 1 unless the row says read-only.
 | `human-outcome.list` / `fid human-outcome list` | read; optional `--class`, `--result`, `--issue`, `--limit` | `{items:HumanOutcome[]}` | null / 10,13 |
 | `requirement.record-reference` / `fid requirement record-reference` | `{id:ID,source:Source,status:text}` | Mutation keyed `requirement`: RequirementRef | requirement.referenced / 12,13 |
 | `requirement.link` / `fid requirement link` | `{requirement_id:ID,issue_id:ID,relation:text}` | Mutation keyed `link`: RequirementLink | requirement.linked / 12,13 |
-| `requirement.get` / `fid requirement get <requirement-id>` | read | `{requirement:RequirementRef,links:RequirementLink[]}` | null / 12,13 |
+| `requirement.get` / `fid requirement get <requirement-id \| reference-id>` (DEC-269) | read | `{requirement:RequirementRef,links:RequirementLink[]}` | null / 12,13 |
 | `requirement.list` / `fid requirement list` | read; optional `--status`, `--issue`, `--limit` | `{items:RequirementRef[]}` | null / 12,13 |
 | `envelope.create` / existing leaf | `obligations:ObligationInput[1..16]`, add `protected_decisions:ProtectedDecisionInput[0..16]` | existing result with amended Envelope | envelope.created / 2 |
 | `envelope.activate` / existing leaf | unchanged input | existing result; `evaluation` becomes `Evaluation[]` | envelope.activated / 2,9 |

@@ -3118,6 +3118,173 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   Phase 22 `contracts.md` section 5; Phase 21 `public-interface.md`
   section 1.
 
+### DEC-269: A1-A3 repair plan - supplemental tasks 19-21
+
+- **Date:** 2026-10-01.
+- **Status:** PROPOSED by the Tech Lead, 2026-10-01. **Human approval
+  pending** for Part 1 (the A1 resolution design) and Part 3 (the A3
+  interface amendment). Both amend accepted Phase 23 contracts. Part 2 (A2)
+  changes no contract. The Runner does not dispatch task 19 until this line
+  reads ACCEPTED.
+- **Authority:** DEC-268 (Human direction to repair A1-A3 in Phase 23);
+  DEC-195 (supply the missing authority; never weaken an assertion).
+- **Evidence:** Tech Lead source reading at `671f358`, plus scratch-copy
+  probes against the Human fixture binary (`sha256:3a34fc31…5d49`). The
+  retained fixtures were not mutated.
+
+#### Part 1 - A1: rework exhaustion resolves through an authorized Human Outcome
+
+- **Finding.**
+  1. `BudgetStopEffects` (`internal/workflow/budget.go:229`) gives the
+     `review-rework-exhausted` Stop the condition `budget-observed`, which
+     needs a `run.budget-observed` Event showing a non-exhausted total.
+  2. `run.observe-budget` rejects `review-cycles` (VAL-028). The command
+     also needs an active Run, while the Stop blocks `run.start`. Cycles are
+     never reset, and Envelope revision is Phase 24. A scratch probe
+     returned `run-inactive`. The Stop therefore cannot be resolved, and
+     its Issue is stuck with no supported exit.
+  3. **Second, latent defect on the same path.** Gate admission
+     (`internal/evidence/execution.go` `budgetAdmissionBlocks`) and resume
+     next-action reasons (`internal/workflow/resume_actions.go:256`) apply
+     the generic `BudgetAdmissionBlocks` to every Run budget binding,
+     including `review-cycles`. An exhausted `review-cycles` budget would
+     deny `gate.run` with a generic `budget-exhausted` and raise a
+     `work-ended` Stop. That contradicts `contracts.md` section 6:
+     review-cycle exhaustion has its own action and blocks exactly
+     `claim.acquire` and `run.start`. The defect can be reached today by a
+     Builder Run that is still active when the exhausting Review commits,
+     and it would make any A1 repair ineffective.
+- **Decision (proposed).**
+  - **Condition.** The `review-rework-exhausted` Stop is raised with
+    condition `human-outcome-recorded`, subject the Envelope, and
+    `outcome_class: "review-rework-extension"`. StopDetails, blocked actions,
+    resolver capability, the failure details, and the crossing rule
+    (raise only when this charge exhausts the budget) are unchanged.
+  - **Resolution.** An activated `human`-type Actor holding
+    `human-outcome.record` records an `approved` Human Outcome of class
+    `review-rework-extension` whose scope Issue is selected in the
+    Envelope's current revision. The existing DEC-250 predicate and atomic
+    path resolve the Stop inside that `human-outcome.recorded` Event, keyed
+    on the Condition, not the code. Manual `stop resolve` with that Event ID
+    also qualifies. A non-qualifying Outcome commits, if otherwise valid,
+    but leaves the Stop open: a different class, result `rejected` /
+    `changes-required` / `acknowledged`, or an out-of-scope Issue.
+    `claim.acquire` and `run.start` are then admitted.
+  - **After resolution (option 1 below).** Later `changes-required`
+    Reviews are still charged exactly once each (VAL-027), so consumption
+    may exceed `maximum`. `remaining` stays clamped at 0, and no further
+    rework Stop is raised for that Envelope revision. Setting a fresh budget
+    is Envelope revision, Phase 24.
+  - **Generic admission excludes the rework budget.** A budget whose
+    `exhaustion_action` is `review-rework-exhausted` never yields a
+    `budget-exhausted` or `budget-data-unavailable` admission block at
+    `gate.run`, and never yields those reasons in resume next actions.
+    Review-cycle exhaustion is governed only by its own Stop. Every other
+    budget keeps its Phase 22 behavior.
+  - **Human denial guidance.** In Human mode, the `review-rework-exhausted`
+    denial prints `error: review rework budget is exhausted` plus one
+    guidance line naming the qualifying action and the Stop list command.
+    This is within Phase 21 section 1's allowance of up to two guidance
+    lines. JSON is unchanged.
+- **Options considered (Human to choose).**
+  1. **Recommended: one Human approval per Envelope revision.** No
+     predicate change. It reuses DEC-250's shared predicate and the atomic
+     path that already serves `human-outcome-required`, and it matches the
+     accepted crossing rule. Phase 24 Envelope revision sets a fresh budget.
+  2. **A new approval for every further cycle.** The Stop would re-raise on
+     each `changes-required` Review past `maximum`. An old approval would
+     still qualify, though, because DEC-250's predicate has no ordering. Each
+     cycle would need an "Outcome recorded after the Stop" rule, which
+     changes the shared predicate that `human-outcome-required` and
+     protected Decisions also use. That is a wider blast radius for Phase 23.
+  3. **Rejected: no resolution in Phase 23.** The Issue would stay
+     permanently stuck. There is no Envelope cancel or revision until
+     Phase 24, and VAL-072 could not pass.
+- **Owner:** task 21. **Assertions:** VAL-086, VAL-087, VAL-088; the Human
+  re-checks VAL-072.
+
+#### Part 2 - A2: Human-mode failures from the Stop-error family are silent
+
+- **Finding.** In Human mode, `writeStopFailure` (`cmd/fid/stop.go:166`) and
+  `renderStopError`'s fallback return a `FailureError` without writing
+  anything. `main` only maps the exit code. So every Human-mode failure
+  through `renderStopError` exits non-zero with empty stdout and stderr:
+  - `claim acquire` (`claim.go:205`);
+  - `run start` (`run.go:291`);
+  - `gate run` Stop denial (`gate.go:302`);
+  - `stop raise|resolve|list` and `attention list|resolve`.
+
+  Probes confirmed this for `claim acquire` and `run start`. It breaks
+  Phase 21 `public-interface.md` section 1 (`error: <message>` on stderr).
+  Other leaves render their own failures, for example `envelope get`,
+  `review get`, and `requirement get`.
+- **Decision.** Every Human-mode failure through `renderStopError` writes
+  exactly `error: <failure message>` to stderr, where the message is
+  identical to the JSON `message`. Stdout stays empty and the exit class is
+  unchanged. No contract change. A Human-mode conformance table over every
+  `renderStopError` code and calling leaf guards it.
+- **Owner:** task 19. **Assertion:** VAL-085.
+
+#### Part 3 - A3: the stable requirement ID is visible on every reference
+
+- **Finding.** `requirement_refs` stores both the stable `requirement_id`
+  (the project's ID, such as `REQ-leaf`) and a per-version reference `id`
+  (`RREF-…`; a new row on every supersede). The accepted wire shape
+  `RequirementRef = {id,source,status,superseded_by_id,created_at,event_id}`
+  (`public-interface.md` section 2) omits `requirement_id`, and the journal
+  result projection deletes it on purpose
+  (`current_event_result_projection.go:242`). The Human view labels the
+  reference and the link line both "Requirement". `requirement get` accepts
+  either ID. `requirement list` therefore never shows the ID the project
+  actually uses.
+- **Decision (proposed).**
+  - `RequirementRef` gains `requirement_id:ID` immediately after `id`, in
+    the record-reference result, `get`, and `list`. Request shapes, the DDL,
+    Events, Effects, semantic keys, and request digests are unchanged.
+  - `requirement get <id>` is documented as accepting the stable
+    requirement ID (returning its active reference, or else its newest) or
+    an exact reference ID (returning that row). This is the shipped
+    resolution order, now stated.
+  - The Human view names the requirement by its stable ID and shows the
+    reference ID separately. Issue links get their own labelled section,
+    so no line is labelled "Requirement" unless it is a requirement.
+- **Owner:** task 20. **Assertion:** VAL-089; the Human re-checks
+  HUMAN-04a/b/c-17 and HUMAN-04a-18 under VAL-073.
+
+#### Execution
+
+- **Order:** task 19 (A2), task 20 (A3), task 21 (A1). A1 goes last because
+  its denial guidance line builds on task 19's rendering path.
+- **Gates:** each task runs the full five-command task gate with
+  `-timeout 30m` and the DEC-227 time recording, unchanged.
+- **Review:** after task 21, the window 19-21 mid-phase review is
+  `qa/review-15.md` by a fresh QA Reviewer, recorded as REVIEW review-15.
+- **Final review:** one fresh independent QA Lead final review
+  (`qa/final-review-1.md`), recorded as REVIEW review-16, covering tasks
+  1-21. It covers MF-1 under DEC-267, VAL-005 under DEC-267, VAL-085..089,
+  and the §22 controls. It regenerates the Human fixtures against the final
+  binary and authors `qa/human-checklist-2.md` with only the rows to
+  re-check: HUMAN-03a, HUMAN-03b-resolution, HUMAN-03b-internals,
+  HUMAN-04a/b/c-17, and HUMAN-04a-18. `human-checklist.md` stays immutable.
+  RUN-END waits until the Human has recorded `human-checklist-2.md`.
+- **Validation contract:** VAL-085..089 are added (84 to 89 rows: 85
+  deterministic and 4 Human). No existing row is weakened. VAL-029 still
+  holds: both later requests return `review-rework-exhausted` while the
+  Stop is open.
+- **Spec impact (applied with this decision):**
+  - Phase 23 `contracts.md` section 6 (Condition, resolution, generic
+    admission exclusion) and section 12 (`requirement get` resolution
+    order);
+  - `public-interface.md` section 2 (`RequirementRef`);
+  - `validation-contract.md`, `contract-coverage.md`, and
+    `execution-scope.md` section 9.
+
+  Canonical spec impact is recorded at wrap-up: `06_DESIGN_PLAN_CLI.md`
+  cites the phase interface, and `07_DESIGN_PLAN_FLOWS.md` is reviewed for
+  the rework flow.
+- **Refs:** DEC-195; DEC-226; DEC-227; DEC-250; DEC-267; DEC-268;
+  ESC-23-012; VAL-027..029, VAL-072, VAL-073, VAL-085..089.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,

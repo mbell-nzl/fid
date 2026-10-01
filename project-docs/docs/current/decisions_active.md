@@ -147,23 +147,20 @@
 - DEC-260 (ESC-23-006): requirement writes need a trusted Actor, with no
   capability or grant; the closed capability set stays at thirty.
   DEC-261: reopened tasks run the DEC-259 race gates.
-- DEC-262 (ESC-23-007): task 13 owns the `activity_log` registry entry and the
-  `issue`-subject rows. Task 15 writes the `requirement`/`decision` rows with
-  0018 and closes VAL-055 (`schema.md` section 6.2).
-- DEC-263 (ESC-23-008): the `protected-decision-required` and
-  `human-outcome-required` details are their StopDetails plus `stop_ids`,
+- DEC-262: task 13 owns `activity_log` and the `issue` rows; task 15 the
+  `requirement`/`decision` rows with 0018 (VAL-055).
+- DEC-263: Stop-blocked judgment denials carry StopDetails plus `stop_ids`,
   `attention_ids`, `event` (null), and `replayed` (`false`).
-- DEC-264 (ESC-23-009, Human-approved): a down migration restores the prior
-  version's live state, not first-creation text. `schema.md` section 5 gives
-  0018 down's exact steps; migrations 0001-0017 are unchanged.
-- DEC-265/266 (ESC-23-010): 19 Failure codes (18 added, 1 retained); the
-  `authority-*` details follow Phase 21 section 7 (four fields, null subject).
-- DEC-267 (ESC-23-012): VAL-005 names the two added Evidence columns, per the
-  DDL. Final-review MF-1 is a task-18 test-harness repair.
-- DEC-268 (ESC-23-012, Human): Human checklist FAIL. A1 (the rework Stop
-  cannot be resolved), A2 (silent Human `claim acquire` denial), and A3
-  (`requirement_id` not shown) are repaired in Phase 23. The Human
-  operating-experience scope (A4-A8) is a wrap-up agenda item.
+- DEC-264 (Human): a down migration restores the prior live state; 0018 down
+  follows `schema.md` section 5. DEC-265/266: 19 Failure codes (18 added);
+  `authority-*` details use the Phase 21 four fields with a null subject.
+- DEC-267: VAL-005 names the two added Evidence columns; MF-1 is task 18's.
+- DEC-268 (Human): checklist FAIL. A1-A3 are repaired in Phase 23; the A4-A8
+  Human operating experience is on the wrap-up agenda.
+- DEC-269 (A1/A3 pending Human approval): tasks 19 (silent Stop-family Human
+  failures), 20 (`RequirementRef.requirement_id`), and 21 (rework Stop resolved
+  by a `review-rework-extension` Human Outcome; rework budget excluded from
+  generic admission). VAL-085..089 bring the contract to 89 rows.
 
 ## Prior Phase and Future Qualification
 

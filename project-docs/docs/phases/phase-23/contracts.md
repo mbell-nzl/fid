@@ -6,6 +6,9 @@
 > semantics, and the Failure code / Evaluation reason vocabulary split), all
 > **approved by the Human 2026-09-19**. Amended passages name their DEC inline;
 > Tech Lead planning clarifications under DEC-228 are marked the same way.
+> Amended 2026-10-01 by DEC-269 (sections 6 and 12: rework-exhaustion resolution
+> through a Human Outcome, rework budget excluded from generic admission, both
+> requirement identities on every reference). **Human approval pending.**
 > Author: Tech Lead, 2026-09-14. Read with `public-interface.md` and `schema.md`.
 > Planning base: `0195897a347dfe1872db0f7be3800c5c3ccdefcf`.
 > Roadmap slice 23 of ADR-0012; Phase 21/22 contracts remain authoritative
@@ -240,8 +243,20 @@ its exhaustion Stop and Attention. That `changes-required` Review still commits;
 the Stop blocks the next rework instead of voiding the Review. The Stop code is
 `review-rework-exhausted`, subject is the Envelope, resolver capability is
 `stop.resolve`, blocked actions are exactly `claim.acquire` and `run.start`,
-and its resolution condition is `budget-observed` on that budget name. A
-subsequent `claim.acquire` or `run.start` on that Envelope returns
+and its resolution condition is `human-outcome-recorded` on the Envelope with
+`outcome_class` `review-rework-extension` (DEC-269, replacing `budget-observed`,
+which no Phase 23 Event could produce for this fid-owned unit). It resolves under
+section 11's shared predicate. Atomic resolution happens inside the recording
+Event when an activated Human records an `approved` Outcome of that class whose
+scope Issue is selected in the Envelope's current revision; manual `stop resolve`
+with that Event ID also qualifies. After resolution, later `changes-required`
+Reviews are still charged once each, with `remaining` clamped at 0, and raise no
+further rework Stop for that Envelope revision; a fresh budget is Envelope
+revision (Phase 24). A budget whose `exhaustion_action` is
+`review-rework-exhausted` never yields a generic `budget-exhausted` or
+`budget-data-unavailable` admission block or next-action reason, at `gate.run` or
+anywhere else; review-cycle exhaustion is governed only by its own Stop (DEC-269).
+A subsequent `claim.acquire` or `run.start` on that Envelope returns
 `review-rework-exhausted` and creates no Claim or Run. That refusal is a
 non-committing denial (DEC-226): it appends no Event, stores no idempotency
 result, and returns null `EventRef`, `replayed:false`, and the immutable Stop
@@ -509,6 +524,12 @@ its `requirement.synced` Event are removed. `requirement.record-reference` and
 not match the observed file rejects `source-digest-mismatch`. Re-recording the
 same requirement ID with a different `Source` supersedes the prior row and
 retains it; it never edits it in place.
+
+Every `RequirementRef` read and result carries both identities: `requirement_id`,
+the project's stable ID, and `id`, the per-version reference row. `requirement get
+<id>` accepts either. A stable requirement ID returns its active reference, or
+else its newest; an exact reference ID returns that row. Its links are always
+the stable requirement ID's links (DEC-269).
 
 `requirement_issue_links` becomes the single authoritative model for
 requirement-to-Issue traceability, so `links` is restricted to Issue endpoints.

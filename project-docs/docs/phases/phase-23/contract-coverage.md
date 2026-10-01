@@ -53,6 +53,9 @@
 | 5: unresolved blocking Finding keeps the Obligation unsatisfied | domain-only evaluation | 6 | VAL-026 |
 | 6: `review-cycles` unit | domain-only budget validation | 6 | VAL-030 |
 | 6: `review-rework-exhausted` exhaustion action | domain-only plus `stops.code` CHECK | 1 defines code, 6 uses | VAL-029, VAL-030 |
+| 6: rework Stop condition `human-outcome-recorded` / `review-rework-extension`; atomic and manual resolution (DEC-269) | domain-only (`internal/workflow/budget.go` `BudgetStopEffects`; DEC-250 predicate in `stop_conditions.go`) | 21 | VAL-086, VAL-088 |
+| 6: rework budget excluded from generic admission blocks and next-action reasons (DEC-269) | domain-only (`internal/evidence/execution.go`, `internal/workflow/resume_actions.go`) | 21 | VAL-087 |
+| Phase 21 interface 1: Human failure `error: <message>` for the Stop-error family (DEC-269) | domain-only (`cmd/fid/stop.go`) | 19 | VAL-085 |
 | 6: exactly one charge per `changes-required` Review, keyed on Review ID | `budget_samples` UNIQUE (envelope, revision, name, source, source_sample_id) | 6 | VAL-027 |
 | 6: `run.observe-budget` rejects `review-cycles` | domain-only | 6 | VAL-028 |
 | 6: atomic admission, charge, Stop, and Attention | `review.recorded` effect rule optional rows | 6 | VAL-029 |
@@ -88,6 +91,7 @@
 | 11: only matching Stops resolve | domain-only | 11 | VAL-050 |
 | 12: `requirement_refs` with digest and supersession | `requirement_refs` CHECKs and `requirement_refs_one_active` | 12 | VAL-051 |
 | 12: `requirement_issue_links` traceability | `requirement_issue_links` plus its guard trigger | 12 | VAL-052 |
+| 12 / public-interface 2: `RequirementRef.requirement_id`; `get` accepts both identities (DEC-269) | existing `requirement_refs.requirement_id` column; journal `RequirementRef` value shape and result projection | 20 | VAL-089 |
 | 12: V1 requirement authoring removed | `0018` DROP plus fence and Event removal | 12 | VAL-053 |
 | 13: three evidence types, one non-null subject each | `evidence_records` rebuild discriminator CHECK | 1 defines; 6 evidences receipt/review links and mismatch classification; 10 closes real Human Outcome row (DEC-243) | VAL-025 |
 | 13: one record per Obligation and subject, never overwritten | three partial unique indexes on `evidence_records` | 6 | VAL-024 |
@@ -128,5 +132,6 @@
   Condition types (DEC-195).
 - Every table, index, and trigger in `schema.md` sections 2 and 4 is referenced
   by at least one clause row above; none is created without a consumer.
-- Every task numbered 1 through 18 appears at least once as an owner.
+- Every task numbered 1 through 21 appears at least once as an owner (tasks
+  19-21 added under DEC-269).
 - No clause is owned by two tasks without an explicit "defines / uses" split.

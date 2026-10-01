@@ -551,3 +551,24 @@ The disposition:
 - Before a BLOCK is emitted, its allocated ESC must already exist in the
   current escalation register. Mis-scoped directives and externally interrupted
   sessions never consume a no-progress recovery budget.
+
+## 9. Supplemental Tasks 19-21 (DEC-269, 2026-10-01)
+
+These tasks follow the Human checklist FAIL (DEC-268). The section 1 ownership
+rule and the section 6 registry rule apply unchanged. Each task's five required
+commands are the standing task gate (the ordinary race suite plus the tagged
+integration suite with `-timeout 30m`). Together they compile and run every
+package named below, including `cmd/fid/integration`. Every owned scope is
+therefore executable by its own task's gate.
+
+| Task | Owns (product) | Owns (tests and fixtures) | Closed registries reached |
+|---|---|---|---|
+| 19 | `cmd/fid/stop.go` | `cmd/fid/stop_error_test.go`; new `cmd/fid/integration/p23_human_failure_test.go`; retained Human-mode assertions that this change displaces | none |
+| 20 | `internal/review/requirement.go`, `cmd/fid/p23_human.go` (requirement rendering only) | `internal/review/requirement_test.go`, `cmd/fid/integration/p23_requirement_*_test.go`, `p23_human_leaf_pairs_test.go`, `p23_human_fixtures_test.go` (requirement rows), and other displaced retained assertions | `internal/journal/current_event_value_catalog.go` (`RequirementRef` shape), `internal/journal/current_event_result_projection.go` (`RequirementRef` fill) |
+| 21 | `internal/workflow/budget.go`, `internal/evidence/execution.go`, `internal/workflow/resume_actions.go`, `cmd/fid/stop.go` (rework guidance line only) | `internal/workflow/*_test.go`, `internal/evidence/*_test.go`, `internal/claims/generic_test.go`, `cmd/fid/integration/p23_review_evidence_budget_test.go`, `p22_fake_test.go` (fake parity for the rework condition), `p23_human_fixtures_test.go` (rework fixture), and other displaced retained assertions | none expected. The `human-outcome-recorded` Condition, its effect rows, and its predicate already exist (tasks 10-11). Reaching an unlisted registry is a Developer escalation. |
+
+Convergence: an existing assertion invalidated by a task's accepted change
+converges inside that task. Its report carries per-row provenance (the
+introducing commit, the displacing change, and the executing command), as
+under DEC-162. A task never narrows an assertion to make a gate pass.
+

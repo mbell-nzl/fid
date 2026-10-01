@@ -18,11 +18,14 @@ Phase 23.** Branch: `phase-23`.
   - **A2:** Human-mode `claim acquire` prints nothing on that denial.
   - **A3:** `RequirementRef` does not show the stable `requirement_id`.
 
-Next: the Tech Lead plans the A1-A3 repair tasks, including the A1
-resolution design and the A3 interface amendment for Human approval. The
-Runner executes them, and the Human re-checks the affected rows. Then one
-fresh independent QA Lead writes `final-review-1.md`. Do not dispatch it
-before the repairs land. Wrap-up follows a PASS.
+Next: DEC-269 plans the A1-A3 repairs as supplemental tasks 19 (A2), 20
+(A3), and 21 (A1), adding VAL-085..089 (89 rows). The A1 resolution design
+and the A3 interface amendment **await Human approval**. Once DEC-269 reads
+ACCEPTED, the Runner resumes using
+[the handoff](../phases/phase-23/qa/resume-after-dec-269.md). The order is:
+tasks 19-21, then `review-15`, then a fresh QA Lead `final-review-1.md`
+(recorded as review-16, which regenerates the fixtures and authors
+`human-checklist-2.md`), then the Human re-check, then RUN-END.
 
 **Wrap-up agenda (DEC-268):** the Human and Tech Lead discuss the remaining
 Human operating-experience scope and decide when to plan it. That scope is
@@ -90,8 +93,8 @@ Retain these constraints:
 - DEC-267: VAL-005's criterion names the two added Evidence columns. MF-1
   is a task-18 test-harness repair; the 5000 ms deadline, golden bytes, and
   commands are preserved.
-- DEC-268: the Human directs A1-A3 to be repaired in Phase 23. The A1 and
-  A3 designs need Human approval. The rest of the Human operating-experience
+- DEC-268: the Human directs A1-A3 to be repaired in Phase 23. DEC-269
+  allocates tasks 19-21; its A1 and A3 designs need Human approval. The rest of the Human operating-experience
   scope is on the wrap-up agenda.
 
 ## Earlier work and carry-forwards
