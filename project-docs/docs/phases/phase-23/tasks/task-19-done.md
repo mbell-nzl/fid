@@ -55,7 +55,7 @@ The cover token is copied from its final `total:` line. `cmd/fid` reported 215.3
 ## Deviations from spec
 
 - The gate fixture needed a baseline budget observation so `gate run` reached the intended Stop denial; the initial table red result is preserved above.
-- Report-lint attempt 1 failed with `FAIL report-lint found 9 failure(s)` (terminated `exit_code: 9`): trailing prose after otherwise valid PASS termination tokens violated its row grammar. Moving that prose to separate paragraphs fixed eight rows. Attempt 2 failed with `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`): the coverage row still had a parenthetical token label before its termination marker. That label is now in prose outside the row.
+- Report-lint attempt 1 failed with `FAIL report-lint found 9 failure(s)` (terminated `exit_code: 9`): trailing prose after otherwise valid PASS termination tokens violated its row grammar. Moving that prose to separate paragraphs fixed eight rows. Attempt 2 failed with `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`): the coverage row still had a parenthetical token label before its termination marker. Moving that label to prose outside the row resolved it. The byte-identical command then passed with `PASS report-lint completed with no failures` (terminated `exit_code: 0`) and literal `OUTCOME COMPLETE`.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
