@@ -393,3 +393,148 @@ not a control-conformance directive or a rewrite of either historical verdict.
 - **Resolution condition:** Full Tech Lead/Human or the owner of the retained Phase 21 public contract must resolve the cross-task product scope and authorize an exact owning repair route. Preserve the Phase 21 expectation, VAL-068, both failed attempts, and all prior evidence. Do not edit `cmd/fid/claim.go` or the fake under task-18 authority; do not change DEC-265, commands, thresholds, or ownership by implication. The existing ESC-23-010 register marks its count issue resolved; this disposition records the separate unresolved contract mismatch under the requested governing IDs without claiming that DEC-265 reopened or settled it.
 - **Control-conformance:** N/A; the mismatch is product behavior against a retained public contract, not a workflow-control implementation defect. No allowed control files or exact control verification are authorized.
 - **References:** project-docs/docs/phases/phase-21/public-interface.md section 7; project-docs/docs/phases/phase-23/public-interface.md section 1; project-docs/docs/phases/phase-23/qa/validation-contract.md VAL-068; project-docs/docs/phases/phase-23/tasks/task-18.md Binding Constraints, Scope, Acceptance Criteria; project-docs/docs/phases/phase-23/tasks/task-18-done.md Workflow outcome, VAL-068, Tests run, Exact quality-gate results, Deviations; project-docs/docs/phases/phase-23/decisions.md DEC-265; project-docs/docs/current/tl_escalations_current.md ESC-23-010; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## TRG-23-012 - Task 18 Developer child sessions ended on model capacity
+
+- **Trigger:** Two consecutive same-task Developer child sessions for task-18 ended externally before returning typed outcomes with the execution-surface error "Selected model is at capacity. Please try a different model." Both interruptions preserved durable partial edits within the DEC-266 task-18 amendment scope. The first interruption was routed session INTERRUPTED 1 -> ACTION REPAIR; the second was routed session INTERRUPTED 2 -> ACTION TRIAGE. No no-progress attempt was consumed.
+- **Originating task:** task-18
+- **Trigger signature:** task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- **Attempt count:** 3
+- **Repair category:** session-continuation
+- **Repair authority:** orchestration session-liveness
+- **Source:** project-docs/docs/phases/phase-23/run-ledger.md
+- **Candidate:** TRIAGE_PENDING / two consecutive externally interrupted Developer sessions
+- **Checkpoint:** Runner reports phase HEAD c06f99899c9c1d97bf3176423d190b84540cb90f. Attempt 2 ended after approximately 31 minutes and attempt 3 after approximately 26 minutes, each with the same model-capacity error, no typed outcome, unknown command in flight, no continuation commit, and no report-lint result. Durable uncommitted edits remain in cmd/fid/claim.go, cmd/fid/concern.go, cmd/fid/decision.go, cmd/fid/deviation.go, cmd/fid/finding.go, cmd/fid/gate_test.go, cmd/fid/human_outcome.go, cmd/fid/integration/p23_conformance_test.go, internal/cli/codes.go, and internal/cli/codes_test.go; the Runner-owned run-ledger.md is also dirty. No commit-verification evidence was attached.
+- **Verdict:** REPAIR
+- **Reasoning:** The execution surface ended both child sessions externally while task-18 work remained incomplete. DEC-266 and task-18's planning amendment already authorize the bounded product convergence; the surviving edits make same-task continuation possible. Neither interruption supplied a completed gate or typed Developer result, and neither consumed a no-progress attempt. Current evidence does not establish unrepairable external infrastructure or a protected definition change.
+- **Local decisions made:** Authorize one bounded same-task Developer continuation from the durable partial tree under the existing DEC-266 amendment. Retain the active trigger and attempt 3; consecutive no-progress remains 0/2. No control-conformance authority or new product scope is granted.
+- **Resolution evidence:** Trigger is real and unresolved. The ledger records session INTERRUPTED 1 -> ACTION REPAIR and session INTERRUPTED 2 -> ACTION TRIAGE; both retained the partial edits and neither verified task completion. A bounded retry of the Developer role/model remains available as the next recovery action; if it remains unavailable, return to triage for possible unrepairable-external-infrastructure BLOCK rather than consuming the no-progress budget.
+- **If REPAIR:** Owning task task-18; category session-continuation; dispatch one same-task Developer continuation. Inspect and reconcile the ten durable partial files against the DEC-266 amendment and existing task-18 report; preserve attempts 1-6, failed focused/tagged evidence, and the existing report content. Complete only the authorized registry, producer, fake, and gate regression convergence. Run the focused red/green check and then all five byte-identical required commands from task-18.md after implementation, recording each observed termination and output token in task-18-done.md. Commit the implementation and report, return a typed outcome, and obtain Runner report-lint and any affected independent re-review before task completion. Do not advance on this verdict; no ESC.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A; ordinary task-18 scope as amended by DEC-266 governs the continuation.
+- **Forbidden changes:** Do not change product behavior outside the DEC-266 task-18 amendment, any accepted contract, VAL text, command, threshold, ownership, or workflow verifier; do not discard durable partial edits or prior failed evidence; do not authorize new product scope or change the no-progress budget.
+- **Exact verification:** N/A for control-conformance. The Developer must run the unchanged five commands in task-18.md, Exact Commands To Run, from /home/mark/projects/fid or the Runner-recorded same-task worktree root after implementation.
+- **Originating report:** project-docs/docs/phases/phase-23/tasks/task-18-done.md
+- **Control repair base:** N/A; the Runner supplied c06f99899c9c1d97bf3176423d190b84540cb90f as context, not as control-conformance authority.
+- **If BLOCK:** N/A now. If the required Developer role/model remains unavailable after this bounded retry, return the external-capability failure to triage for a concrete escalation.
+- **Human attention required:** no
+- **References:** project-docs/docs/phases/phase-23/run-ledger.md, task-18 attempt 2 and 3 REPAIR entries and attempt 3 TASK-RECOVERY; project-docs/docs/phases/phase-23/tasks/task-18.md, Planning Amendment - DEC-266 and Exact Commands To Run; project-docs/docs/phases/phase-23/decisions.md DEC-266; project-docs/docs/phases/phase-23/tasks/task-18-done.md; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## TRG-23-013 - Task 18 bounded Developer retry ended on model capacity
+
+- **Trigger:** The bounded Developer retry authorized by TRG-23-012 also ended externally on model capacity without a typed outcome, commit, command termination evidence, or report-lint result; durable task-18 edits remain.
+- **Originating task:** task-18
+- **Trigger signature:** task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- **Attempt count:** 4
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-23/run-ledger.md; TRG-23-012
+- **Candidate:** external child-role capability failure after the one bounded continuation authorized by TRG-23-012
+- **Checkpoint:** Runner records phase HEAD c06f99899c9c1d97bf3176423d190b84540cb90f and REPAIR task-18 attempt 4 Outcome INTERRUPTED. The continuation ended externally with "Selected model is at capacity. Please try a different model." Command in flight is unknown after termination. No typed Developer result, command termination evidence, commit, or report-lint result was returned. The ten durable uncommitted DEC-266 task-18 paths and the prior failed evidence remain; no-progress is 0/2. No commit-verification evidence is attached.
+- **Verdict:** BLOCK
+- **Reasoning:** TRG-23-012 authorized one bounded same-task Developer retry and expressly required renewed triage if that role/model remained unavailable. The retry failed on the same external capacity condition after two prior externally ended sessions. Required child-role capability remains unavailable after bounded recovery, which is an unrepairable-external-infrastructure blocker for this run. The task implementation remains unfinished, but that alone is not the blocker; no no-progress budget was consumed.
+- **Local decisions made:** none; retain task-18 scope, DEC-266 authority, attempt 4, and consecutive no-progress 0/2.
+- **Resolution evidence:** Not cleared. There is no typed outcome, verified commit, completed gate, or report-lint result. The external capacity error, prior bounded retry limit, and preserved partial edits are recorded in TRG-23-012 and the run ledger.
+- **If REPAIR:** N/A while required Developer role/model is unavailable. Once external capability is restored and the Runner records accepted resolution authority, continue task-18 from the durable partial tree under DEC-266, preserve failed attempts, run the unchanged required commands, complete the report, and obtain affected independent re-review.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** Do not change product behavior, accepted contracts, VAL text, commands, thresholds, ownership, workflow verifiers, or DEC-266 task-18 scope; do not discard durable partial edits or prior failed evidence.
+- **Exact verification:** N/A
+- **Originating report:** project-docs/docs/phases/phase-23/tasks/task-18-done.md
+- **Control repair base:** N/A; Runner supplied c06f99899c9c1d97bf3176423d190b84540cb90f as phase HEAD context only.
+- **If BLOCK:** category unrepairable external infrastructure / required Developer child-role capability unavailable after bounded retry; ESC-23-011 raised in `tl_escalations_current.md`. Resolution condition: restore the required Developer role/model or obtain accepted authority for an available equivalent child capability, then have the Runner record capability evidence and resume the same task from preserved edits and evidence.
+- **Human attention required:** yes
+- **References:** TRG-23-012 in this log; project-docs/docs/phases/phase-23/run-ledger.md, task-18 attempt 4 TASK-RECOVERY and 2026-09-30 21:22 REPAIR; project-docs/docs/phases/phase-23/tasks/task-18.md, Planning Amendment - DEC-266; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## TRG-23-014 - Phase-end QA Lead capacity restored for retry
+
+- **Trigger:** Two consecutive Phase 23 phase-end QA Lead child sessions ended externally before returning a typed result; the first was lost during the tool restart and the second returned the execution-surface usage-limit error. The user now reports that usage limits have been reset and explicitly requests another gpt-6-astra QA Lead completion.
+- **Originating task:** task-18
+- **Trigger signature:** phase-23:qa-session-liveness:phase-end-qa
+- **Attempt count:** 3
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-23/run-ledger.md; phase-end QA child sessions 01a0f415-d00f-7221-9ee8-510792205f76 and 01a0f49e-e346-71a3-9727-843a8eae944a
+- **Candidate:** orchestration session-liveness after two externally ended QA Lead sessions
+- **Checkpoint:** The ledger ends with review-14 PASS after task-18 completion. The two phase-end QA Lead children returned no typed result. The user reports that usage limits have been reset and requests a gpt-6-astra QA Lead retry. No commit-verification evidence was attached; runner-recorded phase HEAD e0893cdee915013371455198906852081633e051 is context only.
+- **Verdict:** RESUME
+- **Reasoning:** The reported usage-limit reset clears the identified external capacity condition for another QA Lead dispatch. The prior sessions did not produce a phase-end QA result, so the Runner must retry the same QA responsibility and retain both interruption records. No product repair or control-conformance mismatch is presented.
+- **Local decisions made:** Resume the phase-end QA Lead dispatch at attempt 3 using the requested gpt-6-astra capability. Keep the Human checklist blank until the QA Lead performs its own work; preserve prior failed session evidence.
+- **Resolution evidence:** The user directly reports restored usage capacity and explicitly requests the retry. This is restored child-role capability, not a claim that QA has passed or that a commit has been verified. The Runner records the restored capability and the retry outcome in its own ledger.
+- **If REPAIR:** N/A; no task or control repair is authorized by this disposition.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** Do not change product code, task specs, decisions, QA plan, validation contract, accepted commands, thresholds, ownership, or the run ledger under this TL-Lite disposition. Preserve the existing blank Human checklist and all prior failed session evidence.
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** N/A; runner supplied e0893cdee915013371455198906852081633e051 as context only.
+- **If BLOCK:** N/A; the reported capability is restored. If the required QA Lead capability remains unavailable on retry, return the concrete failure to triage.
+- **Human attention required:** no
+- **References:** project-docs/docs/phases/phase-23/run-ledger.md, 2026-10-01 09:40 REVIEW review-14 and the two phase-end QA child session references in the invoking prompt; project-docs/specs/09_AI_WORKFLOW.md sections 2.3, 2.4 step 17, and 9.
+
+## TRG-23-015 - Corrected governing identity for phase-end QA Lead retry
+
+- **Trigger:** Corrective triage trigger: The prior RESUME record TRG-23-014 has a schema-v2 identity mismatch: it says Originating task task-18 but its Trigger signature begins phase-23:, so the Phase Runner's exact TRIAGE append was rejected by workflow-sequence-lint.sh. Preserve TRG-23-014 unchanged as failed orchestration evidence and write a corrected governing RESUME record.
+- **Originating task:** task-18
+- **Trigger signature:** task-18:qa-session-liveness:phase-end-qa
+- **Attempt count:** 3
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** TRG-23-014 in this log; Phase Runner's rejected TRIAGE candidate and reported workflow-sequence-lint.sh result
+- **Candidate:** correction of an external triage-record identity defect for the phase-end QA Lead retry
+- **Checkpoint:** TRG-23-014 remains unchanged as failed orchestration evidence. The Phase Runner reports that workflow-sequence-lint.sh rejected its exact TRIAGE candidate with `INVALID schema v2 TRIAGE Originating task does not match Trigger signature` (terminated `exit_code: 1`), leaving the ledger unchanged. The reported `workflow-route.sh triage RESUME 0` usage error (terminated `exit_code: 2`) was followed by `workflow-route.sh triage RESUME` returning `ACTION ADVANCE` (terminated `exit_code: 0`). No commit-verification evidence was supplied; runner-recorded phase HEAD e0893cdee915013371455198906852081633e051 is context only.
+- **Verdict:** RESUME
+- **Reasoning:** The rejected append identifies an external record identity mismatch, not a workflow-control implementation mismatch. This entry corrects only TRG-23-014's Originating task / Trigger signature pairing and is the governing RESUME record. The user's report of restored usage capacity supports retrying the interrupted gpt-6-astra QA Lead session; the prior sessions remain failed evidence and no phase-end QA result is claimed.
+- **Local decisions made:** Use TRG-23-015 as the governing TRIAGE record for attempt 3 and retry the phase-end QA Lead with gpt-6-astra. Preserve TRG-23-014, the rejected ledger candidate, and all earlier session evidence without rewriting them.
+- **Resolution evidence:** The user reports restored usage capacity and requests the retry. The Phase Runner's reported corrected routing returns `ACTION ADVANCE`; this authorizes dispatch of the QA Lead retry, not a claim of completed QA or verified commit.
+- **If REPAIR:** N/A; no task or control repair is authorized by this disposition.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** Preserve TRG-23-014, the rejected ledger candidate, and all prior session evidence unchanged. Do not change product code, task specs, decisions, QA plan, validation contract, accepted commands, thresholds, ownership, or the run ledger under this TL-Lite disposition.
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** N/A; runner supplied e0893cdee915013371455198906852081633e051 as context only.
+- **If BLOCK:** N/A; no protected blocker is presented. If the required QA Lead capability remains unavailable on retry, return the concrete failure to triage.
+- **Human attention required:** no
+- **References:** TRG-23-014 in this log; Phase Runner's reported rejected TRIAGE candidate and routing results in the invoking prompt; project-docs/specs/09_AI_WORKFLOW.md sections 2.3, 2.4 step 17, and 9.
+
+## TRG-23-016 - Phase-end review has protected contract and Human blockers
+
+- **Trigger:** QA Lead final phase-end review returned OUTCOME BLOCKED. The exact seven-command phase gate passed, but the additional mandatory full-checkptr control failed in TestLiveOutputGoldenFixtures; VAL-005 is blocked by a contradiction between accepted schema column-count requirements; and Human-only VAL-070..073 remain blank. The final review names MF-1 as bounded task-1 repair, MF-2/BC-A as a protected accepted-contract/validation contradiction, and BC-B as pending Human judgment.
+- **Originating task:** task-18
+- **Trigger signature:** task-18:qa-block:phase-end-final-review
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-23/qa/final-review.md
+- **Candidate:** QA Lead final review OUTCOME BLOCKED; MF-1, MF-2/BC-A, BC-B
+- **Checkpoint:** Runner attaches commit 74182db30e75df3c2101141ab343d5236b8c6927, matching git rev-parse --verify (terminated exit_code: 0), subject `docs(qa): record phase 23 final review blockers`; final-review.md ends with VERDICT: BLOCK and OUTCOME BLOCKED. The attached verification establishes the review commit, not resolution of its blockers.
+- **Verdict:** BLOCK
+- **Reasoning:** The seven-command phase gate passed, but mandatory QA plan section 22 full-checkptr execution failed in TestLiveOutputGoldenFixtures. MF-1 has a bounded, decision-free task-1 repair route under DEC-238, with exact rerun and independent final re-review, but it does not clear the review. VAL-005 and DEC-223 require three new Evidence columns while accepted DDL and the reproduced migration add two; selecting a count or adding a column changes protected accepted contract or data-model authority. VAL-070..073 require Human judgments; all 63 checklist outcome and notes cells remain blank. Neither protected condition is cleared by the verified review commit.
+- **Local decisions made:** none. Preserve MF-1 as separately actionable task-1 repair after protected disposition; this BLOCK does not dispatch it or choose the VAL-005 interpretation.
+- **Resolution evidence:** No resolution attached. The review's schema-column-contradiction and preservation-rows evidence show schema 16 has nine columns and schema 17 has eleven, adding review_id and human_outcome_id, while VAL-005/task-1/DEC-223 say three. The Human checklist is Pending Human input. Full-checkptr returned FAIL (terminated exit_code: 1); one focused diagnostic pass does not replace that exact failed command.
+- **If REPAIR:** N/A for this overall trigger. MF-1 retains task-1 ownership under DEC-238 and the final review's bounded plan: causal red/green repair, byte-identical `go test -race -timeout 30m ./...`, unchanged task-1 commands, preserved failed evidence, and a fresh independent final review.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** Preserve final-review.md, human-checklist.md, final-evidence, all failed full-checkptr evidence, VAL-005 and VAL-070..073 accepted semantics, QA commands, thresholds, and prior ledger/triage/escalation entries. Do not locally choose a schema contract interpretation, pre-answer Human judgments, weaken the failed control, or dispatch task-1 repair before the disposition.
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** N/A; runner supplied 74182db30e75df3c2101141ab343d5236b8c6927 as context, not control-conformance authority.
+- **If BLOCK:** category specification/validation-contract contradiction with possible data-model change, plus pending Human-only product judgment; ESC-23-012 raised in `tl_escalations_current.md`; resolution condition: Tech Lead/protected owner records the authoritative VAL-005/DDL disposition and resulting task route, Human records VAL-070..073 judgments, MF-1 receives its bounded task-1 repair, and a fresh independent QA Lead final review establishes the resulting evidence before phase advance.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-23/qa/final-review.md, Verdict, Findings MF-1/MF-2, Blocker Candidates BC-A/BC-B, Repair Plan, Final Decision; project-docs/docs/phases/phase-23/qa/validation-contract.md, VAL-005 and VAL-070..073; project-docs/docs/phases/phase-23/decisions.md, DEC-223 and DEC-238; project-docs/specs/09_AI_WORKFLOW.md sections 2.3, 2.6, and 9.

@@ -2,29 +2,28 @@
 
 ## Open escalations
 
-### ESC-23-012 - Phase-end accepted Evidence column count conflicts and Human judgments remain pending
+### ESC-23-012 - Phase-end accepted Evidence column count conflicts and Human judgments remain pending (Human checklist FAIL; A1-A3 repairs)
 
-- **Status:** PARTIALLY RESOLVED 2026-10-01 under DEC-267 (Tech Lead,
-  Human-delegated). It stays open for BC-B only. Governing triage:
-  TRG-23-016.
-  - **BC-A / MF-2, resolved:** the accepted DDL governs. 0017 adds two
-    Evidence columns, `review_id` and `human_outcome_id`. "Three" was a
-    planning miscount from `f94e354`. The VAL-005 criterion, the task-1
-    criterion, and DEC-223 now name the two columns. No implementation
-    change is needed.
-  - **MF-1, routed:** task 18 owns it by planning amendment, under the same
-    repair boundary QA set. The Runner resumes with
-    [the handoff](../phases/phase-23/qa/resume-after-dec-267.md)
-    (task-18 ledger attempt 2).
-  - **BC-B, open:** the Human records VAL-070..073 in the
-    [Human checklist](../phases/phase-23/qa/human-checklist.md).
-- **Resolution condition (remaining):** the Human records all VAL-070..073
-  outcomes. A fresh independent QA Lead then writes `final-review-1.md`,
-  which covers the MF-1 repair, VAL-005 under DEC-267, and the Human
-  results. Phase advance needs that review.
+- **Status:** PARTIALLY RESOLVED 2026-10-01 under DEC-267 and DEC-268.
+  It stays open for the A1-A3 repairs. Governing triage: TRG-23-016.
+  - **BC-A / MF-2, resolved:** the accepted DDL governs, and VAL-005 names
+    the two added Evidence columns (DEC-267).
+  - **MF-1, repaired:** task 18 made the fix (`b84b17c`, report `b37c169`,
+    report-lint PASS). The final review must confirm it.
+  - **BC-B, recorded:** the Human checklist reads 55 pass, 2 fail, 6
+    partial, overall FAIL. DEC-268 (Human-directed) repairs A1 (the
+    rework Stop cannot be resolved), A2 (Human-mode `claim acquire` is
+    silent), and A3 (the `requirement_id` is not shown) in Phase 23. The
+    Tech Lead plans those tasks next. The A1 and A3 designs need Human
+    approval.
+- **Resolution condition (remaining):** the A1-A3 repairs land, and the
+  Human re-checks the affected rows. Then one fresh independent QA Lead
+  writes `final-review-1.md` covering MF-1, VAL-005, A1-A3, and the Human
+  results. Do not dispatch the final review before the repairs land.
 - **References:** [TRG-23-016](../phases/phase-23/triage-log.md);
   [final review](../phases/phase-23/qa/final-review.md);
-  [DEC-267](../phases/phase-23/decisions.md); VAL-005, VAL-070..073;
+  [DEC-267, DEC-268](../phases/phase-23/decisions.md); VAL-005, VAL-070..073;
+  [Human checklist](../phases/phase-23/qa/human-checklist.md);
   [full record](../phases/phase-23/tl-escalations.md).
 
 ## Recently resolved

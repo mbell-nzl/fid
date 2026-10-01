@@ -3064,6 +3064,60 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
   DEC-261; DEC-266; VAL-005; VAL-070..073; `schema.md` section 2;
   `qa/final-review.md`.
 
+### DEC-268: Human checklist disposition; A1-A3 repaired in Phase 23
+
+- **Date:** 2026-10-01.
+- **Status:** ACCEPTED by Human, 2026-10-01, for the do-now scope ("would
+  like to see the A1/A2/A3 addressed in Phase 23"). This entry records
+  direction only. The A1 and A3 repair designs amend accepted contracts, so
+  each needs its own Human-approved decision when it is planned. Everything
+  outside A1-A3 is deliberately undecided.
+- **Source:** `qa/human-checklist.md`, recorded by the Human on 2026-10-01:
+  55 pass, 2 fail, 6 partial, 0 blank; overall FAIL. Its "Tech Lead
+  analysis of Human notes" section (findings A1-A8) has the evidence.
+  ESC-23-012 BC-B.
+- **Do now in Phase 23:**
+  - **A1 (VAL-072; HUMAN-03b-resolution and HUMAN-03b-internals FAIL).** The
+    `review-rework-exhausted` Stop names `budget-observed` as its resolution
+    condition, but Phase 23 offers no way to produce that fact:
+    `run.observe-budget` rejects `review-cycles`, and cycles never reset.
+    The observation also needs an active Run, which the Stop blocks, and
+    Envelope revision is Phase 24 work. DEC-195 governs: supply the missing
+    resolution authority. The assertion is not weakened.
+  - **A2 (VAL-072; HUMAN-03a).** Human-mode `claim acquire` prints nothing on
+    the rework denial, which breaks Phase 21 `public-interface.md` section 1
+    (`error: <message>` on stderr). This is a product defect with no
+    contract change.
+  - **A3 (VAL-073; HUMAN-04a/b/c-17, HUMAN-04a-18).** The accepted
+    `RequirementRef` shape omits the stable `requirement_id`, and the Human
+    view labels both the reference and the link line "Requirement". The
+    repair amends the Phase 23 public interface and the view.
+- **Sequencing.** The Tech Lead plans the A1-A3 repair tasks next. A1's
+  resolution design and A3's interface amendment go to the Human with that
+  task list. `qa/final-review-1.md` is deferred until the repairs land, so a
+  single fresh independent QA Lead final review covers everything: MF-1
+  (`b84b17c`, `b37c169`), VAL-005 under DEC-267, the A1-A3 repairs, and the
+  Human results. Running the final review now would leave it stale. The
+  Human re-checks only the affected rows (HUMAN-03a/03b, HUMAN-04a/b/c-17,
+  HUMAN-04a-18) against regenerated fixtures.
+- **Undecided; on the wrap-up agenda:** the remaining Human operating
+  experience. That covers A4 (raw-JSON Stop details, a Phase 22 view), A5
+  (Human denials omit reasons; the Phase 21 section 1 output limit), A6
+  (purpose and judgment hint lines, which VAL-060/073 require today), A7
+  (`finding address` reason), A8 (`--input` JSON authoring and
+  caller-supplied repository and digest values, which no spec owns; CF-040
+  covers output only), and the `attention resolve --help` text. It also
+  covers the remaining PARTIAL rows HUMAN-02a-before, HUMAN-03a beyond A2,
+  and HUMAN-04c-03. At wrap-up the Human and Tech Lead discuss this scope
+  and decide when to plan it. No carry-forward, task, or spec edit is made
+  for it before that discussion.
+- **Spec impact.** None yet. The A1 and A3 decisions will name their
+  contract, interface, and spec edits.
+- **Refs:** ESC-23-012; DEC-195; DEC-267; VAL-071..073;
+  `qa/human-checklist.md`; Phase 23 `contracts.md` section 6;
+  Phase 22 `contracts.md` section 5; Phase 21 `public-interface.md`
+  section 1.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up. `verified-no-change` is a positive assertion after review,

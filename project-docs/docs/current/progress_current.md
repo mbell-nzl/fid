@@ -1,24 +1,35 @@
 # Progress — Current
 
-Updated 2026-10-01. **All 18 tasks are complete and review-14 passed
-window 16-18. The phase-end final review (`74182db`) returned BLOCK, and
-the Runner STOPPED under TRG-23-016 / ESC-23-012. DEC-267 disposes it.**
-Branch: `phase-23`.
+Updated 2026-10-01. **All 18 tasks are complete. The phase-end final
+review (`74182db`) returned BLOCK under TRG-23-016 / ESC-23-012. DEC-267
+disposed it, and task 18 has since repaired MF-1 (`b84b17c`, `b37c169`).
+The Human checklist is recorded as FAIL (55/2/6). DEC-268 repairs A1-A3 in
+Phase 23.** Branch: `phase-23`.
 
-Final review: the seven-command gate passed, and 79 of 84 rows PASS.
-- **MF-2 / BC-A (VAL-005):** the criterion said three new Evidence columns,
-  but the accepted DDL adds two. DEC-267 keeps the DDL and corrects the text,
-  so there is no implementation work.
-- **MF-1:** the section 22 unflagged-checkptr control failed in
-  `TestLiveOutputGoldenFixtures`. Likely cause: `cmd/fid` TestMain
-  bootstraps SQLite inside the helper child, which has a 5 s deadline.
-  Task 18 owns the test-harness repair by planning amendment.
-- **BC-B (VAL-070..073):** the Human is completing the checklist.
+- **MF-2 / BC-A (VAL-005):** DEC-267 keeps the two-column DDL and corrects
+  the criterion text. No implementation is needed.
+- **MF-1:** task 18 repaired the full-checkptr golden child, and its report
+  passes report-lint. The final review must confirm it.
+- **Human checklist (VAL-070..073):** HUMAN-03b-resolution and
+  HUMAN-03b-internals FAIL, plus 6 PARTIAL. A1-A8 are analysed in
+  [the checklist](../phases/phase-23/qa/human-checklist.md).
+  - **A1:** the `review-rework-exhausted` Stop cannot be resolved in
+    Phase 23.
+  - **A2:** Human-mode `claim acquire` prints nothing on that denial.
+  - **A3:** `RequirementRef` does not show the stable `requirement_id`.
 
-Next: the Runner resumes using
-[the handoff](../phases/phase-23/qa/resume-after-dec-267.md) (task 18,
-ledger attempt 2). Once the Human checklist is recorded, a fresh
-independent QA Lead writes `final-review-1.md`. Wrap-up follows a PASS.
+Next: the Tech Lead plans the A1-A3 repair tasks, including the A1
+resolution design and the A3 interface amendment for Human approval. The
+Runner executes them, and the Human re-checks the affected rows. Then one
+fresh independent QA Lead writes `final-review-1.md`. Do not dispatch it
+before the repairs land. Wrap-up follows a PASS.
+
+**Wrap-up agenda (DEC-268):** the Human and Tech Lead discuss the remaining
+Human operating-experience scope and decide when to plan it. That scope is
+A4-A8: Stop details rendered as raw JSON, denial reasons, hint lines, the
+`finding address` reason, and `--input` authoring and caller-supplied
+repository/digest values. It also includes the leftover PARTIAL rows. No
+carry-forward is recorded before that discussion.
 
 Earlier, task 18 converged the `authority-*` details under DEC-266,
 completed after ESC-23-011's model-capacity stop, and closed review-13 MF-2.
@@ -79,6 +90,9 @@ Retain these constraints:
 - DEC-267: VAL-005's criterion names the two added Evidence columns. MF-1
   is a task-18 test-harness repair; the 5000 ms deadline, golden bytes, and
   commands are preserved.
+- DEC-268: the Human directs A1-A3 to be repaired in Phase 23. The A1 and
+  A3 designs need Human approval. The rest of the Human operating-experience
+  scope is on the wrap-up agenda.
 
 ## Earlier work and carry-forwards
 

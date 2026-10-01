@@ -160,6 +160,10 @@
   `authority-*` details follow Phase 21 section 7 (four fields, null subject).
 - DEC-267 (ESC-23-012): VAL-005 names the two added Evidence columns, per the
   DDL. Final-review MF-1 is a task-18 test-harness repair.
+- DEC-268 (ESC-23-012, Human): Human checklist FAIL. A1 (the rework Stop
+  cannot be resolved), A2 (silent Human `claim acquire` denial), and A3
+  (`requirement_id` not shown) are repaired in Phase 23. The Human
+  operating-experience scope (A4-A8) is a wrap-up agenda item.
 
 ## Prior Phase and Future Qualification
 

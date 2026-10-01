@@ -30,8 +30,20 @@
       task-1 route was rejected in a dry run.
     - BC-B: the Human records VAL-070..073.
   - **Resume:** `qa/resume-after-dec-267.md`.
+- **Update 2026-10-01 (DEC-268):**
+  - MF-1 was repaired by task 18 (`b84b17c`, `b37c169`).
+  - The Human recorded BC-B: 55 pass, 2 fail (HUMAN-03b-resolution and
+    HUMAN-03b-internals), 6 partial, overall FAIL.
+  - The Human directed that A1, A2, and A3 be repaired in Phase 23. A1 is
+    the `review-rework-exhausted` Stop with no supported way to resolve it.
+    A2 is the silent Human-mode `claim acquire` denial. A3 is the missing
+    `requirement_id` on `RequirementRef`.
+  - The escalation stays open until those repairs land, the Human re-checks
+    the affected rows, and one fresh `final-review-1.md` is written.
+  - A4-A8 are on the wrap-up agenda, undecided.
 - **Links:** TRG-23-016; DEC-178; DEC-223; DEC-259; DEC-261; DEC-267;
-  `schema.md` section 2; VAL-005; VAL-070..073.
+  DEC-268; `schema.md` section 2; VAL-005; VAL-070..073;
+  `qa/human-checklist.md`.
 
 ## ESC-23-011 - Task 18 Developer role unavailable after bounded model-capacity retry
 

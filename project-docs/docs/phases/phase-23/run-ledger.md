@@ -2556,3 +2556,481 @@
 - Triage: TRG-23-011 (BLOCK, existing ESC-23-010 disposition; no new identifier allocated)
 - Protected category: cross-task product behavior against retained public-interface contract and scope/ownership authority
 - Next Human or external-authority action: Full Tech Lead or the owner of the retained Phase 21 contract resolves the claim.acquire authority envelope and assigns the exact owning repair route; preserve the independent fake expectation, all task-18 attempts, and failed focused/tagged evidence. After that authority resolves the divergence, resume task 18, rerun the unchanged focused and five exact commands, pass report-lint, complete the required task closure, and dispatch QA review-13 for window 16-18.
+
+### 2026-09-30 20:02 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-30 18:58 STOP; TRG-23-011 / ESC-23-010
+- Governing TRG: TRG-23-011
+- Governing ESC: ESC-23-010
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 2
+- Checkpoint: phase-23 HEAD c06f99899c9c1d97bf3176423d190b84540cb90f on branch phase-23; phase worktree clean except Runner-owned run-ledger.md; c06f99899c9c1d97bf3176423d190b84540cb90f subject docs(phase-23): correct DEC-266 resume attempt binding to ledger attempt 2 and e439d37946229e366136bb830edb12f02b200b9f subject docs(phase-23): resolve task-18 authority-details stop under DEC-266 are verified; task-18 report 117625d696c3c7fd05a3ff60fccda5c9f3867a8f and implementation checkpoint 72113dde93558f1738f5fca36a4323fab44a1bf5 remain retained; prior 18:58 STOP and corrected handoff are present
+- Resolution evidence: Runner verified c06f99899c9c1d97bf3176423d190b84540cb90f with subject docs(phase-23): correct DEC-266 resume attempt binding to ledger attempt 2, e439d37946229e366136bb830edb12f02b200b9f with subject docs(phase-23): resolve task-18 authority-details stop under DEC-266, DEC-266 in phase-23 decisions, the task-18 Planning Amendment - DEC-266, the ESC-23-010 second disposition marked RESOLVED, and project-docs/docs/phases/phase-23/qa/resume-after-dec-266.md; the earlier attempt-7 append was rejected with INVALID RUN-RESUME Attempt count must increment its governing TRIAGE (terminated exit_code: 1), the ledger remained VALID state=STOPPED, and the corrected binding is attempt 2
+- Resolution authority: DEC-266
+- Continuing task: task-18
+- Next recovery: task-18 | in-scope-implementation | task-scope | task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality | 2
+
+### 2026-09-30 20:03 TASK-RECOVERY task-18
+
+- Source: DEC-266 and TRG-23-011; project-docs/docs/phases/phase-23/qa/resume-after-dec-266.md
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: DEC-266 and TRG-23-011
+- Triage disposition: N/A
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD c06f99899c9c1d97bf3176423d190b84540cb90f on branch phase-23; phase worktree clean except Runner-owned run-ledger.md; c06f99899c9c1d97bf3176423d190b84540cb90f subject docs(phase-23): correct DEC-266 resume attempt binding to ledger attempt 2 and e439d37946229e366136bb830edb12f02b200b9f subject docs(phase-23): resolve task-18 authority-details stop under DEC-266 are verified; task-18 report 117625d696c3c7fd05a3ff60fccda5c9f3867a8f and implementation checkpoint 72113dde93558f1738f5fca36a4323fab44a1bf5 remain retained; prior 18:58 STOP and corrected handoff are present
+- Phase worktree: /home/mark/projects/fid on branch phase-23; Runner-owned run-ledger.md is the only dirty path; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - same-task Developer continuation must perform the DEC-266 bounded task-18 convergence, preserve attempts 1-6 and all failed focused/tagged evidence, report the continuation as report attempt 7 (ledger attempt 2 after the 18:58 STOP), run the focused command first and then the five unchanged task-18 commands with observed termination, update and commit task-18-done.md, return a typed outcome, and pass report-lint
+- Next action: dispatch one same-task task-18 Developer continuation from the current phase HEAD; it must read task-18-done.md and the DEC-266 Planning Amendment first, rerun the ten-line producer inventory, red-correct the two fake rows and add the gate regressions, converge the registry and eight producers, run the focused and exact commands in order, update and commit the implementation and report, and return the typed outcome
+- Human attention required: no
+
+### 2026-09-30 20:40 REPAIR task-18
+
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 2
+- Starting checkpoint: TASK-RECOVERY task-18 attempt 2 active at phase-23 HEAD c06f99899c9c1d97bf3176423d190b84540cb90f; corrected DEC-266 resume binding and handoff verified; phase ledger was the only dirty path before Developer dispatch
+- Ending checkpoint: phase-23 HEAD remains c06f99899c9c1d97bf3176423d190b84540cb90f; Developer service session ended externally before returning a typed outcome; durable uncommitted edits remain in cmd/fid/claim.go, cmd/fid/concern.go, cmd/fid/decision.go, cmd/fid/deviation.go, cmd/fid/finding.go, cmd/fid/gate_test.go, cmd/fid/human_outcome.go, cmd/fid/integration/p23_conformance_test.go, internal/cli/codes.go, and internal/cli/codes_test.go; task-18-done.md has no committed continuation report; Runner-owned run-ledger.md remains dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: INTERRUPTED
+- Interruption cause: Developer session errored externally with Selected model is at capacity. Please try a different model.
+- Elapsed session duration: approximately 31 minutes from dispatch until the execution surface reported the external model-capacity error; exact child start timestamp was not exposed
+- Command in flight: unknown after external termination
+- Resolution evidence: workflow-route.sh session INTERRUPTED 1 returned ACTION REPAIR (terminated exit_code: 0); the child returned no typed Developer result, no command termination evidence, no commit, and no report-lint result; the durable edits are within the bounded DEC-266 task-18 scope and must be reconciled by the same-task continuation
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-30 20:41 TASK-RECOVERY task-18
+
+- Source: interrupted Developer session after DEC-266 and TRG-23-011; project-docs/docs/phases/phase-23/qa/resume-after-dec-266.md
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: DEC-266 and TRG-23-011
+- Triage disposition: N/A
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD remains c06f99899c9c1d97bf3176423d190b84540cb90f; the prior task-18 ledger attempt 2 Developer session ended externally without a typed outcome after producing uncommitted bounded-scope edits in cmd/fid/claim.go, cmd/fid/concern.go, cmd/fid/decision.go, cmd/fid/deviation.go, cmd/fid/finding.go, cmd/fid/gate_test.go, cmd/fid/human_outcome.go, cmd/fid/integration/p23_conformance_test.go, internal/cli/codes.go, and internal/cli/codes_test.go; task-18-done.md has no committed continuation report; Runner-owned run-ledger.md is also dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the listed task-18 edits and Runner-owned run-ledger.md are dirty; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - same-task Developer continuation must reconcile the durable edits from the interrupted session, preserve attempts 1-6 and all failed focused/tagged evidence, complete the DEC-266 convergence, run the focused command first and then the five unchanged task-18 commands with observed termination, update and commit task-18-done.md, return a typed outcome, and pass report-lint
+- Next action: dispatch one same-task task-18 Developer continuation; it must inspect the current partial edits and task-18-done.md before changing files, finish the bounded registry/producer/fake/gate-test work, report the continuation as report attempt 7 with the prior ledger attempt-2 interruption and current ledger attempt 3, run the required commands in order, commit implementation and report, and return a typed outcome
+- Human attention required: no
+
+### 2026-09-30 21:07 REPAIR task-18
+
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 3
+- Starting checkpoint: TASK-RECOVERY task-18 attempt 3 active at phase-23 HEAD c06f99899c9c1d97bf3176423d190b84540cb90f; the prior ledger attempt-2 Developer session was externally interrupted and its durable bounded edits were retained; no-progress remained 0/2
+- Ending checkpoint: phase-23 HEAD remains c06f99899c9c1d97bf3176423d190b84540cb90f; replacement Developer service session ended externally before returning a typed outcome; the same durable uncommitted edits remain in cmd/fid/claim.go, cmd/fid/concern.go, cmd/fid/decision.go, cmd/fid/deviation.go, cmd/fid/finding.go, cmd/fid/gate_test.go, cmd/fid/human_outcome.go, cmd/fid/integration/p23_conformance_test.go, internal/cli/codes.go, and internal/cli/codes_test.go; task-18-done.md has no committed continuation report; Runner-owned run-ledger.md remains dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: INTERRUPTED
+- Interruption cause: replacement Developer session errored externally with Selected model is at capacity. Please try a different model; this is the second consecutive external interruption
+- Elapsed session duration: approximately 26 minutes from replacement dispatch until the execution surface reported the external model-capacity error; exact child start timestamp was not exposed
+- Command in flight: unknown after external termination
+- Resolution evidence: workflow-route.sh session INTERRUPTED 2 returned ACTION TRIAGE (terminated exit_code: 0); the child returned no typed Developer result, no command termination evidence, no commit, and no report-lint result; the durable edits remain within the bounded DEC-266 task-18 scope; two consecutive external interruptions now require orchestration session-liveness triage
+- Next checkpoint: triage as orchestration session-liveness
+
+### 2026-09-30 21:17 TRIAGE TRG-23-012
+
+- Trigger: Two consecutive same-task Developer child sessions for task-18 ended externally before returning typed outcomes with the execution-surface error "Selected model is at capacity. Please try a different model"; both interruptions preserved durable partial edits within the DEC-266 task-18 amendment scope and consumed no no-progress attempt
+- Originating task: task-18
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 3
+- Repair category: session-continuation
+- Repair authority: orchestration session-liveness
+- Checkpoint: phase HEAD c06f99899c9c1d97bf3176423d190b84540cb90f; attempts 2 and 3 ended after approximately 31 and 26 minutes with the same model-capacity error, no typed outcome, unknown command in flight, no continuation commit, and no report-lint result; durable task-18 edits remain
+- Verdict: REPAIR
+- Resolution evidence: project-docs/docs/phases/phase-23/triage-log.md TRG-23-012 is confirmed with Verdict REPAIR; DEC-266 and the task-18 Planning Amendment already authorize the bounded product convergence; one same-task Developer continuation may reconcile the durable partial edits, preserve attempts 1-6 and failed evidence, run the focused and five unchanged commands, commit implementation and report, and return a typed outcome; no no-progress attempt is consumed and no control-conformance authority is granted
+- Triage log: project-docs/docs/phases/phase-23/triage-log.md entry TRG-23-012 confirmed
+
+### 2026-09-30 21:20 TASK-RECOVERY task-18
+
+- Source: TRG-23-012; project-docs/docs/phases/phase-23/triage-log.md; project-docs/docs/phases/phase-23/qa/resume-after-dec-266.md
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: orchestration session-liveness
+- Triage disposition: N/A
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 4
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: Do not change product behavior outside the DEC-266 task-18 amendment, any accepted contract, VAL text, command, threshold, ownership, or workflow verifier; do not discard durable partial edits or prior failed evidence; do not authorize new product scope or change the no-progress budget
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD c06f99899c9c1d97bf3176423d190b84540cb90f; the two prior Developer sessions ended externally with model-capacity errors and no typed outcome; durable uncommitted task-18 edits remain in cmd/fid/claim.go, cmd/fid/concern.go, cmd/fid/decision.go, cmd/fid/deviation.go, cmd/fid/finding.go, cmd/fid/gate_test.go, cmd/fid/human_outcome.go, cmd/fid/integration/p23_conformance_test.go, internal/cli/codes.go, and internal/cli/codes_test.go; task-18-done.md has no committed continuation report; Runner-owned run-ledger.md and the confirmed TRG-23-012 triage artifact are dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-23; the listed task-18 edits, triage-log.md, and Runner-owned run-ledger.md are dirty; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: The first candidate was rejected transactionally with INVALID TASK-RECOVERY Triage disposition does not match Repair mode and INVALID TASK-RECOVERY does not preserve its governing schema v2 TRIAGE REPAIR authority (terminated exit_code: 1); the corrected task-scope candidate with disposition N/A and attempt 3 was rejected with INVALID TASK-RECOVERY does not preserve its governing schema v2 TRIAGE REPAIR authority (terminated exit_code: 1); the ledger remained VALID state=REPAIR_PENDING. The session-liveness TRIAGE rule requires the next total attempt to be 4. PENDING - one bounded same-task Developer continuation must reconcile the durable partial edits, preserve attempts 1-6 and interruption evidence, complete DEC-266 convergence, run the focused red/green check and five unchanged task-18 commands with observed termination, update and commit task-18-done.md, return a typed outcome, and pass report-lint
+- Next action: dispatch one same-task task-18 Developer continuation authorized by TRG-23-012; it must inspect current partial edits and task-18-done.md, finish only the bounded registry/producer/fake/gate-test convergence, report attempt 7 with the ledger interruption history, run the required commands in order, commit implementation and report, and return a typed outcome
+- Human attention required: no
+
+### 2026-09-30 21:22 REPAIR task-18
+
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 4
+- Starting checkpoint: TASK-RECOVERY task-18 attempt 4 active under TRG-23-012 session-continuation authority at phase-23 HEAD c06f99899c9c1d97bf3176423d190b84540cb90f; durable DEC-266 task-18 edits were present and no-progress was 0/2
+- Ending checkpoint: phase-23 HEAD remains c06f99899c9c1d97bf3176423d190b84540cb90f; the bounded Developer continuation ended externally before returning a typed outcome; the same durable uncommitted task-18 edits remain; task-18-done.md has no committed continuation report; Runner-owned run-ledger.md and confirmed TRG-23-012 triage-log entry remain dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: INTERRUPTED
+- Interruption cause: bounded Developer continuation errored externally with Selected model is at capacity. Please try a different model
+- Elapsed session duration: approximately 2 minutes from bounded continuation dispatch until the execution surface reported the external model-capacity error; exact child start timestamp was not exposed
+- Command in flight: unknown after external termination
+- Resolution evidence: workflow-route.sh session INTERRUPTED 1 returned ACTION REPAIR (terminated exit_code: 0); the child returned no typed Developer result, no command termination evidence, no commit, and no report-lint result; TRG-23-012 explicitly requires return to triage if the bounded retry remains unavailable; no no-progress attempt was consumed
+- Next checkpoint: triage as external-capability failure
+
+### 2026-09-30 21:30 TRIAGE TRG-23-013
+
+- Trigger: The bounded Developer retry authorized by TRG-23-012 also ended externally on model capacity without a typed outcome, commit, command termination evidence, or report-lint result; durable task-18 edits remain
+- Originating task: task-18
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 4
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: phase HEAD c06f99899c9c1d97bf3176423d190b84540cb90f; the bounded retry ended with the same model-capacity error; durable task-18 edits and prior failed evidence remain; no-progress stays 0/2
+- Verdict: BLOCK (escalated as ESC-23-011)
+- Resolution evidence: project-docs/docs/phases/phase-23/triage-log.md TRG-23-013 is confirmed with BLOCK verdict and project-docs/docs/current/tl_escalations_current.md ESC-23-011 is OPEN; the required Developer role/model remained unavailable after the one bounded retry authorized by TRG-23-012; no task completion or phase advance is authorized
+- Triage log: project-docs/docs/phases/phase-23/triage-log.md entry TRG-23-013 confirmed
+
+### 2026-09-30 21:31 STOP
+
+- Cause: task-18 / TRG-23-013 / ESC-23-011; the required Developer role/model remained unavailable after the bounded session-continuation retry authorized by TRG-23-012, so task-18 cannot complete its DEC-266 convergence or produce required command and report evidence
+- Triage: TRG-23-013 (BLOCK, escalated as ESC-23-011)
+- Protected category: unrepairable external infrastructure / required Developer child-role capability unavailable after bounded retry
+- Next Human or external-authority action: restore the required Developer role/model or record accepted authority for an available equivalent child capability; the Runner must verify and record the restored capability, then resume task-18 from the preserved partial edits and failed evidence with unchanged DEC-266 scope and commands
+
+### 2026-10-01 07:19 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-30 21:31 STOP / TRG-23-013 / ESC-23-011
+- Governing TRG: TRG-23-013
+- Governing ESC: ESC-23-011
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 5
+- Checkpoint: Runner verified phase-23 HEAD c06f99899c9c1d97bf3176423d190b84540cb90f on branch phase-23; durable uncommitted task-18 edits remain in cmd/fid/claim.go, cmd/fid/concern.go, cmd/fid/decision.go, cmd/fid/deviation.go, cmd/fid/finding.go, cmd/fid/gate_test.go, cmd/fid/human_outcome.go, cmd/fid/integration/p23_conformance_test.go, cmd/fid/run.go, internal/cli/codes.go, and internal/cli/codes_test.go; prior failed evidence and task-18 report state remain preserved; Runner-owned ledger, triage log, and current escalation register are dirty as expected; hidden index flags were absent
+- Resolution evidence: Runner spawned the required custom Developer child role and observed child 01a0f38a-74af-7481-8f3a-07931626c07e allocate and return the capability handshake without the prior model-capacity error; the child confirmed no files were inspected, edited, or run; TRG-23-013 and ESC-23-011 remain the governing STOP records, and task-18 resumes under unchanged DEC-266 scope and commands
+- Resolution authority: restored-capability:developer-child-role-01a0f38a-74af-7481-8f3a-07931626c07e
+- Continuing task: task-18
+- Next recovery: task-18 | session-continuation | task-scope | task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality | 5
+
+### 2026-10-01 07:20 TASK-RECOVERY task-18
+
+- Source: restored-capability:developer-child-role-01a0f38a-74af-7481-8f3a-07931626c07e; TRG-23-013 / ESC-23-011 / DEC-266; 2026-10-01 07:19 RUN-RESUME
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: TRG-23-013 / ESC-23-011 / DEC-266 / restored-capability:developer-child-role-01a0f38a-74af-7481-8f3a-07931626c07e
+- Triage disposition: N/A
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 5
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: N/A
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Runner verified phase-23 HEAD c06f99899c9c1d97bf3176423d190b84540cb90f on branch phase-23; durable uncommitted task-18 edits remain in cmd/fid/claim.go, cmd/fid/concern.go, cmd/fid/decision.go, cmd/fid/deviation.go, cmd/fid/finding.go, cmd/fid/gate_test.go, cmd/fid/human_outcome.go, cmd/fid/integration/p23_conformance_test.go, cmd/fid/run.go, internal/cli/codes.go, and internal/cli/codes_test.go; prior failed evidence and task-18 report state remain preserved; Runner-owned ledger, triage log, and current escalation register are dirty as expected; hidden index flags were absent
+- Phase worktree: /home/mark/projects/fid on branch phase-23; durable task-18 implementation edits and Runner-owned workflow documents are dirty; hidden index flags none
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: The first candidate was rejected transactionally with INVALID TASK-RECOVERY does not retain its RUN-RESUME decision authority (terminated exit_code: 1); the ledger remained VALID state=REPAIR_PENDING. The corrected candidate preserves the RUN-RESUME authority, exact checkpoint, trigger, task, mode, category, and attempt. PENDING - same-task Developer continuation must complete the DEC-266 bounded task-18 convergence from the preserved partial edits, run the focused command and the five unchanged task-18 commands with observed termination, update and commit task-18-done.md, return a typed outcome, and pass report-lint
+- Next action: dispatch the same-task task-18 Developer continuation with the handoff's inventory, red-first fake and gate work, registry and producer convergence, retained-test provenance, unchanged command sequence, report update, and commit requirements
+- Human attention required: no
+
+### 2026-10-01 07:38 REPAIR task-18
+
+- Trigger signature: task-18:protected-contract:failure-code-cardinality-and-semantic-fake-equality
+- Attempt count: 5
+- Starting checkpoint: TASK-RECOVERY task-18 attempt 5 active after the restored-capability RUN-RESUME under TRG-23-013 / ESC-23-011; phase-23 HEAD c06f99899c9c1d97bf3176423d190b84540cb90f; durable DEC-266 task-18 edits and prior failed evidence were preserved; no-progress was 0/2
+- Ending checkpoint: phase-23 HEAD 0c4fc6510f0c09dcb78a1e18c777968614a1ed67 on branch phase-23; implementation commit 5fe02e15c508a9b18721dbcff0e463feb53147c7 and report commit 0c4fc6510f0c09dcb78a1e18c777968614a1ed67 are verified with matching subjects; report-lint is complete; only Runner-owned run-ledger.md, triage-log.md, and tl_escalations_current.md remain dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: The Developer completed the bounded DEC-266 convergence in 5fe02e15c508a9b18721dbcff0e463feb53147c7, converging the three registry entries, eight producers, two contract-authored fake rows, and gate regressions for gate.go:325/327. The focused command, named gate regressions, and all five unchanged task-18 commands passed with observed termination; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0). The implementation and report commits resolve and their subjects match; the phase worktree is clean except Runner-owned workflow documents.
+- Next checkpoint: REVIEW review-13 for QA window 16-18
+
+### 2026-10-01 07:39 TASK task-18 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-18-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: 0c4fc6510f0c09dcb78a1e18c777968614a1ed67 - verified, subject matched: docs(task): retain report-lint repair evidence
+- QA-plan commands beyond the task spec: none required
+
+### 2026-10-01 07:43 REVIEW review-13
+
+- Path: project-docs/docs/phases/phase-23/qa/review-13.md
+- Tasks covered: task-16, task-17, task-18
+- Outcome: REPAIR
+- Owning task: task-16, task-18
+- Re-review of: none
+- Must-fix: 2 / Improvement: 0 / blocker candidates: 0; QA minted no ESC
+
+### 2026-10-01 07:51 TASK-RECOVERY task-16
+
+- Source: project-docs/docs/phases/phase-23/qa/review-13.md MF-1
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review
+- Triage disposition: N/A
+- Trigger signature: review-13:qa-rework:task-16-MF-1
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: cmd/fid/integration/p23_portable_recovery_test.go,project-docs/docs/phases/phase-23/tasks/task-16-done.md
+- Forbidden changes: edit only the task-16 portable corruption fixture/test and task-16 completion report; preserve all 28 malformed/unknown Event cases, accepted contracts, product code, commands, prior evidence, QA artifacts, and run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: review-13 is committed at cca15a0153e5bcd96b893fa0f0c3394b4df03fe8 with subject docs(qa): review phase 23 tasks 16-18; phase-23 HEAD is cca15a0153e5bcd96b893fa0f0c3394b4df03fe8; task-16 remains complete under its prior implementation/report commits; review-13 MF-1 requires fresh workspace isolation for every malformed/unknown Event probe; only Runner-owned run-ledger.md, triage-log.md, and tl_escalations_current.md are dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; Runner-owned run-ledger.md, triage-log.md, and tl_escalations_current.md are the only dirty paths
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths are forbidden
+- Resolution evidence: PENDING - task-16 must use a separately initialized or cloned clean workspace for each nine-by-three corrupted Event case and unknown type, preserve full before/after projection evidence, rerun the affected named test and all six unchanged task-16 commands with observed termination, update task-16-done.md, commit the bounded repair and report, run report-lint, and obtain fresh independent re-review of review-13
+- Next action: dispatch the same-task task-16 Developer continuation for review-13 MF-1; it must preserve all prior evidence, implement only the fresh-workspace corruption-fixture repair and report update, run the named test first and all six exact task-16 commands unchanged, commit implementation and report, and return a typed outcome
+- Human attention required: no
+
+### 2026-10-01 08:23 REPAIR task-16
+
+- Trigger signature: review-13:qa-rework:task-16-MF-1
+- Attempt count: 1
+- Starting checkpoint: review-13 is committed at cca15a0153e5bcd96b893fa0f0c3394b4df03fe8 with subject docs(qa): review phase 23 tasks 16-18; phase-23 HEAD was cca15a0153e5bcd96b893fa0f0c3394b4df03fe8; task-16 remained complete under its prior implementation/report commits; review-13 MF-1 required fresh workspace isolation for every malformed/unknown Event probe; only Runner-owned run-ledger.md, triage-log.md, and tl_escalations_current.md were dirty; hidden-index flags none
+- Ending checkpoint: phase-23 HEAD c2f02906a18b9ba29ace7f4b7e5be3fb44cea581 on branch phase-23; implementation commit 4261575c3c84de1acf0089d70cf50fbe310a16c8 and report commit c2f02906a18b9ba29ace7f4b7e5be3fb44cea581 are verified with matching subjects; the two authorized paths are committed and clean; only Runner-owned run-ledger.md, triage-log.md, and tl_escalations_current.md remain dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task task-16 Developer repaired review-13 MF-1 within the bounded integration test and completion report scope. Each of the 28 malformed/unknown Event probes now uses a fresh cloned workspace and connection and compares all 59 projection tables before and after. The named test first exposed the reused-connection defect, then passed byte-identically after repair; all six unchanged task-16 commands passed with observed termination; independent report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0).
+- Next checkpoint: REVIEW review-14 fresh independent re-review of review-13 MF-1 and the task-16 repair
+
+### 2026-10-01 08:24 TASK task-16 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-16-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: c2f02906a18b9ba29ace7f4b7e5be3fb44cea581 - verified, subject matched: docs(task): correct task-16 gate result formatting
+- QA-plan commands beyond the task spec: none required
+
+### 2026-10-01 08:25 TASK-RECOVERY task-18
+
+- Source: project-docs/docs/phases/phase-23/qa/review-13.md MF-2
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review
+- Triage disposition: N/A
+- Trigger signature: review-13:qa-rework:task-18-MF-2
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: cmd/fid/integration/p23_conformance_test.go,project-docs/docs/phases/phase-23/tasks/task-18-done.md
+- Forbidden changes: edit only the task-18 conformance comparator/oracle tests and completion report; preserve all 23 operations, independent fake expectations, rejection classes, DEC-266 authority expectations, contracts, product code, commands, prior evidence, QA artifacts, and run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: review-13 is committed at cca15a0153e5bcd96b893fa0f0c3394b4df03fe8 with subject docs(qa): review phase 23 tasks 16-18; task-16 review-13 MF-1 repair is resolved and task-16 is complete at c2f02906a18b9ba29ace7f4b7e5be3fb44cea581; task-18 remains complete under its prior implementation/report commits but review-13 MF-2 requires caller-provided Review IDs to remain exact through normalization; only Runner-owned run-ledger.md, triage-log.md, and tl_escalations_current.md are dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; Runner-owned run-ledger.md, triage-log.md, and tl_escalations_current.md are the only dirty paths
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths are forbidden
+- Resolution evidence: PENDING - task-18 must restrict placeholder conversion to declared fid-generated positions, add a regression proving distinct caller-provided Review IDs remain distinct and compare Evidence review_id with its input, preserve the independent fake and all 23 operations, rerun the named regression and shared corpus plus all five unchanged task-18 commands with observed termination, update task-18-done.md, commit the bounded repair and report, run report-lint, and obtain fresh independent re-review of review-13
+- Next action: dispatch the same-task task-18 Developer continuation for review-13 MF-2; it must preserve all prior evidence, repair only the comparator/oracle normalization and report, run the new regression first and the shared corpus plus five exact task-18 commands unchanged, commit implementation and report, and return a typed outcome
+- Human attention required: no
+
+### 2026-10-01 09:04 REPAIR task-18
+
+- Trigger signature: review-13:qa-rework:task-18-MF-2
+- Attempt count: 1
+- Starting checkpoint: review-13 is committed at cca15a0153e5bcd96b893fa0f0c3394b4df03fe8 with subject docs(qa): review phase 23 tasks 16-18; task-16 review-13 MF-1 repair is resolved and task-16 is complete at c2f02906a18b9ba29ace7f4b7e5be3fb44cea581; task-18 remained complete under its prior implementation/report commits but review-13 MF-2 required caller-provided Review IDs to remain exact; only Runner-owned run-ledger.md, triage-log.md, and tl_escalations_current.md were dirty; hidden-index flags none
+- Ending checkpoint: phase-23 HEAD 1d2e783a0fa87b97062acc4c7feef248a8436270 on branch phase-23; implementation commit 3227197d5f190528825cca3a8c01a480c06712e2 and final report commit 1d2e783a0fa87b97062acc4c7feef248a8436270 are verified with matching subjects; the authorized paths are committed and clean; only Runner-owned run-ledger.md, triage-log.md, and tl_escalations_current.md remain dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task task-18 Developer repaired review-13 MF-2 within the bounded conformance comparator and completion report scope. Placeholder conversion is now restricted to declared fid-generated positions and uses the same rule for both adapters; the new regression proves distinct caller-provided Review IDs remain distinct and Evidence review_id equals its request input. The regression preserved its initial red result and passed on the byte-identical rerun; the shared corpus passed; all five unchanged task-18 commands passed with observed termination; independent report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0).
+- Next checkpoint: REVIEW review-14 fresh independent re-review of review-13 MF-2 and the task-18 repair
+
+### 2026-10-01 09:05 TASK task-18 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-18-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: 1d2e783a0fa87b97062acc4c7feef248a8436270 - verified, subject matched: docs(task): record task-18 report-lint evidence
+- QA-plan commands beyond the task spec: none required
+
+### 2026-10-01 09:40 REVIEW review-14
+
+- Path: project-docs/docs/phases/phase-23/qa/review-14.md
+- Tasks covered: task-16, task-17, task-18
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-13
+- Must-fix: 0 / Improvement: 0 / blocker candidates: 0; QA minted no ESC
+
+### 2026-10-01 13:33 TRIAGE TRG-23-015
+
+- Trigger: Corrected governing identity for the phase-end QA Lead retry after TRG-23-014's Originating task / Trigger signature mismatch
+- Originating task: task-18
+- Trigger signature: task-18:qa-session-liveness:phase-end-qa
+- Attempt count: 3
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: TRG-23-014 remains unchanged as failed orchestration evidence; workflow-sequence-lint.sh rejected the prior exact TRIAGE candidate with INVALID schema v2 TRIAGE Originating task does not match Trigger signature (terminated exit_code: 1), leaving the ledger unchanged; workflow-route.sh triage RESUME 0 returned its usage error (terminated exit_code: 2), then workflow-route.sh triage RESUME returned ACTION ADVANCE (terminated exit_code: 0); runner-recorded phase HEAD e0893cdee915013371455198906852081633e051
+- Verdict: RESUME
+- Resolution evidence: TRG-23-015 is confirmed in project-docs/docs/phases/phase-23/triage-log.md with Verdict RESUME and is the governing corrected record; the user reports restored usage capacity and requests the gpt-6-astra QA Lead retry; no phase-end QA result has been inferred
+- Triage log: project-docs/docs/phases/phase-23/triage-log.md TRG-23-015 entry confirmed
+
+### 2026-10-01 16:19 TRIAGE TRG-23-016
+
+- Trigger: QA Lead final phase-end review returned OUTCOME BLOCKED with MF-1, MF-2/BC-A, and BC-B
+- Originating task: task-18
+- Trigger signature: task-18:qa-block:phase-end-final-review
+- Attempt count: 1
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: QA review commit 74182db30e75df3c2101141ab343d5236b8c6927 is verified by git rev-parse --verify with terminated exit_code: 0 and subject match; final-review.md ends with VERDICT: BLOCK and OUTCOME BLOCKED; phase HEAD is the review commit plus Runner-owned ledger, triage, and escalation dirt
+- Verdict: BLOCK (escalated as ESC-23-012)
+- Resolution evidence: TRG-23-016 is confirmed in project-docs/docs/phases/phase-23/triage-log.md with Verdict BLOCK; VAL-005 has a protected accepted-contract/data-model contradiction, VAL-070..073 remain pending Human judgments, and the additional full-checkptr command failed in TestLiveOutputGoldenFixtures with terminated exit_code: 1; ESC-23-012 is confirmed in project-docs/docs/current/tl_escalations_current.md; prior candidate at 2026-10-01 16:18 was rejected by workflow-sequence-lint.sh with INVALID TRIAGE has missing or invalid strict Verdict (terminated exit_code: 1), and the ledger was unchanged
+- Triage log: project-docs/docs/phases/phase-23/triage-log.md TRG-23-016 entry confirmed; ESC-23-012 confirmed
+
+### 2026-10-01 16:20 STOP
+
+- Cause: QA final review project-docs/docs/phases/phase-23/qa/final-review.md returned OUTCOME BLOCKED; TRG-23-016 identifies the protected VAL-005 contradiction and pending Human-only VAL-070..073
+- Triage: TRG-23-016 (BLOCK, escalated as ESC-23-012)
+- Protected category: specification/validation-contract contradiction with possible data-model change, plus pending Human-only product judgment
+- Next Human or external-authority action: Tech Lead/protected owner must decide the authoritative VAL-005 Evidence column count and resulting task route; Human must record VAL-070..073 judgments; then route MF-1 task-1 repair under its bounded plan and obtain a fresh independent final QA review
+
+### 2026-10-01 20:17 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-10-01 16:20 STOP; TRG-23-016; ESC-23-012
+- Governing TRG: TRG-23-016
+- Governing ESC: ESC-23-012
+- Trigger signature: task-18:qa-block:phase-end-final-review
+- Attempt count: 2
+- Checkpoint: phase-23 HEAD acb7619f6928688635f220c16a9597744420be04 is verified by git rev-parse --verify (terminated exit_code: 0), subject docs(phase-23): dispose phase-end final review blockers under DEC-267; DEC-267 is present in project-docs/docs/phases/phase-23/decisions.md at line 2932; task-18 Planning Amendment - DEC-267 is present at task-18.md line 215; corrected VAL-005 text is present in validation-contract.md at lines 35-36 and 260; ESC-23-012 is PARTIALLY RESOLVED under DEC-267 with BC-B open; project-docs/docs/phases/phase-23/qa/resume-after-dec-267.md is present; human-checklist.md has recorded partial Human edits but remains Overall result Pending Human input with blank rows; no product paths are dirty, and only the Runner-owned run-ledger.md and triage-log.md plus the Human-owned checklist are dirty.
+- Resolution evidence: Runner verified commit acb7619f6928688635f220c16a9597744420be04 with subject docs(phase-23): dispose phase-end final review blockers under DEC-267 and terminated rev-parse verification; DEC-267 is present in phase decisions; the task-18 Planning Amendment - DEC-267 is present; the corrected VAL-005 row names review_id and human_outcome_id; ESC-23-012 is partially resolved with BC-B pending; this resume-after-dec-267 handoff is present; Human checklist outcomes remain incomplete
+- Resolution authority: DEC-267
+- Continuing task: task-18
+- Next recovery: task-18 | qa-rework | task-scope | task-18:qa-block:phase-end-final-review | 2
+
+### 2026-10-01 20:18 TASK-RECOVERY task-18
+
+- Source: DEC-267 and TRG-23-016; project-docs/docs/phases/phase-23/qa/resume-after-dec-267.md
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: DEC-267 and TRG-23-016
+- Triage disposition: N/A
+- Trigger signature: task-18:qa-block:phase-end-final-review
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: edit only the task-18 QA harness and completion report paths named by Planning Amendment - DEC-267; preserve prior implementation, accepted contracts, commands, budgets, QA artifacts, Human checklist, and run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD acb7619f6928688635f220c16a9597744420be04 is verified by git rev-parse --verify (terminated exit_code: 0), subject docs(phase-23): dispose phase-end final review blockers under DEC-267; DEC-267 is present in project-docs/docs/phases/phase-23/decisions.md at line 2932; task-18 Planning Amendment - DEC-267 is present at task-18.md line 215; corrected VAL-005 text is present in validation-contract.md at lines 35-36 and 260; ESC-23-012 is PARTIALLY RESOLVED under DEC-267 with BC-B open; project-docs/docs/phases/phase-23/qa/resume-after-dec-267.md is present; human-checklist.md has recorded partial Human edits but remains Overall result Pending Human input with blank rows; no product paths are dirty, and only the Runner-owned run-ledger.md and triage-log.md plus the Human-owned checklist are dirty.
+- Phase worktree: /home/mark/projects/fid on branch phase-23; human-checklist.md, Runner-owned run-ledger.md, and Runner-owned triage-log.md are the only dirty paths; no hidden-index flags
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths are forbidden
+- Resolution evidence: PENDING - task-18 must diagnose and repair the failed full-checkptr live golden within the DEC-267 amendment, preserve failed evidence, run the exact focused, five task-18, and unflagged-checkptr commands with observed termination, update and commit the report, pass report-lint, and obtain fresh independent final QA
+- Next action: dispatch the same-task task-18 Developer continuation exactly under the DEC-267 bounded task-18 continuation
+- Human attention required: no
+
+### 2026-10-01 20:54 REPAIR task-18
+
+- Trigger signature: task-18:qa-block:phase-end-final-review
+- Attempt count: 2
+- Starting checkpoint: phase-23 HEAD acb7619f6928688635f220c16a9597744420be04 is verified by git rev-parse --verify (terminated exit_code: 0), subject docs(phase-23): dispose phase-end final review blockers under DEC-267; DEC-267 is present in phase decisions; task-18 Planning Amendment - DEC-267 is present; corrected VAL-005 text is present; ESC-23-012 is partially resolved with BC-B open; resume-after-dec-267 handoff is present; Human checklist outcomes remain incomplete; no product paths are dirty, and only Runner-owned run-ledger.md and triage-log.md plus the Human-owned checklist are dirty
+- Ending checkpoint: phase-23 HEAD 3f364be23e48946f89baaaabb2792f764cf9b498 on branch phase-23; implementation commit b84b17c7b7218f981f368f908225bd139fab926e and report commit 3f364be23e48946f89baaaabb2792f764cf9b498 are verified with matching subjects; the DEC-267 live-golden harness repair and unflagged command evidence are committed; report-lint returned exit_code: 1 with one termination-format failure; only Human-owned human-checklist.md and Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: Same-task task-18 Developer continuation completed the DEC-267 in-scope live-golden harness repair in cmd/fid/workspace_fixture_test.go and cmd/fid/live_golden_child_bootstrap_test.go, preserved the original QA FAIL with terminated exit_code: 1, and reran the focused command, all five unchanged task-18 commands, and go test -race -timeout 30m ./... with observed exit_code: 0. Implementation commit b84b17c7b7218f981f368f908225bd139fab926e and report commit 3f364be23e48946f89baaaabb2792f764cf9b498 are verified with subject matches. The exact report-lint command returned exit_code: 1 because one passing-result termination line was not accepted by report-lint. The attempted report-only TASK-RECOVERY append at 2026-10-01 20:52 was rejected with exact output INVALID overlapping TASK-RECOVERY precedes required REPAIR and terminated exit_code: 1; the ledger remained unchanged.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-10-01 20:55 TASK-RECOVERY task-18
+
+- Source: project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-18-done.md project-docs/docs/phases/phase-23/tasks/task-18.md returned one termination-format failure with terminated exit_code: 1; workflow-route.sh report-lint RECOVERY_REQUIRED returned ACTION REPAIR; corrected append reconciliation preserves the 2026-10-01 20:51 rejected candidate output ending INVALID overlapping TASK-RECOVERY precedes required REPAIR and INVALID overlapping recovery changes task identity from task-18 to task-18\\n\\n- with terminated exit_code: 1, and the 2026-10-01 20:52 rejected candidate output INVALID overlapping TASK-RECOVERY precedes required REPAIR with terminated exit_code: 1
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: DEC-267 and TRG-23-016
+- Triage disposition: N/A
+- Trigger signature: task-18:qa-block:phase-end-final-review
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-23/tasks/task-18-done.md
+- Forbidden changes: edit only the exact task-18 completion report to correct the report-lint termination-evidence format; preserve all implementation, tests, task spec, accepted contracts, commands, thresholds, QA artifacts, Human checklist, run ledger, prior failed report-lint evidence, and the original QA FAIL evidence
+- Originating report: project-docs/docs/phases/phase-23/tasks/task-18-done.md
+- Exact verification: project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-18-done.md project-docs/docs/phases/phase-23/tasks/task-18.md
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 3f364be23e48946f89baaaabb2792f764cf9b498 is verified with subject docs(task): finalize completion report for phase-23 task-18; implementation commit b84b17c7b7218f981f368f908225bd139fab926e is verified with subject test(fid): skip suite bootstrap for live golden child; the implementation continuation is recorded as MATERIAL-PROGRESS at attempt 2; report-lint returned exit_code: 1 with one termination-format failure; only Human-owned human-checklist.md and Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; only Human-owned human-checklist.md and Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths are forbidden
+- Resolution evidence: PENDING - same-task report-only continuation must edit only task-18-done.md, preserve the original report-lint failure and all prior QA evidence, correct the termination-evidence format for the exact unflagged command, commit the report, and pass the exact two-argument report-lint command with observed exit_code: 0
+- Next action: dispatch one same-task task-18 report-repair continuation limited to project-docs/docs/phases/phase-23/tasks/task-18-done.md; it must preserve all prior evidence, correct only the report-lint format defect, commit the report, and return a typed outcome
+- Human attention required: no
+
+### 2026-10-01 20:58 REPAIR task-18
+
+- Trigger signature: task-18:qa-block:phase-end-final-review
+- Attempt count: 3
+- Starting checkpoint: phase-23 HEAD 3f364be23e48946f89baaaabb2792f764cf9b498 is verified with subject docs(task): finalize completion report for phase-23 task-18; implementation commit b84b17c7b7218f981f368f908225bd139fab926e is verified with subject test(fid): skip suite bootstrap for live golden child; the implementation continuation is recorded as MATERIAL-PROGRESS at attempt 2; report-lint returned exit_code: 1 with one termination-format failure; only Human-owned human-checklist.md and Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Ending checkpoint: phase-23 HEAD b37c16986d3dbba8bc786089c2869e3016009b56 on branch phase-23; report-repair commit b37c16986d3dbba8bc786089c2869e3016009b56 is verified with subject docs(task): correct task-18 control result formatting and Refs: phase-23/task-18; report-lint returned PASS report-lint completed with no failures and terminated exit_code: 0; report path is committed and clean; only Human-owned human-checklist.md and Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task report-only continuation edited only project-docs/docs/phases/phase-23/tasks/task-18-done.md and corrected the termination-evidence formatting while preserving the command, PASS result, observed exit_code: 0, the earlier QA FAIL with terminated exit_code: 1, the 333.284s timing, and all prior evidence. Commit b37c16986d3dbba8bc786089c2869e3016009b56 is verified with subject match and Refs: phase-23/task-18. The exact report-lint command returned PASS report-lint completed with no failures with observed exit_code: 0. The first route call was invalid because an extra attempt argument was supplied; workflow-route.sh returned its usage text with exit_code: 2, then the corrected workflow-route.sh report-lint COMPLETE returned ACTION ADVANCE with exit_code: 0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-10-01 20:59 TASK task-18 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-18-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: b37c16986d3dbba8bc786089c2869e3016009b56 - verified, subject matched: docs(task): correct task-18 control result formatting
+- QA-plan commands beyond the task spec: none required
