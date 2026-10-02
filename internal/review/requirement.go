@@ -98,7 +98,7 @@ func RecordRequirementReference(options JudgmentOptions, request RequirementRefe
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "requirement.referenced", ActorV2: judgmentActor(actor), Aggregate: journal.Aggregate{ID: refID, Sequence: 1, Type: "requirement"}, CommandName: "requirement.record-reference", Repository: journalRepository(repository), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setJudgmentEventIdentity(prepared.Effects, prepared)
-			value := map[string]any{"id": refID, "source": request.Source, "status": request.Status, "superseded_by_id": nil, "created_at": prepared.OccurredAt.UTC().Format("2006-01-02T15:04:05.999999999Z07:00"), "event_id": prepared.EventID}
+			value := map[string]any{"id": refID, "requirement_id": request.ID, "source": request.Source, "status": request.Status, "superseded_by_id": nil, "created_at": prepared.OccurredAt.UTC().Format("2006-01-02T15:04:05.999999999Z07:00"), "event_id": prepared.EventID}
 			payload, err := journal.MarshalCanonicalJSON(map[string]any{"requirement": value, "idempotency_key": options.IdempotencyKey, "replayed": false})
 			return journal.IdempotencyMutation{EntityID: refID, ResultJSON: string(payload)}, err
 		})
@@ -252,16 +252,16 @@ func openRequirementRead(options RequirementListOptions) (*sql.DB, error) {
 }
 
 func loadRequirementRef(conn *sql.DB, id string) (map[string]any, error) {
-	var sourceJSON, status, createdAt, eventID string
+	var requirementID, sourceJSON, status, createdAt, eventID string
 	var supersededBy sql.NullString
-	if err := conn.QueryRow(`SELECT source_json,status,superseded_by_id,created_at,created_event_id FROM requirement_refs WHERE id=?`, id).Scan(&sourceJSON, &status, &supersededBy, &createdAt, &eventID); err != nil {
+	if err := conn.QueryRow(`SELECT requirement_id,source_json,status,superseded_by_id,created_at,created_event_id FROM requirement_refs WHERE id=?`, id).Scan(&requirementID, &sourceJSON, &status, &supersededBy, &createdAt, &eventID); err != nil {
 		return nil, err
 	}
 	var source any
 	if err := json.Unmarshal([]byte(sourceJSON), &source); err != nil {
 		return nil, err
 	}
-	return map[string]any{"id": id, "source": source, "status": status, "superseded_by_id": nullableValue(supersededBy), "created_at": createdAt, "event_id": eventID}, nil
+	return map[string]any{"id": id, "requirement_id": requirementID, "source": source, "status": status, "superseded_by_id": nullableValue(supersededBy), "created_at": createdAt, "event_id": eventID}, nil
 }
 
 func loadRequirementLinks(conn *sql.DB, requirementID string) ([]map[string]any, error) {

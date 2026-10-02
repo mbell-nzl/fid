@@ -18,7 +18,18 @@ func writeP23Human(cmd *cobra.Command, operation string, items ...map[string]any
 
 func p23HumanLines(operation string, items ...map[string]any) []string {
 	kind := strings.Split(operation, ".")[0]
-	lines := []string{"Purpose: " + p23HumanPurpose(operation), "", p23HumanHeading(kind)}
+	heading := p23HumanHeading(kind)
+	if operation == "requirement.link" {
+		heading = "Issue links"
+	}
+	lines := []string{"Purpose: " + p23HumanPurpose(operation), "", heading}
+	if operation == "requirement.get" {
+		if len(items) > 0 {
+			lines = append(lines, p23HumanItem(kind, items[0])...)
+			items = items[1:]
+		}
+		lines = append(lines, "", "Issue links")
+	}
 	if len(items) == 0 {
 		lines = append(lines, "  None.")
 	}
@@ -99,7 +110,7 @@ func p23HumanHeading(kind string) string {
 	case "human-outcome":
 		return "Human Outcomes"
 	case "requirement":
-		return "Requirement References and links"
+		return "Requirement References"
 	default:
 		return "Items"
 	}
@@ -107,8 +118,16 @@ func p23HumanHeading(kind string) string {
 
 func p23HumanItem(kind string, item map[string]any) []string {
 	id := item["id"]
-	if kind == "requirement" && id == nil {
-		id = item["requirement_id"]
+	if kind == "requirement" {
+		if id == nil {
+			return []string{fmt.Sprintf("  %v %v %v", item["requirement_id"], item["relation"], item["issue_id"])}
+		}
+		lines := []string{fmt.Sprintf("  Requirement %v", item["requirement_id"])}
+		line := fmt.Sprintf("    Reference ID: %v; Status: %v", id, item["status"])
+		if item["superseded_by_id"] != nil {
+			line += fmt.Sprintf("; Superseded by: %v", item["superseded_by_id"])
+		}
+		return append(append(lines, line), p23HumanSource(item["source"])...)
 	}
 	lines := []string{fmt.Sprintf("  %s %v", p23HumanName(kind), id)}
 	switch kind {
@@ -156,13 +175,6 @@ func p23HumanItem(kind string, item map[string]any) []string {
 			fmt.Sprintf("    Activation: %v revision %v; Profile: %v", provenance["activation_id"], provenance["activation_version"], provenance["profile_ref"]),
 			"    This Outcome is authorized Human judgment, not deterministic proof.")
 		lines = append(lines, p23HumanSources(item["references"])...)
-	case "requirement":
-		if item["requirement_id"] != nil {
-			lines = append(lines, fmt.Sprintf("    Requirement: %v; Issue: %v; Relation: %v", item["requirement_id"], item["issue_id"], item["relation"]))
-		} else {
-			lines = append(lines, fmt.Sprintf("    Status: %v", item["status"]))
-			lines = append(lines, p23HumanSource(item["source"])...)
-		}
 	}
 	return lines
 }

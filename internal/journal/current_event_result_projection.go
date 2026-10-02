@@ -239,8 +239,6 @@ func currentProjectedValue(tx *sql.Tx, kind, table string, pk map[string]any) (m
 		err = currentFillDecisionRef(row)
 	case "HumanOutcome":
 		err = currentFillHumanOutcome(row)
-	case "RequirementRef":
-		delete(row, "requirement_id")
 	}
 	if err != nil {
 		return nil, err

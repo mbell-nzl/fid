@@ -19,7 +19,7 @@ func TestPhase23HumanLeafTextMatchesRecordedFacts(t *testing.T) {
 		"deviation":     {"id": "DEV-one", "subject": map[string]any{"type": "issue", "id": "ISS-one"}, "disposition": "pending-decision", "authority": map[string]any{"actor_id": "actor-human"}, "references": []any{source}, "reasoning": "PRIVATE DEVIATION PROSE"},
 		"decision":      {"id": "DREF-one", "class": "security", "outcome": "approved", "authority": map[string]any{"actor_id": "actor-human", "required_capabilities": []any{"decision.record-reference"}}, "source": source},
 		"human-outcome": {"id": "OUT-one", "actor_id": "actor-human", "class": "security", "result": "approved", "provenance": map[string]any{"activation_id": "ACT-one", "activation_version": 2, "profile_ref": "profile:human"}, "references": []any{source}, "reasoning": "PRIVATE OUTCOME PROSE"},
-		"requirement":   {"id": "RREF-one", "status": "active", "source": source},
+		"requirement":   {"id": "RREF-one", "requirement_id": "REQ-one", "status": "active", "source": source},
 	}
 	bodies := map[string]string{
 		"review":        "Reviews\n  Review REV-one\n    Issue: ISS-one; Envelope: ENV-one revision 2\n    Run: RUN-one; Reviewer: actor-reviewer; Profile: review-default\n    Verdict: changes-required; Independence: distinct-actor\n    Repository: project PRJ-one; worktree WT-one; HEAD abc; tree def\n    Repository capture: git; base base; dirty false; dirty digest <nil>\n    Findings by severity: blocker 0; major 1; minor 0; nit 0\n  Finding FND-one\n    Review: REV-one; Severity: major; Blocking: true; Disposition: addressed\n    Addressed is a Builder assertion, not a resolution.",
@@ -28,7 +28,7 @@ func TestPhase23HumanLeafTextMatchesRecordedFacts(t *testing.T) {
 		"deviation":     "Deviations\n  Deviation DEV-one\n    Subject: issue:ISS-one\n    Disposition: pending-decision; Authority Actor: actor-human\n    Reference: contract section; path docs/contract.md; digest sha256:abc\n    This Deviation is recorded judgment, not deterministic proof.",
 		"decision":      "Decision References\n  Decision Reference DREF-one\n    Class: security; Outcome: approved; Authority Actor: actor-human\n    Required capabilities: decision.record-reference\n    Reference: contract section; path docs/contract.md; digest sha256:abc",
 		"human-outcome": "Human Outcomes\n  Human Outcome OUT-one\n    Actor: actor-human; Class: security; Result: approved\n    Activation: ACT-one revision 2; Profile: profile:human\n    This Outcome is authorized Human judgment, not deterministic proof.\n    Reference: contract section; path docs/contract.md; digest sha256:abc",
-		"requirement":   "Requirement References and links\n  Requirement RREF-one\n    Status: active\n    Reference: contract section; path docs/contract.md; digest sha256:abc",
+		"requirement":   "Requirement References\n  Requirement REQ-one\n    Reference ID: RREF-one; Status: active\n    Reference: contract section; path docs/contract.md; digest sha256:abc",
 	}
 	operations := []struct{ operation, kind, purpose string }{
 		{"review.record", "review", "Record an independent Review of a Run and its bound Issue."},
@@ -53,7 +53,11 @@ func TestPhase23HumanLeafTextMatchesRecordedFacts(t *testing.T) {
 	for _, tc := range operations {
 		t.Run(tc.operation, func(t *testing.T) {
 			t.Parallel()
-			encoded, err := json.Marshal(items[tc.kind])
+			item := items[tc.kind]
+			if tc.operation == "requirement.link" {
+				item = map[string]any{"requirement_id": "REQ-one", "relation": "implements", "issue_id": "ISS-one"}
+			}
+			encoded, err := json.Marshal(item)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -68,7 +72,10 @@ func TestPhase23HumanLeafTextMatchesRecordedFacts(t *testing.T) {
 				"deviation":     {"id", "subject.type", "subject.id", "disposition", "authority.actor_id", "references"},
 				"decision":      {"id", "class", "outcome", "authority.actor_id", "authority.required_capabilities", "source.display_label", "source.path", "source.digest"},
 				"human-outcome": {"id", "actor_id", "class", "result", "provenance.activation_id", "provenance.activation_version", "provenance.profile_ref", "references"},
-				"requirement":   {"id", "status", "source.display_label", "source.path", "source.digest"},
+				"requirement":   {"id", "requirement_id", "status", "source.display_label", "source.path", "source.digest"},
+			}
+			if tc.operation == "requirement.link" {
+				paths["requirement"] = []string{"requirement_id", "relation", "issue_id"}
 			}
 			for _, path := range paths[tc.kind] {
 				value := any(jsonFact)
@@ -90,6 +97,12 @@ func TestPhase23HumanLeafTextMatchesRecordedFacts(t *testing.T) {
 				t.Fatal(err)
 			}
 			want := "Purpose: " + tc.purpose + "\n\n" + bodies[tc.kind] + "\n"
+			if tc.operation == "requirement.link" {
+				want = "Purpose: " + tc.purpose + "\n\nIssue links\n  REQ-one implements ISS-one\n"
+			}
+			if tc.operation == "requirement.get" {
+				want = "Purpose: " + tc.purpose + "\n\n" + bodies[tc.kind] + "\n\nIssue links\n  None.\n"
+			}
 			if output.String() != want {
 				t.Fatalf("Human text:\n%s\nwant:\n%s", output.String(), want)
 			}

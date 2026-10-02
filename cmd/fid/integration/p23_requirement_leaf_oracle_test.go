@@ -20,7 +20,7 @@ func p23RequirementModel(t *testing.T, pairs map[string]p23HumanLeafPair) p23Req
 	record := p23LeafRequest(t, pairs["requirement.record-reference"])
 	link := p23LeafRequest(t, pairs["requirement.link"])
 	reference := map[string]any{
-		"id": "<generated:RREF>", "source": record["source"], "status": record["status"],
+		"id": "<generated:RREF>", "requirement_id": record["id"], "source": record["source"], "status": record["status"],
 		"superseded_by_id": nil, "created_at": "<generated:timestamp>", "event_id": "<generated:EventRef>",
 	}
 	linked := map[string]any{

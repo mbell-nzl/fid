@@ -24,6 +24,24 @@ func TestP23RequirementReferenceAndLinkRealProcess(t *testing.T) {
 		t.Fatal(err)
 	}
 	oldID := p21PathString(t, firstEnvelope, "result", "requirement", "id")
+	assertRequirementID := func(name string, value map[string]any) {
+		t.Helper()
+		if value["requirement_id"] != "PRD-TRACE-001" {
+			t.Fatalf("%s requirement_id = %v, want PRD-TRACE-001", name, value["requirement_id"])
+		}
+	}
+	assertRequirementID("first record-reference", p21Path(t, firstEnvelope, "result", "requirement").(map[string]any))
+	firstGet := a.p22Run(t, "requirement", "get", "PRD-TRACE-001")
+	if firstGet.ExitCode != 0 || firstGet.Stderr != "" {
+		t.Fatalf("stable requirement get = %#v", firstGet)
+	}
+	var firstGetEnvelope map[string]any
+	if err := json.Unmarshal([]byte(firstGet.Stdout), &firstGetEnvelope); err != nil {
+		t.Fatal(err)
+	}
+	if got := p21PathString(t, firstGetEnvelope, "result", "requirement", "requirement_id"); got != "PRD-TRACE-001" {
+		t.Fatalf("stable requirement ID = %q, want PRD-TRACE-001", got)
+	}
 	secondSource := p23DecisionSource(a, true)
 	secondSource["display_label"] = "Second reference to the same file"
 	second := p23RunInput(t, a, "requirement", "record-reference", a.actor, "task12-second", map[string]any{"id": "PRD-TRACE-001", "source": secondSource, "status": "active"})
@@ -36,6 +54,7 @@ func TestP23RequirementReferenceAndLinkRealProcess(t *testing.T) {
 		t.Fatal(err)
 	}
 	newID := p21PathString(t, secondEnvelope, "result", "requirement", "id")
+	assertRequirementID("second record-reference", p21Path(t, secondEnvelope, "result", "requirement").(map[string]any))
 	if oldID == newID {
 		t.Fatal("re-recording reused the old row")
 	}
@@ -56,6 +75,7 @@ func TestP23RequirementReferenceAndLinkRealProcess(t *testing.T) {
 	if p21PathString(t, oldEnvelope, "result", "requirement", "status") != "superseded" || p21PathString(t, oldEnvelope, "result", "requirement", "superseded_by_id") != newID {
 		t.Fatalf("prior reference lost supersession pointer: %s", old.Stdout)
 	}
+	assertRequirementID("superseded reference get", p21Path(t, oldEnvelope, "result", "requirement").(map[string]any))
 	active := a.p22Run(t, "requirement", "list", "--status", "active")
 	if active.ExitCode != 0 || active.Stderr != "" {
 		t.Fatalf("active references = %#v", active)
@@ -68,6 +88,7 @@ func TestP23RequirementReferenceAndLinkRealProcess(t *testing.T) {
 	if len(items) != 1 || items[0].(map[string]any)["id"] != newID {
 		t.Fatalf("active references = %#v, want only %s", items, newID)
 	}
+	assertRequirementID("active list", items[0].(map[string]any))
 	for _, relation := range []string{"implements", "verifies", "relates-to"} {
 		linked := p23RunInput(t, a, "requirement", "link", a.actor, "task12-link-"+relation, map[string]any{"requirement_id": "PRD-TRACE-001", "issue_id": a.issueID, "relation": relation})
 		if linked.ExitCode != 0 || linked.Stderr != "" {
@@ -91,6 +112,11 @@ func TestP23RequirementReferenceAndLinkRealProcess(t *testing.T) {
 		t.Fatal(err)
 	}
 	storedLinks := p21Path(t, readEnvelope, "result", "links").([]any)
+	stableRef := p21Path(t, readEnvelope, "result", "requirement").(map[string]any)
+	assertRequirementID("stable get", stableRef)
+	if stableRef["id"] != newID || stableRef["status"] != "active" {
+		t.Fatalf("stable get resolved %#v, want active %s", stableRef, newID)
+	}
 	if len(storedLinks) != 3 {
 		t.Fatalf("stored traceability links = %#v, want all three relations", storedLinks)
 	}
@@ -105,6 +131,38 @@ func TestP23RequirementReferenceAndLinkRealProcess(t *testing.T) {
 	for _, relation := range []string{"implements", "verifies", "relates-to"} {
 		if !seen[relation] {
 			t.Fatalf("stored links omit %s: %#v", relation, storedLinks)
+		}
+	}
+	for _, refID := range []string{oldID, newID} {
+		got := a.p22Run(t, "requirement", "get", refID)
+		if got.ExitCode != 0 || got.Stderr != "" {
+			t.Fatalf("exact reference get %s = %#v", refID, got)
+		}
+		var envelope map[string]any
+		if err := json.Unmarshal([]byte(got.Stdout), &envelope); err != nil {
+			t.Fatal(err)
+		}
+		ref := p21Path(t, envelope, "result", "requirement").(map[string]any)
+		assertRequirementID("exact reference get", ref)
+		if ref["id"] != refID || len(p21Path(t, envelope, "result", "links").([]any)) != 3 {
+			t.Fatalf("exact get %s lost row or stable links: %s", refID, got.Stdout)
+		}
+	}
+	for _, args := range [][]string{{"requirement", "list"}, {"requirement", "list", "--issue", a.issueID}} {
+		got := a.p22Run(t, args...)
+		if got.ExitCode != 0 || got.Stderr != "" {
+			t.Fatalf("list %v = %#v", args, got)
+		}
+		var envelope map[string]any
+		if err := json.Unmarshal([]byte(got.Stdout), &envelope); err != nil {
+			t.Fatal(err)
+		}
+		listed := p21Path(t, envelope, "result", "items").([]any)
+		if len(listed) != 2 {
+			t.Fatalf("list %v has %d rows, want both references", args, len(listed))
+		}
+		for _, item := range listed {
+			assertRequirementID("list", item.(map[string]any))
 		}
 	}
 	beforeUnknown := p21JournalEventCount(t, a.workspace)

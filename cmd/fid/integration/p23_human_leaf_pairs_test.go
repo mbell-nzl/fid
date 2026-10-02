@@ -193,8 +193,16 @@ func p23LeafReferenceLines(value any) []string {
 func p23LeafFactLines(t *testing.T, kind string, item map[string]any) []string {
 	t.Helper()
 	id := item["id"]
-	if kind == "requirement" && id == nil {
-		id = item["requirement_id"]
+	if kind == "requirement" {
+		if id == nil {
+			return []string{fmt.Sprintf("  %v %v %v", item["requirement_id"], item["relation"], item["issue_id"])}
+		}
+		lines := []string{fmt.Sprintf("  Requirement %v", item["requirement_id"])}
+		line := fmt.Sprintf("    Reference ID: %v; Status: %v", id, item["status"])
+		if item["superseded_by_id"] != nil {
+			line += fmt.Sprintf("; Superseded by: %v", item["superseded_by_id"])
+		}
+		return append(lines, line, p23LeafSource(item["source"]))
 	}
 	names := map[string]string{"review": "Review", "finding": "Finding", "concern": "Concern", "deviation": "Deviation", "decision": "Decision Reference", "human-outcome": "Human Outcome", "requirement": "Requirement"}
 	lines := []string{fmt.Sprintf("  %s %v", names[kind], id)}
@@ -255,12 +263,6 @@ func p23LeafFactLines(t *testing.T, kind string, item map[string]any) []string {
 			fmt.Sprintf("    Activation: %v revision %v; Profile: %v", provenance["activation_id"], provenance["activation_version"], provenance["profile_ref"]),
 			"    This Outcome is authorized Human judgment, not deterministic proof.")
 		lines = append(lines, p23LeafReferenceLines(item["references"])...)
-	case "requirement":
-		if item["requirement_id"] != nil {
-			lines = append(lines, fmt.Sprintf("    Requirement: %v; Issue: %v; Relation: %v", item["requirement_id"], item["issue_id"], item["relation"]))
-		} else {
-			lines = append(lines, fmt.Sprintf("    Status: %v", item["status"]), p23LeafSource(item["source"]))
-		}
 	}
 	return lines
 }
@@ -288,7 +290,10 @@ func p23ExpectedLeafText(t *testing.T, operation string, facts map[string]any) s
 		"requirement.get":              "Inspect Requirement References and Issue links.",
 		"requirement.list":             "Inspect Requirement References and Issue links.",
 	}
-	headings := map[string]string{"review": "Reviews", "finding": "Findings", "concern": "Concerns", "deviation": "Deviations", "decision": "Decision References", "human-outcome": "Human Outcomes", "requirement": "Requirement References and links"}
+	headings := map[string]string{"review": "Reviews", "finding": "Findings", "concern": "Concerns", "deviation": "Deviations", "decision": "Decision References", "human-outcome": "Human Outcomes", "requirement": "Requirement References"}
+	if operation == "requirement.link" {
+		headings["requirement"] = "Issue links"
+	}
 	lines := []string{"Purpose: " + purpose[operation], "", headings[kind]}
 	items := []any{}
 	switch operation {
@@ -310,7 +315,6 @@ func p23ExpectedLeafText(t *testing.T, operation string, facts map[string]any) s
 		items = append(items, p23LeafFact(t, facts, "link"))
 	case "requirement.get":
 		items = append(items, p23LeafFact(t, facts, "requirement"))
-		items = append(items, p23LeafItems(t, facts, "links")...)
 	default:
 		items = p23LeafItems(t, facts, "items")
 	}
@@ -319,6 +323,16 @@ func p23ExpectedLeafText(t *testing.T, operation string, facts map[string]any) s
 	}
 	for _, raw := range items {
 		lines = append(lines, p23LeafFactLines(t, kind, raw.(map[string]any))...)
+	}
+	if operation == "requirement.get" {
+		lines = append(lines, "", "Issue links")
+		links := p23LeafItems(t, facts, "links")
+		if len(links) == 0 {
+			lines = append(lines, "  None.")
+		}
+		for _, raw := range links {
+			lines = append(lines, p23LeafFactLines(t, kind, raw.(map[string]any))...)
+		}
 	}
 	if budget, ok := facts["budget"].(map[string]any); ok {
 		remaining, consumed := "unknown", "unknown"
