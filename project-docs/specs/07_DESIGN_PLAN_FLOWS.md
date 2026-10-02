@@ -103,7 +103,15 @@ Recovered code is not trusted evidence; gates/review run normally.
    resolving a Finding it created, never the same Actor reviewing twice
    (DEC-225, clarified during DEC-239).
 7. Target changes stale bound proof; rework consumes existing budgets.
-8. Exhaustion creates `review-rework-exhausted` and Attention.
+8. Exhaustion creates `review-rework-exhausted` and Attention. The Stop blocks
+   `claim.acquire` and `run.start` only; generic gate admission ignores the
+   rework budget.
+9. An activated Human approves more rework by recording an `approved` Human
+   Outcome of class `review-rework-extension` scoped to a selected Issue. That
+   Outcome resolves the Stop and Attention in its own Event, and rework Claims
+   and Runs are admitted again. Later rework Reviews are still charged; no
+   further rework Stop is raised in that Envelope revision. A fresh budget
+   needs an Envelope revision (Phase 23 DEC-269, option 1).
 
 No QA Work Item, QA Plan, handoff, or completion report is created.
 
@@ -185,4 +193,4 @@ not the operational journey's authority, and are not extended to suit one.
 5. Final convergence replaces the development migration chain with the first
    supported schema/Event baseline and rehearses a disposable project.
 
-*Last updated: 2026-08-22 (Phase 21 DEC-156/157 flow amendment)*
+*Last updated: 2026-10-03 (Phase 23 wrap; rework extension under DEC-269)*

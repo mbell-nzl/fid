@@ -75,6 +75,13 @@ Registration, executor, Receipt, Artifact, and Evidence logic are owned by
 `internal/validation` is called by both terminal-success Issue transition and
 Envelope completion; neither adapter duplicates its rules.
 
+Phase 23 adds exactly one package and removes exactly one. `internal/review`
+owns Review, Finding, Concern, Deviation, Decision Reference, Human Outcome,
+and requirement-reference rules. `internal/requirements` is removed with V1
+requirement authoring. `internal/links` is restricted to Issue endpoints;
+requirement traceability lives only in `requirement_issue_links`. The exact
+reconciliation is in `../docs/phases/phase-23/execution-scope.md`.
+
 ## 3. Versioned Backend Capabilities
 
 Capability versions evolve independently of the fid product version.
@@ -347,4 +354,4 @@ and a slow sample requires causal optimization rather than threshold change.
   physical DDL and Event payload are recorded in `03_TRD_SCHEMA.md` for that
   slice.
 
-*Last updated: 2026-08-23 (Phase 21 DEC-156/157/158 planning amendments)*
+*Last updated: 2026-10-03 (Phase 23 wrap; package boundary and qualified capabilities)*

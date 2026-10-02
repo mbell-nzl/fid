@@ -279,8 +279,20 @@ Avoid: copying decision prose into fid.
 **Human Outcome**
 Definition: A structured Human approval, rejection, checklist result, decision,
 or risk acceptance.
-Use when: an Obligation explicitly permits or requires Human judgment.
+Use when: an Obligation explicitly permits or requires Human judgment, or a
+Stop's recorded condition names an Outcome class (for example
+`review-rework-extension`, Phase 23 DEC-269).
 Avoid: presenting Human judgment as deterministic execution proof.
+
+**Requirement Reference**
+Definition: fid's pointer to one version of a project-owned requirement: its
+source path, digest, status, and Issue links. It carries two identities. The
+**requirement ID** (`requirement_id`, such as `REQ-leaf`) is the project's
+stable ID. The **reference ID** (`RREF-…`) names one version; superseding
+creates a new one (Phase 23 DEC-269).
+Use when: tracing project requirements to Issues.
+Avoid: calling the reference ID "the requirement", or copying requirement
+prose into fid.
 
 **Stop**
 Definition: A typed operational fact that prevents a specified action until its
@@ -542,5 +554,5 @@ forward fid entities. They may appear in historical phase records, the current
 V1 repository delivery process, or the external kit's temporary engineering
 memory. New fid product specifications must use the retained terms above.
 
-*Last updated: 2026-09-19 (Phase 23 DEC-226: `Reason code` split into
-**Failure code** and **Evaluation reason**)*
+*Last updated: 2026-10-03 (Phase 23 wrap: Requirement Reference identities and
+Human Outcome Stop resolution, DEC-269)*

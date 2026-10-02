@@ -3402,34 +3402,126 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 - **Refs:** ADR-0011; DEC-195; DEC-267; DEC-269 Part 3; TRG-23-017;
   ESC-23-012; VAL-089.
 
+### DEC-271: Accept and wrap Phase 23; Human operating experience becomes CF-045
+
+- **Date/status:** 2026-10-03; ACCEPTED by the Tech Lead under the Human's
+  instruction "Complete Phase 23 wrap", given after the Human recorded 7/7
+  PASS in `qa/human-checklist-2.md` (`04e3169`). The VAL-071/073 dispositions
+  below are flagged to the Human, who may reverse them.
+- **Acceptance:** tasks 1-21 complete. Final review 2 (review-16a, PASS)
+  records 85/85 deterministic PASS with no Must-fix, closing MF-1, MF-2 and
+  MF-3. Human rows: VAL-070 PASS (checklist 1); VAL-072 PASS (checklist 2,
+  3/3); VAL-071 and VAL-073 PASS by Tech Lead disposition (below). Total
+  89/89. ESC-23-012 is resolved. See `qa/final-acceptance.md`.
+- **VAL-071 disposition:** the pass criterion is that the Human confirms the
+  before and after states and can state the reason from fid output.
+  HUMAN-02a-after and HUMAN-02a-why are PASS. HUMAN-02a-before is PARTIAL
+  only because Human mode omits the reason that `--json` shows (A5). A5 is a
+  Phase 21 output-contract limit, not a Phase 23 defect, so it does not fail
+  the assertion. It moves to CF-045.
+- **VAL-073 disposition:** 53 of 54 view judgments now PASS. The remaining
+  PARTIAL, HUMAN-04c-03, asks to move the required purpose and judgment lines
+  out of the default view eventually. Those lines are required by VAL-060 and
+  VAL-073, so the request changes accepted guidance rather than showing a
+  failure. It moves to CF-045 (A6).
+- **Checklist 2 summary cell:** its "Overall result" still reads "Pending
+  Human input" although every row is PASS. It is a Human-owned field and is
+  left untouched; the Human may correct it.
+- **CF-045 (new):** Human operating experience, from the DEC-268 agenda: A4
+  (raw-JSON Stop details in `stop list`, `attention list`, `resume`), A5
+  (Human denials omit reasons), A6 (hint-line verbosity), A7 (`finding
+  address` reason), A8 (`--input` JSON authoring and values a Human cannot
+  type; the `attention resolve --help` text), and the residual PARTIALs
+  HUMAN-02a-before and HUMAN-04c-03. Owner and timing: decided by the Human
+  and Tech Lead before Phase 24 planning. Recording the item does not choose
+  a design, a phase, or a contract change.
+- **DEC-227 project default:** no change. After DEC-258, uncached
+  `cmd/fid` is 359.6 s and tagged integration 289.6 s, inside Go's 600 s
+  per-binary default with headroom. A phase whose measured package time
+  passes the DEC-258 80% warning adds `-timeout 30m` to its task commands, as
+  Phase 23 did.
+- **Spec sync:** applied in this wrap to 02 (package boundary), 03 §8.4
+  (0018, DEC-264, DEC-270), 06 (Phase 23 amendment section and requirement
+  identity), 07 (rework extension), 10 (Phase 23 complete), GLOSSARY
+  (Requirement Reference; Human Outcome), and AGENTS (`internal/review/`).
+  The full verdict table is below and in `wrap-up-audit.md`.
+- **Wrap checks:** `workflow-sequence-lint.sh` on the run ledger returned
+  `VALID state=ADVANCEABLE` (exit 0). `git diff --check` returned no output
+  (exit 0). Every local link in the wrap and current documents resolves.
+- **Boundary:** phase complete and ready for PR and merge; no active phase.
+  Nothing here plans Phase 24, pushes, merges, or releases.
+- **Refs:** DEC-002; DEC-227; DEC-258; DEC-267..270; ESC-23-012;
+  VAL-070..073; `qa/final-review-2.md`; `qa/human-checklist.md`;
+  `qa/human-checklist-2.md`; `wrap-up-audit.md`.
+
 ## Spec Sync Verdict
 
-Recorded at wrap-up. `verified-no-change` is a positive assertion after review,
-not the default.
+Recorded at wrap-up (DEC-271). `verified-no-change` is a positive assertion
+after review. Rationale for each row is in `wrap-up-audit.md`.
 
 | Spec | Verdict | Evidence / Reference |
 |---|---|---|
-| `00_PROJECT_CHARTER.md` | pending | |
-| `01_PRD.md` | touched: DEC-242 | PRD-REV-004 distinguishes nonterminal addressed from Review-only resolved/inapplicable |
-| `02_TRD.md` | touched: DEC-238, DEC-239, DEC-242 | rebuild-scoped writes, retained Actor/history binding and atomic Review terminal dispositions; task 17 still owns its later sync |
-| `03_TRD_SCHEMA.md` | touched: DEC-242 | section 3.7 removes conflicting Human-Outcome Finding resolution; task 1's section 8.4 sync still audited at wrap |
-| `04_TRD_CONFIG.md` | pending | |
-| `05_DESIGN_PLAN.md` | pending | |
-| `06_DESIGN_PLAN_CLI.md` | touched: DEC-242, DEC-263 | Review optional inapplicability input; DEC-263 adds the Stop-blocked denial fields to `protected-decision-required` and `human-outcome-required`; later task-owned sync remains |
-| `07_DESIGN_PLAN_FLOWS.md` | touched: DEC-239, DEC-242 | same-independent-Reviewer resolution and reasoned inapplicability in one Review Event |
-| `08_QUALITY_PLAN.md` | touched: DEC-239, DEC-259 | section 8 records VAL-015 evidence-route boundary; section 7 race gates carry the modernc `checkptr` exclusion |
-| `09_AI_WORKFLOW.md` | touched: DEC-257, DEC-258, DEC-259 | §2.4 REVIEW-owner paragraph and "Autonomous triage and resolved resume" gain the BLOCK re-review `Repair owners` route; §2.5 step 6 gains the tiered test loop, `t.Parallel()` default and 80% headroom warning |
-| `AGENTS.md` (Commands) | pending; conventions touched: DEC-258 | DEC-227: decide at wrap-up whether the explicit `-timeout` bound becomes the project default. DEC-258 adds the `t.Parallel()`/`paralleltest` test-style rule; DEC-259 adds the modernc `checkptr` exclusion to the default race commands |
-| `10_IMPLEMENTATION_ROADMAP.md` | pending | |
-| `GLOSSARY.md` | touched: DEC-226, DEC-242, DEC-249 | Failure code / Evaluation reason split; Review Finding distinguishes nonterminal addressed and Review-only terminal dispositions; Obligation gains the "applicable" definition |
+| `00_PROJECT_CHARTER.md` | verified-no-change | Review and Human judgment stay inside the chartered backend scope |
+| `01_PRD.md` | touched: DEC-242 | PRD-REV-004; PRD-REV-006 and PRD-ISSUE-011 verified against DEC-269 |
+| `02_TRD.md` | touched: DEC-238, DEC-239, DEC-242, DEC-271 | wrap adds the Phase 23 package boundary |
+| `03_TRD_SCHEMA.md` | touched: DEC-222, DEC-242, DEC-264, DEC-270 | §8.4 incorporates 0018 and fail-closed pre-change journals |
+| `04_TRD_CONFIG.md` | verified-no-change | no config key or consuming path changed |
+| `05_DESIGN_PLAN.md` | verified-no-change | §6 guidance holds; A5 gap is CF-045 |
+| `06_DESIGN_PLAN_CLI.md` | touched: DEC-242, DEC-263, DEC-265, DEC-266, DEC-269, DEC-270 | Phase 23 amendment section; requirement identity |
+| `07_DESIGN_PLAN_FLOWS.md` | touched: DEC-239, DEC-242, DEC-269 | rework-extension step |
+| `08_QUALITY_PLAN.md` | touched: DEC-239, DEC-259 | DEC-270 check found no pre-adoption promise |
+| `09_AI_WORKFLOW.md` | touched: DEC-257, DEC-258, DEC-259 | no wrap-time change |
+| `AGENTS.md` | touched: DEC-258, DEC-259, DEC-271 | `internal/review/` added; DEC-227 commands unchanged |
+| `10_IMPLEMENTATION_ROADMAP.md` | touched: DEC-271 | Phase 23 complete; next work |
+| `GLOSSARY.md` | touched: DEC-226, DEC-242, DEC-249, DEC-269 | Requirement Reference; Human Outcome |
 
 ## Triage-Log Audit
 
-- [ ] Walked every TRG-23-NNN in `triage-log.md`.
-- [ ] Confirmed each RESUME verdict was correct in hindsight.
-- [ ] Flagged any TRG that should have escalated.
-- [ ] Confirmed autonomous TL-Lite resume remains in effect (DEC-002).
+- [x] Walked every TRG-23-NNN in `triage-log.md`: 17 unique (13 BLOCK,
+  2 REPAIR, 2 RESUME). Every BLOCK names an ESC; all twelve ESCs are resolved.
+- [x] RESUME verdicts TRG-23-014/015 were correct in hindsight (capacity
+  restored; 015 corrects 014's identity pairing).
+- [x] No TRG should have escalated that did not. TRG-23-017 cited the open
+  ESC-23-012 instead of minting a new ESC; acceptable, noted for the
+  retrospective. Five BLOCKs (006, 007, 008, 010, 011) and 017 trace to Tech
+  Lead planning or criterion defects.
+- [x] Autonomous TL-Lite resume remains in effect (DEC-002).
 
 ## Workflow Notes
 
-Recorded at wrap-up.
+- **What worked well:** Independent QA earned its cost. The phase-end review
+  found MF-1 (full-checkptr) and the VAL-005 miscount; final review 1 found a
+  real time-dependent fixture (MF-3). The Human checklist found a genuinely
+  unresolvable Stop (A1) and a silent failure path (A2) that 85 green
+  deterministic assertions had missed. Supplemental tasks 19-21 with a narrow
+  Human re-check closed them in about two days. Contract-first planning held:
+  no accepted assertion was weakened across 13 BLOCKs.
+- **What was inefficient:** Planning took eight QA confirmation passes and
+  still let registry and closed-set gaps through (TRG-006/007/008/010/011).
+  Report-lint row grammar caused repeated report-only continuations (task 18
+  needed seven report attempts; review-15's two Must-fix were report rows
+  only). Model-capacity interruptions cost two triage cycles. The DEC-270
+  criterion was Tech Lead over-caution that cost a full Developer attempt.
+- **Task sizing:** 18 tasks were too coarse at tasks 6, 13 and 18, each of
+  which crossed several registries and needed multiple recoveries. Tasks
+  19-21 (one defect each) were the right size. Future Heavy phases should
+  split any task that touches more than one closed journal registry.
+- **QA cadence:** Three-task windows plus the task-11 checkpoint were right
+  for deterministic work. Human-judgment rows were checked only at phase end,
+  which made A1 (a contract gap) expensive to find. Recommendation: a short
+  Human walk-through of new Stop and denial paths at the window that first
+  produces them.
+- **Token efficiency:** The 3,400-line decisions file and 3,500-line run
+  ledger are too large to load; every role re-derived context from them.
+  Multiple long DEC entries restate contract text. Missed opportunities:
+  shorter DECs that cite rather than restate, and a per-phase registry
+  inventory checked by a script instead of eight manual QA passes. No
+  reliable session-wide token ledger exists, so no numeric claim is made.
+
+### Deep retrospective recommendation
+
+**RECOMMENDED**, as dedicated workflow work under CF-036/039, not as Phase 24
+planning. Cover: executable registry and closed-set inventories at planning
+(the source of five BLOCKs); report-lint grammar friction (CF-030); earlier
+Human judgment on new Human-facing failure paths; Tech Lead criterion review
+for compatibility promises the ADRs do not make; and decisions-file size.

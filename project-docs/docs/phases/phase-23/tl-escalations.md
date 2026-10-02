@@ -17,8 +17,8 @@
   - VAL-070..073 were unanswered.
   - Separately, the section 22 full-checkptr control failed in
     `TestLiveOutputGoldenFixtures` (MF-1).
-- **Status:** PARTIALLY RESOLVED 2026-10-01 under DEC-267. It stays open
-  for BC-B.
+- **Status:** RESOLVED 2026-10-03 under DEC-271 (partially resolved
+  2026-10-01 under DEC-267; open for BC-B until then).
   - **Tech Lead finding:** the DDL and the "three" phrase entered together
     in planning commit `f94e354`, and no third column was ever declared.
     The miscount most likely counted the three nullable reference columns,
@@ -63,9 +63,14 @@
   - ESC-23-012 stays open on its remaining condition.
   - DEC-269 (2026-10-01) plans tasks 19-21 and adds VAL-085..089. Its A1 and
     A3 designs were Human-approved on 2026-10-02 (option 1). Resume via `qa/resume-after-dec-269.md`.
-- **Links:** TRG-23-016; DEC-178; DEC-223; DEC-259; DEC-261; DEC-267;
-  DEC-268; `schema.md` section 2; VAL-005; VAL-070..073;
-  `qa/human-checklist.md`.
+- **RESOLVED 2026-10-03 (DEC-271):** tasks 19-21 landed and passed
+  review-15a. Final review 2 (review-16a) passed with no Must-fix, closing
+  MF-1, MF-2 and final-review-1's MF-3. The Human recorded
+  `qa/human-checklist-2.md` at 7/7 PASS. DEC-271 dispositions VAL-071 and
+  VAL-073's residual PARTIALs and the A4-A8 agenda as CF-045.
+- **Links:** TRG-23-016; TRG-23-017; DEC-178; DEC-223; DEC-259; DEC-261;
+  DEC-267..271; `schema.md` section 2; VAL-005; VAL-070..073;
+  `qa/human-checklist.md`; `qa/human-checklist-2.md`; `qa/final-review-2.md`.
 
 ## ESC-23-011 - Task 18 Developer role unavailable after bounded model-capacity retry
 

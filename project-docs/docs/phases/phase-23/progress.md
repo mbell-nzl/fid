@@ -197,3 +197,33 @@ and12967 statement blocks reconciled;65.5% coverage. Summed job time47m48s
 merge. [Hosted evidence](../phase-22/qa/task-20-hosted-ci.md) binds the
 verified PR head. Closure records are local documentation only; root does not
 push or merge.
+
+## Phase-end and supplemental tasks — 2026-10-01 to 2026-10-03
+
+Snapshot of `progress_current.md` before the wrap, condensed:
+
+- 2026-10-01: all 18 tasks complete. The phase-end final review (`74182db`)
+  returned BLOCK (TRG-23-016 / ESC-23-012). DEC-267 corrected VAL-005 to the
+  two added Evidence columns; task 18 repaired MF-1 (`b84b17c`, `b37c169`).
+- 2026-10-01: Human checklist 1 recorded 55 PASS, 2 FAIL, 6 PARTIAL (overall
+  FAIL). DEC-268: repair A1-A3 in Phase 23; A4-A8 to the wrap agenda.
+- 2026-10-02: DEC-269 (Human, option 1) added tasks 19 (silent Stop-family
+  Human failures), 20 (`RequirementRef.requirement_id`), 21 (rework Stop
+  resolved by a `review-rework-extension` Human Outcome) and VAL-085..089.
+  Task 20 attempt 1 BLOCKED (TRG-23-017); DEC-270 made pre-change journals
+  fail closed and replaced the replay criterion.
+- 2026-10-03: tasks 19-21 complete; review-15 REPAIR (report rows only),
+  review-15a PASS. Final review 1 (review-16) REPAIR on MF-3, the task-16
+  import fixture's 60-second Claim lease; task 16 repaired it (`f5fdec0`,
+  `6c94277`). Final review 2 (review-16a) PASS: 85/85 deterministic, no
+  Must-fix. Human checklist 2: 7/7 PASS (`04e3169`). RUN-END 08:14.
+
+## Phase 23 complete — 2026-10-03
+
+DEC-271 accepts the phase: 21 tasks, 89/89 validation assertions (VAL-071 and
+VAL-073 by Tech Lead disposition with residuals to CF-045), ESC-23-012
+resolved, no open escalation. See [final acceptance](qa/final-acceptance.md)
+and [wrap audit](wrap-up-audit.md). Canonical specs synced (02, 03, 06, 07,
+10, GLOSSARY, AGENTS). `reviews.coverage.v1` and `human.outcomes.v1` are
+qualified; `work.claims.v1` stays Phase 24 and `telemetry.trajectory.v1`
+Phase 25. Next: decide CF-045 timing with the Human, then plan Phase 24.

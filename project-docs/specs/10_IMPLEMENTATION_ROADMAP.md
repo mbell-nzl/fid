@@ -67,8 +67,11 @@ migrations `0013`/`0014`. Incomplete semantic capabilities remain
 is complete and Human-accepted (DEC-220): 18 planned tasks plus supplemental
 Human-guidance task 19, 80/80 validation assertions and 6/6 Human checks.**
 Independent final QA and the accepted second Human checklist are reconciled in
-`../docs/phases/phase-22/qa/final-acceptance.md`. The phase branch awaits PR/merge;
-Phase 23 has not been planned or started.
+`../docs/phases/phase-22/qa/final-acceptance.md`. **Phase 23 (Review and Human
+judgment) is complete (DEC-271): 18 planned tasks plus supplemental tasks 19-21,
+89/89 validation assertions, and a Human re-check of 7/7 after the first
+checklist failed.** Its acceptance is reconciled in
+`../docs/phases/phase-23/qa/final-acceptance.md`. Phase 24 is not yet planned.
 
 ## 3. Foundation to retain
 
@@ -279,8 +282,8 @@ reading `.fid/` internals.
    future CLI polish. The branch is ready for PR; Phase 23 was planned
    separately and is recorded at item 6.
 
-6. **Approved (2026-09-14), not started.** Phase 23 "Review and Human judgment"
-   is planned in Heavy mode and accepted under DEC-222: independent Review
+6. **Complete (2026-10-03).** Phase 23 "Review and Human judgment"
+   was planned in Heavy mode and accepted under DEC-222: independent Review
    coverage and Findings, Finding dispositions, review-cycle accounting and
    `review-rework-exhausted`, generic Concerns and Deviations, Decision
    References with protected-Decision blocking, provenanced Human Outcomes,
@@ -288,9 +291,14 @@ reading `.fid/` internals.
    requirement authoring, and the owned V1 judgment removal. The accepted
    authority is `../docs/phases/phase-23/contracts.md`, `public-interface.md`,
    `schema.md`, `execution-scope.md`, `v1-convergence-inventory.md`,
-   `contract-coverage.md`, the 74-assertion `qa/validation-contract.md`, and an
-   ordered 18-task pack. The QA plan and fresh feasibility validation are still
-   required before task 1.
+   `contract-coverage.md`, `qa/validation-contract.md`, and an ordered
+   18-task pack. The first Human checklist failed; DEC-268/269 added tasks
+   19-21 (silent Human failures, stable requirement identity, resolvable rework
+   exhaustion). DEC-271 records 89/89 assertions, `reviews.coverage.v1` and
+   `human.outcomes.v1` qualified, and the remaining Human operating-experience
+   items as CF-045.
+7. **Next.** The Human and Tech Lead decide when CF-045 is planned, then the
+   Tech Lead plans Phase 24 "Parallel and evolving work".
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

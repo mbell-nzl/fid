@@ -32,7 +32,7 @@ they must not begin implementation that depends on that choice.
 - User-facing adapters: `cmd/fid/`, `internal/cli/`, `internal/project/`,
   `internal/export/`.
 - Core/domain/business logic: `internal/issues/`, `internal/claims/`,
-  `internal/workflow/`, `internal/policy/`, `internal/qa/`,
+  `internal/workflow/`, `internal/review/`, `internal/policy/`, `internal/qa/`,
   `internal/validation/`, `internal/templates/`, `internal/search/`,
   `internal/stats/`, `internal/activity/`, `internal/report/`, `internal/changes/`,
   `internal/handoff/`, `internal/evidence/`, `internal/maintenance/`.

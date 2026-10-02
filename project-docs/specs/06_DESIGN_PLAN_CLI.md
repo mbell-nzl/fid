@@ -134,6 +134,14 @@ fid requirement record-reference|link|get|list
 This surface stores stable identity, source reference/digest, status, and Issue
 links only. Requirement prose is never imported.
 
+Each requirement has two identities. `requirement_id` is the project's stable
+ID (for example `REQ-leaf`); `id` identifies one version of the reference
+(`RREF-…`), and every supersede creates a new one. Every `RequirementRef`
+carries both (Phase 23 DEC-269). `requirement get <id>` accepts either: a
+stable ID returns its active reference, or else its newest; a reference ID
+returns that row. Human views name the requirement by its stable ID, show the
+reference ID separately, and list Issue links in their own labelled section.
+
 ### Work Envelope and projections
 
 ```text
@@ -426,4 +434,33 @@ Human recovery guidance without changing JSON or mutation authority; DEC-220
 records technical qualification and the accepted second Human checklist.
 CLI view polish and verbosity remain nonblocking CF-040.
 
-*Last updated: 2026-09-21 (Phase 23 Decision Reference implementation; DEC-239)*
+### Phase 23 accepted amendment
+
+`../docs/phases/phase-23/public-interface.md` contains the delivered closed
+Review, Finding, Concern, Deviation, Decision Reference, Human Outcome, and
+requirement-reference leaf schemas, failure details, and Human views (DEC-222).
+Later accepted amendments, all delivered and recorded in that contract:
+
+- DEC-263: Stop-blocked judgment denials carry `stop_ids`, `attention_ids`,
+  `event` (null), and `replayed` (`false`) in failure details; StopDetails are
+  unchanged.
+- DEC-265/266: section 5 declares 19 Failure codes (18 added, 1 retained,
+  tabled above). All four `authority-*` codes keep the Phase 21 details
+  `{operation,actor_id,required_actions,required_capabilities}` with a null
+  subject.
+- DEC-269: every Human-mode failure from the Stop-error family (`claim
+  acquire`, `run start`, `gate run` Stop denials, `stop` and `attention`
+  leaves) writes `error: <message>` to stderr, with the JSON `message` text.
+  The `review-rework-exhausted` Stop is resolved by an `approved` Human Outcome
+  of class `review-rework-extension`, recorded atomically or cited through
+  `stop resolve`. Its Human denial adds one guidance line naming that action.
+  `RequirementRef` gains `requirement_id` as described above.
+- DEC-270: journals written before `requirement_id` existed are unsupported;
+  rebuild refuses them with `journal-replay-stopped` (ADR-0011).
+
+DEC-271 records technical qualification and the Human re-check. The
+remaining Human operating-experience items from the Phase 23 checklist
+(Stop-detail rendering, denial reasons, hint verbosity, `--input` authoring)
+are CF-045; CF-040 still covers polish of earlier views.
+
+*Last updated: 2026-10-03 (Phase 23 wrap; DEC-263/265/266/269/270/271)*

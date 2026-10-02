@@ -734,4 +734,11 @@ SQL and the incorporated DDL must agree exactly. The baseline remains
 pre-adoption: clean initialization and rebuild are required, with no old-data
 converter implied.
 
-*Last updated: 2026-09-13 (Phase 22 delivered baseline; DEC-220)*
+Migration 0018 (V1 judgment removal) is incorporated from sections 4-5 of the
+same file. Its down migration restores the schema-17 state exactly (DEC-264);
+no migration from 0001 to 0017 is edited. Journals written by an earlier
+Phase 23 development binary are not supported: where a stored result no longer
+matches the current closed shape, rebuild stops with `journal-replay-stopped`
+and leaves the source journal unchanged (DEC-270, ADR-0011).
+
+*Last updated: 2026-10-03 (Phase 23 delivered baseline; DEC-264/270/271)*

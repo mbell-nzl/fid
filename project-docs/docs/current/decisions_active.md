@@ -32,8 +32,9 @@
   a revision; removing unfinished work needs an authorized disposition.
 - Gates C/D1/D2: all twelve port capabilities qualify before live adoption;
   no global role-policy model; no duplicate process aggregate or generic format.
-- Gates D3.1/D3.2: vertical delivery; Phase 21 delivered the one-Issue skeleton;
-  Phase 22 delivered failure/recovery and its qualified capabilities (DEC-220).
+- Gates D3.1/D3.2: vertical delivery. Phases 21, 22 and 23 delivered the
+  one-Issue skeleton, failure/recovery (DEC-220), and Review/Human judgment
+  (DEC-271) with their qualified capabilities.
 - DEC-156: qualifying Evidence guards terminal-success Issue transition;
   Envelope completion reuses the same evaluator after the Issue is terminal.
 - DEC-157/177: Phase 21 delivered wire authority is
@@ -41,12 +42,6 @@
   `v1-convergence-inventory.md`. Public enums are kebab-case; bootstrap has no role.
 
 ## Standing Delivery Constraints
-
-- DEC-238/239 recoveries are complete. Their earlier task holds are historical;
-  see [phase progress](../phases/phase-23/progress.md). Keep the 30-second rebuild,
-  600-second ordinary-package and 900-second tagged budgets. DEC-239 preserves
-  Run/Claim Actor binding, durable history, real CLI Claim rejection and
-  same-Reviewer rework while using an isolated Run-holder history query.
 
 - DEC-158: report lint is a two-argument Runner pre-dispatch control, not a
   Developer task command; 100k rebuild needs three fresh <30 s samples (CF-024).
@@ -65,7 +60,7 @@
 - DEC-172: an unavailable capability row is required negative metadata, not an
   implementation of that capability. Replace only when owning semantics qualify.
 - DEC-178: shipped migration SQL and canonical slice DDL must agree exactly.
-- DEC-002: autonomous TL-Lite resume remains enabled under the current workflow.
+- DEC-002: autonomous TL-Lite resume remains permanently enabled.
 - DEC-190: separate Human-authorized verifier maintenance resolves ESC-22-001;
   ordinary pending-triage correction and normal restart retain task/attempt
   authority, and active owning-review triggers work across recovery boundaries.
@@ -88,85 +83,38 @@
 - Current V1 delivery scaffolding is binding engineering procedure, not forward
   fid product scope. No failed gate authorizes a protected definition change.
 
-## Current Phase
+## Phase 23 Delivered Commitments (DEC-271)
 
-- DEC-222 (ACCEPTED by Human, 2026-09-14): Phase 23 "Review and Human judgment"
-  is Heavy: accepted contracts, 84-assertion validation contract, and 18-task pack
-  are indexed in [phase brief](phase_brief.md). Owning tasks apply the six
-  accepted canonical spec amendments.
-- DEC-222 Human planning decisions: Concern dispositions are exactly
-  `carried-forward`, `rejected`, `superseded`, with self-disposal permitted and
-  both Actors recorded; `links` is restricted to Issue endpoints so
-  `requirement_issue_links` is the single traceability model, retaining the new
-  `verifies` relation.
-- DEC-223..227 (ACCEPTED by Human 2026-09-19): the link-preserving
-  `evidence_records` rebuild, since 0017 fails wherever Evidence has Artifact
-  links; four named Events raise `human-outcome-required`, two gaining effect
-  rows; independence conflicts with mutating Claims and their Runs only, so one
-  Reviewer may review successive rework cycles; named failure-code producers,
-  denial precedence and non-committing denials; and an explicit `-timeout 30m`
-  plus measured wall-time budgets.
-- DEC-226 vocabulary (standing): a **Failure code** names one refused request
-  and carries category, retryability, and exit status; an **Evaluation reason**
-  says why one Obligation is unsatisfied and carries none of those. File each
-  identifier in its glossary-defined set.
-- DEC-228 (ACCEPTED, Tech Lead) carries the remaining dispositions, including
-  three DEC-167/173 scope corrections and five new assertions.
-- DEC-235 (ACCEPTED by Human 2026-09-20) resolves ESC-23-001 with Option A: the
-  three new `Condition` fields are `omitempty` and absent on the types they do
-  not apply to, the six Phase 22 types stay byte-identical, and exclusivity is
-  structural in per-type journal shapes keyed on `type`.
-- DEC-236: task 9's `case "Condition"` must call
-  `validateCurrentValueRelations("Condition", object)` to retain nullable binding.
-  `review-recorded` has no discriminator; `finding_id` is for `finding-resolved`.
-- DEC-237: resolution (VAL-078) and Condition encoding (VAL-080) are separate.
-  VAL-081 preserves nullable binding; VAL-082 preserves retained-type bytes.
-- DEC-240: VAL-082 splits into VAL-082/083/084. Current count is **84**:
-  80 deterministic, 4 Human.
-- DEC-242: Task 5 adds optional reasoned `inapplicable_findings` to
-  `review.record`; addressed is nonterminal, terminal dispositions belong to
-  the qualifying Review Event.
-- DEC-243: VAL-025 keeps all nine compatibility cells; Task 6 delivers the
-  receipt/review links and Task 10 the real Human link and final closure.
-- DEC-249 (Tech Lead 2026-09-26): an Obligation blocks only the guarded
-  actions it declares. "Applicable" means `required` and guarding that action.
-  Task 2 owns the evaluator conformance repair.
-- DEC-250 (Tech Lead 2026-09-26): `human-outcome-recorded` and
-  `decision-satisfied` qualifying facts. Resolution is keyed on the Condition,
-  not the raising code, with one predicate shared by the manual and atomic
-  paths. Task 11 implements it; DEC-253 ratifies its `stop_conditions.go`
-  scope.
-- DEC-251 (Human, Option B, 2026-09-26): `human-outcome.record` needs no
-  Envelope grant. Human authority comes from the Activation profile. The
-  section 4.1 cell is corrected.
-- DEC-252..257 closed ESC-23-004 (tasks 6, 2, 10, 11); DEC-254 Part 1 stands.
-- DEC-258 (Human-delegated): parallel tests, `paralleltest`, tiered test loop,
-  80% headroom warning. DEC-259 (Human): both race gates carry
-  `-gcflags=modernc.org/...=-d=checkptr=0`, plus a phase-end full-`checkptr` run.
-- DEC-260 (ESC-23-006): requirement writes need a trusted Actor, with no
-  capability or grant; the closed capability set stays at thirty.
-  DEC-261: reopened tasks run the DEC-259 race gates.
-- DEC-262: task 13 owns `activity_log`/`issue` rows; task 15 the rest (VAL-055).
-- DEC-263: Stop-blocked judgment denials carry StopDetails plus `stop_ids`,
-  `attention_ids`, `event` (null), and `replayed` (`false`).
-- DEC-264 (Human): a down migration restores the prior live state; 0018 down
-  follows `schema.md` section 5. DEC-265/266: 19 Failure codes (18 added);
-  `authority-*` details use the Phase 21 four fields with a null subject.
-- DEC-267: VAL-005 names the two added Evidence columns; MF-1 is task 18's.
-- DEC-268 (Human): checklist FAIL. A1-A3 are repaired in Phase 23; the A4-A8
-  Human operating experience is on the wrap-up agenda.
-- DEC-269 (Human, option 1): tasks 19 (silent Stop-family Human
-  failures), 20 (`RequirementRef.requirement_id`), and 21 (rework Stop resolved
-  by a `review-rework-extension` Human Outcome; rework budget excluded from
-  generic admission). VAL-085..089 bring the contract to 89 rows.
-- DEC-270: pre-change Phase 23 journal history fails closed (ADR-0011), with
-  no legacy path; VAL-089 requires a new-shape round trip instead.
+Phase 23 is complete; full reasoning is in
+[phase decisions](../phases/phase-23/decisions.md). Standing rules:
+
+- DEC-225: Review independence conflicts only with mutating Claims and their
+  Runs; the same independent Reviewer may review successive rework cycles.
+- DEC-226: a **Failure code** names one refused request; an **Evaluation
+  reason** says why one Obligation is unsatisfied. File each in its set.
+- DEC-235/236: the `Condition` value uses `omitempty` only on
+  `outcome_class`, `decision_class`, `finding_id`; tagging any other field
+  changes every stored `semantic_key` and `request_digest`.
+- DEC-249: an Obligation blocks only the guarded actions it declares.
+- DEC-250/269: Stop resolution is keyed on the recorded Condition with one
+  predicate shared by manual and atomic paths. The `review-rework-exhausted`
+  Stop resolves through an approved `review-rework-extension` Human Outcome,
+  once per Envelope revision; generic admission ignores the rework budget.
+- DEC-251/260: Human Outcomes need no Envelope grant (Activation supplies
+  authority); requirement writes need a trusted Actor and no capability.
+- DEC-258/259: tests default to `t.Parallel()`; race gates carry the modernc
+  `checkptr` exclusion plus a phase-end full-`checkptr` run. DEC-227's
+  `-timeout 30m` is added per phase when package time passes the 80% warning.
+- DEC-263: Stop-blocked denials carry `stop_ids`, `attention_ids`, `event`
+  (null), `replayed` in failure details; StopDetails unchanged.
+- DEC-264: a down migration restores the prior live schema state exactly.
+- DEC-270: journals from earlier development binaries fail closed under
+  ADR-0011; no legacy replay path is added for pre-adoption history.
 
 ## Prior Phase and Future Qualification
 
-- DEC-220/221: Phase 22 and its CI repair are complete; see the
-  [wrap audit](../phases/phase-22/wrap-up-audit.md) and
-  [hosted evidence](../phases/phase-22/qa/task-20-hosted-ci.md).
+- Phase 23 [wrap audit](../phases/phase-23/wrap-up-audit.md); Phase 22
+  [wrap audit](../phases/phase-22/wrap-up-audit.md) (DEC-220/221).
 - Claims qualification remains Phase 24; external adapter qualification Phase 25.
 
 ## Open Carry-Forward Register
@@ -180,19 +128,20 @@
 | CF-026b | Human/future TL: separate Issue lifecycle product decision; deferred. |
 | CF-029 | Workflow maintainer: QA evidence-token validator improvements in dedicated maintenance. |
 | CF-030 | Workflow maintainer: report-lint rejected-token diagnostics in dedicated maintenance. |
-| CF-033 | Workflow maintainer: AGENTS package inventory and nonexistent quality section locator; execution-scope/TRD part delivered. |
+| CF-033 | Workflow maintainer: AGENTS package inventory (lists nonexistent packages) and nonexistent quality section locator. `internal/review/` added at Phase 23 wrap. |
 | CF-036 | Dedicated workflow retrospective/maintenance: cross-phase/task ledger identities, fail-closed ESC registration and observed control friction. DEC-190/191 bounded repairs do not close it. |
 | CF-037 | Phase 25 TL/adapter owner: exact coordinator/port obligations in Phase 22 kit-contract-mapping.md; fid conformance alone is insufficient. |
 | CF-038 | Future causal editor of cmd/fid/live_output_test.go: same-stream coalescing hardening. Post-truncation output_bytes documentation half closed under DEC-189/220. |
 | CF-039 | Dedicated workflow maintainer: executable cross-check of contract clauses, schema, task ownership and acceptance criteria; existing scope-audit item now formally indexed. |
-| CF-040 | Partially scheduled in Phase 23 task 14 (VAL-073) for the Human views that phase introduces; polish/verbosity review of pre-existing views stays with Phase 25 operating-experience qualification. |
+| CF-040 | Phase 25 operating-experience qualification: polish/verbosity of pre-existing views. Phase 23's new views passed VAL-073; A4 (raw Stop JSON) moved to CF-045. |
 | CF-041 | Workflow/CI maintainer: hosted CI runs only format, lint, build, shard verification, and the ordinary race/coverage shards. The tagged integration suite and the rebuild benchmark are local-only gates, so a green PR is not phase-level evidence. Dedicated maintenance. |
-| CF-042 | Workflow/test-infra maintainer: `cmd/fid/integration/main_test.go` leaks built-binary directories. Cause corrected under R-15/DEC-229: five tests re-execute the test binary, each child rebuilds its own ~16 MB binary, and the crash-process children never reach `RemoveAll`, so one clean run (exit 0, no kill) leaks 20 directories and 306 MB into a RAM-backed `/tmp`. Phase 23 task 1 makes children reuse the parent's published binary and keeps a 24-hour prune only as the residual safety net for a parent killed mid-run; the durable cleanup-on-kill design stays in dedicated maintenance. |
+| CF-042 | Workflow/test-infra maintainer: `cmd/fid/integration/main_test.go` binary-directory leak. Phase 23 task 1 made children reuse the parent binary and added a 24-hour prune; durable cleanup-on-kill stays in dedicated maintenance. |
 | CF-043 | Future TL (after Phase 23): open one SQLite connection per command. Each command re-opens the projection several times (`journal.ensureProjectionFresh`, `workflow.openWorkflowDB` at 32 sites), and each open re-parses the schema, about 33% of race-test CPU (`qa/esc-23-005-repair.md`). Needs planning plus VAL coverage for rebuild/catch-up file replacement, transaction scope and locking. |
 | CF-044 | Future causal editor of `cmd/fid` test helpers: `mustJournalPath` assumes one journal file, but journals split per UTC day. A gate crossing 00:00 UTC fails with `journal files = 2, want 1` (ESC-23-005 attempt 1). |
+| CF-045 | Human + Tech Lead, before Phase 24 planning: decide when and how to plan the Human operating experience from Phase 23 checklist 1 (DEC-268/271). A4 raw-JSON Stop details (`stop list`, `attention list`, `resume`); A5 Human denials omit the reason (Phase 21 two-guidance-line limit vs `05_DESIGN_PLAN.md` §6); A6 purpose/judgment hint verbosity (required by VAL-060/073); A7 `finding address` reason; A8 `--input` JSON authoring and values a Human cannot type, plus `attention resolve --help` "Run JSON input" text. Residual PARTIALs HUMAN-02a-before, HUMAN-04c-03. Unscheduled. |
 
 CF-024/034/035 closed (IDs retired). DEC-222: CF-040/041; DEC-227/229: CF-042;
-DEC-258/259: CF-043/044. See [phase decisions](../phases/phase-23/decisions.md).
+DEC-258/259: CF-043/044; DEC-271: CF-045. See [phase decisions](../phases/phase-23/decisions.md).
 
 ## Environment
 
