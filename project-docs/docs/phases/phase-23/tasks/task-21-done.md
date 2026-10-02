@@ -3,6 +3,10 @@
 ## Workflow outcome
 
 - Task outcome: COMPLETE
+- Category: none
+- Condition: All task-21 work and required gates complete.
+- Recovery attempts: 2
+- Next action: None.
 - Same-task continuation attempt 2 completed the bounded shared-fake conformance repair. Attempt 1 ended `RECOVERY_REQUIRED` because the required fake mirror lived in `p22_semantic_fake_test.go` and `p22_semantic_denial_test.go`, outside the older task file list. The Runner's attempt-2 recovery authorized exactly those two paths and this report.
 - Human attention required: no
 
@@ -48,7 +52,7 @@
 - `FID_P23_HUMAN_FIXTURE_ROOT=/tmp/fid-task21-l8zUT4 go test -tags integration -run '^TestP23HumanFixtures$' -count=1 -v ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 11.653s` (terminated `exit_code: 0`)
 - `go test -tags integration -run '^TestP22Fake(ReviewReworkStopCondition|GenericAdmissionExcludesReviewCycles)$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`; missing fake budget type and admission method)
 - `go test -tags integration -run '^TestP22Fake(ReviewReworkStopCondition|GenericAdmissionExcludesReviewCycles)$' -count=1 ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.086s` (terminated `exit_code: 0`)
-- `go test -tags integration -run '^TestP22Fake(ReviewReworkStopCondition|GenericAdmissionExcludesReviewCycles)$' -count=1 ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 0.570s` (terminated `exit_code: 0`; final focused assertions)
+- `go test -tags integration -run '^TestP22Fake(ReviewReworkStopCondition|GenericAdmissionExcludesReviewCycles)$' -count=1 ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 0.570s` (terminated `exit_code: 0`) — final focused assertions.
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP22Fake(ReviewReworkStopCondition|GenericAdmissionExcludesReviewCycles)$' ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.605s` (terminated `exit_code: 0`)
 
 The first two red tests observed `budget-observed` and `budget-exhausted`,
@@ -69,17 +73,18 @@ Package times were `cmd/fid` 274.158s, `internal/workflow` 113.517s, and
 
 Attempt 2, same exact commands in the task-spec order from repository root:
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`; wall 0.036s)
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`; wall about 1.004s)
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.7% of statements` (terminated `exit_code: 0`; reported `cmd/fid` wall 215.093s)
-- `go tool cover -func=coverage.out` - PASS - `total:										(statements)				60.7%` (terminated `exit_code: 0`; wall 0.114s)
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	291.867s` (terminated `exit_code: 0`; reported package wall 291.867s)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`) — wall 0.036s.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`) — wall about 1.004s.
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.7% of statements` (terminated `exit_code: 0`) — reported `cmd/fid` wall 215.093s.
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)				60.7%` (terminated `exit_code: 0`) — wall 0.114s.
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	291.867s` (terminated `exit_code: 0`) — reported package wall 291.867s.
 
 Attempt 2 reported `cmd/fid` 215.093s, `internal/workflow` as cached (attempt 1 measured 113.517s), and `cmd/fid/integration` 291.867s. These are below 600s/900s; no headroom warning applies.
 
 ## Deviations from spec
 
 - Attempt 1's `RECOVERY_REQUIRED` scope gap was that the shared-fake dispatcher and denial lived in two files outside the older task list. The Runner's bounded attempt-2 continuation authorized those exact paths; both are now converged and the five byte-identical gates passed.
+- The first committed report-lint attempt found 12 report-format failures (`FAIL report-lint found 12 failure(s)`, terminated `exit_code: 12`): missing COMPLETE outcome fields and termination annotations with extra semicolon text. This report-only correction restores the template fields and puts wall-time notes after each termination annotation.
 - First lint attempt failed with `* staticcheck: 1` (terminated `exit_code: 1`) because the new Condition branch used an if/else chain flagged by QF1003. Changed only that branch to a tagged switch; the byte-identical retry returned `0 issues.` (terminated `exit_code: 0`). The failed attempt remains part of this report.
 - The first guidance implementation used an invalid pointer dereference on `cli.Subject.ID`; its focused tagged command ended `FAIL` (terminated `exit_code: 1`). Repaired the string rendering and retained the original red guidance evidence.
 
