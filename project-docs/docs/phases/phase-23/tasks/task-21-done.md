@@ -37,22 +37,31 @@
 
 ## Tests run
 
-- `go test -run '^TestReviewReworkStopRequiresApprovedOutcome$' -count=1 ./internal/workflow` - FAIL (red) - `FAIL` (terminated `exit_code: 1`); old Condition was `budget-observed`. Later PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 0.164s` (terminated `exit_code: 0`).
-- `go test -run '^TestReviewCyclesDoNotBlockGateAdmission$' -count=1 ./internal/evidence` - FAIL (red) - `FAIL` (terminated `exit_code: 1`); old admission returned `budget-exhausted`. Later PASS - `ok  github.com/mbell-nzl/fid/internal/evidence 0.005s` (terminated `exit_code: 0`).
-- `go test -tags integration -run '^TestP23StopFailureHumanAndJSONParity$' -count=1 ./cmd/fid/integration` - FAIL (red) - `FAIL` (terminated `exit_code: 1`); the old Human denial had only the error line.
-- `go test -tags integration -run '^TestP23Review(CyclesRealProcessJourney|ReworkManualResolutionWithPriorOutcome)$' -count=1 ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 6.626s` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow ./internal/evidence ./internal/claims ./cmd/fid` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 230.728s` (terminated `exit_code: 0`).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP23(ReviewCyclesRealProcessJourney|ReviewReworkManualResolutionWithPriorOutcome|HumanFixtureStepsRemainRunnable|HumanFixtures|StopFailureHumanAndJSONParity|StopFailureCodeMatrix)$' ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 19.016s` (terminated `exit_code: 0`).
-- `FID_P23_HUMAN_FIXTURE_ROOT=/tmp/fid-task21-l8zUT4 go test -tags integration -run '^TestP23HumanFixtures$' -count=1 -v ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 11.653s` (terminated `exit_code: 0`).
+- `go test -run '^TestReviewReworkStopRequiresApprovedOutcome$' -count=1 ./internal/workflow` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -run '^TestReviewReworkStopRequiresApprovedOutcome$' -count=1 ./internal/workflow` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 0.164s` (terminated `exit_code: 0`)
+- `go test -run '^TestReviewCyclesDoNotBlockGateAdmission$' -count=1 ./internal/evidence` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -run '^TestReviewCyclesDoNotBlockGateAdmission$' -count=1 ./internal/evidence` - PASS - `ok  github.com/mbell-nzl/fid/internal/evidence 0.005s` (terminated `exit_code: 0`)
+- `go test -tags integration -run '^TestP23StopFailureHumanAndJSONParity$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -tags integration -run '^TestP23Review(CyclesRealProcessJourney|ReworkManualResolutionWithPriorOutcome)$' -count=1 ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 6.626s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow ./internal/evidence ./internal/claims ./cmd/fid` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 230.728s` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP23(ReviewCyclesRealProcessJourney|ReviewReworkManualResolutionWithPriorOutcome|HumanFixtureStepsRemainRunnable|HumanFixtures|StopFailureHumanAndJSONParity|StopFailureCodeMatrix)$' ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 19.016s` (terminated `exit_code: 0`)
+- `FID_P23_HUMAN_FIXTURE_ROOT=/tmp/fid-task21-l8zUT4 go test -tags integration -run '^TestP23HumanFixtures$' -count=1 -v ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 11.653s` (terminated `exit_code: 0`)
+
+The first two red tests observed `budget-observed` and `budget-exhausted`,
+respectively. The guidance red test observed only task 19's error line.
 - Direct `fid claim acquire` in `/tmp/fid-task21-l8zUT4/checkpoints-3467353164/review-exhaustion` - `next: an activated Human records an approved Human Outcome of class review-rework-extension for this Envelope's Issue; see fid stop list --subject envelope:ENV-282fc5` (terminated `exit_code: 4`); direct `fid stop list --subject envelope:ENV-282fc5` named `human-outcome-recorded` (terminated `exit_code: 0`); direct `fid human-outcome record` returned resolved Stop `STP-d08849` (terminated `exit_code: 0`); the same direct `fid claim acquire` returned Claim `CLM-81c95d`, revision 1 (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Repeated after the lint repair with the same result.
-- `golangci-lint run ./...` - FAIL - `* staticcheck: 1` (terminated `exit_code: 1`). Same exact command after the in-scope repair: PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 113.517s coverage: 62.7% of statements` (terminated `exit_code: 0`). Package times: `cmd/fid` 274.158s, `internal/workflow` 113.517s; no ordinary package exceeded 600s.
-- `go tool cover -func=coverage.out` - PASS - `total:										(statements)				60.7%` (terminated `exit_code: 0`).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 268.910s` (terminated `exit_code: 0`); under 900s.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - FAIL - `* staticcheck: 1` (terminated `exit_code: 1`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 113.517s coverage: 62.7% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)				60.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 268.910s` (terminated `exit_code: 0`)
+
+Package times were `cmd/fid` 274.158s, `internal/workflow` 113.517s, and
+`cmd/fid/integration` 268.910s. All stayed within their declared budgets.
 
 ## Deviations from spec
 
