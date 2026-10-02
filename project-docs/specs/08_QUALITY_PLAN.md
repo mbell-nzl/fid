@@ -206,9 +206,9 @@ These commands remain the default implementation gate while fid is developed:
 ```bash
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
+go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 ./cmd/fid/integration/...
 go test -bench . -benchmem ./...
 go build -o /tmp/fid ./cmd/fid
 ```
@@ -303,6 +303,14 @@ fixture repair; earlier failures require the bounded scope amendment in DEC-186.
 The explicit VAL-056 boundary matrix uses real measured decompression at the
 unchanged ceilings. Phase 21's historical checkpoints are not extra Phase 22
 task dependencies; the standing evidence and report-lint rules remain binding.
+
+For approved Heavy Phase 23, VAL-015 proves reachable Claim-history rejection
+and same-independent-Reviewer rework through the CLI. Its isolated Run-holder
+query uses a diagnostic durable-history fixture because the accepted lifecycle
+binds each Run to its Claim's Actor and preserves Claim history (DEC-239).
+Record the fixture's evidence class explicitly; it is not a CLI-reachability,
+journal-acceptance, or import-eligibility claim. Both history directions and the
+exact conflicting subject and Actor remain required.
 
 ## 9. First supported baseline
 

@@ -81,9 +81,9 @@ indexes, checks, and migration numbers are accepted with the owning slice.
 | `acceptance_criteria` | ID, Issue, ordinal, text, created Event | Unique ordinal per Issue. No verification role columns. |
 | `labels` | name, colour, description | Stable project label identity. |
 | `issue_labels` | Issue, label | Composite primary key. |
-| `links` | from type/ID, relation, to type/ID, created Event | Endpoints use a closed supported type registry; dedicated lifecycle fields are not duplicated. |
+| `links` | from type/ID, relation, to type/ID, created Event | Both endpoints are Issues. The closed relation registry excludes `implements` and `implemented_by`; dedicated lifecycle fields are not duplicated. |
 | `requirement_refs` | stable requirement ID, source reference/digest, status | Project files remain canonical. |
-| `requirement_issue_links` | requirement ID, Issue ID, relation | Traceability only. |
+| `requirement_issue_links` | requirement ID, Issue ID, relation | Traceability only; relation is exactly `implements`, `verifies`, or `relates-to`. |
 
 ### 3.3 Issue workflow registry
 
@@ -137,8 +137,8 @@ indexes, checks, and migration numbers are accepted with the owning slice.
 |---|---|---|
 | `review_records` | Review ID, Run, Envelope/revision, exact repository identity, profile, coverage, verdict, evidence refs, created time | Immutable; Findings may be empty. |
 | `review_findings` | Finding ID, Review, subject/scope, severity, summary, blocking flag | Created only with a Review Record. |
-| `finding_dispositions` | Finding, Actor, addressed/resolved/inapplicable action, qualifying later Review/Outcome/reference, time | Builder may address; qualifying Reviewer/Human authority resolves. |
-| `concerns` | ID, subject, Actor, scope, severity, summary, status, references, created time | Generic subject; not completion-linked. |
+| `finding_dispositions` | Finding, Actor, addressed/resolved/inapplicable action, Claim or qualifying later Review, reason, time and Event | Addressed is nonterminal and requires a mutating Claim; only a later qualifying independent Review records resolved or inapplicable, with a mandatory reason for inapplicable. At most one terminal disposition; no Human Outcome substitutes for the Review (DEC-242). |
+| `concerns` | ID, subject, raising Actor, scope, severity, summary, status, references, created time; disposition action, Issue/superseded Concern/superseded Finding reference, reason, disposing Actor, time and Event | Generic subject; not completion-linked. One irreversible `carried-forward`, `rejected`, or `superseded` disposition; the reference columns are mutually constrained by action. |
 | `deviations` | ID, subject, expected contract/control, observed departure, authority, disposition, references, created time | Append-only decision-relevant fact. |
 | `decision_refs` | ID, class, source reference/digest, authority, outcome, scope, created time | No decision body. |
 | `human_outcomes` | ID, Actor/provenance, class, subject, result, scope, references, created time | Only active-activation provenance can exercise protected authority. |
@@ -187,7 +187,7 @@ parity test before implementation:
 | Claim/Run | claimed, renewed, released, started, telemetry recorded, terminalized, recovered |
 | Stop/Attention | raised, deduplicated, resolved |
 | Gate/Evidence | registered, superseded, execution started, Receipt recorded, attestation ingested, Evidence linked, Artifact availability changed |
-| Review/Judgment | Review recorded, Finding addressed/resolved, Concern/Deviation recorded, Decision Reference recorded, Human Outcome recorded |
+| Review/Judgment | Review recorded, Finding addressed/resolved, Concern recorded/disposed, Deviation recorded, Decision Reference recorded, Human Outcome recorded |
 | Activation | prepared, component recorded, committed, aborted, finalized, recovery direction selected/completed |
 
 Every Event carries aggregate sequence, idempotency, Actor/producer,
@@ -722,4 +722,23 @@ references are distinct from their underlying qualifying fact references.
 DEC-187 keeps recovery-export binding in the kit coordinator's activation
 record; no such column is implied in fid activation_recoveries.
 
-*Last updated: 2026-09-13 (Phase 22 delivered baseline; DEC-220)*
+### 8.4 Phase 23 - review and judgment baseline
+
+Status: accepted under DEC-222 and delivered incrementally by the Phase 23 task
+pack. The exact development-baseline replacements to migrations 0013 and 0015,
+the full migration 0017 up/down DDL, the evidence-artifact-link-preserving
+rebuild order, and the nine Event family Effect rules are incorporated by
+reference from `../docs/phases/phase-23/schema.md` sections 1-3 and 6-7.
+Those sections are the physical DDL authority for this slice; shipped migration
+SQL and the incorporated DDL must agree exactly. The baseline remains
+pre-adoption: clean initialization and rebuild are required, with no old-data
+converter implied.
+
+Migration 0018 (V1 judgment removal) is incorporated from sections 4-5 of the
+same file. Its down migration restores the schema-17 state exactly (DEC-264);
+no migration from 0001 to 0017 is edited. Journals written by an earlier
+Phase 23 development binary are not supported: where a stored result no longer
+matches the current closed shape, rebuild stops with `journal-replay-stopped`
+and leaves the source journal unchanged (DEC-270, ADR-0011).
+
+*Last updated: 2026-10-03 (Phase 23 delivered baseline; DEC-264/270/271)*

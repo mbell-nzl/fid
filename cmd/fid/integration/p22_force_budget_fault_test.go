@@ -15,6 +15,7 @@ import (
 )
 
 func TestP22ForceRecoveryBudgetSurvivesProcessFaults(t *testing.T) {
+	t.Parallel()
 	for _, mode := range []string{"before-append", "after-append", "lost-response"} {
 		t.Run(mode, func(t *testing.T) {
 			a := p22ForceBudgetFixture(t, 1)

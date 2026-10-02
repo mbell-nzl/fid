@@ -30,6 +30,7 @@ func TestReplayJournalRejectsNilConnection(t *testing.T) {
 }
 
 func TestReplayJournalClassifiesRetiredIssueEffectKeyAsStopped(t *testing.T) {
+	t.Parallel()
 	workspace := newReplayWorkspace(t)
 	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-11.jsonl")
 	writeReplayEvents(t, journalPath, Event{
@@ -121,6 +122,7 @@ func TestReplayJournalAppliesGoldenV1JournalInFileOrder(t *testing.T) {
 }
 
 func TestReplayJournalAppliesPhase20IssueRevisionGolden(t *testing.T) {
+	t.Parallel()
 	workspace := newReplayWorkspace(t)
 	writeReplayFixture(t, workspace, "p20-issue-revision-effects.golden.jsonl", "2026-08-11.jsonl")
 	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-11.jsonl")
@@ -308,6 +310,7 @@ func TestReplayJournalStopsOnPreconditionConflict(t *testing.T) {
 }
 
 func TestReplayJournalRejectsStaleIssueRevisionBeforeApplyingEffect(t *testing.T) {
+	t.Parallel()
 	workspace := newReplayWorkspace(t)
 	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-11.jsonl")
 	issueID := "FID-stale-revision"
@@ -566,6 +569,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 }
 
 func TestEnsureProjectionFreshWithLockRebuildsMissingSQLiteProjection(t *testing.T) {
+	t.Parallel()
 	workspace := newReplayWorkspace(t)
 	writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 

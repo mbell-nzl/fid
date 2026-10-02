@@ -10,6 +10,7 @@ import (
 )
 
 func TestAbandonRunRequiresExactCurrentAuthorityAndObservation(t *testing.T) {
+	t.Parallel()
 	for _, mode := range []string{"ordinary", "force"} {
 		cases := []string{"valid", "unknown", "missing-observation", "nonexistent-observation", "wrong-run", "wrong-executor", "wrong-kind", "stale-run", "stale-claim", "missing-grant", "closed-envelope", "wrong-actor", "expired-claim"}
 		if mode == "ordinary" {
@@ -101,6 +102,7 @@ func assertAbandonProvenanceAndReplay(t *testing.T, options RunOptions, request 
 }
 
 func TestCloseRunRejectsUnqualifiedObservationVersionAndAuthority(t *testing.T) {
+	t.Parallel()
 	for _, kind := range []string{"unknown", "live", "missing-observation", "nonexistent-observation", "wrong-run", "wrong-executor", "wrong-kind", "stale-run", "missing-grant", "closed-envelope"} {
 		t.Run(kind, func(t *testing.T) {
 			options, recovery := recoveryFixture(t)

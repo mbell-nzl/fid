@@ -43,6 +43,7 @@ type p22RecoveryAdapter interface {
 }
 
 func TestP22DualAdapterRecoveryConformance(t *testing.T) {
+	t.Parallel()
 	fixtures := p22RecoveryFixtures(t)
 	for _, newAdapter := range []func(*testing.T) p22RecoveryAdapter{
 		func(_ *testing.T) p22RecoveryAdapter { return p22NewFakeRecoveryAdapter() },
@@ -234,6 +235,8 @@ func p22FixtureResponse(t *testing.T, envelope map[string]any, stdout bool, exit
 }
 
 type p22FIDRecoveryAdapter struct {
+	firstResults                                                   map[string]map[string]any
+	task13ReplayCorpus                                             bool
 	activation                                                     map[string]any
 	registrationID                                                 string
 	registrationVersion                                            any
@@ -285,13 +288,30 @@ func p22NewFIDRecoveryAdapterWithArtifacts(t *testing.T, actorType string, lease
 
 // p22ExecutionFixture declares immutable policy through normal fixture creation.
 type p22ExecutionFixture struct {
-	Argv         []string
-	ExtraBudgets []any
+	Argv                []string
+	ExtraBudgets        []any
+	HumanObligations    bool
+	ProtectedDecisions  []any
+	ReviewObligation    bool
+	ReviewCyclesMaximum int
+	// CoexistingReviewObligation adds a review Obligation under its own ID
+	// (OBL-p23-review) beside the gate-evidence Obligation instead of replacing
+	// it in place the way ReviewObligation does.
+	CoexistingReviewObligation bool
+	// ReviewGuardsTerminalSuccess makes the coexisting review Obligation guard
+	// issue.transition-terminal-success as well as envelope.complete (DEC-249:
+	// an Obligation blocks only the guarded actions it declares). It has no
+	// effect without CoexistingReviewObligation.
+	ReviewGuardsTerminalSuccess bool
 }
 
 // Explicit locations keep generated fixtures' repository identities durable.
 // A non-nil action set is used by the independent final admission matrix.
 func p22NewFIDRecoveryAdapterAt(t *testing.T, binary, workspace, actorType string, leaseSeconds int, artifactPaths, actions []string, execution ...p22ExecutionFixture) *p22FIDRecoveryAdapter {
+	return p22NewFIDRecoveryAdapterWithClaimModeAt(t, binary, workspace, actorType, leaseSeconds, artifactPaths, actions, "mutation", execution...)
+}
+
+func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, actorType string, leaseSeconds int, artifactPaths, actions []string, claimMode string, execution ...p22ExecutionFixture) *p22FIDRecoveryAdapter {
 	t.Helper()
 	p22Git(t, workspace, "init", "-q")
 	p22Git(t, workspace, "config", "user.email", "p22-corpus@example.test")
@@ -317,12 +337,26 @@ func p22NewFIDRecoveryAdapterAt(t *testing.T, binary, workspace, actorType strin
 		grantActions = capabilities
 	}
 	activationID := p21Activation(t, binary, workspace, "prepare", "p22-corpus-activation-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "p22-corpus", "phase": 21})
-	profileDigest := p21Component(t, binary, workspace, activationID, "authority-profile", "p22-corpus-authority", []any{
+	profiles := []any{
 		map[string]any{"actor_id": "actor-denied", "actor_type": "agent", "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities},
 		map[string]any{"actor_id": actor, "actor_type": actorType, "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities},
+	}
+	if requiresAdditionalJudgmentActors(actions) {
+		profiles = append(profiles, map[string]any{"actor_id": "actor-reviewer-two", "actor_type": "agent", "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities})
+	}
+	// A fixture whose declared actions include human-outcome.record but whose
+	// primary Actor is not itself human-typed needs a dedicated human Actor:
+	// recording requires actor_type "human" in the finalized profile, which an
+	// "agent" primary Actor can never satisfy regardless of capability.
+	if actorType != "human" && containsAction(actions, "human-outcome.record") {
+		profiles = append(profiles, map[string]any{"actor_id": "actor-human-outcome", "actor_type": "human", "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities})
+	}
+	sort.Slice(profiles, func(i, j int) bool {
+		return profiles[i].(map[string]any)["actor_id"].(string) < profiles[j].(map[string]any)["actor_id"].(string)
 	})
+	profileDigest := p21Component(t, binary, workspace, activationID, "authority-profile", "p22-corpus-authority", profiles)
 	argv := []string{"/bin/true"}
-	if len(execution) != 0 {
+	if len(execution) != 0 && len(execution[0].Argv) != 0 {
 		argv = execution[0].Argv
 	}
 	gateDigest := p21Component(t, binary, workspace, activationID, "gate-definitions", "p22-corpus-gates", []any{map[string]any{"artifact_bytes": 1024, "artifact_paths": artifactPaths, "argv": argv, "credential_names": []string{}, "cwd": ".", "definition_id": "gate-p22-corpus", "definition_version": 1, "environment": []any{}, "excerpt_bytes": 0, "network": "allowed", "output_bytes": 1024, "redact_literals": []string{}, "sandbox": "none", "shell": false, "success_exit_codes": []int{0}, "timeout_ms": 1000, "write": "allowed"}})
@@ -335,9 +369,47 @@ func p22NewFIDRecoveryAdapterAt(t *testing.T, binary, workspace, actorType strin
 	registrationID := p21PathString(t, registered, "result", "registration", "id")
 	registrationVersion := p21Path(t, registered, "result", "registration", "version")
 	source := map[string]any{"digest": "sha256:" + p22Zeros(64), "display_label": "Phase 22 corpus", "external_id": nil, "path": "project-docs/p22-corpus.md", "repository": repository, "section": nil, "source_type": "project-file"}
-	envelopeRequest := map[string]any{"outcome": "Recover one interrupted Run", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "authority_grants": []any{map[string]any{"actions": grantActions, "actor_selector": map[string]any{"actor_id": actor, "required_capabilities": grantActions}, "scope": map[string]any{"issue_id": issueID}}}, "obligations": []any{map[string]any{"id": "OBL-p22-corpus", "type": "gate-evidence", "applicability": "required", "guarded_actions": []string{"envelope.complete", "issue.transition-terminal-success"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": map[string]any{"id": registrationID, "version": registrationVersion}, "accepted_evidence_types": []string{"receipt"}, "accepted_trust_sources": []string{"fid-executed"}, "freshness_target": "repository-tree", "artifact_policy": "required-available", "independence": "fid-executed", "required_lane": nil, "source": source}}, "budgets": []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}, map[string]any{"name": "tokens", "scope": "envelope", "unit": "input-tokens", "maximum": 10, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}}}
+	authorityGrants := []any{map[string]any{"actions": grantActions, "actor_selector": map[string]any{"actor_id": actor, "required_capabilities": grantActions}, "scope": map[string]any{"issue_id": issueID}}}
+	// The Review journey needs a second, independently authorized Actor. Keep the
+	// standard recovery fixture's single-Actor authority otherwise.
+	if containsReviewRecordAction(actions) {
+		authorityGrants = append(authorityGrants, map[string]any{"actions": grantActions, "actor_selector": map[string]any{"actor_id": "actor-denied", "required_capabilities": grantActions}, "scope": map[string]any{"issue_id": issueID}})
+		authorityGrants = append(authorityGrants, map[string]any{"actions": grantActions, "actor_selector": map[string]any{"actor_id": "actor-reviewer-two", "required_capabilities": grantActions}, "scope": map[string]any{"issue_id": issueID}})
+		sort.Slice(authorityGrants, func(i, j int) bool {
+			left := authorityGrants[i].(map[string]any)["actor_selector"].(map[string]any)["actor_id"].(string)
+			right := authorityGrants[j].(map[string]any)["actor_selector"].(map[string]any)["actor_id"].(string)
+			return left < right
+		})
+	}
+	obligation := map[string]any{"id": "OBL-p22-corpus", "type": "gate-evidence", "applicability": "required", "guarded_actions": []string{"envelope.complete", "issue.transition-terminal-success"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": map[string]any{"id": registrationID, "version": registrationVersion}, "accepted_evidence_types": []string{"receipt"}, "accepted_trust_sources": []string{"fid-executed"}, "freshness_target": "repository-tree", "artifact_policy": "required-available", "independence": "fid-executed", "required_lane": nil, "source": source}
+	if len(execution) != 0 && execution[0].ReviewObligation {
+		obligation = map[string]any{"id": "OBL-p22-corpus", "type": "review", "applicability": "required", "guarded_actions": []string{"envelope.complete"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "review_profile": "review-default", "accepted_evidence_types": []string{"review"}, "accepted_trust_sources": []string{"activated-actor"}, "freshness_target": "repository-tree", "artifact_policy": "metadata-sufficient", "independence": "distinct-actor", "required_lane": nil, "source": source}
+	}
+	obligations := []any{obligation}
+	if len(execution) != 0 && execution[0].CoexistingReviewObligation {
+		reviewGuardedActions := []string{"envelope.complete"}
+		if execution[0].ReviewGuardsTerminalSuccess {
+			reviewGuardedActions = []string{"envelope.complete", "issue.transition-terminal-success"}
+		}
+		obligations = append(obligations, map[string]any{"id": "OBL-p23-review", "type": "review", "applicability": "required", "guarded_actions": reviewGuardedActions, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "review_profile": "review-default", "accepted_evidence_types": []string{"review"}, "accepted_trust_sources": []string{"activated-actor"}, "freshness_target": "repository-tree", "artifact_policy": "metadata-sufficient", "independence": "distinct-actor", "required_lane": nil, "source": source})
+	}
+	if len(execution) != 0 && execution[0].HumanObligations {
+		for _, outcomeClass := range []string{"release", "security"} {
+			obligations = append(obligations, map[string]any{"id": "OBL-human-" + outcomeClass, "type": "human-outcome", "applicability": "required", "guarded_actions": []string{"envelope.complete"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "outcome_class": outcomeClass, "accepted_evidence_types": []string{"human-outcome"}, "accepted_trust_sources": []string{"activated-human"}, "freshness_target": "none", "artifact_policy": "metadata-sufficient", "independence": "human", "required_lane": nil, "source": source})
+		}
+	}
+	sort.Slice(obligations, func(i, j int) bool {
+		return obligations[i].(map[string]any)["id"].(string) < obligations[j].(map[string]any)["id"].(string)
+	})
+	envelopeRequest := map[string]any{"outcome": "Recover one interrupted Run", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "authority_grants": authorityGrants, "obligations": obligations, "budgets": []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}, map[string]any{"name": "tokens", "scope": "envelope", "unit": "input-tokens", "maximum": 10, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}}}
 	if len(execution) != 0 {
+		if execution[0].ProtectedDecisions != nil {
+			envelopeRequest["protected_decisions"] = execution[0].ProtectedDecisions
+		}
 		budgets := append(envelopeRequest["budgets"].([]any), execution[0].ExtraBudgets...)
+		if execution[0].ReviewCyclesMaximum != 0 {
+			budgets = append(budgets, map[string]any{"name": "review-cycles", "scope": "envelope", "unit": "review-cycles", "maximum": execution[0].ReviewCyclesMaximum, "warning_threshold": nil, "exhaustion_action": "review-rework-exhausted", "consumed": nil, "remaining": nil})
+		}
 		sort.Slice(budgets, func(i, j int) bool {
 			return budgets[i].(map[string]any)["name"].(string) < budgets[j].(map[string]any)["name"].(string)
 		})
@@ -346,11 +418,16 @@ func p22NewFIDRecoveryAdapterAt(t *testing.T, binary, workspace, actorType strin
 	envelopeInput := p21Input(t, workspace, "p22-corpus-envelope", envelopeRequest)
 	created := p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "create", "--actor", actor, "--input", envelopeInput, "--idempotency-key", "p22-corpus-envelope-create")
 	envelopeID := p21PathString(t, created, "result", "envelope", "id")
-	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-envelope-activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1}), "--idempotency-key", "p22-corpus-envelope-activate")
-	claim := p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-claim", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "ttl_seconds": leaseSeconds}), "--idempotency-key", "p22-corpus-claim-acquire")
+	activated := p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-envelope-activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1}), "--idempotency-key", "p22-corpus-envelope-activate")
+	claim := p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-claim", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": claimMode, "ttl_seconds": leaseSeconds}), "--idempotency-key", "p22-corpus-claim-acquire")
 	claimID := p21PathString(t, claim, "result", "claim", "id")
 	run := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "start", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-run", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-corpus-prior", "source": "activated-harness"}, "obligation_id": nil, "repository": repository}), "--idempotency-key", "p22-corpus-run-start")
-	return &p22FIDRecoveryAdapter{activation: map[string]any{"id": activationID}, binary: binary, workspace: workspace, projectID: projectID, issueID: issueID, actor: actor, repository: repository, claimID: claimID, claimVersion: 1, runID: p21PathString(t, run, "result", "run", "id"), runVersion: 1, executorID: "executor-corpus-prior", measurement: source, registrationID: registrationID, registrationVersion: registrationVersion}
+	return &p22FIDRecoveryAdapter{activation: map[string]any{"id": activationID}, binary: binary, workspace: workspace, projectID: projectID, issueID: issueID, actor: actor, repository: repository, claimID: claimID, claimVersion: 1, runID: p21PathString(t, run, "result", "run", "id"), runVersion: 1, executorID: "executor-corpus-prior", measurement: source, registrationID: registrationID, registrationVersion: registrationVersion,
+		firstResults: map[string]map[string]any{
+			"envelope.create":   created["result"].(map[string]any),
+			"envelope.activate": activated["result"].(map[string]any),
+			"claim.acquire":     claim["result"].(map[string]any),
+		}}
 }
 
 func p22CorpusRepository(t *testing.T, workspace, projectID string) map[string]any {
@@ -527,6 +604,7 @@ func (adapter *p22FIDRecoveryAdapter) p22Advance(t *testing.T, operation, stdout
 }
 
 func TestP22RealBinaryRecoveryFailureCorpus(t *testing.T) {
+	t.Parallel()
 	for _, fixture := range []struct {
 		name, operation, code string
 		exit                  int
@@ -624,4 +702,5 @@ func assertP22ProcessFailure(t *testing.T, operation, code string, exit int, res
 	if fmt.Sprint(errorValue["code"]) != code {
 		t.Fatalf("%s failure code = %#v, want %q", operation, errorValue["code"], code)
 	}
+	assertP23AddedFailureContract(t, operation, code, envelope)
 }

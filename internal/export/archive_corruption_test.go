@@ -11,6 +11,7 @@ import (
 )
 
 func TestArchiveRejectsIntegrityValidSemanticCorruptions(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)

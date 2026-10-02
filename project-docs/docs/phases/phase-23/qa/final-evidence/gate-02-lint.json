@@ -1,0 +1,1 @@
+{"id":"gate-02-lint","cmd":"golangci-lint run ./...","results":[{"chunk_id":"3fdd8f","wall_time_seconds":1.000836519,"session_id":29398,"original_token_count":0,"output":""},{"chunk_id":"766a33","wall_time_seconds":0.000014899,"exit_code":0,"original_token_count":3,"output":"0 issues.\n"}]}

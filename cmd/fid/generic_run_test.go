@@ -62,6 +62,7 @@ func TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets(t *testing.T)
 func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 	t.Parallel()
 	t.Run("qualifying", func(t *testing.T) {
+		t.Parallel()
 		workspace, issueID, envelopeID := runEnvelopeForTest(t)
 		claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-binding-qualified-claim")
 		repository := runRepositoryForTest(t, workspace)
@@ -123,6 +124,7 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 			workspace, issueID, envelopeID := runEnvelopeForTest(t)
 			claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-binding-"+strings.ReplaceAll(testCase.name, " ", "-"))
 			repository := runRepositoryForTest(t, workspace)
@@ -154,6 +156,7 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 }
 
 func TestRunObserveRequiresTrustedBoundHarnessAndCurrentVersion(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-observe-claim")
 	startPath := filepath.Join(workspace, "run-observe-start.json")
@@ -204,6 +207,7 @@ func TestRunObserveRequiresTrustedBoundHarnessAndCurrentVersion(t *testing.T) {
 }
 
 func TestRunStartBindsOptionalObligationAndRejectsReusedExecutor(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := observedEvidenceEnvelopeForTest(t, nil)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-executor-claim-1")
 	repository := runRepositoryForTest(t, workspace)

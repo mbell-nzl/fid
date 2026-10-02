@@ -10,6 +10,7 @@ import (
 )
 
 func TestMigration0010SeedsEscalationDefaultExactlyAndPreservesV01Tuples(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
 	defer closeMigrator(t, migrator, conn)

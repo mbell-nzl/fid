@@ -18,6 +18,7 @@ type p22PortableCase struct {
 }
 
 func TestP22PortableRecoveryConformance(t *testing.T) {
+	t.Parallel()
 	data, err := os.ReadFile(filepath.Join(p22CorpusDir, "manifest.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -130,6 +131,7 @@ func p22PortableSource(t *testing.T, state string) (*p22FIDRecoveryAdapter, []st
 }
 
 func TestP22PortableCorpusCoversRecoveryStates(t *testing.T) {
+	t.Parallel()
 	data, err := os.ReadFile(filepath.Join(p22CorpusDir, "manifest.json"))
 	if err != nil {
 		t.Fatal(err)

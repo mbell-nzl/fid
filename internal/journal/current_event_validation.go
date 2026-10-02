@@ -101,7 +101,7 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 	}
 	for _, effect := range event.Effects {
 		for column, value := range effect.Values {
-			if strings.HasSuffix(column, "_json") && currentEventValue(value) != nil {
+			if (strings.HasSuffix(column, "_json") || effect.Table == "activity_log" && column == "details") && currentEventValue(value) != nil {
 				if err := validateCurrentJSON(event, effect, column, currentEventValue(value).(string)); err != nil {
 					return fmt.Errorf("current Event %s %s/%s: invalid JSON column %q: %w", event.EventType, effect.Table, effect.Op, column, err)
 				}
@@ -279,7 +279,7 @@ func currentNextVersion(previous, next any) bool {
 }
 
 func validateCurrentBindings(event Event) error {
-	entityTable := map[string]string{"gate.execution-started": "execution_attempts", "gate.receipt-recorded": "execution_receipts", "stop.raised": "stops", "stop.resolved": "stop_resolutions", "attention.resolved": "attention_items"}[event.EventType]
+	entityTable := map[string]string{"gate.execution-started": "execution_attempts", "gate.receipt-recorded": "execution_receipts", "stop.raised": "stops", "stop.resolved": "stop_resolutions", "attention.resolved": "attention_items", "concern.recorded": "concerns", "concern.disposed": "concerns", "deviation.recorded": "deviations"}[event.EventType]
 	for _, effect := range event.Effects {
 		row, err := mergeEffectValues(effect.PK, effect.Values)
 		if err != nil {

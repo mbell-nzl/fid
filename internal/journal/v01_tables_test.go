@@ -6,21 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	migratesqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 func TestProjectEventPopulatesPhaseTwoRepresentativeTablesViaJournalEffects(t *testing.T) {
 	t.Parallel()
 
-	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
-	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
-		t.Fatalf("MigrateUp() error = %v", err)
-	}
-
-	conn, err := fiddb.Open(dbPath)
-	if err != nil {
-		t.Fatalf("Open() error = %v", err)
-	}
+	conn := openPhaseTwoSchemaDB(t)
 	defer closeProjectDB(t, conn)
 
 	event := Event{
@@ -178,6 +172,42 @@ func TestProjectEventPopulatesPhaseTwoRepresentativeTablesViaJournalEffects(t *t
 	assertRepresentativeAcceptanceCriterion(t, conn)
 	assertRepresentativeTaskCompletion(t, conn)
 	assertRepresentativeConcern(t, conn)
+}
+
+func openPhaseTwoSchemaDB(t *testing.T) *sql.DB {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "fid.sqlite")
+	conn, err := fiddb.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	driver, err := migratesqlite.WithInstance(conn, &migratesqlite.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir, err := filepath.Abs(testProjectMigrationsDir(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	migrator, err := migrate.NewWithDatabaseInstance("file://"+dir, "sqlite", driver)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := migrator.Migrate(2); err != nil {
+		t.Fatalf("migrate Phase 2 schema: %v", err)
+	}
+	sourceErr, databaseErr := migrator.Close()
+	if sourceErr != nil || databaseErr != nil {
+		t.Fatalf("close Phase 2 migrator: %v / %v", sourceErr, databaseErr)
+	}
+	if err := conn.Close(); err != nil {
+		t.Fatal(err)
+	}
+	conn, err = fiddb.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return conn
 }
 
 func TestEnsureProjectionFreshRebuildsStoredPriorProjectionSchemaVersion(t *testing.T) {

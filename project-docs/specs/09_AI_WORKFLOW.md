@@ -439,8 +439,13 @@ Responsibilities:
     result leaves the ledger byte-for-byte unchanged. Require exit zero and
     literal `APPEND_CONFIRMED state=<state>`. If termination or receipt is
     missing, retry the byte-identical candidate; an exact EOF match confirms it
-    without another append. Do not advance, submit a different entry, or perform
-    a separate `apply_patch`, redirect, or editor mutation. This validator and
+    without another append. Do not advance, submit a different entry, or dispatch
+    work while that append result is ambiguous. A terminated `INVALID` rejection
+    is conclusive: validate the unchanged ledger, correct the candidate against
+    that state, and resubmit through the append command, preserving the rejected
+    output and exit status in the corrected event's reconciliation evidence.
+    A rejected candidate with a valid ledger does not require a stop. Never
+    perform a separate `apply_patch`, redirect, or editor mutation. This validator and
     append transaction does not choose
     the next action; `workflow-route.sh` does. Run it without `--append-stdin`
     to read current state, and require literal `VALID state=ADVANCEABLE` before
@@ -483,7 +488,10 @@ Responsibilities:
     review can be closed by a linked `PASS` or replaced by a linked `REPAIR`,
     and owners are repaired one at a time in list order. A linked re-review may
     transfer repair ownership to a task outside the list only after every listed
-    owner completes; it cannot overwrite an unresolved owner. A `CORRECTION` is
+    owner completes; it cannot overwrite an unresolved owner. After a linked
+    `BLOCK` re-review of a review whose owners are all complete, only a STOP
+    resume carrying its DEC-bound `Repair owners` makes that BLOCK review the
+    open review, with that ordered owner list (DEC-257). A `CORRECTION` is
     evidence only: it never changes review ownership, recovery state, or any
     other sequence state, and it is not a mechanism for selecting owners. An
     `INVALID` candidate is recoverable while the ledger remains valid. A
@@ -651,7 +659,18 @@ Autonomous triage and resolved resume:
 
 - Autonomous TL-Lite `RESUME` and `REPAIR` are enabled. Only
   `BLOCK` creates a Human-visible STOP.
-- When a prior STOP has a later decision, verified commit, or restored
+- Choose the resume form from the current validated ledger state. A historical
+  STOP already followed by an accepted RUN-RESUME is consumed, even if current
+  summaries still describe it as stopped. A normal session resume uses `N/A`
+  for `Governing TRG`, `Governing ESC`, `Trigger signature`, `Attempt count`,
+  `Resolution authority`, and `Next recovery`, and omits `Repair owners`.
+  During an active TASK-RECOVERY it preserves the task, trigger, attempt,
+  authority, and review-owner progress. Reconcile existing commits, report, and
+  child-session state, then continue that recovery without duplicating its
+  dispatch event or restarting completed owners. `REPAIR_PENDING` permits
+  continuing the repair, not advancing to the next task.
+- When the current ledger state is `STOPPED` and that STOP has a later decision,
+  verified commit, or restored
   capability, verify it and append `RUN-RESUME` retaining the
   governing TRG/ESC, trigger, next attempt, continuing task, and exact next
   recovery. That tuple binds the next TASK-RECOVERY. Record exactly one
@@ -664,7 +683,10 @@ Autonomous triage and resolved resume:
   BLOCK. When a DEC converts it to control-conformance repair, append one
   unique separate H2 typed directive amendment naming the existing governing
   TRG before RUN-RESUME; parse it independently from the original BLOCK
-  section and retain its ESC.
+  section and retain its ESC. A STOP resume after a BLOCK re-review may carry
+  one `Repair owners` field, byte-identical to the `- Repair owners:` line in
+  its `Resolution authority` DEC, and its continuing task is the first owner
+  (DEC-257).
 - Validate every boundary-valid DEC citation in an authority field against the
   phase decisions file; a real citation cannot mask another nonexistent or
   embedded pseudo-ID.
@@ -708,6 +730,19 @@ Responsibilities:
    unless the task explicitly says otherwise. The focused loop is the iteration
    loop and does not substitute for the full gate at close. If the task spec
    does not define a gate, use the standard fallback gate from `AGENTS.md`.
+   Iterate in tiers so the long gates run once, not per edit:
+   - Red/green: the most specific `go test ./<pkg> -run '<Test>' -count=1`.
+   - Pre-gate: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1` over every touched package, plus the
+     touched tagged tests via `-tags integration -run`, until green.
+   - Full gate: the exact task-spec commands, once, on the final tree. On a
+     failure, repair with the narrower tiers, then rerun the full gate once.
+     Recorded package times come from this run. Never run two long gates, or
+     other heavy test work, concurrently.
+   New top-level tests call `t.Parallel()` unless they touch process-global
+   state (`t.Setenv`, package hooks); `paralleltest` lint enforces this. A
+   long subtest matrix whose cases build independent workspaces parallelizes
+   its subtests too. A recorded package time at or above 80% of its wall-time
+   budget is reported as a headroom warning under Tech Lead notes.
 7. If any gate fails, preserve its token and observed termination, diagnose the
    cause, and repair only when authorized by ordinary task scope or a written
    control-conformance directive. A failure alone never grants permission to
@@ -1445,7 +1480,7 @@ heavy-mode phases may add task-spec sections for them when the phase brief
 requires it.
 
 The canonical integration command targets the dedicated real-process package,
-`go test -tags integration -race ./cmd/fid/integration/...`. Ordinary
+`go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 ./cmd/fid/integration/...`. Ordinary
 in-process command and persistence tests run under the default race/coverage
 gate. Expanding the integration command to `./...` is not additional evidence;
 it duplicates the ordinary suite under a build tag and is a gate-definition
@@ -1518,12 +1553,12 @@ Model guidance:
 
 | Role | Codex | Reasoning | Notes |
 |---|---|---:|---|
-| Tech Lead | `gpt-5.6-sol` | xhigh | phase planning, spec sync, wrap-up |
-| Phase Runner | `gpt-5.4-mini` | xhigh | mechanical orchestration, ledger discipline |
-| Developer | `gpt-5.6-terra` | high | implementation and TDD |
-| QA Lead | `gpt-5.6-sol` | xhigh | phase-wide QA synthesis |
-| QA Reviewer | `gpt-5.6-terra` | high | bounded mid-phase review |
-| TL-Lite | `gpt-5.6-terra` | medium | focused tactical triage |
+| Tech Lead | `gpt-6.1-sol` | xhigh | phase planning, spec sync, wrap-up |
+| Phase Runner | `gpt-5.6-luna` | xhigh | mechanical orchestration, ledger discipline |
+| Developer | `gpt-6-sol` | high | implementation and TDD |
+| QA Lead | `gpt-6.1-sol` | xhigh | phase-wide QA synthesis |
+| QA Reviewer | `gpt-6-sol` | high | bounded mid-phase review |
+| TL-Lite | `gpt-6-sol` | medium | focused tactical triage |
 
 Note: this table is Codex-specific. Claude Code agent model choices are
 configured separately, per agent, in `.claude/agents/*.md`, and are not
@@ -1544,7 +1579,7 @@ Task-level default gate:
 ```bash
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
 ```
 

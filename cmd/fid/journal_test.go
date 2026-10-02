@@ -11,6 +11,7 @@ import (
 )
 
 func TestJournalInspectCommandUsesDirectLegacyJSONWithoutRevert(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
@@ -62,6 +63,7 @@ func TestJournalInspectCommandUsesDirectLegacyJSONWithoutRevert(t *testing.T) {
 }
 
 func TestJournalInspectCommandDoesNotExposeRevertOrResponseEnvelope(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
@@ -98,6 +100,7 @@ func TestJournalInspectCommandDoesNotExposeRevertOrResponseEnvelope(t *testing.T
 }
 
 func TestJournalInspectCommandRejectsMissingEventIDs(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 

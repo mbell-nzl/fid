@@ -17,8 +17,8 @@ import (
 )
 
 func TestIssueGetHumanSuccessUsesStdout(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Human read", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 	result := executeCommandForTest(workspace, "issue", "get", issueID)
@@ -28,8 +28,8 @@ func TestIssueGetHumanSuccessUsesStdout(t *testing.T) {
 }
 
 func TestIssueCreateEpicAcceptsSchedulingAndReturnsDefaultReadShape(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Phase 4 authoring", "--scheduling", "sequential", "--actor", "agent:tl")
 	issueID := parseCreatedIssueID(t, stderr)
@@ -102,8 +102,8 @@ func TestIssueCreateEpicAcceptsSchedulingAndReturnsDefaultReadShape(t *testing.T
 }
 
 func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -370,8 +370,8 @@ func TestIssueCreateRejectsInvalidFlagsAndConstraintViolations(t *testing.T) {
 }
 
 func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierarchy(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -451,8 +451,8 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 }
 
 func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Surface enriched issue state", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
@@ -486,36 +486,16 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 			},
 			{
 				Op:    "insert",
-				Table: "task_completions",
-				PK: map[string]any{
-					"id": "TC-CMD-001",
-				},
-				Values: map[string]any{
-					"issue_id":           issueID,
-					"attempt_number":     1,
-					"developer_role":     "developer",
-					"model":              "gpt-5",
-					"status":             "dev_complete",
-					"gate_results":       `["go test ./..."]`,
-					"human_intervention": false,
-					"completed_at":       "2026-06-07T14:01:00Z",
-				},
-			},
-			{
-				Op:    "insert",
 				Table: "concerns",
 				PK: map[string]any{
 					"id": "CON-CMD-001",
 				},
 				Values: map[string]any{
-					"issue_id":                issueID,
-					"raised_in_completion_id": "TC-CMD-001",
-					"raised_by_role":          "developer",
-					"summary":                 "CLI concern",
-					"body_md_path":            "project-docs/concerns/CON-CMD-001.md",
-					"status":                  "open",
-					"created_at":              "2026-06-07T14:01:30Z",
-					"updated_at":              "2026-06-07T14:01:30Z",
+					"subject_type": "issue", "subject_id": issueID,
+					"actor_id": "developer", "scope_json": `{"paths":[]}`,
+					"severity": "major", "summary": "CLI concern", "reasoning": "Needs review",
+					"references_json": "[]", "status": "open",
+					"created_at": "2026-06-07T14:01:30Z", "created_event_id": "EVT-CON-CMD-001",
 				},
 			},
 			{
@@ -528,8 +508,8 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 					"epic_id":       "FID-epiccmd",
 					"issue_id":      issueID,
 					"triager_role":  "qa_lead",
-					"source":        "task_completion",
-					"source_ref_id": "TC-CMD-001",
+					"source":        "manual",
+					"source_ref_id": "REV-CMD-001",
 					"verdict":       "RESUME",
 					"reasoning_md":  "project-docs/triage/TRG-CMD-001.md",
 					"created_at":    "2026-06-07T14:02:00Z",
@@ -545,8 +525,8 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 					"epic_id":       "FID-epiccmd",
 					"issue_id":      issueID,
 					"triager_role":  "qa_lead",
-					"source":        "task_completion",
-					"source_ref_id": "TC-CMD-001",
+					"source":        "manual",
+					"source_ref_id": "REV-CMD-001",
 					"verdict":       "BLOCK",
 					"reasoning_md":  "project-docs/triage/TRG-CMD-002.md",
 					"created_at":    "2026-06-07T14:03:00Z",
@@ -584,8 +564,8 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 }
 
 func TestIssueGetRejectsRetiredFormatFlags(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Format retirement", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 	for _, flag := range []string{"--format", "--section"} {
@@ -600,8 +580,8 @@ func TestIssueGetRejectsRetiredFormatFlags(t *testing.T) {
 }
 
 func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 
 	journalPath := mustJournalPath(t, workspace)
 	beforePayload, err := os.ReadFile(journalPath)
@@ -682,8 +662,8 @@ func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 }
 
 func TestIssueCreateAndRebuildRoundTripReturnsIdenticalJSON(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Rebuild parity", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
@@ -704,8 +684,8 @@ func TestIssueCreateAndRebuildRoundTripReturnsIdenticalJSON(t *testing.T) {
 }
 
 func TestIssueCreateStandaloneActorIsAttributionOnly(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 
 	t.Run("issue create missing actor", func(t *testing.T) {
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "create", "--kind", "task", "--title", "Missing role")
@@ -739,9 +719,9 @@ func TestIssueCreateStandaloneActorIsAttributionOnly(t *testing.T) {
 }
 
 func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
+	t.Parallel()
 	t.Run("malformed trailing line", func(t *testing.T) {
-		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		workspace := clonePristineWorkspace(t)
 
 		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up corruption", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, stderr)
@@ -766,8 +746,7 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 	})
 
 	t.Run("precondition conflict", func(t *testing.T) {
-		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		workspace := clonePristineWorkspace(t)
 
 		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up conflict", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, stderr)
@@ -819,8 +798,8 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 }
 
 func TestIssueGetRejectsAllFormatValues(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Format rejection", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 	for _, value := range []string{"json", "toon", "yaml", "markdown", "xml"} {
@@ -915,15 +894,19 @@ type issueConcernListItem struct {
 func mustGetConcernListJSONForIssue(t *testing.T, workspace, issueID string) []issueConcernListItem {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "concern", "list", "--issue", issueID)
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "concern", "list", "--subject", "issue:"+issueID)
 	if stderr != "" {
 		t.Fatalf("concern list for %s stderr = %q, want empty", issueID, stderr)
 	}
-	var concerns []issueConcernListItem
-	if err := json.Unmarshal([]byte(stdout), &concerns); err != nil {
+	var envelope struct {
+		Result struct {
+			Items []issueConcernListItem `json:"items"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
 		t.Fatalf("Unmarshal(concern list for %s) error = %v", issueID, err)
 	}
-	return concerns
+	return envelope.Result.Items
 }
 
 func mustIssueTriageStatus(t *testing.T, workspace, issueID string) *string {

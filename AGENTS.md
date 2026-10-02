@@ -32,7 +32,7 @@ they must not begin implementation that depends on that choice.
 - User-facing adapters: `cmd/fid/`, `internal/cli/`, `internal/project/`,
   `internal/export/`.
 - Core/domain/business logic: `internal/issues/`, `internal/claims/`,
-  `internal/workflow/`, `internal/policy/`, `internal/qa/`,
+  `internal/workflow/`, `internal/review/`, `internal/policy/`, `internal/qa/`,
   `internal/validation/`, `internal/templates/`, `internal/search/`,
   `internal/stats/`, `internal/activity/`, `internal/report/`, `internal/changes/`,
   `internal/handoff/`, `internal/evidence/`, `internal/maintenance/`.
@@ -99,7 +99,10 @@ Project-specific conventions:
 - Test style: use red/green TDD for behavior changes; prefer table-driven
   tests; test observable behavior and contracts, not implementation trivia;
   use temporary SQLite databases for integration tests and golden fixtures for
-  journal/event compatibility.
+  journal/event compatibility. Top-level tests call `t.Parallel()` unless they
+  touch process-global state (`t.Setenv`, package hooks), enforced by the
+  `paralleltest` linter; annotate exceptions with a `//nolint:paralleltest`
+  reason.
 - Public interface compatibility policy: before the first supported baseline,
   ADR-0011 permits replacement of current CLI flags, schemas, events,
   migrations, and generic formatters without a legacy mode. Accepted target
@@ -352,16 +355,16 @@ installs still require the normal dependency-budget and approval path.
   edited Go files before running the check. Do not use `gofmt -l .`; it walks
   ignored repo-local tool caches.
 - Lint: `golangci-lint run ./...`.
-- Default unit test suite: `go test -race ./...`.
+- Default unit test suite: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 ./...`.
 - Coverage gate:
 
   ```bash
-  go test -race -coverprofile=coverage.out ./...
+  go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...
   go tool cover -func=coverage.out
   ```
 
 - Real-process integration journeys:
-  `go test -tags integration -race ./cmd/fid/integration/...`. In-process
+  `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 ./cmd/fid/integration/...`. In-process
   SQLite and command contract tests belong in the ordinary suite; do not widen
   this gate to `./...`, which reruns that suite under the tag.
 - End-to-end tests: `N/A` until an end-to-end or held-out scenario harness is
@@ -372,9 +375,9 @@ installs still require the normal dependency-budget and approval path.
   ```bash
   gofmt -l cmd internal
   golangci-lint run ./...
-  go test -race -coverprofile=coverage.out ./...
+  go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...
   go tool cover -func=coverage.out
-  go test -tags integration -race ./cmd/fid/integration/...
+  go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 ./cmd/fid/integration/...
   go test -bench . -benchmem ./...
   go build -o /tmp/fid ./cmd/fid
   ```
@@ -399,7 +402,7 @@ Recommended task-level gate:
 ```bash
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
 ```
 
@@ -408,9 +411,9 @@ Recommended phase-level gate:
 ```bash
 gofmt -l cmd internal
 golangci-lint run ./...
-go test -race -coverprofile=coverage.out ./...
+go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./cmd/fid/integration/...
+go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 ./cmd/fid/integration/...
 go test -bench . -benchmem ./...
 go build -o /tmp/fid ./cmd/fid
 ```

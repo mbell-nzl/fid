@@ -1,0 +1,23 @@
+{
+  "id": "report-20",
+  "cmd": "project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-20-done.md project-docs/docs/phases/phase-23/tasks/task-20.md",
+  "cwd": "/home/mark/projects/fid",
+  "started": "2026-10-02T16:36:28.255Z",
+  "results": [
+    {
+      "chunk_id": "3a0809",
+      "wall_time_seconds": 1.001127792,
+      "session_id": 43299,
+      "original_token_count": 443,
+      "output": "PASS all required headings present\nPASS headings in required order\nPASS section non-empty: ## Concerns, technical debt, or notes for the Tech Lead\nPASS section non-empty: ## Dependency-budget note\nPASS section non-empty: ## Deviations from spec\nPASS section non-empty: ## Validation Contract Coverage\nOUTCOME COMPLETE\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t1.911s\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t3.537s\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t11.288s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.154s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t10.159s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t1.965s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/journal\t101.603s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t16.419s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t11.921s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t117.580s\tcoverage: 62.1% of statements\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t253.239s\nPASS required command recorded PASS: gofmt -l cmd internal\nPASS required command recorded PASS: golangci-lint run ./...\nPASS required command recorded PASS: go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...\n"
+    },
+    {
+      "chunk_id": "e13654",
+      "wall_time_seconds": 0.000013205,
+      "exit_code": 0,
+      "original_token_count": 116,
+      "output": "PASS required command recorded PASS: go tool cover -func=coverage.out\nPASS required command recorded PASS: go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...\nPASS commit hash resolves: 0ba005d7c511d7f5acd1517d1c39dd6e58d3e3e0\nPASS commit subject matches: feat(requirement): expose stable identity and distinct Human views\nPASS report file committed and clean\nPASS report-lint completed with no failures\n"
+    }
+  ],
+  "ended": "2026-10-02T16:36:52.036Z"
+}

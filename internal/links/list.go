@@ -77,14 +77,11 @@ func queryLinkList(conn *sql.DB, entityType, entityID string) ([]ListItem, error
 			el.entity_id,
 			CASE
 				WHEN el.entity_type = 'issue' THEN issue.title
-				WHEN el.entity_type = 'requirement' THEN requirement.summary
 				ELSE NULL
 			END AS entity_title
 		FROM entity_links el
 		LEFT JOIN issues issue
 			ON el.entity_type = 'issue' AND issue.id = el.entity_id
-		LEFT JOIN requirements requirement
-			ON el.entity_type = 'requirement' AND requirement.id = el.entity_id
 		ORDER BY
 			CASE el.direction WHEN 'outgoing' THEN 0 ELSE 1 END,
 			el.relation,
@@ -131,7 +128,7 @@ func listStringPointer(value string) *string {
 
 func isListRelation(relation string) bool {
 	switch relation {
-	case "blocks", "relates_to", "duplicates", "supersedes", "implements", "caused_by", "discovered_from":
+	case "blocks", "relates_to", "duplicates", "supersedes", "caused_by", "discovered_from":
 		return true
 	default:
 		return false

@@ -8,7 +8,7 @@ claude:
 codex:
   name: developer
   description: Handles at most one task using strict red/green TDD, including same-task recovery continuations, gates, commits, and completion reporting.
-  model: gpt-5.6-terra
+  model: gpt-6-sol
   model_reasoning_effort: high
 ---
 <!-- body: shared -->
@@ -66,6 +66,14 @@ lives in `09_AI_WORKFLOW.md` §2.5
   a reason in a blocker report. Focused red/green commands do not substitute
   for the required gate; missing, silently skipped, or narrower substituted
   commands are failed gates.
+- Iterate in tiers so the long gates run once per attempt, not per edit
+  (`09_AI_WORKFLOW.md` §2.5 step 6): the most specific `-run` for red/green;
+  `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1` over touched packages (and touched tagged tests)
+  before the gate; then the exact task-spec commands once on the final tree.
+  Never run two long gates, or other heavy test work, concurrently. New
+  top-level tests call `t.Parallel()` unless they touch process-global state.
+  Report any recorded package time at or above 80% of its budget as a
+  headroom warning in the Tech Lead notes.
 - A required-command failure is an immutable failed attempt, not automatically
   a blocker. Diagnose it, but repair only under accepted task scope or a written
   control-conformance directive; failure alone never authorizes editing a test,

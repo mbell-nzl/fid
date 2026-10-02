@@ -88,6 +88,49 @@ func p22PortableFakeImport(entries map[string][]byte) (*p22PortableModel, error)
 	return model, nil
 }
 
+func TestP22PortableFakeRejectsRemovedRequirementEvent(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		eventType string
+		wantError bool
+	}{
+		{eventType: "requirement.synced", wantError: true},
+		{eventType: "project.initialized"},
+	} {
+		t.Run(tc.eventType, func(t *testing.T) {
+			t.Parallel()
+			line, err := json.Marshal(map[string]any{
+				"event_id": "EV-1", "event_schema": 2, "event_type": tc.eventType,
+				"effects": []any{},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			journal := append(line, '\n')
+			manifest, err := json.Marshal(map[string]any{
+				"schema": "fid.export-manifest.v2", "event_count": 1,
+				"entries": []any{map[string]any{
+					"path": "journal/events.jsonl", "digest": fmt.Sprintf("sha256:%x", sha256.Sum256(journal)),
+					"size_bytes": len(journal),
+				}},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			model, err := p22PortableFakeImport(map[string][]byte{"manifest.json": manifest, "journal/events.jsonl": journal})
+			if tc.wantError {
+				if err == nil || err.Error() != "unknown Event type requirement.synced" {
+					t.Fatalf("removed Event accepted or wrong rejection: model=%v err=%v", model, err)
+				}
+				return
+			}
+			if err != nil || model == nil || len(model.events) != 1 {
+				t.Fatalf("retained Event rejected: model=%v err=%v", model, err)
+			}
+		})
+	}
+}
+
 func (model *p22PortableModel) apply(effect p22PortableEffect, eventKey string) error {
 	columns, known := p22PortableColumns[effect.Table]
 	if !known {
@@ -264,4 +307,4 @@ func p22PortableFakeSummary(t *testing.T, entries map[string][]byte, runID strin
 	return summary
 }
 
-const p22PortableEventTypes = "project.initialized activation.prepared activation.component-staged activation.committed activation.finalized activation.aborted activation.resource-observed activation.recovery-selected activation.recovery-completed gate.registered envelope.created envelope.activated envelope.completed claim.acquired claim.renewed claim.released claim.expired run.started run.observed run.checkpointed run.recovered run.budget-observed run.execution-blocked run.closed run.abandoned gate.execution-started gate.receipt-recorded evidence.linked artifact.availability-observed stop.raised stop.resolved attention.resolved issue.created issue.updated issue.transitioned issue.ac-added issue.label-added issue.label-removed label.added link.added link.removed workflow.defined workflow.assigned requirement.synced"
+const p22PortableEventTypes = "project.initialized activation.prepared activation.component-staged activation.committed activation.finalized activation.aborted activation.resource-observed activation.recovery-selected activation.recovery-completed gate.registered envelope.created envelope.activated envelope.completed claim.acquired claim.renewed claim.released claim.expired run.started run.observed run.checkpointed run.recovered run.budget-observed run.execution-blocked run.closed run.abandoned gate.execution-started gate.receipt-recorded evidence.linked artifact.availability-observed stop.raised stop.resolved attention.resolved issue.created issue.updated issue.transitioned issue.ac-added issue.label-added issue.label-removed label.added link.added link.removed workflow.defined workflow.assigned"

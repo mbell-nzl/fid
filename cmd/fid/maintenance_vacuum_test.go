@@ -11,8 +11,8 @@ import (
 )
 
 func TestMaintenanceVacuumCommandIsUnavailableAndPreservesState(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 
 	journalPath := mustJournalPath(t, workspace)
 	journalBefore := mustReadCommandFile(t, journalPath)
@@ -46,8 +46,8 @@ func TestMaintenanceVacuumCommandIsUnavailableAndPreservesState(t *testing.T) {
 }
 
 func TestMaintenanceVacuumCommandRejectsUnauthorizedRolesBeforeMutation(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 
 	journalPath := mustJournalPath(t, workspace)
 	journalBefore, err := os.ReadFile(journalPath)
@@ -74,8 +74,8 @@ func TestMaintenanceVacuumCommandRejectsUnauthorizedRolesBeforeMutation(t *testi
 }
 
 func TestMaintenanceVacuumHasNoPublicPolicySurface(t *testing.T) {
-	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
 
 	result := executeCommandForTest(workspace, "policy", "show")
 	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "policy"`) {

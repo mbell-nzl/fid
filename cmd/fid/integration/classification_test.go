@@ -15,6 +15,7 @@ import (
 )
 
 func TestIntegrationClassification(t *testing.T) {
+	t.Parallel()
 	dedicatedDir := classificationDirectory(t)
 	repositoryRoot := filepath.Dir(filepath.Dir(filepath.Dir(dedicatedDir)))
 	wantJourneys := []string{
@@ -46,6 +47,7 @@ func TestIntegrationClassification(t *testing.T) {
 }
 
 func TestClosureJourneyHasNoWallClockSleep(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(classificationDirectory(t), "e2e_v01_closure_test.go")
 	parsed, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
 	if err != nil {
@@ -70,6 +72,7 @@ func TestClosureJourneyHasNoWallClockSleep(t *testing.T) {
 }
 
 func TestIntegrationBinaryOwnedByPackage(t *testing.T) {
+	t.Parallel()
 	functions := topLevelFunctions(t, classificationDirectory(t))
 	if !functions["TestMain"] {
 		t.Fatal("dedicated integration package has no TestMain-owned binary lifecycle")

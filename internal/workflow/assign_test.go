@@ -11,6 +11,7 @@ import (
 )
 
 func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	for _, fixture := range []struct {
 		name      string

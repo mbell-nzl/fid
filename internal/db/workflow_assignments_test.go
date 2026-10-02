@@ -97,6 +97,7 @@ func TestMigration0009WorkflowAssignmentsSchemaAndConstraints(t *testing.T) {
 }
 
 func TestMigrations0009And0010RoundTripWithoutResidue(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
 	defer closeMigrator(t, migrator, conn)

@@ -1,0 +1,17 @@
+{
+  "id": "named-audit",
+  "cmd": "python3 project-docs/docs/phases/phase-23/qa/final-evidence-1/audit-named.py",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T17:16:31.011Z",
+  "results": [
+    {
+      "chunk_id": "23c1d0",
+      "wall_time_seconds": 0.039073188,
+      "exit_code": 1,
+      "original_token_count": 464,
+      "output": "cmd/fid 30 selected top-level tests passed; complete inner capture\ncmd/fid/integration 57 selected top-level tests passed; complete inner capture\ninternal/issues 6 selected top-level tests passed; complete inner capture\ninternal/journal 23 selected top-level tests passed; complete inner capture\ninternal/db 12 selected top-level tests passed; complete inner capture\ninternal/cli 2 selected top-level tests passed; complete inner capture\ninternal/workflow 32 selected top-level tests passed; complete inner capture\ninternal/claims 1 selected top-level tests passed; complete inner capture\ninternal/maintenance 2 selected top-level tests passed; complete inner capture\ninternal/evidence 9 selected top-level tests passed; complete inner capture\ninternal/review 12 selected top-level tests passed; complete inner capture\ninternal/links 1 selected top-level tests passed; complete inner capture\ninternal/export 1 selected top-level tests passed; complete inner capture\nTraceback (most recent call last):\n  File \"/home/mark/projects/fid/project-docs/docs/phases/phase-23/qa/final-evidence-1/audit-named.py\", line 19, in <module>\n    row=json.loads((OUT/'named-integration.json').read_text())\n                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/usr/lib/python3.14/pathlib/__init__.py\", line 788, in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:\n         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.14/pathlib/__init__.py\", line 772, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/home/mark/projects/fid/project-docs/docs/phases/phase-23/qa/final-evidence-1/named-integration.json'\n"
+    }
+  ],
+  "ended": "2026-10-02T17:16:31.218Z"
+}

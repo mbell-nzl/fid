@@ -8,6 +8,7 @@ import (
 )
 
 func TestIssuesTableExcludesRetiredPhase20Fields(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	migrationsDir := testMigrationsDir(t)
 	migrator, conn := newTestMigrator(t, dbPath, migrationsDir)
@@ -42,6 +43,7 @@ func TestIssuesTableExcludesRetiredPhase20Fields(t *testing.T) {
 }
 
 func TestIssueRevisionMigrationAddsAndRemovesRevision(t *testing.T) {
+	t.Parallel()
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
 	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
 	defer closeMigrator(t, migrator, conn)

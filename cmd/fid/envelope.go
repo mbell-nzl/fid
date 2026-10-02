@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -223,19 +224,45 @@ func renderEnvelopeError(cmd *cobra.Command, operation string, cause error, acto
 	if err != nil {
 		return err
 	}
+	var idempotency *journal.IdempotencyConflictError
+	if errors.As(cause, &idempotency) {
+		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": idempotency.OperationScope, "idempotency_key": idempotency.IdempotencyKey, "stored_request_digest": idempotency.StoredRequestDigest, "supplied_request_digest": idempotency.SuppliedRequestDigest})
+	}
 	var notFound *workflow.EnvelopeNotFoundError
 	var authority *workflow.EnvelopeAuthorityError
 	var completion *workflow.EnvelopeCompletionError
+	var protectedDecision *workflow.StopBlockedError
 	if errors.As(cause, &notFound) {
 		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeEnvelopeNotFound, "envelope was not found", &cli.Subject{Type: cli.SubjectEnvelope, ID: notFound.ID}, map[string]any{"id": notFound.ID})
 	}
 	if errors.As(cause, &authority) {
 		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityUnavailable, "finalized envelope authority is unavailable", nil, map[string]any{"operation": operation, "actor_id": actor, "required_actions": []string{authority.Capability}, "required_capabilities": []string{authority.Capability}})
 	}
+	if errors.As(cause, &protectedDecision) {
+		failure, err := envelopeStopBlockedFailure(protectedDecision)
+		if err != nil {
+			return err
+		}
+		if !jsonMode {
+			_ = renderIssueError(cmd.ErrOrStderr(), cause)
+			return cli.NewFailureError(failure, cause)
+		}
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
+	}
 	if errors.As(cause, &completion) {
 		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeObligationUnsatisfied, "Envelope completion obligations are unsatisfied", &cli.Subject{Type: cli.SubjectEnvelope, ID: completion.EnvelopeID}, map[string]any{"reasons": envelopeReasonValues(completion.Reasons)})
 	}
 	return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid envelope input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+}
+
+// envelopeStopBlockedFailure renders whichever Stop-carried denial precedence
+// case reached envelope.complete: protected-decision-required (authority) or
+// human-outcome-required (precondition).
+func envelopeStopBlockedFailure(blocked *workflow.StopBlockedError) (cli.Failure, error) {
+	if blocked != nil && len(blocked.Stops) == 1 && blocked.Stops[0].Code == "human-outcome-required" {
+		return humanOutcomeRequiredFailure(blocked)
+	}
+	return protectedDecisionFailure(blocked)
 }
 
 func envelopeReasonValues(reasons []workflow.EvaluationReason) []any {

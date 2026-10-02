@@ -1,0 +1,21 @@
+{
+  "id": "report-12",
+  "cmd": "project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-12-done.md project-docs/docs/phases/phase-23/tasks/task-12.md",
+  "cwd": "/home/mark/projects/fid",
+  "results": [
+    {
+      "chunk_id": "cc4d49",
+      "wall_time_seconds": 1.000533627,
+      "session_id": 66783,
+      "original_token_count": 661,
+      "output": "PASS all required headings present\nPASS headings in required order\nPASS section non-empty: ## Concerns, technical debt, or notes for the Tech Lead\nPASS section non-empty: ## Dependency-budget note\nPASS section non-empty: ## Deviations from spec\nPASS section non-empty: ## Validation Contract Coverage\nOUTCOME COMPLETE\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t0.491s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t1.511s\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/review\t0.005s\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.131s\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t2.041s\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t2.668s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t1.539s\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/links\t0.005s\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t2.427s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t221.383s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t3.300s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t100.258s\tcoverage: 64.6% of statements\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/journal\t24.893s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 64.6% of statements\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t208.862s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/journal\t24.913s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 64.6% of statements\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t236.892s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/journal\t24.957s\n"
+    },
+    {
+      "chunk_id": "e79dc9",
+      "wall_time_seconds": 0.000010219,
+      "exit_code": 0,
+      "original_token_count": 240,
+      "output": "PASS required command recorded PASS: gofmt -l cmd internal\nPASS required command recorded PASS: golangci-lint run ./...\nPASS required command recorded PASS: go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...\nPASS required command recorded PASS: go tool cover -func=coverage.out\nPASS required command recorded PASS: go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...\nPASS required command recorded PASS: go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/\nPASS required command recorded PASS: rg -n --glob '!*_test.go' \"requirement\\.synced|last_synced_hash\" cmd internal\nPASS commit hash resolves: 07e0109c27820c39f531194b83d124cc6f2d2b62\nPASS commit subject matches: test(requirement): reject removed event in portable fake\nPASS report file committed and clean\nPASS report-lint completed with no failures\n"
+    }
+  ]
+}

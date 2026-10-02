@@ -12,6 +12,7 @@ import (
 )
 
 func TestBudgetDenialIncludesDerivedOutputState(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 	})
@@ -52,6 +53,7 @@ func TestBudgetDenialIncludesDerivedOutputState(t *testing.T) {
 }
 
 func TestBudgetProjectionAndHistoricalReplayAcrossCLI(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinitions(t, gateDefinitionsForTest(func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 	}))
@@ -111,6 +113,7 @@ func TestBudgetProjectionAndHistoricalReplayAcrossCLI(t *testing.T) {
 }
 
 func TestBudgetUnknownProjectionPreservesNullCounters(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinitions(t, gateDefinitionsForTest(nil))
 	input := envelopeCreateInput(t, workspace, issueID, registration)
 	input["budgets"].([]any)[0].(map[string]any)["unit"] = "input-tokens"

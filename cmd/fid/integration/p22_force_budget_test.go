@@ -38,6 +38,7 @@ func p22AssertInterventions(t *testing.T, response map[string]any, consumed int)
 }
 
 func TestP22ForceRecoveryBudgetChainBoundaryReplayAndPortability(t *testing.T) {
+	t.Parallel()
 	a := p22ForceBudgetFixture(t, 2)
 	var first map[string]any
 	for i := 1; i <= 2; i++ {

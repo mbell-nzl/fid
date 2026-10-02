@@ -1,0 +1,24 @@
+{
+  "id": "human-guide-verification",
+  "cmd": "python3 project-docs/docs/phases/phase-23/qa/final-evidence-1/refresh-human-guide.py /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/manifest.json",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T17:18:00.495Z",
+  "results": [
+    {
+      "chunk_id": "5d0b64",
+      "wall_time_seconds": 1.001195549,
+      "session_id": 80800,
+      "original_token_count": 292,
+      "output": "VAL-070 mixed Findings inspection 1 expected=0 observed exit_code=0\nVAL-070 mixed Findings inspection 2 expected=0 observed exit_code=0\nVAL-070 mixed Findings inspection 3 expected=0 observed exit_code=0\nVAL-070 mixed Findings inspection 4 expected=0 observed exit_code=0\nVAL-070 mixed Findings inspection 5 expected=0 observed exit_code=0\nVAL-070 mixed Findings inspection 6 expected=0 observed exit_code=0\nVAL-070 mixed Findings inspection 7 expected=0 observed exit_code=0\nVAL-070 mixed Findings inspection 8 expected=0 observed exit_code=0\nVAL-071 protected Decision inspection 1 expected=0 observed exit_code=0\nVAL-071 protected Decision inspection 2 expected=0 observed exit_code=0\nVAL-071 protected Decision inspection 3 expected=0 observed exit_code=0\nVAL-071 protected Decision inspection 4 expected=0 observed exit_code=0\nVAL-071 protected Decision inspection 5 expected=0 observed exit_code=0\nVAL-071 protected Decision inspection 6 expected=0 observed exit_code=0\nVAL-071 protected Decision step blocked action before Outcome expected=5 observed exit_code=5\nVAL-071 protected Decision step record authorized Human Outcome expected=0 observed exit_code=0\n"
+    },
+    {
+      "chunk_id": "907bca",
+      "wall_time_seconds": 0.000008497,
+      "exit_code": 0,
+      "original_token_count": 747,
+      "output": "VAL-071 protected Decision step retry guarded action expected=0 observed exit_code=0\nrework Human denial expected=4 observed exit_code=4\nVAL-072 review rework exhaustion inspection 1 expected=0 observed exit_code=0\nVAL-072 review rework exhaustion inspection 2 expected=0 observed exit_code=0\nVAL-072 review rework exhaustion inspection 3 expected=0 observed exit_code=0\nVAL-072 review rework exhaustion inspection 4 expected=0 observed exit_code=0\nVAL-072 review rework exhaustion inspection 5 expected=0 observed exit_code=0\nVAL-072 review rework exhaustion inspection 6 expected=0 observed exit_code=0\nVAL-072 review rework exhaustion step exhausted rework denial expected=4 observed exit_code=4\nVAL-072 review rework exhaustion step record approved review-rework-extension Outcome expected=0 observed exit_code=0\nVAL-072 review rework exhaustion step retry rework Claim expected=0 observed exit_code=0\nrequirement.record-reference Human expected=0 observed exit_code=0\nrequirement.record-reference JSON expected=0 observed exit_code=0\nrequirement.link Human expected=0 observed exit_code=0\nrequirement.link JSON expected=0 observed exit_code=0\nconcern.record Human expected=0 observed exit_code=0\nconcern.record JSON expected=0 observed exit_code=0\nconcern.dispose Human expected=0 observed exit_code=0\nconcern.dispose JSON expected=0 observed exit_code=0\ndeviation.record Human expected=0 observed exit_code=0\ndeviation.record JSON expected=0 observed exit_code=0\ndecision.record-reference Human expected=0 observed exit_code=0\ndecision.record-reference JSON expected=0 observed exit_code=0\nhuman-outcome.record Human expected=0 observed exit_code=0\nhuman-outcome.record JSON expected=0 observed exit_code=0\nreview.record Human expected=0 observed exit_code=0\nreview.record JSON expected=0 observed exit_code=0\nfinding.address Human expected=0 observed exit_code=0\nfinding.address JSON expected=0 observed exit_code=0\nreview.get Human expected=0 observed exit_code=0\nreview.get JSON expected=0 observed exit_code=0\nreview.list Human expected=0 observed exit_code=0\nreview.list JSON expected=0 observed exit_code=0\nfinding.list Human expected=0 observed exit_code=0\nfinding.list JSON expected=0 observed exit_code=0\nconcern.list Human expected=0 observed exit_code=0\nconcern.list JSON expected=0 observed exit_code=0\ndeviation.list Human expected=0 observed exit_code=0\ndeviation.list JSON expected=0 observed exit_code=0\ndecision.list Human expected=0 observed exit_code=0\ndecision.list JSON expected=0 observed exit_code=0\nhuman-outcome.list Human expected=0 observed exit_code=0\nhuman-outcome.list JSON expected=0 observed exit_code=0\nrequirement.get Human expected=0 observed exit_code=0\nrequirement.get JSON expected=0 observed exit_code=0\nrequirement.list Human expected=0 observed exit_code=0\nrequirement.list JSON expected=0 observed exit_code=0\nPASS 63 exact guide invocations; Human/JSON facts match; seven Human judgments remain blank; fresh fixtures restored for handoff\n"
+    }
+  ],
+  "ended": "2026-10-02T17:18:19.939Z"
+}

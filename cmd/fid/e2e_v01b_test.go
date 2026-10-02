@@ -11,6 +11,7 @@ import (
 )
 
 func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
@@ -336,6 +337,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 }
 
 func TestV01BReadyReturnsEmptyAfterAllTasksFinishedEndToEnd(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 

@@ -1,0 +1,23 @@
+{
+  "id": "report-21",
+  "cmd": "project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-21-done.md project-docs/docs/phases/phase-23/tasks/task-21.md",
+  "cwd": "/home/mark/projects/fid",
+  "started": "2026-10-02T16:36:28.255Z",
+  "results": [
+    {
+      "chunk_id": "f9bc99",
+      "wall_time_seconds": 1.001012524,
+      "session_id": 5412,
+      "original_token_count": 496,
+      "output": "PASS all required headings present\nPASS headings in required order\nPASS section non-empty: ## Concerns, technical debt, or notes for the Tech Lead\nPASS section non-empty: ## Dependency-budget note\nPASS section non-empty: ## Deviations from spec\nPASS section non-empty: ## Validation Contract Coverage\nOUTCOME COMPLETE\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/internal/workflow 0.164s\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/internal/evidence 0.005s\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/cmd/fid/integration 6.626s\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/cmd/fid 230.728s\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/cmd/fid/integration 19.016s\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/cmd/fid/integration 11.653s\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.086s\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/cmd/fid/integration 0.570s\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.605s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t2.270s\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/internal/workflow 113.517s coverage: 62.7% of statements\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/cmd/fid/integration 268.910s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 62.7% of statements\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t291.867s\nPASS required command recorded PASS: gofmt -l cmd internal\nPASS required command recorded PASS: golangci-lint run ./...\n"
+    },
+    {
+      "chunk_id": "d08a4c",
+      "wall_time_seconds": 0.000013696,
+      "exit_code": 0,
+      "original_token_count": 147,
+      "output": "PASS required command recorded PASS: go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...\nPASS required command recorded PASS: go tool cover -func=coverage.out\nPASS required command recorded PASS: go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...\nPASS commit hash resolves: 343b458fc4c1b7a726ae9218315edf319c5e40ba\nPASS commit subject matches: test(review): align semantic fake with rework exhaustion\nPASS report file committed and clean\nPASS report-lint completed with no failures\n"
+    }
+  ],
+  "ended": "2026-10-02T16:36:51.776Z"
+}

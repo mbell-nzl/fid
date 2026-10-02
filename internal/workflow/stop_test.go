@@ -12,6 +12,7 @@ import (
 )
 
 func TestEquivalentStopsShareAttentionButKeepDistinctFacts(t *testing.T) {
+	t.Parallel()
 	workspace, _ := initializedWorkflowWorkspace(t)
 	conn, err := openWorkflowDB(workspace)
 	if err != nil {
@@ -58,6 +59,7 @@ func TestEquivalentStopsShareAttentionButKeepDistinctFacts(t *testing.T) {
 }
 
 func TestRaiseStopUsesOneOpenAttentionAndRejectsRoutineReadsWithoutEffects(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	conn, err := openWorkflowDB(workspace)
 	if err != nil {
@@ -107,6 +109,7 @@ func TestRaiseStopUsesOneOpenAttentionAndRejectsRoutineReadsWithoutEffects(t *te
 }
 
 func TestRoutineStatusLeavesAttentionAndJournalUnchangedUntilExplicitStop(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	conn, err := openWorkflowDB(workspace)
 	if err != nil {
@@ -135,6 +138,50 @@ func TestRoutineStatusLeavesAttentionAndJournalUnchangedUntilExplicitStop(t *tes
 	assertOpenAttentionCount(t, conn, 1)
 	if afterJournal := readWorkflowTestFile(t, workflowJournalPath(t, workspace)); string(afterJournal) == string(beforeJournal) {
 		t.Fatal("explicit Stop did not append a journal Event")
+	}
+}
+
+// TestRaiseStopAcceptsTheClosedFourTypeJudgmentConditionSet proves task 11's
+// two remaining registrations, review-recorded and finding-resolved, are
+// accepted end to end through RaiseStop's own strict journal write and
+// stored verbatim: review-recorded carries no discriminator at all (DEC-236),
+// while finding-resolved requires exactly one, and rejects when it is absent.
+func TestRaiseStopAcceptsTheClosedFourTypeJudgmentConditionSet(t *testing.T) {
+	t.Parallel()
+	options, _ := recoveryFixture(t)
+	authorizeStopConditionRun(t, options)
+	stopOptions := StopOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, ActorID: options.ActorID, IdempotencyKey: testIdempotencyKey()}
+
+	findingID := "FND-condition"
+	cases := []struct {
+		name      string
+		condition Condition
+		wantValid bool
+	}{
+		{"review-recorded bare four-field form is accepted", Condition{Type: "review-recorded", Subject: Subject{Type: "run", ID: "RUN-prior"}}, true},
+		{"review-recorded rejects a finding_id", Condition{Type: "review-recorded", Subject: Subject{Type: "run", ID: "RUN-prior"}, FindingID: &findingID}, false},
+		{"finding-resolved requires a finding_id", Condition{Type: "finding-resolved", Subject: Subject{Type: "run", ID: "RUN-prior"}}, false},
+		{"finding-resolved with a finding_id is accepted", Condition{Type: "finding-resolved", Subject: Subject{Type: "run", ID: "RUN-prior"}, FindingID: &findingID}, true},
+		{"finding-resolved accepts an Envelope subject", Condition{Type: "finding-resolved", Subject: Subject{Type: "envelope", ID: "ENV-recovery"}, FindingID: &findingID}, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			stopOptions.IdempotencyKey = testIdempotencyKey()
+			request := stopTestRequest()
+			request.Subject = tc.condition.Subject
+			request.ResolutionCondition = tc.condition
+			raised, err := RaiseStop(stopOptions, request)
+			if (err == nil) != tc.wantValid {
+				t.Fatalf("RaiseStop with %s condition: %v; want valid=%v", tc.condition.Type, err, tc.wantValid)
+			}
+			if !tc.wantValid {
+				return
+			}
+			retained, err := GetStop(stopOptions.WorkspaceRoot, stopOptions.MigrationsDir, raised.Stop.ID)
+			if err != nil || !reflect.DeepEqual(retained.ResolutionCondition, tc.condition) {
+				t.Fatalf("stored Condition round-trip = %#v, %v; want %#v", retained.ResolutionCondition, err, tc.condition)
+			}
+		})
 	}
 }
 

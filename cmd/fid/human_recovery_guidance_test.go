@@ -10,6 +10,7 @@ import (
 )
 
 func TestHumanRecoveryGuidance(t *testing.T) {
+	t.Parallel()
 	resume := workflow.Resume{
 		Issue:       workflow.ResumeIssue{ID: "ISS-example", Status: "open"},
 		Completion:  workflow.ResumeCompletion{Status: "incomplete"},
@@ -33,6 +34,7 @@ func TestHumanRecoveryGuidance(t *testing.T) {
 }
 
 func TestHumanGuidanceDoesNotRecommendBlockedGate(t *testing.T) {
+	t.Parallel()
 	resume := workflow.Resume{NextActions: []workflow.NextAction{{Operation: "gate.run", Reasons: []workflow.EvaluationReason{{Code: "budget-exhausted"}}}}}
 	human := strings.Join(resumeNextStepLines(resume), "\n")
 	if strings.Contains(human, "To collect proof") || !strings.Contains(human, "blocked") || !strings.Contains(human, "budget-exhausted") {
@@ -41,6 +43,7 @@ func TestHumanGuidanceDoesNotRecommendBlockedGate(t *testing.T) {
 }
 
 func TestHumanActivationTerminalStateDoesNotOfferRecovery(t *testing.T) {
+	t.Parallel()
 	for _, status := range []string{"finalized", "aborted"} {
 		var out bytes.Buffer
 		cmd := &cobra.Command{}
@@ -55,6 +58,7 @@ func TestHumanActivationTerminalStateDoesNotOfferRecovery(t *testing.T) {
 }
 
 func TestHumanImportedFreshObservationDoesNotRequestItAgain(t *testing.T) {
+	t.Parallel()
 	context := workflow.RecoveryReadContext{Import: &workflow.ImportedHistoryContext{}, Liveness: &workflow.Liveness{State: "terminated"}}
 	human := strings.Join(recoveryLocalContextLines(context, true), "\n")
 	if strings.Contains(human, "establish fresh destination liveness") {
@@ -63,6 +67,7 @@ func TestHumanImportedFreshObservationDoesNotRequestItAgain(t *testing.T) {
 }
 
 func TestHumanImportedInactiveRunDoesNotRequestObservation(t *testing.T) {
+	t.Parallel()
 	context := workflow.RecoveryReadContext{Import: &workflow.ImportedHistoryContext{}}
 	for _, run := range []*workflow.Run{nil, {Status: "succeeded"}, {Status: "failed"}, {Status: "abandoned"}} {
 		var out bytes.Buffer

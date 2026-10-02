@@ -15,6 +15,7 @@ import (
 )
 
 func TestV01ParityGoldenOutputs(t *testing.T) {
+	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	copyParityFixture(t, filepath.Join("..", "testdata", "v01_parity", "fixture"), workspace)
@@ -27,6 +28,7 @@ func TestV01ParityGoldenOutputs(t *testing.T) {
 }
 
 func TestV01ParityFixtureRebuildPreservesEveryProjectionTable(t *testing.T) {
+	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	copyParityFixture(t, filepath.Join("..", "testdata", "v01_parity", "fixture"), workspace)

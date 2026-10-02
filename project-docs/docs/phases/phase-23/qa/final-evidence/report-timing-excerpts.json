@@ -1,0 +1,319 @@
+[
+  {
+    "task": 1,
+    "records": [
+      {
+        "line": 62,
+        "text": "  fresh CLI **527.099s**, workflow **231.010s**, every package below 600s. Raw output: `qa/esc-23-002-evidence/race-attempt-3.log`."
+      }
+    ]
+  },
+  {
+    "task": 2,
+    "records": [
+      {
+        "line": 74,
+        "text": "- Observed wall times: `cmd/fid` `440.185s`; `cmd/fid/integration` `650.206s`; `internal/workflow` `193.138s` for the current-session post-edit uncached required run (the final rerun was cached)."
+      },
+      {
+        "line": 81,
+        "text": "- QA repair attempt 1 wall times: `cmd/fid` `451.009s`; `cmd/fid/integration` `681.075s`; `internal/workflow` `198.163s` for the final dedicated workflow run (`203.449s` in the full race/coverage gate)."
+      },
+      {
+        "line": 88,
+        "text": "- QA review-2 wall times: `cmd/fid` `448.937s`; `cmd/fid/integration` `666.085s`; `internal/workflow` retained noncached package wall time `198.163s` from the prior repair gate, with the current exact dedicated rerun cached and completing in `4.131s` process wall time."
+      },
+      {
+        "line": 99,
+        "text": "- DEC-249 DEC-227 wall times (all uncached, from the runs above): `cmd/fid/integration` `691.913s` (budget 900 s); `cmd/fid` `490.783s` (repository-wide race/coverage run; budget 600 s); `internal/workflow` `209.816s` in the repository-wide run and `188.151s` in the dedicated run (budget 600 s). No budget breach; the new tagged tests take about 3.7 s each."
+      }
+    ]
+  },
+  {
+    "task": 3,
+    "records": [
+      {
+        "line": 52,
+        "text": "- Observed wall times: `cmd/fid` `438.942s` from the fresh final race gate; `cmd/fid/integration` `702.407s` from the fresh final tagged gate; `internal/workflow` `237.598s` from the current-session uncached race gate before the final CLI-help-only correction. All are within the 600 s ordinary-package and 900 s tagged-integration budgets."
+      }
+    ]
+  },
+  {
+    "task": 4,
+    "records": [
+      {
+        "line": 69,
+        "text": "- Ordinary package budgets: `cmd/fid` was 496.639s and `internal/workflow` was 217.082s; every package stayed below 600s."
+      },
+      {
+        "line": 72,
+        "text": "- Tagged integration budget: `cmd/fid/integration` was 659.237s, below 900s."
+      }
+    ]
+  },
+  {
+    "task": 5,
+    "records": [
+      {
+        "line": 62,
+        "text": "- Ordinary package budgets: `cmd/fid` was 588.268s and `internal/workflow` was 237.239s; every package stayed below 600s."
+      },
+      {
+        "line": 65,
+        "text": "- Tagged integration budget: `cmd/fid/integration` was 669.496s, below 900s."
+      },
+      {
+        "line": 76,
+        "text": "- `cmd/fid` completed in 588.268s, leaving 11.732s below the 600s ordinary-package budget. The gate passed, but Task 6 should avoid adding repeated full CLI fixtures where a shared snapshot can preserve isolation."
+      }
+    ]
+  },
+  {
+    "task": 6,
+    "records": [
+      {
+        "line": 64,
+        "text": "- VAL-079: PASS - the exact ordinary race gate reported `cmd/fid` at 535.185s and `internal/workflow` at 211.439s, both below 600s. The exact tagged integration rerun completed in 643.828s, below 900s."
+      },
+      {
+        "line": 85,
+        "text": "- Ordinary package budgets: `cmd/fid` was 535.185s, `internal/workflow` was 211.439s, and every ordinary package remained below 600s."
+      },
+      {
+        "line": 89,
+        "text": "- Tagged integration budget: `cmd/fid/integration` was 643.828s, below 900s."
+      },
+      {
+        "line": 106,
+        "text": "DEC-227 package wall times (VAL-079): `cmd/fid/integration` 681.447 s (tagged, budget 900 s, PASS); `cmd/fid` 478.295 s (ordinary, budget 600 s, PASS); `internal/workflow` 185.338 s (ordinary, budget 600 s, PASS; taken from the dedicated `./internal/workflow/` command because the repository-wide run printed `(cached)` for that unchanged package). No ordinary package exceeded 600 s; the repository-wide run's slowest packages were `cmd/fid` 478.295 s and `internal/export` 232.335 s. `goimports -l internal/evidence cmd/fid/integration` printed nothing (checked before the gates; exit status not separately recorded). Each gate's `exit_code` was captured by the launching shell as the command terminated, not asserted."
+      },
+      {
+        "line": 150,
+        "text": "- Built-binary journey `TestP23GateRunAuthorizesEveryEnvelopeGrantThroughBuiltBinary` (`cmd/fid/integration/p23_gate_grants_test.go`), one active Envelope for a fresh Issue with three Grants: `actor-denied` (first sorted) and `actor-reviewer-two` (last sorted) granted `gate.run`; `actor-recovery` (between them) holds the `gate.run` capability in its activated profile but its Grant omits `gate.run`. Each Actor acquires its own mutation Claim and starts its own Run through the CLI, then runs `fid gate run`. Observed: `actor-denied` and `actor-reviewer-two` each receive an `fid-executed` `succeeded` Receipt naming their own Actor and Run; `actor-recovery` is denied with the adapter's `invalid-argument` (exit 2, empty stdout) and the Event count and a projection summary (row counts of `execution_attempts`, `execution_receipts`, `evidence_records`, `budget_samples`, `idempotency_results`, `run_budget_bindings`, plus every Run's id and status) are identical before and after. An in-process `evidence.RunGate` call as `actor-recovery` returns exactly `run gate: authority grant does not permit gate.run`, pinning the cause to the Grant match, again with unchanged Event count and projection. Red before the fix (the same journey, fix reverted): `actor-reviewer-two gate.run with its own gate.run Grant = ... invalid-argument ... ExitCode:2, want stdout-only success` / `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid/integration\t2.303s` (terminated `exit_code: 1`). Green after: `--- PASS: TestP23GateRunAuthorizesEveryEnvelopeGrantThroughBuiltBinary (3.05s)` / `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.535s` (terminated `exit_code: 0`)."
+      }
+    ]
+  },
+  {
+    "task": 7,
+    "records": [
+      {
+        "line": 35,
+        "text": "- VAL-079: PASS - the exact ordinary race gate reported `cmd/fid` at 499.695s and `internal/workflow` at 211.628s, both below 600s. The exact tagged integration gate completed in 648.604s, below 900s."
+      },
+      {
+        "line": 55,
+        "text": "- Ordinary package budgets: `cmd/fid` was 499.695s and `internal/workflow` was 211.628s; every reported ordinary package remained below 600s."
+      },
+      {
+        "line": 58,
+        "text": "- Tagged integration budget: `cmd/fid/integration` was 648.604s, below 900s."
+      }
+    ]
+  },
+  {
+    "task": 8,
+    "records": [
+      {
+        "line": 46,
+        "text": "- VAL-079: PASS - the exact ordinary gate reported `cmd/fid` at 538.754s and `internal/workflow` at 211.559s, both below 600s. The exact tagged integration gate completed in 651.834s, below 900s. Compared with Task 7, these are +39.059s, -0.069s, and +3.230s respectively."
+      },
+      {
+        "line": 68,
+        "text": "- Ordinary package budgets: `cmd/fid` was 538.754s and `internal/workflow` was 211.559s; every reported ordinary package remained below 600s."
+      },
+      {
+        "line": 71,
+        "text": "- Tagged integration budget: `cmd/fid/integration` was 651.834s, below 900s."
+      }
+    ]
+  },
+  {
+    "task": 9,
+    "records": []
+  },
+  {
+    "task": 10,
+    "records": [
+      {
+        "line": 543,
+        "text": "Wall times (VAL-079/DEC-227): `cmd/fid/integration` 693.638 s (tagged, budget"
+      },
+      {
+        "line": 544,
+        "text": "900 s, PASS; shell `real 11m36.832s`); `cmd/fid` 564.337 s (ordinary, budget"
+      },
+      {
+        "line": 589,
+        "text": "Wall times (VAL-079/DEC-227): `cmd/fid/integration` 689.526 s (tagged, budget 900 s,"
+      },
+      {
+        "line": 590,
+        "text": "PASS; shell `real 11m32.728s`); `cmd/fid` 468.708 s (ordinary, budget 600 s, PASS,"
+      }
+    ]
+  },
+  {
+    "task": 11,
+    "records": [
+      {
+        "line": 18,
+        "text": "ESC-23-005 closure (DEC-258, Human-delegated repair above role boundaries): the budget breach was not a task-11 cause. It came from serial test structure plus measurement spread (`qa/esc-23-005-repair.md`). Repair commit `3dff4574a71438900100449e36d7044969ba9162` adds `t.Parallel()` to existing serial tests and enables `paralleltest`, and changes no assertion, command, or budget. The five exact commands then passed on that commit, with `cmd/fid` at 531.533s. The earlier failed budget attempts below remain failed evidence."
+      },
+      {
+        "line": 41,
+        "text": "- VAL-079: PASS on the final exact gates at `3dff457` (DEC-258 attempt 2): `cmd/fid` `531.533s` (<600s), `internal/workflow` `165.920s` (<600s), and tagged `cmd/fid/integration` `326.421s` (<900s). None terminated by timeout. Earlier failures are retained. Task-11 attempts measured `cmd/fid` at `686.386s` and `630.927s` (FAIL), and the pre-repair parent at `614.601s`. DEC-258 attempt 1 failed on the midnight journal-file flake recorded below. `cmd/fid` sits at 88.6% of its budget, which triggers DEC-258's headroom warning (see Concerns)."
+      },
+      {
+        "line": 94,
+        "text": "DEC-227 times from this continuation: `cmd/fid/integration` 778.278s (<900s), `cmd/fid` 686.386s (>600s), `internal/workflow` 277.603s (<600s). The parent comparison had `cmd/fid` 593.812s and `internal/workflow` 238.620s. Other unrelated packages were also slower in the task-11 attempt (`internal/export` 387.634s versus 329.302s; `internal/journal` 295.151s versus 250.583s). These observations suggest broad timing variation, but do not establish a causal repair or pass the budget. The earlier task-11 report's 546.059s/213.335s/700.168s run appended `-count=1` and remains historical evidence, not the current exact gate."
+      },
+      {
+        "line": 96,
+        "text": "Attempt-2 exact task-11 times: `cmd/fid/integration` 766.070s (<900s), `cmd/fid` 630.927s (>600s), `internal/workflow` 252.947s (<600s). The fresh same-session pre-repair parent took 614.601s for `cmd/fid`, itself above budget. The first attempt-2 ordinary result was cached and had no measured package time. The non-cached attempt still fails VAL-079; an unmodified rerun does not erase the earlier failed attempt."
+      },
+      {
+        "line": 105,
+        "text": "- The first exact ordinary gate's last line was `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t277.603s\tcoverage: 64.6% of statements` (terminated `exit_code: 0`), but its `cmd/fid` package time breached the 600s budget. Root cause remains unproven; no repair or later passing task-11 gate is claimed."
+      },
+      {
+        "line": 106,
+        "text": "- Attempt 2 repeated the exact ordinary command after clearing the test cache and observed `cmd/fid` at 630.927s (terminated `exit_code: 0`), still over budget. The same-session pre-repair parent was 614.601s (terminated `exit_code: 0`), also over budget. The 16.326s current-minus-parent difference is smaller than the current 30.927s overage; unrelated package increases and the prior focused Stop comparison prevent attributing the breach to task 11. No test, command, threshold, or source file was altered to seek a green timing result."
+      },
+      {
+        "line": 112,
+        "text": "- DEC-258 headroom warning: `cmd/fid` recorded 531.533s, 88.6% of its 600s budget and above the 480s warning line. With every package parallel, the ordinary gate is CPU-throughput bound, so package times now track total suite CPU. A profile attributes 33% of `cmd/fid` CPU to SQLite re-parsing the schema on each connection open (several opens per command, mainly `journal.ensureProjectionFresh` and `workflow.openWorkflowDB`), and 32% to race-implied `checkptr` inside modernc SQLite. Tasks 13 and 14 add `cmd/fid` tests. Schedule a speed item first; the options and authority needed are in `qa/esc-23-005-repair.md`."
+      }
+    ]
+  },
+  {
+    "task": 12,
+    "records": [
+      {
+        "line": 40,
+        "text": "- VAL-079 (task-12 report part): PASS - This recovery's exact ordinary gate reported `cmd/fid` 194.230s and `(cached)` for `internal/workflow`; the earlier measured `internal/workflow` result was 100.258s, and the prior `cmd/fid` results were 189.843s and 285.237s. This recovery's tagged integration reported 236.892s (earlier 208.862s). Every observed duration is below the ordinary 600s and tagged 900s budgets; neither gate timed out."
+      }
+    ]
+  },
+  {
+    "task": 13,
+    "records": [
+      {
+        "line": 58,
+        "text": "- VAL-079: PASS - this continuation's exact ordinary gate reported `cmd/fid 204.920s` (under 600 s) and cached `internal/workflow`; a fresh `-count=1` race run reported `internal/workflow 62.384s` (under 600 s). The exact tagged gate reported `cmd/fid/integration 265.793s` (under 900 s). All processes terminated and none reached 80% of budget. Historical attempt-2 times were `cmd/fid 284.783s`, `internal/workflow 99.417s`, and tagged `217.733s`; its tagged failure was VAL-057, not timing."
+      },
+      {
+        "line": 136,
+        "text": "- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`); `TestP23DecisionReferenceProtectedLifecycleRealProcess` found that both protected-Decision denials omitted the explicit null EventRef, `replayed:false`, and Stop/Attention IDs required by VAL-057. The package reported 217.733s, below its budget."
+      },
+      {
+        "line": 161,
+        "text": "- VAL-079 final measured times are `cmd/fid 204.920s`, `internal/workflow 62.384s` from a fresh run because the exact ordinary gate reused cache, and tagged `cmd/fid/integration 265.793s`. None approaches 80% of its declared budget. The earlier attempt-2 times were `284.783s`, `99.417s`, and `217.733s`; attempt 1's were `288.696s`, `116.083s`, and `258.375s`."
+      }
+    ]
+  },
+  {
+    "task": 14,
+    "records": [
+      {
+        "line": 56,
+        "text": "- VAL-079: PASS for task timing - the final exact ordinary gate reported `cmd/fid 196.303s`, under 600s; it reported `internal/workflow (cached)`, with the earlier task-14 exact gate's measured `internal/workflow 117.669s` retained above the recovery boundary. The final tagged gate reported `cmd/fid/integration 229.795s`, under 900s. All final gates terminated without a timeout. No package reached 80% of its budget."
+      },
+      {
+        "line": 57,
+        "text": "- VAL-079 QA repair attempt: the exact ordinary gate reported `cmd/fid 241.251s` and `internal/workflow 97.723s`, each under 600s; the exact tagged gate reported `cmd/fid/integration 240.423s`, under 900s. None reached 80% of its budget."
+      },
+      {
+        "line": 130,
+        "text": "The ordinary gate also reported `cmd/fid 241.251s`; its last printed package line was `internal/workflow 97.723s`."
+      }
+    ]
+  },
+  {
+    "task": 15,
+    "records": [
+      {
+        "line": 41,
+        "text": "- VAL-079: PASS - final tagged integration: `240.222s` (limit 900s); final `cmd/fid` ordinary package: `198.174s` (limit 600s); `internal/workflow`: `101.597s` on the uncached first ordinary pass, then cached on the final pass (limit 600s). The first `cmd/fid` pass was `307.101s`. No required gate timed out; none reached 80% of its budget."
+      }
+    ]
+  },
+  {
+    "task": 16,
+    "records": [
+      {
+        "line": 37,
+        "text": "- VAL-079: PASS - original ordinary `cmd/fid` took `246.504s` and `internal/workflow` took `100.101s` (each under 600s); tagged `cmd/fid/integration` took `269.692s` (under 900s). The review-13 repair gate reported uncached `cmd/fid` `196.206s`, uncached `internal/workflow` `57.597s` (the ordinary gate's workflow result was cached), and tagged `cmd/fid/integration` `232.525s`. All original and repair measurements are below 80% of their respective budgets; neither gate timed out."
+      },
+      {
+        "line": 96,
+        "text": "- Uncached VAL-079 workflow measurement after the six exact gates: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow/` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t57.597s` (terminated `exit_code: 0`). The ordinary gate reported workflow as cached, so this supplies its current uncached package time."
+      },
+      {
+        "line": 122,
+        "text": "The repair gate reported `cmd/fid` `196.206s` uncached; the benchmark row was `22542 ms/rebuild`."
+      }
+    ]
+  },
+  {
+    "task": 17,
+    "records": [
+      {
+        "line": 34,
+        "text": "- VAL-079: PASS - the exact ordinary gate reported `cmd/fid 236.172s` and `internal/workflow 90.207s` (each under 600s); the exact tagged gate reported `cmd/fid/integration 234.507s` (under 900s). None reached 80% of its budget."
+      }
+    ]
+  },
+  {
+    "task": 18,
+    "records": [
+      {
+        "line": 60,
+        "text": "- VAL-079: PASS for attempts 1-6 measured time and report inventory. Attempt 1 recorded ordinary `cmd/fid` 214.615s, uncached `internal/workflow` 55.279s, and tagged `cmd/fid/integration` 229.859s. Attempt 2 recorded 202.293s, 57.091s, and 273.836s; attempt 3 recorded 199.423s, 57.209s, and 236.466s. Attempt 4 recorded 196.475s, 57.225s, and 267.677s. Attempt 5 recorded 196.537s, 58.366s, and 252.227s. Attempt 6 recorded final-tree ordinary `cmd/fid` 201.199s, uncached `internal/workflow` 57.620s, and tagged `cmd/fid/integration` 209.231s. Both attempt-5 and attempt-6 tagged commands failed behaviorally within the 900s budget. All historical times are below the 600/600/900s budgets and below 80% headroom. The attempt-1 read-only inventory over task 1-17 reports found all three times in each report. Report attempt 7 recorded tagged `cmd/fid/integration` 249.568s in the exact gate, `cmd/fid` 196.827s in the uncached touched-package race tier (the exact ordinary gate was cached), and uncached `internal/workflow` 57.728s below. All three are below the 900/600/600s budgets and below the 80% headroom warning threshold; no gate timed out."
+      },
+      {
+        "line": 61,
+        "text": "- VAL-079 review-13 MF-2: PASS for this task run. The exact ordinary gate reported `cmd/fid` 197.441s, the uncached workflow command reported `internal/workflow` 56.673s, and the exact tagged gate reported `cmd/fid/integration` 296.429s. These are below the 600/600/900s budgets and 80% warning levels. Both long commands terminated with `exit_code: 0`; neither timed out."
+      },
+      {
+        "line": 203,
+        "text": "- Attempt 3 uncached workflow measurement: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t57.209s` (terminated `exit_code: 0`)."
+      },
+      {
+        "line": 212,
+        "text": "- Attempt 2 uncached workflow measurement: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t57.091s` (terminated `exit_code: 0`)."
+      },
+      {
+        "line": 218,
+        "text": "- Amended leaf first focused attempt: `go test -tags integration -run '^TestP23SharedAmendedLeafConformance$' -count=1 ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`); the fixture's gate Run had unknown token-budget state. A baseline budget observation before the receipt link made the same command pass with `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t1.489s` (terminated `exit_code: 0`)."
+      },
+      {
+        "line": 228,
+        "text": "Attempt 5 exact commands ran in task-spec order from `/home/mark/projects/fid` on the checkpoint test tree. The final tagged gate terminated and failed on the retained `claim.acquire` authority-details contract; the first four commands passed. The ordinary gate recorded `cmd/fid` at 196.537s; its workflow result was cached. The tagged gate recorded `cmd/fid/integration` at 252.227s. An uncached `internal/workflow` measurement of 58.366s appears under Tests run. The task remains `RECOVERY_REQUIRED`."
+      },
+      {
+        "line": 244,
+        "text": "The ordinary gate reported `cmd/fid` at 196.475s. Its `internal/workflow` line was cached; the uncached 57.225s measurement is under Tests run."
+      },
+      {
+        "line": 270,
+        "text": "The ordinary gate also reported `cmd/fid` at 199.423s. Its `internal/workflow` line was cached; the uncached 57.209s measurement is under Tests run."
+      },
+      {
+        "line": 272,
+        "text": "Attempt 6 first exact sequence ran from `/home/mark/projects/fid` after the first set of ID/binding probes. The tagged failure was immutable; it led only to adding two still-missing in-scope fixture cases. `cmd/fid` took 200.883s and tagged `cmd/fid/integration` 215.542s; workflow was cached in the ordinary gate."
+      },
+      {
+        "line": 280,
+        "text": "Attempt 6 final exact sequence ran in task-spec order from `/home/mark/projects/fid` on the final test tree. `cmd/fid` took 201.199s, uncached `internal/workflow` took 57.620s in Tests run, and tagged `cmd/fid/integration` took 209.231s. These are below 80% of their 600/600/900s budgets. The tagged command terminates red on the protected Phase 21 contract divergence; the other four required commands pass."
+      },
+      {
+        "line": 296,
+        "text": "Review-13 MF-2 final exact commands ran from `/home/mark/projects/fid` in task-spec order after the positional normalization repair. The ordinary gate cached `internal/workflow`; its uncached 56.673s measurement is under Tests run. `cmd/fid` took 197.441s and tagged `cmd/fid/integration` took 296.429s. Each is below its VAL-079 budget and 80% warning level."
+      },
+      {
+        "line": 327,
+        "text": "- Historical task reports show `cmd/fid` package times at or above 80% of the 600s budget: task 2's later 490.783s, task 4's 496.639s, task 5's 588.268s, tasks 6-9's 535.185/499.695/538.754/513.222s, task 10's 564.337s attempt, and task 11's 531.533s final pass. This task's 214.615s and tagged 229.859s have ample headroom; the earlier measurements remain phase-level warnings."
+      }
+    ]
+  }
+]

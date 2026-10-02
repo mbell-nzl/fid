@@ -7,6 +7,7 @@ import (
 )
 
 func TestFinalSchemaHasNoEscalationsOrEscalationReferences(t *testing.T) {
+	t.Parallel()
 	path := filepath.Join(t.TempDir(), "fid.sqlite")
 	if err := MigrateUp(path, testMigrationsDir(t)); err != nil {
 		t.Fatal(err)
@@ -55,8 +56,8 @@ func TestFinalSchemaHasNoEscalationsOrEscalationReferences(t *testing.T) {
 			t.Errorf("%s retains %d retired seed rows", table, count)
 		}
 	}
-	if ActiveMigrationVersion != 16 {
-		t.Fatalf("active migration = %d, want16", ActiveMigrationVersion)
+	if ActiveMigrationVersion != 18 {
+		t.Fatalf("active migration = %d, want18", ActiveMigrationVersion)
 	}
 	if _, err := conn.Exec(`INSERT INTO activity_log (id, journal_event_id, ref_type, ref_id, event, occurred_at) VALUES ('ACT-retired', 'EVT-retired', 'escalation', 'ESC-retired', 'raised', '2026-09-08T00:00:00Z')`); err == nil || !strings.Contains(err.Error(), "activity_log: ref_type/ref_id") {
 		t.Fatalf("latest activity accepts retired reference or wrong rejection: %v", err)
@@ -64,6 +65,7 @@ func TestFinalSchemaHasNoEscalationsOrEscalationReferences(t *testing.T) {
 }
 
 func TestFinalSchemaResetsThroughZeroWithoutRetiredAuthority(t *testing.T) {
+	t.Parallel()
 	path, migrations := filepath.Join(t.TempDir(), "fid.sqlite"), testMigrationsDir(t)
 	if err := MigrateUp(path, migrations); err != nil {
 		t.Fatal(err)

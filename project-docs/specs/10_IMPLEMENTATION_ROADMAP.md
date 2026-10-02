@@ -67,8 +67,11 @@ migrations `0013`/`0014`. Incomplete semantic capabilities remain
 is complete and Human-accepted (DEC-220): 18 planned tasks plus supplemental
 Human-guidance task 19, 80/80 validation assertions and 6/6 Human checks.**
 Independent final QA and the accepted second Human checklist are reconciled in
-`../docs/phases/phase-22/qa/final-acceptance.md`. The phase branch awaits PR/merge;
-Phase 23 has not been planned or started.
+`../docs/phases/phase-22/qa/final-acceptance.md`. **Phase 23 (Review and Human
+judgment) is complete (DEC-271): 18 planned tasks plus supplemental tasks 19-21,
+89/89 validation assertions, and a Human re-check of 7/7 after the first
+checklist failed.** Its acceptance is reconciled in
+`../docs/phases/phase-23/qa/final-acceptance.md`. Phase 24 is not yet planned.
 
 ## 3. Foundation to retain
 
@@ -146,6 +149,7 @@ and verbosity review to the Phase 25 operating-experience qualification.
 Phase 22 DEC-187 records the kit comparison in
 `../docs/phases/phase-22/kit-contract-mapping.md`. Receiving work is explicit:
 Phase 23 plans Review charge semantics, review_cycles and review-rework-exhausted;
+its accepted contract for them is `../docs/phases/phase-23/contracts.md` section 6.
 Phase 24 plans generic retry-exhausted and removes the revision-1 limitation.
 Phase 25 qualification (CF-037) must prove kit coordinator recovery-export
 binding, derived terminalState expectation mapping, validate-only/scope/asOf
@@ -161,6 +165,11 @@ phase plan. Phase 20's exact inventory is
 Phase 21's code-derived inventory is
 `../docs/phases/phase-21/v1-convergence-inventory.md`; it assigns every retained,
 fail-closed, temporary, removed, and frozen caller/reader/writer.
+Phase 22's is `../docs/phases/phase-22/v1-convergence-inventory.md` and
+Phase 23's is `../docs/phases/phase-23/v1-convergence-inventory.md`; the latter
+also carries `../docs/phases/phase-23/contract-coverage.md`, which maps every
+accepted contract clause to its schema row, owning task, and validation
+assertion.
 
 | Current surface | Planned treatment |
 |---|---|
@@ -270,7 +279,26 @@ reading `.fid/` internals.
    6/6 second Human checklist. See the phase final acceptance and wrap audit.
    CF-024/034/035 close; remaining workflow maintenance and kit qualification
    stay explicitly assigned in the active register. CF-040 records accepted
-   future CLI polish. The branch is ready for PR; this wrap does not plan Phase 23.
+   future CLI polish. The branch is ready for PR; Phase 23 was planned
+   separately and is recorded at item 6.
+
+6. **Complete (2026-10-03).** Phase 23 "Review and Human judgment"
+   was planned in Heavy mode and accepted under DEC-222: independent Review
+   coverage and Findings, Finding dispositions, review-cycle accounting and
+   `review-rework-exhausted`, generic Concerns and Deviations, Decision
+   References with protected-Decision blocking, provenanced Human Outcomes,
+   Human Outcome-based Attention resolution, requirement references replacing V1
+   requirement authoring, and the owned V1 judgment removal. The accepted
+   authority is `../docs/phases/phase-23/contracts.md`, `public-interface.md`,
+   `schema.md`, `execution-scope.md`, `v1-convergence-inventory.md`,
+   `contract-coverage.md`, `qa/validation-contract.md`, and an ordered
+   18-task pack. The first Human checklist failed; DEC-268/269 added tasks
+   19-21 (silent Human failures, stable requirement identity, resolvable rework
+   exhaustion). DEC-271 records 89/89 assertions, `reviews.coverage.v1` and
+   `human.outcomes.v1` qualified, and the remaining Human operating-experience
+   items as CF-045.
+7. **Next.** The Human and Tech Lead decide when CF-045 is planned, then the
+   Tech Lead plans Phase 24 "Parallel and evolving work".
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

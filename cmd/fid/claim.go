@@ -10,7 +10,9 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
@@ -49,7 +51,7 @@ func newClaimExpireCommand() *cobra.Command {
 
 func newClaimAcquireCommand() *cobra.Command {
 	var inputPath, actor, key string
-	cmd := &cobra.Command{Use: "acquire", Short: "Acquire one mutation claim.", Args: canonicalNoArgs("claim.acquire"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "acquire", Short: "Acquire one Claim.", Args: canonicalNoArgs("claim.acquire"), RunE: func(cmd *cobra.Command, _ []string) error {
 		var request claims.AcquireRequest
 		if err := claimRequest(cmd, "claim.acquire", inputPath, actor, key, &request); err != nil {
 			return err
@@ -198,9 +200,17 @@ func writeClaimSuccess(cmd *cobra.Command, operation string, result claims.Mutat
 }
 
 func renderClaimError(cmd *cobra.Command, operation string, cause error) error {
+	var stopped *workflow.StopBlockedError
+	if errors.As(cause, &stopped) {
+		return renderStopError(cmd, operation, cause)
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	var idempotency *journal.IdempotencyConflictError
+	if errors.As(cause, &idempotency) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": idempotency.OperationScope, "idempotency_key": idempotency.IdempotencyKey, "stored_request_digest": idempotency.StoredRequestDigest, "supplied_request_digest": idempotency.SuppliedRequestDigest})
 	}
 	var notFound *claims.ClaimNotFoundError
 	if errors.As(cause, &notFound) {
@@ -219,7 +229,7 @@ func renderClaimError(cmd *cobra.Command, operation string, cause error) error {
 	}
 	var denied *policy.EnvelopeAuthorityDeniedError
 	if errors.As(cause, &denied) {
-		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor": denied.ActorID})
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor_id": denied.ActorID, "required_actions": []string{denied.Action}, "required_capabilities": []string{denied.Capability}})
 	}
 	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid claim request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }

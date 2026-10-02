@@ -1,0 +1,17 @@
+{
+  "id": "rebuild-pragmas",
+  "cmd": "python3 project-docs/docs/phases/phase-23/qa/final-evidence-1/rebuild-pragmas.py",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T17:18:55.275Z",
+  "results": [
+    {
+      "chunk_id": "d2a972",
+      "wall_time_seconds": 0.11078471,
+      "exit_code": 0,
+      "original_token_count": 266,
+      "output": "{\"command\": [\"/tmp/fid\", \"--project\", \"/tmp/fid-p23-qa-rebuild-_ocav47h/workspace\", \"--json\", \"rebuild\"], \"cwd\": \"/tmp/fid-p23-qa-rebuild-_ocav47h/workspace\", \"stdout\": \"{\\\"contract_version\\\":\\\"fid-cli.v1\\\",\\\"event\\\":null,\\\"ok\\\":true,\\\"operation\\\":\\\"project.rebuild\\\",\\\"result\\\":{\\\"events_replayed\\\":32,\\\"files_replayed\\\":1,\\\"schema_version\\\":18,\\\"upgraded_events\\\":0}}\\n\", \"stderr\": \"\", \"exit_code\": 0}\n{\"command\": [\"sqlite3\", \"-batch\", \"/tmp/fid-p23-qa-rebuild-_ocav47h/workspace/.fid/fid.sqlite\", \"PRAGMA foreign_key_check;\"], \"cwd\": \"/tmp/fid-p23-qa-rebuild-_ocav47h/workspace\", \"stdout\": \"\", \"stderr\": \"\", \"exit_code\": 0}\n{\"command\": [\"sqlite3\", \"-batch\", \"/tmp/fid-p23-qa-rebuild-_ocav47h/workspace/.fid/fid.sqlite\", \"PRAGMA integrity_check;\"], \"cwd\": \"/tmp/fid-p23-qa-rebuild-_ocav47h/workspace\", \"stdout\": \"ok\\n\", \"stderr\": \"\", \"exit_code\": 0}\nJournal SHA-256 unchanged: {\"2026-10-02.jsonl\": \"781e4920a553809500a33d50c0d1ca451648612b659384c72f0eb36e7daa6052\"}\nPASS full journal rebuild: foreign_key_check=[]; integrity_check=ok; source journal unchanged\n"
+    }
+  ],
+  "ended": "2026-10-02T17:18:55.556Z"
+}

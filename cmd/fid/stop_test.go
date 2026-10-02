@@ -11,6 +11,7 @@ import (
 )
 
 func TestStopSuccessHumanNamesBlockingReasonAndQualifyingResolution(t *testing.T) {
+	t.Parallel()
 	condition := workflow.Condition{Type: "activation-recovered", Subject: workflow.Subject{Type: "activation", ID: "ACT-22"}}
 	stop := workflow.Stop{
 		ID: "STOP-22", Code: "operator-stop", BlockedActions: []string{"run.start"},
@@ -46,6 +47,7 @@ func TestStopSuccessHumanNamesBlockingReasonAndQualifyingResolution(t *testing.T
 }
 
 func TestStopHumanListsShowOpenResolvedAndEmptyState(t *testing.T) {
+	t.Parallel()
 	open := workflow.Stop{ID: "STOP-open", Code: "operator-stop", BlockedActions: []string{"run.start"}, Details: json.RawMessage(`{"reason":"operator approval","reference":"DEC-188"}`), ResolutionCondition: workflow.Condition{Type: "work-ended", Subject: workflow.Subject{Type: "run", ID: "RUN-22"}}}
 	resolved := open
 	resolved.ID = "STOP-resolved"

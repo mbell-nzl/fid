@@ -111,15 +111,19 @@ func StartRun(options RunOptions, request RunStartRequest) (RunMutationResult, e
 		return RunMutationResult{}, invalidRun("run start input is invalid")
 	}
 	return mutateRun(options, runStartAction, request, func(conn *sql.DB, projectID string, now time.Time) (journal.Event, Run, error) {
-		if err := validateRunStartBinding(conn, options, projectID, request, now); err != nil {
-			return journal.Event{}, Run{}, err
-		}
 		stops, err := ApplicableStops(conn, runStartAction, Subject{Type: "envelope", ID: request.EnvelopeID})
 		if err != nil {
 			return journal.Event{}, Run{}, err
 		}
 		if len(stops) != 0 {
-			return journal.Event{}, Run{}, &StopBlockedError{Action: runStartAction, Stops: stops}
+			blocked, err := NewStopBlockedError(conn, runStartAction, stops)
+			if err != nil {
+				return journal.Event{}, Run{}, err
+			}
+			return journal.Event{}, Run{}, blocked
+		}
+		if err := validateRunStartBinding(conn, options, projectID, request, now); err != nil {
+			return journal.Event{}, Run{}, err
 		}
 		actor, err := ResolveTrustedActor(options.WorkspaceRoot, options.MigrationsDir, options.ActorID)
 		if err != nil {

@@ -12,6 +12,11 @@ func validateCurrentJSON(event Event, effect Effect, column, raw string) error {
 	}
 	kind := ""
 	switch effect.Table + "." + column {
+	case "activity_log.details":
+		if _, ok := value.(map[string]any); !ok {
+			return fmt.Errorf("activity details must be a JSON object")
+		}
+		return nil
 	case "run_observations.observation_json":
 		return validateCurrentObservation(value, effect)
 	case "run_recoveries.reconciliation_json":
@@ -66,6 +71,28 @@ func validateCurrentJSON(event Event, effect Effect, column, raw string) error {
 		kind = "Toolchain"
 	case "execution_receipts.rejected_artifacts_json":
 		kind = "[]ArtifactRejection"
+	case "review_records.repository_json":
+		kind = "Repository"
+	case "review_records.coverage_json":
+		kind = "Coverage"
+	case "review_records.evidence_refs_json":
+		kind = "[]Source"
+	case "review_records.receipt_ids_json":
+		kind = "[]ID"
+	case "review_findings.scope_json":
+		kind = "Scope"
+	case "concerns.scope_json":
+		kind = "Scope"
+	case "concerns.references_json", "deviations.references_json":
+		kind = "[]Source"
+	case "decision_refs.source_json":
+		kind = "Source"
+	case "requirement_refs.source_json":
+		kind = "Source"
+	case "decision_refs.authority_capabilities_json":
+		kind = "[]ID"
+	case "human_outcomes.references_json":
+		kind = "[]Source"
 	case "idempotency_results.result_json":
 		return validateCurrentResultJSON(event, value)
 	default:
@@ -133,7 +160,16 @@ func validateCurrentAdoptedPaths(value any) error {
 }
 func validateCurrentResultJSON(event Event, value any) error {
 	fields := map[string]string{
-		"run.started": "run:Run", "run.observed": "observation:Observation run:Run", "run.checkpointed": "checkpoint:Checkpoint run:Run",
+		"review.recorded":        "review:Review budget:?Budget stops:[]Stop attention:[]Attention",
+		"finding.addressed":      "finding:Finding",
+		"concern.recorded":       "concern:Concern",
+		"concern.disposed":       "concern:Concern",
+		"deviation.recorded":     "deviation:Deviation",
+		"decision.referenced":    "decision:DecisionRef protected_decisions:[]ProtectedDecision stops:[]Stop attention:[]Attention",
+		"human-outcome.recorded": "outcome:HumanOutcome protected_decisions:[]ProtectedDecision stops:[]Stop attention:[]Attention",
+		"requirement.referenced": "requirement:RequirementRef",
+		"requirement.linked":     "link:RequirementLink",
+		"run.started":            "run:Run", "run.observed": "observation:Observation run:Run", "run.checkpointed": "checkpoint:Checkpoint run:Run",
 		"run.recovered": "recovery:Recovery run:Run claim:Claim", "run.abandoned": "run:Run claim:Claim", "run.closed": "run:Run", "claim.expired": "claim:Claim",
 		"run.budget-observed": "sample:BudgetSample budget:Budget stops:[]Stop attention:[]Attention", "run.execution-blocked": "denial:Denial",
 		"gate.execution-started": "attempt:Attempt receipt:Null", "gate.receipt-recorded": "receipt:Receipt",

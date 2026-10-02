@@ -58,7 +58,8 @@ CREATE TABLE stops (
   code TEXT NOT NULL CHECK (code IN (
     'executor-liveness-unknown','recovery-state-conflict','budget-exhausted',
     'budget-data-unavailable','activation-incomplete','capability-unavailable',
-    'operator-stop'
+    'operator-stop','review-rework-exhausted','protected-decision-required',
+    'human-outcome-required'
   )),
   blocked_actions_json TEXT NOT NULL CHECK (json_valid(blocked_actions_json)),
   details_json TEXT NOT NULL CHECK (json_valid(details_json)),
@@ -84,7 +85,8 @@ CREATE TABLE attention_items (
   code TEXT NOT NULL CHECK (code IN (
     'executor-liveness-unknown','recovery-state-conflict','budget-exhausted',
     'budget-data-unavailable','activation-incomplete','capability-unavailable',
-    'operator-stop'
+    'operator-stop','review-rework-exhausted','protected-decision-required',
+    'human-outcome-required'
   )),
   status TEXT NOT NULL CHECK (status IN ('open','resolved')),
   version INTEGER NOT NULL CHECK (version > 0),

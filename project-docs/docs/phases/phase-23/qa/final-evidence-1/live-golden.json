@@ -1,0 +1,24 @@
+{
+  "id": "live-golden",
+  "cmd": "go test -race -run '^TestLiveOutputGoldenFixtures$' -count=1 -v ./cmd/fid",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T17:00:19.032Z",
+  "results": [
+    {
+      "chunk_id": "8416e3",
+      "wall_time_seconds": 1.001250617,
+      "session_id": 71790,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "b79eb0",
+      "wall_time_seconds": 0.000013276,
+      "exit_code": 0,
+      "original_token_count": 34,
+      "output": "=== RUN   TestLiveOutputGoldenFixtures\n--- PASS: TestLiveOutputGoldenFixtures (0.19s)\nPASS\nok  \tgithub.com/mbell-nzl/fid/cmd/fid\t4.538s\n"
+    }
+  ],
+  "ended": "2026-10-02T17:00:40.938Z"
+}

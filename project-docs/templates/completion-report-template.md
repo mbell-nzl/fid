@@ -56,7 +56,7 @@ Compare this section against the task spec's `## Exact Commands To Run`.
 
 - `gofmt -l cmd internal` - PASS/FAIL/BLOCKED - `<verbatim final output line>` (terminated `exit_code: <N>`)
 - `golangci-lint run ./...` - PASS/FAIL/BLOCKED - `<verbatim final output line>` (terminated `exit_code: <N>`)
-- `go test -race -coverprofile=coverage.out ./...` - PASS/FAIL/BLOCKED - `<verbatim final output line>` (terminated `exit_code: <N>`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...` - PASS/FAIL/BLOCKED - `<verbatim final output line>` (terminated `exit_code: <N>`)
 - `go tool cover -func=coverage.out` - PASS/FAIL/BLOCKED - `<verbatim final output line>` (terminated `exit_code: <N>`)
 - `<conditional command from task spec>` - PASS/FAIL/BLOCKED/N/A - `<verbatim final output line>` (terminated `exit_code: <N>`)
 

@@ -7,9 +7,66 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
+
+// Pinned independently of the journal's per-type shape catalog.
+var p23ConditionWireShapes = map[string]string{
+	"executor-terminated":    "type:=executor-terminated subject:Subject budget_name:?ID capability_id:?ID",
+	"run-recovered":          "type:=run-recovered subject:Subject budget_name:?ID capability_id:?ID",
+	"activation-recovered":   "type:=activation-recovered subject:Subject budget_name:?ID capability_id:?ID",
+	"capability-available":   "type:=capability-available subject:Subject budget_name:?ID capability_id:?ID",
+	"budget-observed":        "type:=budget-observed subject:Subject budget_name:?ID capability_id:?ID",
+	"work-ended":             "type:=work-ended subject:Subject budget_name:?ID capability_id:?ID",
+	"review-recorded":        "type:=review-recorded subject:Subject budget_name:?ID capability_id:?ID",
+	"finding-resolved":       "type:=finding-resolved subject:Subject budget_name:?ID capability_id:?ID finding_id:ID",
+	"decision-satisfied":     "type:=decision-satisfied subject:Subject budget_name:?ID capability_id:?ID decision_class:ID",
+	"human-outcome-recorded": "type:=human-outcome-recorded subject:Subject budget_name:?ID capability_id:?ID outcome_class:ID",
+}
+
+func TestP23ConditionWireGrammarMatchesJournalAndFixtures(t *testing.T) {
+	t.Parallel()
+	got := strings.Fields(p22ClosedFieldGrammar["Condition"]["type"])
+	p22SameMembers(t, "Condition types", got, p22ClosedDomainKeys(p23ConditionWireShapes))
+	data, err := os.ReadFile(filepath.Join(integrationRepositoryRoot(), "internal/journal/current_event_value_catalog.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	section := strings.SplitN(string(data), "var currentConditionShapes = map[string]string{", 2)
+	if len(section) != 2 {
+		t.Fatal("journal Condition catalog missing")
+	}
+	section[1] = strings.SplitN(section[1], "\n}", 2)[0]
+	entries := regexp.MustCompile(`"([a-z-]+)":\s*"([^"]+)"`).FindAllStringSubmatch(section[1], -1)
+	actual := map[string]string{}
+	for _, entry := range entries {
+		actual[entry[1]] = entry[2]
+	}
+	if len(actual) != len(p23ConditionWireShapes) {
+		t.Fatalf("journal Condition shape count = %d, want %d", len(actual), len(p23ConditionWireShapes))
+	}
+	for kind, want := range p23ConditionWireShapes {
+		if actual[kind] != want {
+			t.Fatalf("journal Condition %s shape = %q, want %q", kind, actual[kind], want)
+		}
+		value := p22ConditionFields(kind)
+		if err := p22ValidateClosedFields("Condition", value); err != nil {
+			t.Fatalf("%s accepted shape: %v", kind, err)
+		}
+		for _, field := range []string{"finding_id", "decision_class", "outcome_class"} {
+			changed := p22CloneMap(value)
+			changed[field] = "ID-forbidden"
+			if !strings.Contains(want, field+":ID") && p22ValidateClosedFields("Condition", changed) == nil {
+				t.Fatalf("%s admitted forbidden %s", kind, field)
+			}
+		}
+		if kind == "review-recorded" && len(value) != 4 {
+			t.Fatalf("review-recorded has %d fields, want 4", len(value))
+		}
+	}
+}
 
 // Independent wire oracle: neither the documentation parser, inventory nor
 // product allowlists supply these field-specific accepted values at runtime.
@@ -22,7 +79,7 @@ var p22ClosedFieldGrammar = map[string]map[string]string{
 	"PathChange":         {"classification": "in-scope outside-scope protected"},
 	"Reconciliation":     {"operation": "none merge rebase cherry-pick revert bisect", "ancestry": "unchanged descendant conflict unknown"},
 	"RecoveryAuthority":  {"mode": "ordinary force"},
-	"Condition":          {"type": "executor-terminated run-recovered activation-recovered capability-available budget-observed work-ended"},
+	"Condition":          {"type": "executor-terminated run-recovered activation-recovered capability-available budget-observed work-ended review-recorded finding-resolved decision-satisfied human-outcome-recorded"},
 	"Attention":          {"status": "open resolved"},
 	"BudgetSample":       {"source": "fid activated-harness", "sample_kind": "delta baseline"},
 	"Budget (amend)":     {"state": "unknown available warning exhausted"},
@@ -51,10 +108,45 @@ func p22ValidateClosedFields(domain string, value map[string]any) error {
 			return fmt.Errorf("%s.%s rejects %q", domain, field, member)
 		}
 	}
+	if domain == "Condition" {
+		kind := value["type"].(string)
+		shape := p23ConditionWireShapes[kind]
+		parts := strings.Fields(shape)
+		if len(value) != len(parts) {
+			return fmt.Errorf("Condition %s has %d fields, want %d", kind, len(value), len(parts))
+		}
+		for _, part := range parts {
+			field := strings.SplitN(part, ":", 2)[0]
+			member, present := value[field]
+			if !present {
+				return fmt.Errorf("Condition %s missing %s", kind, field)
+			}
+			if strings.HasSuffix(part, ":ID") {
+				id, ok := member.(string)
+				if !ok || id == "" {
+					return fmt.Errorf("Condition %s invalid %s", kind, field)
+				}
+			}
+		}
+	}
 	return nil
 }
 
+func p22ConditionFields(kind string) map[string]any {
+	value := map[string]any{"type": kind, "subject": map[string]any{"type": "run", "id": "RUN-wire"}, "budget_name": nil, "capability_id": nil}
+	switch kind {
+	case "finding-resolved":
+		value["finding_id"] = "FND-wire"
+	case "decision-satisfied":
+		value["decision_class"] = "DEC-wire"
+	case "human-outcome-recorded":
+		value["outcome_class"] = "OUT-wire"
+	}
+	return value
+}
+
 func TestP22ClosedValueSchemaCases(t *testing.T) {
+	t.Parallel()
 	data, err := os.ReadFile(filepath.Join(p22CorpusDir, "wire-inventory.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -76,12 +168,18 @@ func TestP22ClosedValueSchemaCases(t *testing.T) {
 				base[field] = values[0]
 				union = append(union, values...)
 			}
+			if domain == "Condition" {
+				base = p22ConditionFields(fields["type"][0])
+			}
 			p22SameMembers(t, "field fixture membership", union, inventory.ClosedValues[domain])
 			for field, values := range fields {
 				for _, member := range values {
 					t.Run(field+"/"+member, func(t *testing.T) {
 						candidate := p22CloneMap(base)
 						candidate[field] = member
+						if domain == "Condition" {
+							candidate = p22ConditionFields(member)
+						}
 						if err := p22ValidateClosedFields(domain, candidate); err != nil {
 							t.Fatal(err)
 						}
@@ -105,8 +203,8 @@ func TestP22ClosedValueSchemaCases(t *testing.T) {
 			}
 		})
 	}
-	if accepted != 50 || rejected != 90 {
-		t.Fatalf("closed cases = %d accepted/%d rejected, want50/90", accepted, rejected)
+	if accepted != 54 || rejected != 90 {
+		t.Fatalf("closed cases = %d accepted/%d rejected, want54/90", accepted, rejected)
 	}
 	t.Logf("Closed wire fields: %d accepted member cases, %d invalid/missing cases across12 domains", accepted, rejected)
 }
@@ -123,6 +221,7 @@ func p22ClosedDomainKeys[T any](domains map[string]T) []string {
 // captured field proves that an unaccepted output fails this same conformance
 // assertion; it is not a claim that a caller can submit derived output fields.
 func TestP22ClosedValuesObserveRealResponses(t *testing.T) {
+	t.Parallel()
 	a := p22NewFIDRecoveryAdapterWithLease(t, "human", 3600)
 	run := p21Run(t, a.binary, a.workspace, "--json", "run", "get", a.runID)
 	// DEC-201 explicitly adds effective_status to the resume Claim projection;

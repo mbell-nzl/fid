@@ -116,26 +116,18 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 	}
 }
 
-func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testing.T) {
+func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testing.T) {
 	t.Parallel()
 	t.Run("implements requirement", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
 		issueID := createCommandIssue(t, workspace, "Implements issue")
-		syncCommandRequirement(t, workspace, "PRD-LINK-002")
-
-		stdout, stderr := runFIDCommand(t, workspace, "link", "add", issueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
-		if stderr != "" {
-			t.Fatalf("stderr = %q, want empty", stderr)
-		}
-		for _, want := range []string{
-			"linked " + issueID + " implements PRD-LINK-002",
-			"inverse: PRD-LINK-002 implemented_by " + issueID,
-		} {
-			if !strings.Contains(stdout, want) {
-				t.Fatalf("stdout = %q, want substring %q", stdout, want)
-			}
+		journalPath := mustJournalPath(t, workspace)
+		before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "link", "add", issueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
+		if err == nil || stdout != "" || !strings.Contains(stderr, `to-type must be issue`) {
+			t.Fatalf("removed endpoint result = (%q, %q, %v)", stdout, stderr, err)
 		}
 
 		conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -145,11 +137,8 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 		defer closeCommandDB(t, conn)
 
 		rows := loadCommandLinks(t, conn)
-		if !containsCommandLinkRow(rows, commandLinkRow{FromType: "issue", FromID: issueID, Relation: "implements", ToType: "requirement", ToID: "PRD-LINK-002"}) {
-			t.Fatalf("links rows = %#v, want implements row", rows)
-		}
-		if !containsCommandLinkRow(rows, commandLinkRow{FromType: "requirement", FromID: "PRD-LINK-002", Relation: "implemented_by", ToType: "issue", ToID: issueID}) {
-			t.Fatalf("links rows = %#v, want implemented_by row", rows)
+		if len(rows) != 0 || len(splitJournalLines(mustReadCommandFile(t, journalPath))) != before {
+			t.Fatalf("removed endpoint changed rows or journal: %#v", rows)
 		}
 	})
 
@@ -194,17 +183,16 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 					return []string{createCommandIssue(t, workspace, "First issue"), createCommandIssue(t, workspace, "Second issue")}
 				},
 				command:       []string{"link", "add", "", "implements", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-				wantSubstring: `error: link add: relation "implements" is not valid between issue`,
+				wantSubstring: `error: link add: unknown relation "implements"`,
 			},
 			{
 				name: "blocks issue to requirement",
 				setup: func(t *testing.T, workspace string) []string {
 					issueID := createCommandIssue(t, workspace, "Issue")
-					syncCommandRequirement(t, workspace, "PRD-LINK-002")
 					return []string{issueID, "PRD-LINK-002"}
 				},
 				command:       []string{"link", "add", "", "blocks", "", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},
-				wantSubstring: `error: link add: relation "blocks" is not valid between issue`,
+				wantSubstring: `error: link add: to-type must be issue`,
 			},
 			{
 				name: "missing requirement endpoint",
@@ -212,7 +200,7 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 					return []string{createCommandIssue(t, workspace, "Issue"), "PRD-LINK-002"}
 				},
 				command:       []string{"link", "add", "", "implements", "", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},
-				wantSubstring: `error: link add: requirement "PRD-LINK-002" does not resolve`,
+				wantSubstring: `error: link add: to-type must be issue`,
 			},
 		}
 
@@ -445,10 +433,11 @@ func TestLinkListReturnsTypedCanonicalJSONInContractOrder(t *testing.T) {
 	primaryIssueID := createCommandIssue(t, workspace, "Primary issue")
 	outgoingIssueID := createCommandIssue(t, workspace, "Schema migration runner")
 	incomingIssueID := createCommandIssue(t, workspace, "Add index on concerns(issue_id, status)")
-	syncCommandRequirementWithSummary(t, workspace, "PRD-LINK-002", "Unified polymorphic issue table")
-
 	runFIDCommand(t, workspace, "link", "add", primaryIssueID, "blocks", outgoingIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
-	runFIDCommand(t, workspace, "link", "add", primaryIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
+	_, _, removedErr := runFIDCommandExpectError(t, workspace, "link", "add", primaryIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
+	if removedErr == nil {
+		t.Fatal("removed requirement link was accepted")
+	}
 	runFIDCommand(t, workspace, "link", "add", incomingIssueID, "discovered_from", primaryIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 
 	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "--json", "link", "list", primaryIssueID, "--type", "issue")
@@ -461,12 +450,12 @@ func TestLinkListReturnsTypedCanonicalJSONInContractOrder(t *testing.T) {
 		t.Fatalf("link list envelope = %#v, want link.list read with null event", envelope)
 	}
 	result := envelope["result"].(map[string]any)
-	if result["entity_type"] != "issue" || result["entity_id"] != primaryIssueID || result["count"] != json.Number("3") {
+	if result["entity_type"] != "issue" || result["entity_id"] != primaryIssueID || result["count"] != json.Number("2") {
 		t.Fatalf("link list result header = %#v", result)
 	}
 	rows := result["links"].([]any)
-	if len(rows) != 3 {
-		t.Fatalf("link list rows = %#v, want 3 rows", rows)
+	if len(rows) != 2 {
+		t.Fatalf("link list rows = %#v, want 2 rows", rows)
 	}
 
 	wantRows := []map[string]any{
@@ -476,13 +465,6 @@ func TestLinkListReturnsTypedCanonicalJSONInContractOrder(t *testing.T) {
 			"entity_type":  "issue",
 			"entity_id":    outgoingIssueID,
 			"entity_title": "Schema migration runner",
-		},
-		{
-			"direction":    "outgoing",
-			"relation":     "implements",
-			"entity_type":  "requirement",
-			"entity_id":    "PRD-LINK-002",
-			"entity_title": "Unified polymorphic issue table",
 		},
 		{
 			"direction":    "incoming",
@@ -534,10 +516,10 @@ func TestLinkAddUsesSuppliedTypeForAmbiguousSameIDEndpoints(t *testing.T) {
 	}
 	defer closeCommandDB(t, conn)
 	if _, err := conn.Exec(`
-		INSERT INTO requirements (id, type, summary, source_doc, source_section, status)
-		VALUES (?, 'PRD', 'Requirement with the same opaque ID', 'project-docs/specs/link_requirements.md', '3.8', 'active')
+		INSERT INTO requirement_refs (id, requirement_id, source_json, status, created_at, created_event_id)
+		VALUES ('RREF-same', ?, '{}', 'active', '2026-09-20T00:00:00Z', 'EVT-same')
 	`, issueID); err != nil {
-		t.Fatalf("insert same-ID requirement: %v", err)
+		t.Fatalf("insert same-ID generic requirement reference: %v", err)
 	}
 	journalPath := mustJournalPath(t, workspace)
 	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -546,20 +528,13 @@ func TestLinkAddUsesSuppliedTypeForAmbiguousSameIDEndpoints(t *testing.T) {
 		"--json", "link", "add", issueID, "implements", issueID,
 		"--from-type", "issue", "--to-type", "requirement", "--by", "developer",
 	)
-	if result.err != nil || result.stderr != "" {
-		t.Fatalf("link.add result = %#v, want JSON success on stdout only", result)
+	if result.err == nil || result.stdout != "" {
+		t.Fatalf("link.add result = %#v, want rejection", result)
 	}
 
-	envelope := decodeCommandJSONStructure(t, result.stdout).(map[string]any)
-	if envelope["operation"] != "link.add" || envelope["event"] == nil {
-		t.Fatalf("link.add envelope = %#v, want mutation event", envelope)
-	}
-	link := envelope["result"].(map[string]any)["link"].(map[string]any)
-	if link["from_type"] != "issue" || link["to_type"] != "requirement" || link["from_id"] != issueID || link["to_id"] != issueID {
-		t.Fatalf("declared link = %#v, want supplied issue/requirement types for %q", link, issueID)
-	}
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before+1 {
-		t.Fatalf("journal lines after typed ambiguous add = %d, want %d", got, before+1)
+	assertLinkFailure(t, result.stderr, "link.add", "invalid-argument", nil, map[string]any{"argument": "to-type", "value": "requirement", "allowed": []any{"issue"}})
+	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+		t.Fatalf("journal lines after typed rejected add = %d, want %d", got, before)
 	}
 }
 
@@ -652,7 +627,7 @@ func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
 			name: "missing requirement endpoint", operation: "link.add",
 			args: []string{"--json", "link", "add", firstID, "implements", "PRD-missing", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},
 			assert: func(t *testing.T, output string) {
-				assertLinkFailure(t, output, "link.add", "requirement-not-found", map[string]any{"type": "requirement", "id": "PRD-missing"}, map[string]any{"id": "PRD-missing"})
+				assertLinkFailure(t, output, "link.add", "invalid-argument", nil, map[string]any{"argument": "to-type", "value": "requirement", "allowed": []any{"issue"}})
 			},
 		},
 	}
@@ -852,21 +827,4 @@ func createCommandIssue(t *testing.T, workspace, title string) string {
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--actor", "agent:developer")
 	return parseCreatedIssueID(t, stderr)
-}
-
-func syncCommandRequirement(t *testing.T, workspace, requirementID string) {
-	t.Helper()
-
-	syncCommandRequirementWithSummary(t, workspace, requirementID, "The system shall support links from issues to requirements.")
-}
-
-func syncCommandRequirementWithSummary(t *testing.T, workspace, requirementID, summary string) {
-	t.Helper()
-
-	writeRequirementFixture(t, workspace, "project-docs/specs/link_requirements.md", "# Requirements\n\n## 3.8 Cross-Entity Links\n\n| ID | Requirement | Priority | Notes |\n|---|---|---|---|\n| PRD-LINK-002 | "+summary+" | Must | v0.1 |\n")
-
-	stdout, stderr := runFIDCommand(t, workspace, "requirement", "sync", "--source-doc", "project-docs/specs/link_requirements.md", "--id", requirementID, "--by", "tl")
-	if stderr != "" || !strings.Contains(stdout, "synced requirements from project-docs/specs/link_requirements.md") {
-		t.Fatalf("requirement sync = (%q, %q), want stdout confirmation", stdout, stderr)
-	}
 }

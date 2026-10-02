@@ -13,8 +13,6 @@ var relationInverses = map[string]string{
 	"duplicated_by":   "duplicates",
 	"supersedes":      "superseded_by",
 	"superseded_by":   "supersedes",
-	"implements":      "implemented_by",
-	"implemented_by":  "implements",
 	"caused_by":       "causes",
 	"causes":          "caused_by",
 	"discovered_from": "discovered",
@@ -29,8 +27,6 @@ var relationNames = []string{
 	"duplicated_by",
 	"supersedes",
 	"superseded_by",
-	"implements",
-	"implemented_by",
 	"caused_by",
 	"causes",
 	"discovered_from",
@@ -68,11 +64,7 @@ func endpointType(value, argument, operation string) (string, error) {
 func relationAllowedForTypes(relation, fromType, toType string) bool {
 	switch relation {
 	case "relates_to":
-		return isV01EndpointType(fromType) && isV01EndpointType(toType)
-	case "implements":
-		return fromType == "issue" && toType == "requirement"
-	case "implemented_by":
-		return fromType == "requirement" && toType == "issue"
+		return fromType == "issue" && toType == "issue"
 	case "blocks", "blocked_by", "duplicates", "duplicated_by", "supersedes", "superseded_by", "caused_by", "causes", "discovered_from", "discovered":
 		return fromType == "issue" && toType == "issue"
 	default:
@@ -82,7 +74,7 @@ func relationAllowedForTypes(relation, fromType, toType string) bool {
 
 func isV01EndpointType(value string) bool {
 	switch value {
-	case "issue", "requirement":
+	case "issue":
 		return true
 	default:
 		return false

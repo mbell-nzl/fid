@@ -7,6 +7,7 @@ import (
 )
 
 func TestFinalAllowedAttemptChargesAndRaisesStopAtomically(t *testing.T) {
+	t.Parallel()
 	maximum := int64(1)
 	budget := Budget{Name: "attempt-budget", Scope: "envelope", Unit: "attempts", Maximum: maximum, ExhaustionAction: "budget-exhausted"}
 
@@ -27,6 +28,7 @@ func TestFinalAllowedAttemptChargesAndRaisesStopAtomically(t *testing.T) {
 func int64Pointer(value int64) *int64 { return &value }
 
 func TestBudgetSamplesAreIdempotentOrderedAndRecoverUnknownBaselines(t *testing.T) {
+	t.Parallel()
 	budget := Budget{Name: "external", Scope: "envelope", Unit: "input-tokens", Maximum: 100, ExhaustionAction: "budget-exhausted"}
 	unknown := BudgetSample{Source: "activated-harness", SourceSampleID: "sample-unknown", SampleKind: "delta", Value: nil}
 	first, err := AdmitBudgetSample(budget, nil, unknown)
@@ -57,6 +59,7 @@ func TestBudgetSamplesAreIdempotentOrderedAndRecoverUnknownBaselines(t *testing.
 }
 
 func TestBudgetSamplesRejectOverflow(t *testing.T) {
+	t.Parallel()
 	budget := Budget{Name: "attempt-budget", Scope: "envelope", Unit: "attempts", Maximum: math.MaxInt64, ExhaustionAction: "budget-exhausted"}
 	first := BudgetSample{ID: "one", Source: "fid", SourceSampleID: "one", SampleKind: "delta", Value: int64Pointer(math.MaxInt64)}
 	previous := "one"
@@ -67,6 +70,7 @@ func TestBudgetSamplesRejectOverflow(t *testing.T) {
 }
 
 func TestDeriveBudgetPreservesUnknownAndExhaustedChains(t *testing.T) {
+	t.Parallel()
 	budget := Budget{Name: "attempts", Scope: "envelope", Unit: "attempts", Maximum: 1, ExhaustionAction: "budget-exhausted"}
 	unknown, err := DeriveBudget(budget, []BudgetSample{{ID: "unknown", Source: "activated-harness", SourceSampleID: "unknown", SampleKind: "delta"}})
 	if err != nil || unknown.Consumed != nil || unknown.Remaining != nil {
@@ -79,6 +83,7 @@ func TestDeriveBudgetPreservesUnknownAndExhaustedChains(t *testing.T) {
 }
 
 func TestDeriveBudgetProjectsEveryAcceptedOutputState(t *testing.T) {
+	t.Parallel()
 	maximum := int64(10)
 	warning := int64(3)
 	budget := Budget{Name: "tokens", Scope: "envelope", Unit: "input-tokens", Maximum: maximum, WarningThreshold: &warning, ExhaustionAction: "budget-exhausted"}
@@ -107,6 +112,7 @@ func TestDeriveBudgetProjectsEveryAcceptedOutputState(t *testing.T) {
 }
 
 func TestBudgetAdmissionBlockAndEffectsUseExactBudgetStopShape(t *testing.T) {
+	t.Parallel()
 	workspace, _ := initializedWorkflowWorkspace(t)
 	conn, err := openWorkflowDB(workspace)
 	if err != nil {
@@ -134,5 +140,71 @@ func TestBudgetAdmissionBlockAndEffectsUseExactBudgetStopShape(t *testing.T) {
 	}
 	if effects[0].Table != "stops" || effects[1].Table != "attention_items" || effects[2].Table != "attention_stop_links" {
 		t.Fatalf("first budget effects = %#v, want Stop, Attention, link order", effects[:3])
+	}
+}
+
+func TestReviewReworkStopRequiresApprovedOutcome(t *testing.T) {
+	t.Parallel()
+	workspace, _ := initializedWorkflowWorkspace(t)
+	conn, err := openWorkflowDB(workspace)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeWorkflowDB(conn)
+	block := BudgetAdmissionBlock{Code: "review-rework-exhausted", Budget: Budget{Name: "review-cycles", Unit: "review-cycles", Maximum: 1}, LastReviewID: "REV-1"}
+	_, stops, _, err := BudgetStopEffects(conn, Subject{Type: "envelope", ID: "ENV-1"}, "ENV-1", "actor-reviewer", []BudgetAdmissionBlock{block}, "2026-09-20T00:00:00Z")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stops) != 1 {
+		t.Fatalf("Stops = %#v, want one", stops)
+	}
+	condition := stops[0].ResolutionCondition
+	if condition.Type != "human-outcome-recorded" || condition.Subject != (Subject{Type: "envelope", ID: "ENV-1"}) || condition.OutcomeClass == nil || *condition.OutcomeClass != "review-rework-extension" || condition.BudgetName != nil || condition.CapabilityID != nil {
+		t.Fatalf("rework resolution condition = %#v", condition)
+	}
+}
+
+func TestGenericBudgetAdmissionExcludesOnlyReworkAction(t *testing.T) {
+	t.Parallel()
+	budgets := []Budget{
+		{Name: "review-cycles", Unit: "review-cycles", ExhaustionAction: "review-rework-exhausted", Consumed: int64Pointer(1), Remaining: int64Pointer(0)},
+		{Name: "attempts", Unit: "attempts", ExhaustionAction: "budget-exhausted", Consumed: int64Pointer(1), Remaining: int64Pointer(0)},
+		{Name: "tokens", Unit: "input-tokens", ExhaustionAction: "budget-data-unavailable"},
+	}
+	blocks := GenericBudgetAdmissionBlocks(budgets)
+	if len(blocks) != 2 || blocks[0].Code != "budget-exhausted" || blocks[0].Budget.Name != "attempts" || blocks[1].Code != "budget-data-unavailable" || blocks[1].Budget.Name != "tokens" {
+		t.Fatalf("generic admission blocks = %#v, want attempts and tokens only", blocks)
+	}
+}
+
+func TestResumeGateReasonsExcludeReworkBudget(t *testing.T) {
+	t.Parallel()
+	workspace, _ := initializedWorkflowWorkspace(t)
+	conn, err := openWorkflowDB(workspace)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeWorkflowDB(conn)
+	repository := Repository{ProjectID: "P-1", WorktreeID: "W-1", HeadOID: "head", TreeOID: "tree"}
+	run := &Run{ID: "RUN-1", ActorID: "actor-builder", Status: "active", StartRepository: repository, Budgets: []Budget{
+		{Name: "review-cycles", Unit: "review-cycles", ExhaustionAction: "review-rework-exhausted", Consumed: int64Pointer(1), Remaining: int64Pointer(0)},
+		{Name: "attempts", Unit: "attempts", ExhaustionAction: "budget-exhausted", Consumed: int64Pointer(1), Remaining: int64Pointer(0)},
+	}}
+	action, present, err := resumeGateAction(conn, Envelope{ID: "ENV-1"}, run, repository)
+	if err != nil || !present {
+		t.Fatalf("resume gate action = %#v, present %t, err %v", action, present, err)
+	}
+	var attempts int
+	for _, reason := range action.Reasons {
+		if reason.Code == "budget-exhausted" && reason.Detail == "attempts" {
+			attempts++
+		}
+		if reason.Detail == "review-cycles" || reason.Code == "budget-data-unavailable" {
+			t.Fatalf("review budget leaked into resume: %#v", action.Reasons)
+		}
+	}
+	if attempts != 1 {
+		t.Fatalf("attempts budget reason count = %d, want one: %#v", attempts, action.Reasons)
 	}
 }

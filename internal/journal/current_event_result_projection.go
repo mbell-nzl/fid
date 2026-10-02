@@ -79,6 +79,45 @@ func currentExpectedResult(tx *sql.Tx, event Event) (map[string]any, error) {
 	}
 	id := func(value any) map[string]any { return map[string]any{"id": value} }
 	switch event.EventType {
+	case "review.recorded":
+		put("review", "Review", "review_records", id(event.Aggregate.ID))
+		if failure == nil {
+			var budgetResult map[string]any
+			budgetResult, failure = currentReviewBudgetResult(tx, event)
+			if failure == nil {
+				result["budget"], result["stops"], result["attention"] = budgetResult["budget"], budgetResult["stops"], budgetResult["attention"]
+			}
+		}
+	case "finding.addressed":
+		put("finding", "Finding", "review_findings", id(event.Aggregate.ID))
+	case "concern.recorded", "concern.disposed":
+		put("concern", "Concern", "concerns", id(event.Aggregate.ID))
+	case "deviation.recorded":
+		put("deviation", "Deviation", "deviations", id(event.Aggregate.ID))
+	case "decision.referenced":
+		put("decision", "DecisionRef", "decision_refs", id(event.Aggregate.ID))
+		if failure == nil {
+			result["protected_decisions"], failure = currentProtectedDecisions(tx, result["decision"].(map[string]any)["scope"].(map[string]any)["issue_id"].(string))
+		}
+		if failure == nil {
+			result["stops"], result["attention"], failure = currentDecisionResolutionValues(tx, event)
+		}
+	case "human-outcome.recorded":
+		put("outcome", "HumanOutcome", "human_outcomes", id(event.Aggregate.ID))
+		if failure == nil {
+			result["protected_decisions"], failure = currentProtectedDecisions(tx, result["outcome"].(map[string]any)["scope"].(map[string]any)["issue_id"].(string))
+		}
+		if failure == nil {
+			result["stops"], result["attention"], failure = currentDecisionResolutionValues(tx, event)
+		}
+	case "requirement.referenced":
+		put("requirement", "RequirementRef", "requirement_refs", id(event.Aggregate.ID))
+	case "requirement.linked":
+		for _, effect := range event.Effects {
+			if effect.Table == "requirement_issue_links" && effect.Op == "insert" {
+				put("link", "RequirementLink", "requirement_issue_links", effect.PK)
+			}
+		}
 	case "run.started", "run.closed", "run.observed", "run.checkpointed", "run.abandoned":
 		put("run", "Run", "runs", id(event.Aggregate.ID))
 		if event.EventType == "run.abandoned" && failure == nil {
@@ -188,6 +227,18 @@ func currentProjectedValue(tx *sql.Tx, kind, table string, pk map[string]any) (m
 		err = currentFillStopAttention(tx, kind, row)
 	case "Receipt":
 		err = currentFillReceipt(tx, row)
+	case "Review":
+		err = currentFillReview(tx, row)
+	case "Finding":
+		err = currentFillFinding(tx, row)
+	case "Concern":
+		err = currentFillConcern(row)
+	case "Deviation":
+		err = currentFillDeviation(row)
+	case "DecisionRef":
+		err = currentFillDecisionRef(row)
+	case "HumanOutcome":
+		err = currentFillHumanOutcome(row)
 	}
 	if err != nil {
 		return nil, err
@@ -203,6 +254,127 @@ func currentProjectedValue(tx *sql.Tx, kind, table string, pk map[string]any) (m
 	}
 	return result, nil
 }
+
+func currentFillConcern(row map[string]any) error {
+	row["subject"] = map[string]any{"type": row["subject_type"], "id": row["subject_id"]}
+	row["disposition"] = nil
+	if row["disposition_action"] != nil {
+		row["disposition"] = map[string]any{
+			"action": row["disposition_action"], "issue_id": row["disposition_issue_id"],
+			"supersedes_concern_id": row["supersedes_concern_id"], "supersedes_finding_id": row["supersedes_finding_id"],
+			"reason": row["disposition_reason"], "actor_id": row["disposed_actor_id"],
+			"disposed_at": row["disposed_at"], "event_id": row["disposed_event_id"],
+		}
+	}
+	return nil
+}
+
+func currentFillDeviation(row map[string]any) error {
+	row["subject"] = map[string]any{"type": row["subject_type"], "id": row["subject_id"]}
+	row["authority"] = map[string]any{"actor_id": row["authority_actor_id"], "reference": row["authority_reference"]}
+	return nil
+}
+
+func currentFillDecisionRef(row map[string]any) error {
+	row["authority"] = map[string]any{"actor_id": row["authority_actor_id"], "required_capabilities": row["authority_capabilities"]}
+	row["scope"] = map[string]any{"issue_id": row["scope_issue_id"]}
+	return nil
+}
+
+func currentFillHumanOutcome(row map[string]any) error {
+	row["subject"] = map[string]any{"type": row["subject_type"], "id": row["subject_id"]}
+	row["scope"] = map[string]any{"issue_id": row["scope_issue_id"]}
+	row["provenance"] = map[string]any{"activation_id": row["activation_id"], "activation_version": row["activation_version"], "profile_ref": row["profile_ref"]}
+	return nil
+}
+
+func currentProtectedDecisions(tx *sql.Tx, issueID string) ([]any, error) {
+	rows, err := tx.Query(`
+		SELECT p.ordinal,p.decision_class,p.required_capabilities_json,p.affected_actions_json
+		FROM envelope_protected_decisions p
+		JOIN work_envelopes e ON e.id=p.envelope_id AND e.current_revision=p.revision
+		JOIN envelope_issue_selection s ON s.envelope_id=p.envelope_id AND s.revision=p.revision
+		WHERE s.issue_id=? AND e.status IN ('active','draft')
+		  AND p.envelope_id=(
+		    SELECT selected.id
+		    FROM work_envelopes selected
+		    JOIN envelope_issue_selection selected_scope ON selected_scope.envelope_id=selected.id AND selected_scope.revision=selected.current_revision
+		    WHERE selected_scope.issue_id=? AND selected.status IN ('active','draft')
+		    ORDER BY CASE selected.status WHEN 'active' THEN 0 ELSE 1 END,selected.id
+		    LIMIT 1
+		  )
+		ORDER BY p.ordinal`, issueID, issueID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	result := []any{}
+	for rows.Next() {
+		var ordinal int
+		var class, capabilitiesJSON, actionsJSON string
+		if err := rows.Scan(&ordinal, &class, &capabilitiesJSON, &actionsJSON); err != nil {
+			return nil, err
+		}
+		capabilities, err := decodeCurrentJSON(capabilitiesJSON)
+		if err != nil {
+			return nil, err
+		}
+		actions, err := decodeCurrentJSON(actionsJSON)
+		if err != nil {
+			return nil, err
+		}
+		decisionRefID, err := currentOptionalID(tx, `SELECT id FROM decision_refs WHERE class=? AND scope_issue_id=? AND outcome='approved' AND authority_capabilities_json=? ORDER BY created_event_id DESC LIMIT 1`, class, issueID, capabilitiesJSON)
+		if err != nil {
+			return nil, err
+		}
+		outcomeID, err := currentOptionalID(tx, `SELECT id FROM human_outcomes WHERE class=? AND scope_issue_id=? AND result='approved' ORDER BY created_event_id DESC LIMIT 1`, class, issueID)
+		if err != nil {
+			return nil, err
+		}
+		status := "unsatisfied"
+		if decisionRefID != nil && outcomeID != nil {
+			status = "satisfied"
+		}
+		result = append(result, map[string]any{"ordinal": ordinal, "decision_class": class, "required_capabilities": capabilities, "affected_actions": actions, "status": status, "decision_ref_id": decisionRefID, "human_outcome_id": outcomeID})
+	}
+	return result, rows.Err()
+}
+
+func currentOptionalID(tx *sql.Tx, query string, args ...any) (any, error) {
+	var id string
+	if err := tx.QueryRow(query, args...).Scan(&id); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return id, nil
+}
+
+func currentDecisionResolutionValues(tx *sql.Tx, event Event) ([]any, []any, error) {
+	stops := []any{}
+	attention := []any{}
+	seen := map[any]bool{}
+	for _, effect := range event.Effects {
+		if effect.Table == "stop_resolutions" && effect.Op == "insert" {
+			value, err := currentProjectedValue(tx, "Stop", "stops", map[string]any{"id": effect.PK["stop_id"]})
+			if err != nil {
+				return nil, nil, err
+			}
+			stops = append(stops, value)
+		}
+		if effect.Table == "attention_items" && effect.Op == "update" && !seen[effect.PK["id"]] {
+			value, err := currentProjectedValue(tx, "Attention", "attention_items", effect.PK)
+			if err != nil {
+				return nil, nil, err
+			}
+			attention = append(attention, value)
+			seen[effect.PK["id"]] = true
+		}
+	}
+	return stops, attention, nil
+}
+
 func currentQueryValues(tx *sql.Tx, query string, args ...any) ([]any, error) {
 	rows, err := tx.Query(query, args...)
 	if err != nil {

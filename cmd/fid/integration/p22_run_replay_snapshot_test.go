@@ -9,6 +9,7 @@ import (
 )
 
 func TestP22RunReplayRetainsHistoricalBudgetSnapshot(t *testing.T) {
+	t.Parallel()
 	for _, operation := range []string{"run.observe", "run.checkpoint", "run.recover", "run.abandon"} {
 		t.Run(operation, func(t *testing.T) {
 			adapter := p22NewResumeActionAdapter(t, "activated-harness")

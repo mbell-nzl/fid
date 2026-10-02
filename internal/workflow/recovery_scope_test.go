@@ -11,6 +11,7 @@ import (
 )
 
 func TestRecoveryUsesImmutableClaimScopeForOrdinaryAndForceAdoption(t *testing.T) {
+	t.Parallel()
 	for _, kind := range []string{"ordinary-in-scope", "ordinary-outside", "ordinary-forged-scope", "force-outside", "force-protected", "force-stale-digest", "force-omitted-path"} {
 		t.Run(kind, func(t *testing.T) {
 			options, request := recoveryFixture(t)
@@ -76,6 +77,7 @@ func TestRecoveryUsesImmutableClaimScopeForOrdinaryAndForceAdoption(t *testing.T
 }
 
 func TestRecoveryUsesLatestDurableCheckpoint(t *testing.T) {
+	t.Parallel()
 	options, request := recoveryFixture(t)
 	conn, err := openWorkflowDB(options.WorkspaceRoot)
 	mustRecoveryTest(t, err)

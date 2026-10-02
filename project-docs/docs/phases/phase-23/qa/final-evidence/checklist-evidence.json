@@ -1,0 +1,661 @@
+[
+  {
+    "id": "QA-01",
+    "vals": [],
+    "receipts": [
+      "gate-01-format",
+      "gate-02-lint",
+      "gate-03-coverage",
+      "gate-04-coverage-summary",
+      "gate-05-integration",
+      "gate-06-benchmarks",
+      "gate-07-build"
+    ],
+    "description": "Exact seven-command phase gate; coverage is diagnostic."
+  },
+  {
+    "id": "QA-02",
+    "vals": [],
+    "receipts": [
+      "archive-scale",
+      "benchmark-1",
+      "benchmark-2",
+      "benchmark-3",
+      "identity-go",
+      "identity-env",
+      "identity-kernel",
+      "identity-cpu-count",
+      "identity-cpu-model",
+      "identity-memory"
+    ],
+    "description": "Archive byte/entry boundaries and three separate consecutive 100k rebuild processes, each below 30000 ms/rebuild."
+  },
+  {
+    "id": "QA-03",
+    "vals": [
+      "VAL-001"
+    ],
+    "receipts": [
+      "named-db",
+      "schema-sql"
+    ],
+    "description": "TestMigration0017CreatesExactlyTheAcceptedObjects: accepted DDL equality, ten tables, eighteen indexes, one trigger, two Obligation columns."
+  },
+  {
+    "id": "QA-04",
+    "vals": [
+      "VAL-002"
+    ],
+    "receipts": [
+      "named-db"
+    ],
+    "description": "TestMigration0017ObligationRegistrationDiscriminator: both invalid and both valid combinations."
+  },
+  {
+    "id": "QA-05",
+    "vals": [
+      "VAL-003"
+    ],
+    "receipts": [
+      "file-state",
+      "absence-fence",
+      "named-journal",
+      "named-integration"
+    ],
+    "description": "Nine fence keys introduced by task 1 and removed by their owning tasks; no remaining fence; converged live/replay and malformed-event checks."
+  },
+  {
+    "id": "QA-06",
+    "vals": [
+      "VAL-004"
+    ],
+    "receipts": [
+      "schema-sql",
+      "rebuild-pragmas",
+      "named-db",
+      "named-integration"
+    ],
+    "description": "Foreign keys/integrity at schema 17, fresh 18, and full 32-event journal rebuild; round-trip test also checks rebuilt/imported projections."
+  },
+  {
+    "id": "QA-07",
+    "vals": [
+      "VAL-005"
+    ],
+    "receipts": [
+      "preservation-rows",
+      "schema-column-contradiction",
+      "named-db"
+    ],
+    "description": "Linked seed preserves all nine prior named Evidence columns and required_material=1. Exactly review_id and human_outcome_id are added and null. VAL-005 requires three: protected inconsistency, candidate BC-A."
+  },
+  {
+    "id": "QA-08",
+    "vals": [
+      "VAL-006",
+      "VAL-007"
+    ],
+    "receipts": [
+      "named-cmd-fid",
+      "named-workflow"
+    ],
+    "description": "Typed authoring boundary matrices: 0/1/16/17, accepted/forbidden fields, duplicate/subject and protected-Decision negatives; rejection has no persistence change."
+  },
+  {
+    "id": "QA-09",
+    "vals": [
+      "VAL-008",
+      "VAL-010"
+    ],
+    "receipts": [
+      "named-cmd-fid",
+      "named-workflow",
+      "named-integration"
+    ],
+    "description": "Ordered multi-Obligation evaluation keeps absence, validity/freshness and availability independent; all reasons retained; not-applicable only for review/Human types."
+  },
+  {
+    "id": "QA-10",
+    "vals": [
+      "VAL-009"
+    ],
+    "receipts": [
+      "named-workflow",
+      "named-integration"
+    ],
+    "description": "TestP23ReviewObligationGuardingBothActionsBlocksBothRealProcess and TestP23UnsatisfiedObligationBlocksOnlyTheActionItGuardsRealProcess; qualifying completion/transition in Human Outcome journey (DEC-249)."
+  },
+  {
+    "id": "QA-11",
+    "vals": [
+      "VAL-011",
+      "VAL-012",
+      "VAL-013"
+    ],
+    "receipts": [
+      "named-cmd-fid",
+      "named-workflow",
+      "named-integration"
+    ],
+    "description": "Review/mutation Claim competition, dirty-path adoption denial without Event, normalized lifecycle comparison including recovery/abandon."
+  },
+  {
+    "id": "QA-12",
+    "vals": [
+      "VAL-014",
+      "VAL-016",
+      "VAL-018",
+      "VAL-019"
+    ],
+    "receipts": [
+      "named-cmd-fid",
+      "named-review",
+      "named-integration"
+    ],
+    "description": "Immutable Review/readback/raw row, exact repository binding, one Review per Run; real-process replay and digest conflict; foreign receipt/shared source negatives."
+  },
+  {
+    "id": "QA-13",
+    "vals": [
+      "VAL-015"
+    ],
+    "receipts": [
+      "named-cmd-fid",
+      "named-review",
+      "named-integration"
+    ],
+    "description": "DEC-239 reachable Claim-history denial with exact actor/Claim, same independent Reviewer after rework; isolated Run-holder query is diagnostic durable-history evidence, not CLI reachability."
+  },
+  {
+    "id": "QA-14",
+    "vals": [
+      "VAL-017"
+    ],
+    "receipts": [
+      "named-review",
+      "named-integration"
+    ],
+    "description": "TestValidateVerdictFindingAgreement and real Review journey: three accepted and three rejected verdict cases."
+  },
+  {
+    "id": "QA-15",
+    "vals": [
+      "VAL-020",
+      "VAL-021",
+      "VAL-022",
+      "VAL-023"
+    ],
+    "receipts": [
+      "named-cmd-fid",
+      "named-review",
+      "named-integration"
+    ],
+    "description": "Finding address stays nonterminal; each terminal action has six authority states, mandatory inapplicability reason, atomic mixed dispositions and idempotent readback; omitted/empty retained digest."
+  },
+  {
+    "id": "QA-16",
+    "vals": [
+      "VAL-024",
+      "VAL-025",
+      "VAL-026"
+    ],
+    "receipts": [
+      "named-evidence",
+      "named-integration"
+    ],
+    "description": "Receipt/review durable positives and six production mismatch classes (DEC-243); blocked Review rejects; addressed blocker remains unresolved after pass. QA-21 supplies real Human positive/mismatches for all nine cells."
+  },
+  {
+    "id": "QA-17",
+    "vals": [
+      "VAL-027",
+      "VAL-028",
+      "VAL-029",
+      "VAL-030"
+    ],
+    "receipts": [
+      "named-claims",
+      "named-workflow",
+      "named-review",
+      "named-integration"
+    ],
+    "description": "One Review-keyed charge across replay/recovery/import; observation denial, atomic charge/Stop/Attention at exhaustion; later Claim/Run denial and five budget pairings."
+  },
+  {
+    "id": "QA-18",
+    "vals": [
+      "VAL-031",
+      "VAL-032",
+      "VAL-033"
+    ],
+    "receipts": [
+      "named-workflow",
+      "named-evidence",
+      "named-integration"
+    ],
+    "description": "Repository change stales review Evidence with immutable Review; absent/present Human freshness; later differing outcomes supersede in both directions."
+  },
+  {
+    "id": "QA-19",
+    "vals": [
+      "VAL-034",
+      "VAL-035",
+      "VAL-036",
+      "VAL-037",
+      "VAL-074"
+    ],
+    "receipts": [
+      "named-review",
+      "named-journal",
+      "named-integration"
+    ],
+    "description": "Six Concern subject types, nonblocking severity, three dispositions and seven rejection cases; raising/disposing Actors; append-only Deviation predecessor chain and disallowed Evidence links."
+  },
+  {
+    "id": "QA-20",
+    "vals": [
+      "VAL-038",
+      "VAL-039",
+      "VAL-040",
+      "VAL-041",
+      "VAL-042"
+    ],
+    "receipts": [
+      "named-review",
+      "named-issues",
+      "named-integration",
+      "schema-sql"
+    ],
+    "description": "Digest match/mismatch/missing source, no prose column, exactly affected action, six satisfaction states, paired Stops with one resolution, linked_to_decision positive/negative."
+  },
+  {
+    "id": "QA-21",
+    "vals": [
+      "VAL-025",
+      "VAL-043",
+      "VAL-044",
+      "VAL-045",
+      "VAL-046"
+    ],
+    "receipts": [
+      "named-evidence",
+      "named-integration"
+    ],
+    "description": "Five invalid authority states across four request families plus valid finalized Human; four results, class mismatch, real Human link closes nine-cell matrix; producer/trust/provenance; all readiness producers/repeat/nonqualifying states."
+  },
+  {
+    "id": "QA-22",
+    "vals": [
+      "VAL-047"
+    ],
+    "receipts": [
+      "reference-task11-worktree",
+      "capability-staging",
+      "capabilities-final",
+      "named-integration",
+      "reference-task11-build-bound",
+      "reference-binary-identity"
+    ],
+    "description": "Fresh binary at task-11 close 3dff457 versus current e0893cd: false then true human_outcome_resolution; real working paths in QA-23."
+  },
+  {
+    "id": "QA-23",
+    "vals": [
+      "VAL-048",
+      "VAL-049",
+      "VAL-050"
+    ],
+    "receipts": [
+      "named-workflow",
+      "named-integration"
+    ],
+    "description": "All four judgment resolution Conditions, wrong class/result and foreign fact denials; original Attention raise facts retained; unrelated Stop remains open; unchanged request shape."
+  },
+  {
+    "id": "QA-24",
+    "vals": [
+      "VAL-051",
+      "VAL-052",
+      "VAL-053",
+      "VAL-054"
+    ],
+    "receipts": [
+      "named-cmd-fid",
+      "named-issues",
+      "named-links",
+      "named-review",
+      "named-integration",
+      "absence-v1-requirements"
+    ],
+    "description": "Requirement reference record/mismatch/supersession, one active row; three relations and unknown negatives; removed sync and non-Issue links rejected."
+  },
+  {
+    "id": "QA-25",
+    "vals": [
+      "VAL-055",
+      "VAL-056",
+      "VAL-057"
+    ],
+    "receipts": [
+      "named-cli",
+      "named-cmd-fid",
+      "named-integration",
+      "authority-producer-inventory"
+    ],
+    "description": "Closed request matrices, 19 declared Failure codes (18 added + retained requirement-not-found), precedence, replay and no-Event denials; DEC-266 four-field/null-subject authority regression and ten producers."
+  },
+  {
+    "id": "QA-26",
+    "vals": [
+      "VAL-058",
+      "VAL-060"
+    ],
+    "receipts": [
+      "human-live-final",
+      "named-cmd-fid",
+      "named-integration"
+    ],
+    "description": "All 18 guide pairs and 18 refreshed checklist pairs reproduce exact Human text and complete retained-manifest JSON; every published guide fact matches its documented prose-omitted projection. Judgment qualifiers and project-prose exclusion hold."
+  },
+  {
+    "id": "QA-27",
+    "vals": [
+      "VAL-059"
+    ],
+    "receipts": [
+      "named-cmd-fid",
+      "named-integration"
+    ],
+    "description": "Mixed judgment resume sections and result-limit-exceeded for overflow."
+  },
+  {
+    "id": "QA-28",
+    "vals": [
+      "VAL-061",
+      "VAL-062",
+      "VAL-063"
+    ],
+    "receipts": [
+      "named-db",
+      "named-workflow",
+      "named-maintenance",
+      "named-issues",
+      "named-integration",
+      "absence-v1-tables",
+      "absence-v1-requirements",
+      "absence-v1-rules",
+      "schema-sql"
+    ],
+    "description": "Full V1 removal inventory; seeded 17-to-18 deletes only non-Issue references; rebuilt view/guards, clean maintenance with fixed check names, removed Event/rule/leaf checks."
+  },
+  {
+    "id": "QA-29",
+    "vals": [
+      "VAL-064",
+      "VAL-065"
+    ],
+    "receipts": [
+      "named-integration",
+      "named-export"
+    ],
+    "description": "Every Phase 23 table compared live/rebuilt/imported; canonical archives equal, validation leaves source digest unchanged; current schema 18 accepted, schema 17 rejected."
+  },
+  {
+    "id": "QA-30",
+    "vals": [
+      "VAL-066"
+    ],
+    "receipts": [
+      "named-cmd-fid",
+      "named-integration",
+      "capabilities-final"
+    ],
+    "description": "All twelve capability rows match accepted table across discovery/resume/export/shared fixtures; unavailable work-claims and telemetry rows retained."
+  },
+  {
+    "id": "QA-31",
+    "vals": [
+      "VAL-067"
+    ],
+    "receipts": [
+      "named-integration",
+      "all-action-provenance"
+    ],
+    "description": "Pinned 30-action allow/reject corpus in both closed registries; per-action introducing history, including seven additions with owning task Refs."
+  },
+  {
+    "id": "QA-32",
+    "vals": [
+      "VAL-068"
+    ],
+    "receipts": [
+      "named-integration"
+    ],
+    "description": "23 operations run against independent fake and fid; complete semantic values/rejection envelopes; generated-position-only normalization and distinct caller Review IDs regression."
+  },
+  {
+    "id": "QA-33",
+    "vals": [
+      "VAL-069"
+    ],
+    "receipts": [
+      "named-integration",
+      "schema-sql"
+    ],
+    "description": "Pinned inventory of 59 latest-schema tables and 125 command paths plus aliases excludes all cancelled families."
+  },
+  {
+    "id": "QA-34",
+    "vals": [],
+    "receipts": [
+      "file-state",
+      "report-01",
+      "report-02",
+      "report-03",
+      "report-04",
+      "report-05",
+      "report-06",
+      "report-07",
+      "report-08",
+      "report-09",
+      "report-10",
+      "report-11",
+      "report-12",
+      "report-13",
+      "report-14",
+      "report-15",
+      "report-16",
+      "report-17",
+      "report-18"
+    ],
+    "description": "All 18 reports contain exact task commands, tokens, termination and declared nonzero statuses; converged fence/removal rows retain file/line, provenance, invalidating change and executing command."
+  },
+  {
+    "id": "QA-35",
+    "vals": [],
+    "receipts": [
+      "file-state",
+      "dependency-diff"
+    ],
+    "description": "go.mod/go.sum equal planning base; internal directories add review and remove requirements only."
+  },
+  {
+    "id": "QA-36",
+    "vals": [],
+    "receipts": [
+      "security-source-audit",
+      "authority-producer-inventory",
+      "named-cmd-fid",
+      "named-review",
+      "named-integration"
+    ],
+    "description": "Security review backed by authority, computed independence, under-lock digest, no-prose, import/corruption, exact allowlist tests."
+  },
+  {
+    "id": "QA-37",
+    "vals": [],
+    "receipts": [
+      "documentation-amendments",
+      "file-state"
+    ],
+    "description": "Six accepted spec amendments applied; DEC-226 vocabulary and DEC-265/266 convergence inspected. TL must reconcile BC-A and refresh current context during wrap-up."
+  },
+  {
+    "id": "QA-38",
+    "vals": [],
+    "receipts": [
+      "file-state"
+    ],
+    "description": "Six windows close via reviews 3/4/5/10/12/14; task-11 checkpoint closes via checkpoint-after-task-11-3; each prior REPAIR has independent closure."
+  },
+  {
+    "id": "QA-39",
+    "vals": [],
+    "receipts": [
+      "report-timing-excerpts",
+      "file-state"
+    ],
+    "description": "All 18 reports retain cmd/fid, workflow and tagged timings; local gates provide current evidence independently of hosted CI (CF-041)."
+  },
+  {
+    "id": "QA-40",
+    "vals": [
+      "VAL-075"
+    ],
+    "receipts": [
+      "baseline-migration-diff",
+      "named-db"
+    ],
+    "description": "Exact seven accepted logical edits in 0013/0015 against 0195897; execution_attempts registration fields unchanged."
+  },
+  {
+    "id": "QA-41",
+    "vals": [
+      "VAL-076"
+    ],
+    "receipts": [
+      "named-integration"
+    ],
+    "description": "TestPortableAssertCorruptEventsRejected: 28 distinct cloned workspaces, validator rejections and equal before/after SHA-256 over all 59 tables."
+  },
+  {
+    "id": "QA-42",
+    "vals": [
+      "VAL-077"
+    ],
+    "receipts": [
+      "named-evidence",
+      "named-integration"
+    ],
+    "description": "Independent Review links; later mutating-Claim history blocks link with review-not-independent and no Event."
+  },
+  {
+    "id": "QA-43",
+    "vals": [
+      "VAL-078"
+    ],
+    "receipts": [
+      "named-workflow",
+      "named-integration"
+    ],
+    "description": "Four qualifying/nonqualifying durable-fact pairs; exact Condition/fact binding and Stop state before/after."
+  },
+  {
+    "id": "QA-44",
+    "vals": [
+      "VAL-079"
+    ],
+    "receipts": [
+      "budget-ordinary",
+      "budget-integration",
+      "report-timing-excerpts"
+    ],
+    "description": "Exact section-22 bounded gates, uncached package timing, ordinary <=600 s and integration <900 s; no timeout."
+  },
+  {
+    "id": "QA-45",
+    "vals": [],
+    "receipts": [
+      "tmp-before-integration",
+      "tmp-after-integration",
+      "tmp-before-budget-integration",
+      "tmp-after-budget-integration"
+    ],
+    "description": "Two retained temporary binary directories before and after both integration gates; no new leaked directory; free bytes captured."
+  },
+  {
+    "id": "QA-46",
+    "vals": [
+      "VAL-080"
+    ],
+    "receipts": [
+      "named-journal",
+      "named-integration"
+    ],
+    "description": "Closed discriminator matrix: canonical shapes accepted, missing/null/wrong/additional fields rejected by shape validator; no Event/projection change."
+  },
+  {
+    "id": "QA-47",
+    "vals": [
+      "VAL-082"
+    ],
+    "receipts": [
+      "reference-prechange-probe",
+      "reference-current-probe",
+      "reference-comparison",
+      "named-journal"
+    ],
+    "description": "Six exact canonical Condition byte strings match pre-change 74c83b7 and current; one accepted and mutated rejected case per type."
+  },
+  {
+    "id": "QA-48",
+    "vals": [
+      "VAL-081"
+    ],
+    "receipts": [
+      "named-journal",
+      "named-integration"
+    ],
+    "description": "Retained nullable binding relation: three task-9 negatives/two positives plus task-10/11 stray-budget cases; exact condition nullable binding mismatch, separate from shape rejection."
+  },
+  {
+    "id": "QA-49",
+    "vals": [],
+    "receipts": [
+      "named-journal"
+    ],
+    "description": "Task-9 protected-Decision and task-10 Human Stop-details direct registry tests each exercise valid and malformed shapes; shape/registry reached, not an earlier budget failure."
+  },
+  {
+    "id": "QA-50",
+    "vals": [
+      "VAL-083"
+    ],
+    "receipts": [
+      "named-journal",
+      "reference-comparison"
+    ],
+    "description": "Pinned pre-change journal fixture digest 8fdf1938... replays all 18 Events and retains exact source bytes."
+  },
+  {
+    "id": "QA-51",
+    "vals": [
+      "VAL-084"
+    ],
+    "receipts": [
+      "reference-prechange-probe",
+      "reference-current-probe",
+      "reference-comparison",
+      "named-workflow"
+    ],
+    "description": "Same fixed run/RUN-pinned, budget-exhausted and budget-observed/attempts inputs give identical sha256:d4b51bb4... key at both commits."
+  },
+  {
+    "id": "QA-52",
+    "vals": [],
+    "receipts": [
+      "named-journal"
+    ],
+    "description": "Task-9/10 non-string Condition discriminator negatives reject without panic."
+  }
+]

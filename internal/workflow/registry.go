@@ -2,7 +2,6 @@ package workflow
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -195,15 +194,10 @@ func loadTransitionRequirements(conn *sql.DB, registry *Registry, definition *De
 		if err := rows.Scan(&fromState, &toState, &name, &paramsJSON); err != nil {
 			return fmt.Errorf("load workflow %q transition requirements: %w", definition.ID, err)
 		}
-		requiredRoles, err := requiredRolesFromParams(paramsJSON)
-		if err != nil {
-			return fmt.Errorf("load workflow %q transition %q -> %q rule %q: %w", definition.ID, fromState, toState, name, err)
+		if paramsJSON.Valid && strings.TrimSpace(paramsJSON.String) != "" {
+			return fmt.Errorf("load workflow %q transition %q -> %q rule %q: params_json is unsupported", definition.ID, fromState, toState, name)
 		}
-		rule := RuleReference{
-			Name:          name,
-			RequiredRoles: requiredRoles,
-			Unimplemented: isReservedUnimplementedRule(name),
-		}
+		rule := RuleReference{Name: name, Unimplemented: isReservedUnimplementedRule(name)}
 		key := transitionKey{
 			workflowID: definition.ID,
 			fromState:  fromState,
@@ -222,19 +216,6 @@ func loadTransitionRequirements(conn *sql.DB, registry *Registry, definition *De
 	return nil
 }
 
-func requiredRolesFromParams(paramsJSON sql.NullString) ([]string, error) {
-	if !paramsJSON.Valid || strings.TrimSpace(paramsJSON.String) == "" {
-		return nil, nil
-	}
-	var params struct {
-		RequiredRoles []string `json:"roles"`
-	}
-	if err := json.Unmarshal([]byte(paramsJSON.String), &params); err != nil {
-		return nil, fmt.Errorf("parse params_json: %w", err)
-	}
-	return params.RequiredRoles, nil
-}
-
 func isReservedUnimplementedRule(name string) bool {
-	return name == RuleRequiredGatesCurrent || name == RuleHasCompletion || name == RuleLinkedToDecision
+	return name == RuleRequiredGatesCurrent || name == RuleHasCompletion
 }

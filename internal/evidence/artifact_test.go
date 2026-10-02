@@ -9,6 +9,7 @@ import (
 )
 
 func TestWriteSanitizedArtifactChunkPreservesValidAndSanitizesInvalidUTF8(t *testing.T) {
+	t.Parallel()
 	var output bytes.Buffer
 	redactor := newLiveRedactor(nil)
 	if err := writeSanitizedArtifactChunk(&output, redactor, []byte("valid "), false); err != nil {
@@ -23,6 +24,7 @@ func TestWriteSanitizedArtifactChunkPreservesValidAndSanitizesInvalidUTF8(t *tes
 }
 
 func TestArtifactCandidatePathRejectsEveryUnsafeCandidate(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	cwd := filepath.Join(workspace, "cwd")
 	outside := filepath.Join(workspace, "outside")
@@ -65,6 +67,7 @@ func TestArtifactCandidatePathRejectsEveryUnsafeCandidate(t *testing.T) {
 }
 
 func TestPublishArtifactCandidateRejectsChangedDuringCopy(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	candidate := filepath.Join(workspace, "candidate.txt")
 	if err := os.WriteFile(candidate, []byte("before"), 0o600); err != nil {
@@ -88,6 +91,7 @@ func TestPublishArtifactCandidateRejectsChangedDuringCopy(t *testing.T) {
 }
 
 func TestPublishArtifactCandidateRejectsOversizedContent(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	candidate := filepath.Join(workspace, "candidate.txt")
 	if err := os.WriteFile(candidate, []byte("oversized"), 0o600); err != nil {

@@ -71,8 +71,8 @@ func TestLinkErrorsRenderActionableMessages(t *testing.T) {
 func TestRegistryHelpersCoverEndpointAndCompatibilityRules(t *testing.T) {
 	t.Parallel()
 
-	if got, err := endpointType("requirement", "type", "link add"); err != nil || got != "requirement" {
-		t.Fatalf("endpointType(requirement) = %q, %v; want requirement, nil", got, err)
+	if _, err := endpointType("requirement", "type", "link add"); err == nil {
+		t.Fatal("endpointType(requirement) accepted removed endpoint")
 	}
 	if got, err := endpointType("", "type", "link add"); err != nil || got != "" {
 		t.Fatalf("endpointType(empty) = %q, %v; want empty, nil", got, err)
@@ -81,11 +81,13 @@ func TestRegistryHelpersCoverEndpointAndCompatibilityRules(t *testing.T) {
 		t.Fatal("endpointType(claim) error = nil, want invalid endpoint type")
 	}
 
-	if !relationAllowedForTypes("relates_to", "issue", "requirement") {
-		t.Fatal("relationAllowedForTypes(relates_to, issue, requirement) = false, want true")
+	if relationAllowedForTypes("relates_to", "issue", "requirement") {
+		t.Fatal("relationAllowedForTypes accepted requirement endpoint")
 	}
-	if !relationAllowedForTypes("implemented_by", "requirement", "issue") {
-		t.Fatal("relationAllowedForTypes(implemented_by, requirement, issue) = false, want true")
+	for _, relation := range []string{"implements", "implemented_by"} {
+		if relationAllowedForTypes(relation, "issue", "issue") {
+			t.Fatalf("relationAllowedForTypes accepted removed %s relation", relation)
+		}
 	}
 	if !relationAllowedForTypes("discovered", "issue", "issue") {
 		t.Fatal("relationAllowedForTypes(discovered, issue, issue) = false, want true")
@@ -97,8 +99,8 @@ func TestRegistryHelpersCoverEndpointAndCompatibilityRules(t *testing.T) {
 		t.Fatal("relationAllowedForTypes(mystery, issue, issue) = true, want false")
 	}
 
-	if !isV01EndpointType("issue") || !isV01EndpointType("requirement") {
-		t.Fatal("isV01EndpointType(valid) = false, want true")
+	if !isV01EndpointType("issue") || isV01EndpointType("requirement") {
+		t.Fatal("endpoint registry must admit only Issues")
 	}
 	if isV01EndpointType("decision") {
 		t.Fatal("isV01EndpointType(decision) = true, want false")

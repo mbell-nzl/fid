@@ -12,6 +12,7 @@ import (
 )
 
 func TestRecoverRunRequiresExactObservationVersionsAndAuthority(t *testing.T) {
+	t.Parallel()
 	for _, mode := range []string{"ordinary", "force"} {
 		cases := []string{"valid", "unknown", "missing-observation", "nonexistent-observation", "wrong-run", "wrong-executor", "wrong-kind", "stale-run", "stale-claim", "missing-grant", "closed-envelope", "wrong-actor"}
 		if mode == "ordinary" {

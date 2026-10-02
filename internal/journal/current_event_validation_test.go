@@ -11,6 +11,7 @@ import (
 )
 
 func TestCurrentEventFamiliesRejectMalformedEffectsLiveAndReplay(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name   string
 		mutate func(*Event)
@@ -131,6 +132,7 @@ func currentProjectionSnapshot(t *testing.T, conn *sql.DB) map[string][]string {
 }
 
 func TestCurrentEventRequiresExactCapturedPrior(t *testing.T) {
+	t.Parallel()
 	for _, kind := range []string{"valid", "missing", "wrong", "extra"} {
 		t.Run(kind, func(t *testing.T) {
 			event := checkpointedProjectionEvent()
@@ -169,6 +171,7 @@ func TestCurrentEventRequiresExactCapturedPrior(t *testing.T) {
 }
 
 func TestCurrentEventRejectsConditionalBindingCorruption(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name   string
 		event  func() Event
@@ -226,6 +229,10 @@ func TestCurrentEventRejectsConditionalBindingCorruption(t *testing.T) {
 }
 
 func TestCurrentEventColumnDomainsMatchAcceptedDDL(t *testing.T) {
+	t.Parallel()
+	if _, ok := currentEventTables["activity_log"]; !ok {
+		t.Fatal("activity_log is missing from the strict current Event table registry")
+	}
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "columns.sqlite"))
 	defer closeProjectDB(t, conn)
 	for table, definition := range currentEventTables {
@@ -279,7 +286,40 @@ func TestCurrentEventColumnDomainsMatchAcceptedDDL(t *testing.T) {
 	}
 }
 
+// TestCurrentReviewRecordedRegistersItsDistinctJudgmentValues protects the
+// strict journal path reached after Task 4 removes review.recorded's fence.
+func TestCurrentReviewRecordedRegistersItsDistinctJudgmentValues(t *testing.T) {
+	t.Parallel()
+	for _, kind := range []string{
+		"Review", "Coverage", "CoverageItem", "CoverageExclusion", "Finding",
+		"FindingDisposition", "JudgmentSubject",
+	} {
+		if _, found := currentValueShapes[kind]; !found {
+			t.Fatalf("currentValueShapes[%q] is not registered", kind)
+		}
+	}
+	if currentValueShapes["Subject"] != "type:=run,envelope,activation id:ID" {
+		t.Fatalf("Subject = %q, want retained Phase 22 shape", currentValueShapes["Subject"])
+	}
+}
+
+func TestReviewRecordedAloneAdmitsRepeatedFindingDispositionEffects(t *testing.T) {
+	t.Parallel()
+	dispositions := []Effect{
+		{Op: "insert", Table: "finding_dispositions", PK: map[string]any{"id": "FDP-one"}},
+		{Op: "insert", Table: "finding_dispositions", PK: map[string]any{"id": "FDP-two"}},
+	}
+	if err := validateCurrentCardinality(Event{EventType: "review.recorded", Effects: dispositions}); err != nil {
+		t.Fatalf("review.recorded repeated Finding dispositions: %v", err)
+	}
+	err := validateCurrentCardinality(Event{EventType: "finding.addressed", Effects: dispositions})
+	if err == nil || err.Error() != "current Event finding.addressed: too many finding_dispositions/insert Effects" {
+		t.Fatalf("finding.addressed repeated Finding dispositions error = %v, want cardinality rejection", err)
+	}
+}
+
 func TestCurrentRecoveryAdmitsTerminalPredecessorAndOptionalClaimDisposal(t *testing.T) {
+	t.Parallel()
 	for _, terminal := range []bool{false, true} {
 		for _, expired := range []bool{false, true} {
 			name := fmt.Sprintf("terminal=%t/expired=%t", terminal, expired)

@@ -56,12 +56,12 @@ func ListAcceptanceCriteria(options ListAcceptanceCriteriaOptions) (AcceptanceCr
 	}
 	defer closeIssueDB(conn)
 
-	ownerRole, err := listAcceptanceCriteriaOwnerRole(conn, options.IssueID)
+	_, err = listAcceptanceCriteriaOwnerRole(conn, options.IssueID)
 	if err != nil {
 		return AcceptanceCriteriaList{}, err
 	}
 
-	criteria, err := issueAcceptanceCriteria(conn, options.IssueID, ownerRole)
+	criteria, err := issueAcceptanceCriteria(conn, options.IssueID)
 	if err != nil {
 		return AcceptanceCriteriaList{}, err
 	}

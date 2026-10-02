@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/workflow"
@@ -124,6 +125,19 @@ func renderStopError(cmd *cobra.Command, operation string, cause error) error {
 	}
 	var unresolved *workflow.StopBlockedError
 	if errors.As(cause, &unresolved) {
+		if len(unresolved.Stops) > 0 && unresolved.Stops[0].Code == "review-rework-exhausted" && unresolved.Budget != nil {
+			ids := make([]string, 0, len(unresolved.Stops))
+			for _, stop := range unresolved.Stops {
+				ids = append(ids, stop.ID)
+			}
+			budget := map[string]any{
+				"name": unresolved.Budget.Name, "scope": unresolved.Budget.Scope, "unit": unresolved.Budget.Unit,
+				"maximum": unresolved.Budget.Maximum, "exhaustion_action": unresolved.Budget.ExhaustionAction,
+				"warning_threshold": optionalBudgetValue(unresolved.Budget.WarningThreshold), "consumed": optionalBudgetValue(unresolved.Budget.Consumed),
+				"remaining": optionalBudgetValue(unresolved.Budget.Remaining), "state": unresolved.Budget.State,
+			}
+			return writeStopFailure(cmd, jsonMode, operation, cause, cli.CodeReviewReworkExhausted, "review rework budget is exhausted", &cli.Subject{Type: cli.SubjectEnvelope, ID: unresolved.Stops[0].Subject.ID}, map[string]any{"budget": budget, "stop_ids": ids, "attention_ids": unresolved.AttentionIDs, "event": nil, "replayed": false})
+		}
 		ids := make([]string, 0, len(unresolved.Stops))
 		reasons := make([]map[string]any, 0, len(unresolved.Stops))
 		for _, stop := range unresolved.Stops {
@@ -140,14 +154,7 @@ func renderStopError(cmd *cobra.Command, operation string, cause error) error {
 		}
 		return writeStopFailure(cmd, jsonMode, operation, cause, cli.CodeResolutionInvalid, "Stop resolution is invalid", &cli.Subject{Type: kind, ID: nil}, map[string]any{"subject": map[string]any{"type": resolutionInvalid.Subject.Type, "id": resolutionInvalid.Subject.ID}, "fact_event_ids": resolutionInvalid.FactEventIDs, "reasons": cliEvaluationReasons(resolutionInvalid.Reasons)})
 	}
-	failure, err := cli.NewFailure(cli.CodeInvalidArgument, "invalid Stop request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
-	if err != nil {
-		return err
-	}
-	if jsonMode {
-		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
-	}
-	return cli.NewFailureError(failure, cause)
+	return writeStopFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Stop request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
 func writeStopFailure(cmd *cobra.Command, jsonMode bool, operation string, cause error, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
@@ -157,6 +164,14 @@ func writeStopFailure(cmd *cobra.Command, jsonMode bool, operation string, cause
 	}
 	if jsonMode {
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
+	}
+	if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "error: "+failure.Message); err != nil {
+		return err
+	}
+	if code == cli.CodeReviewReworkExhausted && subject != nil {
+		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "next: an activated Human records an approved Human Outcome of class review-rework-extension for this Envelope's Issue; see fid stop list --subject envelope:"+fmt.Sprint(subject.ID)); err != nil {
+			return err
+		}
 	}
 	return cli.NewFailureError(failure, cause)
 }

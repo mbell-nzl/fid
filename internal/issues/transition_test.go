@@ -177,6 +177,7 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 }
 
 func TestTransitionRejectsEdgeMissingFromDBRegistry(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 
 	created, err := Create(CreateOptions{
@@ -216,6 +217,7 @@ func TestTransitionRejectsEdgeMissingFromDBRegistry(t *testing.T) {
 }
 
 func TestTransitionRegistryMatchesFrozenV01OrderedStateMatrix(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
@@ -242,6 +244,7 @@ func TestTransitionRegistryMatchesFrozenV01OrderedStateMatrix(t *testing.T) {
 }
 
 func TestTransitionUsesDBRuleReferences(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 
 	created, err := Create(CreateOptions{
@@ -286,6 +289,7 @@ func TestTransitionUsesDBRuleReferences(t *testing.T) {
 }
 
 func TestTransitionUsesDBCategoriesForClaimGating(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 
 	created, err := Create(CreateOptions{
@@ -322,6 +326,7 @@ func TestTransitionUsesDBCategoriesForClaimGating(t *testing.T) {
 }
 
 func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 
 	created, err := Create(CreateOptions{
@@ -361,6 +366,7 @@ func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
 }
 
 func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
@@ -377,7 +383,7 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 	if _, err := conn.Exec(`
 		INSERT INTO workflow_transition_requires (workflow_id, from_state, to_state, rule, params_json)
 		VALUES (?, ?, ?, ?, ?)
-	`, "task-default", "todo", "in_progress", workflow.RuleRequiredGatesCurrent, `{"gates":[{"id":"gate-test","version":1}]}`); err != nil {
+	`, "task-default", "todo", "in_progress", workflow.RuleRequiredGatesCurrent, nil); err != nil {
 		closeIssueTestDB(t, conn)
 		t.Fatalf("insert reserved workflow rule: %v", err)
 	}

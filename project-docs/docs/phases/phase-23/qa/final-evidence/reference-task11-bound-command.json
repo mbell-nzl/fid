@@ -1,0 +1,17 @@
+{
+  "command": [
+    "go",
+    "build",
+    "-o",
+    "/tmp/fid-p23-qa-reference-PgIz9Jst/fid-task11",
+    "./cmd/fid"
+  ],
+  "cwd": "/tmp/fid-p23-qa-reference-PgIz9Jst/task11",
+  "environment": {
+    "GIT_DIR": "/home/mark/projects/fid/.git/worktrees/task111",
+    "GIT_WORK_TREE": "/tmp/fid-p23-qa-reference-PgIz9Jst/task11"
+  },
+  "stdout": "",
+  "stderr": "",
+  "exit_code": 0
+}

@@ -14,6 +14,7 @@ import (
 )
 
 func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	journalPath := workflowJournalPath(t, workspace)
 	beforeJournal := readWorkflowTestFile(t, journalPath)
@@ -29,7 +30,7 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 			Categories:  []string{"unstarted", "completed", "cancelled"},
 			Transitions: []Transition{{From: "todo", To: "done"}},
 			Requirements: []Requirement{{
-				From: "todo", To: "done", Rule: RuleHasCompletionReport,
+				From: "todo", To: "done", Rule: "has_completion_report",
 			}},
 		},
 	})

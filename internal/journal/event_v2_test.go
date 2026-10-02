@@ -11,6 +11,7 @@ import (
 )
 
 func TestAppendEventRejectsV2AggregateSequenceGap(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(workspace, ".fid", "journal"), 0o755); err != nil {
 		t.Fatalf("MkdirAll(journal) error = %v", err)
@@ -29,6 +30,7 @@ func TestAppendEventRejectsV2AggregateSequenceGap(t *testing.T) {
 }
 
 func TestReplayJournalRejectsOutOfOrderV2AggregateSequence(t *testing.T) {
+	t.Parallel()
 	workspace := newReplayWorkspace(t)
 	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-22.jsonl")
 	first := eventV2ForSequence(1)
@@ -52,6 +54,7 @@ func TestReplayJournalRejectsOutOfOrderV2AggregateSequence(t *testing.T) {
 }
 
 func TestEventV2RejectsUnknownTopLevelKey(t *testing.T) {
+	t.Parallel()
 	var event Event
 	err := json.Unmarshal([]byte(`{"actor":{"actor_id":"fid-bootstrap","actor_type":"service","producer":"fid","provenance_ref":"fid:init","session_ref":null},"aggregate":{"id":"project-1","sequence":1,"type":"project"},"causation_id":null,"command":"project.init","correlation_id":null,"effects":[],"event_id":"EVT-20260822-000001","event_schema":2,"event_type":"project.initialized","idempotency":null,"occurred_at":"2026-08-22T00:00:00Z","repository":null,"unknown":true}`), &event)
 	if err == nil || !strings.Contains(err.Error(), "unknown field") {

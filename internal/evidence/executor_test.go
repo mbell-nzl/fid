@@ -70,6 +70,7 @@ func TestExecuteAppliesAcceptedGatePolicy(t *testing.T) {
 }
 
 func TestExecutorPolicyChild(t *testing.T) {
+	t.Parallel()
 	marker := "--executor-policy-child"
 	index := -1
 	for position, arg := range os.Args {
@@ -99,6 +100,7 @@ func TestExecutorPolicyChild(t *testing.T) {
 }
 
 func TestExecuteEnforcesTimeoutLimit(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	definition := GateDefinition{
 		ArtifactBytes:     1,
@@ -122,6 +124,7 @@ func TestExecuteEnforcesTimeoutLimit(t *testing.T) {
 }
 
 func TestExecutorTimeoutChild(t *testing.T) {
+	t.Parallel()
 	if !containsArgument(os.Args, "--executor-timeout-child") {
 		return
 	}
@@ -144,6 +147,7 @@ func containsArgument(args []string, target string) bool {
 }
 
 func TestExecuteRejectsMissingCredentialBeforeSpawn(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	definition := GateDefinition{
 		ArtifactBytes:     1,

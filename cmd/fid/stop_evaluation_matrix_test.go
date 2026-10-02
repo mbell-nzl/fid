@@ -10,9 +10,11 @@ import (
 )
 
 func TestStopPredicatesAcrossIssueAndEnvelopeCommands(t *testing.T) {
+	t.Parallel()
 	for _, surface := range []string{"issue", "envelope"} {
 		for _, state := range []string{"applicable", "unrelated-subject", "unrelated-action", "resolved", "multiple"} {
 			t.Run(surface+"/"+state, func(t *testing.T) {
+				t.Parallel()
 				workspace, issueID, envelopeID, _, _ := task18TerminalGuardFixture(t, false, true)
 				if surface == "envelope" {
 					result := stopMatrixTransition(workspace, issueID)

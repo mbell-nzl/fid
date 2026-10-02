@@ -16,6 +16,7 @@ import (
 )
 
 func TestP22ForceRecoveryBudgetRejectsIntegrityValidMissingChargeArchive(t *testing.T) {
+	t.Parallel()
 	a := p22ForceBudgetFixture(t, 1)
 	p22AcceptedCall(t, a, "archive-force", "run.recover", p22ForceBudgetInput(t, a, "archive-force"))
 	archive := filepath.Join(t.TempDir(), "valid.zip")

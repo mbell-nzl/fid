@@ -29,6 +29,7 @@ type p22BudgetCrashInput struct {
 }
 
 func TestP22BudgetBoundarySurvivesAppendAndProjectionFaults(t *testing.T) {
+	t.Parallel()
 	for _, kind := range []string{"external", "attempt", "receipt"} {
 		for _, mode := range []string{"before-append", "after-append", "normal"} {
 			t.Run(kind+"/"+mode, func(t *testing.T) { p22BudgetBoundaryCase(t, kind, mode) })
@@ -215,6 +216,7 @@ func p22BudgetCrash(t *testing.T, input p22BudgetCrashInput) {
 }
 
 func TestP22BudgetCrashProcess(t *testing.T) {
+	t.Parallel()
 	path := os.Getenv("FID_P22_BUDGET_CRASH")
 	if path == "" {
 		return

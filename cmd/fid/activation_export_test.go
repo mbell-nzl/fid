@@ -11,6 +11,7 @@ import (
 )
 
 func TestMalformedConfigRejectsActivationMutationButNotHelpOrExportValidation(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	archive := filepath.Join(t.TempDir(), "config-independent.zip")
 	created := executeCommandForTest(workspace, "--project", workspace, "--json", "export", "create", archive)

@@ -20,6 +20,7 @@ import (
 )
 
 func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 
 	stdout := &bytes.Buffer{}
@@ -117,6 +118,7 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 }
 
 func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -259,6 +261,7 @@ func assertJSONKeys(t *testing.T, value map[string]json.RawMessage, want []strin
 }
 
 func TestInitCommandEnforcesExplicitPrefixGrammarBeforeStaging(t *testing.T) {
+	t.Parallel()
 	validWorkspace := t.TempDir()
 	runInitCommand(t, validWorkspace, "init", "--prefix", "A123456789012345")
 	if _, err := os.Stat(filepath.Join(validWorkspace, ".fid")); err != nil {
@@ -295,6 +298,7 @@ func TestInitCommandEnforcesExplicitPrefixGrammarBeforeStaging(t *testing.T) {
 }
 
 func TestInitCommandPrefixBoundaryMatrix(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		name          string
 		workspaceName string
@@ -349,6 +353,7 @@ func TestInitCommandPrefixBoundaryMatrix(t *testing.T) {
 }
 
 func TestInitCommandPreservesDanglingWorkspaceSymlinkCollision(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	danglingTarget := filepath.Join(workspace, "missing-fid-target")
 	workspacePath := filepath.Join(workspace, ".fid")
@@ -374,6 +379,7 @@ func TestInitCommandPreservesDanglingWorkspaceSymlinkCollision(t *testing.T) {
 }
 
 func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
+	t.Parallel()
 	defaultWorkspace := t.TempDir()
 	runInitCommand(t, defaultWorkspace, "init", "--prefix", "FID")
 
@@ -398,6 +404,7 @@ func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 }
 
 func TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename(t *testing.T) {
+	t.Parallel()
 	workspace := filepath.Join(t.TempDir(), "invalid_prefix")
 	if err := os.Mkdir(workspace, 0o755); err != nil {
 		t.Fatalf("Mkdir() error = %v", err)
@@ -426,6 +433,7 @@ func TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename(t *testing
 }
 
 func TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init", "--prefix", "FID")
 
@@ -470,6 +478,7 @@ func TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent(t *testing.T) {
 }
 
 func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
@@ -501,6 +510,7 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 }
 
 func TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 

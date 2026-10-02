@@ -1,0 +1,16 @@
+workspace=/tmp/fid-esc-23-002-smoke-ju40xigt
+{"command": ["/tmp/fid", "--project", "/tmp/fid-esc-23-002-smoke-ju40xigt", "--json", "init", "--prefix", "FID"], "exit_code": 0, "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20260919-000001\",\"occurred_at\":\"2026-09-19T21:22:41.953424776Z\"},\"ok\":true,\"operation\":\"project.init\",\"result\":{\"journal_path\":\".fid/journal/2026-09-19.jsonl\",\"project\":{\"id\":\"project-cb1477667e70639e6855bf692a4a12dc\",\"issue_prefix\":\"FID\",\"root\":\"/tmp/fid-esc-23-002-smoke-ju40xigt\"}}}\n", "stderr": ""}
+{"command": ["/tmp/fid", "--project", "/tmp/fid-esc-23-002-smoke-ju40xigt", "--json", "issue", "create", "--kind", "task", "--title", "Rebuild smoke", "--actor", "agent:developer"], "exit_code": 2, "stdout": "", "stderr": "{\"contract_version\":\"fid-cli.v1\",\"error\":{\"category\":\"invalid-input\",\"code\":\"invalid-argument\",\"details\":{\"allowed\":[\"accepted issue.create input\"],\"argument\":\"request\",\"value\":null},\"message\":\"invalid command request\",\"retryable\":false,\"subject\":null},\"ok\":false,\"operation\":\"issue.create\"}\n"}
+Traceback (most recent call last):
+  File "/home/mark/projects/fid/project-docs/docs/phases/phase-23/qa/esc-23-002-evidence/rebuild-smoke.py", line 28, in <module>
+    run("issue", "create", "--kind", "task", "--title", "Rebuild smoke",
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        "--actor", "agent:developer")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/mark/projects/fid/project-docs/docs/phases/phase-23/qa/esc-23-002-evidence/rebuild-smoke.py", line 18, in run
+    result.check_returncode()
+    ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/subprocess.py", line 509, in check_returncode
+    raise CalledProcessError(self.returncode, self.args, self.stdout,
+                             self.stderr)
+subprocess.CalledProcessError: Command '['/tmp/fid', '--project', '/tmp/fid-esc-23-002-smoke-ju40xigt', '--json', 'issue', 'create', '--kind', 'task', '--title', 'Rebuild smoke', '--actor', 'agent:developer']' returned non-zero exit status 2.

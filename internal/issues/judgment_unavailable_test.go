@@ -1,64 +1,24 @@
 package issues
 
 import (
-	"errors"
+	"path/filepath"
 	"testing"
 )
 
-func assertJudgmentUnavailable(t *testing.T, capabilityID string, call func() error) {
-	t.Helper()
-	err := call()
-	var unavailable *CapabilityUnavailableError
-	if !errors.As(err, &unavailable) {
-		t.Fatalf("error = %v, want CapabilityUnavailableError", err)
+// The removed judgment writers have no projection target in schema 18.
+func TestV1JudgmentProjectionIsAbsentAfterReplacement(t *testing.T) {
+	t.Parallel()
+	workspace := newIssueWorkspace(t)
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+	for _, name := range []string{"task_completions", "ac_verifications", "judgment_concerns"} {
+		var count int
+		if err := conn.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?`, name).Scan(&count); err != nil || count != 0 {
+			t.Fatalf("removed table %q count = %d, error %v", name, count, err)
+		}
 	}
-	if unavailable.CapabilityID != capabilityID || unavailable.OwnerPhase != 23 {
-		t.Fatalf("unavailable = %#v, want capability %q owned by phase 23", unavailable, capabilityID)
-	}
-}
-
-func TestJudgmentMutationsAreUnavailableBeforeAnyWriterWork(t *testing.T) {
-	tests := []struct {
-		name string
-		call func() error
-		want string
-	}{
-		{
-			name: "acceptance criterion verification",
-			call: func() error {
-				_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
-				return err
-			},
-			want: "reviews.coverage.v1",
-		},
-		{
-			name: "concern raise",
-			call: func() error {
-				_, err := RaiseConcern(RaiseConcernOptions{})
-				return err
-			},
-			want: "human.outcomes.v1",
-		},
-		{
-			name: "concern address",
-			call: func() error {
-				_, err := AddressConcern(AddressConcernOptions{})
-				return err
-			},
-			want: "human.outcomes.v1",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.call()
-			var unavailable *CapabilityUnavailableError
-			if !errors.As(err, &unavailable) {
-				t.Fatalf("error = %v, want CapabilityUnavailableError", err)
-			}
-			if unavailable.CapabilityID != tt.want || unavailable.OwnerPhase != 23 {
-				t.Fatalf("unavailable = %#v, want capability %q owned by phase 23", unavailable, tt.want)
-			}
-		})
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='concerns'`).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("generic concerns table count = %d, error %v", count, err)
 	}
 }

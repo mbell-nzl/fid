@@ -16,6 +16,7 @@ import (
 var p22FinalActions = strings.Fields(`artifact.verify attention.resolve claim.acquire claim.expire claim.release claim.renew envelope.activate envelope.complete envelope.create evidence.link gate.register gate.run issue.transition run.abandon run.checkpoint run.close run.force-recover run.observe run.observe-budget run.recover run.start stop.raise stop.resolve`)
 
 func TestP22FinalActivatedActionSetAcceptsProfilesAndGrants(t *testing.T) {
+	t.Parallel()
 	if len(p22FinalActions) != 23 {
 		t.Fatalf("independent action count = %d, want 23", len(p22FinalActions))
 	}

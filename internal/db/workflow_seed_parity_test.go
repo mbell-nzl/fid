@@ -304,17 +304,7 @@ func assertSeededRequirements(t *testing.T, conn *sql.DB, definitions map[string
 		for fromState, destinations := range definition.Transitions {
 			for toState, rules := range destinations {
 				for _, rule := range rules {
-					paramsJSON := ""
-					if len(rule.RequiredRoles) > 0 {
-						encoded, err := json.Marshal(struct {
-							Roles []string `json:"roles"`
-						}{rule.RequiredRoles})
-						if err != nil {
-							t.Fatalf("marshal roles for %q: %v", rule.Name, err)
-						}
-						paramsJSON = string(encoded)
-					}
-					want = append(want, workflowRequirementTuple{workflowID, fromState, toState, rule.Name, paramsJSON})
+					want = append(want, workflowRequirementTuple{workflowID, fromState, toState, rule.Name, ""})
 				}
 			}
 		}

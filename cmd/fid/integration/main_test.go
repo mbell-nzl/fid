@@ -9,9 +9,12 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 )
 
 var integrationBinary string
+
+const integrationBinaryEnv = "FID_INTEGRATION_BINARY"
 
 func TestMain(m *testing.M) {
 	exitCode := runIntegrationSuite(m)
@@ -19,6 +22,13 @@ func TestMain(m *testing.M) {
 }
 
 func runIntegrationSuite(m interface{ Run() int }) int {
+	if binary := os.Getenv(integrationBinaryEnv); binary != "" {
+		if info, err := os.Stat(binary); err == nil && !info.IsDir() {
+			integrationBinary = binary
+			return m.Run()
+		}
+	}
+	pruneStaleIntegrationBinaries()
 	binaryRoot, err := os.MkdirTemp("", "fid-integration-binary-")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "create integration binary directory: %v\n", err)
@@ -37,6 +47,11 @@ func runIntegrationSuite(m interface{ Run() int }) int {
 		_ = os.RemoveAll(binaryRoot)
 		return 1
 	}
+	if err := os.Setenv(integrationBinaryEnv, integrationBinary); err != nil {
+		fmt.Fprintf(os.Stderr, "publish integration fid binary: %v\n", err)
+		_ = os.RemoveAll(binaryRoot)
+		return 1
+	}
 
 	exitCode := m.Run()
 	if err := os.RemoveAll(binaryRoot); err != nil {
@@ -46,6 +61,23 @@ func runIntegrationSuite(m interface{ Run() int }) int {
 		}
 	}
 	return exitCode
+}
+
+func pruneStaleIntegrationBinaries() {
+	entries, err := os.ReadDir(os.TempDir())
+	if err != nil {
+		return
+	}
+	cutoff := time.Now().Add(-24 * time.Hour)
+	for _, entry := range entries {
+		if !entry.IsDir() || len(entry.Name()) < len("fid-integration-binary-") || entry.Name()[:len("fid-integration-binary-")] != "fid-integration-binary-" {
+			continue
+		}
+		info, err := entry.Info()
+		if err == nil && info.ModTime().Before(cutoff) {
+			_ = os.RemoveAll(filepath.Join(os.TempDir(), entry.Name()))
+		}
+	}
 }
 
 func integrationRepositoryRoot() string {

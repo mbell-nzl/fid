@@ -6,6 +6,7 @@ import (
 )
 
 func TestBuildIssueRevisionEffectsSortsObservedRevisionsAndDerivesResults(t *testing.T) {
+	t.Parallel()
 	effects, err := BuildIssueRevisionEffects([]IssueRevision{
 		{IssueID: "FID-z", Observed: 7},
 		{IssueID: "FID-a", Observed: 1},
@@ -40,6 +41,7 @@ func TestBuildIssueRevisionEffectsSortsObservedRevisionsAndDerivesResults(t *tes
 }
 
 func TestBuildIssueRevisionEffectsRejectsInvalidInputsWithoutEffects(t *testing.T) {
+	t.Parallel()
 	for _, testCase := range []struct {
 		name     string
 		observed []IssueRevision

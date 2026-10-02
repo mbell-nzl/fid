@@ -7,6 +7,7 @@ import (
 )
 
 func TestWriteSuccessUsesExactContractKeys(t *testing.T) {
+	t.Parallel()
 	var output bytes.Buffer
 
 	err := WriteSuccess(&output, "issue.get", map[string]any{"issue": map[string]any{}}, nil)
@@ -31,6 +32,7 @@ func TestWriteSuccessUsesExactContractKeys(t *testing.T) {
 }
 
 func TestWriteFailureUsesExactContractKeys(t *testing.T) {
+	t.Parallel()
 	failure, err := NewFailure(
 		CodeIssueNotFound,
 		"Issue FID-123 was not found",
@@ -73,6 +75,7 @@ func TestWriteFailureUsesExactContractKeys(t *testing.T) {
 }
 
 func TestWriteFailurePreservesRequiredNullFields(t *testing.T) {
+	t.Parallel()
 	failure, err := NewFailure(
 		CodeInvalidArgument,
 		"prefix is invalid",

@@ -12,6 +12,7 @@ import (
 )
 
 func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
+	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	closureRun(t, workspace, "git", "init")
@@ -24,7 +25,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 
 	closureRunFID(t, binary, workspace, "label", "add", "release", "--description", "Closure journey label", "--by", "developer")
 	closureWriteRequirementFixture(t, workspace)
-	closureRunFID(t, binary, workspace, "requirement", "sync", "--source-doc", "project-docs/specs/closure.md", "--id", "PRD-LINK-002", "--by", "tl")
+	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, journalPath, []string{"requirement", "sync", "--source-doc", "project-docs/specs/closure.md", "--id", "PRD-LINK-002", "--by", "tl"})
 
 	mainIssueID := closureCreateIssue(t, binary, workspace, "task", "Closure lifecycle task", nil, nil, nil)
 	peerIssueID := closureCreateIssue(t, binary, workspace, "task", "Closure linked peer", nil, nil, nil)
@@ -33,16 +34,18 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "in_progress", "--actor", "agent:qa_reviewer")
 	acID := closureAddAcceptanceCriterion(t, binary, workspace, mainIssueID)
 	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "dev_complete", "--actor", "agent:developer")
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"--json", "issue", "ac", "verify", mainIssueID, acID, "--actor", "agent:qa_lead"},
-		`"code":"capability-unavailable"`)
+	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, journalPath,
+		[]string{"issue", "ac", "verify"})
+	_ = acID
 	assertClosureConcernMutationsUnavailable(t, binary, workspace, mainIssueID, "TC-unavailable")
-	closureRunFID(t, binary, workspace, "link", "add", mainIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
+	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
+		[]string{"--json", "link", "add", mainIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},
+		`"code":"invalid-argument"`)
 	closureRunFID(t, binary, workspace, "link", "add", peerIssueID, "discovered_from", mainIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertClosureLinkReadback(t, binary, workspace, mainIssueID, peerIssueID)
 	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
 		[]string{"link", "add", mainIssueID, "implements", peerIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-		"relation")
+		"unknown relation")
 
 	seqEpicID := closureCreateIssue(t, binary, workspace, "epic", "Sequential closure epic", stringPointer("sequential"), nil, nil)
 	seqCurrentID := closureCreateIssue(t, binary, workspace, "task", "Sequential current", nil, stringPointer(seqEpicID), intPointer(1))

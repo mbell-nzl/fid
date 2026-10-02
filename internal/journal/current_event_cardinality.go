@@ -12,6 +12,10 @@ func validateCurrentCardinality(event Event) error {
 		counts[key]++
 		maximum := 1
 		switch effect.Table {
+		case "activity_log":
+			if event.EventType == "review.recorded" && effect.Op == "activity" {
+				maximum = len(event.Effects)
+			}
 		case "budget_samples", "run_budget_bindings", "referenced_artifacts", "receipt_artifacts", "activation_actor_profiles", "activation_gate_definitions":
 			maximum = len(event.Effects)
 		case "stops", "attention_items", "attention_stop_links", "stop_resolutions":
@@ -25,6 +29,10 @@ func validateCurrentCardinality(event Event) error {
 		case "activation_resources":
 			if effect.Op == "insert" {
 				maximum = 5
+			}
+		case "review_findings", "finding_dispositions":
+			if event.EventType == "review.recorded" && effect.Op == "insert" {
+				maximum = len(event.Effects)
 			}
 		case "kit_activations":
 			if event.EventType == "activation.finalized" || event.EventType == "activation.recovery-completed" {

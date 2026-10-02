@@ -81,6 +81,7 @@ func TestRunLiveFramesInterleavedOutputControlsAndFailure(t *testing.T) {
 }
 
 func TestLiveRedactorWithoutSourcesPreservesUTF8Sanitization(t *testing.T) {
+	t.Parallel()
 	redactor := newLiveRedactor(nil)
 	if got := redactor.Transform([]byte{'a', 0xff, 'b'}, true); got != "a\uFFFDb" {
 		t.Fatalf("Transform() = %q, want invalid UTF-8 replaced", got)
@@ -88,6 +89,7 @@ func TestLiveRedactorWithoutSourcesPreservesUTF8Sanitization(t *testing.T) {
 }
 
 func TestRunLiveRecordsCancellationAsCancelled(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	ready := filepath.Join(workspace, "child-ready")
 	definition := GateDefinition{
@@ -127,6 +129,7 @@ func TestRunLiveRecordsCancellationAsCancelled(t *testing.T) {
 }
 
 func TestLiveProcessChild(t *testing.T) {
+	t.Parallel()
 	if !containsArgument(os.Args, "--live-process-child") {
 		return
 	}
@@ -143,6 +146,7 @@ func TestLiveProcessChild(t *testing.T) {
 }
 
 func TestLiveCancellationChild(t *testing.T) {
+	t.Parallel()
 	if !containsArgument(os.Args, "--live-cancellation-child") {
 		return
 	}
@@ -153,6 +157,7 @@ func TestLiveCancellationChild(t *testing.T) {
 }
 
 func TestRunLiveDrainsBothPipesAfterTruncationAndPreservesOutcome(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	definition := GateDefinition{
 		ArtifactBytes:     1,
@@ -194,6 +199,7 @@ func TestRunLiveDrainsBothPipesAfterTruncationAndPreservesOutcome(t *testing.T) 
 }
 
 func TestAppendFidErrorClosesStartedStreamWithoutReceipt(t *testing.T) {
+	t.Parallel()
 	result := LiveResult{
 		Frames:      []LiveFrame{{FrameSchema: liveFrameSchema, ExecutionID: "EXE-fid-error", Sequence: 1, Stream: "stdout", Data: map[string]any{"encoding": "utf-8", "text": "started"}}},
 		Outcome:     "failed",
@@ -216,6 +222,7 @@ func TestAppendFidErrorClosesStartedStreamWithoutReceipt(t *testing.T) {
 }
 
 func TestAppendFidErrorAllowsPreStartCommittedDenial(t *testing.T) {
+	t.Parallel()
 	result := LiveResult{executionID: "RUN-denied"}
 	response := map[string]any{"contract_version": "fid-cli.v1", "error": map[string]any{"code": "budget-exhausted"}, "ok": false, "operation": "gate.run"}
 	if err := result.AppendFidError("", response); err != nil {
@@ -227,6 +234,7 @@ func TestAppendFidErrorAllowsPreStartCommittedDenial(t *testing.T) {
 }
 
 func TestAppendCommittedFidErrorBindsRunAndReplayWithoutNullableArrays(t *testing.T) {
+	t.Parallel()
 	result := LiveResult{}
 	response := map[string]any{"contract_version": "fid-cli.v1", "error": map[string]any{"code": "budget-exhausted"}, "ok": false, "operation": "gate.run"}
 	if err := result.AppendCommittedFidError("RUN-denied", response, true); err != nil {
@@ -239,6 +247,7 @@ func TestAppendCommittedFidErrorBindsRunAndReplayWithoutNullableArrays(t *testin
 }
 
 func TestLiveFloodChild(t *testing.T) {
+	t.Parallel()
 	if !containsArgument(os.Args, "--live-flood-child") {
 		return
 	}

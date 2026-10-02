@@ -13,6 +13,7 @@ import (
 )
 
 func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	eventIDs := map[string]bool{}
 

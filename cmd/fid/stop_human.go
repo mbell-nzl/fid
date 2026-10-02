@@ -63,6 +63,15 @@ func stopHumanDescription(stop workflow.Stop) string {
 	if condition.CapabilityID != nil {
 		qualifier += " capability " + *condition.CapabilityID
 	}
+	if condition.DecisionClass != nil {
+		qualifier += " decision class " + *condition.DecisionClass
+	}
+	if condition.OutcomeClass != nil {
+		qualifier += " outcome class " + *condition.OutcomeClass
+	}
+	if condition.FindingID != nil {
+		qualifier += " Finding " + *condition.FindingID
+	}
 	if stop.Resolution != nil {
 		return fmt.Sprintf("Stop %s resolved: %s; qualifying resolution: %s; fact %s, disposition Event %s.", stop.ID, reason, qualifier, stop.Resolution.FactEventID, stop.Resolution.EventID)
 	}

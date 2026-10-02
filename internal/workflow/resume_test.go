@@ -3,6 +3,7 @@ package workflow
 import "testing"
 
 func TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved(t *testing.T) {
+	t.Parallel()
 	options, activation, factID := finalizedStopConditionActivation(t)
 	workspace := options.WorkspaceRoot
 	conn, err := openWorkflowDB(workspace)

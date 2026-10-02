@@ -213,6 +213,9 @@ func RecoverRun(options RunOptions, request RunRecoveryRequest) (RunRecoveryResu
 		if err := validateReconciliationAdoption(reconciliation, request.AdoptedPaths, request.ReconciliationDigest, request.Authority.Mode == "force"); err != nil {
 			return err
 		}
+		if err := validateClaimModeAdoption(priorClaim, len(request.AdoptedPaths) != 0); err != nil {
+			return err
+		}
 		if err := validateRecoveryExecutor(conn, request.Executor); err != nil {
 			return err
 		}

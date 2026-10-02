@@ -126,6 +126,9 @@ or outcome, including gate, evidence, review, acceptance, and Human judgment
 requirements.
 Use when: policy has been compiled into an enforceable condition.
 Avoid: “QA step,” “validation assertion,” or an untyped checklist item.
+Applicable: An Obligation is applicable to a guarded action exactly when it is
+`required` and its guarded actions include that action. It never blocks an
+action it does not guard (Phase 23 DEC-249).
 
 **Actor**
 Definition: A Human, agent, harness, or trusted producer identity recorded with
@@ -243,8 +246,8 @@ Avoid: a QA Work Item or mutable review document.
 
 **Review Finding**
 Definition: A structured defect or improvement recorded by a Review Record. A
-Builder may mark it addressed; only a later qualifying Review Record resolves
-it.
+Builder may mark it addressed, a nonterminal assertion; only a later qualifying
+independent Review Record resolves it or marks it inapplicable with a reason.
 Use when: review discovers actionable work.
 Avoid: free-form comment streams or Builder self-resolution.
 
@@ -276,8 +279,20 @@ Avoid: copying decision prose into fid.
 **Human Outcome**
 Definition: A structured Human approval, rejection, checklist result, decision,
 or risk acceptance.
-Use when: an Obligation explicitly permits or requires Human judgment.
+Use when: an Obligation explicitly permits or requires Human judgment, or a
+Stop's recorded condition names an Outcome class (for example
+`review-rework-extension`, Phase 23 DEC-269).
 Avoid: presenting Human judgment as deterministic execution proof.
+
+**Requirement Reference**
+Definition: fid's pointer to one version of a project-owned requirement: its
+source path, digest, status, and Issue links. It carries two identities. The
+**requirement ID** (`requirement_id`, such as `REQ-leaf`) is the project's
+stable ID. The **reference ID** (`RREF-…`) names one version; superseding
+creates a new one (Phase 23 DEC-269).
+Use when: tracing project requirements to Issues.
+Avoid: calling the reference ID "the requirement", or copying requirement
+prose into fid.
 
 **Stop**
 Definition: A typed operational fact that prevents a specified action until its
@@ -487,12 +502,42 @@ Definition: The stable dotted identifier of one machine operation, such as
 Use when: routing, logging, or asserting on a specific operation.
 Avoid: deriving it from the command string or from a Human message.
 
-**Reason code**
-Definition: A stable machine identifier for why an operation failed, paired
-with a closed category and a retryability flag.
-Use when: a consumer must branch on a failure.
-Avoid: parsing Human message text, or introducing a code outside the owning
-slice contract.
+**Failure code**
+Definition: A stable machine identifier naming one refused operation, paired
+with a closed category and a retryability flag. Exactly one accompanies a
+failed response, and it decides that response's exit status.
+Use when: a consumer must branch on why a request was refused.
+Avoid: parsing Human message text; introducing a code outside the owning slice
+contract; or using a failure code to describe the state of an Obligation that
+was read successfully.
+
+**Evaluation reason**
+Definition: A stable machine identifier describing why one Obligation is
+unsatisfied, carried with the subject it refers to. Zero or more accompany an
+Obligation evaluation. An evaluation reason has no category, no retryability,
+and no exit status of its own.
+Use when: reporting or branching on the state of one Obligation, whether it was
+read successfully or restated inside a refused response's details.
+Avoid: treating an evaluation reason as a refusal. A successful read that
+reports an unsatisfied Obligation is not a failure.
+
+A **Failure code** and an **Evaluation reason** are separate closed sets that
+answer different questions: "was this request refused, and why" against "what is
+the state of this Obligation, and why". Both appear in machine responses, and
+both are written as a `code` field, so they are distinguished by position, never
+by shape. An unsatisfied Obligation read on its own carries evaluation reasons
+in a successful response; attempting the action that Obligation guards returns a
+single failure code, which may restate those same evaluation reasons in its
+details.
+
+An identifier may deliberately belong to both sets, because the same fact can
+refuse an action and describe a state: `protected-decision-required` names the
+refusal when the guarded action is attempted, and describes the Obligation state
+when the Envelope is read. An identifier that belongs to only one set must not
+be registered in the other. The bare term `Reason code` is retired: it named the
+failure set here while the slice contracts used `ReasonCode` for the evaluation
+set, so one term denoted two closed sets and an identifier was filed in the
+wrong one (Phase 23 DEC-226). Name the set explicitly.
 
 **Project root**
 Definition: The directory that directly contains `.fid/` and identifies one fid
@@ -509,4 +554,5 @@ forward fid entities. They may appear in historical phase records, the current
 V1 repository delivery process, or the external kit's temporary engineering
 memory. New fid product specifications must use the retained terms above.
 
-*Last updated: 2026-08-15 (workflow recovery dispositions; ADR-0011 boundary preserved)*
+*Last updated: 2026-10-03 (Phase 23 wrap: Requirement Reference identities and
+Human Outcome Stop resolution, DEC-269)*

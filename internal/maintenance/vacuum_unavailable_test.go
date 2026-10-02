@@ -6,6 +6,7 @@ import (
 )
 
 func TestVacuumIsUnavailableBeforeAnyWriterWork(t *testing.T) {
+	t.Parallel()
 	_, err := Vacuum("", "", "")
 	var unavailable *CapabilityUnavailableError
 	if !errors.As(err, &unavailable) {

@@ -104,37 +104,24 @@ func TestRemoveRejectsMissingLinkBeforeAppend(t *testing.T) {
 	}
 }
 
-func TestRemoveSupportsRequirementInverse(t *testing.T) {
+func TestRemoveRejectsRemovedRequirementInverse(t *testing.T) {
 	t.Parallel()
 
 	workspace := newLinksWorkspace(t)
 	issueID := createLinksIssue(t, workspace, "Implements issue")
-	requirementID := syncLinksRequirement(t, workspace, "PRD-LINK-002")
-
-	if _, err := Add(AddOptions{
+	before := countLinksJournalEvents(t, workspace)
+	_, err := Remove(RemoveOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testLinksMigrationsDir(t),
 		FromID:        issueID,
 		Relation:      "implements",
-		ToID:          requirementID,
-		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
-	}); err != nil {
-		t.Fatalf("seed Add(implements) error = %v", err)
-	}
-
-	result, err := Remove(RemoveOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testLinksMigrationsDir(t),
-		FromID:        issueID,
-		Relation:      "implements",
-		ToID:          requirementID,
+		ToType:        "requirement",
+		ToID:          "PRD-LINK-002",
 		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
-	if err != nil {
-		t.Fatalf("Remove(implements) error = %v", err)
-	}
-	if result.Inverse.Relation != "implemented_by" {
-		t.Fatalf("inverse relation = %q, want %q", result.Inverse.Relation, "implemented_by")
+	var invalid *InvalidEndpointTypeError
+	if !errors.As(err, &invalid) || countLinksJournalEvents(t, workspace) != before {
+		t.Fatalf("removed requirement inverse = %v; Event count %d -> %d", err, before, countLinksJournalEvents(t, workspace))
 	}
 
 	conn := openLinksDB(t, workspace)

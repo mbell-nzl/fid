@@ -26,8 +26,8 @@ func TestTerminalSuccessTransitionRejectsUnsuccessfulReceiptEvidence(t *testing.
 	repository := runRepositoryForTest(t, workspace)
 	linkPath := filepath.Join(workspace, "task18-evidence-link.json")
 	writeActivationInput(t, linkPath, map[string]any{
-		"obligation_id": testEvidenceObligationID,
-		"receipt_id":    terminal.Data.ReceiptID, "target_repository": repository,
+		"obligation_id": testEvidenceObligationID, "evidence_type": "receipt",
+		"receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository,
 		"required_artifact_ids": []string{},
 	})
 	linked := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task18-unsuccessful-evidence")
@@ -102,6 +102,7 @@ func TestTerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState(t 
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 			workspace, issueID, _, evidenceID, artifactID := task18TerminalGuardFixture(t, testCase.withArtifact, testCase.name != "missing")
 			if testCase.mutate != nil {
 				testCase.mutate(t, workspace, evidenceID, artifactID)
@@ -124,7 +125,7 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 	linkPath := filepath.Join(workspace, "task18-qualified-evidence.json")
 	obligationID := testEvidenceObligationID
 	writeActivationInput(t, linkPath, map[string]any{
-		"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID,
+		"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil,
 		"target_repository": repository, "required_artifact_ids": []string{},
 	})
 	linked := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task18-qualified-evidence")
@@ -171,8 +172,9 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 		t.Fatalf("complete terminal Envelope = %#v", completed)
 	}
 	result := decodeCanonicalResult(t, completed.stdout)
-	if result["envelope"].(map[string]any)["status"] != "completed" || !sameJSONMap(result["evaluation"].(map[string]any), wantEvaluation) {
-		t.Fatalf("completion result = %#v, want completed Envelope and shared evaluator result %#v", result, wantEvaluation)
+	evaluations := result["evaluation"].([]any)
+	if result["envelope"].(map[string]any)["status"] != "completed" || len(evaluations) != 1 || !sameJSONMap(evaluations[0].(map[string]any), wantEvaluation) {
+		t.Fatalf("completion result = %#v, want completed Envelope and one shared evaluator result %#v", result, wantEvaluation)
 	}
 	if afterEvents := journalEventCount(t, workspace); afterEvents != beforeEvents+1 {
 		t.Fatalf("completion Event count = %d, want %d", afterEvents, beforeEvents+1)
@@ -180,6 +182,7 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 }
 
 func TestResumeReadsDurableFactsWithoutMutation(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := observedEvidenceEnvelopeForTest(t, nil)
 	beforeEvents := journalEventCount(t, workspace)
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "resume", issueID)
@@ -195,8 +198,25 @@ func TestResumeReadsDurableFactsWithoutMutation(t *testing.T) {
 	}
 }
 
+func TestResumeReportsRealFindingsAndJudgmentSections(t *testing.T) {
+	t.Parallel()
+	workspace, issueID, _ := observedEvidenceEnvelopeForTest(t, nil)
+	result := executeCommandForTest(workspace, "--project", workspace, "--json", "resume", issueID)
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("resume command = %#v", result)
+	}
+	resume := decodeCanonicalResult(t, result.stdout)["resume"].(map[string]any)
+	for _, section := range []string{"findings", "reviews", "concerns", "deviations", "decisions", "human_outcomes", "protected_decisions"} {
+		if _, ok := resume[section].([]any); !ok {
+			t.Errorf("resume %s = %#v, want array", section, resume[section])
+		}
+	}
+}
+
 func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *testing.T) {
+	t.Parallel()
 	t.Run("active", func(t *testing.T) {
+		t.Parallel()
 		workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 			definition["argv"] = []string{"/bin/true"}
 		})
@@ -210,13 +230,14 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 			t.Fatalf("active resume command = %#v, want bounded read", result)
 		}
 		resume := decodeCanonicalResult(t, result.stdout)["resume"].(map[string]any)
-		assertTask18ResumeProjection(t, resume, envelopeID, issueID, "active", "todo", 1, true, "active", "incomplete", []string{"obligation-evidence-absent"}, []string{"obligation-evidence-absent", "issue-not-terminal-success"}, []string{"run.inspect", "run.observe", "gate.run", "claim.renew", "claim.release"})
+		assertTask18ResumeProjection(t, resume, envelopeID, issueID, "active", "todo", 1, true, "active", "incomplete", []string{"obligation-evidence-absent"}, []string{"obligation-evidence-absent", "issue-not-terminal-success"}, []string{"run.inspect", "run.observe", "gate.run", "claim.renew", "claim.release", "concern.record", "deviation.record", "decision.record-reference", "human-outcome.record"})
 		if afterEvents := journalEventCount(t, workspace); afterEvents != beforeEvents {
 			t.Fatalf("active resume Event count = %d, want unchanged %d", afterEvents, beforeEvents)
 		}
 	})
 
 	t.Run("completed", func(t *testing.T) {
+		t.Parallel()
 		workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 			definition["argv"] = []string{"/bin/true"}
 		})
@@ -227,7 +248,7 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 		repository := runRepositoryForTest(t, workspace)
 		obligationID := testEvidenceObligationID
 		linkPath := filepath.Join(workspace, "task18-resume-completed-evidence.json")
-		writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID, "target_repository": repository, "required_artifact_ids": []string{}})
+		writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository, "required_artifact_ids": []string{}})
 		linked := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task18-resume-completed-evidence")
 		if linked.err != nil || linked.stderr != "" {
 			t.Fatalf("completed resume Evidence link = %#v", linked)
@@ -298,7 +319,7 @@ func TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation(t *testing.T) {
 	beforeEnvelope := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "get", envelopeID).stdout
 	beforeIssue := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "get", issueID).stdout
 	beforeEvents := journalEventCount(t, workspace)
-	beforeEvidence, beforeLegacy := task18TableCounts(t, workspace)
+	beforeEvidence, beforeConcerns := task18TableCounts(t, workspace)
 	path := filepath.Join(workspace, "task18-incomplete-envelope.json")
 	writeActivationInput(t, path, map[string]any{"envelope_id": envelopeID, "expected_revision": 1, "repository": repository})
 
@@ -327,9 +348,9 @@ func TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation(t *testing.T) {
 	if after := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "get", issueID).stdout; after != beforeIssue {
 		t.Fatalf("Issue changed after failed completion")
 	}
-	afterEvidence, afterLegacy := task18TableCounts(t, workspace)
-	if afterEvidence != beforeEvidence || afterLegacy != beforeLegacy || journalEventCount(t, workspace) != beforeEvents {
-		t.Fatalf("failed completion mutated counts Evidence/legacy/Events = %d/%d/%d, want %d/%d/%d", afterEvidence, afterLegacy, journalEventCount(t, workspace), beforeEvidence, beforeLegacy, beforeEvents)
+	afterEvidence, afterConcerns := task18TableCounts(t, workspace)
+	if afterEvidence != beforeEvidence || afterConcerns != beforeConcerns || journalEventCount(t, workspace) != beforeEvents {
+		t.Fatalf("failed completion mutated counts Evidence/Concerns/Events = %d/%d/%d, want %d/%d/%d", afterEvidence, afterConcerns, journalEventCount(t, workspace), beforeEvidence, beforeConcerns, beforeEvents)
 	}
 }
 
@@ -358,14 +379,14 @@ func task18TableCounts(t *testing.T, workspace string) (int, int) {
 		t.Fatalf("open task 18 count projection: %v", err)
 	}
 	defer func() { _ = conn.Close() }()
-	var evidence, legacy int
+	var evidence, concerns int
 	if err := conn.QueryRow(`SELECT COUNT(*) FROM evidence_records`).Scan(&evidence); err != nil {
 		t.Fatalf("count Evidence: %v", err)
 	}
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM task_completions`).Scan(&legacy); err != nil {
-		t.Fatalf("count legacy completions: %v", err)
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM concerns`).Scan(&concerns); err != nil {
+		t.Fatalf("count generic Concerns: %v", err)
 	}
-	return evidence, legacy
+	return evidence, concerns
 }
 
 func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence bool) (string, string, string, string, string) {
@@ -414,7 +435,7 @@ func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence boo
 	if artifactID != "" {
 		artifactIDs = append(artifactIDs, artifactID)
 	}
-	writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID, "target_repository": repository, "required_artifact_ids": artifactIDs})
+	writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository, "required_artifact_ids": artifactIDs})
 	linked := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task18-terminal-evidence-link")
 	if linked.err != nil || linked.stderr != "" {
 		t.Fatalf("link terminal Evidence = %#v", linked)

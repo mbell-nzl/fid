@@ -17,6 +17,21 @@ type EnvelopeAuthorityRequest struct {
 	Revision   int
 }
 
+type ClaimModeInvalidError struct {
+	ClaimID      string
+	Mode         string
+	RequiredMode string
+}
+
+func (err *ClaimModeInvalidError) Error() string { return "claim mode is invalid" }
+
+func validateClaimModeAdoption(claim RecoveryClaim, adoptsDirtyPaths bool) error {
+	if adoptsDirtyPaths && claim.Mode == "review" {
+		return &ClaimModeInvalidError{ClaimID: claim.ID, Mode: claim.Mode, RequiredMode: "mutation"}
+	}
+	return nil
+}
+
 // AuthorizeEnvelopeGrant resolves the active Activation Actor before evaluating an Envelope Grant.
 func AuthorizeEnvelopeGrant(workspaceRoot, migrationsDir string, request EnvelopeAuthorityRequest) error {
 	actor, err := ResolveTrustedActor(workspaceRoot, migrationsDir, request.ActorID)

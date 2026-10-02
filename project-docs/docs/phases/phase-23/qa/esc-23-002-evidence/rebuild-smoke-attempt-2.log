@@ -1,0 +1,8 @@
+workspace=/tmp/fid-esc-23-002-smoke-hki1qq0w
+{"command": ["/tmp/fid", "--project", "/tmp/fid-esc-23-002-smoke-hki1qq0w", "--json", "init", "--prefix", "FID"], "exit_code": 0, "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20260919-000001\",\"occurred_at\":\"2026-09-19T21:23:10.210224474Z\"},\"ok\":true,\"operation\":\"project.init\",\"result\":{\"journal_path\":\".fid/journal/2026-09-19.jsonl\",\"project\":{\"id\":\"project-9a051d863c838b6adcffca1e3de7da19\",\"issue_prefix\":\"FID\",\"root\":\"/tmp/fid-esc-23-002-smoke-hki1qq0w\"}}}\n", "stderr": ""}
+{"command": ["/tmp/fid", "--project", "/tmp/fid-esc-23-002-smoke-hki1qq0w", "--json", "issue", "create", "--kind", "task", "--title", "Rebuild smoke", "--actor", "agent:developer", "--idempotency-key", "esc-23-002-smoke-create"], "exit_code": 0, "stdout": "{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20260919-000002\",\"occurred_at\":\"2026-09-19T21:23:10.28550799Z\"},\"ok\":true,\"operation\":\"issue.create\",\"result\":{\"idempotency_key\":\"esc-23-002-smoke-create\",\"issue\":{\"id\":\"FID-f708da\",\"kind\":\"task\",\"revision\":1,\"status\":\"todo\",\"title\":\"Rebuild smoke\"},\"replayed\":false}}\n", "stderr": ""}
+Traceback (most recent call last):
+  File "/home/mark/projects/fid/project-docs/docs/phases/phase-23/qa/esc-23-002-evidence/rebuild-smoke.py", line 31, in <module>
+    issue_id = db.execute("SELECT id FROM issues WHERE title = ?", ("Rebuild smoke",)).fetchone()[0]
+               ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.DatabaseError: malformed database schema (issues_parent_kind_guard_insert) - near "CASE": syntax error

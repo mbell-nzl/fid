@@ -5,21 +5,31 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
-func applyEventEffects(tx *sql.Tx, input ProjectionInput) error {
+func applyEventEffects(tx *sql.Tx, input ProjectionInput, executor fiddb.ProjectionMetaExecutor) error {
 	if err := validateCurrentEvent(tx, input.Event); err != nil {
 		return err
 	}
+	if input.Event.EventType == "requirement.referenced" {
+		// Supersede the old row before inserting its successor so the unique
+		// active-reference index holds throughout the transaction. SQLite checks
+		// the old row's successor foreign key when the transaction commits.
+		if _, err := tx.Exec(`PRAGMA defer_foreign_keys = ON`); err != nil {
+			return fmt.Errorf("defer requirement reference foreign key: %w", err)
+		}
+	}
 	for _, effect := range input.Event.Effects {
-		if err := applyEffect(tx, input, effect); err != nil {
+		if err := applyEffect(tx, input, effect, executor); err != nil {
 			return err
 		}
 	}
 
 	return validateCurrentAppliedResults(tx, input.Event)
 }
-func applyEffect(tx *sql.Tx, input ProjectionInput, effect Effect) error {
+func applyEffect(tx *sql.Tx, input ProjectionInput, effect Effect, executor fiddb.ProjectionMetaExecutor) error {
 	table, err := validatedIdentifier(effect.Table)
 	if err != nil {
 		return fmt.Errorf("project event %q: %w", input.Event.EventID, err)
@@ -34,19 +44,19 @@ func applyEffect(tx *sql.Tx, input ProjectionInput, effect Effect) error {
 
 	switch effect.Op {
 	case "insert":
-		return applyInsert(tx, input.Event.EventID, table, effect)
+		return applyInsert(executor, input.Event.EventID, table, effect)
 	case "update":
-		return applyUpdate(tx, input, table, effect)
+		return applyUpdate(tx, input, table, effect, executor)
 	case "delete":
-		return applyDelete(tx, input, table, effect)
+		return applyDelete(tx, input, table, effect, executor)
 	case "activity":
-		return applyActivity(tx, input.Event.EventID, table, effect)
+		return applyActivity(executor, input.Event.EventID, table, effect)
 	default:
 		return fmt.Errorf("project event %q: unsupported effect op %q", input.Event.EventID, effect.Op)
 	}
 }
 
-func applyActivity(tx *sql.Tx, eventID, table string, effect Effect) error {
+func applyActivity(executor fiddb.ProjectionMetaExecutor, eventID, table string, effect Effect) error {
 	if table != "activity_log" {
 		return fmt.Errorf("project event %q: activity effect must target %q, got %q", eventID, "activity_log", table)
 	}
@@ -56,13 +66,13 @@ func applyActivity(tx *sql.Tx, eventID, table string, effect Effect) error {
 		return fmt.Errorf("project event %q: activity %s: %w", eventID, table, err)
 	}
 
-	return applyInsert(tx, eventID, table, Effect{
+	return applyInsert(executor, eventID, table, Effect{
 		PK:     cloneMap(effect.PK),
 		Values: normalizedValues,
 	})
 }
 
-func applyInsert(tx *sql.Tx, eventID, table string, effect Effect) error {
+func applyInsert(executor fiddb.ProjectionMetaExecutor, eventID, table string, effect Effect) error {
 	row, err := mergeEffectValues(effect.PK, effect.Values)
 	if err != nil {
 		return fmt.Errorf("project event %q: insert %s: %w", eventID, table, err)
@@ -87,14 +97,14 @@ func applyInsert(tx *sql.Tx, eventID, table string, effect Effect) error {
 		strings.Join(columns, ", "),
 		strings.Join(placeholders, ", "),
 	)
-	if _, err := tx.Exec(query, args...); err != nil {
+	if _, err := executor.Exec(query, args...); err != nil {
 		return fmt.Errorf("project event %q: insert into %s: %w", eventID, table, err)
 	}
 
 	return nil
 }
 
-func applyUpdate(tx *sql.Tx, input ProjectionInput, table string, effect Effect) error {
+func applyUpdate(tx *sql.Tx, input ProjectionInput, table string, effect Effect, executor fiddb.ProjectionMetaExecutor) error {
 	if err := enforcePreconditions(tx, input, table, effect); err != nil {
 		return err
 	}
@@ -118,7 +128,7 @@ func applyUpdate(tx *sql.Tx, input ProjectionInput, table string, effect Effect)
 	args = append(args, whereArgs...)
 
 	query := fmt.Sprintf("UPDATE %s SET %s WHERE %s", table, strings.Join(assignments, ", "), whereClause)
-	result, err := tx.Exec(query, args...)
+	result, err := executor.Exec(query, args...)
 	if err != nil {
 		return fmt.Errorf("project event %q: update %s: %w", input.Event.EventID, table, err)
 	}
@@ -126,7 +136,7 @@ func applyUpdate(tx *sql.Tx, input ProjectionInput, table string, effect Effect)
 	return ensureSingleRowAffected(result, input.Event.EventID, "update", table)
 }
 
-func applyDelete(tx *sql.Tx, input ProjectionInput, table string, effect Effect) error {
+func applyDelete(tx *sql.Tx, input ProjectionInput, table string, effect Effect, executor fiddb.ProjectionMetaExecutor) error {
 	if err := enforcePreconditions(tx, input, table, effect); err != nil {
 		return err
 	}
@@ -137,7 +147,7 @@ func applyDelete(tx *sql.Tx, input ProjectionInput, table string, effect Effect)
 	}
 
 	query := fmt.Sprintf("DELETE FROM %s WHERE %s", table, whereClause)
-	result, err := tx.Exec(query, whereArgs...)
+	result, err := executor.Exec(query, whereArgs...)
 	if err != nil {
 		return fmt.Errorf("project event %q: delete %s: %w", input.Event.EventID, table, err)
 	}

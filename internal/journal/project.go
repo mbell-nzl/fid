@@ -65,7 +65,7 @@ func DryRunProjectEvent(conn *sql.DB, event Event) error {
 		return fmt.Errorf("project event %q: begin transaction: %w", input.Event.EventID, err)
 	}
 
-	if err := applyEventEffects(tx, input); err != nil {
+	if err := applyEventEffects(tx, input, tx); err != nil {
 		_ = tx.Rollback()
 		return err
 	}
@@ -89,7 +89,11 @@ func ProjectEvent(conn *sql.DB, input ProjectionInput) error {
 		return fmt.Errorf("project event %q: begin transaction: %w", input.Event.EventID, err)
 	}
 
-	if err := applyEventEffects(tx, input); err != nil {
+	return projectEventTransaction(tx, input, tx)
+}
+
+func projectEventTransaction(tx *sql.Tx, input ProjectionInput, executor fiddb.ProjectionMetaExecutor) error {
+	if err := applyEventEffects(tx, input, executor); err != nil {
 		_ = tx.Rollback()
 		return err
 	}
@@ -98,7 +102,7 @@ func ProjectEvent(conn *sql.DB, input ProjectionInput) error {
 	if replayStatus == "" {
 		replayStatus = fiddb.ReplayStatusClean
 	}
-	if err := fiddb.WriteProjectionMeta(tx, fiddb.ProjectionMeta{
+	if err := fiddb.WriteProjectionMetaWithExecutor(executor, fiddb.ProjectionMeta{
 		JournalFile:             input.File,
 		JournalOffset:           input.Offset,
 		LastEventID:             input.Event.EventID,

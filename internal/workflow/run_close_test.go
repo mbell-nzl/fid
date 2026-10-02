@@ -7,12 +7,14 @@ import (
 )
 
 func TestActivationAdmitsRunCloseAndAbandonActions(t *testing.T) {
+	t.Parallel()
 	if !sortedUniqueCapabilities([]string{"run.abandon", "run.close"}) {
 		t.Fatal("sortedUniqueCapabilities() rejected task-8 Run actions")
 	}
 }
 
 func TestCloseRunDerivesTerminalStateFromTrustedObservation(t *testing.T) {
+	t.Parallel()
 	options, recovery := recoveryFixture(t)
 	closeAuthorize(t, options.WorkspaceRoot)
 	request := RunCloseRequest{
@@ -34,6 +36,7 @@ func TestCloseRunDerivesTerminalStateFromTrustedObservation(t *testing.T) {
 }
 
 func TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority(t *testing.T) {
+	t.Parallel()
 	t.Run("ordinary terminal proof releases the Claim without Evidence", func(t *testing.T) {
 		options, recovery := recoveryFixture(t)
 		closeAuthorize(t, options.WorkspaceRoot)

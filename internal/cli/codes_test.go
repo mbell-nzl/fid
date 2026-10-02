@@ -27,7 +27,7 @@ type detailExpectation struct {
 	value    any
 }
 
-type reasonCodeExpectation struct {
+type failureCodeExpectation struct {
 	code      Code
 	category  Category
 	retryable bool
@@ -36,7 +36,8 @@ type reasonCodeExpectation struct {
 }
 
 func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
-	expectations := []reasonCodeExpectation{
+	t.Parallel()
+	expectations := []failureCodeExpectation{
 		{CodeInvalidArgument, CategoryInvalidInput, false, nil, argumentDetails()},
 		{CodeUnsupportedKind, CategoryInvalidInput, false, nil, argumentDetails()},
 		{CodeUnsupportedRelation, CategoryInvalidInput, false, nil, argumentDetails()},
@@ -110,6 +111,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeClaimConflict, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
 		{CodeClaimExpired, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
 		{CodeClaimStale, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
+		{CodeClaimModeInvalid, CategoryPrecondition, false, []SubjectType{SubjectClaim}, []detailExpectation{stringDetail("claim_id"), stringDetail("mode"), stringDetail("required_mode")}},
 		{CodeRunNotFound, CategoryNotFound, false, []SubjectType{SubjectRun}, stringDetails("id")},
 		{CodeRunInactive, CategoryPrecondition, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("status")}},
 		{Code("run-version-conflict"), CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), integerDetail("expected_version"), integerDetail("actual_version")}},
@@ -120,6 +122,14 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeRecoveryAlreadyLinked, CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("successor_run_id")}},
 		{CodeReceiptNotFound, CategoryNotFound, false, []SubjectType{SubjectReceipt}, stringDetails("id")},
 		{CodeEvidenceNotFound, CategoryNotFound, false, []SubjectType{SubjectEvidence}, stringDetails("id")},
+		{CodeReviewNotIndependent, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("review_actor_id"), {name: "conflicting_subject", kind: detailObjectKind, children: []detailExpectation{stringDetail("type"), stringDetail("id")}}, stringDetail("conflicting_actor_id")}},
+		{CodeReviewVerdictInvalid, CategoryInvalidInput, false, nil, []detailExpectation{stringDetail("verdict"), stringDetail("reason")}},
+		{CodeReviewChangesRequired, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("review_id"), stringDetail("obligation_id"), {name: "blocking_finding_ids", kind: detailStringsKind}}},
+		{CodeReviewReworkExhausted, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, budgetDenialDetails()},
+		{CodeEvidenceTypeNotAccepted, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("obligation_id"), stringDetail("evidence_type"), {name: "accepted_evidence_types", kind: detailStringsKind}}},
+		{CodeOutcomeNotPermitted, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("obligation_id"), stringDetail("obligation_type"), stringDetail("outcome_id"), stringDetail("result")}},
+		{CodeRepositoryMismatch, CategoryConflict, false, nil, []detailExpectation{{name: "expected", kind: detailObjectKind, children: repositoryExpectations()}, {name: "observed", kind: detailObjectKind, children: repositoryExpectations()}}},
+		{CodeReviewNotFound, CategoryNotFound, false, []SubjectType{SubjectReview}, stringDetails("id")},
 		{CodeGateUnsuccessful, CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt}, []detailExpectation{
 			stringDetail("attempt_id"), stringDetail("receipt_id"), stringDetail("outcome"), nullableIntegerDetail("exit_code"), nullableStringDetail("signal"), {name: "timed_out", kind: detailBooleanKind},
 		}},
@@ -142,6 +152,25 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			}},
 		}},
 		{CodeImportTargetConflict, CategoryConflict, false, []SubjectType{SubjectExport}, []detailExpectation{stringDetail("target_root"), stringDetail("reason")}},
+		{CodeFindingNotFound, CategoryNotFound, false, []SubjectType{SubjectFinding}, stringDetails("id")},
+		{CodeFindingAlreadyDisposed, CategoryConflict, false, []SubjectType{SubjectFinding}, []detailExpectation{stringDetail("finding_id"), stringDetail("state")}},
+		{CodeConcernNotFound, CategoryNotFound, false, []SubjectType{SubjectConcern}, stringDetails("id")},
+		{CodeDeviationNotFound, CategoryNotFound, false, []SubjectType{SubjectDeviation}, stringDetails("id")},
+		{CodeConcernAlreadyDisposed, CategoryConflict, false, []SubjectType{SubjectConcern}, []detailExpectation{stringDetail("concern_id"), stringDetail("disposed_at")}},
+		{CodeProtectedDecisionRequired, CategoryAuthority, false, []SubjectType{SubjectEnvelope}, []detailExpectation{
+			stringDetail("envelope_id"), stringDetail("decision_class"), {name: "required_capabilities", kind: detailStringsKind}, {name: "affected_actions", kind: detailStringsKind},
+			{name: "stop_ids", kind: detailStringsKind}, {name: "attention_ids", kind: detailStringsKind},
+			{name: "event", kind: detailObjectKind, nullable: true, children: []detailExpectation{stringDetail("id"), stringDetail("occurred_at")}}, {name: "replayed", kind: detailBooleanKind},
+		}},
+		{CodeSourceDigestMismatch, CategoryPrecondition, false, nil, []detailExpectation{
+			stringDetail("display_label"), nullableStringDetail("path"), stringDetail("expected_digest"), nullableStringDetail("observed_digest"),
+		}},
+		{CodeHumanOutcomeRequired, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, []detailExpectation{
+			stringDetail("envelope_id"), stringDetail("obligation_id"), stringDetail("outcome_class"),
+			{name: "stop_ids", kind: detailStringsKind}, {name: "attention_ids", kind: detailStringsKind},
+			{name: "event", kind: detailObjectKind, nullable: true, children: []detailExpectation{stringDetail("id"), stringDetail("occurred_at")}}, {name: "replayed", kind: detailBooleanKind},
+		}},
+		{CodeOutcomeNotFound, CategoryNotFound, false, []SubjectType{SubjectHumanOutcome}, stringDetails("id")},
 	}
 
 	registered := RegisteredCodes()
@@ -195,6 +224,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 }
 
 func TestImportTargetConflictAcceptsOnlyClosedReasons(t *testing.T) {
+	t.Parallel()
 	for _, reason := range []string{"populated", "different-import", "unsafe-path"} {
 		t.Run(reason, func(t *testing.T) {
 			_, err := NewFailure(CodeImportTargetConflict, "conflict", &Subject{Type: SubjectExport, ID: "archive.zip"}, map[string]any{"target_root": "/target", "reason": reason})
@@ -221,7 +251,8 @@ func argumentDetails() []detailExpectation {
 }
 
 func authorityDetails() []detailExpectation {
-	return []detailExpectation{stringDetail("operation"), nullableStringDetail("actor")}
+	return []detailExpectation{nullableStringDetail("actor_id"), stringDetail("operation"),
+		{name: "required_actions", kind: detailStringsKind}, {name: "required_capabilities", kind: detailStringsKind}}
 }
 
 func claimConflictDetails() []detailExpectation {
@@ -233,6 +264,14 @@ func claimConflictDetails() []detailExpectation {
 
 func findingDetails() []detailExpectation {
 	return []detailExpectation{stringDetail("check"), stringDetail("message"), stringDetail("entity_id")}
+}
+
+func repositoryExpectations() []detailExpectation {
+	return []detailExpectation{
+		nullableStringDetail("base_oid"), stringDetail("capture_source"), {name: "dirty", kind: detailBooleanKind},
+		nullableStringDetail("dirty_digest"), stringDetail("head_oid"), stringDetail("project_id"),
+		stringDetail("tree_oid"), stringDetail("worktree_id"),
+	}
 }
 
 func stringDetails(name string) []detailExpectation { return []detailExpectation{stringDetail(name)} }
@@ -332,7 +371,7 @@ func mustNewFailure(t *testing.T, code Code, subject *Subject, details map[strin
 	return failure
 }
 
-func assertSubjectRules(t *testing.T, expectation reasonCodeExpectation, details map[string]any) {
+func assertSubjectRules(t *testing.T, expectation failureCodeExpectation, details map[string]any) {
 	t.Helper()
 	allSubjectTypes := []SubjectType{SubjectProject, SubjectIssue, SubjectRequirement, SubjectLabel, SubjectLink, SubjectWorkflow}
 	if len(expectation.subjects) == 0 {
@@ -361,7 +400,7 @@ func containsSubjectType(subjects []SubjectType, want SubjectType) bool {
 	return false
 }
 
-func assertDetailRules(t *testing.T, expectation reasonCodeExpectation, subject *Subject, validDetails map[string]any) {
+func assertDetailRules(t *testing.T, expectation failureCodeExpectation, subject *Subject, validDetails map[string]any) {
 	t.Helper()
 	paths := detailPaths(expectation.details, nil)
 	if len(paths) == 0 {
@@ -453,7 +492,7 @@ func assertNewFailureRejected(t *testing.T, code Code, subject *Subject, details
 	}
 }
 
-func assertSerializedFailureSchema(t *testing.T, failure Failure, expectation reasonCodeExpectation) {
+func assertSerializedFailureSchema(t *testing.T, failure Failure, expectation failureCodeExpectation) {
 	t.Helper()
 	var output bytes.Buffer
 	if err := WriteFailure(&output, "operation.name", failure); err != nil {

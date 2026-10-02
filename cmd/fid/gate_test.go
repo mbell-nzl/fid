@@ -4,13 +4,59 @@ import (
 	"database/sql"
 	"encoding/json"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
+
+func TestGateRegisterUnknownActorReturnsContractAuthorityFailure(t *testing.T) {
+	t.Parallel()
+	assertGateRegisterAuthorityFailure(t, "actor-not-activated", "authority-unknown-actor")
+}
+
+func TestGateRegisterDeniedActorReturnsContractAuthorityFailure(t *testing.T) {
+	t.Parallel()
+	assertGateRegisterAuthorityFailure(t, "actor-no-gate", "authority-denied")
+}
+
+func assertGateRegisterAuthorityFailure(t *testing.T, actor, code string) {
+	t.Helper()
+	workspace := finalizedGateWorkspace(t, nil)
+	inputPath := filepath.Join(workspace, "gate-register-authority.json")
+	writeActivationInput(t, inputPath, gateRegisterInput(t, workspace))
+	before := journalEventCount(t, workspace)
+	result := executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "register", "--actor", actor, "--input", inputPath, "--idempotency-key", "gate-register-authority-"+actor)
+	if result.err == nil || cli.ExitCode(result.err) != 5 || result.stdout != "" {
+		t.Fatalf("gate register result = %+v, want exit 5 with stderr only", result)
+	}
+	var failure struct {
+		OK        bool   `json:"ok"`
+		Operation string `json:"operation"`
+		Event     any    `json:"event"`
+		Error     struct {
+			Code     string         `json:"code"`
+			Category string         `json:"category"`
+			Subject  any            `json:"subject"`
+			Details  map[string]any `json:"details"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(result.stderr), &failure); err != nil {
+		t.Fatalf("decode gate failure %q: %v", result.stderr, err)
+	}
+	wantDetails := map[string]any{"operation": "gate.register", "actor_id": actor,
+		"required_actions": []any{"gate.register"}, "required_capabilities": []any{"gate.register"}}
+	if failure.OK || failure.Operation != "gate.register" || failure.Event != nil || failure.Error.Code != code || failure.Error.Category != "authority" || failure.Error.Subject != nil || !reflect.DeepEqual(failure.Error.Details, wantDetails) {
+		t.Fatalf("gate failure = %+v, want %s with details %#v and no Event", failure, code, wantDetails)
+	}
+	if after := journalEventCount(t, workspace); after != before {
+		t.Fatalf("rejected gate register changed Event count: before=%d after=%d", before, after)
+	}
+}
 
 func TestGateRegisterRequiresFinalizedActivatedDefinition(t *testing.T) {
 	t.Parallel()
@@ -215,6 +261,9 @@ func buildFinalizedGateWorkspace(t *testing.T, definitions []any) string {
 		profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "builders", []any{map[string]any{
 			"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/builders", "session_ref": nil,
 			"capabilities": []string{"gate.register"},
+		}, map[string]any{
+			"actor_id": "actor-no-gate", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/builders", "session_ref": nil,
+			"capabilities": []string{"artifact.verify"},
 		}})
 		return workspace, []string{activationID, profileDigest}
 	})

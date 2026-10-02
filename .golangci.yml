@@ -12,6 +12,13 @@ linters:
     - unused
     - ineffassign
     - misspell
+    - paralleltest
+  settings:
+    paralleltest:
+      # Top-level tests must call t.Parallel() unless they touch process-global
+      # state (t.Setenv, package hooks); annotate those with a nolint reason.
+      # Subtests stay the author's choice: parallelize long-running matrices.
+      ignore-missing-subtests: true
 
 formatters:
   enable:

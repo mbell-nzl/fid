@@ -38,7 +38,7 @@ func linkFailure(cmd *cobra.Command, operation string, cause error) (cli.Failure
 		return cli.NewFailure(cli.CodeInvalidArgument, "invalid link endpoint type", nil, map[string]any{
 			"argument": invalidType.Argument,
 			"value":    invalidType.Value,
-			"allowed":  []string{"issue", "requirement"},
+			"allowed":  []string{"issue"},
 		})
 	}
 	var unknown *links.UnknownRelationError

@@ -36,6 +36,25 @@ func validateCurrentValue(kind string, value any) error {
 		}
 		return nil
 	}
+	if kind == "Condition" {
+		object, ok := value.(map[string]any)
+		if !ok {
+			return fmt.Errorf("%s requires an object", kind)
+		}
+		conditionType, ok := object["type"].(string)
+		if !ok {
+			return fmt.Errorf("%s: type: invalid closed enum", kind)
+		}
+		shape, ok := currentConditionShapes[conditionType]
+		if !ok {
+			return fmt.Errorf("%s: type: invalid closed enum", kind)
+		}
+		object, err := validateCurrentShape(value, shape)
+		if err != nil {
+			return fmt.Errorf("%s: %w", kind, err)
+		}
+		return validateCurrentValueRelations("Condition", object)
+	}
 	if shape, ok := currentValueShapes[kind]; ok {
 		object, err := validateCurrentShape(value, shape)
 		if err != nil {

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -77,13 +78,53 @@ type ObligationInput struct {
 	ArtifactPolicy        string   `json:"artifact_policy"`
 	Independence          string   `json:"independence"`
 	RequiredLane          *string  `json:"required_lane"`
+	ReviewProfile         *string  `json:"review_profile,omitempty"`
+	OutcomeClass          *string  `json:"outcome_class,omitempty"`
 	Source                Source   `json:"source"`
+}
+
+// MarshalJSON preserves the wire contract's nullable registration field while
+// retaining the Phase 21 value-type field for existing callers.
+func (input ObligationInput) MarshalJSON() ([]byte, error) {
+	type rawObligationInput ObligationInput
+	payload, err := json.Marshal(rawObligationInput(input))
+	if err != nil || input.Registration.ID != "" || input.Registration.Version != 0 {
+		return payload, err
+	}
+	fields := map[string]json.RawMessage{}
+	if err := json.Unmarshal(payload, &fields); err != nil {
+		return nil, err
+	}
+	fields["registration"] = json.RawMessage("null")
+	return json.Marshal(fields)
 }
 
 type Obligation struct {
 	ObligationInput
 	DerivedStatus string `json:"derived_status"`
 	Reasons       []any  `json:"reasons"`
+}
+
+func (obligation Obligation) MarshalJSON() ([]byte, error) {
+	payload, err := json.Marshal(obligation.ObligationInput)
+	if err != nil {
+		return nil, err
+	}
+	fields := map[string]json.RawMessage{}
+	if err := json.Unmarshal(payload, &fields); err != nil {
+		return nil, err
+	}
+	status, err := json.Marshal(obligation.DerivedStatus)
+	if err != nil {
+		return nil, err
+	}
+	reasons, err := json.Marshal(obligation.Reasons)
+	if err != nil {
+		return nil, err
+	}
+	fields["derived_status"] = status
+	fields["reasons"] = reasons
+	return json.Marshal(fields)
 }
 
 type EnvelopeCreateRequest struct {
@@ -93,13 +134,28 @@ type EnvelopeCreateRequest struct {
 		Source       Source `json:"source"`
 		ResultDigest string `json:"result_digest"`
 	} `json:"risk_result"`
-	RepositoryScope Repository        `json:"repository_scope"`
-	Sources         []Source          `json:"sources"`
-	PrimaryIssueID  string            `json:"primary_issue_id"`
-	RelatedIssueIDs []string          `json:"related_issue_ids"`
-	AuthorityGrants []AuthorityGrant  `json:"authority_grants"`
-	Obligations     []ObligationInput `json:"obligations"`
-	Budgets         []Budget          `json:"budgets"`
+	RepositoryScope    Repository               `json:"repository_scope"`
+	Sources            []Source                 `json:"sources"`
+	PrimaryIssueID     string                   `json:"primary_issue_id"`
+	RelatedIssueIDs    []string                 `json:"related_issue_ids"`
+	AuthorityGrants    []AuthorityGrant         `json:"authority_grants"`
+	Obligations        []ObligationInput        `json:"obligations"`
+	ProtectedDecisions []ProtectedDecisionInput `json:"protected_decisions"`
+	Budgets            []Budget                 `json:"budgets"`
+}
+
+type ProtectedDecisionInput struct {
+	Ordinal              int      `json:"ordinal"`
+	DecisionClass        string   `json:"decision_class"`
+	RequiredCapabilities []string `json:"required_capabilities"`
+	AffectedActions      []string `json:"affected_actions"`
+}
+
+type ProtectedDecision struct {
+	ProtectedDecisionInput
+	Status         string  `json:"status"`
+	DecisionRefID  *string `json:"decision_ref_id"`
+	HumanOutcomeID *string `json:"human_outcome_id"`
 }
 
 type EnvelopeActivateRequest struct {
@@ -123,24 +179,25 @@ type ObligationEvaluation struct {
 }
 
 type Envelope struct {
-	ID              string           `json:"id"`
-	CurrentRevision int              `json:"current_revision"`
-	Status          string           `json:"status"`
-	Outcome         string           `json:"outcome"`
-	NonGoals        []string         `json:"non_goals"`
-	RiskResult      json.RawMessage  `json:"risk_result"`
-	RepositoryScope Repository       `json:"repository_scope"`
-	Sources         []Source         `json:"sources"`
-	PrimaryIssueID  string           `json:"primary_issue_id"`
-	RelatedIssueIDs []string         `json:"related_issue_ids"`
-	AuthorityGrants []AuthorityGrant `json:"authority_grants"`
-	Obligations     []Obligation     `json:"obligations"`
-	Budgets         []Budget         `json:"budgets"`
-	CreatedActorID  string           `json:"created_actor_id"`
-	ApprovedActorID *string          `json:"approved_actor_id"`
-	CreatedAt       string           `json:"created_at"`
-	ActivatedAt     *string          `json:"activated_at"`
-	CompletedAt     *string          `json:"completed_at"`
+	ID                 string              `json:"id"`
+	CurrentRevision    int                 `json:"current_revision"`
+	Status             string              `json:"status"`
+	Outcome            string              `json:"outcome"`
+	NonGoals           []string            `json:"non_goals"`
+	RiskResult         json.RawMessage     `json:"risk_result"`
+	RepositoryScope    Repository          `json:"repository_scope"`
+	Sources            []Source            `json:"sources"`
+	PrimaryIssueID     string              `json:"primary_issue_id"`
+	RelatedIssueIDs    []string            `json:"related_issue_ids"`
+	AuthorityGrants    []AuthorityGrant    `json:"authority_grants"`
+	Obligations        []Obligation        `json:"obligations"`
+	ProtectedDecisions []ProtectedDecision `json:"protected_decisions"`
+	Budgets            []Budget            `json:"budgets"`
+	CreatedActorID     string              `json:"created_actor_id"`
+	ApprovedActorID    *string             `json:"approved_actor_id"`
+	CreatedAt          string              `json:"created_at"`
+	ActivatedAt        *string             `json:"activated_at"`
+	CompletedAt        *string             `json:"completed_at"`
 }
 
 type EnvelopeMutationResult struct {
@@ -314,15 +371,32 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 			return &EnvelopeInvalidError{Reason: "active mutation claim blocks envelope activation"}
 		}
 		activatedAt := time.Now().UTC().Format(time.RFC3339Nano)
+		stopEffects, err := protectedDecisionStopEffects(conn, envelope, options.ActorID)
+		if err != nil {
+			return err
+		}
+		// A fresh git observation is unnecessary here: the only Obligation type
+		// that can be raised at activation time is human-outcome
+		// (freshness_target "none", artifact_policy "metadata-sufficient"), so
+		// its evaluation never consults the repository. Reusing the Envelope's
+		// already-loaded RepositoryScope avoids a new git dependency on
+		// envelope.activate, which is not otherwise repository-bound.
+		readinessEffects, _, _, err := humanOutcomeReadinessEffectsForEnvelope(conn, envelope, options.ActorID, envelope.RepositoryScope, nil)
+		if err != nil {
+			return err
+		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "envelope.activated", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: envelope.ID, Sequence: 2, Type: "envelope"}, CommandName: "envelope.activate", Repository: envelopeRepository(envelope.RepositoryScope), Effects: []journal.Effect{
 			{Op: "update", Table: "work_envelopes", PK: map[string]any{"id": envelope.ID}, Values: map[string]any{"status": "active"}},
 			{Op: "update", Table: "envelope_revisions", PK: map[string]any{"envelope_id": envelope.ID, "revision": 1}, Values: map[string]any{"status": "active", "activated_at": activatedAt}},
 		}}
+		event.Effects = append(event.Effects, stopEffects...)
+		event.Effects = append(event.Effects, readinessEffects...)
 		resultJSON, err := envelopeActivateResultJSON(envelope, activatedAt, options.IdempotencyKey)
 		if err != nil {
 			return err
 		}
-		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
+			setEnvelopeEventIdentity(prepared.Effects, prepared)
 			return journal.IdempotencyMutation{EntityID: envelope.ID, ResultJSON: resultJSON}, nil
 		})
 		if err != nil {
@@ -380,6 +454,21 @@ func CompleteEnvelope(options EnvelopeOptions, request EnvelopeCompleteRequest) 
 		if err != nil {
 			return err
 		}
+		if len(reasons) > 0 && (reasons[0].Code == "protected-decision-required" || reasons[0].Code == "human-outcome-required") {
+			stops, err := ApplicableStops(conn, "envelope.complete", Subject{Type: "envelope", ID: envelope.ID})
+			if err != nil {
+				return err
+			}
+			for _, stop := range stops {
+				if stop.Code == reasons[0].Code {
+					blocked, err := NewStopBlockedError(conn, "envelope.complete", []Stop{stop})
+					if err != nil {
+						return err
+					}
+					return blocked
+				}
+			}
+		}
 		if len(reasons) > 0 {
 			return &EnvelopeCompletionError{EnvelopeID: envelope.ID, Reasons: reasons}
 		}
@@ -416,7 +505,7 @@ func CompleteEnvelope(options EnvelopeOptions, request EnvelopeCompleteRequest) 
 	return result, err
 }
 
-func evaluateEnvelopeCompletion(options EnvelopeOptions, conn *sql.DB, envelope Envelope, request EnvelopeCompleteRequest) ([]EvaluationReason, ObligationEvaluation, error) {
+func evaluateEnvelopeCompletion(options EnvelopeOptions, conn *sql.DB, envelope Envelope, request EnvelopeCompleteRequest) ([]EvaluationReason, []ObligationEvaluation, error) {
 	reasons := []EvaluationReason{}
 	if err := AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: "envelope.complete", Capability: "envelope.complete", IssueID: envelope.PrimaryIssueID, EnvelopeID: envelope.ID, Revision: envelope.CurrentRevision}); err != nil {
 		reasons = append(reasons, evaluationReason("authority-unavailable", "envelope.complete", options.ActorID, "actor"))
@@ -426,17 +515,27 @@ func evaluateEnvelopeCompletion(options EnvelopeOptions, conn *sql.DB, envelope 
 	}
 	stopReasons, err := stopEvaluationReasons(conn, "envelope.complete", Subject{Type: "envelope", ID: envelope.ID})
 	if err != nil {
-		return nil, ObligationEvaluation{}, err
+		return nil, nil, err
 	}
 	reasons = append(reasons, stopReasons...)
-	evaluation, err := currentEnvelopeEvaluation(conn, envelope, request.Repository)
+	evaluation, err := currentEnvelopeEvaluations(conn, envelope, request.Repository)
 	if err != nil {
-		return nil, ObligationEvaluation{}, err
+		return nil, nil, err
 	}
-	reasons = append(reasons, evaluation.Reasons...)
+	// Only Obligations that guard envelope.complete block it (DEC-249). The
+	// returned evaluation still reports every Obligation.
+	guarding := map[string]bool{}
+	for _, obligation := range obligationsGuarding(envelope.Obligations, "envelope.complete") {
+		guarding[obligation.ID] = true
+	}
+	for _, item := range evaluation {
+		if guarding[item.ObligationID] {
+			reasons = append(reasons, item.Reasons...)
+		}
+	}
 	terminal, err := issueTerminalSuccess(conn, envelope.PrimaryIssueID)
 	if err != nil {
-		return nil, ObligationEvaluation{}, err
+		return nil, nil, err
 	}
 	if !terminal {
 		reasons = append(reasons, evaluationReason("issue-not-terminal-success", "completed workflow category", envelope.PrimaryIssueID, "issue"))
@@ -445,27 +544,23 @@ func evaluateEnvelopeCompletion(options EnvelopeOptions, conn *sql.DB, envelope 
 }
 
 func currentEnvelopeEvaluation(conn *sql.DB, envelope Envelope, repository Repository) (ObligationEvaluation, error) {
-	states, err := loadObligationEvidenceStates(conn, envelope.Obligations[0].ID, repository)
+	evaluations, err := currentEnvelopeEvaluations(conn, envelope, repository)
 	if err != nil {
 		return ObligationEvaluation{}, err
 	}
-	reasons := EvaluateEvidenceStates(states)
-	evaluation := ObligationEvaluation{ObligationID: envelope.Obligations[0].ID, Status: "unsatisfied", Validity: "invalid", Freshness: "stale", ArtifactAvailability: "missing", Reasons: reasons}
-	for _, state := range states {
-		if state.Validity == "valid" {
-			evaluation.Validity = "valid"
+	return evaluations[0], nil
+}
+
+func currentEnvelopeEvaluations(conn *sql.DB, envelope Envelope, repository Repository) ([]ObligationEvaluation, error) {
+	states := map[string][]ObligationEvidenceState{}
+	for _, obligation := range envelope.Obligations {
+		loaded, err := loadObligationEvidenceStates(conn, obligation.ID, repository)
+		if err != nil {
+			return nil, err
 		}
-		if state.Freshness == "fresh" {
-			evaluation.Freshness = "fresh"
-		}
-		if state.ArtifactAvailability == "available" {
-			evaluation.ArtifactAvailability = "available"
-		}
+		states[obligation.ID] = loaded
 	}
-	if len(reasons) == 0 {
-		evaluation.Status, evaluation.Validity, evaluation.Freshness, evaluation.ArtifactAvailability = "satisfied", "valid", "fresh", "available"
-	}
-	return evaluation, nil
+	return EvaluateEnvelopeObligations(envelope.Obligations, states), nil
 }
 
 func issueTerminalSuccess(conn *sql.DB, issueID string) (bool, error) {
@@ -489,7 +584,7 @@ func validateEnvelopeOptions(options EnvelopeOptions) error {
 }
 
 func validateEnvelopeCreate(request EnvelopeCreateRequest) error {
-	if strings.TrimSpace(request.Outcome) == "" || len(request.Outcome) > 2048 || len(request.NonGoals) > 64 || len(request.Sources) == 0 || len(request.Sources) > 64 || strings.TrimSpace(request.PrimaryIssueID) == "" || len(request.RelatedIssueIDs) != 0 || len(request.AuthorityGrants) == 0 || len(request.AuthorityGrants) > 64 || len(request.Obligations) != 1 || len(request.Budgets) > 64 {
+	if strings.TrimSpace(request.Outcome) == "" || len(request.Outcome) > 2048 || len(request.NonGoals) > 64 || len(request.Sources) == 0 || len(request.Sources) > 64 || strings.TrimSpace(request.PrimaryIssueID) == "" || len(request.RelatedIssueIDs) != 0 || len(request.AuthorityGrants) == 0 || len(request.AuthorityGrants) > 64 || len(request.Obligations) < 1 || len(request.Obligations) > 16 || len(request.ProtectedDecisions) > 16 || len(request.Budgets) > 64 {
 		return &EnvelopeInvalidError{Reason: "envelope input exceeds the one-revision boundary"}
 	}
 	if !validEnvelopeRepository(request.RepositoryScope) || !validEnvelopeSource(request.RiskResult.Source) || !validEnvelopeDigest(request.RiskResult.ResultDigest) {
@@ -507,18 +602,110 @@ func validateEnvelopeCreate(request EnvelopeCreateRequest) error {
 		}
 		previous = grant.ActorSelector.ActorID
 	}
-	obligation := request.Obligations[0]
-	if obligation.ID == "" || obligation.Type != "gate-evidence" || obligation.Applicability != "required" || obligation.Subject.Type != "issue" || obligation.Subject.ID != request.PrimaryIssueID || obligation.Registration.ID == "" || obligation.Registration.Version < 1 || strings.Join(obligation.GuardedActions, ",") != "envelope.complete,issue.transition-terminal-success" || strings.Join(obligation.AcceptedEvidenceTypes, ",") != "receipt" || strings.Join(obligation.AcceptedTrustSources, ",") != "fid-executed" || obligation.FreshnessTarget != "repository-tree" || obligation.ArtifactPolicy != "required-available" || obligation.Independence != "fid-executed" || obligation.RequiredLane != nil || !validEnvelopeSource(obligation.Source) {
-		return &EnvelopeInvalidError{Reason: "gate-evidence obligation is not the exact supported value"}
+	if err := validateEnvelopeObligations(request); err != nil {
+		return err
+	}
+	if err := validateProtectedDecisions(request); err != nil {
+		return err
 	}
 	previous = ""
+	hasReviewObligation := false
+	for _, obligation := range request.Obligations {
+		hasReviewObligation = hasReviewObligation || obligation.Type == "review"
+	}
 	for _, budget := range request.Budgets {
-		if budget.Name == "" || previous >= budget.Name || budget.Scope != "envelope" || !validBudgetUnit(budget.Unit) || budget.Maximum < 1 || (budget.WarningThreshold != nil && (*budget.WarningThreshold < 0 || *budget.WarningThreshold > budget.Maximum)) || budget.ExhaustionAction != "budget-exhausted" || budget.Consumed != nil || budget.Remaining != nil || budget.State != "" {
+		reviewCycles := budget.Unit == "review-cycles"
+		reviewExhaustion := budget.ExhaustionAction == "review-rework-exhausted"
+		if budget.Name == "" || previous >= budget.Name || budget.Scope != "envelope" || !validBudgetUnit(budget.Unit) || budget.Maximum < 1 || (budget.WarningThreshold != nil && (*budget.WarningThreshold < 0 || *budget.WarningThreshold > budget.Maximum)) || reviewCycles != reviewExhaustion || (!reviewCycles && budget.ExhaustionAction != "budget-exhausted") || (reviewCycles && !hasReviewObligation) || budget.Consumed != nil || budget.Remaining != nil || budget.State != "" {
 			return &EnvelopeInvalidError{Reason: "budget values must remain immutable null counters"}
 		}
 		previous = budget.Name
 	}
 	return nil
+}
+
+func validateEnvelopeObligations(request EnvelopeCreateRequest) error {
+	ids := map[string]bool{}
+	terminalTypes := map[string]bool{}
+	reviewProfiles := map[string]bool{}
+	outcomeClasses := map[string]bool{}
+	gateEvidenceCount := 0
+	for _, obligation := range request.Obligations {
+		if obligation.ID == "" || ids[obligation.ID] || obligation.Applicability != "required" || obligation.Subject.Type != "issue" || obligation.Subject.ID != request.PrimaryIssueID || obligation.RequiredLane != nil || !validEnvelopeSource(obligation.Source) || !validGuardedActions(obligation.GuardedActions) {
+			return &EnvelopeInvalidError{Reason: "obligation is not an accepted value"}
+		}
+		ids[obligation.ID] = true
+		if containsAction(obligation.GuardedActions, "issue.transition-terminal-success") {
+			if terminalTypes[obligation.Type] {
+				return &EnvelopeInvalidError{Reason: "only one obligation type may guard terminal success"}
+			}
+			terminalTypes[obligation.Type] = true
+		}
+		switch obligation.Type {
+		case "gate-evidence":
+			gateEvidenceCount++
+			if gateEvidenceCount > 1 || obligation.Registration.ID == "" || obligation.Registration.Version < 1 || obligation.ReviewProfile != nil || obligation.OutcomeClass != nil || strings.Join(obligation.AcceptedEvidenceTypes, ",") != "receipt" || strings.Join(obligation.AcceptedTrustSources, ",") != "fid-executed" || obligation.FreshnessTarget != "repository-tree" || obligation.ArtifactPolicy != "required-available" || obligation.Independence != "fid-executed" {
+				return &EnvelopeInvalidError{Reason: "gate-evidence obligation is not the exact supported value"}
+			}
+		case "review":
+			if obligation.Registration.ID != "" || obligation.Registration.Version != 0 || obligation.ReviewProfile == nil || strings.TrimSpace(*obligation.ReviewProfile) == "" || reviewProfiles[*obligation.ReviewProfile] || obligation.OutcomeClass != nil || strings.Join(obligation.AcceptedEvidenceTypes, ",") != "review" || strings.Join(obligation.AcceptedTrustSources, ",") != "activated-actor" || obligation.FreshnessTarget != "repository-tree" || obligation.ArtifactPolicy != "metadata-sufficient" || obligation.Independence != "distinct-actor" {
+				return &EnvelopeInvalidError{Reason: "review obligation is not the exact supported value"}
+			}
+			reviewProfiles[*obligation.ReviewProfile] = true
+		case "human-outcome":
+			if obligation.Registration.ID != "" || obligation.Registration.Version != 0 || obligation.ReviewProfile != nil || obligation.OutcomeClass == nil || strings.TrimSpace(*obligation.OutcomeClass) == "" || outcomeClasses[*obligation.OutcomeClass] || strings.Join(obligation.AcceptedEvidenceTypes, ",") != "human-outcome" || strings.Join(obligation.AcceptedTrustSources, ",") != "activated-human" || obligation.FreshnessTarget != "none" || obligation.ArtifactPolicy != "metadata-sufficient" || obligation.Independence != "human" {
+				return &EnvelopeInvalidError{Reason: "human-outcome obligation is not the exact supported value"}
+			}
+			outcomeClasses[*obligation.OutcomeClass] = true
+		default:
+			return &EnvelopeInvalidError{Reason: "obligation type is not supported"}
+		}
+	}
+	return nil
+}
+
+func validateProtectedDecisions(request EnvelopeCreateRequest) error {
+	classes := map[string]bool{}
+	ordinals := map[int]bool{}
+	guarded := map[string]bool{}
+	for _, obligation := range request.Obligations {
+		for _, action := range obligation.GuardedActions {
+			guarded[action] = true
+		}
+	}
+	for _, decision := range request.ProtectedDecisions {
+		if decision.Ordinal < 0 || ordinals[decision.Ordinal] || strings.TrimSpace(decision.DecisionClass) == "" || classes[decision.DecisionClass] || len(decision.RequiredCapabilities) == 0 || len(decision.RequiredCapabilities) > 16 || !sortedUniqueCapabilities(decision.RequiredCapabilities) || !validGuardedActions(decision.AffectedActions) {
+			return &EnvelopeInvalidError{Reason: "protected decision is not an accepted value"}
+		}
+		for _, action := range decision.AffectedActions {
+			if !guarded[action] {
+				return &EnvelopeInvalidError{Reason: "protected decision affects an unguarded action"}
+			}
+		}
+		ordinals[decision.Ordinal], classes[decision.DecisionClass] = true, true
+	}
+	return nil
+}
+
+func validGuardedActions(actions []string) bool {
+	if len(actions) == 0 || len(actions) > 2 || !sort.StringsAreSorted(actions) {
+		return false
+	}
+	for index, action := range actions {
+		if (action != "envelope.complete" && action != "issue.transition-terminal-success") || (index > 0 && action == actions[index-1]) {
+			return false
+		}
+	}
+	return true
+}
+
+func containsAction(actions []string, want string) bool {
+	for _, action := range actions {
+		if action == want {
+			return true
+		}
+	}
+	return false
 }
 
 func validEnvelopeRepository(repository Repository) bool {
@@ -555,7 +742,11 @@ func validateEnvelopeBindings(conn *sql.DB, projectID string, request EnvelopeCr
 	if request.RepositoryScope.ProjectID != projectID {
 		return &EnvelopeInvalidError{Reason: "envelope repository project does not match"}
 	}
-	for _, source := range append(append([]Source{request.RiskResult.Source}, request.Sources...), request.Obligations[0].Source) {
+	sources := append([]Source{request.RiskResult.Source}, request.Sources...)
+	for _, obligation := range request.Obligations {
+		sources = append(sources, obligation.Source)
+	}
+	for _, source := range sources {
 		if source.Repository.ProjectID != projectID || source.Repository.WorktreeID != request.RepositoryScope.WorktreeID {
 			return &EnvelopeInvalidError{Reason: "envelope source repository does not match"}
 		}
@@ -566,23 +757,27 @@ func validateEnvelopeBindings(conn *sql.DB, projectID string, request EnvelopeCr
 	} else if err != nil {
 		return fmt.Errorf("validate envelope issue: %w", err)
 	}
-	obligation := request.Obligations[0]
-	var registrationProject, registrationWorktree, scopeJSON string
-	err := conn.QueryRow(`SELECT project_id, worktree_id, scope_json FROM gate_registrations WHERE id = ? AND version = ?`, obligation.Registration.ID, obligation.Registration.Version).Scan(&registrationProject, &registrationWorktree, &scopeJSON)
-	if err == sql.ErrNoRows {
-		return &EnvelopeInvalidError{Reason: "prior gate registration was not found"}
-	}
-	if err != nil {
-		return fmt.Errorf("validate envelope registration: %w", err)
-	}
-	var scope struct {
-		IssueID string `json:"issue_id"`
-	}
-	if err := json.Unmarshal([]byte(scopeJSON), &scope); err != nil {
-		return fmt.Errorf("decode envelope registration scope: %w", err)
-	}
-	if registrationProject != projectID || registrationWorktree != request.RepositoryScope.WorktreeID || scope.IssueID != request.PrimaryIssueID {
-		return &EnvelopeInvalidError{Reason: "prior registration binding does not match envelope"}
+	for _, obligation := range request.Obligations {
+		if obligation.Type != "gate-evidence" {
+			continue
+		}
+		var registrationProject, registrationWorktree, scopeJSON string
+		err := conn.QueryRow(`SELECT project_id, worktree_id, scope_json FROM gate_registrations WHERE id = ? AND version = ?`, obligation.Registration.ID, obligation.Registration.Version).Scan(&registrationProject, &registrationWorktree, &scopeJSON)
+		if err == sql.ErrNoRows {
+			return &EnvelopeInvalidError{Reason: "prior gate registration was not found"}
+		}
+		if err != nil {
+			return fmt.Errorf("validate envelope registration: %w", err)
+		}
+		var scope struct {
+			IssueID string `json:"issue_id"`
+		}
+		if err := json.Unmarshal([]byte(scopeJSON), &scope); err != nil {
+			return fmt.Errorf("decode envelope registration scope: %w", err)
+		}
+		if registrationProject != projectID || registrationWorktree != request.RepositoryScope.WorktreeID || scope.IssueID != request.PrimaryIssueID {
+			return &EnvelopeInvalidError{Reason: "prior registration binding does not match envelope"}
+		}
 	}
 	return nil
 }
@@ -623,8 +818,15 @@ func hasEnvelopeCapability(capabilities []string, capability string) bool {
 }
 
 func envelopeFromCreate(id, actorID, createdAt string, request EnvelopeCreateRequest) Envelope {
-	obligation := Obligation{ObligationInput: request.Obligations[0], DerivedStatus: "unsatisfied", Reasons: []any{}}
-	return Envelope{ID: id, CurrentRevision: 1, Status: "draft", Outcome: request.Outcome, NonGoals: request.NonGoals, RiskResult: mustEnvelopeJSON(request.RiskResult), RepositoryScope: request.RepositoryScope, Sources: request.Sources, PrimaryIssueID: request.PrimaryIssueID, RelatedIssueIDs: []string{}, AuthorityGrants: request.AuthorityGrants, Obligations: []Obligation{obligation}, Budgets: request.Budgets, CreatedActorID: actorID, ApprovedActorID: nil, CreatedAt: createdAt, ActivatedAt: nil, CompletedAt: nil}
+	obligations := make([]Obligation, 0, len(request.Obligations))
+	for _, input := range request.Obligations {
+		obligations = append(obligations, Obligation{ObligationInput: input, DerivedStatus: "unsatisfied", Reasons: []any{}})
+	}
+	decisions := make([]ProtectedDecision, 0, len(request.ProtectedDecisions))
+	for _, input := range request.ProtectedDecisions {
+		decisions = append(decisions, ProtectedDecision{ProtectedDecisionInput: input, Status: "unsatisfied"})
+	}
+	return Envelope{ID: id, CurrentRevision: 1, Status: "draft", Outcome: request.Outcome, NonGoals: request.NonGoals, RiskResult: mustEnvelopeJSON(request.RiskResult), RepositoryScope: request.RepositoryScope, Sources: request.Sources, PrimaryIssueID: request.PrimaryIssueID, RelatedIssueIDs: []string{}, AuthorityGrants: request.AuthorityGrants, Obligations: obligations, ProtectedDecisions: decisions, Budgets: request.Budgets, CreatedActorID: actorID, ApprovedActorID: nil, CreatedAt: createdAt, ActivatedAt: nil, CompletedAt: nil}
 }
 
 func deriveInitialEnvelopeBudgets(envelope *Envelope) error {
@@ -662,8 +864,16 @@ func envelopeCreateEffects(envelope Envelope, request EnvelopeCreateRequest) []j
 	for ordinal, grant := range request.AuthorityGrants {
 		effects = append(effects, journal.Effect{Op: "insert", Table: "envelope_authority_grants", PK: map[string]any{"envelope_id": envelope.ID, "revision": 1, "ordinal": ordinal}, Values: map[string]any{"actor_selector_json": string(mustEnvelopeJSON(grant.ActorSelector)), "actions_json": string(mustEnvelopeJSON(grant.Actions)), "scope_json": string(mustEnvelopeJSON(grant.Scope))}})
 	}
-	obligation := request.Obligations[0]
-	effects = append(effects, journal.Effect{Op: "insert", Table: "envelope_obligations", PK: map[string]any{"id": obligation.ID}, Values: map[string]any{"envelope_id": envelope.ID, "revision": 1, "obligation_type": obligation.Type, "registration_id": obligation.Registration.ID, "registration_version": obligation.Registration.Version, "obligation_json": string(mustEnvelopeJSON(obligation))}})
+	for _, obligation := range request.Obligations {
+		registrationID, registrationVersion := any(nil), any(nil)
+		if obligation.Type == "gate-evidence" {
+			registrationID, registrationVersion = obligation.Registration.ID, obligation.Registration.Version
+		}
+		effects = append(effects, journal.Effect{Op: "insert", Table: "envelope_obligations", PK: map[string]any{"id": obligation.ID}, Values: map[string]any{"envelope_id": envelope.ID, "revision": 1, "obligation_type": obligation.Type, "registration_id": registrationID, "registration_version": registrationVersion, "review_profile": obligation.ReviewProfile, "outcome_class": obligation.OutcomeClass, "obligation_json": string(mustEnvelopeJSON(obligation))}})
+	}
+	for _, decision := range request.ProtectedDecisions {
+		effects = append(effects, journal.Effect{Op: "insert", Table: "envelope_protected_decisions", PK: map[string]any{"envelope_id": envelope.ID, "revision": 1, "ordinal": decision.Ordinal}, Values: map[string]any{"decision_class": decision.DecisionClass, "required_capabilities_json": string(mustEnvelopeJSON(decision.RequiredCapabilities)), "affected_actions_json": string(mustEnvelopeJSON(decision.AffectedActions))}})
+	}
 	for _, budget := range request.Budgets {
 		policyBudget := budgetPolicyValue(budget)
 		effects = append(effects, journal.Effect{Op: "insert", Table: "envelope_budgets", PK: map[string]any{"envelope_id": envelope.ID, "revision": 1, "name": budget.Name}, Values: map[string]any{"budget_json": string(mustEnvelopeJSON(policyBudget))}})
@@ -694,6 +904,9 @@ func loadEnvelope(conn *sql.DB, id string) (Envelope, error) {
 		return Envelope{}, err
 	}
 	if err := loadEnvelopeObligations(conn, &envelope); err != nil {
+		return Envelope{}, err
+	}
+	if err := loadEnvelopeProtectedDecisions(conn, &envelope); err != nil {
 		return Envelope{}, err
 	}
 	if err := loadEnvelopeBudgets(conn, &envelope); err != nil {
@@ -757,6 +970,87 @@ func loadEnvelopeObligations(conn *sql.DB, envelope *Envelope) error {
 	return rows.Err()
 }
 
+func loadEnvelopeProtectedDecisions(conn *sql.DB, envelope *Envelope) error {
+	rows, err := conn.Query(`SELECT ordinal, decision_class, required_capabilities_json, affected_actions_json FROM envelope_protected_decisions WHERE envelope_id = ? AND revision = ? ORDER BY ordinal`, envelope.ID, envelope.CurrentRevision)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = rows.Close() }()
+	envelope.ProtectedDecisions = []ProtectedDecision{}
+	for rows.Next() {
+		var decision ProtectedDecision
+		var capabilities, actions string
+		if err := rows.Scan(&decision.Ordinal, &decision.DecisionClass, &capabilities, &actions); err != nil || json.Unmarshal([]byte(capabilities), &decision.RequiredCapabilities) != nil || json.Unmarshal([]byte(actions), &decision.AffectedActions) != nil {
+			return fmt.Errorf("decode envelope protected decision")
+		}
+		decision.Status = "unsatisfied"
+		if err := resolveProtectedDecision(conn, envelope.PrimaryIssueID, &decision); err != nil {
+			return err
+		}
+		envelope.ProtectedDecisions = append(envelope.ProtectedDecisions, decision)
+	}
+	return rows.Err()
+}
+
+func protectedDecisionStopEffects(conn *sql.DB, envelope Envelope, actorID string) ([]journal.Effect, error) {
+	effects := []journal.Effect{}
+	for _, decision := range envelope.ProtectedDecisions {
+		if decision.Status == "satisfied" {
+			continue
+		}
+		class := decision.DecisionClass
+		request := StopRaiseRequest{
+			Subject:        Subject{Type: "envelope", ID: envelope.ID},
+			Code:           "protected-decision-required",
+			BlockedActions: decision.AffectedActions,
+			ResolutionCondition: Condition{Type: "decision-satisfied", Subject: Subject{Type: "envelope", ID: envelope.ID},
+				DecisionClass: &class},
+			ResolverCapability: "stop.resolve",
+		}
+		request.Details = mustEnvelopeJSON(map[string]any{"envelope_id": envelope.ID, "decision_class": class, "required_capabilities": decision.RequiredCapabilities, "affected_actions": decision.AffectedActions})
+		if err := validateStopRaise(request); err != nil {
+			return nil, err
+		}
+		stopID, err := newStopID(conn)
+		if err != nil {
+			return nil, err
+		}
+		key, err := attentionSemanticKey(request.Subject, request.Code, request.ResolutionCondition)
+		if err != nil {
+			return nil, err
+		}
+		attention, found, err := loadOpenAttentionByKey(conn, key)
+		if err != nil {
+			return nil, err
+		}
+		if !found {
+			attentionID, err := newAttentionID(conn)
+			if err != nil {
+				return nil, err
+			}
+			attention = Attention{ID: attentionID, SemanticKey: key, Subject: request.Subject, Code: request.Code, Status: "open", Version: 1, StopIDs: []string{stopID}, RaisedAt: "<occurred-at>"}
+		}
+		stop := Stop{ID: stopID, Subject: request.Subject, Code: request.Code, BlockedActions: request.BlockedActions, Details: request.Details, ResolutionCondition: request.ResolutionCondition, ResolverCapability: request.ResolverCapability, ActorID: actorID, RaisedAt: "<occurred-at>"}
+		raised := stopRaisedEventForDomain(stop, attention, !found, "<event-id>")
+		effects = append(effects, raised.Effects...)
+	}
+	return effects, nil
+}
+
+func setEnvelopeEventIdentity(effects []journal.Effect, event journal.Event) {
+	stamp := event.OccurredAt.UTC().Format(time.RFC3339Nano)
+	for index := range effects {
+		for key, value := range effects[index].Values {
+			switch value {
+			case "<event-id>":
+				effects[index].Values[key] = event.EventID
+			case "<occurred-at>":
+				effects[index].Values[key] = stamp
+			}
+		}
+	}
+}
+
 func loadEnvelopeBudgets(conn *sql.DB, envelope *Envelope) error {
 	rows, err := conn.Query(`SELECT budget_json FROM envelope_budgets WHERE envelope_id = ? AND revision = 1 ORDER BY name`, envelope.ID)
 	if err != nil {
@@ -813,14 +1107,14 @@ func envelopeActivateResultJSON(envelope Envelope, activatedAt, key string) (str
 	return string(payload), err
 }
 
-func envelopeCompleteResultJSON(envelope Envelope, completedAt string, evaluation ObligationEvaluation, key string) (string, error) {
+func envelopeCompleteResultJSON(envelope Envelope, completedAt string, evaluation []ObligationEvaluation, key string) (string, error) {
 	envelope.Status, envelope.CompletedAt = "completed", &completedAt
 	payload, err := journal.MarshalCanonicalJSON(map[string]any{"envelope": envelope, "evaluation": evaluation, "idempotency_key": key, "replayed": false})
 	return string(payload), err
 }
 
-func envelopeEvaluation(envelope Envelope) map[string]any {
-	return map[string]any{"obligation_id": envelope.Obligations[0].ID, "status": "unsatisfied", "validity": "invalid", "freshness": "stale", "artifact_availability": "missing", "reasons": []any{}}
+func envelopeEvaluation(envelope Envelope) []ObligationEvaluation {
+	return EvaluateEnvelopeObligations(envelope.Obligations, nil)
 }
 
 func envelopeRepository(repository Repository) *journal.Repository {

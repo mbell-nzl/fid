@@ -416,6 +416,7 @@ func TestIssueLabelAddRejectsNestedLimitWithoutAppend(t *testing.T) {
 }
 
 func TestIssueLabelEffectsPropagatesRevisionConstructionFailure(t *testing.T) {
+	t.Parallel()
 	request := issueLabelWriteRequest{issueID: "FID-invalid-revision", label: "core", actor: standaloneActor{id: "developer", typeName: "agent"}, spec: issueLabelOperationSpec{effectOp: "insert", direction: "added", eventName: "issue-label-added"}}
 	if _, err := issueLabelEffects(request, "ACT-test", "EVT-test", "2026-08-15T00:00:00Z", 0); err == nil {
 		t.Fatal("issueLabelEffects() error = nil, want invalid observed revision rejection")

@@ -120,8 +120,13 @@ ledger byte-for-byte unchanged when it reports `INVALID`. Require exit zero and
 its literal `APPEND_CONFIRMED state=<state>` receipt. If termination or receipt
 is missing, retry the byte-identical candidate: an exact EOF match returns the
 same confirmation without another append. Do not advance, submit a different
-event, or separately mutate the ledger with
-`apply_patch`, redirection, or another editor. This is a sequence validator and
+event, or dispatch work while the append result is ambiguous. A terminated
+`INVALID` rejection is conclusive: validate the unchanged ledger, correct the
+candidate against that state, and resubmit through the append command. Preserve
+the rejected attempt's output and exit status in the corrected event's
+reconciliation evidence. Do not stop solely for a rejected candidate while the
+ledger remains valid. Never separately mutate the ledger with `apply_patch`,
+redirection, or another editor. This is a sequence validator and
 append transaction, not an action router; `workflow-route.sh` remains
 authoritative for the next action. Run the tool without `--append-stdin` when
 reading current state, and require literal `VALID state=ADVANCEABLE` before an
@@ -360,7 +365,21 @@ explicitly marked as a protected blocker candidate.
 
 ## Resolved Resume
 
-When a prior STOP has a later decision, verified commit, or restored
+Choose the resume form from the validated ledger's current state. A historical
+STOP already followed by an accepted RUN-RESUME is consumed; stale current
+context or a session ending does not make it active again.
+
+For a normal session resume, set `Governing TRG`, `Governing ESC`,
+`Trigger signature`, `Attempt count`, `Resolution authority`, and `Next recovery`
+to `N/A`, and omit `Repair owners` entirely. Keep `Continuing task` and the
+checkpoint concrete. If TASK-RECOVERY is already active, preserve its task,
+trigger, attempt, authority, and review-owner progress. Reconcile its existing
+commits, report, and child-session state, then continue that recovery; do not
+append a duplicate TASK-RECOVERY or restart completed owners. A normal resume
+does not turn `REPAIR_PENDING` into permission to advance to the next task.
+
+When the current ledger state is `STOPPED` and that STOP has a later decision,
+verified commit, or restored
 capability, verify it and append `RUN-RESUME` retaining the
 STOP's governing TRG/ESC, trigger, continuing task, next attempt, and exact next
 recovery tuple. The next TASK-RECOVERY must match that tuple. Record exactly one

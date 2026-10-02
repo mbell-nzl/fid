@@ -16,6 +16,7 @@ import (
 )
 
 func TestP22RecoveryConformanceCorpusHasSharedCases(t *testing.T) {
+	t.Parallel()
 	fixture, err := os.ReadFile(filepath.Join("testdata", "p22_conformance", "manifest.json"))
 	if err != nil {
 		t.Fatalf("read Phase 22 recovery conformance manifest: %v", err)
@@ -32,6 +33,7 @@ func TestP22RecoveryConformanceCorpusHasSharedCases(t *testing.T) {
 }
 
 func TestP22EarlyRecoveryJourney(t *testing.T) {
+	t.Parallel()
 	for _, dirty := range []bool{false, true} {
 		name := "clean"
 		if dirty {
@@ -94,7 +96,7 @@ func p22RecoveryFreshnessJourney(t *testing.T, dirty bool) {
 	gateInput := p21Input(t, workspace, "p22-gate-run", map[string]any{"registration_id": registrationID, "registration_version": registrationVersion, "obligation_id": "OBL-p22", "run_id": runID, "repository": repository})
 	gate := p22GateRun(t, binary, workspace, "actor-recovery", gateInput, "p22-gate-run")
 	receiptID := p21PathString(t, gate, "result", "receipt", "id")
-	linked := p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-evidence-link", map[string]any{"obligation_id": "OBL-p22", "receipt_id": receiptID, "target_repository": repository, "required_artifact_ids": []string{}}), "--idempotency-key", "p22-evidence-link")
+	linked := p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-evidence-link", map[string]any{"obligation_id": "OBL-p22", "evidence_type": "receipt", "receipt_id": receiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository, "required_artifact_ids": []string{}}), "--idempotency-key", "p22-evidence-link")
 	evidenceID := p21PathString(t, linked, "result", "evidence", "id")
 
 	terminatedAt := time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)
@@ -141,7 +143,7 @@ func p22RecoveryFreshnessJourney(t *testing.T, dirty bool) {
 	successorGateInput := p21Input(t, workspace, "p22-successor-gate-run", map[string]any{"registration_id": registrationID, "registration_version": registrationVersion, "obligation_id": "OBL-p22", "run_id": successorID, "repository": recoveredRepository})
 	successorGate := p22GateRun(t, binary, workspace, "actor-recovery", successorGateInput, "p22-successor-gate-run")
 	successorReceiptID := p21PathString(t, successorGate, "result", "receipt", "id")
-	successorLinked := p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-successor-evidence-link", map[string]any{"obligation_id": "OBL-p22", "receipt_id": successorReceiptID, "target_repository": recoveredRepository, "required_artifact_ids": []string{}}), "--idempotency-key", "p22-successor-evidence-link")
+	successorLinked := p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-successor-evidence-link", map[string]any{"obligation_id": "OBL-p22", "evidence_type": "receipt", "receipt_id": successorReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": recoveredRepository, "required_artifact_ids": []string{}}), "--idempotency-key", "p22-successor-evidence-link")
 	if successorEvidenceID := p21PathString(t, successorLinked, "result", "evidence", "id"); successorEvidenceID == evidenceID {
 		t.Fatalf("reconciled successor Evidence identity = %q, want new Evidence for successor Receipt", successorEvidenceID)
 	}

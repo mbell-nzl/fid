@@ -10,6 +10,7 @@ import (
 )
 
 func TestRecoveryObservationDetectsChangedUntrackedFileWithNULDelimitedPaths(t *testing.T) {
+	t.Parallel()
 	repository := initRepositoryFixture(t)
 	path := "new\nfile.txt"
 	if err := os.WriteFile(filepath.Join(repository, path), []byte("first"), 0o644); err != nil {
@@ -37,6 +38,7 @@ func TestRecoveryObservationDetectsChangedUntrackedFileWithNULDelimitedPaths(t *
 }
 
 func TestObserveRepositoryPinsCanonicalDirtyVectorsAndExclusions(t *testing.T) {
+	t.Parallel()
 	repository := initRepositoryWithFiles(t, map[string]string{
 		".gitignore":   "ignored.txt\n",
 		"deleted.txt":  "deleted\n",

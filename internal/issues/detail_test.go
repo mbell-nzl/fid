@@ -46,9 +46,6 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 		if got.Concerns == nil || len(got.Concerns) != 0 {
 			t.Fatalf("Get() concerns = %#v, want empty array", got.Concerns)
 		}
-		if got.Completions == nil || len(got.Completions) != 0 {
-			t.Fatalf("Get() completions = %#v, want empty array", got.Completions)
-		}
 		if got.Links == nil || len(got.Links) != 0 {
 			t.Fatalf("Get() links = %#v, want empty array", got.Links)
 		}
@@ -93,15 +90,9 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 		if got.AcceptanceCriteria[0].ID != "AC-d4e5f6" {
 			t.Fatalf("Get() first acceptance criterion id = %q, want AC-d4e5f6", got.AcceptanceCriteria[0].ID)
 		}
-		developerVerification, ok := got.AcceptanceCriteria[0].LatestVerifications["developer"].(map[string]any)
-		if !ok {
-			t.Fatalf("Get() latest_verifications[developer] = %#v, want map", got.AcceptanceCriteria[0].LatestVerifications["developer"])
-		}
-		if developerVerification["status"] != "pass" || developerVerification["verified_at"] != "2026-05-27T10:15:00Z" {
-			t.Fatalf("Get() latest_verifications[developer] = %#v, want latest pass record", developerVerification)
-		}
-		if got.AcceptanceCriteria[1].LatestVerifications["developer"] != nil {
-			t.Fatalf("Get() second criterion latest_verifications[developer] = %#v, want nil owner placeholder", got.AcceptanceCriteria[1].LatestVerifications["developer"])
+		if got.AcceptanceCriteria[0].Text != "Journal file is flushed to disk before returning success" ||
+			got.AcceptanceCriteria[1].Text != "Partial write leaves journal intact" {
+			t.Fatalf("Get() acceptance criteria = %#v, want retained ordered text", got.AcceptanceCriteria)
 		}
 		if !got.ConcernsRaised {
 			t.Fatal("Get() concerns_raised = false, want true")
@@ -115,17 +106,11 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 		if len(got.Concerns) != 1 || got.Concerns[0].ID != "CON-000401" {
 			t.Fatalf("Get() concerns = %#v, want one open concern", got.Concerns)
 		}
-		if len(got.Completions) != 2 || got.Completions[0].ID != "TC-000402" || got.Completions[1].ID != "TC-000401" {
-			t.Fatalf("Get() completions = %#v, want latest-first completions", got.Completions)
-		}
-		if len(got.Links) != 2 || got.Links[0].Relation != "blocks" || got.Links[1].Relation != "implements" {
-			t.Fatalf("Get() links = %#v, want blocks + implements", got.Links)
+		if len(got.Links) != 2 || got.Links[0].Relation != "blocks" || got.Links[1].Relation != "relates_to" {
+			t.Fatalf("Get() links = %#v, want blocks + relates_to", got.Links)
 		}
 		if got.Links[0].TargetTitle == nil || *got.Links[0].TargetTitle != "Schema migration runner" {
 			t.Fatalf("Get() first link target_title = %#v, want Schema migration runner", got.Links[0].TargetTitle)
-		}
-		if len(got.Completions) == 0 || len(got.Completions[0].GateResults) != 2 {
-			t.Fatalf("Get() completions gate_results = %#v, want completion snapshot preserved separately", got.Completions)
 		}
 	})
 }
@@ -224,233 +209,30 @@ func TestNormalizeDateOnlyPointer(t *testing.T) {
 
 func seedIssueDetailFixture(t *testing.T, conn *sql.DB) {
 	t.Helper()
-
-	statements := []struct {
-		query string
-		args  []any
-	}{
-		{
-			query: `
-				INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"FID-e1f2g3",
-				"epic",
-				"Core persistence layer",
-				"todo",
-				"epic-default",
-				"developer",
-				"2026-05-25T08:00:00Z",
-				"2026-05-25T08:00:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO epic_metadata (issue_id, scheduling)
-				VALUES (?, ?)
-			`,
-			args: []any{"FID-e1f2g3", "sequential"},
-		},
-		{
-			query: `
-				INSERT INTO issues (
-					id, kind, parent_id, title, workflow_id, status, priority, sequence,
-					spec_md_path, owner_role, created_at, updated_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"FID-a1b2c3",
-				"task",
-				"FID-e1f2g3",
-				"Implement journal append with flush",
-				"task-default",
-				"in_progress",
-				1,
-				3,
-				"project-docs/docs/phases/phase-1/tasks/FID-a1b2c3.md",
-				"developer",
-				"2026-05-25T09:00:00Z",
-				"2026-05-27T10:20:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"FID-7c3e9f",
-				"task",
-				"Schema migration runner",
-				"todo",
-				"task-default",
-				"developer",
-				"2026-05-25T09:05:00Z",
-				"2026-05-25T09:05:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO requirements (id, type, summary, source_doc, source_section, status)
-				VALUES (?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"PRD-ISSUE-001",
-				"PRD",
-				"Implement journal append with flush",
-				"01_PRD.md",
-				"ISSUE",
-				"active",
-			},
-		},
-		{
-			query: `INSERT INTO labels (name) VALUES (?), (?)`,
-			args:  []any{"core", "journal"},
-		},
-		{
-			query: `INSERT INTO issue_labels (issue_id, label) VALUES (?, ?), (?, ?)`,
-			args:  []any{"FID-a1b2c3", "core", "FID-a1b2c3", "journal"},
-		},
-		{
-			query: `
-				INSERT INTO acceptance_criteria (id, issue_id, ordinal, text)
-				VALUES (?, ?, ?, ?), (?, ?, ?, ?)
-			`,
-			args: []any{
-				"AC-d4e5f6",
-				"FID-a1b2c3",
-				1,
-				"Journal file is flushed to disk before returning success",
-				"AC-e5f6g7",
-				"FID-a1b2c3",
-				2,
-				"Partial write leaves journal intact",
-			},
-		},
-		{
-			query: `
-				INSERT INTO task_completions (
-					id, issue_id, attempt_number, developer_role, model, status, actual_tokens, gate_results, human_intervention, completed_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"TC-000401",
-				"FID-a1b2c3",
-				1,
-				"developer",
-				"gpt-5",
-				"dev_complete",
-				1440,
-				`["go test ./..."]`,
-				false,
-				"2026-05-27T09:30:00Z",
-				"TC-000402",
-				"FID-a1b2c3",
-				2,
-				"developer",
-				"gpt-5",
-				"qa_pass",
-				1550,
-				`[{"cmd":"go test ./...","exit_code":0,"ran_at":"2026-05-27T10:10:00Z","output_excerpt":"ok"},{"cmd":"go test -race ./...","exit_code":0,"ran_at":"2026-05-27T10:12:00Z","output_excerpt":"race ok"}]`,
-				false,
-				"2026-05-27T10:20:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO agent_runs (id, issue_id, role, model, started_at)
-				VALUES (?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"RUN-000401",
-				"FID-a1b2c3",
-				"developer",
-				"gpt-5",
-				"2026-05-27T09:00:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO ac_verifications (id, ac_id, verifier_role, status, completion_id, verified_at)
-				VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"ACV-older-dev",
-				"AC-d4e5f6",
-				"developer",
-				"fail",
-				"TC-000401",
-				"2026-05-27T09:35:00Z",
-				"ACV-latest-dev",
-				"AC-d4e5f6",
-				"developer",
-				"pass",
-				"TC-000402",
-				"2026-05-27T10:15:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO concerns (
-					id, issue_id, raised_in_completion_id, raised_by_role, summary, body_md_path, status, created_at, updated_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"CON-000401",
-				"FID-a1b2c3",
-				"TC-000402",
-				"developer",
-				"Need triage before closing",
-				"project-docs/concerns/CON-000401.md",
-				"open",
-				"2026-05-27T10:18:00Z",
-				"2026-05-27T10:18:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO triage_events (
-					id, epic_id, issue_id, triager_role, source, source_ref_id, verdict, reasoning_md, created_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"TRG-000401",
-				"FID-e1f2g3",
-				"FID-a1b2c3",
-				"qa_lead",
-				"task_completion",
-				"TC-000402",
-				"BLOCK",
-				"project-docs/triage/TRG-000401.md",
-				"2026-05-27T10:19:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at)
-				VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"issue",
-				"FID-a1b2c3",
-				"blocks",
-				"issue",
-				"FID-7c3e9f",
-				"2026-05-27T10:18:00Z",
-				"issue",
-				"FID-a1b2c3",
-				"implements",
-				"requirement",
-				"PRD-ISSUE-001",
-				"2026-05-27T10:19:00Z",
-			},
-		},
+	statements := []string{
+		`INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
+		 VALUES ('FID-e1f2g3','epic','Core persistence layer','todo','epic-default','developer','2026-05-25T08:00:00Z','2026-05-25T08:00:00Z')`,
+		`INSERT INTO epic_metadata (issue_id, scheduling) VALUES ('FID-e1f2g3', 'sequential')`,
+		`INSERT INTO issues (id, kind, parent_id, title, workflow_id, status, priority, sequence, owner_role, created_at, updated_at)
+		 VALUES ('FID-a1b2c3','task','FID-e1f2g3','Implement journal append with flush','task-default','in_progress',1,3,'developer','2026-05-25T09:00:00Z','2026-05-27T10:20:00Z')`,
+		`INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
+		 VALUES ('FID-7c3e9f','task','Schema migration runner','todo','task-default','developer','2026-05-25T09:05:00Z','2026-05-25T09:05:00Z')`,
+		`INSERT INTO labels (name) VALUES ('core'), ('journal')`,
+		`INSERT INTO issue_labels (issue_id, label) VALUES ('FID-a1b2c3','core'), ('FID-a1b2c3','journal')`,
+		`INSERT INTO acceptance_criteria (id, issue_id, ordinal, text)
+		 VALUES ('AC-d4e5f6','FID-a1b2c3',1,'Journal file is flushed to disk before returning success'),
+		        ('AC-e5f6g7','FID-a1b2c3',2,'Partial write leaves journal intact')`,
+		`INSERT INTO concerns (id,subject_type,subject_id,actor_id,scope_json,severity,summary,reasoning,references_json,status,created_at,created_event_id)
+		 VALUES ('CON-000401','issue','FID-a1b2c3','developer','{"paths":[]}','major','Need triage before closing','Needs review','[]','open','2026-05-27T10:18:00Z','EVT-concern-detail')`,
+		`INSERT INTO triage_events (id,epic_id,issue_id,triager_role,source,source_ref_id,verdict,reasoning_md,created_at)
+		 VALUES ('TRG-000401','FID-e1f2g3','FID-a1b2c3','qa_lead','manual','REV-000401','BLOCK','project-docs/triage/TRG-000401.md','2026-05-27T10:19:00Z')`,
+		`INSERT INTO links (from_type,from_id,relation,to_type,to_id,created_at)
+		 VALUES ('issue','FID-a1b2c3','blocks','issue','FID-7c3e9f','2026-05-27T10:18:00Z'),
+		        ('issue','FID-a1b2c3','relates_to','issue','FID-7c3e9f','2026-05-27T10:19:00Z')`,
 	}
-
 	for _, statement := range statements {
-		if _, err := conn.Exec(statement.query, statement.args...); err != nil {
-			t.Fatalf("Exec(%q) error = %v", statement.query, err)
+		if _, err := conn.Exec(statement); err != nil {
+			t.Fatalf("seed Issue detail with %q: %v", statement, err)
 		}
 	}
 }

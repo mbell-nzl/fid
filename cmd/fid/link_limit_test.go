@@ -26,28 +26,28 @@ func TestLinkListJSONHonorsAtAndOverLimitWithoutTruncation(t *testing.T) {
 		t.Fatalf("begin link limit fixture transaction: %v", err)
 	}
 	defer func() { _ = seedTx.Rollback() }()
-	requirementInsert, err := seedTx.Prepare(`
-		INSERT INTO requirements (id, type, summary, source_doc, source_section, status)
-		VALUES (?, 'PRD', ?, 'project-docs/specs/link_limits.md', '3.8', 'active')
+	issueInsert, err := seedTx.Prepare(`
+		INSERT INTO issues (id, kind, title, workflow_id, status)
+		VALUES (?, 'task', ?, 'task-default', 'todo')
 	`)
 	if err != nil {
-		t.Fatalf("prepare requirements insert: %v", err)
+		t.Fatalf("prepare issues insert: %v", err)
 	}
-	defer func() { _ = requirementInsert.Close() }()
+	defer func() { _ = issueInsert.Close() }()
 	linkInsert, err := seedTx.Prepare(`
 		INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at)
-		VALUES ('issue', ?, 'implements', 'requirement', ?, '2026-08-15T00:00:00Z')
+		VALUES ('issue', ?, 'relates_to', 'issue', ?, '2026-08-15T00:00:00Z')
 	`)
 	if err != nil {
 		t.Fatalf("prepare links insert: %v", err)
 	}
 	defer func() { _ = linkInsert.Close() }()
 	for index := 0; index < 10000; index++ {
-		requirementID := fmt.Sprintf("PRD-link-limit-%05d", index)
-		if _, err := requirementInsert.Exec(requirementID, "Requirement "+requirementID); err != nil {
-			t.Fatalf("insert requirement %d: %v", index, err)
+		issueID := fmt.Sprintf("FID-link-limit-%05d", index)
+		if _, err := issueInsert.Exec(issueID, "Issue "+issueID); err != nil {
+			t.Fatalf("insert issue %d: %v", index, err)
 		}
-		if _, err := linkInsert.Exec(primaryID, requirementID); err != nil {
+		if _, err := linkInsert.Exec(primaryID, issueID); err != nil {
 			t.Fatalf("insert link %d: %v", index, err)
 		}
 	}
@@ -65,10 +65,10 @@ func TestLinkListJSONHonorsAtAndOverLimitWithoutTruncation(t *testing.T) {
 		t.Fatalf("at-limit link.list envelope = %#v, want 10000 complete rows and null event", envelope)
 	}
 
-	if _, err := conn.Exec(`INSERT INTO requirements (id, type, summary, source_doc, source_section, status) VALUES (?, 'PRD', ?, 'project-docs/specs/link_limits.md', '3.8', 'active')`, "PRD-link-limit-over", "Over-limit requirement"); err != nil {
-		t.Fatalf("insert over-limit requirement: %v", err)
+	if _, err := conn.Exec(`INSERT INTO issues (id, kind, title, workflow_id, status) VALUES (?, 'task', ?, 'task-default', 'todo')`, "FID-link-limit-over", "Over-limit issue"); err != nil {
+		t.Fatalf("insert over-limit issue: %v", err)
 	}
-	if _, err := conn.Exec(`INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at) VALUES ('issue', ?, 'implements', 'requirement', ?, '2026-08-15T00:00:00Z')`, primaryID, "PRD-link-limit-over"); err != nil {
+	if _, err := conn.Exec(`INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at) VALUES ('issue', ?, 'relates_to', 'issue', ?, '2026-08-15T00:00:00Z')`, primaryID, "FID-link-limit-over"); err != nil {
 		t.Fatalf("insert over-limit link: %v", err)
 	}
 	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))

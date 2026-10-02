@@ -8,6 +8,7 @@ import (
 )
 
 func TestFinalSchemaNamedReadsAndExportMatchAfterRebuild(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID, evaluatePath := task21CompletedWorkspace(t)
 	archivePath := filepath.Join(t.TempDir(), "task21-export.zip")
 	before := task21SnapshotReads(t, workspace, issueID, envelopeID, evaluatePath, archivePath)
@@ -74,7 +75,7 @@ func task21CompletedWorkspace(t *testing.T) (string, string, string, string) {
 	repository := runRepositoryForTest(t, workspace)
 	obligationID := testEvidenceObligationID
 	linkPath := filepath.Join(workspace, "task21-link-evidence.json")
-	writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID, "target_repository": repository, "required_artifact_ids": []string{}})
+	writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository, "required_artifact_ids": []string{}})
 	task21Mutate(t, workspace, "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task21-link-evidence")
 	evaluatePath := filepath.Join(workspace, "task21-evaluate-evidence.json")
 	writeActivationInput(t, evaluatePath, map[string]any{"obligation_id": obligationID, "target_repository": repository})

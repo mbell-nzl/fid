@@ -109,41 +109,26 @@ func TestAddProjectsLinkAddedActivityForIssueAndRequirementLinks(t *testing.T) {
 	t.Run("issue implements requirement", func(t *testing.T) {
 		workspace := newLinksWorkspace(t)
 		issueID := createLinksIssue(t, workspace, "Implements issue")
-		requirementID := syncLinksRequirement(t, workspace, "PRD-LINK-002")
+		before := countLinksJournalEvents(t, workspace)
+		conn := openLinksDB(t, workspace)
+		activityBefore := countLinkActivityRows(t, conn)
+		closeLinksDB(t, conn)
 
 		if _, err := Add(AddOptions{
 			WorkspaceRoot: workspace,
 			MigrationsDir: testLinksMigrationsDir(t),
 			FromID:        issueID,
 			Relation:      "implements",
-			ToID:          requirementID,
+			ToType:        "requirement",
+			ToID:          "PRD-LINK-002",
 			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
-		}); err != nil {
-			t.Fatalf("Add(implements) error = %v", err)
+		}); err == nil {
+			t.Fatal("removed requirement endpoint was accepted")
 		}
-
-		stored := readLinkStoredEvents(t, filepath.Join(workspace, ".fid", "journal"))
-		last := stored[len(stored)-1]
-
-		conn := openLinksDB(t, workspace)
+		conn = openLinksDB(t, workspace)
 		defer closeLinksDB(t, conn)
-
-		eventName, actor, details := loadSingleActivityByEvent(t, conn, last.EventID)
-		if eventName != "link-added" {
-			t.Fatalf("activity_log event = %q, want link-added", eventName)
-		}
-		if actor != "developer" {
-			t.Fatalf("activity_log actor = %q, want developer", actor)
-		}
-		for _, want := range []string{
-			`"relation":"implements"`,
-			`"to_type":"requirement"`,
-			`"to_id":"` + requirementID + `"`,
-			`"inverse_relation":"implemented_by"`,
-		} {
-			if !strings.Contains(details, want) {
-				t.Fatalf("activity_log details = %q, want substring %q", details, want)
-			}
+		if countLinksJournalEvents(t, workspace) != before || countLinkActivityRows(t, conn) != activityBefore {
+			t.Fatal("rejected requirement link changed Event or activity state")
 		}
 	})
 }

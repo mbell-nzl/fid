@@ -6,6 +6,7 @@ import (
 )
 
 func TestActivationResourceVersionConflictsUseActivationVersionConflict(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	prepared, err := PrepareActivation(ActivationPrepareOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, BootstrapActor: "bootstrap:test", IdempotencyKey: "activation-resource-version-prepare", Request: ActivationPrepareRequest{KitIdentity: "kit:test", BackendIdentity: "backend:test", Phase: 21, Direction: "activate", Resources: activationRecoveryTestResources()}})
 	if err != nil {
@@ -35,6 +36,7 @@ func assertActivationVersionConflict(t *testing.T, err error, expected, actual i
 }
 
 func TestActivationRecoverySelectionRaisesAndCompletionDisposesIncompleteStop(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	prepared, err := PrepareActivation(ActivationPrepareOptions{
 		WorkspaceRoot: workspace, MigrationsDir: migrationsDir, BootstrapActor: "bootstrap:test", IdempotencyKey: "activation-stop-prepare",
@@ -94,6 +96,7 @@ func TestActivationRecoverySelectionRaisesAndCompletionDisposesIncompleteStop(t 
 }
 
 func TestCompleteActivationRecoveryRejectsMissingPriorResourceSet(t *testing.T) {
+	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
 	prepared, err := PrepareActivation(ActivationPrepareOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, BootstrapActor: "bootstrap:test", IdempotencyKey: "activation-missing-prior-prepare", Request: ActivationPrepareRequest{KitIdentity: "kit:test", BackendIdentity: "backend:test", Phase: 21, Direction: "activate", Resources: activationRecoveryTestResources()}})
 	if err != nil {

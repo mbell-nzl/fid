@@ -61,7 +61,7 @@ type archiveSemanticFacts struct {
 }
 
 func newSemanticValidator(migrationsDir string, projectionSchema int) (*semanticValidator, error) {
-	if projectionSchema != 14 && projectionSchema != 16 {
+	if projectionSchema != 14 && projectionSchema != 17 && projectionSchema != 18 {
 		return nil, fmt.Errorf("semantic archive validation: unsupported projection schema %d", projectionSchema)
 	}
 	if strings.TrimSpace(migrationsDir) == "" {
@@ -325,7 +325,7 @@ func (validator *semanticValidator) validateEvent(event journal.Event) error {
 		return fmt.Errorf("semantic archive validation: Event %q has unsupported schema %d for projection schema %d", event.EventID, event.EventSchema, validator.profile)
 	}
 	rule, found := semanticEventRules[event.EventType]
-	if !found || (validator.profile == 14 && semanticPhase22Events[event.EventType]) {
+	if !found || (validator.profile == 14 && semanticPost14Events[event.EventType]) {
 		return fmt.Errorf("semantic archive validation: Event %q has unsupported type %q", event.EventID, event.EventType)
 	}
 	if event.Aggregate.Type != rule.aggregate {

@@ -10,6 +10,7 @@ import (
 )
 
 func TestValidateHasNoSourceOrDestinationEffects(t *testing.T) {
+	t.Parallel()
 	workspace, destination := t.TempDir(), t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
@@ -41,6 +42,7 @@ func TestValidateHasNoSourceOrDestinationEffects(t *testing.T) {
 }
 
 func TestCreateRecoveryManifestV2ConfigAndOrdinalJournal(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
@@ -67,6 +69,7 @@ func TestCreateRecoveryManifestV2ConfigAndOrdinalJournal(t *testing.T) {
 }
 
 func TestValidateRetainsPinnedV1Profile(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
@@ -117,6 +120,7 @@ func TestValidateRetainsPinnedV1Profile(t *testing.T) {
 }
 
 func TestValidateRecoveryManifestClosedConfigurationAndInventory(t *testing.T) {
+	t.Parallel()
 	fixture := newExportSourceFixture(t, nil)
 	for _, tc := range []struct {
 		name, code string

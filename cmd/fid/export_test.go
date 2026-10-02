@@ -40,6 +40,7 @@ func TestExportCreateValidateAndImportUsesClosedTargetConflict(t *testing.T) {
 }
 
 func TestExportValidateRendersInvalidArchiveChecks(t *testing.T) {
+	t.Parallel()
 	for _, namedEntry := range []bool{false, true} {
 		t.Run(fmt.Sprint(namedEntry), func(t *testing.T) {
 			archivePath := filepath.Join(t.TempDir(), "invalid.zip")

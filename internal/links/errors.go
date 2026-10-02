@@ -52,7 +52,7 @@ func (err *InvalidEndpointTypeError) Error() string {
 	if err == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("%s: %s must be issue or requirement, got %q", linkOperationName(err.Operation), err.Argument, err.Value)
+	return fmt.Sprintf("%s: %s must be issue, got %q", linkOperationName(err.Operation), err.Argument, err.Value)
 }
 
 func (err *DependencyCycleError) Error() string {

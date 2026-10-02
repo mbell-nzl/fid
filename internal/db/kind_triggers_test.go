@@ -281,7 +281,7 @@ func TestIssueSequenceSchedulingTriggerRejectsInvalidTaskStatesAndAllowsValidRow
 func TestIssueKindGuardTriggersRejectWrongKindsAndAllowValidRows(t *testing.T) {
 	t.Parallel()
 
-	conn := openKindTriggerDB(t)
+	conn := openSchema17DB(t, testKindTriggerMigrationsDir(t))
 	defer closeKindTriggerDB(t, conn)
 
 	insertIssueRow(t, conn, issueRow{
@@ -398,7 +398,7 @@ func TestIssueKindGuardTriggersRejectWrongKindsAndAllowValidRows(t *testing.T) {
 func TestEpicReferenceKindGuardTriggersRejectWrongKindsAndAllowValidRows(t *testing.T) {
 	t.Parallel()
 
-	conn := openKindTriggerDB(t)
+	conn := openSchema17DB(t, testKindTriggerMigrationsDir(t))
 	defer closeKindTriggerDB(t, conn)
 
 	insertIssueRow(t, conn, issueRow{

@@ -6,6 +6,7 @@ import (
 )
 
 func TestBudgetPolicyValueStripsDerivedOutput(t *testing.T) {
+	t.Parallel()
 	consumed, remaining := int64(2), int64(3)
 	value := budgetPolicyValue(Budget{Name: "attempts", Scope: "envelope", Unit: "attempts", Maximum: 5, ExhaustionAction: "budget-exhausted", Consumed: &consumed, Remaining: &remaining, State: "warning"})
 	if value.Consumed != nil || value.Remaining != nil || value.State != "" {

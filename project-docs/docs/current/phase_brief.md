@@ -1,35 +1,40 @@
-# Phase Brief — No Active Phase
+# Phase Brief - No Active Phase
 
-## Current state
+## Status
 
-Phase 22 is complete and Human-accepted under DEC-220 (2026-09-13).
-The PR for `phase-22` is open; its test job subsequently timed out. ESC-22-005
-is resolved under DEC-221: task20 is complete with unchanged timeouts and
-exhaustive race/coverage validation. [Hosted CI](../phases/phase-22/qa/task-20-hosted-ci.md)
-passed on6b8fe50 in13m53s, coverage65.5%; PR ready for Human merge.
-Phase 23 has not been planned or started.
+Phase 23 "Review and Human judgment" is complete (DEC-271, 2026-10-03) on
+branch `phase-23`, ready for PR and merge. Phase 24 has not been planned.
 
-The Heavy phase delivered recovery, budgets/Stops/Attention, derived execution
-outcomes, activation recovery, portable state and accepted Human guidance.
-All 18 planned tasks plus supplemental task 19 are complete. Final evidence:
-80/80 validation assertions, 84 deterministic QA checks and 6/6 Human checks.
-At wrap there was no open technical Must-fix or escalation. Earlier failed attempts are
-preserved; the second Human checklist supplies the accepted final judgments.
+## Last Phase Summary
 
-## Authoritative records
+- Heavy mode; 18 planned tasks plus supplemental tasks 19-21 (DEC-269).
+- 89/89 validation assertions (85 deterministic, 4 Human). Final review 2
+  PASS; Human checklist 1 FAIL (55/2/6), checklist 2 7/7 PASS.
+- Delivered: independent Review coverage and Findings, Finding dispositions,
+  review-cycle budgets and a resolvable `review-rework-exhausted` Stop,
+  Concerns, Deviations, Decision References with protected-Decision blocking,
+  provenanced Human Outcomes, Attention resolution, requirement references
+  with stable `requirement_id`, migrations 0017/0018, and V1 judgment removal.
+- Qualified capabilities: `reviews.coverage.v1`, `human.outcomes.v1`.
+- Records: [final acceptance](../phases/phase-23/qa/final-acceptance.md),
+  [wrap audit](../phases/phase-23/wrap-up-audit.md),
+  [decisions](../phases/phase-23/decisions.md).
 
-- [Final acceptance](../phases/phase-22/qa/final-acceptance.md)
-- [Wrap audit](../phases/phase-22/wrap-up-audit.md)
-- [Decisions / DEC-220](../phases/phase-22/decisions.md)
-- [Run ledger](../phases/phase-22/run-ledger.md)
-- [Human checklist 2](../phases/phase-22/qa/human-checklist-2.md)
-- [Open carry-forwards](decisions_active.md)
+## Before Phase 24 Planning
 
-## Boundaries
+1. **CF-045 scheduling (Human + Tech Lead).** Decide when and how to plan
+   the Human operating experience left from the Phase 23 checklist: A4
+   raw-JSON Stop details, A5 denial reasons, A6 hint verbosity, A7 `finding
+   address` reason, A8 `--input` authoring. Options include folding part of
+   it into Phase 24, a dedicated phase before Phase 24, or keeping it with
+   the Phase 25 operating-experience qualification.
+2. **Optional:** the deep workflow retrospective recommended in the Phase 23
+   workflow notes (CF-036/039).
 
-CF-040 records accepted future CLI polish and verbosity review. Remaining
-workflow maintenance and kit adapter qualification are separately owned.
-Claims parallel semantics remain Phase 24; full baseline qualification remains
-Phase 25. No release or live adoption is authorized by this phase closure.
-The approved roadmap calls Phase 23 “Review and Human judgment”; its exact
-contracts and task pack remain future planning work.
+## Next Phase (Roadmap)
+
+Phase 24 "Parallel and evolving work": distinct Issues in disjoint worktrees,
+conflicting-Claim rejection, multi-Issue Envelope revision, carried-forward
+completion, removed unfinished work, `retry-exhausted`, and
+`work.claims.v1` qualification. See `../../specs/10_IMPLEMENTATION_ROADMAP.md`
+section 5.

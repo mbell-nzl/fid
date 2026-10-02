@@ -26,6 +26,7 @@ var (
 )
 
 func TestPhase21ConformanceCorpusIsCompleteAndByteExact(t *testing.T) {
+	t.Parallel()
 	repoRoot := integrationRepositoryRoot()
 	publicInterface := string(readP21File(t, filepath.Join(repoRoot, "project-docs/docs/phases/phase-21/public-interface.md")))
 	expected := p21ExpectedCorpus(t, publicInterface)
@@ -74,6 +75,7 @@ func TestPhase21ConformanceCorpusIsCompleteAndByteExact(t *testing.T) {
 }
 
 func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
+	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	p22Git(t, workspace, "init", "-q")
@@ -142,7 +144,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	gate := p21GateRun(t, binary, workspace, map[string]any{"registration_id": registrationID, "registration_version": registrationVersion, "obligation_id": "OBL-1", "run_id": runID, "repository": repository})
 	receiptID := p21PathString(t, gate, "result", "receipt", "id")
 	p21AssertBudgetBoundaryAndLaterGateDenial(t, binary, workspace, registrationID, registrationVersion, runID, repository)
-	linkInput := p21Input(t, workspace, "evidence-link", map[string]any{"obligation_id": "OBL-1", "receipt_id": receiptID, "target_repository": repository, "required_artifact_ids": []string{}})
+	linkInput := p21Input(t, workspace, "evidence-link", map[string]any{"obligation_id": "OBL-1", "evidence_type": "receipt", "receipt_id": receiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository, "required_artifact_ids": []string{}})
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkInput, "--idempotency-key", "p21-evidence-link")
 	evaluateInput := p21Input(t, workspace, "evidence-evaluate", map[string]any{"obligation_id": "OBL-1", "target_repository": repository})
 	evaluation := p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", evaluateInput)

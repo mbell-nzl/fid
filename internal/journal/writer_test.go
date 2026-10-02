@@ -13,6 +13,7 @@ import (
 )
 
 func TestAppendEventWritesOneJSONLLineWithFirstSequence(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	mustMkdirAll(t, filepath.Join(workspace, ".fid", "journal"))
 
@@ -93,6 +94,7 @@ func TestAppendEventWritesOneJSONLLineWithFirstSequence(t *testing.T) {
 }
 
 func TestAppendEventWrapperUsesRealClockPath(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	mustMkdirAll(t, filepath.Join(workspace, ".fid", "journal"))
 
@@ -116,6 +118,7 @@ func TestAppendEventWrapperUsesRealClockPath(t *testing.T) {
 }
 
 func TestPrepareEventAssignsNextIDWithoutAppendingJournalBytes(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	journalDir := filepath.Join(workspace, ".fid", "journal")
 	mustMkdirAll(t, journalDir)
@@ -163,6 +166,7 @@ func TestPrepareEventAssignsNextIDWithoutAppendingJournalBytes(t *testing.T) {
 }
 
 func TestAppendEventIncrementsSequenceWithinUTCJournalFile(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	mustMkdirAll(t, filepath.Join(workspace, ".fid", "journal"))
 
@@ -185,6 +189,7 @@ func TestAppendEventIncrementsSequenceWithinUTCJournalFile(t *testing.T) {
 }
 
 func TestAppendEventRejectsClockSkewWithoutAppending(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	journalDir := filepath.Join(workspace, ".fid", "journal")
 	mustMkdirAll(t, journalDir)
@@ -227,6 +232,7 @@ func TestAppendEventRejectsClockSkewWithoutAppending(t *testing.T) {
 }
 
 func TestConcurrentWritesAppendDistinctEventsWithMonotonicSequences(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	mustMkdirAll(t, filepath.Join(workspace, ".fid", "journal"))
 
@@ -295,6 +301,7 @@ func TestConcurrentWritesAppendDistinctEventsWithMonotonicSequences(t *testing.T
 }
 
 func TestWriterHelpersParseEventIDsAndDates(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		eventID string
@@ -333,6 +340,7 @@ func TestWriterHelpersParseEventIDsAndDates(t *testing.T) {
 }
 
 func TestWriterHelpersDetermineLatestDateAndNextSequence(t *testing.T) {
+	t.Parallel()
 	journalDir := filepath.Join(t.TempDir(), ".fid", "journal")
 	mustMkdirAll(t, journalDir)
 

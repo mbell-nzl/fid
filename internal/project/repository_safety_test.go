@@ -11,6 +11,7 @@ import (
 )
 
 func TestObserveRepositoryRejectsUnsafeImages(t *testing.T) {
+	t.Parallel()
 	for _, kind := range []string{"assume-unchanged", "skip-worktree", "unmerged", "missing-head", "gitlink", "unreadable", "fifo", "escaping-parent"} {
 		t.Run(kind, func(t *testing.T) {
 			root := initRepositoryFixture(t)
@@ -74,6 +75,7 @@ func TestObserveRepositoryRejectsChangeDuringCapture(t *testing.T) {
 }
 
 func TestRepositoryPathGrammarRejectsEscapes(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"", ".", "../outside", "/absolute", "dir/../outside", "bad\x00path", string([]byte{0xff})} {
 		if !errors.Is(validPath(name), ErrUnsafeRepository) {
 			t.Fatalf("accepted invalid path %q", name)
@@ -85,6 +87,7 @@ func TestRepositoryPathGrammarRejectsEscapes(t *testing.T) {
 }
 
 func TestObserveRepositoryPinsStagedChangeRestoredInWorktree(t *testing.T) {
+	t.Parallel()
 	root := initRepositoryFixture(t)
 	writeFixtureFile(t, root, "tracked.txt", "staged\n")
 	runGit(t, root, "add", "tracked.txt")

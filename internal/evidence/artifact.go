@@ -16,6 +16,8 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidproject "github.com/mbell-nzl/fid/internal/project"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 type ArtifactVerifyRequest struct {
@@ -441,13 +443,39 @@ func VerifyArtifact(options ArtifactVerifyOptions) (ArtifactVerifyResult, error)
 		if changed {
 			effects = append(effects, journal.Effect{Op: "update", Table: "referenced_artifacts", PK: map[string]any{"id": artifact.ID}, Values: map[string]any{"availability": observed}, Preconditions: map[string]any{"availability": priorAvailability}})
 		}
+		if changed && observed == "available" {
+			targets, err := artifactEnvelopeTargets(conn, artifact.ID)
+			if err != nil {
+				return err
+			}
+			if len(targets) > 0 {
+				observation, err := fidproject.ObserveRepository(options.WorkspaceRoot)
+				if err != nil {
+					return fmt.Errorf("verify Artifact: observe repository: %w", err)
+				}
+				head := observation.HeadOID
+				repository := workflow.Repository{BaseOID: &head, CaptureSource: "git", Dirty: observation.Dirty, DirtyDigest: observation.DirtyDigest, HeadOID: observation.HeadOID, ProjectID: project.ProjectID, TreeOID: observation.TreeOID, WorktreeID: observation.WorktreeID}
+				for _, target := range targets {
+					overrides, err := workflow.ArtifactAvailabilityOverrides(conn, target.EnvelopeID, target.Revision, artifact.ID, repository)
+					if err != nil {
+						return err
+					}
+					readinessEffects, _, _, err := workflow.HumanOutcomeReadinessStopEffects(conn, target.EnvelopeID, target.Revision, actor.ActorID, repository, overrides)
+					if err != nil {
+						return err
+					}
+					effects = append(effects, readinessEffects...)
+				}
+			}
+		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "artifact.availability-observed", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: artifact.ID, Sequence: sequence, Type: "artifact"}, CommandName: "artifact.verify", Effects: effects}
 		result = ArtifactVerifyResult{Artifact: artifact, Changed: changed, IdempotencyKey: options.IdempotencyKey, Replayed: false}
 		resultJSON, err := journal.MarshalCanonicalJSON(result)
 		if err != nil {
 			return err
 		}
-		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
+			substituteEvidenceEventPlaceholders(prepared.Effects, prepared)
 			return journal.IdempotencyMutation{EntityID: artifact.ID, ResultJSON: string(resultJSON)}, nil
 		})
 		if err != nil {
@@ -467,6 +495,31 @@ func VerifyArtifact(options ArtifactVerifyOptions) (ArtifactVerifyResult, error)
 		result.EventOccurredAt = occurredAt
 	}
 	return result, nil
+}
+
+type artifactEnvelopeTarget struct {
+	EnvelopeID string
+	Revision   int
+}
+
+// artifactEnvelopeTargets finds every Envelope revision whose linked Evidence
+// requires this Artifact, so a missing-to-available flip can re-evaluate each
+// one for the human-outcome-required readiness Stop (DEC-224).
+func artifactEnvelopeTargets(conn *sql.DB, artifactID string) ([]artifactEnvelopeTarget, error) {
+	rows, err := conn.Query(`SELECT DISTINCT o.envelope_id,o.revision FROM evidence_artifact_links l JOIN evidence_records e ON e.id=l.evidence_id JOIN envelope_obligations o ON o.id=e.obligation_id WHERE l.artifact_id=? AND l.required_material=1 ORDER BY o.envelope_id,o.revision`, artifactID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	targets := []artifactEnvelopeTarget{}
+	for rows.Next() {
+		var target artifactEnvelopeTarget
+		if err := rows.Scan(&target.EnvelopeID, &target.Revision); err != nil {
+			return nil, err
+		}
+		targets = append(targets, target)
+	}
+	return targets, rows.Err()
 }
 
 func loadArtifactByID(conn *sql.DB, id string) (Artifact, bool, error) {

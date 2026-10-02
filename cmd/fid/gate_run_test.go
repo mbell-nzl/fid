@@ -323,6 +323,7 @@ func TestGateRunRecordsExactNonSuccessTerminalOutcomes(t *testing.T) {
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
 			workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, testCase.modify)
 			terminal, result := executeGateRunForTest(t, workspace, issueID, envelopeID, "gate-run-"+strings.ReplaceAll(testCase.name, " ", "-"))
 			if result.err == nil || result.stderr != "" {
@@ -375,6 +376,7 @@ func TestGateRunRecordsExactNonSuccessTerminalOutcomes(t *testing.T) {
 }
 
 func TestGateRunHelperProcess(t *testing.T) {
+	t.Parallel()
 	switch os.Getenv("FID_GATE_HELPER") {
 	case "signal":
 		_ = syscall.Kill(os.Getpid(), syscall.SIGTERM)

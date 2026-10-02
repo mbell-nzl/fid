@@ -80,6 +80,7 @@ func TestRebuildWorkspaceIsDeterministicAtSingleProjectScale(t *testing.T) {
 }
 
 func TestScaleReplayFixtureUsesRoleFreeEventV2Facts(t *testing.T) {
+	t.Parallel()
 	count := 0
 	forEachScaleReplayEvent(100, func(event Event) {
 		count++

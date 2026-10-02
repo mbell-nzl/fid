@@ -23,6 +23,7 @@
 #   drill-17  protected triage and exhausted budget routes
 #   drill-18  bounded control-conformance routing, scope, and ledger directive
 #   drill-19  child-session polling and external-interruption accounting
+#   drill-20  decision-released repair owners after a BLOCK re-review
 #
 # Agent drills (workspaces materialized with --agent; scored by a human using
 # each drill's DRILL.md and the SCORECARD.md):
@@ -3372,6 +3373,11 @@ if sh "$script_dir/review-recovery.sh"; then
   drill_pass "drill-18 review recovery correction and restart boundaries"
 else
   drill_fail "drill-18 review recovery correction and restart boundaries"
+fi
+if sh "$script_dir/review-block-owners.sh"; then
+  drill_pass "drill-20 BLOCK re-review repair owners"
+else
+  drill_fail "drill-20 BLOCK re-review repair owners"
 fi
 
 echo ""

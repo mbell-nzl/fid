@@ -16,9 +16,11 @@ import (
 // direct producer coverage; these rows seed admitted projection facts to isolate
 // the shared predicate at each operation boundary.
 func TestStopPredicatesAcrossRunStartAndGateRunCommands(t *testing.T) {
+	t.Parallel()
 	for _, surface := range []string{"run-start", "gate-run"} {
 		for _, state := range []string{"applicable", "unrelated-subject", "unrelated-action", "resolved", "multiple"} {
 			t.Run(surface+"/"+state, func(t *testing.T) {
+				t.Parallel()
 				workspace, issueID, envelopeID, marker := stopOperationEnvelopeForTest(t)
 				repository := runRepositoryForTest(t, workspace)
 				claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "stop-operation-"+surface+"-"+state+"-claim")
@@ -177,6 +179,7 @@ func stopOperationEnvelopeForTest(t *testing.T) (string, string, string, string)
 }
 
 func TestStopOperationFixtureExecutesInEachClonedWorkspace(t *testing.T) {
+	t.Parallel()
 	first, issueID, envelopeID, _ := stopOperationEnvelopeForTest(t)
 	second, secondIssue, secondEnvelope, _ := stopOperationEnvelopeForTest(t)
 	for index, row := range []struct{ root, issue, envelope string }{{first, issueID, envelopeID}, {second, secondIssue, secondEnvelope}} {

@@ -8,6 +8,7 @@ import (
 )
 
 func TestP22AmendedFailureWireCorpus(t *testing.T) {
+	t.Parallel()
 	for _, name := range []string{"executor-liveness-unknown", "executor-still-live", "recovery-state-conflict", "run-version-conflict", "attention-version-conflict", "recovery-already-linked", "stop-not-found", "attention-not-found", "observation-not-found", "stop-unresolved", "resolution-invalid", "budget-sample-conflict", "duplicate-entity", "recover-null-observation", "abandon-null-observation"} {
 		t.Run(name, func(t *testing.T) {
 			a := p22NewFIDRecoveryAdapterWithLease(t, "agent", 3600)

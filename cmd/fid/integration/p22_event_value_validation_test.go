@@ -24,6 +24,7 @@ type p22EventCorruption struct {
 // These cases preserve the independent final-review-2 counterexamples. Every
 // case gets a genuine producer prefix and a separate projection for each mode.
 func TestP22CurrentEventClosedValuesAndConditionalEffects(t *testing.T) {
+	t.Parallel()
 	a := p22CompleteOneIssueRecoveryJourney(t)
 	binary := a.binary
 	activation, id := p22ActivationBoundaryFixture(t, binary, "committed")
@@ -267,6 +268,7 @@ func p22CheckCurrentRebuild(t *testing.T, binary, source string, prefix []byte, 
 }
 
 func TestP22CurrentProducerEmitsRequiredClosedFields(t *testing.T) {
+	t.Parallel()
 	a := p22CompleteOneIssueRecoveryJourney(t)
 	b, _ := p22PortableSource(t, "deduplicated-attention")
 	p22CheckProducerRequiredFields(t, []string{a.workspace, b.workspace})

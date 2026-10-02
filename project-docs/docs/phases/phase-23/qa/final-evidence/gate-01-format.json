@@ -1,0 +1,1 @@
+{"id":"gate-01-format","cmd":"gofmt -l cmd internal","results":[{"chunk_id":"205903","wall_time_seconds":0.139073227,"exit_code":0,"original_token_count":0,"output":""}]}

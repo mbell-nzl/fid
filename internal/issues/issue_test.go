@@ -169,6 +169,7 @@ func TestCreateRejectsUnsupportedKind(t *testing.T) {
 }
 
 func TestIssueCreateUsesAssignedWorkflowAndItsInitialState(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
@@ -260,6 +261,7 @@ func TestIssueCreateUsesAssignedWorkflowAndItsInitialState(t *testing.T) {
 }
 
 func TestIssueCreateResolvesKindAssignmentBeforeProjectAssignment(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
@@ -843,6 +845,7 @@ func TestCreateAndGetRoundTrip(t *testing.T) {
 }
 
 func TestCreateEventOmitsRetiredPhase20Fields(t *testing.T) {
+	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
@@ -973,63 +976,7 @@ func TestGetReturnsEnrichedConcernFields(t *testing.T) {
 		t.Fatalf("Create() error = %v", err)
 	}
 
-	event := journal.Event{
-		EventSchema: journal.EventSchemaV1,
-		EventType:   "issue.concerned",
-		Actor: journal.Actor{
-			Role: "developer",
-		},
-		Command: journal.Command{
-			Argv:       []string{"fid", "maintenance", "seed"},
-			CWD:        ".",
-			FIDVersion: "0.1.0",
-		},
-		Effects: []journal.Effect{
-			{
-				Op:    "insert",
-				Table: "task_completions",
-				PK: map[string]any{
-					"id": "TC-000201",
-				},
-				Values: map[string]any{
-					"issue_id":           created.ID,
-					"attempt_number":     1,
-					"developer_role":     "developer",
-					"model":              "gpt-5",
-					"status":             "dev_complete",
-					"gate_results":       `["go test ./..."]`,
-					"human_intervention": false,
-					"completed_at":       "2026-06-07T12:00:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "concerns",
-				PK: map[string]any{
-					"id": "CON-000201",
-				},
-				Values: map[string]any{
-					"issue_id":                created.ID,
-					"raised_in_completion_id": "TC-000201",
-					"raised_by_role":          "developer",
-					"summary":                 "Need triage before closing",
-					"body_md_path":            "project-docs/concerns/CON-000201.md",
-					"status":                  "open",
-					"created_at":              "2026-06-07T12:01:00Z",
-					"updated_at":              "2026-06-07T12:01:00Z",
-				},
-			},
-		},
-	}
-
-	if err := journal.WithLock(workspace, journal.LockOwner{
-		Command: "fid maintenance seed",
-	}, func(lock *journal.WriteLock) error {
-		_, err := journal.AppendEvent(lock, event)
-		return err
-	}); err != nil {
-		t.Fatalf("AppendEvent() error = %v", err)
-	}
+	seedGenericIssueConcern(t, workspace, "CON-000201", created.ID, "open", "Need triage before closing", "2026-06-07T12:01:00Z")
 
 	got, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
@@ -1052,8 +999,8 @@ func TestGetReturnsEnrichedConcernFields(t *testing.T) {
 	if got.Concerns[0].ID != "CON-000201" {
 		t.Fatalf("Get() concern id = %q, want CON-000201", got.Concerns[0].ID)
 	}
-	if got.Concerns[0].AddressedInCompletionID != nil {
-		t.Fatalf("Get() concern addressed_in_completion_id = %#v, want nil", got.Concerns[0].AddressedInCompletionID)
+	if got.Concerns[0].Status != "open" || got.Concerns[0].SubjectType != "issue" || got.Concerns[0].SubjectID != created.ID {
+		t.Fatalf("Get() concern = %#v, want open Issue subject", got.Concerns[0])
 	}
 	if got.TriageStatus != nil {
 		t.Fatalf("Get() triage_status = %#v, want nil", got.TriageStatus)
@@ -1076,72 +1023,7 @@ func TestGetTreatsAddressedConcernsAsNotOpen(t *testing.T) {
 		t.Fatalf("Create() error = %v", err)
 	}
 
-	appendIssueJournalEvent(t, workspace, journal.Event{
-		EventSchema: journal.EventSchemaV1,
-		EventType:   "issue.concern_triaged",
-		Actor: journal.Actor{
-			Role: "developer",
-		},
-		Command: journal.Command{
-			Argv:       []string{"fid", "maintenance", "seed"},
-			CWD:        ".",
-			FIDVersion: "0.1.0",
-		},
-		Effects: []journal.Effect{
-			{
-				Op:    "insert",
-				Table: "task_completions",
-				PK: map[string]any{
-					"id": "TC-000301",
-				},
-				Values: map[string]any{
-					"issue_id":           created.ID,
-					"attempt_number":     1,
-					"developer_role":     "developer",
-					"model":              "gpt-5",
-					"status":             "dev_complete",
-					"gate_results":       `["go test ./..."]`,
-					"human_intervention": false,
-					"completed_at":       "2026-06-07T12:10:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "task_completions",
-				PK: map[string]any{
-					"id": "TC-000302",
-				},
-				Values: map[string]any{
-					"issue_id":           created.ID,
-					"attempt_number":     2,
-					"developer_role":     "developer",
-					"model":              "gpt-5",
-					"status":             "qa_pass",
-					"gate_results":       `["go test ./..."]`,
-					"human_intervention": false,
-					"completed_at":       "2026-06-07T12:20:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "concerns",
-				PK: map[string]any{
-					"id": "CON-000301",
-				},
-				Values: map[string]any{
-					"issue_id":                   created.ID,
-					"raised_in_completion_id":    "TC-000301",
-					"raised_by_role":             "developer",
-					"summary":                    "Resolved concern",
-					"body_md_path":               "project-docs/concerns/CON-000301.md",
-					"status":                     "addressed",
-					"addressed_in_completion_id": "TC-000302",
-					"created_at":                 "2026-06-07T12:11:00Z",
-					"updated_at":                 "2026-06-07T12:21:00Z",
-				},
-			},
-		},
-	})
+	seedGenericIssueConcern(t, workspace, "CON-000301", created.ID, "disposed", "Resolved concern", "2026-06-07T12:11:00Z")
 
 	got, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
@@ -1164,8 +1046,8 @@ func TestGetTreatsAddressedConcernsAsNotOpen(t *testing.T) {
 	if got.Concerns[0].ID != "CON-000301" {
 		t.Fatalf("Get() concern id = %q, want CON-000301", got.Concerns[0].ID)
 	}
-	if got.Concerns[0].AddressedInCompletionID == nil || *got.Concerns[0].AddressedInCompletionID != "TC-000302" {
-		t.Fatalf("Get() concern addressed_in_completion_id = %#v, want TC-000302", got.Concerns[0].AddressedInCompletionID)
+	if got.Concerns[0].Status != "disposed" {
+		t.Fatalf("Get() concern status = %q, want disposed", got.Concerns[0].Status)
 	}
 }
 
@@ -1173,22 +1055,22 @@ func TestGetConcernsOrderSameSecondRowsByAppendOrder(t *testing.T) {
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
-	issueID, completionID := seedConcernRaiseIssueAndCompletion(t, workspace)
+	issueID := seedConcernIssue(t, workspace)
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	const createdAt = "2026-06-20T12:00:00Z"
 	if _, err := conn.Exec(`
-		INSERT INTO concerns (id, issue_id, raised_in_completion_id, raised_by_role, summary, status, created_at, updated_at)
-		VALUES (?, ?, ?, 'developer', 'Older append', 'open', ?, ?)
-	`, "CON-zzzzzz", issueID, completionID, createdAt, createdAt); err != nil {
+		INSERT INTO concerns (id, subject_type, subject_id, actor_id, scope_json, severity, summary, reasoning, references_json, status, created_at, created_event_id)
+		VALUES (?, 'issue', ?, 'developer', '{"paths":[]}', 'major', 'Older append', 'Needs review', '[]', 'open', ?, 'EVT-concern-older')
+	`, "CON-zzzzzz", issueID, createdAt); err != nil {
 		t.Fatalf("insert older concern: %v", err)
 	}
 	if _, err := conn.Exec(`
-		INSERT INTO concerns (id, issue_id, raised_in_completion_id, raised_by_role, summary, status, created_at, updated_at)
-		VALUES (?, ?, ?, 'developer', 'Newer append', 'open', ?, ?)
-	`, "CON-aaaaaa", issueID, completionID, createdAt, createdAt); err != nil {
+		INSERT INTO concerns (id, subject_type, subject_id, actor_id, scope_json, severity, summary, reasoning, references_json, status, created_at, created_event_id)
+		VALUES (?, 'issue', ?, 'developer', '{"paths":[]}', 'major', 'Newer append', 'Needs review', '[]', 'open', ?, 'EVT-concern-newer')
+	`, "CON-aaaaaa", issueID, createdAt); err != nil {
 		t.Fatalf("insert newer concern: %v", err)
 	}
 
@@ -1208,27 +1090,40 @@ func TestGetConcernsOrderSameSecondRowsByAppendOrder(t *testing.T) {
 	}
 }
 
-func seedConcernRaiseIssueAndCompletion(t *testing.T, workspace string) (string, string) {
+func seedConcernIssue(t *testing.T, workspace string) string {
 	t.Helper()
-
 	created, err := Create(CreateOptions{
-		WorkspaceRoot:  workspace,
-		MigrationsDir:  testIssueMigrationsDir(t),
-		Kind:           "task",
-		Title:          "Concern history task",
-		Actor:          testActorForRole("developer"),
-		IdempotencyKey: testIdempotencyKey(),
+		WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t),
+		Kind: "task", Title: "Concern history task",
+		Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
+	return created.ID
+}
+
+func seedGenericIssueConcern(t *testing.T, workspace, concernID, issueID, status, summary, createdAt string) {
+	t.Helper()
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
-	const completionID = "TC-000200"
-	if _, err := conn.Exec(`INSERT INTO task_completions (id, issue_id, attempt_number, status, gate_results, human_intervention, completed_at) VALUES (?, ?, 1, 'completed', '[]', 0, '2026-06-20T12:00:00Z')`, completionID, created.ID); err != nil {
-		t.Fatalf("seed frozen completion: %v", err)
+	if status == "disposed" {
+		_, err := conn.Exec(`INSERT INTO concerns
+			(id, subject_type, subject_id, actor_id, scope_json, severity, summary, reasoning, references_json, status,
+			 disposition_action, disposition_reason, disposed_actor_id, disposed_at, disposed_event_id, created_at, created_event_id)
+			VALUES (?, 'issue', ?, 'developer', '{"paths":[]}', 'major', ?, 'Needs review', '[]', 'disposed',
+			 'rejected', 'Resolved', 'qa_lead', ?, 'EVT-dispose', ?, 'EVT-create')`, concernID, issueID, summary, createdAt, createdAt)
+		if err != nil {
+			t.Fatalf("seed disposed concern: %v", err)
+		}
+		return
 	}
-	return created.ID, completionID
+	_, err := conn.Exec(`INSERT INTO concerns
+		(id, subject_type, subject_id, actor_id, scope_json, severity, summary, reasoning, references_json, status, created_at, created_event_id)
+		VALUES (?, 'issue', ?, 'developer', '{"paths":[]}', 'major', ?, 'Needs review', '[]', 'open', ?, 'EVT-create')`, concernID, issueID, summary, createdAt)
+	if err != nil {
+		t.Fatalf("seed open concern: %v", err)
+	}
 }
 
 func TestGetReturnsLatestTriageStatus(t *testing.T) {

@@ -128,11 +128,19 @@ Envelope revision, expected Issue revision, Actor authority, and active Claim.
 ### Requirement references
 
 ```text
-fid requirement sync|list
+fid requirement record-reference|link|get|list
 ```
 
 This surface stores stable identity, source reference/digest, status, and Issue
 links only. Requirement prose is never imported.
+
+Each requirement has two identities. `requirement_id` is the project's stable
+ID (for example `REQ-leaf`); `id` identifies one version of the reference
+(`RREF-…`), and every supersede creates a new one. Every `RequirementRef`
+carries both (Phase 23 DEC-269). `requirement get <id>` accepts either: a
+stable ID returns its active reference, or else its newest; a reference ID
+returns that row. Human views name the requirement by its stable ID, show the
+reference ID separately, and list Issue links in their own labelled section.
 
 ### Work Envelope and projections
 
@@ -179,15 +187,49 @@ slice before implementation.
 ```text
 fid review record|get|list
 fid finding address|list
-fid concern record|list
+fid concern record|dispose|list
 fid deviation record|list
-fid decision record-reference
-fid human-outcome record
+fid decision record-reference|list
+fid human-outcome record|list
 ```
 
 Review and Outcome inputs are versioned structured records. Protected Human
 authority is established through active provenance, not a free-form `--by
 human` flag. Decision input is a reference/outcome, never an ADR body.
+
+Phase 23 Task 8 adds `concern dispose` for one irreversible, reasoned
+`carried-forward`, `rejected`, or `superseded` disposition. `deviation list`
+reads the append-only Deviation chain; a changed judgment is recorded with
+`deviation record` and an explicit predecessor reference rather than an update
+leaf.
+
+Phase 23 Task 9 adds operational Decision References. `decision
+record-reference` verifies a project-file Source digest while holding the write
+lock and stores the pointer, authority, outcome, and Issue scope without the
+decision prose. `decision list` is a read with optional class, outcome, Issue,
+and limit filters. An unsatisfied protected Decision raises one Stop and blocks
+only its declared affected actions until an approved reference with the exact
+required capabilities and an approved Human Outcome both exist.
+
+Phase 23 Task 5 adds optional `inapplicable_findings:[{finding_id,reason}]` to
+`review.record`, alongside retained `resolves_finding_ids` (DEC-242). The
+reason is mandatory nonblank text; the later qualifying Review records both
+terminal actions atomically. Omission and `[]` canonicalize to omission for
+the request digest, retaining Task 4 request compatibility; explicit null is
+invalid. No independent terminal-disposition leaf is added. The accepted
+[Phase 23 input contract](../docs/phases/phase-23/public-interface.md) fixes
+bounds, rejection codes and existing Finding disposition readback.
+
+Phase 23 Task 10 adds provenanced Human Outcomes. `human-outcome record`
+requires a human Actor type in a finalized Kit Activation profile carrying the
+`human-outcome.record` capability, established through that active provenance
+alone; a standalone Issue-inventory `--by` style attribution can never reach
+this leaf. It resolves the protected Decisions and the `human-outcome-required`
+readiness Stop this exact class and `approved` result qualify, atomically with
+its own recording Event. `human-outcome list` is a read with optional class,
+result, Issue, and limit filters. The stored Evidence and evaluation carry
+`producer:"human"`, `trust_source:"activated-human"`, and
+`artifact_availability:"not-applicable"`, never a deterministic-proof value.
 
 ### Activation and portable recovery
 
@@ -214,7 +256,7 @@ Every mutation:
 Validation failure appends nothing. A projection failure after append is a
 detectable catch-up state and never a reason to append a duplicate Event.
 
-## 5. Typed Reason Codes
+## 5. Typed Failure Codes
 
 Initial cross-cutting codes include:
 
@@ -226,6 +268,7 @@ activation-conflict
 authority-missing
 authority-forged
 protected-decision-required
+source-digest-mismatch
 state-conflict
 idempotency-conflict
 mutation-conflict
@@ -256,6 +299,57 @@ Codes accepted with the Phase 20 standalone Issue slice: `invalid-argument`,
 `authority-*` codes. Phase 21 replaces the V1 checks, but the semantic codes are
 not automatically removed: the generic authority contract may retain or refine
 them through its own accepted contract change.
+
+Phase 23 Task 9 adds `protected-decision-required` (authority, exit 5) with
+exact details `envelope_id`, `decision_class`, `required_capabilities`,
+`affected_actions`, and (DEC-263) the Stop-blocked denial fields `stop_ids`,
+`attention_ids`, `event` (always null), and `replayed` (always `false`); and `source-digest-mismatch` (precondition, exit 4) with
+exact details `display_label`, nullable `path`, `expected_digest`, and nullable
+`observed_digest`. A missing Source file is reported through the same digest
+mismatch code and appends no Event.
+
+Phase 23 Task 10 adds `human-outcome-required` (precondition, exit 4) with
+exact details `envelope_id`, `obligation_id`, `outcome_class`, and (DEC-263)
+the same four Stop-blocked denial fields, returned by
+`envelope.complete` and `issue.transition-terminal-success` for the blocked
+actions of the open readiness Stop only; and `outcome-not-found`
+(not-found, exit 3) with exact detail `id`, returned by `evidence.link` for an
+unknown `human_outcome_id`. Task 10 reuses Task 6's `outcome-not-permitted`
+(precondition, exit 4) registration for its real recorded producer.
+
+The complete Phase 23 added failure-code set is closed by
+`project-docs/docs/phases/phase-23/public-interface.md` section 5. The table
+below records each code's category, exit status, subject, and exact detail
+keys. `null` means the failure-envelope subject is null; a subject type names
+the entity ID in the producing rejection. All are `retryable:false`.
+
+| Code | Category / exit | Subject | Exact detail keys |
+|---|---|---|---|
+| `review-not-independent` | precondition / 4 | null | `review_actor_id`, `conflicting_subject`, `conflicting_actor_id` |
+| `review-verdict-invalid` | invalid-input / 2 | null | `verdict`, `reason` |
+| `review-changes-required` | precondition / 4 | null | `review_id`, `obligation_id`, `blocking_finding_ids` |
+| `review-rework-exhausted` | precondition / 4 | envelope | `budget`, `stop_ids`, `attention_ids`, `event`, `replayed` |
+| `finding-already-disposed` | conflict / 4 | finding | `finding_id`, `state` |
+| `finding-not-found` | not-found / 3 | finding | `id` |
+| `review-not-found` | not-found / 3 | review | `id` |
+| `concern-not-found` | not-found / 3 | concern | `id` |
+| `deviation-not-found` | not-found / 3 | deviation | `id` |
+| `outcome-not-found` | not-found / 3 | human-outcome | `id` |
+| `concern-already-disposed` | conflict / 4 | concern | `concern_id`, `disposed_at` |
+| `claim-mode-invalid` | precondition / 4 | claim | `claim_id`, `mode`, `required_mode` |
+| `protected-decision-required` | authority / 5 | envelope | `envelope_id`, `decision_class`, `required_capabilities`, `affected_actions`, `stop_ids`, `attention_ids`, `event`, `replayed` |
+| `outcome-not-permitted` | precondition / 4 | null | `obligation_id`, `obligation_type`, `outcome_id`, `result` |
+| `evidence-type-not-accepted` | precondition / 4 | null | `obligation_id`, `evidence_type`, `accepted_evidence_types` |
+| `source-digest-mismatch` | precondition / 4 | null | `display_label`, `path`, `expected_digest`, `observed_digest` |
+| `repository-mismatch` | conflict / 4 | null | `expected`, `observed` |
+| `human-outcome-required` | precondition / 4 | envelope | `envelope_id`, `obligation_id`, `outcome_class`, `stop_ids`, `attention_ids`, `event`, `replayed` |
+
+`requirement-not-found` retains its earlier not-found / 3 registration with
+subject `requirement` and detail `id`; the Phase 23 requirement leaves now
+produce it. `finding-unresolved` belongs to the Evaluation reason set and is
+absent from the failure-code set. The nested `budget`, `event`, `expected`,
+`observed`, and `conflicting_subject` objects use the exact closed shapes in
+the accepted interface contract.
 
 ## 6. Removed Commands
 
@@ -340,4 +434,33 @@ Human recovery guidance without changing JSON or mutation authority; DEC-220
 records technical qualification and the accepted second Human checklist.
 CLI view polish and verbosity remain nonblocking CF-040.
 
-*Last updated: 2026-09-13 (Phase 22 accepted implementation; DEC-220)*
+### Phase 23 accepted amendment
+
+`../docs/phases/phase-23/public-interface.md` contains the delivered closed
+Review, Finding, Concern, Deviation, Decision Reference, Human Outcome, and
+requirement-reference leaf schemas, failure details, and Human views (DEC-222).
+Later accepted amendments, all delivered and recorded in that contract:
+
+- DEC-263: Stop-blocked judgment denials carry `stop_ids`, `attention_ids`,
+  `event` (null), and `replayed` (`false`) in failure details; StopDetails are
+  unchanged.
+- DEC-265/266: section 5 declares 19 Failure codes (18 added, 1 retained,
+  tabled above). All four `authority-*` codes keep the Phase 21 details
+  `{operation,actor_id,required_actions,required_capabilities}` with a null
+  subject.
+- DEC-269: every Human-mode failure from the Stop-error family (`claim
+  acquire`, `run start`, `gate run` Stop denials, `stop` and `attention`
+  leaves) writes `error: <message>` to stderr, with the JSON `message` text.
+  The `review-rework-exhausted` Stop is resolved by an `approved` Human Outcome
+  of class `review-rework-extension`, recorded atomically or cited through
+  `stop resolve`. Its Human denial adds one guidance line naming that action.
+  `RequirementRef` gains `requirement_id` as described above.
+- DEC-270: journals written before `requirement_id` existed are unsupported;
+  rebuild refuses them with `journal-replay-stopped` (ADR-0011).
+
+DEC-271 records technical qualification and the Human re-check. The
+remaining Human operating-experience items from the Phase 23 checklist
+(Stop-detail rendering, denial reasons, hint verbosity, `--input` authoring)
+are CF-045; CF-040 still covers polish of earlier views.
+
+*Last updated: 2026-10-03 (Phase 23 wrap; DEC-263/265/266/269/270/271)*

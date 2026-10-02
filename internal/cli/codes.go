@@ -58,6 +58,7 @@ const (
 	CodeClaimConflict               Code = "claim-conflict"
 	CodeClaimExpired                Code = "claim-expired"
 	CodeClaimStale                  Code = "claim-stale"
+	CodeClaimModeInvalid            Code = "claim-mode-invalid"
 	CodeRunNotFound                 Code = "run-not-found"
 	CodeRunInactive                 Code = "run-inactive"
 	CodeRunVersionConflict          Code = "run-version-conflict"
@@ -83,6 +84,24 @@ const (
 	CodeObligationUnsatisfied       Code = "obligation-unsatisfied"
 	CodeArchiveInvalid              Code = "archive-invalid"
 	CodeImportTargetConflict        Code = "import-target-conflict"
+	CodeReviewNotIndependent        Code = "review-not-independent"
+	CodeReviewVerdictInvalid        Code = "review-verdict-invalid"
+	CodeReviewChangesRequired       Code = "review-changes-required"
+	CodeReviewReworkExhausted       Code = "review-rework-exhausted"
+	CodeEvidenceTypeNotAccepted     Code = "evidence-type-not-accepted"
+	CodeOutcomeNotPermitted         Code = "outcome-not-permitted"
+	CodeRepositoryMismatch          Code = "repository-mismatch"
+	CodeReviewNotFound              Code = "review-not-found"
+	CodeFindingNotFound             Code = "finding-not-found"
+	CodeFindingAlreadyDisposed      Code = "finding-already-disposed"
+	CodeConcernNotFound             Code = "concern-not-found"
+	CodeDeviationNotFound           Code = "deviation-not-found"
+	CodeConcernAlreadyDisposed      Code = "concern-already-disposed"
+	CodeIdempotencyConflict         Code = "idempotency-conflict"
+	CodeProtectedDecisionRequired   Code = "protected-decision-required"
+	CodeSourceDigestMismatch        Code = "source-digest-mismatch"
+	CodeHumanOutcomeRequired        Code = "human-outcome-required"
+	CodeOutcomeNotFound             Code = "outcome-not-found"
 )
 
 type SubjectType string
@@ -107,6 +126,12 @@ const (
 	SubjectExport           SubjectType = "export"
 	SubjectStop             SubjectType = "stop"
 	SubjectAttention        SubjectType = "attention"
+	SubjectReview           SubjectType = "review"
+	SubjectFinding          SubjectType = "finding"
+	SubjectConcern          SubjectType = "concern"
+	SubjectDeviation        SubjectType = "deviation"
+	SubjectDecision         SubjectType = "decision"
+	SubjectHumanOutcome     SubjectType = "human-outcome"
 )
 
 type Subject struct {
@@ -186,6 +211,13 @@ func objectsField(name string, fields ...detailField) detailField {
 	return detailField{name: name, typeOf: detailObjects, fields: fields}
 }
 
+func repositoryFields() []detailField {
+	return []detailField{
+		nullableStringField("base_oid"), stringField("capture_source"), booleanField("dirty"), nullableStringField("dirty_digest"),
+		stringField("head_oid"), stringField("project_id"), stringField("tree_oid"), stringField("worktree_id"),
+	}
+}
+
 func definition(category Category, retryable bool, subjects []SubjectType, details ...detailField) reasonDefinition {
 	fields := make([]string, len(details))
 	for index, detail := range details {
@@ -197,7 +229,40 @@ func definition(category Category, retryable bool, subjects []SubjectType, detai
 	}
 }
 
-var reasonCodeDefinitions = map[Code]reasonDefinition{
+var failureCodeDefinitions = map[Code]reasonDefinition{
+	CodeReviewNotIndependent: definition(CategoryPrecondition, false, nil,
+		stringField("review_actor_id"), objectField("conflicting_subject", stringField("type"), stringField("id")), stringField("conflicting_actor_id")),
+	CodeReviewVerdictInvalid: definition(CategoryInvalidInput, false, nil,
+		stringField("verdict"), stringField("reason")),
+	CodeReviewChangesRequired: definition(CategoryPrecondition, false, nil,
+		stringField("review_id"), stringField("obligation_id"), stringsField("blocking_finding_ids")),
+	CodeReviewReworkExhausted: definition(CategoryPrecondition, false, []SubjectType{SubjectEnvelope},
+		objectField("budget", stringField("name"), stringField("scope"), stringField("unit"), integerField("maximum"), nullableIntegerField("warning_threshold"), stringField("exhaustion_action"), nullableIntegerField("consumed"), nullableIntegerField("remaining"), stringField("state")), stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
+	CodeEvidenceTypeNotAccepted: definition(CategoryPrecondition, false, nil,
+		stringField("obligation_id"), stringField("evidence_type"), stringsField("accepted_evidence_types")),
+	CodeOutcomeNotPermitted: definition(CategoryPrecondition, false, nil,
+		stringField("obligation_id"), stringField("obligation_type"), stringField("outcome_id"), stringField("result")),
+	CodeRepositoryMismatch: definition(CategoryConflict, false, nil,
+		objectField("expected", repositoryFields()...), objectField("observed", repositoryFields()...)),
+	CodeReviewNotFound:  definition(CategoryNotFound, false, []SubjectType{SubjectReview}, stringField("id")),
+	CodeFindingNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectFinding}, stringField("id")),
+	CodeFindingAlreadyDisposed: definition(CategoryConflict, false, []SubjectType{SubjectFinding},
+		stringField("finding_id"), stringField("state")),
+	CodeConcernNotFound:   definition(CategoryNotFound, false, []SubjectType{SubjectConcern}, stringField("id")),
+	CodeDeviationNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectDeviation}, stringField("id")),
+	CodeConcernAlreadyDisposed: definition(CategoryConflict, false, []SubjectType{SubjectConcern},
+		stringField("concern_id"), stringField("disposed_at")),
+	CodeIdempotencyConflict: definition(CategoryConflict, false, nil,
+		stringField("operation_scope"), stringField("idempotency_key"), stringField("stored_request_digest"), stringField("supplied_request_digest")),
+	CodeProtectedDecisionRequired: definition(CategoryAuthority, false, []SubjectType{SubjectEnvelope},
+		stringField("envelope_id"), stringField("decision_class"), stringsField("required_capabilities"), stringsField("affected_actions"),
+		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
+	CodeSourceDigestMismatch: definition(CategoryPrecondition, false, nil,
+		stringField("display_label"), nullableStringField("path"), stringField("expected_digest"), nullableStringField("observed_digest")),
+	CodeHumanOutcomeRequired: definition(CategoryPrecondition, false, []SubjectType{SubjectEnvelope},
+		stringField("envelope_id"), stringField("obligation_id"), stringField("outcome_class"),
+		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
+	CodeOutcomeNotFound:     definition(CategoryNotFound, false, []SubjectType{SubjectHumanOutcome}, stringField("id")),
 	CodeInvalidArgument:     definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeUnsupportedKind:     definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeUnsupportedRelation: definition(CategoryInvalidInput, false, nil, stringField("argument"), nullableStringField("value"), stringsField("allowed")),
@@ -218,9 +283,12 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeDependencyCycle: definition(CategoryPrecondition, false, nil, stringsField("path")),
 	CodeTransitionNotPermitted: definition(CategoryPrecondition, false, []SubjectType{SubjectIssue},
 		stringField("from_state"), stringField("to_state"), stringsField("unsatisfied")),
-	CodeAuthorityMissing:      definition(CategoryAuthority, false, nil, stringField("operation"), nullableStringField("actor")),
-	CodeAuthorityUnknownActor: definition(CategoryAuthority, false, nil, stringField("operation"), nullableStringField("actor")),
-	CodeAuthorityDenied:       definition(CategoryAuthority, false, nil, stringField("operation"), nullableStringField("actor")),
+	CodeAuthorityMissing: definition(CategoryAuthority, false, nil,
+		nullableStringField("actor_id"), stringField("operation"), stringsField("required_actions"), stringsField("required_capabilities")),
+	CodeAuthorityUnknownActor: definition(CategoryAuthority, false, nil,
+		nullableStringField("actor_id"), stringField("operation"), stringsField("required_actions"), stringsField("required_capabilities")),
+	CodeAuthorityDenied: definition(CategoryAuthority, false, nil,
+		nullableStringField("actor_id"), stringField("operation"), stringsField("required_actions"), stringsField("required_capabilities")),
 	CodeJournalReplayStopped: definition(CategoryIntegrity, false, nil,
 		stringField("journal_file"), nullableIntegerField("line"), nullableStringField("event_id")),
 	CodeProjectionDivergence: definition(CategoryIntegrity, false, nil,
@@ -251,6 +319,7 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeClaimConflict:        definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
 	CodeClaimExpired:         definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
 	CodeClaimStale:           definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
+	CodeClaimModeInvalid:     definition(CategoryPrecondition, false, []SubjectType{SubjectClaim}, stringField("claim_id"), stringField("mode"), stringField("required_mode")),
 	CodeRunNotFound:          definition(CategoryNotFound, false, []SubjectType{SubjectRun}, stringField("id")),
 	CodeRunInactive:          definition(CategoryPrecondition, false, []SubjectType{SubjectRun}, stringField("run_id"), stringField("status")),
 	CodeRunVersionConflict:   definition(CategoryConflict, false, []SubjectType{SubjectRun}, stringField("run_id"), integerField("expected_version"), integerField("actual_version")),
@@ -303,15 +372,20 @@ var registeredCodes = []Code{
 	CodeActivationDirectionConflict,
 	CodeActivationIncomplete,
 	CodeAuthorityUnavailable, CodeCapabilityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
-	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive, CodeRunVersionConflict,
+	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeClaimModeInvalid, CodeRunNotFound, CodeRunInactive, CodeRunVersionConflict,
 	CodeExecutorLivenessUnknown, CodeExecutorStillLive, CodeRecoveryStateConflict, CodeObservationNotFound, CodeRecoveryAlreadyLinked,
 	CodeReceiptNotFound, CodeEvidenceNotFound,
+	CodeReviewNotIndependent, CodeReviewVerdictInvalid, CodeReviewChangesRequired, CodeReviewReworkExhausted,
+	CodeEvidenceTypeNotAccepted, CodeOutcomeNotPermitted, CodeRepositoryMismatch, CodeReviewNotFound,
 	CodeGateUnsuccessful,
 	CodeBudgetExhausted, CodeBudgetDataUnavailable, CodeBudgetSampleConflict,
 	CodeStopNotFound, CodeAttentionNotFound, CodeAttentionVersionConflict, CodeStopUnresolved, CodeResolutionInvalid,
 	CodeObligationUnsatisfied,
 	CodeArchiveInvalid,
 	CodeImportTargetConflict,
+	CodeFindingNotFound, CodeFindingAlreadyDisposed,
+	CodeConcernNotFound, CodeDeviationNotFound, CodeConcernAlreadyDisposed,
+	CodeProtectedDecisionRequired, CodeSourceDigestMismatch, CodeHumanOutcomeRequired, CodeOutcomeNotFound,
 }
 
 func findingFields() []detailField {
@@ -325,7 +399,7 @@ func infoFields() []detailField {
 func RegisteredCodes() []Code { return append([]Code(nil), registeredCodes...) }
 
 func LookupCode(code Code) (ReasonSpec, bool) {
-	definition, ok := reasonCodeDefinitions[code]
+	definition, ok := failureCodeDefinitions[code]
 	if !ok {
 		return ReasonSpec{}, false
 	}
@@ -336,7 +410,7 @@ func LookupCode(code Code) (ReasonSpec, bool) {
 }
 
 func NewFailure(code Code, message string, subject *Subject, details map[string]any) (Failure, error) {
-	definition, ok := reasonCodeDefinitions[code]
+	definition, ok := failureCodeDefinitions[code]
 	if !ok {
 		return Failure{}, fmt.Errorf("new failure: unknown code %q", code)
 	}

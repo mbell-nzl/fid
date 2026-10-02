@@ -18,7 +18,7 @@ func currentProjectedBudget(tx *sql.Tx, runID, name any, excluding ...string) (m
 	if err != nil {
 		return nil, err
 	}
-	known := currentEnum(budget["unit"], "attempts", "failures", "milliseconds", "tool-failures", "interventions")
+	known := currentEnum(budget["unit"], "attempts", "failures", "milliseconds", "tool-failures", "interventions", "review-cycles")
 	consumed := int64(0)
 	excluded := ""
 	if len(excluding) != 0 {
@@ -141,6 +141,43 @@ func currentBudgetEventResult(tx *sql.Tx, event Event) (map[string]any, error) {
 			return nil, err
 		}
 		attention = append(attention, v)
+	}
+	result["attention"] = attention
+	return result, nil
+}
+
+// currentReviewBudgetResult re-derives review.recorded's committed
+// budget/stops/attention from this Event's own Effects. budget is present
+// only when this Event consumed a review-cycles budget_samples row
+// (exhausting it can also raise a review-rework-exhausted Stop). stops and
+// attention are derived independently of budget: DEC-224 lets a review.record
+// call raise human-outcome-required through workflow.
+// HumanOutcomeReadinessStopEffects with no budget_samples Effect at all (a
+// pass-verdict Review satisfying the last blocking Finding), so gating the
+// Stop/Attention re-derivation on a budget sample being present would drop
+// that Stop from the expected result and reject the whole Event - task 10's
+// own new call site was not previously reachable without this generalization.
+func currentReviewBudgetResult(tx *sql.Tx, event Event) (map[string]any, error) {
+	result := map[string]any{"budget": nil}
+	if sample := currentInserted(event, "budget_samples"); sample != nil {
+		budget, err := currentProjectedBudget(tx, sample["run_id"], sample["budget_name"])
+		if err != nil {
+			return nil, err
+		}
+		result["budget"] = budget
+	}
+	stops, err := currentEventObjects(tx, event, "stops", "Stop", "id")
+	if err != nil {
+		return nil, err
+	}
+	result["stops"] = stops
+	attention := []any{}
+	for _, id := range currentEventIDs(event, "attention_stop_links", "attention_id") {
+		value, err := currentProjectedValue(tx, "Attention", "attention_items", map[string]any{"id": id})
+		if err != nil {
+			return nil, err
+		}
+		attention = append(attention, value)
 	}
 	result["attention"] = attention
 	return result, nil

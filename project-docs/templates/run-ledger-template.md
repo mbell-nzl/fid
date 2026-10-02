@@ -13,6 +13,12 @@
 > resumed or replacement runner session reads it first and reconciles it
 > against completion reports and git history before continuing.
 
+A terminated `INVALID` rejection is a conclusive failed append. Validate the
+unchanged ledger, correct the candidate against its current state, and resubmit;
+retain the rejected output and exit status in the corrected event's evidence.
+The byte-identical retry rule applies when termination or the receipt is
+missing. A rejected candidate with a valid ledger does not require a stop.
+
 Entry types, in the order they typically occur. Timestamps are
 `YYYY-MM-DD HH:MM` local time. Append new entries at the end of the file, in
 wall-clock order, one entry per event.
@@ -73,7 +79,16 @@ Append before a replacement or resumed Phase Runner takes another action.
 For a normal resume that does not reconcile a STOP, set `Governing TRG`,
 `Governing ESC`, `Trigger signature`, `Attempt count`, `Resolution authority`,
 and `Next recovery` to `N/A`; `Continuing task` and checkpoint reconciliation
-remain concrete.
+remain concrete. Omit `Repair owners` entirely, including any `N/A` placeholder.
+Choose this form from the current ledger state: an older STOP already followed
+by an accepted RUN-RESUME does not authorize another STOP resume. Current-context
+summaries may lag the ledger.
+
+A normal resume during an active TASK-RECOVERY preserves its task, trigger,
+attempt, authority, and review-owner progress. Continue that recovery after
+reconciling existing commits, report, and child-session state; do not append a
+duplicate TASK-RECOVERY or restart completed owners. Its `REPAIR_PENDING`
+receipt permits continuing that repair, not advancing to a later task.
 
 A pending ordinary schema-v2 REPAIR TRIAGE permits this normal resume only
 for its same originating task. The resume preserves its pending authority;
@@ -85,6 +100,11 @@ continuing task, and exact recovery tuple. Those fields bind the next
 invalid. That recovery's `Source` and `Repair authority` also contain the exact
 typed `Resolution authority`. `Resolution evidence` contains the
 Runner-observed verification.
+A STOP resume after a BLOCK re-review may include one optional
+`Repair owners: <ordered, distinct task list>` field under DEC-257. Its value
+must be byte-identical to the `- Repair owners:` line in the resolution DEC;
+the BLOCK must re-review an open review whose owners all completed, and
+`Continuing task` and `Next recovery` must name the first new owner.
 The resumed route retains the governing TRG/ESC and never allocates replacement
 identities for the resolved BLOCK.
 `Resolution authority` is exactly one of `verified-commit:<40hex>`,

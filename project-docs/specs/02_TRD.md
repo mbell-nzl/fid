@@ -75,6 +75,13 @@ Registration, executor, Receipt, Artifact, and Evidence logic are owned by
 `internal/validation` is called by both terminal-success Issue transition and
 Envelope completion; neither adapter duplicates its rules.
 
+Phase 23 adds exactly one package and removes exactly one. `internal/review`
+owns Review, Finding, Concern, Deviation, Decision Reference, Human Outcome,
+and requirement-reference rules. `internal/requirements` is removed with V1
+requirement authoring. `internal/links` is restricted to Issue endpoints;
+requirement traceability lives only in `requirement_issue_links`. The exact
+reconciliation is in `../docs/phases/phase-23/execution-scope.md`.
+
 ## 3. Versioned Backend Capabilities
 
 Capability versions evolve independently of the fid product version.
@@ -151,6 +158,15 @@ recovery does not by itself qualify `work.claims.v1`: parallel scope semantics
 remain Phase 24, so that capability remains unavailable. Phase 22 final
 acceptance is recorded in `../docs/phases/phase-22/qa/final-acceptance.md`.
 
+Phase 23 qualifies `reviews.coverage.v1` and `human.outcomes.v1` after the
+Review, Finding, Human Outcome, Attention resolution, V1 removal, and portable
+recovery proofs in `../docs/phases/phase-23/tasks/task-4-done.md` through
+`task-16-done.md`. The final `attention.v1` limit reports
+`human_outcome_resolution:true`. Its three changed rows use the exact limits
+and trust sources in `../docs/phases/phase-23/contracts.md` section 15.
+`work.claims.v1` remains unavailable under Phase 24 ownership and
+`telemetry.trajectory.v1` under Phase 25 ownership.
+
 - JSON objects include a schema or contract version at the operation envelope
   or record level.
 - IDs are opaque stable strings. Consumers do not parse prefixes for behavior.
@@ -199,6 +215,12 @@ distinct Issues, worktrees, and provably disjoint scopes. Lease mismatch,
 unknown liveness, unsafe repository state, or active prior-revision mutation
 rejects without partial effects.
 
+Run start binds the Run Actor to the active Claim's Actor; releasing or expiring
+the Claim retains its durable history. Phase 23 Review independence reads
+mutating Claim history and Runs under those Claims. A separate Run-only Actor
+is therefore a diagnostic query fixture, not a state the accepted CLI creates
+(DEC-239); the binding and retained history are not relaxed for validation.
+
 ### 5.3 Registered execution and evidence
 
 - register and resolve immutable Gate Definitions;
@@ -214,7 +236,9 @@ returns absence, validity/freshness, and Artifact availability separately.
 ### 5.4 Review and judgment
 
 - record a Review Record and Findings;
-- record addressed assertions and later independent Finding resolution;
+- record nonterminal addressed assertions and later independent Finding
+  resolution or reasoned inapplicability, with terminal dispositions committed
+  atomically in their qualifying Review Event;
 - record Concerns, Deviations, Decision References, and Human Outcomes;
 - raise, list, and resolve Attention through the qualifying outcome/fact.
 
@@ -253,6 +277,14 @@ replays before accepting a new write.
 Projection tables may normalize current query state, but canonical history is
 never inferred from row update timestamps. Rebuild and live application use
 the same event appliers and must produce semantic parity.
+
+Full rebuild owns one SQLite connection and a bounded cache of prepared
+Effect-write and projection-metadata statements for that rebuild only. It
+retains one transaction and checkpoint update per Event, all validation and
+foreign-key checks, and the existing rebuild-only durability settings.
+Statements and the connection are released on success or failure before the
+staged projection can replace the installed database. Live writes and catch-up
+retain their existing transaction path (Phase 23 DEC-238).
 
 ## 7. Concurrency And Idempotency
 
@@ -322,4 +354,4 @@ and a slow sample requires causal optimization rather than threshold change.
   physical DDL and Event payload are recorded in `03_TRD_SCHEMA.md` for that
   slice.
 
-*Last updated: 2026-08-23 (Phase 21 DEC-156/157/158 planning amendments)*
+*Last updated: 2026-10-03 (Phase 23 wrap; package boundary and qualified capabilities)*

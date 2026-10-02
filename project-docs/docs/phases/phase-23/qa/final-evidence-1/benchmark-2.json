@@ -1,0 +1,24 @@
+{
+  "id": "benchmark-2",
+  "cmd": "go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T17:06:39.552Z",
+  "results": [
+    {
+      "chunk_id": "cdb172",
+      "wall_time_seconds": 1.000951396,
+      "session_id": 57269,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "5b399a",
+      "wall_time_seconds": 0.00001079,
+      "exit_code": 0,
+      "original_token_count": 78,
+      "output": "goos: linux\ngoarch: amd64\npkg: github.com/mbell-nzl/fid/internal/journal\ncpu: AMD Ryzen 7 5700G with Radeon Graphics         \nBenchmarkRebuildWorkspace100kEvents-6   \t       1\t23338411901 ns/op\t     23338 ms/rebuild\t2296997112 B/op\t34584528 allocs/op\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/journal\t26.312s\n"
+    }
+  ],
+  "ended": "2026-10-02T17:07:13.966Z"
+}

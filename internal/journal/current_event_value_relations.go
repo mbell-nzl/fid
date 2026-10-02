@@ -60,11 +60,21 @@ func validateCurrentValueRelations(kind string, o map[string]any) error {
 		if len(o["producer"].(string)) > 128 || len(o["provenance_ref"].(string)) > 512 {
 			return fmt.Errorf("actor metadata exceeds bound")
 		}
-		const actions = "artifact.verify,attention.resolve,claim.acquire,claim.expire,claim.release,claim.renew,envelope.activate,envelope.complete,envelope.create,evidence.link,gate.register,gate.run,issue.transition,run.abandon,run.checkpoint,run.close,run.force-recover,run.observe,run.observe-budget,run.recover,run.start,stop.raise,stop.resolve"
+		const actions = "artifact.verify,attention.resolve,claim.acquire,claim.expire,claim.release,claim.renew,concern.dispose,concern.record,decision.record-reference,deviation.record,envelope.activate,envelope.complete,envelope.create,evidence.link,finding.address,gate.register,gate.run,human-outcome.record,issue.transition,review.record,run.abandon,run.checkpoint,run.close,run.force-recover,run.observe,run.observe-budget,run.recover,run.start,stop.raise,stop.resolve"
 		if err := validateCurrentValue("[]="+actions, o["capabilities"]); err != nil {
 			return err
 		}
 		return currentSortedValues(o["capabilities"], true)
+	case "DecisionAuthority":
+		return currentSortedValues(o["required_capabilities"], true)
+	case "ProtectedDecision":
+		if (o["status"] == "satisfied") != (o["decision_ref_id"] != nil && o["human_outcome_id"] != nil) {
+			return fmt.Errorf("protected Decision status mismatch")
+		}
+		if err := currentSortedValues(o["required_capabilities"], true); err != nil {
+			return err
+		}
+		return currentSortedValues(o["affected_actions"], true)
 	case "GateDefinition":
 		return currentGateDefinitionRelations(o)
 	case "Stop":

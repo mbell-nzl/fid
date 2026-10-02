@@ -26,13 +26,10 @@ func TestCheckWarningsClassifiesQualifyingAndNonQualifyingStates(t *testing.T) {
 
 	wantChecks := []string{
 		"stale_claims",
-		"stale_verifications",
 		"started_without_claim",
 		"started_without_claim",
 		"started_without_claim",
 		"started_without_claim",
-		"telemetry_gaps",
-		"telemetry_gaps",
 	}
 	if gotChecks := findingChecks(got.Warnings); !reflect.DeepEqual(gotChecks, wantChecks) {
 		t.Fatalf("Check().Warnings checks = %#v, want %#v", gotChecks, wantChecks)
@@ -41,13 +38,10 @@ func TestCheckWarningsClassifiesQualifyingAndNonQualifyingStates(t *testing.T) {
 
 	wantEntityIDs := []string{
 		"FID-stale-claim",
-		"AV-stale",
 		"FID-start-after",
 		"FID-start-at",
 		"FID-start-fallback",
 		"FID-start-non-status-update",
-		"TC-issue-only-run",
-		"TC-missing-run",
 	}
 	if gotEntityIDs := findingEntityIDs(got.Warnings); !reflect.DeepEqual(gotEntityIDs, wantEntityIDs) {
 		t.Fatalf("Check().Warnings entity IDs = %#v, want %#v", gotEntityIDs, wantEntityIDs)

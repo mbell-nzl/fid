@@ -7,6 +7,7 @@ import (
 )
 
 func TestResolveStopsAtContainingGitRoot(t *testing.T) {
+	t.Parallel()
 	outside := t.TempDir()
 	if err := os.Mkdir(filepath.Join(outside, ".fid"), 0o755); err != nil {
 		t.Fatalf("Mkdir(.fid) error = %v", err)
@@ -27,6 +28,7 @@ func TestResolveStopsAtContainingGitRoot(t *testing.T) {
 }
 
 func TestResolveFindsNearestRootAndRequiresExplicitRootToContainFID(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	if err := os.Mkdir(filepath.Join(root, ".fid"), 0o755); err != nil {
 		t.Fatalf("Mkdir(root .fid) error = %v", err)
@@ -53,6 +55,7 @@ func TestResolveFindsNearestRootAndRequiresExplicitRootToContainFID(t *testing.T
 }
 
 func TestResolveRejectsSymlinkedFIDDirectory(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	outside := t.TempDir()
 	if err := os.Mkdir(filepath.Join(outside, ".fid"), 0o755); err != nil {

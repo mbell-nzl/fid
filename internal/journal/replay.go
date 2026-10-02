@@ -54,6 +54,12 @@ func ReplayJournal(conn *sql.DB, journalDir string, options *ReplayOptions) (Rep
 		return ReplayStats{}, fmt.Errorf("replay journal: connection is nil")
 	}
 
+	return replayJournal(journalDir, options, func(input ProjectionInput) error {
+		return ProjectEvent(conn, input)
+	})
+}
+
+func replayJournal(journalDir string, options *ReplayOptions, project func(ProjectionInput) error) (ReplayStats, error) {
 	files, err := orderedJournalFiles(journalDir)
 	if err != nil {
 		return ReplayStats{}, err
@@ -62,7 +68,7 @@ func ReplayJournal(conn *sql.DB, journalDir string, options *ReplayOptions) (Rep
 	var stats ReplayStats
 	tracker := newAggregateSequenceTracker()
 	for _, fileName := range files {
-		fileReplayed, err := replayJournalFile(conn, journalDir, fileName, options, &stats, tracker)
+		fileReplayed, err := replayJournalFile(project, journalDir, fileName, options, &stats, tracker)
 		if err != nil {
 			return ReplayStats{}, err
 		}
@@ -74,7 +80,7 @@ func ReplayJournal(conn *sql.DB, journalDir string, options *ReplayOptions) (Rep
 	return stats, nil
 }
 
-func replayJournalFile(conn *sql.DB, journalDir, fileName string, options *ReplayOptions, stats *ReplayStats, tracker *aggregateSequenceTracker) (bool, error) {
+func replayJournalFile(project func(ProjectionInput) error, journalDir, fileName string, options *ReplayOptions, stats *ReplayStats, tracker *aggregateSequenceTracker) (bool, error) {
 	path := filepath.Join(journalDir, fileName)
 	file, err := os.Open(path)
 	if err != nil {
@@ -150,7 +156,7 @@ func replayJournalFile(conn *sql.DB, journalDir, fileName string, options *Repla
 			stats.UpgradedEvents++
 		}
 
-		if err := ProjectEvent(conn, ProjectionInput{
+		if err := project(ProjectionInput{
 			Event:      upgraded,
 			EventHash:  eventHash,
 			File:       fileName,

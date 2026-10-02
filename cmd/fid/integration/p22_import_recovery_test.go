@@ -20,6 +20,7 @@ var p22ParityDimensions = []string{"resume", "run.inspect", "stop.list", "attent
 var p22ParityEnvironmentalNormalizations = []string{"archive-path", "destination-root", "publication-metadata"}
 
 func TestRecoveryLiveRebuildImportParity(t *testing.T) {
+	t.Parallel()
 	adapter := p22NewFIDRecoveryAdapter(t)
 	archiveDirectory := t.TempDir()
 	archive := filepath.Join(archiveDirectory, "live.zip")

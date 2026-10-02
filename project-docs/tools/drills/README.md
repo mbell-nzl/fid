@@ -29,6 +29,7 @@ decay before a real defect exploits it.
 | drill-16 | bounded QA finding next action | `workflow-route.sh` |
 | drill-17 | protected stop and no-progress budget | `workflow-route.sh` |
 | drill-19 | parent wait expiry and externally interrupted child accounting | `workflow-route.sh`, `workflow-sequence-lint.sh` |
+| drill-20 | decision-released repair owners after a BLOCK re-review (DEC-257) | `workflow-sequence-lint.sh` |
 | drill-05 | weakened/vacuous test | QA Reviewer |
 | drill-06 | unrecorded spec deviation | QA Reviewer |
 | drill-07 | stale doc claim | QA Reviewer |
@@ -71,6 +72,22 @@ mutation, and idempotent receipt retry. Its focused command is:
 
 ```sh
 sh project-docs/tools/drills/review-recovery.sh
+```
+
+The suite also runs `review-block-owners.sh`, the DEC-257 regression for the Phase 23
+STOP after a BLOCK re-review. It proves that a STOP resume can bind the
+ordered `Repair owners` line of its resolving DEC. The owners then recover one
+at a time, and a linked PASS closes the review. It also rejects every drift:
+a mismatched or duplicated list, a STOP that was not a BLOCK re-review, a
+wrong first owner, out-of-order recovery, and an early PASS.
+
+The same drill covers a replacement Runner during a later owner's recovery:
+repeated STOP authority and `Repair owners` are rejected without mutation, a
+corrected normal resume preserves pending work and completed owners, receipt
+retry is idempotent, and the original recovery can finish through linked PASS.
+
+```sh
+sh project-docs/tools/drills/review-block-owners.sh
 ```
 
 Full set including agent drills (05-08):

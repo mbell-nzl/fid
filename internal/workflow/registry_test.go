@@ -38,6 +38,7 @@ func TestRegistryEqualsV01Definitions(t *testing.T) {
 }
 
 func TestLoadReleasesWorkflowRowsBeforeNestedQueries(t *testing.T) {
+	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
 	conn.SetMaxOpenConns(1)
@@ -68,8 +69,8 @@ func TestLoadSurfacesReservedRulesAsUnimplementedWithoutWriting(t *testing.T) {
 		name       string
 		paramsJSON string
 	}{
-		{name: RuleRequiredGatesCurrent, paramsJSON: `{"gates":[{"id":"gate-test","version":1}]}`},
-		{name: RuleHasCompletion, paramsJSON: `{"completion":"required"}`},
+		{name: RuleRequiredGatesCurrent},
+		{name: RuleHasCompletion},
 	} {
 		if _, err := conn.Exec(`
 			INSERT INTO workflow_transition_requires (workflow_id, from_state, to_state, rule, params_json)
@@ -99,7 +100,7 @@ func TestLoadSurfacesReservedRulesAsUnimplementedWithoutWriting(t *testing.T) {
 	}
 }
 
-func TestLoadRetainsProjectDecisionRuleWithoutRetiredSeed(t *testing.T) {
+func TestLoadImplementsProjectDecisionRuleWithoutRetiredSeed(t *testing.T) {
 	t.Parallel()
 
 	conn := migratedWorkflowRegistryDB(t)
@@ -125,7 +126,7 @@ func TestLoadRetainsProjectDecisionRuleWithoutRetiredSeed(t *testing.T) {
 	if !ok {
 		t.Fatal("loaded project Decision rule edge is missing")
 	}
-	want := []RuleReference{{Name: RuleLinkedToDecision, Unimplemented: true}}
+	want := []RuleReference{{Name: RuleLinkedToDecision}}
 	if !reflect.DeepEqual(rules, want) {
 		t.Fatalf("project Decision rule = %#v, want %#v", rules, want)
 	}

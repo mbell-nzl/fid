@@ -17,6 +17,7 @@ import (
 )
 
 func TestMigration0008PreservesIssueGetAndListRenderedBytes(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(workspace, ".fid", "journal"), 0o755); err != nil {
 		t.Fatalf("MkdirAll workspace journal: %v", err)

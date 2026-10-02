@@ -1,0 +1,22 @@
+{
+  "command": [
+    "go",
+    "test",
+    "-race",
+    "-count=1",
+    "-overlay",
+    "/home/mark/projects/fid/project-docs/docs/phases/phase-23/qa/final-evidence/reference-overlay.json",
+    "-run",
+    "^TestQAPhase23ReferenceAttentionKeyAndBytes$",
+    "-v",
+    "./internal/workflow"
+  ],
+  "cwd": "/tmp/fid-p23-qa-reference-PgIz9Jst/prechange",
+  "environment": {
+    "GIT_DIR": "/home/mark/projects/fid/.git/worktrees/prechange",
+    "GIT_WORK_TREE": "/tmp/fid-p23-qa-reference-PgIz9Jst/prechange"
+  },
+  "stdout": "=== RUN   TestQAPhase23ReferenceAttentionKeyAndBytes\n=== PAUSE TestQAPhase23ReferenceAttentionKeyAndBytes\n=== CONT  TestQAPhase23ReferenceAttentionKeyAndBytes\n    qa_reference_test.go:19: canonical executor-terminated: {\"type\":\"executor-terminated\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-pinned\"},\"budget_name\":null,\"capability_id\":null}\n    qa_reference_test.go:19: canonical run-recovered: {\"type\":\"run-recovered\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-pinned\"},\"budget_name\":null,\"capability_id\":null}\n    qa_reference_test.go:19: canonical activation-recovered: {\"type\":\"activation-recovered\",\"subject\":{\"type\":\"activation\",\"id\":\"ACT-pinned\"},\"budget_name\":null,\"capability_id\":null}\n    qa_reference_test.go:19: canonical capability-available: {\"type\":\"capability-available\",\"subject\":{\"type\":\"activation\",\"id\":\"ACT-pinned\"},\"budget_name\":null,\"capability_id\":\"attention.v1\"}\n    qa_reference_test.go:19: canonical budget-observed: {\"type\":\"budget-observed\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-pinned\"},\"budget_name\":\"attempts\",\"capability_id\":null}\n    qa_reference_test.go:19: canonical work-ended: {\"type\":\"work-ended\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-pinned\"},\"budget_name\":null,\"capability_id\":null}\n    qa_reference_test.go:25: subject={type:run,id:RUN-pinned} code=budget-exhausted condition={type:budget-observed,subject:{type:run,id:RUN-pinned},budget_name:attempts,capability_id:null} key=sha256:d4b51bb4a6404d4a2579826ad5c08d802ed83c41814cd5fa74d3ee8c7796c3de\n--- PASS: TestQAPhase23ReferenceAttentionKeyAndBytes (0.00s)\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/workflow\t3.380s\n",
+  "stderr": "",
+  "exit_code": 0
+}

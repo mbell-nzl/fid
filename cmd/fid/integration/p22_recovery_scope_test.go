@@ -12,6 +12,7 @@ import (
 )
 
 func TestP22RecoveryUsesClaimScopeAndExactHumanOutsideAdoption(t *testing.T) {
+	t.Parallel()
 	for _, mode := range []string{"ordinary-forged-scope", "force-outside", "force-protected"} {
 		t.Run(mode, func(t *testing.T) {
 			a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, p22FinalActions)

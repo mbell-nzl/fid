@@ -40,8 +40,9 @@ type BudgetAdmission struct {
 
 // BudgetAdmissionBlock identifies the durable reason execution cannot begin.
 type BudgetAdmissionBlock struct {
-	Code   string
-	Budget Budget
+	Code         string
+	Budget       Budget
+	LastReviewID string
 }
 
 type BudgetSampleConflictError struct {
@@ -102,12 +103,12 @@ func validateBudgetSample(budget Budget, sample BudgetSample) error {
 }
 
 func fidOwnedBudgetUnit(unit string) bool {
-	return unit == "attempts" || unit == "failures" || unit == "milliseconds" || unit == "tool-failures" || unit == "interventions"
+	return unit == "attempts" || unit == "failures" || unit == "milliseconds" || unit == "tool-failures" || unit == "interventions" || unit == "review-cycles"
 }
 
 func validBudgetUnit(unit string) bool {
 	switch unit {
-	case "attempts", "failures", "milliseconds", "input-tokens", "output-tokens", "micro-usd", "tool-failures", "diff-bytes", "interventions":
+	case "attempts", "failures", "milliseconds", "input-tokens", "output-tokens", "micro-usd", "tool-failures", "diff-bytes", "interventions", "review-cycles":
 		return true
 	default:
 		return false
@@ -205,6 +206,18 @@ func BudgetAdmissionBlocks(budgets []Budget) []BudgetAdmissionBlock {
 	return blocks
 }
 
+// GenericBudgetAdmissionBlocks omits budgets governed by their own rework Stop.
+// Callers admitting gate execution and describing that action use the same rule.
+func GenericBudgetAdmissionBlocks(budgets []Budget) []BudgetAdmissionBlock {
+	generic := make([]Budget, 0, len(budgets))
+	for _, budget := range budgets {
+		if budget.ExhaustionAction != "review-rework-exhausted" {
+			generic = append(generic, budget)
+		}
+	}
+	return BudgetAdmissionBlocks(generic)
+}
+
 // BudgetStopEffects prepares the Stop/Attention effects that must share the
 // Event which denied execution or crossed a budget exhaustion boundary.
 func BudgetStopEffects(conn *sql.DB, subject Subject, envelopeID, actorID string, blocks []BudgetAdmissionBlock, raisedAt string) ([]journal.Effect, []Stop, []Attention, error) {
@@ -219,26 +232,36 @@ func BudgetStopEffects(conn *sql.DB, subject Subject, envelopeID, actorID string
 	attention := make([]Attention, 0, len(blocks))
 	preparedAttention := map[string]Attention{}
 	for _, block := range blocks {
-		if block.Code != "budget-exhausted" && block.Code != "budget-data-unavailable" {
+		if block.Code != "budget-exhausted" && block.Code != "budget-data-unavailable" && block.Code != "review-rework-exhausted" {
 			return nil, nil, nil, fmt.Errorf("budget Stop code is invalid")
 		}
 		condition := Condition{Type: "work-ended", Subject: subject}
-		if block.Code == "budget-data-unavailable" {
+		switch block.Code {
+		case "budget-data-unavailable":
 			name := block.Budget.Name
 			condition = Condition{Type: "budget-observed", Subject: subject, BudgetName: &name}
+		case "review-rework-exhausted":
+			class := "review-rework-extension"
+			condition = Condition{Type: "human-outcome-recorded", Subject: subject, OutcomeClass: &class}
 		}
-		details, err := json.Marshal(map[string]any{
+		detailValue := map[string]any{
 			"envelope_id": envelopeID,
 			"budget_name": block.Budget.Name,
 			"unit":        block.Budget.Unit,
 			"maximum":     block.Budget.Maximum,
 			"consumed":    block.Budget.Consumed,
 			"remaining":   block.Budget.Remaining,
-		})
+		}
+		blockedActions := []string{"gate.run", "run.recover", "run.start"}
+		if block.Code == "review-rework-exhausted" {
+			detailValue["last_review_id"] = block.LastReviewID
+			blockedActions = []string{"claim.acquire", "run.start"}
+		}
+		details, err := json.Marshal(detailValue)
 		if err != nil {
 			return nil, nil, nil, err
 		}
-		request := StopRaiseRequest{Subject: subject, Code: block.Code, BlockedActions: []string{"gate.run", "run.recover", "run.start"}, Details: details, ResolutionCondition: condition, ResolverCapability: "stop.resolve"}
+		request := StopRaiseRequest{Subject: subject, Code: block.Code, BlockedActions: blockedActions, Details: details, ResolutionCondition: condition, ResolverCapability: "stop.resolve"}
 		if err := validateStopRaise(request); err != nil {
 			return nil, nil, nil, err
 		}

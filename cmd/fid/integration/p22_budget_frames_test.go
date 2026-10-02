@@ -10,6 +10,7 @@ import (
 )
 
 func TestP22BudgetCrossingFrameOrder(t *testing.T) {
+	t.Parallel()
 	a := p22NewFIDRecoveryAdapterWithLease(t, "agent", 3600)
 	p22AcceptedCall(t, a, "frame-baseline", "run.observe-budget", map[string]any{"value": 0})
 	for attempt := 1; attempt <= 3; attempt++ {

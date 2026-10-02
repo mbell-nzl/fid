@@ -124,6 +124,7 @@ func scanZIP(t *testing.T, path string) (archiveScan, []Check) {
 }
 
 func TestArchiveStopsAtFirstExpandedOverflow(t *testing.T) {
+	t.Parallel()
 	path := writeZeroZIP(t, []zipLimitMember{{size: maxArchiveNonArtifactBytes + 2}, {size: 1}})
 	reader, err := zip.OpenReader(path)
 	if err != nil {
@@ -142,6 +143,7 @@ func TestArchiveStopsAtFirstExpandedOverflow(t *testing.T) {
 }
 
 func TestReadEventLinesUsesPerLineLimitAcrossFragments(t *testing.T) {
+	t.Parallel()
 	if err := readEventLines(&fragmentReader{data: []byte(strings.Repeat("x", (1<<20)-1) + "\n"), width: 257}, func(value []byte) error {
 		if len(value) != (1<<20)-1 {
 			t.Fatal(len(value))
@@ -182,6 +184,7 @@ func (r *fragmentReader) Read(p []byte) (int, error) {
 }
 
 func TestSafeArchivePathRejectsPlatformEscapes(t *testing.T) {
+	t.Parallel()
 	for _, value := range []string{"../x", "/x", "C:/x", "C:x", `x\\y`, "x/../y", "x//y"} {
 		if safeArchivePath(value) {
 			t.Fatalf("accepted unsafe %q", value)

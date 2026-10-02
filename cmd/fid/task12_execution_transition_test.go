@@ -191,6 +191,7 @@ func TestExecutionBoundTransitionPredicateMatrix(t *testing.T) {
 
 	for _, row := range rows {
 		t.Run(row.name, func(t *testing.T) {
+			t.Parallel()
 			workspace, issueID, envelopeID, _ := executionTransitionFixture(t)
 			if row.prepare != nil {
 				row.prepare(t, workspace, issueID, envelopeID)
@@ -319,7 +320,7 @@ func mutateExecutionTransitionFixture(t *testing.T, workspace, statement string,
 func executionTransitionFixture(t *testing.T) (string, string, string, map[string]any) {
 	t.Helper()
 	workspace, values := cloneReusableWorkspaceFixture(t, "execution-transition", func() (string, []string) {
-		workspace, issueID, envelopeID, repository := buildExecutionTransitionFixture(t, false)
+		workspace, issueID, envelopeID, repository := buildExecutionTransitionEnvelopeFixture(t, false)
 		repositoryJSON, err := json.Marshal(repository)
 		if err != nil {
 			t.Fatalf("encode execution-transition repository: %v", err)
@@ -330,6 +331,7 @@ func executionTransitionFixture(t *testing.T) (string, string, string, map[strin
 	if err := json.Unmarshal([]byte(values[2]), &repository); err != nil {
 		t.Fatalf("decode execution-transition repository: %v", err)
 	}
+	startExecutionTransitionFixture(t, workspace, values[0], values[1], repository)
 	return workspace, values[0], values[1], repository
 }
 
@@ -339,6 +341,14 @@ func executionTransitionObservedFixture(t *testing.T) (string, string, string, m
 }
 
 func buildExecutionTransitionFixture(t *testing.T, observedRepository bool) (string, string, string, map[string]any) {
+	t.Helper()
+	workspace, issueID, envelopeID, repository := buildExecutionTransitionEnvelopeFixture(t, observedRepository)
+	startExecutionTransitionFixture(t, workspace, issueID, envelopeID, repository)
+	return workspace, issueID, envelopeID, repository
+}
+
+// Cache only durable setup; each clone acquires its own live claim and Run.
+func buildExecutionTransitionEnvelopeFixture(t *testing.T, observedRepository bool) (string, string, string, map[string]any) {
 	t.Helper()
 	var workspace, issueID string
 	var registration gateRegistrationView
@@ -367,8 +377,12 @@ func buildExecutionTransitionFixture(t *testing.T, observedRepository bool) (str
 	if activated.err != nil {
 		t.Fatalf("activate execution envelope: %v; stderr=%q", activated.err, activated.stderr)
 	}
+	return workspace, issueID, envelopeID, runRepositoryForTest(t, workspace)
+}
+
+func startExecutionTransitionFixture(t *testing.T, workspace, issueID, envelopeID string, repository map[string]any) {
+	t.Helper()
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "execution-transition-claim")
-	repository := runRepositoryForTest(t, workspace)
 	runPath := filepath.Join(workspace, "execution-transition-run.json")
 	writeActivationInput(t, runPath, map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
@@ -378,5 +392,4 @@ func buildExecutionTransitionFixture(t *testing.T, observedRepository bool) (str
 	if started.err != nil {
 		t.Fatalf("start execution Run: %v; stderr=%q", started.err, started.stderr)
 	}
-	return workspace, issueID, envelopeID, repository
 }

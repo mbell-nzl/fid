@@ -38,12 +38,49 @@ func writeResumeHuman(cmd *cobra.Command, resume workflow.Resume, context workfl
 		}
 	}
 	lines = append(lines, resumeCompletionHumanLines(resume)...)
+	lines = append(lines, resumeJudgmentHumanLines(resume)...)
 	if len(resume.Budgets) > 0 {
 		lines = append(lines, "", "Budgets")
 		lines = append(lines, budgetHumanLines(resume.Budgets)...)
 	}
 	_, err := fmt.Fprintln(cmd.OutOrStdout(), strings.Join(lines, "\n"))
 	return err
+}
+
+func resumeJudgmentHumanLines(resume workflow.Resume) []string {
+	lines := []string{"", "Review and judgment"}
+	sections := []struct {
+		label string
+		kind  string
+		items []map[string]any
+	}{
+		{"Reviews", "review", resume.Reviews},
+		{"Open Findings", "finding", resume.Findings},
+		{"Concerns", "concern", resume.Concerns},
+		{"Deviations", "deviation", resume.Deviations},
+		{"Decision References", "decision", resume.Decisions},
+		{"Human Outcomes", "human-outcome", resume.HumanOutcomes},
+	}
+	for _, section := range sections {
+		lines = append(lines, section.label)
+		if len(section.items) == 0 {
+			lines = append(lines, "  None.")
+		}
+		for _, item := range section.items {
+			lines = append(lines, p23HumanItem(section.kind, item)...)
+		}
+	}
+	lines = append(lines, "Protected Decisions")
+	if len(resume.ProtectedDecisions) == 0 {
+		lines = append(lines, "  None.")
+	}
+	for _, decision := range resume.ProtectedDecisions {
+		lines = append(lines, fmt.Sprintf("  Class %s: %s; affected actions: %s", decision.DecisionClass, decision.Status, strings.Join(decision.AffectedActions, ", ")))
+		if decision.Status != "satisfied" {
+			lines = append(lines, "    Resolution requires an approved Decision Reference with the required capabilities and an approved Human Outcome of the same class.")
+		}
+	}
+	return lines
 }
 
 func resumeContextHumanLines(resume workflow.Resume) []string {
@@ -91,9 +128,7 @@ func resumeCompletionHumanLines(resume workflow.Resume) []string {
 	}
 	lines = append(lines, "  Overall completion: "+resume.Completion.Status)
 	lines = append(lines, evaluationReasonHumanLines(resume.Completion.Reasons)...)
-	if !resume.Findings.Available {
-		lines = append(lines, "  Findings: unavailable; this view does not establish completed Review support.")
-	}
+	lines = append(lines, fmt.Sprintf("  Open Findings: %d", len(resume.Findings)))
 	return lines
 }
 

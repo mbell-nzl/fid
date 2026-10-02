@@ -112,6 +112,7 @@ func isTask9IntegrationMutation(args []string) bool {
 }
 
 func TestTask9IntegrationMutationRequestsUseActorAndIdempotency(t *testing.T) {
+	t.Parallel()
 	for _, args := range [][]string{
 		{"workflow", "define", "--by", "tl"},
 		{"workflow", "assign", "--by", "tl"},
@@ -259,12 +260,11 @@ func closureCompleteIssue(t *testing.T, binary, workspace, issueID string) strin
 
 func assertClosureConcernMutationsUnavailable(t *testing.T, binary, workspace, issueID, completionID string) {
 	t.Helper()
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, closureJournalPath(t, workspace),
-		[]string{"--json", "concern", "raise", "--on", issueID, "--actor", "agent:developer", "--in-completion", completionID, "--summary", "Closure concern"},
-		`"code":"capability-unavailable"`)
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, closureJournalPath(t, workspace),
-		[]string{"--json", "concern", "address", issueID, "--in-completion", completionID, "--actor", "agent:developer"},
-		`"code":"capability-unavailable"`)
+	for _, leaf := range []string{"raise", "address"} {
+		assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, closureJournalPath(t, workspace),
+			[]string{"concern", leaf})
+	}
+	_, _ = issueID, completionID
 }
 
 func closureIDAfterWord(t *testing.T, text, word string) string {
@@ -314,10 +314,13 @@ func assertClosureLinkReadback(t *testing.T, binary, workspace, mainIssueID, pee
 	t.Helper()
 
 	mainLinks, _ := closureRunFID(t, binary, workspace, "--json", "link", "list", mainIssueID, "--type", "issue")
-	for _, want := range []string{"PRD-LINK-002", peerIssueID, "implements", "discovered_from"} {
+	for _, want := range []string{peerIssueID, "discovered_from"} {
 		if !strings.Contains(mainLinks, want) {
 			t.Fatalf("main link list = %q, want %q", mainLinks, want)
 		}
+	}
+	if strings.Contains(mainLinks, "PRD-LINK-002") || strings.Contains(mainLinks, "implements") {
+		t.Fatalf("removed requirement link appears in list: %q", mainLinks)
 	}
 	peerLinks, _ := closureRunFID(t, binary, workspace, "--json", "link", "list", peerIssueID, "--type", "issue")
 	if !strings.Contains(peerLinks, mainIssueID) || !strings.Contains(peerLinks, "discovered_from") {
@@ -357,11 +360,11 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 		t.Fatalf("maintenance vacuum = (%v, %q, %q), want fail-closed unavailable", err, stdout, stderr)
 	}
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "maintenance vacuum")
-	stdout, stderr, err = closureRunFIDExpectError(t, binary, workspace, "decision", "get")
-	if err == nil || stdout != "" || stderr != "" {
-		t.Fatalf("decision command = (%v, %q, %q), want unknown command with empty output", err, stdout, stderr)
+	decision, _ := closureRunFID(t, binary, workspace, "--json", "decision", "list")
+	if !strings.Contains(decision, `"items":[]`) {
+		t.Fatalf("decision list = %q, want empty read result", decision)
 	}
-	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "unknown decision command")
+	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "decision list")
 	for _, args := range [][]string{
 		{"--json", "issue", "list"},
 		{"--json", "ready"},
@@ -440,10 +443,6 @@ var closureProjectedTableQueries = []struct {
 		query: "SELECT * FROM acceptance_criteria ORDER BY id",
 	},
 	{
-		name:  "ac_verifications",
-		query: "SELECT * FROM ac_verifications ORDER BY id",
-	},
-	{
 		name:  "activity_log",
 		query: "SELECT * FROM activity_log ORDER BY occurred_at, id",
 	},
@@ -460,8 +459,8 @@ var closureProjectedTableQueries = []struct {
 		query: "SELECT * FROM concerns ORDER BY id",
 	},
 	{
-		name:  "decisions",
-		query: "SELECT * FROM decisions ORDER BY id",
+		name:  "decision_refs",
+		query: "SELECT * FROM decision_refs ORDER BY id",
 	},
 	{
 		name:  "epic_metadata",
@@ -488,12 +487,16 @@ var closureProjectedTableQueries = []struct {
 		query: "SELECT * FROM projection_meta",
 	},
 	{
-		name:  "requirements",
-		query: "SELECT * FROM requirements ORDER BY id",
+		name:  "requirement_refs",
+		query: "SELECT * FROM requirement_refs ORDER BY id",
 	},
 	{
-		name:  "task_completions",
-		query: "SELECT * FROM task_completions ORDER BY id",
+		name:  "requirement_issue_links",
+		query: "SELECT * FROM requirement_issue_links ORDER BY requirement_id, issue_id, relation",
+	},
+	{
+		name:  "review_records",
+		query: "SELECT * FROM review_records ORDER BY id",
 	},
 	{
 		name:  "triage_events",

@@ -128,7 +128,7 @@ of Review/Human Obligations in later phases.
 | PRD-REV-001 | P0 | A completed Review Run shall create an immutable Review Record bound to exact Envelope revision and repository identity. |
 | PRD-REV-002 | P0 | A Review Record shall declare profile, coverage, verdict, evidence, and zero or more Findings. |
 | PRD-REV-003 | P0 | `changes-required` shall leave the review Obligation unsatisfied and expose Builder rework on the original Issue/Envelope. |
-| PRD-REV-004 | P0 | A Builder may record a Finding as addressed but only a later qualifying independent Review Record may resolve it. |
+| PRD-REV-004 | P0 | A Builder may record a Finding as addressed, which remains nonterminal; only a later qualifying independent Review Record may resolve it or mark it inapplicable with a reason. |
 | PRD-REV-005 | P0 | Target changes shall stale target-bound Review Records and Receipts according to the active Obligation policy. |
 | PRD-REV-006 | P0 | Rework shall consume existing budgets; exhaustion shall return `review-rework-exhausted` plus Attention. |
 | PRD-REV-007 | P0 | Concerns and Deviations shall record only the identity, subject, scope, severity, status, authority, disposition, references, and concise reasoning required to govern work. |

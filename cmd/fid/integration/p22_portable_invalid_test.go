@@ -16,6 +16,7 @@ import (
 )
 
 func TestP22PortableFakeAndFIDRejectUnknownEffects(t *testing.T) {
+	t.Parallel()
 	a := p22NewFIDRecoveryAdapter(t)
 	path := filepath.Join(t.TempDir(), "valid.zip")
 	p21Run(t, a.binary, a.workspace, "--json", "export", "create", path)

@@ -11,6 +11,7 @@ import (
 )
 
 func TestV02aWorkflowAuthoringExitScenarioAndRebuildParity(t *testing.T) {
+	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")
@@ -40,6 +41,7 @@ func TestV02aWorkflowAuthoringExitScenarioAndRebuildParity(t *testing.T) {
 }
 
 func TestMaintenanceCheckReportsIncompatibleWorkflowAssignment(t *testing.T) {
+	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")

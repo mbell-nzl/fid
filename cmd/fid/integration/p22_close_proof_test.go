@@ -13,6 +13,7 @@ import (
 )
 
 func TestP22CloseRunUsesObservedRepositoryAndQualifyingProof(t *testing.T) {
+	t.Parallel()
 	for _, kind := range []string{"qualifying", "missing", "stale", "failed", "outstanding", "forged-old-target", "live", "unknown", "missing-observation", "null-observation", "stale-version", "nil-base", "missing-base"} {
 		t.Run(kind, func(t *testing.T) {
 			a := p22CloseProofFixture(t, kind)
@@ -141,7 +142,7 @@ func p22CloseProofFixture(t *testing.T, kind string) *p22FIDRecoveryAdapter {
 		if gate.Receipt.Outcome != expected {
 			t.Fatal("proof fixture did not observe expected process outcome")
 		}
-		p21Run(t, a.binary, a.workspace, "--json", "evidence", "link", "--actor", a.actor, "--input", p21Input(t, a.workspace, "close-proof-link", map[string]any{"obligation_id": "OBL-p22-corpus", "receipt_id": gate.Receipt.ID, "target_repository": a.repository, "required_artifact_ids": []string{}}), "--idempotency-key", "close-proof-link")
+		p21Run(t, a.binary, a.workspace, "--json", "evidence", "link", "--actor", a.actor, "--input", p21Input(t, a.workspace, "close-proof-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}}), "--idempotency-key", "close-proof-link")
 	}
 	current := p21Run(t, a.binary, a.workspace, "--json", "run", "get", a.runID)
 	a.runVersion = p22Number(p21Path(t, current, "result", "run", "version"))

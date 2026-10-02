@@ -8,7 +8,7 @@ import (
 
 const (
 	ProjectionSchemaVersion = 5
-	ActiveMigrationVersion  = 16
+	ActiveMigrationVersion  = 18
 
 	ReplayStatusClean      = "clean"
 	ReplayStatusCatchingUp = "catching_up"
@@ -95,6 +95,16 @@ func WriteProjectionMeta(tx *sql.Tx, meta ProjectionMeta) error {
 		return fmt.Errorf("write projection meta: transaction is nil")
 	}
 
+	return WriteProjectionMetaWithExecutor(tx, meta)
+}
+
+// ProjectionMetaExecutor executes a write inside the caller's transaction.
+// Rebuild can supply a prepared executor bound to that same connection.
+type ProjectionMetaExecutor interface {
+	Exec(string, ...any) (sql.Result, error)
+}
+
+func WriteProjectionMetaWithExecutor(executor ProjectionMetaExecutor, meta ProjectionMeta) error {
 	if meta.ProjectionSchemaVersion == 0 {
 		meta.ProjectionSchemaVersion = ProjectionSchemaVersion
 	}
@@ -105,7 +115,7 @@ func WriteProjectionMeta(tx *sql.Tx, meta ProjectionMeta) error {
 		return fmt.Errorf("write projection meta: updated_at is required")
 	}
 
-	_, err := tx.Exec(`
+	_, err := executor.Exec(`
 		INSERT INTO projection_meta (
 			key, journal_file, journal_offset, last_event_id, last_event_hash,
 			event_schema, projection_schema_version, replay_status, updated_at

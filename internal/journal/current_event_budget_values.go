@@ -12,7 +12,7 @@ func validateCurrentBudgetSampleChain(tx *sql.Tx, effect Effect, policyRunID any
 		return err
 	}
 	budget := policy["budget"].(map[string]any)
-	owned := currentEnum(budget["unit"], "attempts", "failures", "milliseconds", "tool-failures", "interventions")
+	owned := currentEnum(budget["unit"], "attempts", "failures", "milliseconds", "tool-failures", "interventions", "review-cycles")
 	if (effect.Values["source"] == "fid") != owned {
 		return fmt.Errorf("current budget sample: source does not own unit")
 	}

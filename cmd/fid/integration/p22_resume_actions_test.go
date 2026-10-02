@@ -10,6 +10,7 @@ import (
 )
 
 func TestP22ResumeReadyCandidatesExecuteTheirActualOperations(t *testing.T) {
+	t.Parallel()
 	for _, operation := range []string{"run.inspect", "run.observe", "gate.run", "claim.renew", "claim.release"} {
 		t.Run(operation, func(t *testing.T) {
 			adapter := p22NewResumeActionAdapter(t, "activated-harness")
@@ -32,6 +33,7 @@ func TestP22ResumeReadyCandidatesExecuteTheirActualOperations(t *testing.T) {
 }
 
 func TestP22ResumeObserveRejectsUntrustedProducerDespiteCapabilities(t *testing.T) {
+	t.Parallel()
 	adapter := p22NewResumeActionAdapter(t, "kit")
 	p22AssertResumeActionState(t, adapter, "run.observe", false)
 	before := p21JournalEventCount(t, adapter.workspace)

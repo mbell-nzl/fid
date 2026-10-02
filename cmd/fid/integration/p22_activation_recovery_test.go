@@ -12,6 +12,7 @@ import (
 )
 
 func TestActivationPrepareResponseLossReplaysDurableResult(t *testing.T) {
+	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "init", "--prefix", "P22L")
@@ -47,6 +48,7 @@ func p22RunWithClosedResponsePipe(t *testing.T, workspace, binary string, argume
 // TestActivationRecoveryAtEveryDurableBoundary discards each mutation response
 // and opens a fresh fid process to read and recover its durable identity.
 func TestActivationRecoveryAtEveryDurableBoundary(t *testing.T) {
+	t.Parallel()
 	binary := integrationFIDBinary(t)
 	for _, boundary := range []string{"prepared", "staged", "committed", "finalized"} {
 		t.Run(boundary, func(t *testing.T) {

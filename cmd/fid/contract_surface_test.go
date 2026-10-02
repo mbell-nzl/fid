@@ -75,8 +75,8 @@ func TestPhase22AttentionReadBoundary(t *testing.T) {
 	}
 
 	if got, want := phase21AttentionUnavailableSurfaceMatches(t), []string{
-		"cmd/fid/attention.go", "cmd/fid/gate.go", "cmd/fid/live_output.go", "cmd/fid/resume_human.go", "cmd/fid/root.go", "cmd/fid/run.go", "cmd/fid/stop.go", "cmd/fid/stop_human.go",
-		"internal/workflow/activation.go", "internal/workflow/activation_recovery.go", "internal/workflow/budget.go", "internal/workflow/capabilities.go", "internal/workflow/resume.go", "internal/workflow/run_budget.go", "internal/workflow/stop.go", "internal/workflow/stop_errors.go", "internal/workflow/stop_read.go",
+		"cmd/fid/attention.go", "cmd/fid/decision.go", "cmd/fid/gate.go", "cmd/fid/human_outcome.go", "cmd/fid/live_output.go", "cmd/fid/p23_human.go", "cmd/fid/resume_human.go", "cmd/fid/review.go", "cmd/fid/root.go", "cmd/fid/run.go", "cmd/fid/stop.go", "cmd/fid/stop_human.go",
+		"internal/workflow/activation.go", "internal/workflow/activation_recovery.go", "internal/workflow/budget.go", "internal/workflow/capabilities.go", "internal/workflow/envelope.go", "internal/workflow/human_outcome_readiness.go", "internal/workflow/resume.go", "internal/workflow/run_budget.go", "internal/workflow/stop.go", "internal/workflow/stop_errors.go", "internal/workflow/stop_read.go",
 	}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("production Attention paths = %v, want exactly %v", got, want)
 	}
@@ -185,7 +185,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"issue transition",
 		"issue ac add",
 		"issue ac list",
-		"issue ac verify",
+		"issue ac",
 		"issue label add",
 		"issue label remove",
 		"issue",
@@ -202,16 +202,31 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"maintenance vacuum",
 		"activity list",
 		"concern list",
-		"concern address",
-		"concern raise",
-		"requirement sync",
+		"concern",
+		"concern record",
+		"concern dispose",
+		"deviation record",
+		"deviation list",
+		"decision list",
+		"decision record-reference",
+		"human-outcome record",
+		"human-outcome list",
+		"review record",
+		"review get",
+		"review list",
+		"finding address",
+		"finding list",
+		"requirement record-reference",
+		"requirement link",
+		"requirement get",
+		"requirement list",
 		"stats tokens",
 		"stats cost",
 	}
 	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 79 || len(legacy) != 2 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 79 and 2", len(retained), len(legacy))
+	if len(retained) != 94 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 94 and 2", len(retained), len(legacy))
 	}
 	want := append(append([]string{}, retained...), "export")
 	want = append(want, legacy...)
@@ -223,7 +238,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 
 	wantCapabilities := make(map[string]rootFlagCapability, len(retained))
 	for _, command := range retained {
-		if command == "issue" || command == "run" {
+		if command == "issue" || command == "run" || command == "issue ac" || command == "concern" {
 			continue
 		}
 		wantCapabilities[command] = rootFlagCapability{Project: true, JSON: true}
@@ -240,6 +255,21 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 				assertLegacyLeafRejectsRootFlag(t, fixture, rootFlag)
 			})
 		}
+	}
+}
+
+func TestClaimAcquireHelpCoversBothClaimModes(t *testing.T) {
+	t.Parallel()
+	command := newRootCommandAt(t.TempDir())
+	var output bytes.Buffer
+	command.SetOut(&output)
+	command.SetErr(&output)
+	command.SetArgs([]string{"claim", "acquire", "--help"})
+	if err := command.Execute(); err != nil {
+		t.Fatalf("claim acquire help: %v", err)
+	}
+	if got := output.String(); !strings.Contains(got, "Acquire one Claim.") || strings.Contains(got, "mutation claim") {
+		t.Fatalf("claim acquire help = %q, want mode-neutral description", got)
 	}
 }
 

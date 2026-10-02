@@ -55,6 +55,9 @@ func validateCurrentReferences(tx *sql.Tx, event Event) error {
 		return err
 	}
 	runID := event.Aggregate.ID
+	if event.EventType == "review.recorded" {
+		runID, _ = currentInserted(event, "review_records")["run_id"].(string)
+	}
 	if event.EventType == "gate.execution-started" {
 		runID, _ = currentInserted(event, "execution_attempts")["run_id"].(string)
 	}

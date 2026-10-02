@@ -1,0 +1,17 @@
+{
+  "id": "artifact-audit",
+  "cmd": "python3 project-docs/docs/phases/phase-23/qa/final-evidence-1/audit-final-artifacts.py",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T17:19:27.867Z",
+  "results": [
+    {
+      "chunk_id": "fde7fc",
+      "wall_time_seconds": 0.021695081,
+      "exit_code": 0,
+      "original_token_count": 45,
+      "output": "PASS 89 VAL outcomes; 52 deterministic rows; exactly seven blank Human rows; all local evidence links resolve; observed terminations retained; protected hashes/source unchanged\n"
+    }
+  ],
+  "ended": "2026-10-02T17:19:28.059Z"
+}

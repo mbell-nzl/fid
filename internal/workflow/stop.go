@@ -24,10 +24,13 @@ type Subject struct {
 
 // Condition describes the durable fact required to resolve a Stop.
 type Condition struct {
-	Type         string  `json:"type"`
-	Subject      Subject `json:"subject"`
-	BudgetName   *string `json:"budget_name"`
-	CapabilityID *string `json:"capability_id"`
+	Type          string  `json:"type"`
+	Subject       Subject `json:"subject"`
+	BudgetName    *string `json:"budget_name"`
+	CapabilityID  *string `json:"capability_id"`
+	DecisionClass *string `json:"decision_class,omitempty"`
+	OutcomeClass  *string `json:"outcome_class,omitempty"`
+	FindingID     *string `json:"finding_id,omitempty"`
 }
 
 type Stop struct {
@@ -111,15 +114,78 @@ type AttentionResolveResult struct {
 	EventID        string    `json:"event_id"`
 }
 
+// StopBlockedError reports an unresolved Stop that applies to a guarded
+// operation. It carries the immutable facts so command adapters do not infer
+// scope from an error string.
+type StopBlockedError struct {
+	Action       string
+	Stops        []Stop
+	AttentionIDs []string
+	Budget       *Budget
+}
+
+func (err *StopBlockedError) Error() string { return "guarded action is blocked by unresolved Stop" }
+
+// NewStopBlockedError enriches a non-committing denial with the immutable
+// Attention identities and, for review exhaustion, the derived budget state.
+func NewStopBlockedError(conn *sql.DB, action string, stops []Stop) (*StopBlockedError, error) {
+	blocked := &StopBlockedError{Action: action, Stops: stops, AttentionIDs: []string{}}
+	for _, stop := range stops {
+		rows, err := conn.Query(`SELECT attention_id FROM attention_stop_links WHERE stop_id=? ORDER BY attention_id`, stop.ID)
+		if err != nil {
+			return nil, fmt.Errorf("load blocking Attention: %w", err)
+		}
+		for rows.Next() {
+			var id string
+			if err := rows.Scan(&id); err != nil {
+				_ = rows.Close()
+				return nil, err
+			}
+			blocked.AttentionIDs = append(blocked.AttentionIDs, id)
+		}
+		if err := rows.Close(); err != nil {
+			return nil, err
+		}
+		if stop.Code == "review-rework-exhausted" && blocked.Budget == nil {
+			var details struct {
+				EnvelopeID string `json:"envelope_id"`
+				BudgetName string `json:"budget_name"`
+			}
+			if err := json.Unmarshal(stop.Details, &details); err != nil {
+				return nil, fmt.Errorf("decode review exhaustion details: %w", err)
+			}
+			budget, err := loadRunBudget(conn, details.EnvelopeID, 1, details.BudgetName)
+			if err != nil {
+				return nil, fmt.Errorf("load review exhaustion budget: %w", err)
+			}
+			samples, err := loadRunBudgetSamples(conn, details.EnvelopeID, 1, details.BudgetName)
+			if err != nil {
+				return nil, err
+			}
+			derived, err := DeriveBudget(budget, samples)
+			if err != nil {
+				return nil, err
+			}
+			blocked.Budget = &derived
+		}
+	}
+	return blocked, nil
+}
+
 var stopCodes = map[string]bool{
 	"executor-liveness-unknown": true, "recovery-state-conflict": true,
 	"budget-exhausted": true, "budget-data-unavailable": true,
-	"activation-incomplete": true, "capability-unavailable": true, "operator-stop": true,
+	"review-rework-exhausted":     true,
+	"protected-decision-required": true,
+	"human-outcome-required":      true,
+	"activation-incomplete":       true, "capability-unavailable": true, "operator-stop": true,
 }
 
 var conditionTypes = map[string]bool{
 	"executor-terminated": true, "run-recovered": true, "activation-recovered": true,
 	"capability-available": true, "budget-observed": true, "work-ended": true,
+	"decision-satisfied": true, "human-outcome-recorded": true,
+	"review-recorded": true, "finding-resolved": true,
 }
 
 var blockedActionSet = map[string]bool{
@@ -221,6 +287,17 @@ func GetStop(workspaceRoot, migrationsDir, id string) (Stop, error) {
 	}
 	defer closeWorkflowDB(conn)
 	return loadStop(conn, id)
+}
+
+// GetStopFromProjection reads a Stop from an already locked projection.
+func GetStopFromProjection(conn *sql.DB, id string) (Stop, error) {
+	return loadStop(conn, id)
+}
+
+// AttentionForStopFromProjection reads the Attention linked to a Stop from an
+// already locked projection.
+func AttentionForStopFromProjection(conn *sql.DB, stopID string) (Attention, error) {
+	return loadAttentionForStop(conn, stopID)
 }
 
 func ResolveStop(options StopOptions, request StopResolveRequest) (StopResolveResult, error) {
@@ -396,17 +473,31 @@ func validateCondition(condition Condition, subject Subject) error {
 	if !conditionTypes[condition.Type] || condition.Subject != subject {
 		return fmt.Errorf("stop resolution condition is invalid")
 	}
+	if condition.Type == "decision-satisfied" && subject.Type == "activation" {
+		// An activation has no Envelope scope, so this Condition could never
+		// qualify (contracts.md section 11, DEC-250 R3).
+		return fmt.Errorf("stop resolution condition is invalid")
+	}
 	if (condition.Type == "budget-observed") != (condition.BudgetName != nil && *condition.BudgetName != "") {
 		return fmt.Errorf("stop resolution condition budget binding is invalid")
 	}
 	if (condition.Type == "capability-available") != (condition.CapabilityID != nil && *condition.CapabilityID != "") {
 		return fmt.Errorf("stop resolution condition capability binding is invalid")
 	}
+	if (condition.Type == "decision-satisfied") != (condition.DecisionClass != nil && *condition.DecisionClass != "") {
+		return fmt.Errorf("stop resolution condition Decision binding is invalid")
+	}
+	if (condition.Type == "human-outcome-recorded") != (condition.OutcomeClass != nil && *condition.OutcomeClass != "") {
+		return fmt.Errorf("stop resolution condition Human Outcome binding is invalid")
+	}
+	if (condition.Type == "finding-resolved") != (condition.FindingID != nil && *condition.FindingID != "") {
+		return fmt.Errorf("stop resolution condition Finding binding is invalid")
+	}
 	return nil
 }
 
 func validStopDetails(code string, details map[string]any) bool {
-	keys := map[string][]string{"executor-liveness-unknown": {"run_id", "executor_id", "observation_id"}, "recovery-state-conflict": {"run_id", "observation_digest", "paths", "reasons"}, "budget-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "budget-data-unavailable": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "activation-incomplete": {"activation_id", "point_of_no_return", "components"}, "capability-unavailable": {"capability_id", "available", "owner_phase"}, "operator-stop": {"reason", "reference"}}
+	keys := map[string][]string{"executor-liveness-unknown": {"run_id", "executor_id", "observation_id"}, "recovery-state-conflict": {"run_id", "observation_digest", "paths", "reasons"}, "budget-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "budget-data-unavailable": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining"}, "review-rework-exhausted": {"envelope_id", "budget_name", "unit", "maximum", "consumed", "remaining", "last_review_id"}, "protected-decision-required": {"envelope_id", "decision_class", "required_capabilities", "affected_actions"}, "human-outcome-required": {"envelope_id", "obligation_id", "outcome_class"}, "activation-incomplete": {"activation_id", "point_of_no_return", "components"}, "capability-unavailable": {"capability_id", "available", "owner_phase"}, "operator-stop": {"reason", "reference"}}
 	want, ok := keys[code]
 	if !ok || len(details) != len(want) {
 		return false
@@ -540,12 +631,18 @@ func qualifyingFact(workspace string, conn *sql.DB, stop Stop, factEventID strin
 		return qualifyingBudgetCondition(conn, event, stop.ResolutionCondition)
 	case "work-ended":
 		return qualifyingWorkEnded(conn, event, stop.ResolutionCondition)
+	case "review-recorded":
+		return qualifyingReviewRecordedCondition(conn, event, stop.ResolutionCondition)
+	case "finding-resolved":
+		return qualifyingFindingResolvedCondition(conn, event, stop.ResolutionCondition)
+	case "human-outcome-recorded", "decision-satisfied":
+		return qualifyingJudgmentCondition(conn, event, stop.ResolutionCondition)
 	}
 	return fmt.Errorf("unsupported Stop resolution condition")
 }
 
 func eventMatchesCondition(event journal.Event, condition Condition) bool {
-	want := map[string][]string{"executor-terminated": {"run.observed"}, "run-recovered": {"run.recovered"}, "activation-recovered": {"activation.recovery-completed", "activation.finalized"}, "capability-available": {"activation.finalized", "activation.recovery-completed"}, "budget-observed": {"run.budget-observed"}, "work-ended": {"run.closed", "run.abandoned", "envelope.completed"}}
+	want := map[string][]string{"executor-terminated": {"run.observed"}, "run-recovered": {"run.recovered"}, "activation-recovered": {"activation.recovery-completed", "activation.finalized"}, "capability-available": {"activation.finalized", "activation.recovery-completed"}, "budget-observed": {"run.budget-observed"}, "work-ended": {"run.closed", "run.abandoned", "envelope.completed"}, "review-recorded": {"review.recorded"}, "finding-resolved": {"review.recorded"}, "human-outcome-recorded": {"human-outcome.recorded"}, "decision-satisfied": {"decision.referenced", "human-outcome.recorded"}}
 	for _, eventType := range want[condition.Type] {
 		if event.EventType == eventType {
 			return true

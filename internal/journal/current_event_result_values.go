@@ -99,6 +99,38 @@ func currentFillReceipt(tx *sql.Tx, row map[string]any) error {
 	return err
 }
 
+func currentFillReview(tx *sql.Tx, row map[string]any) error {
+	findings, err := currentCollection(tx, "Finding", "review_findings", "id", "SELECT id FROM review_findings WHERE review_id=? ORDER BY id", row["id"])
+	if err != nil {
+		return err
+	}
+	row["findings"] = findings
+	resolved, err := currentQueryValues(tx, "SELECT finding_id FROM finding_dispositions WHERE qualifying_review_id=? AND action='resolved' ORDER BY finding_id", row["id"])
+	if err != nil {
+		return err
+	}
+	row["resolved_finding_ids"] = resolved
+	return nil
+}
+
+func currentFillFinding(tx *sql.Tx, row map[string]any) error {
+	dispositions, err := currentCollection(tx, "FindingDisposition", "finding_dispositions", "id", "SELECT id FROM finding_dispositions WHERE finding_id=? ORDER BY disposed_at, id", row["id"])
+	if err != nil {
+		return err
+	}
+	row["subject"] = map[string]any{"type": row["subject_type"], "id": row["subject_id"]}
+	row["dispositions"] = dispositions
+	row["state"] = "open"
+	if len(dispositions) != 0 {
+		action, ok := dispositions[len(dispositions)-1].(map[string]any)["action"].(string)
+		if !ok {
+			return fmt.Errorf("invalid projected Finding disposition")
+		}
+		row["state"] = action
+	}
+	return nil
+}
+
 // Read the complete resource snapshot in one ordered query. Result validation
 // still compares every field, without preparing one query per resource.
 func currentActivationResources(tx *sql.Tx, activationID any) ([]any, error) {

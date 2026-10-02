@@ -6,6 +6,7 @@ import (
 )
 
 func TestForceRecoveryChargesInterventionBudgetsExactlyOnce(t *testing.T) {
+	t.Parallel()
 	for _, mode := range []string{"ordinary", "force"} {
 		t.Run(mode, func(t *testing.T) {
 			options, request := recoveryFixture(t)
@@ -62,6 +63,7 @@ func seedRecoveryInterventionBudget(t *testing.T, workspace, name string, maximu
 }
 
 func TestForceRecoveryChargesEveryConfiguredInterventionBudget(t *testing.T) {
+	t.Parallel()
 	options, request := recoveryFixture(t)
 	request.Authority = exactRecoveryForce(t, options)
 	seedRecoveryInterventionBudget(t, options.WorkspaceRoot, "interventions-a", 1)

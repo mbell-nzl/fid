@@ -3,27 +3,20 @@ package workflow
 import "strings"
 
 const (
-	RuleAllACsVerified              = "all_acs_verified"
-	RuleHasCompletionReport         = "has_completion_report"
-	RuleConcernsAddressed           = "concerns_addressed"
 	RuleAllChildTasksDoneOrCanceled = "all_child_tasks_done_or_cancelled"
 	// RuleRequiredGatesCurrent is reserved for the v0.2b trusted-gate path.
 	// It has no evaluator in this phase.
 	RuleRequiredGatesCurrent = "required_gates_current"
 	// RuleHasCompletion is reserved for structured completion requirements.
 	// It has no evaluator in this phase.
-	RuleHasCompletion = "has_completion"
-	// RuleLinkedToDecision remains reserved for project Decision scope (Phase 23).
-	// It has no evaluator in this phase.
+	RuleHasCompletion    = "has_completion"
 	RuleLinkedToDecision = "linked_to_decision"
 )
 
 // IsImplementedRule reports whether a rule has an evaluator in this release.
 func IsImplementedRule(name string) bool {
-	return name == RuleAllACsVerified ||
-		name == RuleHasCompletionReport ||
-		name == RuleConcernsAddressed ||
-		name == RuleAllChildTasksDoneOrCanceled
+	return name == RuleAllChildTasksDoneOrCanceled ||
+		name == RuleLinkedToDecision
 }
 
 type RuleResult struct {
@@ -37,67 +30,17 @@ type UnmetCondition struct {
 	MissingRoles []string
 }
 
-type AcceptanceCriterionVerification struct {
-	AcceptanceCriterionID string
-	PassingRoles          []string
-}
-
-type CompletionReportStatus struct {
-	IssueID string
-	Exists  bool
-}
-
-type ConcernStatus struct {
-	OpenConcernIDs []string
-}
-
 type ChildTaskStatus struct {
 	IssueID string
 	State   string
 }
 
-func AllACsVerified(requiredRoles []string, criteria []AcceptanceCriterionVerification) RuleResult {
-	required := uniqueNonEmpty(requiredRoles)
-	unmet := make([]UnmetCondition, 0)
-	for _, criterion := range criteria {
-		passingRoles := stringSet(criterion.PassingRoles)
-		missingRoles := make([]string, 0)
-		for _, role := range required {
-			if !passingRoles[role] {
-				missingRoles = append(missingRoles, role)
-			}
-		}
-		if len(missingRoles) == 0 {
-			continue
-		}
-		unmet = append(unmet, UnmetCondition{
-			Rule:         RuleAllACsVerified,
-			EntityIDs:    singleEntityID(criterion.AcceptanceCriterionID),
-			MissingRoles: missingRoles,
-		})
-	}
-	return newRuleResult(unmet)
-}
-
-func HasCompletionReport(status CompletionReportStatus) RuleResult {
-	if status.Exists {
+func LinkedToDecision(issueID string, decisionReferenceIDs []string) RuleResult {
+	ids := uniqueNonEmpty(decisionReferenceIDs)
+	if len(ids) > 0 {
 		return RuleResult{Satisfied: true}
 	}
-	return newRuleResult([]UnmetCondition{{
-		Rule:      RuleHasCompletionReport,
-		EntityIDs: singleEntityID(status.IssueID),
-	}})
-}
-
-func ConcernsAddressed(status ConcernStatus) RuleResult {
-	openConcernIDs := uniqueNonEmpty(status.OpenConcernIDs)
-	if len(openConcernIDs) == 0 {
-		return RuleResult{Satisfied: true}
-	}
-	return newRuleResult([]UnmetCondition{{
-		Rule:      RuleConcernsAddressed,
-		EntityIDs: openConcernIDs,
-	}})
+	return newRuleResult([]UnmetCondition{{Rule: RuleLinkedToDecision, EntityIDs: singleEntityID(issueID)}})
 }
 
 func AllChildTasksDoneOrCancelled(children []ChildTaskStatus) RuleResult {
@@ -150,14 +93,6 @@ func uniqueNonEmpty(values []string) []string {
 		result = append(result, trimmed)
 	}
 	return result
-}
-
-func stringSet(values []string) map[string]bool {
-	set := make(map[string]bool, len(values))
-	for _, value := range uniqueNonEmpty(values) {
-		set[value] = true
-	}
-	return set
 }
 
 func singleEntityID(value string) []string {

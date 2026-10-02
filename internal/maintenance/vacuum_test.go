@@ -6,14 +6,17 @@ import (
 )
 
 func TestVacuumPreservesProjectedStateJournalAndActivity(t *testing.T) {
+	t.Parallel()
 	assertVacuumUnavailable(t, "workspace", "migrations", "human")
 }
 
 func TestVacuumWaitsForWriteLockThenCompletes(t *testing.T) {
+	t.Parallel()
 	assertVacuumUnavailable(t, "", "", "")
 }
 
 func TestVacuumRefreshesMissingProjectionBeforeCompacting(t *testing.T) {
+	t.Parallel()
 	assertVacuumUnavailable(t, "workspace", "migrations", "agent:maintenance")
 }
 

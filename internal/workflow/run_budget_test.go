@@ -7,6 +7,7 @@ import (
 )
 
 func TestObserveRunBudgetAppendsExternalSampleAndBoundaryEffectsExactlyOnce(t *testing.T) {
+	t.Parallel()
 	options, recovery := recoveryFixture(t)
 	observeBudgetAuthorize(t, options.WorkspaceRoot, "input-tokens", 5)
 	value := int64(5)
@@ -45,6 +46,7 @@ func TestObserveRunBudgetAppendsExternalSampleAndBoundaryEffectsExactlyOnce(t *t
 }
 
 func TestObserveRunBudgetRejectsFidOwnedUnitAndConflictWithoutEffects(t *testing.T) {
+	t.Parallel()
 	options, recovery := recoveryFixture(t)
 	observeBudgetAuthorize(t, options.WorkspaceRoot, "attempts", 2)
 	value := int64(1)
@@ -83,6 +85,7 @@ func TestObserveRunBudgetRejectsFidOwnedUnitAndConflictWithoutEffects(t *testing
 }
 
 func TestObserveRunBudgetReplayKeepsHistoricalDerivedState(t *testing.T) {
+	t.Parallel()
 	options, recovery := recoveryFixture(t)
 	observeBudgetAuthorize(t, options.WorkspaceRoot, "input-tokens", 10)
 	baseline := int64(2)

@@ -3,6 +3,7 @@ package maintenance
 import "testing"
 
 func TestCheckWorkflowAssignmentsFlagsIncompatibleAppliesTo(t *testing.T) {
+	t.Parallel()
 	fixture := newMaintenanceFixture(t)
 	seedJournalEvent(t, fixture.journalPath, "EVT-20260715-000001")
 	if _, err := fixture.db.Exec(`
@@ -22,6 +23,7 @@ func TestCheckWorkflowAssignmentsFlagsIncompatibleAppliesTo(t *testing.T) {
 }
 
 func TestCheckWorkflowAssignmentsAcceptsCompatibleKindAndProjectScopes(t *testing.T) {
+	t.Parallel()
 	fixture := newMaintenanceFixture(t)
 	seedJournalEvent(t, fixture.journalPath, "EVT-20260715-000001")
 	if _, err := fixture.db.Exec(`

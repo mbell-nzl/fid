@@ -182,7 +182,7 @@ func simpleFindings(rows *sql.Rows, check, message string) ([]Finding, error) {
 }
 
 func frozenStateFindings(db *sql.DB) ([]Finding, error) {
-	return tableCountFindings(db, []string{"ac_verifications", "agent_runs", "concerns", "task_completions"}, "frozen-state-present", "frozen state is non-authoritative")
+	return tableCountFindings(db, []string{"agent_runs"}, "frozen-state-present", "frozen state is non-authoritative")
 }
 
 func removedStateResidueFindings(db *sql.DB) ([]Finding, error) {

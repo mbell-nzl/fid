@@ -9,6 +9,7 @@ import (
 // Exercise the real recovery producer for every durable predecessor/Claim
 // branch. The journal tests independently apply/replay the resulting grammar.
 func TestRecoverRunCurrentEventStateBranches(t *testing.T) {
+	t.Parallel()
 	for _, terminal := range []bool{false, true} {
 		for _, activeClaim := range []bool{false, true} {
 			t.Run(fmt.Sprintf("terminal=%v/active-claim=%v", terminal, activeClaim), func(t *testing.T) {

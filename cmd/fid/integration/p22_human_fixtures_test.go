@@ -42,6 +42,7 @@ type p22HumanManifest struct {
 // Generation happens in a child test process. The parent only inspects once
 // that process (including TestMain cleanup) has exited successfully.
 func TestP22HumanFixtures(t *testing.T) {
+	t.Parallel()
 	if root := os.Getenv("FID_P22_HUMAN_FIXTURE_CHILD"); root != "" {
 		p22GenerateHumanFixtures(t, root)
 		return
