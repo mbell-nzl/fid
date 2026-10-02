@@ -50,7 +50,7 @@ copied into it. Shard output uses the fresh scratch directory named below.
 
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/db -run '^TestPhase23BaselineMigrationDiffIsExactlySevenAcceptedHunks$' -v` - FAIL - `FAIL` (terminated `exit_code: 1`); initial shallow-checkout attempt.
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/db -run '^TestPhase23BaselineMigrationDiffIsExactlySevenAcceptedHunks$' -v` - FAIL - `FAIL` (terminated `exit_code: 1`); full-history attempt before the abbreviation fix.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/db -run '^TestPhase23BaselineMigrationDiffIsExactlySevenAcceptedHunks$' -v` - PASS - `ok  	github.com/mbell-nzl/fid/internal/db	1.026s` (terminated `exit_code: 0`).
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/db -run '^TestPhase23BaselineMigrationDiffIsExactlySevenAcceptedHunks$' -v` - PASS - `ok  	github.com/mbell-nzl/fid/internal/db	1.026s` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
@@ -58,10 +58,18 @@ Shard and Python controls ran in the clone above. Format and lint ran in
 `/home/mark/projects/fid` after `gofmt -w` and `goimports -w` on the edited Go
 file. Each result was captured in this repair session.
 
-- `python3 project-docs/tools/ci_tests.py run --count 4 --index 2 --out /tmp/fid-ci-checkout-5mZiTF/shard-2` - PASS - `PASS shard 2: 208 selected targets completed; all 21 packages accounted for` (terminated `exit_code: 0`).
-- `python3 -m unittest discover -s project-docs/tools -p test_ci_tests.py -v` - PASS - `PASS coverage union: 4 shards, 23 targets, 3 statement blocks` (terminated `exit_code: 0`); all eight controls passed, including real Go execution and coverage reconciliation.
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
+- `python3 project-docs/tools/ci_tests.py run --count 4 --index 2 --out /tmp/fid-ci-checkout-5mZiTF/shard-2` - PASS - `PASS shard 2: 208 selected targets completed; all 21 packages accounted for` (terminated `exit_code: 0`)
+- `python3 -m unittest discover -s project-docs/tools -p test_ci_tests.py -v` - PASS - `PASS coverage union: 4 shards, 23 targets, 3 statement blocks` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `git diff --cached --check` - FAIL - `project-docs/docs/phases/phase-23/tasks/task-ci-checkout-done.md:106: new blank line at EOF.` (terminated `exit_code: 2`); additional staged whitespace check.
+- `git diff --cached --check` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-ci-checkout-done.md project-docs/docs/phases/phase-23/tasks/task-ci-checkout.md` - FAIL - `FAIL report-lint found 6 failure(s)` (terminated `exit_code: 6`)
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-ci-checkout-done.md project-docs/docs/phases/phase-23/tasks/task-ci-checkout.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+
+All eight Python controls passed, including real Go execution and coverage
+reconciliation. The passing staged whitespace check follows removal of the
+extra final blank line.
 
 The shard retained raw Go output in
 `/tmp/fid-ci-checkout-5mZiTF/shard-2/tests.jsonl`, discovery output,
@@ -84,6 +92,17 @@ The shard retained raw Go output in
 - The scoped verification exception is recorded in `task-ci-checkout.md`.
   The unchanged failed CI shard, existing shard controls, format, and lint
   replace a full phase gate for this repair. Phase acceptance is not reasserted.
+- The initial staged whitespace check also reported
+  `project-docs/docs/phases/phase-23/tasks/task-ci-checkout-done.md:106: new blank line at EOF.`
+  (terminated `exit_code: 2`). Report generation added an extra final blank
+  line; report finalization removed it, and the byte-identical rerun completed
+  with `exit 0 (no output)` (terminated `exit_code: 0`).
+- Report lint initially ended `FAIL report-lint found 6 failure(s)` (terminated
+  `exit_code: 6`) because PASS rows carried punctuation or commentary after
+  their termination receipt. The output tokens and observed statuses were
+  correct. Each PASS row now ends at its receipt; the byte-identical command
+  then ended `PASS report-lint completed with no failures` (terminated
+  `exit_code: 0`) against the committed report.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -98,9 +117,8 @@ The shard retained raw Go output in
 
 ## Commit hash
 
-- Pending commit
+- `d15893d8bda9bfb973103412981e680171546e56`
 
 ## Commit subject
 
-- Pending commit
-
+- `fix(ci): make migration baseline checks reproducible`
