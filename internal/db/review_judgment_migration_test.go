@@ -110,7 +110,7 @@ func TestPhase23BaselineMigrationDiffIsExactlySevenAcceptedHunks(t *testing.T) {
 	}
 	repoRoot := filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", ".."))
 	output, err := exec.Command(
-		"git", "-C", repoRoot, "diff", "--no-ext-diff", "--unified=0",
+		"git", "-C", repoRoot, "diff", "--no-ext-diff", "--unified=0", "--abbrev=7",
 		"0195897a347dfe1872db0f7be3800c5c3ccdefcf", "--",
 		"migrations/0013_p21_operational_kernel.up.sql",
 		"migrations/0015_p22_recovery.up.sql",
