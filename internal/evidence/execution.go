@@ -497,7 +497,7 @@ func budgetAdmissionBlocks(chains []budgetChain) ([]workflow.BudgetAdmissionBloc
 		}
 		budgets = append(budgets, budget)
 	}
-	return workflow.BudgetAdmissionBlocks(budgets), nil
+	return workflow.GenericBudgetAdmissionBlocks(budgets), nil
 }
 
 func loadBudgetChains(conn *sql.DB, runID string) ([]budgetChain, error) {

@@ -471,6 +471,13 @@ Run these in order after recording the initial reading. The supplied Outcome rea
 
 ## VAL-072 review rework exhaustion
 
+The verbatim readback below is the original Human-checklist snapshot. For the
+DEC-269 re-check, regenerate the fixture with `TestP23HumanFixtures`; its
+`review-exhaustion` checkpoint has the amended `human-outcome-recorded`
+Condition and the following supported resolution sequence. The generator
+places `fixture-rework-outcome.json` in that checkpoint's project directory
+and includes `actor-human-outcome` as an activated Human Actor.
+
 - Project: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion`
 - IDs: `{"issue_id": "P22-4cf573", "review_id": "REV-3d0854"}`
 
@@ -643,6 +650,13 @@ Run these in order after recording the initial reading. The supplied Outcome rea
 ```bash
 /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion --json claim acquire --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion/fixture-rework-claim.json --actor actor-recovery --idempotency-key fixture-exhausted-claim
 ```
+
+In the regenerated checkpoint, first inspect `fid stop list --subject
+envelope:<envelope-id>`. Then record the supplied approved
+`review-rework-extension` Outcome with `fid human-outcome record --actor
+actor-human-outcome --input fixture-rework-outcome.json --idempotency-key
+fixture-rework-outcome`. Retry the same `claim acquire` command above against
+the regenerated checkpoint; it now exits `0` and returns an admitted Claim.
 
 ## Review prompts
 

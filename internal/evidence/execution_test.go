@@ -83,6 +83,15 @@ func TestBudgetAdmissionDeniesUnknownAndExhaustedChainsBeforeAttempt(t *testing.
 	}
 }
 
+func TestReviewCyclesDoNotBlockGateAdmission(t *testing.T) {
+	t.Parallel()
+	rework := budgetChain{Budget: workflow.Budget{Name: "review-cycles", Unit: "review-cycles", Maximum: 1, ExhaustionAction: "review-rework-exhausted"}, Samples: []workflow.BudgetSample{{ID: "REV-1", Source: "fid", SourceSampleID: "REV-1", SampleKind: "delta", Value: int64Pointer(1)}}}
+	blocks, err := budgetAdmissionBlocks([]budgetChain{rework})
+	if err != nil || len(blocks) != 0 {
+		t.Fatalf("rework gate admission = %#v, %v; want no generic block", blocks, err)
+	}
+}
+
 func TestBudgetBoundaryBlocksOnlyOnFirstExhaustion(t *testing.T) {
 	t.Parallel()
 	available := workflow.Budget{Name: "attempts", Unit: "attempts", Maximum: 2, Consumed: int64Pointer(1), Remaining: int64Pointer(1)}

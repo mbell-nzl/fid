@@ -76,7 +76,7 @@ func TestP23ReviewEvidenceRealProcessJourney(t *testing.T) {
 
 func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
 	t.Parallel()
-	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "gate.register", "review.record", "run.close", "run.observe", "run.observe-budget", "run.start"}
+	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "gate.register", "human-outcome.record", "review.record", "run.close", "run.observe", "run.observe-budget", "run.start", "stop.resolve"}
 	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "mutation", p22ExecutionFixture{ReviewObligation: true, ReviewCyclesMaximum: 1})
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "cycles-builder")
 	blockedClaim := p23AcquireClaim(t, a, "actor-denied", "review", "cycles-blocked")
@@ -96,7 +96,7 @@ func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
 	p23AssertReviewSuccess(t, "exhausting changes-required Review", result)
 	humanInput := p21Input(t, a.workspace, "cycles-human-replay", input)
 	human, humanStderr, humanErr := closureRunCommand(a.workspace, a.binary, "--project", a.workspace, "review", "record", "--actor", "actor-denied", "--input", humanInput, "--idempotency-key", "cycles-review")
-	if humanErr != nil || humanStderr != "" || !strings.Contains(human, "review-rework-exhausted") || !strings.Contains(human, "budget-observed") {
+	if humanErr != nil || humanStderr != "" || !strings.Contains(human, "review-rework-exhausted") || !strings.Contains(human, "human-outcome-recorded") {
 		t.Fatalf("exhausted Review Human result = %q / %q / %v", human, humanStderr, humanErr)
 	}
 	if after := p21JournalEventCount(t, a.workspace); after != before+1 {
@@ -111,6 +111,10 @@ func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
 	attention := p21Path(t, resultEnvelope, "result", "attention").([]any)
 	if len(stops) != 1 || len(attention) != 1 || stops[0].(map[string]any)["code"] != "review-rework-exhausted" {
 		t.Fatalf("exhausting Review Stop/Attention = %#v %#v", stops, attention)
+	}
+	condition := stops[0].(map[string]any)["resolution_condition"].(map[string]any)
+	if condition["type"] != "human-outcome-recorded" || condition["outcome_class"] != "review-rework-extension" || condition["budget_name"] != nil || condition["capability_id"] != nil || condition["subject"].(map[string]any)["id"] != p23EnvelopeID(t, a) {
+		t.Fatalf("review rework Stop Condition = %#v", condition)
 	}
 	rebuilt := a.p22Run(t, "rebuild")
 	p23AssertReviewSuccess(t, "rebuild after exhausting Review", rebuilt)
@@ -150,6 +154,71 @@ func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
 	if p21JournalEventCount(t, a.workspace) != beforeDenials || afterClaims != beforeClaims || afterRuns != beforeRuns {
 		t.Fatalf("exhausted denials changed Event or entity counts: events %d -> %d, claims %d -> %d, runs %d -> %d", beforeDenials, p21JournalEventCount(t, a.workspace), beforeClaims, afterClaims, beforeRuns, afterRuns)
 	}
+	for _, tc := range []struct{ suffix, class, result, actor string }{
+		{"wrong-class", "unrelated", "approved", "actor-human-outcome"},
+		{"rejected", "review-rework-extension", "rejected", "actor-human-outcome"},
+		{"non-human", "review-rework-extension", "approved", "actor-denied"},
+	} {
+		prior := p21JournalEventCount(t, a.workspace)
+		outcome := p23RecordHumanOutcome(t, a, "rework-"+tc.suffix, tc.actor, tc.class, tc.result)
+		if tc.suffix == "non-human" {
+			assertP22ProcessFailure(t, "human-outcome.record", "authority-missing", 5, outcome)
+			if p21JournalEventCount(t, a.workspace) != prior {
+				t.Fatal("non-human Outcome appended an Event")
+			}
+		} else {
+			p23AssertReviewSuccess(t, "non-qualifying Outcome", outcome)
+		}
+		assertP22ProcessFailure(t, "claim.acquire", "review-rework-exhausted", 4, p23RunInput(t, a, "claim", "acquire", a.actor, "cycles-still-denied-"+tc.suffix, claimInput))
+		assertP22ProcessFailure(t, "run.start", "review-rework-exhausted", 4, p23RunInput(t, a, "run", "start", a.actor, "cycles-run-still-denied-"+tc.suffix, runInput))
+	}
+	other := p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "create", "--kind", "task", "--title", "unselected rework issue", "--actor", "agent:developer", "--idempotency-key", "cycles-other-issue")
+	otherID := p21PathString(t, other, "result", "issue", "id")
+	outOfScope := p23RunInput(t, a, "human-outcome", "record", "actor-human-outcome", "cycles-out-of-scope", map[string]any{"id": "OUT-cycles-out-of-scope", "class": "review-rework-extension", "subject": map[string]any{"type": "issue", "id": otherID}, "result": "approved", "scope": map[string]any{"issue_id": otherID}, "reasoning": "approval for a different Issue", "references": []any{}})
+	p23AssertReviewSuccess(t, "out-of-scope Outcome", outOfScope)
+	assertP22ProcessFailure(t, "claim.acquire", "review-rework-exhausted", 4, p23RunInput(t, a, "claim", "acquire", a.actor, "cycles-still-denied-out-of-scope", claimInput))
+	assertP22ProcessFailure(t, "run.start", "review-rework-exhausted", 4, p23RunInput(t, a, "run", "start", a.actor, "cycles-run-still-denied-out-of-scope", runInput))
+	approved := p23RecordHumanOutcome(t, a, "rework-approved", "actor-human-outcome", "review-rework-extension", "approved")
+	p23AssertReviewSuccess(t, "qualifying rework Outcome", approved)
+	resolved := p21Path(t, p23Envelope(t, approved.Stdout), "result", "stops").([]any)
+	if len(resolved) != 1 || resolved[0].(map[string]any)["id"] != stops[0].(map[string]any)["id"] || resolved[0].(map[string]any)["resolution"] == nil {
+		t.Fatalf("Outcome did not resolve rework Stop atomically: %#v", resolved)
+	}
+	reworkClaim := p23AcquireClaim(t, a, a.actor, "mutation", "cycles-after-approval")
+	reworkRun := p23StartRun(t, a, a.actor, reworkClaim, "cycles-after-approval")
+	p23CloseAndRelease(t, a, a.actor, p21PathString(t, reworkRun, "id"), p21PathString(t, reworkClaim, "id"), "cycles-after-approval")
+	for i := 0; i < 2; i++ {
+		suffix := "cycles-later-" + string(rune('a'+i))
+		reviewClaim := p23AcquireClaim(t, a, "actor-denied", "review", suffix)
+		reviewRun := p23StartRun(t, a, "actor-denied", reviewClaim, suffix)
+		later := p23ReviewRecord(t, a, "actor-denied", suffix, p23ReviewInput(a, p21PathString(t, reviewRun, "id"), p23Number(t, reviewRun["version"]), "changes-required", []any{p23Finding(a.issueID, "FND-"+suffix, "major", true)}, nil))
+		p23AssertReviewSuccess(t, "later changes-required Review", later)
+		value := p21Path(t, p23Envelope(t, later.Stdout), "result", "budget").(map[string]any)
+		if p23Number(t, value["consumed"]) != i+2 || p23Number(t, value["remaining"]) != 0 || len(p21Path(t, p23Envelope(t, later.Stdout), "result", "stops").([]any)) != 0 {
+			t.Fatalf("later Review budget/Stops = %#v", p23Envelope(t, later.Stdout))
+		}
+		p23CloseAndRelease(t, a, "actor-denied", p21PathString(t, reviewRun, "id"), p21PathString(t, reviewClaim, "id"), suffix)
+	}
+}
+
+func TestP23ReviewReworkManualResolutionWithPriorOutcome(t *testing.T) {
+	t.Parallel()
+	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "gate.register", "human-outcome.record", "review.record", "run.close", "run.observe", "run.start", "stop.resolve"}
+	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "mutation", p22ExecutionFixture{ReviewObligation: true, ReviewCyclesMaximum: 1})
+	prior := p23RecordHumanOutcome(t, a, "rework-prior", "actor-human-outcome", "review-rework-extension", "approved")
+	p23AssertReviewSuccess(t, "prior qualifying Outcome", prior)
+	factID := p21PathString(t, p23Envelope(t, prior.Stdout), "event", "id")
+	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "manual-builder")
+	claim := p23AcquireClaim(t, a, "actor-denied", "review", "manual-review")
+	run := p23StartRun(t, a, "actor-denied", claim, "manual-review")
+	recorded := p23ReviewRecord(t, a, "actor-denied", "manual-review", p23ReviewInput(a, p21PathString(t, run, "id"), p23Number(t, run["version"]), "changes-required", []any{p23Finding(a.issueID, "FND-manual", "major", true)}, nil))
+	p23AssertReviewSuccess(t, "manual exhaustion Review", recorded)
+	stop := p21Path(t, p23Envelope(t, recorded.Stdout), "result", "stops").([]any)[0].(map[string]any)
+	p23CloseAndRelease(t, a, "actor-denied", p21PathString(t, run, "id"), p21PathString(t, claim, "id"), "manual-review")
+	resolved := p23RunInput(t, a, "stop", "resolve", a.actor, "manual-rework-resolve", map[string]any{"stop_id": stop["id"], "fact_event_id": factID})
+	p23AssertReviewSuccess(t, "manual rework Stop resolution", resolved)
+	claim = p23AcquireClaim(t, a, a.actor, "mutation", "manual-after-approval")
+	_ = p23StartRun(t, a, a.actor, claim, "manual-after-approval")
 }
 
 // TestP23ReviewCycleChargeSurvivesLinkedRecoveryAndRebuild is the VAL-027

@@ -168,6 +168,11 @@ func writeStopFailure(cmd *cobra.Command, jsonMode bool, operation string, cause
 	if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "error: "+failure.Message); err != nil {
 		return err
 	}
+	if code == cli.CodeReviewReworkExhausted && subject != nil {
+		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "next: an activated Human records an approved Human Outcome of class review-rework-extension for this Envelope's Issue; see fid stop list --subject envelope:"+fmt.Sprint(subject.ID)); err != nil {
+			return err
+		}
+	}
 	return cli.NewFailureError(failure, cause)
 }
 

@@ -184,8 +184,8 @@ func TestP23HumanFixtureStepsRemainRunnable(t *testing.T) {
 			count++
 		}
 	}
-	if count != 4 {
-		t.Fatalf("Human fixture steps exercised = %d, want 4", count)
+	if count != 6 {
+		t.Fatalf("Human fixture steps exercised = %d, want 6", count)
 	}
 }
 
@@ -292,7 +292,7 @@ func p23ProtectedDecisionFixture(t *testing.T, binary, root string) p23HumanChec
 func p23ReviewExhaustionFixture(t *testing.T, binary, root string) p23HumanCheckpoint {
 	t.Helper()
 	workspace := p22HumanDirectory(t, root, "review-exhaustion")
-	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "gate.register", "review.record", "run.close", "run.observe", "run.start"}
+	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "gate.register", "human-outcome.record", "review.record", "run.close", "run.observe", "run.start"}
 	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, binary, workspace, "agent", 3600, []string{}, actions, "mutation", p22ExecutionFixture{ReviewObligation: true, ReviewCyclesMaximum: 1})
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "fixture-builder")
 	claim := p23AcquireClaim(t, a, "actor-denied", "review", "fixture-cycle")
@@ -306,7 +306,9 @@ func p23ReviewExhaustionFixture(t *testing.T, binary, root string) p23HumanCheck
 	if err == nil || stdout != "" || !strings.Contains(stderr, "review-rework-exhausted") {
 		t.Fatalf("fixture exhaustion denial: %v %q %q", err, stdout, stderr)
 	}
-	return p23HumanCheckpoint{Name: "VAL-072 review rework exhaustion", Project: workspace, IDs: map[string]string{"issue_id": a.issueID, "review_id": p23ReviewFromResponse(t, recorded)["id"].(string)}, Inspections: p22HumanInspections(workspace,
+	outcomeInput := p21Input(t, workspace, "fixture-rework-outcome", map[string]any{"id": "OUT-fixture-rework", "class": "review-rework-extension", "subject": map[string]any{"type": "issue", "id": a.issueID}, "result": "approved", "scope": map[string]any{"issue_id": a.issueID}, "reasoning": "Human authorizes rework beyond the original cycle budget", "references": []any{}})
+	resolveArgs := []string{"--project", workspace, "--json", "human-outcome", "record", "--input", outcomeInput, "--actor", "actor-human-outcome", "--idempotency-key", "fixture-rework-outcome"}
+	return p23HumanCheckpoint{Name: "VAL-072 review rework exhaustion", Project: workspace, IDs: map[string]string{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "human_actor_id": "actor-human-outcome", "review_id": p23ReviewFromResponse(t, recorded)["id"].(string)}, Inspections: p22HumanInspections(workspace,
 		[]string{"resume", a.issueID, "--repository", workspace}, []string{"stop", "list", "--subject", "envelope:" + p23EnvelopeID(t, a)}, []string{"attention", "list", "--subject", "envelope:" + p23EnvelopeID(t, a)}),
-		Steps: []p23HumanStep{{Name: "exhausted rework denial", CWD: workspace, Args: deniedArgs, ExpectedExit: 4}}}
+		Steps: []p23HumanStep{{Name: "exhausted rework denial", CWD: workspace, Args: deniedArgs, ExpectedExit: 4}, {Name: "record approved review-rework-extension Outcome", CWD: workspace, Args: resolveArgs, ExpectedExit: 0}, {Name: "retry rework Claim", CWD: workspace, Args: deniedArgs, ExpectedExit: 0}}}
 }

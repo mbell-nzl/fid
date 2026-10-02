@@ -33,7 +33,7 @@ func TestClaimAcquireRejectsOpenReviewReworkStop(t *testing.T) {
 	}
 	policy, _ := json.Marshal(workflow.Budget{Name: "reviews", Scope: "envelope", Unit: "review-cycles", Maximum: 1, ExhaustionAction: "review-rework-exhausted"})
 	for _, statement := range []string{
-		`INSERT INTO stops VALUES ('STP-review','envelope','ENV-1','review-rework-exhausted','["claim.acquire","run.start"]','{"envelope_id":"ENV-1","budget_name":"reviews"}','{"type":"budget-observed","subject":{"type":"envelope","id":"ENV-1"},"budget_name":"reviews","capability_id":null}','stop.resolve','actor-reviewer','2026-09-20T00:00:00Z')`,
+		`INSERT INTO stops VALUES ('STP-review','envelope','ENV-1','review-rework-exhausted','["claim.acquire","run.start"]','{"envelope_id":"ENV-1","budget_name":"reviews"}','{"type":"human-outcome-recorded","subject":{"type":"envelope","id":"ENV-1"},"budget_name":null,"capability_id":null,"outcome_class":"review-rework-extension"}','stop.resolve','actor-reviewer','2026-09-20T00:00:00Z')`,
 		`INSERT INTO attention_stop_links VALUES ('ATT-review','STP-review')`,
 	} {
 		if _, err := conn.Exec(statement); err != nil {

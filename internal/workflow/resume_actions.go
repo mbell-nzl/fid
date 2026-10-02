@@ -253,7 +253,7 @@ func resumeGateAction(conn *sql.DB, envelope Envelope, run *Run, repository Repo
 	if run.Status != "active" {
 		action.Reasons = append(action.Reasons, evaluationReason("run-inactive", run.Status, run.ID, "run"))
 	}
-	for _, block := range BudgetAdmissionBlocks(run.Budgets) {
+	for _, block := range GenericBudgetAdmissionBlocks(run.Budgets) {
 		action.Reasons = append(action.Reasons, evaluationReason(block.Code, block.Budget.Name, envelope.ID, "envelope"))
 	}
 	subjects := []Subject{{Type: "run", ID: run.ID}}

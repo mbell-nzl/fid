@@ -22,8 +22,9 @@ func TestP23StopFailureHumanAndJSONParity(t *testing.T) {
 		}
 	}
 	stdout, stderr, err := closureRunCommand(fixture.Project, integrationFIDBinary(t), args...)
-	if err == nil || processExitCode(t, err) != 4 || stdout != "" || stderr != "error: review rework budget is exhausted\n" {
-		t.Fatalf("claim acquire Human denial = (exit %v, stdout %q, stderr %q), want exit 4 and error line", err, stdout, stderr)
+	want := "error: review rework budget is exhausted\nnext: an activated Human records an approved Human Outcome of class review-rework-extension for this Envelope's Issue; see fid stop list --subject envelope:" + fixture.IDs["envelope_id"] + "\n"
+	if err == nil || processExitCode(t, err) != 4 || stdout != "" || stderr != want {
+		t.Fatalf("claim acquire Human denial = (exit %v, stdout %q, stderr %q), want exit 4 and two exact lines", err, stdout, stderr)
 	}
 	if strings.Contains(stderr, "guidance:") {
 		t.Fatalf("unexpected guidance: %q", stderr)
@@ -173,7 +174,16 @@ func p23AssertStopFailurePair(t *testing.T, binary string, tc p23StopFailureCase
 		t.Fatalf("%s Human succeeded: %q", tc.operation, humanOut)
 	}
 	humanStatus := processExitCode(t, humanExit)
-	if humanStatus != jsonStatus || humanOut != "" || humanErr != "error: "+envelope.Error.Message+"\n" {
+	wantHuman := "error: " + envelope.Error.Message + "\n"
+	if tc.code == "review-rework-exhausted" {
+		var payload map[string]any
+		if err := json.Unmarshal([]byte(jsonErr), &payload); err != nil {
+			t.Fatal(err)
+		}
+		id := p21Path(t, payload, "error", "subject", "id").(string)
+		wantHuman += "next: an activated Human records an approved Human Outcome of class review-rework-extension for this Envelope's Issue; see fid stop list --subject envelope:" + id + "\n"
+	}
+	if humanStatus != jsonStatus || humanOut != "" || humanErr != wantHuman {
 		t.Fatalf("%s Human = (exit %d, stdout %q, stderr %q), JSON = (exit %d, stderr %q)", tc.name, humanStatus, humanOut, humanErr, jsonStatus, jsonErr)
 	}
 	jsonOutAgain, jsonErrAgain, jsonExitAgain := closureRunCommand(tc.workspace, binary, jsonArgs...)

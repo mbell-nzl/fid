@@ -206,6 +206,18 @@ func BudgetAdmissionBlocks(budgets []Budget) []BudgetAdmissionBlock {
 	return blocks
 }
 
+// GenericBudgetAdmissionBlocks omits budgets governed by their own rework Stop.
+// Callers admitting gate execution and describing that action use the same rule.
+func GenericBudgetAdmissionBlocks(budgets []Budget) []BudgetAdmissionBlock {
+	generic := make([]Budget, 0, len(budgets))
+	for _, budget := range budgets {
+		if budget.ExhaustionAction != "review-rework-exhausted" {
+			generic = append(generic, budget)
+		}
+	}
+	return BudgetAdmissionBlocks(generic)
+}
+
 // BudgetStopEffects prepares the Stop/Attention effects that must share the
 // Event which denied execution or crossed a budget exhaustion boundary.
 func BudgetStopEffects(conn *sql.DB, subject Subject, envelopeID, actorID string, blocks []BudgetAdmissionBlock, raisedAt string) ([]journal.Effect, []Stop, []Attention, error) {
@@ -224,9 +236,13 @@ func BudgetStopEffects(conn *sql.DB, subject Subject, envelopeID, actorID string
 			return nil, nil, nil, fmt.Errorf("budget Stop code is invalid")
 		}
 		condition := Condition{Type: "work-ended", Subject: subject}
-		if block.Code == "budget-data-unavailable" || block.Code == "review-rework-exhausted" {
+		switch block.Code {
+		case "budget-data-unavailable":
 			name := block.Budget.Name
 			condition = Condition{Type: "budget-observed", Subject: subject, BudgetName: &name}
+		case "review-rework-exhausted":
+			class := "review-rework-extension"
+			condition = Condition{Type: "human-outcome-recorded", Subject: subject, OutcomeClass: &class}
 		}
 		detailValue := map[string]any{
 			"envelope_id": envelopeID,
