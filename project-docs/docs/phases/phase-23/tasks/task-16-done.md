@@ -166,8 +166,8 @@ The ordinary gate's uncached `cmd/fid` package took `215.384s`, and the benchmar
 
 ## Commit hash
 
-- Pending commit
+- `f5fdec0167d7ed2d4a7aaac0d6b226f7275df1fa`
 
 ## Commit subject
 
-- Pending commit
+- `test(export): keep import recovery fixture claim live`
