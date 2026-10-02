@@ -1,0 +1,23 @@
+{
+  "id": "report-15",
+  "cmd": "project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-15-done.md project-docs/docs/phases/phase-23/tasks/task-15.md",
+  "cwd": "/home/mark/projects/fid",
+  "started": "2026-10-02T16:36:28.254Z",
+  "results": [
+    {
+      "chunk_id": "691397",
+      "wall_time_seconds": 1.00151475,
+      "session_id": 74472,
+      "original_token_count": 360,
+      "output": "PASS all required headings present\nPASS headings in required order\nPASS section non-empty: ## Concerns, technical debt, or notes for the Tech Lead\nPASS section non-empty: ## Dependency-budget note\nPASS section non-empty: ## Deviations from spec\nPASS section non-empty: ## Validation Contract Coverage\nOUTCOME COMPLETE\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: FAIL\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t5.622s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.310s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t254.927s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t9.855s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t1.758s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 62.1% of statements\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t240.222s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/journal\t25.273s\nPASS required command recorded PASS: gofmt -l cmd internal\nPASS required command recorded PASS: golangci-lint run ./...\nPASS required command recorded PASS: go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...\n"
+    },
+    {
+      "chunk_id": "f85f0a",
+      "wall_time_seconds": 0.000016912,
+      "exit_code": 0,
+      "original_token_count": 233,
+      "output": "PASS required command recorded PASS: go tool cover -func=coverage.out\nPASS required command recorded PASS: go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...\nPASS required command recorded PASS: go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/\nPASS required command recorded PASS: rg -n --glob '!*_test.go' \"task_completions|ac_verifications\" cmd internal\nPASS required command recorded PASS: rg -n --glob '!*_test.go' \"requirement\\.synced|last_synced_hash\" cmd internal\nPASS required command recorded PASS: rg -n --glob '!*_test.go' \"has_completion_report|concerns_addressed\" cmd internal\nPASS commit hash resolves: 0dd4c57849f8be7779e1c2e43cf7b14093c945f0\nPASS commit subject matches: feat(task): complete phase 23 task 15 judgment removal\nPASS report file committed and clean\nPASS report-lint completed with no failures\n"
+    }
+  ],
+  "ended": "2026-10-02T16:36:50.840Z"
+}

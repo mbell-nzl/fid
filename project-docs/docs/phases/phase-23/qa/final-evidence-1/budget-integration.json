@@ -1,0 +1,45 @@
+{
+  "id": "budget-integration",
+  "cmd": "go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T16:43:24.866Z",
+  "results": [
+    {
+      "chunk_id": "b32a7d",
+      "wall_time_seconds": 1.00136924,
+      "session_id": 13008,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "65673b",
+      "wall_time_seconds": 5.001376323,
+      "session_id": 13008,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "334166",
+      "wall_time_seconds": 5.000860639,
+      "session_id": 13008,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "875b95",
+      "wall_time_seconds": 5.000972538,
+      "session_id": 13008,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "bb461f",
+      "wall_time_seconds": 0.000020088,
+      "exit_code": 0,
+      "original_token_count": 15,
+      "output": "ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t267.627s\n"
+    }
+  ],
+  "ended": "2026-10-02T16:48:16.795Z"
+}

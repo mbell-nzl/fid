@@ -1,0 +1,17 @@
+{
+  "id": "reference-comparison",
+  "cmd": "python3 project-docs/docs/phases/phase-23/qa/final-evidence-1/compare-reference.py",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T17:16:51.622Z",
+  "results": [
+    {
+      "chunk_id": "c1f489",
+      "wall_time_seconds": 0.000019787,
+      "exit_code": 0,
+      "original_token_count": 321,
+      "output": "MATCH canonical executor-terminated {\"type\":\"executor-terminated\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-pinned\"},\"budget_name\":null,\"capability_id\":null}\nMATCH canonical run-recovered {\"type\":\"run-recovered\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-pinned\"},\"budget_name\":null,\"capability_id\":null}\nMATCH canonical activation-recovered {\"type\":\"activation-recovered\",\"subject\":{\"type\":\"activation\",\"id\":\"ACT-pinned\"},\"budget_name\":null,\"capability_id\":null}\nMATCH canonical capability-available {\"type\":\"capability-available\",\"subject\":{\"type\":\"activation\",\"id\":\"ACT-pinned\"},\"budget_name\":null,\"capability_id\":\"attention.v1\"}\nMATCH canonical budget-observed {\"type\":\"budget-observed\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-pinned\"},\"budget_name\":\"attempts\",\"capability_id\":null}\nMATCH canonical work-ended {\"type\":\"work-ended\",\"subject\":{\"type\":\"run\",\"id\":\"RUN-pinned\"},\"budget_name\":null,\"capability_id\":null}\nMATCH attentionSemanticKey sha256:d4b51bb4a6404d4a2579826ad5c08d802ed83c41814cd5fa74d3ee8c7796c3de\nPinned source journal: internal/journal/testdata/task9-prechange-budget-observed.jsonl.gz.b64 events=18 sha256=8fdf19380c9cf8e1627bbde730e5554e3d0f3b3006ffcff7e21d6162197f11df\nPASS six canonical bytes and Attention key identical at 74c83b7 and 32a55a9; pinned journal identity verified\n"
+    }
+  ],
+  "ended": "2026-10-02T17:16:51.730Z"
+}

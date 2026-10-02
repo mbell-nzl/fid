@@ -1,0 +1,21 @@
+{
+  "id": "report-01",
+  "cmd": "project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-1-done.md project-docs/docs/phases/phase-23/tasks/task-1.md",
+  "cwd": "/home/mark/projects/fid",
+  "results": [
+    {
+      "chunk_id": "851ccf",
+      "wall_time_seconds": 1.002120681,
+      "session_id": 56594,
+      "original_token_count": 184,
+      "output": "PASS all required headings present\nPASS headings in required order\nPASS section non-empty: ## Concerns, technical debt, or notes for the Tech Lead\nPASS section non-empty: ## Dependency-budget note\nPASS section non-empty: ## Deviations from spec\nPASS section non-empty: ## Validation Contract Coverage\nOUTCOME COMPLETE\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t4.078s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t231.010s\tcoverage: 62.6% of statements\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t669.586s\nPASS go test token looks like output: PASS\nPASS required command recorded PASS: gofmt -l cmd internal\n"
+    },
+    {
+      "chunk_id": "2c545d",
+      "wall_time_seconds": 0.000014928,
+      "exit_code": 0,
+      "original_token_count": 176,
+      "output": "PASS required command recorded PASS: golangci-lint run ./...\nPASS required command recorded PASS: go test -race -timeout 30m -coverprofile=coverage.out ./...\nPASS required command recorded PASS: go tool cover -func=coverage.out\nPASS required command recorded PASS: go test -tags integration -race -timeout 30m ./cmd/fid/integration/...\nPASS required command recorded PASS: go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/\nPASS commit hash resolves: 730128cd8842e2943c9ab2b21f8f2b154148c10a\nPASS commit subject matches: perf(phase-23): repair rebuild and task gate runtime\nPASS report file committed and clean\nPASS report-lint completed with no failures\n"
+    }
+  ]
+}

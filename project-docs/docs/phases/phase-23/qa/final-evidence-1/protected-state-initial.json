@@ -1,0 +1,16 @@
+{
+  "reviewed_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "initial_dirty": [
+    "project-docs/docs/phases/phase-23/run-ledger.md",
+    "project-docs/docs/phases/phase-23/triage-log.md"
+  ],
+  "sha256": {
+    "qa/final-review.md": "e2ca7b44deb76f1f4464d6c690d5252121e7c323d7d0e38d4198fa31eb62b584",
+    "qa/human-checklist.md": "03a2c2e59730f1d086509eb2050d9f793218d4be6a1e1960aed0d6d4b224b412",
+    "qa/validation-contract.md": "f78468d5b9ce7786a0f572bf37fbe94cd52291a167bed2e6c06b6d5f9363d582",
+    "qa/qa-plan.md": "742386fcda9db108a22e9a4add9b20ebb6169191b13fc13bab6f7f8a7a8792f7",
+    "run-ledger.md": "ebfd9d3dbb7fb927598b45dccfa7485e688c8a065179d0b8c2c8453aaa814500",
+    "triage-log.md": "a8af5e85c1d83a32040ec1cbca44c4124cafdd0b63a132e6d30f82bc149c5fb4"
+  },
+  "note": "Hashes observed at session start; protected-state-final.json rechecks them before the QA commit."
+}

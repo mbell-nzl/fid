@@ -1,0 +1,21 @@
+{
+  "id": "report-02",
+  "cmd": "project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-2-done.md project-docs/docs/phases/phase-23/tasks/task-2.md",
+  "cwd": "/home/mark/projects/fid",
+  "results": [
+    {
+      "chunk_id": "b15a76",
+      "wall_time_seconds": 1.001637939,
+      "session_id": 26226,
+      "original_token_count": 253,
+      "output": "PASS all required headings present\nPASS headings in required order\nPASS section non-empty: ## Concerns, technical debt, or notes for the Tech Lead\nPASS section non-empty: ## Dependency-budget note\nPASS section non-empty: ## Deviations from spec\nPASS section non-empty: ## Validation Contract Coverage\nOUTCOME COMPLETE\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 63.8% of statements\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/cmd/fid/integration 650.206s\nPASS go test token looks like output: ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 63.8% of statements\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t209.816s\tcoverage: 64.0% of statements\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t691.913s\nPASS go test token looks like output: ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t188.151s\tcoverage: 64.0% of statements\n"
+    },
+    {
+      "chunk_id": "33da53",
+      "wall_time_seconds": 0.000006633,
+      "exit_code": 0,
+      "original_token_count": 184,
+      "output": "PASS required command recorded PASS: gofmt -l cmd internal\nPASS required command recorded PASS: golangci-lint run ./...\nPASS required command recorded PASS: go test -race -timeout 30m -coverprofile=coverage.out ./...\nPASS required command recorded PASS: go tool cover -func=coverage.out\nPASS required command recorded PASS: go test -tags integration -race -timeout 30m ./cmd/fid/integration/...\nPASS required command recorded PASS: go test -race -timeout 30m -cover ./internal/workflow/\nPASS commit hash resolves: 613e45aad9b10445cffd6b113ee598ab493f183a\nPASS commit subject matches: fix(workflow): evaluate only guarding Obligations per guarded action\nPASS report file committed and clean\nPASS report-lint completed with no failures\n"
+    }
+  ]
+}

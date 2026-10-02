@@ -1,0 +1,31 @@
+{
+  "id": "archive-scale",
+  "cmd": "go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T17:02:12.737Z",
+  "results": [
+    {
+      "chunk_id": "a27786",
+      "wall_time_seconds": 1.000980077,
+      "session_id": 94447,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "b4d5a9",
+      "wall_time_seconds": 5.000793182,
+      "session_id": 94447,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "93c0f6",
+      "wall_time_seconds": 0.000013616,
+      "exit_code": 0,
+      "original_token_count": 14,
+      "output": "ok  \tgithub.com/mbell-nzl/fid/internal/export\t147.666s\n"
+    }
+  ],
+  "ended": "2026-10-02T17:05:05.457Z"
+}

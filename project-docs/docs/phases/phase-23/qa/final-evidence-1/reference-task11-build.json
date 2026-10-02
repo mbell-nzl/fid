@@ -1,0 +1,17 @@
+{
+  "id": "reference-task11-build",
+  "cmd": "python3 /home/mark/projects/fid/project-docs/docs/phases/phase-23/qa/final-evidence-1/reference-environment.py task11 go build -o /tmp/fid-p23-final-review-1-task11 ./cmd/fid",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T17:16:10.755Z",
+  "results": [
+    {
+      "chunk_id": "fe8c89",
+      "wall_time_seconds": 0.592834162,
+      "exit_code": 0,
+      "original_token_count": 192,
+      "output": "{\"command\": [\"git\", \"rev-parse\", \"HEAD\"], \"cwd\": \"/tmp/fid-p23-qa-reference-PgIz9Jst/task11\", \"git_dir\": \"/home/mark/projects/fid/.git/worktrees/task111\", \"stdout\": \"3dff4574a71438900100449e36d7044969ba9162\\n\", \"stderr\": \"\", \"exit_code\": 0}\n{\"command\": [\"git\", \"status\", \"--porcelain\"], \"cwd\": \"/tmp/fid-p23-qa-reference-PgIz9Jst/task11\", \"git_dir\": \"/home/mark/projects/fid/.git/worktrees/task111\", \"stdout\": \"\", \"stderr\": \"\", \"exit_code\": 0}\n{\"command\": [\"go\", \"build\", \"-o\", \"/tmp/fid-p23-final-review-1-task11\", \"./cmd/fid\"], \"cwd\": \"/tmp/fid-p23-qa-reference-PgIz9Jst/task11\", \"environment\": {\"GIT_DIR\": \"/home/mark/projects/fid/.git/worktrees/task111\", \"GIT_WORK_TREE\": \"/tmp/fid-p23-qa-reference-PgIz9Jst/task11\"}, \"stdout\": \"\", \"stderr\": \"\", \"exit_code\": 0}\n"
+    }
+  ],
+  "ended": "2026-10-02T17:16:11.518Z"
+}

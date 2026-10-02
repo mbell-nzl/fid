@@ -1,219 +1,249 @@
-# Phase 23 Human fixture guide
+# Phase 23 Human Fixtures
 
-Only the Human judges VAL-070, VAL-071, and VAL-072; VAL-073 remains a phase-end Human view review. The generator and recorded text make the checks runnable.
+Reviewed on 2026-10-03 by gpt-6-astra QA Lead. This guide replaces the earlier
+fixture snapshots with one fresh manifest at the reviewed HEAD, including
+DEC-267 and tasks 19–21 (DEC-269/DEC-270).
 
 ## Generate a fresh set
 
-From `/home/mark/projects/fid`:
+Working directory: `/home/mark/projects/fid`.
 
 ```bash
 FID_P23_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/phase-23-human go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23HumanFixtures$' -count=1 -v ./cmd/fid/integration
 ```
 
-Each run creates a separate retained `checkpoints-*` directory. Keep its binary and workspaces together. The manifest binds the binary digest, source commit, exact working directories, argument arrays, and expected Human stdout. Regenerate after the delivered binary changes.
+Wait for the command to finish. Its output names a new manifest with current
+paths and IDs. Seeded active Claims last one hour, so generate immediately before a later
+Human session and use that manifest's commands. Exact expected text below is
+bound to this recorded generation. The original [human-checklist.md](human-checklist.md)
+is the immutable historical Human result. Record only the seven re-checks in
+[human-checklist-2.md](human-checklist-2.md).
 
-## Recorded fixture set
+## Reviewed fixture identity
 
-- Manifest: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/manifest.json`
-- Binary: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid`
-- Binary SHA-256: `sha256:2b0eb89940e02d4ad84d971981dee85f4bdbcc9e190da4213d8ca71bc98e64ef`
-- Source commit: `df24c0cf832e6c29a0f0a743150c91ff178d841a`; source dirty: `true`
+- Reviewed source HEAD: `32a55a94efb2a89dbf50b29accb434b9c753418c`.
+- Generated at: `2026-10-02T17:17:10.215903366Z`.
+- Checkpoint root: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561`.
+- Manifest: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/manifest.json`.
+- Binary: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid`.
+- Binary SHA-256: `sha256:9a94cc6405b2c64fa5a6e2eef027b9ab39e81461b1f179b4910e53e0ffec29da`.
+- Source dirty flag: `true`; only workflow/QA documents are dirty. Product source is the reviewed HEAD.
+- Durable manifest: [human-fixture-manifest.json](final-evidence-1/human-fixture-manifest.json).
+
+Generation receipt, including the complete terminal result and wall-time
+observation: [human-fixture-generation.json](final-evidence-1/human-fixture-generation.json).
+Every invocation below was executed by QA; receipt:
+[human-guide-verification.json](final-evidence-1/human-guide-verification.json).
+These receipts establish runnable mechanics and exact text, not Human judgment.
+
+The protected-Decision and rework steps change their fixtures. Run inspections
+before the steps and use a fresh generation when repeating a complete sequence.
+The leaf mutations repeat existing requests idempotently.
 
 ## VAL-070 mixed Findings
 
-- Project: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings`
-- IDs: `{"first_review_id": "REV-367292", "issue_id": "P22-764499", "second_review_id": "REV-b90c1c"}`
+Fixture IDs:
 
-### Read 1
-
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings`
-- Arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings", "review", "get", "REV-367292"]`
-
-```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings review get REV-367292
+```json
+{
+  "first_review_id": "REV-52abd2",
+  "issue_id": "P22-d7b499",
+  "second_review_id": "REV-ca6a86"
+}
 ```
 
-Verbatim Human stdout:
+### Inspection 1
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings review get REV-52abd2
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect independent Reviews and their Findings.
 
 Reviews
-  Review REV-367292
-    Issue: P22-764499; Envelope: ENV-e2b3c3 revision 1
-    Run: RUN-0b264e; Reviewer: actor-denied; Profile: review-default
+  Review REV-52abd2
+    Issue: P22-d7b499; Envelope: ENV-861002 revision 1
+    Run: RUN-ec8e47; Reviewer: actor-denied; Profile: review-default
     Verdict: changes-required; Independence: distinct-actor
-    Repository: project project-7d0d9392020521f7351a9197fad2ac4d; worktree sha256:a4936266d2d82b477ba646de792bf42fcbe02de77cca3c2481a83b1ab2758b10; HEAD 114d9451b3f51394221c0839145ca411370828b2; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
-    Repository capture: git; base 114d9451b3f51394221c0839145ca411370828b2; dirty false; dirty digest <nil>
+    Repository: project project-5475e8060295e582dbf4aa4f3dd79ee4; worktree sha256:fffa66b52c81449881d8b0db618e00d3415798368634615951a7b709a6fa1131; HEAD f3a1a2e2f19fb6e64d033d31c2c53dcba65e1442; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
+    Repository capture: git; base f3a1a2e2f19fb6e64d033d31c2c53dcba65e1442; dirty false; dirty digest <nil>
     Findings by severity: blocker 0; major 3; minor 0; nit 0
   Finding FND-fixture-addressed
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: addressed
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: addressed
     Addressed is a Builder assertion, not a resolution.
   Finding FND-fixture-blocking
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: open
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: open
   Finding FND-fixture-resolved
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: resolved
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: resolved
 ```
 
-- JSON counterpart for read 1: cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings", "--json", "review", "get", "REV-367292"]`
+### Inspection 2
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings --json review get REV-367292
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings --json review get REV-52abd2
 ```
 
-### Read 3
+### Inspection 3
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings`
-- Arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings", "review", "list", "--issue", "P22-764499"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings review list --issue P22-764499
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings review list --issue P22-d7b499
 ```
 
-Verbatim Human stdout:
+Expected Human output:
 
 ```text
 Purpose: Inspect independent Reviews and their Findings.
 
 Reviews
-  Review REV-367292
-    Issue: P22-764499; Envelope: ENV-e2b3c3 revision 1
-    Run: RUN-0b264e; Reviewer: actor-denied; Profile: review-default
+  Review REV-52abd2
+    Issue: P22-d7b499; Envelope: ENV-861002 revision 1
+    Run: RUN-ec8e47; Reviewer: actor-denied; Profile: review-default
     Verdict: changes-required; Independence: distinct-actor
-    Repository: project project-7d0d9392020521f7351a9197fad2ac4d; worktree sha256:a4936266d2d82b477ba646de792bf42fcbe02de77cca3c2481a83b1ab2758b10; HEAD 114d9451b3f51394221c0839145ca411370828b2; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
-    Repository capture: git; base 114d9451b3f51394221c0839145ca411370828b2; dirty false; dirty digest <nil>
+    Repository: project project-5475e8060295e582dbf4aa4f3dd79ee4; worktree sha256:fffa66b52c81449881d8b0db618e00d3415798368634615951a7b709a6fa1131; HEAD f3a1a2e2f19fb6e64d033d31c2c53dcba65e1442; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
+    Repository capture: git; base f3a1a2e2f19fb6e64d033d31c2c53dcba65e1442; dirty false; dirty digest <nil>
     Findings by severity: blocker 0; major 3; minor 0; nit 0
   Finding FND-fixture-addressed
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: addressed
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: addressed
     Addressed is a Builder assertion, not a resolution.
   Finding FND-fixture-blocking
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: open
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: open
   Finding FND-fixture-resolved
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: resolved
-  Review REV-b90c1c
-    Issue: P22-764499; Envelope: ENV-e2b3c3 revision 1
-    Run: RUN-7fb8a5; Reviewer: actor-reviewer-two; Profile: review-default
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: resolved
+  Review REV-ca6a86
+    Issue: P22-d7b499; Envelope: ENV-861002 revision 1
+    Run: RUN-29022d; Reviewer: actor-reviewer-two; Profile: review-default
     Verdict: changes-required; Independence: distinct-actor
-    Repository: project project-7d0d9392020521f7351a9197fad2ac4d; worktree sha256:a4936266d2d82b477ba646de792bf42fcbe02de77cca3c2481a83b1ab2758b10; HEAD 114d9451b3f51394221c0839145ca411370828b2; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
-    Repository capture: git; base 114d9451b3f51394221c0839145ca411370828b2; dirty false; dirty digest <nil>
+    Repository: project project-5475e8060295e582dbf4aa4f3dd79ee4; worktree sha256:fffa66b52c81449881d8b0db618e00d3415798368634615951a7b709a6fa1131; HEAD f3a1a2e2f19fb6e64d033d31c2c53dcba65e1442; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
+    Repository capture: git; base f3a1a2e2f19fb6e64d033d31c2c53dcba65e1442; dirty false; dirty digest <nil>
     Findings by severity: blocker 0; major 1; minor 0; nit 0
   Finding FND-fixture-new
-    Review: REV-b90c1c; Severity: major; Blocking: true; Disposition: open
+    Review: REV-ca6a86; Severity: major; Blocking: true; Disposition: open
 ```
 
-- JSON counterpart for read 3: cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings", "--json", "review", "list", "--issue", "P22-764499"]`
+### Inspection 4
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings --json review list --issue P22-764499
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings --json review list --issue P22-d7b499
 ```
 
-### Read 5
+### Inspection 5
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings`
-- Arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings", "finding", "list", "--issue", "P22-764499"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings finding list --issue P22-764499
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings finding list --issue P22-d7b499
 ```
 
-Verbatim Human stdout:
+Expected Human output:
 
 ```text
 Purpose: Inspect Finding dispositions and current blocking state.
 
 Findings
   Finding FND-fixture-addressed
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: addressed
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: addressed
     Addressed is a Builder assertion, not a resolution.
   Finding FND-fixture-blocking
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: open
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: open
   Finding FND-fixture-new
-    Review: REV-b90c1c; Severity: major; Blocking: true; Disposition: open
+    Review: REV-ca6a86; Severity: major; Blocking: true; Disposition: open
   Finding FND-fixture-resolved
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: resolved
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: resolved
 ```
 
-- JSON counterpart for read 5: cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings", "--json", "finding", "list", "--issue", "P22-764499"]`
+### Inspection 6
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings --json finding list --issue P22-764499
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings --json finding list --issue P22-d7b499
 ```
 
-### Read 7
+### Inspection 7
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings`
-- Arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings", "resume", "P22-764499", "--repository", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings resume P22-764499 --repository /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings resume P22-d7b499 --repository /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings
 ```
 
-Verbatim Human stdout:
+Expected Human output:
 
 ```text
-Issue P22-764499
+Issue P22-d7b499
   Status: todo
   Completion: incomplete
-  Envelope: ENV-e2b3c3 (revision 1, active)
+  Envelope: ENV-861002 (revision 1, active)
 
-Current Run: RUN-7fb8a5
+Current Run: RUN-29022d
   Status: active
   Actor ID: actor-reviewer-two
   Executor ID: executor-fixture-second-review
 
-Claim CLM-85890b
+Claim CLM-0d6730
   Lease status now: active
   Recorded status: active
-  Expires: 2026-09-29T08:58:30.667478918Z
+  Expires: 2026-10-02T18:17:15.761350562Z
   An active lease alone does not authorize an operation; its authority and repository checks still apply.
 
 Repository
-  Project: project-7d0d9392020521f7351a9197fad2ac4d
-  Current worktree: sha256:a4936266d2d82b477ba646de792bf42fcbe02de77cca3c2481a83b1ab2758b10
-  HEAD: 114d9451b3f51394221c0839145ca411370828b2
+  Project: project-5475e8060295e582dbf4aa4f3dd79ee4
+  Current worktree: sha256:fffa66b52c81449881d8b0db618e00d3415798368634615951a7b709a6fa1131
+  HEAD: f3a1a2e2f19fb6e64d033d31c2c53dcba65e1442
   Uncommitted changes: false
-  Run's recorded worktree: sha256:a4936266d2d82b477ba646de792bf42fcbe02de77cca3c2481a83b1ab2758b10
+  Run's recorded worktree: sha256:fffa66b52c81449881d8b0db618e00d3415798368634615951a7b709a6fa1131
 
 Next steps
   Candidate operations below are not an execution sequence.
   Ready means the recorded prerequisites permit a request; supplied inputs and authority are checked when it runs.
-  Action run.inspect run:RUN-7fb8a5: ready
+  Action run.inspect run:RUN-29022d: ready
     Purpose: Compare this repository with the Run's recorded start or checkpoint; inspect changed paths without recording a checkpoint.
-  Action run.observe run:RUN-7fb8a5: ready
+  Action run.observe run:RUN-29022d: ready
     Purpose: Have the activated harness record a fresh observation of whether this Run's executor is live, terminated or unknown.
     Requires: run.observe
-  Action gate.run run:RUN-7fb8a5: blocked
+  Action gate.run run:RUN-29022d: blocked
     Purpose: Execute the configured check to produce Evidence for the current work.
     Requires: gate.run
   authority-unavailable for actor:actor-reviewer-two: gate.run
-  budget-data-unavailable for envelope:ENV-e2b3c3: tokens
-  Action claim.renew claim:CLM-85890b: blocked
+  budget-data-unavailable for envelope:ENV-861002: tokens
+  Action claim.renew claim:CLM-0d6730: blocked
     Purpose: Extend an eligible work lease after checking authority.
     Requires: claim.renew
   authority-unavailable for actor:actor-reviewer-two: claim.renew
-  Action claim.release claim:CLM-85890b: ready
+  Action claim.release claim:CLM-0d6730: ready
     Purpose: Give up an eligible work lease after checking authority; this does not prove the work complete.
     Requires: claim.release
-  Action concern.record issue:P22-764499: blocked
+  Action concern.record issue:P22-d7b499: blocked
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: concern.record
-  authority-unavailable for issue:P22-764499: concern.record
-  Action deviation.record issue:P22-764499: blocked
+  authority-unavailable for issue:P22-d7b499: concern.record
+  Action deviation.record issue:P22-d7b499: blocked
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: deviation.record
-  authority-unavailable for issue:P22-764499: deviation.record
-  Action decision.record-reference issue:P22-764499: blocked
+  authority-unavailable for issue:P22-d7b499: deviation.record
+  Action decision.record-reference issue:P22-d7b499: blocked
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: decision.record-reference
-  authority-unavailable for issue:P22-764499: decision.record-reference
-  Action human-outcome.record issue:P22-764499: blocked
+  authority-unavailable for issue:P22-d7b499: decision.record-reference
+  Action human-outcome.record issue:P22-d7b499: blocked
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: human-outcome.record
-  authority-unavailable for issue:P22-764499: human-outcome.record
-  Action review.record run:RUN-7fb8a5: blocked
+  authority-unavailable for issue:P22-d7b499: human-outcome.record
+  Action review.record run:RUN-29022d: blocked
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: review.record
-  review-not-independent for run:RUN-7fb8a5: Run already reviewed
+  review-not-independent for run:RUN-29022d: Run already reviewed
 
 Completion requirements
   These describe what is needed to finish the Issue, separately from recovery checks above.
@@ -222,42 +252,42 @@ Completion requirements
   obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent
   Overall completion: incomplete
   obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent
-  issue-not-terminal-success for issue:P22-764499: completed workflow category
+  issue-not-terminal-success for issue:P22-d7b499: completed workflow category
   Open Findings: 3
 
 Review and judgment
 Reviews
-  Review REV-367292
-    Issue: P22-764499; Envelope: ENV-e2b3c3 revision 1
-    Run: RUN-0b264e; Reviewer: actor-denied; Profile: review-default
+  Review REV-52abd2
+    Issue: P22-d7b499; Envelope: ENV-861002 revision 1
+    Run: RUN-ec8e47; Reviewer: actor-denied; Profile: review-default
     Verdict: changes-required; Independence: distinct-actor
-    Repository: project project-7d0d9392020521f7351a9197fad2ac4d; worktree sha256:a4936266d2d82b477ba646de792bf42fcbe02de77cca3c2481a83b1ab2758b10; HEAD 114d9451b3f51394221c0839145ca411370828b2; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
-    Repository capture: git; base 114d9451b3f51394221c0839145ca411370828b2; dirty false; dirty digest <nil>
+    Repository: project project-5475e8060295e582dbf4aa4f3dd79ee4; worktree sha256:fffa66b52c81449881d8b0db618e00d3415798368634615951a7b709a6fa1131; HEAD f3a1a2e2f19fb6e64d033d31c2c53dcba65e1442; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
+    Repository capture: git; base f3a1a2e2f19fb6e64d033d31c2c53dcba65e1442; dirty false; dirty digest <nil>
     Findings by severity: blocker 0; major 3; minor 0; nit 0
   Finding FND-fixture-addressed
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: addressed
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: addressed
     Addressed is a Builder assertion, not a resolution.
   Finding FND-fixture-blocking
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: open
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: open
   Finding FND-fixture-resolved
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: resolved
-  Review REV-b90c1c
-    Issue: P22-764499; Envelope: ENV-e2b3c3 revision 1
-    Run: RUN-7fb8a5; Reviewer: actor-reviewer-two; Profile: review-default
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: resolved
+  Review REV-ca6a86
+    Issue: P22-d7b499; Envelope: ENV-861002 revision 1
+    Run: RUN-29022d; Reviewer: actor-reviewer-two; Profile: review-default
     Verdict: changes-required; Independence: distinct-actor
-    Repository: project project-7d0d9392020521f7351a9197fad2ac4d; worktree sha256:a4936266d2d82b477ba646de792bf42fcbe02de77cca3c2481a83b1ab2758b10; HEAD 114d9451b3f51394221c0839145ca411370828b2; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
-    Repository capture: git; base 114d9451b3f51394221c0839145ca411370828b2; dirty false; dirty digest <nil>
+    Repository: project project-5475e8060295e582dbf4aa4f3dd79ee4; worktree sha256:fffa66b52c81449881d8b0db618e00d3415798368634615951a7b709a6fa1131; HEAD f3a1a2e2f19fb6e64d033d31c2c53dcba65e1442; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
+    Repository capture: git; base f3a1a2e2f19fb6e64d033d31c2c53dcba65e1442; dirty false; dirty digest <nil>
     Findings by severity: blocker 0; major 1; minor 0; nit 0
   Finding FND-fixture-new
-    Review: REV-b90c1c; Severity: major; Blocking: true; Disposition: open
+    Review: REV-ca6a86; Severity: major; Blocking: true; Disposition: open
 Open Findings
   Finding FND-fixture-addressed
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: addressed
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: addressed
     Addressed is a Builder assertion, not a resolution.
   Finding FND-fixture-blocking
-    Review: REV-367292; Severity: major; Blocking: true; Disposition: open
+    Review: REV-52abd2; Severity: major; Blocking: true; Disposition: open
   Finding FND-fixture-new
-    Review: REV-b90c1c; Severity: major; Blocking: true; Disposition: open
+    Review: REV-ca6a86; Severity: major; Blocking: true; Disposition: open
 Concerns
   None.
 Deviations
@@ -274,97 +304,105 @@ Budget attempts: remaining 3 attempts; consumed 0; maximum 3; state available
 Budget tokens: remaining unknown input-tokens; consumed unknown; maximum 10; state unknown
 ```
 
-- JSON counterpart for read 7: cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings", "--json", "resume", "P22-764499", "--repository", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings"]`
+### Inspection 8
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings --json resume P22-764499 --repository /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/mixed-findings
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings --json resume P22-d7b499 --repository /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings
 ```
 
 ## VAL-071 protected Decision
 
-- Project: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision`
-- IDs: `{"envelope_id": "ENV-415cac", "human_actor_id": "actor-human-outcome", "issue_id": "P22-8c4994"}`
+Fixture IDs:
 
-### Read 1
-
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision`
-- Arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision", "resume", "P22-8c4994", "--repository", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision"]`
-
-```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision resume P22-8c4994 --repository /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision
+```json
+{
+  "envelope_id": "ENV-3f958e",
+  "human_actor_id": "actor-human-outcome",
+  "issue_id": "P22-504696"
+}
 ```
 
-Verbatim Human stdout:
+### Inspection 1
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision resume P22-504696 --repository /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision
+```
+
+Expected Human output:
 
 ```text
-Issue P22-8c4994
+Issue P22-504696
   Status: qa_review
   Completion: incomplete
-  Envelope: ENV-415cac (revision 1, active)
+  Envelope: ENV-3f958e (revision 1, active)
 
-Current Run: RUN-160063
+Current Run: RUN-134ab7
   Status: active
   Actor ID: actor-recovery
   Executor ID: executor-corpus-prior
 
-Claim CLM-db623c
+Claim CLM-00f41a
   Lease status now: active
   Recorded status: active
-  Expires: 2026-09-29T08:58:34.681176109Z
+  Expires: 2026-10-02T18:17:20.479180459Z
   An active lease alone does not authorize an operation; its authority and repository checks still apply.
 
 Repository
-  Project: project-ef54671165fe5e7b33f42bcf99980981
-  Current worktree: sha256:1577c216515eda0b4fbd6b99708bace576cf96a92efc79d7577b620473738ea9
-  HEAD: 8c8270f04f0c3f465220c5b2b178ccca658ee5b9
+  Project: project-8a8cfda890a2cec7623a946b7d5f5b5f
+  Current worktree: sha256:fd3a069e2077680bef8375286d77679b1e78936b06a19afdd73749cf1c99de12
+  HEAD: 3990d0ea31fd2a668bdc005630419d217271c022
   Uncommitted changes: false
-  Run's recorded worktree: sha256:1577c216515eda0b4fbd6b99708bace576cf96a92efc79d7577b620473738ea9
+  Run's recorded worktree: sha256:fd3a069e2077680bef8375286d77679b1e78936b06a19afdd73749cf1c99de12
 
 Next steps
   To collect proof for unfinished work, run the configured Gate (gate.run).
   A successful execution can supply Evidence; it does not itself complete the Issue.
   Candidate operations below are not an execution sequence.
   Ready means the recorded prerequisites permit a request; supplied inputs and authority are checked when it runs.
-  Action run.inspect run:RUN-160063: ready
+  Action run.inspect run:RUN-134ab7: ready
     Purpose: Compare this repository with the Run's recorded start or checkpoint; inspect changed paths without recording a checkpoint.
-  Action run.observe run:RUN-160063: ready
+  Action run.observe run:RUN-134ab7: ready
     Purpose: Have the activated harness record a fresh observation of whether this Run's executor is live, terminated or unknown.
     Requires: run.observe
-  Action gate.run run:RUN-160063: ready
+  Action gate.run run:RUN-134ab7: ready
     Purpose: Execute the configured check to produce Evidence for the current work.
     Requires: gate.run
-  Action claim.renew claim:CLM-db623c: blocked
+  Action claim.renew claim:CLM-00f41a: blocked
     Purpose: Extend an eligible work lease after checking authority.
     Requires: claim.renew
   authority-unavailable for actor:actor-recovery: claim.renew
-  Action claim.release claim:CLM-db623c: ready
+  Action claim.release claim:CLM-00f41a: ready
     Purpose: Give up an eligible work lease after checking authority; this does not prove the work complete.
     Requires: claim.release
-  Action concern.record issue:P22-8c4994: blocked
+  Action concern.record issue:P22-504696: blocked
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: concern.record
-  authority-unavailable for issue:P22-8c4994: concern.record
-  Action deviation.record issue:P22-8c4994: blocked
+  authority-unavailable for issue:P22-504696: concern.record
+  Action deviation.record issue:P22-504696: blocked
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: deviation.record
-  authority-unavailable for issue:P22-8c4994: deviation.record
-  Action decision.record-reference issue:P22-8c4994: ready
+  authority-unavailable for issue:P22-504696: deviation.record
+  Action decision.record-reference issue:P22-504696: ready
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: decision.record-reference
-  Action human-outcome.record issue:P22-8c4994: ready
+  Action human-outcome.record issue:P22-504696: ready
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: human-outcome.record
 
 Blockers and attention
-Stop STP-b4168f blocks issue.transition-terminal-success because protected-decision-required: {"affected_actions":["issue.transition-terminal-success"],"decision_class":"security","envelope_id":"ENV-415cac","required_capabilities":["decision.record-reference"]}; qualifying resolution: decision-satisfied for envelope:ENV-415cac decision class security (resolver capability stop.resolve).
-Attention ATT-ede39c: open; protected-decision-required; linked Stops: STP-b4168f
+Stop STP-8fa9af blocks issue.transition-terminal-success because protected-decision-required: {"affected_actions":["issue.transition-terminal-success"],"decision_class":"security","envelope_id":"ENV-3f958e","required_capabilities":["decision.record-reference"]}; qualifying resolution: decision-satisfied for envelope:ENV-3f958e decision class security (resolver capability stop.resolve).
+Attention ATT-1619e3: open; protected-decision-required; linked Stops: STP-8fa9af
 
 Completion requirements
   These describe what is needed to finish the Issue, separately from recovery checks above.
   Obligation OBL-p22-corpus: satisfied
     Evidence validity: valid; freshness: fresh; Artifacts: available
   Overall completion: incomplete
-  issue-not-terminal-success for issue:P22-8c4994: completed workflow category
+  issue-not-terminal-success for issue:P22-504696: completed workflow category
   Open Findings: 0
 
 Review and judgment
@@ -392,22 +430,23 @@ Budget attempts: remaining 2 attempts; consumed 1; maximum 3; state available
 Budget tokens: remaining 10 input-tokens; consumed 0; maximum 10; state available
 ```
 
-- JSON counterpart for read 1: cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision", "--json", "resume", "P22-8c4994", "--repository", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision"]`
+### Inspection 2
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision --json resume P22-8c4994 --repository /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision --json resume P22-504696 --repository /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision
 ```
 
-### Read 3
+### Inspection 3
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision`
-- Arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision", "decision", "list", "--issue", "P22-8c4994"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision decision list --issue P22-8c4994
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision decision list --issue P22-504696
 ```
 
-Verbatim Human stdout:
+Expected Human output:
 
 ```text
 Purpose: Inspect Decision References and their authority.
@@ -419,86 +458,102 @@ Decision References
     Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
 ```
 
-- JSON counterpart for read 3: cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision", "--json", "decision", "list", "--issue", "P22-8c4994"]`
+### Inspection 4
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision --json decision list --issue P22-8c4994
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision --json decision list --issue P22-504696
 ```
 
-### Read 5
+### Inspection 5
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision`
-- Arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision", "stop", "list", "--subject", "envelope:ENV-415cac"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision stop list --subject envelope:ENV-415cac
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision stop list --subject envelope:ENV-3f958e
 ```
 
-Verbatim Human stdout:
+Expected Human output:
 
 ```text
 stop.list
-Stop STP-b4168f blocks issue.transition-terminal-success because protected-decision-required: {"affected_actions":["issue.transition-terminal-success"],"decision_class":"security","envelope_id":"ENV-415cac","required_capabilities":["decision.record-reference"]}; qualifying resolution: decision-satisfied for envelope:ENV-415cac decision class security (resolver capability stop.resolve).
+Stop STP-8fa9af blocks issue.transition-terminal-success because protected-decision-required: {"affected_actions":["issue.transition-terminal-success"],"decision_class":"security","envelope_id":"ENV-3f958e","required_capabilities":["decision.record-reference"]}; qualifying resolution: decision-satisfied for envelope:ENV-3f958e decision class security (resolver capability stop.resolve).
 ```
 
-- JSON counterpart for read 5: cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision", "--json", "stop", "list", "--subject", "envelope:ENV-415cac"]`
+### Inspection 6
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision --json stop list --subject envelope:ENV-415cac
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision --json stop list --subject envelope:ENV-3f958e
 ```
 
-### Human-run steps
+### Step 1: blocked action before Outcome
 
-Run these in order after recording the initial reading. The supplied Outcome reasoning is fixture data for Human review.
-
-- blocked action before Outcome: expected exit `5`; cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision", "--json", "issue", "transition", "P22-8c4994", "--to", "qa_pass", "--actor", "agent:actor-recovery", "--expected-revision", "4", "--idempotency-key", "fixture-human-transition"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision`. Expected exit: `5`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision --json issue transition P22-8c4994 --to qa_pass --actor agent:actor-recovery --expected-revision 4 --idempotency-key fixture-human-transition
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision --json issue transition P22-504696 --to qa_pass --actor agent:actor-recovery --expected-revision 4 --idempotency-key fixture-human-transition
 ```
 
-- record authorized Human Outcome: expected exit `0`; cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision", "--json", "human-outcome", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision/fixture-human-outcome.json", "--actor", "actor-human-outcome", "--idempotency-key", "fixture-human-outcome"]`
+### Step 2: record authorized Human Outcome
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision --json human-outcome record --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision/fixture-human-outcome.json --actor actor-human-outcome --idempotency-key fixture-human-outcome
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision --json human-outcome record --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision/fixture-human-outcome.json --actor actor-human-outcome --idempotency-key fixture-human-outcome
 ```
 
-- retry guarded action: expected exit `0`; cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision", "--json", "issue", "transition", "P22-8c4994", "--to", "qa_pass", "--actor", "agent:actor-recovery", "--expected-revision", "4", "--idempotency-key", "fixture-human-transition"]`
+### Step 3: retry guarded action
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/protected-decision --json issue transition P22-8c4994 --to qa_pass --actor agent:actor-recovery --expected-revision 4 --idempotency-key fixture-human-transition
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision --json issue transition P22-504696 --to qa_pass --actor agent:actor-recovery --expected-revision 4 --idempotency-key fixture-human-transition
 ```
 
 ## VAL-072 review rework exhaustion
 
-The verbatim readback below is the original Human-checklist snapshot. For the
-DEC-269 re-check, regenerate the fixture with `TestP23HumanFixtures`; its
-`review-exhaustion` checkpoint has the amended `human-outcome-recorded`
-Condition and the following supported resolution sequence. The generator
-places `fixture-rework-outcome.json` in that checkpoint's project directory
-and includes `actor-human-outcome` as an activated Human Actor.
+Fixture IDs:
 
-- Project: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion`
-- IDs: `{"issue_id": "P22-4cf573", "review_id": "REV-3d0854"}`
-
-### Read 1
-
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion`
-- Arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion", "resume", "P22-4cf573", "--repository", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion"]`
-
-```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion resume P22-4cf573 --repository /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion
+```json
+{
+  "envelope_id": "ENV-f39156",
+  "human_actor_id": "actor-human-outcome",
+  "issue_id": "P22-add6ba",
+  "review_id": "REV-8abebf"
+}
 ```
 
-Verbatim Human stdout:
+Read the denial and Stop/Attention before consulting the resolution step. Record the three rework judgments from what fid displays.
+
+
+### Human rework denial
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion`. Expected exit: `4`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion claim acquire --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion/fixture-rework-claim.json --actor actor-recovery --idempotency-key fixture-exhausted-claim
+```
+
+### Inspection 1
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion resume P22-add6ba --repository /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion
+```
+
+Expected Human output:
 
 ```text
-Issue P22-4cf573
+Issue P22-add6ba
   Status: todo
   Completion: incomplete
-  Envelope: ENV-4fc37e (revision 1, active)
+  Envelope: ENV-f39156 (revision 1, active)
 
-Current Run: RUN-6e8ecc
+Current Run: RUN-c3557d
   Status: failed
   Actor ID: actor-denied
   Executor ID: executor-fixture-cycle
@@ -506,48 +561,46 @@ Current Run: RUN-6e8ecc
 Current Claim: none.
 
 Repository
-  Project: project-22109211fb77fdabe2af451f37766460
-  Current worktree: sha256:2d435a306d1fc326f44f7403e8ef32c218816ccf6689fc14b9a6544aa7c42762
-  HEAD: d1a6fc27879b9a4d2557e5231d3a8f414ad0c939
+  Project: project-4c535c06f3bce304b4a98c743e1e43d8
+  Current worktree: sha256:148cb9983ef5818e12aecc536655bdf07bf3988003afd4cfd205591b97808d89
+  HEAD: 288a00221fec8b08567ca0227b29e4c06be5d9ae
   Uncommitted changes: false
-  Run's recorded worktree: sha256:2d435a306d1fc326f44f7403e8ef32c218816ccf6689fc14b9a6544aa7c42762
+  Run's recorded worktree: sha256:148cb9983ef5818e12aecc536655bdf07bf3988003afd4cfd205591b97808d89
 
 Next steps
   Candidate operations below are not an execution sequence.
   Ready means the recorded prerequisites permit a request; supplied inputs and authority are checked when it runs.
-  Action run.inspect run:RUN-6e8ecc: ready
+  Action run.inspect run:RUN-c3557d: ready
     Purpose: Compare this repository with the Run's recorded start or checkpoint; inspect changed paths without recording a checkpoint.
-  Action run.observe run:RUN-6e8ecc: blocked
+  Action run.observe run:RUN-c3557d: blocked
     Purpose: Have the activated harness record a fresh observation of whether this Run's executor is live, terminated or unknown.
     Requires: run.observe
-  run-inactive for run:RUN-6e8ecc: failed
-  Action gate.run run:RUN-6e8ecc: blocked
+  run-inactive for run:RUN-c3557d: failed
+  Action gate.run run:RUN-c3557d: blocked
     Purpose: Execute the configured check to produce Evidence for the current work.
     Requires: gate.run
   authority-unavailable for actor:actor-denied: gate.run
-  run-inactive for run:RUN-6e8ecc: failed
-  budget-exhausted for envelope:ENV-4fc37e: review-cycles
-  budget-data-unavailable for envelope:ENV-4fc37e: tokens
-  Action concern.record issue:P22-4cf573: blocked
+  run-inactive for run:RUN-c3557d: failed
+  budget-data-unavailable for envelope:ENV-f39156: tokens
+  Action concern.record issue:P22-add6ba: blocked
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: concern.record
-  authority-unavailable for issue:P22-4cf573: concern.record
-  Action deviation.record issue:P22-4cf573: blocked
+  authority-unavailable for issue:P22-add6ba: concern.record
+  Action deviation.record issue:P22-add6ba: blocked
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: deviation.record
-  authority-unavailable for issue:P22-4cf573: deviation.record
-  Action decision.record-reference issue:P22-4cf573: blocked
+  authority-unavailable for issue:P22-add6ba: deviation.record
+  Action decision.record-reference issue:P22-add6ba: blocked
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: decision.record-reference
-  authority-unavailable for issue:P22-4cf573: decision.record-reference
-  Action human-outcome.record issue:P22-4cf573: blocked
+  authority-unavailable for issue:P22-add6ba: decision.record-reference
+  Action human-outcome.record issue:P22-add6ba: ready
     Purpose: Inspect the operation's requirements before submitting a request.
     Requires: human-outcome.record
-  authority-unavailable for issue:P22-4cf573: human-outcome.record
 
 Blockers and attention
-Stop STP-5b10b2 blocks claim.acquire, run.start because review-rework-exhausted: {"budget_name":"review-cycles","consumed":1,"envelope_id":"ENV-4fc37e","last_review_id":"REV-3d0854","maximum":1,"remaining":0,"unit":"review-cycles"}; qualifying resolution: budget-observed for envelope:ENV-4fc37e budget review-cycles (resolver capability stop.resolve).
-Attention ATT-00c589: open; review-rework-exhausted; linked Stops: STP-5b10b2
+Stop STP-c3de71 blocks claim.acquire, run.start because review-rework-exhausted: {"budget_name":"review-cycles","consumed":1,"envelope_id":"ENV-f39156","last_review_id":"REV-8abebf","maximum":1,"remaining":0,"unit":"review-cycles"}; qualifying resolution: human-outcome-recorded for envelope:ENV-f39156 outcome class review-rework-extension (resolver capability stop.resolve).
+Attention ATT-9a4ab8: open; review-rework-exhausted; linked Stops: STP-c3de71
 
 Completion requirements
   These describe what is needed to finish the Issue, separately from recovery checks above.
@@ -556,23 +609,23 @@ Completion requirements
   obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent
   Overall completion: incomplete
   obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent
-  issue-not-terminal-success for issue:P22-4cf573: completed workflow category
+  issue-not-terminal-success for issue:P22-add6ba: completed workflow category
   Open Findings: 1
 
 Review and judgment
 Reviews
-  Review REV-3d0854
-    Issue: P22-4cf573; Envelope: ENV-4fc37e revision 1
-    Run: RUN-6e8ecc; Reviewer: actor-denied; Profile: review-default
+  Review REV-8abebf
+    Issue: P22-add6ba; Envelope: ENV-f39156 revision 1
+    Run: RUN-c3557d; Reviewer: actor-denied; Profile: review-default
     Verdict: changes-required; Independence: distinct-actor
-    Repository: project project-22109211fb77fdabe2af451f37766460; worktree sha256:2d435a306d1fc326f44f7403e8ef32c218816ccf6689fc14b9a6544aa7c42762; HEAD d1a6fc27879b9a4d2557e5231d3a8f414ad0c939; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
-    Repository capture: git; base d1a6fc27879b9a4d2557e5231d3a8f414ad0c939; dirty false; dirty digest <nil>
+    Repository: project project-4c535c06f3bce304b4a98c743e1e43d8; worktree sha256:148cb9983ef5818e12aecc536655bdf07bf3988003afd4cfd205591b97808d89; HEAD 288a00221fec8b08567ca0227b29e4c06be5d9ae; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
+    Repository capture: git; base 288a00221fec8b08567ca0227b29e4c06be5d9ae; dirty false; dirty digest <nil>
     Findings by severity: blocker 0; major 1; minor 0; nit 0
   Finding FND-fixture-cycle
-    Review: REV-3d0854; Severity: major; Blocking: true; Disposition: open
+    Review: REV-8abebf; Severity: major; Blocking: true; Disposition: open
 Open Findings
   Finding FND-fixture-cycle
-    Review: REV-3d0854; Severity: major; Blocking: true; Disposition: open
+    Review: REV-8abebf; Severity: major; Blocking: true; Disposition: open
 Concerns
   None.
 Deviations
@@ -590,134 +643,141 @@ Budget review-cycles: remaining 0 review-cycles; consumed 1; maximum 1; state ex
 Budget tokens: remaining unknown input-tokens; consumed unknown; maximum 10; state unknown
 ```
 
-- JSON counterpart for read 1: cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion", "--json", "resume", "P22-4cf573", "--repository", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion"]`
+### Inspection 2
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion --json resume P22-4cf573 --repository /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion --json resume P22-add6ba --repository /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion
 ```
 
-### Read 3
+### Inspection 3
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion`
-- Arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion", "stop", "list", "--subject", "envelope:ENV-4fc37e"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion stop list --subject envelope:ENV-4fc37e
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion stop list --subject envelope:ENV-f39156
 ```
 
-Verbatim Human stdout:
+Expected Human output:
 
 ```text
 stop.list
-Stop STP-5b10b2 blocks claim.acquire, run.start because review-rework-exhausted: {"budget_name":"review-cycles","consumed":1,"envelope_id":"ENV-4fc37e","last_review_id":"REV-3d0854","maximum":1,"remaining":0,"unit":"review-cycles"}; qualifying resolution: budget-observed for envelope:ENV-4fc37e budget review-cycles (resolver capability stop.resolve).
+Stop STP-c3de71 blocks claim.acquire, run.start because review-rework-exhausted: {"budget_name":"review-cycles","consumed":1,"envelope_id":"ENV-f39156","last_review_id":"REV-8abebf","maximum":1,"remaining":0,"unit":"review-cycles"}; qualifying resolution: human-outcome-recorded for envelope:ENV-f39156 outcome class review-rework-extension (resolver capability stop.resolve).
 ```
 
-- JSON counterpart for read 3: cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion", "--json", "stop", "list", "--subject", "envelope:ENV-4fc37e"]`
+### Inspection 4
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion --json stop list --subject envelope:ENV-4fc37e
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion --json stop list --subject envelope:ENV-f39156
 ```
 
-### Read 5
+### Inspection 5
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion`
-- Arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion", "attention", "list", "--subject", "envelope:ENV-4fc37e"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion attention list --subject envelope:ENV-4fc37e
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion attention list --subject envelope:ENV-f39156
 ```
 
-Verbatim Human stdout:
+Expected Human output:
 
 ```text
 attention.list
-Attention ATT-00c589 open for review-rework-exhausted; qualifying resolution requires dispositions for every linked Stop:
-  Stop STP-5b10b2 blocks claim.acquire, run.start because review-rework-exhausted: {"budget_name":"review-cycles","consumed":1,"envelope_id":"ENV-4fc37e","last_review_id":"REV-3d0854","maximum":1,"remaining":0,"unit":"review-cycles"}; qualifying resolution: budget-observed for envelope:ENV-4fc37e budget review-cycles (resolver capability stop.resolve).
+Attention ATT-9a4ab8 open for review-rework-exhausted; qualifying resolution requires dispositions for every linked Stop:
+  Stop STP-c3de71 blocks claim.acquire, run.start because review-rework-exhausted: {"budget_name":"review-cycles","consumed":1,"envelope_id":"ENV-f39156","last_review_id":"REV-8abebf","maximum":1,"remaining":0,"unit":"review-cycles"}; qualifying resolution: human-outcome-recorded for envelope:ENV-f39156 outcome class review-rework-extension (resolver capability stop.resolve).
 ```
 
-- JSON counterpart for read 5: cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion", "--json", "attention", "list", "--subject", "envelope:ENV-4fc37e"]`
+### Inspection 6
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion`. Expected exit: `0`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion --json attention list --subject envelope:ENV-4fc37e
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion --json attention list --subject envelope:ENV-f39156
 ```
 
-### Human-run steps
+### Step 1: exhausted rework denial
 
-Run these in order after recording the initial reading. The supplied Outcome reasoning is fixture data for Human review.
-
-- exhausted rework denial: expected exit `4`; cwd `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion`; args `["--project", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion", "--json", "claim", "acquire", "--input", "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion/fixture-rework-claim.json", "--actor", "actor-recovery", "--idempotency-key", "fixture-exhausted-claim"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion`. Expected exit: `4`.
 
 ```bash
-/home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion --json claim acquire --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-1365380666/review-exhaustion/fixture-rework-claim.json --actor actor-recovery --idempotency-key fixture-exhausted-claim
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion --json claim acquire --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion/fixture-rework-claim.json --actor actor-recovery --idempotency-key fixture-exhausted-claim
 ```
 
-In the regenerated checkpoint, first inspect `fid stop list --subject
-envelope:<envelope-id>`. Then record the supplied approved
-`review-rework-extension` Outcome with `fid human-outcome record --actor
-actor-human-outcome --input fixture-rework-outcome.json --idempotency-key
-fixture-rework-outcome`. Retry the same `claim acquire` command above against
-the regenerated checkpoint; it now exits `0` and returns an admitted Claim.
+### Step 2: record approved review-rework-extension Outcome
 
-## Review prompts
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion`. Expected exit: `0`.
 
-- VAL-070: Identify the resolved Finding, the merely addressed Finding, and what still blocks completion from fid output.
-- VAL-071: Run the blocked action, inspect the Stop, record the Human Outcome with the listed human Actor, and retry. Explain why permission changed.
-- VAL-072: Inspect the rework denial, Stop, and Attention. Identify the exhausted budget and exact qualifying resolution.
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion --json human-outcome record --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion/fixture-rework-outcome.json --actor actor-human-outcome --idempotency-key fixture-rework-outcome
+```
 
-Record Human judgments in the phase-end checklist. Keep `.fid/` internals out of the inspection.
+Task 21 resolution: this activated Human records an approved `review-rework-extension` Outcome. Its Event resolves the matching rework Stop and Attention atomically. No internal file editing is involved.
 
-## 2026-09-30 QA repair — review-11 MF-1 every-leaf Human/JSON pairs
+### Step 3: retry rework Claim
 
-The original three VAL-070..072 Human checkpoints above remain available. This additional retained workspace exercises all 18 Phase 23 leaves through the built `fid` process. Each Human block below is byte-for-byte stdout. Each JSON block contains the result facts returned by the paired `--json` command, with free-form project prose fields omitted from the guide. The tagged test compares the full JSON result, reconstructs every Human fact line from its JSON fields, and reruns both modes after the generator exits. The ordinary test pins exact text for all 18 operation names against JSON-decoded facts.
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion`. Expected exit: `0`.
 
-- Manifest: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/manifest.json`
-- Binary: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/fid`
-- Binary SHA-256: `sha256:f11fa4c7873600e34ab5310fd2e059349eb279bbb02a196323dff6ae9b3a5a6d`
-- Source commit: `44556095af20058b84d93957597456e7741d626f`; source dirty: `true`
-- Leaf workspace: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Judgment checks: every Concern, Deviation, and Human Outcome view carries its non-proof qualifier; addressed Findings say that addressed is a Builder assertion; no Human block contains the `PRIVATE_` project prose sentinels seeded in the JSON facts.
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion --json claim acquire --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion/fixture-rework-claim.json --actor actor-recovery --idempotency-key fixture-exhausted-claim
+```
 
-### `requirement.record-reference`
+## Every new leaf — Human and JSON pairs
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "requirement", "record-reference", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-requirement.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-requirement"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "requirement", "record-reference", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-requirement.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-requirement"]`
+### 01. requirement.record-reference
 
-Verbatim Human stdout:
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract requirement record-reference --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-requirement.json --actor actor-recovery --idempotency-key leaf-requirement
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect Requirement References and Issue links.
 
-Requirement References and links
-  Requirement RREF-dad9dc
-    Status: active
+Requirement References
+  Requirement REQ-leaf
+    Reference ID: RREF-150ca7; Status: active
     Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json requirement record-reference --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-requirement.json --actor actor-recovery --idempotency-key leaf-requirement
+```
+
+Expected JSON result facts:
 
 ```json
 {
   "idempotency_key": "leaf-requirement",
   "replayed": true,
   "requirement": {
-    "created_at": "2026-09-29T23:39:27.851042559Z",
-    "event_id": "EVT-20260929-000018",
-    "id": "RREF-dad9dc",
+    "created_at": "2026-10-02T17:17:31.152056319Z",
+    "event_id": "EVT-20261002-000018",
+    "id": "RREF-150ca7",
+    "requirement_id": "REQ-leaf",
     "source": {
       "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
       "display_label": "Task 9 decision",
       "external_id": null,
       "path": "base.txt",
       "repository": {
-        "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+        "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
         "capture_source": "git",
         "dirty": false,
         "dirty_digest": null,
-        "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-        "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+        "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+        "project_id": "project-302aace960d053da046da917ed52841b",
         "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-        "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+        "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
       },
       "section": null,
       "source_type": "project-file"
@@ -728,31 +788,40 @@ JSON result facts for comparison (project prose omitted):
 }
 ```
 
-### `requirement.link`
+### 02. requirement.link
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "requirement", "link", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-link.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-link"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "requirement", "link", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-link.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-link"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract requirement link --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-link.json --actor actor-recovery --idempotency-key leaf-link
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect Requirement References and Issue links.
 
-Requirement References and links
-  Requirement REQ-leaf
-    Requirement: REQ-leaf; Issue: P22-b8865b; Relation: implements
+Issue links
+  REQ-leaf implements P22-4338c8
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json requirement link --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-link.json --actor actor-recovery --idempotency-key leaf-link
+```
+
+Expected JSON result facts:
 
 ```json
 {
   "idempotency_key": "leaf-link",
   "link": {
-    "created_at": "2026-09-29T23:39:27.991208446Z",
-    "event_id": "EVT-20260929-000019",
-    "issue_id": "P22-b8865b",
+    "created_at": "2026-10-02T17:17:31.304799438Z",
+    "event_id": "EVT-20261002-000019",
+    "issue_id": "P22-4338c8",
     "relation": "implements",
     "requirement_id": "REQ-leaf"
   },
@@ -760,35 +829,46 @@ JSON result facts for comparison (project prose omitted):
 }
 ```
 
-### `concern.record`
+### 03. concern.record
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "concern", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-concern.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-concern"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "concern", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-concern.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-concern"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract concern record --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-concern.json --actor actor-recovery --idempotency-key leaf-concern
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect a raised concern and its disposition as judgment.
 
 Concerns
   Concern CON-leaf
-    Subject: issue:P22-b8865b
+    Subject: issue:P22-4338c8
     Severity: major; Status: open; Raised by: actor-recovery
     Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
     This Concern is recorded judgment, not deterministic proof.
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json concern record --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-concern.json --actor actor-recovery --idempotency-key leaf-concern
+```
+
+Expected JSON result facts:
 
 ```json
 {
   "concern": {
     "actor_id": "actor-recovery",
-    "created_at": "2026-09-29T23:39:28.149301929Z",
+    "created_at": "2026-10-02T17:17:31.480113205Z",
     "disposition": null,
-    "event_id": "EVT-20260929-000020",
+    "event_id": "EVT-20261002-000020",
     "id": "CON-leaf",
+    "reasoning": "PRIVATE_CONCERN_REASONING",
     "references": [
       {
         "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
@@ -796,14 +876,14 @@ JSON result facts for comparison (project prose omitted):
         "external_id": null,
         "path": "base.txt",
         "repository": {
-          "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
           "capture_source": "git",
           "dirty": false,
           "dirty_digest": null,
-          "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-          "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+          "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+          "project_id": "project-302aace960d053da046da917ed52841b",
           "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-          "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+          "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
         },
         "section": null,
         "source_type": "project-file"
@@ -815,54 +895,67 @@ JSON result facts for comparison (project prose omitted):
     "severity": "major",
     "status": "open",
     "subject": {
-      "id": "P22-b8865b",
+      "id": "P22-4338c8",
       "type": "issue"
-    }
+    },
+    "summary": "PRIVATE_CONCERN_SUMMARY"
   },
   "idempotency_key": "leaf-concern",
   "replayed": true
 }
 ```
 
-### `concern.dispose`
+### 04. concern.dispose
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "concern", "dispose", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-dispose.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-dispose"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "concern", "dispose", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-dispose.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-dispose"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract concern dispose --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-dispose.json --actor actor-recovery --idempotency-key leaf-dispose
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect a raised concern and its disposition as judgment.
 
 Concerns
   Concern CON-leaf
-    Subject: issue:P22-b8865b
+    Subject: issue:P22-4338c8
     Severity: major; Status: disposed; Raised by: actor-recovery
     Disposition: carried-forward; Disposed by: actor-recovery
-    Work now owned by Issue: P22-b8865b
+    Work now owned by Issue: P22-4338c8
     Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
     This Concern is recorded judgment, not deterministic proof.
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json concern dispose --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-dispose.json --actor actor-recovery --idempotency-key leaf-dispose
+```
+
+Expected JSON result facts:
 
 ```json
 {
   "concern": {
     "actor_id": "actor-recovery",
-    "created_at": "2026-09-29T23:39:28.149301929Z",
+    "created_at": "2026-10-02T17:17:31.480113205Z",
     "disposition": {
       "action": "carried-forward",
       "actor_id": "actor-recovery",
-      "disposed_at": "2026-09-29T23:39:28.364091417Z",
-      "event_id": "EVT-20260929-000021",
-      "issue_id": "P22-b8865b",
+      "disposed_at": "2026-10-02T17:17:31.704936997Z",
+      "event_id": "EVT-20261002-000021",
+      "issue_id": "P22-4338c8",
+      "reason": "PRIVATE_DISPOSITION_REASON",
       "supersedes_concern_id": null,
       "supersedes_finding_id": null
     },
-    "event_id": "EVT-20260929-000020",
+    "event_id": "EVT-20261002-000020",
     "id": "CON-leaf",
+    "reasoning": "PRIVATE_CONCERN_REASONING",
     "references": [
       {
         "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
@@ -870,14 +963,14 @@ JSON result facts for comparison (project prose omitted):
         "external_id": null,
         "path": "base.txt",
         "repository": {
-          "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
           "capture_source": "git",
           "dirty": false,
           "dirty_digest": null,
-          "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-          "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+          "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+          "project_id": "project-302aace960d053da046da917ed52841b",
           "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-          "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+          "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
         },
         "section": null,
         "source_type": "project-file"
@@ -889,35 +982,46 @@ JSON result facts for comparison (project prose omitted):
     "severity": "major",
     "status": "disposed",
     "subject": {
-      "id": "P22-b8865b",
+      "id": "P22-4338c8",
       "type": "issue"
-    }
+    },
+    "summary": "PRIVATE_CONCERN_SUMMARY"
   },
   "idempotency_key": "leaf-dispose",
   "replayed": true
 }
 ```
 
-### `deviation.record`
+### 05. deviation.record
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "deviation", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-deviation.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-deviation"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "deviation", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-deviation.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-deviation"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract deviation record --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-deviation.json --actor actor-recovery --idempotency-key leaf-deviation
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect a recorded deviation as judgment.
 
 Deviations
   Deviation DEV-leaf
-    Subject: issue:P22-b8865b
+    Subject: issue:P22-4338c8
     Disposition: pending-decision; Authority Actor: actor-recovery
     Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
     This Deviation is recorded judgment, not deterministic proof.
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json deviation record --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-deviation.json --actor actor-recovery --idempotency-key leaf-deviation
+```
+
+Expected JSON result facts:
 
 ```json
 {
@@ -927,10 +1031,13 @@ JSON result facts for comparison (project prose omitted):
       "actor_id": "actor-recovery",
       "reference": null
     },
-    "created_at": "2026-09-29T23:39:28.528957533Z",
+    "created_at": "2026-10-02T17:17:31.884176128Z",
     "disposition": "pending-decision",
-    "event_id": "EVT-20260929-000022",
+    "event_id": "EVT-20261002-000022",
+    "expected": "PRIVATE_EXPECTED",
     "id": "DEV-leaf",
+    "observed": "PRIVATE_OBSERVED",
+    "reasoning": "PRIVATE_DEVIATION_REASONING",
     "references": [
       {
         "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
@@ -938,21 +1045,21 @@ JSON result facts for comparison (project prose omitted):
         "external_id": null,
         "path": "base.txt",
         "repository": {
-          "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
           "capture_source": "git",
           "dirty": false,
           "dirty_digest": null,
-          "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-          "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+          "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+          "project_id": "project-302aace960d053da046da917ed52841b",
           "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-          "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+          "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
         },
         "section": null,
         "source_type": "project-file"
       }
     ],
     "subject": {
-      "id": "P22-b8865b",
+      "id": "P22-4338c8",
       "type": "issue"
     },
     "supersedes_deviation_id": null
@@ -962,13 +1069,15 @@ JSON result facts for comparison (project prose omitted):
 }
 ```
 
-### `decision.record-reference`
+### 06. decision.record-reference
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "decision", "record-reference", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-decision.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-decision"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "decision", "record-reference", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-decision.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-decision"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract decision record-reference --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-decision.json --actor actor-recovery --idempotency-key leaf-decision
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect Decision References and their authority.
@@ -980,7 +1089,15 @@ Decision References
     Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json decision record-reference --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-decision.json --actor actor-recovery --idempotency-key leaf-decision
+```
+
+Expected JSON result facts:
 
 ```json
 {
@@ -993,12 +1110,12 @@ JSON result facts for comparison (project prose omitted):
       ]
     },
     "class": "security",
-    "created_at": "2026-09-29T23:39:28.741456268Z",
-    "event_id": "EVT-20260929-000023",
+    "created_at": "2026-10-02T17:17:32.114461714Z",
+    "event_id": "EVT-20261002-000023",
     "id": "DREF-leaf",
     "outcome": "approved",
     "scope": {
-      "issue_id": "P22-b8865b"
+      "issue_id": "P22-4338c8"
     },
     "source": {
       "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
@@ -1006,14 +1123,14 @@ JSON result facts for comparison (project prose omitted):
       "external_id": null,
       "path": "base.txt",
       "repository": {
-        "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+        "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
         "capture_source": "git",
         "dirty": false,
         "dirty_digest": null,
-        "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-        "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+        "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+        "project_id": "project-302aace960d053da046da917ed52841b",
         "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-        "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+        "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
       },
       "section": null,
       "source_type": "project-file"
@@ -1026,13 +1143,15 @@ JSON result facts for comparison (project prose omitted):
 }
 ```
 
-### `human-outcome.record`
+### 07. human-outcome.record
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "human-outcome", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-outcome.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-outcome"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "human-outcome", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-outcome.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-outcome"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract human-outcome record --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-outcome.json --actor actor-recovery --idempotency-key leaf-outcome
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect authorized Human judgments and their provenance.
@@ -1040,12 +1159,20 @@ Purpose: Inspect authorized Human judgments and their provenance.
 Human Outcomes
   Human Outcome OUT-leaf
     Actor: actor-recovery; Class: security; Result: approved
-    Activation: ACT-baf0ec revision 10; Profile: activation:p22-corpus
+    Activation: ACT-f1d9ce revision 10; Profile: activation:p22-corpus
     This Outcome is authorized Human judgment, not deterministic proof.
     Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json human-outcome record --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-outcome.json --actor actor-recovery --idempotency-key leaf-outcome
+```
+
+Expected JSON result facts:
 
 ```json
 {
@@ -1054,14 +1181,15 @@ JSON result facts for comparison (project prose omitted):
   "outcome": {
     "actor_id": "actor-recovery",
     "class": "security",
-    "created_at": "2026-09-29T23:39:28.940351293Z",
-    "event_id": "EVT-20260929-000024",
+    "created_at": "2026-10-02T17:17:32.32174547Z",
+    "event_id": "EVT-20261002-000024",
     "id": "OUT-leaf",
     "provenance": {
-      "activation_id": "ACT-baf0ec",
+      "activation_id": "ACT-f1d9ce",
       "activation_version": 10,
       "profile_ref": "activation:p22-corpus"
     },
+    "reasoning": "PRIVATE_OUTCOME_REASONING",
     "references": [
       {
         "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
@@ -1069,14 +1197,14 @@ JSON result facts for comparison (project prose omitted):
         "external_id": null,
         "path": "base.txt",
         "repository": {
-          "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
           "capture_source": "git",
           "dirty": false,
           "dirty_digest": null,
-          "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-          "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+          "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+          "project_id": "project-302aace960d053da046da917ed52841b",
           "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-          "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+          "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
         },
         "section": null,
         "source_type": "project-file"
@@ -1084,10 +1212,10 @@ JSON result facts for comparison (project prose omitted):
     ],
     "result": "approved",
     "scope": {
-      "issue_id": "P22-b8865b"
+      "issue_id": "P22-4338c8"
     },
     "subject": {
-      "id": "P22-b8865b",
+      "id": "P22-4338c8",
       "type": "issue"
     }
   },
@@ -1097,30 +1225,40 @@ JSON result facts for comparison (project prose omitted):
 }
 ```
 
-### `review.record`
+### 08. review.record
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "review", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-review.json", "--actor", "actor-denied", "--idempotency-key", "leaf-review"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "review", "record", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-review.json", "--actor", "actor-denied", "--idempotency-key", "leaf-review"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract review record --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-review.json --actor actor-denied --idempotency-key leaf-review
+```
+
+Expected Human output:
 
 ```text
 Purpose: Record an independent Review of a Run and its bound Issue.
 
 Reviews
-  Review REV-93ace4
-    Issue: P22-b8865b; Envelope: ENV-c45f4a revision 1
-    Run: RUN-8664f6; Reviewer: actor-denied; Profile: review-default
+  Review REV-959494
+    Issue: P22-4338c8; Envelope: ENV-192626 revision 1
+    Run: RUN-1cf746; Reviewer: actor-denied; Profile: review-default
     Verdict: changes-required; Independence: distinct-actor
-    Repository: project project-c38e61c97b0200742aa4a3e766c8c02e; worktree sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600; HEAD 02e5a80e8429bc8f939cae2e8fdb691ad7571947; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
-    Repository capture: git; base 02e5a80e8429bc8f939cae2e8fdb691ad7571947; dirty false; dirty digest <nil>
+    Repository: project project-302aace960d053da046da917ed52841b; worktree sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150; HEAD d4d8902533118db91365b0535458d10fd36f98ce; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
+    Repository capture: git; base d4d8902533118db91365b0535458d10fd36f98ce; dirty false; dirty digest <nil>
     Findings by severity: blocker 0; major 1; minor 0; nit 0
   Finding FND-leaf
-    Review: REV-93ace4; Severity: major; Blocking: true; Disposition: open
+    Review: REV-959494; Severity: major; Blocking: true; Disposition: open
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json review record --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-review.json --actor actor-denied --idempotency-key leaf-review
+```
+
+Expected JSON result facts:
 
 ```json
 {
@@ -1141,14 +1279,14 @@ JSON result facts for comparison (project prose omitted):
             "external_id": null,
             "path": "project-docs/p22-corpus.md",
             "repository": {
-              "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+              "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
               "capture_source": "git",
               "dirty": false,
               "dirty_digest": null,
-              "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-              "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+              "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+              "project_id": "project-302aace960d053da046da917ed52841b",
               "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-              "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+              "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
             },
             "section": null,
             "source_type": "project-file"
@@ -1156,128 +1294,151 @@ JSON result facts for comparison (project prose omitted):
         }
       ]
     },
-    "envelope_id": "ENV-c45f4a",
+    "envelope_id": "ENV-192626",
     "envelope_revision": 1,
-    "event_id": "EVT-20260929-000030",
+    "event_id": "EVT-20261002-000030",
     "evidence_refs": [],
     "findings": [
       {
         "blocking": true,
-        "created_at": "2026-09-29T23:39:29.730679427Z",
+        "created_at": "2026-10-02T17:17:33.176610983Z",
         "dispositions": [],
         "id": "FND-leaf",
-        "review_id": "REV-93ace4",
+        "review_id": "REV-959494",
         "scope": {
           "paths": []
         },
         "severity": "major",
         "state": "open",
         "subject": {
-          "id": "P22-b8865b",
+          "id": "P22-4338c8",
           "type": "issue"
-        }
+        },
+        "summary": "real-process Review finding"
       }
     ],
-    "id": "REV-93ace4",
+    "id": "REV-959494",
     "independence": "distinct-actor",
-    "issue_id": "P22-b8865b",
+    "issue_id": "P22-4338c8",
     "profile": "review-default",
     "receipt_ids": [],
-    "recorded_at": "2026-09-29T23:39:29.730679427Z",
+    "recorded_at": "2026-10-02T17:17:33.176610983Z",
     "repository": {
-      "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+      "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
       "capture_source": "git",
       "dirty": false,
       "dirty_digest": null,
-      "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-      "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+      "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+      "project_id": "project-302aace960d053da046da917ed52841b",
       "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-      "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+      "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
     },
     "resolved_finding_ids": [],
-    "run_id": "RUN-8664f6",
+    "run_id": "RUN-1cf746",
     "verdict": "changes-required"
   },
   "stops": []
 }
 ```
 
-### `finding.address`
+### 09. finding.address
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "finding", "address", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-address.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-address"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "finding", "address", "--input", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract/leaf-leaf-address.json", "--actor", "actor-recovery", "--idempotency-key", "leaf-address"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract finding address --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-address.json --actor actor-recovery --idempotency-key leaf-address
+```
+
+Expected Human output:
 
 ```text
 Purpose: Record a Builder assertion that a Finding was addressed.
 
 Findings
   Finding FND-leaf
-    Review: REV-93ace4; Severity: major; Blocking: true; Disposition: addressed
+    Review: REV-959494; Severity: major; Blocking: true; Disposition: addressed
     Addressed is a Builder assertion, not a resolution.
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json finding address --input /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract/leaf-leaf-address.json --actor actor-recovery --idempotency-key leaf-address
+```
+
+Expected JSON result facts:
 
 ```json
 {
   "finding": {
     "blocking": true,
-    "created_at": "2026-09-29T23:39:29.730679427Z",
+    "created_at": "2026-10-02T17:17:33.176610983Z",
     "dispositions": [
       {
         "action": "addressed",
         "actor_id": "actor-recovery",
-        "disposed_at": "2026-09-29T23:39:30.408258957Z",
-        "event_id": "EVT-20260929-000035",
-        "id": "FDP-0baf38",
-        "qualifying_review_id": null
+        "disposed_at": "2026-10-02T17:17:33.915543183Z",
+        "event_id": "EVT-20261002-000035",
+        "id": "FDP-3d9cc3",
+        "qualifying_review_id": null,
+        "reason": "PRIVATE_FINDING_REASON"
       }
     ],
     "id": "FND-leaf",
-    "review_id": "REV-93ace4",
+    "review_id": "REV-959494",
     "scope": {
       "paths": []
     },
     "severity": "major",
     "state": "addressed",
     "subject": {
-      "id": "P22-b8865b",
+      "id": "P22-4338c8",
       "type": "issue"
-    }
+    },
+    "summary": "real-process Review finding"
   },
   "idempotency_key": "leaf-address",
   "replayed": true
 }
 ```
 
-### `review.get`
+### 10. review.get
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "review", "get", "REV-93ace4"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "review", "get", "REV-93ace4"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract review get REV-959494
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect independent Reviews and their Findings.
 
 Reviews
-  Review REV-93ace4
-    Issue: P22-b8865b; Envelope: ENV-c45f4a revision 1
-    Run: RUN-8664f6; Reviewer: actor-denied; Profile: review-default
+  Review REV-959494
+    Issue: P22-4338c8; Envelope: ENV-192626 revision 1
+    Run: RUN-1cf746; Reviewer: actor-denied; Profile: review-default
     Verdict: changes-required; Independence: distinct-actor
-    Repository: project project-c38e61c97b0200742aa4a3e766c8c02e; worktree sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600; HEAD 02e5a80e8429bc8f939cae2e8fdb691ad7571947; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
-    Repository capture: git; base 02e5a80e8429bc8f939cae2e8fdb691ad7571947; dirty false; dirty digest <nil>
+    Repository: project project-302aace960d053da046da917ed52841b; worktree sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150; HEAD d4d8902533118db91365b0535458d10fd36f98ce; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
+    Repository capture: git; base d4d8902533118db91365b0535458d10fd36f98ce; dirty false; dirty digest <nil>
     Findings by severity: blocker 0; major 1; minor 0; nit 0
   Finding FND-leaf
-    Review: REV-93ace4; Severity: major; Blocking: true; Disposition: addressed
+    Review: REV-959494; Severity: major; Blocking: true; Disposition: addressed
     Addressed is a Builder assertion, not a resolution.
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json review get REV-959494
+```
+
+Expected JSON result facts:
 
 ```json
 {
@@ -1294,14 +1455,14 @@ JSON result facts for comparison (project prose omitted):
             "external_id": null,
             "path": "project-docs/p22-corpus.md",
             "repository": {
-              "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+              "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
               "capture_source": "git",
               "dirty": false,
               "dirty_digest": null,
-              "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-              "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+              "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+              "project_id": "project-302aace960d053da046da917ed52841b",
               "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-              "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+              "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
             },
             "section": null,
             "source_type": "project-file"
@@ -1309,85 +1470,97 @@ JSON result facts for comparison (project prose omitted):
         }
       ]
     },
-    "envelope_id": "ENV-c45f4a",
+    "envelope_id": "ENV-192626",
     "envelope_revision": 1,
-    "event_id": "EVT-20260929-000030",
+    "event_id": "EVT-20261002-000030",
     "evidence_refs": [],
     "findings": [
       {
         "blocking": true,
-        "created_at": "2026-09-29T23:39:29.730679427Z",
+        "created_at": "2026-10-02T17:17:33.176610983Z",
         "dispositions": [
           {
             "action": "addressed",
             "actor_id": "actor-recovery",
-            "disposed_at": "2026-09-29T23:39:30.408258957Z",
-            "event_id": "EVT-20260929-000035",
-            "id": "FDP-0baf38",
-            "qualifying_review_id": null
+            "disposed_at": "2026-10-02T17:17:33.915543183Z",
+            "event_id": "EVT-20261002-000035",
+            "id": "FDP-3d9cc3",
+            "qualifying_review_id": null,
+            "reason": "PRIVATE_FINDING_REASON"
           }
         ],
         "id": "FND-leaf",
-        "review_id": "REV-93ace4",
+        "review_id": "REV-959494",
         "scope": {
           "paths": []
         },
         "severity": "major",
         "state": "addressed",
         "subject": {
-          "id": "P22-b8865b",
+          "id": "P22-4338c8",
           "type": "issue"
-        }
+        },
+        "summary": "real-process Review finding"
       }
     ],
-    "id": "REV-93ace4",
+    "id": "REV-959494",
     "independence": "distinct-actor",
-    "issue_id": "P22-b8865b",
+    "issue_id": "P22-4338c8",
     "profile": "review-default",
     "receipt_ids": [],
-    "recorded_at": "2026-09-29T23:39:29.730679427Z",
+    "recorded_at": "2026-10-02T17:17:33.176610983Z",
     "repository": {
-      "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+      "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
       "capture_source": "git",
       "dirty": false,
       "dirty_digest": null,
-      "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-      "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+      "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+      "project_id": "project-302aace960d053da046da917ed52841b",
       "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-      "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+      "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
     },
     "resolved_finding_ids": [],
-    "run_id": "RUN-8664f6",
+    "run_id": "RUN-1cf746",
     "verdict": "changes-required"
   }
 }
 ```
 
-### `review.list`
+### 11. review.list
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "review", "list", "--issue", "P22-b8865b"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "review", "list", "--issue", "P22-b8865b"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract review list --issue P22-4338c8
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect independent Reviews and their Findings.
 
 Reviews
-  Review REV-93ace4
-    Issue: P22-b8865b; Envelope: ENV-c45f4a revision 1
-    Run: RUN-8664f6; Reviewer: actor-denied; Profile: review-default
+  Review REV-959494
+    Issue: P22-4338c8; Envelope: ENV-192626 revision 1
+    Run: RUN-1cf746; Reviewer: actor-denied; Profile: review-default
     Verdict: changes-required; Independence: distinct-actor
-    Repository: project project-c38e61c97b0200742aa4a3e766c8c02e; worktree sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600; HEAD 02e5a80e8429bc8f939cae2e8fdb691ad7571947; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
-    Repository capture: git; base 02e5a80e8429bc8f939cae2e8fdb691ad7571947; dirty false; dirty digest <nil>
+    Repository: project project-302aace960d053da046da917ed52841b; worktree sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150; HEAD d4d8902533118db91365b0535458d10fd36f98ce; tree 720e5c7e58f0ed980bdde2d8743e3755ef4a8503
+    Repository capture: git; base d4d8902533118db91365b0535458d10fd36f98ce; dirty false; dirty digest <nil>
     Findings by severity: blocker 0; major 1; minor 0; nit 0
   Finding FND-leaf
-    Review: REV-93ace4; Severity: major; Blocking: true; Disposition: addressed
+    Review: REV-959494; Severity: major; Blocking: true; Disposition: addressed
     Addressed is a Builder assertion, not a resolution.
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json review list --issue P22-4338c8
+```
+
+Expected JSON result facts:
 
 ```json
 {
@@ -1405,14 +1578,14 @@ JSON result facts for comparison (project prose omitted):
               "external_id": null,
               "path": "project-docs/p22-corpus.md",
               "repository": {
-                "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+                "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
                 "capture_source": "git",
                 "dirty": false,
                 "dirty_digest": null,
-                "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-                "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+                "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+                "project_id": "project-302aace960d053da046da917ed52841b",
                 "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-                "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+                "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
               },
               "section": null,
               "source_type": "project-file"
@@ -1420,152 +1593,178 @@ JSON result facts for comparison (project prose omitted):
           }
         ]
       },
-      "envelope_id": "ENV-c45f4a",
+      "envelope_id": "ENV-192626",
       "envelope_revision": 1,
-      "event_id": "EVT-20260929-000030",
+      "event_id": "EVT-20261002-000030",
       "evidence_refs": [],
       "findings": [
         {
           "blocking": true,
-          "created_at": "2026-09-29T23:39:29.730679427Z",
+          "created_at": "2026-10-02T17:17:33.176610983Z",
           "dispositions": [
             {
               "action": "addressed",
               "actor_id": "actor-recovery",
-              "disposed_at": "2026-09-29T23:39:30.408258957Z",
-              "event_id": "EVT-20260929-000035",
-              "id": "FDP-0baf38",
-              "qualifying_review_id": null
+              "disposed_at": "2026-10-02T17:17:33.915543183Z",
+              "event_id": "EVT-20261002-000035",
+              "id": "FDP-3d9cc3",
+              "qualifying_review_id": null,
+              "reason": "PRIVATE_FINDING_REASON"
             }
           ],
           "id": "FND-leaf",
-          "review_id": "REV-93ace4",
+          "review_id": "REV-959494",
           "scope": {
             "paths": []
           },
           "severity": "major",
           "state": "addressed",
           "subject": {
-            "id": "P22-b8865b",
+            "id": "P22-4338c8",
             "type": "issue"
-          }
+          },
+          "summary": "real-process Review finding"
         }
       ],
-      "id": "REV-93ace4",
+      "id": "REV-959494",
       "independence": "distinct-actor",
-      "issue_id": "P22-b8865b",
+      "issue_id": "P22-4338c8",
       "profile": "review-default",
       "receipt_ids": [],
-      "recorded_at": "2026-09-29T23:39:29.730679427Z",
+      "recorded_at": "2026-10-02T17:17:33.176610983Z",
       "repository": {
-        "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+        "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
         "capture_source": "git",
         "dirty": false,
         "dirty_digest": null,
-        "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-        "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+        "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+        "project_id": "project-302aace960d053da046da917ed52841b",
         "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-        "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+        "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
       },
       "resolved_finding_ids": [],
-      "run_id": "RUN-8664f6",
+      "run_id": "RUN-1cf746",
       "verdict": "changes-required"
     }
   ]
 }
 ```
 
-### `finding.list`
+### 12. finding.list
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "finding", "list", "--issue", "P22-b8865b"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "finding", "list", "--issue", "P22-b8865b"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract finding list --issue P22-4338c8
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect Finding dispositions and current blocking state.
 
 Findings
   Finding FND-leaf
-    Review: REV-93ace4; Severity: major; Blocking: true; Disposition: addressed
+    Review: REV-959494; Severity: major; Blocking: true; Disposition: addressed
     Addressed is a Builder assertion, not a resolution.
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json finding list --issue P22-4338c8
+```
+
+Expected JSON result facts:
 
 ```json
 {
   "items": [
     {
       "blocking": true,
-      "created_at": "2026-09-29T23:39:29.730679427Z",
+      "created_at": "2026-10-02T17:17:33.176610983Z",
       "dispositions": [
         {
           "action": "addressed",
           "actor_id": "actor-recovery",
-          "disposed_at": "2026-09-29T23:39:30.408258957Z",
-          "event_id": "EVT-20260929-000035",
-          "id": "FDP-0baf38",
-          "qualifying_review_id": null
+          "disposed_at": "2026-10-02T17:17:33.915543183Z",
+          "event_id": "EVT-20261002-000035",
+          "id": "FDP-3d9cc3",
+          "qualifying_review_id": null,
+          "reason": "PRIVATE_FINDING_REASON"
         }
       ],
       "id": "FND-leaf",
-      "review_id": "REV-93ace4",
+      "review_id": "REV-959494",
       "scope": {
         "paths": []
       },
       "severity": "major",
       "state": "addressed",
       "subject": {
-        "id": "P22-b8865b",
+        "id": "P22-4338c8",
         "type": "issue"
-      }
+      },
+      "summary": "real-process Review finding"
     }
   ]
 }
 ```
 
-### `concern.list`
+### 13. concern.list
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "concern", "list", "--subject", "issue:P22-b8865b"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "concern", "list", "--subject", "issue:P22-b8865b"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract concern list --subject issue:P22-4338c8
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect a raised concern and its disposition as judgment.
 
 Concerns
   Concern CON-leaf
-    Subject: issue:P22-b8865b
+    Subject: issue:P22-4338c8
     Severity: major; Status: disposed; Raised by: actor-recovery
     Disposition: carried-forward; Disposed by: actor-recovery
-    Work now owned by Issue: P22-b8865b
+    Work now owned by Issue: P22-4338c8
     Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
     This Concern is recorded judgment, not deterministic proof.
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json concern list --subject issue:P22-4338c8
+```
+
+Expected JSON result facts:
 
 ```json
 {
   "items": [
     {
       "actor_id": "actor-recovery",
-      "created_at": "2026-09-29T23:39:28.149301929Z",
+      "created_at": "2026-10-02T17:17:31.480113205Z",
       "disposition": {
         "action": "carried-forward",
         "actor_id": "actor-recovery",
-        "disposed_at": "2026-09-29T23:39:28.364091417Z",
-        "event_id": "EVT-20260929-000021",
-        "issue_id": "P22-b8865b",
+        "disposed_at": "2026-10-02T17:17:31.704936997Z",
+        "event_id": "EVT-20261002-000021",
+        "issue_id": "P22-4338c8",
+        "reason": "PRIVATE_DISPOSITION_REASON",
         "supersedes_concern_id": null,
         "supersedes_finding_id": null
       },
-      "event_id": "EVT-20260929-000020",
+      "event_id": "EVT-20261002-000020",
       "id": "CON-leaf",
+      "reasoning": "PRIVATE_CONCERN_REASONING",
       "references": [
         {
           "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
@@ -1573,14 +1772,14 @@ JSON result facts for comparison (project prose omitted):
           "external_id": null,
           "path": "base.txt",
           "repository": {
-            "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+            "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
             "capture_source": "git",
             "dirty": false,
             "dirty_digest": null,
-            "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-            "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+            "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+            "project_id": "project-302aace960d053da046da917ed52841b",
             "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-            "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+            "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
           },
           "section": null,
           "source_type": "project-file"
@@ -1592,34 +1791,45 @@ JSON result facts for comparison (project prose omitted):
       "severity": "major",
       "status": "disposed",
       "subject": {
-        "id": "P22-b8865b",
+        "id": "P22-4338c8",
         "type": "issue"
-      }
+      },
+      "summary": "PRIVATE_CONCERN_SUMMARY"
     }
   ]
 }
 ```
 
-### `deviation.list`
+### 14. deviation.list
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "deviation", "list", "--subject", "issue:P22-b8865b"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "deviation", "list", "--subject", "issue:P22-b8865b"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract deviation list --subject issue:P22-4338c8
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect a recorded deviation as judgment.
 
 Deviations
   Deviation DEV-leaf
-    Subject: issue:P22-b8865b
+    Subject: issue:P22-4338c8
     Disposition: pending-decision; Authority Actor: actor-recovery
     Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
     This Deviation is recorded judgment, not deterministic proof.
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json deviation list --subject issue:P22-4338c8
+```
+
+Expected JSON result facts:
 
 ```json
 {
@@ -1630,10 +1840,13 @@ JSON result facts for comparison (project prose omitted):
         "actor_id": "actor-recovery",
         "reference": null
       },
-      "created_at": "2026-09-29T23:39:28.528957533Z",
+      "created_at": "2026-10-02T17:17:31.884176128Z",
       "disposition": "pending-decision",
-      "event_id": "EVT-20260929-000022",
+      "event_id": "EVT-20261002-000022",
+      "expected": "PRIVATE_EXPECTED",
       "id": "DEV-leaf",
+      "observed": "PRIVATE_OBSERVED",
+      "reasoning": "PRIVATE_DEVIATION_REASONING",
       "references": [
         {
           "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
@@ -1641,21 +1854,21 @@ JSON result facts for comparison (project prose omitted):
           "external_id": null,
           "path": "base.txt",
           "repository": {
-            "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+            "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
             "capture_source": "git",
             "dirty": false,
             "dirty_digest": null,
-            "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-            "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+            "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+            "project_id": "project-302aace960d053da046da917ed52841b",
             "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-            "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+            "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
           },
           "section": null,
           "source_type": "project-file"
         }
       ],
       "subject": {
-        "id": "P22-b8865b",
+        "id": "P22-4338c8",
         "type": "issue"
       },
       "supersedes_deviation_id": null
@@ -1664,13 +1877,15 @@ JSON result facts for comparison (project prose omitted):
 }
 ```
 
-### `decision.list`
+### 15. decision.list
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "decision", "list", "--issue", "P22-b8865b"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "decision", "list", "--issue", "P22-b8865b"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract decision list --issue P22-4338c8
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect Decision References and their authority.
@@ -1682,7 +1897,15 @@ Decision References
     Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json decision list --issue P22-4338c8
+```
+
+Expected JSON result facts:
 
 ```json
 {
@@ -1695,12 +1918,12 @@ JSON result facts for comparison (project prose omitted):
         ]
       },
       "class": "security",
-      "created_at": "2026-09-29T23:39:28.741456268Z",
-      "event_id": "EVT-20260929-000023",
+      "created_at": "2026-10-02T17:17:32.114461714Z",
+      "event_id": "EVT-20261002-000023",
       "id": "DREF-leaf",
       "outcome": "approved",
       "scope": {
-        "issue_id": "P22-b8865b"
+        "issue_id": "P22-4338c8"
       },
       "source": {
         "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
@@ -1708,14 +1931,14 @@ JSON result facts for comparison (project prose omitted):
         "external_id": null,
         "path": "base.txt",
         "repository": {
-          "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
           "capture_source": "git",
           "dirty": false,
           "dirty_digest": null,
-          "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-          "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+          "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+          "project_id": "project-302aace960d053da046da917ed52841b",
           "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-          "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+          "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
         },
         "section": null,
         "source_type": "project-file"
@@ -1725,13 +1948,15 @@ JSON result facts for comparison (project prose omitted):
 }
 ```
 
-### `human-outcome.list`
+### 16. human-outcome.list
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "human-outcome", "list", "--issue", "P22-b8865b"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "human-outcome", "list", "--issue", "P22-b8865b"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract human-outcome list --issue P22-4338c8
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect authorized Human judgments and their provenance.
@@ -1739,12 +1964,20 @@ Purpose: Inspect authorized Human judgments and their provenance.
 Human Outcomes
   Human Outcome OUT-leaf
     Actor: actor-recovery; Class: security; Result: approved
-    Activation: ACT-baf0ec revision 10; Profile: activation:p22-corpus
+    Activation: ACT-f1d9ce revision 10; Profile: activation:p22-corpus
     This Outcome is authorized Human judgment, not deterministic proof.
     Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json human-outcome list --issue P22-4338c8
+```
+
+Expected JSON result facts:
 
 ```json
 {
@@ -1752,14 +1985,15 @@ JSON result facts for comparison (project prose omitted):
     {
       "actor_id": "actor-recovery",
       "class": "security",
-      "created_at": "2026-09-29T23:39:28.940351293Z",
-      "event_id": "EVT-20260929-000024",
+      "created_at": "2026-10-02T17:17:32.32174547Z",
+      "event_id": "EVT-20261002-000024",
       "id": "OUT-leaf",
       "provenance": {
-        "activation_id": "ACT-baf0ec",
+        "activation_id": "ACT-f1d9ce",
         "activation_version": 10,
         "profile_ref": "activation:p22-corpus"
       },
+      "reasoning": "PRIVATE_OUTCOME_REASONING",
       "references": [
         {
           "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
@@ -1767,14 +2001,14 @@ JSON result facts for comparison (project prose omitted):
           "external_id": null,
           "path": "base.txt",
           "repository": {
-            "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+            "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
             "capture_source": "git",
             "dirty": false,
             "dirty_digest": null,
-            "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-            "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+            "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+            "project_id": "project-302aace960d053da046da917ed52841b",
             "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-            "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+            "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
           },
           "section": null,
           "source_type": "project-file"
@@ -1782,10 +2016,10 @@ JSON result facts for comparison (project prose omitted):
       ],
       "result": "approved",
       "scope": {
-        "issue_id": "P22-b8865b"
+        "issue_id": "P22-4338c8"
       },
       "subject": {
-        "id": "P22-b8865b",
+        "id": "P22-4338c8",
         "type": "issue"
       }
     }
@@ -1793,56 +2027,68 @@ JSON result facts for comparison (project prose omitted):
 }
 ```
 
-### `requirement.get`
+### 17. requirement.get
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "requirement", "get", "REQ-leaf"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "requirement", "get", "REQ-leaf"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract requirement get REQ-leaf
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect Requirement References and Issue links.
 
-Requirement References and links
-  Requirement RREF-dad9dc
-    Status: active
-    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+Requirement References
   Requirement REQ-leaf
-    Requirement: REQ-leaf; Issue: P22-b8865b; Relation: implements
+    Reference ID: RREF-150ca7; Status: active
+    Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
+
+Issue links
+  REQ-leaf implements P22-4338c8
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json requirement get REQ-leaf
+```
+
+Expected JSON result facts:
 
 ```json
 {
   "links": [
     {
-      "created_at": "2026-09-29T23:39:27.991208446Z",
-      "event_id": "EVT-20260929-000019",
-      "issue_id": "P22-b8865b",
+      "created_at": "2026-10-02T17:17:31.304799438Z",
+      "event_id": "EVT-20261002-000019",
+      "issue_id": "P22-4338c8",
       "relation": "implements",
       "requirement_id": "REQ-leaf"
     }
   ],
   "requirement": {
-    "created_at": "2026-09-29T23:39:27.851042559Z",
-    "event_id": "EVT-20260929-000018",
-    "id": "RREF-dad9dc",
+    "created_at": "2026-10-02T17:17:31.152056319Z",
+    "event_id": "EVT-20261002-000018",
+    "id": "RREF-150ca7",
+    "requirement_id": "REQ-leaf",
     "source": {
       "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
       "display_label": "Task 9 decision",
       "external_id": null,
       "path": "base.txt",
       "repository": {
-        "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+        "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
         "capture_source": "git",
         "dirty": false,
         "dirty_digest": null,
-        "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-        "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+        "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+        "project_id": "project-302aace960d053da046da917ed52841b",
         "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-        "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+        "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
       },
       "section": null,
       "source_type": "project-file"
@@ -1853,46 +2099,57 @@ JSON result facts for comparison (project prose omitted):
 }
 ```
 
-### `requirement.list`
+### 18. requirement.list
 
-- Working directory: `/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract`
-- Human arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "requirement", "list"]`
-- JSON arguments: `["--project", "/home/mark/projects/fid/.cache/phase-23-human-repair/checkpoints-944862472/leaf-contract", "--json", "requirement", "list"]`
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
 
-Verbatim Human stdout:
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract requirement list
+```
+
+Expected Human output:
 
 ```text
 Purpose: Inspect Requirement References and Issue links.
 
-Requirement References and links
-  Requirement RREF-dad9dc
-    Status: active
+Requirement References
+  Requirement REQ-leaf
+    Reference ID: RREF-150ca7; Status: active
     Reference: Task 9 decision; path base.txt; digest sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac
 ```
 
-JSON result facts for comparison (project prose omitted):
+JSON counterpart:
+
+Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract`. Expected exit: `0`.
+
+```bash
+/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/fid --project /home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract --json requirement list
+```
+
+Expected JSON result facts:
 
 ```json
 {
   "items": [
     {
-      "created_at": "2026-09-29T23:39:27.851042559Z",
-      "event_id": "EVT-20260929-000018",
-      "id": "RREF-dad9dc",
+      "created_at": "2026-10-02T17:17:31.152056319Z",
+      "event_id": "EVT-20261002-000018",
+      "id": "RREF-150ca7",
+      "requirement_id": "REQ-leaf",
       "source": {
         "digest": "sha256:f34848ca92665c342abd5816c9e3eda0e82180671195362bcd0080544a3bc2ac",
         "display_label": "Task 9 decision",
         "external_id": null,
         "path": "base.txt",
         "repository": {
-          "base_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
+          "base_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
           "capture_source": "git",
           "dirty": false,
           "dirty_digest": null,
-          "head_oid": "02e5a80e8429bc8f939cae2e8fdb691ad7571947",
-          "project_id": "project-c38e61c97b0200742aa4a3e766c8c02e",
+          "head_oid": "d4d8902533118db91365b0535458d10fd36f98ce",
+          "project_id": "project-302aace960d053da046da917ed52841b",
           "tree_oid": "720e5c7e58f0ed980bdde2d8743e3755ef4a8503",
-          "worktree_id": "sha256:6f63dd6a121835ceb46aeca0827c0baa6a3794ffe387f33b9d9c9011e928a600"
+          "worktree_id": "sha256:0c8bfc0f39e219f6a50f7efa556147fbdf56c4a0637b44ae1d8fd32f29adc150"
         },
         "section": null,
         "source_type": "project-file"

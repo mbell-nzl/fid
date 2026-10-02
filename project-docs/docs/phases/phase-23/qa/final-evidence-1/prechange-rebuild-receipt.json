@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/tmp/fid",
+    "--project",
+    "/tmp/fid-task20-prechange.NjCRbu/judgment",
+    "--json",
+    "rebuild"
+  ],
+  "cwd": "/tmp/fid-task20-prechange.NjCRbu/judgment",
+  "stdout": "",
+  "stderr": "{\"contract_version\":\"fid-cli.v1\",\"error\":{\"category\":\"integrity\",\"code\":\"journal-replay-stopped\",\"details\":{\"event_id\":null,\"journal_file\":\".fid/journal/2026-10-01.jsonl\",\"line\":18},\"message\":\"journal replay stopped\",\"retryable\":false,\"subject\":null},\"ok\":false,\"operation\":\"project.rebuild\"}\n",
+  "exit_code": 6,
+  "sha256_before": "a8fdbdccfc7fd39e27b80f256811d8b70113a0e30285122a166148455d1ba16e",
+  "sha256_after": "a8fdbdccfc7fd39e27b80f256811d8b70113a0e30285122a166148455d1ba16e"
+}

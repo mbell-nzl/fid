@@ -1,0 +1,17 @@
+{
+  "id": "setup-testcache",
+  "cmd": "go clean -testcache",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T16:36:28.099Z",
+  "results": [
+    {
+      "chunk_id": "27e9f9",
+      "wall_time_seconds": 0.000014748,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    }
+  ],
+  "ended": "2026-10-02T16:36:28.193Z"
+}

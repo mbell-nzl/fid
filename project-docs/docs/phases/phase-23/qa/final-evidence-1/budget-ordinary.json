@@ -1,0 +1,52 @@
+{
+  "id": "budget-ordinary",
+  "cmd": "go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T16:36:49.504Z",
+  "results": [
+    {
+      "chunk_id": "b99cb4",
+      "wall_time_seconds": 1.001582888,
+      "session_id": 24872,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "f0fc06",
+      "wall_time_seconds": 5.00115265,
+      "session_id": 24872,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "7dbf3c",
+      "wall_time_seconds": 5.002244537,
+      "session_id": 24872,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "399545",
+      "wall_time_seconds": 5.001134685,
+      "session_id": 24872,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "31fe95",
+      "wall_time_seconds": 5.001439467,
+      "session_id": 24872,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "e4f648",
+      "wall_time_seconds": 0.000017443,
+      "exit_code": 0,
+      "original_token_count": 439,
+      "output": "ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t341.192s\tcoverage: 67.8% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/activity\t4.476s\tcoverage: 79.8% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/bootstrap\t12.622s\tcoverage: 62.0% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/claims\t1.045s\tcoverage: 1.8% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/cli\t1.177s\tcoverage: 80.4% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/config\t1.066s\tcoverage: 68.7% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/db\t60.052s\tcoverage: 69.6% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/evidence\t2.428s\tcoverage: 29.2% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/export\t205.171s\tcoverage: 77.2% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/issues\t213.158s\tcoverage: 79.2% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/journal\t192.232s\tcoverage: 68.4% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/labels\t66.434s\tcoverage: 80.5% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/links\t79.740s\tcoverage: 75.5% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/maintenance\t27.600s\tcoverage: 78.9% of statements\n\tgithub.com/mbell-nzl/fid/internal/policy\t\tcoverage: 0.0% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/project\t3.634s\tcoverage: 80.3% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/review\t1.375s\tcoverage: 12.4% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/sqlquery\t7.928s\tcoverage: 65.3% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/stats\t15.321s\tcoverage: 81.6% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/validation\t1.120s\tcoverage: 100.0% of statements\nok  \tgithub.com/mbell-nzl/fid/internal/workflow\t101.659s\tcoverage: 62.7% of statements\n"
+    }
+  ],
+  "ended": "2026-10-02T16:43:09.250Z"
+}

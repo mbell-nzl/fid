@@ -1,0 +1,31 @@
+{
+  "id": "named-export",
+  "cmd": "go test -race -count=1 -v -run '^(TestCreateIsByteIdenticalWithCompleteDeterministicInventory)$' ./internal/export",
+  "cwd": "/home/mark/projects/fid",
+  "source_head": "32a55a94efb2a89dbf50b29accb434b9c753418c",
+  "started": "2026-10-02T17:15:59.716Z",
+  "results": [
+    {
+      "chunk_id": "d42a74",
+      "wall_time_seconds": 1.001335001,
+      "session_id": 22174,
+      "original_token_count": 53,
+      "output": "=== RUN   TestCreateIsByteIdenticalWithCompleteDeterministicInventory\n=== PAUSE TestCreateIsByteIdenticalWithCompleteDeterministicInventory\n=== CONT  TestCreateIsByteIdenticalWithCompleteDeterministicInventory\n"
+    },
+    {
+      "chunk_id": "bc804c",
+      "wall_time_seconds": 5.001065527,
+      "session_id": 22174,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "2b786a",
+      "wall_time_seconds": 4.809069314,
+      "exit_code": 0,
+      "original_token_count": 35,
+      "output": "--- PASS: TestCreateIsByteIdenticalWithCompleteDeterministicInventory (9.40s)\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/export\t10.420s\n"
+    }
+  ],
+  "ended": "2026-10-02T17:16:10.694Z"
+}
