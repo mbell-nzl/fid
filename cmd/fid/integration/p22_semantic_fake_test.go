@@ -28,15 +28,25 @@ type p22MemoryModel struct {
 	stop, attention               map[string]any
 	consumed                      int
 	sampleID, terminalEvent       string
+	budgets                       []p22FakeBudget
 }
+
+type p22FakeBudget struct {
+	name, unit, action string
+	maximum, consumed  int
+	remaining          *int
+}
+
+func p22FakeInt(value int) *int { return &value }
 
 func p22NewFakeRecoveryAdapter() *p22FakeRecoveryAdapter {
 	return &p22FakeRecoveryAdapter{
 		context: &p22FIDRecoveryAdapter{actor: "actor-recovery", runID: "RUN-prior", runVersion: 1, claimID: "CLM-prior", claimVersion: 1, executorID: "executor-corpus-prior", measurement: map[string]any{"path": "measurement", "digest": "sha256:" + strings.Repeat("0", 64)}},
 		model: &p22MemoryModel{
-			run:    map[string]any{"id": "RUN-prior", "version": 1, "status": "active", "claim_id": "CLM-prior", "predecessor_run_id": nil},
-			claim:  map[string]any{"id": "CLM-prior", "version": 1, "status": "active"},
-			digest: "sha256:" + strings.Repeat("1", 64), replies: map[string]map[string]any{}, requests: map[string]string{},
+			run:     map[string]any{"id": "RUN-prior", "version": 1, "status": "active", "claim_id": "CLM-prior", "predecessor_run_id": nil},
+			claim:   map[string]any{"id": "CLM-prior", "version": 1, "status": "active"},
+			budgets: []p22FakeBudget{{name: "tokens", unit: "input-tokens", action: "budget-exhausted", maximum: 10}},
+			digest:  "sha256:" + strings.Repeat("1", 64), replies: map[string]map[string]any{}, requests: map[string]string{},
 		},
 	}
 }
@@ -178,6 +188,7 @@ func (model *p22MemoryModel) execute(t *testing.T, operation, key, actor string,
 		model.sampleID = fmt.Sprintf("BSM-%d", model.sequence)
 		model.run["version"] = p22Number(model.run["version"]) + 1
 		remaining := max(0, 10-model.consumed)
+		model.budgets[0].consumed, model.budgets[0].remaining = model.consumed, p22FakeInt(remaining)
 		state := "available"
 		if remaining == 0 {
 			state = "exhausted"
@@ -269,4 +280,59 @@ func p22Number(value any) int {
 
 func p22SameResult(left, right map[string]any) bool {
 	return reflect.DeepEqual(p22CloneMap(left), p22CloneMap(right))
+}
+
+func (model *p22MemoryModel) chargeReviewCycle(envelopeID, reviewID string) {
+	for i := range model.budgets {
+		budget := &model.budgets[i]
+		if budget.action != "review-rework-exhausted" {
+			continue
+		}
+		previous := budget.maximum - budget.consumed
+		budget.consumed++
+		budget.remaining = p22FakeInt(max(0, budget.maximum-budget.consumed))
+		if previous <= 0 || *budget.remaining != 0 {
+			return
+		}
+		model.sequence++
+		subject := map[string]any{"type": "envelope", "id": envelopeID}
+		model.stop = map[string]any{
+			"id": fmt.Sprintf("STP-%d", model.sequence), "subject": subject, "code": "review-rework-exhausted",
+			"details":         map[string]any{"envelope_id": envelopeID, "budget_name": budget.name, "unit": budget.unit, "maximum": budget.maximum, "consumed": budget.consumed, "remaining": *budget.remaining, "last_review_id": reviewID},
+			"blocked_actions": []string{"claim.acquire", "run.start"}, "resolver_capability": "stop.resolve",
+			"resolution_condition": map[string]any{"type": "human-outcome-recorded", "subject": subject, "budget_name": nil, "capability_id": nil, "outcome_class": "review-rework-extension"},
+		}
+		model.attention = map[string]any{"id": fmt.Sprintf("ATT-%d", model.sequence), "subject": subject, "code": "review-rework-exhausted", "status": "open", "version": 1, "stop_ids": []any{model.stop["id"]}}
+		return
+	}
+}
+
+func TestP22FakeReviewReworkStopCondition(t *testing.T) {
+	t.Parallel()
+	model := p22NewFakeRecoveryAdapter().model
+	model.budgets = []p22FakeBudget{{name: "review-cycles", unit: "review-cycles", action: "review-rework-exhausted", maximum: 1, remaining: p22FakeInt(1)}}
+	model.chargeReviewCycle("ENV-review", "REV-first")
+	want := map[string]any{
+		"subject":             map[string]any{"type": "envelope", "id": "ENV-review"},
+		"code":                "review-rework-exhausted",
+		"blocked_actions":     []any{"claim.acquire", "run.start"},
+		"resolver_capability": "stop.resolve",
+		"details":             map[string]any{"envelope_id": "ENV-review", "budget_name": "review-cycles", "unit": "review-cycles", "maximum": 1, "consumed": 1, "remaining": 0, "last_review_id": "REV-first"},
+		"resolution_condition": map[string]any{
+			"type": "human-outcome-recorded", "subject": map[string]any{"type": "envelope", "id": "ENV-review"},
+			"budget_name": nil, "capability_id": nil, "outcome_class": "review-rework-extension",
+		},
+	}
+	for field, expected := range want {
+		gotJSON, _ := json.Marshal(model.stop[field])
+		wantJSON, _ := json.Marshal(expected)
+		if string(gotJSON) != string(wantJSON) {
+			t.Fatalf("fake rework Stop %s = %#v, want %#v", field, model.stop[field], expected)
+		}
+	}
+	firstID := model.stop["id"]
+	model.chargeReviewCycle("ENV-review", "REV-second")
+	if model.stop["id"] != firstID || model.budgets[0].consumed != 2 || *model.budgets[0].remaining != 0 {
+		t.Fatalf("fake rework charge retripped Stop or changed remaining: stop=%#v budget=%#v", model.stop, model.budgets[0])
+	}
 }
