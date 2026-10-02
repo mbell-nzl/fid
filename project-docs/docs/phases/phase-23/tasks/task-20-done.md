@@ -47,20 +47,26 @@
 - `go build -o /tmp/fid-task20-candidate ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `/tmp/fid-task20-candidate --project /tmp/fid-task20-prechange.NjCRbu/judgment --json rebuild` - FAIL - `{"contract_version":"fid-cli.v1","error":{"category":"integrity","code":"journal-replay-stopped","details":{"event_id":null,"journal_file":".fid/journal/2026-10-01.jsonl","line":18},"message":"journal replay stopped","retryable":false,"subject":null},"ok":false,"operation":"project.rebuild"}` (terminated `exit_code: 6`).
 - `sha256sum /tmp/fid-task20-prechange.NjCRbu/judgment/.fid/journal/2026-10-01.jsonl` - PASS - `a8fdbdccfc7fd39e27b80f256811d8b70113a0e30285122a166148455d1ba16e  /tmp/fid-task20-prechange.NjCRbu/judgment/.fid/journal/2026-10-01.jsonl` (terminated `exit_code: 0`)
-- `go test -tags integration -run '^TestP23RequirementNewShapeJournalRoundTrip$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.537s` (terminated `exit_code: 0`).
+- `go test -tags integration -run '^TestP23RequirementNewShapeJournalRoundTrip$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.537s` (terminated `exit_code: 0`)
 - `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - FAIL (expected RED) - `FAIL` (terminated `exit_code: 1`); the output showed `Requirement References and links` and `Requirement RREF-3e34b0` instead of separate stable and reference labels.
-- `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	11.288s` (terminated `exit_code: 0`).
-- `go test -run '^TestPhase23HumanLeafTextMatchesRecordedFacts$' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.154s` (terminated `exit_code: 0`).
-- `go test -tags integration -run '^TestP23SharedLeafConformance$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	10.159s` (terminated `exit_code: 0`).
-- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.965s` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid ./internal/review ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	101.603s` (terminated `exit_code: 0`); `cmd/fid` 221.604s and `internal/review` 1.101s.
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^(TestP23HumanFixtures|TestP23SharedLeafConformance|TestP23RequirementReferenceAndLinkRealProcess|TestP23RequirementNewShapeJournalRoundTrip)$' ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	16.419s` (terminated `exit_code: 0`).
-- `sha256sum /tmp/fid-task20-prechange.NjCRbu/judgment/.fid/journal/2026-10-01.jsonl` (before final rebuild) - PASS - `a8fdbdccfc7fd39e27b80f256811d8b70113a0e30285122a166148455d1ba16e  /tmp/fid-task20-prechange.NjCRbu/judgment/.fid/journal/2026-10-01.jsonl` (terminated `exit_code: 0`).
-- `go build -o /tmp/fid-task20-candidate ./cmd/fid` (final binary) - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	11.288s` (terminated `exit_code: 0`)
+- `go test -run '^TestPhase23HumanLeafTextMatchesRecordedFacts$' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.154s` (terminated `exit_code: 0`)
+- `go test -tags integration -run '^TestP23SharedLeafConformance$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	10.159s` (terminated `exit_code: 0`)
+- `go test -tags integration -run '^TestP23RequirementReferenceAndLinkRealProcess$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.965s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid ./internal/review ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	101.603s` (terminated `exit_code: 0`)
+  - Note: `cmd/fid` 221.604s and `internal/review` 1.101s.
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^(TestP23HumanFixtures|TestP23SharedLeafConformance|TestP23RequirementReferenceAndLinkRealProcess|TestP23RequirementNewShapeJournalRoundTrip)$' ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	16.419s` (terminated `exit_code: 0`)
+- `sha256sum /tmp/fid-task20-prechange.NjCRbu/judgment/.fid/journal/2026-10-01.jsonl` - PASS - `a8fdbdccfc7fd39e27b80f256811d8b70113a0e30285122a166148455d1ba16e  /tmp/fid-task20-prechange.NjCRbu/judgment/.fid/journal/2026-10-01.jsonl` (terminated `exit_code: 0`)
+  - Note: before final rebuild.
+- `go build -o /tmp/fid-task20-candidate ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+  - Note: final binary.
 - `/tmp/fid-task20-candidate --project /tmp/fid-task20-prechange.NjCRbu/judgment --json rebuild` - FAIL (expected DEC-270 refusal) - `{"contract_version":"fid-cli.v1","error":{"category":"integrity","code":"journal-replay-stopped","details":{"event_id":null,"journal_file":".fid/journal/2026-10-01.jsonl","line":18},"message":"journal replay stopped","retryable":false,"subject":null},"ok":false,"operation":"project.rebuild"}` (terminated `exit_code: 6`).
-- `sha256sum /tmp/fid-task20-prechange.NjCRbu/judgment/.fid/journal/2026-10-01.jsonl` (after final rebuild) - PASS - `a8fdbdccfc7fd39e27b80f256811d8b70113a0e30285122a166148455d1ba16e  /tmp/fid-task20-prechange.NjCRbu/judgment/.fid/journal/2026-10-01.jsonl` (terminated `exit_code: 0`).
-- `FID_P23_HUMAN_FIXTURE_ROOT=/tmp/fid-task20-runtime.I3sG3G go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	11.921s` (terminated `exit_code: 0`); fixture setup for the direct CLI check.
-- `/tmp/fid-task20-candidate --project /tmp/fid-task20-runtime.I3sG3G/checkpoints-1169491080/leaf-contract requirement get REQ-leaf` - PASS - `  REQ-leaf implements P22-0b1cdb` (terminated `exit_code: 0`); output also contained `Requirement REQ-leaf`, `Reference ID: RREF-1334c6; Status: active`, and `Issue links`.
+- `sha256sum /tmp/fid-task20-prechange.NjCRbu/judgment/.fid/journal/2026-10-01.jsonl` - PASS - `a8fdbdccfc7fd39e27b80f256811d8b70113a0e30285122a166148455d1ba16e  /tmp/fid-task20-prechange.NjCRbu/judgment/.fid/journal/2026-10-01.jsonl` (terminated `exit_code: 0`)
+  - Note: after final rebuild.
+- `FID_P23_HUMAN_FIXTURE_ROOT=/tmp/fid-task20-runtime.I3sG3G go test -tags integration -run '^TestP23HumanFixtures$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	11.921s` (terminated `exit_code: 0`)
+  - Note: fixture setup for the direct CLI check.
+- `/tmp/fid-task20-candidate --project /tmp/fid-task20-runtime.I3sG3G/checkpoints-1169491080/leaf-contract requirement get REQ-leaf` - PASS - `  REQ-leaf implements P22-0b1cdb` (terminated `exit_code: 0`)
+  - Note: output also contained `Requirement REQ-leaf`, `Reference ID: RREF-1334c6; Status: active`, and `Issue links`.
 
 ## Exact quality-gate results
 
@@ -69,11 +75,13 @@
 - Attempt 1: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - BLOCKED - not run after the protected replay contradiction; no termination result. Thus `cmd/fid` and `internal/workflow` wall times were not measured.
 - Attempt 1: `go tool cover -func=coverage.out` - BLOCKED - not run after the protected replay contradiction; no termination result.
 - Attempt 1: `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - BLOCKED - not run after the protected replay contradiction; no termination result. The tagged integration wall time was not measured.
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	117.580s	coverage: 62.1% of statements` (terminated `exit_code: 0`); `cmd/fid` 344.249s, `internal/workflow` 117.580s; neither reaches 80% of its 600s ordinary-package budget.
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)			60.5%` (terminated `exit_code: 0`).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	253.239s` (terminated `exit_code: 0`); tagged package 253.239s, below 80% of its 900s budget.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	117.580s	coverage: 62.1% of statements` (terminated `exit_code: 0`)
+  - Note: `cmd/fid` 344.249s, `internal/workflow` 117.580s; neither reaches 80% of its 600s ordinary-package budget.
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)			60.5%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	253.239s` (terminated `exit_code: 0`)
+  - Note: tagged package 253.239s, below 80% of its 900s budget.
 
 ## Deviations from spec
 
