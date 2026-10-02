@@ -1,6 +1,13 @@
 # Progress — Current
 
-Updated 2026-10-01. **All 18 tasks are complete. The phase-end final
+Updated 2026-10-02. **Task 19 is complete. Task 20 attempt 1 BLOCKED
+(TRG-23-017, 07:21 STOP): a pre-change stored `RequirementRef` result cannot
+replay once the result carries `requirement_id`. DEC-270 resolves it: that
+history is unsupported and fails closed (ADR-0011), and a new-shape round
+trip replaces the criterion. The Runner resumes task 20 as attempt 2 via
+[the handoff](../phases/phase-23/qa/resume-after-dec-270.md).**
+
+Earlier, updated 2026-10-01. **All 18 tasks are complete. The phase-end final
 review (`74182db`) returned BLOCK under TRG-23-016 / ESC-23-012. DEC-267
 disposed it, and task 18 has since repaired MF-1 (`b84b17c`, `b37c169`).
 The Human checklist is recorded as FAIL (55/2/6). DEC-268 repairs A1-A3 in
@@ -93,6 +100,8 @@ Retain these constraints:
 - DEC-267: VAL-005's criterion names the two added Evidence columns. MF-1
   is a task-18 test-harness repair; the 5000 ms deadline, golden bytes, and
   commands are preserved.
+- DEC-270: pre-change Phase 23 journal history fails closed; there is no
+  legacy path, and VAL-089 requires a new-shape round trip.
 - DEC-268: the Human directs A1-A3 to be repaired in Phase 23. DEC-269
   allocates tasks 19-21; its A1 and A3 designs need Human approval. The rest of the Human operating-experience
   scope is on the wrap-up agenda.

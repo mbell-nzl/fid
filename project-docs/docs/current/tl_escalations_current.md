@@ -4,7 +4,8 @@
 
 ### ESC-23-012 - Phase-end accepted Evidence column count conflicts and Human judgments remain pending (Human checklist FAIL; A1-A3 repairs)
 
-- **Status:** PARTIALLY RESOLVED 2026-10-01 under DEC-267 and DEC-268.
+- **Status:** PARTIALLY RESOLVED 2026-10-01 under DEC-267 and DEC-268;
+  task-20 blocker resolved 2026-10-02 under DEC-270.
   It stays open for the A1-A3 repairs. Governing triage: TRG-23-016.
   - **BC-A / MF-2, resolved:** the accepted DDL governs, and VAL-005 names
     the two added Evidence columns (DEC-267).
@@ -16,13 +17,22 @@
     silent), and A3 (the `requirement_id` is not shown) in Phase 23. The
     plan is DEC-269 (tasks 19-21, VAL-085..089). DEC-269 was Human-approved on
     2026-10-02 (option 1). Resume via `qa/resume-after-dec-269.md`.
+  - **TRG-23-017 / task 20 (BLOCK, 07:21 STOP), resolved by DEC-270
+    (2026-10-02):** the task-20 pre-change replay criterion could not
+    hold, because the old stored `RequirementRef` result lacks
+    `requirement_id`. It also protected no real journal: the event is
+    absent from `main` and `v0.1.0`, and ADR-0011 makes no promise.
+    Pre-change history now must fail closed; a new-shape round trip
+    replaces the criterion. Task 20 continues as attempt 2 via
+    `qa/resume-after-dec-270.md`. The amendment is flagged to the Human,
+    who may reverse it.
 - **Resolution condition (remaining):** the A1-A3 repairs land, and the
   Human re-checks the affected rows. Then one fresh independent QA Lead
   writes `final-review-1.md` covering MF-1, VAL-005, A1-A3, and the Human
   results. Do not dispatch the final review before the repairs land.
-- **References:** [TRG-23-016](../phases/phase-23/triage-log.md);
+- **References:** [TRG-23-016, TRG-23-017](../phases/phase-23/triage-log.md);
   [final review](../phases/phase-23/qa/final-review.md);
-  [DEC-267, DEC-268](../phases/phase-23/decisions.md); VAL-005, VAL-070..073;
+  [DEC-267..270](../phases/phase-23/decisions.md); VAL-005, VAL-070..073, VAL-089;
   [Human checklist](../phases/phase-23/qa/human-checklist.md);
   [full record](../phases/phase-23/tl-escalations.md).
 

@@ -32,8 +32,11 @@ views distinguish requirement, reference, and Issue link.
   requirement ID (active reference, else newest) or an exact reference ID (that
   row). Its links are always the stable requirement ID's links. This is the
   shipped SQL order. Assert it; do not change it.
-- Unchanged: request shapes, DDL, Events, Effects, semantic keys, request
-  digests, and `RequirementLink`. `schema.md` already has the column.
+- Unchanged: request shapes, DDL, Event types, Effect tables and keys,
+  semantic keys, request digests, and `RequirementLink`. `schema.md` already
+  has the column. The one changed stored value is the `record-reference`
+  result in the `idempotency_results` Effect, which now carries
+  `requirement_id` (DEC-270).
 - Human view (contracts 14: labelled sections, purpose line, no routine
   narration). Each reference renders:
   - a heading line `Requirement <requirement_id>`;
@@ -45,10 +48,12 @@ views distinguish requirement, reference, and Issue link.
   `<requirement_id> <relation> <issue_id>`. No link line is labelled
   "Requirement". The `requirement.link` view renders only the `Issue links`
   section. Human text adds no member absent from JSON (VAL-058).
-- Journal compatibility: a journal recorded by the pre-change binary that
-  contains `requirement.referenced` events must replay and rebuild unchanged.
-  If the stored-result shape prevents that, stop and return `BLOCKED`. Never
-  rewrite journal history or relax result validation.
+- Journal compatibility (amended by DEC-270): a journal written by a
+  pre-task-20 Phase 23 binary with `requirement.referenced` is unsupported
+  (ADR-0011) and must fail closed. Rebuild refuses it with
+  `journal-replay-stopped` and leaves its source digest unchanged. Never
+  rewrite journal history, add a legacy or versioned path, or relax result
+  validation.
 - The closed journal registries this value reaches are owned here
   (`execution-scope.md` section 9): the `RequirementRef` value shape and its
   result-projection fill. Reaching any other registry is an escalation.
@@ -93,9 +98,19 @@ views distinguish requirement, reference, and Issue link.
   shows the reference ID on its own labelled line, and lists links under
   `Issue links`. A verbatim Human fixture per leaf, compared with the JSON
   field set, shows no Human-only member. (VAL-089, VAL-058)
-- [ ] A journal recorded by the pre-change binary (`671f358` or this task's
-  base) with `requirement.referenced` and `requirement.linked` events replays
-  and rebuilds clean, with its source journal digest unchanged. (VAL-089)
+- [ ] (DEC-270 a) A journal recorded by this task's binary with a reference,
+  a superseding reference, and links rebuilds clean, with its source
+  digest unchanged. JSON `requirement get` (stable ID and each reference
+  ID) and `requirement list` are byte-identical before and after the
+  rebuild. An idempotent `record-reference` retry returns the stored result
+  with the correct `requirement_id`. This is a committed test that the
+  tagged gate runs. (VAL-089)
+- [ ] (DEC-270 b) The final binary's `rebuild` of the preserved pre-change
+  journal (task base `d7f960d`) returns `journal-replay-stopped` at the
+  `requirement.referenced` line, exit 6, with the source digest unchanged.
+  This is one-time report evidence. (VAL-089)
+- [ ] No env-gated or default-skipped test is committed;
+  `TestP23Task20SeedPrechangeJournal` is removed. (DEC-270)
 - [ ] The regenerated requirement Human fixture rows still run. (VAL-073)
 
 ## First Failing Test
@@ -146,6 +161,27 @@ is a Runner control after the report commit, not a Developer gate.
 List any conditional command required by this task and why:
 
 - None.
+## Planning Amendment - DEC-270 (2026-10-02)
+
+Attempt 1 returned `BLOCKED` correctly (TRG-23-017). The pre-change replay
+criterion could not hold, and it protected no real journal:
+`requirement.referenced` exists only in unreleased Phase 23 binaries, and
+ADR-0011 makes no pre-adoption journal promise. DEC-270 replaces that
+criterion with (a) a new-shape round trip and (b) fail-closed evidence for
+pre-change history. Nothing else changes: DEC-269 Part 3's shape, exact
+validation, scope, commands, and the other criteria stand.
+
+Continue from the preserved, uncommitted partial tree. Its value-catalog,
+projection, and `loadRequirementRef` edits are the accepted direction. Then:
+
+- finish `cmd/fid/p23_human.go` requirement rendering;
+- add the (a) round-trip test in an owned `p23_requirement_*_test.go` file;
+- remove `TestP23Task20SeedPrechangeJournal`;
+- converge any displaced retained assertion with per-row provenance;
+- run all five commands;
+- rerun the exact rebuild for (b) and report it, keeping attempt 1's
+  failed evidence in the report.
+
 ## Notes For Developer
 
 - Report path: `project-docs/docs/phases/phase-23/tasks/task-20-done.md`.

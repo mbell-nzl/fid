@@ -139,16 +139,14 @@
 - DEC-251 (Human, Option B, 2026-09-26): `human-outcome.record` needs no
   Envelope grant. Human authority comes from the Activation profile. The
   section 4.1 cell is corrected.
-- DEC-252..257 closed ESC-23-004's repairs (tasks 6, 2, 10, 11 complete);
-  DEC-254 Part 1 (`cmd/fid` breach attribution) still stands.
+- DEC-252..257 closed ESC-23-004 (tasks 6, 2, 10, 11); DEC-254 Part 1 stands.
 - DEC-258 (Human-delegated): parallel tests, `paralleltest`, tiered test loop,
   80% headroom warning. DEC-259 (Human): both race gates carry
   `-gcflags=modernc.org/...=-d=checkptr=0`, plus a phase-end full-`checkptr` run.
 - DEC-260 (ESC-23-006): requirement writes need a trusted Actor, with no
   capability or grant; the closed capability set stays at thirty.
   DEC-261: reopened tasks run the DEC-259 race gates.
-- DEC-262: task 13 owns `activity_log` and the `issue` rows; task 15 the
-  `requirement`/`decision` rows with 0018 (VAL-055).
+- DEC-262: task 13 owns `activity_log`/`issue` rows; task 15 the rest (VAL-055).
 - DEC-263: Stop-blocked judgment denials carry StopDetails plus `stop_ids`,
   `attention_ids`, `event` (null), and `replayed` (`false`).
 - DEC-264 (Human): a down migration restores the prior live state; 0018 down
@@ -161,6 +159,8 @@
   failures), 20 (`RequirementRef.requirement_id`), and 21 (rework Stop resolved
   by a `review-rework-extension` Human Outcome; rework budget excluded from
   generic admission). VAL-085..089 bring the contract to 89 rows.
+- DEC-270: pre-change Phase 23 journal history fails closed (ADR-0011), with
+  no legacy path; VAL-089 requires a new-shape round trip instead.
 
 ## Prior Phase and Future Qualification
 

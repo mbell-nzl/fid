@@ -21,11 +21,14 @@ A1-A3 in Phase 23 as supplemental tasks 19-21 (DEC-269, Human-approved
   (`b84b17c`, `b37c169`).
 - Task 19 (A2): Human-mode Stop-family failures are silent.
 - Task 20 (A3): `RequirementRef` gains `requirement_id`; the views are fixed.
+  Attempt 1 BLOCKED (TRG-23-017); under DEC-270, pre-change journals fail
+  closed and a new-shape round trip replaces the replay criterion.
 - Task 21 (A1): the rework Stop resolves through a `review-rework-extension`
   Human Outcome; the rework budget is excluded from generic admission.
 
-Next action: the Runner resumes using
-`qa/resume-after-dec-269.md`. Order: tasks 19, 20, 21, then `review-15`
+Next action: task 19 is complete. The Runner resumes task 20 using
+`qa/resume-after-dec-270.md`, then continues with `qa/resume-after-dec-269.md`.
+Order: tasks 20, 21, then `review-15`
 (window 19-21), then a fresh QA Lead `final-review-1.md` (recorded as
 review-16) that regenerates the fixtures and authors `human-checklist-2.md`,
 then the Human re-check, then RUN-END. The A4-A8 Human operating experience is

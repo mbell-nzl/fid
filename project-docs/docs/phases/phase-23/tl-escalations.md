@@ -41,6 +41,26 @@
   - The escalation stays open until those repairs land, the Human re-checks
     the affected rows, and one fresh `final-review-1.md` is written.
   - A4-A8 are on the wrap-up agenda, undecided.
+- **Update 2026-10-02 (DEC-270, TRG-23-017):**
+  - Task 20 returned BLOCKED (`f739417`). DEC-269 Part 3 adds
+    `requirement_id` to `RequirementRef`. A pre-task-20 journal's
+    stored `requirement.referenced` result lacks it, so exact result
+    validation stops `rebuild` at that line (`journal-replay-stopped`,
+    exit 6). The source digest was unchanged. Task 20's own criterion
+    required that journal to replay unchanged. The Runner stopped at
+    07:21.
+  - **Tech Lead finding:** the event was introduced in Phase 23
+    (`4aa2320`). It is absent from `main` and `v0.1.0`, and the
+    repository's `.fid` journal has none. ADR-0011 and `schema.md`
+    section 1 make no pre-adoption journal compatibility promise. The
+    criterion was over-cautious planning text, not accepted contract.
+  - **Resolution (DEC-270):** the shape and exact validation stand. Pre-change
+    history is unsupported and fails closed. The criterion becomes (a) a
+    new-shape round trip and (b) one-time fail-closed evidence. Task 20
+    resumes as attempt 2 from its preserved uncommitted tree
+    (`qa/resume-after-dec-270.md`). The amendment is flagged to the Human,
+    who may reverse it.
+  - ESC-23-012 stays open on its remaining condition.
   - DEC-269 (2026-10-01) plans tasks 19-21 and adds VAL-085..089. Its A1 and
     A3 designs were Human-approved on 2026-10-02 (option 1). Resume via `qa/resume-after-dec-269.md`.
 - **Links:** TRG-23-016; DEC-178; DEC-223; DEC-259; DEC-261; DEC-267;
