@@ -2,7 +2,7 @@
 
 > Phase: 23 — Review and Human judgment
 > Date: 2026-10-03
-> Tester: _______________
+> Tester: MBEL
 
 **Pending Human input: seven blank judgments.** This is the DEC-269 re-check
 scope. The [original Human checklist](human-checklist.md) remains immutable,
@@ -65,9 +65,9 @@ Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-93
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HUMAN-03a | VAL-072 | Explain the cause of the rework block. `(human)` | The cause is clear from the denial and displayed Stop/Attention. | | |
-| HUMAN-03b-resolution | VAL-072 | State the exact qualifying action that would resolve the block. `(human)` | The required resolution is clear without additional help. | | |
-| HUMAN-03b-internals | VAL-072 | Assess whether the output suggests editing fid internals. `(human)` | It guides you through supported actions without suggesting internal edits. | | |
+| HUMAN-03a | VAL-072 | Explain the cause of the rework block. `(human)` | The cause is clear from the denial and displayed Stop/Attention. | PASS | The review-cycles budget is exhausted. |
+| HUMAN-03b-resolution | VAL-072 | State the exact qualifying action that would resolve the block. `(human)` | The required resolution is clear without additional help. | PASS | A `human-outcome-recorded` is required via `fid stop resolve`. (Though as noted in human checklist 1, it is not clear to be how to format the `--input` flag json content correctly to do this -- happy for this to be deferred to the human ergonomic review/improvements later though).|
+| HUMAN-03b-internals | VAL-072 | Assess whether the output suggests editing fid internals. `(human)` | It guides you through supported actions without suggesting internal edits. | PASS | It does not suggest manual internal editing. |
 
 ### Task 21 resolution and admitted retry
 
@@ -108,9 +108,9 @@ Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-93
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HUMAN-04a-17 | VAL-073 | Assess the section labels. `(human)` | Labels make the displayed sections clear. | | |
-| HUMAN-04b-17 | VAL-073 | Assess the operation purpose line. `(human)` | The view clearly states its purpose. | | |
-| HUMAN-04c-17 | VAL-073 | Assess routine-state narration. `(human)` | The view is free of unnecessary routine-state narration. | | |
+| HUMAN-04a-17 | VAL-073 | Assess the section labels. `(human)` | Labels make the displayed sections clear. | PASS | n/a |
+| HUMAN-04b-17 | VAL-073 | Assess the operation purpose line. `(human)` | The view clearly states its purpose. | PASS | n/a |
+| HUMAN-04c-17 | VAL-073 | Assess routine-state narration. `(human)` | The view is free of unnecessary routine-state narration. | PASS | n/a |
 
 ## Requirement list — VAL-073
 
@@ -122,21 +122,21 @@ Working directory: `/home/mark/projects/fid/.cache/phase-23-human/checkpoints-93
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HUMAN-04a-18 | VAL-073 | Assess the section labels. `(human)` | Labels make the displayed sections clear. | | |
+| HUMAN-04a-18 | VAL-073 | Assess the section labels. `(human)` | Labels make the displayed sections clear. | PASS | n/a |
 
 ## Summary
 
 | Section | Total | Pass | Fail | Partial | Blank |
 |---|---:|---:|---:|---:|---:|
-| Review rework exhaustion | 3 | 0 | 0 | 0 | 3 |
-| Requirement get | 3 | 0 | 0 | 0 | 3 |
-| Requirement list | 1 | 0 | 0 | 0 | 1 |
-| **Total** | **7** | **0** | **0** | **0** | **7** |
+| Review rework exhaustion | 3 | 3 | 0 | 0 | 0 |
+| Requirement get | 3 | 3 | 0 | 0 | 0 |
+| Requirement list | 1 | 1 | 0 | 0 | 0 |
+| **Total** | **7** | **7** | **0** | **0** | **0** |
 
 | | |
 |---|---|
 | **Overall result** | Pending Human input |
-| **Date completed** | |
+| **Date completed** | 2026-10-03 |
 | **Notes** | ESC-23-012 remains open. A4–A8 and remaining original PARTIAL items stay on the Tech Lead wrap-up agenda; this checklist does not accept a carry-forward. |
 
 Outcome values: pass, fail, partial, blank. Only the Human records judgments.
