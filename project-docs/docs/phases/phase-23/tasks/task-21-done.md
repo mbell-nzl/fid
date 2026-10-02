@@ -73,8 +73,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `c6e070b1ea0b3aff339564c47bb1cd39cfccbcd0`
 
 ## Commit subject
 
-- Pending commit
+- `feat(review): make rework exhaustion resolvable`
