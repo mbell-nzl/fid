@@ -1553,12 +1553,12 @@ Model guidance:
 
 | Role | Codex | Reasoning | Notes |
 |---|---|---:|---|
-| Tech Lead | `gpt-5.6-sol` | xhigh | phase planning, spec sync, wrap-up |
-| Phase Runner | `gpt-5.4-mini` | xhigh | mechanical orchestration, ledger discipline |
-| Developer | `gpt-5.6-terra` | high | implementation and TDD |
-| QA Lead | `gpt-5.6-sol` | xhigh | phase-wide QA synthesis |
-| QA Reviewer | `gpt-5.6-terra` | high | bounded mid-phase review |
-| TL-Lite | `gpt-5.6-terra` | medium | focused tactical triage |
+| Tech Lead | `gpt-6.1-sol` | xhigh | phase planning, spec sync, wrap-up |
+| Phase Runner | `gpt-5.6-luna` | xhigh | mechanical orchestration, ledger discipline |
+| Developer | `gpt-6-sol` | high | implementation and TDD |
+| QA Lead | `gpt-6.1-sol` | xhigh | phase-wide QA synthesis |
+| QA Reviewer | `gpt-6-sol` | high | bounded mid-phase review |
+| TL-Lite | `gpt-6-sol` | medium | focused tactical triage |
 
 Note: this table is Codex-specific. Claude Code agent model choices are
 configured separately, per agent, in `.claude/agents/*.md`, and are not
