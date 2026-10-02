@@ -3034,3 +3034,448 @@
 - report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
 - Commit: b37c16986d3dbba8bc786089c2869e3016009b56 - verified, subject matched: docs(task): correct task-18 control result formatting
 - QA-plan commands beyond the task spec: none required
+
+### 2026-10-02 06:39 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-10-01 20:17 RUN-RESUME session, ending at 2026-10-01 20:59 TASK task-18 COMPLETE
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: phase-23 HEAD 3bf54ba03b0bc8f328aa49682dcacf57430c3614 is verified by git rev-parse --verify with terminated exit_code: 0 and subject docs(phase-23): record Human approval of DEC-269 option 1; phase-23 branch is clean with no product paths dirty; DEC-268 and DEC-269 are present in project-docs/docs/phases/phase-23/decisions.md and DEC-269 Status is ACCEPTED by Human, 2026-10-02; tasks task-19.md, task-20.md, and task-21.md are present; VAL-085..089 are present in project-docs/docs/phases/phase-23/qa/validation-contract.md; project-docs/docs/phases/phase-23/qa/resume-after-dec-269.md is present; the ledger standalone validation before resume returned VALID state=ADVANCEABLE
+- Resolution evidence: Runner verified the accepted DEC-269 status, the current HEAD and subject, the clean product tree, tasks 19-21, VAL-085..089, and the resume-after-dec-269 handoff; the current ledger had no active STOP and validated as VALID state=ADVANCEABLE after task-18 completion
+- Resolution authority: N/A
+- Continuing task: task-19
+- Next recovery: N/A
+
+### 2026-10-02 07:03 TASK task-19 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-19-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: d7f960d94252a7fa07df4aabb0798ce160c94763 - verified, subject matched: docs(task): record task-19 report-lint recovery
+- QA-plan commands beyond the task spec: none required
+
+### 2026-10-02 07:08 TASK-RECOVERY task-20
+
+- Source: project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-20-done.md project-docs/docs/phases/phase-23/tasks/task-20.md returned exit_code: 4 with report-lint found 4 failure(s); workflow-route.sh report-lint RECOVERY_REQUIRED returned ACTION REPAIR
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-20:protected-contract:requirement-ref-journal-replay-compatibility
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-23/tasks/task-20-done.md
+- Forbidden changes: edit only the task-20 blocker report to satisfy the canonical report contract; preserve the typed BLOCKED outcome, protected journal replay mismatch, immutable source journal and digest, partial product/test changes, all red evidence, all blocked gate evidence, task scope, accepted contracts, task spec, QA artifacts, Human checklist, run ledger, and triage log
+- Originating report: project-docs/docs/phases/phase-23/tasks/task-20-done.md
+- Exact verification: project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-20-done.md project-docs/docs/phases/phase-23/tasks/task-20.md
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD d7f960d94252a7fa07df4aabb0798ce160c94763 is verified with subject docs(task): record task-19 report-lint recovery; task-20 product and test paths are partially modified but uncommitted; task-20-done.md is untracked; the protected replay mismatch is recorded in the report; only the Runner-owned run-ledger.md was already dirty before task-20; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; partial task-20 product/test paths and task-20-done.md are dirty/untracked, plus Runner-owned run-ledger.md; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths are forbidden
+- Resolution evidence: PENDING - same-task report-only continuation must correct only the report-lint contract defects, preserve the BLOCKED outcome and all protected mismatch evidence, commit task-20-done.md with Refs: phase-23/task-20, and pass the exact report-lint command with observed termination
+- Next action: dispatch one same-task task-20 report-repair continuation limited to project-docs/docs/phases/phase-23/tasks/task-20-done.md; after report closure, invoke TL-Lite to classify the protected journal compatibility blocker
+- Human attention required: no
+
+### 2026-10-02 07:19 REPAIR task-20
+
+- Trigger signature: task-20:protected-contract:requirement-ref-journal-replay-compatibility
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD d7f960d94252a7fa07df4aabb0798ce160c94763 is verified with subject docs(task): record task-19 report-lint recovery; task-20 product and test paths are partially modified but uncommitted; task-20-done.md is untracked; the protected replay mismatch is recorded in the report; only the Runner-owned run-ledger.md was already dirty before task-20; hidden-index flags none
+- Ending checkpoint: phase-23 HEAD f73941739a03b827ff15926108d6c14ceb8cd653 on branch phase-23; report-repair commit f73941739a03b827ff15926108d6c14ceb8cd653 is verified with subject docs(task): repair task-20 blocker report formatting and Refs: phase-23/task-20; exact report-lint returned OUTCOME BLOCKED and PASS report-lint completed with no failures with observed exit_code: 0; task-20 product and test paths remain partially modified and uncommitted; only Runner-owned run-ledger.md is additionally dirty; hidden-index flags none
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task report-only continuation edited only project-docs/docs/phases/phase-23/tasks/task-20-done.md, preserved the typed BLOCKED outcome, exact journal replay mismatch, unchanged source digest, partial product/test state, and blocked gate evidence, and committed f73941739a03b827ff15926108d6c14ceb8cd653. The exact report-lint command returned OUTCOME BLOCKED and PASS report-lint completed with no failures with observed exit_code: 0. The protected journal compatibility mismatch remains a blocker candidate and is now routed to TL-Lite.
+- Next checkpoint: triage as blocker candidate
+
+### 2026-10-02 07:20 TRIAGE TRG-23-017
+
+- Trigger: Phase 23 task-20 cannot satisfy the task's accepted pre-change journal replay requirement after adding the DEC-269 RequirementRef field
+- Originating task: task-20
+- Trigger signature: task-20:protected-contract:requirement-ref-journal-replay-compatibility
+- Attempt count: 1
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: phase-23 HEAD f73941739a03b827ff15926108d6c14ceb8cd653 is verified with subject docs(task): repair task-20 blocker report formatting; task-20 product and test paths remain partially modified and uncommitted; task-20 blocker report is committed and report-lint returned OUTCOME BLOCKED with observed exit_code: 0; TRG-23-017 is confirmed in the phase triage log; ESC-23-012 remains the governing open escalation and no new ESC was allocated; hidden-index flags none
+- Verdict: BLOCK (escalated as ESC-23-012)
+- Resolution evidence: DEC-269 Part 3 requires RequirementRef.requirement_id in the record-reference result, while the retained requirement.referenced Event stores a result without it. The candidate rebuild stops at journal line 18 with journal-replay-stopped and terminated exit_code: 6, while the source journal digest remains unchanged. Resolving this requires protected authority for journal stored-result compatibility/versioning or an amendment to the accepted replay contract; this is a persistence-contract contradiction, not a control-conformance repair.
+- Triage log: project-docs/docs/phases/phase-23/triage-log.md TRG-23-017 entry confirmed; project-docs/docs/current/tl_escalations_current.md ESC-23-012 remains open and no new ESC was allocated
+
+### 2026-10-02 07:21 STOP
+
+- Cause: task-20 / TRG-23-017 / ESC-23-012 - DEC-269's required RequirementRef.requirement_id conflicts with exact replay of a retained pre-change requirement.referenced journal result that lacks the field
+- Triage: TRG-23-017 (BLOCK, escalated as ESC-23-012)
+- Protected category: protected persistence contract / specification contradiction
+- Next Human or external-authority action: Protected owner must decide the exact journal stored-result compatibility/versioning contract and task-20 scope, or amend the accepted replay requirement; then resume task-20 with its partial implementation, source journal, and failed evidence preserved
+
+### 2026-10-02 20:21 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-10-02 07:21 STOP after TRG-23-017 (ESC-23-012)
+- Governing TRG: TRG-23-017
+- Governing ESC: ESC-23-012
+- Trigger signature: task-20:protected-contract:requirement-ref-journal-replay-compatibility
+- Attempt count: 2
+- Checkpoint: phase-23 HEAD 53e2ec9401f36e606779a9c24908908882bb30dc is verified by git rev-parse --verify with terminated exit_code: 0 and subject docs(phase-23): resolve task-20 replay blocker under DEC-270; DEC-270 is present in project-docs/docs/phases/phase-23/decisions.md; the task-20 Planning Amendment - DEC-270 is present in project-docs/docs/phases/phase-23/tasks/task-20.md; amended VAL-089 is present in project-docs/docs/phases/phase-23/qa/validation-contract.md; project-docs/docs/phases/phase-23/qa/resume-after-dec-270.md is present; the preserved BLOCKED report commit f73941739a03b827ff15926108d6c14ceb8cd653 is present; /tmp/fid-task20-prechange.NjCRbu/ is present; dirty paths are only cmd/fid/integration/p23_human_leaf_pairs_test.go, cmd/fid/integration/p23_requirement_reference_test.go, internal/journal/current_event_result_projection.go, internal/journal/current_event_value_catalog.go, internal/review/requirement.go, project-docs/docs/phases/phase-23/run-ledger.md, and project-docs/docs/phases/phase-23/triage-log.md; hidden-index flags none
+- Resolution evidence: Runner verified commit 53e2ec9401f36e606779a9c24908908882bb30dc with matching subject; DEC-270 in phase decisions; the task-20 Planning Amendment - DEC-270; amended VAL-089; this handoff; the preserved f739417 report; the preserved pre-change journal directory; and the exact dirty-path boundary. DEC-270 replaces the unsatisfiable pre-change replay criterion with the new-shape round-trip test and one-time fail-closed evidence, while preserving DEC-269's shape, exact validation, task scope, and commands.
+- Resolution authority: DEC-270
+- Continuing task: task-20
+- Next recovery: task-20 | in-scope-implementation | task-scope | task-20:protected-contract:requirement-ref-journal-replay-compatibility | 2
+
+### 2026-10-02 20:22 TASK-RECOVERY task-20
+
+- Source: DEC-270 and TRG-23-017; project-docs/docs/phases/phase-23/qa/resume-after-dec-270.md
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: DEC-270 and TRG-23-017
+- Triage disposition: N/A
+- Trigger signature: task-20:protected-contract:requirement-ref-journal-replay-compatibility
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: preserve DEC-269 Part 3's RequirementRef shape and exact result validation; implement DEC-270's new-shape round-trip criterion and one-time fail-closed pre-change evidence; do not relax validation, add a legacy or versioned path, touch internal/journal/current_event_json.go, rewrite the pre-change journal, change commands, or edit any unowned file
+- Originating report: project-docs/docs/phases/phase-23/tasks/task-20-done.md
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 53e2ec9401f36e606779a9c24908908882bb30dc is verified by git rev-parse --verify with terminated exit_code: 0 and subject docs(phase-23): resolve task-20 replay blocker under DEC-270; DEC-270 is present in project-docs/docs/phases/phase-23/decisions.md; the task-20 Planning Amendment - DEC-270 is present in project-docs/docs/phases/phase-23/tasks/task-20.md; amended VAL-089 is present in project-docs/docs/phases/phase-23/qa/validation-contract.md; project-docs/docs/phases/phase-23/qa/resume-after-dec-270.md is present; the preserved BLOCKED report commit f73941739a03b827ff15926108d6c14ceb8cd653 is present; /tmp/fid-task20-prechange.NjCRbu/ is present; dirty paths are only cmd/fid/integration/p23_human_leaf_pairs_test.go, cmd/fid/integration/p23_requirement_reference_test.go, internal/journal/current_event_result_projection.go, internal/journal/current_event_value_catalog.go, internal/review/requirement.go, project-docs/docs/phases/phase-23/run-ledger.md, and project-docs/docs/phases/phase-23/triage-log.md; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; dirty paths are only the five preserved task-20 partial product/test paths plus project-docs/docs/phases/phase-23/run-ledger.md and project-docs/docs/phases/phase-23/triage-log.md; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths are forbidden
+- Resolution evidence: PENDING - same-task task-20 continuation must finish Human requirement rendering, add and commit the DEC-270 new-shape round-trip test, remove TestP23Task20SeedPrechangeJournal, converge displaced assertions with provenance, run all five unchanged task commands with wall times, rerun the preserved pre-change rebuild and sha256sum expecting journal-replay-stopped exit 6 with unchanged digest, update task-20-done.md to COMPLETE while preserving attempt 1 evidence and disclosing DEC-270, commit the implementation and report, and pass Runner report-lint
+- Next action: dispatch one same-task task-20 Developer continuation exactly under the bounded task-20 continuation in resume-after-dec-270.md
+- Human attention required: no
+
+### 2026-10-02 20:48 REPAIR task-20
+
+- Trigger signature: task-20:protected-contract:requirement-ref-journal-replay-compatibility
+- Attempt count: 2
+- Starting checkpoint: phase-23 HEAD 53e2ec9401f36e606779a9c24908908882bb30dc is verified by git rev-parse --verify with terminated exit_code: 0 and subject docs(phase-23): resolve task-20 replay blocker under DEC-270; DEC-270 is present in project-docs/docs/phases/phase-23/decisions.md; the task-20 Planning Amendment - DEC-270 is present in project-docs/docs/phases/phase-23/tasks/task-20.md; amended VAL-089 is present in project-docs/docs/phases/phase-23/qa/validation-contract.md; project-docs/docs/phases/phase-23/qa/resume-after-dec-270.md is present; the preserved BLOCKED report commit f73941739a03b827ff15926108d6c14ceb8cd653 is present; /tmp/fid-task20-prechange.NjCRbu/ is present; dirty paths are only cmd/fid/integration/p23_human_leaf_pairs_test.go, cmd/fid/integration/p23_requirement_reference_test.go, internal/journal/current_event_result_projection.go, internal/journal/current_event_value_catalog.go, internal/review/requirement.go, project-docs/docs/phases/phase-23/run-ledger.md, and project-docs/docs/phases/phase-23/triage-log.md; hidden-index flags none
+- Ending checkpoint: phase-23 HEAD 9aac58a371bdf972e5d83adfe27c0e05dc67ec20 on branch phase-23; implementation commit 0ba005d7c511d7f5acd1517d1c39dd6e58d3e3e0 and report commit 9aac58a371bdf972e5d83adfe27c0e05dc67ec20 are verified with matching subjects and Refs: phase-23/task-20; all five task commands passed with observed termination and recorded wall times; DEC-270(a) new-shape round-trip passed; DEC-270(b) pre-change rebuild returned journal-replay-stopped exit 6 with unchanged digest; report-lint returned exit_code: 14 for termination-evidence formatting; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: Same-task task-20 continuation completed the DEC-270 implementation and test work. The Human requirement rendering is complete; TestP23Task20SeedPrechangeJournal was removed; the committed DEC-270(a) round-trip test passed; all five unchanged task commands passed; and DEC-270(b) was reproduced with journal-replay-stopped at line 18, terminated exit_code: 6, and unchanged digest a8fdbdccfc7fd39e27b80f256811d8b70113a0e30285122a166148455d1ba16e. Implementation commit 0ba005d7c511d7f5acd1517d1c39dd6e58d3e3e0 and report commit 9aac58a371bdf972e5d83adfe27c0e05dc67ec20 are verified. The exact report-lint command returned exit_code: 14 because fourteen PASS evidence lines included trailing prose after their termination tokens; report-only repair is required. The implementation progress is material and no no-progress attempt is counted.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-10-02 20:49 TASK-RECOVERY task-20
+
+- Source: project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-20-done.md project-docs/docs/phases/phase-23/tasks/task-20.md returned exit_code: 14 with fourteen termination-evidence formatting failures; workflow-route.sh report-lint RECOVERY_REQUIRED returned ACTION REPAIR
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: DEC-270 and TRG-23-017
+- Triage disposition: N/A
+- Trigger signature: task-20:protected-contract:requirement-ref-journal-replay-compatibility
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-23/tasks/task-20-done.md
+- Forbidden changes: edit only the task-20 completion report to correct report-lint termination-evidence formatting; preserve the COMPLETE outcome, DEC-270(a) round-trip evidence, DEC-270(b) fail-closed evidence, attempt-1 BLOCKED evidence, all five gate results and wall times, implementation/tests, accepted contracts, commands, QA artifacts, Human checklist, run ledger, and triage log
+- Originating report: project-docs/docs/phases/phase-23/tasks/task-20-done.md
+- Exact verification: project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-20-done.md project-docs/docs/phases/phase-23/tasks/task-20.md
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 9aac58a371bdf972e5d83adfe27c0e05dc67ec20 is verified with subject docs(task): finalize completion report for phase-23 task-20; implementation commit 0ba005d7c511d7f5acd1517d1c39dd6e58d3e3e0 and report commit 9aac58a371bdf972e5d83adfe27c0e05dc67ec20 are present; the implementation and report paths are committed and clean; report-lint returned exit_code: 14 with fourteen termination-format failures; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; implementation and report paths are clean; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths are forbidden
+- Resolution evidence: PENDING - same-task report-only continuation must correct only the fourteen report-lint termination-evidence formatting defects, preserve every implementation and verification result, commit task-20-done.md with Refs: phase-23/task-20, and pass the exact report-lint command with observed exit_code: 0
+- Next action: dispatch one same-task task-20 report-repair continuation limited to project-docs/docs/phases/phase-23/tasks/task-20-done.md; after report-lint passes, append REPAIR task-20 RESOLVED and TASK task-20 COMPLETE
+- Human attention required: no
+
+### 2026-10-02 21:02 REPAIR task-20
+
+- Trigger signature: task-20:protected-contract:requirement-ref-journal-replay-compatibility
+- Attempt count: 3
+- Starting checkpoint: phase-23 HEAD 9aac58a371bdf972e5d83adfe27c0e05dc67ec20 is verified with subject docs(task): finalize completion report for phase-23 task-20; implementation commit 0ba005d7c511d7f5acd1517d1c39dd6e58d3e3e0 and report commit 9aac58a371bdf972e5d83adfe27c0e05dc67ec20 are present; the implementation and report paths are committed and clean; report-lint returned exit_code: 14 with fourteen termination-format failures; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Ending checkpoint: phase-23 HEAD bccec6f899c7503e2b51e53504d708711a1aff1c on branch phase-23; implementation commit 0ba005d7c511d7f5acd1517d1c39dd6e58d3e3e0 and report-format commit bccec6f899c7503e2b51e53504d708711a1aff1c are verified with matching subjects and Refs: phase-23/task-20; exact report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures with observed exit_code: 0; implementation and report paths are committed and clean; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task report-only continuation edited only project-docs/docs/phases/phase-23/tasks/task-20-done.md, moved trailing explanatory prose off canonical PASS evidence lines without changing commands, statuses, tokens, exit codes, timings, or any implementation evidence, and committed bccec6f899c7503e2b51e53504d708711a1aff1c with Refs: phase-23/task-20. The exact report-lint command returned OUTCOME COMPLETE and PASS report-lint completed with no failures with observed exit_code: 0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-10-02 21:03 TASK task-20 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-20-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: bccec6f899c7503e2b51e53504d708711a1aff1c - verified, subject matched: docs(task): correct task-20 report evidence formatting
+- QA-plan commands beyond the task spec: none required
+
+### 2026-10-02 21:29 TASK-RECOVERY task-21
+
+- Source: project-docs/docs/phases/phase-23/tasks/task-21-done.md returned OUTCOME RECOVERY_REQUIRED; workflow-route.sh report-lint RECOVERY_REQUIRED returned ACTION REPAIR
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-21 objective, Binding Constraints, and VAL-068 shared-fake conformance requirement
+- Triage disposition: N/A
+- Trigger signature: task-21:in-scope-implementation:shared-fake-review-rework-conformance
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: preserve the DEC-269 Part 1 review-rework-extension contract, DEC-250 resolution predicate, all other budget behavior, exact Human denial lines, commands, thresholds, and VAL semantics; repair only the shared fake's review-cycle condition and gate-admission mirror, with no production behavior, contract, command, threshold, or ownership changes
+- Originating report: project-docs/docs/phases/phase-23/tasks/task-21-done.md
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD bccec6f899c7503e2b51e53504d708711a1aff1c is verified by git rev-parse --verify with terminated exit_code: 0 and subject docs(task): correct task-20 report evidence formatting; TASK task-20 COMPLETE is the last ledger event; before the task-21 continuation the product tree was clean and only Runner-owned run-ledger.md and triage-log.md were dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; pre-dispatch product paths clean, with only Runner-owned run-ledger.md and triage-log.md dirty; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths are forbidden
+- Resolution evidence: PENDING - same-task task-21 continuation must complete the shared semantic fake mirror for review-cycle exhaustion and gate admission, preserve the first continuation's failed and passing evidence, rerun all five unchanged task commands with observed termination and wall times, update task-21-done.md to COMPLETE, commit the implementation and report with Refs: phase-23/task-21, and pass Runner report-lint
+- Next action: dispatch one same-task task-21 continuation limited to the shared semantic fake paths and task-21's existing implementation/report scope
+- Human attention required: no
+
+
+### 2026-10-02 21:30 REPAIR task-21
+
+- Trigger signature: task-21:in-scope-implementation:shared-fake-review-rework-conformance
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD bccec6f899c7503e2b51e53504d708711a1aff1c is verified by git rev-parse --verify with terminated exit_code: 0 and subject docs(task): correct task-20 report evidence formatting; TASK task-20 COMPLETE is the last ledger event; before the task-21 continuation the product tree was clean and only Runner-owned run-ledger.md and triage-log.md were dirty; hidden-index flags none
+- Ending checkpoint: phase-23 HEAD fc7e99683e6d2354b0e531e55bebd8f1d795dcd2 is verified by git rev-parse --verify with matching task-21 implementation subject feat(review): make rework exhaustion resolvable and report commit subject docs(task): correct task-21 report command rows; exact report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0; implementation behavior and all five task commands passed with observed termination and recorded wall times; shared semantic fake paths remain unchanged and are the sole reported scope gap; only task-21 product/report paths plus Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: The same-task task-21 continuation implemented the resolvable review-rework Stop, excluded the rework budget from generic admission and resume reasons, added the exact Human guidance, and passed the unchanged five-command gate. Its report preserves red and green evidence and identifies the remaining shared fake conformance gap in cmd/fid/integration/p22_semantic_fake_test.go and cmd/fid/integration/p22_semantic_denial_test.go. The in-scope behavior and verification progress is material; no no-progress attempt is counted.
+- Next checkpoint: another TASK-RECOVERY
+
+
+### 2026-10-02 21:31 TASK-RECOVERY task-21
+
+- Source: project-docs/docs/phases/phase-23/tasks/task-21-done.md; prior REPAIR task-21 at attempt 1
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-21 objective, Binding Constraints, and VAL-068 shared-fake conformance requirement
+- Triage disposition: N/A
+- Trigger signature: task-21:in-scope-implementation:shared-fake-review-rework-conformance
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: preserve the DEC-269 Part 1 review-rework-extension contract, DEC-250 resolution predicate, all other budget behavior, exact Human denial lines, commands, thresholds, and VAL semantics; edit only the shared semantic fake mirror and task-21 completion report; no production behavior, contract, command, threshold, ownership, task-spec, QA, or decision changes
+- Originating report: project-docs/docs/phases/phase-23/tasks/task-21-done.md
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD fc7e99683e6d2354b0e531e55bebd8f1d795dcd2 is verified by git rev-parse --verify with terminated exit_code: 0 and subject feat(review): make rework exhaustion resolvable; task-21 report commit fc7e99683e6d2354b0e531e55bebd8f1d795dcd2 is present and report-lint returned OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0; task-21 implementation and report paths are dirty only as durable continuation state, shared semantic fake paths are unchanged, and only Runner-owned run-ledger.md and triage-log.md are additionally dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; task-21 partial implementation/report paths and Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths are forbidden
+- Resolution evidence: PENDING - same-task task-21 continuation must add the shared semantic fake's review-cycle Stop condition and gate-admission exclusion in cmd/fid/integration/p22_semantic_fake_test.go and cmd/fid/integration/p22_semantic_denial_test.go, add or converge the focused fake conformance evidence without weakening it, rerun all five unchanged task commands with observed termination and wall times, update task-21-done.md to COMPLETE while preserving attempt 1's recovery evidence and provenance, commit the implementation and report with Refs: phase-23/task-21, and pass Runner report-lint
+- Next action: dispatch one same-task task-21 continuation under the bounded shared semantic fake conformance scope
+- Human attention required: no
+
+
+### 2026-10-02 21:46 REPAIR task-21
+
+- Trigger signature: task-21:in-scope-implementation:shared-fake-review-rework-conformance
+- Attempt count: 2
+- Starting checkpoint: phase-23 HEAD fc7e99683e6d2354b0e531e55bebd8f1d795dcd2 is verified by git rev-parse --verify with terminated exit_code: 0 and subject feat(review): make rework exhaustion resolvable; task-21 report commit fc7e99683e6d2354b0e531e55bebd8f1d795dcd2 is present and report-lint returned OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0; task-21 implementation and report paths are dirty only as durable continuation state, shared semantic fake paths are unchanged, and only Runner-owned run-ledger.md and triage-log.md are additionally dirty; hidden-index flags none
+- Ending checkpoint: phase-23 HEAD cbe2cc0ef337d939a59897db61d552521d69ef32 on branch phase-23; implementation commit 343b458fc4c1b7a726ae9218315edf319c5e40ba and report commit cbe2cc0ef337d939a59897db61d552521d69ef32 are verified with matching subjects and Refs: phase-23/task-21; the two shared semantic fake paths now mirror the review-rework Stop condition and admission exclusion; all five unchanged task commands passed with observed termination and wall times; exact report-lint returned OUTCOME COMPLETE with observed exit_code: 0; standalone sequence-lint returned VALID state=REPAIR_PENDING with observed exit_code: 0; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: The same-task continuation edited only cmd/fid/integration/p22_semantic_fake_test.go, cmd/fid/integration/p22_semantic_denial_test.go, and the task-21 report. Focused fake conformance tests went red then green; the five byte-identical required commands passed, with attempt-1 evidence preserved and the path-scope correction disclosed. Implementation commit 343b458fc4c1b7a726ae9218315edf319c5e40ba and report commit cbe2cc0ef337d939a59897db61d552521d69ef32 resolve the shared-fake obligation. Report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures with observed exit_code: 0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+
+### 2026-10-02 21:47 TASK task-21 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-21-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: cbe2cc0ef337d939a59897db61d552521d69ef32 - verified, subject matched: docs(task): align task-21 report with lint row format
+- QA-plan commands beyond the task spec: none required
+
+
+### 2026-10-03 04:57 REVIEW review-15
+
+- Path: project-docs/docs/phases/phase-23/qa/review-15.md
+- Tasks covered: task-19, task-20, task-21
+- Outcome: REPAIR
+- Owning task: task-19, task-21
+- Re-review of: none
+- Must-fix: 2 / Improvement: 0 / blocker candidates: 0; QA minted no ESC
+
+### 2026-10-03 04:58 TASK-RECOVERY task-19
+
+- Source: project-docs/docs/phases/phase-23/qa/review-15.md MF-1
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review
+- Triage disposition: N/A
+- Trigger signature: review-15:qa-rework:task-19-report-retry-evidence
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-23/tasks/task-19-done.md
+- Forbidden changes: edit only the task-19 completion report; preserve all original failed evidence, accepted contracts, commands, thresholds, QA artifacts, task specification, decisions, and run ledger; no product, test, spec, gate, or QA-plan changes
+- Originating report: project-docs/docs/phases/phase-23/tasks/task-19-done.md
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD e7c656fb69aabd63a01bc534da9c23d8951ec7e5 is verified by git rev-parse --verify with terminated exit_code: 0 and subject docs(qa): record phase 23 review 15 repair findings; review-15 is committed; task-19 remains complete under its prior report and commit; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - same-task task-19 report-only continuation must run the three exact byte-identical commands from review-15 MF-1, append each passing output token with observed exit_code and wall time while preserving the original failed evidence and a causal deviation note, commit only task-19-done.md, and pass Runner report-lint
+- Next action: dispatch one same-task task-19 report-only continuation under review-15 MF-1
+- Human attention required: no
+
+### 2026-10-03 05:02 REPAIR task-19
+
+- Trigger signature: review-15:qa-rework:task-19-report-retry-evidence
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD e7c656fb69aabd63a01bc534da9c23d8951ec7e5 is verified by git rev-parse --verify with terminated exit_code: 0 and subject docs(qa): record phase 23 review 15 repair findings; review-15 is committed; task-19 remains complete under its prior report and commit; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Ending checkpoint: phase-23 HEAD 9ea1f5533000d7cb12a48ba0ce92d0729d3d268b on branch phase-23; report commit 9ea1f5533000d7cb12a48ba0ce92d0729d3d268b is verified with matching subject docs(task): add exact task-19 QA retry evidence; the three byte-identical review-15 MF-1 commands now have fresh PASS tokens, observed exit_code: 0, and wall times while original failed rows remain; report-lint returned OUTCOME COMPLETE with observed exit_code: 0; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task task-19 report-only continuation edited only project-docs/docs/phases/phase-23/tasks/task-19-done.md, preserved the original failed evidence and added the three exact later PASS results with causal deviation evidence. Report commit 9ea1f5533000d7cb12a48ba0ce92d0729d3d268b resolves review-15 MF-1; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures, both with observed exit_code: 0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-10-03 05:03 TASK task-19 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-19-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: 9ea1f5533000d7cb12a48ba0ce92d0729d3d268b - verified, subject matched: docs(task): add exact task-19 QA retry evidence
+- QA-plan commands beyond the task spec: none required
+
+### 2026-10-03 05:04 TASK-RECOVERY task-21
+
+- Source: project-docs/docs/phases/phase-23/qa/review-15.md MF-2
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review
+- Triage disposition: N/A
+- Trigger signature: review-15:qa-rework:task-21-report-retry-evidence
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-23/tasks/task-21-done.md
+- Forbidden changes: edit only the task-21 completion report; preserve all original failed evidence, accepted contracts, commands, thresholds, QA artifacts, task specification, decisions, and run ledger; no product, fake, test, spec, gate, or QA-plan changes
+- Originating report: project-docs/docs/phases/phase-23/tasks/task-21-done.md
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 9ea1f5533000d7cb12a48ba0ce92d0729d3d268b is verified by git rev-parse --verify with terminated exit_code: 0 and subject docs(task): add exact task-19 QA retry evidence; task-19 QA repair is resolved and complete; task-21 remains complete under its prior report and commit; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - same-task task-21 report-only continuation must run the exact byte-identical command from review-15 MF-2, append its passing output token with observed exit_code and wall time while preserving the original failed evidence and a causal deviation note, commit only task-21-done.md, and pass Runner report-lint
+- Next action: dispatch one same-task task-21 report-only continuation under review-15 MF-2
+- Human attention required: no
+
+### 2026-10-03 05:14 REPAIR task-21
+
+- Trigger signature: review-15:qa-rework:task-21-report-retry-evidence
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD 9ea1f5533000d7cb12a48ba0ce92d0729d3d268b is verified by git rev-parse --verify with terminated exit_code: 0 and subject docs(task): add exact task-19 QA retry evidence; task-19 QA repair is resolved and complete; task-21 remains complete under its prior report and commit; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Ending checkpoint: phase-23 HEAD 025aa410c9efb5c344398d4f45cce6c5798c7529 on branch phase-23; report commit 025aa410c9efb5c344398d4f45cce6c5798c7529 is verified with matching subject docs(task): add exact task-21 QA retry evidence; the byte-identical review-15 MF-2 command now has a fresh PASS token, observed exit_code: 0, and wall time while the original failed row remains; report-lint returned OUTCOME COMPLETE with observed exit_code: 0; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task task-21 report-only continuation edited only project-docs/docs/phases/phase-23/tasks/task-21-done.md, preserved the original failed evidence and added the exact later PASS result with causal deviation evidence. Report commit 025aa410c9efb5c344398d4f45cce6c5798c7529 resolves review-15 MF-2; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures, both with observed exit_code: 0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-10-03 05:15 TASK task-21 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-21-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: 025aa410c9efb5c344398d4f45cce6c5798c7529 - verified, subject matched: docs(task): add exact task-21 QA retry evidence
+- QA-plan commands beyond the task spec: none required
+
+### 2026-10-03 05:20 REVIEW review-15a
+
+- Path: project-docs/docs/phases/phase-23/qa/review-15a.md
+- Tasks covered: task-19, task-20, task-21
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-15
+- Must-fix: 0 / Improvement: 0 / blocker candidates: 0; QA minted no ESC
+
+### 2026-10-03 06:34 REVIEW review-16
+
+- Path: project-docs/docs/phases/phase-23/qa/final-review-1.md
+- Tasks covered: task-1 through task-21
+- Outcome: REPAIR
+- Owning task: task-16
+- Re-review of: none
+- Must-fix: 1 / Improvement: 2 / blocker candidates: 0; QA minted no ESC
+
+### 2026-10-03 06:36 TASK-RECOVERY task-16
+
+- Source: project-docs/docs/phases/phase-23/qa/final-review-1.md MF-3
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review
+- Triage disposition: N/A
+- Trigger signature: review-16:qa-rework:task-16-import-claim-fixture-expiry
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/export/import_test.go,internal/export/archive_fixture_test.go,project-docs/docs/phases/phase-23/tasks/task-16-done.md
+- Forbidden changes: repair only the imported fixture's incidental live-Claim premise within task-16 import binding and matching-test scope; preserve Claim expiry enforcement, all negative and positive import/recovery assertions, Event and identity semantics, test parallelism, timeouts, race/checkptr flags, budgets, task commands, accepted contracts, and QA definitions; do not skip the test, alter a required command, or change product code to accept an expired Claim
+- Originating report: project-docs/docs/phases/phase-23/tasks/task-16-done.md
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-23 HEAD 926a086d81860384a85fc6fc8989da6bda1db3d0 is verified by git rev-parse --verify with terminated exit_code: 0 and subject docs(qa): record Phase 23 final re-review and import fixture repair; final-review-1.md, human-checklist-2.md, regenerated human-fixtures.md, and final-evidence-1 are committed; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Phase worktree: /home/mark/projects/fid on branch phase-23; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree paths absent
+- Resolution evidence: PENDING - same-task task-16 continuation must repair the 60-second Claim fixture expiry exposed at internal/export/import_test.go:263 using only the bounded task-16 test/helper/report scope, add deterministic fixture-age regression evidence, preserve expiry enforcement and every recovery assertion, run the focused red/green proof and all six unchanged task-16 commands with observed termination and wall times, update task-16-done.md preserving prior evidence and disclosing MF-3, commit the implementation and report with Refs: phase-23/task-16, and pass Runner report-lint
+- Next action: dispatch one same-task task-16 continuation under final-review-1 MF-3
+- Human attention required: no
+
+### 2026-10-03 07:05 REPAIR task-16
+
+- Trigger signature: review-16:qa-rework:task-16-import-claim-fixture-expiry
+- Attempt count: 1
+- Starting checkpoint: phase-23 HEAD 926a086d81860384a85fc6fc8989da6bda1db3d0 is verified by git rev-parse --verify with terminated exit_code: 0 and subject docs(qa): record Phase 23 final re-review and import fixture repair; final-review-1.md, human-checklist-2.md, regenerated human-fixtures.md, and final-evidence-1 are committed; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Ending checkpoint: phase-23 HEAD 6c94277af798e475a9d068f1e18ca9d0260e5bf8 on branch phase-23; implementation commit f5fdec0167d7ed2d4a7aaac0d6b226f7275df1fa and report commit 6c94277af798e475a9d068f1e18ca9d0260e5bf8 are verified with matching subjects and Refs: phase-23/task-16; the one-hour fixture Claim lease and persisted timestamp regression are committed; the focused red/green proof passed; all six unchanged task-16 commands passed with observed termination; the byte-identical go test -race -timeout 30m ./... rerun passed with observed exit_code: 0; report-lint returned OUTCOME COMPLETE with observed exit_code: 0; only Runner-owned run-ledger.md and triage-log.md are dirty; hidden-index flags none
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Same-task task-16 repaired only internal/export/archive_fixture_test.go, internal/export/import_test.go, and the task-16 report. The fixture Claim now has a one-hour lease while expiry enforcement and import/recovery assertions remain unchanged; a persisted timestamp regression proved the original 60-second failure and the repaired behavior. The original QA full-checkptr failure remains preserved, and the byte-identical later full-checkptr command passed. Implementation commit f5fdec0167d7ed2d4a7aaac0d6b226f7275df1fa and report commit 6c94277af798e475a9d068f1e18ca9d0260e5bf8 resolve MF-3; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures, both with observed exit_code: 0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-10-03 07:06 TASK task-16 COMPLETE
+
+- Report: project-docs/docs/phases/phase-23/tasks/task-16-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: 6c94277af798e475a9d068f1e18ca9d0260e5bf8 - verified, subject matched: docs(task): finalize completion report for phase-23 task-16
+- QA-plan commands beyond the task spec: none required
+
+### 2026-10-03 07:52 REVIEW review-16a
+
+- Path: project-docs/docs/phases/phase-23/qa/final-review-2.md
+- Tasks covered: task-1 through task-21
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-16
+- Must-fix: 0 / Improvement: 2 / blocker candidates: 0; QA minted no ESC

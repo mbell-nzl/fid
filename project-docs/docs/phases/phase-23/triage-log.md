@@ -538,3 +538,32 @@ not a control-conformance directive or a rewrite of either historical verdict.
 - **If BLOCK:** category specification/validation-contract contradiction with possible data-model change, plus pending Human-only product judgment; ESC-23-012 raised in `tl_escalations_current.md`; resolution condition: Tech Lead/protected owner records the authoritative VAL-005/DDL disposition and resulting task route, Human records VAL-070..073 judgments, MF-1 receives its bounded task-1 repair, and a fresh independent QA Lead final review establishes the resulting evidence before phase advance.
 - **Human attention required:** yes
 - **References:** project-docs/docs/phases/phase-23/qa/final-review.md, Verdict, Findings MF-1/MF-2, Blocker Candidates BC-A/BC-B, Repair Plan, Final Decision; project-docs/docs/phases/phase-23/qa/validation-contract.md, VAL-005 and VAL-070..073; project-docs/docs/phases/phase-23/decisions.md, DEC-223 and DEC-238; project-docs/specs/09_AI_WORKFLOW.md sections 2.3, 2.6, and 9.
+
+## TRG-23-017 - Task 20 RequirementRef change blocks unchanged journal replay
+
+- **Trigger:** Phase 23 task-20 cannot satisfy the task's accepted pre-change journal replay requirement after adding the DEC-269 RequirementRef field.
+- **Originating task:** task-20
+- **Trigger signature:** task-20:protected-contract:requirement-ref-journal-replay-compatibility
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-23/tasks/task-20-done.md; existing ESC-23-012
+- **Candidate:** blocker report for protected journal stored-result compatibility
+- **Checkpoint:** Task-20 report records partial, uncommitted changes within its named task scope and no commit-verification evidence. Its pre-change journal from d7f960d94252a7fa07df4aabb0798ce160c94763 retains source digest a8fdbdccfc7fd39e27b80f256811d8b70113a0e30285122a166148455d1ba16e before and after the candidate rebuild.
+- **Verdict:** BLOCK
+- **Reasoning:** DEC-269 Part 3 requires `RequirementRef.requirement_id` in the record-reference result, while the retained `requirement.referenced` Event stores a result without that member. The reported rebuild fails exact stored-result validation at journal line 18 with `journal-replay-stopped` (terminated `exit_code: 6`), so the task's explicit unchanged-replay acceptance criterion cannot be met under the current shape. Choosing a versioned stored-result compatibility rule or amending the accepted contract changes protected journal replay semantics and requires protected authority; this is a product persistence-contract contradiction, not a control-conformance repair. Incomplete task work and unrun gates remain consequences, not the BLOCK category.
+- **Local decisions made:** none; retain task-20 identity, trigger signature, attempt 1, uncommitted task-scope changes, source journal, and failed evidence. Keep ESC-23-012 open as the governing escalation; allocate no replacement ESC.
+- **Resolution evidence:** No resolution or verified commit is attached. The supplied candidate command `/tmp/fid-task20-candidate --project /tmp/fid-task20-prechange.NjCRbu/judgment --json rebuild` returned `journal-replay-stopped` at `.fid/journal/2026-10-01.jsonl` line 18 with terminated `exit_code: 6`; the source journal digest remained unchanged.
+- **If REPAIR:** N/A until protected authority defines the exact versioned stored-result compatibility behavior and file scope, or amends the accepted replay requirement. Then resume task-20 from preserved partial work and evidence under the authorized route, rerun required verification, and obtain affected independent re-review.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** Do not rewrite journal history, relax exact result validation, alter the accepted `RequirementRef` result shape or unchanged-replay criterion, widen task-20 scope, discard uncommitted partial work, or erase failed evidence without protected authority.
+- **Exact verification:** N/A
+- **Originating report:** project-docs/docs/phases/phase-23/tasks/task-20-done.md
+- **Control repair base:** N/A; the Runner supplied no control repair base.
+- **If BLOCK:** category protected persistence contract / specification contradiction; ESC-23-012 referenced as the existing open escalation in `tl_escalations_current.md`, with no duplicate ESC entry. Resolution condition: protected owner decides the precise journal stored-result compatibility/versioning contract and task scope, or amends the accepted requirement; the Runner then resumes task-20 with preserved partial work and failed evidence.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-23/tasks/task-20.md, Binding Constraints and Acceptance Criteria; project-docs/docs/phases/phase-23/tasks/task-20-done.md, Workflow outcome, Summary, and Tests run; project-docs/docs/phases/phase-23/decisions.md, DEC-269 Part 3; project-docs/docs/phases/phase-23/public-interface.md section 2; project-docs/docs/current/tl_escalations_current.md, ESC-23-012; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
