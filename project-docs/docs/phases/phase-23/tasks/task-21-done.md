@@ -54,6 +54,9 @@
 - `go test -tags integration -run '^TestP22Fake(ReviewReworkStopCondition|GenericAdmissionExcludesReviewCycles)$' -count=1 ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.086s` (terminated `exit_code: 0`)
 - `go test -tags integration -run '^TestP22Fake(ReviewReworkStopCondition|GenericAdmissionExcludesReviewCycles)$' -count=1 ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 0.570s` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP22Fake(ReviewReworkStopCondition|GenericAdmissionExcludesReviewCycles)$' ./cmd/fid/integration` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.605s` (terminated `exit_code: 0`)
+- `go test -tags integration -run '^TestP23StopFailureHumanAndJSONParity$' -count=1 ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.270s` (terminated `exit_code: 0`)
+
+Review-15 MF-2 exact retry ran from the repository root. Observed command wall time: 2.560s.
 
 The first two red tests observed `budget-observed` and `budget-exhausted`,
 respectively. The guidance red test observed only task 19's error line.
@@ -87,6 +90,7 @@ Attempt 2 reported `cmd/fid` 215.093s, `internal/workflow` as cached (attempt 1 
 - The first committed report-lint attempt found 12 report-format failures (`FAIL report-lint found 12 failure(s)`, terminated `exit_code: 12`): missing COMPLETE outcome fields and termination annotations with extra semicolon text. The second committed attempt found six (`FAIL report-lint found 6 failure(s)`, terminated `exit_code: 6`) because notes after the annotations also violate its row format. The report-only correction retains the fields and moves wall-time notes into prose.
 - First lint attempt failed with `* staticcheck: 1` (terminated `exit_code: 1`) because the new Condition branch used an if/else chain flagged by QF1003. Changed only that branch to a tagged switch; the byte-identical retry returned `0 issues.` (terminated `exit_code: 0`). The failed attempt remains part of this report.
 - The first guidance implementation used an invalid pointer dereference on `cli.Subject.ID`; its focused tagged command ended `FAIL` (terminated `exit_code: 1`). Repaired the string rendering and retained the original red guidance evidence.
+- Review-15 MF-2: the original `go test -tags integration -run '^TestP23StopFailureHumanAndJSONParity$' -count=1 ./cmd/fid/integration` failure was the expected red guidance check: `FAIL` (terminated `exit_code: 1`) because the Human denial still had only task 19's error line. The guidance implementation was repaired, but the report recorded only broader passing selections. This report-only QA repair reran the original command byte-for-byte from the repository root; the later `PASS` row above records its output, observed `exit_code: 0`, and 2.560s wall time. The original failed row remains above.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
