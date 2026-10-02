@@ -9,7 +9,7 @@ claude:
 codex:
   name: qa_lead
   description: Creates phase QA plans, runs phase-end quality review, and generates human verification checklists. Does not write product code.
-  model: gpt-6-astra
+  model: gpt-6.1-sol
   model_reasoning_effort: xhigh
 ---
 <!-- body: shared -->
