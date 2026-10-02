@@ -78,7 +78,7 @@ func addJournalBackedExportFixtureFacts(t *testing.T, workspace string) string {
 	if _, err := workflow.ActivateEnvelope(workflow.EnvelopeOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-envelope-activate"}, workflow.EnvelopeActivateRequest{EnvelopeID: created.Envelope.ID, ExpectedRevision: 1}); err != nil {
 		t.Fatalf("activate fixture envelope: %v", err)
 	}
-	claim, err := claims.AcquireGeneric(claims.MutationOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-claim"}, claims.AcquireRequest{IssueID: issue.ID, EnvelopeID: created.Envelope.ID, EnvelopeRevision: 1, WorktreeID: repository.WorktreeID, Scope: claims.Scope{Paths: []string{"fixture-artifact.txt"}}, TTLSeconds: 60})
+	claim, err := claims.AcquireGeneric(claims.MutationOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-claim"}, claims.AcquireRequest{IssueID: issue.ID, EnvelopeID: created.Envelope.ID, EnvelopeRevision: 1, WorktreeID: repository.WorktreeID, Scope: claims.Scope{Paths: []string{"fixture-artifact.txt"}}, TTLSeconds: 3600})
 	if err != nil {
 		t.Fatalf("acquire fixture claim: %v", err)
 	}

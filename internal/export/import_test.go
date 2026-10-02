@@ -191,6 +191,27 @@ func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
 	if err != nil || len(sourceRuns) != 1 {
 		t.Fatalf("source active Run = %#v, %v", sourceRuns, err)
 	}
+	sourceDB, err := fiddb.Open(filepath.Join(source, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open source projection: %v", err)
+	}
+	var acquiredAt, expiresAt string
+	if err := sourceDB.QueryRow(`SELECT acquired_at, expires_at FROM claims WHERE id = ?`, sourceRuns[0].ClaimID).Scan(&acquiredAt, &expiresAt); err != nil {
+		_ = sourceDB.Close()
+		t.Fatalf("read source Claim lease: %v", err)
+	}
+	_ = sourceDB.Close()
+	acquired, err := time.Parse(time.RFC3339Nano, acquiredAt)
+	if err != nil {
+		t.Fatalf("parse source Claim acquisition: %v", err)
+	}
+	expires, err := time.Parse(time.RFC3339Nano, expiresAt)
+	if err != nil {
+		t.Fatalf("parse source Claim expiry: %v", err)
+	}
+	if lease := expires.Sub(acquired); lease < time.Hour {
+		t.Fatalf("source Claim lease = %s, want at least 1h for import recovery under the 30m test timeout", lease)
+	}
 	sourceRequest := workflow.RunObserveRequest{RunID: sourceRuns[0].ID, ExpectedVersion: sourceRuns[0].Version, Liveness: workflow.Liveness{ExecutorID: sourceRuns[0].Executor.ID, State: "terminated", SourceRef: "source:historical", ObservedAt: time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)}}
 	if _, err := workflow.ObserveRun(workflow.RunOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), ActorID: "actor-harness", IdempotencyKey: "source-imported-observation"}, sourceRequest); err != nil {
 		t.Fatalf("observe source Run: %v", err)

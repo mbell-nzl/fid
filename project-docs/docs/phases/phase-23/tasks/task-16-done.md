@@ -15,17 +15,21 @@
 - A built-binary integration journey exports, validates, rebuilds, and imports four populated Phase 23 workspaces. It compares every application table row and every canonical archive entry between live, rebuilt, and imported state, and verifies the schema-18 projection integrity. The four workspaces collectively populate every table named below and emit all nine Phase 23 Event types.
 - The journey verifies non-mutating validation, exact schema-18 import and schema-17 rejection, one `review-cycles` sample keyed to its Review ID, and rejection with no projection change for three corrupt payloads per Phase 23 Event type plus an unknown type.
 - Review-13 MF-1 repair: each of those 28 corrupt Event probes now clones the same clean `.fid` workspace into its own temporary directory, opens a separate projection connection, verifies its complete starting projection against the source, and checks the complete projection again after current-Event rejection. A named test runs all 28 probes independently and logs each workspace, validator error, and before/after projection digest.
+- Final-review-1 MF-3 repair: the shared archive fixture now acquires its source Claim for one hour, long enough for the retained import/recovery journey under its unchanged 30-minute test timeout. `TestImportRequiresFreshDestinationObservationBeforeRecovery` reads the persisted acquisition and expiry timestamps and asserts that lease length before exercising its historical rejection, destination observation, release, recovery, successor Gate, and import-retry checks. Claim expiry rules and Event content are unchanged.
+- MF-3 provenance: `qa/final-review-1.md` traces the retained import recovery test to phase-22/task-14 commit `cc73b092bf5ecd3fdba62a1362062a6d543697ab` and the 60-second archive fixture lease to phase-22/task-13 commit `1be8e882ef689f15705507c448e3b087e23d5f65`. The accepted task-16 import scope owns this bounded repair, as recorded in the final-review finding and the latest `TASK-RECOVERY task-16` ledger entry.
 - The original implementation commit was `d02614e6c26757076a91d8a12e08dfa328fe699d` (`fix(export): validate portable Phase 23 review recovery`); this repair preserves that implementation and its prior report evidence.
 
 ## Files created or modified
 
 - `internal/export/archive_semantics_values.go`: accept `review_findings.blocking` as a JSON boolean in the archive semantic replay.
 - `cmd/fid/integration/p23_portable_recovery_test.go`: portable parity, corruption, schema, and charge journey; review-13 MF-1 isolation repair and named corruption test.
+- `internal/export/archive_fixture_test.go`: one-hour source Claim lease for archive fixture consumers.
+- `internal/export/import_test.go`: persisted lease-length regression assertion in the retained import/recovery journey.
 - `project-docs/docs/phases/phase-23/tasks/task-16-done.md`: this report.
 
 ## Documentation updated
 
-- This report records the Phase 23 table and Event inventory, validation evidence, exact command results, and provenance. No governing contract or Runner-owned ledger was edited.
+- This report records the Phase 23 table and Event inventory, validation evidence, exact command results, and provenance. It also preserves the final-review-1 MF-3 full-checkptr failure and the focused red/green and gate reruns. No governing contract or Runner-owned ledger was edited.
 
 ## Validation Contract Coverage
 
@@ -35,6 +39,8 @@
 - VAL-065: PASS - the current archive imports and reports `projection_schema:18` (`p23_portable_recovery_test.go:219`); `p23PortableAssertPriorSchemaRejected` changes only the manifest projection schema to 17, then checks `archive-invalid` with `schema-unsupported` and absence of a published `.fid` (`:173`). The current manifest remains `fid.export-manifest.v2`.
 - VAL-076: PASS after review-13 MF-1 repair - the original `p23PortableAssertCorruptEventsRejected` (`p23_portable_recovery_test.go:104` in the original task commit) used real exported Events for all nine named types, with unknown Effect table, missing required Effect, and malformed scalar body cases, plus one unknown type. It asserted current-Event rejection and complete projection equality, but reused one workspace and connection, so its isolation evidence was insufficient. The repaired helper (`p23_portable_recovery_test.go:129`) clones a clean workspace and opens a new connection in each subtest (`:147-158`), verifies each clone equals the source before injection (`:159-162`), retains the validator assertion (`:187-190`), and compares every table after rejection (`:191-198`). `TestPortableAssertCorruptEventsRejected` (`:88`) supplied 28 passing subtests with distinct workspace paths and per-probe validator output and digest pairs; the 28-case record below names each case. The complete 59-table snapshot SHA-256 was `6a279ff389b35e1d3689116706d3d24677bf9a2fe76942f69a8505277cb853f9` both before and after **each** probe in the verbose run.
 - VAL-079: PASS - original ordinary `cmd/fid` took `246.504s` and `internal/workflow` took `100.101s` (each under 600s); tagged `cmd/fid/integration` took `269.692s` (under 900s). The review-13 repair gate reported uncached `cmd/fid` `196.206s`, uncached `internal/workflow` `57.597s` (the ordinary gate's workflow result was cached), and tagged `cmd/fid/integration` `232.525s`. All original and repair measurements are below 80% of their respective budgets; neither gate timed out.
+
+Final-review-1 MF-3 has **no VAL** of its own: it repairs the mandatory QA plan §22 full-checkptr control. The current unchanged task gates still execute the VAL-004/027/064/065/076 evidence above. This attempt's ordinary gate reported `cmd/fid` `215.384s` and `internal/workflow` `(cached)`; the earlier uncached workflow measurement remains `57.597s`. Tagged integration reported `281.806s`. These are below the 600s ordinary and 900s tagged budgets; none reaches 80% headroom warning. The separate full-checkptr control reported `cmd/fid` `356.407s` and `internal/export` `163.526s` and is not subject to VAL-079's budget.
 
 The table provenance is the accepted Phase 23 task that introduced or changed the projected row, as recorded in `contract-coverage.md`. Each row below is executed by `TestPortableRoundTripCoversEveryPhase23Table` under `go test -tags integration -run '^TestPortableRoundTripCoversEveryPhase23Table$' -count=1 -v ./cmd/fid/integration/` (PASS, `exit_code: 0`) and the mandatory tagged race gate. The named subcase supplies non-empty rows; `p23PortableRoundTrip` compares the entire row set across all three projections, and compares the complete archive.
 
@@ -97,6 +103,16 @@ Review-13 MF-1 repair tests, working directory `/home/mark/projects/fid`:
 - Report-lint expectation after the finalized report commit: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-23/tasks/task-16-done.md project-docs/docs/phases/phase-23/tasks/task-16.md` must terminate with `OUTCOME COMPLETE`. The post-commit observed result is returned to the Phase Runner.
 - Report-lint attempt 1 on finalized report commit `e25fa2d`: the same command - FAIL - `FAIL report-lint found 2 failure(s)` (terminated `exit_code: 2`). Two new gate result lines had explanatory prose after their termination fields. The entries below now end at the observed termination, with those notes on separate lines; the original failed control evidence is retained here.
 
+Final-review-1 MF-3 and this bounded repair (working directory `/home/mark/projects/fid`):
+
+- QA attempt 1, mandatory `go test -race -timeout 30m ./...` - FAIL - `FAIL` (terminated `exit_code: 1`). The failing package reported `--- FAIL: TestImportRequiresFreshDestinationObservationBeforeRecovery (109.65s)` and `import_test.go:263: release imported Claim: claim expired`; see `qa/final-review-1.md` MF-3 and its linked `final-evidence-1/full-checkptr.json`. This is QA's observed failed attempt, retained here.
+- Focused red after adding the persisted lease assertion: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestImportRequiresFreshDestinationObservationBeforeRecovery$' ./internal/export/` - FAIL - `FAIL` (terminated `exit_code: 1`). The test reported `source Claim lease = 1m0s, want at least 1h for import recovery under the 30m test timeout`; package result `FAIL github.com/mbell-nzl/fid/internal/export 4.417s`.
+- Focused green after extending the fixture lease: the same command - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	11.465s` (terminated `exit_code: 0`). The complete test retains its negative historical-observation and Gate checks and its positive destination release, recovery, successor Gate, and idempotent retry checks.
+- Pre-gate touched package: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/export/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	77.432s` (terminated `exit_code: 0`)
+- Later byte-identical full-checkptr control: `go test -race -timeout 30m ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)` (terminated `exit_code: 0`)
+
+The pre-gate touched package wall time was `83.364s`; the full-checkptr control wall time was `374.439s`. Full-checkptr also reported `internal/export 163.526s` and `cmd/fid 356.407s`.
+
 ## Exact quality-gate results
 
 Working directory for all six commands: `/home/mark/projects/fid`. The six original task-spec commands below ran in order on the original task implementation tree. Their evidence is retained unchanged.
@@ -121,9 +137,24 @@ Review-13 MF-1 repair gate: the same six commands ran byte-identically, in the t
 
 The repair gate reported `cmd/fid` `196.206s` uncached; the benchmark row was `22542 ms/rebuild`.
 
+Final-review-1 MF-3 repair gate: all six unchanged task-spec commands ran in order from `/home/mark/projects/fid` after the focused proof. Wall time is measured from invocation through observed termination.
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.7% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					60.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	281.806s` (terminated `exit_code: 0`)
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	27.845s` (terminated `exit_code: 0`)
+
+Observed wall times in the same command order: `0.219s`, `4.425s`, `232.800s`, `0.277s`, `299.608s`, and `29.133s`.
+
+The ordinary gate's uncached `cmd/fid` package took `215.384s`, and the benchmark reported `24311 ms/rebuild`. The full-checkptr control result is in `## Tests run` above.
+
 ## Deviations from spec
 
 - None. The initial focused failure was the missing archive boolean allowance; adding `review_findings.blocking` to the accepted semantic boolean columns produced the passing focused and full gates. The two intermediate focused failures were new test-fixture defects and were repaired in the same test file. All failed attempts above remain recorded; the exact same focused command later passed. Review-13 MF-1 identified that the original corruption assertion reused one projection: the new named test failed with the copied terminal token `FAIL` (terminated `exit_code: 1`) because 27 cases reused the connection. Cloning the clean workspace and opening a new connection inside each case repaired that cause; the byte-identical command later returned `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.156s` (terminated `exit_code: 0`). The first report-lint attempt failed with `FAIL report-lint found 2 failure(s)` (terminated `exit_code: 2`) because two PASS lines had trailing prose; moving those notes after the six-command list lets the unchanged control parse each observed termination. No accepted contract, command, threshold, or product behavior changed.
+
+- Final-review-1 MF-3 caused a required-command deviation: QA's first byte-identical `go test -race -timeout 30m ./...` ended `FAIL` (terminated `exit_code: 1`) at `release imported Claim: claim expired`. The retained source fixture acquired a Claim for only 60 seconds, while the import/recovery journey performs export, import, and several rejection checks before release. The new persisted-timestamp assertion deterministically failed with a `1m0s` lease and `FAIL` (terminated `exit_code: 1`). Extending only that fixture lease to one hour made the same focused command pass with `ok  	github.com/mbell-nzl/fid/internal/export	11.465s` (terminated `exit_code: 0`) and the byte-identical full-checkptr command pass with `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)` (terminated `exit_code: 0`). Claim expiry enforcement, negative and positive recovery assertions, Event identity, gate definitions, and budgets remain intact.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -135,8 +166,8 @@ The repair gate reported `cmd/fid` `196.206s` uncached; the benchmark row was `2
 
 ## Commit hash
 
-- `4261575c3c84de1acf0089d70cf50fbe310a16c8`
+- Pending commit
 
 ## Commit subject
 
-- `test(integration): isolate Phase 23 corrupt Event probes`
+- Pending commit
