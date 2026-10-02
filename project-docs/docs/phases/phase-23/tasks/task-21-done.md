@@ -97,8 +97,8 @@ Attempt 2 reported `cmd/fid` 215.093s, `internal/workflow` as cached (attempt 1 
 
 ## Commit hash
 
-- Pending commit
+- `343b458fc4c1b7a726ae9218315edf319c5e40ba`
 
 ## Commit subject
 
-- Pending commit
+- `test(review): align semantic fake with rework exhaustion`
