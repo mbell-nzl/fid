@@ -92,8 +92,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `0ba005d7c511d7f5acd1517d1c39dd6e58d3e3e0`
 
 ## Commit subject
 
-- Pending commit
+- `feat(requirement): expose stable identity and distinct Human views`
