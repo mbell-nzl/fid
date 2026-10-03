@@ -1,9 +1,10 @@
 # Phase 24 Public Interface Amendment
 
 > **Status: DRAFT for Human review (planning, 2026-10-03).** Authority:
-> DEC-272. Items marked **[D1]**..**[D4]** await the Human decision named in
+> DEC-272. Items marked **[D2]**..**[D4]** await the Human decision named in
 > section 13. Everything else is Tech Lead contract detail under DEC-272 and
 > becomes binding when the Human approves this file with the task list.
+> D1 is decided (DEC-273).
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -77,10 +78,10 @@ gain help, an `--example` template and field-named validation (section 8).
 | `envelope.create` | `repository_scope`; `repository` in `risk_result.source`, `sources[]`, `obligations[].source` | Source `digest` optional per section 3 | `repository_scope` = observation; Sources per section 3; existing registration/worktree checks compare observed values |
 | `envelope.complete` | `repository` (already discarded and replaced by observation today) | none | unchanged: completion already evaluates against the observation |
 | `claim.acquire` | `worktree_id` | none | Claim `worktree_id` = observed worktree; it must equal the Envelope scope's worktree (today's rule, now checked against reality) |
-| `run.start` | `repository` | `expected_repository` required | `start_repository` = observation; Envelope comparison per **[D1]** |
+| `run.start` | `repository` | `expected_repository` required | `start_repository` = observation; Envelope comparison per section 5 (DEC-273) |
 | `run.close` | `repository` | `expected_repository` required | `terminal_repository` = observation; obligations evaluated against it |
 | `run.abandon` | `repository` | `expected_repository` required | `terminal_repository` = observation |
-| `gate.run` | `repository` | `expected_repository` required | One observation before spawn is recorded as Attempt `start_repository`, Receipt `terminal_repository` and Event `repository` (today all three are the caller's block). Run comparison per **[D1]** |
+| `gate.run` | `repository` | `expected_repository` required | One observation before spawn is recorded as Attempt `start_repository`, Receipt `terminal_repository` and Event `repository` (today all three are the caller's block). Run comparison per section 5 (DEC-273) |
 | `evidence.link` | `target_repository` | none | `target_repository` = the subject's recorded repository (Receipt terminal, Review repository, or the Human Outcome Event's observation) |
 | `evidence.evaluate` | `target_repository` | none | freshness is evaluated against the current observation, as terminal transition and completion already are |
 | `review.record` | `repository`; `repository` in coverage items, exclusions and `evidence_refs` | `expected_repository` required; Source digests optional | `repository` = observation (today the caller's block must equal it exactly) |
@@ -95,22 +96,20 @@ The Event `repository` of every Event above is a fid observation or a stored
 fid-observed value, never caller input. Claim and Finding Events keep the
 Envelope scope, which is now itself observed.
 
-## 5. Comparisons That Change Meaning [D1]
+## 5. Comparisons That Change Meaning (D1, DEC-273)
 
 Today `run.start` requires the caller's block to equal the Envelope's stored
 `repository_scope` byte for byte. `gate.run` requires it to equal the Run's
 `start_repository`. Neither is ever compared with the real worktree.
 
-**Proposed (D1 option A).** Each comparison becomes *same project and same
-worktree*. The caller's `expected_repository` is checked against the real
-worktree instead. A Run or gate run may therefore start after edits or
+**Decided (DEC-273, option A).** Each comparison becomes *same project and
+same worktree*. The caller's `expected_repository` is checked against the
+real worktree instead. A Run or gate run may therefore start after edits or
 commits made since the Envelope or Run began. Freshness (PRD-EVID-003)
-already stales proof whose recorded tree differs from the current one.
-
-**Option B.** The real worktree must equal the Envelope snapshot (for
-`run.start`) or the Run snapshot (for `gate.run`). Any edit or commit since
-then refuses new Runs and gate runs until an Envelope revision, which is
-Phase 25 scope.
+stales proof whose recorded tree differs from the current one. The rejected
+option B (the real worktree must equal the snapshot) would have refused
+every rework Run until an Envelope revision (Phase 25), and blocked a
+Builder from testing their own edits within a Run.
 
 ## 6. Failure Codes
 
@@ -306,7 +305,7 @@ are not weakened:
 
 | ID | Question | Tech Lead recommendation |
 |---|---|---|
-| D1 | Does `run.start` / `gate.run` require the real worktree to equal the Envelope/Run snapshot, or only the same project and worktree? | A: same project and worktree, plus the caller's expectation |
+| D1 | Does `run.start` / `gate.run` require the real worktree to equal the Envelope/Run snapshot, or only the same project and worktree? | **Decided A (DEC-273)**: same project and worktree, plus the caller's expectation |
 | D2 | Where do Humans read full recorded reasoning for Concerns, Deviations and Human Outcomes? | A: add `concern get`, `deviation get`, `human-outcome get` |
 | D3 | Naming the differing field needs per-field digests stored in the journal and migration 0019. Accept the cost? | Accept |
 | D4 | `--example` rules in section 8 (static typed placeholders, required fields only, refuses `--json`) | Accept |
