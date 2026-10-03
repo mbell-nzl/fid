@@ -78,7 +78,7 @@ fence, and task 9 removes the empty fence (the DEC-192 pattern).
 | R11 | Human views printing repository identity | `rg -n -i "worktree\|dirty digest\|HeadOID\|head_oid" cmd/fid -g '!*_test.go'` | `run_inspect_human.go`, `resume_human.go`, `p23_human.go`, `review.go` | 11 |
 | R12 | Stop/Attention Human renderers | `cmd/fid/stop_human.go`, `resume_human.go`, `resume_human_guidance.go` | 3 files | 11 |
 | R13 | Judgment Human renderers, disclaimers, leak guard | `rg -n "p23CheckJudgmentQualifiers\|PRIVATE_" cmd` | `p23_human.go`; `integration/p23_human_leaf_pairs_test.go:123`, `p23_human_fixtures_test.go:143` | 13 |
-| R14 | Live leaf inventory test | `rg -n "func TestLiveLeafCommandsMatchContractInventories" cmd/fid` | `contract_surface_test.go:128` | 12 (if D2 = A) |
+| R14 | Live leaf inventory test | `rg -n "func TestLiveLeafCommandsMatchContractInventories" cmd/fid` | `contract_surface_test.go:128` | 12 (DEC-274) |
 | R15 | Cobra Short descriptions | the section 1 walk with `head -1` per leaf | 9 read + 12 `--input` leaves start with `Usage:` | 3 |
 
 ## 3. Fixture And Test Convergence

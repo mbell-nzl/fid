@@ -1,10 +1,10 @@
 # Phase 24 Public Interface Amendment
 
 > **Status: DRAFT for Human review (planning, 2026-10-03).** Authority:
-> DEC-272. Items marked **[D2]**..**[D4]** await the Human decision named in
+> DEC-272. Items marked **[D3]**..**[D4]** await the Human decision named in
 > section 13. Everything else is Tech Lead contract detail under DEC-272 and
 > becomes binding when the Human approves this file with the task list.
-> D1 is decided (DEC-273).
+> D1 and D2 are decided (DEC-273, DEC-274).
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -220,7 +220,7 @@ next: <resolving action>                 # only for the codes in the next-table 
 | `human-outcome-required` | `an activated Human records a <outcome_class> Human Outcome, then link it: fid human-outcome record, fid evidence link (templates: --example)` |
 | `obligation-unsatisfied` | `see per-Obligation reasons: fid evidence evaluate --input <file> (template: fid evidence evaluate --example)` |
 
-## 10. Human Views (Part 3 A4, A6, A7) [D2]
+## 10. Human Views (Part 3 A4, A6, A7; DEC-274)
 
 - **A4 Stops and Attention.** `stop list`, `attention list` and `resume`
   render each Stop as labelled lines and never print raw JSON: subject, code,
@@ -264,15 +264,18 @@ next: <resolving action>                 # only for the codes in the next-table 
   - The `PRIVATE_` leak checks are replaced by a guard that seeds referenced
     files with sentinel content and proves no Human view prints it.
   - GLOSSARY distinguishes project-owned prose from recorded reasoning.
-- **[D2] Detail views.** Concerns, Deviations and Human Outcomes have no
-  detail view today; only list leaves exist.
-  - **Proposed (option A):** add read leaves `concern.get` /
-    `fid concern get <id>`, `deviation.get` and `human-outcome.get`, with
-    results `{concern:Concern}`, `{deviation:Deviation}` and
-    `{outcome:HumanOutcome}`. Not-found uses the existing
-    `concern-not-found`, `deviation-not-found` and `outcome-not-found`, which
-    gain these producers.
-  - Mutation outputs and `review get` are also detail views.
+- **Detail views (D2, DEC-274).** New read leaves `concern.get` /
+  `fid concern get <concern-id>`, `deviation.get` /
+  `fid deviation get <deviation-id>` and `human-outcome.get` /
+  `fid human-outcome get <outcome-id>`.
+  - Results: `{concern:Concern}`, `{deviation:Deviation}`,
+    `{outcome:HumanOutcome}`.
+  - Grammar: one positional ID and no flags beyond the globals; `event:null`.
+  - Not-found: the existing `concern-not-found`, `deviation-not-found` and
+    `outcome-not-found`, each with subject ID = the requested ID and
+    `{id:ID}`.
+  - Their Human views show recorded reasoning in full. Mutation outputs and
+    `review get` are also detail views; every list is a list view.
 
 ## 11. Restated Assertions (handoff item d)
 
@@ -306,6 +309,6 @@ are not weakened:
 | ID | Question | Tech Lead recommendation |
 |---|---|---|
 | D1 | Does `run.start` / `gate.run` require the real worktree to equal the Envelope/Run snapshot, or only the same project and worktree? | **Decided A (DEC-273)**: same project and worktree, plus the caller's expectation |
-| D2 | Where do Humans read full recorded reasoning for Concerns, Deviations and Human Outcomes? | A: add `concern get`, `deviation get`, `human-outcome get` |
+| D2 | Where do Humans read full recorded reasoning for Concerns, Deviations and Human Outcomes? | **Decided A (DEC-274)**: add `concern get`, `deviation get`, `human-outcome get` |
 | D3 | Naming the differing field needs per-field digests stored in the journal and migration 0019. Accept the cost? | Accept |
 | D4 | `--example` rules in section 8 (static typed placeholders, required fields only, refuses `--json`) | Accept |

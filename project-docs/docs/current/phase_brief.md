@@ -12,16 +12,16 @@ expectations a check uses. Request digests cover the input as written.
 ## Status
 
 **Planning.** Branch `phase-24` (from `main` after PR #25). The contract draft
-and executable inventory are written. They await Human decisions D1-D4
-(`../phases/phase-24/public-interface.md` section 13), then approval of the
-mode and task list. The validation contract, task specs and QA plan follow
+and executable inventory are written. D1 and D2 are decided (DEC-273/274).
+D3 and D4 await the Human (`../phases/phase-24/public-interface.md` section
+13), then approval of the mode and task list. The validation contract, task specs and QA plan follow
 approval. Nothing is dispatched until then.
 
 ## Operating Mode
 
 **Heavy (proposed).** Entry criteria: a public-interface change (17 inputs
-reshaped, `--example`, Human failure lines, possibly 3 new read leaves) and a
-persistence change (migration 0019). The full artifact set applies. Mode B
+reshaped, `--example`, Human failure lines, three new read leaves under
+DEC-274) and a persistence change (migration 0019). The full artifact set applies. Mode B
 held-out runs are `N/A` as in Phases 21-23 (no harness recorded); the
 "Human takes control" checklist scenario is the Human run.
 
@@ -35,12 +35,12 @@ held-out runs are `N/A` as in Phases 21-23 (no harness recorded); the
 | 4 | Observation and SourceInput foundation; judgment reference leaves | Proposed | 2, 3 |
 | 5 | Review leaves; `repository-mismatch` details | Proposed | 4 |
 | 6 | Gate registration, Envelope and Claim leaves | Proposed | 4 |
-| 7 | Run leaves (D1) | Proposed | 5, 6 |
-| 8 | Gate run and Evidence leaves; real freshness (D1) | Proposed | 7 |
+| 7 | Run leaves (DEC-273) | Proposed | 5, 6 |
+| 8 | Gate run and Evidence leaves; real freshness (DEC-273) | Proposed | 7 |
 | 9 | Activation descriptors; remove pending fence; whole-tree help conformance | Proposed | 3-8 |
 | 10 | Human failure lines in every family (A5) | Proposed | 9 |
 | 11 | Readable Stop, Attention and repository lines (A4) | Proposed | 10 |
-| 12 | Judgment detail read leaves (D2) | Proposed | 4 |
+| 12 | Concern, Deviation and Human Outcome `get` leaves (DEC-274) | Proposed | 4 |
 | 13 | Disclaimers once per section; recorded reasoning (A6/A7) | Proposed | 11, 12 |
 | 14 | "Human takes control" real-process journey; phase conformance | Proposed | 1-13 |
 

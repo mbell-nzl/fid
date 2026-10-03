@@ -33,6 +33,25 @@
 - **Refs:** DEC-272; `public-interface.md` sections 4, 5 and 13;
   PRD-RUN-005; PRD-GATE-003; PRD-EVID-003.
 
+### DEC-274: Add detail read leaves for Concerns, Deviations and Human Outcomes (D2 = A)
+
+- **Date:** 2026-10-04. ACCEPTED by the Human ("A").
+- **Context:** DEC-272 A7 shows recorded reasoning cut to one line in lists
+  and in full in detail views. Concerns, Deviations and Human Outcomes have
+  only `list` leaves, so their full reasoning was readable only through
+  `--json` or the recording command's own output. Findings are already
+  covered by `review get`.
+- **Decision:** add read leaves `concern.get` / `fid concern get <id>`,
+  `deviation.get` and `human-outcome.get`, returning `{concern:Concern}`,
+  `{deviation:Deviation}` and `{outcome:HumanOutcome}`. Their Human views
+  show recorded reasoning in full. Not-found reuses `concern-not-found`,
+  `deviation-not-found` and `outcome-not-found`, which gain these producers.
+  Option B (`--full` on lists) and option C (JSON only) were rejected.
+- **Consequences:** three new public read leaves (task 12). The live leaf
+  inventory test (R14), the Phase 23 section 5.1 producer table and the
+  Human fixtures gain rows. Capability rows are unchanged.
+- **Refs:** DEC-272 A7; `public-interface.md` sections 10 and 13.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.
