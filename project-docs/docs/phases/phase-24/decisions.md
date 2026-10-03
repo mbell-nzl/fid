@@ -88,6 +88,34 @@
   caller, never rubber-stamped from fid's observation.
 - **Refs:** DEC-272 Part 2; `public-interface.md` section 8.
 
+### DEC-277: Phase 24 plan approved (contract, Heavy mode, 14 tasks)
+
+- **Date:** 2026-10-04. ACCEPTED by the Human ("Approved").
+- **Decision:** the following are approved, with D1-D4 as DEC-273..276:
+  - the contract amendment `public-interface.md`, including the Tech Lead
+    details the Human was shown: Source digests checked wherever supplied,
+    `repository-unavailable`, run close/abandon expectation mismatch as
+    `repository-mismatch`, and field-path `invalid-argument`;
+  - Heavy mode;
+  - the 14-task order in the phase brief.
+
+  The Tech Lead added the *same worktree* rule (contract section 5) when
+  drafting assertions. It preserves Phase 22 import semantics and generalizes
+  the existing `importedGateDestination` and `importedDestinationBinding`
+  rule. It adds no new behaviour.
+- **Spec edits under this decision:** `01_PRD.md` gains PRD-OPS-011..014 and
+  PRD-PROJ-006/007, which give the validation contract durable sources. The
+  roadmap section 10 records the plan.
+- **Validation contract:** 57 assertions (52 deterministic, 5 Human), all
+  `Draft` until the QA Lead's QA-plan pass. VAL-044/047/056 restate Phase 23
+  VAL-060/073.
+- **QA cadence (proposed to the QA Lead):**
+  - windows after tasks 3, 8, 11 and 14;
+  - a Human walk-through of the new failure and Stop output at the
+    task-11 window (Phase 23 workflow notes);
+  - Mode B held-out runs `N/A` (no harness recorded), as in Phases 21-23.
+- **Refs:** DEC-272..276; `qa/validation-contract.md`; `input-inventory.md`.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.

@@ -1,13 +1,13 @@
 # Phase 24 Executable Inventory
 
-> **Status: DRAFT with the planning contract** (`public-interface.md`).
+> **Status: ACCEPTED with the contract (DEC-277).**
 > Measured at `4b86710` (branch `phase-24`). Phase 23's five planning BLOCKs
 > came from registries missed during planning. This file therefore lists
 > every closed registry and fixture family the phase reaches, each with the
 > command that regenerates it. Before task close, a Developer reruns the
 > command for each registry the task owns and records the result. QA reruns
-> them all at every review window. Task numbers are the proposed task pack
-> (see the phase brief).
+> them all at every review window. Task numbers refer to the approved
+> task pack (`tasks/`).
 
 ## 1. `--input` Leaves (39)
 

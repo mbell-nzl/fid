@@ -147,6 +147,8 @@ of Review/Human Obligations in later phases.
 | PRD-PROJ-003 | P0 | Context projections shall be bounded to the requested subject, Actor needs, and optional changed-since cursor without copying workflow protocol prose. |
 | PRD-PROJ-004 | P0 | The Human Validation Brief shall present delivered outcomes, material Decisions, evidence roll-up, Deviations, unresolved risk, economics, and remaining Human-only checks without a full transcript. |
 | PRD-PROJ-005 | P0 | Purpose-built Human Markdown or HTML shall be derived from the same projection schema as JSON and shall not define a second contract. |
+| PRD-PROJ-006 | P0 | Human views shall render Stop, Attention and repository state as labelled text naming the qualifying resolution and its command, never as raw JSON or opaque internal identifiers (DEC-272). |
+| PRD-PROJ-007 | P0 | Human views shall show recorded reasoning (summarized in lists and in full in detail views) and shall never reproduce the content of a referenced project file (DEC-272, DEC-274). |
 | PRD-REC-001 | P0 | Portable export shall be versioned, backend-neutral, integrity-protected, and sufficient to reconstruct retained operational state and current projections. |
 | PRD-REC-002 | P0 | Export validation shall support a non-mutating validation-only mode. |
 | PRD-REC-003 | P0 | Import shall preserve stable identities and history unless an explicit versioned migration maps them. |
@@ -169,6 +171,10 @@ of Review/Human Obligations in later phases.
 | PRD-OPS-008 | P0 | Errors shall be typed and machine-readable in JSON, include no partial success ambiguity, and use non-zero process status for failed operations. |
 | PRD-OPS-009 | P0 | The production port shall never read fid SQLite tables, journal files, or `.fid/` internals directly. |
 | PRD-OPS-010 | P0 | The in-memory backend fake shall be test-only and shall never be selected as a production fallback. |
+| PRD-OPS-011 | P0 | fid shall observe repository identity itself. A mutation input shall carry only expectations that a check uses (expected HEAD and uncommitted-change state, and an optional expected project-file digest). fid shall record its own observation (DEC-272). |
+| PRD-OPS-012 | P0 | An idempotency request digest shall cover the caller's input as written and never fid-observed values. An idempotency conflict shall name each differing input (DEC-272, DEC-275). |
+| PRD-OPS-013 | P0 | A Human shall be able to author any mutation input from fid's own output: help shall document every input field, a template command shall print an editable input, and a malformed input shall name the offending field (DEC-272, DEC-276). |
+| PRD-OPS-014 | P0 | Human failure output shall state the JSON failure message, the failure reason, any blocking Stop and Attention, and the next legitimate action where one exists (DEC-272). |
 
 ## 11. First Supported Baseline
 
@@ -182,4 +188,4 @@ The first supported baseline exists only when:
 - the migration and journal baseline has been consolidated; and
 - a disposable project rehearsal completes before live dogfood.
 
-*Last updated: 2026-08-22 (Phase 21 DEC-156 qualification)*
+*Last updated: 2026-10-04 (Phase 24 planning: PRD-OPS-011..014 and PRD-PROJ-006/007 under DEC-272..276)*

@@ -1,28 +1,26 @@
 # Progress — Current
 
-Updated 2026-10-03. **No phase is active. Phase 23 "Review and Human
-judgment" is complete (DEC-271) and merged as PR #25 (`a46ec77`).** A
-post-wrap CI checkout repair (`d15893d`, report `ca0c831`) made the
-migration-baseline test reproducible in hosted CI before the merge.
+Updated 2026-10-04. **Phase 24 "Operating experience and input
+convergence" is planned and approved (DEC-277).** Heavy mode, 14 tasks, 57
+validation assertions (`Draft` until the QA plan). The Human decided D1-D4
+(DEC-273..276). The QA Lead writes the QA plan next. Phase 23 is complete
+(DEC-271) and merged as PR #25 (`a46ec77`).
 
-- 21 tasks (18 planned plus supplemental 19-21) and 89/89 validation
-  assertions. Final review 2 (review-16a) PASS with no Must-fix; Human
-  checklist 2 7/7 PASS after checklist 1 failed.
-- VAL-071 and VAL-073 pass by Tech Lead disposition; their residual Human
-  notes go to CF-045. The Human may reverse either disposition.
-- `reviews.coverage.v1` and `human.outcomes.v1` are qualified.
-- Evidence: [final acceptance](../phases/phase-23/qa/final-acceptance.md),
-  [wrap audit](../phases/phase-23/wrap-up-audit.md),
-  [phase history](../phases/phase-23/progress.md),
-  [decisions](../phases/phase-23/decisions.md) (DEC-222..271 and workflow
-  notes).
+- Contract: [public interface](../phases/phase-24/public-interface.md);
+  [inventory](../phases/phase-24/input-inventory.md);
+  [validation contract](../phases/phase-24/qa/validation-contract.md);
+  [decisions](../phases/phase-24/decisions.md).
+- Phase 23 evidence: [final acceptance](../phases/phase-23/qa/final-acceptance.md),
+  [wrap audit](../phases/phase-23/wrap-up-audit.md).
 
 ## Next
 
-1. Tech Lead plans the new Phase 24 "Operating experience and input
-   convergence" (DEC-272; scope in the [phase brief](phase_brief.md)).
-2. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and
-   baseline convergence" follow (renumbered by DEC-272).
+1. QA Lead: `../phases/phase-24/qa/qa-plan.md` with fresh command and
+   feasibility validation (Heavy), plus proposed assertion refinements.
+2. Tech Lead applies refinements, marks rows `Ready`, then Phase Runner
+   executes tasks 1-14.
+3. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and
+   baseline convergence" follow.
 
 A deep workflow retrospective is recommended under CF-036/039 (see Phase 23
 workflow notes). It is separate from Phase 24.

@@ -1,9 +1,8 @@
 # Phase 24 Public Interface Amendment
 
-> **Status: DRAFT for Human approval (planning, 2026-10-04).** Authority:
-> DEC-272. The Human decided D1-D4 (DEC-273..276; section 13). The rest is
-> Tech Lead contract detail under DEC-272 and becomes binding when the Human
-> approves this file with the task list.
+> **Status: ACCEPTED for execution (DEC-277, 2026-10-04).** Authority:
+> DEC-272. The Human decided D1-D4 (DEC-273..276; section 13) and approved
+> this file with the task list. Amendments need a recorded DEC.
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -109,6 +108,20 @@ stales proof whose recorded tree differs from the current one. The rejected
 option B (the real worktree must equal the snapshot) would have refused
 every rework Run until an Envelope revision (Phase 25), and blocked a
 Builder from testing their own edits within a Run.
+
+**Same worktree (Tech Lead detail, preserving Phase 22).** Two
+repositories are the same worktree when their `project_id` and `worktree_id`
+are equal. In an imported destination, the destination's observed worktree
+also stands for the source worktree recorded in imported history. This
+requires the import binding to name this project and its `target_root` to
+equal the workspace root, which is the existing rule in
+`importedGateDestination` and `importedDestinationBinding` (Phase 22
+`contracts.md` section 10: destination observations are new local facts).
+The rule applies uniformly to `claim.acquire` against the Envelope scope,
+`run.start` against the Envelope scope, `gate.run` against the Registration
+and Run, and `envelope.create` against prior Registrations. A different
+worktree without a matching import binding (for example, a plain directory
+copy) is refused as today.
 
 ## 6. Failure Codes
 

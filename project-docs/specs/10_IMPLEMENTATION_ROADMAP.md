@@ -1,7 +1,7 @@
 # IMPLEMENTATION ROADMAP - fid
 
-**Status:** Phase 22 complete and Human-accepted (DEC-220); branch awaiting PR/merge; no next phase planned
-**Last updated:** 2026-09-13
+**Status:** Phase 23 complete (DEC-271); Phase 24 planned and approved (DEC-277)
+**Last updated:** 2026-10-04
 **Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md),
 [ADR-0012](../../docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md)
 
@@ -73,7 +73,7 @@ judgment) is complete (DEC-271): 18 planned tasks plus supplemental tasks 19-21,
 checklist failed.** Its acceptance is reconciled in
 `../docs/phases/phase-23/qa/final-acceptance.md`. DEC-272 inserts an
 operating-experience phase as Phase 24 and renumbers the later phases; Phase 24
-is not yet planned.
+is planned and approved (DEC-277).
 
 ## 3. Foundation to retain
 
@@ -305,10 +305,15 @@ reading `.fid/` internals.
    exhaustion). DEC-271 records 89/89 assertions, `reviews.coverage.v1` and
    `human.outcomes.v1` qualified, and the remaining Human operating-experience
    items as CF-045.
-7. **Next.** DEC-272 schedules CF-045 as a new Phase 24 "Operating experience
-   and input convergence". The Tech Lead plans it next; Phase 25 "Parallel and
-   evolving work" and Phase 26 "Qualification and baseline convergence"
-   follow.
+7. **Planned (2026-10-04).** DEC-272 schedules CF-045 as Phase 24 "Operating
+   experience and input convergence". It is planned in Heavy mode and approved
+   under DEC-277. The Human decisions are DEC-273 (run and gate-run checks use
+   the real worktree), DEC-274 (judgment `get` leaves), DEC-275 (per-field
+   request digests, migration 0019) and DEC-276 (help and template rules).
+   The authority is `../docs/phases/phase-24/public-interface.md`, with
+   `input-inventory.md`, `qa/validation-contract.md` (57 assertions) and a
+   14-task pack. Phase 25 "Parallel and evolving work" and Phase 26
+   "Qualification and baseline convergence" follow.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.
