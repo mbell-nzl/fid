@@ -12,9 +12,8 @@ expectations a check uses. Request digests cover the input as written.
 ## Status
 
 **Planning.** Branch `phase-24` (from `main` after PR #25). The contract draft
-and executable inventory are written. D1-D3 are decided (DEC-273/274/275).
-D4 awaits the Human (`../phases/phase-24/public-interface.md` section 13),
-then approval of the mode and task list. The validation contract, task specs and QA plan follow
+and executable inventory are written. The Human decided D1-D4
+(DEC-273..276). Next: Human approval of the contract, mode and task list. The validation contract, task specs and QA plan follow
 approval. Nothing is dispatched until then.
 
 ## Operating Mode
@@ -46,7 +45,7 @@ held-out runs are `N/A` as in Phases 21-23 (no harness recorded); the
 
 ## Validation Contract
 
-Drafted after D1-D4 at `../phases/phase-24/qa/validation-contract.md`. VAL-060
+Drafted after approval at `../phases/phase-24/qa/validation-contract.md`. VAL-060
 and VAL-073 from Phase 23 are restated, not weakened (contract section 11).
 
 ## QA Artifacts
@@ -76,5 +75,6 @@ and VAL-073 from Phase 23 are restated, not weakened (contract section 11).
 
 ## Next Planning Checkpoint
 
-The Human decides D1-D4. The Tech Lead then drafts the validation contract
+The Human approves the contract, mode and task list. The Tech Lead then
+drafts the validation contract
 and the 14 task specs, and the QA Lead writes the QA plan.

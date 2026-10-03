@@ -71,6 +71,23 @@
   adopts the rule at all 43 digest call sites (inventory R1-R4).
 - **Refs:** DEC-272; `public-interface.md` sections 6 and 7.
 
+### DEC-276: `--help` input documentation and `--example` template rules (D4)
+
+- **Date:** 2026-10-04. ACCEPTED by the Human ("yes, accept all").
+- **Context:** DEC-272 option C requires every `--input` leaf to document its
+  input and print an editable template. Three choices were open.
+- **Decision:** templates use static, correctly typed placeholders (never
+  pre-filled from the workspace or repository). They contain required fields
+  only; optional fields are documented in `--help`. `--json --example` is
+  `invalid-argument` because a template is not a `fid-cli.v1` envelope.
+  `--example` needs no project, Actor, key or input and writes nothing. Help
+  lists every input field with type, requirement, bounds or allowed values
+  and a one-line meaning, then names the template command.
+- **Consequences:** templates are deterministic and pinned exactly by tests.
+  An expectation such as `expected_repository` is always typed by the
+  caller, never rubber-stamped from fid's observation.
+- **Refs:** DEC-272 Part 2; `public-interface.md` section 8.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.

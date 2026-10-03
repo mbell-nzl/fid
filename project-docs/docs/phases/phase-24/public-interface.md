@@ -1,10 +1,9 @@
 # Phase 24 Public Interface Amendment
 
-> **Status: DRAFT for Human review (planning, 2026-10-03).** Authority:
-> DEC-272. Items marked **[D4]** await the Human decision named in
-> section 13. Everything else is Tech Lead contract detail under DEC-272 and
-> becomes binding when the Human approves this file with the task list.
-> D1-D3 are decided (DEC-273, DEC-274, DEC-275).
+> **Status: DRAFT for Human approval (planning, 2026-10-04).** Authority:
+> DEC-272. The Human decided D1-D4 (DEC-273..276; section 13). The rest is
+> Tech Lead contract detail under DEC-272 and becomes binding when the Human
+> approves this file with the task list.
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -150,7 +149,7 @@ unless stated.
 - Journals written before this change are unsupported and fail closed
   (ADR-0011, DEC-270). No task criterion requires them to replay.
 
-## 8. Input Help And Templates (Part 2) [D4]
+## 8. Input Help And Templates (Part 2; DEC-276)
 
 - **Single source.** One input descriptor per `--input` leaf (39 leaves)
   drives three things: the leaf's `--help` input section, its `--example`
@@ -166,7 +165,7 @@ unless stated.
   input field: path, type, required/optional/nullable, allowed values or
   bounds, and a one-line meaning. It then names the template command.
   `attention resolve --help` no longer says "Run JSON input".
-- **`--example` [D4].** It prints one editable JSON object to stdout and exits
+- **`--example` (DEC-276).** It prints one editable JSON object to stdout and exits
   0. It reads no workspace (it works outside a project), needs no `--actor`,
   `--idempotency-key` or `--input`, and writes nothing.
   - Keys appear in documented order with 2-space indentation.
@@ -311,4 +310,4 @@ are not weakened:
 | D1 | Does `run.start` / `gate.run` require the real worktree to equal the Envelope/Run snapshot, or only the same project and worktree? | **Decided A (DEC-273)**: same project and worktree, plus the caller's expectation |
 | D2 | Where do Humans read full recorded reasoning for Concerns, Deviations and Human Outcomes? | **Decided A (DEC-274)**: add `concern get`, `deviation get`, `human-outcome get` |
 | D3 | Naming the differing field needs per-field digests stored in the journal and migration 0019. Accept the cost? | **Decided A (DEC-275)**: accept |
-| D4 | `--example` rules in section 8 (static typed placeholders, required fields only, refuses `--json`) | Accept |
+| D4 | `--example` rules in section 8 (static typed placeholders, required fields only, refuses `--json`) | **Decided (DEC-276)**: accept all |
