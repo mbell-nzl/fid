@@ -1,8 +1,9 @@
 # Progress — Current
 
 Updated 2026-10-03. **No phase is active. Phase 23 "Review and Human
-judgment" is complete (DEC-271)** on branch `phase-23`, ready for PR and
-merge.
+judgment" is complete (DEC-271) and merged as PR #25 (`a46ec77`).** A
+post-wrap CI checkout repair (`d15893d`, report `ca0c831`) made the
+migration-baseline test reproducible in hosted CI before the merge.
 
 - 21 tasks (18 planned plus supplemental 19-21) and 89/89 validation
   assertions. Final review 2 (review-16a) PASS with no Must-fix; Human
@@ -18,10 +19,9 @@ merge.
 
 ## Next
 
-1. Human creates the Phase 23 PR and merges it.
-2. Tech Lead plans the new Phase 24 "Operating experience and input
+1. Tech Lead plans the new Phase 24 "Operating experience and input
    convergence" (DEC-272; scope in the [phase brief](phase_brief.md)).
-3. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and
+2. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and
    baseline convergence" follow (renumbered by DEC-272).
 
 A deep workflow retrospective is recommended under CF-036/039 (see Phase 23

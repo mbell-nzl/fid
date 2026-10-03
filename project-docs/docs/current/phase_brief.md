@@ -2,9 +2,9 @@
 
 ## Status
 
-Phase 23 "Review and Human judgment" is complete (DEC-271, 2026-10-03) on
-branch `phase-23`, ready for PR and merge. DEC-272 inserts a new Phase 24,
-which the Tech Lead plans next.
+Phase 23 "Review and Human judgment" is complete (DEC-271, 2026-10-03) and
+merged to `main` as PR #25 (`a46ec77`). DEC-272 inserts a new Phase 24,
+which the Tech Lead plans next on branch `phase-24`.
 
 ## Last Phase Summary
 
