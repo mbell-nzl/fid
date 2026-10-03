@@ -1,51 +1,80 @@
-# Phase Brief - No Active Phase
+# Phase Brief - Phase 24 (Planning)
+
+## Phase Goal
+
+"Operating experience and input convergence" (DEC-272, CF-045). A Human
+takes control of a stuck or diverging journey using fid output alone. They
+read why each action is refused, see readable Stop, Attention and judgment
+details, and write a valid input for any leaf from fid's own help and
+template. fid observes repository identity itself, so callers send only the
+expectations a check uses. Request digests cover the input as written.
 
 ## Status
 
-Phase 23 "Review and Human judgment" is complete (DEC-271, 2026-10-03) and
-merged to `main` as PR #25 (`a46ec77`). DEC-272 inserts a new Phase 24,
-which the Tech Lead plans next on branch `phase-24`.
+**Planning.** Branch `phase-24` (from `main` after PR #25). The contract draft
+and executable inventory are written. They await Human decisions D1-D4
+(`../phases/phase-24/public-interface.md` section 13), then approval of the
+mode and task list. The validation contract, task specs and QA plan follow
+approval. Nothing is dispatched until then.
 
-## Last Phase Summary
+## Operating Mode
 
-- Heavy mode; 18 planned tasks plus supplemental tasks 19-21 (DEC-269).
-- 89/89 validation assertions (85 deterministic, 4 Human). Final review 2
-  PASS; Human checklist 1 FAIL (55/2/6), checklist 2 7/7 PASS.
-- Delivered: independent Review coverage and Findings, Finding dispositions,
-  review-cycle budgets and a resolvable `review-rework-exhausted` Stop,
-  Concerns, Deviations, Decision References with protected-Decision blocking,
-  provenanced Human Outcomes, Attention resolution, requirement references
-  with stable `requirement_id`, migrations 0017/0018, and V1 judgment removal.
-- Qualified capabilities: `reviews.coverage.v1`, `human.outcomes.v1`.
-- Records: [final acceptance](../phases/phase-23/qa/final-acceptance.md),
-  [wrap audit](../phases/phase-23/wrap-up-audit.md),
-  [decisions](../phases/phase-23/decisions.md).
+**Heavy (proposed).** Entry criteria: a public-interface change (17 inputs
+reshaped, `--example`, Human failure lines, possibly 3 new read leaves) and a
+persistence change (migration 0019). The full artifact set applies. Mode B
+held-out runs are `N/A` as in Phases 21-23 (no harness recorded); the
+"Human takes control" checklist scenario is the Human run.
 
-## Next Phase: 24 "Operating experience and input convergence" (DEC-272)
+## Task Index (proposed; specs written after approval)
 
-Goal: a Human can take control of a stuck or diverging journey using fid
-output alone. Agreed scope (full text in DEC-272):
+| Task | Title | Status | Dependencies |
+|---|---|---|---|
+| 1 | Idempotency field-digest storage (migration 0019) | Proposed | None |
+| 2 | Input-as-written digests and named conflict fields, all families | Proposed | 1 |
+| 3 | Input descriptor framework, `--help`, `--example`, field-named validation; Stop/Attention leaves; all Short lines | Proposed | None |
+| 4 | Observation and SourceInput foundation; judgment reference leaves | Proposed | 2, 3 |
+| 5 | Review leaves; `repository-mismatch` details | Proposed | 4 |
+| 6 | Gate registration, Envelope and Claim leaves | Proposed | 4 |
+| 7 | Run leaves (D1) | Proposed | 5, 6 |
+| 8 | Gate run and Evidence leaves; real freshness (D1) | Proposed | 7 |
+| 9 | Activation descriptors; remove pending fence; whole-tree help conformance | Proposed | 3-8 |
+| 10 | Human failure lines in every family (A5) | Proposed | 9 |
+| 11 | Readable Stop, Attention and repository lines (A4) | Proposed | 10 |
+| 12 | Judgment detail read leaves (D2) | Proposed | 4 |
+| 13 | Disclaimers once per section; recorded reasoning (A6/A7) | Proposed | 11, 12 |
+| 14 | "Human takes control" real-process journey; phase conformance | Proposed | 1-13 |
 
-1. **Input convergence.** fid observes repository identity itself. Inputs
-   drop the `Repository` block, `project_id`, `worktree_id` and
-   `capture_source`. Callers send only checked expectations: expected HEAD
-   and dirty state on Review and Run inputs, and an optional file digest on
-   references. Request digests cover the input as written.
-2. **Human authoring (option C).** `--help` documents each `--input`;
-   `--example` prints a template; guidance names the resolving command.
-3. **Human output.** A4 readable Stop/Attention details; A5 `error:` plus
-   `reason:`/`blocked by:`/`next:`; A6 disclaimers once per section; A7
-   recorded reasoning shown (truncated in lists, full in detail views).
+## Validation Contract
 
-Expected Heavy mode (public-interface change), roughly 7-10 tasks; the mode
-and task list go to the Human for approval at planning.
+Drafted after D1-D4 at `../phases/phase-24/qa/validation-contract.md`. VAL-060
+and VAL-073 from Phase 23 are restated, not weakened (contract section 11).
 
-## Later Phases (Renumbered)
+## QA Artifacts
 
-- Phase 25 "Parallel and evolving work": parallel Claims in disjoint
-  worktrees, multi-Issue Envelope revision, `retry-exhausted`,
-  `work.claims.v1`.
-- Phase 26 "Qualification and baseline convergence", then the full
-  Human-output design revisit (CF-040).
+| Artifact | Path | Status |
+|---|---|---|
+| Contract draft | `../phases/phase-24/public-interface.md` | Draft |
+| Executable inventory | `../phases/phase-24/input-inventory.md` | Draft |
+| QA plan | `../phases/phase-24/qa/qa-plan.md` | Missing |
+| Mid-phase reviews | windows after tasks 3, 8, 11 (+ Human walk-through of new failure and Stop output), 14 | Proposed |
+| Final review / Human checklist | `../phases/phase-24/qa/` | Pending |
 
-Optional, separate: the deep workflow retrospective (CF-036/039).
+## Active Constraints
+
+- Contract first: no task spec before the Human approves the contract.
+- No compatibility with pre-Phase-24 journals (ADR-0011, DEC-270).
+- Agent prompts and `09_AI_WORKFLOW.md` gain no fid product features.
+- Split any task that would touch more than one closed journal registry
+  (Phase 23 workflow notes).
+
+## Known Risks
+
+- **Real freshness (task 8).** Phase 21-23 journeys stay fresh only because
+  the caller's block is copied. Displaced rows are convergence; see inventory
+  section 4.
+- **Registry misses.** Every task reruns the inventory commands it owns.
+
+## Next Planning Checkpoint
+
+The Human decides D1-D4. The Tech Lead then drafts the validation contract
+and the 14 task specs, and the QA Lead writes the QA plan.
