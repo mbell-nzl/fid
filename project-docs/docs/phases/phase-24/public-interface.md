@@ -1,10 +1,10 @@
 # Phase 24 Public Interface Amendment
 
 > **Status: DRAFT for Human review (planning, 2026-10-03).** Authority:
-> DEC-272. Items marked **[D3]**..**[D4]** await the Human decision named in
+> DEC-272. Items marked **[D4]** await the Human decision named in
 > section 13. Everything else is Tech Lead contract detail under DEC-272 and
 > becomes binding when the Human approves this file with the task list.
-> D1 and D2 are decided (DEC-273, DEC-274).
+> D1-D3 are decided (DEC-273, DEC-274, DEC-275).
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -124,7 +124,7 @@ unless stated.
 | `idempotency-conflict` | Details gain `differing_fields:string[]` (sorted unique, nonempty). Each name is a public input name: a top-level `--input` field, a flag spelling (`--title`), a positional argument name, or `--actor`. See section 7. |
 | `invalid-argument` | Detail **shape unchanged**. For a structural `--input` failure, `argument` names the field path (`input.coverage.items[0].source.path`). `value` is the offending key, JSON type or value (null when missing). `allowed` lists the accepted keys, type or members. Today Human mode prints Go decoder text that JSON omits; after this change JSON carries it (required by section 9). |
 
-## 7. Request Digest Rule (handoff item b) [D3]
+## 7. Request Digest Rule (handoff item b; DEC-275)
 
 - The request digest covers the input **as the caller wrote it**: the
   canonical form of the closed input object, plus operation, project ID and
@@ -138,7 +138,7 @@ unless stated.
 - **Consequence.** A retry with the same key and input after HEAD moved, or
   after a referenced file changed, replays the original result. It does not
   re-check, re-observe or fail.
-- **Naming the differing field [D3].** Every keyed mutation also stores one
+- **Naming the differing field (DEC-275).** Every keyed mutation also stores one
   digest per top-level public input name, `--actor` included. On a conflict,
   `differing_fields` lists the names whose digest differs, or that are
   present on only one side. Storage: migration `0019` adds
@@ -310,5 +310,5 @@ are not weakened:
 |---|---|---|
 | D1 | Does `run.start` / `gate.run` require the real worktree to equal the Envelope/Run snapshot, or only the same project and worktree? | **Decided A (DEC-273)**: same project and worktree, plus the caller's expectation |
 | D2 | Where do Humans read full recorded reasoning for Concerns, Deviations and Human Outcomes? | **Decided A (DEC-274)**: add `concern get`, `deviation get`, `human-outcome get` |
-| D3 | Naming the differing field needs per-field digests stored in the journal and migration 0019. Accept the cost? | Accept |
+| D3 | Naming the differing field needs per-field digests stored in the journal and migration 0019. Accept the cost? | **Decided A (DEC-275)**: accept |
 | D4 | `--example` rules in section 8 (static typed placeholders, required fields only, refuses `--json`) | Accept |

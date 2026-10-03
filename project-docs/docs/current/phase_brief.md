@@ -12,9 +12,9 @@ expectations a check uses. Request digests cover the input as written.
 ## Status
 
 **Planning.** Branch `phase-24` (from `main` after PR #25). The contract draft
-and executable inventory are written. D1 and D2 are decided (DEC-273/274).
-D3 and D4 await the Human (`../phases/phase-24/public-interface.md` section
-13), then approval of the mode and task list. The validation contract, task specs and QA plan follow
+and executable inventory are written. D1-D3 are decided (DEC-273/274/275).
+D4 awaits the Human (`../phases/phase-24/public-interface.md` section 13),
+then approval of the mode and task list. The validation contract, task specs and QA plan follow
 approval. Nothing is dispatched until then.
 
 ## Operating Mode

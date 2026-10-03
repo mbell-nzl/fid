@@ -52,6 +52,25 @@
   Human fixtures gain rows. Capability rows are unchanged.
 - **Refs:** DEC-272 A7; `public-interface.md` sections 10 and 13.
 
+### DEC-275: Store per-field request digests to name the differing field (D3 = A)
+
+- **Date:** 2026-10-04. ACCEPTED by the Human ("A").
+- **Context:** DEC-272 requires `idempotency-conflict` to name the differing
+  field. fid stores one digest per request, so it cannot tell which part
+  changed.
+- **Decision:** every keyed mutation also stores one digest per top-level
+  public input name (`--actor` included). These are fingerprints, never
+  input values. Migration `0019` adds
+  `idempotency_results.request_field_digests_json`, and the idempotency
+  Effect of every keyed Event carries it, so rebuild reproduces it. Conflict
+  details gain `differing_fields`. Option B (keep only whole-request
+  digests) was rejected.
+- **Consequences:** projection schema 19, and manifest `projection_schema` 19
+  at phase end. Down migration restores schema 18 exactly (DEC-264).
+  Pre-Phase-24 journals fail closed (DEC-270). Task 1 owns storage; task 2
+  adopts the rule at all 43 digest call sites (inventory R1-R4).
+- **Refs:** DEC-272; `public-interface.md` sections 6 and 7.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.
