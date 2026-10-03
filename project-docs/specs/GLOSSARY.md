@@ -25,6 +25,10 @@ files and Git.
 Use when: content may be referenced by fid but must not be copied into its
 operational model.
 Avoid: “fid document” or “backend prose.”
+Not project-owned prose: the short **recorded reasoning** an Actor types into
+a fid record (a Concern summary, a disposition or addressed reason, Human
+Outcome reasoning). That text is fid's own record and may be shown in Human
+views (Phase 23 DEC-272).
 
 **Routine (external kit term)**
 Definition: An external kit risk-lane classification for work the kit judges

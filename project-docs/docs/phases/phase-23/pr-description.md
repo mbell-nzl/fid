@@ -33,13 +33,13 @@ Acceptance and review trail:
 - `project-docs/docs/phases/phase-23/qa/final-review-2.md`
 - `project-docs/docs/phases/phase-23/qa/human-checklist.md` and `human-checklist-2.md`
 - `project-docs/docs/phases/phase-23/wrap-up-audit.md`
-- `project-docs/docs/phases/phase-23/decisions.md` (DEC-271 sign-off)
+- `project-docs/docs/phases/phase-23/decisions.md` (DEC-271 sign-off; DEC-272 next-phase decision)
 
 Remaining boundaries:
 
-- Human operating experience (raw-JSON Stop details, denial reasons, hint verbosity, `--input` authoring) is CF-045, to be scheduled before Phase 24 planning.
+- Human operating experience (raw-JSON Stop details, denial reasons, hint verbosity, recorded reasoning in views, `--input` authoring, repository-input convergence) is CF-045, scheduled by DEC-272 as a new Phase 24.
 - Pre-change Phase 23 development journals fail closed (DEC-270, ADR-0011).
-- Parallel Claims and Envelope revision remain Phase 24; adapter and all-capability qualification remain Phase 25.
+- Parallel Claims and Envelope revision move to Phase 25; adapter and all-capability qualification to Phase 26 (renumbered by DEC-272).
 - This is a pre-adoption baseline, not a supported release.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

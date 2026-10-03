@@ -71,7 +71,9 @@ Independent final QA and the accepted second Human checklist are reconciled in
 judgment) is complete (DEC-271): 18 planned tasks plus supplemental tasks 19-21,
 89/89 validation assertions, and a Human re-check of 7/7 after the first
 checklist failed.** Its acceptance is reconciled in
-`../docs/phases/phase-23/qa/final-acceptance.md`. Phase 24 is not yet planned.
+`../docs/phases/phase-23/qa/final-acceptance.md`. DEC-272 inserts an
+operating-experience phase as Phase 24 and renumbers the later phases; Phase 24
+is not yet planned.
 
 ## 3. Foundation to retain
 
@@ -130,28 +132,34 @@ owning phase before its product code changes.
 | **21. One-Issue walking skeleton (Heavy; two internal groups)** | Activate one kit/project/backend contract; register one activated Gate Definition; select one Issue; authorize and claim one Builder Run; execute the Registration through fid; create trusted evidence; evaluate completion; then resume and create/validate an export of the same state. An independent checkpoint separates Group 1 authority/state from Group 2 trusted execution/evidence. | Introduce the exact limited Envelope/Revision, activated Actor authority, Claim/Run, Registration/Attempt/Receipt, gate-evidence Obligation, freshness, completion, activation happy path, and export create/validate operations. Store immutable budgets with consumption/remaining null. Keep every incomplete semantic capability unavailable. | After replacements pass, remove the V1 role matrix and `fid policy show`, every actor-attribution `--by`, role-bound Claim/Run commands, `fid dev start/gate/finish/block`, reported `gate_runs`, gate snapshots, and completion-report-as-state writers. |
 | **22. Failure and recovery** | Interrupt or abandon execution, recover liveness, reconcile repository state, start a linked Run, retry or stop safely, stale prior proof, import/export recovery state, rebuild, and resume without contradictory truth. | Complete typed Stops, Attention disposition, budget consumption/exhaustion, lease/liveness rules, explicit recovery without automatic respawn, activation recovery, freshness failure, import identity/history preservation, and recovery-grade export equivalence. Advertise `kit.activation.v1`, `work.claims.v1`, `attention.v1`, and `export.portable.v1` only when complete. | Remove escalation entities and commands, duplicate recovery/activity truth, caller-reported terminal-result paths, and temporary walking-skeleton recovery shortcuts. |
 | **23. Review and Human judgment** | An independent Reviewer records coverage and zero-or-more Findings; Builder rework preserves review independence; protected or subjective Obligations receive authorized Human Outcomes; completion is reevaluated. | Complete Reviews, Findings, Concerns, Deviations, project Decision/requirement references, Human Outcomes, acceptance evidence, and Human-facing decision projections. | Remove role-specific verification columns, QA/TL composites, legacy requirement authoring that duplicates project prose, and remaining role-specific completion behavior. |
-| **24. Parallel and evolving work** | Execute distinct selected Issues in disjoint worktrees; reject conflicting Claims; revise a multi-Issue Envelope; carry valid completion forward; handle removed unfinished work explicitly; and preserve review rework rules. | Complete multi-Issue revision, scope conflict, dependency, partial-progress, parallel-claim, linked-Run, and evolving-obligation semantics. | Remove remaining V1 Claim/Run shapes, triage and carry-forward composites, and any Envelope-owned duplicate work or partial-progress state. |
-| **25. Qualification and baseline convergence** | Run the full shared fake/fid conformance suite, all recovery and security scenarios, portable validation, a disposable V1-project input migration rehearsal, and Human validation of the operating experience. | Qualify all twelve capabilities together; finish trajectory telemetry and named operational/Human projections; consolidate the first supported schema and event baseline. | Remove superseded migrations and event fixtures, V1 parity/compatibility tests, dead packages, temporary slice scaffolding, generic report/whet-export residue, and any retired surface found by the whole-product audit. |
+| **24. Operating experience and input convergence** | A Human takes control of a stuck or diverging journey using fid output alone: reads why each action is refused, sees readable Stop, Attention and judgment details, and writes a valid input for any leaf from fid's own help and template. | fid observes repository identity; callers send only checked expectations (expected HEAD/dirty state, optional file digest). Request digests cover caller input as written. Human failure output carries message, reason, blocking IDs and next action. Every `--input` leaf documents its input and prints a template. | Remove the caller-supplied `Repository`/`worktree_id` input blocks, the Phase 21 two-guidance-line failure limit, per-item judgment disclaimers, and raw-JSON Stop detail rendering. |
+| **25. Parallel and evolving work** | Execute distinct selected Issues in disjoint worktrees; reject conflicting Claims; revise a multi-Issue Envelope; carry valid completion forward; handle removed unfinished work explicitly; and preserve review rework rules. | Complete multi-Issue revision, scope conflict, dependency, partial-progress, parallel-claim, linked-Run, and evolving-obligation semantics. | Remove remaining V1 Claim/Run shapes, triage and carry-forward composites, and any Envelope-owned duplicate work or partial-progress state. |
+| **26. Qualification and baseline convergence** | Run the full shared fake/fid conformance suite, all recovery and security scenarios, portable validation, a disposable V1-project input migration rehearsal, and Human validation of the operating experience. | Qualify all twelve capabilities together; finish trajectory telemetry and named operational/Human projections; consolidate the first supported schema and event baseline. | Remove superseded migrations and event fixtures, V1 parity/compatibility tests, dead packages, temporary slice scaffolding, generic report/whet-export residue, and any retired surface found by the whole-product audit. |
 
 The removal column is an ownership map, not permission to keep a known retired
-surface until Phase 25. Phase planning must enumerate exact commands, packages,
+surface until Phase 26. Phase planning must enumerate exact commands, packages,
 tables, events, migrations, fixtures, and tests. If implementation discovery
 moves an item, the owning phase records the reason and a concrete new expiry
 point.
 
-Phase 22 retains `work.claims.v1` as unavailable until Phase 24's parallel-
+DEC-272 (2026-10-03) inserted Phase 24 above. Records written before it use
+the earlier numbers: their "Phase 24" is now Phase 25 and their "Phase 25"
+is now Phase 26.
+
+Phase 22 retains `work.claims.v1` as unavailable until Phase 25's parallel-
 conflict semantics qualify (DEC-188/220). The row's "only when complete" condition
 does not authorize partial advertisement. Recovery operations and limits are
 delivered; `kit.activation.v1`, `attention.v1` and `export.portable.v1` are enabled
 after their scoped conformance passed. CF-040 carries Human-accepted CLI polish
-and verbosity review to the Phase 25 operating-experience qualification.
+and verbosity review to the Phase 26 operating-experience qualification and,
+after Phase 26, a full Human-output design revisit (DEC-272).
 
 Phase 22 DEC-187 records the kit comparison in
 `../docs/phases/phase-22/kit-contract-mapping.md`. Receiving work is explicit:
 Phase 23 plans Review charge semantics, review_cycles and review-rework-exhausted;
 its accepted contract for them is `../docs/phases/phase-23/contracts.md` section 6.
-Phase 24 plans generic retry-exhausted and removes the revision-1 limitation.
-Phase 25 qualification (CF-037) must prove kit coordinator recovery-export
+Phase 25 plans generic retry-exhausted and removes the revision-1 limitation.
+Phase 26 qualification (CF-037) must prove kit coordinator recovery-export
 binding, derived terminalState expectation mapping, validate-only/scope/asOf
 mapping, deduplication-key agreement and explicit representations for unmapped
 Stop codes. No fid capability advertisement alone closes these adapter duties.
@@ -179,8 +187,8 @@ assertion.
 | `internal/policy`, `internal/dev`, `fid policy`, `fid dev`, and role-bound portions of `claims`, `runs`, and `workflow` | Replace and delete in Phase 21 after generic Actor/Envelope authority, Claims/Runs, trusted execution, and completion pass. |
 | Legacy recovery/activity facts that duplicate Run, Stop, Attention, or activation recovery | Replace/delete in Phase 22; retain activity only as an event-derived projection. |
 | `internal/requirements` authoring and role-specific acceptance/concern verification | Replace in Phase 23 with project-owned prose references plus generic acceptance, Review, Finding, Concern, Decision, and Human Outcome facts. |
-| Remaining V1 Claim/Run shapes and any triage/carry-forward composites exposed during multi-Issue work | Delete in Phase 24 after parallel and Envelope-revision rules pass. |
-| `internal/stats` behavior not justified by trajectory telemetry, V1 parity/e2e fixtures, superseded migrations/events, and dead packages | Replace or delete in Phase 25 during whole-product convergence. |
+| Remaining V1 Claim/Run shapes and any triage/carry-forward composites exposed during multi-Issue work | Delete in Phase 25 after parallel and Envelope-revision rules pass. |
+| `internal/stats` behavior not justified by trajectory telemetry, V1 parity/e2e fixtures, superseded migrations/events, and dead packages | Replace or delete in Phase 26 during whole-product convergence. |
 | `internal/journal`, `internal/db`, locking, IDs, rebuild, maintenance, and `fid sql` | Retain as foundation subject to the new contracts; `fid sql` remains an unstable development diagnostic. |
 
 ## 6. Removal rules
@@ -297,8 +305,10 @@ reading `.fid/` internals.
    exhaustion). DEC-271 records 89/89 assertions, `reviews.coverage.v1` and
    `human.outcomes.v1` qualified, and the remaining Human operating-experience
    items as CF-045.
-7. **Next.** The Human and Tech Lead decide when CF-045 is planned, then the
-   Tech Lead plans Phase 24 "Parallel and evolving work".
+7. **Next.** DEC-272 schedules CF-045 as a new Phase 24 "Operating experience
+   and input convergence". The Tech Lead plans it next; Phase 25 "Parallel and
+   evolving work" and Phase 26 "Qualification and baseline convergence"
+   follow.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

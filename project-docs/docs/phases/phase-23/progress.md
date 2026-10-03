@@ -227,3 +227,12 @@ and [wrap audit](wrap-up-audit.md). Canonical specs synced (02, 03, 06, 07,
 10, GLOSSARY, AGENTS). `reviews.coverage.v1` and `human.outcomes.v1` are
 qualified; `work.claims.v1` stays Phase 24 and `telemetry.trajectory.v1`
 Phase 25. Next: decide CF-045 timing with the Human, then plan Phase 24.
+
+## Post-wrap operating-experience decision — 2026-10-03
+
+The DEC-268 agenda was settled with the Human as DEC-272. A new Phase 24
+"Operating experience and input convergence" precedes parallel work, which
+becomes Phase 25; qualification becomes Phase 26. Scope: repository-input
+convergence with an input-as-written idempotency digest, option C Human input
+authoring, and A4/A5/A6/A7 Human output fixes. CF-045 is scheduled in Phase 24;
+CF-040 widens to a full Human-output design revisit after Phase 26.

@@ -458,9 +458,10 @@ Later accepted amendments, all delivered and recorded in that contract:
 - DEC-270: journals written before `requirement_id` existed are unsupported;
   rebuild refuses them with `journal-replay-stopped` (ADR-0011).
 
-DEC-271 records technical qualification and the Human re-check. The
-remaining Human operating-experience items from the Phase 23 checklist
-(Stop-detail rendering, denial reasons, hint verbosity, `--input` authoring)
-are CF-045; CF-040 still covers polish of earlier views.
+DEC-271 records technical qualification and the Human re-check. DEC-272
+schedules the remaining Human operating-experience items (Stop-detail
+rendering, denial reasons, hint verbosity, recorded reasoning in Human views,
+`--input` authoring and repository-input convergence) as Phase 24. Until that
+phase's contract is accepted, the rules above remain in force.
 
 *Last updated: 2026-10-03 (Phase 23 wrap; DEC-263/265/266/269/270/271)*

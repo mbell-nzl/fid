@@ -26,9 +26,7 @@ BLOCK and REPAIR reviews, and every failed command attempt stay on record.
 - [Human checklist 1](human-checklist.md), 2026-10-01: 55 PASS, 2 FAIL,
   6 PARTIAL, overall FAIL. DEC-268/269 repaired A1-A3 in tasks 19-21.
 - [Human checklist 2](human-checklist-2.md), 2026-10-03: 7/7 PASS, committed at
-  `04e3169`. Its "Overall result" cell still reads "Pending Human input". That
-  cell is a Human-owned field, so the Tech Lead has not edited it; every row
-  outcome is PASS.
+  `04e3169`; the Human set its overall result to PASS in `7af47be`.
 - [Wrap audit](../wrap-up-audit.md) records the decision, deviation, spec-sync,
   triage, and carry-forward audits.
 
@@ -135,8 +133,9 @@ measured 23705 ms against the 30000 ms rule.
 
 ## Human operating-experience residuals
 
-These are recorded as CF-045. The Human and Tech Lead decide when to schedule
-it before Phase 24 planning:
+These are recorded as CF-045. DEC-272 schedules them in the new Phase 24
+(operating experience and input convergence), except A6's on/off switch,
+which goes to Phase 26:
 
 - A4: Stop details render as raw JSON in `stop list`, `attention list`, and
   `resume` (a Phase 22 view).

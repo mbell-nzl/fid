@@ -3453,6 +3453,82 @@ clearance**; no QA verdict and no Tech Lead disposition releases that hold.
 - **Refs:** DEC-002; DEC-227; DEC-258; DEC-267..270; ESC-23-012;
   VAL-070..073; `qa/final-review-2.md`; `qa/human-checklist.md`;
   `qa/human-checklist-2.md`; `wrap-up-audit.md`.
+- **Update 2026-10-03:** the Human set checklist 2's "Overall result" to
+  PASS (`7af47be`); the "Checklist 2 summary cell" note above is historical.
+
+### DEC-272: Insert an operating-experience phase as Phase 24; schedule CF-045
+
+- **Date/status:** 2026-10-03; ACCEPTED by Human after the DEC-268 wrap-up
+  discussion with the Tech Lead. Each point below was agreed in turn
+  ("Yes, and renumbering is ok"; "I lean towards C"; "option 2 ok"; "looks
+  good"; "ok with both"; "ok with 3").
+- **Roadmap:** a new **Phase 24 "Operating experience and input
+  convergence"** precedes parallel work. Former Phase 24 "Parallel and
+  evolving work" becomes **Phase 25**, and former Phase 25 "Qualification and
+  baseline convergence" becomes **Phase 26**. Records written before this
+  decision keep their wording: "Phase 24" there means the new Phase 25 and
+  "Phase 25" means the new Phase 26. Active documents are updated. Reasons:
+  Phase 25 (parallel) is already Heavy and adds more denials, Stops and
+  Human-authorized decisions; Phase 26 is already the largest phase; settling
+  the conventions first means later phases build on them.
+- **Principle (A8, option C):** agents do almost all fid bookkeeping through
+  JSON, but a Human must be able to run any fid command unaided, using only
+  fid's own output, when taking control. fid must never be what blocks a
+  Human during recovery. `--input` JSON stays the single write contract;
+  flag-based input forms are not scheduled.
+- **Part 1, input convergence:** fid observes repository identity itself.
+  Inputs drop the caller-supplied `Repository` block, `project_id`,
+  `worktree_id` and `capture_source`; outputs and the journal keep them.
+  Callers send an expectation only where a check protects something: an
+  expected HEAD and uncommitted-change state on Review and Run inputs
+  (mismatch rejects), and an optional expected file digest on project-file
+  references (checked if given, observed and recorded if omitted). Human
+  Outcome references become checked. A worktree is named by path. Planning
+  enumerates every affected leaf (`gate register`, `envelope create`
+  Obligation sources, `claim acquire`, `run start` and close, `review
+  record`, Decision, Requirement and Human Outcome references).
+- **Idempotency rule (option 2):** the request digest covers the input as the
+  caller wrote it, omissions included. fid-observed values are recorded in
+  the Event and result but never enter the digest, so a retry after HEAD
+  moves replays the original result. An `idempotency-conflict` names the
+  differing field. The contract states this before any code.
+- **Part 2, Human authoring (option C):** every `--input` leaf's `--help`
+  describes its input, required fields and allowed values, plus a one-line
+  description. `--example` prints an editable template. Stop and denial
+  guidance names the resolving command and its template. Fix `attention
+  resolve --help` ("Run JSON input"). Record IDs stay caller-chosen.
+- **Part 3, Human output:**
+  - A4: Stop and Attention details render as labelled lines in `stop list`,
+    `attention list` and `resume`. Human repository lines show short HEAD
+    and clean/dirty only.
+  - A5: a Human failure prints `error:` with the exact JSON `message`, then
+    `reason:` (failure code and key detail), `blocked by:` (Stop/Attention
+    IDs) and `next:` (resolving action and template) when applicable. Every
+    line derives from the JSON failure. This replaces Phase 21
+    `public-interface.md` §1's two-guidance-line rule. Every code gets the
+    message fix and `reason:`; the Stop, Attention and judgment denials also
+    get `blocked by:` and `next:`.
+  - A6 (option 2): keep the `Purpose:` line; print each judgment disclaimer
+    once per section instead of on every item. VAL-060/073 are restated,
+    not weakened. The on/off switch is deferred to Phase 26.
+  - A7 (option 3): Phase 23 `public-interface.md` §7 "never reproduces project
+    prose" was over-applied to all free text. Human views show recorded
+    reasoning (Concern summary and reasoning, disposition reason, Finding
+    addressed reason, Deviation text, Human Outcome reasoning): one truncated
+    line in lists, full text in detail views. The `PRIVATE_` leak test is
+    replaced by a guard that referenced project-file content never appears.
+    GLOSSARY distinguishes project-owned prose from recorded reasoning.
+- **Mode:** expected Heavy (public-interface change, `09_AI_WORKFLOW.md`
+  §4.3), estimated 7-10 tasks. The Tech Lead proposes the mode and task list
+  at planning for Human approval.
+- **Carry-forwards:** CF-045 moves from unscheduled to Phase 24, except the A6
+  switch (Phase 26). CF-040 widens to a full Human-output design revisit
+  (layout, spacing, tables, scannability) after Phase 26, when fid and the
+  kit are used in real projects. Owner and phase numbers in CF-037, CF-040 and
+  the roadmap are renumbered.
+- **Refs:** DEC-268; DEC-271; CF-040; CF-045; Phase 21 `public-interface.md`
+  §1; Phase 23 `public-interface.md` §7, `contracts.md` §14; PRD-HUM-001;
+  `05_DESIGN_PLAN.md` §6; VAL-060; VAL-073.
 
 ## Spec Sync Verdict
 

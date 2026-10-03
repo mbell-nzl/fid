@@ -19,10 +19,10 @@ merge.
 ## Next
 
 1. Human creates the Phase 23 PR and merges it.
-2. Human and Tech Lead decide when and how CF-045 (Human operating
-   experience: A4-A8 and residual PARTIALs) is planned.
-3. Tech Lead plans Phase 24 "Parallel and evolving work" (multi-Issue
-   revision, parallel Claims, `retry-exhausted`, `work.claims.v1`).
+2. Tech Lead plans the new Phase 24 "Operating experience and input
+   convergence" (DEC-272; scope in the [phase brief](phase_brief.md)).
+3. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and
+   baseline convergence" follow (renumbered by DEC-272).
 
 A deep workflow retrospective is recommended under CF-036/039 (see Phase 23
 workflow notes). It is separate from Phase 24.
@@ -30,5 +30,5 @@ workflow notes). It is separate from Phase 24.
 ## Earlier phases
 
 Phase 22 closed under DEC-220/221: [wrap audit](../phases/phase-22/wrap-up-audit.md).
-Claims qualification remains Phase 24; external adapter qualification Phase 25.
+Claims qualification is Phase 25; external adapter qualification Phase 26.
 Live carry-forwards are in [active decisions](decisions_active.md).
