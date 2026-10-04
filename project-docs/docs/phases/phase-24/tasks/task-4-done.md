@@ -89,8 +89,8 @@ Working directory: `/home/mark/projects/fid`. The first failed tagged attempt is
 
 ## Commit hash
 
-- Pending commit
+- `7c69c2bbb6b8b7f8688bb6d28fc72f8fb5fff61c`
 
 ## Commit subject
 
-- Pending commit
+- `feat(judgment): observe repositories and resolve SourceInput`
