@@ -5,7 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 1 (QA review-1 F1/F2 rework)
+- Recovery attempts: 1
 - Next action: None.
 - Human attention required: no
 
@@ -45,10 +45,12 @@
 
 ## Tests run
 
-- QA rework red check: `go test -run '^TestCurrentIdempotencyFieldDigestsReplayFailClosed$' -count=1 ./internal/journal` - FAIL - `FAIL` (terminated `exit_code: 1`; wall 1.860 s). A provisional line-2 assertion caught the actual line-1 refusal, establishing that the location check fails for a wrong line.
-- QA rework green check: `go test -run '^TestCurrentIdempotencyFieldDigestsReplayFailClosed$' -count=1 ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	0.316s` (terminated `exit_code: 0`; wall 1.269 s).
-- QA rework focused CLI/archive check: `go test -run '^(TestGateReceiptFieldDigestGuardAndMalformedInsertFailClosedThroughCLI|TestSchema19ArchiveImportsAndSchema18ManifestFailsClosed)$' -count=1 ./internal/export` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	2.442s` (terminated `exit_code: 0`; wall 3.217 s). The test's real `fid --project <workspace> --json rebuild` interactions observed success for the valid Receipt and exit 6 with `journal-replay-stopped`, exact file/line, and unchanged tree for the four refusals.
-- QA rework touched-package race run: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/journal ./internal/export` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	95.034s` (terminated `exit_code: 0`; package walls: journal 100.929 s, export 95.034 s).
+- QA rework red check: `go test -run '^TestCurrentIdempotencyFieldDigestsReplayFailClosed$' -count=1 ./internal/journal` - FAIL - `FAIL` (terminated `exit_code: 1`). A provisional line-2 assertion caught the actual line-1 refusal, establishing that the location check fails for a wrong line.
+- QA rework green check: `go test -run '^TestCurrentIdempotencyFieldDigestsReplayFailClosed$' -count=1 ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	0.316s` (terminated `exit_code: 0`).
+- QA rework focused CLI/archive check: `go test -run '^(TestGateReceiptFieldDigestGuardAndMalformedInsertFailClosedThroughCLI|TestSchema19ArchiveImportsAndSchema18ManifestFailsClosed)$' -count=1 ./internal/export` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	2.442s` (terminated `exit_code: 0`). The test's real `fid --project <workspace> --json rebuild` interactions observed success for the valid Receipt and exit 6 with `journal-replay-stopped`, exact file/line, and unchanged tree for the four refusals.
+- QA rework touched-package race run: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/journal ./internal/export` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	95.034s` (terminated `exit_code: 0`).
+
+QA rework focused wall times in order: red 1.860 s; green 1.269 s; CLI/archive 3.217 s; touched-package race run: journal 100.929 s and export 95.034 s (reported package times).
 
 - First red: `go test -run '^TestMigration0019AddsOnlyFieldDigestColumn$' -count=1 ./internal/db` - FAIL - `FAIL	github.com/mbell-nzl/fid/internal/db	0.078s` (terminated `exit_code: 1`); migration 19 was absent.
 - Green: `go test -run '^TestMigration0019AddsOnlyFieldDigestColumn$' -count=1 ./internal/db` - PASS - `ok  	github.com/mbell-nzl/fid/internal/db	0.088s` (terminated `exit_code: 0`)
@@ -73,16 +75,19 @@
 
 QA review-1 rework gate attempt: all seven byte-identical task-spec commands ran in order from `/home/mark/projects/fid`. Wall times below are command times where the execution surface measured them, or Go's printed package times for the two long suites.
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`; wall 0.021 s)
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`; wall 3.186 s)
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.6% of statements` (terminated `exit_code: 0`; reported package walls: cmd/fid 249.268 s, internal/export 131.056 s, internal/journal 123.508 s; internal/workflow cached)
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					60.2%` (terminated `exit_code: 0`; wall 0.136 s)
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	293.970s` (terminated `exit_code: 0`; reported package wall 293.970 s)
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	24.979s` (terminated `exit_code: 0`; wall 25.208 s). Benchmark line: `22239 ms/rebuild`.
-- `rg -n "idempotency_results" migrations internal -g '!*_test.go'` - PASS - `internal/maintenance/operational.go:128:	rows, err := db.Query(`SELECT operation_scope, idempotency_key, result_event_id, aggregate_sequence FROM idempotency_results ORDER BY operation_scope, idempotency_key`)` (terminated `exit_code: 0`; wall <0.001 s; 126 matching lines).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					60.2%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	293.970s` (terminated `exit_code: 0`)
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	24.979s` (terminated `exit_code: 0`). Benchmark line: `22239 ms/rebuild`.
+- `rg -n "idempotency_results" migrations internal -g '!*_test.go'` - PASS - `internal/maintenance/operational.go:128:	rows, err := db.Query(`SELECT operation_scope, idempotency_key, result_event_id, aggregate_sequence FROM idempotency_results ORDER BY operation_scope, idempotency_key`)` (terminated `exit_code: 0`).
+
+Wall times in command order: format 0.021 s; lint 3.186 s; ordinary race/coverage: cmd/fid 249.268 s, internal/export 131.056 s, internal/journal 123.508 s (reported package times); coverage summary 0.136 s; tagged integration 293.970 s (reported package time); benchmark 25.208 s; registry search <0.001 s.
 
 ## Deviations from spec
 
+- First committed-report check: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-24/tasks/task-1-done.md project-docs/docs/phases/phase-24/tasks/task-1.md` - FAIL - `FAIL report-lint found 8 failure(s)` (terminated `exit_code: 8`). Root cause: recovery-attempt metadata included prose and seven PASS rows put wall notes inside the required termination field. This report-only correction makes the count numeric and records wall times separately; the same check is rerun after this commit.
 - QA rework made no accepted-contract or gate change. The focused red line check returned `FAIL` (terminated `exit_code: 1`) because the provisional assertion named line 2; the malformed Event is on line 1. Correcting that expectation preserved the rejection and the byte-identical focused command returned PASS (terminated `exit_code: 0`). All seven required rework commands then passed.
 
 - No accepted-contract deviation. The first required full gate failed with `FAIL	github.com/mbell-nzl/fid/internal/workflow	103.620s` (terminated `exit_code: 1`): the shared retained Stop fixture omitted the new required map, so five workflow tests stopped at the insert shape. Adding `{}` in `internal/workflow/stop_test.go:256` preserved those tests' original assertions. The byte-identical required command then passed with `ok  	github.com/mbell-nzl/fid/internal/workflow	72.492s	coverage: 62.7% of statements` (terminated `exit_code: 0`).
