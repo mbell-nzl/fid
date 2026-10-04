@@ -135,8 +135,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `ed1ce980e52ba4eeb6af00b58dbd6670c3b70731`
 
 ## Commit subject
 
-- Pending commit
+- `test(idempotency): pair deleted-source replay with new-key controls`
