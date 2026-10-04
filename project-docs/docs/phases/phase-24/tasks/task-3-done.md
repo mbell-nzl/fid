@@ -45,25 +45,26 @@
 ## Tests run
 
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid -run '^TestAttentionResolveUnknownFieldNamesInputPath$'` - FAIL - `FAIL` (terminated `exit_code: 1`); expected first red: `argument:"input"` rather than `input.bogus`.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid -run '^TestAttentionResolveUnknownFieldNamesInputPath$'` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.368s` (terminated `exit_code: 0`); after implementation.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid ./internal/cli` - PASS - `ok  	github.com/mbell-nzl/fid/internal/cli	1.112s` (terminated `exit_code: 0`); touched packages, `cmd/fid` 192.973 s.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid -run '^Test(StructuralFailuresCoverEachAdoptedLeaf|AdoptedInputHelpAndExamples)$'` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.370s` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/cli -run '^TestInputValidationOrderAndSensitiveValues$'` - PASS - `ok  	github.com/mbell-nzl/fid/internal/cli	1.014s` (terminated `exit_code: 0`).
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid -run '^TestAttentionResolveUnknownFieldNamesInputPath$'` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.368s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid ./internal/cli` - PASS - `ok  	github.com/mbell-nzl/fid/internal/cli	1.112s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid -run '^Test(StructuralFailuresCoverEachAdoptedLeaf|AdoptedInputHelpAndExamples)$'` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.370s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/cli -run '^TestInputValidationOrderAndSensitiveValues$'` - PASS - `ok  	github.com/mbell-nzl/fid/internal/cli	1.014s` (terminated `exit_code: 0`)
 - `rg -n "func decodeClosed[A-Za-z]*Input" cmd/fid` - observed seven original decoders and no new decoder matching the pattern; last line `cmd/fid/activation.go:328:func decodeClosedActivationInput(stdin io.Reader, path string, target any) error {` (terminated `exit_code: 0`).
 - Input-inventory section 1 regeneration block - observed `92` leaves, `39` input leaves, `0` no-Short leaves; last line `235 total` (terminated `exit_code: 0`).
-- `go build -o /tmp/fid-p24-task3 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). `/tmp/fid-p24-task3 stop raise --example` from `/tmp` printed the exact template ending `}` with empty stderr (terminated `exit_code: 0`).
+- `go build -o /tmp/fid-p24-task3 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `/tmp/fid-p24-task3 stop raise --example` from `/tmp` printed the exact template ending `}` with empty stderr (terminated `exit_code: 0`).
 - `/tmp/fid-p24-task3 --json attention resolve --example --input /definitely-missing` - observed expected rejection: final JSON envelope named `--json`, operation `attention.resolve`, `invalid-argument` (terminated `exit_code: 2`).
 
 ## Exact quality-gate results
 
 Working directory: `/home/mark/projects/fid`. The first lint attempt is retained, followed by the repaired attempt. The tagged integration result is an immutable failed attempt.
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - FAIL - `* staticcheck: 1` (terminated `exit_code: 1`); first attempt.
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); final tree.
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`); after in-scope repair.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.6% of statements` (terminated `exit_code: 0`); `cmd/fid` 196.604 s, `internal/workflow` cached, other ordinary packages cached.
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)			60.3%` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)			60.3%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`); `cmd/fid/integration` 190.815 s. The retained fixture omits required nullable condition members and lies outside the named task file scope.
 
 ## Deviations from spec
