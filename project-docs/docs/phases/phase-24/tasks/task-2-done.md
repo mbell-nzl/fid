@@ -116,8 +116,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `9bbbdb55feb7409c8a845d387bc714d927babd8a`
 
 ## Commit subject
 
-- Pending commit
+- `feat(idempotency): checkpoint 49-leaf digest corpus and replay fixes`
