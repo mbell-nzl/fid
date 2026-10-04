@@ -57,12 +57,14 @@ OUTCOME COMPLETE
 
 - First TDD red: `TestP24HumanOutcomeRejectsReferenceDigestMismatch` accepted a wrong reference digest and appended an Event before the implementation; focused result `FAIL` (terminated `exit_code: 1`). The final tagged gate passes this test.
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`); immutable first required-gate attempt before fake/fid convergence.
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/project ./internal/review ./internal/cli ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	202.774s` (terminated `exit_code: 0`).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23SharedLeafConformance$' -count=1 ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	13.271s` (terminated `exit_code: 0`).
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/project ./internal/review ./internal/cli ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	202.774s` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23SharedLeafConformance$' -count=1 ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	13.271s` (terminated `exit_code: 0`)
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^(TestP24JudgmentStructuralValidationCorpus|TestAdoptedExampleProcessExclusivity)$' -count=1 ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`); first structural run showed generic paths for requirement and concern leaves. After decoding order repair, the identical focused command passed: `ok  	github.com/mbell-nzl/fid/cmd/fid	3.786s` (terminated `exit_code: 0`).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24Judgment' -count=1 ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.640s` (terminated `exit_code: 0`).
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24Judgment' -count=1 ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.640s` (terminated `exit_code: 0`)
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
-- `/tmp/fid decision record-reference --example` - PASS - `}` (terminated `exit_code: 0`); working directory `/tmp`, with no caller repository member in the SourceInput template.
+- `/tmp/fid decision record-reference --example` - PASS - `}` (terminated `exit_code: 0`)
+
+The CLI invocation ran from `/tmp`; its SourceInput template has no caller repository member.
 
 ## Exact quality-gate results
 
