@@ -61,7 +61,7 @@ type archiveSemanticFacts struct {
 }
 
 func newSemanticValidator(migrationsDir string, projectionSchema int) (*semanticValidator, error) {
-	if projectionSchema != 14 && projectionSchema != 17 && projectionSchema != 18 {
+	if projectionSchema != 14 && projectionSchema != 17 && projectionSchema != 18 && projectionSchema != 19 {
 		return nil, fmt.Errorf("semantic archive validation: unsupported projection schema %d", projectionSchema)
 	}
 	if strings.TrimSpace(migrationsDir) == "" {

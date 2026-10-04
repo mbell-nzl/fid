@@ -68,7 +68,7 @@ indexes, checks, and migration numbers are accepted with the owning slice.
 | Table | Minimum identity and content | Rules |
 |---|---|---|
 | `projection_meta` | singleton schema version, last Event ID/hash, applied count | Updated only after the projection transaction commits. |
-| `idempotency_results` | operation scope, key, request digest, result entity/Event, created time | Same key/digest returns original result; different digest conflicts. |
+| `idempotency_results` | operation scope, key, request digest, request field digests JSON, result entity/Event, created time | Same key/digest returns original result; different digest conflicts. Field digests are immutable after insertion. |
 | `system_capabilities` | capability ID/version, schema range, availability, limits, trust sources | Derived from running binary and active migration state. |
 
 ### 3.2 Issue tracker
@@ -741,4 +741,20 @@ Phase 23 development binary are not supported: where a stored result no longer
 matches the current closed shape, rebuild stops with `journal-replay-stopped`
 and leaves the source journal unchanged (DEC-270, ADR-0011).
 
-*Last updated: 2026-10-03 (Phase 23 delivered baseline; DEC-264/270/271)*
+### 8.5 Phase 24 - idempotency field digest storage
+
+Migration 0019 adds one column to `idempotency_results`, after the schema-18
+baseline (DEC-275):
+
+```sql
+ALTER TABLE idempotency_results ADD COLUMN request_field_digests_json TEXT NOT NULL CHECK (json_valid(request_field_digests_json));
+```
+
+The column holds a canonical JSON object mapping public input names to SHA-256
+digests. Every idempotency insert Effect carries it. The receipt-recorded
+update guards the stored value and never changes it (DEC-278). Migration 0019
+down drops only this column and restores schema 18 byte for byte. The active
+projection and export manifest schema are 19; projection meta format remains 5.
+Earlier journals that lack the field are unsupported and fail closed (DEC-270).
+
+*Last updated: 2026-10-04 (Phase 24 task 1 storage baseline; DEC-275/278)*

@@ -468,7 +468,7 @@ func checkpointedProjectionEvent() Event {
 
 func currentProjectionIdempotency(event Event, entityID string) Event {
 	event.Idempotency = &EventIdempotency{Key: "projection-fixture", RequestDigest: "sha256:" + strings.Repeat("1", 64), Scope: event.CommandName + ":PRJ-projection"}
-	event.Effects = append(event.Effects, Effect{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": event.Idempotency.Scope, "idempotency_key": event.Idempotency.Key}, Values: map[string]any{"request_digest": event.Idempotency.RequestDigest, "result_entity_id": entityID, "result_event_id": event.EventID, "aggregate_sequence": event.Aggregate.Sequence, "result_json": projectionFixtureJSON(projectionResult(event)), "created_at": event.OccurredAt.Format(time.RFC3339Nano)}})
+	event.Effects = append(event.Effects, Effect{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": event.Idempotency.Scope, "idempotency_key": event.Idempotency.Key}, Values: map[string]any{"request_digest": event.Idempotency.RequestDigest, "request_field_digests_json": "{}", "result_entity_id": entityID, "result_event_id": event.EventID, "aggregate_sequence": event.Aggregate.Sequence, "result_json": projectionFixtureJSON(projectionResult(event)), "created_at": event.OccurredAt.Format(time.RFC3339Nano)}})
 	return event
 }
 

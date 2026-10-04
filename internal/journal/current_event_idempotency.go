@@ -33,6 +33,17 @@ func validateCurrentIdempotency(event Event) error {
 			return fmt.Errorf("current Receipt: invalid idempotency transition")
 		}
 	}
+	fieldDigests := result.Values["request_field_digests_json"]
+	if result.Op == "update" {
+		fieldDigests = result.Preconditions["request_field_digests_json"]
+	}
+	fieldsJSON, ok := fieldDigests.(string)
+	if !ok {
+		return fmt.Errorf("current Event: missing idempotency field digests")
+	}
+	if err := validateCurrentJSON(event, *result, "request_field_digests_json", fieldsJSON); err != nil {
+		return fmt.Errorf("current Event: invalid idempotency field digests: %w", err)
+	}
 	{
 		id := event.Idempotency
 		digest := row["request_digest"]

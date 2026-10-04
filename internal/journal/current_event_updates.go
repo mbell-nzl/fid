@@ -43,7 +43,7 @@ func validateCurrentUpdate(event Event, effect Effect) error {
 	case "requirement_refs":
 		values, guards = "status superseded_by_id", "status superseded_by_id"
 	case "idempotency_results":
-		values, guards = "result_entity_id result_event_id aggregate_sequence result_json", "request_digest"
+		values, guards = "result_entity_id result_event_id aggregate_sequence result_json", "request_digest request_field_digests_json"
 	default:
 		return fmt.Errorf("current Event update table not admitted")
 	}

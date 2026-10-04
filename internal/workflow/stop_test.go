@@ -253,7 +253,7 @@ func stopRaisedEvent(eventID, stopID, attentionID string, createAttention bool) 
 
 func stopFixtureIdempotency(event journal.Event) journal.Event {
 	event.Idempotency = &journal.EventIdempotency{Key: event.Aggregate.ID, Scope: event.CommandName + ":test-project", RequestDigest: strings.Repeat("1", 64)}
-	event.Effects = append(event.Effects, journal.Effect{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": event.Idempotency.Scope, "idempotency_key": event.Idempotency.Key}, Values: map[string]any{"request_digest": event.Idempotency.RequestDigest, "result_entity_id": event.Aggregate.ID, "result_event_id": event.EventID, "aggregate_sequence": event.Aggregate.Sequence, "result_json": `{"replayed":false}`, "created_at": time.Now().UTC().Format(time.RFC3339Nano)}})
+	event.Effects = append(event.Effects, journal.Effect{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": event.Idempotency.Scope, "idempotency_key": event.Idempotency.Key}, Values: map[string]any{"request_digest": event.Idempotency.RequestDigest, "request_field_digests_json": "{}", "result_entity_id": event.Aggregate.ID, "result_event_id": event.EventID, "aggregate_sequence": event.Aggregate.Sequence, "result_json": `{"replayed":false}`, "created_at": time.Now().UTC().Format(time.RFC3339Nano)}})
 	return event
 }
 

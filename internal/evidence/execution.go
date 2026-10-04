@@ -453,7 +453,7 @@ func appendAttempt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 	}
 	effects := []journal.Effect{
 		{Op: "insert", Table: "execution_attempts", PK: map[string]any{"id": attempt.ID}, Values: map[string]any{"registration_id": attempt.RegistrationID, "registration_version": attempt.RegistrationVersion, "obligation_id": attempt.ObligationID, "run_id": attempt.RunID, "actor_id": attempt.ActorID, "start_repository_json": string(repositoryJSON), "resolved_policy_digest": attempt.ResolvedPolicyDigest, "producer": "fid", "started_at": attempt.StartedAt}},
-		{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": "gate.run:" + binding.projectID, "idempotency_key": options.IdempotencyKey}, Values: map[string]any{"request_digest": requestDigest, "result_entity_id": attempt.ID, "result_event_id": "<event-id>", "aggregate_sequence": 1, "result_json": string(pendingResult), "created_at": "<occurred-at>"}},
+		{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": "gate.run:" + binding.projectID, "idempotency_key": options.IdempotencyKey}, Values: map[string]any{"request_digest": requestDigest, "request_field_digests_json": "{}", "result_entity_id": attempt.ID, "result_event_id": "<event-id>", "aggregate_sequence": 1, "result_json": string(pendingResult), "created_at": "<occurred-at>"}},
 	}
 	budgetEffects, err := appendFIDBudgetEffects(conn, chains, charges, attempt.RunID, binding.actor.ActorID)
 	if err != nil {
@@ -754,7 +754,7 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 		return Receipt{}, "", err
 	}
 	event.Idempotency = &journal.EventIdempotency{Key: options.IdempotencyKey, RequestDigest: requestDigest, Scope: "gate.run:" + binding.projectID}
-	event.Effects = append(event.Effects, journal.Effect{Op: "update", Table: "idempotency_results", PK: map[string]any{"operation_scope": "gate.run:" + binding.projectID, "idempotency_key": options.IdempotencyKey}, Values: map[string]any{"result_entity_id": receipt.ID, "result_event_id": "<event-id>", "aggregate_sequence": 1, "result_json": string(resultJSON)}, Preconditions: map[string]any{"request_digest": requestDigest}})
+	event.Effects = append(event.Effects, journal.Effect{Op: "update", Table: "idempotency_results", PK: map[string]any{"operation_scope": "gate.run:" + binding.projectID, "idempotency_key": options.IdempotencyKey}, Values: map[string]any{"result_entity_id": receipt.ID, "result_event_id": "<event-id>", "aggregate_sequence": 1, "result_json": string(resultJSON)}, Preconditions: map[string]any{"request_digest": requestDigest, "request_field_digests_json": "{}"}})
 	prepared, err := journal.PrepareEvent(lock, event)
 	if err != nil {
 		return Receipt{}, "", err

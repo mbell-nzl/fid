@@ -72,6 +72,41 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 	}
 }
 
+func TestSchema19ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
+	t.Parallel()
+	source := t.TempDir()
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+		t.Fatal(err)
+	}
+	addJournalBackedExportFixtureFacts(t, source)
+	archivePath := filepath.Join(t.TempDir(), "schema19.zip")
+	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archivePath}); err != nil {
+		t.Fatal(err)
+	}
+	if got := archiveManifest(t, archivePath)["projection_schema"]; got != float64(19) {
+		t.Fatalf("manifest projection_schema = %v, want 19", got)
+	}
+	if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)}); err != nil {
+		t.Fatalf("validate schema-19 archive: %#v", err)
+	}
+	if _, err := Import(ImportOptions{ArchivePath: archivePath, RepositoryRoot: t.TempDir(), MigrationsDir: testMigrationsDir(t), IdempotencyKey: "schema19"}); err != nil {
+		t.Fatal(err)
+	}
+	entries := archiveContents(t, archivePath)
+	manifest := decodeManifestMap(t, entries["manifest.json"])
+	manifest["projection_schema"] = json.Number("18")
+	entries["manifest.json"] = encodeManifestMap(t, manifest)
+	invalidArchive := filepath.Join(t.TempDir(), "schema18.zip")
+	writeTestArchive(t, invalidArchive, entries)
+	target := t.TempDir()
+	before := workspaceTreeDigest(t, target)
+	_, err := Import(ImportOptions{ArchivePath: invalidArchive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "schema18"})
+	assertArchiveCheck(t, err, "schema-unsupported")
+	if after := workspaceTreeDigest(t, target); after != before {
+		t.Fatalf("invalid import changed target tree: %s to %s", before, after)
+	}
+}
+
 func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {
 	t.Parallel()
 	source := t.TempDir()

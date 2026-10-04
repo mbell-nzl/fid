@@ -21,6 +21,13 @@ func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first CommitIdempotent() error = %v", err)
 	}
+	var liveFields string
+	if err := conn.QueryRow(`SELECT request_field_digests_json FROM idempotency_results WHERE operation_scope=? AND idempotency_key=?`, request.OperationScope, request.IdempotencyKey).Scan(&liveFields); err != nil {
+		t.Fatal(err)
+	}
+	if liveFields != "{}" {
+		t.Fatalf("live field digests = %q, want {}", liveFields)
+	}
 	if first.Replayed {
 		t.Fatal("first idempotency outcome replayed = true, want false")
 	}
@@ -37,6 +44,13 @@ func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
 	}
 	conn = openIdempotencyDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIdempotencyDB(t, conn)
+	var rebuiltFields string
+	if err := conn.QueryRow(`SELECT request_field_digests_json FROM idempotency_results WHERE operation_scope=? AND idempotency_key=?`, request.OperationScope, request.IdempotencyKey).Scan(&rebuiltFields); err != nil {
+		t.Fatal(err)
+	}
+	if rebuiltFields != liveFields {
+		t.Fatalf("rebuilt field digests = %q, want %q", rebuiltFields, liveFields)
+	}
 
 	replayed, err := commitTestIdempotentActivation(workspace, conn, request)
 	if err != nil {

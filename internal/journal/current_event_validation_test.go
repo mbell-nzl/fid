@@ -3,12 +3,57 @@ package journal
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestCurrentIdempotencyFieldDigestsReplayFailClosed(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		value any
+		valid bool
+	}{
+		{"present", `{"--actor":"sha256:` + strings.Repeat("a", 64) + `"}`, true},
+		{"missing", nil, false},
+		{"array", `[]`, false},
+		{"non-digest", `{"--actor":"plain"}`, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			event := checkpointedProjectionEvent()
+			if tc.value == nil {
+				delete(event.Effects[len(event.Effects)-1].Values, "request_field_digests_json")
+			} else {
+				event.Effects[len(event.Effects)-1].Values["request_field_digests_json"] = tc.value
+			}
+			conn := openReplayDB(t, filepath.Join(t.TempDir(), "projection.sqlite"))
+			defer closeProjectDB(t, conn)
+			seedCheckpointProjectionRun(t, conn)
+			workspace := newReplayWorkspace(t)
+			writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
+			_, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+			if tc.valid {
+				if err != nil {
+					t.Fatal(err)
+				}
+				return
+			}
+			var corrupt *CorruptJournalError
+			if !errors.As(err, &corrupt) || corrupt.Line != 1 {
+				t.Fatalf("replay = %v, want line-1 journal corruption", err)
+			}
+			var count int
+			if err := conn.QueryRow(`SELECT count(*) FROM idempotency_results`).Scan(&count); err != nil || count != 0 {
+				t.Fatalf("rejected journal projected %d idempotency rows: %v", count, err)
+			}
+		})
+	}
+}
 
 func TestCurrentEventFamiliesRejectMalformedEffectsLiveAndReplay(t *testing.T) {
 	t.Parallel()

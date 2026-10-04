@@ -138,7 +138,7 @@ func recoveryEventWithMissingReference() journal.Event {
 	recovery := map[string]any{"id": "REC-invalid-reference", "prior_run_id": "RUN-prior-missing", "successor_run_id": "RUN-successor-missing", "prior_claim_id": "CLM-prior-missing", "successor_claim_id": "CLM-successor-missing", "observation_id": "OBS-missing", "reconciliation": reconciliation, "adopted_paths": []any{}, "authority": authority, "event_id": event.EventID}
 	result := map[string]any{"run": run, "claim": claim, "recovery": recovery, "idempotency_key": "missing-reference", "replayed": false}
 	event.Idempotency = &journal.EventIdempotency{Key: "missing-reference", Scope: "run.recover:missing-project", RequestDigest: strings.Repeat("1", 64)}
-	event.Effects = append(event.Effects, journal.Effect{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": event.Idempotency.Scope, "idempotency_key": event.Idempotency.Key}, Values: map[string]any{"request_digest": event.Idempotency.RequestDigest, "result_entity_id": "REC-invalid-reference", "result_event_id": event.EventID, "aggregate_sequence": 1, "result_json": encode(result), "created_at": event.OccurredAt.Format(time.RFC3339Nano)}})
+	event.Effects = append(event.Effects, journal.Effect{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": event.Idempotency.Scope, "idempotency_key": event.Idempotency.Key}, Values: map[string]any{"request_digest": event.Idempotency.RequestDigest, "request_field_digests_json": "{}", "result_entity_id": "REC-invalid-reference", "result_event_id": event.EventID, "aggregate_sequence": 1, "result_json": encode(result), "created_at": event.OccurredAt.Format(time.RFC3339Nano)}})
 	return event
 }
 
@@ -158,7 +158,7 @@ func TestSemanticValidatorRejectsNestedDuplicateJSONKey(t *testing.T) {
 
 func TestSemanticValidatorRejectsMissingRecoveryReference(t *testing.T) {
 	t.Parallel()
-	validator, err := newSemanticValidator(testMigrationsDir(t), 17)
+	validator, err := newSemanticValidator(testMigrationsDir(t), 19)
 	if err != nil {
 		t.Fatalf("new semantic validator: %v", err)
 	}

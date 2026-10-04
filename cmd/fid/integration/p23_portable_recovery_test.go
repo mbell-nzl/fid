@@ -36,6 +36,7 @@ func TestPortableRoundTripCoversEveryPhase23Table(t *testing.T) {
 	binary := integrationFIDBinary(t)
 	root := t.TempDir()
 	populated := map[string]bool{}
+	fieldDigestFamilies := map[string]bool{}
 	events := map[string]journal.Event{}
 	var validationWorkspace string
 	for _, fixture := range []struct {
@@ -57,6 +58,7 @@ func TestPortableRoundTripCoversEveryPhase23Table(t *testing.T) {
 	} {
 		t.Run(fixture.name, func(t *testing.T) {
 			workspace := fixture.make(t)
+			p23PortableCollectFieldDigestFamilies(t, workspace, fieldDigestFamilies)
 			for table, rows := range p23PortableRoundTrip(t, binary, workspace) {
 				if len(rows) > 0 {
 					populated[table] = true
@@ -76,6 +78,11 @@ func TestPortableRoundTripCoversEveryPhase23Table(t *testing.T) {
 			t.Errorf("Phase 23 table %s never populated", table)
 		}
 	}
+	for _, family := range []string{"issue.", "claim.", "run.", "review."} {
+		if !fieldDigestFamilies[family] {
+			t.Errorf("no %s keyed row included in field-digest rebuild parity", family)
+		}
+	}
 	for _, kind := range p23PortableEvents {
 		if _, found := events[kind]; !found {
 			t.Errorf("Phase 23 Event %s never exported", kind)
@@ -83,6 +90,28 @@ func TestPortableRoundTripCoversEveryPhase23Table(t *testing.T) {
 	}
 	p23PortableAssertCorruptEventsRejected(t, validationWorkspace, events)
 	p23PortableAssertPriorSchemaRejected(t, binary, validationWorkspace)
+}
+
+func p23PortableCollectFieldDigestFamilies(t *testing.T, workspace string, families map[string]bool) {
+	t.Helper()
+	conn := p22FaultDB(t, workspace)
+	defer func() { p22FaultOK(t, conn.Close()) }()
+	rows, err := conn.Query(`SELECT operation_scope, request_field_digests_json FROM idempotency_results`)
+	p22FaultOK(t, err)
+	defer func() { p22FaultOK(t, rows.Close()) }()
+	for rows.Next() {
+		var scope, fields string
+		p22FaultOK(t, rows.Scan(&scope, &fields))
+		if fields != "{}" {
+			t.Errorf("%s field digests = %q, want {} before task 2", scope, fields)
+		}
+		for _, family := range []string{"issue.", "claim.", "run.", "review."} {
+			if strings.HasPrefix(scope, family) {
+				families[family] = true
+			}
+		}
+	}
+	p22FaultOK(t, rows.Err())
 }
 
 func TestPortableAssertCorruptEventsRejected(t *testing.T) {
@@ -227,7 +256,7 @@ func p23PortableAssertPriorSchemaRejected(t *testing.T, binary, workspace string
 	entries := p22ArchiveEntries(t, archive)
 	var manifest map[string]any
 	p22FaultOK(t, json.Unmarshal(entries["manifest.json"], &manifest))
-	if manifest["schema"] != "fid.export-manifest.v2" || manifest["projection_schema"] != float64(18) {
+	if manifest["schema"] != "fid.export-manifest.v2" || manifest["projection_schema"] != float64(19) {
 		t.Fatalf("current manifest profile = %#v", manifest)
 	}
 	manifest["projection_schema"] = 17
@@ -288,7 +317,7 @@ func p23PortableRoundTrip(t *testing.T, binary, workspace string) map[string][]s
 	target := filepath.Join(t.TempDir(), "imported")
 	closureRun(t, filepath.Dir(target), "git", "clone", "-q", workspace, target)
 	imported := p21Run(t, binary, target, "--json", "export", "import", archive, "--repository", target, "--idempotency-key", "p23-portable")
-	if got := p21Path(t, imported, "result", "import", "projection_schema"); got != float64(18) {
+	if got := p21Path(t, imported, "result", "import", "projection_schema"); got != float64(19) {
 		t.Fatalf("imported schema = %v", got)
 	}
 	p23PortableAssertRows(t, "imported", live, p23PortableRows(t, target))
