@@ -34,6 +34,7 @@ func TestCurrentIdempotencyFieldDigestsReplayFailClosed(t *testing.T) {
 			conn := openReplayDB(t, filepath.Join(t.TempDir(), "projection.sqlite"))
 			defer closeProjectDB(t, conn)
 			seedCheckpointProjectionRun(t, conn)
+			before := currentProjectionSnapshot(t, conn)
 			workspace := newReplayWorkspace(t)
 			writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
 			_, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
@@ -44,8 +45,11 @@ func TestCurrentIdempotencyFieldDigestsReplayFailClosed(t *testing.T) {
 				return
 			}
 			var corrupt *CorruptJournalError
-			if !errors.As(err, &corrupt) || corrupt.Line != 1 {
-				t.Fatalf("replay = %v, want line-1 journal corruption", err)
+			if !errors.As(err, &corrupt) || corrupt.Line != 1 || corrupt.File != ".fid/journal/2026-09-06.jsonl" {
+				t.Fatalf("replay = %v, want line-1 journal corruption with file evidence", err)
+			}
+			if !reflect.DeepEqual(before, currentProjectionSnapshot(t, conn)) {
+				t.Fatal("rejected map changed projection")
 			}
 			var count int
 			if err := conn.QueryRow(`SELECT count(*) FROM idempotency_results`).Scan(&count); err != nil || count != 0 {

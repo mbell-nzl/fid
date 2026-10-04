@@ -5,7 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 0
+- Recovery attempts: 1 (QA review-1 F1/F2 rework)
 - Next action: None.
 - Human attention required: no
 
@@ -14,6 +14,7 @@
 - Migration 0019 adds the accepted non-null JSON column and down restores every schema-18 `sqlite_master` object byte for byte. The active migration and export manifest use projection schema 19; projection meta format remains 5.
 - Every central idempotency insert and the direct `gate.execution-started` insert carry a canonical field-digest map. Current call sites write `{}`. The `gate.receipt-recorded` Effect guards the stored map beside `request_digest`; its update values do not include the map. Replay validates an object of digest values and fails closed on malformed or missing maps. Conflict errors retain stored and supplied maps for task 2, without changing public failure details.
 - Retained schema, journal, portable recovery, Stop, and archive fixtures were converged to the accepted new storage shape. The old Phase 23 journal fixture retains its original bytes and digest and now asserts the required fail-closed refusal.
+- QA review-1 F1/F2: strengthened journal projection-snapshot evidence, added real `fid --json rebuild` cases for a valid Gate Receipt, malformed insert maps, and a mismatched receipt guard, and pinned `manifest.json` on the schema-18 archive refusal. This rework changed only tests and this report.
 
 ## Files created or modified
 
@@ -36,11 +37,18 @@
 - VAL-058: PASS - the same test migrates down and compares every schema-18 `sqlite_master` object byte for byte.
 - VAL-002 (storage half): PASS - `TestPortableRoundTripCoversEveryPhase23Table` and `p23PortableCollectFieldDigestFamilies` in `cmd/fid/integration/p23_portable_recovery_test.go:31` include keyed issue, claim, run, and review rows with `{}` and compare all live projection rows to rebuild and import; `TestCommitIdempotentReplaysStoredResultAfterRebuild` in `internal/journal/idempotency_test.go:14` compares the stored column byte for byte before and after rebuild.
 - VAL-003: PASS - `TestCurrentIdempotencyFieldDigestsReplayFailClosed` in `internal/journal/current_event_validation_test.go:14` replays the valid object and rejects missing, array, and non-digest maps at line 1 without projecting a row. `TestTask9PrechangeBudgetObservedJournalFailsClosedWithoutMutation` preserves the old fixture bytes and rejects its missing map at line 2. The built `fid --json rebuild` also returned `journal-replay-stopped`, line 2, exit 6 on that fixture. `internal/journal/current_event_updates.go:46` requires the receipt guard; `internal/journal/project_effects.go:158` rejects any guard value that differs from the stored row before update.
+- VAL-003 QA rework F1: PASS - `TestGateReceiptFieldDigestGuardAndMalformedInsertFailClosedThroughCLI` (`internal/export/export_test.go:125`) builds fid and replays a genuine Gate journal. Its `valid-receipt` row succeeds; its missing, array, and non-digest insert-map rows and mismatched stored receipt-guard row each assert `journal-replay-stopped`, integrity category, process exit 6, exact journal file/line, and unchanged workspace-tree digest (`internal/export/export_test.go:206`). `TestCurrentIdempotencyFieldDigestsReplayFailClosed` now compares the full projection snapshot and checks file/line for each rejected insert (`internal/journal/current_event_validation_test.go:14`).
 - VAL-004: PASS - `TestSchema19ArchiveImportsAndSchema18ManifestFailsClosed` in `internal/export/export_test.go:75` creates, validates, and imports schema 19; a copy declaring 18 fails `schema-unsupported` with unchanged target tree. `internal/export/archive_validation.go:130` binds this check to `manifest.json`.
+- VAL-004 QA rework F2: PASS - the same test (`internal/export/export_test.go:77`) asserts `InvalidArchiveError` (`archive-invalid`) with a `schema-unsupported` check whose `Entry` is exactly `manifest.json` (`:111`), and compares target-tree digests before and after refusal (`:104`, `:120`). Its schema-19 validate/import control remains.
 - VAL-005: PASS - the required 100k benchmark completed its parity self-assert and reported `22373 ms/rebuild`, below 30000.
 - VAL-052: PASS - the final ordinary gate reported `cmd/fid` 215.296 s and `internal/workflow` 72.492 s. The first full attempt reported the slowest other ordinary package, `internal/issues`, at 194.345 s; that package was cached on the final attempt after only a workflow fixture changed. Tagged `cmd/fid/integration` took 253.353 s. No package reached the 480 s headroom warning or its budget.
 
 ## Tests run
+
+- QA rework red check: `go test -run '^TestCurrentIdempotencyFieldDigestsReplayFailClosed$' -count=1 ./internal/journal` - FAIL - `FAIL` (terminated `exit_code: 1`; wall 1.860 s). A provisional line-2 assertion caught the actual line-1 refusal, establishing that the location check fails for a wrong line.
+- QA rework green check: `go test -run '^TestCurrentIdempotencyFieldDigestsReplayFailClosed$' -count=1 ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	0.316s` (terminated `exit_code: 0`; wall 1.269 s).
+- QA rework focused CLI/archive check: `go test -run '^(TestGateReceiptFieldDigestGuardAndMalformedInsertFailClosedThroughCLI|TestSchema19ArchiveImportsAndSchema18ManifestFailsClosed)$' -count=1 ./internal/export` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	2.442s` (terminated `exit_code: 0`; wall 3.217 s). The test's real `fid --project <workspace> --json rebuild` interactions observed success for the valid Receipt and exit 6 with `journal-replay-stopped`, exact file/line, and unchanged tree for the four refusals.
+- QA rework touched-package race run: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/journal ./internal/export` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	95.034s` (terminated `exit_code: 0`; package walls: journal 100.929 s, export 95.034 s).
 
 - First red: `go test -run '^TestMigration0019AddsOnlyFieldDigestColumn$' -count=1 ./internal/db` - FAIL - `FAIL	github.com/mbell-nzl/fid/internal/db	0.078s` (terminated `exit_code: 1`); migration 19 was absent.
 - Green: `go test -run '^TestMigration0019AddsOnlyFieldDigestColumn$' -count=1 ./internal/db` - PASS - `ok  	github.com/mbell-nzl/fid/internal/db	0.088s` (terminated `exit_code: 0`)
@@ -63,7 +71,19 @@
   - Benchmark line: `22373 ms/rebuild`.
 - `rg -n "idempotency_results" migrations internal -g '!*_test.go'` - PASS - `internal/workflow/activation.go:845:	if err := conn.QueryRow(`SELECT COUNT(*) FROM idempotency_results WHERE result_entity_id = ?`, activationID).Scan(&count); err != nil {` (terminated `exit_code: 0`)
 
+QA review-1 rework gate attempt: all seven byte-identical task-spec commands ran in order from `/home/mark/projects/fid`. Wall times below are command times where the execution surface measured them, or Go's printed package times for the two long suites.
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`; wall 0.021 s)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`; wall 3.186 s)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.6% of statements` (terminated `exit_code: 0`; reported package walls: cmd/fid 249.268 s, internal/export 131.056 s, internal/journal 123.508 s; internal/workflow cached)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					60.2%` (terminated `exit_code: 0`; wall 0.136 s)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	293.970s` (terminated `exit_code: 0`; reported package wall 293.970 s)
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	24.979s` (terminated `exit_code: 0`; wall 25.208 s). Benchmark line: `22239 ms/rebuild`.
+- `rg -n "idempotency_results" migrations internal -g '!*_test.go'` - PASS - `internal/maintenance/operational.go:128:	rows, err := db.Query(`SELECT operation_scope, idempotency_key, result_event_id, aggregate_sequence FROM idempotency_results ORDER BY operation_scope, idempotency_key`)` (terminated `exit_code: 0`; wall <0.001 s; 126 matching lines).
+
 ## Deviations from spec
+
+- QA rework made no accepted-contract or gate change. The focused red line check returned `FAIL` (terminated `exit_code: 1`) because the provisional assertion named line 2; the malformed Event is on line 1. Correcting that expectation preserved the rejection and the byte-identical focused command returned PASS (terminated `exit_code: 0`). All seven required rework commands then passed.
 
 - No accepted-contract deviation. The first required full gate failed with `FAIL	github.com/mbell-nzl/fid/internal/workflow	103.620s` (terminated `exit_code: 1`): the shared retained Stop fixture omitted the new required map, so five workflow tests stopped at the insert shape. Adding `{}` in `internal/workflow/stop_test.go:256` preserved those tests' original assertions. The byte-identical required command then passed with `ok  	github.com/mbell-nzl/fid/internal/workflow	72.492s	coverage: 62.7% of statements` (terminated `exit_code: 0`).
 
@@ -73,14 +93,16 @@
 - Retained-test provenance was checked from introducing commits, not filenames: `checkpoint_projection_test.go` 59c62b9 (phase-22/task-4); `task9_prechange_replay_test.go` 828eb18 (phase-23/task-9); `archive_semantics_test.go` acb569b (phase-22/task-13); `check_test.go` d2a087d (phase-17/task-3); `p22_portable_schema_test.go` 5ec69e6 (phase-22/task-15); `p23_portable_recovery_test.go` d02614e (phase-23/task-16); `escalation_removal_test.go` 644f30e (phase-22/task-16); `stop_test.go` ac82795 (phase-22/task-2). Each retains its original subject; the accepted schema-19 change displaced only its fixture or version expectation. The historical migration-0013 test in `internal/db/operational_kernel_migration_test.go` was left unchanged because it runs at schema 13.
 - An existing Phase 23 workspace with keyed rows cannot catch up in place: SQLite refuses the accepted non-null `ADD COLUMN` on its populated table. Rebuilding its old keyed journal also stops closed at the first missing map; the retained old-journal fixture and CLI run returned `journal-replay-stopped`, line 2, exit 6. No compatibility path was added under DEC-270.
 
+- QA review-1 F1/F2 are addressed by the added assertions. The original task implementation commit was `58352c73edf81ac8e89ffb7d7d824a67def3e3c4` (`feat(idempotency): store request field digests in schema 19`); its earlier failed and later passing gate evidence remains above. No new ordinary package reached the 480 s headroom warning; tagged integration remained below 900 s.
+
 ## Dependency-budget note
 
 - No dependency changes.
 
 ## Commit hash
 
-- `58352c73edf81ac8e89ffb7d7d824a67def3e3c4`
+- Pending commit
 
 ## Commit subject
 
-- `feat(idempotency): store request field digests in schema 19`
+- Pending commit
