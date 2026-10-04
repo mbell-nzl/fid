@@ -101,8 +101,8 @@ QA review-1 rework gate attempt: all seven byte-identical task-spec commands ran
 
 ## Commit hash
 
-- Pending commit
+- `64a8228295095a686a171d081a8ab4a8b9ff2052`
 
 ## Commit subject
 
-- Pending commit
+- `test(idempotency): prove QA review-1 replay and archive refusals`
