@@ -22,7 +22,18 @@ type InputError struct {
 func (e *InputError) Error() string { return "invalid " + e.Path }
 
 func (e *InputError) Details() map[string]any {
-	return map[string]any{"argument": e.Path, "value": e.Value, "allowed": e.Allowed}
+	value := e.Value
+	if value != nil {
+		if _, ok := value.(string); !ok {
+			encoded, err := json.Marshal(value)
+			if err != nil {
+				value = fmt.Sprint(value)
+			} else {
+				value = string(encoded)
+			}
+		}
+	}
+	return map[string]any{"argument": e.Path, "value": value, "allowed": e.Allowed}
 }
 
 // ValidateInput checks a single closed object before decoding or domain work.

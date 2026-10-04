@@ -39,6 +39,46 @@ func TestAttentionResolveUnknownFieldNamesInputPath(t *testing.T) {
 	}
 }
 
+func TestAttentionResolveIntegerBoundWritesJSONFailure(t *testing.T) {
+	t.Parallel()
+	workspace := t.TempDir()
+	path := filepath.Join(workspace, "request.json")
+	if err := os.WriteFile(path, []byte(`{"attention_id":"ATT-1","expected_version":0,"fact_event_ids":["EVT-1"]}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	result := executeCommandForTest(workspace, "--json", "attention", "resolve", "--input", path, "--actor", "ACT-1", "--idempotency-key", "bound-1")
+	if cli.ExitCode(result.err) != 2 || result.stdout != "" {
+		t.Fatalf("exit = %d, stdout = %q, stderr = %q", cli.ExitCode(result.err), result.stdout, result.stderr)
+	}
+	var envelope struct {
+		ContractVersion string           `json:"contract_version"`
+		OK              bool             `json:"ok"`
+		Operation       string           `json:"operation"`
+		Event           *json.RawMessage `json:"event"`
+		Error           struct {
+			Category string `json:"category"`
+			Code     string `json:"code"`
+			Details  struct {
+				Argument string   `json:"argument"`
+				Value    *string  `json:"value"`
+				Allowed  []string `json:"allowed"`
+			} `json:"details"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(result.stderr), &envelope); err != nil {
+		t.Fatalf("decode stderr %q: %v", result.stderr, err)
+	}
+	if envelope.ContractVersion != "fid-cli.v1" || envelope.OK || envelope.Operation != "attention.resolve" || envelope.Event != nil ||
+		envelope.Error.Category != "invalid-input" || envelope.Error.Code != "invalid-argument" ||
+		envelope.Error.Details.Argument != "input.expected_version" || envelope.Error.Details.Value == nil || *envelope.Error.Details.Value != "0" ||
+		!reflect.DeepEqual(envelope.Error.Details.Allowed, []string{"integer range 1..unbounded"}) {
+		t.Fatalf("unexpected structural failure: %s", result.stderr)
+	}
+	if _, err := os.Stat(filepath.Join(workspace, ".fid")); !os.IsNotExist(err) {
+		t.Fatalf("structural failure touched workspace: %v", err)
+	}
+}
+
 func TestInputDescriptorRegistryMatchesLiveTreeAndTypes(t *testing.T) {
 	t.Parallel()
 	root := newRootCommandAt(t.TempDir())

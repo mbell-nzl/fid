@@ -2,11 +2,11 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: gate-repair
-- Condition: The authorized retained `stop.raise` fixture repair is green, but the tagged integration gate now reaches `TestP23StopFailureCodeMatrix/attention/invalid-argument` and receives empty JSON stderr for a structural integer-bound error. Repair of the product error path and any corresponding tests is outside the two-file TRG-24-001 allowlist.
-- Recovery attempts: 1
-- Next action: Phase Runner obtains bounded same-task authority for the newly exposed product-path scope gap. Preserve the accepted `invalid-argument` detail shape and the retained sequential journey assertion; add a focused red/green reproduction, repair the causal error path, then rerun the five exact gates.
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 2
+- Next action: None.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -15,6 +15,7 @@
 - Registered descriptors for `stop raise`, `stop resolve`, and `attention resolve`, with the other 36 live `--input` leaves in a disjoint pending fence. Connected the three leaves to descriptor validation and `--example` before workspace access. Preserved their domain validation after input decoding.
 - Added a one-line `Short` to every previously bare leaf in scope and replaced the shared `Run JSON input` flag text. Updated the CLI design specification.
 - Converged the retained Phase 22 `stop.raise` fixture with the two explicit nullable `resolution_condition` members, allowing its previously rejected raise to pass structural validation without changing journey assertions.
+- Adapted structural error details to the accepted `invalid-argument` envelope schema: raw numeric validation values become strings at the error boundary, while missing or redacted values remain null. `attention resolve` now reports an integer-bound failure with exit 2 and no Event. No change to `stop.go` was needed.
 
 ## Files created or modified
 
@@ -33,19 +34,25 @@
 
 ## Validation Contract Coverage
 
-- VAL-010: PASS for the current tree - `TestEveryLiveLeafHasOneLineShort` at `cmd/fid/input_descriptor_test.go:84`; the live inventory regeneration printed `0 .../no-short` among 92 leaves.
-- VAL-011: PASS for Task 3's three leaves - `TestInputDescriptorRegistryMatchesLiveTreeAndTypes` at `cmd/fid/input_descriptor_test.go:42` proves registry/fence disjointness and union with all 39 live input leaves, reflects the three Go types, and rejects a seeded mismatch. The remaining 36 descriptors belong to later adoption steps in the same phase assertion.
-- VAL-012: PASS for Task 3's three leaves - `TestAdoptedInputHelpAndExamples` at `cmd/fid/input_descriptor_test.go:99` checks every top-level field and template command; SHA-256 `b3a71078d99b3047a9ffdba35e599bd8298da2e6f6e9b06f709ba3283af5bf75` pins the full `stop raise --help` text. Nested field help is emitted by `internal/cli/input_render.go:16`.
-- VAL-013: PASS for Task 3's three leaves - exact full template strings for all three are asserted in `TestAdoptedInputHelpAndExamples` at `cmd/fid/input_descriptor_test.go:99`; the real `fid stop raise --example` printed one indented object ending `}`.
-- VAL-014: PASS for Task 3's three leaves - the same test decodes each exact template into its registered Go request type with unknown fields disallowed at `cmd/fid/input_descriptor_test.go:163`.
-- VAL-015: PASS for Task 3's rule - `TestExampleRejectsOtherInputsInFixedOrder` at `cmd/fid/input_descriptor_test.go:180` covers all six conflicts and exit 2; the real `--json attention resolve --example --input /definitely-missing` returned an `invalid-argument` envelope for `--json` first, with `value:null`, `allowed:["--example"]`, operation `attention.resolve`, and exit 2. `cmd/fid/input_descriptor_command.go:47` constructs the ordered details before any workspace read.
-- VAL-016: BLOCKED at the JSON integration boundary - `TestAdoptedStructuralValidationPaths` at `cmd/fid/input_descriptor_test.go:218`, `TestStructuralFailuresCoverEachAdoptedLeaf` at `:248`, and `TestInputValidationOrderAndSensitiveValues` at `internal/cli/input_validate_test.go:8` pass the structural path, ordering, and redaction corpus. The focused retained fixture test `TestP24StopRaiseConflictNamesChangedDetails` passes after the two null members. The exact tagged gate fails `TestP23StopFailureCodeMatrix/attention/invalid-argument` at `cmd/fid/integration/p23_human_failure_test.go:97`: an integer bound produces no JSON error envelope. Full adopted-leaf end-to-end evidence remains open.
-- VAL-052: BLOCKED - the exact ordinary gate reports `cmd/fid` 197.459 s, below the 480 s warning and 600 s budget. The exact tagged integration gate reports 290.647 s, below 900 s, but fails. `internal/workflow` and the other ordinary packages were cached in this gate, so their current wall times and slowest other ordinary package remain unverified. Recheck on the completed final tree.
+- VAL-010: PASS for the current tree - `TestEveryLiveLeafHasOneLineShort` at `cmd/fid/input_descriptor_test.go:124`; the live inventory regeneration printed `0 .../no-short` among 92 leaves.
+- VAL-011: PASS for Task 3's three leaves - `TestInputDescriptorRegistryMatchesLiveTreeAndTypes` at `cmd/fid/input_descriptor_test.go:82` proves registry/fence disjointness and union with all 39 live input leaves, reflects the three Go types, and rejects a seeded mismatch. The remaining 36 descriptors belong to later adoption steps in the same phase assertion.
+- VAL-012: PASS for Task 3's three leaves - `TestAdoptedInputHelpAndExamples` at `cmd/fid/input_descriptor_test.go:139` checks every top-level field and template command; SHA-256 `b3a71078d99b3047a9ffdba35e599bd8298da2e6f6e9b06f709ba3283af5bf75` pins the full `stop raise --help` text. Nested field help is emitted by `internal/cli/input_render.go:16`.
+- VAL-013: PASS for Task 3's three leaves - exact full template strings for all three are asserted in `TestAdoptedInputHelpAndExamples` at `cmd/fid/input_descriptor_test.go:139`; the real `fid stop raise --example` printed one indented object ending `}`.
+- VAL-014: PASS for Task 3's three leaves - the same test decodes each exact template into its registered Go request type with unknown fields disallowed at `cmd/fid/input_descriptor_test.go:203`.
+- VAL-015: PASS for Task 3's rule - `TestExampleRejectsOtherInputsInFixedOrder` at `cmd/fid/input_descriptor_test.go:220` covers all six conflicts and exit 2; the real `--json attention resolve --example --input /definitely-missing` returned an `invalid-argument` envelope for `--json` first, with `value:null`, `allowed:["--example"]`, operation `attention.resolve`, and exit 2. `cmd/fid/input_descriptor_command.go:47` constructs the ordered details before any workspace read.
+- VAL-016: PASS for Task 3's adopted leaves - `TestAdoptedStructuralValidationPaths` at `cmd/fid/input_descriptor_test.go:258`, `TestStructuralFailuresCoverEachAdoptedLeaf` at `:288`, and `TestInputValidationOrderAndSensitiveValues` at `internal/cli/input_validate_test.go:8` cover structural paths, ordering, and sensitive-value redaction. `TestAttentionResolveIntegerBoundWritesJSONFailure` at `cmd/fid/input_descriptor_test.go:42` proves the previously failed bound now yields `invalid-argument`, `input.expected_version`, string `"0"`, its allowed range, exit 2, and no Event or workspace creation; the real binary emitted the same JSON envelope. The unchanged tagged `TestP23StopFailureCodeMatrix/attention/invalid-argument` row passed in the exact integration gate, alongside the retained `stop.raise` journey.
+- VAL-052: PASS - the exact ordinary gate reports `cmd/fid` 200.072 s; an uncached internal-package run reports `internal/workflow` 93.837 s and the slowest other ordinary package, `internal/issues`, 166.391 s. The exact tagged integration gate reports 302.158 s. All ordinary packages were below 600 s, tagged integration below 900 s, and no ordinary package reached the 480 s warning.
 - VAL-059: PASS - `attention resolve --help` uses `Resolve an Attention item.` and `Resolve an Attention item JSON input file (or - for stdin)`; `runMutationFlags` now uses neutral `JSON input file` text at `cmd/fid/run.go:208`. The three non-Run adopted leaves use their own descriptor text.
-- VAL-060: PASS for Task 3's three leaves - `TestAdoptedInputHelpAndExamples` at `cmd/fid/input_descriptor_test.go:99` runs each `--example` in an empty non-project directory, checks exit 0 and empty stderr, and confirms no directory entry was created.
+- VAL-060: PASS for Task 3's three leaves - `TestAdoptedInputHelpAndExamples` at `cmd/fid/input_descriptor_test.go:139` runs each `--example` in an empty non-project directory, checks exit 0 and empty stderr, and confirms no directory entry was created.
 
 ## Tests run
 
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid -run '^TestAttentionResolveIntegerBoundWritesJSONFailure$'` - FAIL - `FAIL` (terminated `exit_code: 1`); first red observed exit 7 and empty stderr.
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid -run '^TestAttentionResolveIntegerBoundWritesJSONFailure$'` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.357s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid ./internal/cli` - PASS - `ok  	github.com/mbell-nzl/fid/internal/cli	1.118s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	93.837s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid-p24-task3-a2 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `printf '%s' '{"attention_id":"ATT-1","expected_version":0,"fact_event_ids":["EVT-1"]}' | /tmp/fid-p24-task3-a2 --json attention resolve --input - --actor ACT-1 --idempotency-key bound-a2` - expected exit 2; real binary printed `{"contract_version":"fid-cli.v1","error":{"category":"invalid-input","code":"invalid-argument","details":{"allowed":["integer range 1..unbounded"],"argument":"input.expected_version","value":"0"},"message":"invalid input.expected_version","retryable":false,"subject":null},"ok":false,"operation":"attention.resolve"}` with no Event (terminated `exit_code: 2`).
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP24StopRaiseConflictNamesChangedDetails$' ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`); before the two null members, `input.resolution_condition.budget_name` was rejected.
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP24StopRaiseConflictNamesChangedDetails$' ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.474s` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`); package 248.184 s, later failure at `TestP23StopFailureCodeMatrix/attention/invalid-argument`.
@@ -63,7 +70,7 @@
 
 ## Exact quality-gate results
 
-Working directory: `/home/mark/projects/fid`. The original lint failure and first tagged integration failure are retained as immutable attempts. The second five-command gate is recorded in order below them.
+Working directory: `/home/mark/projects/fid`. The original lint failure and both tagged integration failures are retained as immutable attempts. The third five-command gate is recorded in order below them.
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - FAIL - `* staticcheck: 1` (terminated `exit_code: 1`); first attempt.
@@ -77,20 +84,25 @@ Working directory: `/home/mark/projects/fid`. The original lint failure and firs
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.6% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:											(statements)			60.3%` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`); `cmd/fid/integration` 290.647 s. `TestP23StopFailureCodeMatrix/attention/invalid-argument` received empty JSON stderr; product-path repair is outside this continuation's allowlist.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)			60.2%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	302.158s` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
 - No accepted input shape, domain message, gate definition, or assertion was changed. The first lint attempt failed with verbatim last token `* staticcheck: 1` (terminated `exit_code: 1`) because the new validator used `bytes.IndexAny` for a membership check. Replacing it with `bytes.ContainsAny` in `internal/cli/input_validate.go:218` made the byte-identical lint command return `0 issues.` (terminated `exit_code: 0`).
 - The first tagged integration attempt failed with last token `FAIL` (terminated `exit_code: 1`) because the retained Phase 22 fixture omitted required nullable members. Under TRG-24-001, the one-line fixture change added `budget_name:nil` and `capability_id:nil`; the byte-identical focused test changed from `FAIL` (terminated `exit_code: 1`) to `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.474s` (terminated `exit_code: 0`). The later full tagged attempts reached a distinct failure and remain failed evidence.
-- The second exact tagged integration attempt failed with last token `FAIL` (terminated `exit_code: 1`) after 290.647 s. The likely cause is a numeric bound value reaching `cli.NewFailure` for `invalid-argument`, whose accepted detail schema permits only a nullable string. No product code, accepted shape, assertion, or gate was changed in this bounded continuation.
+- The second exact tagged integration attempt failed with last token `FAIL` (terminated `exit_code: 1`) after 290.647 s because a numeric bound value reached `cli.NewFailure` for `invalid-argument`, whose accepted detail schema permits only a nullable string. Under TRG-24-002, `InputError.Details()` now renders non-string JSON values as strings at the structural error boundary, preserving null redaction and raw `InputError.Value`. The focused test first failed with `FAIL` (terminated `exit_code: 1`), reporting exit 7 and empty stderr; after repair it returned `ok  	github.com/mbell-nzl/fid/cmd/fid	2.357s` (terminated `exit_code: 0`). The byte-identical tagged command later returned `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	302.158s` (terminated `exit_code: 0`). No accepted schema, input shape, domain message, assertion, or gate changed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
 - The retained `cmd/fid/integration/p22_fake_test.go:514` fixture line was introduced by `25caa7d40712455c3d1dc39dcdea77b4cc743dd1` (`Refs: phase-22/task-9`), before Phase 24. Task 3's closed validation displaced its omission; TRG-24-001 authorized exactly the two null members. All sequential journey assertions remain intact, and the downstream blank `stop_id`/`attention_id` failures from the first gate no longer occur.
-- New scope gap: `cmd/fid/integration/p23_human_failure_test.go:97` now observes empty JSON stderr for `attention.resolve` with `expected_version:0`. `internal/cli/input_validate.go:163` sends the numeric value through `InputError.Details` (`:24`), while `internal/cli/codes.go:266` declares `invalid-argument.details.value` nullable string and `cmd/fid/stop.go:181` returns before writing when `NewFailure` rejects details. This is a causal inference from source plus the repeated focused failure; exact runtime error text has not yet been captured. A production-path fix and new focused regression lie outside this attempt's allowed files. Preserve the public detail shape and the matrix assertion.
+- The retained Attention invalid-argument matrix row at `cmd/fid/integration/p23_human_failure_test.go:80` was introduced by `180f5168e3f1338cb758f8388f1c26fd6f8428d3` (`Refs: phase-23/task-19`). Task 3's structural integer-bound validation displaced the row's prior domain failure path. TRG-24-002 repaired only the structural error adapter in `internal/cli/input_validate.go:24`; the row and its JSON/Human parity, repeatability, and no-Event assertions remained unchanged. `cmd/fid/stop.go` did not need an edit.
 - Retained exact production-path inventory `TestPhase22AttentionReadBoundary` initially failed when `input_descriptors.go` joined the Attention source set. Its expected list at `cmd/fid/contract_surface_test.go:78` was introduced by `59d2653da7cfe14699dc4d1cd85ef032bec26a5c` (`Refs: phase-23/task-14`). Added the new path to that exact list, preserving the inventory assertion; the focused test then passed.
 - Inventory R18 now counts 25 typed flags versus its planning count of 22 because the three adopted leaves each add `--example`. The later grammar corpus should regenerate that live inventory.
-- The exact ordinary gate cached `internal/workflow` and every other ordinary package; their current wall times and slowest other ordinary package remain unverified for VAL-052. `cmd/fid` at 197.459 s has over 400 s of headroom, and no observed package crossed the 480 s warning.
+- VAL-052 timing evidence: `cmd/fid` 200.072 s in the exact ordinary gate, `internal/workflow` 93.837 s and `internal/issues` 166.391 s in the uncached internal-package check, and tagged integration 302.158 s in the exact gate. No ordinary package crossed the 480 s warning.
 
 ## Dependency-budget note
 
@@ -98,8 +110,8 @@ Working directory: `/home/mark/projects/fid`. The original lint failure and firs
 
 ## Commit hash
 
-- `2ee33ba30ac698de515ab2c1f6142f2d310615e3`
+- Pending commit
 
 ## Commit subject
 
-- `test(cli): checkpoint retained stop fixture convergence`
+- Pending commit
