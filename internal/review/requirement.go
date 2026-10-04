@@ -13,9 +13,9 @@ import (
 )
 
 type RequirementReferenceRequest struct {
-	ID     string `json:"id"`
-	Source Source `json:"source"`
-	Status string `json:"status"`
+	ID     string      `json:"id"`
+	Source SourceInput `json:"source"`
+	Status string      `json:"status"`
 }
 
 type RequirementLinkRequest struct {
@@ -47,7 +47,7 @@ type RequirementListOptions struct {
 }
 
 func RecordRequirementReference(options JudgmentOptions, request RequirementReferenceRequest) (RequirementMutationResult, error) {
-	if !validJudgmentOptions(options) || strings.TrimSpace(request.ID) == "" || !oneOf(request.Status, "active", "withdrawn") || request.Source.SourceType != "project-file" || request.Source.Path == nil || request.Source.ExternalID != nil || request.Source.DisplayLabel == "" || request.Source.Digest == "" {
+	if !validJudgmentOptions(options) || strings.TrimSpace(request.ID) == "" || !oneOf(request.Status, "active", "withdrawn") || request.Source.SourceType != "project-file" || request.Source.Path == nil || request.Source.ExternalID != nil || request.Source.DisplayLabel == "" {
 		return RequirementMutationResult{}, fmt.Errorf("requirement reference input is invalid")
 	}
 	var result RequirementMutationResult
@@ -67,9 +67,15 @@ func RecordRequirementReference(options JudgmentOptions, request RequirementRefe
 		} else if found {
 			return decodeRequirementResult(replay, &result)
 		}
-		if err := verifyDecisionSource(options.WorkspaceRoot, request.Source); err != nil {
+		repository, err := observedRepository(options.WorkspaceRoot, projectID)
+		if err != nil {
 			return err
 		}
+		resolved, err := resolveSources(options.WorkspaceRoot, []SourceInput{request.Source}, repository, "source")
+		if err != nil {
+			return err
+		}
+		source := resolved[0]
 		refID, err := journal.GenerateID("RREF", func(candidate string) (bool, error) { return rowExists(conn, "requirement_refs", candidate) })
 		if err != nil {
 			return err
@@ -78,7 +84,7 @@ func RecordRequirementReference(options JudgmentOptions, request RequirementRefe
 		if err != nil {
 			return err
 		}
-		sourceJSON, err := journal.MarshalCanonicalJSON(request.Source)
+		sourceJSON, err := journal.MarshalCanonicalJSON(source)
 		if err != nil {
 			return err
 		}
@@ -91,14 +97,10 @@ func RecordRequirementReference(options JudgmentOptions, request RequirementRefe
 			return err
 		}
 		effects = append(effects, activity)
-		repository, err := observedRepository(options.WorkspaceRoot, projectID)
-		if err != nil {
-			return err
-		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "requirement.referenced", ActorV2: judgmentActor(actor), Aggregate: journal.Aggregate{ID: refID, Sequence: 1, Type: "requirement"}, CommandName: "requirement.record-reference", Repository: journalRepository(repository), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setJudgmentEventIdentity(prepared.Effects, prepared)
-			value := map[string]any{"id": refID, "requirement_id": request.ID, "source": request.Source, "status": request.Status, "superseded_by_id": nil, "created_at": prepared.OccurredAt.UTC().Format("2006-01-02T15:04:05.999999999Z07:00"), "event_id": prepared.EventID}
+			value := map[string]any{"id": refID, "requirement_id": request.ID, "source": source, "status": request.Status, "superseded_by_id": nil, "created_at": prepared.OccurredAt.UTC().Format("2006-01-02T15:04:05.999999999Z07:00"), "event_id": prepared.EventID}
 			payload, err := journal.MarshalCanonicalJSON(map[string]any{"requirement": value, "idempotency_key": options.IdempotencyKey, "replayed": false})
 			return journal.IdempotencyMutation{EntityID: refID, ResultJSON: string(payload)}, err
 		})

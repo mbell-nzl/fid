@@ -91,6 +91,7 @@ const (
 	CodeEvidenceTypeNotAccepted     Code = "evidence-type-not-accepted"
 	CodeOutcomeNotPermitted         Code = "outcome-not-permitted"
 	CodeRepositoryMismatch          Code = "repository-mismatch"
+	CodeRepositoryUnavailable       Code = "repository-unavailable"
 	CodeReviewNotFound              Code = "review-not-found"
 	CodeFindingNotFound             Code = "finding-not-found"
 	CodeFindingAlreadyDisposed      Code = "finding-already-disposed"
@@ -258,7 +259,9 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 		stringField("envelope_id"), stringField("decision_class"), stringsField("required_capabilities"), stringsField("affected_actions"),
 		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
 	CodeSourceDigestMismatch: definition(CategoryPrecondition, false, nil,
-		stringField("display_label"), nullableStringField("path"), stringField("expected_digest"), nullableStringField("observed_digest")),
+		stringField("display_label"), nullableStringField("path"), nullableStringField("expected_digest"), nullableStringField("observed_digest")),
+	CodeRepositoryUnavailable: definition(CategoryPrecondition, true, nil,
+		stringField("reason"), stringField("detail")),
 	CodeHumanOutcomeRequired: definition(CategoryPrecondition, false, []SubjectType{SubjectEnvelope},
 		stringField("envelope_id"), stringField("obligation_id"), stringField("outcome_class"),
 		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
@@ -385,7 +388,7 @@ var registeredCodes = []Code{
 	CodeImportTargetConflict,
 	CodeFindingNotFound, CodeFindingAlreadyDisposed,
 	CodeConcernNotFound, CodeDeviationNotFound, CodeConcernAlreadyDisposed,
-	CodeProtectedDecisionRequired, CodeSourceDigestMismatch, CodeHumanOutcomeRequired, CodeOutcomeNotFound,
+	CodeProtectedDecisionRequired, CodeSourceDigestMismatch, CodeRepositoryUnavailable, CodeHumanOutcomeRequired, CodeOutcomeNotFound,
 }
 
 func findingFields() []detailField {

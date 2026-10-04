@@ -1,13 +1,10 @@
 package review
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -17,6 +14,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -32,7 +30,7 @@ type DecisionScope struct {
 type DecisionReferenceRequest struct {
 	ID        string            `json:"id"`
 	Class     string            `json:"class"`
-	Source    Source            `json:"source"`
+	Source    SourceInput       `json:"source"`
 	Authority DecisionAuthority `json:"authority"`
 	Outcome   string            `json:"outcome"`
 	Scope     DecisionScope     `json:"scope"`
@@ -57,16 +55,7 @@ type DecisionListOptions struct {
 	Limit         int
 }
 
-type SourceDigestMismatchError struct {
-	DisplayLabel   string
-	Path           *string
-	ExpectedDigest string
-	ObservedDigest *string
-}
-
-func (err *SourceDigestMismatchError) Error() string {
-	return fmt.Sprintf("Source %q digest does not match the observed project file", err.DisplayLabel)
-}
+type SourceDigestMismatchError = project.SourceDigestMismatchError
 
 func RecordDecisionReference(options JudgmentOptions, request DecisionReferenceRequest) (DecisionMutationResult, error) {
 	if err := validateDecisionReference(options, request); err != nil {
@@ -100,9 +89,15 @@ func RecordDecisionReference(options JudgmentOptions, request DecisionReferenceR
 		if err := authorizeJudgmentSubject(options, conn, actor, "decision.record-reference", Subject{Type: "issue", ID: request.Scope.IssueID}); err != nil {
 			return err
 		}
-		if err := verifyDecisionSource(options.WorkspaceRoot, request.Source); err != nil {
+		repository, err := observedRepository(options.WorkspaceRoot, projectID)
+		if err != nil {
 			return err
 		}
+		resolved, err := resolveSources(options.WorkspaceRoot, []SourceInput{request.Source}, repository, "source")
+		if err != nil {
+			return err
+		}
+		source := resolved[0]
 		if exists, err := rowExists(conn, "decision_refs", request.ID); err != nil {
 			return err
 		} else if exists {
@@ -113,7 +108,7 @@ func RecordDecisionReference(options JudgmentOptions, request DecisionReferenceR
 		if err != nil {
 			return err
 		}
-		sourceJSON, _ := journal.MarshalCanonicalJSON(request.Source)
+		sourceJSON, _ := journal.MarshalCanonicalJSON(source)
 		capabilitiesJSON, _ := journal.MarshalCanonicalJSON(request.Authority.RequiredCapabilities)
 		effects := []journal.Effect{{Op: "insert", Table: "decision_refs", PK: map[string]any{"id": request.ID}, Values: map[string]any{
 			"class": request.Class, "source_json": string(sourceJSON), "authority_actor_id": request.Authority.ActorID,
@@ -126,14 +121,10 @@ func RecordDecisionReference(options JudgmentOptions, request DecisionReferenceR
 			return err
 		}
 		effects = append(effects, activity)
-		repository, err := observedRepository(options.WorkspaceRoot, projectID)
-		if err != nil {
-			return err
-		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "decision.referenced", ActorV2: judgmentActor(actor), Aggregate: journal.Aggregate{ID: request.ID, Sequence: 1, Type: "decision"}, CommandName: "decision.record-reference", Repository: journalRepository(repository), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setJudgmentEventIdentity(prepared.Effects, prepared)
-			value := decisionReferenceValue(request, prepared)
+			value := decisionReferenceValue(request, source, prepared)
 			finalizeDecisionResolutionValues(stops, attention, prepared)
 			payload, err := journal.MarshalCanonicalJSON(map[string]any{"decision": value, "protected_decisions": decisions, "stops": stops, "attention": attention, "idempotency_key": options.IdempotencyKey, "replayed": false})
 			return journal.IdempotencyMutation{EntityID: request.ID, ResultJSON: string(payload)}, err
@@ -188,29 +179,8 @@ func validateDecisionReference(options JudgmentOptions, request DecisionReferenc
 	if !validJudgmentOptions(options) || strings.TrimSpace(request.ID) == "" || strings.TrimSpace(request.Class) == "" || request.Authority.ActorID == "" || request.Scope.IssueID == "" || !oneOf(request.Outcome, "approved", "rejected", "deferred") || len(request.Authority.RequiredCapabilities) == 0 || len(request.Authority.RequiredCapabilities) > 16 || !sort.StringsAreSorted(request.Authority.RequiredCapabilities) || !uniqueStrings(request.Authority.RequiredCapabilities) {
 		return fmt.Errorf("decision reference input is invalid")
 	}
-	if request.Source.SourceType != "project-file" || request.Source.Path == nil || request.Source.ExternalID != nil || request.Source.DisplayLabel == "" || request.Source.Digest == "" {
+	if request.Source.SourceType != "project-file" || request.Source.Path == nil || request.Source.ExternalID != nil || request.Source.DisplayLabel == "" {
 		return fmt.Errorf("decision Source is invalid")
-	}
-	return nil
-}
-
-func verifyDecisionSource(root string, source Source) error {
-	if source.Path == nil || filepath.IsAbs(*source.Path) || filepath.Clean(*source.Path) != *source.Path {
-		return &SourceDigestMismatchError{DisplayLabel: source.DisplayLabel, Path: source.Path, ExpectedDigest: source.Digest}
-	}
-	path := filepath.Join(root, filepath.FromSlash(*source.Path))
-	relative, err := filepath.Rel(root, path)
-	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
-		return &SourceDigestMismatchError{DisplayLabel: source.DisplayLabel, Path: source.Path, ExpectedDigest: source.Digest}
-	}
-	payload, err := os.ReadFile(path)
-	if err != nil {
-		return &SourceDigestMismatchError{DisplayLabel: source.DisplayLabel, Path: source.Path, ExpectedDigest: source.Digest}
-	}
-	sum := sha256.Sum256(payload)
-	observed := "sha256:" + hex.EncodeToString(sum[:])
-	if observed != source.Digest {
-		return &SourceDigestMismatchError{DisplayLabel: source.DisplayLabel, Path: source.Path, ExpectedDigest: source.Digest, ObservedDigest: &observed}
 	}
 	return nil
 }
@@ -272,8 +242,8 @@ func finalizeDecisionResolutionValues(stops []workflow.Stop, attention []workflo
 	}
 }
 
-func decisionReferenceValue(request DecisionReferenceRequest, event journal.Event) map[string]any {
-	return map[string]any{"id": request.ID, "class": request.Class, "source": request.Source, "authority": request.Authority, "outcome": request.Outcome, "scope": request.Scope, "created_at": event.OccurredAt.UTC().Format(time.RFC3339Nano), "event_id": event.EventID}
+func decisionReferenceValue(request DecisionReferenceRequest, source Source, event journal.Event) map[string]any {
+	return map[string]any{"id": request.ID, "class": request.Class, "source": source, "authority": request.Authority, "outcome": request.Outcome, "scope": request.Scope, "created_at": event.OccurredAt.UTC().Format(time.RFC3339Nano), "event_id": event.EventID}
 }
 
 func loadDecisionReference(conn *sql.DB, id string) (map[string]any, error) {

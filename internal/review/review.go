@@ -4,6 +4,7 @@ package review
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -65,6 +66,29 @@ type Source struct {
 	ExternalID   *string    `json:"external_id"`
 	Digest       string     `json:"digest"`
 	Repository   Repository `json:"repository"`
+}
+
+type SourceInput = project.SourceInput
+
+func resolveSources(root string, inputs []SourceInput, repository Repository, field string) ([]Source, error) {
+	resolved := make([]Source, 0, len(inputs))
+	for index, input := range inputs {
+		digest, err := project.ResolveSourceInput(root, input)
+		if err != nil {
+			var invalid *project.InvalidSourceInputError
+			if errors.As(err, &invalid) {
+				position := field
+				if field == "references" {
+					position = fmt.Sprintf("references[%d]", index)
+				}
+				return nil, &project.InvalidSourceInputError{Field: "input." + position + "." + invalid.Field, Detail: invalid.Detail}
+			}
+			return nil, err
+		}
+		resolved = append(resolved, Source{SourceType: input.SourceType, DisplayLabel: input.DisplayLabel,
+			Path: input.Path, Section: input.Section, ExternalID: input.ExternalID, Digest: digest, Repository: repository})
+	}
+	return resolved, nil
 }
 
 type CoverageItem struct {
@@ -623,12 +647,11 @@ func loadRecordBinding(conn *sql.DB, runID string) (recordBinding, error) {
 }
 
 func observedRepository(root, projectID string) (Repository, error) {
-	observation, err := project.ObserveRepository(root)
+	observation, err := project.ObserveRecordedRepository(root, projectID)
 	if err != nil {
 		return Repository{}, fmt.Errorf("review record: observe repository: %w", err)
 	}
-	base := observation.HeadOID
-	return Repository{BaseOID: &base, CaptureSource: "git", Dirty: observation.Dirty, DirtyDigest: observation.DirtyDigest, HeadOID: observation.HeadOID, ProjectID: projectID, TreeOID: observation.TreeOID, WorktreeID: observation.WorktreeID}, nil
+	return Repository(observation), nil
 }
 
 func sameRepository(left, right Repository) bool {

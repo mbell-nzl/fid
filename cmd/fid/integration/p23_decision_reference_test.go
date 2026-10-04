@@ -209,7 +209,7 @@ func p23DecisionSource(a *p22FIDRecoveryAdapter, matching bool) map[string]any {
 	if !matching {
 		encoded = p22Zeros(64)
 	}
-	return map[string]any{"source_type": "project-file", "display_label": "Task 9 decision", "path": "base.txt", "section": nil, "external_id": nil, "digest": "sha256:" + encoded, "repository": a.repository}
+	return map[string]any{"source_type": "project-file", "display_label": "Task 9 decision", "path": "base.txt", "section": nil, "external_id": nil, "digest": "sha256:" + encoded}
 }
 
 func p23MissingDecisionSource(a *p22FIDRecoveryAdapter) map[string]any {

@@ -1,13 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
-	"strings"
-	"unicode/utf8"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -42,30 +37,33 @@ func init() {
 }
 
 func newConcernRecordCommand() *cobra.Command {
-	return newConcernMutationCommand("record", func(options review.JudgmentOptions, inputPath string, cmd *cobra.Command) (review.ConcernMutationResult, error) {
+	return newConcernMutationCommand("record", func(cmd *cobra.Command, inputPath string) (concernMutation, error) {
 		var request review.ConcernRecordRequest
-		fields := []string{"id", "subject", "scope", "severity", "summary", "reasoning", "references"}
-		if err := decodeClosedJudgmentInput(cmd.InOrStdin(), inputPath, fields, &request); err != nil {
-			return review.ConcernMutationResult{}, err
+		if err := decodeClosedJudgmentInput(cmd, inputPath, &request); err != nil {
+			return nil, err
 		}
-		return review.RecordConcern(options, request)
+		return func(options review.JudgmentOptions) (review.ConcernMutationResult, error) {
+			return review.RecordConcern(options, request)
+		}, nil
 	})
 }
 
 func newConcernDisposeCommand() *cobra.Command {
-	return newConcernMutationCommand("dispose", func(options review.JudgmentOptions, inputPath string, cmd *cobra.Command) (review.ConcernMutationResult, error) {
+	return newConcernMutationCommand("dispose", func(cmd *cobra.Command, inputPath string) (concernMutation, error) {
 		var request review.ConcernDisposeRequest
-		fields := []string{"concern_id", "action", "issue_id", "supersedes_concern_id", "supersedes_finding_id", "reason"}
-		if err := decodeClosedJudgmentInput(cmd.InOrStdin(), inputPath, fields, &request); err != nil {
-			return review.ConcernMutationResult{}, err
+		if err := decodeClosedJudgmentInput(cmd, inputPath, &request); err != nil {
+			return nil, err
 		}
-		return review.DisposeConcern(options, request)
+		return func(options review.JudgmentOptions) (review.ConcernMutationResult, error) {
+			return review.DisposeConcern(options, request)
+		}, nil
 	})
 }
 
-type concernMutation func(review.JudgmentOptions, string, *cobra.Command) (review.ConcernMutationResult, error)
+type concernMutation func(review.JudgmentOptions) (review.ConcernMutationResult, error)
+type concernDecoder func(*cobra.Command, string) (concernMutation, error)
 
-func newConcernMutationCommand(name string, mutate concernMutation) *cobra.Command {
+func newConcernMutationCommand(name string, decode concernDecoder) *cobra.Command {
 	operation := "concern." + name
 	var inputPath, actor, key string
 	cmd := &cobra.Command{Use: name, Short: "Record or dispose a Concern.", Args: canonicalNoArgs(operation), RunE: func(cmd *cobra.Command, _ []string) error {
@@ -74,11 +72,15 @@ func newConcernMutationCommand(name string, mutate concernMutation) *cobra.Comma
 				return err
 			}
 		}
+		mutate, err := decode(cmd, inputPath)
+		if err != nil {
+			return renderConcernError(cmd, operation, err)
+		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderConcernError(cmd, operation, err)
 		}
-		result, err := mutate(review.JudgmentOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, inputPath, cmd)
+		result, err := mutate(review.JudgmentOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key})
 		if err != nil {
 			return renderConcernError(cmd, operation, err)
 		}
@@ -99,6 +101,7 @@ func newConcernMutationCommand(name string, mutate concernMutation) *cobra.Comma
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError(operation))
+	installInputDescriptor(cmd, inputDescriptorRegistry["concern "+name])
 	return cmd
 }
 
@@ -106,6 +109,9 @@ func renderConcernError(cmd *cobra.Command, operation string, cause error) error
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, operation, cause); ok {
+		return rendered
 	}
 	var missing *review.ConcernNotFoundError
 	if errors.As(cause, &missing) {
@@ -138,39 +144,8 @@ func renderConcernError(cmd *cobra.Command, operation string, cause error) error
 	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Concern request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
-func decodeClosedJudgmentInput(stdin io.Reader, path string, required []string, target any) error {
-	payload, err := os.ReadFile(path)
-	if path == "-" {
-		payload, err = io.ReadAll(io.LimitReader(stdin, 1_048_577))
-	}
-	if err != nil || !utf8.Valid(payload) {
-		return fmt.Errorf("read judgment input: invalid input")
-	}
-	if err := rejectDuplicateJSONKeys(payload); err != nil {
-		return fmt.Errorf("decode judgment input: %w", err)
-	}
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal(payload, &fields); err != nil {
-		return fmt.Errorf("decode judgment input: %w", err)
-	}
-	if len(fields) != len(required) {
-		return fmt.Errorf("decode judgment input: wrong field set")
-	}
-	for _, name := range required {
-		if _, found := fields[name]; !found {
-			return fmt.Errorf("decode judgment input: missing %s", name)
-		}
-	}
-	decoder := json.NewDecoder(strings.NewReader(string(payload)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		return fmt.Errorf("decode judgment input: %w", err)
-	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		return fmt.Errorf("judgment input must contain one object")
-	}
-	return nil
+func decodeClosedJudgmentInput(cmd *cobra.Command, path string, target any) error {
+	return readDescriptorInput(cmd.InOrStdin(), path, inputDescriptorRegistry[rootCommandKey(cmd)], target)
 }
 
 func newConcernListCommand() *cobra.Command {

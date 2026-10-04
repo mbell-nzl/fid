@@ -16,13 +16,13 @@ func p23JudgmentModel(t *testing.T, pairs map[string]p23HumanLeafPair) map[strin
 	deviationValue := map[string]any{
 		"id": deviation["id"], "subject": deviation["subject"], "actor_id": p23LeafFlag(t, deviationPair, "--actor"),
 		"expected": deviation["expected"], "observed": deviation["observed"], "authority": deviation["authority"],
-		"disposition": deviation["disposition"], "reasoning": deviation["reasoning"], "references": deviation["references"],
+		"disposition": deviation["disposition"], "reasoning": deviation["reasoning"], "references": p24ModelSources(t, deviationPair, deviation["references"]),
 		"supersedes_deviation_id": deviation["supersedes_deviation_id"], "created_at": "<generated:timestamp>", "event_id": "<generated:EventRef>",
 	}
 	decisionPair := pairs["decision.record-reference"]
 	decision := p23LeafRequest(t, decisionPair)
 	decisionValue := map[string]any{
-		"id": decision["id"], "class": decision["class"], "source": decision["source"],
+		"id": decision["id"], "class": decision["class"], "source": p24ModelSource(t, decisionPair, decision["source"]),
 		"authority": decision["authority"], "outcome": decision["outcome"], "scope": decision["scope"],
 		"created_at": "<generated:timestamp>", "event_id": "<generated:EventRef>",
 	}
@@ -32,7 +32,7 @@ func p23JudgmentModel(t *testing.T, pairs map[string]p23HumanLeafPair) map[strin
 		"id": outcome["id"], "actor_id": p23LeafFlag(t, outcomePair, "--actor"),
 		"provenance": map[string]any{"activation_id": "<generated:ACT>", "activation_version": float64(10), "profile_ref": "activation:p22-corpus"},
 		"class":      outcome["class"], "subject": outcome["subject"], "result": outcome["result"],
-		"scope": outcome["scope"], "reasoning": outcome["reasoning"], "references": outcome["references"],
+		"scope": outcome["scope"], "reasoning": outcome["reasoning"], "references": p24ModelSources(t, outcomePair, outcome["references"]),
 		"created_at": "<generated:timestamp>", "event_id": "<generated:EventRef>",
 	}
 	return map[string]map[string]any{

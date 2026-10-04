@@ -43,7 +43,8 @@ func TestAttentionResolveUnknownFieldNamesInputPath(t *testing.T) {
 
 func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 	t.Parallel()
-	leaves := []string{"stop raise", "stop resolve", "attention resolve"}
+	leaves := []string{"stop raise", "stop resolve", "attention resolve", "decision record-reference",
+		"requirement record-reference", "requirement link", "human-outcome record", "concern record", "concern dispose", "deviation record"}
 	conflicts := []struct {
 		name, argument string
 		value          any
@@ -62,8 +63,8 @@ func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 		{"key first", "--idempotency-key", "key-1", func(string) []string { return []string{"--idempotency-key", "key-1", "extra"} }},
 		{"positional", "arguments", "extra", func(string) []string { return []string{"extra"} }},
 	}
-	if got := len(leaves) * len(conflicts); got != 18 {
-		t.Fatalf("exclusivity corpus has %d rows, want 18", got)
+	if got := len(leaves) * len(conflicts); got != 60 {
+		t.Fatalf("exclusivity corpus has %d rows, want 60", got)
 	}
 	binary := buildAdoptedFID(t)
 	for _, leaf := range leaves {
@@ -270,6 +271,209 @@ func TestInputDescriptorRegistryMatchesLiveTreeAndTypes(t *testing.T) {
 	mismatch.Fields[0].Name = "wrong_stop_id"
 	if err := cli.CheckInputType(mismatch); err == nil {
 		t.Error("seeded descriptor/type mismatch passed")
+	}
+}
+
+func TestP24JudgmentDescriptorSourcePositionsAndExamples(t *testing.T) {
+	t.Parallel()
+	wantSources := map[string]string{
+		"decision record-reference":    "input.source",
+		"requirement record-reference": "input.source",
+		"human-outcome record":         "input.references[]",
+		"concern record":               "input.references[]",
+		"deviation record":             "input.references[]",
+		"requirement link":             "",
+		"concern dispose":              "",
+	}
+	var positions func([]cli.InputField, string) []string
+	positions = func(fields []cli.InputField, path string) []string {
+		found := []string{}
+		for _, field := range fields {
+			current := path + "." + field.Name
+			if field.Name == "source_type" {
+				found = append(found, path)
+			}
+			found = append(found, positions(field.Children, current)...)
+			if field.Element != nil {
+				found = append(found, positions(field.Element.Children, current+"[]")...)
+			}
+		}
+		return found
+	}
+	for leaf, want := range wantSources {
+		leaf, want := leaf, want
+		t.Run(leaf, func(t *testing.T) {
+			t.Parallel()
+			descriptor, exists := inputDescriptorRegistry[leaf]
+			if !exists || pendingInputDescriptors[leaf] {
+				t.Fatalf("%s lacks adopted descriptor", leaf)
+			}
+			found := positions(descriptor.Fields, "input")
+			if want == "" && len(found) != 0 || want != "" && (len(found) != 1 || found[0] != want) {
+				t.Fatalf("%s SourceInput positions = %v, want %q", leaf, found, want)
+			}
+			workspace := t.TempDir()
+			parts := strings.Split(leaf, " ")
+			help := executeCommandForTest(workspace, append(parts, "--help")...)
+			if help.err != nil || !strings.Contains(help.stdout, "fid "+leaf+" --example") {
+				t.Fatalf("help for %s = %#v", leaf, help)
+			}
+			var checkHelp func([]cli.InputField, string)
+			checkHelp = func(fields []cli.InputField, prefix string) {
+				for _, field := range fields {
+					path := prefix + "." + field.Name
+					if !strings.Contains(help.stdout, path+": ") || !strings.Contains(help.stdout, field.Meaning) {
+						t.Errorf("help for %s lacks %s or its meaning", leaf, path)
+					}
+					checkHelp(field.Children, path)
+					if field.Element != nil {
+						checkHelp(field.Element.Children, path+"[i]")
+					}
+				}
+			}
+			checkHelp(descriptor.Fields, "input")
+			example := executeCommandForTest(workspace, append(parts, "--example")...)
+			if example.err != nil || example.stderr != "" || !json.Valid([]byte(example.stdout)) {
+				t.Fatalf("example for %s = %#v", leaf, example)
+			}
+			template, err := cli.InputExample(descriptor)
+			if err != nil || example.stdout != string(template) {
+				t.Fatalf("example for %s differs from ordered template: %v", leaf, err)
+			}
+			if err := cli.CheckInputType(descriptor); err != nil {
+				t.Fatalf("descriptor type for %s: %v", leaf, err)
+			}
+			var typed any
+			if err := json.Unmarshal([]byte(example.stdout), &typed); err != nil {
+				t.Fatal(err)
+			}
+			if err := cli.ValidateInput([]byte(example.stdout), descriptor); err != nil {
+				t.Fatalf("template for %s: %v", leaf, err)
+			}
+			entries, err := os.ReadDir(workspace)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("example changed non-project directory: %v, %v", entries, err)
+			}
+		})
+	}
+}
+
+func TestP24JudgmentStructuralValidationCorpus(t *testing.T) {
+	t.Parallel()
+	leaves := []string{"decision record-reference", "requirement record-reference", "requirement link",
+		"human-outcome record", "concern record", "concern dispose", "deviation record"}
+	for _, leaf := range leaves {
+		t.Run(leaf, func(t *testing.T) {
+			descriptor := inputDescriptorRegistry[leaf]
+			template, err := cli.InputExample(descriptor)
+			if err != nil {
+				t.Fatal(err)
+			}
+			first := descriptor.Fields[0].Name
+			var baseline map[string]any
+			if err := json.Unmarshal(template, &baseline); err != nil {
+				t.Fatal(err)
+			}
+			sourcePath := ""
+			if _, ok := baseline["source"]; ok {
+				sourcePath = "input.source"
+			} else if _, ok := baseline["references"]; ok {
+				sourcePath = "input.references[0]"
+				baseline["references"] = []any{map[string]any{"source_type": "project-file", "display_label": "Example",
+					"path": nil, "section": nil, "external_id": nil}}
+			}
+			fresh := func() map[string]any {
+				t.Helper()
+				encoded, err := json.Marshal(baseline)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var copy map[string]any
+				if err := json.Unmarshal(encoded, &copy); err != nil {
+					t.Fatal(err)
+				}
+				return copy
+			}
+			check := func(name string, payload []byte, want string) {
+				t.Helper()
+				t.Run(name, func(t *testing.T) {
+					invalid, ok := cli.ValidateInput(payload, descriptor).(*cli.InputError)
+					if !ok || invalid.Path != want || len(invalid.Allowed) == 0 {
+						t.Fatalf("%s: invalid = %#v, want %s", name, invalid, want)
+					}
+					workspace := t.TempDir()
+					inputPath := filepath.Join(workspace, "request.json")
+					if err := os.WriteFile(inputPath, payload, 0o600); err != nil {
+						t.Fatal(err)
+					}
+					parts := append([]string{"--json"}, strings.Split(leaf, " ")...)
+					parts = append(parts, "--input", inputPath, "--actor", "ACT-1", "--idempotency-key", "key-1")
+					result := executeCommandForTest(workspace, parts...)
+					if cli.ExitCode(result.err) != 2 || result.stdout != "" {
+						t.Fatalf("%s: result = %#v", name, result)
+					}
+					var envelope struct {
+						Error struct {
+							Details struct {
+								Argument string   `json:"argument"`
+								Allowed  []string `json:"allowed"`
+							} `json:"details"`
+						} `json:"error"`
+					}
+					if err := json.Unmarshal([]byte(result.stderr), &envelope); err != nil || envelope.Error.Details.Argument != want || len(envelope.Error.Details.Allowed) == 0 {
+						t.Fatalf("%s: stderr = %s, err = %v", name, result.stderr, err)
+					}
+					entries, err := os.ReadDir(workspace)
+					if err != nil || len(entries) != 1 || entries[0].Name() != "request.json" {
+						t.Fatalf("%s: unexpected effects: %v, %v", name, entries, err)
+					}
+				})
+			}
+			mutate := func(name, want string, change func(map[string]any)) {
+				t.Helper()
+				value := fresh()
+				change(value)
+				payload, err := json.Marshal(value)
+				if err != nil {
+					t.Fatal(err)
+				}
+				check(name, payload, want)
+			}
+			mutate("unknown", "input.bogus", func(v map[string]any) { v["bogus"] = true })
+			mutate("missing", "input."+first, func(v map[string]any) { delete(v, first) })
+			mutate("null", "input."+first, func(v map[string]any) { v[first] = nil })
+			mutate("type", "input."+first, func(v map[string]any) { v[first] = 1 })
+			mutate("format", "input."+first, func(v map[string]any) { v[first] = "" })
+			encoded, err := json.Marshal(fresh())
+			if err != nil {
+				t.Fatal(err)
+			}
+			needle := `"` + first + `":`
+			check("duplicate", []byte(strings.Replace(string(encoded), needle, needle+`"duplicate",`+needle, 1)), "input."+first)
+			for _, field := range descriptor.Fields {
+				if len(field.Members) > 0 {
+					mutate("enum", "input."+field.Name, func(v map[string]any) { v[field.Name] = "not-a-member" })
+					break
+				}
+			}
+			if sourcePath == "" {
+				return
+			}
+			getSource := func(v map[string]any) map[string]any {
+				if sourcePath == "input.source" {
+					return v["source"].(map[string]any)
+				}
+				return v["references"].([]any)[0].(map[string]any)
+			}
+			mutate("nested unknown", sourcePath+".bogus", func(v map[string]any) { getSource(v)["bogus"] = true })
+			mutate("nested missing", sourcePath+".source_type", func(v map[string]any) { delete(getSource(v), "source_type") })
+			mutate("nested null", sourcePath+".source_type", func(v map[string]any) { getSource(v)["source_type"] = nil })
+			mutate("nested type", sourcePath+".source_type", func(v map[string]any) { getSource(v)["source_type"] = 1 })
+			mutate("nested enum", sourcePath+".source_type", func(v map[string]any) { getSource(v)["source_type"] = "unknown" })
+			mutate("nested format", sourcePath+".display_label", func(v map[string]any) { getSource(v)["display_label"] = "" })
+			check("nested duplicate", []byte(strings.Replace(string(encoded), `"source_type":"project-file"`,
+				`"source_type":"project-file","source_type":"external-reference"`, 1)), sourcePath+".source_type")
+		})
 	}
 }
 

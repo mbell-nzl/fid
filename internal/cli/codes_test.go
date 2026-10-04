@@ -163,8 +163,9 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			{name: "event", kind: detailObjectKind, nullable: true, children: []detailExpectation{stringDetail("id"), stringDetail("occurred_at")}}, {name: "replayed", kind: detailBooleanKind},
 		}},
 		{CodeSourceDigestMismatch, CategoryPrecondition, false, nil, []detailExpectation{
-			stringDetail("display_label"), nullableStringDetail("path"), stringDetail("expected_digest"), nullableStringDetail("observed_digest"),
+			stringDetail("display_label"), nullableStringDetail("path"), nullableStringDetail("expected_digest"), nullableStringDetail("observed_digest"),
 		}},
+		{CodeRepositoryUnavailable, CategoryPrecondition, true, nil, []detailExpectation{stringDetail("reason"), stringDetail("detail")}},
 		{CodeHumanOutcomeRequired, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, []detailExpectation{
 			stringDetail("envelope_id"), stringDetail("obligation_id"), stringDetail("outcome_class"),
 			{name: "stop_ids", kind: detailStringsKind}, {name: "attention_ids", kind: detailStringsKind},

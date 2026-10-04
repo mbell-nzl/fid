@@ -16,7 +16,7 @@ func p23ConcernModel(t *testing.T, pairs map[string]p23HumanLeafPair) map[string
 	base := map[string]any{
 		"id": record["id"], "subject": record["subject"], "actor_id": p23LeafFlag(t, pairs["concern.record"], "--actor"),
 		"scope": record["scope"], "severity": record["severity"], "summary": record["summary"],
-		"reasoning": record["reasoning"], "references": record["references"], "status": "open",
+		"reasoning": record["reasoning"], "references": p24ModelSources(t, pairs["concern.record"], record["references"]), "status": "open",
 		"disposition": nil, "created_at": "<generated:timestamp>", "event_id": "<generated:EventRef>",
 	}
 	disposed := make(map[string]any, len(base))

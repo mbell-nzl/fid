@@ -512,4 +512,27 @@ Structural `--input` failures name the field in `invalid-argument.details.argume
 (for example `input.resolution_condition.subject.id`) before domain validation.
 The remaining `--input` leaves enter this convention in their owning tasks.
 
-*Last updated: 2026-10-04 (Phase 24 QA recheck dispositions; DEC-282)*
+Task 4 adopts `SourceInput` for `decision record-reference`, `requirement
+record-reference`, `human-outcome record`, `concern record`, and `deviation
+record`. It is a Source without `repository`; a project-file digest may be
+omitted, while an external-reference digest is required. fid resolves each
+project-file path under the project root, checks a supplied SHA-256 digest or
+records the observed one, and attaches its own repository observation to the
+stored Source and Event. `requirement link` and `concern dispose` gain
+descriptor help and templates as observing leaves without Source fields.
+
+For example, `fid decision record-reference --example` shows the complete
+required input shape. Its `source` can be edited to name a file as follows;
+the optional digest is shown only here to illustrate a caller-supplied check:
+
+```json
+{"source_type":"project-file","display_label":"Accepted decision","path":"project-docs/decision.md","section":null,"external_id":null,"digest":"sha256:<64 lowercase hexadecimal digits>"}
+```
+
+Omitting `digest` asks fid to observe the file. A same-key retry replays the
+original Source and Event even after HEAD or the file changes. A mismatch
+returns `source-digest-mismatch` with nullable `expected_digest` and
+`observed_digest`; an unobservable worktree returns `repository-unavailable`
+with a typed reason and detail. Both refuse without appending an Event.
+
+*Last updated: 2026-10-05 (Phase 24 Task 4 judgment SourceInput delivery)*

@@ -23,7 +23,7 @@ type HumanOutcomeRequest struct {
 	Result     string        `json:"result"`
 	Scope      DecisionScope `json:"scope"`
 	Reasoning  string        `json:"reasoning"`
-	References []Source      `json:"references"`
+	References []SourceInput `json:"references"`
 }
 
 type HumanOutcomeMutationResult struct {
@@ -115,7 +115,11 @@ func RecordHumanOutcome(options JudgmentOptions, request HumanOutcomeRequest) (H
 		if err != nil {
 			return err
 		}
-		referencesJSON, err := journal.MarshalCanonicalJSON(request.References)
+		references, err := resolveSources(options.WorkspaceRoot, request.References, repository, "references")
+		if err != nil {
+			return err
+		}
+		referencesJSON, err := journal.MarshalCanonicalJSON(references)
 		if err != nil {
 			return err
 		}
@@ -134,7 +138,7 @@ func RecordHumanOutcome(options JudgmentOptions, request HumanOutcomeRequest) (H
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "human-outcome.recorded", ActorV2: judgmentActor(actor), Aggregate: journal.Aggregate{ID: request.ID, Sequence: 1, Type: "human-outcome"}, CommandName: "human-outcome.record", Repository: journalRepository(repository), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setJudgmentEventIdentity(prepared.Effects, prepared)
-			value := humanOutcomeValue(request, provenance, prepared)
+			value := humanOutcomeValue(request, references, provenance, prepared)
 			finalizeDecisionResolutionValues(stops, attention, prepared)
 			payload, err := journal.MarshalCanonicalJSON(map[string]any{"outcome": value, "protected_decisions": decisions, "stops": stops, "attention": attention, "idempotency_key": options.IdempotencyKey, "replayed": false})
 			return journal.IdempotencyMutation{EntityID: request.ID, ResultJSON: string(payload)}, err
@@ -198,12 +202,12 @@ func loadActorProvenance(conn *sql.DB, actorID string) (actorProvenance, error) 
 	return provenance, err
 }
 
-func humanOutcomeValue(request HumanOutcomeRequest, provenance actorProvenance, event journal.Event) map[string]any {
+func humanOutcomeValue(request HumanOutcomeRequest, references []Source, provenance actorProvenance, event journal.Event) map[string]any {
 	return map[string]any{
 		"id": request.ID, "actor_id": event.ActorV2.ActorID,
 		"provenance": map[string]any{"activation_id": provenance.ActivationID, "activation_version": provenance.ActivationVersion, "profile_ref": provenance.ProfileRef},
 		"class":      request.Class, "subject": map[string]any{"type": request.Subject.Type, "id": request.Subject.ID},
-		"result": request.Result, "scope": map[string]any{"issue_id": request.Scope.IssueID}, "reasoning": request.Reasoning, "references": request.References,
+		"result": request.Result, "scope": map[string]any{"issue_id": request.Scope.IssueID}, "reasoning": request.Reasoning, "references": references,
 		"created_at": event.OccurredAt.UTC().Format(time.RFC3339Nano), "event_id": event.EventID,
 	}
 }

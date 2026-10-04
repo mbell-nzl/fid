@@ -17,6 +17,29 @@ import (
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
+func TestP24HumanOutcomeRejectsReferenceDigestMismatch(t *testing.T) {
+	t.Parallel()
+	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "review.record", "run.close", "run.observe", "run.observe-budget", "run.start"}
+	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, actions,
+		p22ExecutionFixture{HumanObligations: true, CoexistingReviewObligation: true})
+	path := filepath.Join(a.workspace, "judgment-source.md")
+	if err := os.WriteFile(path, []byte("actual source bytes"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	input := map[string]any{
+		"id": "OUT-reference-mismatch", "class": "release", "subject": map[string]any{"type": "issue", "id": a.issueID},
+		"result": "approved", "scope": map[string]any{"issue_id": a.issueID}, "reasoning": "reference check",
+		"references": []any{map[string]any{"source_type": "project-file", "display_label": "judgment source",
+			"path": "judgment-source.md", "section": nil, "external_id": nil, "digest": "sha256:" + p22Zeros(64)}},
+	}
+	before := p21JournalEventCount(t, a.workspace)
+	response := p23RunInput(t, a, "human-outcome", "record", a.actor, "p24-reference-mismatch", input)
+	assertP22ProcessFailure(t, "human-outcome.record", "source-digest-mismatch", 4, response)
+	if after := p21JournalEventCount(t, a.workspace); after != before {
+		t.Fatalf("digest mismatch appended %d Events", after-before)
+	}
+}
+
 // TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess proves
 // provenanced Human Outcome recording end to end through the built binary:
 // VAL-043 authority admission and its four negatives, VAL-045's deterministic

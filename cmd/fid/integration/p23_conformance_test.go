@@ -3,6 +3,7 @@
 package integration
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -17,6 +18,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 type p23LeafCase struct {
@@ -228,7 +231,7 @@ func TestP23SharedLeafConformance(t *testing.T) {
 		a := p22NewFIDRecoveryAdapter(t)
 		before := p21JournalEventCount(t, a.workspace)
 		response := p23RunInput(t, a, "requirement", "record-reference", "actor-not-activated", "p23-shared-authority", map[string]any{
-			"id": "REQ-shared-authority", "source": a.measurement, "status": "active",
+			"id": "REQ-shared-authority", "source": p23DecisionSource(a, true), "status": "active",
 		})
 		var failure struct {
 			Operation string `json:"operation"`
@@ -327,6 +330,50 @@ func TestP23SharedLeafConformance(t *testing.T) {
 		fid := p23FIDLeafAdapter{pair: pair, binary: a.binary, fixture: fixture}
 		p23CompareLeafOutcome(t, "missing-capability", fake.MissingCapability(a.actor), fid.rejection(t, args))
 	})
+}
+
+// p24ModelSource derives stored fields independently from the caller's input,
+// project config and Git capture for the Phase 24 SourceInput convergence.
+func p24ModelSource(t *testing.T, pair p23HumanLeafPair, raw any) map[string]any {
+	t.Helper()
+	input := raw.(map[string]any)
+	stored := make(map[string]any, len(input)+1)
+	for key, value := range input {
+		stored[key] = value
+	}
+	if _, supplied := stored["digest"]; !supplied && stored["source_type"] == "project-file" {
+		path := stored["path"].(string)
+		contents, err := os.ReadFile(filepath.Join(pair.CWD, filepath.FromSlash(path)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		sum := sha256.Sum256(contents)
+		stored["digest"] = "sha256:" + hex.EncodeToString(sum[:])
+	}
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(pair.CWD, config.WorkspaceDirName, config.ConfigFileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	repository := p22CorpusRepository(t, pair.CWD, projectConfig.ProjectID)
+	if digest, ok := repository["dirty_digest"].(*string); ok {
+		if digest == nil {
+			repository["dirty_digest"] = nil
+		} else {
+			repository["dirty_digest"] = *digest
+		}
+	}
+	stored["repository"] = repository
+	return stored
+}
+
+func p24ModelSources(t *testing.T, pair p23HumanLeafPair, raw any) []any {
+	t.Helper()
+	inputs := raw.([]any)
+	sources := make([]any, 0, len(inputs))
+	for _, input := range inputs {
+		sources = append(sources, p24ModelSource(t, pair, input))
+	}
+	return sources
 }
 
 func TestP23SharedAmendedLeafConformance(t *testing.T) {
@@ -451,8 +498,22 @@ func (a p23FakeLeafAdapter) Accepted() p23LeafOutcome {
 }
 
 func (a p23FakeLeafAdapter) UnknownField() p23LeafOutcome {
+	if allowed, ok := p24AdoptedTopLevelFields[a.fixture.Operation]; ok {
+		return p23LeafOutcome{Operation: a.fixture.Operation, Code: "invalid-argument", Category: "invalid-input", Exit: 2,
+			Details: map[string]any{"argument": "input.unaccepted_field", "value": "unaccepted_field", "allowed": allowed}}
+	}
 	return p23LeafOutcome{Operation: a.fixture.Operation, Code: "invalid-argument", Category: "invalid-input", Exit: 2,
 		Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted " + a.fixture.Operation + " input"}}}
+}
+
+var p24AdoptedTopLevelFields = map[string][]any{
+	"decision.record-reference":    {"authority", "class", "id", "outcome", "scope", "source"},
+	"requirement.record-reference": {"id", "source", "status"},
+	"requirement.link":             {"issue_id", "relation", "requirement_id"},
+	"human-outcome.record":         {"class", "id", "reasoning", "references", "result", "scope", "subject"},
+	"concern.record":               {"id", "reasoning", "references", "scope", "severity", "subject", "summary"},
+	"concern.dispose":              {"action", "concern_id", "issue_id", "reason", "supersedes_concern_id", "supersedes_finding_id"},
+	"deviation.record":             {"authority", "disposition", "expected", "id", "observed", "reasoning", "references", "subject", "supersedes_deviation_id"},
 }
 
 func (a p23FakeLeafAdapter) UntrustedActor() p23LeafOutcome {

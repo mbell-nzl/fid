@@ -56,7 +56,7 @@ func newHumanOutcomeRecordCommand() *cobra.Command {
 			}
 		}
 		var request review.HumanOutcomeRequest
-		if err := decodeClosedJudgmentInput(cmd.InOrStdin(), inputPath, []string{"id", "class", "subject", "result", "scope", "reasoning", "references"}, &request); err != nil {
+		if err := decodeClosedJudgmentInput(cmd, inputPath, &request); err != nil {
 			return renderHumanOutcomeError(cmd, "human-outcome.record", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -81,6 +81,7 @@ func newHumanOutcomeRecordCommand() *cobra.Command {
 	command.Flags().StringVar(&actor, "actor", "", "Finalized activation human actor ID")
 	command.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	command.SetFlagErrorFunc(canonicalFlagError("human-outcome.record"))
+	installInputDescriptor(command, inputDescriptorRegistry["human-outcome record"])
 	return command
 }
 
@@ -121,6 +122,9 @@ func renderHumanOutcomeError(cmd *cobra.Command, operation string, cause error) 
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, operation, cause); ok {
+		return rendered
 	}
 	var authorityMissing *review.AuthorityMissingError
 	if errors.As(cause, &authorityMissing) {

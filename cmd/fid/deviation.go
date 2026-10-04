@@ -30,8 +30,7 @@ func newDeviationRecordCommand() *cobra.Command {
 			}
 		}
 		var request review.DeviationRecordRequest
-		fields := []string{"id", "subject", "expected", "observed", "authority", "disposition", "reasoning", "references", "supersedes_deviation_id"}
-		if err := decodeClosedJudgmentInput(cmd.InOrStdin(), inputPath, fields, &request); err != nil {
+		if err := decodeClosedJudgmentInput(cmd, inputPath, &request); err != nil {
 			return renderDeviationError(cmd, "deviation.record", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -55,6 +54,7 @@ func newDeviationRecordCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("deviation.record"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["deviation record"])
 	return cmd
 }
 
@@ -94,6 +94,9 @@ func renderDeviationError(cmd *cobra.Command, operation string, cause error) err
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, operation, cause); ok {
+		return rendered
 	}
 	var missing *review.DeviationNotFoundError
 	if errors.As(cause, &missing) {

@@ -33,7 +33,7 @@ var p23FailureContracts = map[string]struct {
 	"human-outcome-required":      {"precondition", "envelope", "envelope_id obligation_id outcome_class stop_ids attention_ids event replayed", "envelope.complete issue.transition"},
 	"outcome-not-permitted":       {"precondition", "", "obligation_id obligation_type outcome_id result", "evidence.link"},
 	"evidence-type-not-accepted":  {"precondition", "", "obligation_id evidence_type accepted_evidence_types", "evidence.link"},
-	"source-digest-mismatch":      {"precondition", "", "display_label path expected_digest observed_digest", "decision.record-reference requirement.record-reference"},
+	"source-digest-mismatch":      {"precondition", "", "display_label path expected_digest observed_digest", "decision.record-reference requirement.record-reference human-outcome.record concern.record deviation.record"},
 	"repository-mismatch":         {"conflict", "", "expected observed", "review.record"},
 }
 
