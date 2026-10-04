@@ -511,7 +511,7 @@ func (adapter *p22FIDRecoveryAdapter) p22BuildArgs(t *testing.T, fixture p22Conf
 	case "stop.raise":
 		args = append(args, "stop", "raise", "--actor", adapter.actor)
 		subject := map[string]any{"type": "run", "id": adapter.runID}
-		input = map[string]any{"subject": subject, "code": "operator-stop", "blocked_actions": []string{"gate.run"}, "details": map[string]any{"reason": "conformance operator intervention", "reference": "policy:conformance"}, "resolution_condition": map[string]any{"type": "work-ended", "subject": subject}, "resolver_capability": "stop.resolve"}
+		input = map[string]any{"subject": subject, "code": "operator-stop", "blocked_actions": []string{"gate.run"}, "details": map[string]any{"reason": "conformance operator intervention", "reference": "policy:conformance"}, "resolution_condition": map[string]any{"type": "work-ended", "subject": subject, "budget_name": nil, "capability_id": nil}, "resolver_capability": "stop.resolve"}
 	case "stop.resolve":
 		args = append(args, "stop", "resolve", "--actor", adapter.actor)
 		input = map[string]any{"stop_id": adapter.stopID, "fact_event_id": adapter.terminalEvent}
