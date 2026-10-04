@@ -10,8 +10,9 @@ Deliver two accepted Phase 21 allocations that were never delivered
   `operation-unavailable`. Today it either prints help with exit 0 or exits
   silently.
 
-Every message that embeds caller text is free of control characters. This
-task was split from task 9 (DEC-280, TL-02) and runs between tasks 9 and 10.
+Every message that embeds caller text is free of control characters and
+bounded to 512 Unicode scalars (DEC-282). This task was split from task 9
+(DEC-280, TL-02) and runs between tasks 9 and 10.
 
 ## Validation Contract Coverage
 
@@ -24,10 +25,10 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
 ## Binding Constraints
 
-- Phase 21 `public-interface.md` sections 2 (grammar rule), 5 (absent
-  commands; the Human-only diagnostics) and 7 (code table; "messages are
+- Phase 21 `public-interface.md` sections 1 (message bound), 2 (grammar
+  rule), 5 (absent commands; the Human-only diagnostics) and 7 (code table; "messages are
   never control flow"). Contract section 9. DEC-278 items 3-4, DEC-279, and
-  DEC-280 items 2-6 and 8.
+  DEC-280 items 2-6 and 8, and DEC-282 (RC-02).
 - **Scope.** Every live leaf except `fid journal inspect` and `fid sql`
   (Phase 21 section 5), plus the root and every command group (R17).
   Cobra's generated `help` and `completion` commands have no operation ID
@@ -40,7 +41,7 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   `concern`, `issue.ac`).
 - **Classes (DEC-280 item 4).**
 
-  | Class | `argument` | `value` | `allowed` | `message` |
+  | Class | `argument` | `value` | `allowed` | Message source (before escaping and bounding) |
   |---|---|---|---|---|
   | unknown flag (long or shorthand) | the spelling as typed (`--bogus`, `-x`) | the spelling | the leaf's local long flags, sorted, without `--help`, `--json` and `--project`; `[]` at the root or a group | pflag's text (`unknown flag: --bogus`) |
   | missing required flag | `--<name>` | null | `["--<name>"]` | the detecting check's text (`--input is required`) |
@@ -93,10 +94,10 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   - An unknown word returns `argument:"command"`, `value:<word>` and
     `allowed:` the subcommands that command's `--help` lists, sorted. The
     root's list includes `completion` and `help`.
-  - `message` is exactly `unknown command "<word>" for "<command path>"`
+  - The message source is exactly `unknown command "<word>" for "<command path>"`
     (Cobra's `CommandPath`, for example `fid issue ac`) on one line, with
     no suggestions. Today Cobra's root text appends `Did you mean this?`
-    lines.
+    lines. Apply the bounded message rule below to this source (DEC-282).
   - A command run with no word keeps today's behaviour (Human mode: its help
     on stdout, exit 0).
   - Human mode prints `error: <message>` and exits 2 until task 10 sets the
@@ -108,9 +109,21 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   (`cmd/fid/live_output.go`): `\n`, `\r` and `\t`, and `\uXXXX` for any other
   control character. Apply it to every grammar and unknown-command
   `message`. Text already escaped by Go's `%q` passes through unchanged.
-  Task 10's renderer reuses the function. `details.value` keeps the
-  supplied text; JSON encoding escapes it, and task 10 escapes the
-  `reason:` line.
+  Task 10's renderer reuses the function. `details.argument` and
+  `details.value` keep their full class-table values; JSON encoding escapes
+  them, and task 10 escapes the `reason:` line.
+- **Message bound (DEC-282, RC-02).** Add the shared bounded message
+  construction in `internal/cli` alongside the escape function. Apply
+  contract section 9 in order: construct the class-table or unknown-command
+  text, escape controls, then count Unicode scalars before JSON serialization
+  (no Human label or line terminator). Up to 512: unchanged. Over 512: first
+  511 plus `…`, dropping an escape that straddles the cut whole, without
+  padding. Already escaped `%q` text stays escaped and its escapes cannot
+  be split either. This rule takes precedence over exact source text;
+  details, code, category, retryable, subject and exit keep their specified
+  values. Human `error:` carries the final JSON message verbatim. Task 10
+  reuses this construction for generic fallbacks, without escaping or
+  truncating the final message again in the Human renderer.
 - **Request-level fallbacks (R19, DEC-280 item 5).** After this task, the
   grammar paths produce class details and no longer use
   `argument:"request"`. They are `canonical_request.go`, the Cobra-error
@@ -129,7 +142,8 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 ### Files To Create Or Modify
 
 - `internal/cli/codes.go` (`operation-unavailable`) and its code
-  conformance tests; the `internal/cli` escape function (new), with tests
+  conformance tests; the `internal/cli` escape and bounded message functions
+  (new), with tests
 - `cmd/fid/root.go` (the central unknown-command mechanism; root and group
   unknown flags; the `execute` fallback); `cmd/fid/main.go` if the exit path
   needs it
@@ -150,9 +164,10 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - `project-docs/docs/phases/phase-24/public-interface.md` sections 9 and 13
 - `project-docs/docs/phases/phase-24/input-inventory.md` section 1, R8,
   R17, R18 and R19
-- `project-docs/docs/phases/phase-24/decisions.md` DEC-278, DEC-279, DEC-280
+- `project-docs/docs/phases/phase-24/decisions.md` DEC-278, DEC-279, DEC-280,
+  DEC-282
 - `project-docs/docs/phases/phase-21/public-interface.md` sections 1
-  (`capabilities` example), 2, 4, 5 and 7; the Phase 22 and 23
+  (message bound and `capabilities` example), 2, 4, 5 and 7; the Phase 22 and 23
   `public-interface.md` rows that amend Phase 21 rows
 - `cmd/fid/live_output.go` `visibleLiveText`; `cobra@v1.10.2` `args.go`
   (`legacyArgs`, `NoArgs`)
@@ -185,6 +200,16 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - [ ] An unknown-flag spelling containing ESC gives a message with no raw
   control byte. The text is identical in the JSON `message` and after the
   Human `error: `. (VAL-064)
+- [ ] Built-binary rows in both modes cover a long unknown flag and a long
+  unknown word (600 ASCII characters each), alongside short exact messages.
+  Boundary rows for both message sources cover escaped text of exactly 512
+  and 513 scalars, non-ASCII scalar counting, and an escape crossing the
+  511-scalar cut (dropped whole). Include already escaped `%q` text. Unit
+  tests also exercise the shared construction at those boundaries. JSON
+  messages match the exact bounded result and the Human `error:` payload;
+  no raw control, split escape, second escape or second cut is present.
+  Full offending spelling/value remains in details; code, category,
+  retryable, subject and exit match the class rules. (VAL-064, VAL-065)
 - [ ] Every row run again from a non-project directory returns the same
   failure, and no row writes anything. (VAL-064)
 - [ ] `fid bogus`, `fid isue` and an unknown word under every R17 command
@@ -202,8 +227,8 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 ## Documentation Updates
 
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md`: the grammar-failure class
-  table, declared flag domains, and `operation-unavailable` for unknown
-  commands.
+  table, declared flag domains, `operation-unavailable` for unknown commands,
+  and DEC-282's escape-then-bound precedence and full detail preservation.
 
 ## Exact Commands To Run
 

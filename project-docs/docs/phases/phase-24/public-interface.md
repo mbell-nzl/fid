@@ -7,6 +7,8 @@
 > adds Human decision D5 to section 13, decided as DEC-279. DEC-280 (QA
 > readiness-refresh dispositions) clarifies section 9 and adds Human decision
 > D6 to section 13, decided as DEC-281 (sections 5 and 9).
+> DEC-282 corrects the plain-copy Run cause in section 5 and applies the
+> bounded message rule to grammar failures and unknown commands in section 9.
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -139,15 +141,18 @@ equal the workspace root, which is the existing rule in
 `importedGateDestination` and `importedDestinationBinding` (Phase 22
 `contracts.md` section 10: destination observations are new local facts).
 The rule applies uniformly to `claim.acquire` against the Envelope scope,
-`run.start` against the Envelope scope, `gate.run` against the Registration
-and Run, and `envelope.create` against prior Registrations. A different
+`run.start` against the Claim and Envelope scope, `gate.run` against the
+Registration and Run, and `envelope.create` against prior Registrations. A different
 worktree without a matching import binding (for example, a plain directory
 copy) is refused as today. "As today" means each leaf's existing fallback
 failure: `invalid-argument`, `argument:"input"`, `value:null` (DEC-278).
-Its message is the domain reason the refusing check gives today (DEC-281):
+Its message is the domain reason the refusing check gives today (DEC-281/282):
 `prior registration binding does not match envelope`, `claim acquire
-binding is invalid`, `run envelope binding is invalid` or `run gate:
+binding is invalid`, `run claim binding is invalid` or `run gate:
 repository binding is invalid`.
+For `run.start`, the Claim binding check rejects the plain copy before the
+Envelope check. Preserve that order and both checks; a snapshot mismatch in
+the original worktree is not the plain-copy case (DEC-282, RC-01).
 
 ## 6. Failure Codes
 
@@ -232,14 +237,14 @@ next: <resolving action>                 # only for the codes in the next-table 
 
 - Every line derives from the JSON failure (code, message, subject and
   details). Exit status and the JSON failure are unchanged, except the
-  grammar messages above (DEC-278) and the generic-fallback messages below
-  (DEC-281).
+  grammar messages below (DEC-278/280/282) and the generic-fallback messages
+  below (DEC-281).
 - **Generic fallbacks (DEC-281, D6 = A).** A family's final
   `invalid-argument` branch for a cause no earlier branch matched sets
-  `message` to the caught error's text, escaped as below. A text over 512
-  scalars keeps its first 511 plus `…`. An empty cause keeps the fixed
-  message. Code and details are unchanged, so the `error:` line keeps
-  showing the cause that Human mode prints today.
+  `message` to the caught error's text, escaped and bounded as below. An
+  empty or all-whitespace cause keeps the fixed message. Code and details
+  are unchanged, so the `error:` line keeps showing the cause that Human
+  mode prints today.
 - The `error:` line repairs A5. Today `issue transition` prints a different
   sentence from its JSON `message`.
 - **Key detail.** Scalar detail members render as `name=value` in key order;
@@ -257,18 +262,34 @@ next: <resolving action>                 # only for the codes in the next-table 
   sequence that would straddle the cut is dropped whole.
 - **Grammar failures and unknown commands (DEC-278).** Grammar failures carry
   the Phase 21 section 2 details (the offending spelling or value, and the
-  accepted alternatives). Their JSON `message` is the parser's text, so the
-  `error:` line keeps the spelling. Unknown commands return the Phase 21
-  `operation-unavailable` failure. Its JSON `operation` is the dotted path of
+  accepted alternatives). Their message source is the detecting error's
+  text specified by task 9a's class table. Unknown commands return the
+  Phase 21 `operation-unavailable` failure. Its JSON `operation` is the dotted path of
   the known command that received the unknown word, `fid` at the root
-  (DEC-279, D5). Its `message` is the single line
+  (DEC-279, D5). Its message source is the single line
   `unknown command "<word>" for "<command path>"`, with no suggestions
-  (DEC-280).
+  (DEC-280). Both sources pass through the bounded message rule below
+  (DEC-282). Details retain the full offending spelling/value.
 - **No control characters in messages (DEC-280, PRD-OPS-007).** A message
   that embeds caller text (a flag spelling, a value, a command word, or a
   generic fallback's domain cause) escapes control characters when it is
   built. The JSON `message` and the `error:`
   line therefore stay byte-equal, and neither carries a raw control byte.
+- **Bounded messages (DEC-282, RC-02).** Grammar failures, unknown commands
+  and generic fallbacks share this construction rule. First escape control
+  characters using the DEC-280 form (`\n`, `\r`, `\t`, otherwise `\uXXXX`);
+  text already escaped by Go's `%q` stays escaped. Then count Unicode scalar
+  values in that text, before JSON serialization and excluding `error: `
+  and the line terminator. At most 512 scalars: keep it unchanged. More
+  than 512: keep the first 511 and append `…`; if an escape sequence would
+  straddle the cut, drop that entire sequence and append `…` to the
+  preceding prefix, without padding. Never split an escape. This bound
+  takes precedence over exact parser text and the unknown-command formula;
+  neither can bypass Phase 21's `message:string[1..512]` contract. Code,
+  category, retryable, subject, details and exit retain their specified
+  values. In particular, `details.argument` and `details.value` are not
+  truncated by this message rule. The Human `error:` payload equals the
+  decoded JSON `message` byte for byte, with no second escape or cut.
 - **next-table (closed):**
 
 | Code | `next:` text (IDs and classes from details) |

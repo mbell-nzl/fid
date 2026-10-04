@@ -1,4 +1,4 @@
-# Phase Brief - Phase 24 (readiness-refresh findings applied; D6 decided)
+# Phase Brief - Phase 24 (QA recheck corrections applied; verification pending)
 
 ## Phase Goal
 
@@ -11,22 +11,20 @@ expectations a check uses. Request digests cover the input as written.
 
 ## Status
 
-**Readiness-refresh findings applied (DEC-280).** Branch `phase-24`. The
-QA plan's first pass was dispositioned in DEC-278 and D5 in DEC-279. Its
-readiness refresh (`87f1071`) was NOT READY, with nine Must-fix items
-(RR-01..09) and 13 improvements (RI-01..13). The Tech Lead reproduced each
-one and dispositioned all of them in DEC-280:
-- task 9 is split, and new task 9a owns grammar failures and unknown
-  commands (VAL-064/065);
-- inventory R17-R19 are added;
-- a control-character defect found during the check is fixed in tasks 9a
-  and 10;
-- RR-06 went to the Human as D6, decided A (DEC-281): generic fallbacks
-  carry their domain cause as the message (new VAL-067, task 10).
+**QA recheck corrections applied (DEC-282).** Branch `phase-24`. The
+first QA pass and readiness refresh were dispositioned in DEC-278..281,
+including task 9a for grammar/unknown commands and D6=A for generic-fallback
+messages. Recheck `4819b30` confirmed those dispositions but remains
+**NOT READY** with RC-01/RC-02. DEC-282 addresses both:
 
-- **Next:** the QA Lead re-checks everything DEC-280 and DEC-281 changed,
-  then the Phase Runner's readiness check, then task 1. Nothing is
-  dispatched before the re-check passes.
+- plain-copy `run.start` preserves the earlier Claim refusal,
+  `run claim binding is invalid` (task 7; message convergence task 10);
+- grammar and unknown-command messages use the shared escape-then-bound
+  rule, at most 512 scalars, retaining full details (task 9a; pairing task 10).
+
+**Next:** QA Lead rechecks RC-01/RC-02 and DEC-282's changed text, then the
+Phase Runner checks readiness, then task 1. Nothing is dispatched before
+the QA recheck passes. No Phase 24 implementation has started.
 
 ## Operating Mode
 
@@ -39,14 +37,15 @@ Human checklist's "take control" scenario is the Human run.
 ## Authority
 
 - Contract: `../phases/phase-24/public-interface.md` (ACCEPTED, DEC-277;
-  clarified by DEC-278 and DEC-280; D6 decided by DEC-281).
-- Inventory: `../phases/phase-24/input-inventory.md` (R1-R19). Every task
+  clarified by DEC-278/280/282; D6 decided by DEC-281).
+- Inventory: `../phases/phase-24/input-inventory.md` (R1-R20). Every task
   reruns its registry commands.
 - Decisions: DEC-272 (scope), DEC-273 (real-worktree run and gate checks),
   DEC-274 (`get` leaves), DEC-275 (per-field digests, migration 0019),
   DEC-276 (help and template rules), DEC-277 (plan approval), DEC-278
   (QA-plan dispositions), DEC-279 (unknown-command `operation`), DEC-280
-  (readiness-refresh dispositions) and DEC-281 (generic-fallback messages). See `../phases/phase-24/decisions.md`.
+  (readiness-refresh dispositions), DEC-281 (generic-fallback messages),
+  DEC-282 (QA recheck corrections). See `../phases/phase-24/decisions.md`.
 
 ## Task Index
 
@@ -73,6 +72,7 @@ Human checklist's "take control" scenario is the Human run.
 Full contract: `../phases/phase-24/qa/validation-contract.md`. It has 67
 rows (62 deterministic, 5 Human), all `Ready`. VAL-058..063 were split from
 bundled rows. VAL-064..066 are new (DEC-278), and so is VAL-067 (DEC-281).
+DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 
 | VAL range | Subject | Owning tasks | Validator |
 |---|---|---|---|
@@ -87,14 +87,14 @@ bundled rows. VAL-064..066 are new (DEC-278), and so is VAL-067 (DEC-281).
 | 042-043 | `get` leaves | 12 | QA Reviewer |
 | 044-048, 063 | Disclaimers, recorded reasoning, sentinel guard, glossary, `PRIVATE_` removal | 13 | QA Reviewer (048 QA Lead) |
 | 049-052 | Take-control journey, parity, absence, wall-time budgets | 14 (052 every task) | QA Reviewer (051 QA Lead) |
-| 053-057 | Human: take control, failure lines, views, guidance, authoring | phase-end (054/055 also at window D) | Human |
+| 053-057 | Human: take control, failure lines, views, guidance, authoring | phase-end (054/055 also at window D2) | Human |
 
 ## QA Artifacts
 
 | Artifact | Path | Status |
 |---|---|---|
-| QA plan | `../phases/phase-24/qa/qa-plan.md` | Refresh NOT READY; dispositions applied (DEC-280, DEC-281); QA re-check next |
-| Mid-phase reviews | windows A-E after tasks 3, 6, 8, 11 (plus the Human walk-through) and 14 | Accepted (DEC-278). Window D now spans tasks 9, 9a, 10 and 11 |
+| QA plan | `../phases/phase-24/qa/qa-plan.md` | Recheck NOT READY (`4819b30`); RC-01/02 addressed by DEC-282; fresh QA recheck next |
+| Mid-phase reviews | A after 3; B after 6; C after 8; D1 after 9a; D2 after 11; E after 14 | Six windows per QA plan section 8 (DEC-280/282). Human walkthrough after task 11 |
 | Human fixtures | `TestP24HumanFixtures` (task 11, extended by task 14) | Pending |
 | Final review / Human checklist | `../phases/phase-24/qa/` | Pending |
 
@@ -127,6 +127,6 @@ bundled rows. VAL-064..066 are new (DEC-278), and so is VAL-067 (DEC-281).
 
 ## Next Planning Checkpoint
 
-The QA Lead re-checks everything DEC-280 and DEC-281 changed, in a new
-subsection of QA plan section 12. Phase 25
+The QA Lead rechecks RC-01/RC-02 and DEC-282's changed text in a new
+subsection of QA plan section 12, retaining the prior review. Phase 25
 "Parallel and evolving work" follows Phase 24.

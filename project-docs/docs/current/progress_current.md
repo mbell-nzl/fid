@@ -6,7 +6,11 @@ convergence" is planned and approved (DEC-277).** Heavy mode, 15 tasks
 dispositioned in DEC-278, and the Human decided D5 (DEC-279). The readiness
 refresh (`87f1071`) was NOT READY with 22 findings. All are dispositioned
 in DEC-280. The Human decided D6 (RR-06) as option A (DEC-281). The
-validation contract has 67 assertions, all `Ready`.
+QA recheck (`4819b30`) confirmed those dispositions but remains **NOT READY**
+with RC-01/RC-02. DEC-282 corrects the Run plain-copy cause and specifies
+escape-then-bound grammar messages. Fresh QA verification is pending; all
+dispatch remains held. The validation contract still has 67 assertions,
+all `Ready` for planning, with no implementation outcome claimed.
 Phase 23 is complete (DEC-271) and merged as PR #25 (`a46ec77`).
 
 - Contract: [public interface](../phases/phase-24/public-interface.md);
@@ -18,9 +22,11 @@ Phase 23 is complete (DEC-271) and merged as PR #25 (`a46ec77`).
 
 ## Next
 
-1. QA Lead: re-check every item DEC-280 and DEC-281 changed, in a new
-   subsection of `../phases/phase-24/qa/qa-plan.md` section 12.
-2. Phase Runner: the readiness check, then tasks 1-14 with 9a after 9.
+1. QA Lead: recheck RC-01/RC-02 and DEC-282's changed text, in a new
+   subsection of `../phases/phase-24/qa/qa-plan.md` section 12, retaining
+   the prior NOT READY review.
+2. After QA passes, Phase Runner: readiness check, then tasks 1-14 with 9a
+   after 9. Reviews D1 after 9a and D2 after 11; Human walkthrough after 11.
 3. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and
    baseline convergence" follow.
 

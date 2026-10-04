@@ -434,7 +434,8 @@
     refusing sites today, which tasks 6-8 keep:
     - `envelope.create`: `prior registration binding does not match envelope`;
     - `claim.acquire`: `claim acquire binding is invalid`;
-    - `run.start`: `run envelope binding is invalid`;
+    - `run.start`: `run claim binding is invalid` (corrected by DEC-282;
+      the original pin named the later Envelope check);
     - `gate.run`: `run gate: repository binding is invalid`.
   - Task 10 delivers the rule, and new VAL-067 proves it. Tasks 6-8 assert
     today's fallback messages. Task 10 converges those assertions, plus
@@ -448,6 +449,73 @@
     assertions.
 - **Refs:** DEC-278 item 6; DEC-280; `public-interface.md` sections 5, 9 and
   13; Phase 21 `public-interface.md` sections 1 and 7.
+
+### DEC-282: QA recheck corrections for the Run cause and bounded grammar messages
+
+- **Date:** 2026-10-04. Tech Lead clarification under DEC-277 and the Human's
+  request to address QA recheck RC-01/RC-02. Preserves D6=A's actual-cause
+  rule, Phase 21's 512-scalar message bound and DEC-280's escaping rule.
+- **Context:** QA commit `4819b30c935acdb6827c66316f4f3383343bc76f`,
+  `qa/qa-plan.md` sections 12.6.3-12.6.5, reports two bounded contract
+  contradictions and retains a NOT READY verdict. The Tech Lead read that
+  evidence and inspected `internal/workflow/run.go`'s Claim-before-Envelope
+  checks, the existing escape form, and the inherited message contract.
+  QA's runtime probes remain attributed to QA; no runtime probe or quality
+  gate was run or re-attested in this Tech Lead session.
+- **RC-01 — Do now: correct the pin.** The plain-copy `run.start` cause is
+  `run claim binding is invalid`. The Claim worktree check rejects before
+  the Envelope check. Correct DEC-281's consequence, contract section 5,
+  VAL-029 and tasks 7/10 together. Preserve both checks and their order.
+  Task 7 proves original-worktree acceptance, import-binding acceptance
+  and plain-copy refusal with an otherwise valid active Claim; task 10
+  pairs the actual cause in Human/JSON output and converges retained
+  message assertions with provenance. A same-worktree snapshot mismatch
+  is not a substitute for the plain-copy case. Codes, details, exit and
+  no-Event guarantees retain their accepted values.
+- **RC-02 — Do now: specify bound precedence.** Grammar failures and
+  unknown commands use the same bounded message construction as DEC-281
+  generic fallbacks. Construct the specified parser/check/formula text,
+  escape controls, then count Unicode scalar values in the resulting text
+  before JSON serialization (excluding the Human label and line terminator).
+  Up to 512 scalars stays intact. Over 512 keeps the first 511 plus `…`;
+  drop an escape sequence that straddles the cut whole, then append `…`
+  without padding. Existing `%q` escapes stay escaped and are not split.
+  This rule takes precedence over DEC-278/280's exact message-source
+  wording. Full offending spelling/value remains in structured details;
+  code, category, retryable, subject and exit are unchanged. The Human
+  `error:` payload equals the decoded JSON message without a second escape
+  or cut. This neither expands the message bound nor changes domain checks.
+- **Ownership and evidence:** task 9a owns shared construction and grammar/
+  unknown-command producers, with short exact text, 600-character flag/word,
+  escaped-text 512/513, non-ASCII and escape-crossing-cut cases (both modes,
+  plus shared-construction units). Task 10 reuses that construction for
+  generic fallbacks and repeats pairing after adopting its renderer.
+  VAL-064/065 own grammar behavior; VAL-036 owns final Human pairing.
+  VAL-067 explicitly includes the already required whitespace and combined
+  escape/cut cases and a sentinel guard reaching the generic fallback.
+  All affected rows keep QA Reviewer as their sole validator. No new
+  assertion, task or test-file scope is needed: tasks 7/9a/10 already own
+  these source/test locations and require both ordinary race/coverage and
+  tagged integration gates, which execute the respective owned suites.
+- **Other recheck findings:** adopt the QA Lead's D1 after task 9a and D2
+  after task 11 cadence; the Human walkthrough stays after task 11. Correct
+  the brief to R1-R20. R20's 18 fallbacks/seven exclusions and the two
+  retained literal-message assertions need no allocation change.
+- **Artifact/spec sync:** amended `public-interface.md` sections 5/9,
+  `qa/validation-contract.md` (029/036/064/065/067 and revision log),
+  tasks 7/9a/10, and current brief/progress. Canonical
+  `06_DESIGN_PLAN_CLI.md` gains a Phase 24 accepted-amendment entry linking
+  these message rules, explicitly pending implementation. The Phase 21
+  baseline bound stays intact. No product/data-model/glossary change or new
+  carry-forward is required; the full-suite spec audit remains phase-end work.
+- **Next:** QA Lead rechecks RC-01/RC-02 and this amendment's changed text,
+  recording fresh evidence in a new QA-plan subsection. The prior QA plan
+  and its NOT READY verdict remain intact. The phase-wide dispatch hold
+  stays until QA recheck passes and the Runner completes readiness checks.
+  This decision supplies the requested contract authority, not QA acceptance.
+- **Refs:** DEC-277/280/281; `qa/qa-plan.md` section 12.6;
+  `public-interface.md` sections 5/9; Phase 21 `public-interface.md`
+  sections 1/2/5/7; PRD-OPS-007/014.
 
 ## Spec Sync Verdict
 

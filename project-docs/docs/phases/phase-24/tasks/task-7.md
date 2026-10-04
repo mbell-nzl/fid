@@ -55,8 +55,10 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   `invalid-argument`, exit 2, message `invalid Run request`, details
   `{argument:"input",value:null,allowed:["accepted run.start input"]}`, and
   no Event. The plain-copy fixture is defined in task 6. Keep the refusing
-  check's domain reason `run envelope binding is invalid` unchanged. Task 10
-  makes it the JSON message (DEC-281) and converges this assertion.
+  check's domain reason `run claim binding is invalid` unchanged (DEC-282,
+  RC-01). The Claim check rejects before the Envelope check; preserve both
+  checks and their order. Task 10 makes the cause the JSON message
+  (DEC-281/282) and converges this assertion.
 - **`run.recover`** already observes, so its input is unchanged.
 
 ## Scope
@@ -75,7 +77,7 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
 - `project-docs/docs/phases/phase-24/public-interface.md` sections 4, 5
 - `project-docs/docs/phases/phase-24/input-inventory.md` sections 1-4
-- `project-docs/docs/phases/phase-24/decisions.md` DEC-273
+- `project-docs/docs/phases/phase-24/decisions.md` DEC-273, DEC-281, DEC-282
 - `project-docs/docs/phases/phase-22/public-interface.md` section 3 (Run
   leaves)
 
@@ -101,8 +103,12 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - [ ] A Run whose Envelope has a Receipt-backed Obligation closes
   `succeeded` in the tree the Receipt was proven in, and `failed` after a
   tracked-file edit (separate fixtures). (VAL-062)
-- [ ] `run.start` in an imported destination is accepted. The same request in
-  a plain copy returns the exact refusal above. (VAL-029)
+- [ ] With an otherwise valid active Claim, `run.start` is accepted in the
+  original worktree and in an imported destination with a matching binding.
+  The same request in a plain copy returns the exact refusal above, with
+  the domain cause `run claim binding is invalid` and no Event. Keep the
+  Claim identity/version and other prerequisites valid so this is the
+  worktree refusal, not a different Claim failure. (VAL-029)
 - [ ] `measurement_ref` passes VAL-018/019; retries after HEAD advanced
   replay. (VAL-018, VAL-019, VAL-009)
 - [ ] For start, close, abandon and observe-budget (with a

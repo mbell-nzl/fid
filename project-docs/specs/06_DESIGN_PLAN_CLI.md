@@ -461,7 +461,31 @@ Later accepted amendments, all delivered and recorded in that contract:
 DEC-271 records technical qualification and the Human re-check. DEC-272
 schedules the remaining Human operating-experience items (Stop-detail
 rendering, denial reasons, hint verbosity, recorded reasoning in Human views,
-`--input` authoring and repository-input convergence) as Phase 24. Until that
-phase's contract is accepted, the rules above remain in force.
+`--input` authoring and repository-input convergence) as Phase 24.
 
-*Last updated: 2026-10-03 (Phase 23 wrap; DEC-263/265/266/269/270/271)*
+### Phase 24 accepted amendment (implementation pending)
+
+`../docs/phases/phase-24/public-interface.md` is the accepted target contract
+(DEC-277, amended by DEC-278..282); the preceding delivered rules describe
+the implementation until the owning Phase 24 tasks land. Sections 5 and 9
+govern the message clarifications recorded in DEC-282:
+
+- A plain-copy `run.start` refusal reaches the Claim binding check first.
+  Its generic fallback carries `run claim binding is invalid` once task 10
+  applies D6=A. Task 7 preserves the Claim-before-Envelope check order and
+  the original/copy/import-binding cases.
+- Task 9a constructs grammar and unknown-command messages from their
+  specified source text, escapes controls, then enforces the inherited
+  512-Unicode-scalar bound. Escaped text up to 512 stays intact; longer text
+  keeps the first 511 plus `…`, dropping an escape crossing the cut whole.
+  Count before JSON serialization, excluding the Human label/terminator.
+  This bound takes precedence over exact parser text or the unknown-command
+  formula. Structured details retain the full offending spelling/value.
+- Task 10 reuses that construction for DEC-281 generic fallbacks and prints
+  the resulting JSON message verbatim after `error: `, without a second
+  escape or cut. Codes, details and exits retain their accepted values.
+
+The exact leaf, input, failure and view changes remain indexed in that phase
+contract; this entry records accepted planning, not completed delivery.
+
+*Last updated: 2026-10-04 (Phase 24 QA recheck dispositions; DEC-282)*

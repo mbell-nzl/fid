@@ -8,7 +8,8 @@ message, then `reason:`, then `blocked by:` and `next:` where they apply.
 Every line derives from the JSON failure. One shared renderer is adopted by
 every family.
 
-The Human decided D6 = A (DEC-281), which lifts this task's dispatch gate.
+The Human decided D6 = A (DEC-281), which resolves its decision prerequisite.
+The phase-wide QA recheck hold remains in the phase brief.
 Each generic `invalid-argument` fallback now carries its domain cause as the
 JSON message, so the `error:` line still shows why the request was refused.
 
@@ -36,15 +37,16 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   (inventory R20) sets `message` to the caught error's text,
   `cause.Error()`, the text Human mode printed after `error: ` at
   `62dddab`.
-  - The text is escaped with the task 9a function. A text over 512 scalars
-    keeps its first 511 and gains `…`, without splitting an escape. An
+  - Reuse task 9a's shared message construction (contract section 9,
+    DEC-282): escape, then bound to 512 scalars. Text over 512 keeps the
+    first 511 plus `…`, dropping any escape crossing the cut whole. An
     empty or all-whitespace cause keeps the fixed message.
   - Code, category, retryable, subject, details and exit stay unchanged.
   - A cause never carries a `sensitive` descriptor value.
   - The plain-copy messages become `prior registration binding does not
-    match envelope`, `claim acquire binding is invalid`, `run envelope
+    match envelope`, `claim acquire binding is invalid`, `run claim
     binding is invalid` and `run gate: repository binding is invalid`
-    (VAL-027..029).
+    (VAL-027..029; DEC-282 corrects the Run cause to the earlier Claim check).
 - **One renderer.** A single function in `internal/cli` takes the
   `fid-cli.v1` failure (code, message, subject, details) plus the operation
   and leaf path, and writes the lines. Every family writer (inventory R9)
@@ -70,8 +72,10 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   (contract section 9; DEC-280 item 1). Failures on leaves without `--input`
   print no `next:`, and neither does `operation-unavailable`.
 - **Grammar failures and unknown commands** (task 9a) render through the
-  same renderer: the `error:` line is their JSON `message`, which keeps the
-  offending spelling.
+  same renderer: the `error:` payload is their already escaped and bounded
+  JSON `message` (DEC-282), verbatim. Full offending spelling/value stays
+  in details even if the message is cut. Do not escape or truncate the
+  final message again.
 - **Escaping (DEC-280 item 6).** The renderer uses the `internal/cli` escape
   function from task 9a for the `reason:` and `blocked by:` values. The
   `error:` line is the message verbatim, and a message never holds a
@@ -105,7 +109,7 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - `project-docs/docs/phases/phase-24/public-interface.md` section 9
 - `project-docs/docs/phases/phase-24/input-inventory.md` R8, R9, R10
 - `project-docs/docs/phases/phase-24/decisions.md` DEC-272, DEC-278,
-  DEC-280 and DEC-281 (D6)
+  DEC-280, DEC-281 (D6) and DEC-282
 - `project-docs/docs/phases/phase-21/public-interface.md` sections 1, 7;
   `project-docs/specs/05_DESIGN_PLAN.md` section 6
 - `cmd/fid/stop.go` `writeStopFailure` (the task 19/21 guidance)
@@ -132,6 +136,12 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   stdout carries the streamed Human output, and the JSON side is the
   failure inside the `--json` run's terminal frame. The corpus includes
   the Phase 23 `issue transition` protected-Decision case. (VAL-036)
+- [ ] The pairing corpus includes task 9a's short exact grammar and
+  unknown-command messages, the long flag and long word, the 512/513
+  escaped-text boundaries, non-ASCII scalars and an escape crossing the
+  cut. Human `error:` matches the bounded JSON message byte for byte;
+  details retain the full offending values and metadata/exit are unchanged.
+  (VAL-036; rechecks task 9a's VAL-064/065 construction)
 - [ ] Stop-blocked denials print `blocked by:` with exactly their IDs; other
   denials print none. (VAL-037)
 - [ ] Each next-table code prints its row. So does a grammar failure on an
@@ -149,20 +159,25 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - [ ] The generic-fallback corpus has one row per R20 site, driven by a
   reachable domain cause in both modes. A fallback with neither a row nor a
   pinned unreachability reason fails the test.
-  - JSON `message` is the escaped cause text, and the Human `error:` line is
-    the same text.
+  - JSON `message` is the escaped and bounded cause text, and the Human
+    `error:` line is the same text.
   - Code, details and exit are unchanged.
-  - Unit rows cover causes of 512 scalars (uncut) and 513 scalars (the
-    first 511 plus `…`), a cause holding ESC, and an empty cause (the fixed
-    message stays).
+  - Unit rows cover escaped causes of 512 scalars (uncut) and 513 scalars
+    (first 511 plus `…`), non-ASCII scalar counting, a cause holding ESC,
+    an escape crossing the cut (dropped whole), and empty and all-whitespace
+    causes (the fixed message stays).
   - A guard row: an `activation component` domain failure whose
     `gate-definitions` input holds a sentinel `environment[].value`. The
-    sentinel appears in neither stream.
+    sentinel appears in neither stream. Prove the row reaches the generic
+    fallback, rather than an earlier structural or typed failure (QA plan
+    section 12.6.2 records a reachable duplicate-component case).
 
   (VAL-067)
 - [ ] The plain-copy refusals of `envelope.create`, `claim.acquire`,
-  `run.start` and `gate.run` carry the four DEC-281 messages, with code and
-  details unchanged. (VAL-027, VAL-028, VAL-029)
+  `run.start` and `gate.run` carry the four DEC-281/282 messages, with code
+  and details unchanged. In both modes the plain-copy `run.start` row says
+  `run claim binding is invalid`; preserve task 7's valid Claim and its
+  original/copy/import controls. (VAL-027, VAL-028, VAL-029)
 - [ ] Wall times inside budget. (VAL-052)
 
 ## First Failing Test
