@@ -92,8 +92,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `1c94956a5c0b79ad0ab1ff325b7097ac621ed2b2`
 
 ## Commit subject
 
-- Pending commit
+- `feat(idempotency): checkpoint shared digest adoption across families`
