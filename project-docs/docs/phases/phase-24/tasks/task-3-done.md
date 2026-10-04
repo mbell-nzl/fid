@@ -133,8 +133,8 @@ QA review-1 repair gate, run in order from `/home/mark/projects/fid` on the test
 
 ## Commit hash
 
-- Pending commit
+- `2b380e3fbf746396e067e94a3e2d486430c8418a`
 
 ## Commit subject
 
-- Pending commit
+- `docs(task): record phase-24 task-3 QA repair evidence`
