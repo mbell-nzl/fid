@@ -43,24 +43,25 @@
 ## Tests run
 
 - First red: `go test -run '^TestMigration0019AddsOnlyFieldDigestColumn$' -count=1 ./internal/db` - FAIL - `FAIL	github.com/mbell-nzl/fid/internal/db	0.078s` (terminated `exit_code: 1`); migration 19 was absent.
-- Green: `go test -run '^TestMigration0019AddsOnlyFieldDigestColumn$' -count=1 ./internal/db` - PASS - `ok  	github.com/mbell-nzl/fid/internal/db	0.088s` (terminated `exit_code: 0`).
-- `go test -run '^TestCurrentIdempotencyFieldDigestsReplayFailClosed$' -count=1 ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	0.303s` (terminated `exit_code: 0`).
-- `go test -run '^TestSchema19ArchiveImportsAndSchema18ManifestFailsClosed$' -count=1 ./internal/export` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	0.828s` (terminated `exit_code: 0`).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestPortableRoundTripCoversEveryPhase23Table$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	14.165s` (terminated `exit_code: 0`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	58.494s` (terminated `exit_code: 0`).
-- Built entrypoint: `go build -o /tmp/fid-p24-task1 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). `/tmp/fid-p24-task1 --project /tmp/fid-p24-task1-smoke-nKX1AY --json issue create --kind epic --title storage-smoke --scheduling sequential --actor agent:developer --idempotency-key p24-storage-smoke` - PASS - `"replayed":false` in the successful JSON response (terminated `exit_code: 0`). `sqlite3` read `request_field_digests_json` as `{}` before and after `/tmp/fid-p24-task1 --project /tmp/fid-p24-task1-smoke-nKX1AY --json rebuild`, whose response reported `"events_replayed":2` and `"schema_version":19` (terminated `exit_code: 0`).
+- Green: `go test -run '^TestMigration0019AddsOnlyFieldDigestColumn$' -count=1 ./internal/db` - PASS - `ok  	github.com/mbell-nzl/fid/internal/db	0.088s` (terminated `exit_code: 0`)
+- `go test -run '^TestCurrentIdempotencyFieldDigestsReplayFailClosed$' -count=1 ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	0.303s` (terminated `exit_code: 0`)
+- `go test -run '^TestSchema19ArchiveImportsAndSchema18ManifestFailsClosed$' -count=1 ./internal/export` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	0.828s` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestPortableRoundTripCoversEveryPhase23Table$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	14.165s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	58.494s` (terminated `exit_code: 0`)
+- Built entrypoint: `go build -o /tmp/fid-p24-task1 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). A keyed `fid --json issue create` then returned `"replayed":false` (terminated `exit_code: 0`); `sqlite3` read `request_field_digests_json` as `{}`. `/tmp/fid-p24-task1 --project /tmp/fid-p24-task1-smoke-nKX1AY --json rebuild` reported `"events_replayed":2` and `"schema_version":19` (terminated `exit_code: 0`); the same `sqlite3` query still returned `{}`.
 - Old-journal entrypoint: `/tmp/fid-p24-task1 --project /tmp/fid-p24-task1-old-oZxm2g --json rebuild` observed the intended fail-closed refusal: `"code":"journal-replay-stopped"` with `"line":2` (terminated `exit_code: 6`).
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - First attempt: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - FAIL - `FAIL	github.com/mbell-nzl/fid/internal/workflow	103.620s` (terminated `exit_code: 1`).
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	72.492s	coverage: 62.7% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					60.4%` (terminated `exit_code: 0`).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	253.353s` (terminated `exit_code: 0`).
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	25.020s` (terminated `exit_code: 0`); benchmark line reported `22373 ms/rebuild`.
-- `rg -n "idempotency_results" migrations internal -g '!*_test.go'` - PASS - `internal/workflow/activation.go:845:	if err := conn.QueryRow(`SELECT COUNT(*) FROM idempotency_results WHERE result_entity_id = ?`, activationID).Scan(&count); err != nil {` (terminated `exit_code: 0`).
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	72.492s	coverage: 62.7% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					60.4%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	253.353s` (terminated `exit_code: 0`)
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	25.020s` (terminated `exit_code: 0`)
+  - Benchmark line: `22373 ms/rebuild`.
+- `rg -n "idempotency_results" migrations internal -g '!*_test.go'` - PASS - `internal/workflow/activation.go:845:	if err := conn.QueryRow(`SELECT COUNT(*) FROM idempotency_results WHERE result_entity_id = ?`, activationID).Scan(&count); err != nil {` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
