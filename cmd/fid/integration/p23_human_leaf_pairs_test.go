@@ -20,6 +20,12 @@ func p23GenerateLeafPairs(t *testing.T, binary, root string) []p23HumanLeafPair 
 		"run.close", "run.observe", "run.start",
 	}
 	a := p22NewFIDRecoveryAdapterAt(t, binary, workspace, "human", 3600, []string{}, actions)
+	return p23GenerateLeafPairsForAdapter(t, a)
+}
+
+func p23GenerateLeafPairsForAdapter(t *testing.T, a *p22FIDRecoveryAdapter) []p23HumanLeafPair {
+	t.Helper()
+	workspace, binary := a.workspace, a.binary
 	pairs := []p23HumanLeafPair{}
 	addMutation := func(operation, actor, key string, input map[string]any) {
 		t.Helper()
