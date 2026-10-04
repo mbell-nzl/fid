@@ -56,14 +56,16 @@
 - Gate red/green: `go test -tags integration -run '^TestP24GateRunPersistsNamedFieldsThroughReceipt$' -count=1 ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`, field map empty after admitted execution); after real map propagation and conflict rendering, PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.704s` (terminated `exit_code: 0`). `TestP24GateRunCommittedDenialPersistsNamedFields` also passed in the combined Gate selection.
 - Issue renderer red/green: `go test -tags integration -run '^TestP24IssueCreateConflictNamesChangedTitle$' -count=1 ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`, generic invalid argument); after renderer repair, PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.597s` (terminated `exit_code: 0`).
 - Stop renderer red/green: `go test -tags integration -run '^TestP24StopRaiseConflictNamesChangedDetails$' -count=1 ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`, generic invalid argument); after renderer repair, PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.261s` (terminated `exit_code: 0`).
-- `go test -tags integration -run '^TestP24' -count=1 ./cmd/fid/integration/` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	13.420s` (terminated `exit_code: 0`). It invokes the real `fid` process; the Issue fixture's `issue create --kind task --title "different title" --actor agent:developer --idempotency-key p22-corpus-issue --json` returned exit 4, `differing_fields:["--title"]` and no Event.
+- `go test -tags integration -run '^TestP24' -count=1 ./cmd/fid/integration/` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	13.420s` (terminated `exit_code: 0`)
+  - Real entrypoint: the Issue fixture invoked `fid issue create --kind task --title "different title" --actor agent:developer --idempotency-key p22-corpus-issue --json` and observed exit 4, `differing_fields:["--title"]`, with no Event.
 - Retained conformance red: `go test -tags integration -run '^TestP23SharedLeafConformance$' -count=1 ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`); nine fake conflict envelopes omitted `differing_fields`. After exact-field convergence the byte-identical command passed: `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	10.322s` (terminated `exit_code: 0`).
 - Touched-package race attempt: `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/journal ./internal/issues ./internal/labels ./internal/links ./internal/workflow ./internal/evidence ./internal/claims ./internal/review ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`); retained Activation assertion expected generic `invalid-argument`. After exact conflict convergence the byte-identical command passed: `ok  	github.com/mbell-nzl/fid/cmd/fid	251.732s` (terminated `exit_code: 0`).
-- `go test -run '^TestP24KeyedLeafCorpusMatchesLiveTree$' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.152s` (terminated `exit_code: 0`).
+- `go test -run '^TestP24KeyedLeafCorpusMatchesLiveTree$' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.152s` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); checkpoint tree only, rerun on final Task 2 tree.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- Formatting result applies to the checkpoint tree; rerun on the final Task 2 tree.
 - `golangci-lint run ./...` - BLOCKED - Final-tree gate deferred until the remaining Task 2 implementation and corpus are complete.
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - BLOCKED - Final-tree gate deferred until the remaining Task 2 implementation and corpus are complete.
 - `go tool cover -func=coverage.out` - BLOCKED - Coverage gate depends on the unfinished ordinary test gate.
@@ -77,6 +79,8 @@
 - No accepted-contract deviation. This is a same-task checkpoint, not task completion.
 - The first touched-package race attempt failed with final token `FAIL` (terminated `exit_code: 1`): a retained Phase 21 Task 4 Activation assertion expected the displaced generic `invalid-argument`. The repair requires exit-4 `idempotency-conflict`, exact `content`/`expected_version` fields, identical repeated failure and unchanged Event count. The byte-identical repaired race command terminated `exit_code: 0` with final token `ok  	github.com/mbell-nzl/fid/cmd/fid	251.732s`.
 - The first retained Phase 23 conformance selection failed with final token `FAIL` (terminated `exit_code: 1`) because its fake model omitted the new closed details member. Exact nine-field convergence made the byte-identical selection pass with final token `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	10.322s` (terminated `exit_code: 0`).
+
+- The first committed-report lint attempt terminated `exit_code: 3` with final token `FAIL report-lint found 3 failure(s)`: three PASS rows had prose after their termination tokens. A docs-only correction moved that prose outside the rows; lint is rerun against the corrected committed report.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
