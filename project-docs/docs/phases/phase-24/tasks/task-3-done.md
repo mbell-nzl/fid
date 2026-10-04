@@ -98,8 +98,8 @@ Working directory: `/home/mark/projects/fid`. The original lint failure and firs
 
 ## Commit hash
 
-- Pending commit
+- `2ee33ba30ac698de515ab2c1f6142f2d310615e3`
 
 ## Commit subject
 
-- Pending commit
+- `test(cli): checkpoint retained stop fixture convergence`
