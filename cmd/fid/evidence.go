@@ -132,7 +132,7 @@ func renderEvidenceError(cmd *cobra.Command, operation string, cause error) erro
 	}
 	var conflict *journal.IdempotencyConflictError
 	if errors.As(cause, &conflict) {
-		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(conflict))
 	}
 	var notFound *evidence.EvidenceNotFoundError
 	if errors.As(cause, &notFound) {

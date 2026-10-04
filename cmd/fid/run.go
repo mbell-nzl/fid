@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
@@ -293,6 +294,10 @@ func renderRunError(cmd *cobra.Command, operation string, cause error) error {
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	var idempotency *journal.IdempotencyConflictError
+	if errors.As(cause, &idempotency) {
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(idempotency))
 	}
 	var notFound *workflow.RunNotFoundError
 	if errors.As(cause, &notFound) {

@@ -253,7 +253,7 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 	CodeConcernAlreadyDisposed: definition(CategoryConflict, false, []SubjectType{SubjectConcern},
 		stringField("concern_id"), stringField("disposed_at")),
 	CodeIdempotencyConflict: definition(CategoryConflict, false, nil,
-		stringField("operation_scope"), stringField("idempotency_key"), stringField("stored_request_digest"), stringField("supplied_request_digest")),
+		stringField("operation_scope"), stringField("idempotency_key"), stringField("stored_request_digest"), stringField("supplied_request_digest"), stringsField("differing_fields")),
 	CodeProtectedDecisionRequired: definition(CategoryAuthority, false, []SubjectType{SubjectEnvelope},
 		stringField("envelope_id"), stringField("decision_class"), stringsField("required_capabilities"), stringsField("affected_actions"),
 		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),

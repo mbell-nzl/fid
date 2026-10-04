@@ -248,7 +248,7 @@ func renderReviewError(cmd *cobra.Command, cause error) error {
 	}
 	var conflict *journal.IdempotencyConflictError
 	if errors.As(cause, &conflict) {
-		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
+		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(conflict))
 	}
 	return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeInvalidArgument, "invalid review request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted review.record input"}})
 }

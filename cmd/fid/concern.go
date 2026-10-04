@@ -129,7 +129,7 @@ func renderConcernError(cmd *cobra.Command, operation string, cause error) error
 	}
 	var conflict *journal.IdempotencyConflictError
 	if errors.As(cause, &conflict) {
-		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(conflict))
 	}
 	var resultLimit *review.ResultLimitExceededError
 	if errors.As(cause, &resultLimit) {
