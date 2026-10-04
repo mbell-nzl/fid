@@ -13,9 +13,11 @@ and the removal-inventory absence proofs.
 - VAL-049: the journey can be completed from fid output alone.
 - VAL-050: rebuild and export/import parity over Phase 24 data.
 - VAL-051: retired surfaces are absent.
+- VAL-063 (re-proved): the `PRIVATE_` checks stay removed.
 - VAL-052.
 - Advances VAL-053, VAL-054, VAL-055, VAL-056 and VAL-057 (Human,
-  phase-end). The QA Lead prepares those fixtures.
+  phase-end). This task's extension of the task 11 fixture generator
+  prepares their workspaces. The QA Lead runs it and writes no test code.
 
 Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`.
 
@@ -24,15 +26,41 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - Roadmap Phase 24 journey; contract sections 8-10.
 - **The journey** starts from an activated project whose Envelope has an
   unsatisfied protected Decision. A Builder's terminal-success transition is
-  refused. Then, at every step:
+  refused. Every fid command runs in Human mode. Then, at every step:
   - the command comes from the previous `next:` or `Next:` line, or from
     `--help`;
   - each input file comes from that leaf's `--example`, with every
-    placeholder substituted by a value that appeared in earlier fid output.
-    The test records the source output line for each value.
+    placeholder substituted by a value of a permitted provenance class.
 
-  The journey ends at `envelope.complete` success. A step needing an
-  unprinted value fails the test.
+  The journey ends at `envelope.complete` success.
+- **Provenance classes (DEC-278).** The test records, for every command and
+  every substituted value, its class and its source line:
+  - `fid-output`: a line printed by an earlier Human-mode fid command in this
+    journey (stdout or stderr). JSON output is never a source.
+  - `fid-help`: the leaf's `--help` or `--example` text (commands, field
+    names, enum members).
+  - `caller-authored`: values the acting caller chooses or writes: new record
+    IDs (DEC-272), idempotency keys, reasoning text, display labels, and the
+    project files (and their paths) the caller writes.
+  - `git`: the output of a git command that the leaf's `--help` names for
+    that field (`git rev-parse HEAD` and `git status --porcelain` for
+    `expected_repository`).
+  - `setup`: only the acting Actor IDs (`--actor`) and the project
+    directory.
+
+  A value with no permitted class fails the test. If the journey cannot be
+  completed within these classes, fid has a product gap. Stop with a
+  `BLOCKED` escalation candidate naming the step and the value. Never widen
+  the classes or read JSON to pass.
+- **Fixture generator extension (DEC-278, R-14).** Extend
+  `TestP24HumanFixtures` (task 11) with:
+  - the journey's stuck start state (VAL-053);
+  - workspaces for every judgment view after task 13 (VAL-056);
+  - authoring workspaces where `run close` (with `expected_repository`),
+    `decision record-reference` (digest omitted) and a third leaf of the
+    Human's choice can each be run validly (VAL-057).
+
+  Keep the task 11 denials and views (VAL-054, VAL-055).
 - **Parity** covers field-digest maps, observed repositories, the new `get`
   reads, and manifest `projection_schema` 19.
 - **Absence.** No descriptor anywhere contains a member named `worktree_id`,
@@ -48,6 +76,8 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
 - `cmd/fid/integration/p24_take_control_test.go` (new)
 - `cmd/fid/integration/` parity test for Phase 24 data (new or extended)
+- `cmd/fid/integration/p24_human_fixtures_test.go` (extension; the tagged
+  gate executes it)
 - `cmd/fid/input_descriptor_test.go` (forbidden-member scan)
 
 ### Files To Read For Context
@@ -59,17 +89,22 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
 ### Out Of Scope
 
-- Human checklist content (QA Lead). New product behavior of any kind.
+- Human checklist content (QA Lead). New product behavior of any kind: a gap
+  the journey finds is escalated, not fixed here.
 
 ## Acceptance Criteria
 
-- [ ] The journey passes. Every command and substituted value has a
-  recorded provenance line from earlier fid output. (VAL-049)
+- [ ] The journey passes in Human mode. Every command and substituted value
+  has a recorded permitted class and source line. (VAL-049)
 - [ ] The live and rebuilt projections are semantically equal, export
   validates, and import reproduces the same state with manifest 19.
   (VAL-050)
 - [ ] The forbidden-member scan passes and the two absence commands exit 1.
-  (VAL-051)
+  (VAL-051, VAL-063)
+- [ ] `TestP24HumanFixtures` passes with the variable unset, and its manifest
+  lists the start state, the judgment views and the three authoring
+  workspaces in addition to the task 11 fixtures. (VAL-053..057
+  preparation)
 - [ ] Wall times inside budget. (VAL-052)
 
 ## First Failing Test
@@ -100,9 +135,10 @@ rg -n "PRIVATE_" cmd/fid/integration
 ```
 
 The `-timeout 30m` bounds follow DEC-227/259. Record the wall time `go test`
-reports for `cmd/fid/integration`, `cmd/fid` and `internal/workflow`. The
-budgets are tagged integration under 900 s and no ordinary package over 600 s
-(VAL-052). A breach caused by this task's own new journeys is a bounded speed
+reports for `cmd/fid/integration`, `cmd/fid`, `internal/workflow` and the
+slowest other ordinary package. The budgets are tagged integration under
+900 s and no ordinary package over 600 s (VAL-052); report any ordinary
+package over the 480 s warning. A breach caused by this task's own new journeys is a bounded speed
 repair owned by this task; otherwise stop and escalate. Never record a
 timed-out gate as `PASS`.
 

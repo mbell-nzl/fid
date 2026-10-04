@@ -19,6 +19,7 @@ Apply A6 and A7 (contract section 10):
 - VAL-046: control characters are escaped.
 - VAL-047: no referenced project-file content (restates Phase 23 VAL-060,
   prose half).
+- VAL-063: the `PRIVATE_` leak checks are removed.
 - VAL-048: glossary terms.
 - VAL-052.
 - Advances VAL-056 (restated Phase 23 VAL-073, Human, phase-end).
@@ -41,11 +42,26 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   Concerns or Deviations, before the items. None on items. An empty section
   prints `none` and no disclaimer. The `Purpose:` lines stay. The on/off
   switch is Phase 26.
+  - One shared section-disclaimer function prints it. The VAL-044 view set
+    is its call sites plus every leaf that prints these records, so a view
+    that skips the function is still in the set.
+  - The section text must not reuse the three per-item sentences
+    (`cmd/fid/p23_human.go:163, 167, 176` at planning). Otherwise the
+    absence command below keeps matching.
 - Control characters in recorded reasoning are escaped (PRD-OPS-007).
 - **Sentinel guard:** fixtures seed referenced project files with sentinel
   content. A test scans every Human output of records that reference them.
   The `PRIVATE_` checks (`p23_human_leaf_pairs_test.go:123`,
   `p23_human_fixtures_test.go:143`) are removed.
+- **The `PRIVATE_` values are recorded reasoning** (inventory R13).
+  `p23_human_leaf_pairs_test.go` lines 45-80 use them as Concern, Deviation,
+  Finding and Human Outcome text, which A7 now shows. Rename them to a
+  neutral prefix (for example `RECORDED_`) in the leaf-pair inputs. Make the
+  same rename in the expected facts of
+  `cmd/fid/integration/testdata/p23_conformance/operations.json` (lines 67,
+  114, 144, 145 at planning; read by `p23_conformance_test.go`, added in
+  `3335149`, Phase 23). Record the provenance. Sentinel content for
+  referenced files must use a different marker.
 
 ## Scope
 
@@ -56,6 +72,9 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - `cmd/fid/p23_human_test.go`;
   `cmd/fid/integration/p23_human_leaf_pairs_test.go`,
   `p23_human_fixtures_test.go` (guard replacement, with provenance)
+- `cmd/fid/integration/testdata/p23_conformance/operations.json` and, if its
+  reader needs it, `cmd/fid/integration/p23_conformance_test.go` (value
+  rename, with provenance; the tagged gate executes both)
 - `project-docs/specs/GLOSSARY.md`
 
 ### Files To Read For Context
@@ -73,14 +92,16 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
 ## Acceptance Criteria
 
-- [ ] Every judgment view with zero, one and three items: one disclaimer
-  when items exist, none on items, and `none` when empty. (VAL-044)
+- [ ] Every judgment view in the enumerated set, with zero, one and three
+  items: one disclaimer when items exist, none on items, and `none` when
+  empty. (VAL-044)
 - [ ] Every closed field with 80-scalar, 81-scalar and multi-line text
   renders cut in lists and in full in detail views. (VAL-045)
 - [ ] Reasoning containing ESC, CR, BEL and NUL is escaped in every view
   that shows it. (VAL-046)
-- [ ] The sentinel guard passes over every Human fixture, and the `PRIVATE_`
-  checks are gone. (VAL-047)
+- [ ] The sentinel guard passes over every Human fixture. (VAL-047)
+- [ ] `rg -n "PRIVATE_" cmd/fid/integration` terminates `exit_code: 1`.
+  (VAL-063)
 - [ ] `GLOSSARY.md` defines **Recorded reasoning** and **Project-owned
   prose** consistently with contract section 10. (VAL-048)
 - [ ] Wall times inside budget. (VAL-052)
@@ -113,9 +134,10 @@ rg -n "PRIVATE_" cmd/fid/integration
 ```
 
 The `-timeout 30m` bounds follow DEC-227/259. Record the wall time `go test`
-reports for `cmd/fid/integration`, `cmd/fid` and `internal/workflow`. The
-budgets are tagged integration under 900 s and no ordinary package over 600 s
-(VAL-052). A breach caused by this task's own new journeys is a bounded speed
+reports for `cmd/fid/integration`, `cmd/fid`, `internal/workflow` and the
+slowest other ordinary package. The budgets are tagged integration under
+900 s and no ordinary package over 600 s (VAL-052); report any ordinary
+package over the 480 s warning. A breach caused by this task's own new journeys is a bounded speed
 repair owned by this task; otherwise stop and escalate. Never record a
 timed-out gate as `PASS`.
 

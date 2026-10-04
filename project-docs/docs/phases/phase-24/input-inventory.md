@@ -7,22 +7,28 @@
 > command that regenerates it. Before task close, a Developer reruns the
 > command for each registry the task owns and records the result. QA reruns
 > them all at every review window. Task numbers refer to the approved
-> task pack (`tasks/`).
+> task pack (`tasks/`). DEC-278 corrected R3, R13 and R15, replaced the
+> section 1 walk with a recursive one, and added R16 (counts re-measured at
+> `eb34889`).
 
 ## 1. `--input` Leaves (39)
 
-Regenerate the live list (scratch binary; no workspace needed):
+Regenerate the live lists (scratch binary; no workspace needed; run in
+`bash` from the repository root). The walk recurses, so it reaches depth-1
+leaves (`init`, `ready`) and depth-3 leaves (`issue ac add`). Each loop uses
+`if`, so the block terminates `exit_code: 0`. The line sets are the pass
+condition.
 
 ```bash
-go build -o "$S/fid" ./cmd/fid
-for g in $("$S/fid" --help | awk '/Available Commands:/{f=1;next} /^$/{f=0} f{print $1}'); do
-  for s in $("$S/fid" "$g" --help | awk '/Available Commands:/{f=1;next} /^$/{f=0} f{print $1}'); do
-    "$S/fid" "$g" "$s" --help 2>/dev/null | grep -q -- '--input' && echo "$g $s"
-  done
-done
+S=$(mktemp -d); go build -o "$S/fid" ./cmd/fid
+walk() { local subs s; subs=$("$S/fid" "$@" --help | awk '/Available Commands:/{f=1;next} /^$/{f=0} f{print $1}' | grep -vx -e help -e completion); if [ -z "$subs" ]; then echo "$*"; else for s in $subs; do walk "$@" "$s"; done; fi; }
+walk > "$S/leaves"                                       # all live leaves: 92
+while read -r l; do if "$S/fid" $l --help | grep -q -- '--input'; then echo "$l"; fi; done < "$S/leaves"                  # --input leaves: 39 (this section)
+while read -r l; do if "$S/fid" $l --help | grep -q -- '--idempotency-key'; then echo "$l"; fi; done < "$S/leaves"        # keyed: 50 (R16)
+while read -r l; do if "$S/fid" $l --help | head -1 | grep -q '^Usage:'; then echo "$l"; fi; done < "$S/leaves"           # no Short: 20 (R15)
 ```
 
-The expected result is exactly the 39 rows below. `Shape` is `changes` when
+The expected `--input` result is exactly the 39 rows below. `Shape` is `changes` when
 public-interface section 4 amends the input. `No Short` marks leaves whose
 help has no one-line description today.
 
@@ -54,9 +60,9 @@ help has no one-line description today.
 | run observe, checkpoint, recover | same | - | 7 |
 | stop raise, resolve | same | yes | 3 |
 
-Read leaves without a Short today: `attention list`, `concern list`,
-`decision list`, `deviation list`, `finding list`, `human-outcome list`,
-`requirement get`, `requirement list` and `stop list`. Task 3 owns Short
+Read leaves without a Short today (8): `attention list`, `decision list`,
+`deviation list`, `finding list`, `human-outcome list`, `requirement get`,
+`requirement list` and `stop list`. Task 3 owns Short
 descriptions for the whole live tree. A pending-descriptor fence lists the 36
 leaves task 3 does not adopt. Each owning task removes its leaves from the
 fence, and task 9 removes the empty fence (the DEC-192 pattern).
@@ -67,7 +73,7 @@ fence, and task 9 removes the empty fence (the DEC-192 pattern).
 |---|---|---|---|---|
 | R1 | Request-digest call sites (`RequestDigest:`) | `rg -n "RequestDigest:" internal cmd -g '!*_test.go'` | 43 sites in 32 files | 2 |
 | R2 | Request-digest helpers | `rg -n "func [a-zA-Z]*(RequestDigest\|requestDigest\|judgmentDigest)\(" internal -g '!*_test.go'` | 11 helpers | 2 |
-| R3 | Idempotency storage: `idempotency_results` DDL, idempotency Effect validation, projection | `rg -n "idempotency_results" migrations internal -g '!*_test.go'` | 0013 DDL; `internal/journal/current_event_idempotency.go`, `current_event_validation.go`, catalog rows | 1 |
+| R3 | Idempotency storage: `idempotency_results` DDL, idempotency Effect validation, projection, closed column registries | `rg -n "idempotency_results" migrations internal -g '!*_test.go'` | 16 files at `eb34889`. Closed registries the column enters: `internal/journal/current_event_columns.go` (column list), `current_event_json.go` (JSON column kinds), `current_event_updates.go` (update values and guards). Effect builders: `internal/journal/idempotency.go`; the direct gate-run insert and update in `internal/evidence/execution.go`. Validation: `current_event_idempotency.go`, `current_event_validation.go`. Read, unchanged: `internal/export/archive_updates.go` (the map is never an update value, DEC-278), catalog rows, `internal/maintenance/operational.go`, `internal/workflow/activation.go`, `current_event_result_projection.go`, `current_event_stop_references.go`; 0013 DDL | 1 |
 | R4 | Migrations and projection schema constants | `ls migrations; rg -n "ProjectionSchemaVersion\|projection_schema" internal -g '!*_test.go'` | latest 0018; schema 18 | 1 |
 | R5 | Closed `--input` decoders | `rg -n "func decodeClosed[A-Za-z]*Input" cmd/fid` | 7 helpers in 14 command files | 3-9 |
 | R6 | Repository comparison and validation | `rg -n "func (same[A-Za-z]*Repository\|validateRepositoryBinding\|validEnvelopeRepository\|validEnvelopeSource\|validEvidenceRepository\|validateRunTerminalRepository\|verifyDecisionSource\|importedGateDestination)" internal -g '!*_test.go'` | 4 `same*Repository`, 6 validators | 4-8 |
@@ -77,9 +83,10 @@ fence, and task 9 removes the empty fence (the DEC-192 pattern).
 | R10 | Human failure assertions in tests | `rg -n '"error: ' cmd internal -g '*_test.go'` | 32 in 13 files | 10 |
 | R11 | Human views printing repository identity | `rg -n -i "worktree\|dirty digest\|HeadOID\|head_oid" cmd/fid -g '!*_test.go'` | `run_inspect_human.go`, `resume_human.go`, `p23_human.go`, `review.go` | 11 |
 | R12 | Stop/Attention Human renderers | `cmd/fid/stop_human.go`, `resume_human.go`, `resume_human_guidance.go` | 3 files | 11 |
-| R13 | Judgment Human renderers, disclaimers, leak guard | `rg -n "p23CheckJudgmentQualifiers\|PRIVATE_" cmd` | `p23_human.go`; `integration/p23_human_leaf_pairs_test.go:123`, `p23_human_fixtures_test.go:143` | 13 |
+| R13 | Judgment Human renderers, disclaimers, leak guard | `rg -n "p23CheckJudgmentQualifiers\|PRIVATE_" cmd` | `p23_human.go`; `integration/p23_human_leaf_pairs_test.go` (values at 45-80, check at 123), `p23_human_fixtures_test.go:143`, `integration/testdata/p23_conformance/operations.json:67, 114, 144, 145` (read by `p23_conformance_test.go`) | 13 |
 | R14 | Live leaf inventory test | `rg -n "func TestLiveLeafCommandsMatchContractInventories" cmd/fid` | `contract_surface_test.go:128` | 12 (DEC-274) |
-| R15 | Cobra Short descriptions | the section 1 walk with `head -1` per leaf | 9 read + 12 `--input` leaves start with `Usage:` | 3 |
+| R15 | Cobra Short descriptions | the fourth loop of the section 1 block | 92 leaves; 20 start with `Usage:` (8 read + 12 `--input`) | 3 |
+| R16 | Keyed leaves (VAL-006/007 corpus) | the third loop of the section 1 block, minus `export import` | 50 leaves with `--idempotency-key` in 21 families; 49 keyed leaves in 20 families after excluding `export import` (install marker, no request digest) | 2; converged by 4-9 |
 
 ## 3. Fixture And Test Convergence
 

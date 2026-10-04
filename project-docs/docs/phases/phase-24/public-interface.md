@@ -3,6 +3,8 @@
 > **Status: ACCEPTED for execution (DEC-277, 2026-10-04).** Authority:
 > DEC-272. The Human decided D1-D4 (DEC-273..276; section 13) and approved
 > this file with the task list. Amendments need a recorded DEC.
+> DEC-278 (QA-plan dispositions) clarifies sections 2, 5, 6, 9 and 10, and
+> adds pending Human decision D5 to section 13.
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -30,12 +32,29 @@ itself and records what it observed. Outputs and the journal keep the full
   worktree uses a path flag (`--repository <path>`), as `resume`,
   `run inspect` and `export create` already do. Parallel worktrees are
   Phase 25.
+- **Observing leaves (DEC-278 clarification).** The observing leaves are:
+  - `gate.register`, `envelope.create`, `envelope.complete`, `claim.acquire`;
+  - `run.start`, `run.close`, `run.abandon`, and `run.observe-budget` when
+    `measurement_ref` is non-null;
+  - `gate.run` and `evidence.evaluate`;
+  - `review.record`, `concern.record`, `concern.dispose`,
+    `deviation.record`, `decision.record-reference`, `human-outcome.record`,
+    `requirement.record-reference` and `requirement.link`.
+
+  Every one except `evidence.evaluate` is an *observing mutation*.
+  `evidence.link` does not observe: it copies the subject's recorded
+  repository (section 4). Leaves that observe under earlier contracts and are
+  not listed keep their Phase 21-23 behaviour: `run.recover`,
+  `run.checkpoint`, `artifact.verify`, terminal-success `issue.transition`,
+  `resume` and `run.inspect`.
 - **When.** An observing mutation observes at most once, under the write
   lock, after closed-input validation and after the idempotency replay check.
-  A replay never observes (section 7).
+  A replay never observes (section 7). `evidence.evaluate` observes once,
+  after closed-input validation.
 - **Unobservable repository.** If observation fails (not a Git worktree,
   unmerged paths, assume-unchanged/skip-worktree entries, or a change during
-  capture), the request returns `repository-unavailable` (section 6).
+  capture), the request returns `repository-unavailable` (section 6). This
+  applies to every observing leaf, `evidence.evaluate` included (DEC-278).
   `run.close` and `run.abandon` keep their Phase 22 `recovery-state-conflict`.
 
 ## 3. Shared Input Values
@@ -121,7 +140,9 @@ The rule applies uniformly to `claim.acquire` against the Envelope scope,
 `run.start` against the Envelope scope, `gate.run` against the Registration
 and Run, and `envelope.create` against prior Registrations. A different
 worktree without a matching import binding (for example, a plain directory
-copy) is refused as today.
+copy) is refused as today. "As today" means each leaf's existing fallback
+failure: `invalid-argument`, `argument:"input"`, `value:null`, with its
+family message (DEC-278).
 
 ## 6. Failure Codes
 
@@ -132,7 +153,7 @@ unless stated.
 |---|---|
 | `repository-mismatch` | Details become `{expected:ExpectedRepository, observed:Repository}`. Producers become `run.start`, `run.close`, `run.abandon`, `gate.run` (before Attempt append) and `review.record`. `run.close`/`run.abandon` expectation mismatch moves here from `recovery-state-conflict`. |
 | `source-digest-mismatch` | Details become `{display_label:text, path:?text, expected_digest:?digest, observed_digest:?digest}`. `expected_digest` is null when the caller omitted the digest. Producers become every leaf that accepts a `SourceInput`. |
-| `repository-unavailable` | **Implemented for the first time** (Phase 21 prose listed it; `internal/cli/codes.go` never did). precondition / retryable true / exit 4 / subject null; details `{reason:"not-a-repository"\|"unmerged-paths"\|"tracked-flags"\|"changed-during-capture"\|"unsafe-path", detail:text}`. Producers: every observing mutation except `run.close`/`run.abandon`. |
+| `repository-unavailable` | **Implemented for the first time** (Phase 21 prose listed it; `internal/cli/codes.go` never did). precondition / retryable true / exit 4 / subject null; details `{reason:"not-a-repository"\|"unmerged-paths"\|"tracked-flags"\|"changed-during-capture"\|"unsafe-path", detail:text}`. Producers: every observing leaf (section 2) except `run.close`/`run.abandon` (DEC-278). The reason is classified by error type and capture stage (DEC-278): `not-a-repository`: no Repository value can be formed (no enclosing Git worktree, or HEAD or its tree does not resolve, including a repository with no commit). `tracked-flags`: an assume-unchanged or skip-worktree entry. `unmerged-paths`: an unmerged index entry or Git image. `unsafe-path`: a path or entry fid refuses to capture (an invalid or non-UTF-8 path, an unsupported file type, mode or object type, or the path-count or output-size limit). `changed-during-capture`: the two reads differ, or a Git or file read fails after the root resolved. `detail` names the specific cause. |
 | `idempotency-conflict` | Details gain `differing_fields:string[]` (sorted unique, nonempty). Each name is a public input name: a top-level `--input` field, a flag spelling (`--title`), a positional argument name, or `--actor`. See section 7. |
 | `invalid-argument` | Detail **shape unchanged**. For a structural `--input` failure, `argument` names the field path (`input.coverage.items[0].source.path`). `value` is the offending key, JSON type or value (null when missing). `allowed` lists the accepted keys, type or members. Today Human mode prints Go decoder text that JSON omits; after this change JSON carries it (required by section 9). |
 
@@ -217,7 +238,16 @@ next: <resolving action>                 # only for the codes in the next-table 
   - `invalid-argument`: `argument=<path>, allowed=<a|b>`
 
   Values are control-character-escaped, and the line is cut to 200 Unicode
-  scalars with `…`.
+  scalars with `…`. **Counting (DEC-278):** the whole `reason:` line is
+  counted, label included, after escaping. A line over 200 scalars keeps its
+  first 200 and gains `…`. A line of exactly 200 is unchanged. An escape
+  sequence that would straddle the cut is dropped whole.
+- **Grammar failures and unknown commands (DEC-278).** Grammar failures carry
+  the Phase 21 section 2 details (the offending spelling or value, and the
+  accepted alternatives). Their JSON `message` is the parser's text, so the
+  `error:` line keeps the spelling. Unknown commands return the Phase 21
+  `operation-unavailable` failure. Its JSON `operation` value is Human
+  decision D5 (section 13).
 - **next-table (closed):**
 
 | Code | `next:` text (IDs and classes from details) |
@@ -250,7 +280,9 @@ next: <resolving action>                 # only for the codes in the next-table 
   - `decision-satisfied` → `fid decision record-reference` then `fid human-outcome record`
 
   After the fact, `fid stop resolve`, then `fid attention resolve`, where no
-  lifecycle Event disposed it.
+  lifecycle Event disposed it. Every open Stop's `Next:` line names this
+  after-the-fact step after its Condition command. A resolved Stop shows its
+  resolution Event and no `Next:` line (DEC-278).
 - **Repository lines.** Every Human repository line shows short HEAD (12 hex
   digits) and `clean`/`dirty` only. Recorded-versus-current comparisons say
   `same worktree` or `different worktree`. No Human view prints `worktree_id`,
@@ -324,3 +356,4 @@ are not weakened:
 | D2 | Where do Humans read full recorded reasoning for Concerns, Deviations and Human Outcomes? | **Decided A (DEC-274)**: add `concern get`, `deviation get`, `human-outcome get` |
 | D3 | Naming the differing field needs per-field digests stored in the journal and migration 0019. Accept the cost? | **Decided A (DEC-275)**: accept |
 | D4 | `--example` rules in section 8 (static typed placeholders, required fields only, refuses `--json`) | **Decided (DEC-276)**: accept all |
+| D5 | Which JSON envelope `operation` does `operation-unavailable` carry for a command that does not exist (`fid bogus`, `fid concern bogus`)? | **Pending (DEC-279).** Recommended A: the dotted path of the known command that received the unknown word (`concern`; the root is `fid`), with details `{argument:"command", value:<word>, allowed:<that command's subcommands, sorted>}`. Alternative B: the requested path including the unknown word (`concern.bogus`). |

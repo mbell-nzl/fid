@@ -23,7 +23,8 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   `{outcome:HumanOutcome}`, with `event:null`.
 - Not-found reuses `concern-not-found`, `deviation-not-found` and
   `outcome-not-found`: exit 3, subject ID = the requested ID, `{id}`. A
-  grammar error is `invalid-argument`, exit 2.
+  grammar error is `invalid-argument`, exit 2, with the task 9 grammar
+  details (DEC-278) and Human lines through the task 10 renderer.
 - The Human view uses the existing item rendering in this task. Task 13
   adds full reasoning to detail views.
 - No capability row changes. These are read operation IDs only, outside the
@@ -59,7 +60,9 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   missing ID, an extra argument or an unknown flag returns
   `invalid-argument` (exit 2). (VAL-043)
 - [ ] The live leaf inventory includes the three leaves, each with a
-  one-line description (VAL-010 stays green).
+  one-line description (VAL-010 stays green). The whole-tree grammar corpus
+  and the pairing corpus cover them with no new exclusion (VAL-064 and
+  VAL-036 stay green).
 - [ ] Wall times inside budget. (VAL-052)
 
 ## First Failing Test
@@ -89,9 +92,10 @@ go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 
 ```
 
 The `-timeout 30m` bounds follow DEC-227/259. Record the wall time `go test`
-reports for `cmd/fid/integration`, `cmd/fid` and `internal/workflow`. The
-budgets are tagged integration under 900 s and no ordinary package over 600 s
-(VAL-052). A breach caused by this task's own new journeys is a bounded speed
+reports for `cmd/fid/integration`, `cmd/fid`, `internal/workflow` and the
+slowest other ordinary package. The budgets are tagged integration under
+900 s and no ordinary package over 600 s (VAL-052); report any ordinary
+package over the 480 s warning. A breach caused by this task's own new journeys is a bounded speed
 repair owned by this task; otherwise stop and escalate. Never record a
 timed-out gate as `PASS`.
 

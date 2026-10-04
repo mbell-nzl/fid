@@ -14,8 +14,11 @@ envelope and claim leaves.
 
 ## Validation Contract Coverage
 
-- VAL-009, VAL-011..016, VAL-017, VAL-018, VAL-019 (`envelope.create`
-  Sources), VAL-022, VAL-023 (these leaves).
+- VAL-009, VAL-066, VAL-022, VAL-023 (the observing leaves of this task:
+  `gate.register`, `envelope.create`, `envelope.complete`,
+  `claim.acquire`).
+- VAL-011..016, VAL-060 (descriptors for all eight leaves), VAL-017,
+  VAL-018, VAL-019 (`envelope.create` Sources).
 - VAL-026: `gate.register` binds the observed repository.
 - VAL-027: `envelope.create` records the observed scope; plain-copy
   Registration refused.
@@ -48,6 +51,18 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   unchanged.
 - Events keep `repository` from fid values only. Claim and Finding Events
   keep the Envelope scope.
+- **Plain-copy refusal (DEC-278).** A different worktree without a matching
+  import binding is "refused as today": the leaf's existing fallback failure,
+  `invalid-argument`, exit 2, `value:null`, `argument:"input"`, and no Event.
+  - `envelope.create`: message `invalid envelope input`,
+    `allowed:["accepted envelope.create input"]`.
+  - `claim.acquire`: message `invalid claim request`,
+    `allowed:["accepted claim.acquire input"]`.
+
+  The plain-copy fixture copies the whole worktree, `.git` included, to a new
+  path with no import binding, so observation succeeds there. Each refusal
+  row is paired with the same request accepted from the original worktree, so
+  the worktree root is the only difference.
 
 ## Scope
 
@@ -66,7 +81,7 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
 - `project-docs/docs/phases/phase-24/public-interface.md` sections 2-5
 - `project-docs/docs/phases/phase-24/input-inventory.md` sections 1-4 (R6, R7)
-- `project-docs/docs/phases/phase-24/decisions.md` DEC-273, DEC-277
+- `project-docs/docs/phases/phase-24/decisions.md` DEC-273, DEC-277, DEC-278
 - `project-docs/docs/phases/phase-22/contracts.md` section 10 (import)
 - `internal/evidence/execution.go` `importedGateDestination`
 
@@ -85,17 +100,21 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   each Source repository and the Event `repository` equal the independent
   observation. (VAL-022)
 - [ ] `envelope.create`: `repository_scope` equals the observation and every
-  Source position passes VAL-017/018/019. A Registration from a plain copy is
-  refused with no Event. (VAL-027, VAL-017, VAL-018, VAL-019)
-- [ ] `claim.acquire` records the observed worktree. A plain copy is refused
-  with no Event. (VAL-028)
+  Source position (from its descriptor) passes VAL-017/018/019. The same
+  request from a plain copy returns the exact refusal above with no Event.
+  (VAL-027, VAL-017, VAL-018, VAL-019)
+- [ ] `claim.acquire` records the observed worktree. The same request from a
+  plain copy returns the exact refusal above with no Event. (VAL-028)
 - [ ] After export/import into a new directory, `claim.acquire` and
-  `envelope.create` against imported history are accepted, and refused in a
-  plain copy. (VAL-029)
-- [ ] An unobservable repository returns `repository-unavailable` for the
-  observing leaves. Retries after HEAD advanced replay. (VAL-023, VAL-009)
-- [ ] The eight leaves leave the fence; fake/fid agree. (VAL-011..016,
-  VAL-035)
+  `envelope.create` against imported history are accepted. The same requests
+  in a plain copy return the exact refusals. (VAL-029)
+- [ ] For the four observing leaves: an unobservable repository returns
+  `repository-unavailable` with the mapped reason. Retries after HEAD
+  advanced replay. Retries in an unobservable worktree, and after deleting a
+  referenced Source file, replay with no Event while new-key controls fail.
+  (VAL-023, VAL-009, VAL-066)
+- [ ] The eight leaves leave the fence with VAL-011..016 and VAL-060 rows;
+  fake/fid agree over the derived set. (VAL-011..016, VAL-060, VAL-035)
 - [ ] Wall times inside budget. (VAL-052)
 
 ## First Failing Test
@@ -125,9 +144,10 @@ go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 
 ```
 
 The `-timeout 30m` bounds follow DEC-227/259. Record the wall time `go test`
-reports for `cmd/fid/integration`, `cmd/fid` and `internal/workflow`. The
-budgets are tagged integration under 900 s and no ordinary package over 600 s
-(VAL-052). A breach caused by this task's own new journeys is a bounded speed
+reports for `cmd/fid/integration`, `cmd/fid`, `internal/workflow` and the
+slowest other ordinary package. The budgets are tagged integration under
+900 s and no ordinary package over 600 s (VAL-052); report any ordinary
+package over the 480 s warning. A breach caused by this task's own new journeys is a bounded speed
 repair owned by this task; otherwise stop and escalate. Never record a
 timed-out gate as `PASS`.
 

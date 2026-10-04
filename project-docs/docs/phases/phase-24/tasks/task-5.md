@@ -13,8 +13,10 @@ gets its descriptor (two leaves leave the fence).
 
 ## Validation Contract Coverage
 
-- VAL-009, VAL-011..016, VAL-017, VAL-018, VAL-019, VAL-022, VAL-023
-  (`review.record` rows; descriptors for both leaves).
+- VAL-009, VAL-066, VAL-011..016, VAL-060, VAL-017, VAL-018, VAL-019,
+  VAL-022, VAL-023 (`review.record` rows; descriptors for both leaves).
+- VAL-012 (`expected_repository` help names its git commands; reused by
+  tasks 7 and 8).
 - VAL-024 (`review.record`): expectation match, HEAD differs, dirty differs.
 - VAL-025 (shape): `repository-mismatch` details are exactly
   `{expected:{head_oid,dirty},observed:Repository}`.
@@ -26,7 +28,11 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
 - Contract sections 3, 4 (the `review.record` row), 6 and 7.
 - **`ExpectedRepository`** is `{head_oid:oid,dirty:boolean}`, defined once
-  for reuse by tasks 7 and 8. The check compares only `head_oid` and
+  (type and descriptor) for reuse by tasks 7 and 8. Its descriptor meanings
+  tell a Human how to obtain each value (contract section 3, DEC-278):
+  `head_oid` is the full output of `git rev-parse HEAD`; `dirty` is `true`
+  when `git status --porcelain` lists any path outside `.fid/`, otherwise
+  `false`. The check compares only `head_oid` and
   `dirty` with the single observation. Any difference returns
   `repository-mismatch` with `expected` echoing the input and `observed` the
   full observation. Nothing is committed.
@@ -77,8 +83,13 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - [ ] An unobservable repository returns `repository-unavailable`.
   (VAL-023)
 - [ ] A retry after HEAD advanced replays. (VAL-009)
-- [ ] Both leaves leave the fence with VAL-011..016 rows; fake/fid agree.
-  (VAL-011..016, VAL-035)
+- [ ] A retry in an unobservable worktree, and after deleting a referenced
+  coverage file, replays with no Event. New-key controls fail with
+  `repository-unavailable` and `source-digest-mismatch`. (VAL-066)
+- [ ] `review record --help` shows the `expected_repository` meanings naming
+  `git rev-parse HEAD` and `git status --porcelain`. (VAL-012)
+- [ ] Both leaves leave the fence with VAL-011..016 and VAL-060 rows;
+  fake/fid agree over the derived set. (VAL-011..016, VAL-060, VAL-035)
 - [ ] Wall times inside budget. (VAL-052)
 
 ## First Failing Test
@@ -107,9 +118,10 @@ go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 
 ```
 
 The `-timeout 30m` bounds follow DEC-227/259. Record the wall time `go test`
-reports for `cmd/fid/integration`, `cmd/fid` and `internal/workflow`. The
-budgets are tagged integration under 900 s and no ordinary package over 600 s
-(VAL-052). A breach caused by this task's own new journeys is a bounded speed
+reports for `cmd/fid/integration`, `cmd/fid`, `internal/workflow` and the
+slowest other ordinary package. The budgets are tagged integration under
+900 s and no ordinary package over 600 s (VAL-052); report any ordinary
+package over the 480 s warning. A breach caused by this task's own new journeys is a bounded speed
 repair owned by this task; otherwise stop and escalate. Never record a
 timed-out gate as `PASS`.
 

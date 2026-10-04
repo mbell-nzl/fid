@@ -12,15 +12,21 @@ Converge the Run family under DEC-273:
 
 ## Validation Contract Coverage
 
-- VAL-009, VAL-011..016, VAL-017, VAL-018, VAL-019 (`measurement_ref`),
-  VAL-022, VAL-023 (these leaves).
+- VAL-009, VAL-066, VAL-022 (the observing leaves of this task: `run.start`,
+  `run.close`, `run.abandon`, and `run.observe-budget` with a
+  `measurement_ref`).
+- VAL-023 (`run.start`; `run.observe-budget` with a `measurement_ref`).
+- VAL-011..016, VAL-060 (descriptors for all seven leaves), VAL-017, VAL-018,
+  VAL-019 (`measurement_ref`).
 - VAL-024 (`run.start`, `run.close`, `run.abandon`): expectation check.
-- VAL-025 (run leaves): expectation mismatch returns `repository-mismatch`;
-  unsafe observation still returns `recovery-state-conflict`.
+- VAL-025 (run producers): the amended mismatch details.
+- VAL-061: close/abandon map an expectation mismatch to `repository-mismatch`
+  and an unsafe repository to `recovery-state-conflict`.
 - VAL-029 (`run.start`): imported-destination equivalence.
 - VAL-030: `run.start` is admitted after edits and commits since Envelope
   creation.
 - VAL-031: close and abandon record the observed terminal repository.
+- VAL-062: close evaluates Obligations against that observation.
 - VAL-035, VAL-052.
 
 Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`.
@@ -40,7 +46,15 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   observation with `base_oid` = HEAD (the caller's `base_oid` and its
   existence check are gone). Close evaluates Obligations against that
   observation.
-- **`run.observe-budget`**: `measurement_ref` is `?SourceInput`.
+- **`run.observe-budget`**: `measurement_ref` is `?SourceInput`. The leaf
+  observes only when `measurement_ref` is non-null (contract section 2,
+  DEC-278). With it null, an unobservable worktree does not fail the
+  request.
+- **Plain-copy refusal (DEC-278).** `run.start` from a different worktree
+  without a matching import binding returns the existing fallback failure:
+  `invalid-argument`, exit 2, message `invalid Run request`, details
+  `{argument:"input",value:null,allowed:["accepted run.start input"]}`, and
+  no Event. The plain-copy fixture is defined in task 6.
 - **`run.recover`** already observes, so its input is unchanged.
 
 ## Scope
@@ -74,20 +88,34 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   a matching expectation is accepted and records the observation, not the
   Envelope snapshot. (VAL-030, VAL-022)
 - [ ] For each of start, close and abandon: match accepted; HEAD-differs and
-  dirty-differs return `repository-mismatch` with no Event. (VAL-024)
-- [ ] Close/abandon with an unsafe repository still return
-  `recovery-state-conflict`. (VAL-025)
+  dirty-differs return `repository-mismatch` with the amended details and no
+  Event. (VAL-024, VAL-025)
+- [ ] Close/abandon with a mismatching expectation return
+  `repository-mismatch`. With an unsafe repository (unmerged paths) they
+  return `recovery-state-conflict`. Neither appends an Event. (VAL-061)
 - [ ] The close and abandon `terminal_repository` equals the observation
-  with `base_oid` = HEAD, and close evaluates against it. (VAL-031)
-- [ ] `run.start` in an imported destination is accepted, and refused in a
-  plain copy. (VAL-029)
-- [ ] `measurement_ref` passes VAL-018/019; retries replay. (VAL-018,
-  VAL-019, VAL-009)
-- [ ] `run.start` and `run.observe-budget` with an unobservable repository
-  return `repository-unavailable` with no Event. Close and abandon are
-  covered by VAL-025. (VAL-023)
-- [ ] The seven leaves leave the fence; fake/fid agree. (VAL-011..016,
-  VAL-017, VAL-035)
+  with `base_oid` = HEAD, after a commit and an edit since Run start.
+  (VAL-031)
+- [ ] A Run whose Envelope has a Receipt-backed Obligation closes
+  `succeeded` in the tree the Receipt was proven in, and `failed` after a
+  tracked-file edit (separate fixtures). (VAL-062)
+- [ ] `run.start` in an imported destination is accepted. The same request in
+  a plain copy returns the exact refusal above. (VAL-029)
+- [ ] `measurement_ref` passes VAL-018/019; retries after HEAD advanced
+  replay. (VAL-018, VAL-019, VAL-009)
+- [ ] For start, close, abandon and observe-budget (with a
+  `measurement_ref`): a retry in an unobservable worktree replays with no
+  Event, and a retry after deleting the `measurement_ref` file replays.
+  New-key controls fail: `repository-unavailable`, `recovery-state-conflict`
+  for close/abandon, and `source-digest-mismatch` for the deleted file.
+  (VAL-066)
+- [ ] `run.start` and `run.observe-budget` (with a `measurement_ref`) with an
+  unobservable repository return `repository-unavailable` with the mapped
+  reason and no Event. With `measurement_ref` null, `run.observe-budget`
+  succeeds. (VAL-023)
+- [ ] The seven leaves leave the fence with VAL-011..016 and VAL-060 rows;
+  fake/fid agree over the derived set. (VAL-011..016, VAL-060, VAL-017,
+  VAL-035)
 - [ ] Wall times inside budget. (VAL-052)
 
 ## First Failing Test
@@ -117,9 +145,10 @@ go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 
 ```
 
 The `-timeout 30m` bounds follow DEC-227/259. Record the wall time `go test`
-reports for `cmd/fid/integration`, `cmd/fid` and `internal/workflow`. The
-budgets are tagged integration under 900 s and no ordinary package over 600 s
-(VAL-052). A breach caused by this task's own new journeys is a bounded speed
+reports for `cmd/fid/integration`, `cmd/fid`, `internal/workflow` and the
+slowest other ordinary package. The budgets are tagged integration under
+900 s and no ordinary package over 600 s (VAL-052); report any ordinary
+package over the 480 s warning. A breach caused by this task's own new journeys is a bounded speed
 repair owned by this task; otherwise stop and escalate. Never record a
 timed-out gate as `PASS`.
 

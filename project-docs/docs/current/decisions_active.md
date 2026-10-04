@@ -140,11 +140,11 @@ Phase 23 is complete; full reasoning is in
 | CF-043 | Future TL (after Phase 23): open one SQLite connection per command. Each command re-opens the projection several times (`journal.ensureProjectionFresh`, `workflow.openWorkflowDB` at 32 sites), and each open re-parses the schema, about 33% of race-test CPU (`qa/esc-23-005-repair.md`). Needs planning plus VAL coverage for rebuild/catch-up file replacement, transaction scope and locking. |
 | CF-044 | Future causal editor of `cmd/fid` test helpers: `mustJournalPath` assumes one journal file, but journals split per UTC day. A gate crossing 00:00 UTC fails with `journal files = 2, want 1` (ESC-23-005 attempt 1). |
 | CF-045 | SCHEDULED in Phase 24 (DEC-272; plan approved DEC-277): A4 Stop/Attention rendering, A5 Human failure reason lines, A6 once-per-section disclaimers, A7 recorded reasoning in Human views, A8 option C (`--help` input docs, `--example`, guidance), and repository-input convergence with the input-as-written digest rule. Closes when Phase 24 is accepted. |
+| CF-046 | Phase 25 TL (parallel worktrees), recorded under DEC-278. (a) A plain-copy worktree refusal returns each leaf's generic fallback `invalid-argument` (`argument:"input"`), as Phase 24 contract section 5 accepts ("refused as today"); a dedicated worktree-binding failure belongs with parallel worktrees. (b) Leaves that observe outside the Phase 24 observing-leaf list (`run.recover`, `run.checkpoint`, `artifact.verify`, terminal `issue.transition`, `resume`, `run.inspect`) keep their earlier unobservable-repository codes; decide whether they should return `repository-unavailable`. |
 
 CF-024/034/035 closed (IDs retired). DEC-222: CF-040/041; DEC-227/229: CF-042;
-DEC-258/259: CF-043/044; DEC-271: CF-045. See [phase decisions](../phases/phase-23/decisions.md).
+DEC-258/259: CF-043/044; DEC-271: CF-045; DEC-278: CF-046. See [phase decisions](../phases/phase-23/decisions.md).
 
 ## Environment
 
-Go/tool caches remain redirected into gitignored repository directories by
-.codex/config.toml; configuration changes require a fresh session.
+Go/tool caches stay redirected into gitignored repo directories by .codex/config.toml; config changes need a fresh session.

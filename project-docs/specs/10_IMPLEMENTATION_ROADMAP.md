@@ -311,8 +311,8 @@ reading `.fid/` internals.
    the real worktree), DEC-274 (judgment `get` leaves), DEC-275 (per-field
    request digests, migration 0019) and DEC-276 (help and template rules).
    The authority is `../docs/phases/phase-24/public-interface.md`, with
-   `input-inventory.md`, `qa/validation-contract.md` (57 assertions) and a
-   14-task pack. Phase 25 "Parallel and evolving work" and Phase 26
+   `input-inventory.md`, `qa/validation-contract.md` (66 assertions after the
+   QA-plan dispositions, DEC-278) and a 14-task pack. Phase 25 "Parallel and evolving work" and Phase 26
    "Qualification and baseline convergence" follow.
 
 No implementation task should cite the superseded historical version roadmap

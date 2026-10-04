@@ -12,11 +12,11 @@ tasks shrink.
 
 ## Validation Contract Coverage
 
-- VAL-010: every live leaf has a one-line description; `attention resolve`
-  help fixed.
-- VAL-011..016 (framework; the three adopted leaves): descriptor/type
-  conformance, help, `--example` output, typed templates, exclusivity, and
-  field-path validation.
+- VAL-010: every live leaf has a one-line description.
+- VAL-059: `attention resolve` help describes Attention resolution.
+- VAL-011..016 and VAL-060 (framework; the three adopted leaves):
+  descriptor/type conformance, help, `--example` form, typed templates,
+  exclusivity, field-path validation, and no `--example` side effects.
 - VAL-052: gate wall-time budgets.
 - Advances VAL-057 (Human authoring, phase-end).
 
@@ -64,9 +64,21 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   leaf's own input. The shared `runMutationFlags` "Run JSON input" text is
   replaced.
 - **`--example`** follows DEC-276 exactly. It is handled before any workspace
-  resolution, so it works outside a project. Combined with `--json`,
-  `--input`, `--actor`, `--idempotency-key` or a positional argument, it
-  returns `invalid-argument` (exit 2) with no effect.
+  resolution, so it works outside a project. Combined with any other flag or
+  argument, it returns `invalid-argument` (exit 2) with no read or write.
+  Checks run in this order, and the first conflict is reported: `--json`,
+  `--project`, `--input`, `--actor`, `--idempotency-key`, then a positional
+  argument. The failure follows the Phase 21 grammar rule (offending spelling,
+  accepted alternative):
+  - message: `--example cannot be combined with <spelling>`;
+  - details: `{argument:"<spelling>", value:<supplied value, or null for
+    --json>, allowed:["--example"]}`;
+  - a positional argument uses `argument:"arguments"` and the first
+    positional as `value`.
+
+  With `--json` present the failure is a `fid-cli.v1` JSON envelope carrying
+  the leaf's operation ID. Otherwise the Human form applies until task 10
+  converges it.
 - **Fence.** A test asserts that registry ∪ fence equals the live `--input`
   set exactly, and that registry ∩ fence is empty. Tasks 4-8 remove their
   leaves; task 9 deletes the empty fence (DEC-192 pattern).
@@ -105,19 +117,26 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
 ## Acceptance Criteria
 
-- [ ] Live-tree walk: every leaf has a nonempty one-line `Short`.
-  `attention resolve --help` describes Attention resolution input. (VAL-010)
+- [ ] A recursive walk of the live tree (depths 1-3; 92 leaves at planning,
+  20 without a `Short`, inventory R15) finds a nonempty one-line `Short` on
+  every leaf. (VAL-010)
+- [ ] `attention resolve --help` describes Attention resolution input. No leaf
+  outside the Run family describes its input as Run input. (VAL-059)
 - [ ] Reflection conformance passes for the three adopted leaves, and a
   seeded mismatch fixture fails it. The fence test holds. (VAL-011)
 - [ ] Help for the three leaves lists every field with type, requirement,
   bounds/allowed values and meaning, and names the template. Full text is
   pinned for `stop raise`. (VAL-012)
-- [ ] `--example` from a non-project temporary directory prints the template
-  with exit 0 and empty stderr, and leaves the tree unchanged. (VAL-013)
+- [ ] `--example` prints one JSON object with required fields only, in
+  documented order with 2-space indentation. (VAL-013)
+- [ ] `--example` from a non-project temporary directory exits 0 with empty
+  stderr and leaves the tree snapshot unchanged. (VAL-060)
 - [ ] Each template decodes into its Go type with no unknown, missing or
   wrongly typed member. (VAL-014)
-- [ ] The exclusivity corpus returns `invalid-argument`, exit 2, with no
-  effect. (VAL-015)
+- [ ] The exclusivity corpus (`--json`, `--project <dir>`, `--input`,
+  `--actor`, `--idempotency-key`, a positional argument) returns
+  `invalid-argument`, exit 2, with the details above and no effect.
+  (VAL-015)
 - [ ] The structural corpus for the three leaves covers every failure class,
   at top level and nested (for example `input.details.*`,
   `input.resolution_condition.subject.*`), with the exact path. JSON for
@@ -150,9 +169,10 @@ go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 
 ```
 
 The `-timeout 30m` bounds follow DEC-227/259. Record the wall time `go test`
-reports for `cmd/fid/integration`, `cmd/fid` and `internal/workflow`. The
-budgets are tagged integration under 900 s and no ordinary package over 600 s
-(VAL-052). A breach caused by this task's own new journeys is a bounded speed
+reports for `cmd/fid/integration`, `cmd/fid`, `internal/workflow` and the
+slowest other ordinary package. The budgets are tagged integration under
+900 s and no ordinary package over 600 s (VAL-052); report any ordinary
+package over the 480 s warning. A breach caused by this task's own new journeys is a bounded speed
 repair owned by this task; otherwise stop and escalate. Never record a
 timed-out gate as `PASS`.
 

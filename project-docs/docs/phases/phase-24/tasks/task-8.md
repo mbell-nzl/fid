@@ -14,7 +14,12 @@ Freshness becomes a comparison of real observations.
 
 ## Validation Contract Coverage
 
-- VAL-009, VAL-011..016, VAL-017, VAL-022, VAL-023 (these leaves).
+- VAL-009, VAL-066, VAL-022 (`gate.run`, the one observing mutation of this
+  task).
+- VAL-023 (`gate.run` and `evidence.evaluate`, the observing leaves).
+- VAL-011..016, VAL-060 (descriptors for all four leaves), VAL-017
+  (`gate.run`, `evidence.link`, `evidence.evaluate`).
+- VAL-025 (`gate.run` producer): the amended mismatch details.
 - VAL-024 (`gate.run`): expectation check, with no Attempt or process on
   mismatch.
 - VAL-029 (`gate.run`): imported-destination equivalence.
@@ -39,13 +44,22 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
     `run.execution-blocked` Event.
   - There is no re-observation after the process exits. The `fid.live.v1`
     contract is unchanged.
-- **`evidence.link`**: `target_repository` is the Receipt's
-  `terminal_repository`, the Review's `repository`, or the repository of the
-  `human-outcome.recorded` Event.
-- **`evidence.evaluate`** input is `{obligation_id:?ID}`. Freshness compares
-  each Evidence target with the current observation, exactly as terminal
-  transition and completion do. Human Outcome Evidence stays `fresh`
-  (Phase 23).
+- **`evidence.link`** does not observe (contract section 2, DEC-278).
+  `target_repository` and the `evidence.linked` Event `repository` are the
+  Receipt's `terminal_repository`, the Review's `repository`, or the
+  repository of the `human-outcome.recorded` Event.
+- **`evidence.evaluate`** input is `{obligation_id:?ID}`. It is the one
+  observing read: it observes once, after closed-input validation, and an
+  unobservable worktree returns `repository-unavailable` with the mapped
+  reason (DEC-278). Freshness compares each Evidence target with the current
+  observation, exactly as terminal transition and completion do. Human
+  Outcome Evidence stays `fresh` (Phase 23).
+- **Plain-copy refusal (DEC-278).** `gate.run` from a different worktree
+  without a matching import binding returns the existing fallback failure:
+  `invalid-argument`, exit 2, message `invalid gate request`, details
+  `{argument:"input",value:null,allowed:["accepted gate registration input"]}`,
+  and no Attempt, process or Event. The plain-copy fixture is defined in
+  task 6.
 - **Real freshness.** Phase 21-23 journeys that relied on copied blocks may
   now see `evidence-stale` after editing tracked files. A displaced
   assertion is convergence of this accepted change: fix the fixture so it
@@ -84,21 +98,27 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   admitted. The Attempt, Receipt and both Events carry one identical
   repository equal to the independent pre-spawn observation. (VAL-032,
   VAL-022)
-- [ ] HEAD-differs and dirty-differs return `repository-mismatch` with no
-  Attempt, process or Event. (VAL-024)
+- [ ] HEAD-differs and dirty-differs return `repository-mismatch` with the
+  amended details and no Attempt, process or Event. (VAL-024, VAL-025)
 - [ ] A Receipt-backed Obligation is fresh with the tree unchanged, stale
   (`evidence-stale`) in `evidence.evaluate`, the terminal-transition denial
   and the `envelope.complete` denial after a tracked edit, and fresh again
   after reverting. (VAL-033)
 - [ ] Receipt, Review and Human Outcome Evidence each record the subject's
-  repository. (VAL-034)
-- [ ] `gate.run` in an imported destination is admitted, and refused in a
-  plain copy. (VAL-029)
-- [ ] Removed members are rejected; an unobservable repository returns
-  `repository-unavailable`; retries after HEAD advanced replay. (VAL-017,
-  VAL-023, VAL-009)
-- [ ] The four leaves leave the fence; fake/fid agree. (VAL-011..016,
-  VAL-035)
+  repository as `target_repository` and as the Event `repository`.
+  (VAL-034)
+- [ ] `gate.run` in an imported destination is admitted. The same request in
+  a plain copy returns the exact refusal above. (VAL-029)
+- [ ] Removed members are rejected for `gate.run`, `evidence.link` and
+  `evidence.evaluate`. (VAL-017)
+- [ ] `gate.run` and `evidence.evaluate` with an unobservable repository
+  return `repository-unavailable` with the mapped reason (and, for
+  `gate.run`, no Attempt, process or Event). (VAL-023)
+- [ ] `gate.run`: a retry after HEAD advanced replays (VAL-009). A retry in an
+  unobservable worktree replays with no Event, and a new-key control fails
+  with `repository-unavailable` (VAL-066).
+- [ ] The four leaves leave the fence with VAL-011..016 and VAL-060 rows;
+  fake/fid agree over the derived set. (VAL-011..016, VAL-060, VAL-035)
 - [ ] Wall times inside budget. (VAL-052)
 
 ## First Failing Test
@@ -127,9 +147,10 @@ go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 
 ```
 
 The `-timeout 30m` bounds follow DEC-227/259. Record the wall time `go test`
-reports for `cmd/fid/integration`, `cmd/fid` and `internal/workflow`. The
-budgets are tagged integration under 900 s and no ordinary package over 600 s
-(VAL-052). A breach caused by this task's own new journeys is a bounded speed
+reports for `cmd/fid/integration`, `cmd/fid`, `internal/workflow` and the
+slowest other ordinary package. The budgets are tagged integration under
+900 s and no ordinary package over 600 s (VAL-052); report any ordinary
+package over the 480 s warning. A breach caused by this task's own new journeys is a bounded speed
 repair owned by this task; otherwise stop and escalate. Never record a
 timed-out gate as `PASS`.
 
