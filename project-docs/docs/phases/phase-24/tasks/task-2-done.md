@@ -5,7 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 3
+- Recovery attempts: 4
 - Next action: None.
 - Human attention required: no
 
@@ -18,6 +18,7 @@
 - Attempt 1 added process tests for Review optional presence and the DEC-242 exception; seven-leaf replay after HEAD/source changes and through unmerged/deleted-file states with new-key controls; selected family conflicts; and Gate receipt/denial maps. Its live-tree inventory listed 49 keyed leaves before executable conflict/retry rows were added in attempt 2.
 - Attempt 2 executed conflict and canonical-retry rows for all 49 planned leaves, and two-field and Actor conflicts in all 20 families. It added raw replay-byte checks, exact input-as-written field-name checks, and per-workspace live/rebuilt map parity. It moved replay ahead of lookup/authority on affected leaves, retained the original Claim result snapshot on replay, and preserved typed Envelope evaluation JSON order.
 - Attempt 3 added a singular real workspace/journal fixture. It performs keyed mutations through all 49 live leaves, including recovery and judgment lifecycle transitions and secondary Activation recovery/abort, then checks the exact projection operation inventory and byte-equal field-map JSON before and after `fid rebuild`.
+- QA review-1 F3 rework enumerated the five project-file Source leaves in the retained seven-leaf fixture. Each now runs a distinct new-key control after `base.txt` deletion, alongside the original-byte same-key replay and unchanged Event count. The successful observable preflight and unmerged-path control remain in place.
 
 ## Files created or modified
 
@@ -38,17 +39,18 @@
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` describes input-as-written hashing, DEC-242, named field digests and `differing_fields`. This report retains the original attempt's failed evidence and records the continuation.
 - Attempt 2 made no further design-document change; the prior committed CLI specification update remains the Task 2 documentation update.
 - Attempt 3 updated this completion report with the singular-journal evidence and final gate results; the design contract remains the committed CLI specification above.
+- QA review-1 F3 rework updated this report with the paired deleted-source control evidence and fresh exact gate results.
 
 ## Validation Contract Coverage
 
 - VAL-002: PASS - `TestP24All49KeyedLeavesRebuildInOneJournal` (`cmd/fid/integration/p24_single_journal_test.go:15`) executes all 49 keyed leaves in one real workspace. `p24AssertSingleJournalInventory` (`cmd/fid/integration/p24_single_journal_test.go:196`) queries that workspace's `idempotency_results` projection and requires its exact 49 distinct operation names to equal `testdata/p24_keyed_leaves.tsv`; `p24AssertRebuildMapParity` (`cmd/fid/integration/p24_map_parity_test.go:11`) compares every `request_field_digests_json` string byte-for-byte across live projection and real `fid --json rebuild`. Focused test and full tagged gate passed.
-- VAL-005: PASS - `BenchmarkRebuildWorkspace100kEvents-6` printed `22449 ms/rebuild` in the exact benchmark gate, below 30000 ms; the command terminated exit 0.
+- VAL-005: PASS - The fresh exact `BenchmarkRebuildWorkspace100kEvents-6` printed `22006 ms/rebuild`, below 30000 ms; the command terminated exit 0. The original Task 2 gate printed `22449 ms/rebuild`.
 - VAL-006: PASS - `TestP24EveryLiveKeyedLeafHasExecutableCorpusRow` (`cmd/fid/p24_keyed_tree_test.go:14`) and `TestP24ExecutedKeyedCorpusMatches49LeafInventory` (`cmd/fid/integration/p24_corpus_completeness_test.go:12`) bind all 49 live leaves to executable row maps. The Foundation, Recovery, Flag/Claim, Activation, Judgment, Gate/Evidence, Artifact and Workflow corpus tests (`cmd/fid/integration/p24_{foundation,recovery,flag,activation,judgment,gate_evidence,artifact,workflow_digest}*_test.go`) assert each changed-input exit 4, exact sorted `differing_fields`, unchanged journal count, and each family's two-field and Actor cases; the full tagged gate passed.
 - VAL-007: PASS - `p24ExerciseCapturedLeaf` (`cmd/fid/integration/p24_foundation_corpus_test.go:52`), `TestP24JudgmentKeyedLeafConflictAndCanonicalRetryCorpus` (`cmd/fid/integration/p24_judgment_corpus_test.go:27`), `TestP24WorkflowInputAsWrittenAndTwoFieldConflict` (`cmd/fid/integration/p24_workflow_digest_test.go:14`), and `TestP24GateEvidenceAndEnvelopeKeyedLeafCorpus` (`cmd/fid/integration/p24_gate_evidence_corpus_test.go:15`) compare original EventRef and response bytes with only `replayed:true`, including reordered input keys/whitespace or flag order. All run in the passing tagged gate.
 - VAL-008: PASS - `TestP24ReviewOptionalPresenceAndEmptyException` (`cmd/fid/integration/p24_idempotency_test.go:178`) checks nonempty-versus-omitted `inapplicable_findings` conflicts and DEC-242 `[]`-versus-omitted replay; `p24AssertStoredFieldNames` (`cmd/fid/integration/p24_foundation_corpus_test.go:154`) audits written top-level names for captured leaves, and the Foundation test checks `protected_decisions` presence.
 - VAL-009: PASS - `TestP24ObservingJudgmentRetriesAfterSourceAndHEADChange` (`cmd/fid/integration/p24_idempotency_test.go:260`) commits a changed source file and advances HEAD, then compares raw replay bytes and unchanged journal count for all seven named leaves; the full tagged gate passed.
-- VAL-052: PASS - Final ordinary gate reported `cmd/fid` 196.324 s; final tagged `cmd/fid/integration` was 248.512 s. The ordinary gate cached `internal/workflow` and other packages, so an uncached final-tree race run separately observed `internal/workflow` 67.367 s and slowest other ordinary package `internal/issues` 113.986 s. All ordinary packages were below 600 s and the 480 s warning; tagged integration was below 900 s.
-- VAL-066: PASS - `TestP24ObservingJudgmentReplayNeverObserves` (`cmd/fid/integration/p24_idempotency_test.go:310`) checks raw replay bytes and no new Event for all seven in unmerged states and after source deletion where applicable; its observable new-key preflight succeeds and unobservable new-key control fails without an Event. The full tagged gate passed.
+- VAL-052: PASS - Fresh ordinary gate reported `cmd/fid` 221.607 s, `internal/export` 98.415 s as the slowest other uncached package, and cached `internal/workflow`; the fresh tagged `cmd/fid/integration` run reported 288.286 s. The original Task 2 final-tree uncached race run observed `internal/workflow` 67.367 s and `internal/issues` 113.986 s. All recorded ordinary package times are below 600 s and the 480 s warning; tagged integration is below 900 s.
+- VAL-066: PASS for Task 2's seven leaves - `TestP24ObservingJudgmentReplayNeverObserves` (`cmd/fid/integration/p24_idempotency_test.go:310`) checks original response bytes and unchanged Event count on all seven same-key unmerged replays. For the five project-file Source leaves enumerated at line 312, it deletes `base.txt`, repeats the same-key replay, then sends a distinct viable `-p24-deleted` new-key request in that same unmerged/deleted state. Each returns a typed JSON error with no stdout and appends no Event (lines 371-394). The existing observable new-key preflight succeeds for each leaf (line 350). Focused race and full tagged gates passed. Task 4 owns isolated deleted-file observation behavior and the `repository-unavailable` code.
 
 ## Tests run
 
@@ -86,20 +88,27 @@
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./internal/workflow ./internal/issues` - PASS - `ok  	github.com/mbell-nzl/fid/internal/issues	113.986s` (terminated `exit_code: 0`)
 - The same uncached race command printed `ok  	github.com/mbell-nzl/fid/internal/workflow	67.367s` before its final Issues line.
 - Real entrypoint in the singular-journal fixture: `fid --project <one workspace> --json rebuild` exited 0 after 49 real keyed operation names were projected, and every live `request_field_digests_json` byte string equaled its rebuilt value.
+- QA review-1 F3 red: `go test -tags integration -run '^TestP24ObservingJudgmentReplayNeverObserves$' -count=1 ./cmd/fid/integration/` - FAIL - `FAIL` (terminated `exit_code: 1`; tool wall 13.287 s). All five Source-bearing subtests reported `deleted-source new-key control was not verified` before the paired call was added.
+- Isolated-deletion probe with the same focused command - FAIL - `FAIL` (terminated `exit_code: 1`; tool wall 12.342 s). After clearing the unmerged index, `concern.record`, `deviation.record`, and `human-outcome.record` accepted a new key with a missing Source file. This is Task 4 observation behavior, so the fixture retains the existing unmerged state through deletion.
+- QA review-1 F3 green: `go test -tags integration -run '^TestP24ObservingJudgmentReplayNeverObserves$' -count=1 ./cmd/fid/integration/` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	10.931s` (terminated `exit_code: 0`)
+- Touched tagged race pre-gate: `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP24ObservingJudgmentReplayNeverObserves$' ./cmd/fid/integration/` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	12.677s` (terminated `exit_code: 0`)
+- Real CLI entrypoint in that fixture: `fid --project <workspace> --json <source leaf> --input <fixture> --actor <actor> --idempotency-key <distinct deleted key>` returned a nonzero status and typed JSON error for each of the five Source leaves after `base.txt` removal, while the paired same-key invocation returned its original stdout bytes. The test checks the journal line count before and after both calls.
+- Fresh exact-gate wall evidence: format 0.025 s; lint 3.501 s; ordinary race gate's longest reported package `cmd/fid` 221.607 s (slowest other ordinary package `internal/export` 98.415 s; `internal/workflow` cached); coverage tool 0.095 s; tagged integration package 288.286 s; benchmark tool 24.832 s (22,006 ms/rebuild); each `rg` tool call <0.001 s. The execution surface did not provide a single aggregate elapsed value across the ordinary gate's polling chunks; the reported package times are its reproducible wall evidence.
 
 ## Exact quality-gate results
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.6% of statements` (terminated `exit_code: 0`)
-- `go tool cover -func=coverage.out` - PASS - `total:											(statements)			60.5%` (terminated `exit_code: 0`)
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	248.512s` (terminated `exit_code: 0`)
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	25.093s` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)			60.2%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	288.286s` (terminated `exit_code: 0`)
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	24.634s` (terminated `exit_code: 0`)
 - `rg -n "RequestDigest:" internal cmd -g '!*_test.go'` - PASS - `internal/workflow/run_budget.go:61:		idem := journal.IdempotencyRequest{OperationScope: "run.observe-budget:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}` (terminated `exit_code: 0`)
 - `rg -n "func [a-zA-Z]*(RequestDigest|requestDigest|judgmentDigest)\(" internal -g '!*_test.go'` - PASS - `internal/journal/request_digest.go:14:func ComputeRequestDigest(components map[string]any, actor any, aliases map[string]string) (string, map[string]string, error) {` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
+- QA review-1 F3 first focused attempt failed with `FAIL` (terminated `exit_code: 1`) because the deleted-source branch had no new-key call. Adding the paired call and exact five-leaf enumeration repaired that evidence gap; the byte-identical focused command passed with `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	10.931s` (terminated `exit_code: 0`). A second focused probe failed with `FAIL` (terminated `exit_code: 1`) when it cleared the unmerged index: three reference leaves accepted the missing-file request under today's behavior. Keeping the accepted unmerged/deleted state restored the paired test; Task 4 owns file-only observation semantics. The full byte-identical Task 2 gate then passed.
 - No accepted-contract deviation. The final singular-journal fixture uses only real keyed CLI writes in one workspace and changes no public contract.
 - The first touched-package race attempt failed with final token `FAIL` (terminated `exit_code: 1`): a retained Phase 21 Task 4 Activation assertion expected the displaced generic `invalid-argument`. The repair requires exit-4 `idempotency-conflict`, exact `content`/`expected_version` fields, identical repeated failure and unchanged Event count. The byte-identical repaired race command terminated `exit_code: 0` with final token `ok  	github.com/mbell-nzl/fid/cmd/fid	251.732s`.
 - The first retained Phase 23 conformance selection failed with final token `FAIL` (terminated `exit_code: 1`) because its fake model omitted the new closed details member. Exact nine-field convergence made the byte-identical selection pass with final token `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	10.322s` (terminated `exit_code: 0`).
@@ -112,6 +121,7 @@
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
+- QA review-1 F3 limit: the deleted-source control runs while the fixture is also unmerged, exactly matching the retained state after the first refusal. The three reference leaves' isolated missing-file acceptance is left for Task 4; this test proves replay bypasses observation and that a fresh viable request is refused in the combined state. Fresh gates reported `cmd/fid` 221.607 s, `internal/export` 98.415 s and tagged integration 288.286 s, below their 600/900 s budgets and 480 s ordinary headroom warning.
 - The original checkpoint left most write sites storing `{}` and some renderers returning generic failures; attempt 1 adopted their direct request constructors and Gate, Stop and Issue renderers, and attempt 2 ran the all-leaf behavioral corpus.
 - The original checkpoint had changed no retained assertion. This continuation converged three displaced retained assertions after checking their introducing commits, as required by DEC-162/165/166.
 - The first red exposed a missing `run.start` CLI conflict mapping. The integration test and focused green prove that one path only; they do not prove the 49-leaf or observation contracts.
@@ -125,8 +135,8 @@
 
 ## Commit hash
 
-- `95c738f23c34aef1a9e8c6630f1d88c660648591`
+- Pending commit
 
 ## Commit subject
 
-- `test(idempotency): prove all keyed leaves rebuild in one journal`
+- Pending commit

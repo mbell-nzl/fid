@@ -309,6 +309,10 @@ func TestP24ObservingJudgmentRetriesAfterSourceAndHEADChange(t *testing.T) {
 
 func TestP24ObservingJudgmentReplayNeverObserves(t *testing.T) {
 	t.Parallel()
+	sourceBearing := map[string]bool{
+		"concern.record": true, "deviation.record": true, "human-outcome.record": true,
+		"decision.record-reference": true, "requirement.record-reference": true,
+	}
 	for _, operation := range []string{
 		"concern.record", "concern.dispose", "deviation.record", "human-outcome.record",
 		"decision.record-reference", "requirement.record-reference", "requirement.link",
@@ -363,7 +367,12 @@ func TestP24ObservingJudgmentReplayNeverObserves(t *testing.T) {
 				t.Fatalf("%s unmerged replay/control appended Event: %d -> %d", operation, before, after)
 			}
 			request := p23LeafRequest(t, pair)
-			if _, hasSource := request["source"]; hasSource || request["references"] != nil {
+			_, hasSource := request["source"]
+			if sourceBearing[operation] != (hasSource || request["references"] != nil) {
+				t.Fatalf("%s project-file Source enumeration disagrees with fixture", operation)
+			}
+			if sourceBearing[operation] {
+				deleted := control("deleted")
 				if err := os.Remove(filepath.Join(workspace, "base.txt")); err != nil {
 					t.Fatal(err)
 				}
@@ -372,6 +381,16 @@ func TestP24ObservingJudgmentReplayNeverObserves(t *testing.T) {
 				}
 				if after := p21JournalEventCount(t, workspace); after != before {
 					t.Fatalf("%s deleted-source retry appended Event: %d -> %d", operation, before, after)
+				}
+				stdout, stderr, err := closureRunCommand(workspace, binary, deleted...)
+				if err == nil || stdout != "" || stderr == "" {
+					t.Fatalf("%s deleted-source new-key control = %v stdout=%q stderr=%q, want refusal", operation, err, stdout, stderr)
+				}
+				if code, ok := p21Path(t, p23Envelope(t, stderr), "error", "code").(string); !ok || code == "" {
+					t.Fatalf("%s deleted-source new-key control lacks typed error code", operation)
+				}
+				if after := p21JournalEventCount(t, workspace); after != before {
+					t.Fatalf("%s deleted-source control appended Event: %d -> %d", operation, before, after)
 				}
 			}
 		})
