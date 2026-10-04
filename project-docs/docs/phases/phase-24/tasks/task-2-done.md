@@ -74,8 +74,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `8bddc91940dd2f0e012eabc389ffed2a7aa5e987`
 
 ## Commit subject
 
-- Pending commit
+- `feat(idempotency): checkpoint named conflict field digests`
