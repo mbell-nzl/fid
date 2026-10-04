@@ -1,32 +1,45 @@
 # Phase 24 QA Plan - Operating Experience And Input Convergence
 
 > Phase: 24 - Operating experience and input convergence
-> Refreshed: 2026-10-04 (first pass)
-> QA Lead: Claude Opus 5.5 (Claude Code), QA-plan pass after DEC-277
-> Operating mode: **Heavy** (DEC-277). Every result in section 6 was produced
-> fresh in this session on `phase-24` at
-> `304aa45f12cf3966567231e6986e3070df409c68` (clean tree). Nothing carries
-> forward from Phase 23.
+> Refreshed: 2026-10-04 (readiness refresh, second pass)
+> QA Lead: Claude Opus 5.5 (Claude Code). The first pass ran at `304aa45`
+> and was committed as `eb34889`. This readiness refresh ran at `21c833f`,
+> after DEC-278 (QA-plan dispositions) and DEC-279 (D5).
+> Operating mode: **Heavy** (DEC-277). The product trees (`cmd/`,
+> `internal/`, `migrations/`, `go.mod`, `go.sum`) at `21c833f` are
+> byte-identical to `304aa45` (section 12.2). The section 6 gate results
+> therefore still hold for every unchanged command. Everything DEC-278 and
+> DEC-279 changed was re-validated fresh in this session (section 12).
 >
-> **Status: NOT READY. Seventeen Must-fix revisions (R-01..R-17, section 2.3)
-> need Tech Lead disposition.** This is not a placeholder `BLOCKED`: every
-> required command is concrete and was executed or proven feasible (section
-> 6). Three revisions carry blocker candidates (section 2.4). Under the phase
-> brief, nothing is dispatched until a readiness refresh of this plan
-> confirms the dispositions (section 11).
+> **Status: NOT READY (scoped).** The first pass's 17 Must-fix and 19
+> improvement items are all verified as applied (section 12.1), and none
+> remains open. The refresh found **nine new Must-fix items (RR-01..RR-09)**,
+> and one of them is a **blocker candidate (RR-06)** (sections 12.3, 12.4).
+> No finding touches tasks 1-3. RR-09 gates task 4. All the others gate
+> task 9 or task 10. Under the phase brief nothing is dispatched until the
+> Tech Lead dispositions them, or lifts the dispatch gate for tasks 1-3 by
+> decision, as DEC-278 did for task 9 (section 12.5).
 
 ## 1. Scope And Source Documents
 
 Phase 24 gives a Human control of a stuck or diverging journey through fid
-output alone, and converges inputs. fid observes repository identity itself,
-so callers send only the expectations a check uses. Request digests cover the
-input as written, and per-field digests name the differing field (migration
-0019). One input descriptor per `--input` leaf drives help, an `--example`
-template and field-path validation. Human failure lines repeat the JSON
-failure with reason, blockers and next action. Stop, Attention and repository
-lines become readable. Three judgment `get` leaves are added. Judgment views
-show recorded reasoning, with one disclaimer per section. The phase has 14
-sequential tasks and 57 assertions (52 deterministic, 5 Human).
+output alone, and it converges inputs:
+- fid observes repository identity itself, so callers send only the
+  expectations a check uses;
+- request digests cover the input as written, and per-field digests name
+  the differing field (migration 0019);
+- one input descriptor per `--input` leaf drives help, an `--example`
+  template and field-path validation;
+- grammar failures name the offending spelling, and unknown commands return
+  `operation-unavailable` (Phase 21 allocations, DEC-278);
+- Human failure lines repeat the JSON failure with reason, blockers and
+  next action;
+- Stop, Attention and repository lines become readable;
+- three judgment `get` leaves are added;
+- judgment views show recorded reasoning, with one disclaimer per section.
+
+The phase has 14 sequential tasks and 66 assertions (61 deterministic, 5
+Human).
 
 Sources read for this plan:
 
@@ -35,21 +48,27 @@ Sources read for this plan:
   `progress_current.md`, `tl_escalations_current.md` (no open ESC)
 - `project-docs/specs/08_QUALITY_PLAN.md` sections 5-8
 - `project-docs/specs/09_AI_WORKFLOW.md` sections 2.6, 4.3, 4.4, 6.1
-- `project-docs/specs/01_PRD.md` (the 19 PRD IDs the contract cites)
+- `project-docs/specs/01_PRD.md` (the PRD IDs the contract cites)
 - `project-docs/specs/GLOSSARY.md` (Project-owned prose entry)
-- `project-docs/docs/phases/phase-24/qa/validation-contract.md`
-- `project-docs/docs/phases/phase-24/public-interface.md`,
-  `input-inventory.md`, `decisions.md` (DEC-273..277), `triage-log.md`
-- `project-docs/docs/phases/phase-24/tasks/task-1.md` .. `task-14.md`
+- `project-docs/docs/phases/phase-24/qa/validation-contract.md` (66 rows)
+- `project-docs/docs/phases/phase-24/public-interface.md` (with the DEC-278
+  clarifications to sections 2, 5, 6, 9, 10 and D5 in section 13),
+  `input-inventory.md` (R1-R16), `decisions.md` (DEC-273..279),
+  `triage-log.md`
+- `project-docs/docs/phases/phase-24/tasks/task-1.md` .. `task-14.md` (as
+  amended by `c80304c` and `21c833f`)
 - `project-docs/docs/phases/phase-23/decisions.md` DEC-227, DEC-259;
-  `phase-23/qa/qa-plan.md` sections 1-11 and `qa/human-fixtures.md` (format
-  and fixture precedent only)
-- `project-docs/docs/phases/phase-21/public-interface.md` lines 80-90,
-  402-412, 459 (grammar failures, unknown commands, `operation-unavailable`)
+  `phase-23/qa/qa-plan.md` and `qa/human-fixtures.md` (format and fixture
+  precedent only)
+- `project-docs/docs/phases/phase-21/public-interface.md` section 1 (lines
+  14-45), section 2 (lines 75-95), section 4 (lines 400-415) and the code
+  table (line 459)
+- `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md` (CF-046)
 - `project-docs/templates/qa-plan-template.md`
 - `project-docs/skills/validation-contract/SKILL.md`,
   `project-docs/skills/qa-evidence/SKILL.md`
-- Source files inspected read-only are cited inline where they are evidence.
+- Read-only source evidence, cited inline. This includes the module-cache
+  copy of `github.com/spf13/cobra@v1.10.2` (`args.go`, `command.go`).
 
 No held-out scenario, evaluator or excluded-scenario material was read. Mode B
 scenario execution is **N/A**, as in Phases 21-23. `AGENTS.md` records
@@ -59,44 +78,43 @@ control" scenario is the phase's Human run.
 
 ## 2. Validation Contract Refinement Check
 
-- All in-scope requirements referenced by at least one `VAL-NNN`: **YES**.
-  All 19 PRD IDs in the contract's Coverage table exist in `01_PRD.md`.
-  PRD-OPS-011..014 and PRD-PROJ-006/007 were added under DEC-277 (rows at
-  `01_PRD.md:150-151, 174-177`). Contract sections 2-11 re-derive to
-  assertions, with the gaps listed in 2.1.
-- Every `VAL-NNN` has one validator role: **YES**. QA Reviewer 49, QA Lead 3
-  (VAL-005, VAL-048, VAL-051), Human 5. No row names two.
-- Every `VAL-NNN` has a concrete evidence method: **YES as written; NO as
-  executable** for VAL-009 ("no new observation" has no observable, R-03),
-  VAL-036 (no producer registry exists, R-06) and VAL-049 (unsatisfiable
-  provenance rule, R-13).
-- Every `VAL-NNN` maps to a task/window or phase-end check: **YES**, verified
-  mechanically. All 57 IDs are cited by at least one task spec, and no task
-  cites an ID absent from the contract. The only out-of-range citations are
-  the Phase 23 restatement notes (VAL-060, VAL-073).
-- Every `VAL-NNN` describes one observable: **NO for six rows.** VAL-001,
-  010, 013, 025, 031 and 047 each bundle two independent observables proven
-  by different evidence (R-17). Matrix rows (006, 009, 016-019, 022-024, 036,
-  040, 051) are acceptable because sections 4 and 7 enumerate their cases.
-  The Human rows VAL-053..057 span several observables and are fanned out in
-  section 9.
-- Conditional or binary assertions require both states: **NO for four rows.**
-  VAL-038 omits the in-table code on a non-qualifying leaf (R-08). VAL-040
-  omits the Condition types that the code set does not reach (R-10). VAL-041
-  omits same-worktree versus different-worktree (R-11). VAL-027/028/029 name
-  no refusal code, so a refusal for the wrong reason passes (R-12).
-- Parity or "matches reference" assertions have deterministic proof:
-  **YES.** VAL-002, 007, 035, 042 and 050 need byte or semantic comparison,
-  and section 4 pins the comparison inputs. VAL-035's leaf set should be
-  derived, not listed (I-11).
-- Revisions requested from Tech Lead: R-01..R-17 Must-fix and I-01..I-19
-  Improvement (section 2.3).
+These results are current at `21c833f`. The first-pass record follows in
+2.1-2.4.
 
-### 2.1 Contract-Coverage Re-Derivation
+- All in-scope requirements referenced by at least one `VAL-NNN`: **YES.**
+  Every PRD ID in the Coverage table exists in `01_PRD.md`. The table does
+  not list the roadmap-sourced rows VAL-035 and VAL-051..053 (RI-07,
+  improvement).
+- Every `VAL-NNN` has one validator role: **YES.** QA Reviewer 58, QA Lead 3
+  (VAL-005, VAL-048, VAL-051), Human 5.
+- Every `VAL-NNN` has a concrete evidence method: **YES**, with one
+  infeasible fixture example in task 4 for VAL-023 (RR-09).
+- Every `VAL-NNN` maps to a task/window or phase-end check: **YES**, verified
+  mechanically. All 66 IDs are cited by at least one task spec. The only
+  citation outside the contract is the Phase 23 restatement note (VAL-073).
+- Every `VAL-NNN` describes one observable: **YES.** The six bundled rows
+  are split (VAL-058..063). VAL-064 and VAL-065 are matrices over enumerated
+  cases (failure class × leaf × mode, and command group × mode), and are
+  accepted as such.
+- Conditional or binary assertions require both states: **YES** for
+  VAL-058..063 and VAL-066 (the new-key control is the non-qualifying
+  state). **NO** for VAL-038 as task 10 implements it: task 10 and contract
+  section 9 give different expected outputs for a grammar failure on an
+  `--input` leaf (RR-01).
+- Parity or "matches reference" assertions have deterministic proof:
+  **YES.** VAL-002, 007, 035, 042 and 050 have pinned comparison inputs.
+- Assertions consistent with their task specs: **NO for VAL-036** (stdout
+  for post-frame `gate run` failures, RR-07) and **VAL-064** (the
+  `journal inspect`/`sql` exclusion, RR-08).
+- Revisions requested from Tech Lead: RR-01..RR-09 Must-fix and
+  RI-01..RI-13 Improvement (section 12.3).
+
+### 2.1 Contract-Coverage Re-Derivation (first pass, at `304aa45`)
 
 Contract sections 2-12 were mapped to assertions independently of the
-contract's Coverage table. The following clauses have no assertion that
-evidences them, or one that cannot:
+contract's Coverage table. At the first pass, the following clauses had no
+assertion that evidenced them, or one that could not. Section 12.1 verifies
+the dispositions.
 
 | Clause | Mapped to | Gap |
 |---|---|---|
@@ -111,30 +129,30 @@ evidences them, or one that cannot:
 | Section 10: "same worktree / different worktree" | VAL-041 | Only clean/dirty fixtures named (R-11) |
 | Roadmap journey "from fid output alone" | VAL-049, VAL-053, VAL-057 | Caller-chosen IDs (DEC-272) and `expected_repository` (contract section 3, DEC-276) never come from fid output (R-13) |
 
-### 2.2 Clauses Verified Sound
+### 2.2 Clauses Verified Sound (first pass)
 
 - **Accepted 0019 DDL applied, not read** (section 6.4). On a real 0001-0018
   chain, `ALTER TABLE ... ADD COLUMN` with the exact accepted text succeeds
   on an empty table. `DROP COLUMN` restores the schema-18 `sqlite_master`
-  dump byte for byte (VAL-001 is feasible as written). The CHECK and NOT NULL
-  behave as accepted. A populated table refuses the column (I-14).
-- **Inventory registries** R1, R2, R4-R12 and R14 reproduce their recorded
-  counts at the planning base (section 6.3). R3, R13 and R15 differ
-  (R-01, R-15, I-01).
+  dump byte for byte (VAL-001 and VAL-058 are feasible). The CHECK and NOT
+  NULL constraints behave as accepted. A populated table refuses the column
+  (I-14).
+- **Inventory registries** R1, R2, R4-R12 and R14 reproduced their recorded
+  counts at the planning base (section 6.3). R3, R13 and R15 differed; all
+  three are corrected (section 12.1).
 - **The `--input` leaf set** is exactly the 39 leaves of inventory section 1.
 - **First failing tests** for tasks 3, 6, 12 and 13 are red today (section
   6.5). The other first failing tests name new files or behavior that does
   not exist yet.
 - **The 100k rebuild** has about 19.6% headroom (worst of three fresh samples
-  24128 ms), not the 10% the phase brief records (I-18).
+  24128 ms).
 - **Documentation targets** named by tasks 1-14 all exist (section 6.8).
 
-### 2.3 Revisions Requested From Tech Lead
+### 2.3 Revisions Requested From Tech Lead (first pass)
 
-Must-fix (M) items block Ready. Improvement (I) items are applied at the Tech
-Lead's discretion. The Tech Lead owns every edit to `validation-contract.md`,
-`public-interface.md`, `input-inventory.md` and the task specs. This plan
-proposes edits and never applies them.
+This table is the first-pass record. DEC-278 dispositioned every item, and
+section 12.1 verifies each disposition against source. New findings are in
+section 12.3.
 
 | ID | Sev | Where | Finding and proposal |
 |---|---|---|---|
@@ -175,10 +193,11 @@ proposes edits and never applies them.
 | I-18 | I | phase brief Known Risks | Rebuild headroom is about 19.6% (worst fresh sample 24128 ms), not about 10%. |
 | I-19 | I | environment | `/tmp` is a 3.9 GB tmpfs with 1.4 GB free at assessment. Others' scratch (`pytest-of-mark` 773 MB, `kauri-*` ~1 GB) is not fid's to remove. Integration binary directories are about 17-21 MB each. If space falls, a gate fails for environmental reasons (CF-042). |
 
-### 2.4 Blocker Candidates
+### 2.4 Blocker Candidates (first pass)
 
-QA emits candidates only. No `ESC` identity is allocated. TL-Lite or the Tech
-Lead decides whether each is resolvable within existing authority.
+All three were resolved from accepted text or by Human decision: R-04 and
+R-05 by DEC-278 items 1-2, and R-07's `operation` value by DEC-279. Section
+12.1 verifies them. The open candidate from this refresh is in section 12.4.
 
 | Candidate | Protected category | Evidence | Authority boundary | Requested action |
 |---|---|---|---|---|
@@ -190,20 +209,20 @@ Lead decides whether each is resolvable within existing authority.
 
 | Task | Focus | Covered VAL IDs | Risk | QA Notes |
 |---|---|---|---|---|
-| 1 | Migration 0019, field-digest storage | 001-005, 052 | high | R-01 file scope; I-07, I-14. DDL measured feasible (6.4). 100k benchmark early sample. |
-| 2 | Input-as-written digests, `differing_fields` | 002, 005-009, 052 | high | 43 sites; R-02 per-leaf corpus; I-16. Pins "digest before observe". |
-| 3 | Descriptor framework, help, `--example`, field paths | 010-016, 052 | high | New descriptor files inside `internal/cli` (no new package). Fence (DEC-192). R-07 if assigned here; I-01, I-09. |
-| 4 | Observation, SourceInput, judgment leaves | 008, 009, 011-023, 035, 052 | high | R-03, R-04, R-05. Human Outcome references become checked. Path-safety fixtures. |
-| 5 | `ExpectedRepository`, `review.record` | 009, 011-019, 022-025, 035, 052 | medium | `repository-mismatch` shape change; Phase 23 Review corpora converge. |
-| 6 | Registration, Envelope, Claim; same-worktree predicate | 009, 011-019, 022, 023, 026-029, 035, 052 | high | Predicate reused by tasks 7-8 (window after 6, section 8). R-12. |
-| 7 | Run leaves (DEC-273) | 009, 011-019, 022-025, 029-031, 035, 052 | high | `base_oid` becomes HEAD; recovery corpora converge. |
-| 8 | Gate run, Evidence, real freshness | 009, 011-017, 022-024, 029, 032-035, 052 | high | Highest convergence risk (brief). Artifacts must stay git-ignored. Imported destinations. |
-| 9 | Activation descriptors; whole-tree conformance | 011-016, 035, 052 | medium | Fence deleted. Sensitive fields. R-16. |
-| 10 | Human failure lines, every family | 036-039, 052 (054) | high | 41 writers (R9), 32 retained assertions (R10). R-06..R-09. |
-| 11 | Stop, Attention, repository lines | 040, 041, 052 (054, 055) | medium | R-10, R-11. Human walk-through at its window. |
-| 12 | Judgment `get` leaves | 042, 043, 052 | low | Live leaf inventory (R14). |
-| 13 | Disclaimers, recorded reasoning, sentinel guard, glossary | 044-048, 052 (056) | medium | R-15; I-15. The glossary already holds a partial "recorded reasoning" note (`GLOSSARY.md:28-31`). |
-| 14 | Take-control journey, parity, absence | 049-052 (053-057) | high | R-13, R-14. Absence commands declared exit 1. |
+| 1 | Migration 0019, field-digest storage | 001-005, 058, 052 | high | Map is an insert value and a receipt-update guard (DEC-278 item 7); registries and retained tests now in scope (12.1). I-14 note. 100k early sample. |
+| 2 | Input-as-written digests, `differing_fields` | 002, 005-009, 066, 052 | high | 49 keyed leaves in 20 families (R16); completeness test; RI-01 (artifact two-field row); RI-04 (control construction). |
+| 3 | Descriptor framework, help, `--example`, field paths | 010-016, 059, 060, 052 | high | Fence (DEC-192). VAL-059 non-qualifying leaves are exactly `attention resolve`, `stop raise`, `stop resolve` (12.2). |
+| 4 | Observation, SourceInput, judgment leaves | 008, 009, 011-023, 035, 060, 066, 052 | high | Five-reason mapping (DEC-278 item 2); **RR-09** (FIFO fixture); RI-02, RI-03. Human Outcome references become checked. |
+| 5 | `ExpectedRepository`, `review.record` | 009, 011-019, 022-025, 035, 060, 066, 052 | medium | Help names the git commands (VAL-012); `dirty` meaning matches fid's capture (12.1 R-13). |
+| 6 | Registration, Envelope, Claim; same-worktree predicate | 009, 011-019, 022, 023, 026-029, 035, 060, 066, 052 | high | Predicate reused by tasks 7-8. Plain copy is a working workspace (12.2). Exact fallback refusals (DEC-278 item 6). |
+| 7 | Run leaves (DEC-273) | 009, 011-019, 022-025, 029-031, 035, 060-062, 066, 052 | high | `base_oid` becomes HEAD; `run.close` records `failed` on stale Evidence (`run_close.go:81-87`). |
+| 8 | Gate run, Evidence, real freshness | 009, 011-017, 022-025, 029, 032-035, 060, 066, 052 | high | Highest convergence risk. `evidence.evaluate` is the one observing read. Artifacts stay git-ignored. |
+| 9 | Activation descriptors; whole-tree input, help and grammar conformance | 011-016, 035, 060, 064, 065, 052 | **high** | Grammar and unknown commands across the whole tree. **RR-02, RR-03, RR-04, RR-05, RR-08**; RI-05, RI-11, RI-12. |
+| 10 | Human failure lines, every family | 036-039, 052 (054) | **high** | 41 writers (R9), 32 retained assertions (R10). **RR-01, RR-06 (blocker candidate), RR-07.** |
+| 11 | Stop, Attention, repository lines; Human fixture generator | 040, 041, 052 (054, 055) | medium | `TestP24HumanFixtures` (DEC-278 item 10). Every Condition type has existing resolve fixtures (12.1 R-10). |
+| 12 | Judgment `get` leaves | 042, 043, 052 | low | Depends on the task 9/10 corpora in its AC (RI-10). |
+| 13 | Disclaimers, recorded reasoning, sentinel guard, glossary | 044-048, 063, 052 (056) | medium | `operations.json` and reader in scope (R-15); I-15. |
+| 14 | Take-control journey, parity, absence | 049-052, 063 (053-057) | high | Closed provenance classes (DEC-278 item 9). RI-08 (real freshness in the journey), RI-09 (red-first test). |
 
 ## 4. Required Evidence Strategy
 
@@ -211,47 +230,55 @@ Rows state what QA requires; they do not prescribe implementation. "Named
 tests" means tests the completion report names and whose output it records.
 "Independent observation" is the test's own `git rev-parse HEAD`,
 `git rev-parse HEAD^{tree}`, `git status --porcelain` and SHA-256 of the
-absolute root, never fid output.
+absolute root, never fid output. EVID-38..44 were added in this refresh;
+existing IDs are not renumbered.
 
 | Evidence ID | Required evidence | Covers | Owner | Produced by |
 |---|---|---|---|---|
-| EVID-01 | `sqlite_master` (type, name, tbl_name, sql) dumps at 18, after up, after down; the up diff is exactly the one column; the down dump is byte-equal to 18 | VAL-001 | Developer | task 1 |
-| EVID-02 | Live versus rebuilt `request_field_digests_json`, byte-equal per row, over a journal with keyed mutations (task 1: issue, claim, run, review; task 2: every keyed leaf after R-02) | VAL-002 | Developer | tasks 1, 2 |
-| EVID-03 | Journal fixture pair (and malformed map, I-05): replays with the map; without it stops with `journal-replay-stopped`, exit 6, naming the line | VAL-003 | Developer | task 1 |
-| EVID-04 | Export, validate, import of a 19 archive; 18-manifest archive rejected (I-06) with the target tree digest unchanged | VAL-004 | Developer | task 1 |
+| EVID-01 | `sqlite_master` (type, name, tbl_name, sql) dumps at 18, after up, after down; the up diff is exactly the one column; the down dump is byte-equal to 18. Each half is reported against its own assertion | VAL-001, VAL-058 | Developer | task 1 |
+| EVID-02 | Live versus rebuilt `request_field_digests_json`, byte-equal per row (task 1: issue, claim, run, review; task 2: one keyed mutation per keyed leaf, R16) | VAL-002 | Developer | tasks 1, 2 |
+| EVID-03 | Journal fixtures: map present replays; removed, non-object and non-digest value each stop with `journal-replay-stopped`, exit 6, naming the line; receipt-update guard mismatch fails closed | VAL-003 | Developer | task 1 |
+| EVID-04 | Export, validate, import of a 19 archive; 18-manifest archive rejected `archive-invalid`/`schema-unsupported` on `manifest.json`, target tree digest unchanged | VAL-004 | Developer | task 1 |
 | EVID-05 | `BenchmarkRebuildWorkspace100kEvents` `< 30000 ms/rebuild` with count parity; final review three fresh processes plus instance identity | VAL-005 | Developer, QA Lead | tasks 1, 2; final review |
-| EVID-06 | Per-keyed-leaf conflict corpus (R-02): one-field row per leaf; two-field and `--actor` rows per family; exact sorted `differing_fields`, exit 4, journal line count unchanged; canonical retry replays byte-identically except `replayed:true` with the original EventRef | VAL-006, VAL-007 | Developer | task 2; converged by tasks 4-8 |
+| EVID-06 | Per-keyed-leaf conflict corpus (49 leaves, R16) with a completeness test: one-field row per leaf; two-field and `--actor` rows per family; exact sorted `differing_fields`, exit 4, journal line count unchanged; canonical retry replays byte-identically except `replayed:true` with the original EventRef | VAL-006, VAL-007 | Developer | task 2; converged by tasks 4-9 |
 | EVID-07 | Three presence states: nonempty versus omitted `inapplicable_findings` conflicts naming it; `[]` versus omitted replays; supplied versus omitted Source `digest` conflicts naming the top-level field | VAL-008 | Developer | tasks 2, 4 |
-| EVID-08 | Per observing keyed leaf: commit, change the observed value, retry, which replays with no Event; plus the unobservable-worktree and deleted-file retries (R-03) | VAL-009 | Developer | tasks 2, 4-8 |
-| EVID-09 | In-process recursive Cobra walk: every leaf `Short` nonempty; `attention resolve --help` describes Attention resolution | VAL-010 | Developer | task 3; kept green by task 12 |
+| EVID-08 | Per observing mutation: commit, change the observed value (HEAD, dirty, file with digest omitted), retry, which replays with no Event and no failure | VAL-009 | Developer | tasks 2, 4-8 |
+| EVID-09 | In-process recursive Cobra walk: every leaf `Short` nonempty, no help starts `Usage:` | VAL-010 | Developer | task 3; kept green by task 12 |
 | EVID-10 | Reflection conformance, descriptor versus Go type, for every registered leaf; seeded mismatch fails; registry ∪ fence = live `--input` set until task 9, registry = live set after | VAL-011 | Developer | tasks 3-9 |
-| EVID-11 | Help conformance per descriptor field (path, type, requirement, bounds or allowed values, meaning, template line); full text pinned for `stop raise`, `activation component` and one more | VAL-012 | Developer | tasks 3-9 |
-| EVID-12 | Built-binary `--example` per leaf from a non-project temp dir: tree snapshot before and after, exit 0, empty stderr; template decoded with unknown fields disallowed and type-checked against the descriptor | VAL-013, VAL-014 | Developer | tasks 3-9 |
-| EVID-13 | Exclusivity corpus (`--json`, `--input`, `--actor`, `--idempotency-key`, positional, `--project` per I-09) returns `invalid-argument` exit 2 with no read or write | VAL-015 | Developer | tasks 3-9 |
+| EVID-11 | Help conformance per descriptor field (path, type, requirement, bounds or allowed values, meaning, template line); `expected_repository` meanings name `git rev-parse HEAD` and `git status --porcelain`; full text pinned for `stop raise`, `activation component` and one more | VAL-012 | Developer | tasks 3-9 |
+| EVID-12 | Built-binary `--example` per leaf: one object, required fields only, documented order, 2-space indent; template decoded with unknown fields disallowed and type-checked against the descriptor | VAL-013, VAL-014 | Developer | tasks 3-9 |
+| EVID-13 | Exclusivity corpus (`--json`, `--project <dir>`, `--input`, `--actor`, `--idempotency-key`, positional) returns `invalid-argument` exit 2 with task 3's details and no read or write | VAL-015 | Developer | tasks 3-9 |
 | EVID-14 | Structural corpus per leaf: 7 failure classes at top level and two levels deep; exact `input.<path>` and `allowed`; `sensitive` value null; no Event | VAL-016 | Developer | tasks 3-9 |
 | EVID-15 | Removed-member corpus over the 17 changed leaves, each rejected naming its path | VAL-017 | Developer | tasks 4-8 |
-| EVID-16 | Every Source position (I-08) × matching, mismatching, omitted-existing, omitted-missing; five path-safety fixtures; external reference omitted versus supplied | VAL-018-021 | Developer | tasks 4-7 |
+| EVID-16 | Every Source position (from the descriptor registry, with completeness check) × matching, mismatching, omitted-existing, omitted-missing; five path-safety fixtures; external reference omitted versus supplied | VAL-018-021 | Developer | tasks 4-7 |
 | EVID-17 | Stored record repository, each Source repository and the Event `repository` compared with the independent observation (`base_oid` = HEAD, `worktree_id` = SHA-256 of root, `project_id` from config) | VAL-022 | Developer | tasks 4-8 |
-| EVID-18 | Unmerged-paths and non-Git fixtures versus a normal worktree per observing leaf; unit rows for every reason and the R-05 mapping | VAL-023 | Developer | tasks 4-8 |
-| EVID-19 | Five expectation leaves × match, HEAD differs, dirty differs; mismatch details exactly `{expected:{head_oid,dirty},observed}`; close/abandon unsafe gives `recovery-state-conflict` | VAL-024, VAL-025 | Developer | tasks 5, 7, 8 |
-| EVID-20 | Registration fields and `binding_digest` recomputed from the independent observation; same-worktree versus plain-copy refusals with the exact code (R-12); imported destination with binding versus plain copy for four leaves | VAL-026-029 | Developer | tasks 6-8 |
-| EVID-21 | `run.start` after commit and edit since Envelope creation records the observation; close/abandon `terminal_repository` observed, with Obligations evaluated against it | VAL-030, VAL-031 | Developer | task 7 |
+| EVID-18 | Unmerged-paths and non-Git fixtures versus a normal worktree per observing leaf (except close/abandon); cause-class rows for no commit, tracked flag, unsupported file type (tracked file replaced by a FIFO, RR-09), injected capture change, injected size limit | VAL-023 | Developer | tasks 4-8 |
+| EVID-19 | Five expectation leaves × match, HEAD differs, dirty differs; mismatch details exactly `{expected:{head_oid,dirty},observed}` | VAL-024, VAL-025 | Developer | tasks 5, 7, 8 |
+| EVID-20 | Registration fields and `binding_digest` recomputed from the independent observation; same-worktree versus plain-copy refusals with the exact DEC-278 strings; imported destination with binding versus plain copy for four leaves | VAL-026-029 | Developer | tasks 6-8 |
+| EVID-21 | `run.start` after commit and edit since Envelope creation records the observation; close/abandon `terminal_repository` observed with `base_oid` = HEAD | VAL-030, VAL-031 | Developer | task 7 |
 | EVID-22 | Gate run after an edit since Run start: Attempt, Receipt and both Events carry one identical repository equal to the pre-spawn observation; mismatch leaves no Attempt, no process and no Event | VAL-032, VAL-024 | Developer | task 8 |
 | EVID-23 | Freshness: unchanged, edited, reverted × `evidence.evaluate`, terminal-transition denial, `envelope.complete` denial | VAL-033 | Developer | task 8 |
-| EVID-24 | `evidence.link` target equals the subject's recorded repository for receipt, review and Human Outcome subjects | VAL-034 | Developer | task 8 |
-| EVID-25 | Shared fake/fid corpus over the derived leaf set (I-11), identical acceptance and rejection | VAL-035 | Developer | tasks 4-9 |
-| EVID-26 | Built-binary Human/JSON pairing from `RegisteredCodes()` with pinned exclusions (R-06), grammar and unknown-command rows (R-07); `blocked by:` both states; next-table rows plus five outside codes plus the R-08 row; reason-rendering units with the R-09 boundary | VAL-036-039 | Developer | task 10 |
-| EVID-27 | `stop list`, `attention list`, `resume` over 10 codes and 10 Condition types, open and resolved (R-10), no raw `{`; repository lines over clean/dirty and same/different worktree (R-11) with a forbidden-token scan | VAL-040, VAL-041 | Developer | task 11 |
+| EVID-24 | `evidence.link` target and Event `repository` equal the subject's recorded repository for receipt, review and Human Outcome subjects | VAL-034 | Developer | task 8 |
+| EVID-25 | Shared fake/fid corpus over the derived leaf set, identical acceptance and rejection, no one-sided case | VAL-035 | Developer | tasks 4-9 |
+| EVID-26 | Built-binary Human/JSON pairing from `RegisteredCodes()` with pinned exclusions; grammar and unknown-command rows (including a near-miss word, RR-02); the post-frame `gate run` row (RR-07); `blocked by:` both states; next-table rows plus five outside codes plus the non-`--input` row and the `--input`-leaf grammar row (RR-01); reason-rendering units with the 200/201 boundary | VAL-036-039 | Developer | task 10 |
+| EVID-27 | `stop list`, `attention list`, `resume` over 10 codes and 10 Condition types, open and resolved, no raw `{`; repository lines over clean/dirty and same/different worktree (plain copy via `--repository`) with a forbidden-token scan | VAL-040, VAL-041 | Developer | task 11 |
 | EVID-28 | `get` JSON equals the list item with `event:null`; unknown ID gives `*-not-found` exit 3 `{id}`; missing ID, extra argument, unknown flag give `invalid-argument` exit 2 | VAL-042, VAL-043 | Developer | task 12 |
-| EVID-29 | Disclaimer count for 0/1/3 items per view; 80/81/multi-line text per closed field in list and detail views; ESC/CR/BEL/NUL escaped; sentinel guard over every Human fixture; `PRIVATE_` absent | VAL-044-047 | Developer | task 13 |
+| EVID-29 | Disclaimer count for 0/1/3 items per enumerated view; 80/81/multi-line text per closed field in list and detail views; ESC/CR/BEL/NUL escaped; sentinel guard over every Human fixture | VAL-044-047 | Developer | task 13 |
 | EVID-30 | `GLOSSARY.md` entries compared item by item with the contract section 10 closed field list | VAL-048 | QA Lead | task 13; final review |
-| EVID-31 | Tagged take-control journey with a provenance record per command and value, classed per R-13; live/rebuilt/imported parity over its workspace, manifest 19 | VAL-049, VAL-050 | Developer | task 14 |
-| EVID-32 | Descriptor forbidden-member scan; the two declared absence `rg` lines terminating `exit_code: 1` | VAL-051 | Developer, QA Lead | task 14; final review |
-| EVID-33 | Per-task wall times for `cmd/fid/integration`, `cmd/fid`, `internal/workflow` and the slowest ordinary package (I-13) | VAL-052 | Developer | every task |
-| EVID-34 | Human fixture generator output (R-14) and Human judgment notes | VAL-053-057 | Developer fixture; Human judgment | task 14; window after 11; phase end |
+| EVID-31 | Tagged take-control journey with a provenance record (DEC-278 class and source line) per command and value; live/rebuilt/imported parity over its workspace, manifest 19 | VAL-049, VAL-050 | Developer | task 14 |
+| EVID-32 | Descriptor forbidden-member scan; per-item disclaimer absence `rg` terminating `exit_code: 1`; no raw-JSON Stop renderer | VAL-051 | Developer, QA Lead | task 14; final review |
+| EVID-33 | Per-task wall times for `cmd/fid/integration`, `cmd/fid`, `internal/workflow` and the slowest ordinary package | VAL-052 | Developer | every task |
+| EVID-34 | `TestP24HumanFixtures` output (manifest with workspace, cwd, command lines, expected exit, binary SHA-256) and Human judgment notes | VAL-053-057 | Developer fixture (tasks 11, 14); Human judgment | window D; phase end |
 | EVID-35 | Full phase gate, DEC-259 full-`checkptr` control, archive-scale gate, three 100k samples, reference instance | no VAL | QA Lead | final review |
-| EVID-36 | Security review: observation under lock, path containment and symlinks, digest-before-observe, sensitive-field redaction, field-digest privacy (I-17), import binding | no VAL | QA Lead | final review |
-| EVID-37 | Inventory registries R1-R15 and section 1 walk regenerated, with deltas explained | no VAL | QA Reviewer, QA Lead | every window; final review |
+| EVID-36 | Security review: observation under lock and never on replay; path containment and symlinks; digest-before-observe; sensitive-field redaction; no top-level sensitive descriptor field (I-17); import binding | no VAL | QA Lead | final review |
+| EVID-37 | Inventory registries R1-R16 and the section 1 block regenerated, with deltas explained | no VAL | QA Reviewer, QA Lead | every window; final review |
+| EVID-38 | Per observing mutation: retry in an unobservable worktree (unmerged paths) and, for project-file Sources, after deleting the file, each replaying with no Event; a new-key control that would succeed in an observable worktree fails with no Event (from task 4: `repository-unavailable`, `recovery-state-conflict` for close/abandon, `source-digest-mismatch`) | VAL-066 | Developer | tasks 2, 4-8 |
+| EVID-39 | `attention resolve --help` text; every leaf that used `runMutationFlags` outside the Run family (`attention resolve`, `stop raise`, `stop resolve`) has no Run wording | VAL-059 | Developer | task 3 |
+| EVID-40 | Built-binary `--example` per leaf from a non-project temp dir: tree snapshot digest before and after, exit 0, empty stderr | VAL-060 | Developer | tasks 3-9 |
+| EVID-41 | Close and abandon: mismatching expectation gives `repository-mismatch`; unmerged paths give `recovery-state-conflict`; neither appends | VAL-061 | Developer | task 7 |
+| EVID-42 | Receipt-backed Obligation: close in the proven tree gives `succeeded`; separate fixture after a tracked edit gives `failed` | VAL-062 | Developer | task 7 |
+| EVID-43 | `rg -n "PRIVATE_" cmd/fid/integration` terminating `exit_code: 1` | VAL-063 | Developer, QA Lead | task 13; task 14; final review |
+| EVID-44 | Whole-tree grammar corpus (every live leaf except `journal inspect` and `sql`, both modes, four classes) with completeness check; unknown word under root and every command group, both modes, with the DEC-279 `operation` | VAL-064, VAL-065 | Developer | task 9 |
 
 ## 5. Deterministic Gates
 
@@ -264,7 +291,8 @@ absolute root, never fid output.
 | Integration | `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` | `ok ... cmd/fid/integration`, under 900 s, `exit_code: 0` | every task, final review (hosted CI does not run it, CF-041) |
 | Reference rebuild | `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/` | `ok`, count parity, `< 30000 ms/rebuild` | tasks 1, 2; final review three consecutive fresh processes (DEC-158) |
 | Reference instance | `go version`; `go env GOOS GOARCH`; `uname -srm`; `nproc`; `grep -m1 '^model name' /proc/cpuinfo`; `grep -m1 '^MemTotal:' /proc/meminfo` | recorded with the samples | final review |
-| Registry and absence searches | the `rg` lines in tasks 1, 2, 9, 10, 11, 13, 14 | recorded real status; tasks 13/14 declared `exit_code: 1` | owning task; window; final review |
+| Registry and absence searches | the `rg` lines in tasks 1, 2, 9, 10, 11, 13, 14 | recorded real status; task 9 R5 and the tasks 13/14 absence lines declared `exit_code: 1` | owning task; window; final review |
+| Human fixtures | `FID_P24_HUMAN_FIXTURE_ROOT=<repo>/.cache/phase-24-human go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24HumanFixtures$' -count=1 ./cmd/fid/integration` | `ok`, manifest written | window D (QA Reviewer, task-11 close); phase end (QA Lead, task-14 close) |
 | Benchmarks | `go test -bench . -benchmem ./...` | all packages `ok`, `exit_code: 0` | final review |
 | Archive scale | `go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries\|CumulativeBoundary\|EntryCountBoundaries)$' -count=1` | `ok`, `exit_code: 0` | final review (DEC-217 phase-end gate) |
 | Full-`checkptr` control | `go test -race -timeout 30m ./...` | `ok`, `exit_code: 0`; not held to VAL-052 budgets | final review (DEC-259); any task that changes a `modernc.org` version |
@@ -276,22 +304,28 @@ The two race gates carry `-timeout 30m`, as every Phase 24 task spec does
 (DEC-227 added per phase; DEC-259 flag). `AGENTS.md` still lists them
 without the bound. Only the bounded form was executed (section 6.2). At
 today's package times, all under 600 s, the unbounded form would also stay
-inside Go's default limit. The task-spec form governs. No gate is narrowed, substituted or deferred. Only
-tasks 13 and 14 declare expected non-zero commands (R-16 may add task 9).
-Cleanup commands are never gate results. Report lint
+inside Go's default limit. The task-spec form governs. No gate is narrowed,
+substituted or deferred. Tasks 9, 13 and 14 declare expected non-zero
+commands; RR-05 may add one more to task 9. Cleanup commands are never gate
+results. Report lint
 (`project-docs/tools/report-lint.sh <task-N-done.md> <task-N.md>`) is a Phase
 Runner control after the report commit, never a Developer or QA gate. Run
 heavy gates serially.
 
 ## 6. Command And Feasibility Validation
 
-Heavy mode: nothing carries forward. The working directory for every command
-is `/home/mark/projects/fid` unless stated. A serial wrapper captured each
-command's own exit status and wall time (`bash -c "<cmd>"; rc=$?`). Logs are
-in session scratch storage. `go clean -testcache` ran first as setup, not as
-a gate result, so no result is a cached replay. Light read-only probes ran
-during gate steps 3-9. Gate wall times therefore include minor contention,
-and no step failed.
+Sections 6.1-6.9 are the first-pass results at `304aa45`. The product trees at
+`21c833f` are byte-identical (section 12.2), and no gate command's text
+changed, so these results still hold. Every command, fixture, scope and probe
+that DEC-278 or DEC-279 changed is validated fresh in section 12.2.
+
+Heavy mode: nothing carries forward from Phase 23. The working directory for
+every command is `/home/mark/projects/fid` unless stated. A serial wrapper
+captured each command's own exit status and wall time
+(`bash -c "<cmd>"; rc=$?`). Logs are in session scratch storage.
+`go clean -testcache` ran first as setup, not as a gate result, so no result
+is a cached replay. Light read-only probes ran during gate steps 3-9. Gate
+wall times therefore include minor contention, and no step failed.
 
 ### 6.1 Toolchain And Reference Instance
 
@@ -320,28 +354,28 @@ and no step failed.
 
 | Referenced step | Validation method | Result | Evidence |
 |---|---|---|---|
-| 100k rebuild (tasks 1, 2; final ×3) | executed three times, fresh processes | PASS | `22653` / `23211` / `24128 ms/rebuild`; `ok ... internal/journal 25.506s` / `25.995s` / `26.885s` (each terminated `exit_code: 0`). Worst-case headroom 19.6% (I-18) |
+| 100k rebuild (tasks 1, 2; final ×3) | executed three times, fresh processes | PASS | `22653` / `23211` / `24128 ms/rebuild`; `ok ... internal/journal 25.506s` / `25.995s` / `26.885s` (each terminated `exit_code: 0`). Worst-case headroom 19.6% |
 | Archive-scale gate | executed | PASS | `ok github.com/mbell-nzl/fid/internal/export 143.927s` (terminated `exit_code: 0`, 164.6 s wall) |
-| Full-`checkptr` control `go test -race -timeout 30m ./...` | executed | PASS | last line `ok github.com/mbell-nzl/fid/internal/workflow 171.784s`; 0 `FAIL` lines (terminated `exit_code: 0`, 553.2 s wall). `cmd/fid` 539.666 s, `internal/issues` 379.787 s; not held to VAL-052 budgets (DEC-259), bounded by `-timeout 30m` (I-13) |
+| Full-`checkptr` control `go test -race -timeout 30m ./...` | executed | PASS | last line `ok github.com/mbell-nzl/fid/internal/workflow 171.784s`; 0 `FAIL` lines (terminated `exit_code: 0`, 553.2 s wall). `cmd/fid` 539.666 s, `internal/issues` 379.787 s; not held to VAL-052 budgets (DEC-259), bounded by `-timeout 30m` |
 | R1 `rg -n "RequestDigest:" internal cmd -g '!*_test.go'` (task 2) | executed | PASS | `exit_code: 0`; 43 lines in 32 files, matching the inventory |
-| R2 helper `rg` (task 2) | executed | PASS | `exit_code: 0`; 11 helpers in `internal/{links,review(2),evidence(2),workflow(4),labels,issues}`; I-16 |
-| R3 `rg -n "idempotency_results" migrations internal -g '!*_test.go'` (task 1) | executed | PASS (syntax); **inventory incomplete** | `exit_code: 0`; 16 files including four closed registries outside task 1's list (R-01) |
+| R2 helper `rg` (task 2) | executed | PASS | `exit_code: 0`; 11 helpers in `internal/{links,review(2),evidence(2),workflow(4),labels,issues}` |
+| R3 `rg -n "idempotency_results" migrations internal -g '!*_test.go'` (task 1) | executed | PASS (syntax); inventory incomplete at first pass (R-01, since corrected) | `exit_code: 0`; 16 files |
 | R4 | `ls migrations`; source | PASS | latest `0018_p23_remove_v1_judgment`; `ActiveMigrationVersion = 18`, `ProjectionSchemaVersion = 5` (`internal/db/projection_meta.go:10-11`); manifest uses `ActiveMigrationVersion` (`internal/export/export.go:137`) |
-| R5 `rg -n "func decodeClosed[A-Za-z]*Input" cmd/fid` (task 9) | executed | PASS (syntax); status undeclared (R-16) | `exit_code: 0`; 7 helpers (`review`, `run`, `claim`, `activation`, `envelope`, `judgment`, `gate`), 14 calling files |
+| R5 `rg -n "func decodeClosed[A-Za-z]*Input" cmd/fid` (task 9) | executed | PASS (syntax) | `exit_code: 0`; 7 helpers, 14 calling files |
 | R6 | executed | PASS | 4 `same*Repository`, 6 validators, `importedGateDestination` (`internal/evidence/execution.go:338`); `importedDestinationBinding` (`internal/workflow/import_binding.go:18`) |
 | R7 | executed | PASS | caller-repository writers in `claims/generic.go`, `evidence/{evidence,execution,registration}.go`, `review/review.go`, `workflow/{envelope,run,run_close}.go` |
 | R8 `internal/cli/codes.go` | inspection | PASS | 78 registered codes; `repository-unavailable` and `operation-unavailable` absent; `idempotency-conflict` details 4 strings; `source-digest-mismatch.expected_digest` non-nullable; `repository-mismatch.expected` a full Repository |
-| R9 `rg -n "func (write[A-Za-z]*Failure\|render[A-Za-z]*Error)\(" cmd/fid -g '!*_test.go'` (task 10) | executed | PASS | `exit_code: 0`; 41 functions (I-10) |
+| R9 `rg -n "func (write[A-Za-z]*Failure\|render[A-Za-z]*Error)\(" cmd/fid -g '!*_test.go'` (task 10) | executed | PASS | `exit_code: 0`; 41 functions |
 | R10 | executed | PASS | 32 `"error: ` assertions in 13 test files |
 | R11 `rg -n -i "worktree\|dirty digest\|HeadOID\|head_oid" cmd/fid -g '!*_test.go'` (task 11) | executed | PASS | `exit_code: 0`; Human lines in `p23_human.go:139-140`, `resume_human.go:113-117`, `run_inspect_human.go:17-19`; JSON mapping in `review.go:264`; a flag description in `run_recovery.go:68` |
 | R12 | `ls` | PASS | `stop_human.go`, `resume_human.go`, `resume_human_guidance.go` present |
-| R13 `rg -n "p23CheckJudgmentQualifiers\|PRIVATE_" cmd` | executed | PASS (syntax); **scope gap** | also matches `cmd/fid/integration/testdata/p23_conformance/operations.json` four times (R-15) |
+| R13 `rg -n "p23CheckJudgmentQualifiers\|PRIVATE_" cmd` | executed | PASS (syntax) | also matches `cmd/fid/integration/testdata/p23_conformance/operations.json` four times (R-15, since corrected) |
 | R14 | executed | PASS | `cmd/fid/contract_surface_test.go:128` |
-| R15 Short walk | executed recursively over the live tree | PASS with I-01 | 92 leaves; 20 lack a Short (8 read, 12 `--input`) |
-| Section 1 `--input` walk | executed | PASS with I-02 | exactly the 39 inventory leaves; loop status `exit 1` from the last `grep -q` |
+| R15 Short walk | executed recursively over the live tree | PASS | 92 leaves; 20 lack a Short (8 read, 12 `--input`) |
+| Section 1 `--input` walk | executed | PASS | exactly the 39 inventory leaves |
 | Section 3 fixture families | executed | PASS | 56 test files name caller repository fields (29 integration); 8 pinned literal digests in 7 files; 4 `p2*_fake_test.go` files |
-| Task 13/14 per-item disclaimer `rg` | executed | PASS (syntax); matches expected before task 13 | `exit_code: 0`; `cmd/fid/p23_human.go:163, 167, 176` (I-15) |
-| Task 13/14 `rg -n "PRIVATE_" cmd/fid/integration` | executed | PASS (syntax); **cannot reach declared exit 1 in scope** | `exit_code: 0`; `p23_human_fixtures_test.go:143`, `p23_human_leaf_pairs_test.go:45-126`, `testdata/p23_conformance/operations.json:67-145` (R-15) |
+| Task 13/14 per-item disclaimer `rg` | executed | PASS (syntax); matches expected before task 13 | `exit_code: 0`; `cmd/fid/p23_human.go:163, 167, 176` |
+| Task 13/14 `rg -n "PRIVATE_" cmd/fid/integration` | executed | PASS (syntax) | `exit_code: 0`; `p23_human_fixtures_test.go:143`, `p23_human_leaf_pairs_test.go:45-126`, `testdata/p23_conformance/operations.json:67-145` |
 | `project-docs/tools/report-lint.sh` | usage output | PASS | `Usage: project-docs/tools/report-lint.sh <completion-report.md> <task-spec.md> [--repo <git-dir>]` |
 | New file paths | `ls` | PASS | `migrations/0019_*`, `internal/db/migration0019_test.go`, `cmd/fid/input_descriptor_test.go`, `cmd/fid/integration/p24_take_control_test.go` absent; `internal/db/migration0018_test.go` present as pattern |
 
@@ -366,28 +400,28 @@ session scratch storage.
 
 | Referenced step | Validation method | Result | Evidence |
 |---|---|---|---|
-| Keyed leaf set (VAL-006, R-02) | `--help` scan of all 92 leaves | PASS | 50 leaves take `--idempotency-key` across 21 families; `export import` is the only one outside R1; `evidence evaluate` is the only `--input` leaf without a key (R-04) |
+| Keyed leaf set (VAL-006) | `--help` scan of all 92 leaves | PASS | 50 leaves take `--idempotency-key` across 21 families; `export import` is the only one outside R1; `evidence evaluate` is the only `--input` leaf without a key |
 | Task 3 first failing test | `fid --json attention resolve --input {"bogus":1}` | PASS (red today) | `invalid-argument`, `argument:"input"`, message `invalid Run request`; exit 2 |
 | `--example` absent today | `fid stop raise --example` | PASS (red today) | `error: unknown flag: --example`, exit 2; JSON `operation:"raise"` (not `stop.raise`) |
 | `attention resolve --help` text | executed | PASS (red today) | `--input string Run JSON input`; first line `Usage:` |
-| Task 12 leaves absent | `fid concern get CON-1` | PASS (red today) | exit 2, **no output in either mode** (R-07) |
-| Unknown command and subcommand | `fid bogus`, `fid concern bogus` in both modes | **FAIL vs Phase 21 contract (R-07)** | exit 2, empty stdout and stderr |
-| Grammar failure parity | `fid stop list --bogus`, `fid review get` in both modes | **conflicts with section 9 intent (R-07)** | Human `error: unknown flag: --bogus` / `error: accepts 1 arg(s), received 0`; JSON message `invalid command request`, `argument:"request"`, `value:null` |
+| Task 12 leaves absent | `fid concern get CON-1` | PASS (red today) | exit 2, no output in either mode |
+| Unknown command and subcommand | `fid bogus`, `fid concern bogus` in both modes | FAIL vs Phase 21 contract (R-07) | exit 2, empty stdout and stderr |
+| Grammar failure parity | `fid stop list --bogus`, `fid review get` in both modes | conflicts with section 9 intent (R-07) | Human `error: unknown flag: --bogus` / `error: accepts 1 arg(s), received 0`; JSON message `invalid command request`, `argument:"request"`, `value:null` |
 | Task 6 first failing test | source (`internal/claims/generic.go:483`) | PASS (red today) | empty `worktree_id` fails validation |
 | Task 13 first failing test | source (`cmd/fid/p23_human.go:154-163`) | PASS (red today) | Concern item lines print subject, severity, status, disposition, sources and the per-item disclaimer; no `summary` or `reasoning` |
-| Task 11 fixture reach | source (`internal/workflow/stop.go:175-189, 440-500`) | PASS | 10 codes, 10 Condition types; `stop raise` accepts any pairing with bindings (R-10) |
-| Observation causes | source (`internal/project/repository.go`) | **gap (R-05)** | about 30 `unsafeRepository` causes; operation markers are recorded, not rejected |
+| Task 11 fixture reach | source (`internal/workflow/stop.go:175-189, 440-500`) | PASS | 10 codes, 10 Condition types; `stop raise` accepts any pairing with bindings |
+| Observation causes | source (`internal/project/repository.go`) | gap at first pass (R-05, since resolved) | about 30 `unsafeRepository` causes; operation markers are recorded, not rejected |
 | Existing codes used by assertions | `internal/cli/codes.go` | PASS | `journal-replay-stopped`, `recovery-state-conflict`, `evidence-stale`, `concern/deviation/outcome-not-found` (not-found, `{id}`), `archive-invalid`, `idempotency-conflict`, `source-digest-mismatch`, `repository-mismatch` present |
-| Plain-copy refusal codes | source | PASS; **unnamed in contract (R-12)** | `cmd/fid/envelope.go:253`, `cmd/fid/claim.go:234` generic `invalid-argument` |
+| Plain-copy refusal codes | source | PASS | `cmd/fid/envelope.go:253`, `cmd/fid/claim.go:234` generic `invalid-argument` |
 | JSON failure stream | probes | noted | JSON failure envelopes are written to stderr with empty stdout |
 
 ### 6.6 Scope And Gate Reach
 
 | Referenced step | Validation method | Result | Evidence |
 |---|---|---|---|
-| Gate reach covers owned paths | task file lists against registry output | **PASS with R-01, R-15, R-07** | both race gates compile every `cmd/`/`internal/` package; three tasks would need files they do not list |
+| Gate reach covers owned paths | task file lists against registry output | PASS at first pass with R-01, R-15, R-07 (since corrected); see RR-03 | both race gates compile every `cmd/`/`internal/` package |
 | Same-worktree predicate home | source | PASS | `internal/workflow/import_binding.go` exists (task 6 names it) |
-| Fake adapters present | `ls` | PASS | `p22_fake_test.go`, `p22_semantic_fake_test.go`, `p22_portable_fake_test.go`, `p22_activation_fake_test.go` (I-11) |
+| Fake adapters present | `ls` | PASS | `p22_fake_test.go`, `p22_semantic_fake_test.go`, `p22_portable_fake_test.go`, `p22_activation_fake_test.go` |
 | Glossary starting state | `GLOSSARY.md:21-31` | PASS | "recorded reasoning" exists only as a note inside Project-owned prose, with a partial list; VAL-048's non-qualifying state exists today |
 
 ### 6.7 Human Checklist Feasibility
@@ -395,9 +429,9 @@ session scratch storage.
 | Referenced step | Validation method | Result | Evidence |
 |---|---|---|---|
 | Disposable project in a non-Git directory | executed | PASS | `fid init --prefix PNG` gives `initialized fid project in .fid/` (also the VAL-023 non-Git fixture) |
-| Disposable project with unborn HEAD | executed | PASS (and R-05) | `git init` then `fid init --prefix PUB` succeeds |
+| Disposable project with unborn HEAD | executed | PASS | `git init` then `fid init --prefix PUB` succeeds (VAL-023 `not-a-repository` row) |
 | Phase 23 fixture generator | source | PASS | `TestP23HumanFixtures` with `FID_P23_HUMAN_FIXTURE_ROOT` (`cmd/fid/integration/p23_human_fixtures_test.go:57-63`), including a protected-Decision checkpoint (line 264) |
-| Phase 24 stuck-journey fixture | task specs | **FAIL - drives R-14** | no task owns a generator; task 14 assigns preparation to the QA Lead |
+| Phase 24 stuck-journey fixture | task specs | PASS after DEC-278 item 10 (first pass FAIL, R-14) | `TestP24HumanFixtures`, task 11, extended by task 14 (12.1) |
 | Judgment not delegable | role rules | PASS | VAL-053..057 are `Human`; no `(qa-lead)` item substitutes |
 
 ### 6.8 Documentation Targets
@@ -415,7 +449,7 @@ session scratch storage.
 
 | Referenced step | Validation method | Result | Evidence |
 |---|---|---|---|
-| `/tmp` filesystem | `df -h /tmp` | CONSTRAINT (I-19) | tmpfs 3.9 GB, 1.4 GB free; no stale `fid-integration-binary-*` directories |
+| `/tmp` filesystem | `df -h /tmp` | CONSTRAINT | first pass: tmpfs 3.9 GB, 1.4 GB free; refresh: 1.2 GB free (RI-13); no stale `fid-integration-binary-*` directories |
 | Disk-backed alternative | `df -h /` | PASS | 896 GB available |
 | Per-binary test time | measured | PASS | tagged 293.1 s (33% of 900 s); `cmd/fid` 330.8 s (55% of 600 s); `internal/workflow` 110.3 s; all well inside the `-timeout 30m` bound |
 
@@ -426,69 +460,77 @@ means `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run
 '^(<names>)$' <packages>` (adding `-tags integration` for tagged tests), using
 the exact names in the completion report, with output recorded. Real-process
 probes use the `/tmp/fid` built by the phase gate against a fresh `git init` +
-`fid init --prefix <P>` project. PASS without evidence is invalid.
+`fid init --prefix <P>` project. PASS without evidence is invalid. Each
+assertion keeps its own outcome slot even where one item covers two.
+QA-41..48 were added in this refresh.
 
 | ID | Check | Covers | Evidence Required |
 |---|---|---|---|
 | QA-01 | Full seven-command phase gate in the section 5 form, each with token and observed termination `(qa-lead)` | no VAL | command transcript |
 | QA-02 | DEC-259 full-`checkptr` control and DEC-217 archive-scale gate `(qa-lead)` | no VAL | transcripts |
 | QA-03 | Three consecutive fresh 100k samples, each `< 30000 ms/rebuild`, with the reference instance captured in the same session `(qa-lead)` | VAL-005 | transcripts, instance values |
-| QA-04 | Fresh-init `sqlite_master` dump versus a schema-18 chain (one-column diff); apply the 0019 down migration and `cmp` with 18; rerun task 1 named tests `(qa-lead)` | VAL-001 | dumps, `cmp` status, test output |
+| QA-04 | Fresh-init `sqlite_master` dump versus a schema-18 chain (one-column diff, VAL-001); apply the 0019 down migration and `cmp` with 18 (VAL-058); rerun task 1 named tests `(qa-lead)` | VAL-001, VAL-058 | dumps, `cmp` status, test output |
 | QA-05 | On one workspace, `fid rebuild` then compare `request_field_digests_json` live versus rebuilt, plus the task 1/2 parity tests `(qa-lead)` | VAL-002 | SQL dumps, test output |
-| QA-06 | Rerun the replay fixture pair (and malformed map); confirm the stop line and exit 6 `(qa-lead)` | VAL-003 | test output |
+| QA-06 | Rerun the replay fixtures (present, removed, non-object, non-digest value); confirm the stop line and exit 6 `(qa-lead)` | VAL-003 | test output |
 | QA-07 | Export, validate, import a 19 archive; edit a copy's manifest to 18 and confirm the named rejection with the target unchanged `(qa-lead)` | VAL-004 | outputs, tree digests |
-| QA-08 | Rerun the per-keyed-leaf conflict and canonical-retry corpus; reproduce one conflict per family through the binary `(qa-lead)` | VAL-006, VAL-007 | test output, probe JSON |
+| QA-08 | Rerun the per-keyed-leaf conflict and canonical-retry corpus and its completeness test; confirm 49 rows against R16; reproduce one conflict per family through the binary `(qa-lead)` | VAL-006, VAL-007 | test output, probe JSON |
 | QA-09 | Reproduce the three VAL-008 presence states through the binary `(qa-lead)` | VAL-008 | probe JSON |
-| QA-10 | Per observing keyed leaf, rerun the advanced-HEAD retry and the unobservable-worktree retry (R-03); journal line count unchanged `(qa-lead)` | VAL-009 | test output, line counts |
-| QA-11 | Recursive live-tree walk: every leaf has a Short; `attention resolve --help` text `(qa-lead)` | VAL-010 | walk output |
+| QA-10 | Per observing mutation, rerun the advanced-HEAD (and changed-file) retry; journal line count unchanged `(qa-lead)` | VAL-009 | test output, line counts |
+| QA-11 | Recursive live-tree walk: every leaf has a Short and no help starts `Usage:` `(qa-lead)` | VAL-010 | walk output |
 | QA-12 | Registry equals the live `--input` set (39), no fence, reflection conformance and seeded-mismatch tests `(qa-lead)` | VAL-011 | test output, walk diff |
-| QA-13 | For every `--input` leaf from a non-project temp dir: `--example` (tree snapshot before and after), template decode, and `--help` lists every descriptor field and the template line `(qa-lead)` | VAL-012, VAL-013, VAL-014 | per-leaf outputs, snapshot digests |
+| QA-13 | For every `--input` leaf from a non-project temp dir: `--example` form, template decode, and `--help` lists every descriptor field and the template line; `expected_repository` names the git commands `(qa-lead)` | VAL-012, VAL-013, VAL-014 | per-leaf outputs |
 | QA-14 | Exclusivity corpus rerun, plus binary probes of `--json --example` and `--project <dir> --example` `(qa-lead)` | VAL-015 | outputs |
 | QA-15 | Structural corpus rerun, plus binary probes of one nested unknown key, one enum violation and one sensitive field `(qa-lead)` | VAL-016 | outputs |
 | QA-16 | Removed-member probe for each of the 17 changed leaves `(qa-lead)` | VAL-017 | outputs |
 | QA-17 | Source corpus rerun; binary probes of match, mismatch, omitted-existing, omitted-missing, absolute path, `..`, escaping symlink, directory, in-root symlink, external reference `(qa-lead)` | VAL-018-021 | outputs, stored rows |
 | QA-18 | For one leaf per task 4-8, stored and Event repositories against an independent observation `(qa-lead)` | VAL-022 | SQL rows, git output |
-| QA-19 | Unmerged-paths and non-Git probes per observing leaf versus normal; unit rows for every reason `(qa-lead)` | VAL-023 | outputs, test output |
-| QA-20 | Expectation corpus (5 leaves × 3 states); mismatch details shape; close/abandon unsafe `(qa-lead)` | VAL-024, VAL-025 | outputs |
-| QA-21 | Registration binding digest recomputed; same-worktree versus plain copy for `envelope.create`, `claim.acquire`; imported destination versus plain copy for four leaves, each refusal with its exact code (R-12) `(qa-lead)` | VAL-026-029 | outputs, recomputation |
-| QA-22 | `run.start` after commit and edit; close/abandon terminal repository and Obligation evaluation `(qa-lead)` | VAL-030, VAL-031 | outputs, SQL rows |
+| QA-19 | Unmerged-paths and non-Git probes per observing leaf (except close/abandon) versus normal; cause-class rows: no commit, `--assume-unchanged`, tracked file replaced by a FIFO, injected capture change, injected size limit `(qa-lead)` | VAL-023 | outputs, test output |
+| QA-20 | Expectation corpus (5 leaves × 3 states); mismatch details shape `(qa-lead)` | VAL-024, VAL-025 | outputs |
+| QA-21 | Registration binding digest recomputed; same-worktree versus plain copy for `envelope.create`, `claim.acquire`; imported destination versus plain copy for four leaves, each refusal with the exact DEC-278 message and details `(qa-lead)` | VAL-026-029 | outputs, recomputation |
+| QA-22 | `run.start` after commit and edit; close/abandon terminal repository `(qa-lead)` | VAL-030, VAL-031 | outputs, SQL rows |
 | QA-23 | Gate run after an edit: one identical repository across Attempt, Receipt and both Events; mismatch leaves no Attempt row, no Event, and no marker file from the gate's command (proving no spawn) `(qa-lead)` | VAL-032 | SQL rows, journal lines |
 | QA-24 | Freshness three states × three surfaces `(qa-lead)` | VAL-033 | outputs |
-| QA-25 | `evidence.link` target per subject type `(qa-lead)` | VAL-034 | SQL rows |
+| QA-25 | `evidence.link` target and Event repository per subject type `(qa-lead)` | VAL-034 | SQL rows, journal lines |
 | QA-26 | Rerun the fake/fid corpus; confirm the derived leaf set has no one-sided case `(qa-lead)` | VAL-035 | test output, case inventory |
-| QA-27 | Rerun the pairing corpus; confirm rows plus exclusions equal `RegisteredCodes()`; binary probes of one Stop-blocked denial, one next-table code per row, one non-`--input` `invalid-argument`, one unknown command (per R-07 disposition), and the 200/201-scalar boundary (R-09) `(qa-lead)` | VAL-036-039 | test output, stderr captures |
-| QA-28 | Stop and Attention views over every code and Condition type, open and resolved; repository lines clean/dirty and same/different worktree; forbidden-token `rg` over captured Human output `(qa-lead)` | VAL-040, VAL-041 | captured output, `rg` status |
+| QA-27 | Rerun the pairing corpus; confirm rows plus exclusions equal `RegisteredCodes()`; binary probes of one Stop-blocked denial, one next-table code per row, one non-`--input` `invalid-argument`, one grammar failure on an `--input` leaf (per the RR-01 disposition), one unknown command and one near-miss word such as `fid isue` (RR-02), one post-frame `gate run` failure (RR-07), and the 200/201-scalar boundary `(qa-lead)` | VAL-036-039 | test output, stderr captures |
+| QA-28 | Stop and Attention views over every code and Condition type, open (with `Next:` and the after-the-fact step) and resolved (resolution Event, no `Next:`); repository lines clean/dirty and same/different worktree; forbidden-token `rg` over captured Human output `(qa-lead)` | VAL-040, VAL-041 | captured output, `rg` status |
 | QA-29 | `get` leaves versus list items; not-found and grammar probes `(qa-lead)` | VAL-042, VAL-043 | outputs |
-| QA-30 | Disclaimer counts, reasoning cut and full text, control escaping, sentinel guard rerun; `PRIVATE_` search status `(qa-lead)` | VAL-044-047 | captured output, test output |
+| QA-30 | Disclaimer counts over the enumerated view set, reasoning cut and full text, control escaping, sentinel guard rerun `(qa-lead)` | VAL-044-047 | captured output, test output |
 | QA-31 | `GLOSSARY.md` entries compared item by item with contract section 10 `(qa-lead)` | VAL-048 | quoted entries and comparison |
-| QA-32 | Rerun the take-control journey; check each provenance record's class against the R-13 rule; parity test `(qa-lead)` | VAL-049, VAL-050 | test output, provenance log |
-| QA-33 | Descriptor forbidden-member scan; both absence `rg` lines terminate `exit_code: 1`; no raw-JSON Stop renderer `(qa-lead)` | VAL-051 | test output, `rg` status |
-| QA-34 | Every completion report records the three package times (plus the slowest ordinary package); none breaches 600/900 s `(qa-lead)` | VAL-052 | report excerpts |
-| QA-35 | Security review: observation under the write lock and after replay; path containment and symlink escape; digest-before-observe; sensitive fields never echoed; field-digest privacy (I-17); import-binding equivalence limited to the bound root `(qa-lead)` | no VAL | findings with file references |
-| QA-36 | Every completion report lists every exact task-spec command with token and observed termination; declared non-zero commands recorded as declared; converged rows carry introducing commit, invalidating change and executing command (DEC-162/165/166) `(qa-lead)` | no VAL | report-to-spec comparison |
+| QA-32 | Rerun the take-control journey; check each provenance record's class against DEC-278 item 9 and that no value comes from JSON; parity test `(qa-lead)` | VAL-049, VAL-050 | test output, provenance log |
+| QA-33 | Descriptor forbidden-member scan; per-item disclaimer `rg` terminates `exit_code: 1`; no raw-JSON Stop renderer `(qa-lead)` | VAL-051 | test output, `rg` status |
+| QA-34 | Every completion report records the three package times plus the slowest ordinary package; none breaches 600/900 s `(qa-lead)` | VAL-052 | report excerpts |
+| QA-35 | Security review: observation under the write lock and never on replay; path containment and symlink escape; digest-before-observe; sensitive fields never echoed; no top-level sensitive descriptor field (I-17); import-binding equivalence limited to the bound root `(qa-lead)` | no VAL | findings with file references |
+| QA-36 | Every completion report lists every exact task-spec command with token and observed termination; declared non-zero commands (tasks 9, 13, 14) recorded as declared; converged rows carry introducing commit, invalidating change and executing command (DEC-162/165/166) `(qa-lead)` | no VAL | report-to-spec comparison |
 | QA-37 | `git diff 304aa45 -- go.mod go.sum` empty, or each dependency recorded per the budget; no new package outside `internal/*` boundaries in `02_TRD.md` `(qa-lead)` | no VAL | diff output |
-| QA-38 | Registries R1-R15 and the section 1 walk regenerated; R2 lists only the shared helper; R5 matches the R-16 disposition; deltas explained `(qa-lead)` | no VAL | command output |
+| QA-38 | Registries R1-R16 and the section 1 block regenerated; R2 lists only the shared helper; R5 terminates `exit_code: 1`; deltas explained `(qa-lead)` | no VAL | command output |
 | QA-39 | Spec amendments named by tasks 1-14 applied (03, 05, 06, 07, 08, GLOSSARY); spec sync inputs for wrap-up `(qa-lead)` | no VAL | spec diffs |
 | QA-40 | Every window review is `PASS`; each earlier `REPAIR` closed by a fresh independent re-review; the task-11 Human walk-through recorded `(qa-lead)` | no VAL | review files |
+| QA-41 | Per observing mutation, rerun the unobservable-worktree and deleted-file retries and their new-key controls; replays append nothing; controls fail with the VAL-066 codes `(qa-lead)` | VAL-066 | test output, line counts, control outputs |
+| QA-42 | `attention resolve --help`, `stop raise --help`, `stop resolve --help`: no Run wording; Attention wording present `(qa-lead)` | VAL-059 | help captures |
+| QA-43 | For every `--input` leaf from a non-project temp dir: `--example` exit 0, empty stderr, tree snapshot digest unchanged `(qa-lead)` | VAL-060 | per-leaf statuses, snapshot digests |
+| QA-44 | Close and abandon with a mismatching expectation (`repository-mismatch`) and with unmerged paths (`recovery-state-conflict`); journal line count unchanged `(qa-lead)` | VAL-061 | outputs, line counts |
+| QA-45 | Rerun the two VAL-062 fixtures; closed Run status `succeeded` and `failed` `(qa-lead)` | VAL-062 | test output, SQL rows |
+| QA-46 | Rerun the whole-tree grammar corpus and its completeness check; binary probes of one unknown flag, one missing required flag, one malformed typed value (e.g. `issue list --has-concerns=maybe`), one malformed enumerated value (e.g. `issue list --order bogus`) and one extra positional, both modes `(qa-lead)` | VAL-064 | test output, captures |
+| QA-47 | `fid bogus`, `fid isue`, and an unknown word under every command group, both modes: `operation-unavailable`, DEC-279 `operation`, sorted `allowed`, exit 2, nonempty Human stderr `(qa-lead)` | VAL-065 | captures per group |
+| QA-48 | `rg -n "PRIVATE_" cmd/fid/integration` terminates `exit_code: 1` `(qa-lead)` | VAL-063 | `rg` status |
 
 ## 8. Mid-Phase Review Cadence
 
-DEC-277 proposed windows after tasks 3, 8, 11 and 14. This plan adopts them
-and adds a window after task 6, so that five dependent tasks do not share one
-window:
+DEC-278 item 13 accepted five windows:
 
 | Window | After task | Reviews | In-window focus |
 |---|---|---|---|
-| A | 3 | tasks 1-3 | VAL-001-009 (migration, replay fail-closed, schema 19, benchmark, field digests; task 2 rows of 008/009), VAL-010-016 framework |
-| B | 6 | tasks 4-6 | Observation, SourceInput, expectations and the same-worktree predicate before tasks 7-8 reuse them (VAL-008 Source case, 009, 011-029 for these leaves, 035). Fresh feasibility for the unmerged-path, plain-copy and import-binding fixtures that tasks 7-8 prescribe |
-| C | 8 | tasks 7-8 | DEC-273 Runs and gate runs, real freshness (VAL-009, 011-019, 022-025, 029-035 for these leaves). Fresh feasibility for every non-default command and corpus that tasks 9-14 prescribe |
-| D | 11 | tasks 9-11 | Whole-tree descriptors (VAL-011-016 complete), failure lines (036-039), Stop and repository lines (040, 041). **Human walk-through** of new failure and Stop output (VAL-054, VAL-055 interim), recorded in `qa/human-walkthrough-after-task-11.md` from regenerated fixtures (R-14) |
-| E | 14 | tasks 12-14 | `get` leaves, judgment views, journey, parity, absence (VAL-042-052) |
+| A | 3 | tasks 1-3 | VAL-001-009, 058 and task 2's rows of 066 (migration, replay fail-closed, schema 19, benchmark, field digests); VAL-010-016, 059, 060 framework |
+| B | 6 | tasks 4-6 | Observation, SourceInput, expectations and the same-worktree predicate before tasks 7-8 reuse them (VAL-008 Source case, 009, 011-029 for these leaves, 035, 060, 066). Fresh feasibility for the unmerged-path, plain-copy and import-binding fixtures that tasks 7-8 prescribe |
+| C | 8 | tasks 7-8 | DEC-273 Runs and gate runs, real freshness (VAL-009, 011-019, 022-035, 060-062, 066 for these leaves). Fresh feasibility for every non-default command and corpus that tasks 9-14 prescribe |
+| D | 11 | tasks 9-11 | Whole-tree descriptors (VAL-011-016 and 060 complete, 035), grammar and unknown commands (064, 065), failure lines (036-039), Stop and repository lines (040, 041). **Human walk-through** of new failure and Stop output (VAL-054, VAL-055 interim), recorded in `qa/human-walkthrough-after-task-11.md` from `TestP24HumanFixtures` output regenerated by the window QA Reviewer at the task-11 close commit (section 5) |
+| E | 14 | tasks 12-14 | `get` leaves, judgment views, journey, parity, absence (VAL-042-052, 063) |
 
 - Each window uses `project-docs/templates/mid-phase-review-template.md` and
   the next unused `qa/review-M.md`. It reruns the in-window named tests and
   verifies in-window `VAL-NNN` in both states. It compares each report's
-  commands with its spec. It reruns inventory registries R1-R15 (inventory
+  commands with its spec. It reruns inventory registries R1-R16 (inventory
   header). It checks VAL-052 wall times for every in-window task, and records
   gate evidence or why a gate was not run.
 - The window-D walk-through records Human judgment only. Its interim results
@@ -505,10 +547,14 @@ window:
 
 ## 9. Human Verification Scope
 
-Fixtures come from the owner assigned under R-14. The Human records judgment
-only. The HUMAN-01 step list is re-derived at final review from the task-14
-journey's recorded steps. Any added or removed step keeps the parent
-VAL-053.
+Fixtures come from `TestP24HumanFixtures` (task 11, extended by task 14;
+DEC-278 item 10). The QA Lead regenerates them at the task-14 close commit
+with the section 5 command and writes no test code. The Human records
+judgment only. The HUMAN-01 step list is re-derived at final review from the
+task-14 journey's recorded steps. Any added or removed step keeps the parent
+VAL-053. If RR-06 is dispositioned as an accepted consequence, HUMAN-02 gains
+a sixth row for a generic-fallback denial (the plain-copy `claim acquire`
+refusal).
 
 | ID | Check | Covers | Human Evidence Expected |
 |---|---|---|---|
@@ -533,7 +579,7 @@ VAL-053.
 | HUMAN-04c | Does every judgment section carry its disclaimer once? `(human)` | VAL-056 | accept/reject per view |
 | HUMAN-04d | Is every judgment view free of routine-state narration? `(human)` | VAL-056 | accept/reject per view |
 | HUMAN-04e | Is recorded reasoning readable in every judgment view? `(human)` | VAL-056 | accept/reject per view |
-| HUMAN-05a | Author a `run close` input with `expected_repository` from `--help`/`--example`; accepted on the first or second try? `(human)` | VAL-057 | attempts, final input |
+| HUMAN-05a | Author a `run close` input with `expected_repository`, using only `--help`, `--example` and the git commands the help names; accepted on the first or second try? `(human)` | VAL-057 | attempts, final input |
 | HUMAN-05b | Author a `decision record-reference` input with the digest omitted; accepted on the first or second try? `(human)` | VAL-057 | attempts, final input |
 | HUMAN-05c | Author an input for one more leaf of your choice; accepted on the first or second try? `(human)` | VAL-057 | leaf, attempts, final input |
 
@@ -544,7 +590,7 @@ The phase can proceed to final review only when:
 - Every required deterministic gate in section 5 passes with observed
   termination evidence, including the three fresh 100k samples, the
   archive-scale gate and the full-`checkptr` control.
-- Every `VAL-NNN` (all 57, plus any row added under section 2.3) has planned
+- Every `VAL-NNN` (all 66, plus any row added under section 12.3) has planned
   evidence and a final-review outcome slot. Every outcome is `PASS`, `FAIL`,
   `BLOCKED` or `CARRY-FORWARD` with cited evidence.
 - Every `(qa-lead)` item has reproducible evidence captured in the
@@ -563,16 +609,148 @@ TL-Lite or the Tech Lead, which alone may allocate an `ESC` identity.
 
 ## 11. Readiness Conditions
 
-This plan becomes Ready only after:
+First-pass conditions 1 and 2 are met: DEC-278 dispositioned R-01..R-17 and
+I-01..I-19, DEC-279 decided D5, and the edits are applied (verified in 12.1).
+Condition 3 is this refresh. The plan becomes Ready only after:
 
-1. The Tech Lead dispositions R-01..R-17. For R-04, R-05 and R-07, the Tech
-   Lead records whether accepted text decides them or a DEC (with Human
-   approval where protected) is needed. Improvement items are applied or
-   declined.
-2. The Tech Lead applies accepted edits to the contract, the inventory and the
-   affected task specs (at least tasks 1, 2, 3 or 10, 4, 6-11, 13, 14), and
-   marks rows `Ready`.
-3. A fresh QA Lead readiness refresh revalidates every changed command,
-   fixture owner, file scope and assertion in a new section of this file. It
-   reuses no result above for anything that changed.
+1. The Tech Lead dispositions RR-01..RR-09 (section 12.3). For RR-06, the
+   Tech Lead records whether accepted text decides it or a DEC with Human
+   approval is needed. RR-01 is decision-free if task 10 is aligned to
+   contract section 9; restricting section 9 instead needs a DEC.
+   Improvement items RI-01..RI-13 are applied or declined.
+2. The Tech Lead applies accepted edits to the contract, the validation
+   contract and the affected task specs (at least tasks 4, 9 and 10).
+3. A fresh QA Lead check revalidates every item those edits change, in a new
+   subsection of section 12. It reuses nothing that changed.
 4. The Phase Runner's readiness check passes.
+
+## 12. Readiness Refresh (Second Pass)
+
+Performed 2026-10-04 at `21c833f` (clean tree, branch `phase-24`). It
+covers the changes in `c80304c` (DEC-278) and `21c833f` (DEC-279). Each
+first-pass disposition was checked against source or a fresh probe, not
+against the disposition register.
+
+### 12.1 First-Pass Disposition Verification
+
+| Item | DEC-278 disposition | Applied in | Fresh evidence (this session) | Result |
+|---|---|---|---|---|
+| R-01 | Map is an insert value on every keyed insert and a **guard** on the `gate.receipt-recorded` update (item 7) | task 1 Binding Constraints and Scope; inventory R3 | R3 `exit_code: 0`, 16 files. The task-1 constructor `rg` finds exactly `internal/journal/idempotency.go:218` and `internal/evidence/execution.go:456` (insert) and `:757` (update, guard `request_digest`). `validateSemanticUpdate` (`internal/export/archive_updates.go:28-41`) iterates `effect.Values` only, so a new guard leaves archive validation unchanged. The R3 "read, unchanged" sites are all SELECTs: `workflow/activation.go:845`, `maintenance/operational.go:128`, `journal/current_event_stop_references.go:37`, `current_event_result_projection.go:27`. The only tests that insert rows directly are the two task 1 names (`maintenance/check_test.go:344` `seedTask21CorruptProjection`; `db/operational_kernel_migration_test.go`) | Resolved |
+| R-02 | Per-keyed-leaf corpus over R16 with a completeness test | VAL-002/006/007; task 2; inventory R16 | 50 keyed leaves; 49 after `export import` across 20 families. All idempotency scopes are `<operation>:<project_id>` with no actor component, so an `--actor` row reaches a conflict | Resolved (RI-01) |
+| R-03 | New VAL-066 with a new-key control | VAL-066; tasks 2, 4-8 | The seven `internal/review` observation calls run unconditionally after validation and authority (`decision.go:129`, `human_outcome.go:114`, `requirement.go:94, 145`, `deviation.go:93`, `concern.go:96, 163`), so a valid control reaches observation | Resolved (RI-04) |
+| R-04 | 18 observing leaves; `evidence.evaluate` returns `repository-unavailable` (item 1) | contract 2, 6; Shared Terms; VAL-009/017/022/023 | Live observation sites: the eight review leaves; `envelope.go:448` (complete); `run_close.go:291`; and exactly the six excluded leaves: `recovery.go:193`, `run_checkpoint.go:106`, `evidence/artifact.go:452`, `evaluation.go:463` (terminal-success transition), `resume.go:90`, `run_inspect.go:41`. `evidence.evaluate` does not observe today (task 8 adds it) | Resolved; not a blocker |
+| R-05 | Five-member mapping by capture stage (item 2) | contract 6; task 4; VAL-023 | Every `unsafeRepository` cause in `internal/project/repository.go:61-364` falls under one stated rule: toplevel/HEAD/tree → `not-a-repository`; `ls-files -v` flags → `tracked-flags`; `ls-files -u` and stage≠0 images → `unmerged-paths`; `validPath`, non-UTF-8, unsupported type/mode/object, path count, output size → `unsafe-path`; DeepEqual and read failures → `changed-during-capture`. One cause fits two rules (RI-02). The example fixture for unsupported file types is infeasible (RR-09) | Resolved, with RR-09 |
+| R-06 | Rows from `cli.RegisteredCodes()` with pinned exclusions | VAL-036; task 10 | `internal/cli/codes.go:399` exports `RegisteredCodes()` | Resolved |
+| R-07 | Task 9 delivers grammar failures and `operation-unavailable` (items 3-4); D5 decided A (DEC-279) | contract 9, 13; VAL-064/065; task 9 | DEC-279 recorded and VAL-065 pins it. The measured baseline differs from the record (RR-03, RI-11), and the message and `allowed` rules are not fully determined (RR-02, RR-04, RR-05). Section 9 still drops cause text in the generic fallbacks (RR-06) | Disposition applied; new findings |
+| R-08 | VAL-038 non-`--input` row | VAL-038; task 10 | Row present. Task 10 contradicts section 9 for grammar failures on `--input` leaves (RR-01) | Applied; RR-01 |
+| R-09 | Counting rule (item 5) | contract 9; VAL-039; task 10 | Identical rule in all three: whole line, label included, after escaping; 200 uncut; 201 → first 200 + `…`; a straddling escape is dropped whole | Resolved |
+| R-10 | 10 Condition types, open and resolved `Next:` states (item 8) | contract 10; VAL-040; task 11 | 10 codes, 10 Condition types (`stop.go:175-189`). Resolution needs a real qualifying fact Event per type (`qualifyingFact`, `stop.go:614-641`). Every type already has resolve fixtures in 1-8 test files each | Resolved (window D confirms) |
+| R-11 | Same-worktree and plain-copy fixtures | VAL-041; task 11 | `resume --repository` and `run inspect --repository` exist. A `cp -a` plain copy is a working independent workspace (`issue create` in the copy: `created issue PC-b43c67 (task) "two"`, rc 0) | Resolved |
+| R-12 | Exact fallback refusals (item 6) | contract 5; VAL-027/028/029; tasks 6-8 | `envelope.go:255` `invalid envelope input`; `claim.go:234` `invalid claim request`; `run.go:321` `invalid Run request`, each `allowed:["accepted <op> input"]`; `gate.go:329` `invalid gate request`, `allowed:["accepted gate registration input"]` (default branch for every gate operation). Only `review.record` maps `repository-mismatch` today (`review.go:225-227`), so no earlier branch intercepts the refusal | Resolved |
+| R-13 | Five provenance classes (item 9); help names the git commands | VAL-012/049; tasks 5, 14 | fid's `dirty` is staged ∪ unstaged ∪ untracked-not-ignored, excluding `.fid` (`repository.go:138-169`). That is exactly "`git status --porcelain` lists a path outside `.fid/`" (task 5) | Resolved (RI-08) |
+| R-14 | `TestP24HumanFixtures` in task 11, extended by task 14 (item 10) | tasks 11, 14 | `.cache/phase-24-human` is ignored (`.gitignore:51:/.cache/`). The command form is valid: the same flags with `-list '^TestP23HumanFixtures$'` print `TestP23HumanFixtures`, `ok ... 1.686s` (terminated `exit_code: 0`). The env-root-else-`t.TempDir()` pattern exists (`p23_human_fixtures_test.go:63-65`) | Resolved |
+| R-15 | Task 13 adds `operations.json` and its reader | task 13; inventory R13 | `rg -n "PRIVATE_" cmd/fid/integration` `exit_code: 0` in exactly three files: `p23_human_leaf_pairs_test.go` (7), `p23_human_fixtures_test.go` (1), `testdata/p23_conformance/operations.json` (4). All three are in task 13's scope | Resolved |
+| R-16 | Declared `exit_code: 1` | task 9 | 7 decoders; callers are all `--input` families (14 files); test references (`envelope_test.go:341`, `finding_test.go:21-27`) converge in tasks 6/5 | Resolved (RI-05) |
+| R-17 | Split into VAL-058..063 (item 12) | contract | Each new row has one observable and both states | Resolved |
+| I-01, I-02 | Recursive walk that exits 0; corrected counts | inventory 1, R15 | Block terminates `exit_code: 0`; 92 leaves, 39 `--input`, 50 keyed, 20 without a Short (8 read + 12 `--input`) | Resolved (RI-06) |
+| I-03..I-06 | Applied | Shared Terms; VAL-007, 003, 004 | Row text present | Resolved |
+| I-07 | Record only | VAL-005; task 1 | Note present | Recorded |
+| I-08, I-09, I-11, I-12 | Applied | Shared Terms; VAL-015, 018, 035, 044; tasks 3, 4, 9, 13 | Row text present | Resolved |
+| I-10, I-16 | Statuses and names declared | tasks 10, 2 | Present | Resolved |
+| I-13, I-14, I-15 | Applied | VAL-052 and all tasks; task 1 note; task 13 | Present | Resolved |
+| I-17 | No top-level sensitive field (item 11) | task 9 | `environment` and `redact_literals` exist only in `GateDefinition` (`internal/evidence/policy.go:20, 24`). That type reaches input only through activation `content` | Resolved |
+| I-18, I-19 | Phase brief | brief Known Risks | Present; `/tmp` free space has since fallen to 1.2 GB (RI-13) | Resolved |
+
+### 12.2 Fresh Command And Feasibility Validation
+
+Working directory `/home/mark/projects/fid`. Probes used a scratch build of
+`21c833f` against fresh projects in session scratch storage.
+
+| Referenced step | Validation method | Result | Evidence |
+|---|---|---|---|
+| Product tree identity `304aa45` → `21c833f` | `git rev-parse <rev>:<path>`; `git diff --stat 304aa45 HEAD -- . ':!project-docs'` | PASS | `cmd` `072971c9…`, `internal` `fb9d687b…`, `migrations` `9ef9c27e…`, `go.mod` `9825eba4…`, `go.sum` `b9915dbe…` identical; diff empty. The section 6 gate results stand |
+| Inventory section 1 block, verbatim under `bash` | executed | PASS | terminated `exit_code: 0`; 109 stdout lines = 39 + 50 + 20, concatenated (RI-06); empty stderr |
+| `--input`, R15, R16 lists | the same loops, outputs split | PASS | 39 (identical to the section 1 rows); 92 leaves (6 at depth 1, 82 at depth 2, 4 at depth 3); 20 without a Short; 49 keyed leaves in 20 families after `export import` |
+| R1, R2 (task 2) | executed | PASS | `exit_code: 0`; 43 sites in 32 files; 11 helpers |
+| R3 (task 1) | executed | PASS | `exit_code: 0`; 16 files |
+| `rg -n "EventIdempotency\{\|Table: \"idempotency_results\"" internal -g '!*_test.go'` (task 1 scope) | executed | PASS | `exit_code: 0`; `idempotency.go` (2), `execution.go` (4) |
+| R4 | executed | PASS | latest `0018_p23_remove_v1_judgment`; `ActiveMigrationVersion = 18`; `ProjectionSchemaVersion = 5` |
+| R5 (task 9, declared `exit_code: 1` at task close) | executed | PASS (syntax; exit 0 expected before task 9) | `exit_code: 0`; 7 decoders |
+| R6, R7, R9, R10, R14 | executed | PASS | 11 functions; 8 files; 41 writers; 32 assertions in 13 files; `contract_surface_test.go:128` |
+| R11 (task 11) | executed | PASS | `exit_code: 0`; `review.go`, `resume_human.go`, `run_recovery.go`, `p23_human.go`, `run_inspect_human.go`, `testdata/p21_conformance/manifest.json` |
+| Tasks 13/14 absence lines | executed | PASS (syntax; exit 0 expected before task 13) | disclaimer `rg` `exit_code: 0` at `p23_human.go:163, 167, 176`; `PRIVATE_` `rg` `exit_code: 0` in three in-scope files |
+| `rg -n '"argument": *"request"' cmd/fid -g '!*_test.go'` (proposed for task 9, RR-05) | executed | PASS (syntax) | `exit_code: 0`; 7 sites: `canonical_request.go:47`, `root.go:33`, `link_response.go:89`, `issue_mutation_response.go:123, 236`, `issue_get_list.go:129`, `receipt.go:87` |
+| Human fixture regeneration (task 11 note) | `-list` with the same flags against the P23 analogue; `git check-ignore -v` | PASS | see R-14 above |
+| VAL-023 unsupported-file-type fixture | scratch repository | **untracked FIFO infeasible (RR-09)**; tracked-file variant PASS | untracked FIFO: `git ls-files --others --exclude-standard -z` and `git status --porcelain` both empty. Tracked `a.txt` replaced by a FIFO: `git diff --name-only` lists `a.txt`; porcelain ` M a.txt` |
+| VAL-023 tracked flag and no-commit fixtures | source | PASS | `ls-files -v` lowercase/`S` → flagged (`repository.go:292-303`); unborn HEAD → `missing base` (`:75-78`) |
+| Plain copy (VAL-027..029, 041) | `cp -a` of a fid project | PASS | see R-11 above |
+| VAL-062 close status | source | PASS | `run_close.go:81-87`: `failed` unless Obligation evaluation returns no reasons |
+| VAL-059 baseline | `--help` scan of the 39 `--input` leaves | PASS | "Run JSON input" on the seven Run leaves plus `attention resolve`, `stop raise`, `stop resolve` (all task 3) |
+| Unknown word under every command group, both modes (VAL-065 baseline) | built-binary probe of 28 groups and the root | **baseline differs from DEC-278 (RR-03)** | 23 groups (`activation`, `activity`, `artifact`, `attention`, `claim`, `decision`, `deviation`, `envelope`, `evidence`, `finding`, `gate`, `human-outcome`, `issue label`, `journal`, `label`, `link`, `maintenance`, `receipt`, `requirement`, `review`, `stats`, `stop`, `workflow`) print help on stdout and exit 0 in both modes. `concern`, `export`, `issue`, `issue ac`, `run` and the root exit 2 with no output |
+| Cobra unknown-command text (RR-02) | module source `cobra@v1.10.2` | noted | `args.go:36` appends `findSuggestions`; `command.go:781-795` emits `\n\nDid you mean this?\n\t<cmd>\n` unless `DisableSuggestions`; fid's root sets none (`root.go:61-73`) |
+| Grammar baseline (VAL-064) | built-binary probes, both modes | noted (RR-04, RR-05, RI-11) | `issue list --bogus` and `issue show` (no ID): rc 2, silent in **both** modes. `issue list --has-concerns=maybe`: **rc 7**, silent in both modes (pflag `invalid argument` is not matched by `isCobraInputError`, `root.go:45-52`). `ready extra`, `concern list extra`: rc 2, silent (`cobra.NoArgs` text `unknown command …`). `stop raise --bogus`: JSON `operation:"raise"`. `capabilities extra` already conforms |
+| Human versus JSON message (RR-05, RR-06) | probes; source | noted | `issue update --priority 99`: Human `error: update issue: priority must be between 0 and 5`, JSON `invalid Issue mutation request`/`argument:"request"`. `issue list --order bogus`: Human `unsupported issue list order "bogus"; supported orders: …`, JSON `invalid issue read argument`. 25 `CodeInvalidArgument, "invalid …"` fallback sites in `cmd/fid`; the Human branch prints the cause (`renderIssueError`, `issue_helpers.go:43`) |
+| Post-frame `gate run` failure (RR-07) | source | noted | Human mode renders live output to stdout (`gate.go:195`); `gate-unsuccessful` failure built at `gate.go:138` |
+| Root `--help` subcommands (RI-12) | executed | noted | lists `completion` and `help` among 34 names |
+| Validation-contract cross-check | script over the contract and 14 task specs | PASS | 66 rows, all `Ready`; validators QA Reviewer 58, QA Lead 3, Human 5; every ID cited by at least one task; only out-of-contract citation is Phase 23 VAL-073; Coverage table omits 035, 051, 052, 053 (RI-07) |
+| `/tmp` | `df -h /tmp /` | CONSTRAINT | 3.9 GB tmpfs, 1.2 GB free; `/` 896 GB free; no stale `fid-integration-binary-*` |
+
+### 12.3 New Revisions Requested From Tech Lead
+
+Must-fix (M) items block Ready. Improvement (I) items are applied at the
+Tech Lead's discretion. The Tech Lead owns every edit to the contract, the
+validation contract, the inventory and the task specs. This plan proposes
+edits and never applies them.
+
+| ID | Sev | Where | Finding and proposal |
+|---|---|---|---|
+| RR-01 | M | task 10 Binding Constraints (`next:`); contract 9 next-table; VAL-038 | **Task 10 contradicts section 9 for grammar failures on `--input` leaves.** Task 10 says "Grammar failures and failures on leaves without `--input` print no `next:`". Contract section 9 applies the row to every "`invalid-argument` on an `--input` leaf", with no grammar exception, and VAL-038 follows the contract. So `fid stop raise --bogus`, and every task 3 `--example` exclusivity failure, has two different expected outputs. Proposal: align task 10 with section 9, so that only leaves without `--input` print no `next:`. Alternatively, amend section 9 by DEC to limit the row to structural `input.<path>` failures. Either way, add a VAL-038 row for a grammar failure on an `--input` leaf in the chosen state. |
+| RR-02 | M | task 9 (unknown commands); contract 9; VAL-036, VAL-065 | **The unknown-command `message` is multi-line for a near-miss word.** Task 9 makes the message "Cobra's unknown-command text". At the root, Cobra builds that text with suggestions (`cobra@v1.10.2` `args.go:36`, `command.go:781-795`), and fid sets no `DisableSuggestions`. For `fid isue` the message would be four lines (`unknown command "isue" for "fid"`, blank, `Did you mean this?`, `\tissue`). The Human `error:` line then breaks section 9's "exactly these lines" rule and VAL-036's label check. The group validators already use the single-line form (`concern.go:25`, `issue.go:17`, `issue_ac.go:17`, `run.go:31`, `export.go:24`). Proposal: pin the message at every level as the single line `unknown command "<word>" for "<command path>"`; `allowed` already lists the alternatives. Add a near-miss row (`fid isue`) to VAL-065 and to VAL-036's unknown-command rows. |
+| RR-03 | M | task 9 Objective and Scope; DEC-278 item 4; VAL-065 | **The unknown-command baseline and file scope are wrong for 23 of 28 groups.** DEC-278 item 4 and task 9 say both modes are "silent today". Measured: an unknown word under 23 groups prints the group help on stdout and **exits 0** in both modes, so `fid --json activation bogus` returns Human text as success. Only `concern`, `export`, `issue`, `issue ac`, `run` and the root exit 2 silently (12.2). Task 9's file list names `root.go`, `main.go`, `canonical_request.go`, `codes.go` and leaf files, but not the 23 group constructors. Proposal: correct the stated baseline. Add to task 9's scope either every group constructor in `cmd/fid`, or one central mechanism in `root.go` applied to every command with subcommands. Phase 21 section 4 (exit 2) already authorizes the exit change. |
+| RR-04 | M | task 9 grammar table; VAL-064 | **The grammar `allowed` values and class boundaries are not fully determined.** (a) Unknown flag: "the leaf's accepted long flag spellings" does not say whether the globals `--json` and `--project` are included, and they are enabled per leaf (`rootFlagCapabilities`, `root.go:21, 134`). Phase 21 rows list only leaf-local flags; the globals sit outside the row (Phase 21 line 18). Proposal: the row's local flags only. (b) Malformed value: `[<the flag's type or format>]` differs from Phase 21's "row's exact accepted alternatives" for enumerated flags (`issue list --order <created\|priority\|sequence\|updated>`, Phase 21 line 333). Proposal: an enumerated flag lists its members; a typed flag lists its pflag type name (`int`, `bool`, …). (c) Typed-flag parse failures are a path the table does not name. `issue list --has-concerns=maybe` exits **7** and is silent in both modes today. Proposal: name them in the malformed-value class. (d) A `cobra.NoArgs` leaf reports an extra word as `unknown command "<word>" for "<leaf>"` (`ready`, `concern list`, `activity list`). Proposal: state that a leaf's extra word is a wrong positional count (`invalid-argument`), never `operation-unavailable`, and pin its `message`. |
+| RR-05 | M | task 9 Exact Commands; VAL-064 | **The grammar rule is universal, but its proof is sampled (the first-pass R-02 pattern).** VAL-064 takes one row per class per leaf, while seven request-level fallbacks remain (`rg -n '"argument": *"request"' cmd/fid -g '!*_test.go'`, 12.2). Flag checks done by fid itself, not the parser, reach these fallbacks with Human text richer than the JSON message: `issue update --priority 99`, `issue create --actor bogus`, `issue list --order bogus` (12.2). A site that is missed keeps `argument:"request"`. After task 10, it prints the generic text in Human mode, and no assertion fails. Proposal: add that `rg` to task 9 with a declared status: `exit_code: 1` if every request-level fallback is converted, or exit 0 with each remaining match accounted for as non-grammar in the report. Also require one malformed-value row per flag with an enumerated, bounded or typed value, enumerated from the Phase 21-23 rows. |
+| RR-06 | M | contract 9; task 10; VAL-036, VAL-054 | **Blocker candidate (12.4): generic domain fallbacks lose the Human cause.** Every family's default failure branch maps unmatched errors to a fixed `invalid-argument` message (25 sites). Human mode prints the cause instead (`writeClaimFailure`, `claim.go:262-268`, via `renderIssueError`, `issue_helpers.go:43`). Section 9 makes the Human `error:` line the JSON message verbatim and keeps JSON unchanged. Concrete case, the VAL-028 refusal: today a worktree that does not match the Envelope's prints `error: claim acquire binding is invalid` (`internal/claims/generic.go:361-362`). After task 10 it prints `error: invalid claim request`, then `reason: invalid-argument; argument=input, allowed=accepted claim.acquire input`, then `next: see fid claim acquire --help; template: fid claim acquire --example`. That points the Human at the input when the worktree is the cause. No assertion detects this: VAL-036 checks form, and VAL-054's five denials include no fallback. Proposal: see 12.4. |
+| RR-07 | M | VAL-036 pass criterion; task 10 (`gate run`) | **"stdout is empty" cannot hold for post-frame `gate run` failures.** Task 10 prints the failure lines after the streamed output for a terminal non-success in Human mode. The live output goes to stdout (`gate.go:195`), and Phase 21 section 1 keeps the streaming exception. A `gate-unsuccessful` row therefore has nonempty stdout. Excluding the code would drop a reachable producer. Proposal: VAL-036 states the exception (post-frame `gate run`: stdout carries the streamed Human output, and stderr has the section 9 lines) and keeps a row for it. |
+| RR-08 | M | VAL-064 evidence method; task 9 | **VAL-064 says "every live leaf", but task 9 excludes `journal inspect` and `sql`.** Phase 21 section 4 makes those two Human-only diagnostics outside `fid-cli.v1` that reject `--json`. A reviewer applying VAL-064 as written would fail it on both. Proposal: state the exclusion in VAL-064, citing Phase 21 section 4. |
+| RR-09 | M | task 4 Acceptance Criteria (VAL-023 cause classes) | **The named unsupported-file-type fixture cannot reach `unsafe-path`.** Task 4 suggests "an untracked FIFO". Git does not list FIFOs as untracked (measured: `ls-files --others --exclude-standard` and `status --porcelain` both empty), so observation succeeds. A tracked file replaced by a FIFO is listed by `git diff --name-only` and reaches `unsupported worktree file type` (`repository.go:247-248`). Proposal: name the tracked-file-replaced-by-a-FIFO fixture. |
+| RI-01 | I | VAL-006; task 2 | The `artifact` family has one keyed leaf, and `artifact verify` has a single top-level field (`artifact_id`). Its two-field row can only be `artifact_id` + `--actor`. Say so. |
+| RI-02 | I | task 4 reason mapping | `invalid unmerged path` (`repository.go:261-262`) fits both `unmerged-paths` (capture stage) and `unsafe-path` (invalid path). Pin one; capture stage suggests `unmerged-paths`. |
+| RI-03 | I | task 4 | An unreadable untracked file (`os.ReadFile` fails, `repository.go:243-245`) maps to `changed-during-capture`, which is retryable, although a retry cannot succeed. `detail` names it. Record only. |
+| RI-04 | I | VAL-066; tasks 2, 4-8 | Define the control as "a request, under a new key, that would succeed in an observable worktree in the same pre-state". A same-input control fails on domain checks first for create-style leaves (`concern.go:96` checks the ID before observing) and for already-completed subjects (`envelope.complete`, `run.close`). |
+| RI-05 | I | task 9 | The R5 pattern `func decodeClosed[A-Za-z]*Input` also matches a shared `decodeClosedInput`. Name any shared `cmd/fid` decoder outside the pattern, or the declared exit 1 fails (cf. I-16). |
+| RI-06 | I | inventory section 1 | The block prints three lists back to back (109 lines). Label or split them so a window reviewer can diff each list. |
+| RI-07 | I | validation contract Coverage | Add the roadmap-sourced rows: VAL-035 (roadmap section 7), VAL-051 (removal column), VAL-052 (Phase 23 VAL-079, DEC-227), VAL-053 (journey). |
+| RI-08 | I | task 14 journey | Under real freshness, files the caller writes inside the worktree change the dirty digest and can stale Receipt-backed Evidence. That covers the Decision source and input files built from `--example`. `evidence-stale` has no next-table row, so the journey could reach a step with no `next:` at the last task. Design the start state so this cannot happen. For example, write input files outside the worktree, write Sources under a path the start state's `.gitignore` already ignores, or guard completion with no Receipt-backed Evidence. |
+| RI-09 | I | task 14 First Failing Test | The named first step (a `next:` line naming `fid decision record-reference`) is delivered by task 10, so it is likely green when task 14 starts. Use an assertion that only task 14 makes true (for example the fixture manifest listing the start state). |
+| RI-10 | I | phase brief Task Index | Task 12 lists dependency 4, but its acceptance criteria use the task 9/10 corpora. Sequential order makes this harmless; align the column. |
+| RI-11 | I | DEC-278 item 3; task 9 | `issue list --bogus` is silent in **both** modes, not only JSON, and so is `issue show` with no ID (12.2). Task 9's "where Human mode printed nothing, use the parser's text" rule covers this. Correct the record. |
+| RI-12 | I | DEC-279; task 9 | Root `--help` lists Cobra's `completion` and `help`. By DEC-279's literal rule they belong in `allowed` for `fid bogus`. Say so, so a test does not filter them out. |
+| RI-13 | I | environment | `/tmp` free space is now 1.2 GB (1.4 GB at first pass). CF-042 risk persists; the brief's figure is stale. |
+
+### 12.4 Blocker Candidates
+
+QA emits candidates only. No `ESC` identity is allocated. TL-Lite or the Tech
+Lead decides whether each is resolvable within existing authority.
+
+| Candidate | Protected category | Evidence | Authority boundary | Requested action |
+|---|---|---|---|---|
+| RR-06 | public interface (Human failure content under contract section 9) | 25 generic `invalid-argument` fallbacks whose Human branch prints the cause today (`claim.go:262-268`; `issue_helpers.go:43`); refusal at `claims/generic.go:361-362`. Section 9 sets `error:` to the JSON message verbatim, and "the JSON failure [is] unchanged" | Changing a JSON message, or the section 9 rule, is contract text (DEC-277). Accepting a Human-visible loss of the reason is product judgment | The Tech Lead states whether accepted text intends this consequence. If it does, record that by DEC and add a generic-fallback denial (the plain-copy refusal) to VAL-054 / HUMAN-02, so the Human judges it. Otherwise, amend section 9 by DEC with Human approval (for example, the fallback `message` carries the domain cause) |
+
+RR-01 becomes a contract question only if the Tech Lead chooses to restrict
+section 9 instead of aligning task 10.
+
+### 12.5 Verdict And Dispatch Scope
+
+- **NOT READY.** Nine Must-fix items are open (RR-01..RR-09), one of them a
+  blocker candidate (RR-06). Every first-pass item is closed (12.1).
+- **Scope of the open items:**
+  - none touches tasks 1-3 or their assertions (VAL-001..016, 058..060,
+    task 2's rows of 066, 052);
+  - RR-09 gates task 4;
+  - RR-02, RR-03, RR-04, RR-05 and RR-08 gate task 9 (VAL-064/065);
+  - RR-01, RR-06 and RR-07 gate task 10 (VAL-036/038).
+- The phase brief holds all dispatch until this refresh passes. DEC-278
+  gated a single task (task 9, on D5), so this plan supports the Tech Lead
+  lifting the gate for tasks 1-3 by decision. The plan itself stays NOT
+  READY until the open items are dispositioned and the changed text passes a
+  fresh QA Lead check (section 11).
