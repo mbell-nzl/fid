@@ -91,8 +91,8 @@ Working directory: `/home/mark/projects/fid`. The five required commands were ru
 
 ## Commit hash
 
-- Pending commit
+- `ff6c923dcb706513e71ff7dca76723d68da6ba89`
 
 ## Commit subject
 
-- Pending commit
+- `feat(review): check repository expectations and resolve sources`
