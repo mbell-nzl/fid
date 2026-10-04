@@ -1,23 +1,19 @@
 # Phase 24 QA Plan - Operating Experience And Input Convergence
 
 > Phase: 24 - Operating experience and input convergence
-> Refreshed: 2026-10-04 (DEC-280/281 recheck, third pass)
-> QA Lead: Codex. Reviewed HEAD: `c9acdac81972de5f8388cd346f7b78787dbf113c`.
+> Refreshed: 2026-10-04 (DEC-282 recheck, fourth pass)
+> QA Lead: Codex. Reviewed HEAD: `a0e069c3682f119d1826413b99e5a98258acd70d`.
 > Operating mode: **Heavy** (DEC-277). Earlier reviews by Claude Opus 5.5
-> remain in sections 6 and 12.1-12.5; their command results are historical,
-> not freshly attested gate results in this session. Section 12.6 records
-> this recheck's own evidence and supersedes earlier readiness verdicts.
+> and Codex remain in sections 6 and 12.1-12.6; their command results are
+> historical, not freshly attested gate results in this session. Section
+> 12.7 records this recheck's evidence and supersedes earlier readiness verdicts.
 >
-> **Status: NOT READY (scoped).** DEC-280/281 disposition all nine RR and
-> thirteen RI findings. Two new Must-fix contract candidates remain:
-> **RC-01**, the pinned plain-copy `run.start` cause (VAL-029; tasks 7, 10),
-> and **RC-02**, unbounded grammar messages (VAL-064/065; task 9a).
-> A fresh binary returns `run claim binding is invalid`, while DEC-281 pins
-> `run envelope binding is invalid`. The Tech Lead must reconcile the
-> contract and specify bounded grammar-message precedence before this plan
-> can pass. The phase brief's dispatch hold stays
-> in force. Review window D is split into D1 after task 9a and D2 after
-> task 11 under DEC-280 item 10; the Human walk-through stays after task 11.
+> **Status: READY — QA planning recheck PASS.** RC-01 and RC-02 are closed
+> by verified DEC-282 corrections; no Must-fix finding or blocker candidate
+> remains open. The Phase Runner may perform its readiness check before
+> task 1. This is planning acceptance, not an implementation or phase-end
+> verdict. Reviews remain D1 after task 9a and D2 after task 11, with the
+> Human walk-through after task 11.
 
 ## 1. Scope And Source Documents
 
@@ -40,8 +36,8 @@ output alone, and it converges inputs:
 The phase has 15 sequential tasks (including 9a) and 67 assertions (62 deterministic, 5
 Human).
 
-Sources read for the first two passes (third-pass sources and evidence are
-listed in section 12.6):
+Sources read for the first two passes (later sources and evidence are
+listed in sections 12.6 and 12.7):
 
 - `AGENTS.md`, `CLAUDE.md`
 - `project-docs/docs/current/phase_brief.md`, `decisions_active.md`,
@@ -79,7 +75,7 @@ control" scenario is the phase's Human run.
 ## 2. Validation Contract Refinement Check
 
 The following bullets are the historical second-pass check at `21c833f`.
-Current refinement results and proposals are in section 12.6. The first-pass
+Current refinement results are in section 12.7. The first-pass
 record follows in 2.1-2.4.
 
 - All in-scope requirements referenced by at least one `VAL-NNN`: **YES.**
@@ -219,8 +215,8 @@ R-05 by DEC-278 items 1-2, and R-07's `operation` value by DEC-279. Section
 | 7 | Run leaves (DEC-273) | 009, 011-019, 022-025, 029-031, 035, 060-062, 066, 052 | high | `base_oid` becomes HEAD; `run.close` records `failed` on stale Evidence (`run_close.go:81-87`). |
 | 8 | Gate run, Evidence, real freshness | 009, 011-017, 022-025, 029, 032-035, 060, 066, 052 | high | Highest convergence risk. `evidence.evaluate` is the one observing read. Artifacts stay git-ignored. |
 | 9 | Activation descriptors; whole-tree input and help conformance | 011-016, 035, 060, 052 | **high** | Completes the descriptor registry and fake/fid assembly; R5 naming constraint. |
-| 9a | Grammar failures and unknown commands | 064, 065, 052 (036 advanced) | **high** | R17 root/groups, R18 typed flags plus cited string domains, R19 exactly four residual fallbacks; control escaping; non-project repetitions. RC-02 requires a bounded-message rule. Review before task 10. |
-| 10 | Human failure lines and generic-fallback messages | 036-039, 067, 027-029 messages, 052 (054) | **high** | 41 writers (R9); R20 has 18 fallbacks and seven excluded matches. DEC-281 adopted; RC-01 still needs the TL's plain-copy message correction. |
+| 9a | Grammar failures and unknown commands | 064, 065, 052 (036 advanced) | **high** | R17 root/groups, R18 typed flags plus cited string domains, R19 exactly four residual fallbacks; DEC-282 escape-then-bound messages and full details; non-project repetitions. Review before task 10. |
+| 10 | Human failure lines and generic-fallback messages | 036-039, 067, 027-029 messages, 052 (054) | **high** | 41 writers (R9); R20 has 18 fallbacks and seven excluded matches. DEC-281/282 cause preservation and shared construction; plain-copy Run cause is `run claim binding is invalid`. |
 | 11 | Stop, Attention, repository lines; Human fixture generator | 040, 041, 052 (054, 055) | medium | `TestP24HumanFixtures` (DEC-278 item 10). Every Condition type has existing resolve fixtures (12.1 R-10). |
 | 12 | Judgment `get` leaves | 042, 043, 052 | low | Depends on tasks 4 and 10; extends the task 9a/10 corpora (DEC-280). |
 | 13 | Disclaimers, recorded reasoning, sentinel guard, glossary | 044-048, 063, 052 (056) | medium | `operations.json` and reader in scope (R-15); I-15. |
@@ -256,7 +252,7 @@ existing IDs are not renumbered.
 | EVID-17 | Stored record repository, each Source repository and the Event `repository` compared with the independent observation (`base_oid` = HEAD, `worktree_id` = SHA-256 of root, `project_id` from config) | VAL-022 | Developer | tasks 4-8 |
 | EVID-18 | Unmerged-paths and non-Git fixtures versus a normal worktree per observing leaf (except close/abandon); cause-class rows for no commit, tracked flag, unsupported file type (tracked file replaced by a FIFO, RR-09), injected capture change, injected size limit | VAL-023 | Developer | tasks 4-8 |
 | EVID-19 | Five expectation leaves × match, HEAD differs, dirty differs; mismatch details exactly `{expected:{head_oid,dirty},observed}` | VAL-024, VAL-025 | Developer | tasks 5, 7, 8 |
-| EVID-20 | Registration fields and `binding_digest` recomputed from the independent observation; same-worktree versus plain-copy and imported destination with binding for four leaves. Tasks 6-8 retain fixed JSON messages; task 10 converges to DEC-281 domain causes, after RC-01 is dispositioned | VAL-026-029 | Developer | tasks 6-8; message convergence task 10 |
+| EVID-20 | Registration fields and `binding_digest` recomputed from the independent observation; same-worktree versus plain-copy and imported destination with binding for four leaves. Tasks 6-8 retain fixed JSON messages; task 10 converges to DEC-281/282 domain causes, with a valid Claim and Claim-first refusal for plain-copy `run.start` | VAL-026-029 | Developer | tasks 6-8; message convergence task 10 |
 | EVID-21 | `run.start` after commit and edit since Envelope creation records the observation; close/abandon `terminal_repository` observed with `base_oid` = HEAD | VAL-030, VAL-031 | Developer | task 7 |
 | EVID-22 | Gate run after an edit since Run start: Attempt, Receipt and both Events carry one identical repository equal to the pre-spawn observation; mismatch leaves no Attempt, no process and no Event | VAL-032, VAL-024 | Developer | task 8 |
 | EVID-23 | Freshness: unchanged, edited, reverted × `evidence.evaluate`, terminal-transition denial, `envelope.complete` denial | VAL-033 | Developer | task 8 |
@@ -280,7 +276,7 @@ existing IDs are not renumbered.
 | EVID-41 | Close and abandon: mismatching expectation gives `repository-mismatch`; unmerged paths give `recovery-state-conflict`; neither appends | VAL-061 | Developer | task 7 |
 | EVID-42 | Receipt-backed Obligation: close in the proven tree gives `succeeded`; separate fixture after a tracked edit gives `failed` | VAL-062 | Developer | task 7 |
 | EVID-43 | `rg -n "PRIVATE_" cmd/fid/integration` terminating `exit_code: 1` | VAL-063 | Developer, QA Lead | task 13; task 14; final review |
-| EVID-44 | Whole-tree grammar corpus per task 9a: leaf/group completeness, every typed flag and cited string domain, ESC spelling, missing value, non-project repetitions; unknown word under each group, near miss, and no-word controls. Exclude Human-only diagnostics and generated Cobra commands as declared; include help/completion in root alternatives | VAL-064, VAL-065 | Developer | task 9a |
+| EVID-44 | Whole-tree grammar corpus per task 9a: leaf/group completeness, every typed flag and cited string domain, ESC spelling, missing value, non-project repetitions; unknown word under each group, near miss, and no-word controls. DEC-282 short/600-character/512/513/non-ASCII/escape-cut cases, including existing `%q` escapes: bounded message, full details, both modes. Exclude Human-only diagnostics and generated Cobra commands as declared; include help/completion in root alternatives | VAL-064, VAL-065 | Developer | task 9a; pairing repeated by task 10 |
 | EVID-45 | R20 site-to-row map: both-mode reachable fallback causes or individually justified unreachability; unchanged metadata, details and exit; matching escaped JSON/Human text; 512/513 scalars, empty and whitespace-only causes, escape crossing the cut; sensitive activation-component guard reaches the generic fallback, not an earlier typed failure | VAL-067 | Developer | task 10 |
 
 ## 5. Deterministic Gates
@@ -514,10 +510,10 @@ QA-41..48 were added in this refresh.
 | QA-43 | For every `--input` leaf from a non-project temp dir: `--example` exit 0, empty stderr, tree snapshot digest unchanged `(qa-lead)` | VAL-060 | per-leaf statuses, snapshot digests |
 | QA-44 | Close and abandon with a mismatching expectation (`repository-mismatch`) and with unmerged paths (`recovery-state-conflict`); journal line count unchanged `(qa-lead)` | VAL-061 | outputs, line counts |
 | QA-45 | Rerun the two VAL-062 fixtures; closed Run status `succeeded` and `failed` `(qa-lead)` | VAL-062 | test output, SQL rows |
-| QA-46 | Rerun the whole-tree grammar corpus and its completeness check; binary probes of one unknown flag, one missing required flag, one malformed typed value (e.g. `issue list --has-concerns=maybe`), one malformed enumerated value (e.g. `issue list --order bogus`) and one extra positional, both modes `(qa-lead)` | VAL-064 | test output, captures |
-| QA-47 | `fid bogus`, `fid isue`, and an unknown word under every command group, both modes: `operation-unavailable`, DEC-279 `operation`, sorted `allowed`, exit 2, nonempty Human stderr `(qa-lead)` | VAL-065 | captures per group |
+| QA-46 | Rerun the whole-tree grammar corpus and its completeness check; binary probes of one unknown flag, one missing required flag, one malformed typed value (e.g. `issue list --has-concerns=maybe`), one malformed enumerated value (e.g. `issue list --order bogus`) and one extra positional, both modes. Verify DEC-282's short/long/512/513/non-ASCII/escape-cut rows: bounded message, uncut details, exact Human/JSON pairing `(qa-lead)` | VAL-064, VAL-036 | test output, captures |
+| QA-47 | `fid bogus`, `fid isue`, and an unknown word under every command group, both modes: `operation-unavailable`, DEC-279 `operation`, sorted `allowed`, exit 2, matching Human error. Verify DEC-282 short/long/512/513/non-ASCII/escape-cut rows and no-word help controls `(qa-lead)` | VAL-065, VAL-036 | captures per group and boundary |
 | QA-48 | `rg -n "PRIVATE_" cmd/fid/integration` terminates `exit_code: 1` `(qa-lead)` | VAL-063 | `rg` status |
-| QA-49 | Rerun the fallback corpus and its R20 completeness check, the 512/513, empty/whitespace and escape-cut boundaries, and an activation-component sentinel guard that reaches the fallback; compare both streams and unchanged failure metadata; converge plain-copy causes to the TL-dispositioned RC-01 rule `(qa-lead)` | VAL-067, VAL-027-029 messages | per-site captures, unit results, exclusion reasons, retained-test provenance |
+| QA-49 | Rerun the fallback corpus and its R20 completeness check, the 512/513, empty/whitespace and escape-cut boundaries, and an activation-component sentinel guard that reaches the fallback; compare both streams and unchanged failure metadata; plain-copy Run cause is `run claim binding is invalid` under DEC-282 `(qa-lead)` | VAL-067, VAL-027-029 messages | per-site captures, unit results, exclusion reasons, retained-test provenance |
 
 ## 8. Mid-Phase Review Cadence
 
@@ -994,3 +990,100 @@ resolve it automatically.
   dispatch until recheck passes; QA does not lift that hold or allocate an
   ESC. After the TL corrections, recheck RC-01/RC-02 and any changed text. No final
   review or Human acceptance outcome is produced at this planning stage.
+
+### 12.7 DEC-282 Recheck (Codex, 2026-10-04)
+
+**Verdict: READY — QA planning recheck PASS.** RC-01 and RC-02 are closed.
+No new Must-fix finding, blocker candidate or unresolved refinement remains.
+The Phase Runner may now perform its readiness check before task 1. This
+verdict does not claim that any pending implementation assertion has passed.
+
+Reviewed HEAD: `a0e069c3682f119d1826413b99e5a98258acd70d`
+(`docs(phase-24): resolve QA recheck contract findings`), against QA commit
+`4819b30c935acdb6827c66316f4f3383343bc76f`. All nine changed documents were
+reviewed: current brief/progress, DEC-282 and its DEC-281 correction, contract
+sections 5/9, VAL-029/036/064/065/067 and revision log, tasks 7/9a/10, and
+the accepted-amendment entry in `06_DESIGN_PLAN_CLI.md`. Current escalations
+remain empty. AGENTS, active decisions, quality plan, invoked skills and
+product trees are unchanged from the preceding check. Earlier findings and
+NOT READY verdicts in 12.6 remain intact as history.
+
+#### 12.7.1 Finding Closure And Contract Refinement
+
+| Finding / follow-up | Verified correction | Outcome |
+|---|---|---|
+| RC-01, VAL-029, tasks 7/10 | DEC-281/282, contract 5, VAL-029, both task specs and the canonical CLI amendment consistently name `run claim binding is invalid`. Claim-before-Envelope order and both checks are preserved. Evidence now expressly requires valid active Claim identity/version, original/copy/import states and no snapshot-mismatch substitution. Fresh copied-worktree probe below confirms the baseline cause | CLOSED |
+| RC-02, VAL-064/065, task 9a; pairing VAL-036, task 10 | Contract 9 and every affected task/assertion now specify source text → escape → count decoded message scalars → bound. At 512 or less, unchanged; over 512, first 511 plus ellipsis, omitting an escape crossing the cut without padding. This explicitly overrides literal parser/formula text. Details stay full, metadata/exit stay specified, Human output neither escapes nor truncates again | CLOSED |
+| VAL-067 evidence refinements | Task 10 and the assertion now explicitly include empty/all-whitespace causes, non-ASCII scalars, combined escape/cut cases and an activation sentinel row reaching the generic fallback. Task 9a owns the shared constructor; task 10 reuses it | VERIFIED |
+| Inventory/cadence sync | Brief now says R1-R20 and six windows A/B/C/D1/D2/E; D1 follows 9a, D2 follows 11. Progress agrees and the Human walkthrough stays after 11 | VERIFIED |
+| Canonical spec sync | `06_DESIGN_PLAN_CLI.md` links the existing Phase 24 contract and records accepted planning separately from delivered behavior; the inherited 512-scalar bound is preserved | VERIFIED |
+
+Coverage rollup: **YES**, all in-scope sources remain represented. The
+contract still has 67 assertions (62 deterministic, five Human), all with a
+single validator and task/window. Fresh range-expansion checks found no
+missing task citation or QA/Human mapping. The amended rows remain matrices
+over one observable each, with both qualifying and non-qualifying states:
+original/import versus copy; short versus cut message; empty versus nonempty
+cause. Human assertions retain their existing checklist fan-out. No new VAL
+or product terminology is needed. No validation-contract file was edited by QA.
+
+#### 12.7.2 Command And Feasibility Validation
+
+Repository commands ran from `/home/mark/projects/fid`. Every executable
+probe below captured actual subprocess exit, stdout and stderr. The build's
+nested session was polled to observed termination. Refused CLI requests are
+baseline observations with their real exit 2, not non-zero task-gate PASS
+claims. Future bounded rendering and import-equivalence behavior remain
+implementation evidence for their owning tasks.
+
+| Command / step | Method | Fresh result and evidence |
+|---|---|---|
+| `go build -o /tmp/fid ./cmd/fid` | Exact AGENTS build command | PASS — `exit 0 (no output)` (terminated `exit_code: 0`) |
+| `python3 /tmp/fid-p24-recheck-ipmy0o/probe.py` | Rerun the 12.6.3 CLI setup in newly allocated scratch with the rebuilt binary | `original-worktree controls: envelope.create, claim.acquire, run.start accepted` (probe terminated `exit_code: 0`). Fresh receipts/input files: `/tmp/fid-p24-binding-vz0k962u/`. Four plain-copy refusals in both modes each terminated `exit_code: 2`, empty stdout, unchanged journal bytes. Run Human stderr: `error: run claim binding is invalid`; current JSON message remains `invalid Run request` until task 10 |
+| Sensitive fallback feasibility | The same fresh probe stages a gate component, then repeats its identity/version under a new key with a literal environment sentinel | Both modes terminated `exit_code: 2`; generic `invalid-argument` with `argument:input`. Human cause includes `UNIQUE constraint failed: activation_components.activation_id, activation_components.component_type, activation_components.component_id, activation_components.component_version (1555)`. Neither stream exposes `QA_P24_SECRET_SENTINEL` |
+| Grammar boundary fixture feasibility | Fresh subprocess calls to `/tmp/fid stop raise --<word>` from `/tmp/fid-p24-dec282-e416qo59`, with exact word recipes below; measure source and escaped-text lengths | Six refusals each terminated `exit_code: 2`, empty stdout; sources exactly match `unknown flag: --<word>`. Receipts: that directory's `receipts.json`. Harness token `PASS boundary fixture feasibility; product bounded-message assertions remain pending task 9a` (terminated `exit_code: 0`) |
+| Commands and scope for tasks 7/9a/10 | Compare each entire Exact Commands section with `git show 4819b30:<task-path>`; inspect current command blocks and source/test directories | Each reports `command section unchanged: True`; all compile/test roots exist, ordinary race/coverage and tagged integration remain required, no placeholder. Scan token `PASS scope: tasks 7/9a/10 retain concrete ordinary and tagged integration commands` (terminated `exit_code: 0`) |
+| Corrected cause across authorities | Whitespace-normalized file-state scan over decisions, phase contract, validation contract and tasks 7/10 | Corrected Claim cause present and old Envelope pin absent in all five authoritative locations (scanner terminated `exit_code: 0`). Historical QA evidence is deliberately excluded from this absence check |
+| Assertion/task/checklist mapping | Expand `VAL-NNN` ranges in current contract, 15 task specs and QA/Human rows | `PASS coverage: 67 assertions; 15 task specs; no missing task or QA/Human mapping` (terminated `exit_code: 0`); zero completion reports |
+| Canonical CLI contract link | Resolve `project-docs/specs/../docs/phases/phase-24/public-interface.md` | `PASS spec reference: True` (terminated `exit_code: 0`) |
+| QA artifact integrity | `git diff --check`; compare the previous section 12.6 with the preserved section; rerun coverage over the edited checklist | Diff check: `exit 0 (no output)` (terminated `exit_code: 0`). Audit tokens: `PASS historical section 12.6 preserved byte-for-byte apart from trailing whitespace`; `PASS updated checklist covers all 67 assertions; current verdict READY` (terminated `exit_code: 0`). Only `qa-plan.md` is changed |
+| Change boundary | `git diff --stat 4819b30 HEAD -- AGENTS.md project-docs/docs/current/decisions_active.md project-docs/specs/08_QUALITY_PLAN.md project-docs/skills/qa-evidence/SKILL.md project-docs/skills/validation-contract/SKILL.md cmd internal migrations go.mod go.sum` | Empty, terminated `exit_code: 0`; these reviewed inputs and product files have not changed. This is identity evidence, not inherited gate acceptance |
+
+The message-boundary recipes are deterministic and require no inaccessible
+fixture or future command syntax. Here `x^N` means N ASCII `x` characters;
+prefix and suffix count toward the message limit, and the Human label/LF do
+not. The expected final column follows DEC-282 and is future test data, not
+a claim that today's binary implements the rule.
+
+| Message source / word recipe | Escaped source scalars | Expected final message |
+|---|---|---|
+| Unknown flag, `bogus` | 21 | unchanged |
+| Unknown flag, `x^496` / `x^497` | 512 / 513 | unchanged / first 511 plus `…` |
+| Unknown flag, `x^600` | 616 | first 511 plus `…` |
+| Unknown flag, 496 copies of `界` | 512 (1504 UTF-8 bytes) | unchanged; byte count must not drive the cut |
+| Unknown flag, `x^494` + raw ESC + `z` | 517 after ESC becomes `\u001b`; raw source was 512 | 510-scalar prefix plus `…`, total 511; crossing escape omitted whole |
+| Root unknown-command formula, `x^484` / `x^485` / `x^600` | 512 / 513 / 628 | unchanged / first 511 plus `…` / first 511 plus `…` |
+
+Task 9a additionally pins already-escaped `%q` cases in shared-construction
+units and built-binary rows; task 10 repeats pairing after renderer adoption.
+The escape-crossing example demonstrates why the final message may be shorter
+than 512 without padding and why counting must occur after escaping.
+
+#### 12.7.3 Readiness Boundary
+
+- All earlier planning Must-fix findings, including RC-01/RC-02, are closed.
+  No remaining protected-authority question prevents the Runner's readiness
+  check. This satisfies the QA recheck prerequisite in the brief; the
+  Runner still performs its own pre-dispatch controls.
+- Task 7 implements the corrected binding contract. Task 9a implements
+  message construction, and task 10 adopts it and proves final pairing and
+  generic-fallback behavior. Their unchanged full task gates remain required.
+- No full race/coverage, integration, benchmark, archive-scale or
+  full-checkptr gate result is re-attested here. Those product gates are
+  **UNVERIFIED in this recheck** and remain mandatory at their prescribed
+  task/window/phase-end boundaries. Planning feasibility and the fresh build
+  and probes above are the evidence for this verdict.
+- Keep the six-window cadence, the task-11 Human walkthrough and all five
+  phase-end Human assertions. No final-review artifact or Human checklist is
+  due at this planning checkpoint. Only `qa-plan.md` is authored by this QA
+  session; the historical section 12.6 findings are retained unchanged.
