@@ -125,8 +125,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `95c738f23c34aef1a9e8c6630f1d88c660648591`
 
 ## Commit subject
 
-- Pending commit
+- `test(idempotency): prove all keyed leaves rebuild in one journal`
