@@ -47,7 +47,7 @@
 ## Tests run
 
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP24StopRaiseConflictNamesChangedDetails$' ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`); before the two null members, `input.resolution_condition.budget_name` was rejected.
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP24StopRaiseConflictNamesChangedDetails$' ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.474s` (terminated `exit_code: 0`); after only the two null members.
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP24StopRaiseConflictNamesChangedDetails$' ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.474s` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`); package 248.184 s, later failure at `TestP23StopFailureCodeMatrix/attention/invalid-argument`.
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP23StopFailureCodeMatrix/attention/invalid-argument$' ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`); same empty JSON stderr in isolation.
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid -run '^TestAttentionResolveUnknownFieldNamesInputPath$'` - FAIL - `FAIL` (terminated `exit_code: 1`); expected first red: `argument:"input"` rather than `input.bogus`.
