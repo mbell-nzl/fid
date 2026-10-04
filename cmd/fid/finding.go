@@ -25,7 +25,7 @@ func newFindingCommand() *cobra.Command {
 
 func newFindingAddressCommand() *cobra.Command {
 	var inputPath, actor, key string
-	cmd := &cobra.Command{Use: "address", Args: canonicalNoArgs("finding.address"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "address", Short: "Address a Review Finding.", Args: canonicalNoArgs("finding.address"), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, "finding.address", flag); err != nil {
 				return err
@@ -64,7 +64,7 @@ func newFindingAddressCommand() *cobra.Command {
 func newFindingListCommand() *cobra.Command {
 	var issueID, reviewID, state, severity string
 	var limit int
-	cmd := &cobra.Command{Use: "list", Args: canonicalNoArgs("finding.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "list", Short: "List Review Findings.", Args: canonicalNoArgs("finding.list"), RunE: func(cmd *cobra.Command, _ []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderFindingError(cmd, "finding.list", err)

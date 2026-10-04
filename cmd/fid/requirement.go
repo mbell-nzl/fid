@@ -23,7 +23,7 @@ func newRequirementCommand() *cobra.Command {
 func newRequirementMutationCommand(leaf string) *cobra.Command {
 	operation := "requirement." + leaf
 	var inputPath, actor, key string
-	command := &cobra.Command{Use: leaf, Args: canonicalNoArgs(operation), RunE: func(cmd *cobra.Command, _ []string) error {
+	command := &cobra.Command{Use: leaf, Short: "Record a Requirement Reference.", Args: canonicalNoArgs(operation), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, operation, flag); err != nil {
 				return err
@@ -82,7 +82,7 @@ func requirementMutationOptions(cmd *cobra.Command, actor, key string) (review.J
 }
 
 func newRequirementGetCommand() *cobra.Command {
-	return &cobra.Command{Use: "get <requirement-id>", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	return &cobra.Command{Use: "get <requirement-id>", Short: "Read a Requirement Reference.", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderRequirementError(cmd, "requirement.get", err)
@@ -105,7 +105,7 @@ func newRequirementGetCommand() *cobra.Command {
 func newRequirementListCommand() *cobra.Command {
 	var status, issueID string
 	var limit int
-	command := &cobra.Command{Use: "list", Args: canonicalNoArgs("requirement.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+	command := &cobra.Command{Use: "list", Short: "List Requirement References.", Args: canonicalNoArgs("requirement.list"), RunE: func(cmd *cobra.Command, _ []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderRequirementError(cmd, "requirement.list", err)

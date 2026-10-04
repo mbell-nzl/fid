@@ -20,7 +20,7 @@ func newAttentionCommand() *cobra.Command {
 func newAttentionListCommand() *cobra.Command {
 	var subject, status string
 	var limit int
-	cmd := &cobra.Command{Use: "list", Args: canonicalNoArgs("attention.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "list", Short: "List Attention items.", Args: canonicalNoArgs("attention.list"), RunE: func(cmd *cobra.Command, _ []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderStopError(cmd, "attention.list", err)
@@ -40,7 +40,7 @@ func newAttentionListCommand() *cobra.Command {
 
 func newAttentionResolveCommand() *cobra.Command {
 	var input, actor, key string
-	cmd := &cobra.Command{Use: "resolve", Args: canonicalNoArgs("attention.resolve"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "resolve", Short: "Resolve an Attention item.", Args: canonicalNoArgs("attention.resolve"), RunE: func(cmd *cobra.Command, _ []string) error {
 		var request workflow.AttentionResolveRequest
 		if err := stopRequest(cmd, "attention.resolve", input, actor, key, &request); err != nil {
 			return err
@@ -56,5 +56,6 @@ func newAttentionResolveCommand() *cobra.Command {
 		return writeStopSuccess(cmd, "attention.resolve", map[string]any{"attention": result.Attention, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, result.EventID, result.Attention.RaisedAt)
 	}}
 	runMutationFlags(cmd, &input, &actor, &key)
+	installInputDescriptor(cmd, inputDescriptorRegistry["attention resolve"])
 	return cmd
 }

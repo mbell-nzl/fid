@@ -502,4 +502,14 @@ govern the message clarifications recorded in DEC-282:
 The exact leaf, input, failure and view changes remain indexed in that phase
 contract; this entry records accepted planning, not completed delivery.
 
+Task 3 adopts descriptor-generated input help and `--example` templates for
+`stop raise`, `stop resolve`, and `attention resolve`. Each adopted leaf's help
+lists field paths, JSON types, required/optional/nullable status, declared
+limits and allowed values, and the template command. `--example` prints a
+two-space-indented JSON object with required fields in documented order; it
+works outside a project and cannot be combined with another flag or argument.
+Structural `--input` failures name the field in `invalid-argument.details.argument`
+(for example `input.resolution_condition.subject.id`) before domain validation.
+The remaining `--input` leaves enter this convention in their owning tasks.
+
 *Last updated: 2026-10-04 (Phase 24 QA recheck dispositions; DEC-282)*

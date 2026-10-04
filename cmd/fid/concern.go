@@ -68,7 +68,7 @@ type concernMutation func(review.JudgmentOptions, string, *cobra.Command) (revie
 func newConcernMutationCommand(name string, mutate concernMutation) *cobra.Command {
 	operation := "concern." + name
 	var inputPath, actor, key string
-	cmd := &cobra.Command{Use: name, Args: canonicalNoArgs(operation), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: name, Short: "Record or dispose a Concern.", Args: canonicalNoArgs(operation), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, operation, flag); err != nil {
 				return err

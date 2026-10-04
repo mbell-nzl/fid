@@ -49,7 +49,7 @@ func newHumanOutcomeCommand() *cobra.Command {
 
 func newHumanOutcomeRecordCommand() *cobra.Command {
 	var inputPath, actor, key string
-	command := &cobra.Command{Use: "record", Args: canonicalNoArgs("human-outcome.record"), RunE: func(cmd *cobra.Command, _ []string) error {
+	command := &cobra.Command{Use: "record", Short: "Record a Human Outcome.", Args: canonicalNoArgs("human-outcome.record"), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, "human-outcome.record", flag); err != nil {
 				return err
@@ -87,7 +87,7 @@ func newHumanOutcomeRecordCommand() *cobra.Command {
 func newHumanOutcomeListCommand() *cobra.Command {
 	var class, result, issueID string
 	var limit int
-	command := &cobra.Command{Use: "list", Args: canonicalNoArgs("human-outcome.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+	command := &cobra.Command{Use: "list", Short: "List Human Outcomes.", Args: canonicalNoArgs("human-outcome.list"), RunE: func(cmd *cobra.Command, _ []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderHumanOutcomeError(cmd, "human-outcome.list", err)

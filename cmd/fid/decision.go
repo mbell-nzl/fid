@@ -47,7 +47,7 @@ func newDecisionCommand() *cobra.Command {
 
 func newDecisionRecordReferenceCommand() *cobra.Command {
 	var inputPath, actor, key string
-	command := &cobra.Command{Use: "record-reference", Args: canonicalNoArgs("decision.record-reference"), RunE: func(cmd *cobra.Command, _ []string) error {
+	command := &cobra.Command{Use: "record-reference", Short: "Record a Decision Reference.", Args: canonicalNoArgs("decision.record-reference"), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, "decision.record-reference", flag); err != nil {
 				return err
@@ -85,7 +85,7 @@ func newDecisionRecordReferenceCommand() *cobra.Command {
 func newDecisionListCommand() *cobra.Command {
 	var class, outcome, issueID string
 	var limit int
-	command := &cobra.Command{Use: "list", Args: canonicalNoArgs("decision.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+	command := &cobra.Command{Use: "list", Short: "List Decision References.", Args: canonicalNoArgs("decision.list"), RunE: func(cmd *cobra.Command, _ []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderDecisionError(cmd, "decision.list", err)

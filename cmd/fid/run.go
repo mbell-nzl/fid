@@ -205,7 +205,7 @@ func newRunListCommand() *cobra.Command {
 }
 
 func runMutationFlags(cmd *cobra.Command, inputPath, actor, key *string) {
-	cmd.Flags().StringVar(inputPath, "input", "", "Run JSON input")
+	cmd.Flags().StringVar(inputPath, "input", "", "JSON input file (or - for stdin)")
 	cmd.Flags().StringVar(actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError(strings.ReplaceAll(rootCommandKey(cmd), " ", ".")))

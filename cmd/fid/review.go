@@ -97,7 +97,7 @@ func newReviewGetCommand() *cobra.Command {
 
 func newReviewRecordCommand() *cobra.Command {
 	var inputPath, actor, key string
-	cmd := &cobra.Command{Use: "record", Args: canonicalNoArgs("review.record"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "record", Short: "Record a Review.", Args: canonicalNoArgs("review.record"), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, "review.record", flag); err != nil {
 				return err

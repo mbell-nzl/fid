@@ -23,7 +23,7 @@ func newDeviationCommand() *cobra.Command {
 
 func newDeviationRecordCommand() *cobra.Command {
 	var inputPath, actor, key string
-	cmd := &cobra.Command{Use: "record", Args: canonicalNoArgs("deviation.record"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "record", Short: "Record a Deviation.", Args: canonicalNoArgs("deviation.record"), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, "deviation.record", flag); err != nil {
 				return err
@@ -61,7 +61,7 @@ func newDeviationRecordCommand() *cobra.Command {
 func newDeviationListCommand() *cobra.Command {
 	var subject, disposition string
 	var limit int
-	cmd := &cobra.Command{Use: "list", Args: canonicalNoArgs("deviation.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "list", Short: "List Deviations.", Args: canonicalNoArgs("deviation.list"), RunE: func(cmd *cobra.Command, _ []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderDeviationError(cmd, "deviation.list", err)

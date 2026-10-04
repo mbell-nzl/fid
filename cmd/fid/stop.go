@@ -24,7 +24,7 @@ func newStopCommand() *cobra.Command {
 
 func newStopRaiseCommand() *cobra.Command {
 	var input, actor, key string
-	cmd := &cobra.Command{Use: "raise", Args: canonicalNoArgs("stop.raise"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "raise", Short: "Raise a durable Stop.", Args: canonicalNoArgs("stop.raise"), RunE: func(cmd *cobra.Command, _ []string) error {
 		var request workflow.StopRaiseRequest
 		if err := stopRequest(cmd, "stop.raise", input, actor, key, &request); err != nil {
 			return err
@@ -40,12 +40,13 @@ func newStopRaiseCommand() *cobra.Command {
 		return writeStopSuccess(cmd, "stop.raise", map[string]any{"stop": result.Stop, "attention": result.Attention, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, result.EventID, result.Stop.RaisedAt)
 	}}
 	runMutationFlags(cmd, &input, &actor, &key)
+	installInputDescriptor(cmd, inputDescriptorRegistry["stop raise"])
 	return cmd
 }
 
 func newStopResolveCommand() *cobra.Command {
 	var input, actor, key string
-	cmd := &cobra.Command{Use: "resolve", Args: canonicalNoArgs("stop.resolve"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "resolve", Short: "Resolve a Stop with a qualifying fact.", Args: canonicalNoArgs("stop.resolve"), RunE: func(cmd *cobra.Command, _ []string) error {
 		var request workflow.StopResolveRequest
 		if err := stopRequest(cmd, "stop.resolve", input, actor, key, &request); err != nil {
 			return err
@@ -61,13 +62,14 @@ func newStopResolveCommand() *cobra.Command {
 		return writeStopSuccess(cmd, "stop.resolve", map[string]any{"stop": result.Stop, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, result.EventID, result.Stop.Resolution.ResolvedAt)
 	}}
 	runMutationFlags(cmd, &input, &actor, &key)
+	installInputDescriptor(cmd, inputDescriptorRegistry["stop resolve"])
 	return cmd
 }
 
 func newStopListCommand() *cobra.Command {
 	var subject, status string
 	var limit int
-	cmd := &cobra.Command{Use: "list", Args: canonicalNoArgs("stop.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "list", Short: "List Stops.", Args: canonicalNoArgs("stop.list"), RunE: func(cmd *cobra.Command, _ []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderStopError(cmd, "stop.list", err)
@@ -86,8 +88,22 @@ func newStopListCommand() *cobra.Command {
 }
 
 func stopRequest(cmd *cobra.Command, operation, input, actor, key string, target any) error {
-	if err := runRequest(cmd, operation, input, actor, key, target); err != nil {
-		return err
+	for _, flag := range []string{"input", "actor", "idempotency-key"} {
+		if err := requireCanonicalFlag(cmd, operation, flag); err != nil {
+			return err
+		}
+	}
+	descriptor := inputDescriptorRegistry[rootCommandKey(cmd)]
+	if err := readDescriptorInput(cmd.InOrStdin(), input, descriptor, target); err != nil {
+		var structural *cli.InputError
+		if errors.As(err, &structural) {
+			jsonMode, modeErr := readJSONMode(cmd)
+			if modeErr != nil {
+				return modeErr
+			}
+			return writeStopFailure(cmd, jsonMode, operation, err, cli.CodeInvalidArgument, err.Error(), nil, structural.Details())
+		}
+		return renderStopError(cmd, operation, err)
 	}
 	return nil
 }
