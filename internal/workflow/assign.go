@@ -19,6 +19,7 @@ type AssignOptions struct {
 	Actor          string
 	IdempotencyKey string
 	Request        AssignmentRequest
+	RequestInput   map[string]any
 }
 
 // AssignResult reports the workflow and scope recorded by one assignment.
@@ -76,7 +77,17 @@ func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions, actor 
 	if err != nil {
 		return err
 	}
-	digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "workflow.assign", "project_id": projectConfig.ProjectID, "request": options.Request}, options.Actor, map[string]string{"Name": "--name", "Kind": "--kind", "Project": "--project-wide"})
+	requestInput := any(map[string]any{"Name": options.Request.Name})
+	aliases := map[string]string{"Name": "--name", "Kind": "--kind", "Project": "--project-wide"}
+	if options.Request.Project {
+		requestInput.(map[string]any)["Project"] = true
+	} else {
+		requestInput.(map[string]any)["Kind"] = options.Request.Kind
+	}
+	if options.RequestInput != nil {
+		requestInput, aliases = options.RequestInput, nil
+	}
+	digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "workflow.assign", "project_id": projectConfig.ProjectID, "request": requestInput}, options.Actor, aliases)
 	if err != nil {
 		return err
 	}

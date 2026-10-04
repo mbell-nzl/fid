@@ -391,21 +391,7 @@ func VerifyArtifact(options ArtifactVerifyOptions) (ArtifactVerifyResult, error)
 		if err != nil {
 			return fmt.Errorf("verify Artifact: read project config: %w", err)
 		}
-		_, actor, err := loadActiveActor(conn, options.ActorID)
-		if err != nil {
-			return err
-		}
-		if !hasCapability(actor.Capabilities, "artifact.verify") {
-			return &AuthorityDeniedError{ActorID: options.ActorID}
-		}
-		artifact, found, err := loadArtifactByID(conn, options.Request.ArtifactID)
-		if err != nil {
-			return err
-		}
-		if !found {
-			return fmt.Errorf("verify Artifact: Artifact %q was not found", options.Request.ArtifactID)
-		}
-		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "artifact_id": artifact.ID, "project_id": project.ProjectID, "request": options.Request}, options.ActorID, nil)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "artifact_id": options.Request.ArtifactID, "project_id": project.ProjectID, "request": options.Request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
@@ -420,6 +406,20 @@ func VerifyArtifact(options ArtifactVerifyOptions) (ArtifactVerifyResult, error)
 			result.IdempotencyKey = options.IdempotencyKey
 			result.Replayed = true
 			return nil
+		}
+		_, actor, err := loadActiveActor(conn, options.ActorID)
+		if err != nil {
+			return err
+		}
+		if !hasCapability(actor.Capabilities, "artifact.verify") {
+			return &AuthorityDeniedError{ActorID: options.ActorID}
+		}
+		artifact, found, err := loadArtifactByID(conn, options.Request.ArtifactID)
+		if err != nil {
+			return err
+		}
+		if !found {
+			return fmt.Errorf("verify Artifact: Artifact %q was not found", options.Request.ArtifactID)
 		}
 
 		storeRoot, err := artifactStoreRoot(options.WorkspaceRoot, project.ArtifactRoot)

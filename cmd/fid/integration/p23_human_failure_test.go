@@ -81,6 +81,11 @@ func TestP23StopFailureCodeMatrix(t *testing.T) {
 		{"attention-list/invalid-argument", "CodeInvalidArgument", "invalid-argument", "attention.list", a.workspace, []string{"--project", a.workspace, "attention", "list", "--subject", "issue:ISS-1"}},
 		{"stop-list/invalid-argument", "CodeInvalidArgument", "invalid-argument", "stop.list", a.workspace, []string{"--project", a.workspace, "stop", "list", "--subject", "issue:ISS-1"}},
 		{"stop-raise/invalid-argument", "CodeInvalidArgument", "invalid-argument", "stop.raise", a.workspace, mutation("stop", "raise", "stop-raise-invalid", map[string]any{})},
+		{"stop-raise/idempotency-conflict", "CodeIdempotencyConflict", "idempotency-conflict", "stop.raise", a.workspace, mutation("stop", "raise", "human-envelope-stop", map[string]any{
+			"subject": envelopeSubject, "code": "operator-stop", "blocked_actions": []string{"claim.acquire", "run.start"},
+			"details":              map[string]any{"reason": "changed operator review", "reference": "policy:human-failure"},
+			"resolution_condition": p23HumanOutcomeCondition(envelopeSubject, "security"), "resolver_capability": "stop.resolve",
+		})},
 	}
 	rework := p23StopFailureReworkFixture(t, binary)
 	cases = append(cases,

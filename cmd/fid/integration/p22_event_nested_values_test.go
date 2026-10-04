@@ -26,6 +26,11 @@ func p22RejectNestedCurrentValues(t *testing.T, conn *sql.DB, event journal.Even
 			var root any
 			p22FaultOK(t, json.Unmarshal([]byte(raw.(string)), &root))
 			check := func(label string) {
+				// Task 2 field maps are open by the caller's written optional
+				// members. Their keys cannot be inferred from the Event alone.
+				if column == "request_field_digests_json" && (strings.HasSuffix(label, "/unknown") || strings.Contains(label, "/missing-")) {
+					return
+				}
 				body, err := json.Marshal(event)
 				p22FaultOK(t, err)
 				var changed journal.Event

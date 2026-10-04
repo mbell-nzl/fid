@@ -102,20 +102,6 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 		if err != nil {
 			return fmt.Errorf("link Evidence: read project config: %w", err)
 		}
-		binding, err := loadEvidenceBinding(conn, options.Request)
-		if err != nil {
-			return err
-		}
-		if err := workflow.AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, workflow.EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: "evidence.link", Capability: "evidence.link", IssueID: binding.IssueID, EnvelopeID: binding.EnvelopeID, Revision: binding.Revision}); err != nil {
-			return err
-		}
-		_, actor, err := loadActiveActor(conn, options.ActorID)
-		if err != nil {
-			return err
-		}
-		if !hasCapability(actor.Capabilities, "evidence.link") {
-			return &AuthorityDeniedError{ActorID: options.ActorID}
-		}
 		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "project_id": project.ProjectID, "request": options.Request}, options.ActorID, nil)
 		if err != nil {
 			return err
@@ -129,6 +115,20 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 			}
 			result.IdempotencyKey, result.Replayed, result.EventID = options.IdempotencyKey, true, outcome.EventID
 			return nil
+		}
+		binding, err := loadEvidenceBinding(conn, options.Request)
+		if err != nil {
+			return err
+		}
+		if err := workflow.AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, workflow.EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: "evidence.link", Capability: "evidence.link", IssueID: binding.IssueID, EnvelopeID: binding.EnvelopeID, Revision: binding.Revision}); err != nil {
+			return err
+		}
+		_, actor, err := loadActiveActor(conn, options.ActorID)
+		if err != nil {
+			return err
+		}
+		if !hasCapability(actor.Capabilities, "evidence.link") {
+			return &AuthorityDeniedError{ActorID: options.ActorID}
 		}
 
 		evidenceID, err := nextEvidenceID(conn)

@@ -84,9 +84,6 @@ func RecordHumanOutcome(options JudgmentOptions, request HumanOutcomeRequest) (H
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-		if actor.ActorType != "human" || !contains(actor.Capabilities, "human-outcome.record") {
-			return &AuthorityMissingError{Operation: "human-outcome.record", ActorID: options.ActorID}
-		}
 		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "human-outcome.record", "project_id": projectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
@@ -96,6 +93,9 @@ func RecordHumanOutcome(options JudgmentOptions, request HumanOutcomeRequest) (H
 			return err
 		} else if found {
 			return replayHumanOutcome(replay, options.IdempotencyKey, &result)
+		}
+		if actor.ActorType != "human" || !contains(actor.Capabilities, "human-outcome.record") {
+			return &AuthorityMissingError{Operation: "human-outcome.record", ActorID: options.ActorID}
 		}
 		if exists, err := rowExists(conn, "human_outcomes", request.ID); err != nil {
 			return err

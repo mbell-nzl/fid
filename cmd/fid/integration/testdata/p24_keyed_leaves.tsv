@@ -18,7 +18,7 @@ decision record-reference	id
 deviation record	id
 envelope activate	expected_revision
 envelope complete	expected_revision
-envelope create	issue_id
+envelope create	outcome
 evidence link	obligation_id
 finding address	reason
 gate register	definition_version

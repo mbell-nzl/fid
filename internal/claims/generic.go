@@ -323,11 +323,13 @@ func mutateGenericClaim(options MutationOptions, operation string, request any, 
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
-			claim, err := loadGenericClaim(conn, replay.EntityID)
-			if err != nil {
-				return err
+			var stored struct {
+				Claim GenericClaim `json:"claim"`
 			}
-			result = MutationResult{Claim: claim, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
+			if err := json.Unmarshal([]byte(replay.ResultJSON), &stored); err != nil {
+				return fmt.Errorf("decode Claim replay: %w", err)
+			}
+			result = MutationResult{Claim: stored.Claim, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
 			return nil
 		}
 		event, claim, err := build(conn, project.ProjectID, genericClaimNow(options.Now))

@@ -79,6 +79,16 @@ func RecordDecisionReference(options JudgmentOptions, request DecisionReferenceR
 			return err
 		}
 		defer func() { _ = conn.Close() }()
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "decision.record-reference", "project_id": projectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
+		if err != nil {
+			return err
+		}
+		idempotency := journal.IdempotencyRequest{OperationScope: "decision.record-reference:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
+		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
+			return err
+		} else if found {
+			return replayDecision(replay, options.IdempotencyKey, &result)
+		}
 		if request.Authority.ActorID != options.ActorID || !contains(actor.Capabilities, "decision.record-reference") {
 			return &policy.EnvelopeAuthorityDeniedError{ActorID: options.ActorID, Action: "decision.record-reference", Capability: "decision.record-reference"}
 		}
@@ -89,16 +99,6 @@ func RecordDecisionReference(options JudgmentOptions, request DecisionReferenceR
 		}
 		if err := authorizeJudgmentSubject(options, conn, actor, "decision.record-reference", Subject{Type: "issue", ID: request.Scope.IssueID}); err != nil {
 			return err
-		}
-		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "decision.record-reference", "project_id": projectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
-		if err != nil {
-			return err
-		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "decision.record-reference:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
-		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
-			return err
-		} else if found {
-			return replayDecision(replay, options.IdempotencyKey, &result)
 		}
 		if err := verifyDecisionSource(options.WorkspaceRoot, request.Source); err != nil {
 			return err

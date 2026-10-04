@@ -126,9 +126,10 @@ func (obligation Obligation) MarshalJSON() ([]byte, error) {
 }
 
 type EnvelopeCreateRequest struct {
-	Outcome    string   `json:"outcome"`
-	NonGoals   []string `json:"non_goals"`
-	RiskResult struct {
+	InputAsWritten map[string]any `json:"-"`
+	Outcome        string         `json:"outcome"`
+	NonGoals       []string       `json:"non_goals"`
+	RiskResult     struct {
 		Source       Source `json:"source"`
 		ResultDigest string `json:"result_digest"`
 	} `json:"risk_result"`
@@ -199,10 +200,10 @@ type Envelope struct {
 }
 
 type EnvelopeMutationResult struct {
-	Envelope       Envelope `json:"envelope"`
-	Evaluation     any      `json:"evaluation,omitempty"`
-	IdempotencyKey string   `json:"idempotency_key"`
-	Replayed       bool     `json:"replayed"`
+	Envelope       Envelope               `json:"envelope"`
+	Evaluation     []ObligationEvaluation `json:"evaluation,omitempty"`
+	IdempotencyKey string                 `json:"idempotency_key"`
+	Replayed       bool                   `json:"replayed"`
 	EventID        string
 }
 
@@ -282,7 +283,11 @@ func CreateEnvelope(options EnvelopeOptions, request EnvelopeCreateRequest) (Env
 		if err := deriveInitialEnvelopeBudgets(&envelope); err != nil {
 			return err
 		}
-		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": actor.ActorID, "operation": "envelope.create", "project_id": project.ProjectID, "request": request}, actor.ActorID, nil)
+		requestInput := any(request)
+		if request.InputAsWritten != nil {
+			requestInput = request.InputAsWritten
+		}
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": actor.ActorID, "operation": "envelope.create", "project_id": project.ProjectID, "request": requestInput}, actor.ActorID, nil)
 		if err != nil {
 			return err
 		}
@@ -323,7 +328,7 @@ func GetEnvelope(workspaceRoot, migrationsDir, id string) (Envelope, error) {
 }
 
 func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) (EnvelopeMutationResult, error) {
-	if err := validateEnvelopeOptions(options); err != nil || strings.TrimSpace(request.EnvelopeID) == "" || request.ExpectedRevision != 1 {
+	if err := validateEnvelopeOptions(options); err != nil || strings.TrimSpace(request.EnvelopeID) == "" {
 		return EnvelopeMutationResult{}, &EnvelopeInvalidError{Reason: "envelope activation input is invalid"}
 	}
 	var result EnvelopeMutationResult
@@ -353,6 +358,9 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 			return err
 		} else if found {
 			return loadEnvelopeMutationReplay(outcome, options.IdempotencyKey, &result)
+		}
+		if request.ExpectedRevision != 1 {
+			return &EnvelopeInvalidError{Reason: "envelope activation input is invalid"}
 		}
 		envelope, err := loadEnvelope(conn, request.EnvelopeID)
 		if err != nil {
@@ -411,7 +419,7 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 }
 
 func CompleteEnvelope(options EnvelopeOptions, request EnvelopeCompleteRequest) (EnvelopeMutationResult, error) {
-	if err := validateEnvelopeOptions(options); err != nil || strings.TrimSpace(request.EnvelopeID) == "" || request.ExpectedRevision != 1 || !validEnvelopeRepository(request.Repository) {
+	if err := validateEnvelopeOptions(options); err != nil || strings.TrimSpace(request.EnvelopeID) == "" || !validEnvelopeRepository(request.Repository) {
 		return EnvelopeMutationResult{}, &EnvelopeInvalidError{Reason: "envelope completion input is invalid"}
 	}
 	var result EnvelopeMutationResult
@@ -437,6 +445,9 @@ func CompleteEnvelope(options EnvelopeOptions, request EnvelopeCompleteRequest) 
 			return err
 		} else if found {
 			return loadEnvelopeMutationReplay(outcome, options.IdempotencyKey, &result)
+		}
+		if request.ExpectedRevision != 1 {
+			return &EnvelopeInvalidError{Reason: "envelope completion input is invalid"}
 		}
 
 		envelope, err := loadEnvelope(conn, request.EnvelopeID)

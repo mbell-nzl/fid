@@ -198,6 +198,11 @@ func decodeClosedEnvelopeInput(stdin io.Reader, path string, target any) error {
 	if err := decoder.Decode(&extra); err != io.EOF {
 		return fmt.Errorf("envelope input must contain one object")
 	}
+	if request, ok := target.(*workflow.EnvelopeCreateRequest); ok {
+		if err := json.Unmarshal(payload, &request.InputAsWritten); err != nil {
+			return fmt.Errorf("decode envelope input members: %w", err)
+		}
+	}
 	return nil
 }
 

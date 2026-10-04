@@ -492,6 +492,7 @@ func (a p23FakeLeafAdapter) Conflict(pair p23HumanLeafPair) p23LeafOutcome {
 		"review.record": "profile", "finding.address": "reason", "concern.record": "summary",
 		"concern.dispose": "reason", "deviation.record": "reasoning", "decision.record-reference": "outcome",
 		"human-outcome.record": "reasoning", "requirement.record-reference": "status", "requirement.link": "relation",
+		"envelope.create": "outcome", "envelope.activate": "--actor", "claim.acquire": "ttl_seconds", "evidence.link": "receipt_id",
 	}[a.fixture.Operation]
 	return p23LeafOutcome{Operation: a.fixture.Operation, Code: "idempotency-conflict", Category: "conflict", Exit: 4,
 		Details: map[string]any{"operation_scope": a.fixture.Operation + ":<generated:project>", "idempotency_key": key,

@@ -16,7 +16,12 @@ func ComputeRequestDigest(components map[string]any, actor any, aliases map[stri
 	if !ok {
 		return "", nil, fmt.Errorf("request digest: request component is required")
 	}
-	payload, err := MarshalCanonicalJSON(components)
+	digestComponents := make(map[string]any, len(components)+1)
+	for name, value := range components {
+		digestComponents[name] = value
+	}
+	digestComponents["actor_input"] = actor
+	payload, err := MarshalCanonicalJSON(digestComponents)
 	if err != nil {
 		return "", nil, fmt.Errorf("request digest: canonicalize components: %w", err)
 	}

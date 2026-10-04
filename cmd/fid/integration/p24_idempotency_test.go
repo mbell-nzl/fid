@@ -266,7 +266,7 @@ func TestP24ObservingJudgmentRetriesAfterSourceAndHEADChange(t *testing.T) {
 		"human-outcome.record": true, "decision.record-reference": true,
 		"requirement.record-reference": true, "requirement.link": true,
 	}
-	baseline := map[string]map[string]any{}
+	baseline := map[string]string{}
 	var workspace string
 	for _, pair := range pairs {
 		if !observing[pair.Operation] {
@@ -277,7 +277,8 @@ func TestP24ObservingJudgmentRetriesAfterSourceAndHEADChange(t *testing.T) {
 		if err != nil || stderr != "" {
 			t.Fatalf("%s baseline retry = %v %q", pair.Operation, err, stderr)
 		}
-		baseline[pair.Operation] = p23Envelope(t, stdout)
+		_ = p23Envelope(t, stdout)
+		baseline[pair.Operation] = stdout
 	}
 	if len(baseline) != len(observing) {
 		t.Fatalf("observing fixture coverage = %d, want %d", len(baseline), len(observing))
@@ -297,7 +298,7 @@ func TestP24ObservingJudgmentRetriesAfterSourceAndHEADChange(t *testing.T) {
 		if err != nil || stderr != "" {
 			t.Fatalf("%s changed-source retry = %v %q", pair.Operation, err, stderr)
 		}
-		if got := p23Envelope(t, stdout); !reflect.DeepEqual(got, want) {
+		if got := stdout; got != want {
 			t.Fatalf("%s changed-source replay = %#v, want %#v", pair.Operation, got, want)
 		}
 		if after := p21JournalEventCount(t, workspace); after != before {
@@ -377,13 +378,14 @@ func TestP24ObservingJudgmentReplayNeverObserves(t *testing.T) {
 	}
 }
 
-func p24RetryJudgment(t *testing.T, binary string, pair p23HumanLeafPair) map[string]any {
+func p24RetryJudgment(t *testing.T, binary string, pair p23HumanLeafPair) string {
 	t.Helper()
 	stdout, stderr, err := closureRunCommand(pair.CWD, binary, pair.JSONArgs...)
 	if err != nil || stderr != "" {
 		t.Fatalf("%s replay = %v stderr=%q", pair.Operation, err, stderr)
 	}
-	return p23Envelope(t, stdout)
+	_ = p23Envelope(t, stdout)
+	return stdout
 }
 
 func p24JudgmentArgs(t *testing.T, pair p23HumanLeafPair, request map[string]any, marker string) []string {

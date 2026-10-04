@@ -55,3 +55,22 @@ func TestComputeRequestDigestOptionalPresence(t *testing.T) {
 		t.Fatalf("optional difference = %v", got)
 	}
 }
+
+func TestComputeRequestDigestIncludesWrittenActorWithOpaqueResolvedActor(t *testing.T) {
+	t.Parallel()
+	type resolvedActor struct{ id string }
+	components := func() map[string]any {
+		return map[string]any{"operation": "issue.update", "project_id": "PRJ-1", "actor": resolvedActor{id: "opaque"}, "request": map[string]any{"title": "same"}}
+	}
+	first, _, err := ComputeRequestDigest(components(), "agent:developer", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, _, err := ComputeRequestDigest(components(), "agent:other", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first == second {
+		t.Fatalf("Actor change retained request digest %q", first)
+	}
+}

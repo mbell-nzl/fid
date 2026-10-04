@@ -214,9 +214,6 @@ func RaiseStop(options StopOptions, request StopRaiseRequest) (StopRaiseResult, 
 		if err != nil {
 			return err
 		}
-		if err := authorizeStop(conn, options, request.Subject, "stop.raise", ""); err != nil {
-			return err
-		}
 		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "stop.raise", "project_id": project.ProjectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
@@ -226,6 +223,9 @@ func RaiseStop(options StopOptions, request StopRaiseRequest) (StopRaiseResult, 
 			return err
 		} else if found {
 			return loadStopRaiseResult(replay, &result)
+		}
+		if err := authorizeStop(conn, options, request.Subject, "stop.raise", ""); err != nil {
+			return err
 		}
 		stopID, err := newStopID(conn)
 		if err != nil {

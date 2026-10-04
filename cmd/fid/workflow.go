@@ -44,6 +44,7 @@ func newWorkflowDefineCommand() *cobra.Command {
 			}
 			result, err := workflow.Define(workflow.DefineOptions{
 				WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), Actor: actor, IdempotencyKey: key, Request: request,
+				RequestInput: map[string]any{"--name": name, "--applies-to": appliesTo, "--states": states, "--categories": categories, "--transitions": transitions},
 			})
 			if err != nil {
 				return renderWorkflowError(cmd, "workflow.define", err)
@@ -99,9 +100,16 @@ func newWorkflowAssignCommand() *cobra.Command {
 			if err != nil {
 				return renderWorkflowError(cmd, "workflow.assign", err)
 			}
+			requestInput := map[string]any{"--name": name}
+			if projectWide {
+				requestInput["--project-wide"] = true
+			} else {
+				requestInput["--kind"] = kind
+			}
 			result, err := workflow.Assign(workflow.AssignOptions{
 				WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), Actor: actor, IdempotencyKey: key,
-				Request: workflow.AssignmentRequest{Name: strings.TrimSpace(name), Kind: strings.TrimSpace(kind), Project: projectWide},
+				Request:      workflow.AssignmentRequest{Name: strings.TrimSpace(name), Kind: strings.TrimSpace(kind), Project: projectWide},
+				RequestInput: requestInput,
 			})
 			if err != nil {
 				return renderWorkflowError(cmd, "workflow.assign", err)

@@ -149,6 +149,7 @@ func closureRunCommand(workspace, command string, args ...string) (string, strin
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
+	p24CaptureKeyedCommand(workspace, args, stdout.String(), stderr.String(), err)
 	return stdout.String(), stderr.String(), err
 }
 
