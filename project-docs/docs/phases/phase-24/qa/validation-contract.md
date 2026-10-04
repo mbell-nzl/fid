@@ -5,8 +5,8 @@
 > (`../public-interface.md`), Heavy mode and the 14-task list (DEC-277).
 > Last refined: 2026-10-04 by the Tech Lead, applying the QA plan's first
 > pass (`qa-plan.md`, R-01..R-17 and I-01..I-19) under DEC-278.
-> 66 assertions: 61 deterministic and 5 Human. All are `Ready` except
-> VAL-065, which waits for Human decision D5 (DEC-279).
+> 66 assertions: 61 deterministic and 5 Human, all `Ready`. VAL-065 became
+> `Ready` when the Human decided D5 (DEC-279).
 
 ## Purpose
 
@@ -123,7 +123,7 @@ under DEC-278. No ID was renumbered.
 | VAL-062 | PRD-RUN-005; contract 4 | `run.close` evaluates Obligations against its observed terminal repository. | A Run whose Envelope has a Receipt-backed Obligation, closed once in the tree the Receipt was proven in and once (a separate fixture) after a tracked-file edit. | QA Reviewer | task 7 | Unchanged tree: the closed Run's status is `succeeded`. Edited tree: `failed`, because the Evidence is stale against the observation. | Either status differs, showing evaluation against a repository other than the observation. | Ready | Split from VAL-031 (R-17). |
 | VAL-063 | PRD-PROJ-007; restates Phase 23 VAL-060 | The `PRIVATE_` leak checks are removed. | `rg -n "PRIVATE_" cmd/fid/integration`, declared `exit_code: 1`. | QA Reviewer | task 13; re-proved by task 14 | Terminates `exit_code: 1`. | Any match. | Ready | Split from VAL-047 (R-17). The values become ordinary recorded reasoning. |
 | VAL-064 | Phase 21 contract 2 (grammar); contract 9; DEC-278 | Grammar failures name the offending spelling or value. | Whole-tree corpus over every live leaf in both modes: an unknown flag; a missing required flag where the leaf has one; a malformed flag value where one exists; and a wrong positional count. | QA Reviewer | task 9 | `invalid-argument`, exit 2, the leaf's operation ID in the envelope, details per task 9's mapping, JSON `message` = the parser text, and nothing read or written. Human stderr is never empty. | `argument:"request"`, a wrong operation, an empty JSON or Human stream, or any effect. | Ready | Human line form is VAL-036. |
-| VAL-065 | Phase 21 contract 4 (`operation-unavailable`); contract 9 | An unknown command or subcommand returns `operation-unavailable`. | `fid bogus`, `fid concern bogus` and an unknown word under every command group, in both modes. | QA Reviewer | task 9 | JSON: `operation-unavailable`, invalid-input, not retryable, exit 2, subject null, details `{argument:"command",value:<word>,allowed:[...]}`, envelope `operation` per DEC-279. Human: nonempty stderr, exit 2. | Silence, a different code or exit, or a wrong `operation`. | Draft | Waits for DEC-279 (D5). |
+| VAL-065 | Phase 21 contract 4 (`operation-unavailable`); contract 9 | An unknown command or subcommand returns `operation-unavailable`. | `fid bogus`, `fid concern bogus` and an unknown word under every command group, in both modes. | QA Reviewer | task 9 | JSON: `operation-unavailable`, invalid-input, not retryable, exit 2, subject null, details `{argument:"command",value:<word>,allowed:[...]}`, envelope `operation` = the dotted path of the known command that received the word (`fid`, `concern`, `issue.ac`; DEC-279), `allowed` = that command's `--help` subcommands, sorted. Human: nonempty stderr, exit 2. | Silence, a different code or exit, or a wrong `operation`. | Ready | - |
 | VAL-066 | PRD-OPS-012; contract 2, 7 | A replay never observes. | For every observing mutation: commit, then make the worktree unobservable (unmerged paths) and retry the same key and input. For a project-file Source, delete the file and retry. A control request under a new key in the same state must fail. | QA Reviewer | tasks 2, 4-8 (rows per owned leaf) | Every retry replays the original result with no Event. Each control fails with no Event (from task 4: `repository-unavailable`, `recovery-state-conflict` for close/abandon, `source-digest-mismatch` for the deleted file). | A retry fails or appends, or a control succeeds. | Ready | Added under DEC-278 (R-03). |
 
 ## Coverage
@@ -166,3 +166,4 @@ under DEC-278. No ID was renumbered.
 | 2026-10-04 | VAL-034 | the Event repository is also checked | R-04 (`evidence.link` is not observing) | DEC-278 |
 | 2026-10-04 | VAL-064, 065, 066 | added | R-07, R-03 | DEC-278 |
 | 2026-10-04 | VAL-001..066 except 065 | `Draft` to `Ready` | QA-plan dispositions applied; QA Lead readiness refresh pending | DEC-278 |
+| 2026-10-04 | VAL-065 | exact `operation` rule; `Draft` to `Ready` | Human decided D5 = A | DEC-279 |

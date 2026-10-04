@@ -3,8 +3,8 @@
 Updated 2026-10-04. **Phase 24 "Operating experience and input
 convergence" is planned and approved (DEC-277).** Heavy mode, 14 tasks. The
 QA plan's first pass (`eb34889`) was NOT READY. The Tech Lead dispositioned
-all 36 findings in DEC-278. The validation contract now has 66 assertions,
-all `Ready` except VAL-065, which waits for Human decision D5 (DEC-279).
+all 36 findings in DEC-278, and the Human decided D5 (DEC-279). The
+validation contract now has 66 assertions, all `Ready`.
 Phase 23 is complete (DEC-271) and merged as PR #25 (`a46ec77`).
 
 - Contract: [public interface](../phases/phase-24/public-interface.md);
@@ -16,12 +16,10 @@ Phase 23 is complete (DEC-271) and merged as PR #25 (`a46ec77`).
 
 ## Next
 
-1. Human: decide D5 (contract section 13). The Tech Lead records DEC-279 and
-   marks VAL-065 `Ready`. This gates task 9 only.
-2. QA Lead: a readiness refresh of `../phases/phase-24/qa/qa-plan.md`. It
-   revalidates every item DEC-278 changed.
-3. Phase Runner: the readiness check, then tasks 1-14.
-4. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and
+1. QA Lead: a readiness refresh of `../phases/phase-24/qa/qa-plan.md`. It
+   revalidates every item DEC-278 and DEC-279 changed.
+2. Phase Runner: the readiness check, then tasks 1-14.
+3. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and
    baseline convergence" follow.
 
 A deep workflow retrospective is recommended under CF-036/039 (see Phase 23

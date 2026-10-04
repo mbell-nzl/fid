@@ -14,16 +14,12 @@ Deliver two accepted Phase 21 allocations that were never delivered
 whole live tree. Unknown commands return `operation-unavailable` instead of
 exiting silently.
 
-**Dispatch gate:** this task is not dispatched until the Human decides D5
-(contract section 13) and the Tech Lead records it as DEC-279 and marks
-VAL-065 `Ready`.
-
 ## Validation Contract Coverage
 
 - VAL-011..016 and VAL-060 (completion: all 39 leaves, no fence).
 - VAL-035 (assembly across tasks 4-8).
 - VAL-064: grammar failures name the offending spelling or value.
-- VAL-065: unknown commands return `operation-unavailable` (after DEC-279).
+- VAL-065: unknown commands return `operation-unavailable` (DEC-279).
 - VAL-052.
 
 Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`.
@@ -72,9 +68,11 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   `{argument:string, value:string|null, allowed:string[]}`. An unknown word at
   any command level returns it with `argument:"command"`, `value:<word>` and
   `allowed:<the subcommands that command's --help lists, sorted>`. The
-  message is Cobra's unknown-command text. The JSON envelope `operation`
-  follows DEC-279. Human mode prints `error: <message>` and exits 2. It is
-  never silent.
+  message is Cobra's unknown-command text. The JSON envelope `operation` is
+  the dotted path of the known command that received the unknown word, with
+  `fid` at the root (DEC-279): `fid bogus` gives `fid`, `fid concern bogus`
+  gives `concern`, and `fid issue ac bogus` gives `issue.ac`. Human mode
+  prints `error: <message>` and exits 2. It is never silent.
 
 ## Scope
 

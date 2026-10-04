@@ -4,7 +4,7 @@
 > DEC-272. The Human decided D1-D4 (DEC-273..276; section 13) and approved
 > this file with the task list. Amendments need a recorded DEC.
 > DEC-278 (QA-plan dispositions) clarifies sections 2, 5, 6, 9 and 10, and
-> adds pending Human decision D5 to section 13.
+> adds Human decision D5 to section 13, decided as DEC-279.
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -246,8 +246,9 @@ next: <resolving action>                 # only for the codes in the next-table 
   the Phase 21 section 2 details (the offending spelling or value, and the
   accepted alternatives). Their JSON `message` is the parser's text, so the
   `error:` line keeps the spelling. Unknown commands return the Phase 21
-  `operation-unavailable` failure. Its JSON `operation` value is Human
-  decision D5 (section 13).
+  `operation-unavailable` failure. Its JSON `operation` is the dotted path of
+  the known command that received the unknown word, `fid` at the root
+  (DEC-279, D5).
 - **next-table (closed):**
 
 | Code | `next:` text (IDs and classes from details) |
@@ -356,4 +357,4 @@ are not weakened:
 | D2 | Where do Humans read full recorded reasoning for Concerns, Deviations and Human Outcomes? | **Decided A (DEC-274)**: add `concern get`, `deviation get`, `human-outcome get` |
 | D3 | Naming the differing field needs per-field digests stored in the journal and migration 0019. Accept the cost? | **Decided A (DEC-275)**: accept |
 | D4 | `--example` rules in section 8 (static typed placeholders, required fields only, refuses `--json`) | **Decided (DEC-276)**: accept all |
-| D5 | Which JSON envelope `operation` does `operation-unavailable` carry for a command that does not exist (`fid bogus`, `fid concern bogus`)? | **Pending (DEC-279).** Recommended A: the dotted path of the known command that received the unknown word (`concern`; the root is `fid`), with details `{argument:"command", value:<word>, allowed:<that command's subcommands, sorted>}`. Alternative B: the requested path including the unknown word (`concern.bogus`). |
+| D5 | Which JSON envelope `operation` does `operation-unavailable` carry for a command that does not exist (`fid bogus`, `fid concern bogus`)? | **Decided A (DEC-279)**: the dotted path of the known command that received the unknown word (`concern`; the root is `fid`), with details `{argument:"command", value:<word>, allowed:<that command's subcommands, sorted>}`. Rejected B: the requested path including the unknown word (`concern.bogus`). |

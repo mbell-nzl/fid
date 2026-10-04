@@ -14,12 +14,10 @@ expectations a check uses. Request digests cover the input as written.
 **QA-plan findings applied (DEC-278).** Branch `phase-24`. The QA plan's
 first pass (`eb34889`) was NOT READY, with 17 Must-fix and 19 improvement
 items. The Tech Lead checked each against source and dispositioned all of
-them in DEC-278: contract clarifications, 66 assertions (65 `Ready`), and
-amended task specs.
+them in DEC-278: contract clarifications, 66 assertions (all `Ready`), and
+amended task specs. The Human decided D5 (unknown-command `operation`) as
+option A (DEC-279).
 
-- **Open:** Human decision D5 (contract section 13): the JSON `operation`
-  for an unknown command. It will be recorded as DEC-279. It gates task 9 and
-  VAL-065 only.
 - **Next:** the QA Lead's readiness refresh of `qa/qa-plan.md`, then the
   Phase Runner's readiness check, then task 1. Nothing is dispatched before
   the refresh passes.
@@ -40,8 +38,8 @@ Human checklist's "take control" scenario is the Human run.
   reruns its registry commands.
 - Decisions: DEC-272 (scope), DEC-273 (real-worktree run and gate checks),
   DEC-274 (`get` leaves), DEC-275 (per-field digests, migration 0019),
-  DEC-276 (help and template rules), DEC-277 (plan approval) and DEC-278
-  (QA-plan dispositions). See `../phases/phase-24/decisions.md`.
+  DEC-276 (help and template rules), DEC-277 (plan approval), DEC-278
+  (QA-plan dispositions) and DEC-279 (unknown-command `operation`). See `../phases/phase-24/decisions.md`.
 
 ## Task Index
 
@@ -55,7 +53,7 @@ Human checklist's "take control" scenario is the Human run.
 | 6 | Gate registration, Envelope and Claim leaves | Pending | 4 |
 | 7 | Run leaves (DEC-273) | Pending | 5, 6 |
 | 8 | Gate run and Evidence leaves; real freshness (DEC-273) | Pending | 7 |
-| 9 | Activation descriptors; whole-tree input, help and grammar conformance | Pending (also gated on DEC-279) | 3-8 |
+| 9 | Activation descriptors; whole-tree input, help and grammar conformance | Pending | 3-8 |
 | 10 | Human failure lines in every family | Pending | 9 |
 | 11 | Readable Stop, Attention and repository lines; Human fixture generator | Pending | 10 |
 | 12 | Concern, Deviation and Human Outcome `get` leaves (DEC-274) | Pending | 4 |
@@ -65,8 +63,7 @@ Human checklist's "take control" scenario is the Human run.
 ## Validation Contract
 
 Full contract: `../phases/phase-24/qa/validation-contract.md`. It has 66
-rows (61 deterministic, 5 Human). All are `Ready` except VAL-065 (waiting
-for DEC-279). VAL-058..063 were split from bundled rows. VAL-064..066 are
+rows (61 deterministic, 5 Human), all `Ready`. VAL-058..063 were split from bundled rows. VAL-064..066 are
 new.
 
 | VAL range | Subject | Owning tasks | Validator |
@@ -120,6 +117,6 @@ new.
 
 ## Next Planning Checkpoint
 
-After the Human decides D5, the Tech Lead records DEC-279 and marks VAL-065
-`Ready`. The QA Lead then runs the readiness refresh. Phase 25 "Parallel and
+The QA Lead runs the readiness refresh, revalidating everything DEC-278 and
+DEC-279 changed. Phase 25 "Parallel and
 evolving work" follows Phase 24.

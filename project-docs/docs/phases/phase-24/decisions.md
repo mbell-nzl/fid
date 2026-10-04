@@ -247,6 +247,25 @@
 - **Refs:** DEC-194; DEC-195; DEC-264; DEC-277; `qa/qa-plan.md` sections 2.3
   and 2.4; Phase 21 `public-interface.md` sections 2 and 4.
 
+### DEC-279: Unknown-command `operation` names the receiving command (D5 = A)
+
+- **Date:** 2026-10-04. ACCEPTED by the Human ("A") after the Tech Lead
+  showed both options with example output.
+- **Context:** Phase 21 accepted `operation-unavailable` for unknown
+  commands, but no accepted text gave the JSON envelope's `operation` value
+  for a command that does not exist (DEC-278 item 4).
+- **Decision:** `operation` is the dotted path of the known command that
+  received the unknown word. The root is `fid`. For example, `fid bogus`
+  gives `fid`, `fid concern bogus` gives `concern`, and `fid issue ac bogus`
+  gives `issue.ac`. The unknown word goes in `details.value`, with
+  `argument:"command"` and `allowed` = the subcommand names that command's
+  `--help` lists, sorted. Option B (the typed path, `concern.bogus`) was
+  rejected because it puts caller text in a field that otherwise holds only
+  known names.
+- **Consequences:** VAL-065 is `Ready`, and task 9's dispatch gate is
+  lifted. No other assertion or task changes.
+- **Refs:** DEC-278; `public-interface.md` sections 9 and 13; task 9.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.
