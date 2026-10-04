@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -36,6 +38,156 @@ func TestAttentionResolveUnknownFieldNamesInputPath(t *testing.T) {
 	}
 	if envelope.Error.Details.Argument != "input.bogus" {
 		t.Fatalf("argument = %q, want input.bogus; stderr=%s", envelope.Error.Details.Argument, result.stderr)
+	}
+}
+
+func TestAdoptedExampleProcessExclusivity(t *testing.T) {
+	t.Parallel()
+	leaves := []string{"stop raise", "stop resolve", "attention resolve"}
+	conflicts := []struct {
+		name, argument string
+		value          any
+		args           func(string) []string
+	}{
+		{"json first", "--json", nil, func(dir string) []string {
+			return []string{"--json", "--project", filepath.Join(dir, "absent-project"), "--input", filepath.Join(dir, "absent-input"), "--actor", "ACT-1", "--idempotency-key", "key-1", "extra"}
+		}},
+		{"project first", "--project", "ABSENT", func(dir string) []string {
+			return []string{"--project", filepath.Join(dir, "absent-project"), "--input", filepath.Join(dir, "absent-input"), "--actor", "ACT-1", "--idempotency-key", "key-1", "extra"}
+		}},
+		{"input first", "--input", "ABSENT", func(dir string) []string {
+			return []string{"--input", filepath.Join(dir, "absent-input"), "--actor", "ACT-1", "--idempotency-key", "key-1", "extra"}
+		}},
+		{"actor first", "--actor", "ACT-1", func(string) []string { return []string{"--actor", "ACT-1", "--idempotency-key", "key-1", "extra"} }},
+		{"key first", "--idempotency-key", "key-1", func(string) []string { return []string{"--idempotency-key", "key-1", "extra"} }},
+		{"positional", "arguments", "extra", func(string) []string { return []string{"extra"} }},
+	}
+	if got := len(leaves) * len(conflicts); got != 18 {
+		t.Fatalf("exclusivity corpus has %d rows, want 18", got)
+	}
+	binary := buildAdoptedFID(t)
+	for _, leaf := range leaves {
+		t.Run(leaf, func(t *testing.T) {
+			parts := strings.Split(leaf, " ")
+			operation := inputDescriptorRegistry[leaf].Operation
+			for _, conflict := range conflicts {
+				t.Run(conflict.name, func(t *testing.T) {
+					workspace := t.TempDir()
+					args := append(append([]string{}, parts...), "--example")
+					args = append(args, conflict.args(workspace)...)
+					stdout, stderr, exit := runAdoptedFID(t, binary, workspace, args...)
+					if exit != 2 || stdout != "" {
+						t.Fatalf("%s %s: exit=%d stdout=%q stderr=%q", leaf, conflict.name, exit, stdout, stderr)
+					}
+					value := conflict.value
+					if value == "ABSENT" {
+						if conflict.argument == "--project" {
+							value = filepath.Join(workspace, "absent-project")
+						} else {
+							value = filepath.Join(workspace, "absent-input")
+						}
+					}
+					if conflict.argument == "--json" {
+						assertAdoptedFailure(t, stderr, operation, conflict.argument, value)
+					} else if stderr != "error: --example cannot be combined with "+conflict.argument+"\n" {
+						t.Fatalf("first conflict = %q, want %s", stderr, conflict.argument)
+					}
+					// Human output predates typed details; exercise its shared detail writer in JSON mode.
+					root := newRootCommandAt(workspace)
+					var details bytes.Buffer
+					root.SetErr(&details)
+					if err := root.PersistentFlags().Set("json", "true"); err != nil {
+						t.Fatal(err)
+					}
+					command, _, err := root.Find(parts)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if err := writeExampleConflict(command, operation, conflict.argument, value); cli.ExitCode(err) != 2 {
+						t.Fatalf("detail writer exit = %d", cli.ExitCode(err))
+					}
+					assertAdoptedFailure(t, details.String(), operation, conflict.argument, value)
+					entries, err := os.ReadDir(workspace)
+					if err != nil || len(entries) != 0 {
+						t.Fatalf("conflict touched non-project workspace: entries=%v err=%v", entries, err)
+					}
+				})
+			}
+			workspace := t.TempDir()
+			stdout, stderr, exit := runAdoptedFID(t, binary, workspace, append(parts, "--example")...)
+			if exit != 0 || stderr != "" || !json.Valid([]byte(stdout)) {
+				t.Fatalf("standalone %s: exit=%d stdout=%q stderr=%q", leaf, exit, stdout, stderr)
+			}
+			entries, err := os.ReadDir(workspace)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("standalone touched non-project workspace: entries=%v err=%v", entries, err)
+			}
+		})
+	}
+}
+
+func buildAdoptedFID(t *testing.T) string {
+	t.Helper()
+	binary := filepath.Join(t.TempDir(), "fid")
+	command := exec.Command("go", "build", "-o", binary, ".")
+	output, err := command.CombinedOutput()
+	if err != nil {
+		t.Fatalf("build fid: %v: %s", err, output)
+	}
+	return binary
+}
+
+func runAdoptedFID(t *testing.T, binary, workspace string, args ...string) (string, string, int) {
+	t.Helper()
+	command := exec.Command(binary, args...)
+	command.Dir = workspace
+	var stdout, stderr bytes.Buffer
+	command.Stdout, command.Stderr = &stdout, &stderr
+	err := command.Run()
+	if err == nil {
+		return stdout.String(), stderr.String(), 0
+	}
+	if exit, ok := err.(*exec.ExitError); ok {
+		return stdout.String(), stderr.String(), exit.ExitCode()
+	}
+	t.Fatalf("run fid: %v", err)
+	return "", "", -1
+}
+
+func assertAdoptedFailure(t *testing.T, stderr, operation, argument string, value any) {
+	assertAdoptedJSONFailure(t, stderr, operation, argument, value, []string{"--example"})
+}
+
+func assertAdoptedJSONFailure(t *testing.T, stderr, operation, argument string, value any, allowed []string) {
+	t.Helper()
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(stderr), &fields); err != nil {
+		t.Fatalf("decode failure %q: %v", stderr, err)
+	}
+	if _, present := fields["event"]; present {
+		t.Fatalf("failure emitted Event: %s", stderr)
+	}
+	var envelope struct {
+		ContractVersion string           `json:"contract_version"`
+		OK              bool             `json:"ok"`
+		Operation       string           `json:"operation"`
+		Event           *json.RawMessage `json:"event"`
+		Error           struct {
+			Category string         `json:"category"`
+			Code     string         `json:"code"`
+			Details  map[string]any `json:"details"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(stderr), &envelope); err != nil {
+		t.Fatalf("decode failure %q: %v", stderr, err)
+	}
+	wantAllowed := make([]any, len(allowed))
+	for i, item := range allowed {
+		wantAllowed[i] = item
+	}
+	want := map[string]any{"argument": argument, "value": value, "allowed": wantAllowed}
+	if envelope.ContractVersion != "fid-cli.v1" || envelope.OK || envelope.Operation != operation || envelope.Event != nil || envelope.Error.Category != "invalid-input" || envelope.Error.Code != "invalid-argument" || !reflect.DeepEqual(envelope.Error.Details, want) {
+		t.Fatalf("failure = %s; want operation %s details %#v", stderr, operation, want)
 	}
 }
 
@@ -334,6 +486,129 @@ func TestStructuralFailuresCoverEachAdoptedLeaf(t *testing.T) {
 			invalid, ok := cli.ValidateInput([]byte(payload), inputDescriptorRegistry[test.leaf]).(*cli.InputError)
 			if !ok || invalid.Path != test.path || len(invalid.Allowed) == 0 {
 				t.Fatalf("%s: result = %#v, want %s", test.name, invalid, test.path)
+			}
+		})
+	}
+}
+
+func TestAdoptedStructuralProcessDetails(t *testing.T) {
+	t.Parallel()
+	baseline := map[string]string{
+		"stop resolve":      `{"stop_id":"STP-1","fact_event_id":"EVT-1"}`,
+		"attention resolve": `{"attention_id":"ATT-1","expected_version":1,"fact_event_ids":["EVT-1"]}`,
+		"stop raise":        `{"subject":{"type":"run","id":"RUN-1"},"code":"operator-stop","blocked_actions":["run.start"],"details":{"reason":"reason","reference":"REF"},"resolution_condition":{"type":"work-ended","subject":{"type":"run","id":"RUN-1"},"budget_name":null,"capability_id":null},"resolver_capability":"stop.resolve"}`,
+	}
+	topResolve := []string{"fact_event_id", "stop_id"}
+	topAttention := []string{"attention_id", "expected_version", "fact_event_ids"}
+	topRaise := []string{"blocked_actions", "code", "details", "resolution_condition", "resolver_capability", "subject"}
+	subject := []string{"id", "type"}
+	codeMembers := []string{"executor-liveness-unknown", "recovery-state-conflict", "budget-exhausted", "budget-data-unavailable", "review-rework-exhausted", "protected-decision-required", "human-outcome-required", "activation-incomplete", "capability-unavailable", "operator-stop"}
+	conditionMembers := []string{"executor-terminated", "run-recovered", "activation-recovered", "capability-available", "budget-observed", "work-ended", "decision-satisfied", "human-outcome-recorded", "review-recorded", "finding-resolved"}
+	cases := []struct {
+		name, leaf, old, replacement, path string
+		value                              any
+		allowed                            []string
+	}{
+		{"resolve unknown", "stop resolve", `"fact_event_id":"EVT-1"`, `"fact_event_id":"EVT-1","bogus":1`, "input.bogus", "bogus", topResolve},
+		{"resolve duplicate", "stop resolve", `"stop_id":"STP-1"`, `"stop_id":"STP-1","stop_id":"STP-2"`, "input.stop_id", "stop_id", topResolve},
+		{"resolve missing", "stop resolve", `"stop_id":"STP-1",`, ``, "input.stop_id", nil, []string{"stop_id"}},
+		{"resolve null", "stop resolve", `"stop_id":"STP-1"`, `"stop_id":null`, "input.stop_id", "null", []string{"string"}},
+		{"resolve type", "stop resolve", `"stop_id":"STP-1"`, `"stop_id":1`, "input.stop_id", "integer", []string{"string"}},
+		{"resolve format", "stop resolve", `"stop_id":"STP-1"`, `"stop_id":""`, "input.stop_id", "", []string{"ID"}},
+		{"attention unknown", "attention resolve", `"expected_version":1`, `"expected_version":1,"bogus":1`, "input.bogus", "bogus", topAttention},
+		{"attention duplicate", "attention resolve", `"attention_id":"ATT-1"`, `"attention_id":"ATT-1","attention_id":"ATT-2"`, "input.attention_id", "attention_id", topAttention},
+		{"attention missing", "attention resolve", `"attention_id":"ATT-1",`, ``, "input.attention_id", nil, []string{"attention_id"}},
+		{"attention null", "attention resolve", `"attention_id":"ATT-1"`, `"attention_id":null`, "input.attention_id", "null", []string{"string"}},
+		{"attention type", "attention resolve", `"expected_version":1`, `"expected_version":"1"`, "input.expected_version", "string", []string{"integer"}},
+		{"attention format", "attention resolve", `"attention_id":"ATT-1"`, `"attention_id":""`, "input.attention_id", "", []string{"ID"}},
+		{"attention bound", "attention resolve", `"expected_version":1`, `"expected_version":0`, "input.expected_version", float64(0), []string{"integer range 1..unbounded"}},
+		{"attention array member", "attention resolve", `"fact_event_ids":["EVT-1"]`, `"fact_event_ids":[1]`, "input.fact_event_ids[0]", "integer", []string{"string"}},
+		{"attention array null", "attention resolve", `"fact_event_ids":["EVT-1"]`, `"fact_event_ids":[null]`, "input.fact_event_ids[0]", "null", []string{"string"}},
+		{"attention array format", "attention resolve", `"fact_event_ids":["EVT-1"]`, `"fact_event_ids":[""]`, "input.fact_event_ids[0]", "", []string{"ID"}},
+		{"attention sorted unique", "attention resolve", `"fact_event_ids":["EVT-1"]`, `"fact_event_ids":["EVT-1","EVT-1"]`, "input.fact_event_ids", []json.RawMessage{json.RawMessage(`"EVT-1"`), json.RawMessage(`"EVT-1"`)}, []string{"sorted-unique"}},
+		{"raise unknown", "stop raise", `"code":"operator-stop"`, `"code":"operator-stop","bogus":1`, "input.bogus", "bogus", topRaise},
+		{"raise duplicate", "stop raise", `"code":"operator-stop"`, `"code":"operator-stop","code":"operator-stop"`, "input.code", "code", topRaise},
+		{"raise missing", "stop raise", `"code":"operator-stop",`, ``, "input.code", nil, []string{"code"}},
+		{"raise null", "stop raise", `"code":"operator-stop"`, `"code":null`, "input.code", "null", []string{"string"}},
+		{"raise type", "stop raise", `"code":"operator-stop"`, `"code":1`, "input.code", "integer", []string{"string"}},
+		{"raise enum", "stop raise", `"code":"operator-stop"`, `"code":"bogus"`, "input.code", "bogus", codeMembers},
+		{"raise format", "stop raise", `"resolver_capability":"stop.resolve"`, `"resolver_capability":""`, "input.resolver_capability", "", []string{"ID"}},
+		{"subject unknown", "stop raise", `"id":"RUN-1"},"code"`, `"id":"RUN-1","bogus":1},"code"`, "input.subject.bogus", "bogus", subject},
+		{"subject duplicate", "stop raise", `"id":"RUN-1"},"code"`, `"id":"RUN-1","id":"RUN-2"},"code"`, "input.subject.id", "id", subject},
+		{"subject missing", "stop raise", `"type":"run","id":"RUN-1"},"code"`, `"type":"run"},"code"`, "input.subject.id", nil, []string{"id"}},
+		{"subject null", "stop raise", `"id":"RUN-1"},"code"`, `"id":null},"code"`, "input.subject.id", "null", []string{"string"}},
+		{"subject type", "stop raise", `"id":"RUN-1"},"code"`, `"id":1},"code"`, "input.subject.id", "integer", []string{"string"}},
+		{"subject enum", "stop raise", `"type":"run","id":"RUN-1"},"code"`, `"type":"bogus","id":"RUN-1"},"code"`, "input.subject.type", "bogus", []string{"run", "envelope", "activation"}},
+		{"subject format", "stop raise", `"id":"RUN-1"},"code"`, `"id":""},"code"`, "input.subject.id", "", []string{"ID"}},
+		{"deep unknown", "stop raise", `"id":"RUN-1"},"budget_name"`, `"id":"RUN-1","bogus":1},"budget_name"`, "input.resolution_condition.subject.bogus", "bogus", subject},
+		{"deep duplicate", "stop raise", `"id":"RUN-1"},"budget_name"`, `"id":"RUN-1","id":"RUN-2"},"budget_name"`, "input.resolution_condition.subject.id", "id", subject},
+		{"deep missing", "stop raise", `"type":"run","id":"RUN-1"},"budget_name"`, `"type":"run"},"budget_name"`, "input.resolution_condition.subject.id", nil, []string{"id"}},
+		{"deep null", "stop raise", `"id":"RUN-1"},"budget_name"`, `"id":null},"budget_name"`, "input.resolution_condition.subject.id", "null", []string{"string"}},
+		{"deep type", "stop raise", `"id":"RUN-1"},"budget_name"`, `"id":1},"budget_name"`, "input.resolution_condition.subject.id", "integer", []string{"string"}},
+		{"deep enum", "stop raise", `"type":"run","id":"RUN-1"},"budget_name"`, `"type":"bogus","id":"RUN-1"},"budget_name"`, "input.resolution_condition.subject.type", "bogus", []string{"run", "envelope", "activation"}},
+		{"deep format", "stop raise", `"id":"RUN-1"},"budget_name"`, `"id":""},"budget_name"`, "input.resolution_condition.subject.id", "", []string{"ID"}},
+		{"condition enum", "stop raise", `"type":"work-ended","subject"`, `"type":"bogus","subject"`, "input.resolution_condition.type", "bogus", conditionMembers},
+		{"details unknown", "stop raise", `"reference":"REF"},"resolution_condition"`, `"reference":"REF","bogus":1},"resolution_condition"`, "input.details.bogus", "bogus", []string{"reason", "reference"}},
+		{"action member type", "stop raise", `"blocked_actions":["run.start"]`, `"blocked_actions":[1]`, "input.blocked_actions[0]", "integer", []string{"string"}},
+		{"action member enum", "stop raise", `"blocked_actions":["run.start"]`, `"blocked_actions":["bogus"]`, "input.blocked_actions[0]", "bogus", []string{"claim.acquire", "run.start", "run.recover", "gate.run", "issue.transition-terminal-success", "envelope.complete"}},
+	}
+	if len(cases) != 42 {
+		t.Fatalf("structural corpus has %d rows, want 42", len(cases))
+	}
+	binary := buildAdoptedFID(t)
+	for leaf, payload := range baseline {
+		t.Run(leaf+" valid structure", func(t *testing.T) {
+			if err := cli.ValidateInput([]byte(payload), inputDescriptorRegistry[leaf]); err != nil {
+				t.Fatalf("qualifying structure: %v", err)
+			}
+			workspace := t.TempDir()
+			input := filepath.Join(t.TempDir(), "valid.json")
+			if err := os.WriteFile(input, []byte(payload), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			args := append([]string{"--json"}, strings.Split(leaf, " ")...)
+			args = append(args, "--input", input, "--actor", "ACT-1", "--idempotency-key", "valid-structure")
+			_, stderr, exit := runAdoptedFID(t, binary, workspace, args...)
+			if exit != 2 || !strings.Contains(stderr, `"argument":"input"`) || !strings.Contains(stderr, `"allowed":["accepted `+inputDescriptorRegistry[leaf].Operation+` input"]`) {
+				t.Fatalf("valid structure did not reach domain validation: exit=%d stderr=%q", exit, stderr)
+			}
+		})
+	}
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			payload := strings.Replace(baseline[test.leaf], test.old, test.replacement, 1)
+			if payload == baseline[test.leaf] {
+				t.Fatal("mutation did not match baseline")
+			}
+			invalid, ok := cli.ValidateInput([]byte(payload), inputDescriptorRegistry[test.leaf]).(*cli.InputError)
+			if !ok || invalid.Path != test.path || !reflect.DeepEqual(invalid.Value, test.value) || !reflect.DeepEqual(invalid.Allowed, test.allowed) {
+				t.Fatalf("typed details = %#v, want path=%s value=%#v allowed=%v", invalid, test.path, test.value, test.allowed)
+			}
+			workspace := t.TempDir()
+			input := filepath.Join(t.TempDir(), "input.json")
+			if err := os.WriteFile(input, []byte(payload), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			args := append([]string{"--json"}, strings.Split(test.leaf, " ")...)
+			args = append(args, "--input", input, "--actor", "ACT-1", "--idempotency-key", "structure-1")
+			stdout, stderr, exit := runAdoptedFID(t, binary, workspace, args...)
+			if exit != 2 || stdout != "" {
+				t.Fatalf("exit=%d stdout=%q stderr=%q", exit, stdout, stderr)
+			}
+			wireValue := test.value
+			if wireValue != nil {
+				if _, ok := wireValue.(string); !ok {
+					encoded, err := json.Marshal(wireValue)
+					if err != nil {
+						t.Fatal(err)
+					}
+					wireValue = string(encoded)
+				}
+			}
+			assertAdoptedJSONFailure(t, stderr, inputDescriptorRegistry[test.leaf].Operation, test.path, wireValue, test.allowed)
+			entries, err := os.ReadDir(workspace)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("failure touched workspace: entries=%v err=%v", entries, err)
 			}
 		})
 	}
