@@ -10,7 +10,8 @@
 > task pack (`tasks/`). DEC-278 corrected R3, R13 and R15, replaced the
 > section 1 walk with a recursive one, and added R16 (counts re-measured at
 > `eb34889`). DEC-280 labelled the section 1 lists and added R17-R19 for
-> task 9a (measured at `87f1071`).
+> task 9a (measured at `87f1071`). DEC-281 added R20 for task 10 (measured
+> at `62dddab`).
 
 ## 1. `--input` Leaves (39)
 
@@ -97,6 +98,7 @@ fence, and task 9 removes the empty fence (the DEC-192 pattern).
 | R17 | Commands with subcommands (VAL-065 corpus) | `$S/groups` from the section 1 block | 29 at `87f1071`: the root (`fid`) and 28 groups. Today 23 print help and exit 0 on an unknown word; the root and `concern`, `export`, `issue`, `issue ac`, `run` exit 2 silently (DEC-280). Cobra's `help` and `completion` are filtered out | 9a |
 | R18 | Typed leaf-local flags (VAL-064 malformed-value corpus) | `$S/typed-flags` from the section 1 block | 22 at `87f1071`: 17 `int` (12 `--limit`, `--priority` twice, `--sequence`, `--ordinal`, `--version`) and 5 `bool`. String-kind flags (`string`, `strings`) are excluded. A string flag whose Phase 21-24 row states a domain is added by row citation (task 9a) | 9a |
 | R19 | Request-level `invalid-argument` sites | `rg -n '"argument": *"request"' cmd/fid -g '!*_test.go'` | 7 at `87f1071`: grammar paths `canonical_request.go:47`, `root.go:33`, `issue_mutation_response.go:123` (`issueMutationFlagError`); family fallbacks `issue_mutation_response.go:236`, `issue_get_list.go:129`, `link_response.go:89`, `receipt.go:87` | 9a (exactly the four fallbacks remain) |
+| R20 | Generic `invalid-argument` fallbacks (VAL-067 corpus, DEC-281) | `rg -n 'CodeInvalidArgument, "invalid [^"]*"' cmd/fid -g '!*_test.go'` | 25 lines at `62dddab`. The 18 generic fallbacks are each family mapper's final branch: `activation.go:403`, `claim.go:234`, `concern.go:138`, `decision.go:139`, `deviation.go:114`, `envelope.go:255`, `evidence.go:165`, `finding.go:140`, `gate.go:329`, `human_outcome.go:141`, `issue_get_list.go:129`, `issue_mutation_response.go:236`, `link_response.go:88`, `receipt.go:87`, `review.go:72`, `review.go:253`, `run.go:321`, `stop.go:157`. Not fallbacks: the grammar sites `canonical_request.go:46`, `root.go:32`, `issue_mutation_response.go:122` (task 9a), and the specific failures carrying their own argument and value, `finding.go:138`, `review.go:243`, `link_response.go:38`, `init.go:156` | 10 |
 
 ## 3. Fixture And Test Convergence
 

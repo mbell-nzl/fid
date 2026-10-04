@@ -6,10 +6,9 @@
 > Last refined: 2026-10-04 by the Tech Lead, applying the QA plan's first
 > pass (`qa-plan.md`, R-01..R-17 and I-01..I-19) under DEC-278, and its
 > readiness refresh (RR-01..RR-09, RI-01..RI-13) under DEC-280.
-> 66 assertions: 61 deterministic and 5 Human, all `Ready`. VAL-065 became
-> `Ready` when the Human decided D5 (DEC-279). Human decision D6 (contract
-> section 13) may amend VAL-027..029, VAL-036 and VAL-054 when it is
-> recorded as DEC-281.
+> 67 assertions: 62 deterministic and 5 Human, all `Ready`. VAL-065 became
+> `Ready` when the Human decided D5 (DEC-279). D6 = A (DEC-281) amended
+> VAL-027..029 and added VAL-067.
 
 ## Purpose
 
@@ -22,8 +21,8 @@ it.
 
 `VAL-NNN` is phase-scoped. VAL-044, VAL-047 and VAL-056 restate Phase 23
 VAL-060 and VAL-073 (contract section 11). They are not weakened.
-VAL-058..063 were split from bundled rows (R-17), and VAL-064..066 were added
-under DEC-278. No ID was renumbered.
+VAL-058..063 were split from bundled rows (R-17), VAL-064..066 were added
+under DEC-278, and VAL-067 under DEC-281. No ID was renumbered.
 
 ## Shared Terms
 
@@ -88,9 +87,9 @@ under DEC-278. No ID was renumbered.
 | VAL-024 | PRD-OPS-011; DEC-273 | `expected_repository` is checked against the real worktree. | Corpus over the five expectation leaves: match, HEAD differs, dirty differs. | QA Reviewer | tasks 5, 7, 8 | Match: accepted. Each difference: `repository-mismatch` with no Event (and, for `gate.run`, no Attempt or process). | Any difference accepted, or match refused. | Ready | - |
 | VAL-025 | contract 6 | `repository-mismatch` details have the amended closed shape. | JSON shape check of each producer's mismatch. | QA Reviewer | task 5 (shape), tasks 7, 8 (their producers) | Details are exactly `{expected:{head_oid,dirty},observed:Repository}`, with `expected` echoing the input. | Any member is missing, extra or different. | Ready | The close/abandon producer mapping is VAL-061. |
 | VAL-026 | PRD-GATE-003; contract 4 | `gate.register` binds the observed repository. | Register, then read the Registration and its Event. | QA Reviewer | task 6 | Registration `project_id`/`worktree_id` equal the independent observation, and `binding_digest` is computed from the observed repository and scope. | Any value comes from input or differs. | Ready | - |
-| VAL-027 | PRD-ENV-003; contract 5 | `envelope.create` records the observed scope and checks Registration worktrees. | Create from the Registration's worktree, and the same request from a plain copy. | QA Reviewer | task 6 | Same worktree: `repository_scope` equals the observation. Plain copy: `invalid-argument`, exit 2, message `invalid envelope input`, details `{argument:"input",value:null,allowed:["accepted envelope.create input"]}`, and no Event. | Either state behaves otherwise. | Ready | A dedicated worktree-binding failure is CF-046 (Phase 25). |
-| VAL-028 | PRD-RUN-004; contract 4, 5 | `claim.acquire` records the observed worktree. | Acquire in the Envelope's worktree, and the same request in a plain copy. | QA Reviewer | task 6 | Same worktree: Claim `worktree_id` equals the observation. Plain copy: `invalid-argument`, exit 2, message `invalid claim request`, details `{argument:"input",value:null,allowed:["accepted claim.acquire input"]}`, and no Event. | Either state behaves otherwise. | Ready | Parallel worktrees are Phase 25. |
-| VAL-029 | contract 5 (same worktree); Phase 22 contracts 10 | An imported destination counts as the source worktree only with a matching import binding. | Export/import into a new directory, then `claim.acquire`, `run.start`, `gate.run` and `envelope.create` against imported history. Repeat the same requests in a plain copy. | QA Reviewer | tasks 6-8 (rows per owned leaf) | Destination with binding: accepted per each leaf's other rules. Plain copy: the leaf's existing fallback failure (DEC-278): `invalid envelope input`, `invalid claim request`, `invalid Run request` or `invalid gate request`, each `invalid-argument` with `argument:"input"`, and no Event. | Either state behaves otherwise. | Ready | - |
+| VAL-027 | PRD-ENV-003; contract 5 | `envelope.create` records the observed scope and checks Registration worktrees. | Create from the Registration's worktree, and the same request from a plain copy. | QA Reviewer | task 6 (refusal); task 10 (message) | Same worktree: `repository_scope` equals the observation. Plain copy: `invalid-argument`, exit 2, message `prior registration binding does not match envelope` (DEC-281), details `{argument:"input",value:null,allowed:["accepted envelope.create input"]}`, and no Event. | Either state behaves otherwise. | Ready | A dedicated worktree-binding failure is CF-046 (Phase 25). Until task 10, the message is `invalid envelope input`. |
+| VAL-028 | PRD-RUN-004; contract 4, 5 | `claim.acquire` records the observed worktree. | Acquire in the Envelope's worktree, and the same request in a plain copy. | QA Reviewer | task 6 (refusal); task 10 (message) | Same worktree: Claim `worktree_id` equals the observation. Plain copy: `invalid-argument`, exit 2, message `claim acquire binding is invalid` (DEC-281), details `{argument:"input",value:null,allowed:["accepted claim.acquire input"]}`, and no Event. | Either state behaves otherwise. | Ready | Parallel worktrees are Phase 25. Until task 10, the message is `invalid claim request`. |
+| VAL-029 | contract 5 (same worktree); Phase 22 contracts 10 | An imported destination counts as the source worktree only with a matching import binding. | Export/import into a new directory, then `claim.acquire`, `run.start`, `gate.run` and `envelope.create` against imported history. Repeat the same requests in a plain copy. | QA Reviewer | tasks 6-8 (rows per owned leaf); task 10 (messages) | Destination with binding: accepted per each leaf's other rules. Plain copy: the leaf's existing fallback failure (DEC-278), `invalid-argument` with `argument:"input"`, and no Event. Its message is the domain reason (DEC-281): `prior registration binding does not match envelope`, `claim acquire binding is invalid`, `run envelope binding is invalid` or `run gate: repository binding is invalid`. | Either state behaves otherwise. | Ready | Until task 10, the messages are the fixed fallbacks (`invalid envelope input`, `invalid claim request`, `invalid Run request`, `invalid gate request`). |
 | VAL-030 | DEC-273; PRD-RUN-005 | `run.start` is admitted after edits and commits made since Envelope creation, in the same worktree. | Create Envelope, commit and edit files, then `run.start` with a matching expectation. | QA Reviewer | task 7 | Accepted, with `start_repository` equal to the independent observation, not the Envelope snapshot. The refusal half is VAL-024. | Refused, or the snapshot is recorded. | Ready | - |
 | VAL-031 | PRD-RUN-005; contract 4 | `run.close` and `run.abandon` record the observed terminal repository. | Close and abandon with matching expectations after a commit and an edit since Run start. | QA Reviewer | task 7 | `terminal_repository` equals the independent observation with `base_oid` = HEAD. | Any field comes from input or differs. | Ready | Obligation evaluation is VAL-062. |
 | VAL-032 | DEC-273; PRD-GATE-006 | `gate.run` records one pre-spawn observation everywhere. | Run a gate after editing files since Run start, and inspect the Attempt, Receipt and both Events. | QA Reviewer | task 8 | Admitted. Attempt `start_repository`, Receipt `terminal_repository` and both Events' `repository` are equal to each other and to the independent pre-spawn observation. | Any differs, or the run is refused. | Ready | Terminal re-observation is a non-goal. |
@@ -128,6 +127,7 @@ under DEC-278. No ID was renumbered.
 | VAL-064 | Phase 21 contract 2 (grammar) and 5 (diagnostics); contract 9; DEC-278; DEC-280 | Grammar failures name the offending spelling or value. | A whole-tree corpus in both modes over every live leaf except `journal inspect` and `sql` (Phase 21 section 5). It is enumerated from the live tree and has four parts. (1) Unknown flag, missing required flag where the leaf has one, and wrong positional count. (2) A malformed value for every declared flag domain (task 9a): every typed flag (R18) and every string domain a Phase 21-24 row states, plus a flag given without its value. (3) An unknown flag on the root and on every group (R17), and a flag spelling containing ESC. (4) Every row repeated from a non-project directory. | QA Reviewer | task 9a | `invalid-argument`, exit 2, details per task 9a's class table, and nothing written. The envelope carries the leaf's operation ID, or the DEC-279 path for the root and groups. JSON `message` = the detecting error's text with control characters escaped. A non-project directory gives the same failure. Human stderr is never empty. | `argument:"request"` or a family fallback for any class, a wrong operation, an empty JSON or Human stream, a raw control byte, a different failure outside a project, a declared domain without a row, or any effect. | Ready | Human line form is VAL-036. Flag-combination rules are not a class here (CF-047). Cobra's `help` and `completion` have no operation ID (DEC-280). |
 | VAL-065 | Phase 21 contract 5 (`operation-unavailable`); contract 9; DEC-279; DEC-280 | An unknown command or subcommand returns `operation-unavailable`. | An unknown word under the root and under every group, enumerated from the live tree (R17: the root plus 28 groups at planning), in both modes. Plus the near-miss `fid isue`, and each group with no word in Human mode. | QA Reviewer | task 9a | JSON: `operation-unavailable`, invalid-input, not retryable, exit 2, subject null, details `{argument:"command",value:<word>,allowed:[...]}`, and `message` exactly `unknown command "<word>" for "<command path>"` on one line. Envelope `operation` = the dotted path of the known command that received the word (`fid`, `concern`, `issue.ac`; DEC-279). `allowed` = that command's `--help` subcommands, sorted, with `completion` and `help` at the root. Human: nonempty stderr, exit 2. No word: the group's help on stdout, exit 0, unchanged. A group without a row fails the completeness check. | Silence, help with exit 0 for an unknown word, a multi-line message, a different code or exit, or a wrong `operation`. | Ready | Baseline (DEC-280): 23 groups print help and exit 0 today; the root and 5 groups exit 2 silently. |
 | VAL-066 | PRD-OPS-012; contract 2, 7 | A replay never observes. | For every observing mutation: commit, then make the worktree unobservable (unmerged paths) and retry the same key and input. For a project-file Source, delete the file and retry. In the same state, send a control request under a new key, chosen to succeed from the same pre-state in an observable worktree (RI-04). | QA Reviewer | tasks 2, 4-8 (rows per owned leaf) | Every retry replays the original result with no Event. Each control fails with no Event (from task 4: `repository-unavailable`, `recovery-state-conflict` for close/abandon, `source-digest-mismatch` for the deleted file). | A retry fails or appends, or a control succeeds or fails for a reason other than the unobservable state. | Ready | Added under DEC-278 (R-03). Create-style leaves need a new record ID in the control, and completed subjects need a fresh subject. |
+| VAL-067 | PRD-OPS-014; PRD-OPS-007; contract 9; DEC-281 | A generic fallback's message is the domain cause it caught. | Built-binary corpus in both modes, one row per generic fallback (inventory R20, 18 at planning), each driven by a reachable domain cause. Unit rows: causes of exactly 512 and of 513 scalars, a cause holding ESC, and an empty cause. Guard row: a domain failure on `activation component` whose `gate-definitions` input holds a sentinel `environment[].value` literal. A fallback with neither a row nor a pinned unreachability reason fails the completeness check. | QA Reviewer | task 10 | JSON `message` is the cause's text, escaped. Code, details and exit are those of the fixed fallback. The Human `error:` line shows the same text. 512 scalars stay uncut, and 513 become the first 511 plus `…`. An empty cause keeps the fixed message. The sentinel appears in neither stream. | A fixed message where a cause exists, a changed code, detail or exit, a raw control byte, a wrong cut, the sentinel in output, or an unaccounted fallback. | Ready | Plain-copy messages are VAL-027..029. Added under DEC-281. |
 
 ## Coverage
 
@@ -136,7 +136,7 @@ under DEC-278. No ID was renumbered.
 | PRD-OPS-011 | 017-032 |
 | PRD-OPS-012 | 006-009, 066 |
 | PRD-OPS-013 | 010-016, 049, 057, 059 |
-| PRD-OPS-014 | 036-039, 049, 054, 064, 065 |
+| PRD-OPS-014 | 036-039, 049, 054, 064, 065, 067 |
 | PRD-PROJ-006 | 040, 041, 055 |
 | PRD-PROJ-007 | 045, 047, 048, 063 |
 | PRD-HUM-001 | 044, 056 |
@@ -146,7 +146,7 @@ under DEC-278. No ID was renumbered.
 | PRD-ENV-003 | 027 |
 | PRD-ISSUE-011 | 018 |
 | PRD-FOUND-003, PRD-REC-001, PRD-REC-004 | 001-004, 050, 058 |
-| PRD-OPS-007 | 039, 046 |
+| PRD-OPS-007 | 036, 039, 046, 064, 067 |
 | DEC-273 / 274 / 275 / 276 | 024, 030, 032 / 042, 043 / 001-006, 058 / 011-015, 060 |
 | Contract sections 2, 6 (unobservable, codes) | 023, 025, 061 |
 | Phase 21 contract 2, 5 (delivered under DEC-194) | 064, 065 |
@@ -178,3 +178,5 @@ under DEC-278. No ID was renumbered.
 | 2026-10-04 | VAL-036, 038 | near-miss and post-frame `gate run` rows; no control characters; grammar `next:` on `--input` leaves | RR-01, RR-02, RR-07, TL-01 | DEC-280 |
 | 2026-10-04 | VAL-006, 023, 066 | `artifact` two-field row; tracked-FIFO fixture; control definition | RI-01, RR-09, RI-04 | DEC-280 |
 | 2026-10-04 | Coverage | roadmap and Phase 23 sources for 035, 049, 051, 052, 053 | RI-07 | DEC-280 |
+| 2026-10-04 | VAL-027, 028, 029 | plain-copy messages become the domain reasons; task 10 owns the message | Human decided D6 = A | DEC-281 |
+| 2026-10-04 | VAL-067 | added | Human decided D6 = A | DEC-281 |

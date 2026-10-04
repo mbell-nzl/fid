@@ -59,6 +59,11 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   - `claim.acquire`: message `invalid claim request`,
     `allowed:["accepted claim.acquire input"]`.
 
+  Keep the refusing checks' domain reasons unchanged:
+  `prior registration binding does not match envelope` and
+  `claim acquire binding is invalid`. Task 10 makes them the JSON message
+  (DEC-281) and converges this task's message assertions with provenance.
+
   The plain-copy fixture copies the whole worktree, `.git` included, to a new
   path with no import binding, so observation succeeds there. Each refusal
   row is paired with the same request accepted from the original worktree, so

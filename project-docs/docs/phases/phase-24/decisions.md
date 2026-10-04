@@ -410,6 +410,45 @@
 - **Refs:** DEC-194; DEC-278; DEC-279; Phase 21 `public-interface.md`
   sections 1, 2, 4, 5 and 7; `qa/qa-plan.md` sections 12.3 and 12.4.
 
+### DEC-281: Generic fallbacks carry the domain cause as their message (D6 = A)
+
+- **Date:** 2026-10-04. ACCEPTED by the Human ("A") after the Tech Lead
+  showed both options with example output (DEC-280 item 11).
+- **Context:** each family's default `invalid-argument` branch catches
+  cross-field domain failures with a fixed message (`invalid claim
+  request`), `value:null` and a generic `allowed`. Today Human mode prints
+  the domain cause instead. Contract section 9 makes the `error:` line the
+  JSON message, so the cause would have vanished from both modes.
+- **Decision:** a **generic fallback** is a family failure mapper's final
+  `invalid-argument` branch for a cause no earlier branch matched. There
+  are 18 at `62dddab` (inventory R20). Its JSON `message` is the caught
+  error's text (`cause.Error()`, which Human mode prints today). The text is
+  control-character-escaped by the DEC-280 function. A text over 512
+  scalars keeps its first 511 and gains `…`, with no escape split; this is
+  the Phase 21 `message` bound. An empty or all-whitespace cause keeps the
+  fixed message. Code, details, subject, category, retryable and exit are
+  unchanged. Option B (accept the loss) was rejected.
+- **Consequences:**
+  - The plain-copy refusals (contract section 5, DEC-278 item 6) keep
+    their code and details. Their messages become the domain reasons at the
+    refusing sites today, which tasks 6-8 keep:
+    - `envelope.create`: `prior registration binding does not match envelope`;
+    - `claim.acquire`: `claim acquire binding is invalid`;
+    - `run.start`: `run envelope binding is invalid`;
+    - `gate.run`: `run gate: repository binding is invalid`.
+  - Task 10 delivers the rule, and new VAL-067 proves it. Tasks 6-8 assert
+    today's fallback messages. Task 10 converges those assertions, plus
+    `cmd/fid/issue_update_test.go` and `cmd/fid/generic_run_test.go`, with
+    provenance.
+  - Messages are never control flow (Phase 21 section 7). No cause may
+    carry a `sensitive` descriptor value, and VAL-067 includes a guard row.
+  - The plain-copy `next:` line still points at the input. A dedicated
+    worktree-binding failure stays CF-046 (Phase 25).
+  - Task 10's dispatch gate is lifted. The validation contract has 67
+    assertions.
+- **Refs:** DEC-278 item 6; DEC-280; `public-interface.md` sections 5, 9 and
+  13; Phase 21 `public-interface.md` sections 1 and 7.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.

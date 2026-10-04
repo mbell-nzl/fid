@@ -5,8 +5,8 @@ convergence" is planned and approved (DEC-277).** Heavy mode, 15 tasks
 (task 9 split into 9 and 9a under DEC-280). The QA plan's first pass was
 dispositioned in DEC-278, and the Human decided D5 (DEC-279). The readiness
 refresh (`87f1071`) was NOT READY with 22 findings. All are dispositioned
-in DEC-280, and RR-06 goes to the Human as D6. The validation contract has
-66 assertions, all `Ready`.
+in DEC-280. The Human decided D6 (RR-06) as option A (DEC-281). The
+validation contract has 67 assertions, all `Ready`.
 Phase 23 is complete (DEC-271) and merged as PR #25 (`a46ec77`).
 
 - Contract: [public interface](../phases/phase-24/public-interface.md);
@@ -18,11 +18,10 @@ Phase 23 is complete (DEC-271) and merged as PR #25 (`a46ec77`).
 
 ## Next
 
-1. Human: decide D6 (contract section 13), recorded as DEC-281.
-2. QA Lead: re-check every item DEC-280 and DEC-281 changed, in a new
+1. QA Lead: re-check every item DEC-280 and DEC-281 changed, in a new
    subsection of `../phases/phase-24/qa/qa-plan.md` section 12.
-3. Phase Runner: the readiness check, then tasks 1-14 with 9a after 9.
-4. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and
+2. Phase Runner: the readiness check, then tasks 1-14 with 9a after 9.
+3. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and
    baseline convergence" follow.
 
 A deep workflow retrospective is recommended under CF-036/039 (see Phase 23

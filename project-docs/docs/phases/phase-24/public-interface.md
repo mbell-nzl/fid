@@ -5,8 +5,8 @@
 > this file with the task list. Amendments need a recorded DEC.
 > DEC-278 (QA-plan dispositions) clarifies sections 2, 5, 6, 9 and 10, and
 > adds Human decision D5 to section 13, decided as DEC-279. DEC-280 (QA
-> readiness-refresh dispositions) clarifies section 9 and adds open Human
-> decision D6 to section 13.
+> readiness-refresh dispositions) clarifies section 9 and adds Human decision
+> D6 to section 13, decided as DEC-281 (sections 5 and 9).
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -143,8 +143,11 @@ The rule applies uniformly to `claim.acquire` against the Envelope scope,
 and Run, and `envelope.create` against prior Registrations. A different
 worktree without a matching import binding (for example, a plain directory
 copy) is refused as today. "As today" means each leaf's existing fallback
-failure: `invalid-argument`, `argument:"input"`, `value:null`, with its
-family message (DEC-278).
+failure: `invalid-argument`, `argument:"input"`, `value:null` (DEC-278).
+Its message is the domain reason the refusing check gives today (DEC-281):
+`prior registration binding does not match envelope`, `claim acquire
+binding is invalid`, `run envelope binding is invalid` or `run gate:
+repository binding is invalid`.
 
 ## 6. Failure Codes
 
@@ -228,7 +231,15 @@ next: <resolving action>                 # only for the codes in the next-table 
 ```
 
 - Every line derives from the JSON failure (code, message, subject and
-  details). Exit status and the JSON failure are unchanged.
+  details). Exit status and the JSON failure are unchanged, except the
+  grammar messages above (DEC-278) and the generic-fallback messages below
+  (DEC-281).
+- **Generic fallbacks (DEC-281, D6 = A).** A family's final
+  `invalid-argument` branch for a cause no earlier branch matched sets
+  `message` to the caught error's text, escaped as below. A text over 512
+  scalars keeps its first 511 plus `…`. An empty cause keeps the fixed
+  message. Code and details are unchanged, so the `error:` line keeps
+  showing the cause that Human mode prints today.
 - The `error:` line repairs A5. Today `issue transition` prints a different
   sentence from its JSON `message`.
 - **Key detail.** Scalar detail members render as `name=value` in key order;
@@ -254,8 +265,9 @@ next: <resolving action>                 # only for the codes in the next-table 
   `unknown command "<word>" for "<command path>"`, with no suggestions
   (DEC-280).
 - **No control characters in messages (DEC-280, PRD-OPS-007).** A message
-  that embeds caller text (a flag spelling, a value, a command word) escapes
-  control characters when it is built. The JSON `message` and the `error:`
+  that embeds caller text (a flag spelling, a value, a command word, or a
+  generic fallback's domain cause) escapes control characters when it is
+  built. The JSON `message` and the `error:`
   line therefore stay byte-equal, and neither carries a raw control byte.
 - **next-table (closed):**
 
@@ -366,4 +378,4 @@ are not weakened:
 | D3 | Naming the differing field needs per-field digests stored in the journal and migration 0019. Accept the cost? | **Decided A (DEC-275)**: accept |
 | D4 | `--example` rules in section 8 (static typed placeholders, required fields only, refuses `--json`) | **Decided (DEC-276)**: accept all |
 | D5 | Which JSON envelope `operation` does `operation-unavailable` carry for a command that does not exist (`fid bogus`, `fid concern bogus`)? | **Decided A (DEC-279)**: the dotted path of the known command that received the unknown word (`concern`; the root is `fid`), with details `{argument:"command", value:<word>, allowed:<that command's subcommands, sorted>}`. Rejected B: the requested path including the unknown word (`concern.bogus`). |
-| D6 | A family's generic `invalid-argument` fallback (for example `invalid claim request`, `argument:"input"`, `value:null`) catches cross-field domain failures. Today Human mode prints the domain cause instead (`error: claim acquire binding is invalid`). Section 9 makes the `error:` line the JSON message, so the cause would disappear from both modes. Should the cause stay visible? (DEC-280, RR-06) | **Open.** Recommendation A: the fallback's JSON `message` becomes the domain cause text, escaped and at most 512 scalars. Code, details, subject and exit are unchanged. Messages are never control flow (Phase 21 section 7). Alternative B: accept the loss, and add the plain-copy refusal to the Human's VAL-054 review. |
+| D6 | A family's generic `invalid-argument` fallback (for example `invalid claim request`, `argument:"input"`, `value:null`) catches cross-field domain failures. Today Human mode prints the domain cause instead (`error: claim acquire binding is invalid`). Section 9 makes the `error:` line the JSON message, so the cause would disappear from both modes. Should the cause stay visible? (DEC-280, RR-06) | **Decided A (DEC-281)**: the fallback's JSON `message` becomes the domain cause text, escaped and at most 512 scalars. Code, details, subject and exit are unchanged (section 9). Rejected B: accept the loss. |

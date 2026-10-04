@@ -59,7 +59,9 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   `invalid-argument`, exit 2, message `invalid gate request`, details
   `{argument:"input",value:null,allowed:["accepted gate registration input"]}`,
   and no Attempt, process or Event. The plain-copy fixture is defined in
-  task 6.
+  task 6. Keep the refusing check's domain reason
+  `run gate: repository binding is invalid` unchanged. Task 10 makes it the
+  JSON message (DEC-281) and converges this assertion.
 - **Real freshness.** Phase 21-23 journeys that relied on copied blocks may
   now see `evidence-stale` after editing tracked files. A displaced
   assertion is convergence of this accepted change: fix the fixture so it

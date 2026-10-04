@@ -54,7 +54,9 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   without a matching import binding returns the existing fallback failure:
   `invalid-argument`, exit 2, message `invalid Run request`, details
   `{argument:"input",value:null,allowed:["accepted run.start input"]}`, and
-  no Event. The plain-copy fixture is defined in task 6.
+  no Event. The plain-copy fixture is defined in task 6. Keep the refusing
+  check's domain reason `run envelope binding is invalid` unchanged. Task 10
+  makes it the JSON message (DEC-281) and converges this assertion.
 - **`run.recover`** already observes, so its input is unchanged.
 
 ## Scope

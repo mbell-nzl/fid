@@ -311,8 +311,8 @@ reading `.fid/` internals.
    the real worktree), DEC-274 (judgment `get` leaves), DEC-275 (per-field
    request digests, migration 0019) and DEC-276 (help and template rules).
    The authority is `../docs/phases/phase-24/public-interface.md`, with
-   `input-inventory.md`, `qa/validation-contract.md` (66 assertions after the
-   QA-plan dispositions, DEC-278) and a 15-task pack. That is 14 tasks plus
+   `input-inventory.md`, `qa/validation-contract.md` (67 assertions after the
+   QA-plan dispositions, DEC-278, DEC-280 and DEC-281) and a 15-task pack. That is 14 tasks plus
    task 9a, which was split from task 9 under DEC-280. Phase 25 "Parallel
    and evolving work" and Phase 26 "Qualification and baseline convergence"
    follow.

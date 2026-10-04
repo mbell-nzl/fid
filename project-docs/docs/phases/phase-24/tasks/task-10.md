@@ -8,10 +8,9 @@ message, then `reason:`, then `blocked by:` and `next:` where they apply.
 Every line derives from the JSON failure. One shared renderer is adopted by
 every family.
 
-**Dispatch gate (DEC-280 item 11).** This task is not dispatched before the
-Human decides D6 (contract section 13) and the decision is recorded as
-DEC-281. D6 decides what the `error:` line shows for a family's generic
-`invalid-argument` fallback.
+The Human decided D6 = A (DEC-281), which lifts this task's dispatch gate.
+Each generic `invalid-argument` fallback now carries its domain cause as the
+JSON message, so the `error:` line still shows why the request was refused.
 
 ## Validation Contract Coverage
 
@@ -19,6 +18,10 @@ DEC-281. D6 decides what the `error:` line shows for a family's generic
 - VAL-037: `blocked by:` appears exactly when details carry blocking IDs.
 - VAL-038: `next:` appears exactly for next-table codes.
 - VAL-039: `reason:` key-detail rendering, escaping and the 200-scalar cut.
+- VAL-067: each generic fallback's message is the domain cause it caught
+  (DEC-281).
+- VAL-027, VAL-028, VAL-029 (message half): the plain-copy refusals carry
+  their domain reasons.
 - VAL-052.
 - Advances VAL-054 (Human walk-through at the task-11 window).
 
@@ -28,7 +31,20 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
 - Contract section 9 is exact. It replaces Phase 21 `public-interface.md`
   section 1's guidance-line rule. JSON failures, exit codes and stdout are
-  unchanged.
+  unchanged, except the generic-fallback messages below.
+- **Generic fallbacks (DEC-281).** Each of the 18 generic fallbacks
+  (inventory R20) sets `message` to the caught error's text,
+  `cause.Error()`, the text Human mode printed after `error: ` at
+  `62dddab`.
+  - The text is escaped with the task 9a function. A text over 512 scalars
+    keeps its first 511 and gains `…`, without splitting an escape. An
+    empty or all-whitespace cause keeps the fixed message.
+  - Code, category, retryable, subject, details and exit stay unchanged.
+  - A cause never carries a `sensitive` descriptor value.
+  - The plain-copy messages become `prior registration binding does not
+    match envelope`, `claim acquire binding is invalid`, `run envelope
+    binding is invalid` and `run gate: repository binding is invalid`
+    (VAL-027..029).
 - **One renderer.** A single function in `internal/cli` takes the
   `fid-cli.v1` failure (code, message, subject, details) plus the operation
   and leaf path, and writes the lines. Every family writer (inventory R9)
@@ -75,6 +91,12 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - Every function listed by inventory R9 (41 in `cmd/fid`)
 - Retained Human stderr assertions (R10: 32 in 13 files): convergence with
   provenance
+- The 18 generic fallbacks (inventory R20). Retained fallback-message
+  assertions converge with provenance: the plain-copy message assertions
+  from tasks 6-8, and `cmd/fid/issue_update_test.go` and
+  `cmd/fid/generic_run_test.go` (one line each at `62dddab`)
+- A built-binary generic-fallback corpus (new), one row per R20 site, with
+  a pinned unreachability list
 - A built-binary Human/JSON pairing corpus (new), enumerated from
   `cli.RegisteredCodes()` with a pinned exclusion list
 
@@ -91,7 +113,9 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 ### Out Of Scope
 
 - Stop, Attention and repository views (task 11). Judgment views (task 13).
-- Changing any failure message, code or detail.
+- Changing any failure code or detail. No message changes, other than the
+  generic fallbacks (DEC-281) and the grammar messages that task 9a already
+  set.
 
 ## Acceptance Criteria
 
@@ -122,6 +146,23 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   (dropped whole). (VAL-039)
 - [ ] `rg` over R9 shows no Human-mode branch that bypasses the renderer
   (the report lists each R9 function and its call).
+- [ ] The generic-fallback corpus has one row per R20 site, driven by a
+  reachable domain cause in both modes. A fallback with neither a row nor a
+  pinned unreachability reason fails the test.
+  - JSON `message` is the escaped cause text, and the Human `error:` line is
+    the same text.
+  - Code, details and exit are unchanged.
+  - Unit rows cover causes of 512 scalars (uncut) and 513 scalars (the
+    first 511 plus `…`), a cause holding ESC, and an empty cause (the fixed
+    message stays).
+  - A guard row: an `activation component` domain failure whose
+    `gate-definitions` input holds a sentinel `environment[].value`. The
+    sentinel appears in neither stream.
+
+  (VAL-067)
+- [ ] The plain-copy refusals of `envelope.create`, `claim.acquire`,
+  `run.start` and `gate.run` carry the four DEC-281 messages, with code and
+  details unchanged. (VAL-027, VAL-028, VAL-029)
 - [ ] Wall times inside budget. (VAL-052)
 
 ## First Failing Test
@@ -148,6 +189,7 @@ go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=
 go tool cover -func=coverage.out
 go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...
 rg -n "func (write[A-Za-z]*Failure|render[A-Za-z]*Error)\(" cmd/fid -g '!*_test.go'
+rg -n 'CodeInvalidArgument, "invalid [^"]*"' cmd/fid -g '!*_test.go'
 ```
 
 The `-timeout 30m` bounds follow DEC-227/259. Record the wall time `go test`
@@ -165,9 +207,13 @@ commands. Report lint is a Runner control, not a Developer gate.
 
 List any conditional command required by this task and why:
 
-- The `rg` line regenerates R9 for the report's adoption table. Family writers
-  remain as callers of the shared renderer, so it is expected to terminate
-  `exit_code: 0`.
+- The first `rg` line regenerates R9 for the report's adoption table. Family
+  writers remain as callers of the shared renderer, so it is expected to
+  terminate `exit_code: 0`.
+- The second `rg` line regenerates R20. The fixed fallback messages remain
+  for empty causes, so it is expected to terminate `exit_code: 0`. The
+  report maps each generic-fallback match to its corpus row or its
+  unreachability reason.
 
 ## Notes For Developer
 
