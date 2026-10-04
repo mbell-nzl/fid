@@ -9,7 +9,7 @@ Every line derives from the JSON failure. One shared renderer is adopted by
 every family.
 
 The Human decided D6 = A (DEC-281), which resolves its decision prerequisite.
-The phase-wide QA recheck hold remains in the phase brief.
+Dispatch follows QA acceptance and Runner readiness controls in the phase brief.
 Each generic `invalid-argument` fallback now carries its domain cause as the
 JSON message, so the `error:` line still shows why the request was refused.
 

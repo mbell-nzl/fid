@@ -11,7 +11,7 @@
 > VAL-027..029 and added VAL-067.
 > DEC-282 applies QA recheck RC-01/02: the Run plain-copy cause and bounded
 > grammar messages, with matching evidence in VAL-029/036/064/065/067.
-> `Ready` describes planning; dispatch awaits the QA recheck in the brief.
+> `Ready` describes planning; dispatch follows the readiness controls in the brief.
 
 ## Purpose
 

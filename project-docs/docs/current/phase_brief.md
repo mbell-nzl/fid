@@ -1,4 +1,4 @@
-# Phase Brief - Phase 24 (QA recheck corrections applied; verification pending)
+# Phase Brief - Phase 24 (QA planning accepted; Runner readiness next)
 
 ## Phase Goal
 
@@ -11,20 +11,19 @@ expectations a check uses. Request digests cover the input as written.
 
 ## Status
 
-**QA recheck corrections applied (DEC-282).** Branch `phase-24`. The
-first QA pass and readiness refresh were dispositioned in DEC-278..281,
-including task 9a for grammar/unknown commands and D6=A for generic-fallback
-messages. Recheck `4819b30` confirmed those dispositions but remains
-**NOT READY** with RC-01/RC-02. DEC-282 addresses both:
+**QA planning READY (`7e41e6b`, QA plan section 12.7).** Branch `phase-24`.
+The QA Lead accepted DEC-282 and closed RC-01/RC-02. No planning Must-fix
+finding or protected-authority question remains. DEC-282 records:
 
 - plain-copy `run.start` preserves the earlier Claim refusal,
   `run claim binding is invalid` (task 7; message convergence task 10);
 - grammar and unknown-command messages use the shared escape-then-bound
   rule, at most 512 scalars, retaining full details (task 9a; pairing task 10).
 
-**Next:** QA Lead rechecks RC-01/RC-02 and DEC-282's changed text, then the
-Phase Runner checks readiness, then task 1. Nothing is dispatched before
-the QA recheck passes. No Phase 24 implementation has started.
+**Next:** Phase Runner performs its readiness and pre-dispatch controls,
+then starts task 1. The QA recheck prerequisite is satisfied; no Phase 24
+implementation has started. Product gates and assertion outcomes remain
+required at their task/window/phase-end boundaries.
 
 ## Operating Mode
 
@@ -51,7 +50,7 @@ Human checklist's "take control" scenario is the Human run.
 
 | Task | Title | Status | Dependencies |
 |---|---|---|---|
-| 1 | Idempotency field-digest storage (migration 0019) | Ready (after the QA re-check) | None |
+| 1 | Idempotency field-digest storage (migration 0019) | Ready for Runner pre-dispatch controls | None |
 | 2 | Input-as-written digests and named conflict fields, every keyed leaf | Pending | 1 |
 | 3 | Input descriptor framework, help, templates, field-named validation | Pending | None |
 | 4 | Repository observation and SourceInput; judgment reference leaves | Pending | 2, 3 |
@@ -93,7 +92,7 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 
 | Artifact | Path | Status |
 |---|---|---|
-| QA plan | `../phases/phase-24/qa/qa-plan.md` | Recheck NOT READY (`4819b30`); RC-01/02 addressed by DEC-282; fresh QA recheck next |
+| QA plan | `../phases/phase-24/qa/qa-plan.md` | READY (`7e41e6b`, section 12.7); RC-01/02 closed; Runner readiness next |
 | Mid-phase reviews | A after 3; B after 6; C after 8; D1 after 9a; D2 after 11; E after 14 | Six windows per QA plan section 8 (DEC-280/282). Human walkthrough after task 11 |
 | Human fixtures | `TestP24HumanFixtures` (task 11, extended by task 14) | Pending |
 | Final review / Human checklist | `../phases/phase-24/qa/` | Pending |
@@ -127,6 +126,5 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 
 ## Next Planning Checkpoint
 
-The QA Lead rechecks RC-01/RC-02 and DEC-282's changed text in a new
-subsection of QA plan section 12, retaining the prior review. Phase 25
-"Parallel and evolving work" follows Phase 24.
+Runner readiness and task 1 are next. The first mid-phase QA review is
+window A after task 3. Phase 25 "Parallel and evolving work" follows Phase 24.
