@@ -55,12 +55,12 @@ OUTCOME COMPLETE
 
 - First TDD red: `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run 'TestP23ReviewRecordRealProcessJourney/dirty_expectation_mismatch_echoes_only_the_expected_pair' ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`); the old decoder rejected `expected_repository` before the repository check.
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -timeout 30m ./internal/project ./internal/review ./internal/cli ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`) on the first retained-fixture attempt; after convergence, the identical command passed with `ok  	github.com/mbell-nzl/fid/cmd/fid	194.986s` (terminated `exit_code: 0`).
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run 'TestP24JudgmentKeyedLeafConflictAndCanonicalRetryCorpus|TestP23ReviewRecordRealProcessJourney' ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.435s` (terminated `exit_code: 0`).
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run 'TestP24JudgmentKeyedLeafConflictAndCanonicalRetryCorpus|TestP23ReviewRecordRealProcessJourney' ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.435s` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - FAIL - `* staticcheck: 1` (terminated `exit_code: 1`) on the first exact-gate attempt; the corrected command passed as recorded below.
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`) on its first exact-gate attempt; the corrected command passed as recorded below.
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `/tmp/fid review record --example` - PASS - `}` (terminated `exit_code: 0`).
-- `/tmp/fid finding address --example` - PASS - `}` (terminated `exit_code: 0`).
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `/tmp/fid review record --example` - PASS - `}` (terminated `exit_code: 0`)
+- `/tmp/fid finding address --example` - PASS - `}` (terminated `exit_code: 0`)
 
 Both direct CLI invocations ran from `/tmp`.
 
@@ -79,6 +79,7 @@ Working directory: `/home/mark/projects/fid`. The five required commands were ru
 - No accepted behavior, protected assertion, command or threshold changed. The first lint attempt ended `* staticcheck: 1` (terminated `exit_code: 1`) because a new test declared `var typed any =`; changing it to `typed :=` made the identical lint command return `0 issues.` (terminated `exit_code: 0`).
 - The first exact tagged gate ended `FAIL` (terminated `exit_code: 1`). Task 5's new verdict descriptor rejected a retained corpus mutation's invalid enum, and two retained mismatch comparisons treated Go typed nil differently from JSON null. The corpus now changes `changes-required` to the accepted `blocked` verdict, preserving its idempotency-conflict assertion; the comparisons normalize the fixture to JSON while retaining full Repository equality. The identical tagged command later returned `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	252.256s` (terminated `exit_code: 0`).
 - The touched-package race attempt ended `FAIL` (terminated `exit_code: 1`) because retained Review/Finding fixture inputs still used displaced shapes. Converging those inputs produced `ok  	github.com/mbell-nzl/fid/cmd/fid	194.986s` (terminated `exit_code: 0`) on the identical command.
+- The first report-lint attempt ended `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`) because four passing command rows had punctuation after the termination field. Removing those periods preserved the recorded tokens and statuses.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
