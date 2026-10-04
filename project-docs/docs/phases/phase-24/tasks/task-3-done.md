@@ -110,8 +110,8 @@ Working directory: `/home/mark/projects/fid`. The original lint failure and both
 
 ## Commit hash
 
-- Pending commit
+- `c942419596aad3fd198cb2c27cf8d06fc5238745`
 
 ## Commit subject
 
-- Pending commit
+- `fix(cli): render structural bound values in failure details`
