@@ -76,8 +76,8 @@ Working directory for the required gate: `/home/mark/projects/fid`. None of its 
 
 ## Commit hash
 
-- Pending commit
+- `3ed4824b3f9f7d5dee0f2a50799df538a2911953`
 
 ## Commit subject
 
-- Pending commit
+- `feat(binding): checkpoint observed gate envelope claim inputs`
