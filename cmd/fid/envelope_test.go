@@ -16,6 +16,33 @@ import (
 
 const testEvidenceObligationID = "OBL-1"
 
+func TestEnvelopeCreateObservesScopeAndSourcesWithoutCallerRepository(t *testing.T) {
+	t.Parallel()
+	workspace, issueID, registration := finalizedObservedEnvelopeWorkspaceWithDefinitions(t, gateDefinitionsForTest(nil))
+	input := envelopeCreateInput(t, workspace, issueID, registration)
+	delete(input, "repository_scope")
+	source := input["sources"].([]any)[0].(map[string]any)
+	delete(source, "repository")
+	source["source_type"] = "external-reference"
+	source["path"] = nil
+	source["external_id"] = "gate-policy"
+	source["digest"] = "sha256:" + strings.Repeat("0", 64)
+	path := filepath.Join(workspace, "observed-envelope.json")
+	writeActivationInput(t, path, input)
+	created := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", path, "--idempotency-key", "observed-envelope")
+	if created.err != nil {
+		t.Fatalf("create observed Envelope: %v; stderr=%q", created.err, created.stderr)
+	}
+	envelope := decodeCommandJSONStructure(t, created.stdout).(map[string]any)["result"].(map[string]any)["envelope"].(map[string]any)
+	if got, want := envelope["repository_scope"].(map[string]any)["worktree_id"], testEnvelopeRepository(t, workspace)["worktree_id"]; got != want {
+		t.Fatalf("repository_scope.worktree_id = %v, want %v", got, want)
+	}
+	storedSource := envelope["sources"].([]any)[0].(map[string]any)
+	if got, want := storedSource["repository"].(map[string]any)["worktree_id"], testEnvelopeRepository(t, workspace)["worktree_id"]; got != want {
+		t.Fatalf("source.repository.worktree_id = %v, want %v", got, want)
+	}
+}
+
 func TestEnvelopeCreateGetActivateRoundTripAndRejectsWidening(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
@@ -365,23 +392,7 @@ func finalizedObservedEnvelopeWorkspaceWithDefinitions(t *testing.T, definitions
 
 func finalizedEnvelopeWorkspaceWithRepository(t *testing.T, definitions []any, observeRepository bool) (string, string, gateRegistrationView) {
 	t.Helper()
-	if observeRepository {
-		return buildFinalizedEnvelopeWorkspaceWithRepository(t, definitions, true)
-	}
-	key := reusableWorkspaceFixtureKey(t, "finalized-envelope", map[string]any{"definitions": definitions, "observed_repository": observeRepository})
-	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, registration := buildFinalizedEnvelopeWorkspaceWithRepository(t, definitions, observeRepository)
-		registrationJSON, err := json.Marshal(registration)
-		if err != nil {
-			t.Fatalf("encode cached gate registration: %v", err)
-		}
-		return workspace, []string{issueID, string(registrationJSON)}
-	})
-	var registration gateRegistrationView
-	if err := json.Unmarshal([]byte(values[1]), &registration); err != nil {
-		t.Fatalf("decode cached gate registration: %v", err)
-	}
-	return workspace, values[0], registration
+	return buildFinalizedEnvelopeWorkspaceWithRepository(t, definitions, observeRepository)
 }
 
 func buildFinalizedEnvelopeWorkspace(t *testing.T, definitions []any) (string, string, gateRegistrationView) {
@@ -398,9 +409,7 @@ func buildFinalizedEnvelopeWorkspaceWithRepository(t *testing.T, definitions []a
 		return root, []string{issueID}
 	})
 	issueID := values[0]
-	if observeRepository {
-		initializeObservedRepositoryForTest(t, workspace)
-	}
+	initializeObservedRepositoryForTest(t, workspace)
 	registrationInput := gateRegisterInput(t, workspace)
 	registrationInput["scope"] = map[string]any{"issue_id": issueID}
 	registrationPath := filepath.Join(workspace, "gate-register-envelope.json")
@@ -472,15 +481,21 @@ func authorityCapabilities() []string {
 
 func envelopeCreateInput(t *testing.T, workspace, issueID string, registration gateRegistrationView) map[string]any {
 	t.Helper()
-	repository := testEnvelopeRepository(t, workspace)
+	sourcePath := filepath.Join(workspace, "project-docs", "gates", "unit.json")
+	if err := os.MkdirAll(filepath.Dir(sourcePath), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(sourcePath, []byte("gate policy fixture\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	source := map[string]any{
-		"digest": "sha256:" + strings.Repeat("0", 64), "display_label": "Gate policy", "external_id": nil,
-		"path": "project-docs/gates/unit.json", "repository": repository, "section": nil, "source_type": "project-file",
+		"display_label": "Gate policy", "external_id": nil,
+		"path": "project-docs/gates/unit.json", "section": nil, "source_type": "project-file",
 	}
 	return map[string]any{
 		"outcome": "Prove the envelope value", "non_goals": []string{},
-		"risk_result":      map[string]any{"source": source, "result_digest": "sha256:" + strings.Repeat("1", 64)},
-		"repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{},
+		"risk_result": map[string]any{"source": source, "result_digest": "sha256:" + strings.Repeat("1", 64)},
+		"sources":     []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "protected_decisions": []any{},
 		"authority_grants": []any{map[string]any{
 			"actions":        []string{"envelope.activate"},
 			"actor_selector": map[string]any{"actor_id": "actor-builder", "required_capabilities": []string{"envelope.activate"}},

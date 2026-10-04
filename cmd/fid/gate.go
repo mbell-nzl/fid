@@ -211,7 +211,7 @@ func newGateRegisterCommand() *cobra.Command {
 			return err
 		}
 		var request evidence.RegisterRequest
-		if err := decodeClosedGateInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["gate register"], &request); err != nil {
 			return renderGateError(cmd, "gate.register", err)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -236,6 +236,7 @@ func newGateRegisterCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("gate.register"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["gate register"])
 	return cmd
 }
 
@@ -305,6 +306,9 @@ func renderGateError(cmd *cobra.Command, operation string, cause error) error {
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	if failure, handled := renderJudgmentObservationError(cmd, jsonMode, operation, cause); handled {
+		return failure
 	}
 	var idempotency *journal.IdempotencyConflictError
 	if errors.As(cause, &idempotency) {

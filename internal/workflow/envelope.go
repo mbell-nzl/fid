@@ -3,6 +3,7 @@ package workflow
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidproject "github.com/mbell-nzl/fid/internal/project"
 )
 
 type Repository struct {
@@ -25,13 +27,37 @@ type Repository struct {
 }
 
 type Source struct {
-	Digest       string     `json:"digest"`
+	Digest       string     `json:"digest,omitempty"`
 	DisplayLabel string     `json:"display_label"`
 	ExternalID   *string    `json:"external_id"`
 	Path         *string    `json:"path"`
-	Repository   Repository `json:"repository"`
+	Repository   Repository `json:"-"`
 	Section      *string    `json:"section"`
 	SourceType   string     `json:"source_type"`
+}
+
+// Source is also a stored value. The input tree excludes repository, while
+// stored Sources still carry the observation that resolved them.
+func (source Source) MarshalJSON() ([]byte, error) {
+	type input Source
+	return json.Marshal(struct {
+		input
+		Repository Repository `json:"repository"`
+	}{input: input(source), Repository: source.Repository})
+}
+
+func (source *Source) UnmarshalJSON(data []byte) error {
+	type input Source
+	var value struct {
+		input
+		Repository Repository `json:"repository"`
+	}
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*source = Source(value.input)
+	source.Repository = value.Repository
+	return nil
 }
 
 type AuthorityGrant struct {
@@ -133,13 +159,13 @@ type EnvelopeCreateRequest struct {
 		Source       Source `json:"source"`
 		ResultDigest string `json:"result_digest"`
 	} `json:"risk_result"`
-	RepositoryScope    Repository               `json:"repository_scope"`
+	RepositoryScope    Repository               `json:"-"`
 	Sources            []Source                 `json:"sources"`
 	PrimaryIssueID     string                   `json:"primary_issue_id"`
 	RelatedIssueIDs    []string                 `json:"related_issue_ids"`
 	AuthorityGrants    []AuthorityGrant         `json:"authority_grants"`
 	Obligations        []ObligationInput        `json:"obligations"`
-	ProtectedDecisions []ProtectedDecisionInput `json:"protected_decisions"`
+	ProtectedDecisions []ProtectedDecisionInput `json:"protected_decisions,omitempty"`
 	Budgets            []Budget                 `json:"budgets"`
 }
 
@@ -165,7 +191,7 @@ type EnvelopeActivateRequest struct {
 type EnvelopeCompleteRequest struct {
 	EnvelopeID       string     `json:"envelope_id"`
 	ExpectedRevision int        `json:"expected_revision"`
-	Repository       Repository `json:"repository"`
+	Repository       Repository `json:"-"`
 }
 
 type ObligationEvaluation struct {
@@ -263,11 +289,33 @@ func CreateEnvelope(options EnvelopeOptions, request EnvelopeCreateRequest) (Env
 		if err != nil {
 			return fmt.Errorf("create envelope: read project config: %w", err)
 		}
+		requestInput := any(request)
+		if request.InputAsWritten != nil {
+			requestInput = request.InputAsWritten
+		}
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "operation": "envelope.create", "project_id": project.ProjectID, "request": requestInput}, options.ActorID, nil)
+		if err != nil {
+			return err
+		}
+		idempotency := journal.IdempotencyRequest{OperationScope: "envelope.create:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
+		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
+			return err
+		} else if found {
+			return loadEnvelopeMutationReplay(replay, options.IdempotencyKey, &result)
+		}
+		observed, err := fidproject.ObserveRecordedRepository(options.WorkspaceRoot, project.ProjectID)
+		if err != nil {
+			return fmt.Errorf("create envelope: %w", err)
+		}
+		request.RepositoryScope = Repository(observed)
+		if err := resolveEnvelopeSources(options.WorkspaceRoot, &request); err != nil {
+			return err
+		}
 		actor, err := envelopeActor(conn, options.ActorID, "envelope.create")
 		if err != nil {
 			return err
 		}
-		if err := validateEnvelopeBindings(conn, project.ProjectID, request); err != nil {
+		if err := validateEnvelopeBindings(conn, options.WorkspaceRoot, project.ProjectID, request); err != nil {
 			return err
 		}
 		envelopeID, err := journal.GenerateID("ENV", func(candidate string) (bool, error) {
@@ -283,20 +331,12 @@ func CreateEnvelope(options EnvelopeOptions, request EnvelopeCreateRequest) (Env
 		if err := deriveInitialEnvelopeBudgets(&envelope); err != nil {
 			return err
 		}
-		requestInput := any(request)
-		if request.InputAsWritten != nil {
-			requestInput = request.InputAsWritten
-		}
-		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": actor.ActorID, "operation": "envelope.create", "project_id": project.ProjectID, "request": requestInput}, actor.ActorID, nil)
-		if err != nil {
-			return err
-		}
 		resultJSON, err := envelopeResultJSON(envelope, options.IdempotencyKey)
 		if err != nil {
 			return err
 		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "envelope.created", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: envelopeID, Sequence: 1, Type: "envelope"}, CommandName: "envelope.create", Repository: envelopeRepository(request.RepositoryScope), Effects: envelopeCreateEffects(envelope, request)}
-		outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: "envelope.create:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(journal.Event) (journal.IdempotencyMutation, error) {
 			return journal.IdempotencyMutation{EntityID: envelopeID, ResultJSON: resultJSON}, nil
 		})
 		if err != nil {
@@ -419,7 +459,7 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 }
 
 func CompleteEnvelope(options EnvelopeOptions, request EnvelopeCompleteRequest) (EnvelopeMutationResult, error) {
-	if err := validateEnvelopeOptions(options); err != nil || strings.TrimSpace(request.EnvelopeID) == "" || !validEnvelopeRepository(request.Repository) {
+	if err := validateEnvelopeOptions(options); err != nil || strings.TrimSpace(request.EnvelopeID) == "" {
 		return EnvelopeMutationResult{}, &EnvelopeInvalidError{Reason: "envelope completion input is invalid"}
 	}
 	var result EnvelopeMutationResult
@@ -596,13 +636,8 @@ func validateEnvelopeCreate(request EnvelopeCreateRequest) error {
 	if strings.TrimSpace(request.Outcome) == "" || len(request.Outcome) > 2048 || len(request.NonGoals) > 64 || len(request.Sources) == 0 || len(request.Sources) > 64 || strings.TrimSpace(request.PrimaryIssueID) == "" || len(request.RelatedIssueIDs) != 0 || len(request.AuthorityGrants) == 0 || len(request.AuthorityGrants) > 64 || len(request.Obligations) < 1 || len(request.Obligations) > 16 || len(request.ProtectedDecisions) > 16 || len(request.Budgets) > 64 {
 		return &EnvelopeInvalidError{Reason: "envelope input exceeds the one-revision boundary"}
 	}
-	if !validEnvelopeRepository(request.RepositoryScope) || !validEnvelopeSource(request.RiskResult.Source) || !validEnvelopeDigest(request.RiskResult.ResultDigest) {
+	if !validEnvelopeDigest(request.RiskResult.ResultDigest) {
 		return &EnvelopeInvalidError{Reason: "envelope repository or risk result is invalid"}
-	}
-	for _, source := range request.Sources {
-		if !validEnvelopeSource(source) {
-			return &EnvelopeInvalidError{Reason: "envelope source is invalid"}
-		}
 	}
 	previous := ""
 	for _, grant := range request.AuthorityGrants {
@@ -640,7 +675,7 @@ func validateEnvelopeObligations(request EnvelopeCreateRequest) error {
 	outcomeClasses := map[string]bool{}
 	gateEvidenceCount := 0
 	for _, obligation := range request.Obligations {
-		if obligation.ID == "" || ids[obligation.ID] || obligation.Applicability != "required" || obligation.Subject.Type != "issue" || obligation.Subject.ID != request.PrimaryIssueID || obligation.RequiredLane != nil || !validEnvelopeSource(obligation.Source) || !validGuardedActions(obligation.GuardedActions) {
+		if obligation.ID == "" || ids[obligation.ID] || obligation.Applicability != "required" || obligation.Subject.Type != "issue" || obligation.Subject.ID != request.PrimaryIssueID || obligation.RequiredLane != nil || !validGuardedActions(obligation.GuardedActions) {
 			return &EnvelopeInvalidError{Reason: "obligation is not an accepted value"}
 		}
 		ids[obligation.ID] = true
@@ -725,6 +760,42 @@ func validEnvelopeSource(source Source) bool {
 	return source.DisplayLabel != "" && len(source.DisplayLabel) <= 128 && validEnvelopeDigest(source.Digest) && validEnvelopeRepository(source.Repository) && ((source.SourceType == "project-file" && source.Path != nil && source.ExternalID == nil) || (source.SourceType == "external-reference" && source.Path == nil && source.ExternalID != nil))
 }
 
+func resolveEnvelopeSources(root string, request *EnvelopeCreateRequest) error {
+	resolve := func(source *Source, field string) error {
+		var digest *string
+		if source.Digest != "" {
+			digest = &source.Digest
+		}
+		value, err := fidproject.ResolveSourceInput(root, fidproject.SourceInput{SourceType: source.SourceType,
+			DisplayLabel: source.DisplayLabel, Path: source.Path, Section: source.Section,
+			ExternalID: source.ExternalID, Digest: digest})
+		if err != nil {
+			var invalid *fidproject.InvalidSourceInputError
+			if errors.As(err, &invalid) {
+				return &fidproject.InvalidSourceInputError{Field: "input." + field + "." + invalid.Field, Detail: invalid.Detail}
+			}
+			return err
+		}
+		source.Digest = value
+		source.Repository = request.RepositoryScope
+		return nil
+	}
+	if err := resolve(&request.RiskResult.Source, "risk_result.source"); err != nil {
+		return err
+	}
+	for index := range request.Sources {
+		if err := resolve(&request.Sources[index], fmt.Sprintf("sources[%d]", index)); err != nil {
+			return err
+		}
+	}
+	for index := range request.Obligations {
+		if err := resolve(&request.Obligations[index].Source, fmt.Sprintf("obligations[%d].source", index)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func validEnvelopeOID(value string) bool {
 	return len(value) == 40 && strings.Trim(value, "0123456789abcdef") == ""
 }
@@ -747,7 +818,7 @@ func sortedUniqueEnvelopeActions(actions []string) bool {
 	return true
 }
 
-func validateEnvelopeBindings(conn *sql.DB, projectID string, request EnvelopeCreateRequest) error {
+func validateEnvelopeBindings(conn *sql.DB, workspaceRoot, projectID string, request EnvelopeCreateRequest) error {
 	if request.RepositoryScope.ProjectID != projectID {
 		return &EnvelopeInvalidError{Reason: "envelope repository project does not match"}
 	}
@@ -784,7 +855,7 @@ func validateEnvelopeBindings(conn *sql.DB, projectID string, request EnvelopeCr
 		if err := json.Unmarshal([]byte(scopeJSON), &scope); err != nil {
 			return fmt.Errorf("decode envelope registration scope: %w", err)
 		}
-		if registrationProject != projectID || registrationWorktree != request.RepositoryScope.WorktreeID || scope.IssueID != request.PrimaryIssueID {
+		if !SameWorktree(workspaceRoot, Repository{ProjectID: registrationProject, WorktreeID: registrationWorktree}, request.RepositoryScope) || scope.IssueID != request.PrimaryIssueID {
 			return &EnvelopeInvalidError{Reason: "prior registration binding does not match envelope"}
 		}
 	}

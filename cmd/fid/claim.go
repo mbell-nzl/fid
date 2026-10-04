@@ -117,6 +117,7 @@ func claimMutationFlags(cmd *cobra.Command, inputPath, actor, key *string) {
 	cmd.Flags().StringVar(actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError(strings.ReplaceAll(rootCommandKey(cmd), " ", ".")))
+	installInputDescriptor(cmd, inputDescriptorRegistry["claim "+cmd.Name()])
 }
 
 func claimRequest(cmd *cobra.Command, operation, inputPath, actor, key string, target any) error {
@@ -125,7 +126,7 @@ func claimRequest(cmd *cobra.Command, operation, inputPath, actor, key string, t
 			return err
 		}
 	}
-	if err := decodeClosedClaimInput(cmd.InOrStdin(), inputPath, target); err != nil {
+	if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[strings.ReplaceAll(operation, ".", " ")], target); err != nil {
 		return renderClaimError(cmd, operation, err)
 	}
 	return nil
@@ -207,6 +208,9 @@ func renderClaimError(cmd *cobra.Command, operation string, cause error) error {
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	if failure, handled := renderJudgmentObservationError(cmd, jsonMode, operation, cause); handled {
+		return failure
 	}
 	var idempotency *journal.IdempotencyConflictError
 	if errors.As(cause, &idempotency) {

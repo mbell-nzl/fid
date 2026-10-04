@@ -274,6 +274,20 @@ func TestInputDescriptorRegistryMatchesLiveTreeAndTypes(t *testing.T) {
 	}
 }
 
+func TestP24GateEnvelopeClaimDescriptors(t *testing.T) {
+	t.Parallel()
+	for _, leaf := range []string{"gate register", "envelope create", "envelope activate", "envelope complete", "claim acquire", "claim renew", "claim release", "claim expire"} {
+		descriptor, ok := inputDescriptorRegistry[leaf]
+		if !ok || pendingInputDescriptors[leaf] {
+			t.Errorf("%s has no adopted descriptor", leaf)
+			continue
+		}
+		if err := cli.CheckInputType(descriptor); err != nil {
+			t.Errorf("%s descriptor/type: %v", leaf, err)
+		}
+	}
+}
+
 func TestP24ReviewAndFindingDescriptorHelpAndStructure(t *testing.T) {
 	t.Parallel()
 	for _, leaf := range []string{"review record", "finding address"} {

@@ -202,6 +202,21 @@ func TestGateRegisterReusesBindingAndVersionsChangedBinding(t *testing.T) {
 	}
 }
 
+func TestGateRegisterObservesRepositoryWithoutCallerIdentity(t *testing.T) {
+	t.Parallel()
+	workspace := finalizedGateWorkspace(t, nil)
+	input := gateRegisterInput(t, workspace)
+	delete(input, "worktree_id")
+	delete(input, "repository")
+	path := filepath.Join(workspace, "gate-observed.json")
+	writeActivationInput(t, path, input)
+	registered := registerGateForTest(t, workspace, path, "gate-observed")
+	observed := testEnvelopeRepository(t, workspace)
+	if registered.WorktreeID != observed["worktree_id"] {
+		t.Fatalf("registration worktree = %q, want observed %q", registered.WorktreeID, observed["worktree_id"])
+	}
+}
+
 func TestGateRegisterRejectsRuntimePolicyOverride(t *testing.T) {
 	t.Parallel()
 	workspace := finalizedGateWorkspace(t, func(map[string]any) {})
@@ -220,6 +235,7 @@ type gateRegistrationView struct {
 	ID            string `json:"id"`
 	Version       int    `json:"version"`
 	BindingDigest string `json:"binding_digest"`
+	WorktreeID    string `json:"worktree_id"`
 }
 
 func registerGateForTest(t *testing.T, workspace, inputPath, key string) gateRegistrationView {
@@ -250,6 +266,7 @@ func finalizedGateWorkspaceWithDefinitions(t *testing.T, definitions []any) stri
 	workspace, _ := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
 		return buildFinalizedGateWorkspace(t, definitions), nil
 	})
+	initializeObservedRepositoryForTest(t, workspace)
 	return workspace
 }
 
@@ -301,10 +318,8 @@ func registrationCount(t *testing.T, workspace string) int {
 
 func gateRegisterInput(t *testing.T, workspace string) map[string]any {
 	t.Helper()
-	repository := testEnvelopeRepository(t, workspace)
 	return map[string]any{
-		"definition_id": "gate-unit", "definition_version": 1, "worktree_id": repository["worktree_id"],
-		"scope":      map[string]any{"issue_id": "ISS-1"},
-		"repository": repository,
+		"definition_id": "gate-unit", "definition_version": 1,
+		"scope": map[string]any{"issue_id": "ISS-1"},
 	}
 }

@@ -31,10 +31,14 @@ keeps fid useful as an Issue tracker without requiring the V2 kit.
    validation/review/Human Obligations, budgets, Stops, and repository scope.
 3. Human approval is obtained where kit policy requires it.
 4. fid creates immutable Gate Definition Registrations from the activated Gate
-   Definition values that the Envelope will reference.
+   Definition values that the Envelope will reference. Registration binds
+   fid's observed project and worktree, not a caller-supplied identity.
 5. Kit submits the complete versioned Envelope through the backend port.
-6. fid validates references, capability support, provenance, non-weakening, and
-   revision invariants, then records the approved/active revision.
+6. fid observes the worktree, resolves and checks every Source, and validates
+   references, capability support, provenance, non-weakening, and revision
+   invariants. It records that observation as the Envelope repository scope
+   and on each Source. An imported destination with a matching project and
+   target-root binding can continue imported history.
 
 fid does not persist or recalculate the external kit's risk lane and does not
 create Issue copies. A caller cannot substitute a mutable Gate Definition for
@@ -46,7 +50,8 @@ the activated Registration reference.
 2. fid derives actionable state from Issue, Envelope, authority, dependencies,
    Obligations, Claim/Run, evidence, Stops, and Attention.
 3. Harness acquires a mutation Claim for one selected Issue, exact Envelope
-   revision, worktree, and declared scope.
+   revision, and declared path scope. fid observes the worktree, checks it
+   against the Envelope scope, and records its ID on the Claim.
 4. fid rejects overlapping or unknown parallel mutation with
    `mutation-conflict`.
 5. Harness starts a Run and records observed telemetry incrementally.

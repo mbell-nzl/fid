@@ -43,7 +43,7 @@ func newEnvelopeCreateCommand() *cobra.Command {
 			return err
 		}
 		var request workflow.EnvelopeCreateRequest
-		if err := decodeClosedEnvelopeInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["envelope create"], &request); err != nil {
 			return renderEnvelopeError(cmd, "envelope.create", err, actor)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -60,6 +60,7 @@ func newEnvelopeCreateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("envelope.create"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["envelope create"])
 	return cmd
 }
 
@@ -100,7 +101,7 @@ func newEnvelopeActivateCommand() *cobra.Command {
 			return err
 		}
 		var request workflow.EnvelopeActivateRequest
-		if err := decodeClosedEnvelopeInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["envelope activate"], &request); err != nil {
 			return renderEnvelopeError(cmd, "envelope.activate", err, actor)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -117,6 +118,7 @@ func newEnvelopeActivateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("envelope.activate"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["envelope activate"])
 	return cmd
 }
 
@@ -129,7 +131,7 @@ func newEnvelopeCompleteCommand() *cobra.Command {
 			}
 		}
 		var request workflow.EnvelopeCompleteRequest
-		if err := decodeClosedEnvelopeInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["envelope complete"], &request); err != nil {
 			return renderEnvelopeError(cmd, "envelope.complete", err, actor)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -146,6 +148,7 @@ func newEnvelopeCompleteCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("envelope.complete"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["envelope complete"])
 	return cmd
 }
 
@@ -228,6 +231,9 @@ func renderEnvelopeError(cmd *cobra.Command, operation string, cause error, acto
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	if failure, handled := renderJudgmentObservationError(cmd, jsonMode, operation, cause); handled {
+		return failure
 	}
 	var idempotency *journal.IdempotencyConflictError
 	if errors.As(cause, &idempotency) {

@@ -11,6 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -29,9 +30,9 @@ type AcquireRequest struct {
 	IssueID          string `json:"issue_id"`
 	EnvelopeID       string `json:"envelope_id"`
 	EnvelopeRevision int    `json:"envelope_revision"`
-	WorktreeID       string `json:"worktree_id"`
+	WorktreeID       string `json:"-"`
 	Scope            Scope  `json:"scope"`
-	Mode             string `json:"mode"`
+	Mode             string `json:"mode,omitempty"`
 	TTLSeconds       int    `json:"ttl_seconds"`
 }
 
@@ -136,7 +137,16 @@ func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationRe
 		return MutationResult{}, invalidGenericClaim("claim acquire input is invalid")
 	}
 	return mutateGenericClaim(options, claimAcquireAction, request, func(conn *sql.DB, _ string, now time.Time) (journal.Event, GenericClaim, error) {
-		envelope, err := validateAcquireAuthority(options, request)
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		if err != nil {
+			return journal.Event{}, GenericClaim{}, err
+		}
+		observation, err := project.ObserveRecordedRepository(options.WorkspaceRoot, projectConfig.ProjectID)
+		if err != nil {
+			return journal.Event{}, GenericClaim{}, err
+		}
+		repository := workflow.Repository(observation)
+		envelope, err := validateAcquireAuthority(options, request, repository)
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
 		}
@@ -176,7 +186,7 @@ func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationRe
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
 		}
-		claim := GenericClaim{ID: claimID, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, EnvelopeRevision: request.EnvelopeRevision, ActorID: options.ActorID, WorktreeID: request.WorktreeID, Scope: request.Scope, Mode: request.Mode, Version: 1, Status: "active", AcquiredAt: now.Format(time.RFC3339Nano), ExpiresAt: now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)}
+		claim := GenericClaim{ID: claimID, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, EnvelopeRevision: request.EnvelopeRevision, ActorID: options.ActorID, WorktreeID: observation.WorktreeID, Scope: request.Scope, Mode: request.Mode, Version: 1, Status: "active", AcquiredAt: now.Format(time.RFC3339Nano), ExpiresAt: now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)}
 		event, err := genericClaimEvent(options.WorkspaceRoot, actor, envelope.RepositoryScope, claimID, 1, "claim.acquired", claimAcquireAction, []journal.Effect{{
 			Op: "insert", Table: "claims", PK: map[string]any{"id": claimID}, Values: claimValues(claim),
 		}})
@@ -353,12 +363,12 @@ func mutateGenericClaim(options MutationOptions, operation string, request any, 
 	return result, err
 }
 
-func validateAcquireAuthority(options MutationOptions, request AcquireRequest) (workflow.Envelope, error) {
+func validateAcquireAuthority(options MutationOptions, request AcquireRequest, observed workflow.Repository) (workflow.Envelope, error) {
 	envelope, err := workflow.GetEnvelope(options.WorkspaceRoot, options.MigrationsDir, request.EnvelopeID)
 	if err != nil {
 		return workflow.Envelope{}, err
 	}
-	if envelope.PrimaryIssueID != request.IssueID || envelope.CurrentRevision != request.EnvelopeRevision || envelope.RepositoryScope.WorktreeID != request.WorktreeID {
+	if envelope.PrimaryIssueID != request.IssueID || envelope.CurrentRevision != request.EnvelopeRevision || !workflow.SameWorktree(options.WorkspaceRoot, envelope.RepositoryScope, observed) {
 		return workflow.Envelope{}, invalidGenericClaim("claim acquire binding is invalid")
 	}
 	if err := workflow.AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, workflow.EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: claimAcquireAction, Capability: claimAcquireAction, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, Revision: request.EnvelopeRevision}); err != nil {
@@ -480,7 +490,7 @@ func validateMutationOptions(options MutationOptions) error {
 }
 
 func validAcquireRequest(request AcquireRequest) bool {
-	if strings.TrimSpace(request.IssueID) == "" || strings.TrimSpace(request.EnvelopeID) == "" || request.EnvelopeRevision != 1 || strings.TrimSpace(request.WorktreeID) == "" || (request.Mode != "mutation" && request.Mode != "review") || request.TTLSeconds < 1 || request.TTLSeconds > 86400 || len(request.Scope.Paths) == 0 {
+	if strings.TrimSpace(request.IssueID) == "" || strings.TrimSpace(request.EnvelopeID) == "" || request.EnvelopeRevision != 1 || (request.Mode != "mutation" && request.Mode != "review") || request.TTLSeconds < 1 || request.TTLSeconds > 86400 || len(request.Scope.Paths) == 0 {
 		return false
 	}
 	previous := ""

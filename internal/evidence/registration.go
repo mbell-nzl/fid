@@ -13,14 +13,15 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidproject "github.com/mbell-nzl/fid/internal/project"
 )
 
 type RegisterRequest struct {
 	DefinitionID      string     `json:"definition_id"`
 	DefinitionVersion int        `json:"definition_version"`
-	WorktreeID        string     `json:"worktree_id"`
+	WorktreeID        string     `json:"-"`
 	Scope             GateScope  `json:"scope"`
-	Repository        Repository `json:"repository"`
+	Repository        Repository `json:"-"`
 }
 
 type GateScope struct {
@@ -150,9 +151,12 @@ func Register(options RegisterOptions) (RegisterResult, error) {
 		if !hasCapability(actor.Capabilities, "gate.register") {
 			return &AuthorityDeniedError{ActorID: options.ActorID}
 		}
-		if err := validateRepositoryBinding(options.Request, project.ProjectID); err != nil {
-			return err
+		observed, err := fidproject.ObserveRecordedRepository(options.WorkspaceRoot, project.ProjectID)
+		if err != nil {
+			return fmt.Errorf("register gate: %w", err)
 		}
+		options.Request.Repository = Repository(observed)
+		options.Request.WorktreeID = observed.WorktreeID
 		definition, digest, err := loadActivatedDefinition(conn, activationID, options.Request.DefinitionID, options.Request.DefinitionVersion)
 		if err != nil {
 			return err
@@ -349,7 +353,7 @@ func hasCapability(capabilities []string, required string) bool {
 }
 
 func validateRegisterRequest(request RegisterRequest) error {
-	if strings.TrimSpace(request.DefinitionID) == "" || request.DefinitionVersion < 1 || strings.TrimSpace(request.WorktreeID) == "" || strings.TrimSpace(request.Scope.IssueID) == "" {
+	if strings.TrimSpace(request.DefinitionID) == "" || request.DefinitionVersion < 1 || strings.TrimSpace(request.Scope.IssueID) == "" {
 		return &ExecutorPolicyUnsupportedError{Fields: []string{"binding"}}
 	}
 	return nil

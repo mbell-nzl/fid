@@ -156,6 +156,14 @@ all projection commands are derived reads. `human-brief` may explicitly render
 its named Human schema as terminal text, Markdown, or HTML; JSON remains
 canonical.
 
+`envelope create --input` omits `repository_scope` and every Source
+`repository`. fid observes the selected project's Git worktree and records that
+observation as the scope and on `risk_result.source`, `sources[]`, and every
+Obligation Source. A project-file Source may omit `digest`; fid reads the file
+and records its SHA-256 digest, or checks a supplied digest. External
+references require a digest. `envelope complete --input` names the Envelope
+and expected revision; fid observes the completion repository itself.
+
 ### Claims, Runs, Stops, and Attention
 
 ```text
@@ -169,6 +177,11 @@ No command assumes a Developer or QA role. Actor identity, capabilities,
 Envelope grants, Issue, worktree, mutation scope, optional Obligation, and
 lease version are explicit machine fields.
 
+`claim acquire --input` names the Issue, Envelope revision, path scope, mode
+and lifetime. fid observes and records the selected worktree ID, checking it
+against the Envelope scope. Renew, release and expire retain their existing
+inputs.
+
 ### Registered gates and evidence
 
 ```text
@@ -181,6 +194,10 @@ fid evidence link|get|evaluate
 and idempotency key. It does not accept replacement command or execution-policy
 fields. Live-output framing and terminal JSON are specified in the execution
 slice before implementation.
+
+`gate register --input` names the activated definition/version and Issue scope.
+fid observes the selected worktree and derives the Registration project ID,
+worktree ID and binding digest from that observation and scope.
 
 ### Review and judgment
 

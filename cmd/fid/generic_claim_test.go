@@ -12,7 +12,7 @@ import (
 
 func TestClaimAcquireBindsActiveEnvelopeActorWorktreeScopeAndTTL(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+	workspace, issueID, registration := finalizedObservedEnvelopeWorkspaceWithDefinitions(t, gateDefinitionsForTest(nil))
 	envelopeInput := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := envelopeInput["authority_grants"].([]any)[0].(map[string]any)
 	grant["actions"] = []string{"claim.acquire", "envelope.activate"}
@@ -42,7 +42,7 @@ func TestClaimAcquireBindsActiveEnvelopeActorWorktreeScopeAndTTL(t *testing.T) {
 	claimPath := filepath.Join(workspace, "claim-acquire.json")
 	writeActivationInput(t, claimPath, map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+		"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
 	})
 	result := executeCommandForTest(workspace,
 		"--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder",
@@ -56,7 +56,7 @@ func TestClaimAcquireBindsActiveEnvelopeActorWorktreeScopeAndTTL(t *testing.T) {
 	claim := payload["result"].(map[string]any)["claim"].(map[string]any)
 	for field, want := range map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": "1", "actor_id": "actor-builder",
-		"worktree_id": "worktree-1", "mode": "mutation", "version": "1", "status": "active",
+		"worktree_id": testEnvelopeRepository(t, workspace)["worktree_id"], "mode": "mutation", "version": "1", "status": "active",
 	} {
 		if got := stringifyClaimValue(claim[field]); got != want {
 			t.Fatalf("claim.%s = %#v, want %#v", field, got, want)
@@ -505,11 +505,7 @@ func TestClaimRenewReleaseVersionAndReplayAreExact(t *testing.T) {
 
 func claimEnvelopeForTest(t *testing.T) (string, string, string) {
 	t.Helper()
-	workspace, values := cloneReusableWorkspaceFixture(t, "claim-envelope", func() (string, []string) {
-		workspace, issueID, envelopeID := buildClaimEnvelopeForTest(t)
-		return workspace, []string{issueID, envelopeID}
-	})
-	return workspace, values[0], values[1]
+	return buildClaimEnvelopeForTest(t)
 }
 
 func buildClaimEnvelopeForTest(t *testing.T) (string, string, string) {
@@ -546,8 +542,7 @@ func acquireGenericClaimForTestWithTTL(t *testing.T, workspace, issueID, envelop
 func acquireGenericClaimForTestWithMode(t *testing.T, workspace, issueID, envelopeID, key string, ttlSeconds int, mode string) (map[string]any, string) {
 	t.Helper()
 	path := filepath.Join(workspace, key+".json")
-	worktreeID := testEnvelopeRepository(t, workspace)["worktree_id"]
-	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": worktreeID, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": mode, "ttl_seconds": ttlSeconds})
+	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": mode, "ttl_seconds": ttlSeconds})
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", path, "--idempotency-key", key)
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("acquire = %#v, want stdout-only success", result)
