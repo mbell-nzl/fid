@@ -61,7 +61,8 @@ OUTCOME COMPLETE
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP23SharedLeafConformance$' -count=1 ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	13.271s` (terminated `exit_code: 0`).
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^(TestP24JudgmentStructuralValidationCorpus|TestAdoptedExampleProcessExclusivity)$' -count=1 ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`); first structural run showed generic paths for requirement and concern leaves. After decoding order repair, the identical focused command passed: `ok  	github.com/mbell-nzl/fid/cmd/fid	3.786s` (terminated `exit_code: 0`).
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24Judgment' -count=1 ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.640s` (terminated `exit_code: 0`).
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); `/tmp/fid decision record-reference --example` from `/tmp` printed a SourceInput template ending `}` with no repository member (terminated `exit_code: 0`).
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `/tmp/fid decision record-reference --example` - PASS - `}` (terminated `exit_code: 0`); working directory `/tmp`, with no caller repository member in the SourceInput template.
 
 ## Exact quality-gate results
 
