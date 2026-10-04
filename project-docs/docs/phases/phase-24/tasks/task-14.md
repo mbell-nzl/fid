@@ -26,7 +26,16 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - Roadmap Phase 24 journey; contract sections 8-10.
 - **The journey** starts from an activated project whose Envelope has an
   unsatisfied protected Decision. A Builder's terminal-success transition is
-  refused. Every fid command runs in Human mode. Then, at every step:
+  refused. Every fid command runs in Human mode.
+- **Start state and freshness (DEC-280, RI-08).** Under real freshness
+  (task 8), any file the caller writes inside the worktree changes the
+  dirty digest and can stale Receipt-backed Evidence. `evidence-stale` has
+  no next-table row (CF-040). So the start state (and the VAL-053 workspace
+  built from it) has no Receipt-backed Obligation, and the journey writes
+  its `--input` files outside the worktree. Project files the caller writes
+  as Sources stay inside the project root, as section 3 of the contract
+  requires.
+- At every step:
   - the command comes from the previous `next:` or `Next:` line, or from
     `--help`;
   - each input file comes from that leaf's `--example`, with every
@@ -109,7 +118,7 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
 ## First Failing Test
 
-The journey's first step asserts that the refused transition's Human stderr contains a `next:` line naming `fid decision record-reference`.
+`TestP24HumanFixtures`'s manifest lists the take-control start state workspace. Today it lists only the task 11 fixtures. Task 10 already makes the journey's first `next:` line true, so that line cannot be the red test (DEC-280, RI-09).
 
 ## Documentation Updates
 

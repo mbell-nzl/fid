@@ -55,7 +55,11 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   - `not-a-repository`: `rev-parse --show-toplevel` fails, or HEAD or its
     tree does not resolve (a repository with no commit);
   - `tracked-flags`: an assume-unchanged or skip-worktree entry;
-  - `unmerged-paths`: an unmerged index entry or an unmerged Git image;
+  - `unmerged-paths`: an unmerged index entry or an unmerged Git image.
+    Capture stage decides: `invalid unmerged path` (`repository.go`
+    `unmergedPaths`) is `unmerged-paths`, because unmerged records exist.
+    A failure of the `ls-files -u` command itself stays
+    `changed-during-capture` (DEC-280, RI-02);
   - `unsafe-path`: an invalid or non-UTF-8 path, an unsupported file type,
     mode or object type, or the path-count or output-size limit;
   - `changed-during-capture`: the two reads differ, or any other Git or file
@@ -63,6 +67,10 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
   `detail` names the specific cause. Failures that are not repository
   observation (for example canonical-JSON encoding) stay internal errors.
+  An unreadable untracked file (`read worktree file`) maps to
+  `changed-during-capture`, which is retryable even though a retry cannot
+  succeed until the file is readable. `detail` names the file (RI-03,
+  recorded only).
 - **`repository-unavailable`** is added to `internal/cli/codes.go` exactly as
   contract section 6 states: precondition, retryable, exit 4, null subject,
   `{reason,detail}`.
@@ -138,9 +146,11 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   Event. A normal worktree succeeds. (VAL-023)
 - [ ] The classifier maps every cause class to its reason: real fixtures for
   a repository with no commit (`git init` without a commit), a tracked flag
-  (`git update-index --assume-unchanged`) and an unsupported file type (for
-  example an untracked FIFO); injected unit rows for a capture change and a
-  size limit. (VAL-023)
+  (`git update-index --assume-unchanged`) and an unsupported file type. For
+  the file type, replace a committed file with a FIFO, which reaches
+  `unsupported worktree file type`. Git never lists an untracked FIFO, so
+  an untracked one is observed normally (DEC-280, RR-09). Injected unit
+  rows cover a capture change and a size limit. (VAL-023)
 - [ ] For each of the seven, a retry after HEAD advanced (and the file
   changed, digest omitted) replays. Supplied versus omitted digest under one
   key conflicts naming the top-level field. (VAL-009, VAL-008)
@@ -148,6 +158,8 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   the leaf references a project file) after deleting that file, replays with
   no Event. New-key controls fail
   with `repository-unavailable` and `source-digest-mismatch` respectively.
+  Each control would succeed from the same pre-state in an observable
+  worktree, with a new record ID for create-style leaves (DEC-280, RI-04).
   (VAL-066)
 - [ ] The seven leaves leave the fence with VAL-011..016 and VAL-060 rows.
   (VAL-011..016, VAL-060)

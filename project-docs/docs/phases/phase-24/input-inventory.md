@@ -9,23 +9,30 @@
 > them all at every review window. Task numbers refer to the approved
 > task pack (`tasks/`). DEC-278 corrected R3, R13 and R15, replaced the
 > section 1 walk with a recursive one, and added R16 (counts re-measured at
-> `eb34889`).
+> `eb34889`). DEC-280 labelled the section 1 lists and added R17-R19 for
+> task 9a (measured at `87f1071`).
 
 ## 1. `--input` Leaves (39)
 
 Regenerate the live lists (scratch binary; no workspace needed; run in
-`bash` from the repository root). The walk recurses, so it reaches depth-1
-leaves (`init`, `ready`) and depth-3 leaves (`issue ac add`). Each loop uses
-`if`, so the block terminates `exit_code: 0`. The line sets are the pass
-condition.
+`bash` from the repository root). The walks recurse, so they reach depth-1
+leaves (`init`, `ready`) and depth-3 leaves (`issue ac add`). Each list goes
+to its own labelled file, so a reviewer can diff each one (DEC-280, RI-06).
+The block ends with `wc -l` and terminates `exit_code: 0` (re-measured at
+`87f1071`). The line sets in the files are the pass condition.
 
 ```bash
 S=$(mktemp -d); go build -o "$S/fid" ./cmd/fid
-walk() { local subs s; subs=$("$S/fid" "$@" --help | awk '/Available Commands:/{f=1;next} /^$/{f=0} f{print $1}' | grep -vx -e help -e completion); if [ -z "$subs" ]; then echo "$*"; else for s in $subs; do walk "$@" "$s"; done; fi; }
-walk > "$S/leaves"                                       # all live leaves: 92
-while read -r l; do if "$S/fid" $l --help | grep -q -- '--input'; then echo "$l"; fi; done < "$S/leaves"                  # --input leaves: 39 (this section)
-while read -r l; do if "$S/fid" $l --help | grep -q -- '--idempotency-key'; then echo "$l"; fi; done < "$S/leaves"        # keyed: 50 (R16)
-while read -r l; do if "$S/fid" $l --help | head -1 | grep -q '^Usage:'; then echo "$l"; fi; done < "$S/leaves"           # no Short: 20 (R15)
+subs() { "$S/fid" "$@" --help | awk '/Available Commands:/{f=1;next} /^$/{f=0} f{print $1}' | grep -vx -e help -e completion; }
+walk() { local s l; l=$(subs "$@"); if [ -z "$l" ]; then echo "$*"; else for s in $l; do walk "$@" "$s"; done; fi; }
+groups() { local s l; l=$(subs "$@"); if [ -n "$l" ]; then echo "${*:-fid}"; for s in $l; do groups "$@" "$s"; done; fi; }
+walk > "$S/leaves"                                                                  # all live leaves: 92
+groups > "$S/groups"                                                                # root + command groups: 29 (R17)
+while read -r l; do if "$S/fid" $l --help | grep -q -- '--input'; then echo "$l"; fi; done < "$S/leaves" > "$S/input"        # --input leaves: 39 (this section)
+while read -r l; do if "$S/fid" $l --help | grep -q -- '--idempotency-key'; then echo "$l"; fi; done < "$S/leaves" > "$S/keyed" # keyed: 50 (R16)
+while read -r l; do if "$S/fid" $l --help | head -1 | grep -q '^Usage:'; then echo "$l"; fi; done < "$S/leaves" > "$S/no-short"  # no Short: 20 (R15)
+while read -r l; do "$S/fid" $l --help | awk -v leaf="$l" '/^Flags:/{f=1;next} /^$|^Global Flags:/{f=0} f{for(i=1;i<=NF;i++) if($i~/^--/){n=$i; t=$(i+1); if(t!~/^(string|strings|stringArray|int|int64|uint|float64|duration|count)$/) t="bool"; if(n!="--help" && t!~/^string/) print leaf "\t" n "\t" t; break}}'; done < "$S/leaves" > "$S/typed-flags"  # typed leaf flags: 22 (R18)
+wc -l "$S/leaves" "$S/groups" "$S/input" "$S/keyed" "$S/no-short" "$S/typed-flags"
 ```
 
 The expected `--input` result is exactly the 39 rows below. `Shape` is `changes` when
@@ -78,15 +85,18 @@ fence, and task 9 removes the empty fence (the DEC-192 pattern).
 | R5 | Closed `--input` decoders | `rg -n "func decodeClosed[A-Za-z]*Input" cmd/fid` | 7 helpers in 14 command files | 3-9 |
 | R6 | Repository comparison and validation | `rg -n "func (same[A-Za-z]*Repository\|validateRepositoryBinding\|validEnvelopeRepository\|validEnvelopeSource\|validEvidenceRepository\|validateRunTerminalRepository\|verifyDecisionSource\|importedGateDestination)" internal -g '!*_test.go'` | 4 `same*Repository`, 6 validators | 4-8 |
 | R7 | Caller-repository writers into stored facts or Events | `rg -n "Request\.Repository\|request\.Repository\|Request\.TargetRepository\|request\.RepositoryScope\|Request\.WorktreeID\|request\.WorktreeID" internal -g '!*_test.go'` | registration, execution (Attempt, Receipt, Events), evidence, envelope, run, run_close, claims, review | 6-8 |
-| R8 | Failure codes and details | `internal/cli/codes.go` (`definition(` rows); conformance `internal/cli/*codes_test.go` | `repository-unavailable` absent | 4 (unavailable, source), 5 (mismatch), 2 (conflict), 3 (invalid-argument) |
+| R8 | Failure codes and details | `internal/cli/codes.go` (`definition(` rows); conformance `internal/cli/*codes_test.go` | `repository-unavailable` and `operation-unavailable` absent | 4 (unavailable, source), 5 (mismatch), 2 (conflict), 3 (invalid-argument), 9a (`operation-unavailable`) |
 | R9 | Human failure renderers | `rg -n "func (write[A-Za-z]*Failure\|render[A-Za-z]*Error)\(" cmd/fid -g '!*_test.go'` | 41 functions | 10 |
 | R10 | Human failure assertions in tests | `rg -n '"error: ' cmd internal -g '*_test.go'` | 32 in 13 files | 10 |
 | R11 | Human views printing repository identity | `rg -n -i "worktree\|dirty digest\|HeadOID\|head_oid" cmd/fid -g '!*_test.go'` | `run_inspect_human.go`, `resume_human.go`, `p23_human.go`, `review.go` | 11 |
 | R12 | Stop/Attention Human renderers | `cmd/fid/stop_human.go`, `resume_human.go`, `resume_human_guidance.go` | 3 files | 11 |
 | R13 | Judgment Human renderers, disclaimers, leak guard | `rg -n "p23CheckJudgmentQualifiers\|PRIVATE_" cmd` | `p23_human.go`; `integration/p23_human_leaf_pairs_test.go` (values at 45-80, check at 123), `p23_human_fixtures_test.go:143`, `integration/testdata/p23_conformance/operations.json:67, 114, 144, 145` (read by `p23_conformance_test.go`) | 13 |
 | R14 | Live leaf inventory test | `rg -n "func TestLiveLeafCommandsMatchContractInventories" cmd/fid` | `contract_surface_test.go:128` | 12 (DEC-274) |
-| R15 | Cobra Short descriptions | the fourth loop of the section 1 block | 92 leaves; 20 start with `Usage:` (8 read + 12 `--input`) | 3 |
-| R16 | Keyed leaves (VAL-006/007 corpus) | the third loop of the section 1 block, minus `export import` | 50 leaves with `--idempotency-key` in 21 families; 49 keyed leaves in 20 families after excluding `export import` (install marker, no request digest) | 2; converged by 4-9 |
+| R15 | Cobra Short descriptions | `$S/no-short` from the section 1 block | 92 leaves; 20 start with `Usage:` (8 read + 12 `--input`) | 3 |
+| R16 | Keyed leaves (VAL-006/007 corpus) | `$S/keyed` from the section 1 block, minus `export import` | 50 leaves with `--idempotency-key` in 21 families; 49 keyed leaves in 20 families after excluding `export import` (install marker, no request digest) | 2; converged by 4-9 |
+| R17 | Commands with subcommands (VAL-065 corpus) | `$S/groups` from the section 1 block | 29 at `87f1071`: the root (`fid`) and 28 groups. Today 23 print help and exit 0 on an unknown word; the root and `concern`, `export`, `issue`, `issue ac`, `run` exit 2 silently (DEC-280). Cobra's `help` and `completion` are filtered out | 9a |
+| R18 | Typed leaf-local flags (VAL-064 malformed-value corpus) | `$S/typed-flags` from the section 1 block | 22 at `87f1071`: 17 `int` (12 `--limit`, `--priority` twice, `--sequence`, `--ordinal`, `--version`) and 5 `bool`. String-kind flags (`string`, `strings`) are excluded. A string flag whose Phase 21-24 row states a domain is added by row citation (task 9a) | 9a |
+| R19 | Request-level `invalid-argument` sites | `rg -n '"argument": *"request"' cmd/fid -g '!*_test.go'` | 7 at `87f1071`: grammar paths `canonical_request.go:47`, `root.go:33`, `issue_mutation_response.go:123` (`issueMutationFlagError`); family fallbacks `issue_mutation_response.go:236`, `issue_get_list.go:129`, `link_response.go:89`, `receipt.go:87` | 9a (exactly the four fallbacks remain) |
 
 ## 3. Fixture And Test Convergence
 

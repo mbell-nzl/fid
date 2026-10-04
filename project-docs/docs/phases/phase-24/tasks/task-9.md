@@ -1,4 +1,4 @@
-# Phase 24 - Task 9: Activation descriptors; whole-tree input, help and grammar conformance
+# Phase 24 - Task 9: Activation descriptors; whole-tree input and help conformance
 
 ## Objective
 
@@ -9,17 +9,12 @@ exclusivity and structural-validation conformance run over all 39 `--input`
 leaves. Assemble the shared fake/fid conformance evidence for every changed
 leaf.
 
-Deliver two accepted Phase 21 allocations that were never delivered
-(DEC-194, DEC-278). Grammar failures name the offending spelling across the
-whole live tree. Unknown commands return `operation-unavailable` instead of
-exiting silently.
+Grammar failures and unknown commands moved to task 9a (DEC-280, TL-02).
 
 ## Validation Contract Coverage
 
 - VAL-011..016 and VAL-060 (completion: all 39 leaves, no fence).
 - VAL-035 (assembly across tasks 4-8).
-- VAL-064: grammar failures name the offending spelling or value.
-- VAL-065: unknown commands return `operation-unavailable` (DEC-279).
 - VAL-052.
 
 Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`.
@@ -44,35 +39,10 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   remove that family's decoder; this task removes the rest. If one must stay,
   structural validation would have two sources: that is a `BLOCKED`
   escalation candidate, not a local decision.
-- **Grammar failures (Phase 21 `public-interface.md` section 2; DEC-278).**
-  Every live leaf except the Human-only diagnostics `fid journal inspect` and
-  `fid sql` returns `invalid-argument`, exit 2, with no read or write. The
-  JSON envelope carries the leaf's operation ID (for example `stop.raise`,
-  never the bare Cobra name). `message` is the text Human mode printed after
-  `error: ` for that failure at `eb34889`, normally the parser's text. Where
-  Human mode printed nothing, use the parser's text.
-
-  | Class | `argument` | `value` | `allowed` |
-  |---|---|---|---|
-  | unknown flag | the spelling as typed | the spelling | the leaf's accepted long flag spellings, sorted, without `--help` |
-  | missing required flag | `--<name>` | null | `["--<name>"]` |
-  | malformed flag value | `--<name>` | the supplied value | `[<the flag's type or format>]` |
-  | wrong positional count | `arguments` | the first extra argument, or null when one is missing | `[<positional spelling from Use>]`, or `["no arguments"]` |
-
-  Human mode keeps printing `error: <message>` until task 10 converges it.
-  Leaves that already conform (for example `capabilities` with an extra
-  argument) keep their text.
-- **Unknown commands (Phase 21 section 4; DEC-278, DEC-279).** Add the
-  accepted `operation-unavailable` row to `internal/cli/codes.go`:
-  invalid-input, not retryable, exit 2, subject null, details
-  `{argument:string, value:string|null, allowed:string[]}`. An unknown word at
-  any command level returns it with `argument:"command"`, `value:<word>` and
-  `allowed:<the subcommands that command's --help lists, sorted>`. The
-  message is Cobra's unknown-command text. The JSON envelope `operation` is
-  the dotted path of the known command that received the unknown word, with
-  `fid` at the root (DEC-279): `fid bogus` gives `fid`, `fid concern bogus`
-  gives `concern`, and `fid issue ac bogus` gives `issue.ac`. Human mode
-  prints `error: <message>` and exits 2. It is never silent.
+- **Decoder naming (DEC-280, RI-05).** The R5 pattern
+  `func decodeClosed[A-Za-z]*Input` also matches a shared name such as
+  `decodeClosedInput`. No shared descriptor decoder may match it, so the
+  declared `exit_code: 1` proves that no family-local decoder remains.
 
 ## Scope
 
@@ -85,32 +55,21 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   (inventory R5)
 - Fake/fid conformance assembly in `cmd/fid/integration/` (the Phase 22 fake
   corpus files)
-- Grammar and unknown-command conformance: `cmd/fid/canonical_request.go`,
-  `cmd/fid/root.go`, `cmd/fid/main.go` if the exit path needs it,
-  `internal/cli/codes.go` and its code conformance tests, and every
-  `cmd/fid` command file whose leaves bypass `canonical_request.go` for
-  grammar failures (for example `issue list --bogus` is silent in JSON mode
-  today)
-- A whole-tree grammar corpus test (new, in-process over the live tree), and
-  retained grammar-failure assertions (convergence with provenance)
-- `cmd/fid/integration/testdata/p21_conformance/` if the
-  `operation-unavailable` producer changes its manifest or fixtures
 
 ### Files To Read For Context
 
 - `project-docs/docs/phases/phase-24/public-interface.md` section 8
 - `project-docs/docs/phases/phase-24/input-inventory.md` sections 1, 2 (R5)
 - `project-docs/docs/phases/phase-24/decisions.md` DEC-276
-- `project-docs/docs/phases/phase-21/public-interface.md` sections 2 (grammar
-  rule), 2.2 and 4 (absent commands, `operation-unavailable`) and the code
-  table; `project-docs/docs/phases/phase-22/public-interface.md` section 3
+- `project-docs/docs/phases/phase-21/public-interface.md` section 2.2;
+  `project-docs/docs/phases/phase-22/public-interface.md` section 3
   (activation inputs)
-- `project-docs/docs/phases/phase-24/decisions.md` DEC-278, DEC-279
+- `project-docs/docs/phases/phase-24/decisions.md` DEC-278, DEC-280
 
 ### Out Of Scope
 
-- Any input shape change. Human failure lines (task 10): this task fixes the
-  JSON failure and keeps Human output nonempty; task 10 sets the line form.
+- Any input shape change. Grammar failures and unknown commands (task 9a).
+  Human failure lines (task 10).
 
 ## Acceptance Criteria
 
@@ -130,16 +89,6 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   `run.observe-budget`), with identical acceptance and rejection and no
   one-sided case. (VAL-035)
 - [ ] No descriptor marks a top-level field `sensitive`. (I-17)
-- [ ] The whole-tree grammar corpus covers every live leaf except
-  `journal inspect` and `sql`, in both modes: an unknown flag; a missing
-  required flag where the leaf has one; a malformed value where a typed flag
-  exists; and a wrong positional count. Each matches the table above, with
-  the leaf's operation ID, no effect and nonempty Human stderr. A leaf
-  without rows fails the completeness check. (VAL-064)
-- [ ] `fid bogus`, `fid concern bogus` and an unknown word under every command
-  group return `operation-unavailable` in JSON with the DEC-279 `operation`
-  and the details above, and print `error: …` in Human mode, exit 2.
-  (VAL-065)
 - [ ] Wall times inside budget. (VAL-052)
 
 ## First Failing Test
@@ -148,8 +97,7 @@ The live `--input` set equals the descriptor registry with no fence. Today 8 act
 
 ## Documentation Updates
 
-- `project-docs/specs/06_DESIGN_PLAN_CLI.md`: the activation input help, the
-  grammar-failure details, and `operation-unavailable` for unknown commands.
+- `project-docs/specs/06_DESIGN_PLAN_CLI.md`: the activation input help.
 
 ## Exact Commands To Run
 

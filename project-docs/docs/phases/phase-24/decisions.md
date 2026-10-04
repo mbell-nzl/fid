@@ -266,6 +266,150 @@
   lifted. No other assertion or task changes.
 - **Refs:** DEC-278; `public-interface.md` sections 9 and 13; task 9.
 
+### DEC-280: QA readiness-refresh dispositions; task 9 split
+
+- **Date:** 2026-10-04. Tech Lead decision under DEC-277. It clarifies
+  accepted text and adds no behaviour beyond it. RR-06 is the one item
+  accepted text does not decide, so it goes to the Human as D6 (to be
+  DEC-281).
+- **Context:** the QA plan's readiness refresh (`qa/qa-plan.md` section 12,
+  `87f1071`) was NOT READY. It raised RR-01..RR-09 (RR-06 is a blocker
+  candidate) and RI-01..RI-13. The Tech Lead reproduced each finding against
+  source and a scratch build of `87f1071`. The product tree there is
+  identical to `304aa45`.
+- **Decisions:**
+  1. **`next:` on grammar failures (RR-01).** Contract section 9 governs:
+     every `invalid-argument` on an `--input` leaf prints its row, grammar
+     failures included. Task 10 was wrong, and now says the same thing. No
+     contract change.
+  2. **Unknown-command message (RR-02).** At every level the message is the
+     single line `unknown command "<word>" for "<command path>"`, with no
+     Cobra suggestions; `allowed` already lists the alternatives. The root's
+     `allowed` includes Cobra's `completion` and `help`, because root
+     `--help` lists them (RI-12). Those two Cobra commands have no operation
+     ID, so they get no VAL-064/065 rows of their own.
+  3. **Unknown-command baseline (RR-03; corrects DEC-278 item 4).** Measured
+     at `87f1071`: an unknown word under 23 groups prints the group help and
+     exits 0 in both modes. The root and five groups (`concern`, `export`,
+     `issue`, `issue ac`, `run`) exit 2 silently. Task 9a installs one
+     central mechanism on every command with subcommands (R17: the root plus
+     28 groups) and replaces the five group-local validators. A group run
+     with no word still prints its help. The exit change from 0 to 2 is
+     authorized by Phase 21 `public-interface.md` section 5. DEC-278 cited
+     that section as 4. The correct section is now cited in VAL-064/065 and
+     tasks 9a and 10.
+  4. **Grammar classes (RR-04).** These are pinned in task 9a.
+     - (a) The unknown-flag `allowed` lists the leaf's local long flags,
+       without `--help` or the globals `--json` and `--project`. Phase 21
+       section 4 rows list only leaf flags.
+     - (b) The malformed-value `allowed` is the flag's declared domain:
+       enumerated members, sorted; an integer range written `lo..hi`; or the
+       pattern its row states. Otherwise it is the pflag type name.
+     - (c) A typed-flag parse failure, or a flag given without a value, is a
+       malformed value. Today `issue list --has-concerns=maybe` exits 7
+       silently.
+     - (d) An extra word on a leaf without subcommands is a wrong positional
+       count, never `operation-unavailable`. Its message is
+       `<path> accepts no arguments`, after the Phase 21 section 1
+       `capabilities` example.
+     - An unknown flag on the root or on a group uses the unknown-flag class
+       with the DEC-279 `operation` and `allowed:[]`.
+     - The `message` is the text of the error that detected the failure:
+       Cobra's or pflag's, or the flag-domain check's. It is never a family
+       fallback text. This replaces task 9's rule "the text Human mode
+       printed". That rule would have pinned `invalid Issue mutation
+       request` for `issue update --bogus`, because `issueMutationFlagError`
+       prints that text today.
+  5. **Flag domains and proof (RR-05).** Each flag with a typed or closed
+     value declares its domain once in `cmd/fid`. The check runs before
+     workspace resolution, and the corpus is enumerated from the
+     declarations. Completeness covers every non-string pflag flag (R18:
+     22) and every string domain that a Phase 21-24 row states. Each row
+     also runs from a non-project directory, which proves "no read".
+     - R19 (`rg '"argument": *"request"'`) must terminate `exit_code: 0`
+       with exactly the four family fallbacks left. Each is accounted for in
+       the report. The grammar sites (`canonical_request.go`, `root.go`,
+       `issueMutationFlagError`) must not match.
+     - Flag-domain failures on read leaves also reach `argument:"input"`
+       fallbacks (`claim list --limit 0`, `run list --status bogus`). The
+       corpus, not the `rg`, is therefore the completeness proof.
+     - Flag-combination rules are outside the four classes and keep today's
+       failures (CF-047). They are exclusive selectors, exactly-one or
+       at-least-one groups, and kind-conditional flags.
+  6. **Control characters in messages (TL-01, found during this check).**
+     `fid stop raise $'--bo\x1bgus'` writes a raw ESC to stderr today,
+     because pflag's `unknown flag: --%s` is unquoted. Section 9's verbatim
+     `error:` line would keep doing this, against PRD-OPS-007. Any message
+     that embeds caller text escapes control characters when it is built,
+     using one shared `internal/cli` function in the existing
+     `visibleLiveText` form. The JSON message and the `error:` line stay
+     byte-equal. Task 9a escapes the grammar and unknown-command messages.
+     Task 10's renderer uses the same function, and its pairing corpus
+     asserts that no message holds a control character.
+  7. **Post-frame `gate run` (RR-07).** VAL-036 states the stdout exception
+     and keeps a `gate-unsuccessful` row. Its JSON side is the failure inside
+     the `--json` run's terminal frame.
+  8. **Exclusions (RR-08).** VAL-064 excludes `journal inspect` and `sql`
+     (Phase 21 section 5), plus Cobra's `help` and `completion`.
+  9. **FIFO fixture (RR-09).** Git lists no untracked FIFO. The fixture
+     replaces a tracked file with a FIFO. Task 4 also pins
+     `invalid unmerged path` as `unmerged-paths`, decided by capture stage
+     (RI-02).
+  10. **Task 9 split (TL-02).** The Phase 23 sizing lesson applies: split
+      any task that crosses several closed registries. Task 9 keeps the
+      descriptor and input conformance work. New task 9a owns VAL-064/065
+      and runs between tasks 9 and 10. Lettered tasks have a precedent in
+      Phase 20 tasks 3a-3i, and the sequence lint accepts them. Window D
+      now spans tasks 9, 9a, 10 and 11. Its cadence is the QA Lead's call.
+  11. **D6 (RR-06).** Today every generic `invalid-argument` fallback prints
+      its domain cause in Human mode. Section 9 would replace that cause
+      with the fixed JSON message. Accepted text does not decide this, so
+      it is Human decision D6 (contract section 13). Task 10 is not
+      dispatched before DEC-281.
+  12. **Journey start state (RI-08).** The VAL-049/053 start state has no
+      Receipt-backed Obligation, and journey input files are written
+      outside the worktree, so real freshness cannot stale the journey.
+      `evidence-stale` has no next-table row. That gap is recorded under
+      CF-040, because a closed-table change needs the Human.
+- **Disposition register:**
+
+| Item | Disposition | Applied in |
+|---|---|---|
+| RR-01 | Do now (item 1). Task 10 aligned to section 9. New VAL-038 row: a grammar failure on an `--input` leaf | task 10; VAL-038 |
+| RR-02 | Do now (item 2). Near-miss rows (`fid isue`) | contract 9; task 9a; VAL-036, VAL-065 |
+| RR-03 | Do now (item 3). R17 completeness check | task 9a; VAL-065; inventory R17 |
+| RR-04 | Do now (item 4) | task 9a; VAL-064 |
+| RR-05 | Do now (item 5). R18, R19 and a flag-domain corpus | task 9a; VAL-064; inventory R18, R19 |
+| RR-06 | Escalated to the Human as D6 (item 11). Task 10 waits for DEC-281 | contract 13 |
+| RR-07 | Do now (item 7) | VAL-036; task 10 |
+| RR-08 | Do now (item 8) | VAL-064; task 9a |
+| RR-09 | Do now (item 9) | task 4; VAL-023 |
+| RI-01 | Do now. The `artifact` two-field row is `artifact_id` plus `--actor` | VAL-006; task 2 |
+| RI-02 | Do now (item 9) | task 4 |
+| RI-03 | Record only. An unreadable untracked file stays `changed-during-capture`, and `detail` names it | task 4 note |
+| RI-04 | Do now. A control would succeed from the same pre-state in an observable worktree | VAL-066; tasks 2, 4-8 by reference |
+| RI-05 | Do now. No shared decoder may match the R5 pattern | tasks 3, 9 |
+| RI-06 | Do now. The section 1 block writes one labelled file per list | inventory 1 |
+| RI-07 | Do now | validation contract Coverage |
+| RI-08 | Do now (item 12) | task 14; CF-040 |
+| RI-09 | Do now. The first failing test is the fixture manifest listing the start state | task 14 |
+| RI-10 | Do now. Task 12 depends on 4 and 10 | phase brief; task 12 |
+| RI-11 | Do now. `issue list --bogus` and `issue get` with no ID are silent in both modes. QA's `issue show` is an unknown word under `issue` (an RR-03 case), not a missing ID | this entry; task 9a |
+| RI-12 | Do now (item 2) | task 9a; VAL-065 |
+| RI-13 | Do now. `/tmp` had 0.7 GB free at this check | phase brief |
+| TL-01 | Do now (item 6) | contract 9; tasks 9a, 10; VAL-036, VAL-064 |
+| TL-02 | Do now (item 10) | task 9, new task 9a; tasks 10, 12; phase brief |
+
+- **Consequences:**
+  - CF-047 is opened. CF-040 gains the `evidence-stale` next-row note.
+  - The validation contract keeps 66 assertions. VAL-064/065 move to task
+    9a.
+  - Tasks 1-3 change only by RI-01 (task 2) and RI-05 (task 3).
+  - Nothing is dispatched until a fresh QA Lead check passes. Task 10 also
+    waits for DEC-281.
+- **Refs:** DEC-194; DEC-278; DEC-279; Phase 21 `public-interface.md`
+  sections 1, 2, 4, 5 and 7; `qa/qa-plan.md` sections 12.3 and 12.4.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.

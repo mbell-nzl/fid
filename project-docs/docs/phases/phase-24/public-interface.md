@@ -4,7 +4,9 @@
 > DEC-272. The Human decided D1-D4 (DEC-273..276; section 13) and approved
 > this file with the task list. Amendments need a recorded DEC.
 > DEC-278 (QA-plan dispositions) clarifies sections 2, 5, 6, 9 and 10, and
-> adds Human decision D5 to section 13, decided as DEC-279.
+> adds Human decision D5 to section 13, decided as DEC-279. DEC-280 (QA
+> readiness-refresh dispositions) clarifies section 9 and adds open Human
+> decision D6 to section 13.
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -248,12 +250,18 @@ next: <resolving action>                 # only for the codes in the next-table 
   `error:` line keeps the spelling. Unknown commands return the Phase 21
   `operation-unavailable` failure. Its JSON `operation` is the dotted path of
   the known command that received the unknown word, `fid` at the root
-  (DEC-279, D5).
+  (DEC-279, D5). Its `message` is the single line
+  `unknown command "<word>" for "<command path>"`, with no suggestions
+  (DEC-280).
+- **No control characters in messages (DEC-280, PRD-OPS-007).** A message
+  that embeds caller text (a flag spelling, a value, a command word) escapes
+  control characters when it is built. The JSON `message` and the `error:`
+  line therefore stay byte-equal, and neither carries a raw control byte.
 - **next-table (closed):**
 
 | Code | `next:` text (IDs and classes from details) |
 |---|---|
-| `invalid-argument` on an `--input` leaf | `see fid <leaf> --help; template: fid <leaf> --example` |
+| `invalid-argument` on an `--input` leaf (grammar failures included; DEC-280) | `see fid <leaf> --help; template: fid <leaf> --example` |
 | `repository-mismatch` | `check HEAD and uncommitted changes, then correct expected_repository` |
 | `source-digest-mismatch` | `correct or omit digest for <display_label>` |
 | `idempotency-conflict` | `resend the original input, or use a new --idempotency-key` |
@@ -358,3 +366,4 @@ are not weakened:
 | D3 | Naming the differing field needs per-field digests stored in the journal and migration 0019. Accept the cost? | **Decided A (DEC-275)**: accept |
 | D4 | `--example` rules in section 8 (static typed placeholders, required fields only, refuses `--json`) | **Decided (DEC-276)**: accept all |
 | D5 | Which JSON envelope `operation` does `operation-unavailable` carry for a command that does not exist (`fid bogus`, `fid concern bogus`)? | **Decided A (DEC-279)**: the dotted path of the known command that received the unknown word (`concern`; the root is `fid`), with details `{argument:"command", value:<word>, allowed:<that command's subcommands, sorted>}`. Rejected B: the requested path including the unknown word (`concern.bogus`). |
+| D6 | A family's generic `invalid-argument` fallback (for example `invalid claim request`, `argument:"input"`, `value:null`) catches cross-field domain failures. Today Human mode prints the domain cause instead (`error: claim acquire binding is invalid`). Section 9 makes the `error:` line the JSON message, so the cause would disappear from both modes. Should the cause stay visible? (DEC-280, RR-06) | **Open.** Recommendation A: the fallback's JSON `message` becomes the domain cause text, escaped and at most 512 scalars. Code, details, subject and exit are unchanged. Messages are never control flow (Phase 21 section 7). Alternative B: accept the loss, and add the plain-copy refusal to the Human's VAL-054 review. |

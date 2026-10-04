@@ -35,7 +35,9 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   - a `sensitive` mark.
 
   Descriptors live in `internal/cli` (no new package boundary). Per-leaf
-  descriptors live in `cmd/fid`.
+  descriptors live in `cmd/fid`. No shared descriptor decoder may be named
+  to match `func decodeClosed[A-Za-z]*Input` (inventory R5). Task 9
+  declares that pattern `exit_code: 1` (DEC-280, RI-05).
 - **Validation order.** First the existing size, UTF-8 and single-object
   rules. Then duplicate keys. Then structure, level by level: unknown keys
   (lexicographic), then members in documented order (missing, null, type,

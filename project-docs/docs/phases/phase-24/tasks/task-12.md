@@ -23,8 +23,9 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   `{outcome:HumanOutcome}`, with `event:null`.
 - Not-found reuses `concern-not-found`, `deviation-not-found` and
   `outcome-not-found`: exit 3, subject ID = the requested ID, `{id}`. A
-  grammar error is `invalid-argument`, exit 2, with the task 9 grammar
-  details (DEC-278) and Human lines through the task 10 renderer.
+  grammar error is `invalid-argument`, exit 2, with the task 9a grammar
+  details (DEC-278, DEC-280) and Human lines through the task 10 renderer.
+  This task therefore runs after tasks 4 and 10 (DEC-280, RI-10).
 - The Human view uses the existing item rendering in this task. Task 13
   adds full reasoning to detail views.
 - No capability row changes. These are read operation IDs only, outside the

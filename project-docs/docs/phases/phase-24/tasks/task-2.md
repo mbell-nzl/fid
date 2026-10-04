@@ -81,7 +81,9 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - [ ] The corpus has a one-field-change row for every keyed leaf: the 50
   live leaves with `--idempotency-key` minus `export import`, so 49 at
   planning (inventory R16). It also has a two-field row and an `--actor` row in each of the 20
-  families. `differing_fields` is exact and sorted, the exit is 4, and the
+  families. The `artifact` family has one keyed leaf with one top-level
+  field, so its two-field row is `artifact_id` plus `--actor` (DEC-280,
+  RI-01). `differing_fields` is exact and sorted, the exit is 4, and the
   journal line count is unchanged. A completeness test walks the live tree
   and fails when a keyed leaf has no row. (VAL-006)
 - [ ] For every keyed leaf, a canonically equal retry under the same key
@@ -98,7 +100,9 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   then retry. Where the leaf references a project file, also delete the file
   and retry. Each retry replays with no Event. A control request under a new
   key in the same state fails with no Event (any code until task 4 adds
-  `repository-unavailable`). (VAL-066)
+  `repository-unavailable`). The control would succeed from the same
+  pre-state in an observable worktree. A create-style leaf uses a new record
+  ID, and a completed subject uses a fresh one (DEC-280, RI-04). (VAL-066)
 - [ ] Rebuild parity of the maps over a journal with one keyed mutation per
   keyed leaf. (VAL-002)
 - [ ] `rg` over R2 shows only the shared helper.

@@ -8,6 +8,11 @@ message, then `reason:`, then `blocked by:` and `next:` where they apply.
 Every line derives from the JSON failure. One shared renderer is adopted by
 every family.
 
+**Dispatch gate (DEC-280 item 11).** This task is not dispatched before the
+Human decides D6 (contract section 13) and the decision is recorded as
+DEC-281. D6 decides what the `error:` line shows for a family's generic
+`invalid-argument` fallback.
+
 ## Validation Contract Coverage
 
 - VAL-036: per code, the Human lines repeat the JSON failure.
@@ -44,13 +49,21 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - **`next:`** uses the closed table in contract section 9 with values from
   details. `<leaf>` is the CLI path (for example `fid run close`). The
   Phase 23 task 21 rework guidance line is replaced by its table row. The
-  `invalid-argument` row applies only on an `--input` leaf. Grammar failures
-  and failures on leaves without `--input` print no `next:`.
-- **Grammar failures and unknown commands** (task 9) render through the
+  `invalid-argument` row applies to every `invalid-argument` on an `--input`
+  leaf, grammar failures and `--example` exclusivity failures included
+  (contract section 9; DEC-280 item 1). Failures on leaves without `--input`
+  print no `next:`, and neither does `operation-unavailable`.
+- **Grammar failures and unknown commands** (task 9a) render through the
   same renderer: the `error:` line is their JSON `message`, which keeps the
   offending spelling.
+- **Escaping (DEC-280 item 6).** The renderer uses the `internal/cli` escape
+  function from task 9a for the `reason:` and `blocked by:` values. The
+  `error:` line is the message verbatim, and a message never holds a
+  control character.
 - **`gate run`.** Pre-frame failures use these lines. A terminal non-success
-  in Human mode prints them after the streamed output.
+  in Human mode prints them on stderr after the streamed output. The
+  streamed output stays on stdout, as Phase 21 section 1's streaming
+  exception allows (DEC-280 item 7).
 - `fid journal inspect` and `fid sql` are unstable Human-only diagnostics
   outside `fid-cli.v1` and are excluded.
 
@@ -69,7 +82,8 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
 - `project-docs/docs/phases/phase-24/public-interface.md` section 9
 - `project-docs/docs/phases/phase-24/input-inventory.md` R8, R9, R10
-- `project-docs/docs/phases/phase-24/decisions.md` DEC-272, DEC-278
+- `project-docs/docs/phases/phase-24/decisions.md` DEC-272, DEC-278,
+  DEC-280 and DEC-281 (D6)
 - `project-docs/docs/phases/phase-21/public-interface.md` sections 1, 7;
   `project-docs/specs/05_DESIGN_PLAN.md` section 6
 - `cmd/fid/stop.go` `writeStopFailure` (the task 19/21 guidance)
@@ -84,18 +98,24 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - [ ] The pairing corpus has one row per code in `cli.RegisteredCodes()`. A
   pinned exclusion list in the test gives each excluded code its reason (for
   example, no reachable CLI producer). A code with neither a row nor an
-  exclusion fails the test. Grammar-path `invalid-argument` rows (from
-  `canonical_request.go`) and unknown-command rows are separate from the
-  `--input` structural rows. In every row, Human stderr is
-  `error: <JSON message>` then `reason: <code>…`, with only the permitted
-  labels, in order, once each. stdout is empty and the exit matches JSON. It
-  includes the Phase 23 `issue transition` protected-Decision case.
-  (VAL-036)
+  exclusion fails the test. Rows for grammar failures (task 9a), unknown
+  commands (including the near miss `fid isue`) and a post-frame `gate run`
+  failure (`gate-unsuccessful`) are kept apart from the `--input`
+  structural rows. In every row, Human stderr is `error: <JSON message>`
+  then `reason: <code>…`, with only the permitted labels, in order, once
+  each. No message contains a control character, and the exit matches JSON.
+  stdout is empty in every row except the post-frame `gate run` row: there
+  stdout carries the streamed Human output, and the JSON side is the
+  failure inside the `--json` run's terminal frame. The corpus includes
+  the Phase 23 `issue transition` protected-Decision case. (VAL-036)
 - [ ] Stop-blocked denials print `blocked by:` with exactly their IDs; other
   denials print none. (VAL-037)
-- [ ] Each next-table code prints its row. At least five other codes print no
-  `next:`, and neither does `invalid-argument` from a leaf without `--input`
-  (for example a grammar failure on `fid issue create`). (VAL-038)
+- [ ] Each next-table code prints its row. So does a grammar failure on an
+  `--input` leaf (`fid stop raise --bogus` prints
+  `next: see fid stop raise --help; template: fid stop raise --example`).
+  At least five other codes print no `next:`, and neither does
+  `invalid-argument` from a leaf without `--input` (for example a grammar
+  failure on `fid issue create`). (VAL-038)
 - [ ] Unit fixtures cover scalar flattening, every override, a
   control-character detail, a `reason:` line of exactly 200 scalars (uncut)
   and one of 201 (first 200 plus `…`), and an escape sequence at the cut

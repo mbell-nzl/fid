@@ -312,8 +312,10 @@ reading `.fid/` internals.
    request digests, migration 0019) and DEC-276 (help and template rules).
    The authority is `../docs/phases/phase-24/public-interface.md`, with
    `input-inventory.md`, `qa/validation-contract.md` (66 assertions after the
-   QA-plan dispositions, DEC-278) and a 14-task pack. Phase 25 "Parallel and evolving work" and Phase 26
-   "Qualification and baseline convergence" follow.
+   QA-plan dispositions, DEC-278) and a 15-task pack. That is 14 tasks plus
+   task 9a, which was split from task 9 under DEC-280. Phase 25 "Parallel
+   and evolving work" and Phase 26 "Qualification and baseline convergence"
+   follow.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.
