@@ -57,11 +57,11 @@ func RecordRequirementReference(options JudgmentOptions, request RequirementRefe
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-		digest, err := judgmentDigest("requirement.record-reference", projectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "requirement.record-reference", "project_id": projectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "requirement.record-reference:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "requirement.record-reference:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
@@ -129,11 +129,11 @@ func LinkRequirement(options JudgmentOptions, request RequirementLinkRequest) (R
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-		digest, err := judgmentDigest("requirement.link", projectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "requirement.link", "project_id": projectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "requirement.link:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "requirement.link:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {

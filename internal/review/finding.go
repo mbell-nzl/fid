@@ -1,9 +1,7 @@
 package review
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -95,11 +93,11 @@ func Address(options AddressOptions, request AddressRequest) (AddressResult, err
 		if err != nil {
 			return fmt.Errorf("finding address: read project config: %w", err)
 		}
-		digest, err := findingAddressDigest(projectConfig.ProjectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "finding.address", "project_id": projectConfig.ProjectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "finding.address:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "finding.address:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
@@ -288,15 +286,6 @@ func nextDispositionID(conn *sql.DB) (string, error) {
 		err := conn.QueryRow(`SELECT 1 FROM finding_dispositions WHERE id=?`, candidate).Scan(&found)
 		return err == nil, nil
 	})
-}
-
-func findingAddressDigest(projectID, actorID string, request AddressRequest) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"operation": "finding.address", "project_id": projectID, "actor_id": actorID, "request": request})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func replayAddress(outcome journal.IdempotencyOutcome, key string, result *AddressResult) error {

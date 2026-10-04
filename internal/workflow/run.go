@@ -1,9 +1,7 @@
 package workflow
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -297,15 +295,6 @@ func validateRunOptions(options RunOptions) error {
 
 func validRunStartRequest(request RunStartRequest) bool {
 	return strings.TrimSpace(request.IssueID) != "" && strings.TrimSpace(request.EnvelopeID) != "" && request.EnvelopeRevision == 1 && strings.TrimSpace(request.ClaimID) != "" && request.ClaimVersion > 0 && strings.TrimSpace(request.Executor.ID) != "" && request.Executor.Source == "activated-harness"
-}
-
-func runRequestDigest(operation, projectID, actorID string, request any) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"actor_id": actorID, "operation": operation, "project_id": projectID, "request": request})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func runNow(now time.Time) time.Time {

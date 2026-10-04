@@ -126,6 +126,9 @@ type issueLabelWriteRequest struct {
 	issueID        string
 	label          string
 	actor          standaloneActor
+	actorValue     string
+	rawIssueID     string
+	rawLabel       string
 	idempotencyKey string
 	operation      string
 	commandArgv    []string
@@ -177,6 +180,9 @@ func prepareIssueLabelWrite(
 		issueID:        trimmedIssueID,
 		label:          trimmedLabel,
 		actor:          actor,
+		actorValue:     actorValue,
+		rawIssueID:     issueID,
+		rawLabel:       label,
 		idempotencyKey: idempotencyKey,
 		operation:      strings.ReplaceAll(opName, " ", "."),
 		commandArgv:    argvBuilder(trimmedIssueID, trimmedLabel, actorValue, idempotencyKey),
@@ -211,11 +217,11 @@ func issueLabelWriteLocked(lock *journal.WriteLock, request issueLabelWriteReque
 	if err != nil {
 		return err
 	}
-	digest, err := issueRequestDigest(request.operation, projectConfig.ProjectID, request.actor, map[string]any{"issue_id": request.issueID, "label": request.label})
+	digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": request.actor, "operation": request.operation, "project_id": projectConfig.ProjectID, "request": map[string]any{"issue_id": request.rawIssueID, "label": request.rawLabel}}, request.actorValue, map[string]string{"issue_id": "issue-id", "label": "label"})
 	if err != nil {
 		return err
 	}
-	idempotencyRequest := journal.IdempotencyRequest{OperationScope: request.operation + ":" + projectConfig.ProjectID, IdempotencyKey: request.idempotencyKey, RequestDigest: digest}
+	idempotencyRequest := journal.IdempotencyRequest{OperationScope: request.operation + ":" + projectConfig.ProjectID, IdempotencyKey: request.idempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 	if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
 		return err
 	} else if found {

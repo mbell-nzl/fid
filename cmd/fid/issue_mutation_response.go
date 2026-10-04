@@ -8,6 +8,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
@@ -158,6 +159,10 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 		return cli.Failure{}, err
 	} else if handled {
 		return failure, nil
+	}
+	var idempotency *journal.IdempotencyConflictError
+	if errors.As(mutationErr, &idempotency) {
+		return cli.NewFailure(cli.CodeIdempotencyConflict, "idempotency key is bound to another request", nil, idempotencyConflictDetails(idempotency))
 	}
 
 	var stateConflict *issues.StateConflictError

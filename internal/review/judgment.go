@@ -1,9 +1,7 @@
 package review
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -71,15 +69,6 @@ func judgmentEnvelopeBinding(conn *sql.DB, subject Subject) (judgmentBinding, bo
 		return judgmentBinding{}, false, nil
 	}
 	return value, err == nil, err
-}
-
-func judgmentDigest(operation, projectID, actorID string, request any) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"operation": operation, "project_id": projectID, "actor_id": actorID, "request": request})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func setJudgmentEventIdentity(effects []journal.Effect, event journal.Event) {

@@ -169,7 +169,7 @@ func Register(options RegisterOptions) (RegisterResult, error) {
 		if err != nil {
 			return err
 		}
-		requestDigest, err := requestDigest(project.ProjectID, options.ActorID, options.Request)
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "project_id": project.ProjectID, "request": options.Request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
@@ -178,7 +178,7 @@ func Register(options RegisterOptions) (RegisterResult, error) {
 			return err
 		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "gate.registered", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: registration.ID, Sequence: registration.Version, Type: "gate-registration"}, CommandName: "gate.register", Repository: repositoryEventValue(options.Request.Repository), Effects: []journal.Effect{{Op: "insert", Table: "gate_registrations", PK: map[string]any{"id": registration.ID, "version": registration.Version}, Values: map[string]any{"activation_id": activationID, "definition_id": definition.DefinitionID, "definition_version": definition.DefinitionVersion, "definition_digest": digest, "binding_digest": bindingDigest, "project_id": project.ProjectID, "worktree_id": options.Request.WorktreeID, "scope_json": string(scopeJSON), "policy_json": string(policyJSON), "authorization_provenance": actor.ProvenanceRef, "created_event_id": "<event-id>", "created_at": createdAt}}}}
-		outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: "gate.register:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
+		outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: "gate.register:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			prepared.Effects[0].Values["created_event_id"] = prepared.EventID
 			return journal.IdempotencyMutation{EntityID: registration.ID, ResultJSON: resultJSON}, nil
 		})
@@ -356,15 +356,6 @@ func validOID(value string) bool {
 
 func validDigest(value string) bool {
 	return strings.HasPrefix(value, "sha256:") && len(value) == 71 && strings.TrimPrefix(value, "sha256:") != ""
-}
-
-func requestDigest(projectID, actorID string, request RegisterRequest) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"actor_id": actorID, "project_id": projectID, "request": request})
-	if err != nil {
-		return "", fmt.Errorf("canonicalize gate registration request: %w", err)
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func gateBindingDigest(request RegisterRequest) (string, error) {

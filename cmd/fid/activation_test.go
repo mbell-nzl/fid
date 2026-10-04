@@ -164,9 +164,13 @@ func assertActivationStableDigestConflict(t *testing.T, workspace, operation, in
 	args := []string{"--project", workspace, "--json", "activation", operation, "--input", inputPath, "--idempotency-key", key}
 	before := journalEventCount(t, workspace)
 	first := executeCommandForTest(workspace, args...)
-	assertActivationTypedFailure(t, first, "invalid-argument")
+	assertActivationTypedFailure(t, first, "idempotency-conflict")
 	second := executeCommandForTest(workspace, args...)
-	assertActivationTypedFailure(t, second, "invalid-argument")
+	assertActivationTypedFailure(t, second, "idempotency-conflict")
+	details := decodeActivationEnvelope(t, first.stderr)["error"].(map[string]any)["details"].(map[string]any)
+	if got := details["differing_fields"]; !reflect.DeepEqual(got, []any{"content", "expected_version"}) {
+		t.Fatalf("same-key different-digest fields = %#v", got)
+	}
 	if first.stderr != second.stderr {
 		t.Fatalf("same-key different-digest failures differ: first=%q second=%q", first.stderr, second.stderr)
 	}

@@ -1,9 +1,7 @@
 package claims
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -317,11 +315,11 @@ func mutateGenericClaim(options MutationOptions, operation string, request any, 
 		if err != nil {
 			return fmt.Errorf("claim mutation: read project config: %w", err)
 		}
-		digest, err := genericClaimDigest(operation, project.ProjectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "operation": operation, "project_id": project.ProjectID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: operation + ":" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: operation + ":" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
@@ -503,15 +501,6 @@ func validExpireRequest(request ExpireRequest) bool {
 
 func validReleaseRequest(request ReleaseRequest) bool {
 	return strings.TrimSpace(request.ClaimID) != "" && request.ExpectedVersion > 0 && (request.Reason == "completed" || request.Reason == "failed" || request.Reason == "operator-released")
-}
-
-func genericClaimDigest(operation, projectID, actorID string, request any) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"actor_id": actorID, "operation": operation, "project_id": projectID, "request": request})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func genericClaimNow(now time.Time) time.Time {

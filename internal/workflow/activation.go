@@ -245,11 +245,11 @@ func PrepareActivation(options ActivationPrepareOptions) (ActivationPrepareResul
 		if err != nil {
 			return fmt.Errorf("prepare activation: read project config: %w", err)
 		}
-		requestDigest, err := activationRequestDigest("activation.prepare", project.ProjectID, options.BootstrapActor, options.Request)
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"bootstrap_actor": options.BootstrapActor, "operation": "activation.prepare", "project_id": project.ProjectID, "request": options.Request}, options.BootstrapActor, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "activation.prepare:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "activation.prepare:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
@@ -385,11 +385,11 @@ func StageActivationComponent(options ActivationComponentOptions) (ActivationCom
 		if err != nil {
 			return fmt.Errorf("stage activation component: read project config: %w", err)
 		}
-		requestDigest, err := activationRequestDigest("activation.component", project.ProjectID, options.BootstrapActor, options.Request)
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"bootstrap_actor": options.BootstrapActor, "operation": "activation.component", "project_id": project.ProjectID, "request": options.Request}, options.BootstrapActor, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "activation.component:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "activation.component:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
@@ -597,11 +597,11 @@ func transitionActivation(options ActivationTransitionOptions, activationID, ope
 		if err != nil {
 			return err
 		}
-		requestDigest, err := activationRequestDigest(operation, project.ProjectID, options.BootstrapActor, request)
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"bootstrap_actor": options.BootstrapActor, "operation": operation, "project_id": project.ProjectID, "request": request}, options.BootstrapActor, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: operation + ":" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		idempotency := journal.IdempotencyRequest{OperationScope: operation + ":" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
@@ -978,15 +978,6 @@ func loadActivation(conn *sql.DB, id string) (Activation, error) {
 		return Activation{}, fmt.Errorf("load activation recovery: %w", err)
 	}
 	return activation, nil
-}
-
-func activationRequestDigest(operation, projectID, bootstrapActor string, request any) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"bootstrap_actor": bootstrapActor, "operation": operation, "project_id": projectID, "request": request})
-	if err != nil {
-		return "", fmt.Errorf("canonical activation request: %w", err)
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func activationResultJSON(activation Activation, key string) (string, error) {

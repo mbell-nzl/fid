@@ -12,6 +12,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/evidence"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -304,6 +305,10 @@ func renderGateError(cmd *cobra.Command, operation string, cause error) error {
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	var idempotency *journal.IdempotencyConflictError
+	if errors.As(cause, &idempotency) {
+		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key is bound to another request", nil, idempotencyConflictDetails(idempotency))
 	}
 	var unavailable *evidence.ActiveActivationUnavailableError
 	var policyErr *evidence.ExecutorPolicyUnsupportedError

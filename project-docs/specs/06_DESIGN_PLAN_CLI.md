@@ -253,6 +253,20 @@ Every mutation:
    and metadata update; and
 5. returns the entity revision and Event identity.
 
+For a keyed mutation, the request digest covers the closed input object as
+written, plus the operation, project ID and resolved Actor components already
+used by its family. Optional members enter the digest only when supplied;
+`review.record` treats `inapplicable_findings:[]` as omission (DEC-242). Values
+observed by fid, including repository state and Source digests, do not enter
+the request digest. A same-key replay returns the original result before any
+observation. Each keyed mutation also records a `sha256:` digest of the
+canonical JSON value for every top-level public input name and `--actor`.
+Flag names include `--`; positional names follow the leaf's `Use` line.
+An `idempotency-conflict` JSON details object contains the operation scope,
+key, stored and supplied request digests, and `differing_fields`: the sorted,
+unique, nonempty names whose field digest or presence differs. The conflict
+appends no Event.
+
 Validation failure appends nothing. A projection failure after append is a
 detectable catch-up state and never a reason to append a duplicate Event.
 

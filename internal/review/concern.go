@@ -78,11 +78,11 @@ func RecordConcern(options JudgmentOptions, request ConcernRecordRequest) (Conce
 		if err := authorizeJudgmentSubject(options, conn, actor, "concern.record", request.Subject); err != nil {
 			return err
 		}
-		digest, err := judgmentDigest("concern.record", projectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "concern.record", "project_id": projectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "concern.record:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "concern.record:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
@@ -136,11 +136,11 @@ func DisposeConcern(options JudgmentOptions, request ConcernDisposeRequest) (Con
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-		digest, err := judgmentDigest("concern.dispose", projectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "concern.dispose", "project_id": projectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "concern.dispose:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "concern.dispose:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {

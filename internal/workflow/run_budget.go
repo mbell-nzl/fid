@@ -54,11 +54,11 @@ func ObserveRunBudget(options RunOptions, request RunBudgetObserveRequest) (RunB
 		if err != nil {
 			return err
 		}
-		digest, err := runRequestDigest("run.observe-budget", project.ProjectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "operation": "run.observe-budget", "project_id": project.ProjectID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idem := journal.IdempotencyRequest{OperationScope: "run.observe-budget:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idem := journal.IdempotencyRequest{OperationScope: "run.observe-budget:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idem); err != nil {
 			return err
 		} else if found {

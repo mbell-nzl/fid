@@ -90,11 +90,11 @@ func RecordDecisionReference(options JudgmentOptions, request DecisionReferenceR
 		if err := authorizeJudgmentSubject(options, conn, actor, "decision.record-reference", Subject{Type: "issue", ID: request.Scope.IssueID}); err != nil {
 			return err
 		}
-		digest, err := judgmentDigest("decision.record-reference", projectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "decision.record-reference", "project_id": projectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "decision.record-reference:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "decision.record-reference:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {

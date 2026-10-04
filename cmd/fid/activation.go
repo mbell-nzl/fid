@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -372,6 +373,10 @@ func renderActivationError(cmd *cobra.Command, operation string, cause error) er
 }
 
 func activationFailure(cause error) (cli.Failure, error) {
+	var idempotency *journal.IdempotencyConflictError
+	if errors.As(cause, &idempotency) {
+		return cli.NewFailure(cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(idempotency))
+	}
 	var conflict *workflow.ActivationConflictError
 	if errors.As(cause, &conflict) {
 		return cli.NewFailure(cli.CodeActivationConflict, "another activation blocks this request", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"active_id": activationConflictID(conflict.ActiveID), "nonterminal_id": activationConflictID(conflict.NonterminalID), "requested_direction": "activate"})

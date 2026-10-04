@@ -2,9 +2,7 @@
 package review
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -225,11 +223,11 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if err != nil {
 			return fmt.Errorf("review record: read project config: %w", err)
 		}
-		requestDigest, err := reviewRequestDigest(projectConfig.ProjectID, options.ActorID, request)
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "review.record", "project_id": projectConfig.ProjectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "review.record:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "review.record:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
@@ -654,15 +652,6 @@ func journalRepository(repository Repository) *journal.Repository {
 		base = *repository.BaseOID
 	}
 	return &journal.Repository{BaseOID: base, CaptureSource: repository.CaptureSource, Dirty: repository.Dirty, DirtyDigest: repository.DirtyDigest, HeadOID: repository.HeadOID, ProjectID: repository.ProjectID, TreeOID: repository.TreeOID, WorktreeID: repository.WorktreeID}
-}
-
-func reviewRequestDigest(projectID, actorID string, request RecordRequest) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"operation": "review.record", "project_id": projectID, "actor_id": actorID, "request": request})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func recordReplay(outcome journal.IdempotencyOutcome, key string, result *RecordResult) error {

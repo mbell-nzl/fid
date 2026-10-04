@@ -1,9 +1,7 @@
 package evidence
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -118,11 +116,11 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 		if !hasCapability(actor.Capabilities, "evidence.link") {
 			return &AuthorityDeniedError{ActorID: options.ActorID}
 		}
-		requestDigest, err := evidenceRequestDigest(project.ProjectID, options.ActorID, options.Request)
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "project_id": project.ProjectID, "request": options.Request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "evidence.link:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "evidence.link:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
@@ -665,15 +663,6 @@ func nextEvidenceID(conn *sql.DB) (string, error) {
 		err := conn.QueryRow(`SELECT COUNT(*) FROM evidence_records WHERE id = ?`, candidate).Scan(&count)
 		return count > 0, err
 	})
-}
-
-func evidenceRequestDigest(projectID, actorID string, request EvidenceLinkRequest) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"actor_id": actorID, "project_id": projectID, "request": request})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func validEvidenceRepository(repository Repository) bool {

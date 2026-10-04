@@ -74,7 +74,7 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 	if err != nil {
 		return AddAcceptanceCriterionResult{}, err
 	}
-	requestDigest, err := issueRequestDigest("issue.ac.add", projectConfig.ProjectID, actor, map[string]any{"issue_id": issueID, "ordinal": options.Ordinal, "text": text})
+	requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "issue.ac.add", "project_id": projectConfig.ProjectID, "request": map[string]any{"issue_id": options.IssueID, "ordinal": options.Ordinal, "text": options.Text}}, options.Actor, map[string]string{"issue_id": "issue-id", "ordinal": "--ordinal", "text": "--text"})
 	if err != nil {
 		return AddAcceptanceCriterionResult{}, err
 	}
@@ -89,7 +89,7 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 			return err
 		}
 		defer closeIssueDB(conn)
-		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "issue.ac.add:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "issue.ac.add:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
 			return err
 		} else if found {

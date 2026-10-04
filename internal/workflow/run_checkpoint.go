@@ -57,11 +57,11 @@ func RunCheckpoint(options RunOptions, request RunCheckpointRequest) (RunCheckpo
 		if err != nil {
 			return fmt.Errorf("run checkpoint: read project config: %w", err)
 		}
-		digest, err := runRequestDigest(runCheckpointAction, projectConfig.ProjectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "operation": runCheckpointAction, "project_id": projectConfig.ProjectID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: runCheckpointAction + ":" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: runCheckpointAction + ":" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {

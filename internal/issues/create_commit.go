@@ -146,11 +146,36 @@ func commitCreateEvent(conn *sql.DB, lock *journal.WriteLock, projectID string, 
 	if err != nil {
 		return CreateResult{}, err
 	}
-	digest, err := issueRequestDigest("issue.create", projectID, request.actor, map[string]any{"kind": request.kind, "labels": request.labels, "parent_id": parentIDValue(request.parentID), "priority": options.Priority, "scheduling": request.scheduling, "sequence": options.Sequence, "spec_md_path": request.specMDPath, "title": options.Title})
+	input := map[string]any{"kind": options.Kind, "title": options.Title}
+	aliases := map[string]string{"kind": "--kind", "title": "--title", "priority": "--priority", "sequence": "--sequence", "spec_md_path": "--spec-md", "labels": "--label", "scheduling": "--scheduling"}
+	if options.ParentID != nil {
+		input["parent_id"] = *options.ParentID
+		if options.Kind == "subtask" {
+			aliases["parent_id"] = "--parent"
+		} else {
+			aliases["parent_id"] = "--epic"
+		}
+	}
+	if options.Priority != nil {
+		input["priority"] = *options.Priority
+	}
+	if options.Sequence != nil {
+		input["sequence"] = *options.Sequence
+	}
+	if options.SpecMDPath != nil {
+		input["spec_md_path"] = *options.SpecMDPath
+	}
+	if options.Labels != nil {
+		input["labels"] = options.Labels
+	}
+	if options.Scheduling != "" {
+		input["scheduling"] = options.Scheduling
+	}
+	digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": request.actor, "operation": "issue.create", "project_id": projectID, "request": input}, options.Actor, aliases)
 	if err != nil {
 		return CreateResult{}, err
 	}
-	outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: "issue.create:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+	outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: "issue.create:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}, event, func(journal.Event) (journal.IdempotencyMutation, error) {
 		return journal.IdempotencyMutation{EntityID: result.ID, ResultJSON: resultJSON}, nil
 	})
 	if err != nil {

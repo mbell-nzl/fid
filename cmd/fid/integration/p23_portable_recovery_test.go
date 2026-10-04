@@ -102,8 +102,11 @@ func p23PortableCollectFieldDigestFamilies(t *testing.T, workspace string, famil
 	for rows.Next() {
 		var scope, fields string
 		p22FaultOK(t, rows.Scan(&scope, &fields))
-		if fields != "{}" {
-			t.Errorf("%s field digests = %q, want {} before task 2", scope, fields)
+		var named map[string]string
+		if err := json.Unmarshal([]byte(fields), &named); err != nil {
+			t.Errorf("%s invalid field digests: %v", scope, err)
+		} else if len(named) < 2 || !strings.HasPrefix(named["--actor"], "sha256:") {
+			t.Errorf("%s field digests = %q, want public input fields and --actor", scope, fields)
 		}
 		for _, family := range []string{"issue.", "claim.", "run.", "review."} {
 			if strings.HasPrefix(scope, family) {

@@ -1,9 +1,7 @@
 package workflow
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -284,7 +282,7 @@ func CreateEnvelope(options EnvelopeOptions, request EnvelopeCreateRequest) (Env
 		if err := deriveInitialEnvelopeBudgets(&envelope); err != nil {
 			return err
 		}
-		requestDigest, err := envelopeRequestDigest("envelope.create", project.ProjectID, actor.ActorID, request)
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": actor.ActorID, "operation": "envelope.create", "project_id": project.ProjectID, "request": request}, actor.ActorID, nil)
 		if err != nil {
 			return err
 		}
@@ -293,7 +291,7 @@ func CreateEnvelope(options EnvelopeOptions, request EnvelopeCreateRequest) (Env
 			return err
 		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "envelope.created", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: envelopeID, Sequence: 1, Type: "envelope"}, CommandName: "envelope.create", Repository: envelopeRepository(request.RepositoryScope), Effects: envelopeCreateEffects(envelope, request)}
-		outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: "envelope.create:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: "envelope.create:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}, event, func(journal.Event) (journal.IdempotencyMutation, error) {
 			return journal.IdempotencyMutation{EntityID: envelopeID, ResultJSON: resultJSON}, nil
 		})
 		if err != nil {
@@ -346,11 +344,11 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 		if err != nil {
 			return err
 		}
-		requestDigest, err := envelopeRequestDigest("envelope.activate", project.ProjectID, actor.ActorID, request)
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": actor.ActorID, "operation": "envelope.activate", "project_id": project.ProjectID, "request": request}, actor.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "envelope.activate:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "envelope.activate:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
@@ -430,11 +428,11 @@ func CompleteEnvelope(options EnvelopeOptions, request EnvelopeCompleteRequest) 
 		if err != nil {
 			return fmt.Errorf("complete envelope: read project config: %w", err)
 		}
-		requestDigest, err := envelopeRequestDigest("envelope.complete", project.ProjectID, options.ActorID, request)
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "operation": "envelope.complete", "project_id": project.ProjectID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "envelope.complete:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "envelope.complete:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
@@ -1075,15 +1073,6 @@ func loadEnvelopeBudgets(conn *sql.DB, envelope *Envelope) error {
 		envelope.Budgets = append(envelope.Budgets, derived)
 	}
 	return rows.Err()
-}
-
-func envelopeRequestDigest(operation, projectID, actorID string, value any) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"actor_id": actorID, "operation": operation, "project_id": projectID, "request": value})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func envelopeResultJSON(envelope Envelope, key string) (string, error) {

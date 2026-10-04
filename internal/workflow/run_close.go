@@ -115,11 +115,11 @@ func AbandonRun(options RunOptions, request RunAbandonRequest) (RunAbandonResult
 		if err != nil {
 			return fmt.Errorf("run abandon: read project config: %w", err)
 		}
-		digest, err := runRequestDigest(runAbandonAction, projectConfig.ProjectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "operation": runAbandonAction, "project_id": projectConfig.ProjectID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: runAbandonAction + ":" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: runAbandonAction + ":" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {

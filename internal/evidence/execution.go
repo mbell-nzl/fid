@@ -189,17 +189,26 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-
-		binding, requestDigest, err := loadGateRunBinding(conn, options)
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		if err != nil {
+			return fmt.Errorf("run gate: read project config: %w", err)
+		}
+		preflightDigest, preflightFields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "project_id": projectConfig.ProjectID, "request": options.Request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "gate.run:" + binding.projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
-		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
+		preflight := journal.IdempotencyRequest{OperationScope: "gate.run:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: preflightDigest, RequestFieldDigests: preflightFields}
+		if outcome, found, err := journal.ReplayIdempotent(conn, preflight); err != nil {
 			return err
 		} else if found {
 			return replayGateRunResult(conn, options, outcome, &prepared)
 		}
+
+		binding, requestDigest, fields, err := loadGateRunBinding(conn, options)
+		if err != nil {
+			return err
+		}
+		idempotency := journal.IdempotencyRequest{OperationScope: "gate.run:" + binding.projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
 		chains, err := loadBudgetChains(conn, options.Request.RunID)
 		if err != nil {
 			return err
@@ -209,7 +218,7 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 			return err
 		}
 		if len(blocks) != 0 {
-			denial, err := appendExecutionBlocked(lock, conn, binding, options, requestDigest, chains, blocks)
+			denial, err := appendExecutionBlocked(lock, conn, binding, options, idempotency, chains, blocks)
 			if err != nil {
 				return err
 			}
@@ -229,7 +238,7 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 		} else {
 			cancel()
 		}
-		attempt, err := appendAttempt(lock, conn, binding, options, requestDigest)
+		attempt, err := appendAttempt(lock, conn, binding, options, idempotency)
 		if err != nil {
 			return err
 		}
@@ -262,11 +271,11 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-		binding, requestDigest, err := loadGateRunBinding(conn, options)
+		binding, requestDigest, fields, err := loadGateRunBinding(conn, options)
 		if err != nil {
 			return err
 		}
-		receipt, eventID, err := appendReceipt(lock, conn, binding, prepared.Attempt, options, requestDigest, &prepared.Live)
+		receipt, eventID, err := appendReceipt(lock, conn, binding, prepared.Attempt, options, journal.IdempotencyRequest{RequestDigest: requestDigest, RequestFieldDigests: fields}, &prepared.Live)
 		if err != nil {
 			return err
 		}
@@ -305,34 +314,33 @@ func validateGateRunOptions(options GateRunOptions) error {
 	return nil
 }
 
-func loadGateRunBinding(conn *sql.DB, options GateRunOptions) (gateRunBinding, string, error) {
+func loadGateRunBinding(conn *sql.DB, options GateRunOptions) (gateRunBinding, string, map[string]string, error) {
 	project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
 	if err != nil {
-		return gateRunBinding{}, "", fmt.Errorf("run gate: read project config: %w", err)
+		return gateRunBinding{}, "", nil, fmt.Errorf("run gate: read project config: %w", err)
 	}
 	registration, err := loadRegistration(conn, options.Request.RegistrationID, options.Request.RegistrationVersion)
 	if err != nil {
-		return gateRunBinding{}, "", err
+		return gateRunBinding{}, "", nil, err
 	}
 	if err := validateRepositoryBinding(RegisterRequest{WorktreeID: registration.WorktreeID, Repository: options.Request.Repository}, project.ProjectID); (err != nil && !importedGateDestination(conn, options.WorkspaceRoot, registration, options.Request)) || registration.ProjectID != project.ProjectID {
-		return gateRunBinding{}, "", fmt.Errorf("run gate: repository binding is invalid")
+		return gateRunBinding{}, "", nil, fmt.Errorf("run gate: repository binding is invalid")
 	}
 	_, actor, err := loadActiveActor(conn, options.ActorID)
 	if err != nil {
-		return gateRunBinding{}, "", err
+		return gateRunBinding{}, "", nil, err
 	}
 	if !hasCapability(actor.Capabilities, "gate.run") {
-		return gateRunBinding{}, "", &AuthorityDeniedError{ActorID: options.ActorID}
+		return gateRunBinding{}, "", nil, &AuthorityDeniedError{ActorID: options.ActorID}
 	}
 	if err := validateGateRunReferences(conn, registration, actor.ActorID, options.Request); err != nil {
-		return gateRunBinding{}, "", err
+		return gateRunBinding{}, "", nil, err
 	}
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"actor_id": options.ActorID, "project_id": project.ProjectID, "request": options.Request})
+	digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "project_id": project.ProjectID, "request": options.Request}, options.ActorID, nil)
 	if err != nil {
-		return gateRunBinding{}, "", fmt.Errorf("run gate: canonicalize request: %w", err)
+		return gateRunBinding{}, "", nil, fmt.Errorf("run gate: canonicalize request: %w", err)
 	}
-	sum := sha256.Sum256(payload)
-	return gateRunBinding{registration: registration, actor: actor, projectID: project.ProjectID}, "sha256:" + hex.EncodeToString(sum[:]), nil
+	return gateRunBinding{registration: registration, actor: actor, projectID: project.ProjectID}, digest, fields, nil
 }
 
 func importedGateDestination(conn *sql.DB, workspaceRoot string, registration Registration, request GateRunRequest) bool {
@@ -424,7 +432,12 @@ func sameGateRepository(left, right Repository) bool {
 	return sameStringPointer(left.BaseOID, right.BaseOID) && left.CaptureSource == right.CaptureSource && left.Dirty == right.Dirty && sameStringPointer(left.DirtyDigest, right.DirtyDigest) && left.HeadOID == right.HeadOID && left.ProjectID == right.ProjectID && left.TreeOID == right.TreeOID && left.WorktreeID == right.WorktreeID
 }
 
-func appendAttempt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding, options GateRunOptions, requestDigest string) (Attempt, error) {
+func appendAttempt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding, options GateRunOptions, idempotency journal.IdempotencyRequest) (Attempt, error) {
+	requestDigest := idempotency.RequestDigest
+	fieldsJSON, err := journal.MarshalCanonicalJSON(idempotency.RequestFieldDigests)
+	if err != nil {
+		return Attempt{}, err
+	}
 	id, err := journal.GenerateID("ATT", func(candidate string) (bool, error) {
 		var count int
 		err := conn.QueryRow(`SELECT COUNT(*) FROM execution_attempts WHERE id = ?`, candidate).Scan(&count)
@@ -453,7 +466,7 @@ func appendAttempt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 	}
 	effects := []journal.Effect{
 		{Op: "insert", Table: "execution_attempts", PK: map[string]any{"id": attempt.ID}, Values: map[string]any{"registration_id": attempt.RegistrationID, "registration_version": attempt.RegistrationVersion, "obligation_id": attempt.ObligationID, "run_id": attempt.RunID, "actor_id": attempt.ActorID, "start_repository_json": string(repositoryJSON), "resolved_policy_digest": attempt.ResolvedPolicyDigest, "producer": "fid", "started_at": attempt.StartedAt}},
-		{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": "gate.run:" + binding.projectID, "idempotency_key": options.IdempotencyKey}, Values: map[string]any{"request_digest": requestDigest, "request_field_digests_json": "{}", "result_entity_id": attempt.ID, "result_event_id": "<event-id>", "aggregate_sequence": 1, "result_json": string(pendingResult), "created_at": "<occurred-at>"}},
+		{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": "gate.run:" + binding.projectID, "idempotency_key": options.IdempotencyKey}, Values: map[string]any{"request_digest": requestDigest, "request_field_digests_json": string(fieldsJSON), "result_entity_id": attempt.ID, "result_event_id": "<event-id>", "aggregate_sequence": 1, "result_json": string(pendingResult), "created_at": "<occurred-at>"}},
 	}
 	budgetEffects, err := appendFIDBudgetEffects(conn, chains, charges, attempt.RunID, binding.actor.ActorID)
 	if err != nil {
@@ -594,7 +607,7 @@ func appendFIDBudgetEffects(conn *sql.DB, chains []budgetChain, charges []fidBud
 	return effects, nil
 }
 
-func appendExecutionBlocked(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding, options GateRunOptions, requestDigest string, chains []budgetChain, blocks []workflow.BudgetAdmissionBlock) (BudgetDenial, error) {
+func appendExecutionBlocked(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding, options GateRunOptions, idempotency journal.IdempotencyRequest, chains []budgetChain, blocks []workflow.BudgetAdmissionBlock) (BudgetDenial, error) {
 	if len(chains) == 0 || len(blocks) == 0 {
 		return BudgetDenial{}, fmt.Errorf("execution budget denial is invalid")
 	}
@@ -624,7 +637,6 @@ func appendExecutionBlocked(lock *journal.WriteLock, conn *sql.DB, binding gateR
 	if err != nil {
 		return BudgetDenial{}, err
 	}
-	idempotency := journal.IdempotencyRequest{OperationScope: "gate.run:" + binding.projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
 	if _, err := journal.CommitIdempotent(lock, conn, idempotency, prepared, func(journal.Event) (journal.IdempotencyMutation, error) {
 		return journal.IdempotencyMutation{EntityID: denial.StopIDs[0], ResultJSON: string(payload)}, nil
 	}); err != nil {
@@ -682,7 +694,12 @@ func fillCreatedEventIDs(effects []journal.Effect, eventID string) {
 	}
 }
 
-func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding, attempt Attempt, options GateRunOptions, requestDigest string, live *LiveResult) (Receipt, string, error) {
+func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding, attempt Attempt, options GateRunOptions, idempotency journal.IdempotencyRequest, live *LiveResult) (Receipt, string, error) {
+	requestDigest := idempotency.RequestDigest
+	fieldsJSON, err := journal.MarshalCanonicalJSON(idempotency.RequestFieldDigests)
+	if err != nil {
+		return Receipt{}, "", err
+	}
 	if live == nil {
 		return Receipt{}, "", fmt.Errorf("run gate: live result is required")
 	}
@@ -754,7 +771,7 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 		return Receipt{}, "", err
 	}
 	event.Idempotency = &journal.EventIdempotency{Key: options.IdempotencyKey, RequestDigest: requestDigest, Scope: "gate.run:" + binding.projectID}
-	event.Effects = append(event.Effects, journal.Effect{Op: "update", Table: "idempotency_results", PK: map[string]any{"operation_scope": "gate.run:" + binding.projectID, "idempotency_key": options.IdempotencyKey}, Values: map[string]any{"result_entity_id": receipt.ID, "result_event_id": "<event-id>", "aggregate_sequence": 1, "result_json": string(resultJSON)}, Preconditions: map[string]any{"request_digest": requestDigest, "request_field_digests_json": "{}"}})
+	event.Effects = append(event.Effects, journal.Effect{Op: "update", Table: "idempotency_results", PK: map[string]any{"operation_scope": "gate.run:" + binding.projectID, "idempotency_key": options.IdempotencyKey}, Values: map[string]any{"result_entity_id": receipt.ID, "result_event_id": "<event-id>", "aggregate_sequence": 1, "result_json": string(resultJSON)}, Preconditions: map[string]any{"request_digest": requestDigest, "request_field_digests_json": string(fieldsJSON)}})
 	prepared, err := journal.PrepareEvent(lock, event)
 	if err != nil {
 		return Receipt{}, "", err

@@ -63,11 +63,11 @@ func ObserveRun(options RunOptions, request RunObserveRequest) (RunObservationRe
 		if err != nil {
 			return fmt.Errorf("run observe: read project config: %w", err)
 		}
-		digest, err := runRequestDigest(runObserveAction, project.ProjectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "operation": runObserveAction, "project_id": project.ProjectID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: runObserveAction + ":" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: runObserveAction + ":" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {

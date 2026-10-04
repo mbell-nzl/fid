@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -110,6 +111,10 @@ func renderStopError(cmd *cobra.Command, operation string, cause error) error {
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	var idempotency *journal.IdempotencyConflictError
+	if errors.As(cause, &idempotency) {
+		return writeStopFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key is bound to another request", nil, idempotencyConflictDetails(idempotency))
 	}
 	var stopNotFound *workflow.StopNotFoundError
 	if errors.As(cause, &stopNotFound) {

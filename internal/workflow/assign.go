@@ -76,11 +76,11 @@ func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions, actor 
 	if err != nil {
 		return err
 	}
-	digest, err := workflowRequestDigest("workflow.assign", projectConfig.ProjectID, actor, options.Request)
+	digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "workflow.assign", "project_id": projectConfig.ProjectID, "request": options.Request}, options.Actor, map[string]string{"Name": "--name", "Kind": "--kind", "Project": "--project-wide"})
 	if err != nil {
 		return err
 	}
-	idempotencyRequest := journal.IdempotencyRequest{OperationScope: "workflow.assign:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+	idempotencyRequest := journal.IdempotencyRequest{OperationScope: "workflow.assign:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 	if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
 		return err
 	} else if found {

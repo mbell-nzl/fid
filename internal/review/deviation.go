@@ -65,11 +65,11 @@ func RecordDeviation(options JudgmentOptions, request DeviationRecordRequest) (D
 		if err := authorizeJudgmentSubject(options, conn, actor, "deviation.record", request.Subject); err != nil {
 			return err
 		}
-		digest, err := judgmentDigest("deviation.record", projectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "deviation.record", "project_id": projectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "deviation.record:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "deviation.record:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {

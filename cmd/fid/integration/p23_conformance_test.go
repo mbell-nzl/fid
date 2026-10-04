@@ -488,9 +488,14 @@ func (a p23FakeLeafAdapter) Conflict(pair p23HumanLeafPair) p23LeafOutcome {
 			key = pair.JSONArgs[i+1]
 		}
 	}
+	changedField := map[string]string{
+		"review.record": "profile", "finding.address": "reason", "concern.record": "summary",
+		"concern.dispose": "reason", "deviation.record": "reasoning", "decision.record-reference": "outcome",
+		"human-outcome.record": "reasoning", "requirement.record-reference": "status", "requirement.link": "relation",
+	}[a.fixture.Operation]
 	return p23LeafOutcome{Operation: a.fixture.Operation, Code: "idempotency-conflict", Category: "conflict", Exit: 4,
 		Details: map[string]any{"operation_scope": a.fixture.Operation + ":<generated:project>", "idempotency_key": key,
-			"stored_request_digest": "<generated:digest>", "supplied_request_digest": "<generated:digest>"}}
+			"stored_request_digest": "<generated:digest>", "supplied_request_digest": "<generated:digest>", "differing_fields": []any{changedField}}}
 }
 
 func (a p23FakeLeafAdapter) NotFound() p23LeafOutcome {
