@@ -1,16 +1,58 @@
 package review
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	_ "modernc.org/sqlite"
 )
+
+func TestResolveReviewCoverageChecksSourcesBeforeDigestExclusivity(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	path := "coverage.md"
+	contents := []byte("reviewed coverage\n")
+	if err := os.WriteFile(filepath.Join(root, path), contents, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	observedDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(contents))
+	observed := Repository{HeadOID: "head", Dirty: true}
+	file := SourceInput{SourceType: "project-file", DisplayLabel: "Coverage", Path: &path}
+	input := CoverageInput{Items: []CoverageItemInput{{Source: file, Assessed: true}}, Exclusions: []CoverageExclusionInput{}}
+	coverage, err := resolveReviewCoverage(root, input, observed)
+	if err != nil || len(coverage.Items) != 1 || coverage.Items[0].Source.Digest != observedDigest || coverage.Items[0].Source.Repository != observed {
+		t.Fatalf("resolved coverage = %#v, error %v", coverage, err)
+	}
+	if err := validateCoverage(coverage); err != nil {
+		t.Fatalf("valid resolved coverage: %v", err)
+	}
+	file.Digest = &observedDigest
+	input.Items[0].Source = file
+	if _, err := resolveReviewCoverage(root, input, observed); err != nil {
+		t.Fatalf("matching supplied digest: %v", err)
+	}
+	input.Exclusions = []CoverageExclusionInput{{Source: file, Reason: "unavailable"}}
+	duplicated, err := resolveReviewCoverage(root, input, observed)
+	if err != nil || validateCoverage(duplicated) == nil {
+		t.Fatalf("shared item/exclusion digest accepted: coverage %#v, error %v", duplicated, err)
+	}
+	wrong := "sha256:" + fmt.Sprintf("%064d", 0)
+	input.Items[0].Source.Digest = &wrong
+	_, err = resolveReviewCoverage(root, input, observed)
+	var mismatch *project.SourceDigestMismatchError
+	if !errors.As(err, &mismatch) || mismatch.ExpectedDigest == nil || *mismatch.ExpectedDigest != wrong || mismatch.ObservedDigest == nil || *mismatch.ObservedDigest != observedDigest {
+		t.Fatalf("mismatch = %#v, want supplied and observed digests", err)
+	}
+}
 
 func TestChangesRequiredReviewChargesExactlyOneReviewCycle(t *testing.T) {
 	t.Parallel()

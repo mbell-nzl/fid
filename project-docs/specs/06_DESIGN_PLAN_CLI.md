@@ -220,6 +220,24 @@ invalid. No independent terminal-disposition leaf is added. The accepted
 [Phase 23 input contract](../docs/phases/phase-23/public-interface.md) fixes
 bounds, rejection codes and existing Finding disposition readback.
 
+Phase 24 Task 5 makes `review record` take required
+`expected_repository:{head_oid,dirty}` in place of a caller-supplied
+`repository`. Use the full output of `git rev-parse HEAD` for `head_oid` and
+set `dirty` from `git status --porcelain`, ignoring `.fid/` paths. The
+coverage item and exclusion Sources, and `evidence_refs`, take `SourceInput`
+without `repository`; project-file digests may be omitted for fid to compute.
+The stored Review and its Sources carry fid's single observed Repository.
+For example, the repository portion of a Review input is:
+
+```json
+{"expected_repository":{"head_oid":"0123456789abcdef0123456789abcdef01234567","dirty":false}}
+```
+
+A mismatch returns `repository-mismatch` with exactly
+`{expected:{head_oid,dirty},observed:Repository}` and appends no Event.
+`finding address` keeps its input shape and gains descriptor help and
+`--example`.
+
 Phase 23 Task 10 adds provenanced Human Outcomes. `human-outcome record`
 requires a human Actor type in a finalized Kit Activation profile carrying the
 `human-outcome.record` capability, established through that active provenance
@@ -355,7 +373,7 @@ the entity ID in the producing rejection. All are `retryable:false`.
 | `outcome-not-permitted` | precondition / 4 | null | `obligation_id`, `obligation_type`, `outcome_id`, `result` |
 | `evidence-type-not-accepted` | precondition / 4 | null | `obligation_id`, `evidence_type`, `accepted_evidence_types` |
 | `source-digest-mismatch` | precondition / 4 | null | `display_label`, `path`, `expected_digest`, `observed_digest` |
-| `repository-mismatch` | conflict / 4 | null | `expected`, `observed` |
+| `repository-mismatch` | conflict / 4 | null | `expected:{head_oid,dirty}`, `observed:Repository` |
 | `human-outcome-required` | precondition / 4 | envelope | `envelope_id`, `obligation_id`, `outcome_class`, `stop_ids`, `attention_ids`, `event`, `replayed` |
 
 `requirement-not-found` retains its earlier not-found / 3 registration with

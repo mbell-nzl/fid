@@ -244,7 +244,7 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 	CodeOutcomeNotPermitted: definition(CategoryPrecondition, false, nil,
 		stringField("obligation_id"), stringField("obligation_type"), stringField("outcome_id"), stringField("result")),
 	CodeRepositoryMismatch: definition(CategoryConflict, false, nil,
-		objectField("expected", repositoryFields()...), objectField("observed", repositoryFields()...)),
+		objectField("expected", stringField("head_oid"), booleanField("dirty")), objectField("observed", repositoryFields()...)),
 	CodeReviewNotFound:  definition(CategoryNotFound, false, []SubjectType{SubjectReview}, stringField("id")),
 	CodeFindingNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectFinding}, stringField("id")),
 	CodeFindingAlreadyDisposed: definition(CategoryConflict, false, []SubjectType{SubjectFinding},

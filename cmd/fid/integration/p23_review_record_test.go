@@ -3,12 +3,172 @@
 package integration
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestP24ReviewRecordResolvesSourcesAndReplaysWithoutObservation(t *testing.T) {
+	t.Parallel()
+	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "gate.register", "review.record", "run.close", "run.observe", "run.start"}
+	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "mutation")
+	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "review-source-builder")
+	claim := p23AcquireClaim(t, a, "actor-denied", "review", "review-source")
+	run := p23StartRun(t, a, "actor-denied", claim, "review-source")
+	p22Write(t, a.workspace, "excluded.md", "excluded material\n")
+	input := p23ReviewInput(a, p21PathString(t, run, "id"), p23Number(t, run["version"]), "pass", nil, nil)
+	head := p22GitOutput(t, a.workspace, "rev-parse", "HEAD")
+	dirty := p22GitOutput(t, a.workspace, "status", "--porcelain") != ""
+	input["expected_repository"] = map[string]any{"head_oid": head, "dirty": dirty}
+	basePath, exclusionPath := "base.txt", "excluded.md"
+	baseBytes, err := os.ReadFile(filepath.Join(a.workspace, basePath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	baseDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(baseBytes))
+	excludedBytes, err := os.ReadFile(filepath.Join(a.workspace, exclusionPath))
+	if err != nil {
+		t.Fatal(err)
+	}
+	excludedDigest := fmt.Sprintf("sha256:%x", sha256.Sum256(excludedBytes))
+	baseSource := map[string]any{"source_type": "project-file", "display_label": "Covered", "path": basePath, "section": nil, "external_id": nil}
+	exclusionSource := map[string]any{"source_type": "project-file", "display_label": "Excluded", "path": exclusionPath, "section": nil, "external_id": nil, "digest": excludedDigest}
+	input["coverage"] = map[string]any{"items": []any{map[string]any{"source": baseSource, "assessed": true}}, "exclusions": []any{map[string]any{"source": exclusionSource, "reason": "outside review scope"}}}
+	input["evidence_refs"] = []any{baseSource}
+	for _, test := range []struct {
+		name, path string
+		change     func(map[string]any)
+	}{
+		{"top repository", "input.repository", func(v map[string]any) { v["repository"] = a.repository }},
+		{"item repository", "input.coverage.items[0].source.repository", func(v map[string]any) {
+			v["coverage"].(map[string]any)["items"].([]any)[0].(map[string]any)["source"].(map[string]any)["repository"] = a.repository
+		}},
+		{"exclusion repository", "input.coverage.exclusions[0].source.repository", func(v map[string]any) {
+			v["coverage"].(map[string]any)["exclusions"].([]any)[0].(map[string]any)["source"].(map[string]any)["repository"] = a.repository
+		}},
+		{"evidence repository", "input.evidence_refs[0].repository", func(v map[string]any) {
+			v["evidence_refs"].([]any)[0].(map[string]any)["repository"] = a.repository
+		}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			removed := p23Clone(input)
+			test.change(removed)
+			before := p21JournalEventCount(t, a.workspace)
+			result := p23ReviewRecord(t, a, "actor-denied", "review-removed-"+test.name, removed)
+			assertP22ProcessFailure(t, "review.record", "invalid-argument", 2, result)
+			var failure map[string]any
+			if err := json.Unmarshal([]byte(result.Stderr), &failure); err != nil {
+				t.Fatal(err)
+			}
+			if got := failure["error"].(map[string]any)["details"].(map[string]any)["argument"]; got != test.path || p21JournalEventCount(t, a.workspace) != before {
+				t.Fatalf("removed repository member = %v, want %s and no Event", got, test.path)
+			}
+		})
+	}
+	wrongDigest := "sha256:" + p22Zeros(64)
+	for _, test := range []struct {
+		name, observed string
+		change         func(map[string]any)
+	}{
+		{"item", baseDigest, func(v map[string]any) {
+			v["coverage"].(map[string]any)["items"].([]any)[0].(map[string]any)["source"].(map[string]any)["digest"] = wrongDigest
+		}},
+		{"exclusion", excludedDigest, func(v map[string]any) {
+			v["coverage"].(map[string]any)["exclusions"].([]any)[0].(map[string]any)["source"].(map[string]any)["digest"] = wrongDigest
+		}},
+		{"evidence", baseDigest, func(v map[string]any) { v["evidence_refs"].([]any)[0].(map[string]any)["digest"] = wrongDigest }},
+	} {
+		t.Run(test.name+" digest mismatch", func(t *testing.T) {
+			wrong := p23Clone(input)
+			test.change(wrong)
+			before := p21JournalEventCount(t, a.workspace)
+			response := p23ReviewRecord(t, a, "actor-denied", "review-source-wrong-"+test.name, wrong)
+			assertP22ProcessFailure(t, "review.record", "source-digest-mismatch", 4, response)
+			var failure map[string]any
+			if err := json.Unmarshal([]byte(response.Stderr), &failure); err != nil {
+				t.Fatal(err)
+			}
+			details := failure["error"].(map[string]any)["details"].(map[string]any)
+			if details["expected_digest"] != wrongDigest || details["observed_digest"] != test.observed || p21JournalEventCount(t, a.workspace) != before {
+				t.Fatalf("%s mismatch details = %#v; want both digests and no Event", test.name, details)
+			}
+		})
+	}
+	before := p21JournalEventCount(t, a.workspace)
+	response := p23ReviewRecord(t, a, "actor-denied", "review-source-record", input)
+	p23AssertReviewSuccess(t, "Review with resolved Sources", response)
+	review := p23ReviewFromResponse(t, response)
+	storedItem := review["coverage"].(map[string]any)["items"].([]any)[0].(map[string]any)["source"].(map[string]any)
+	storedExclusion := review["coverage"].(map[string]any)["exclusions"].([]any)[0].(map[string]any)["source"].(map[string]any)
+	storedEvidence := review["evidence_refs"].([]any)[0].(map[string]any)
+	for _, check := range []struct {
+		source map[string]any
+		digest string
+	}{{storedItem, baseDigest}, {storedExclusion, excludedDigest}, {storedEvidence, baseDigest}} {
+		if check.source["digest"] != check.digest || !reflect.DeepEqual(check.source["repository"], review["repository"]) {
+			t.Fatalf("resolved Source = %#v, want digest %s and observed Repository", check.source, check.digest)
+		}
+	}
+	if repository := review["repository"].(map[string]any); repository["head_oid"] != head || repository["dirty"] != dirty || repository["tree_oid"] != p22GitOutput(t, a.workspace, "rev-parse", "HEAD^{tree}") {
+		t.Fatalf("stored repository differs from git observation: %#v", repository)
+	}
+	if p21JournalEventCount(t, a.workspace) != before+1 {
+		t.Fatal("accepted Review did not append exactly one Event")
+	}
+	p22Git(t, a.workspace, "add", "base.txt", "excluded.md")
+	p22Git(t, a.workspace, "commit", "-qm", "advance Review HEAD")
+	before = p21JournalEventCount(t, a.workspace)
+	replay := p23ReviewRecord(t, a, "actor-denied", "review-source-record", input)
+	p23AssertReviewSuccess(t, "HEAD-advanced replay", replay)
+	if p21Path(t, p23Envelope(t, replay.Stdout), "result", "replayed") != true || p21JournalEventCount(t, a.workspace) != before {
+		t.Fatal("HEAD-advanced retry did not replay without Event")
+	}
+	newKey := p23ReviewRecord(t, a, "actor-denied", "review-head-control", input)
+	assertP22ProcessFailure(t, "review.record", "repository-mismatch", 4, newKey)
+	gitBackup := filepath.Join(t.TempDir(), "git-backup")
+	if err := os.Rename(filepath.Join(a.workspace, ".git"), gitBackup); err != nil {
+		t.Fatal(err)
+	}
+	replay = p23ReviewRecord(t, a, "actor-denied", "review-source-record", input)
+	p23AssertReviewSuccess(t, "unobservable replay", replay)
+	if p21Path(t, p23Envelope(t, replay.Stdout), "result", "replayed") != true || p21JournalEventCount(t, a.workspace) != before {
+		t.Fatal("unobservable retry did not replay without Event")
+	}
+	unavailable := p23ReviewRecord(t, a, "actor-denied", "review-unobservable-control", input)
+	assertP22ProcessFailure(t, "review.record", "repository-unavailable", 4, unavailable)
+	if err := os.Rename(gitBackup, filepath.Join(a.workspace, ".git")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(a.workspace, basePath)); err != nil {
+		t.Fatal(err)
+	}
+	replay = p23ReviewRecord(t, a, "actor-denied", "review-source-record", input)
+	p23AssertReviewSuccess(t, "deleted Source replay", replay)
+	if p21Path(t, p23Envelope(t, replay.Stdout), "result", "replayed") != true || p21JournalEventCount(t, a.workspace) != before {
+		t.Fatal("deleted Source retry did not replay without Event")
+	}
+	deleted := p23Clone(input)
+	deleted["expected_repository"] = map[string]any{"head_oid": p22GitOutput(t, a.workspace, "rev-parse", "HEAD"), "dirty": true}
+	missing := p23ReviewRecord(t, a, "actor-denied", "review-deleted-control", deleted)
+	assertP22ProcessFailure(t, "review.record", "source-digest-mismatch", 4, missing)
+	var missingFailure map[string]any
+	if err := json.Unmarshal([]byte(missing.Stderr), &missingFailure); err != nil {
+		t.Fatal(err)
+	}
+	missingDetails := missingFailure["error"].(map[string]any)["details"].(map[string]any)
+	if missingDetails["expected_digest"] != nil || missingDetails["observed_digest"] != nil {
+		t.Fatalf("deleted omitted Source details = %#v, want both digests null", missingDetails)
+	}
+	if p21JournalEventCount(t, a.workspace) != before {
+		t.Fatal("replay controls appended Event")
+	}
+}
 
 // TestP23ReviewRecordRealProcessJourney keeps the VAL-015 real-process
 // evidence at the built-binary boundary. The Run-only history direction is
@@ -45,17 +205,44 @@ func TestP23ReviewRecordRealProcessJourney(t *testing.T) {
 		p23Finding(a.issueID, "FND-prior", "major", true),
 		p23Finding(a.issueID, "FND-prior-two", "major", true),
 	}, nil)
+	t.Run("dirty_expectation_mismatch_echoes_only_the_expected_pair", func(t *testing.T) {
+		input := p23Clone(firstInput)
+		delete(input, "repository")
+		input["expected_repository"] = map[string]any{"head_oid": a.repository["head_oid"], "dirty": !a.repository["dirty"].(bool)}
+		before := p21JournalEventCount(t, a.workspace)
+		response := p23ReviewRecord(t, a, "actor-denied", "dirty-mismatch", input)
+		assertP22ProcessFailure(t, "review.record", "repository-mismatch", 4, response)
+		var envelope map[string]any
+		if err := json.Unmarshal([]byte(response.Stderr), &envelope); err != nil {
+			t.Fatal(err)
+		}
+		details := envelope["error"].(map[string]any)["details"].(map[string]any)
+		if !reflect.DeepEqual(details["expected"], input["expected_repository"]) {
+			t.Fatalf("expected echo = %#v, want %#v", details["expected"], input["expected_repository"])
+		}
+		if !reflect.DeepEqual(details["observed"], p24JSONMap(t, a.repository)) {
+			t.Fatalf("observed repository = %#v, want %#v", details["observed"], a.repository)
+		}
+		if after := p21JournalEventCount(t, a.workspace); after != before {
+			t.Fatalf("dirty mismatch appended Event: %d -> %d", before, after)
+		}
+	})
 
 	t.Run("repository_mismatch_is_typed_and_non_mutating", func(t *testing.T) {
 		mismatch := p23Clone(firstInput)
-		repository := p23Clone(mismatch["repository"].(map[string]any))
+		repository := p23Clone(mismatch["expected_repository"].(map[string]any))
 		repository["head_oid"] = strings.Repeat("0", 40)
-		mismatch["repository"] = repository
+		mismatch["expected_repository"] = repository
 		before := p21JournalEventCount(t, a.workspace)
 		response := p23ReviewRecord(t, a, "actor-denied", "repository-mismatch", mismatch)
 		assertP22ProcessFailure(t, "review.record", "repository-mismatch", 4, response)
-		if !strings.Contains(response.Stderr, `"expected"`) || !strings.Contains(response.Stderr, `"observed"`) {
-			t.Fatalf("repository mismatch = %q, want expected and observed identities", response.Stderr)
+		var envelope map[string]any
+		if err := json.Unmarshal([]byte(response.Stderr), &envelope); err != nil {
+			t.Fatal(err)
+		}
+		details := envelope["error"].(map[string]any)["details"].(map[string]any)
+		if len(details) != 2 || !reflect.DeepEqual(details["expected"], repository) || !reflect.DeepEqual(details["observed"], p24JSONMap(t, a.repository)) {
+			t.Fatalf("repository mismatch details = %#v, want closed expected/observed shape", details)
 		}
 		if after := p21JournalEventCount(t, a.workspace); after != before {
 			t.Fatalf("repository mismatch appended Event(s): %d -> %d", before, after)
@@ -229,7 +416,18 @@ func containsAction(actions []string, want string) bool {
 }
 
 func p23ReviewInput(a *p22FIDRecoveryAdapter, runID string, version int, verdict string, findings, resolves []any) map[string]any {
-	return map[string]any{"run_id": runID, "expected_run_version": version, "profile": "review-default", "repository": a.repository, "coverage": map[string]any{"items": []any{map[string]any{"source": a.measurement, "assessed": true}}, "exclusions": []any{}}, "verdict": verdict, "findings": findings, "resolves_finding_ids": resolves, "evidence_refs": []any{}, "receipt_ids": []any{}}
+	if findings == nil {
+		findings = []any{}
+	}
+	if resolves == nil {
+		resolves = []any{}
+	}
+	source := p23Clone(a.measurement)
+	delete(source, "repository")
+	source["source_type"] = "external-reference"
+	source["path"] = nil
+	source["external_id"] = "p22-corpus-coverage"
+	return map[string]any{"run_id": runID, "expected_run_version": version, "profile": "review-default", "expected_repository": map[string]any{"head_oid": a.repository["head_oid"], "dirty": a.repository["dirty"]}, "coverage": map[string]any{"items": []any{map[string]any{"source": source, "assessed": true}}, "exclusions": []any{}}, "verdict": verdict, "findings": findings, "resolves_finding_ids": resolves, "evidence_refs": []any{}, "receipt_ids": []any{}}
 }
 
 func p23Finding(issueID, id, severity string, blocking bool) map[string]any {

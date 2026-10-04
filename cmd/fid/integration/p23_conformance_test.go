@@ -507,6 +507,8 @@ func (a p23FakeLeafAdapter) UnknownField() p23LeafOutcome {
 }
 
 var p24AdoptedTopLevelFields = map[string][]any{
+	"review.record":                {"coverage", "evidence_refs", "expected_repository", "expected_run_version", "findings", "inapplicable_findings", "profile", "receipt_ids", "resolves_finding_ids", "run_id", "verdict"},
+	"finding.address":              {"claim_id", "expected_claim_version", "finding_id", "reason"},
 	"decision.record-reference":    {"authority", "class", "id", "outcome", "scope", "source"},
 	"requirement.record-reference": {"id", "source", "status"},
 	"requirement.link":             {"issue_id", "relation", "requirement_id"},

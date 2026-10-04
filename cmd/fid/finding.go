@@ -32,7 +32,7 @@ func newFindingAddressCommand() *cobra.Command {
 			}
 		}
 		var request review.AddressRequest
-		if err := decodeClosedReviewInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["finding address"], &request); err != nil {
 			return renderFindingError(cmd, "finding.address", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -58,6 +58,7 @@ func newFindingAddressCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("finding.address"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["finding address"])
 	return cmd
 }
 
@@ -99,6 +100,9 @@ func renderFindingError(cmd *cobra.Command, operation string, cause error) error
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, operation, cause); ok {
+		return rendered
 	}
 	var missing *review.FindingNotFoundError
 	if errors.As(cause, &missing) {

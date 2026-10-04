@@ -104,7 +104,7 @@ func newReviewRecordCommand() *cobra.Command {
 			}
 		}
 		var request review.RecordRequest
-		if err := decodeClosedReviewInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["review record"], &request); err != nil {
 			return renderReviewError(cmd, err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -128,6 +128,7 @@ func newReviewRecordCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("review.record"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["review record"])
 	return cmd
 }
 
@@ -224,7 +225,10 @@ func renderReviewError(cmd *cobra.Command, cause error) error {
 	}
 	var mismatch *review.RepositoryMismatchError
 	if errors.As(cause, &mismatch) {
-		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeRepositoryMismatch, "repository identity does not match", nil, map[string]any{"expected": repositoryDetails(mismatch.Expected), "observed": repositoryDetails(mismatch.Observed)})
+		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeRepositoryMismatch, "repository identity does not match", nil, map[string]any{"expected": map[string]any{"head_oid": mismatch.Expected.HeadOID, "dirty": mismatch.Expected.Dirty}, "observed": repositoryDetails(mismatch.Observed)})
+	}
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, "review.record", cause); ok {
+		return rendered
 	}
 	var reviewConflict *review.ReviewConflictError
 	if errors.As(cause, &reviewConflict) {

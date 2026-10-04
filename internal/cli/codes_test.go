@@ -128,7 +128,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeReviewReworkExhausted, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, budgetDenialDetails()},
 		{CodeEvidenceTypeNotAccepted, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("obligation_id"), stringDetail("evidence_type"), {name: "accepted_evidence_types", kind: detailStringsKind}}},
 		{CodeOutcomeNotPermitted, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("obligation_id"), stringDetail("obligation_type"), stringDetail("outcome_id"), stringDetail("result")}},
-		{CodeRepositoryMismatch, CategoryConflict, false, nil, []detailExpectation{{name: "expected", kind: detailObjectKind, children: repositoryExpectations()}, {name: "observed", kind: detailObjectKind, children: repositoryExpectations()}}},
+		{CodeRepositoryMismatch, CategoryConflict, false, nil, []detailExpectation{{name: "expected", kind: detailObjectKind, children: []detailExpectation{{name: "head_oid", kind: detailStringKind}, {name: "dirty", kind: detailBooleanKind}}}, {name: "observed", kind: detailObjectKind, children: repositoryExpectations()}}},
 		{CodeReviewNotFound, CategoryNotFound, false, []SubjectType{SubjectReview}, stringDetails("id")},
 		{CodeGateUnsuccessful, CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt}, []detailExpectation{
 			stringDetail("attempt_id"), stringDetail("receipt_id"), stringDetail("outcome"), nullableIntegerDetail("exit_code"), nullableStringDetail("signal"), {name: "timed_out", kind: detailBooleanKind},

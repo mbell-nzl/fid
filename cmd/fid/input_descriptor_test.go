@@ -44,7 +44,7 @@ func TestAttentionResolveUnknownFieldNamesInputPath(t *testing.T) {
 func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 	t.Parallel()
 	leaves := []string{"stop raise", "stop resolve", "attention resolve", "decision record-reference",
-		"requirement record-reference", "requirement link", "human-outcome record", "concern record", "concern dispose", "deviation record"}
+		"requirement record-reference", "requirement link", "human-outcome record", "concern record", "concern dispose", "deviation record", "review record", "finding address"}
 	conflicts := []struct {
 		name, argument string
 		value          any
@@ -63,8 +63,8 @@ func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 		{"key first", "--idempotency-key", "key-1", func(string) []string { return []string{"--idempotency-key", "key-1", "extra"} }},
 		{"positional", "arguments", "extra", func(string) []string { return []string{"extra"} }},
 	}
-	if got := len(leaves) * len(conflicts); got != 60 {
-		t.Fatalf("exclusivity corpus has %d rows, want 60", got)
+	if got := len(leaves) * len(conflicts); got != 72 {
+		t.Fatalf("exclusivity corpus has %d rows, want 72", got)
 	}
 	binary := buildAdoptedFID(t)
 	for _, leaf := range leaves {
@@ -271,6 +271,122 @@ func TestInputDescriptorRegistryMatchesLiveTreeAndTypes(t *testing.T) {
 	mismatch.Fields[0].Name = "wrong_stop_id"
 	if err := cli.CheckInputType(mismatch); err == nil {
 		t.Error("seeded descriptor/type mismatch passed")
+	}
+}
+
+func TestP24ReviewAndFindingDescriptorHelpAndStructure(t *testing.T) {
+	t.Parallel()
+	for _, leaf := range []string{"review record", "finding address"} {
+		t.Run(leaf, func(t *testing.T) {
+			descriptor := inputDescriptorRegistry[leaf]
+			if pendingInputDescriptors[leaf] {
+				t.Fatalf("%s remains behind the descriptor fence", leaf)
+			}
+			example, err := cli.InputExample(descriptor)
+			if err != nil || cli.ValidateInput(example, descriptor) != nil {
+				t.Fatalf("template is not structurally valid: %s, %v", example, err)
+			}
+			typed := reflect.New(descriptor.Type).Interface()
+			decoder := json.NewDecoder(bytes.NewReader(example))
+			decoder.DisallowUnknownFields()
+			if err := decoder.Decode(typed); err != nil {
+				t.Fatalf("template does not decode: %v", err)
+			}
+			parts := strings.Split(leaf, " ")
+			help := executeCommandForTest(t.TempDir(), append(parts, "--help")...)
+			if help.err != nil || !strings.Contains(help.stdout, "fid "+leaf+" --example") {
+				t.Fatalf("descriptor help = %#v", help)
+			}
+			if leaf == "review record" && (!strings.Contains(help.stdout, "git rev-parse HEAD") || !strings.Contains(help.stdout, "git status --porcelain")) {
+				t.Fatalf("review help omits git commands: %s", help.stdout)
+			}
+			first := descriptor.Fields[0].Name
+			cases := []struct {
+				name, path string
+				change     func(map[string]any)
+			}{
+				{"unknown", "input.bogus", func(v map[string]any) { v["bogus"] = true }},
+				{"missing", "input." + first, func(v map[string]any) { delete(v, first) }},
+				{"null", "input." + first, func(v map[string]any) { v[first] = nil }},
+				{"type", "input." + first, func(v map[string]any) { v[first] = 1 }},
+				{"format", "input." + first, func(v map[string]any) { v[first] = "" }},
+			}
+			if leaf == "review record" {
+				cases = append(cases,
+					struct {
+						name, path string
+						change     func(map[string]any)
+					}{"nested unknown", "input.expected_repository.bogus", func(v map[string]any) { v["expected_repository"].(map[string]any)["bogus"] = true }},
+					struct {
+						name, path string
+						change     func(map[string]any)
+					}{"deep enum", "input.coverage.items[0].source.source_type", func(v map[string]any) {
+						v["coverage"].(map[string]any)["items"].([]any)[0].(map[string]any)["source"].(map[string]any)["source_type"] = "bogus"
+					}},
+				)
+			}
+			for _, test := range cases {
+				t.Run(test.name, func(t *testing.T) {
+					var value map[string]any
+					if err := json.Unmarshal(example, &value); err != nil {
+						t.Fatal(err)
+					}
+					test.change(value)
+					payload, err := json.Marshal(value)
+					if err != nil {
+						t.Fatal(err)
+					}
+					invalid, ok := cli.ValidateInput(payload, descriptor).(*cli.InputError)
+					if !ok || invalid.Path != test.path {
+						t.Fatalf("validation = %#v, want %s", invalid, test.path)
+					}
+					workspace := t.TempDir()
+					input := filepath.Join(workspace, "input.json")
+					if err := os.WriteFile(input, payload, 0o600); err != nil {
+						t.Fatal(err)
+					}
+					args := append([]string{"--json"}, parts...)
+					args = append(args, "--input", input, "--actor", "ACT-1", "--idempotency-key", "structure")
+					result := executeCommandForTest(workspace, args...)
+					if cli.ExitCode(result.err) != 2 || result.stdout != "" {
+						t.Fatalf("structural failure = %#v", result)
+					}
+					assertAdoptedJSONFailure(t, result.stderr, descriptor.Operation, test.path, invalid.Value, invalid.Allowed)
+					if _, err := os.Stat(filepath.Join(workspace, ".fid")); !os.IsNotExist(err) {
+						t.Fatalf("structural failure changed workspace: %v", err)
+					}
+				})
+			}
+			duplicates := []struct{ name, key, path string }{{"top duplicate", first, "input." + first}}
+			if leaf == "review record" {
+				duplicates = append(duplicates, struct{ name, key, path string }{"deep duplicate", "head_oid", "input.expected_repository.head_oid"})
+			}
+			for _, test := range duplicates {
+				t.Run(test.name, func(t *testing.T) {
+					needle := `"` + test.key + `":`
+					payload := []byte(strings.Replace(string(example), needle, needle+`"duplicate",`+needle, 1))
+					invalid, ok := cli.ValidateInput(payload, descriptor).(*cli.InputError)
+					if !ok || invalid.Path != test.path {
+						t.Fatalf("duplicate validation = %#v, want %s", invalid, test.path)
+					}
+					workspace := t.TempDir()
+					input := filepath.Join(workspace, "input.json")
+					if err := os.WriteFile(input, payload, 0o600); err != nil {
+						t.Fatal(err)
+					}
+					args := append([]string{"--json"}, parts...)
+					args = append(args, "--input", input, "--actor", "ACT-1", "--idempotency-key", "duplicate")
+					result := executeCommandForTest(workspace, args...)
+					if cli.ExitCode(result.err) != 2 || result.stdout != "" {
+						t.Fatalf("duplicate failure = %#v", result)
+					}
+					assertAdoptedJSONFailure(t, result.stderr, descriptor.Operation, test.path, invalid.Value, invalid.Allowed)
+					if _, err := os.Stat(filepath.Join(workspace, ".fid")); !os.IsNotExist(err) {
+						t.Fatalf("duplicate failure changed workspace: %v", err)
+					}
+				})
+			}
+		})
 	}
 }
 

@@ -32,13 +32,28 @@ func p23ReviewFindingModel(t *testing.T, pairs map[string]p23HumanLeafPair) map[
 		"qualifying_review_id": nil, "reason": addressInput["reason"],
 		"disposed_at": "<generated:timestamp>", "event_id": "<generated:EventRef>",
 	}}
+	coverageInput := reviewInput["coverage"].(map[string]any)
+	coverage := map[string]any{"items": []any{}, "exclusions": []any{}}
+	for _, raw := range coverageInput["items"].([]any) {
+		item := raw.(map[string]any)
+		coverage["items"] = append(coverage["items"].([]any), map[string]any{"assessed": item["assessed"], "source": p24ModelSource(t, reviewPair, item["source"])})
+	}
+	for _, raw := range coverageInput["exclusions"].([]any) {
+		exclusion := raw.(map[string]any)
+		coverage["exclusions"] = append(coverage["exclusions"].([]any), map[string]any{"reason": exclusion["reason"], "source": p24ModelSource(t, reviewPair, exclusion["source"])})
+	}
+	evidenceRefs := []any{}
+	for _, raw := range reviewInput["evidence_refs"].([]any) {
+		evidenceRefs = append(evidenceRefs, p24ModelSource(t, reviewPair, raw))
+	}
+	repository := coverage["items"].([]any)[0].(map[string]any)["source"].(map[string]any)["repository"]
 	review := map[string]any{
 		"id": "<generated:REV>", "run_id": reviewInput["run_id"],
 		"issue_id":    findingInput["subject"].(map[string]any)["id"],
 		"envelope_id": "<generated:ENV>", "envelope_revision": float64(1),
 		"actor_id": p23LeafFlag(t, reviewPair, "--actor"), "profile": reviewInput["profile"],
-		"repository": reviewInput["repository"], "coverage": reviewInput["coverage"],
-		"verdict": reviewInput["verdict"], "evidence_refs": reviewInput["evidence_refs"],
+		"repository": repository, "coverage": coverage,
+		"verdict": reviewInput["verdict"], "evidence_refs": evidenceRefs,
 		"receipt_ids": reviewInput["receipt_ids"], "findings": []any{open},
 		"resolved_finding_ids": []any{}, "independence": "distinct-actor",
 		"recorded_at": "<generated:timestamp>", "event_id": "<generated:EventRef>",

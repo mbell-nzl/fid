@@ -29,7 +29,10 @@ func TestReviewRecordRejectsNonIndependentActor(t *testing.T) {
 	}
 	run := runFromResponse(t, started.stdout)
 	inputPath := filepath.Join(workspace, "review-record.json")
-	writeActivationInput(t, inputPath, map[string]any{"run_id": run["id"]})
+	writeActivationInput(t, inputPath, reviewRecordInput(issueID, run, repository,
+		map[string]any{"source_type": "external-reference", "display_label": "Independence probe", "path": nil, "section": nil,
+			"external_id": "independence-probe", "digest": "sha256:" + strings.Repeat("0", 64)},
+		"pass", []any{}, []any{}, []any{}))
 
 	result := executeCommandForTest(workspace,
 		"--project", workspace, "--json", "review", "record", "--actor", "actor-builder",
@@ -75,7 +78,7 @@ func TestReviewRecordCreatesImmutableReview(t *testing.T) {
 		map[string]any{"id": "FND-review-one", "subject": map[string]any{"type": "issue", "id": issueID}, "scope": map[string]any{"paths": []any{}}, "severity": "minor", "summary": "first non-blocking finding", "blocking": false},
 		map[string]any{"id": "FND-review-two", "subject": map[string]any{"type": "issue", "id": issueID}, "scope": map[string]any{"paths": []any{}}, "severity": "nit", "summary": "second non-blocking finding", "blocking": false},
 	}
-	recordInput := map[string]any{"run_id": run["id"], "expected_run_version": run["version"], "profile": "review-default", "repository": repository, "coverage": map[string]any{"items": []any{map[string]any{"source": source, "assessed": true}}, "exclusions": []any{}}, "verdict": "pass", "findings": findings, "resolves_finding_ids": []any{}, "evidence_refs": []any{}, "receipt_ids": []any{}}
+	recordInput := reviewRecordInput(issueID, run, repository, source, "pass", findings, []any{}, []any{})
 	invalidVerdicts := []struct {
 		name     string
 		verdict  string
@@ -101,9 +104,9 @@ func TestReviewRecordCreatesImmutableReview(t *testing.T) {
 	}
 	writeActivationInput(t, recordPath, recordInput)
 	staleInput := cloneJSONMap(t, recordInput)
-	staleRepository := cloneJSONMap(t, repository)
+	staleRepository := cloneJSONMap(t, recordInput["expected_repository"].(map[string]any))
 	staleRepository["head_oid"] = strings.Repeat("0", 40)
-	staleInput["repository"] = staleRepository
+	staleInput["expected_repository"] = staleRepository
 	writeActivationInput(t, recordPath, staleInput)
 	beforeMismatch := snapshotWorkspacePersistence(t, workspace)
 	mismatch := executeCommandForTest(workspace, "--project", workspace, "--json", "review", "record", "--actor", "actor-builder", "--input", recordPath, "--idempotency-key", "review-record-stale")
@@ -409,7 +412,19 @@ func releaseReviewClaim(t *testing.T, workspace string, claim map[string]any, ac
 }
 
 func reviewRecordInput(issueID string, run map[string]any, repository map[string]any, source any, verdict string, findings, resolves, receipts []any) map[string]any {
-	return map[string]any{"run_id": run["id"], "expected_run_version": run["version"], "profile": "review-default", "repository": repository, "coverage": map[string]any{"items": []any{map[string]any{"source": source, "assessed": true}}, "exclusions": []any{}}, "verdict": verdict, "findings": findings, "resolves_finding_ids": resolves, "evidence_refs": []any{}, "receipt_ids": receipts}
+	sourceInput := map[string]any{}
+	for key, value := range source.(map[string]any) {
+		if key != "repository" {
+			sourceInput[key] = value
+		}
+	}
+	// The inherited envelope fixture uses a placeholder project-file Source.
+	// Review SourceInput now checks files, so this retained coverage declaration
+	// names the same digest as an external reference.
+	sourceInput["source_type"] = "external-reference"
+	sourceInput["path"] = nil
+	sourceInput["external_id"] = "review-corpus-source"
+	return map[string]any{"run_id": run["id"], "expected_run_version": run["version"], "profile": "review-default", "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]}, "coverage": map[string]any{"items": []any{map[string]any{"source": sourceInput, "assessed": true}}, "exclusions": []any{}}, "verdict": verdict, "findings": findings, "resolves_finding_ids": resolves, "evidence_refs": []any{}, "receipt_ids": receipts}
 }
 
 func reviewFinding(issueID, id, severity string, blocking bool) map[string]any {

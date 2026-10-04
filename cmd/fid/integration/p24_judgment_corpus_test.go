@@ -89,6 +89,11 @@ func TestP24JudgmentKeyedLeafConflictAndCanonicalRetryCorpus(t *testing.T) {
 				case string:
 					if pair.Operation == "requirement.link" && name == "relation" {
 						changed[name] = "verifies"
+					} else if pair.Operation == "review.record" && name == "verdict" {
+						if value != "changes-required" {
+							t.Fatalf("review verdict fixture = %q, want changes-required", value)
+						}
+						changed[name] = "blocked"
 					} else {
 						changed[name] = value + "-p24-different"
 					}
