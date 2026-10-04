@@ -78,8 +78,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `58352c73edf81ac8e89ffb7d7d824a67def3e3c4`
 
 ## Commit subject
 
-- Pending commit
+- `feat(idempotency): store request field digests in schema 19`
