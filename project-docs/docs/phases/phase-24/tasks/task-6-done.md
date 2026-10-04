@@ -43,11 +43,13 @@ OUTCOME RECOVERY_REQUIRED
 - `go test ./cmd/fid -run '^TestP24GateEnvelopeClaimDescriptors$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); all eight descriptors were behind the pending fence. After adopting them, the identical command - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.151s` (terminated `exit_code: 0`).
 - `go test ./cmd/fid -run '^TestEnvelopeCreateObservesScopeAndSourcesWithoutCallerRepository$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); the old Envelope input required `repository_scope`. After the Source/observation change, the identical command - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.556s` (terminated `exit_code: 0`).
 - `go test ./cmd/fid -run 'TestGateRegister|TestEnvelope|TestClaim' -count=1 -timeout 10m` - FAIL - `FAIL` (terminated `exit_code: 1`); retained fixtures still send removed members, copy path-bound facts, or need nullable `registration`. Preserve this failure and rerun the identical command after repair.
-- `go test ./cmd/fid -run '^(TestClaimAcquireBindsActiveEnvelopeActorWorktreeScopeAndTTL|TestGateRegisterObservesRepositoryWithoutCallerIdentity|TestEnvelopeCreateObservesScopeAndSourcesWithoutCallerRepository|TestP24GateEnvelopeClaimDescriptors|TestInputDescriptorRegistryMatchesLiveTreeAndTypes)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.676s` (terminated `exit_code: 0`).
-- `go test ./cmd/fid -run '^TestAdoptedExampleProcessExclusivity$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	1.577s` (terminated `exit_code: 0`).
-- `go test ./cmd/fid ./internal/workflow ./internal/evidence ./internal/claims ./internal/export -run '^$'` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	0.005s [no tests to run]` (terminated `exit_code: 0`); compile only.
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `/tmp/fid gate register --example` from `/tmp` - PASS - `}` (terminated `exit_code: 0`); the real CLI printed the new identity-free input template.
+- `go test ./cmd/fid -run '^(TestClaimAcquireBindsActiveEnvelopeActorWorktreeScopeAndTTL|TestGateRegisterObservesRepositoryWithoutCallerIdentity|TestEnvelopeCreateObservesScopeAndSourcesWithoutCallerRepository|TestP24GateEnvelopeClaimDescriptors|TestInputDescriptorRegistryMatchesLiveTreeAndTypes)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.676s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid -run '^TestAdoptedExampleProcessExclusivity$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	1.577s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid ./internal/workflow ./internal/evidence ./internal/claims ./internal/export -run '^$'` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	0.005s [no tests to run]` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `/tmp/fid gate register --example` - PASS - `}` (terminated `exit_code: 0`)
+
+The compile-only command ran no tests. The real `fid --example` invocation ran from `/tmp` and printed the new identity-free input template.
 
 ## Exact quality-gate results
 
@@ -62,6 +64,7 @@ Working directory for the required gate: `/home/mark/projects/fid`. None of its 
 ## Deviations from spec
 
 - No protected contract or gate definition was changed. The retained focused group ended `FAIL` (terminated `exit_code: 1`) because its inputs still contain removed repository/worktree members, its path-bound fixture caches need replacement, and the descriptor rejects a previously valid nullable Obligation Registration. In-scope convergence is pending; the identical command must be rerun after repair. No required gate attempt has been made.
+- The first report-lint check ended `FAIL report-lint found 5 failure(s)` (terminated `exit_code: 5`) because five passing test/build rows had prose or punctuation after their termination field. The report correction moved that prose to a separate paragraph and left the observed command tokens and statuses intact.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
