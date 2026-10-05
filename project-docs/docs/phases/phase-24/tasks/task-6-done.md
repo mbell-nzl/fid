@@ -83,7 +83,9 @@ The second identical run reached the two retained completion tests in the out-of
 
 - `go test ./cmd/fid -run '^TestP24EnvelopeAndClaimOriginalCopyAndImport$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
 - `go test ./cmd/fid -run '^TestP24EnvelopeAndClaimOriginalCopyAndImport$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	1.062s` (terminated `exit_code: 0`)
-- `go test ./cmd/fid -run '^TestP24BindingDescriptorProcessCorpus
+- `go test ./cmd/fid -run '^TestP24BindingDescriptorProcessCorpus$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test ./cmd/fid -run '^TestP24BindingDescriptorProcessCorpus$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test ./cmd/fid -run '^TestP24BindingDescriptorProcessCorpus$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
 - `go test ./cmd/fid -run '^TestP24BindingDescriptorProcessCorpus$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.572s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run '^TestP24BindingReplayBeforeObservation$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
 - `go test ./cmd/fid -run '^TestP24BindingReplayBeforeObservation$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	3.200s` (terminated `exit_code: 0`)
@@ -94,10 +96,13 @@ The second identical run reached the two retained completion tests in the out-of
 
 The expanded corpus initially serialized a non-string invalid value with fmt instead of canonical JSON; the assertion was corrected while preserving its required exact error value. The large failed output was not rerun to obtain a different failure.
 
-- `go test -tags integration ./cmd/fid/integration -run '^TestPhase21RealProcessJourneyStartsOneActivatedEnvelope
+- `go test -tags integration ./cmd/fid/integration -run '^TestPhase21RealProcessJourneyStartsOneActivatedEnvelope$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -tags integration ./cmd/fid/integration -run '^TestPhase21RealProcessJourneyStartsOneActivatedEnvelope$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -tags integration ./cmd/fid/integration -run '^TestPhase21RealProcessJourneyStartsOneActivatedEnvelope$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
 - `go test -tags integration ./cmd/fid/integration -run '^TestPhase21RealProcessJourneyStartsOneActivatedEnvelope$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	2.969s` (terminated `exit_code: 0`)
 - `go test -tags integration ./cmd/fid/integration -run '^TestP22DualAdapterRecoveryConformance$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	6.688s` (terminated `exit_code: 0`)
-- `go test -tags integration ./cmd/fid/integration -run '^TestP23SharedAmendedLeafConformance
+- `go test -tags integration ./cmd/fid/integration -run '^TestP23SharedAmendedLeafConformance$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -tags integration ./cmd/fid/integration -run '^TestP23SharedAmendedLeafConformance$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
 - `go test -tags integration ./cmd/fid/integration -run '^TestP23SharedAmendedLeafConformance$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.114s` (terminated `exit_code: 0`)
 - `go test -tags integration ./cmd/fid/integration -run '^TestP23ReviewRecord' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
 - `go test -tags integration ./cmd/fid/integration -run '^TestP23ReviewRecord' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.106s` (terminated `exit_code: 0`)
