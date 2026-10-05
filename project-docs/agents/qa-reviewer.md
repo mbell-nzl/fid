@@ -9,7 +9,7 @@ claude:
 codex:
   name: qa_reviewer
   description: Focused mid-phase QA reviewer for three-task windows. Writes review-M.md and emits blocker candidates for protected concerns.
-  model: gpt-6-sol
+  model: gpt-6.1-sol
   model_reasoning_effort: high
 ---
 <!-- body: shared -->

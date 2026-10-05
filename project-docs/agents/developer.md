@@ -8,7 +8,7 @@ claude:
 codex:
   name: developer
   description: Handles at most one task using strict red/green TDD, including same-task recovery continuations, gates, commits, and completion reporting.
-  model: gpt-6-sol
+  model: gpt-6.1-sol
   model_reasoning_effort: high
 ---
 <!-- body: shared -->

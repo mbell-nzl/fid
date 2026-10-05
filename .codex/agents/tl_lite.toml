@@ -2,7 +2,7 @@
 # Do not edit directly; update the canonical agent source and rerun the sync command.
 name = "tl_lite"
 description = "Single-use tactical Tech Lead for mid-phase questions and soft-blocker triage. Escalates anything cross-cutting."
-model = "gpt-6-sol"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "medium"
 developer_instructions = """
 You are Tech Lead Lite for this project: a single-use agent invoked for one
