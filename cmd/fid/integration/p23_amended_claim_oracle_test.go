@@ -34,7 +34,7 @@ func p23AmendedModel(t *testing.T, operation string, pair p23HumanLeafPair) map[
 	claim := map[string]any{
 		"id": "<generated:CLM>", "issue_id": input["issue_id"], "envelope_id": input["envelope_id"],
 		"envelope_revision": input["envelope_revision"], "actor_id": p23LeafFlag(t, pair, "--actor"),
-		"worktree_id": input["worktree_id"], "scope": input["scope"], "mode": input["mode"],
+		"worktree_id": p24ModelBindingRepository(t, pair.CWD)["worktree_id"], "scope": input["scope"], "mode": input["mode"],
 		"version": float64(1), "status": "active", "acquired_at": "<generated:timestamp>",
 		"expires_at": "<generated:timestamp>", "released_at": nil, "release_reason": nil,
 	}

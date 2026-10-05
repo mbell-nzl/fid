@@ -454,6 +454,17 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 				p23CompareLeafOutcome(t, "unknown-field", fake.UnknownField(), fid.UnknownField(t))
 				p23CompareLeafOutcome(t, "different-payload", fake.Conflict(fid.pair), fid.Conflict(t))
 			}
+			removed := map[string][]string{"envelope.create": {"repository_scope", "risk_result.source.repository"}, "claim.acquire": {"worktree_id"}}
+			for _, field := range removed[fixture.operation] {
+				allowed := p24AdoptedTopLevelFields[fixture.operation]
+				if strings.Contains(field, ".") {
+					allowed = []any{"digest", "display_label", "external_id", "path", "section", "source_type"}
+				}
+				value := field[strings.LastIndex(field, ".")+1:]
+				p23CompareLeafOutcome(t, "removed-member/"+field, p23LeafOutcome{Operation: fixture.operation,
+					Code: "invalid-argument", Category: "invalid-input", Exit: 2,
+					Details: map[string]any{"argument": "input." + field, "value": value, "allowed": allowed}}, fid.InvalidBinding(t, field, nil))
+			}
 			for _, missing := range leaf.NotFoundCases {
 				p23CompareLeafOutcome(t, "not-found/"+missing.Name, p23ExpectedNotFound(fixture.operation, missing), fid.NotFoundVariant(t, missing))
 			}
@@ -507,6 +518,10 @@ func (a p23FakeLeafAdapter) UnknownField() p23LeafOutcome {
 }
 
 var p24AdoptedTopLevelFields = map[string][]any{
+	"envelope.create":              {"authority_grants", "budgets", "non_goals", "obligations", "outcome", "primary_issue_id", "protected_decisions", "related_issue_ids", "risk_result", "sources"},
+	"envelope.activate":            {"envelope_id", "expected_revision"},
+	"envelope.complete":            {"envelope_id", "expected_revision"},
+	"claim.acquire":                {"envelope_id", "envelope_revision", "issue_id", "mode", "scope", "ttl_seconds"},
 	"review.record":                {"coverage", "evidence_refs", "expected_repository", "expected_run_version", "findings", "inapplicable_findings", "profile", "receipt_ids", "resolves_finding_ids", "run_id", "verdict"},
 	"finding.address":              {"claim_id", "expected_claim_version", "finding_id", "reason"},
 	"decision.record-reference":    {"authority", "class", "id", "outcome", "scope", "source"},

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -12,6 +14,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestGateRegisterUnknownActorReturnsContractAuthorityFailure(t *testing.T) {
@@ -61,6 +64,7 @@ func assertGateRegisterAuthorityFailure(t *testing.T, actor, code string) {
 func TestGateRegisterRequiresFinalizedActivatedDefinition(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
+	initializeObservedRepositoryForTest(t, workspace)
 	activationID := prepareActivationForTest(t, workspace)
 	profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "builders", []any{map[string]any{
 		"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/builders", "session_ref": nil,
@@ -215,6 +219,26 @@ func TestGateRegisterObservesRepositoryWithoutCallerIdentity(t *testing.T) {
 	if registered.WorktreeID != observed["worktree_id"] {
 		t.Fatalf("registration worktree = %q, want observed %q", registered.WorktreeID, observed["worktree_id"])
 	}
+	independent := p24IndependentBindingRepository(t, workspace)
+	payload, err := journal.MarshalCanonicalJSON(map[string]any{"repository": independent, "scope": input["scope"], "worktree_id": independent["worktree_id"]})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if registered.BindingDigest != fmt.Sprintf("sha256:%x", sha256.Sum256(payload)) {
+		t.Fatalf("binding digest = %q, want independent observation and scope", registered.BindingDigest)
+	}
+	var response struct {
+		Result struct {
+			Registration struct {
+				ProjectID string `json:"project_id"`
+			} `json:"registration"`
+		} `json:"result"`
+	}
+	get := executeCommandForTest(workspace, "--json", "gate", "resolve", registered.ID, "--version", "1")
+	if get.err != nil || json.Unmarshal([]byte(get.stdout), &response) != nil || response.Result.Registration.ProjectID != independent["project_id"] {
+		t.Fatalf("Registration project: %#v", get)
+	}
+	p24AssertBindingEventRepository(t, workspace, independent)
 }
 
 func TestGateRegisterRejectsRuntimePolicyOverride(t *testing.T) {

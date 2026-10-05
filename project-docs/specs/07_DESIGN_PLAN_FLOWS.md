@@ -167,6 +167,11 @@ satisfy either guarded action.
    Receipts/Evidence, Reviews/Findings, Outcomes, activation, and telemetry
    match the source semantics.
 5. Projections are regenerated; project prose is not copied.
+6. New Envelope creation and Claim acquisition may use imported history when
+   the import binding names this project and the selected workspace root.
+   Sources are read from the destination checkout, new scopes and Claims
+   record local observations, and Claim Events retain their Envelope scope.
+   Copying the worktree without that binding does not grant equivalence.
 
 Phase 21 delivered deterministic export creation and non-mutating validation.
 Phase 22 now delivers empty-target import, identity/history preservation and

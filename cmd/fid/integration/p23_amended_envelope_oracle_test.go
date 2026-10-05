@@ -3,9 +3,14 @@
 package integration
 
 import (
+	"crypto/sha256"
+	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 // Phase 21 Envelope grammar plus Phase 23's protected_decisions and derived
@@ -13,6 +18,25 @@ import (
 func p23EnvelopeCreateModel(t *testing.T, pair p23HumanLeafPair) map[string]map[string]any {
 	t.Helper()
 	input := p23LeafRequest(t, pair)
+	repository := p24ModelBindingRepository(t, pair.CWD)
+	input["repository_scope"] = repository
+	resolve := func(source map[string]any) {
+		source["repository"] = repository
+		if source["source_type"] == "project-file" {
+			data, err := os.ReadFile(filepath.Join(pair.CWD, source["path"].(string)))
+			if err != nil {
+				t.Fatal(err)
+			}
+			source["digest"] = fmt.Sprintf("sha256:%x", sha256.Sum256(data))
+		}
+	}
+	resolve(input["risk_result"].(map[string]any)["source"].(map[string]any))
+	for _, source := range input["sources"].([]any) {
+		resolve(source.(map[string]any))
+	}
+	for _, obligation := range input["obligations"].([]any) {
+		resolve(obligation.(map[string]any)["source"].(map[string]any))
+	}
 	obligations := make([]any, 0, len(input["obligations"].([]any)))
 	for _, item := range input["obligations"].([]any) {
 		value := make(map[string]any)
@@ -50,11 +74,28 @@ func p23EnvelopeCreateModel(t *testing.T, pair p23HumanLeafPair) map[string]map[
 	return map[string]map[string]any{"envelope.create": {"envelope": envelope, "idempotency_key": p23LeafFlag(t, pair, "--idempotency-key"), "replayed": true}}
 }
 
+func p24ModelBindingRepository(t *testing.T, workspace string) map[string]any {
+	t.Helper()
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	repository := p22CorpusRepository(t, workspace, projectConfig.ProjectID)
+	if value, ok := repository["dirty_digest"].(*string); ok {
+		if value == nil {
+			repository["dirty_digest"] = nil
+		} else {
+			repository["dirty_digest"] = *value
+		}
+	}
+	return repository
+}
+
 func p23EnvelopeActivateModel(t *testing.T, pair p23HumanLeafPair) map[string]map[string]any {
 	t.Helper()
 	// The creation request is a fixture input in this workspace. Reading it is
 	// independent of both the creation and activation responses.
-	creation := p23HumanLeafPair{Operation: "envelope.create", JSONArgs: []string{
+	creation := p23HumanLeafPair{Operation: "envelope.create", CWD: pair.CWD, JSONArgs: []string{
 		"--input", filepath.Join(pair.CWD, "p22-corpus-envelope.json"),
 		"--actor", p23LeafFlag(t, pair, "--actor"), "--idempotency-key", "p22-corpus-envelope-create",
 	}}

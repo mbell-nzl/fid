@@ -44,7 +44,7 @@ func TestAttentionResolveUnknownFieldNamesInputPath(t *testing.T) {
 func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 	t.Parallel()
 	leaves := []string{"stop raise", "stop resolve", "attention resolve", "decision record-reference",
-		"requirement record-reference", "requirement link", "human-outcome record", "concern record", "concern dispose", "deviation record", "review record", "finding address"}
+		"requirement record-reference", "requirement link", "human-outcome record", "concern record", "concern dispose", "deviation record", "review record", "finding address", "gate register", "envelope create", "envelope activate", "envelope complete", "claim acquire", "claim renew", "claim release", "claim expire"}
 	conflicts := []struct {
 		name, argument string
 		value          any
@@ -63,8 +63,8 @@ func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 		{"key first", "--idempotency-key", "key-1", func(string) []string { return []string{"--idempotency-key", "key-1", "extra"} }},
 		{"positional", "arguments", "extra", func(string) []string { return []string{"extra"} }},
 	}
-	if got := len(leaves) * len(conflicts); got != 72 {
-		t.Fatalf("exclusivity corpus has %d rows, want 72", got)
+	if got := len(leaves) * len(conflicts); got != 120 {
+		t.Fatalf("exclusivity corpus has %d rows, want 120", got)
 	}
 	binary := buildAdoptedFID(t)
 	for _, leaf := range leaves {
@@ -284,6 +284,305 @@ func TestP24GateEnvelopeClaimDescriptors(t *testing.T) {
 		}
 		if err := cli.CheckInputType(descriptor); err != nil {
 			t.Errorf("%s descriptor/type: %v", leaf, err)
+		}
+	}
+}
+
+func TestP24RemovedBindingMembers(t *testing.T) {
+	t.Parallel()
+	for leaf, members := range map[string][]string{"gate register": {"repository", "worktree_id"}, "envelope create": {"repository_scope"}, "envelope complete": {"repository"}, "claim acquire": {"worktree_id"}} {
+		for _, member := range members {
+			t.Run(leaf+"/"+member, func(t *testing.T) {
+				t.Parallel()
+				descriptor := inputDescriptorRegistry[leaf]
+				data, err := cli.InputExample(descriptor)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var input map[string]any
+				if err := json.Unmarshal(data, &input); err != nil {
+					t.Fatal(err)
+				}
+				p24ExpandDescriptorObjects(t, input, descriptor.Fields)
+				input[member] = nil
+				result := p24BindingMutation(t, t.TempDir(), leaf, input, "removed")
+				if cli.ExitCode(result.err) != 2 || result.stdout != "" || !strings.Contains(result.stderr, `"argument":"input.`+member+`"`) {
+					t.Fatalf("removed member: %#v", result)
+				}
+			})
+		}
+	}
+}
+
+func TestP24BindingDescriptorProcessCorpus(t *testing.T) {
+	t.Parallel()
+	leaves := bindingDescriptors()
+	if len(leaves) != 8 {
+		t.Fatalf("binding leaf corpus = %d, want 8", len(leaves))
+	}
+	binary := buildAdoptedFID(t)
+	for leaf, descriptor := range leaves {
+		t.Run(leaf, func(t *testing.T) {
+			t.Parallel()
+			if pendingInputDescriptors[leaf] || cli.CheckInputType(descriptor) != nil {
+				t.Fatal("descriptor missing or mismatched")
+			}
+			workspace := t.TempDir()
+			parts := strings.Split(leaf, " ")
+			help := executeCommandForTest(workspace, append(parts, "--help")...)
+			if help.err != nil || !strings.Contains(help.stdout, "fid "+leaf+" --example") {
+				t.Fatalf("help: %#v", help)
+			}
+			var helpFields func([]cli.InputField, string)
+			helpFields = func(fields []cli.InputField, prefix string) {
+				for _, field := range fields {
+					path := prefix + "." + field.Name
+					typeName := field.Type
+					if field.Element != nil {
+						typeName += "<" + field.Element.Type + ">"
+					}
+					if !strings.Contains(help.stdout, path+": "+typeName+", "+field.Requirement) || !strings.Contains(help.stdout, field.Meaning) {
+						t.Errorf("help lacks %s type, requirement or meaning", path)
+					}
+					line := ""
+					for _, candidate := range strings.Split(help.stdout, "\n") {
+						if strings.HasPrefix(strings.TrimSpace(candidate), path+": ") {
+							line = candidate
+						}
+					}
+					constraints := []string{}
+					if field.Format != "" {
+						constraints = append(constraints, field.Format)
+					}
+					if len(field.Members) > 0 {
+						constraints = append(constraints, "allowed: "+strings.Join(field.Members, "|"))
+					}
+					if field.Element != nil {
+						if len(field.Element.Members) > 0 {
+							constraints = append(constraints, "elements allowed: "+strings.Join(field.Element.Members, "|"))
+						} else if field.Element.Format != "" {
+							constraints = append(constraints, "element format: "+field.Element.Format)
+						}
+					}
+					minimum, maximum := "unbounded", "unbounded"
+					if field.MinInt != nil {
+						minimum = fmt.Sprint(*field.MinInt)
+					}
+					if field.MaxInt != nil {
+						maximum = fmt.Sprint(*field.MaxInt)
+					}
+					if field.MinInt != nil || field.MaxInt != nil {
+						constraints = append(constraints, "integer range "+minimum+".."+maximum)
+					}
+					minimum, maximum = "0", "unbounded"
+					if field.MinLen != nil {
+						minimum = fmt.Sprint(*field.MinLen)
+					}
+					if field.MaxLen != nil {
+						maximum = fmt.Sprint(*field.MaxLen)
+					}
+					if field.MinLen != nil || field.MaxLen != nil {
+						constraints = append(constraints, "length "+minimum+".."+maximum)
+					}
+					for _, constraint := range constraints {
+						if !strings.Contains(line, constraint) {
+							t.Errorf("help lacks %s constraint %s", path, constraint)
+						}
+					}
+					helpFields(field.Children, path)
+					if field.Element != nil {
+						helpFields(field.Element.Children, path+"[i]")
+					}
+				}
+			}
+			helpFields(descriptor.Fields, "input")
+			template, err := cli.InputExample(descriptor)
+			if err != nil {
+				t.Fatal(err)
+			}
+			stdout, stderr, exit := runAdoptedFID(t, binary, workspace, append(parts, "--example")...)
+			if exit != 0 || stderr != "" || stdout != string(template) {
+				t.Fatalf("template: exit=%d stderr=%q stdout=%q", exit, stderr, stdout)
+			}
+			request := reflect.New(descriptor.Type).Interface()
+			decoder := json.NewDecoder(strings.NewReader(stdout))
+			decoder.DisallowUnknownFields()
+			if err := decoder.Decode(request); err != nil {
+				t.Fatal(err)
+			}
+
+			entries, err := os.ReadDir(workspace)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("example side effects: %v / %v", entries, err)
+			}
+			var baseline map[string]any
+			if err := json.Unmarshal(template, &baseline); err != nil {
+				t.Fatal(err)
+			}
+			p24ExpandDescriptorObjects(t, baseline, descriptor.Fields)
+			payload, err := json.Marshal(baseline)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := cli.ValidateInput(payload, descriptor); err != nil {
+				t.Fatalf("expanded qualifying structure: %v", err)
+			}
+			check := func(name, path string, object map[string]any, change func(), restore func()) {
+				t.Helper()
+				t.Run(name, func(t *testing.T) {
+					change()
+					data, err := json.Marshal(baseline)
+					restore()
+					if err != nil {
+						t.Fatal(err)
+					}
+					if strings.HasSuffix(name, "/duplicate") {
+						field := path[strings.LastIndex(path, ".")+1:]
+						value, err := json.Marshal(object[field])
+						if err != nil {
+							t.Fatal(err)
+						}
+						object["__p24_duplicate_target"] = "marker"
+						marked, err := json.Marshal(baseline)
+						delete(object, "__p24_duplicate_target")
+						if err != nil {
+							t.Fatal(err)
+						}
+						data = []byte(strings.Replace(string(marked), `"__p24_duplicate_target":"marker",`, `"`+field+`":`+string(value)+`,`, 1))
+					}
+					invalid, ok := cli.ValidateInput(data, descriptor).(*cli.InputError)
+					if !ok || invalid.Path != path || len(invalid.Allowed) == 0 {
+						t.Fatalf("structural path: %#v, want %s", invalid, path)
+					}
+					input := filepath.Join(t.TempDir(), "input.json")
+					if err := os.WriteFile(input, data, 0o600); err != nil {
+						t.Fatal(err)
+					}
+					args := append([]string{"--json"}, parts...)
+					args = append(args, "--input", input, "--actor", "ACT-1", "--idempotency-key", "structure")
+					out, failure, exit := runAdoptedFID(t, binary, workspace, args...)
+					if exit != 2 || out != "" {
+						t.Fatalf("structural refusal: exit=%d stdout=%q stderr=%q", exit, out, failure)
+					}
+					value := invalid.Value
+					if value != nil {
+						if _, ok := value.(string); !ok {
+							encoded, err := json.Marshal(value)
+							if err != nil {
+								t.Fatal(err)
+							}
+							value = string(encoded)
+						}
+					}
+					assertAdoptedJSONFailure(t, failure, descriptor.Operation, path, value, invalid.Allowed)
+					entries, err := os.ReadDir(workspace)
+					if err != nil || len(entries) != 0 {
+						t.Fatalf("structural refusal side effects: %v / %v", entries, err)
+					}
+				})
+			}
+			var walk func(map[string]any, []cli.InputField, string)
+			walk = func(object map[string]any, fields []cli.InputField, prefix string) {
+				check(prefix+"/unknown", prefix+".bogus", object, func() { object["bogus"] = true }, func() { delete(object, "bogus") })
+				for _, field := range fields {
+					path, original := prefix+"."+field.Name, object[field.Name]
+					noop := func() {}
+					check(prefix+"/"+field.Name+"/duplicate", path, object, noop, noop)
+					if field.Requirement != "optional" {
+						check(path+"/missing", path, object, func() { delete(object, field.Name) }, func() { object[field.Name] = original })
+					}
+					if field.Requirement == "required" {
+						check(path+"/null", path, object, func() { object[field.Name] = nil }, func() { object[field.Name] = original })
+					}
+					wrong := any(true)
+					if field.Type == "boolean" {
+						wrong = "true"
+					}
+					check(path+"/type", path, object, func() { object[field.Name] = wrong }, func() { object[field.Name] = original })
+					if len(field.Members) > 0 {
+						check(path+"/enum", path, object, func() { object[field.Name] = "not-a-member" }, func() { object[field.Name] = original })
+					}
+					if field.Type == "string" && field.Format != "" && field.Format != "text" {
+						check(path+"/format", path, object, func() { object[field.Name] = "" }, func() { object[field.Name] = original })
+					}
+					if field.MinInt != nil {
+						check(path+"/bound", path, object, func() { object[field.Name] = *field.MinInt - 1 }, func() { object[field.Name] = original })
+					}
+					if field.Type == "string" && field.MinLen != nil && *field.MinLen > 0 {
+						check(path+"/short", path, object, func() { object[field.Name] = strings.Repeat("x", *field.MinLen-1) }, func() { object[field.Name] = original })
+					}
+					if field.Type == "string" && field.MaxLen != nil {
+						check(path+"/long", path, object, func() { object[field.Name] = strings.Repeat("x", *field.MaxLen+1) }, func() { object[field.Name] = original })
+					}
+					if field.Type == "array" {
+						if field.MinLen != nil && *field.MinLen > 0 {
+							check(path+"/short", path, object, func() { object[field.Name] = []any{} }, func() { object[field.Name] = original })
+						}
+						if field.MaxLen != nil {
+							check(path+"/long", path, object, func() { object[field.Name] = make([]any, *field.MaxLen+1) }, func() { object[field.Name] = original })
+						}
+						if field.Element != nil {
+							check(path+"/element-type", path+"[0]", object, func() { object[field.Name] = []any{true} }, func() { object[field.Name] = original })
+							if field.Element.Type == "string" && field.Element.Format != "" && field.Element.Format != "text" {
+								check(path+"/element-format", path+"[0]", object, func() { object[field.Name] = []any{""} }, func() { object[field.Name] = original })
+							}
+							if field.Format == "sorted-unique" {
+								check(path+"/order", path, object, func() { object[field.Name] = []any{"duplicate", "duplicate"} }, func() { object[field.Name] = original })
+							}
+						}
+					}
+					if len(field.Children) > 0 {
+						walk(original.(map[string]any), field.Children, path)
+					}
+					if field.Element != nil && len(field.Element.Children) > 0 {
+						walk(original.([]any)[0].(map[string]any), field.Element.Children, path+"[0]")
+					}
+				}
+			}
+			walk(baseline, descriptor.Fields, "input")
+		})
+	}
+}
+
+func p24ExpandDescriptorObjects(t *testing.T, object map[string]any, fields []cli.InputField) {
+	t.Helper()
+	for _, field := range fields {
+		if field.Requirement == "optional" {
+			valueField := field
+			valueField.Requirement = "required"
+			data, err := cli.InputExample(cli.InputDescriptor{Fields: []cli.InputField{valueField}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var values map[string]any
+			if err := json.Unmarshal(data, &values); err != nil {
+				t.Fatal(err)
+			}
+			object[field.Name] = values[field.Name]
+		}
+		if field.Format == "digest" && object[field.Name] != nil {
+			object[field.Name] = "sha256:" + strings.Repeat("1", 64)
+		}
+		children := field.Children
+		if field.Element != nil {
+			children = field.Element.Children
+		}
+		if len(children) == 0 {
+			continue
+		}
+		data, err := cli.InputExample(cli.InputDescriptor{Fields: children})
+		if err != nil {
+			t.Fatal(err)
+		}
+		var child map[string]any
+		if err := json.Unmarshal(data, &child); err != nil {
+			t.Fatal(err)
+		}
+		p24ExpandDescriptorObjects(t, child, children)
+		if field.Type == "array" {
+			object[field.Name] = []any{child}
+		} else {
+			object[field.Name] = child
 		}
 	}
 }

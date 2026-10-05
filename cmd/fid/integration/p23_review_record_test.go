@@ -530,7 +530,7 @@ func p23NumberValue(value any) int {
 
 func p23AcquireClaim(t *testing.T, a *p22FIDRecoveryAdapter, actor, mode, key string) map[string]any {
 	t.Helper()
-	response := p23RunInput(t, a, "claim", "acquire", actor, key, map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "worktree_id": a.repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": mode, "ttl_seconds": 3600})
+	response := p23RunInput(t, a, "claim", "acquire", actor, key, map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": mode, "ttl_seconds": 3600})
 	p23AssertReviewSuccess(t, "acquire "+mode+" Claim", response)
 	return p21Path(t, p23Envelope(t, response.Stdout), "result", "claim").(map[string]any)
 }

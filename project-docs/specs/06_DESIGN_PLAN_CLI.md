@@ -164,6 +164,14 @@ and records its SHA-256 digest, or checks a supplied digest. External
 references require a digest. `envelope complete --input` names the Envelope
 and expected revision; fid observes the completion repository itself.
 
+An Obligation's `registration` is nullable: gate-evidence names its immutable
+Registration, while Review and Human Outcome Obligations supply null. Prior
+Registrations and Envelope scopes must name the same project and worktree,
+or an imported destination whose binding names that project and exact root.
+A plain copy with no import binding is refused without an Event. Claim Events
+retain the Envelope scope; the acquired Claim records its local observed
+worktree.
+
 ### Claims, Runs, Stops, and Attention
 
 ```text

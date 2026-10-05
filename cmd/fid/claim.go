@@ -1,11 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/claims"
@@ -162,32 +159,6 @@ func newClaimListCommand() *cobra.Command {
 	cmd.Flags().IntVar(&limit, "limit", 100, "Maximum claims")
 	cmd.SetFlagErrorFunc(canonicalFlagError("claim.list"))
 	return cmd
-}
-
-func decodeClosedClaimInput(stdin io.Reader, path string, target any) error {
-	var payload []byte
-	var err error
-	if path == "-" {
-		payload, err = io.ReadAll(io.LimitReader(stdin, 1_048_577))
-	} else {
-		payload, err = os.ReadFile(path)
-	}
-	if err != nil {
-		return fmt.Errorf("read claim input: %w", err)
-	}
-	if len(payload) > 1_048_576 {
-		return fmt.Errorf("claim input exceeds 1048576 bytes")
-	}
-	decoder := json.NewDecoder(strings.NewReader(string(payload)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		return fmt.Errorf("decode claim input: %w", err)
-	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		return fmt.Errorf("claim input must contain one object")
-	}
-	return nil
 }
 
 func writeClaimSuccess(cmd *cobra.Command, operation string, result claims.MutationResult) error {

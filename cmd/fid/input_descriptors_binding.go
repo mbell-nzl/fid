@@ -29,6 +29,7 @@ func bindingNullable(name, meaning string) cli.InputField {
 func bindingObligation() cli.InputField {
 	registration := inputObject("registration", "Gate Registration used by gate-evidence Obligations.",
 		judgmentID("id", "Registration ID."), inputInteger("version", "Registration version.", 1))
+	registration.Requirement = "nullable"
 	subject := inputObject("subject", "Issue guarded by this Obligation.", bindingString("type", "Subject type (issue)."), judgmentID("id", "Issue ID."))
 	reviewProfile := bindingNullable("review_profile", "Review profile, if applicable.")
 	reviewProfile.Requirement = "optional"
