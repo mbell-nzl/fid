@@ -1,4 +1,4 @@
-# Phase Brief - Phase 24 (QA planning accepted; Runner readiness next)
+# Phase Brief - Phase 24 (executing; Task 6 recovery under DEC-283)
 
 ## Phase Goal
 
@@ -11,19 +11,28 @@ expectations a check uses. Request digests cover the input as written.
 
 ## Status
 
-**QA planning READY (`7e41e6b`, QA plan section 12.7).** Branch `phase-24`.
-The QA Lead accepted DEC-282 and closed RC-01/RC-02. No planning Must-fix
-finding or protected-authority question remains. DEC-282 records:
+**Executing on branch `phase-24`.** Tasks 1-5 are complete, and QA window A
+passed (review-2). Task 6 is `RECOVERY_REQUIRED` at `1baaecc`/`7298964`.
+The run ledger is `REPAIR_PENDING`.
 
-- plain-copy `run.start` preserves the earlier Claim refusal,
-  `run claim binding is invalid` (task 7; message convergence task 10);
-- grammar and unknown-command messages use the shared escape-then-bound
-  rule, at most 512 scalars, retaining full details (task 9a; pairing task 10).
+**DEC-283 (2026-10-06)** clears the Task 6 blocker:
 
-**Next:** Phase Runner performs its readiness and pre-dispatch controls,
-then starts task 1. The QA recheck prerequisite is satisfied; no Phase 24
-implementation has started. Product gates and assertion outcomes remain
-required at their task/window/phase-end boundaries.
+- It closes ESC-24-001 (model capacity restored) and ESC-24-002, an
+  unsatisfiable RUN-RESUME recovery tuple that wedged the ledger.
+- It reconciles that tuple to attempt 3 of the session-liveness trigger,
+  without rewriting history.
+- It authorizes a bounded two-file `workflow-sequence-lint.sh` repair,
+  run outside the run sequence.
+- It amends Task 6's scope with 21 retained fixtures and rules on stored
+  Claim authority.
+
+**Next:**
+
+1. The Phase Runner records the base, has a Developer apply DEC-283 clause 4
+   in a clean temporary worktree, verifies it, and integrates with `--ff-only`.
+2. It appends clause 6 (a)-(c), then dispatches the Task 6 attempt-4
+   continuation.
+3. QA window B follows Task 6.
 
 ## Operating Mode
 
@@ -50,12 +59,12 @@ Human checklist's "take control" scenario is the Human run.
 
 | Task | Title | Status | Dependencies |
 |---|---|---|---|
-| 1 | Idempotency field-digest storage (migration 0019) | Ready for Runner pre-dispatch controls | None |
-| 2 | Input-as-written digests and named conflict fields, every keyed leaf | Pending | 1 |
-| 3 | Input descriptor framework, help, templates, field-named validation | Pending | None |
-| 4 | Repository observation and SourceInput; judgment reference leaves | Pending | 2, 3 |
-| 5 | Review leaves and repository expectations | Pending | 4 |
-| 6 | Gate registration, Envelope and Claim leaves | Pending | 4 |
+| 1 | Idempotency field-digest storage (migration 0019) | Complete | None |
+| 2 | Input-as-written digests and named conflict fields, every keyed leaf | Complete | 1 |
+| 3 | Input descriptor framework, help, templates, field-named validation | Complete (window A PASS) | None |
+| 4 | Repository observation and SourceInput; judgment reference leaves | Complete | 2, 3 |
+| 5 | Review leaves and repository expectations | Complete | 4 |
+| 6 | Gate registration, Envelope and Claim leaves | Recovery (DEC-283) | 4 |
 | 7 | Run leaves (DEC-273) | Pending | 5, 6 |
 | 8 | Gate run and Evidence leaves; real freshness (DEC-273) | Pending | 7 |
 | 9 | Activation descriptors; whole-tree input and help conformance | Pending | 3-8 |
@@ -92,8 +101,8 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 
 | Artifact | Path | Status |
 |---|---|---|
-| QA plan | `../phases/phase-24/qa/qa-plan.md` | READY (`7e41e6b`, section 12.7); RC-01/02 closed; Runner readiness next |
-| Mid-phase reviews | A after 3; B after 6; C after 8; D1 after 9a; D2 after 11; E after 14 | Six windows per QA plan section 8 (DEC-280/282). Human walkthrough after task 11 |
+| QA plan | `../phases/phase-24/qa/qa-plan.md` | READY (`7e41e6b`, section 12.7); RC-01/02 closed |
+| Mid-phase reviews | A after 3 (review-2 PASS); B after 6; C after 8; D1 after 9a; D2 after 11; E after 14 | Six windows per QA plan section 8 (DEC-280/282). Human walkthrough after task 11 |
 | Human fixtures | `TestP24HumanFixtures` (task 11, extended by task 14) | Pending |
 | Final review / Human checklist | `../phases/phase-24/qa/` | Pending |
 
@@ -126,5 +135,5 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 
 ## Next Planning Checkpoint
 
-Runner readiness and task 1 are next. The first mid-phase QA review is
-window A after task 3. Phase 25 "Parallel and evolving work" follows Phase 24.
+Task 6 completes under DEC-283, then QA window B runs. Phase 25
+"Parallel and evolving work" follows Phase 24.

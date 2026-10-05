@@ -517,6 +517,241 @@
   `public-interface.md` sections 5/9; Phase 21 `public-interface.md`
   sections 1/2/5/7; PRD-OPS-007/014.
 
+### DEC-283: Reconcile the Task 6 STOP-resume recovery tuple; bounded `workflow-sequence-lint.sh` repair; Task 6 retained-fixture scope. Closes ESC-24-001 and ESC-24-002
+
+- **Date:** 2026-10-06. Tech Lead orchestration-integrity decision on the
+  Human's instruction to fix the current blocker. This is the separate
+  protected authority that `AGENTS.md` and `09_AI_WORKFLOW.md` section 2.3
+  require for a `workflow-sequence-lint.sh` change. It follows DEC-148/149.
+- **Context:**
+  - The 2026-10-05 20:48 RUN-RESUME resolved ESC-24-001 with
+    `restored-capability:developer-role-spawn-01a10b08-efe6-7050-8f88-65c524e62519`.
+    A Developer session then committed implementation
+    `1baaecc7983872b06e2a47e6df0801bfb1370ea0` and report
+    `7298964a65beb375a6b50ec45c42ea12dada6c59` (report-lint
+    `OUTCOME RECOVERY_REQUIRED`, exit 0). Every path `1baaecc` touches is in
+    the 2026-10-05 20:06 TASK-RECOVERY allowlist.
+  - That RUN-RESUME contradicts itself. Its `Trigger signature` and
+    `Attempt count` are `task-6:session-liveness:developer-role-capacity-after-bounded-retry`
+    and `3`, as the verifier requires: TRG-24-003's trigger, attempt plus
+    one (`:1049-1054`). Its `Next recovery` instead names
+    `task-6:session-continuation:retained-gate-envelope-claim-fixtures-and-nullable-registration`
+    at attempt `1`. The bound TASK-RECOVERY must match both (`:723-727`,
+    `:742-746`), so no candidate exists. Tech Lead dry runs on a scratch
+    copy: the RUN-RESUME-matching successor fails only `TASK-RECOVERY does
+    not match the exact schema v2 RUN-RESUME recovery tuple`; the
+    tuple-matching one fails only `TASK-RECOVERY does not preserve its
+    RUN-RESUME checkpoint`. While `resume_recovery_pending` is set
+    (`:473-474`), nothing else may follow, not even TRIAGE, STOP or
+    CORRECTION. This is the wedge DEC-149 clause 6 described. The ledger
+    still validates `VALID state=REPAIR_PENDING`.
+  - Causes: (1) the two spawn failures were routed but never recorded as
+    `REPAIR ... INTERRUPTED`, so TRG-24-003 was not a session-liveness
+    TRIAGE that keeps the chain trigger (`:1024-1029`). TL-Lite minted a
+    new trigger, whereas Phase 23's TRG-23-013 kept the task's. (2) The
+    Runner wrote the tuple from ESC-24-001's "preserving the trigger"
+    prose, with an attempt that did not advance. (3) The STOP-resume
+    branch (`:1034-1100`) never compares `Next recovery` with
+    `Continuing task`, `Trigger signature` and `Attempt count`, although
+    `phase-runner.md` and section 2.4 say it does. (4) The Runner
+    dispatched the Developer before appending the bound TASK-RECOVERY.
+  - All 32 phase 20-24 STOP resumes with a tuple were scanned. 30 restate
+    their own task, trigger and attempt. Phase 23's 2026-09-26 17:38 is a
+    DEC-257 owner-route resume whose first-owner trigger at attempt 1 is
+    legitimate. Phase 24's 20:48 is the only defect.
+  - Task 6's report records both full gates failing at 21 retained fixture
+    definitions outside the 20:06 allowlist, each with introducing-commit
+    provenance, and flags `internal/claims/generic.go:380`.
+- **Decision:**
+  1. **Stop sustained.** Refusing to rewrite the accepted RUN-RESUME or to
+     append an invalid STOP was correct. ESC-24-002 is allocated to this
+     defect and closed here. ESC-24-001 is closed: the 20:48 RUN-RESUME
+     and the later session verify restored capability.
+  2. **Accepted semantics.** In a STOP resume without `Repair owners`, the
+     verifier-checked `Continuing task`, `Trigger signature` and
+     `Attempt count` are the successor's identity. `Next recovery` restates
+     them and adds category and repair mode. In the 20:48 tuple the trigger
+     and attempt are the defect; its task, category and mode stand. Task 6's
+     chain trigger moves to the session-liveness signature at this boundary.
+     That is recorded here so it is not later read as a fabricated identity
+     change, as DEC-148 did for task-3k. Attempts stay monotonic: 1, TRG 2,
+     then 3. No-progress restarts at `0/2`, equal to the pre-STOP count.
+  3. **Reconciliation record.** The verifier reads these two lines exactly:
+
+- Reconciles RUN-RESUME: 2026-10-05 20:48 / TRG-24-003
+- Reconciled next recovery: task-6 | in-scope-implementation | task-scope | task-6:session-liveness:developer-role-capacity-after-bounded-retry | 3
+
+  4. **Bounded verifier repair (the only authorized change).** In the
+     schema-v2 STOP-resume RUN-RESUME branch, without `Repair owners`:
+     (a) Split `Next recovery` on ` | `. It is *consistent* when it has
+     exactly five fields: task equals `Continuing task`, category is in the
+     `:650` set, mode is in the `:653` set, trigger equals
+     `Trigger signature`, and attempt equals `Attempt count`.
+     (b) An inconsistent tuple is accepted only through a reconciliation.
+     Exactly one `### DEC-NNN:` section of the phase decisions file must
+     hold a trimmed line `Reconciles RUN-RESUME` (bullet form, as above)
+     whose value is `<heading date> <heading time> / <Governing TRG>`. That
+     section must hold exactly one `Reconciled next recovery` line. Its tuple
+     must be consistent under (a), and its fields 2-3 must equal the recorded
+     tuple's. That tuple then binds the successor, and the DEC becomes a
+     required citation. Anything else is INVALID `schema v2 RUN-RESUME Next
+     recovery does not retain its Continuing task, Trigger signature, and
+     Attempt count`.
+     (c) A reconciliation keyed to a consistent RUN-RESUME is INVALID
+     `RUN-RESUME next-recovery reconciliation targets a consistent Next
+     recovery`, so a DEC cannot replace a valid binding.
+     (d) The bound TASK-RECOVERY after a reconciled RUN-RESUME must cite the
+     reconciling DEC in both `Source` and `Repair authority`; otherwise it is
+     INVALID `TASK-RECOVERY does not cite its RUN-RESUME next-recovery
+     reconciliation`. The checks at `:714-746` are unchanged; the exact-tuple
+     comparison uses the reconciled tuple.
+     (e) Owner-route and normal resumes, CORRECTION (evidence only), TRIAGE
+     trigger rules, every other message, and every other state transition
+     are unchanged.
+  5. **Execution** is Tech Lead-authorized workflow maintenance outside the
+     run sequence (DEC-148 clause 5, DEC-149 clauses 8-9). It has no
+     TRIAGE, no control TASK-RECOVERY or REPAIR, and no ledger event before
+     the bound TASK-RECOVERY. The Runner dispatches a Developer into a clean
+     temporary worktree at the directive base and integrates the single
+     verified commit with `git merge --ff-only`. The Runner-owned ledger stays
+     byte-unchanged in the main worktree until then.
+  6. **Ledger sequence after integration**, each through the transactional
+     append:
+     (a) the bound TASK-RECOVERY: task-6, in-scope-implementation,
+     task-scope, the session-liveness trigger, attempt 3, `0/2`. `Source` and
+     `Repair authority` cite TRG-24-003, ESC-24-001, DEC-283 and the
+     restored-capability token. `Allowed files` and `Forbidden changes` are
+     byte-identical to the 20:06 entry, since that directive is what the child
+     received. Its `Checkpoint` starts at 3ed4824/c845cee on phase HEAD
+     70e2106 and cites the maintenance commit. Its `Resolution evidence`
+     discloses the dispatch-before-append deviation and both rejected
+     candidates with their messages and exit status.
+     (b) `REPAIR task-6`, attempt 3, `MATERIAL-PROGRESS`, ending at
+     1baaecc/7298964 with report-lint `OUTCOME RECOVERY_REQUIRED`.
+     (c) TASK-RECOVERY task-6, same trigger, attempt 4, `0/2`, sourcing the
+     report and DEC-283, using clause 7's allowlist. Then dispatch.
+     Tech Lead dry runs of (a)-(c) on a scratch ledger copy, with the binding
+     reconciled, each returned `APPEND_CONFIRMED state=REPAIR_PENDING`.
+  7. **Task 6 scope (attempt 4).** The 21 report paths are retained fixtures
+     whose inputs Task 6's accepted removals displaced (gate.register
+     identities, envelope.create Source repository and real bytes,
+     envelope.complete `repository`, claim.acquire `worktree_id`), or which
+     copy observed history to another root. Sampled introducing commits
+     resolve to the recorded phase/task. None comes from a later Phase 24
+     task. The seven untagged files run under the ordinary race/coverage
+     gate and the fourteen `integration`-tagged files under the tagged gate,
+     so both are Task 6 required commands. Convergence is Task 6's, with
+     per-row provenance in the report. The exact `Allowed files` value is
+     the 20:06 list followed by the 21 paths in report order:
+
+     `internal/evidence/registration.go,internal/workflow/envelope.go,internal/workflow/import_binding.go,internal/claims/generic.go,cmd/fid/gate.go,cmd/fid/envelope.go,cmd/fid/claim.go,cmd/fid/input_descriptor_command.go,cmd/fid/input_descriptors_binding.go,cmd/fid/gate_test.go,cmd/fid/envelope_test.go,cmd/fid/generic_claim_test.go,cmd/fid/input_descriptor_test.go,cmd/fid/integration/p21_conformance_test.go,cmd/fid/integration/p22_conformance_test.go,cmd/fid/integration/p22_fake_test.go,cmd/fid/integration/p22_portable_conformance_test.go,cmd/fid/integration/p22_portable_fake_test.go,cmd/fid/integration/p23_conformance_test.go,cmd/fid/integration/p23_amended_envelope_oracle_test.go,cmd/fid/integration/p23_amended_claim_oracle_test.go,cmd/fid/integration/p23_claim_mode_test.go,cmd/fid/integration/p23_review_record_test.go,cmd/fid/integration/p23_review_leaf_oracle_test.go,cmd/fid/integration/p23_judgment_leaf_oracle_test.go,cmd/fid/integration/p23_portable_recovery_test.go,cmd/fid/integration/p23_leaf_surface_test.go,project-docs/specs/06_DESIGN_PLAN_CLI.md,project-docs/specs/07_DESIGN_PLAN_FLOWS.md,project-docs/docs/phases/phase-24/tasks/task-6-done.md,cmd/fid/generic_run_test.go,cmd/fid/evidence_test.go,cmd/fid/review_test.go,cmd/fid/task18_completion_resume_test.go,cmd/fid/task21_maintenance_rebuild_test.go,cmd/fid/stop_evaluation_matrix_test.go,internal/export/archive_fixture_test.go,cmd/fid/integration/p22_resume_actions_test.go,cmd/fid/integration/p22_recovery_journey_test.go,cmd/fid/integration/p23_review_evidence_budget_test.go,cmd/fid/integration/p23_obligation_guard_test.go,cmd/fid/integration/p23_human_outcome_test.go,cmd/fid/integration/p23_human_fixtures_test.go,cmd/fid/integration/p23_human_failure_test.go,cmd/fid/integration/p23_gate_grants_test.go,cmd/fid/integration/p23_decision_reference_test.go,cmd/fid/integration/p23_task13_precedence_test.go,cmd/fid/integration/p23_concern_deviation_test.go,cmd/fid/integration/p24_gate_evidence_corpus_test.go,cmd/fid/integration/p24_single_journal_test.go,cmd/fid/integration/p24_idempotency_test.go`
+
+     `Forbidden changes` is the 20:06 text plus: build path-bound history in
+     the root that uses it, never by copying observed history to another
+     root; never create a fictitious import binding; never relax the shared
+     predicate.
+  8. **Stored Claim authority (contract section 5 detail).**
+     `validateStoredClaimAuthority` compares the stored Claim worktree to the
+     Envelope scope. Task 6 now stores the observed worktree, so a Claim
+     acquired under VAL-029's imported-destination equivalence would be
+     refused by its own renew, release or expire. Section 5 already says the
+     destination's worktree stands for the source worktree recorded in
+     imported history. That comparison therefore uses the shared
+     `workflow.SameWorktree` predicate, never a copy. Inputs, the
+     `claim worktree binding is invalid` reason, the code, the exit and
+     no-Event behavior are unchanged.
+     Red first, in an imported destination: acquire, then renew and release
+     (expire too if a public path reaches it). Green after convergence, with
+     the original-worktree control unchanged. If the red does not reproduce,
+     record that and leave the line unchanged. Evidence is reported under
+     VAL-029's Task 6 slice and reviewed at QA window B. No VAL row changes.
+  9. No other product behavior, public interface, data model, dependency,
+     VAL row, task boundary, gate command, QA cadence or Task 6 command
+     changes.
+- **Repair directive (verifier maintenance, clause 4):**
+  - **Originating task:** task-6
+  - **Control trigger signature:**
+    `task-6:session-liveness:developer-role-capacity-after-bounded-retry`
+  - **Control contract:** a STOP resume's `Next recovery` must be
+    satisfiable by its own bound successor; a recorded defect is reconciled
+    only by one DEC line pair, never by rewriting history.
+  - **Control mismatch:** the STOP-resume branch accepts a tuple that
+    contradicts its verified `Trigger signature` and `Attempt count`. The
+    bound successor is then unsatisfiable, and the ledger admits no event.
+  - **Authorized change:** clause 4 (a)-(e) only.
+  - **Control repair base:** the phase-24 HEAD that records this decision.
+    The Runner records it from `git rev-parse --verify HEAD^{commit}`,
+    with only its own `run-ledger.md` dirty, and keeps it immutable.
+  - **Allowed files:**
+    `project-docs/tools/workflow-sequence-lint.sh,project-docs/tools/drills/run-drills.sh`
+  - **Forbidden changes:** any run ledger, decisions file, triage log, task
+    spec or report, product and test files, `report-lint.sh`,
+    `workflow-control-scope-lint.sh`, `workflow-route.sh`, agent prompts,
+    templates, specs, and any rule outside clause 4.
+  - **Exact verification** (record verbatim output and observed `exit_code`):
+    1. Red, gap: fixture F1 is a `phase-N` directory with a triage log and a
+       decisions file. Its sequence is RUN-START; TASK-RECOVERY task-1
+       (trigger A, attempt 1); TRIAGE BLOCK with trigger B, attempt 2, and
+       an ESC; STOP; a restored-capability RUN-RESUME with trigger B,
+       attempt 3, and `Next recovery` naming trigger A, attempt 1. It has no
+       reconciliation. Before the change it is `VALID state=REPAIR_PENDING`.
+       After, it is INVALID with the clause 4(b) message.
+    2. Red, wedge: F2 is F1 plus a reconciling DEC and the bound successor
+       (trigger B, attempt 3, the recorded category and mode, `0/2`), citing
+       the TRG, ESC, DEC and restored-capability token. Before the change
+       its only diagnostic is `TASK-RECOVERY does not match the exact schema
+       v2 RUN-RESUME recovery tuple`. After, it is `VALID
+       state=REPAIR_PENDING`.
+    3. Guards after the change, each INVALID with the named message:
+       F2's successor without the DEC citation (4d); a successor at trigger
+       A, attempt 1 (`TASK-RECOVERY does not preserve its RUN-RESUME
+       checkpoint`). Each of these RUN-RESUME reconciliation faults gives
+       the 4(b) message: a wrong key time or TRG, a wrong reconciled attempt,
+       a changed category or mode, two DECs with the key, and a missing or
+       duplicated tuple line. A reconciliation of a consistent resume gives
+       the 4(c) message.
+    4. The existing consistent STOP-resume, DEC-257 owner-route,
+       normal-resume and DEC-148/149 drills are unchanged, and
+       `sh project-docs/tools/drills/run-drills.sh` ends `exit_code: 0`.
+    5. Regression: the base verifier, materialized from the base into fresh
+       scratch storage, and the repaired verifier give byte-identical
+       combined output and exit status on the real phase 16-23 ledgers.
+       The 2026-10-06 Tech Lead baseline: 16-19 `VALID state=STOPPED`; 20
+       `INVALID REVIEW PASS must use Owning task: none: review-7b`; 21-23
+       `VALID state=ADVANCEABLE`. Both verifiers return
+       `VALID state=REPAIR_PENDING` on
+       `/home/mark/projects/fid/project-docs/docs/phases/phase-24/run-ledger.md`
+       (read-only, by that absolute path, because the worktree copy lacks the
+       uncommitted 20:48 entry).
+    6. `sh project-docs/tools/workflow-lint.sh` exits 0. It does at this
+       base.
+    7. Scope, proved directly as in DEC-149 item 7:
+       `git diff --name-only --no-renames <base> <head>` prints exactly the
+       two allowed paths; `git status --short` is empty; one commit on
+       `<base>`; regular files with no mode change.
+- **Consequences:** Once (a)-(c) are confirmed, Task 6 continues. QA window B
+  follows Task 6 completion as planned. If item 1 or 2 cannot be produced
+  as stated, that is new information: return to the Tech Lead, not to a
+  fixture substitution (DEC-149).
+- **Workflow notes for wrap-up:** (i) during an active TASK-RECOVERY, record a
+  spawn failure as `REPAIR ... INTERRUPTED` so its TRIAGE keeps the chain
+  trigger (DEC-148 clause 7's namespace asymmetry recurred); (ii) append the
+  bound TASK-RECOVERY before dispatch; (iii) an owner-route tuple
+  satisfiability check, and a legal record for a second STOP while
+  resume-pending (DEC-149 clause 6), remain open.
+- **Artifact/spec sync:** `09_AI_WORKFLOW.md` section 2.4 and
+  `templates/run-ledger-template.md` gain the satisfiable-tuple rule and the
+  reconciliation line pair. `public-interface.md` section 5 gains the stored
+  Claim comparison. `tasks/task-6.md` gains a DEC-283 amendment. The ESC
+  register, archive, brief and progress are refreshed. No PRD, TRD, data
+  model, glossary or validation-contract change.
+- **Refs:** TRG-24-003; ESC-24-001; ESC-24-002; DEC-148/149/150/257/277/278;
+  `run-ledger.md` 2026-10-05 20:06 TASK-RECOVERY, 20:13 TRIAGE, 20:14
+  STOP, 20:48 RUN-RESUME; `tasks/task-6-done.md` at `7298964`;
+  `workflow-sequence-lint.sh:473-474`, `:650-654`, `:714-746`,
+  `:1024-1029`, `:1034-1100`, `:1312-1345`; `internal/claims/generic.go:380-388`;
+  `09_AI_WORKFLOW.md` sections 2.3-2.4, 9.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.

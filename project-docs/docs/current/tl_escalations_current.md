@@ -2,22 +2,18 @@
 
 ## Open escalations
 
-### ESC-24-001 - Task 6 Developer role unavailable after bounded model-capacity retry
-
-- **Raised:** 2026-10-05 by TL-Lite in TRG-24-003.
-- **Protected category:** unrepairable external infrastructure/capability failure after bounded retry.
-- **Originating task:** task-6.
-- **Trigger signature:** task-6:session-liveness:developer-role-capacity-after-bounded-retry.
-- **Attempt count:** 2 interrupted spawn attempts; neither returned a typed result, so neither consumes the task's no-progress budget.
-- **Condition:** The required Developer role failed to spawn twice because the selected model reported capacity exhaustion. The first interruption routed ACTION REPAIR; the bounded retry routed ACTION TRIAGE. No implementation, report, or task outcome came from either spawn.
-- **Status:** OPEN; Phase Runner must stop Task 6 dispatch and phase advance.
-- **Resolution condition:** Restore the required Developer role capability and have the Phase Runner verify that the role can spawn. Then resume the same Task 6 recovery from its existing checkpoint under TRG-24-003/ESC-24-001, preserving the trigger and no-progress count. Do not substitute an unapproved role or model override.
-- **Human/external action:** Arrange restoration of the selected Developer model's capacity or the required-role spawn capability, then provide the Phase Runner with the capability evidence for RUN-RESUME.
-- **Links:** [TRG-24-003](../phases/phase-24/triage-log.md); [Task 6 checkpoint](../phases/phase-24/tasks/task-6-done.md); `project-docs/specs/09_AI_WORKFLOW.md` §2.3 and §9.
+None.
 
 ## Recently resolved
 
-All resolved and archived in
+Phase 24, archived in [Phase 24 escalations](../phases/phase-24/tl-escalations.md):
+- ESC-24-002: the accepted Task 6 RUN-RESUME bound an unsatisfiable recovery
+  tuple; resolved 2026-10-06 by DEC-283. The Runner then does the verifier
+  maintenance and the ledger sequence.
+- ESC-24-001: Task 6 Developer model capacity; restored and verified by the
+  2026-10-05 20:48 RUN-RESUME. Closure recorded in DEC-283.
+
+Phase 23, all resolved and archived in
 [Phase 23 escalations](../phases/phase-23/tl-escalations.md):
 - ESC-23-012: phase-end final review blockers and Human judgment; resolved
   2026-10-03 by DEC-267..271 (tasks 19-21, final review 2 PASS, Human

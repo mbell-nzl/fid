@@ -673,7 +673,15 @@ Autonomous triage and resolved resume:
   verified commit, or restored
   capability, verify it and append `RUN-RESUME` retaining the
   governing TRG/ESC, trigger, next attempt, continuing task, and exact next
-  recovery. That tuple binds the next TASK-RECOVERY. Record exactly one
+  recovery. That tuple binds the next TASK-RECOVERY. Without `Repair
+  owners`, the tuple's task, trigger and attempt must equal the RUN-RESUME's
+  `Continuing task`, `Trigger signature` and `Attempt count`. An accepted
+  RUN-RESUME that breaks this is never rewritten. Exactly one phase DEC
+  reconciles it with the line pair `- Reconciles RUN-RESUME: <date> <time> /
+  <TRG>` and `- Reconciled next recovery: <tuple>`. The reconciled tuple
+  restates those three fields and keeps the recorded category and mode. The
+  bound TASK-RECOVERY cites that DEC in `Source` and `Repair authority`
+  (DEC-283). Record exactly one
   `Resolution authority` as `verified-commit:<40hex>`,
   `restored-capability:<stable-id>`, or `DEC-<NNN>`, with separate
   Runner-observed resolution evidence. The next recovery's `Source` and

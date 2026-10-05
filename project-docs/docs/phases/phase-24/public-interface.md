@@ -142,7 +142,11 @@ equal the workspace root, which is the existing rule in
 `contracts.md` section 10: destination observations are new local facts).
 The rule applies uniformly to `claim.acquire` against the Envelope scope,
 `run.start` against the Claim and Envelope scope, `gate.run` against the
-Registration and Run, and `envelope.create` against prior Registrations. A different
+Registration and Run, and `envelope.create` against prior Registrations.
+`claim.renew`, `claim.release` and `claim.expire` compare the stored Claim
+worktree with the Envelope scope using the same predicate. A Claim acquired
+in an imported destination stays usable; inputs and the reason
+`claim worktree binding is invalid` are unchanged (DEC-283). A different
 worktree without a matching import binding (for example, a plain directory
 copy) is refused as today. "As today" means each leaf's existing fallback
 failure: `invalid-argument`, `argument:"input"`, `value:null` (DEC-278).

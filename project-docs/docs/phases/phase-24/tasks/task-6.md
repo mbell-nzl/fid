@@ -90,6 +90,24 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - `project-docs/docs/phases/phase-22/contracts.md` section 10 (import)
 - `internal/evidence/execution.go` `importedGateDestination`
 
+### DEC-283 Amendment (recovery attempt 4)
+
+- Retained fixtures displaced by this task's accepted removals are this
+  task's convergence, with per-row introducing-commit provenance. The 21
+  paths are listed in `task-6-done.md` at `7298964`, and the exact
+  allowlist is in DEC-283 clause 7. They include ordinary `cmd/fid` and
+  `internal/export` tests and tagged `p22_*`, `p23_*` and `p24_*`
+  integration fixtures. The two required test gates already execute them.
+- Build path-bound history in the root that uses it. Never copy observed
+  history to another root, invent an import binding, or relax the shared
+  predicate.
+- `internal/claims/generic.go` `validateStoredClaimAuthority` uses the
+  shared same-worktree predicate (contract section 5, DEC-283 clause 8).
+  Red first: in an imported destination, acquire then renew and release
+  (expire too if a public path reaches it). Inputs, reason, code, exit and
+  no-Event behavior are unchanged. If the red does not reproduce, record
+  that and make no change.
+
 ### Out Of Scope
 
 - The Run, gate-run and Evidence leaves (tasks 7, 8); `ExpectedRepository`
