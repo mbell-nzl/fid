@@ -125,7 +125,7 @@ func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
 	p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "transition", a.issueID, "--to", "qa_review", "--actor", "agent:"+a.actor, "--expected-revision", "3", "--idempotency-key", "task8-qa-review")
 	p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "transition", a.issueID, "--to", "qa_pass", "--actor", "agent:"+a.actor, "--expected-revision", "4", "--idempotency-key", "task8-qa-pass")
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "task8-close")
-	completed := p23RunInput(t, a, "envelope", "complete", a.actor, "task8-envelope-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
+	completed := p23RunInput(t, a, "envelope", "complete", a.actor, "task8-envelope-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1})
 	p23AssertReviewSuccess(t, "complete Envelope with open blocker Concern", completed)
 }
 

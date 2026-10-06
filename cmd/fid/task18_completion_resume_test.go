@@ -165,7 +165,7 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 	}
 
 	completePath := filepath.Join(workspace, "task18-envelope-complete.json")
-	writeActivationInput(t, completePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1, "repository": repository})
+	writeActivationInput(t, completePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
 	beforeEvents := journalEventCount(t, workspace)
 	completed := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "complete", "--actor", "actor-builder", "--input", completePath, "--idempotency-key", "task18-envelope-complete")
 	if completed.err != nil || completed.stderr != "" {
@@ -280,7 +280,7 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 			t.Fatalf("release completed resume Claim = %#v", released)
 		}
 		completePath := filepath.Join(workspace, "task18-resume-complete.json")
-		writeActivationInput(t, completePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1, "repository": repository})
+		writeActivationInput(t, completePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
 		if err := os.WriteFile(filepath.Join(workspace, "current-target.txt"), []byte("one byte changed\n"), 0o600); err != nil {
 			t.Fatalf("change complete current target: %v", err)
 		}
@@ -315,13 +315,12 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 func TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := observedEvidenceEnvelopeForTest(t, nil)
-	repository := runRepositoryForTest(t, workspace)
 	beforeEnvelope := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "get", envelopeID).stdout
 	beforeIssue := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "get", issueID).stdout
 	beforeEvents := journalEventCount(t, workspace)
 	beforeEvidence, beforeConcerns := task18TableCounts(t, workspace)
 	path := filepath.Join(workspace, "task18-incomplete-envelope.json")
-	writeActivationInput(t, path, map[string]any{"envelope_id": envelopeID, "expected_revision": 1, "repository": repository})
+	writeActivationInput(t, path, map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
 
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "complete", "--actor", "actor-builder", "--input", path, "--idempotency-key", "task18-incomplete-envelope")
 	if result.err == nil || result.stdout != "" {

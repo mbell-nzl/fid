@@ -111,7 +111,7 @@ func p24SingleTransitions(t *testing.T, a *p22FIDRecoveryAdapter) {
 
 func p24SingleCompletion(t *testing.T, a *p22FIDRecoveryAdapter) {
 	t.Helper()
-	p24SingleInput(t, a, "envelope", "complete", "p24-single-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
+	p24SingleInput(t, a, "envelope", "complete", "p24-single-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1})
 }
 
 func p24SingleActivationRecovery(t *testing.T, a *p22FIDRecoveryAdapter) {

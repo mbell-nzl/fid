@@ -89,7 +89,7 @@ func task21CompletedWorkspace(t *testing.T) (string, string, string, string) {
 	writeActivationInput(t, releasePath, map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
 	task21Mutate(t, workspace, "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "task21-release-claim")
 	completePath := filepath.Join(workspace, "task21-complete-envelope.json")
-	writeActivationInput(t, completePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1, "repository": repository})
+	writeActivationInput(t, completePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
 	task21Mutate(t, workspace, "envelope", "complete", "--actor", "actor-builder", "--input", completePath, "--idempotency-key", "task21-complete-envelope")
 	return workspace, issueID, envelopeID, evaluatePath
 }

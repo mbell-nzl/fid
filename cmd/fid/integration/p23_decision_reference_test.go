@@ -100,7 +100,7 @@ func TestP23DecisionReferenceProtectedLifecycleRealProcess(t *testing.T) {
 	assertP23DecisionCommandSuccess(t, "transition terminal with unrelated release Decision open", p23IssueTransition(t, a, "qa_pass", 4, "task9-qa-pass"))
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "task9-close")
 	beforeReleaseDenial := p21JournalEventCount(t, a.workspace)
-	releaseDenialInput := map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository}
+	releaseDenialInput := map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1}
 	releaseDenial := p23RunInput(t, a, "envelope", "complete", a.actor, "task9-release-denial", releaseDenialInput)
 	assertP23ProtectedDecisionDenial(t, a, beforeReleaseDenial, "envelope.complete", releaseDenial, "release", []string{"envelope.complete"})
 	p23AssertNoncommittingDenialRetry(t, a, releaseDenial, func() p22ConformanceResponse {
@@ -110,7 +110,7 @@ func TestP23DecisionReferenceProtectedLifecycleRealProcess(t *testing.T) {
 	release := p23RecordDecision(t, a, "release-approved", "release", "approved", []string{"decision.record-reference"}, p23DecisionSource(a, true))
 	assertP23DecisionSuccess(t, release, 1)
 	assertP23DecisionStopStates(t, a, map[string]string{"release": "resolved", "security": "resolved"})
-	assertP23DecisionCommandSuccess(t, "complete Envelope after both Decisions", p23RunInput(t, a, "envelope", "complete", a.actor, "task9-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository}))
+	assertP23DecisionCommandSuccess(t, "complete Envelope after both Decisions", p23RunInput(t, a, "envelope", "complete", a.actor, "task9-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1}))
 
 	listed := a.p22Run(t, "decision", "list", "--issue", a.issueID)
 	if listed.ExitCode != 0 || listed.Stderr != "" {

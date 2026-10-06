@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -122,19 +121,7 @@ type linkedEvidenceFixture struct {
 
 func newLinkedEvidenceFixture(t *testing.T, _ string) linkedEvidenceFixture {
 	t.Helper()
-	workspace, values := cloneReusableWorkspaceFixture(t, "linked-evidence", func() (string, []string) {
-		fixture := buildLinkedEvidenceFixture(t, "cached")
-		repositoryJSON, err := json.Marshal(fixture.repository)
-		if err != nil {
-			t.Fatalf("encode linked Evidence repository: %v", err)
-		}
-		return fixture.workspace, []string{fixture.obligationID, fixture.evidenceID, fixture.artifactID, fixture.digest, string(repositoryJSON)}
-	})
-	repository := make(map[string]any)
-	if err := json.Unmarshal([]byte(values[4]), &repository); err != nil {
-		t.Fatalf("decode linked Evidence repository: %v", err)
-	}
-	return linkedEvidenceFixture{workspace: workspace, obligationID: values[0], evidenceID: values[1], artifactID: values[2], digest: values[3], repository: repository}
+	return buildLinkedEvidenceFixture(t, "local")
 }
 
 func buildLinkedEvidenceFixture(t *testing.T, key string) linkedEvidenceFixture {
@@ -358,25 +345,11 @@ func observedEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[str
 
 func evidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any), observedRepository bool) (string, string, string) {
 	t.Helper()
-	definitions := gateDefinitionsForTest(modifyDefinition)
-	if observedRepository {
-		workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, definitions, true)
-		rememberEnvelopeBindingForTest(t, workspace, envelopeBindingForTest{registrationID: registration.ID, registrationVersion: registration.Version, obligationID: testEvidenceObligationID})
-		return workspace, issueID, envelopeID
-	}
-	key := reusableWorkspaceFixtureKey(t, "evidence-envelope", map[string]any{"definitions": definitions, "observed_repository": observedRepository})
-	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, definitions, observedRepository)
-		return workspace, []string{issueID, envelopeID, registration.ID, strconv.Itoa(registration.Version)}
-	})
-	registrationVersion, err := strconv.Atoi(values[3])
-	if err != nil {
-		t.Fatalf("decode cached registration version: %v", err)
-	}
+	workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, gateDefinitionsForTest(modifyDefinition), observedRepository)
 	rememberEnvelopeBindingForTest(t, workspace, envelopeBindingForTest{
-		registrationID: values[2], registrationVersion: registrationVersion, obligationID: testEvidenceObligationID,
+		registrationID: registration.ID, registrationVersion: registration.Version, obligationID: testEvidenceObligationID,
 	})
-	return workspace, values[0], values[1]
+	return workspace, issueID, envelopeID
 }
 
 func gateReadyEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
@@ -389,47 +362,21 @@ func observedGateReadyEvidenceEnvelopeForTest(t *testing.T, modifyDefinition fun
 
 func readyEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any), observedRepository bool) (string, string, string) {
 	t.Helper()
-	definitions := gateDefinitionsForTest(modifyDefinition)
-	if observedRepository {
-		workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, definitions, true)
-		claim, _ := acquireGenericClaimForTestWithTTL(t, workspace, issueID, envelopeID, "gate-ready-claim", 86400)
-		repository := testEnvelopeRepository(t, workspace)
-		path := filepath.Join(workspace, "gate-ready-run.json")
-		writeActivationInput(t, path, runStartInput(issueID, envelopeID, claim["id"], repository))
-		started := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", path, "--idempotency-key", "gate-ready-run")
-		if started.err != nil {
-			t.Fatalf("start observed gate-ready Run: %v; stderr=%q", started.err, started.stderr)
-		}
-		runID := runFromResponse(t, started.stdout)["id"].(string)
-		rememberEnvelopeBindingForTest(t, workspace, envelopeBindingForTest{registrationID: registration.ID, registrationVersion: registration.Version, obligationID: testEvidenceObligationID, runID: runID, claimID: claim["id"].(string)})
-		return workspace, issueID, envelopeID
+	workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, gateDefinitionsForTest(modifyDefinition), observedRepository)
+	claim, _ := acquireGenericClaimForTestWithTTL(t, workspace, issueID, envelopeID, "gate-ready-claim", 86400)
+	repository := testEnvelopeRepository(t, workspace)
+	path := filepath.Join(workspace, "gate-ready-run.json")
+	writeActivationInput(t, path, runStartInput(issueID, envelopeID, claim["id"], repository))
+	started := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", path, "--idempotency-key", "gate-ready-run")
+	if started.err != nil {
+		t.Fatalf("start gate-ready Run: %v; stderr=%q", started.err, started.stderr)
 	}
-	key := reusableWorkspaceFixtureKey(t, "gate-ready-evidence-envelope", map[string]any{"definitions": definitions, "observed_repository": observedRepository})
-	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, definitions, observedRepository)
-		claim, _ := acquireGenericClaimForTestWithTTL(t, workspace, issueID, envelopeID, "gate-ready-claim", 86400)
-		repository := testEnvelopeRepository(t, workspace)
-		path := filepath.Join(workspace, "gate-ready-run.json")
-		writeActivationInput(t, path, runStartInput(issueID, envelopeID, claim["id"], repository))
-		started := executeCommandForTest(workspace,
-			"--project", workspace, "--json", "run", "start", "--actor", "actor-builder",
-			"--input", path, "--idempotency-key", "gate-ready-run",
-		)
-		if started.err != nil {
-			t.Fatalf("start cached gate-ready Run: %v; stderr=%q", started.err, started.stderr)
-		}
-		runID := runFromResponse(t, started.stdout)["id"].(string)
-		return workspace, []string{issueID, envelopeID, registration.ID, strconv.Itoa(registration.Version), runID, claim["id"].(string)}
-	})
-	registrationVersion, err := strconv.Atoi(values[3])
-	if err != nil {
-		t.Fatalf("decode cached registration version: %v", err)
-	}
+	runID := runFromResponse(t, started.stdout)["id"].(string)
 	rememberEnvelopeBindingForTest(t, workspace, envelopeBindingForTest{
-		registrationID: values[2], registrationVersion: registrationVersion,
-		obligationID: testEvidenceObligationID, runID: values[4], claimID: values[5],
+		registrationID: registration.ID, registrationVersion: registration.Version,
+		obligationID: testEvidenceObligationID, runID: runID, claimID: claim["id"].(string),
 	})
-	return workspace, values[0], values[1]
+	return workspace, issueID, envelopeID
 }
 
 func buildEvidenceEnvelopeForTest(t *testing.T, definitions []any, observedRepository bool) (string, string, string, gateRegistrationView) {

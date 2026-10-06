@@ -357,7 +357,7 @@ func reviewWorkspaceWithTwoActivatedReviewers(t *testing.T) (string, string, str
 func acquireReviewClaim(t *testing.T, workspace, issueID, envelopeID, actor, mode, key string) map[string]any {
 	t.Helper()
 	path := filepath.Join(workspace, key+"-claim.json")
-	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": runRepositoryForTest(t, workspace)["worktree_id"], "scope": map[string]any{"paths": []string{"cmd/fid/review.go"}}, "mode": mode, "ttl_seconds": 60})
+	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"cmd/fid/review.go"}}, "mode": mode, "ttl_seconds": 60})
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", actor, "--input", path, "--idempotency-key", key+"-claim")
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("acquire %s Claim as %s = %#v", mode, actor, result)

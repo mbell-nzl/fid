@@ -33,7 +33,7 @@ func TestStopPredicatesAcrossIssueAndEnvelopeCommands(t *testing.T) {
 					result = stopMatrixTransition(workspace, issueID)
 				} else {
 					path := filepath.Join(workspace, "stop-matrix-complete.json")
-					writeActivationInput(t, path, map[string]any{"envelope_id": envelopeID, "expected_revision": 1, "repository": runRepositoryForTest(t, workspace)})
+					writeActivationInput(t, path, map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
 					result = executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "complete", "--actor", "actor-builder", "--input", path, "--idempotency-key", "stop-matrix-complete")
 				}
 				assertStopMatrixCommand(t, workspace, surface, issueID, envelopeID, result, wantIDs, beforeEvents)

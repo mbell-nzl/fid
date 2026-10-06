@@ -3,7 +3,9 @@
 package integration
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -51,8 +53,12 @@ func p22RecoveryFreshnessJourney(t *testing.T, dirty bool) {
 	p22Git(t, workspace, "config", "user.email", "p22@example.test")
 	p22Git(t, workspace, "config", "user.name", "Phase 22")
 	p22Write(t, workspace, "base.txt", "base\n")
+	if err := os.MkdirAll(filepath.Join(workspace, "project-docs"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	p22Write(t, workspace, "project-docs/p22.md", "Phase 22 recovery policy\n")
 	p22Write(t, workspace, ".gitignore", "*.json\n")
-	p22Git(t, workspace, "add", "base.txt", ".gitignore")
+	p22Git(t, workspace, "add", "base.txt", ".gitignore", "project-docs/p22.md")
 	p22Git(t, workspace, "commit", "-qm", "base")
 
 	init := p21Run(t, binary, workspace, "--project", workspace, "--json", "init", "--prefix", "P22")
@@ -75,12 +81,12 @@ func p22RecoveryFreshnessJourney(t *testing.T, dirty bool) {
 		adoptedPaths = []string{"base.txt"}
 	}
 	repository := p22Repository(t, workspace, projectID)
-	registered := p21Run(t, binary, workspace, "--project", workspace, "--json", "gate", "register", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-gate-register", map[string]any{"definition_id": "gate-p22", "definition_version": 1, "worktree_id": repository["worktree_id"], "scope": map[string]any{"issue_id": issueID}, "repository": repository}), "--idempotency-key", "p22-gate-register")
+	registered := p21Run(t, binary, workspace, "--project", workspace, "--json", "gate", "register", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-gate-register", map[string]any{"definition_id": "gate-p22", "definition_version": 1, "scope": map[string]any{"issue_id": issueID}}), "--idempotency-key", "p22-gate-register")
 	registrationID := p21PathString(t, registered, "result", "registration", "id")
 	registrationVersion := p21Path(t, registered, "result", "registration", "version")
-	source := map[string]any{"digest": "sha256:" + p22Zeros(64), "display_label": "Phase 22", "external_id": nil, "path": "project-docs/p22.md", "repository": repository, "section": nil, "source_type": "project-file"}
+	source := map[string]any{"digest": fmt.Sprintf("sha256:%x", sha256.Sum256([]byte("Phase 22 recovery policy\n"))), "display_label": "Phase 22", "external_id": nil, "path": "project-docs/p22.md", "section": nil, "source_type": "project-file"}
 	envelopeInput := p21Input(t, workspace, "p22-envelope", map[string]any{
-		"outcome": "Recover one interrupted Run", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{},
+		"outcome": "Recover one interrupted Run", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{},
 		"authority_grants": []any{map[string]any{"actions": capabilities[1:], "actor_selector": map[string]any{"actor_id": "actor-recovery", "required_capabilities": capabilities[1:]}, "scope": map[string]any{"issue_id": issueID}}},
 		"obligations":      []any{map[string]any{"id": "OBL-p22", "type": "gate-evidence", "applicability": "required", "guarded_actions": []string{"envelope.complete", "issue.transition-terminal-success"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": map[string]any{"id": registrationID, "version": registrationVersion}, "accepted_evidence_types": []string{"receipt"}, "accepted_trust_sources": []string{"fid-executed"}, "freshness_target": "repository-tree", "artifact_policy": "required-available", "independence": "fid-executed", "required_lane": nil, "source": source}},
 		"budgets":          []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}},
@@ -89,7 +95,7 @@ func p22RecoveryFreshnessJourney(t *testing.T, dirty bool) {
 	envelopeID := p21PathString(t, created, "result", "envelope", "id")
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-envelope-activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1}), "--idempotency-key", "p22-envelope-activate")
 
-	claim := p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-claim", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "ttl_seconds": 60}), "--idempotency-key", "p22-claim-acquire")
+	claim := p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-claim", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "ttl_seconds": 60}), "--idempotency-key", "p22-claim-acquire")
 	claimID := p21PathString(t, claim, "result", "claim", "id")
 	run := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-run", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-prior", "source": "activated-harness"}, "obligation_id": nil, "repository": repository}), "--idempotency-key", "p22-run-start")
 	runID := p21PathString(t, run, "result", "run", "id")

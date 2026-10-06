@@ -171,6 +171,8 @@ satisfy either guarded action.
    the import binding names this project and the selected workspace root.
    Sources are read from the destination checkout, new scopes and Claims
    record local observations, and Claim Events retain their Envelope scope.
+   A Claim acquired in the destination can be renewed, released or expired
+   there under the same worktree equivalence (DEC-283).
    Copying the worktree without that binding does not grant equivalence.
 
 Phase 21 delivered deterministic export creation and non-mutating validation.

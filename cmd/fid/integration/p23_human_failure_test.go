@@ -58,7 +58,7 @@ func TestP23StopFailureCodeMatrix(t *testing.T) {
 		return []string{"--project", a.workspace, group, leaf, "--actor", a.actor,
 			"--input", p21Input(t, a.workspace, "human-"+key, input), "--idempotency-key", key}
 	}
-	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": a.repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
+	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
 	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": a.claimID, "claim_version": a.claimVersion, "executor": map[string]any{"id": "executor-human-failure", "source": "activated-harness"}, "obligation_id": nil, "repository": a.repository}
 	_, gateInput := a.p22BuildArgs(t, p22ConformanceCase{Operation: "gate.run"})
 	stopResolve := func(key, id, event string) []string {
@@ -118,7 +118,7 @@ func p23StopFailureReworkFixture(t *testing.T, binary string) p23StopFailureRewo
 			"--input", p21Input(t, a.workspace, "human-"+key, input), "--idempotency-key", key}
 	}
 	envelopeID := p23EnvelopeID(t, a)
-	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": a.repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
+	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
 	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": "CLM-would-be-rework", "claim_version": 1, "executor": map[string]any{"id": "executor-would-be-rework", "source": "activated-harness"}, "obligation_id": nil, "repository": a.repository}
 	return p23StopFailureRework{a.workspace, mutation("claim", "acquire", "rework-claim", claimInput), mutation("run", "start", "rework-run", runInput)}
 }

@@ -43,7 +43,7 @@ func TestP23FailurePrecedenceWithReadinessStopAndObligation(t *testing.T) {
 	assertP23HumanOutcomeSuccess(t, rejected)
 	assertP23ObligationsUnsatisfied(t, a, "OBL-human-release", "OBL-human-security")
 	beforeEvents, beforeProjection := p21JournalEventCount(t, a.workspace), p22FaultProjection(t, a.workspace)
-	denied := p23RunInput(t, a, "envelope", "complete", a.actor, "precedence-stop-and-obligation", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
+	denied := p23RunInput(t, a, "envelope", "complete", a.actor, "precedence-stop-and-obligation", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1})
 	assertP22ProcessFailure(t, "envelope.complete", "human-outcome-required", 4, denied)
 	p23AssertStopBlockedDetails(t, a, denied, "human-outcome-required", "outcome_class", "security")
 	if p21JournalEventCount(t, a.workspace) != beforeEvents || !reflect.DeepEqual(p22FaultProjection(t, a.workspace), beforeProjection) {

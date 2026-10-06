@@ -170,7 +170,9 @@ Registrations and Envelope scopes must name the same project and worktree,
 or an imported destination whose binding names that project and exact root.
 A plain copy with no import binding is refused without an Event. Claim Events
 retain the Envelope scope; the acquired Claim records its local observed
-worktree.
+worktree. A Claim acquired in an imported destination may be renewed,
+released or expired there; stored authority uses the same shared worktree
+predicate as acquisition (DEC-283).
 
 ### Claims, Runs, Stops, and Attention
 

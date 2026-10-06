@@ -510,8 +510,7 @@ func p23ConflictInput(operation string, input map[string]any) map[string]any {
 	case "claim.release":
 		mutated["reason"] = "failed"
 	case "envelope.complete":
-		repository := mutated["repository"].(map[string]any)
-		repository["head_oid"] = strings.Repeat("0", 40)
+		mutated["expected_revision"] = p23NumberValue(input["expected_revision"]) + 1
 	default:
 		return nil
 	}

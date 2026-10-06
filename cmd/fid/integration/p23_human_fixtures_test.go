@@ -300,7 +300,7 @@ func p23ReviewExhaustionFixture(t *testing.T, binary, root string) p23HumanCheck
 	recorded := p23ReviewRecord(t, a, "actor-denied", "fixture-cycle", p23ReviewInput(a, p21PathString(t, run, "id"), p23Number(t, run["version"]), "changes-required", []any{p23Finding(a.issueID, "FND-fixture-cycle", "major", true)}, nil))
 	p23AssertReviewSuccess(t, "fixture exhaustion Review", recorded)
 	p23CloseAndRelease(t, a, "actor-denied", p21PathString(t, run, "id"), p21PathString(t, claim, "id"), "fixture-cycle")
-	input := p21Input(t, workspace, "fixture-rework-claim", map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "worktree_id": a.repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60})
+	input := p21Input(t, workspace, "fixture-rework-claim", map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60})
 	deniedArgs := []string{"--project", workspace, "--json", "claim", "acquire", "--input", input, "--actor", a.actor, "--idempotency-key", "fixture-exhausted-claim"}
 	stdout, stderr, err := closureRunCommand(workspace, binary, deniedArgs...)
 	if err == nil || stdout != "" || !strings.Contains(stderr, "review-rework-exhausted") {

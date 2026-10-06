@@ -59,7 +59,7 @@ func addJournalBackedExportFixtureFacts(t *testing.T, workspace string) string {
 		t.Fatalf("register fixture gate for activation %q: %v", activation.ID, err)
 	}
 
-	source := fixtureSource(repository)
+	source := fixtureSource(t, workspace, repository)
 	grant := workflow.AuthorityGrant{Actions: fixtureCapabilities()}
 	grant.ActorSelector.ActorID, grant.ActorSelector.RequiredCapabilities = "actor-builder", fixtureCapabilities()
 	grant.Scope.IssueID = issue.ID
@@ -242,9 +242,14 @@ func fixtureGit(t *testing.T, workspace string, arguments ...string) {
 	}
 }
 
-func fixtureSource(repository workflow.Repository) workflow.Source {
+func fixtureSource(t *testing.T, workspace string, repository workflow.Repository) workflow.Source {
 	path := "project-docs/gates/fixture.json"
-	return workflow.Source{Digest: "sha256:" + strings.Repeat("3", 64), DisplayLabel: "Fixture gate policy", Path: &path, Repository: repository, SourceType: "project-file"}
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(workspace, path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return workflow.Source{Digest: digest(data), DisplayLabel: "Fixture gate policy", Path: &path, Repository: repository, SourceType: "project-file"}
 }
 
 func evidenceRepository(repository workflow.Repository) evidence.Repository {

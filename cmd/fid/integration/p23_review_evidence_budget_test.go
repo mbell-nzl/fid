@@ -135,7 +135,7 @@ func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
 
 	beforeDenials := p21JournalEventCount(t, a.workspace)
 	beforeClaims, beforeRuns := p23EntityCounts(t, a)
-	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "worktree_id": a.repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
+	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
 	deniedClaim := p23RunInput(t, a, "claim", "acquire", a.actor, "cycles-denied-claim", claimInput)
 	assertP22ProcessFailure(t, "claim.acquire", "review-rework-exhausted", 4, deniedClaim)
 	if !p23HasJSON(deniedClaim.Stderr, `"event":null`) || !p23HasJSON(deniedClaim.Stderr, `"replayed":false`) || p21JournalEventCount(t, a.workspace) != beforeDenials {

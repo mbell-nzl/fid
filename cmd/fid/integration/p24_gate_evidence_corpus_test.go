@@ -60,7 +60,7 @@ func TestP24GateEvidenceAndEnvelopeKeyedLeafCorpus(t *testing.T) {
 		p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "transition", a.issueID, "--to", state, "--actor", "agent:"+a.actor, "--expected-revision", strconv.Itoa(i+1), "--idempotency-key", "p24-gate-issue-"+state)
 	}
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "p24-gate-evidence")
-	complete := p23RunInput(t, a, "envelope", "complete", a.actor, "p24-envelope-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
+	complete := p23RunInput(t, a, "envelope", "complete", a.actor, "p24-envelope-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1})
 	if complete.ExitCode != 0 || complete.Stderr != "" {
 		t.Fatalf("envelope.complete = %d %q", complete.ExitCode, complete.Stderr)
 	}

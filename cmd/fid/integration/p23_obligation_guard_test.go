@@ -147,7 +147,7 @@ func p23AssertEvaluationStatuses(t *testing.T, response p22ConformanceResponse, 
 // its reasons.
 func p23CompleteDenialObligationIDs(t *testing.T, a *p22FIDRecoveryAdapter, key string) []string {
 	t.Helper()
-	complete := p23RunInput(t, a, "envelope", "complete", a.actor, key, map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
+	complete := p23RunInput(t, a, "envelope", "complete", a.actor, key, map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1})
 	if complete.ExitCode != 4 || complete.Stdout != "" {
 		t.Fatalf("%s envelope.complete = %#v, want exit 4 with no stdout", key, complete)
 	}

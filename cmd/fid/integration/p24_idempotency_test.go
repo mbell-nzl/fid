@@ -75,8 +75,7 @@ func TestP24ClaimAcquireConflictNamesChangedLease(t *testing.T) {
 	before := p21JournalEventCount(t, a.workspace)
 	input := map[string]any{
 		"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a),
-		"envelope_revision": 1, "worktree_id": a.repository["worktree_id"],
-		"scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation",
+		"envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation",
 		"ttl_seconds": 61,
 	}
 	response := p23RunInput(t, a, "claim", "acquire", a.actor, "p22-corpus-claim-acquire", input)

@@ -289,20 +289,11 @@ func runEnvelopeForTest(t *testing.T) (string, string, string) {
 
 func runEnvelopeForTestWithDefinition(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
 	t.Helper()
-	definitions := gateDefinitionsForTest(modifyDefinition)
-	key := reusableWorkspaceFixtureKey(t, "run-envelope", definitions)
-	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, envelopeID, registration := buildRunEnvelopeForTest(t, definitions)
-		return workspace, []string{issueID, envelopeID, registration.ID, strconv.Itoa(registration.Version)}
-	})
-	registrationVersion, err := strconv.Atoi(values[3])
-	if err != nil {
-		t.Fatalf("decode cached registration version: %v", err)
-	}
+	workspace, issueID, envelopeID, registration := buildRunEnvelopeForTest(t, gateDefinitionsForTest(modifyDefinition))
 	rememberEnvelopeBindingForTest(t, workspace, envelopeBindingForTest{
-		registrationID: values[2], registrationVersion: registrationVersion, obligationID: testEvidenceObligationID,
+		registrationID: registration.ID, registrationVersion: registration.Version, obligationID: testEvidenceObligationID,
 	})
-	return workspace, values[0], values[1]
+	return workspace, issueID, envelopeID
 }
 
 func buildRunEnvelopeForTest(t *testing.T, definitions []any) (string, string, string, gateRegistrationView) {
@@ -337,6 +328,9 @@ func buildRunEnvelopeForTest(t *testing.T, definitions []any) (string, string, s
 
 func runRepositoryForTest(t *testing.T, workspace string) map[string]any {
 	t.Helper()
+	if repository, ok := retainedRepositoryInputs.Load(workspace); ok {
+		return cloneJSONMap(t, repository.(map[string]any))
+	}
 	return cloneJSONMap(t, testEnvelopeRepository(t, workspace))
 }
 

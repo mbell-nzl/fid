@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/cli"
@@ -20,6 +21,11 @@ import (
 )
 
 const testEvidenceObligationID = "OBL-1"
+
+// Retained fixtures that use caller snapshots keep their local observation as
+// the input to later Run/Gate/Evidence leaves. Observing fixtures still capture
+// their current worktree. Neither kind shares observed history across roots.
+var retainedRepositoryInputs sync.Map
 
 func TestP24EnvelopeReplayAfterSourceChangeOrDeletion(t *testing.T) {
 	t.Parallel()
@@ -324,6 +330,89 @@ func TestP24EnvelopeAndClaimOriginalCopyAndImport(t *testing.T) {
 	}
 }
 
+func TestP24ImportedClaimStoredAuthority(t *testing.T) {
+	t.Parallel()
+	for _, action := range []string{"renew", "release", "expire"} {
+		t.Run(action, func(t *testing.T) {
+			t.Parallel()
+			workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+			input := envelopeCreateInput(t, workspace, issueID, registration)
+			grant := input["authority_grants"].([]any)[0].(map[string]any)
+			actions := []string{"claim.acquire", "claim.expire", "claim.release", "claim.renew", "envelope.activate"}
+			grant["actions"] = actions
+			grant["actor_selector"].(map[string]any)["required_capabilities"] = actions
+			created := p24BindingMutation(t, workspace, "envelope create", input, "create")
+			if created.err != nil {
+				t.Fatalf("create: %#v", created)
+			}
+			envelopeID := assertEnvelopeShape(t, created.stdout, "draft")
+			if activated := p24BindingMutation(t, workspace, "envelope activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1}, "activate"); activated.err != nil {
+				t.Fatalf("activate: %#v", activated)
+			}
+			archive := filepath.Join(t.TempDir(), "archive.zip")
+			if exported := executeCommandForTest(workspace, "export", "create", archive, "--json"); exported.err != nil {
+				t.Fatalf("export: %#v", exported)
+			}
+			target := filepath.Join(t.TempDir(), "imported")
+			if data, err := exec.Command("git", "clone", "-q", workspace, target).CombinedOutput(); err != nil {
+				t.Fatalf("clone: %v (%s)", err, data)
+			}
+			if imported := executeCommandForTest(target, "export", "import", archive, "--repository", target, "--idempotency-key", "import", "--json"); imported.err != nil {
+				t.Fatalf("import: %#v", imported)
+			}
+			for _, root := range []string{workspace, target} {
+				claim, _ := acquireGenericClaimForTest(t, root, issueID, envelopeID, "stored-authority-acquire")
+				if claim["worktree_id"] != p24IndependentBindingRepository(t, root)["worktree_id"] {
+					t.Fatalf("Claim did not record destination: %#v", claim)
+				}
+				request := map[string]any{"claim_id": claim["id"], "expected_version": 1}
+				if action == "renew" {
+					request["ttl_seconds"] = 120
+				}
+				if action == "release" {
+					request["reason"] = "completed"
+				}
+				if root == target {
+					copied := t.TempDir()
+					if err := copyWorkspaceTree(target, copied); err != nil {
+						t.Fatal(err)
+					}
+					before := p24BindingPersistenceSnapshot(t, copied)
+					refused := p24BindingMutation(t, copied, "claim "+action, request, "stored-authority")
+					if cli.ExitCode(refused.err) != 2 || refused.stdout != "" {
+						t.Fatalf("copy exit: %#v", refused)
+					}
+					failure := decodeCommandJSONStructure(t, refused.stderr).(map[string]any)["error"].(map[string]any)
+					if failure["code"] != "invalid-argument" || failure["message"] != "invalid claim request" || !reflect.DeepEqual(failure["details"], map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted claim." + action + " input"}}) {
+						t.Fatalf("copy failure: %#v", failure)
+					}
+					if !before.equal(p24BindingPersistenceSnapshot(t, copied)) {
+						t.Fatal("copy changed persistence")
+					}
+				}
+				mutated := p24BindingMutation(t, root, "claim "+action, request, "stored-authority")
+				if mutated.err != nil || mutated.stderr != "" || stringifyClaimValue(claimFromResponse(t, mutated.stdout)["version"]) != "2" {
+					t.Fatalf("%s in %s: %#v", action, root, mutated)
+				}
+				before := p24BindingPersistenceSnapshot(t, root)
+				replayed := p24BindingMutation(t, root, "claim "+action, request, "stored-authority")
+				if replayed.err != nil || !claimResponseReplayed(t, replayed.stdout) || !reflect.DeepEqual(claimFromResponse(t, replayed.stdout), claimFromResponse(t, mutated.stdout)) {
+					t.Fatalf("replay %s: %#v", action, replayed)
+				}
+				if !before.equal(p24BindingPersistenceSnapshot(t, root)) {
+					t.Fatal("replay changed persistence")
+				}
+				if action == "renew" {
+					released := p24BindingMutation(t, root, "claim release", map[string]any{"claim_id": claim["id"], "expected_version": 2, "reason": "completed"}, "release-renewed")
+					if released.err != nil || released.stderr != "" || stringifyClaimValue(claimFromResponse(t, released.stdout)["version"]) != "3" || claimFromResponse(t, released.stdout)["status"] != "released" {
+						t.Fatalf("release renewed Claim: %#v", released)
+					}
+				}
+			}
+		})
+	}
+}
+
 func TestP24EnvelopeSourcePositions(t *testing.T) {
 	t.Parallel()
 	positions := p24EnvelopeSourcePositions(t)
@@ -454,6 +543,19 @@ func p24IndependentBindingRepository(t *testing.T, workspace string) map[string]
 		t.Fatal(err)
 	}
 	return map[string]any{"base_oid": head, "capture_source": "git", "dirty": false, "dirty_digest": nil, "head_oid": head, "project_id": projectConfig.ProjectID, "tree_oid": tree, "worktree_id": fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(root)))}
+}
+
+func p24BindingPersistenceSnapshot(t *testing.T, workspace string) workspacePersistenceSnapshot {
+	t.Helper()
+	paths, err := filepath.Glob(filepath.Join(workspace, ".fid/journal/*.jsonl"))
+	if err != nil || len(paths) == 0 {
+		t.Fatalf("journal inventory: %v / %v", paths, err)
+	}
+	snapshot := workspacePersistenceSnapshot{database: mustReadCommandFile(t, filepath.Join(workspace, ".fid/fid.sqlite"))}
+	for _, path := range paths {
+		snapshot.journal = append(snapshot.journal, mustReadCommandFile(t, path)...)
+	}
+	return snapshot
 }
 
 func p24AssertBindingEventRepository(t *testing.T, workspace string, repository map[string]any) {
@@ -889,7 +991,11 @@ func buildFinalizedEnvelopeWorkspaceWithRepository(t *testing.T, definitions []a
 	registrationInput["scope"] = map[string]any{"issue_id": issueID}
 	registrationPath := filepath.Join(workspace, "gate-register-envelope.json")
 	writeActivationInput(t, registrationPath, registrationInput)
-	return workspace, issueID, registerGateForTest(t, workspace, registrationPath, "gate-register-envelope")
+	registration := registerGateForTest(t, workspace, registrationPath, "gate-register-envelope")
+	if !observeRepository {
+		retainedRepositoryInputs.Store(workspace, testEnvelopeRepository(t, workspace))
+	}
+	return workspace, issueID, registration
 }
 
 func buildUnregisteredEnvelopeWorkspace(t *testing.T, definitions []any) (string, string) {

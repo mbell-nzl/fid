@@ -382,7 +382,7 @@ func validateStoredClaimAuthority(options MutationOptions, claim GenericClaim, a
 	if err != nil {
 		return err
 	}
-	if envelope.RepositoryScope.WorktreeID != claim.WorktreeID {
+	if !workflow.SameWorktree(options.WorkspaceRoot, envelope.RepositoryScope, workflow.Repository{ProjectID: envelope.RepositoryScope.ProjectID, WorktreeID: claim.WorktreeID}) {
 		return invalidGenericClaim("claim worktree binding is invalid")
 	}
 	return workflow.AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, workflow.EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: action, Capability: action, IssueID: claim.IssueID, EnvelopeID: claim.EnvelopeID, Revision: claim.EnvelopeRevision})
