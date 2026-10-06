@@ -93,13 +93,23 @@ Recovered code is not trusted evidence; gates/review run normally.
 
 ## 7. Review And Rework
 
-1. A fresh Reviewer Run binds the exact Envelope revision and repository
-   identity.
+1. A fresh Reviewer Run binds the exact Envelope revision and the same
+   project/worktree. `run start` checks `expected_repository` against fid's
+   current observation and records it, so commits and edits since Envelope
+   creation do not require an Envelope revision. A matching imported
+   destination binding preserves the worktree relationship; a plain copy is
+   refused.
 2. Reviewer records coverage, verdict, evidence, and zero or more Findings.
 3. `pass` may satisfy the review Obligation when every other condition holds.
 4. `changes-required` leaves it unsatisfied and derives Builder rework on the
    original Issue/Envelope.
-5. Builder acquires a new Claim/Run and may mark Findings addressed.
+5. Builder acquires a new Claim/Run and may mark Findings addressed. Its
+   matching repository expectation permits the rework Run after the Builder's
+   changes. On `run close`, fid records the terminal observation with
+   `base_oid` equal to HEAD and evaluates Obligations against it. A Run with
+   Receipt-backed Evidence succeeds in the proven tree and fails after a
+   tracked-file edit stales that Evidence. `run abandon` records the same
+   terminal observation and releases the Claim without creating Evidence.
 6. Only a later qualifying independent Review Record resolves a Finding or
    marks it inapplicable with a reason; those dispositions commit in that
    Review's atomic Event. An addressed assertion remains nonterminal. The

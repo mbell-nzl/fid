@@ -144,7 +144,7 @@ func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
 	p23AssertNoncommittingDenialRetry(t, a, deniedClaim, func() p22ConformanceResponse {
 		return p23RunInput(t, a, "claim", "acquire", a.actor, "cycles-denied-claim", claimInput)
 	})
-	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "claim_id": "CLM-would-be-rework", "claim_version": 1, "executor": map[string]any{"id": "executor-would-be-rework", "source": "activated-harness"}, "obligation_id": nil, "repository": a.repository}
+	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "claim_id": "CLM-would-be-rework", "claim_version": 1, "executor": map[string]any{"id": "executor-would-be-rework", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": p24ExpectedRepository(a.repository)}
 	deniedRun := p23RunInput(t, a, "run", "start", a.actor, "cycles-denied-run", runInput)
 	assertP22ProcessFailure(t, "run.start", "review-rework-exhausted", 4, deniedRun)
 	p23AssertNoncommittingDenialRetry(t, a, deniedRun, func() p22ConformanceResponse {

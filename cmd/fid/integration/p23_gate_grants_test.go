@@ -55,7 +55,7 @@ func TestP23GateRunAuthorizesEveryEnvelopeGrantThroughBuiltBinary(t *testing.T) 
 		claim := p23RunInput(t, a, "claim", "acquire", actor, "p23-gate-grants-claim-"+actor, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 3600})
 		p23AssertReviewSuccess(t, actor+" acquires a mutation Claim", claim)
 		claimValue := p21Path(t, p23Envelope(t, claim.Stdout), "result", "claim").(map[string]any)
-		run := p23RunInput(t, a, "run", "start", actor, "p23-gate-grants-run-"+actor, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimValue["id"], "claim_version": claimValue["version"], "executor": map[string]any{"id": "executor-gate-grants-" + actor, "source": "activated-harness"}, "obligation_id": nil, "repository": a.repository})
+		run := p23RunInput(t, a, "run", "start", actor, "p23-gate-grants-run-"+actor, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimValue["id"], "claim_version": claimValue["version"], "executor": map[string]any{"id": "executor-gate-grants-" + actor, "source": "activated-harness"}, "obligation_id": nil, "expected_repository": p24ExpectedRepository(a.repository)})
 		p23AssertReviewSuccess(t, actor+" starts a Run", run)
 		return p21PathString(t, p23Envelope(t, run.Stdout), "result", "run", "id"), claimValue["id"].(string)
 	}

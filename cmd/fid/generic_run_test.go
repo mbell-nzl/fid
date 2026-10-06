@@ -114,7 +114,9 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 		},
 		{
 			name: "mismatched repository", actor: "actor-builder",
-			mutate: func(input map[string]any) { input["repository"].(map[string]any)["tree_oid"] = "tree-mismatched" },
+			mutate: func(input map[string]any) {
+				input["expected_repository"].(map[string]any)["head_oid"] = strings.Repeat("f", 40)
+			},
 		},
 		{
 			name: "immutable budgets", actor: "actor-builder",
@@ -149,7 +151,18 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 				"--project", workspace, "--json", "run", "start", "--actor", testCase.actor,
 				"--input", path, "--idempotency-key", "run-binding-"+strings.ReplaceAll(testCase.name, " ", "-"),
 			)
-			assertRunStartInvalidArgument(t, result)
+			switch testCase.name {
+			case "mismatched repository":
+				if result.err == nil || !strings.Contains(result.stderr, `"code":"repository-mismatch"`) {
+					t.Fatalf("mismatch: %#v", result)
+				}
+			case "immutable budgets":
+				if result.err == nil || !strings.Contains(result.stderr, `"argument":"input.budgets"`) {
+					t.Fatalf("immutable budgets: %#v", result)
+				}
+			default:
+				assertRunStartInvalidArgument(t, result)
+			}
 			assertRunStateUnchanged(t, workspace, before)
 		})
 	}
@@ -342,7 +355,7 @@ func runFromResponse(t *testing.T, output string) map[string]any {
 func runStartInput(issueID, envelopeID, claimID any, repository map[string]any) map[string]any {
 	return map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-builder", "source": "activated-harness"}, "obligation_id": nil, "repository": repository,
+		"claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-builder", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]},
 	}
 }
 
@@ -369,7 +382,7 @@ func closeRunForTest(t *testing.T, workspace, runID string, repository map[strin
 	observation := response["observation"].(map[string]any)
 	run := response["run"].(map[string]any)
 	closePath := filepath.Join(workspace, key+"-close.json")
-	writeActivationInput(t, closePath, map[string]any{"run_id": runID, "expected_version": run["version"], "observation_id": observation["id"], "repository": repository})
+	writeActivationInput(t, closePath, map[string]any{"run_id": runID, "expected_version": run["version"], "observation_id": observation["id"], "expected_repository": map[string]any{"head_oid": testEnvelopeRepository(t, workspace)["head_oid"], "dirty": testEnvelopeRepository(t, workspace)["dirty"]}})
 	closed := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "close", "--actor", "actor-builder", "--input", closePath, "--idempotency-key", key+"-close")
 	if closed.err != nil {
 		t.Fatalf("close Run: %#v", closed)

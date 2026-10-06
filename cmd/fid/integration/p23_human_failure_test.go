@@ -59,7 +59,7 @@ func TestP23StopFailureCodeMatrix(t *testing.T) {
 			"--input", p21Input(t, a.workspace, "human-"+key, input), "--idempotency-key", key}
 	}
 	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
-	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": a.claimID, "claim_version": a.claimVersion, "executor": map[string]any{"id": "executor-human-failure", "source": "activated-harness"}, "obligation_id": nil, "repository": a.repository}
+	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": a.claimID, "claim_version": a.claimVersion, "executor": map[string]any{"id": "executor-human-failure", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": p24ExpectedRepository(a.repository)}
 	_, gateInput := a.p22BuildArgs(t, p22ConformanceCase{Operation: "gate.run"})
 	stopResolve := func(key, id, event string) []string {
 		return mutation("stop", "resolve", key, map[string]any{"stop_id": id, "fact_event_id": event})
@@ -119,7 +119,7 @@ func p23StopFailureReworkFixture(t *testing.T, binary string) p23StopFailureRewo
 	}
 	envelopeID := p23EnvelopeID(t, a)
 	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
-	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": "CLM-would-be-rework", "claim_version": 1, "executor": map[string]any{"id": "executor-would-be-rework", "source": "activated-harness"}, "obligation_id": nil, "repository": a.repository}
+	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": "CLM-would-be-rework", "claim_version": 1, "executor": map[string]any{"id": "executor-would-be-rework", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": p24ExpectedRepository(a.repository)}
 	return p23StopFailureRework{a.workspace, mutation("claim", "acquire", "rework-claim", claimInput), mutation("run", "start", "rework-run", runInput)}
 }
 

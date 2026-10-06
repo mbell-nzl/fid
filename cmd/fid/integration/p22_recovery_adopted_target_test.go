@@ -118,7 +118,7 @@ func TestP22RecoveryAdoptedTargetPermitsTerminalTransitionWithFreshSuccessorProo
 		"liveness": map[string]any{"executor_id": "executor-adopted-terminal", "state": "terminated", "source_ref": "p22:adopted-target-b", "observed_at": time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)},
 	}), "--idempotency-key", "p22-adopted-terminal-observe-b")
 	p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "run", "close", "--actor", adapter.actor, "--input", p21Input(t, adapter.workspace, "p22-adopted-terminal-close-b", map[string]any{
-		"run_id": successorRunID, "expected_version": p21Path(t, observed, "result", "run", "version"), "observation_id": p21PathString(t, observed, "result", "observation", "id"), "repository": successorRepository,
+		"run_id": successorRunID, "expected_version": p21Path(t, observed, "result", "run", "version"), "observation_id": p21PathString(t, observed, "result", "observation", "id"), "expected_repository": p24ExpectedRepository(successorRepository),
 	}), "--idempotency-key", "p22-adopted-terminal-close-b")
 	p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "envelope", "complete", "--actor", adapter.actor, "--input", p21Input(t, adapter.workspace, "p22-adopted-terminal-complete-b", map[string]any{
 		"envelope_id": p21PathString(t, run, "result", "run", "envelope_id"), "expected_revision": 1,

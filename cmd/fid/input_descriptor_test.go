@@ -45,7 +45,7 @@ func TestAttentionResolveUnknownFieldNamesInputPath(t *testing.T) {
 func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 	t.Parallel()
 	leaves := []string{"stop raise", "stop resolve", "attention resolve", "decision record-reference",
-		"requirement record-reference", "requirement link", "human-outcome record", "concern record", "concern dispose", "deviation record", "review record", "finding address", "gate register", "envelope create", "envelope activate", "envelope complete", "claim acquire", "claim renew", "claim release", "claim expire"}
+		"requirement record-reference", "requirement link", "human-outcome record", "concern record", "concern dispose", "deviation record", "review record", "finding address", "gate register", "envelope create", "envelope activate", "envelope complete", "claim acquire", "claim renew", "claim release", "claim expire", "run start", "run close", "run abandon", "run observe-budget", "run observe", "run checkpoint", "run recover"}
 	conflicts := []struct {
 		name, argument string
 		value          any
@@ -64,8 +64,8 @@ func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 		{"key first", "--idempotency-key", "key-1", func(string) []string { return []string{"--idempotency-key", "key-1", "extra"} }},
 		{"positional", "arguments", "extra", func(string) []string { return []string{"extra"} }},
 	}
-	if got := len(leaves) * len(conflicts); got != 120 {
-		t.Fatalf("exclusivity corpus has %d rows, want 120", got)
+	if got := len(leaves) * len(conflicts); got != 162 {
+		t.Fatalf("exclusivity corpus has %d rows, want 162", got)
 	}
 	binary := buildAdoptedFID(t)
 	for _, leaf := range leaves {
@@ -321,6 +321,20 @@ func TestP24BindingDescriptorProcessCorpus(t *testing.T) {
 	if len(leaves) != 8 {
 		t.Fatalf("binding leaf corpus = %d, want 8", len(leaves))
 	}
+	p24DescriptorProcessCorpus(t, leaves)
+}
+
+func TestP24RunDescriptorProcessCorpus(t *testing.T) {
+	t.Parallel()
+	leaves := runDescriptors()
+	if len(leaves) != 7 {
+		t.Fatalf("Run corpus = %d, want 7", len(leaves))
+	}
+	p24DescriptorProcessCorpus(t, leaves)
+}
+
+func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescriptor) {
+	t.Helper()
 	binary := buildAdoptedFID(t)
 	for leaf, descriptor := range leaves {
 		t.Run(leaf, func(t *testing.T) {
@@ -563,6 +577,12 @@ func p24ExpandDescriptorObjects(t *testing.T, object map[string]any, fields []cl
 		}
 		if field.Format == "digest" && object[field.Name] != nil {
 			object[field.Name] = "sha256:" + strings.Repeat("1", 64)
+		}
+		if (field.Format == "oid" || field.Format == "OID") && object[field.Name] != nil {
+			object[field.Name] = strings.Repeat("1", 40)
+		}
+		if field.Format == "timestamp" && object[field.Name] != nil {
+			object[field.Name] = "2026-10-06T00:00:00Z"
 		}
 		children := field.Children
 		if field.Element != nil {
@@ -1062,6 +1082,7 @@ func TestP24JudgmentDescriptorSourcePositionsAndExamples(t *testing.T) {
 		"deviation record":             "input.references[]",
 		"requirement link":             "",
 		"concern dispose":              "",
+		"run observe-budget":           "input.measurement_ref",
 	}
 	var positions func([]cli.InputField, string) []string
 	positions = func(fields []cli.InputField, path string) []string {
@@ -1110,11 +1131,22 @@ func TestP24JudgmentDescriptorSourcePositionsAndExamples(t *testing.T) {
 			if err := cli.CheckInputType(descriptor); err != nil {
 				t.Fatalf("descriptor type for %s: %v", leaf, err)
 			}
-			var typed any
-			if err := json.Unmarshal([]byte(example.stdout), &typed); err != nil {
+			typed := reflect.New(descriptor.Type).Interface()
+			decoder := json.NewDecoder(strings.NewReader(example.stdout))
+			decoder.DisallowUnknownFields()
+			if err := decoder.Decode(typed); err != nil {
 				t.Fatal(err)
 			}
-			if err := cli.ValidateInput([]byte(example.stdout), descriptor); err != nil {
+			var expanded map[string]any
+			if err := json.Unmarshal([]byte(example.stdout), &expanded); err != nil {
+				t.Fatal(err)
+			}
+			p24ExpandDescriptorObjects(t, expanded, descriptor.Fields)
+			payload, err := json.Marshal(expanded)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := cli.ValidateInput(payload, descriptor); err != nil {
 				t.Fatalf("template for %s: %v", leaf, err)
 			}
 			entries, err := os.ReadDir(workspace)
@@ -2068,6 +2100,65 @@ func TestAdoptedStructuralProcessDetails(t *testing.T) {
 			entries, err := os.ReadDir(workspace)
 			if err != nil || len(entries) != 0 {
 				t.Fatalf("failure touched workspace: entries=%v err=%v", entries, err)
+			}
+		})
+	}
+}
+
+func TestP24RunDescriptorsAdoptSevenLeaves(t *testing.T) {
+	t.Parallel()
+	for _, leaf := range []string{"run start", "run close", "run abandon", "run observe-budget", "run observe", "run checkpoint", "run recover"} {
+		descriptor, found := inputDescriptorRegistry[leaf]
+		if !found || pendingInputDescriptors[leaf] {
+			t.Errorf("%s lacks adopted descriptor", leaf)
+			continue
+		}
+		if err := cli.CheckInputType(descriptor); err != nil {
+			t.Errorf("%s: %v", leaf, err)
+		}
+	}
+}
+
+func TestP24RemovedRunRepositoryMembers(t *testing.T) {
+	t.Parallel()
+	for _, leaf := range []string{"run start", "run close", "run abandon", "run observe-budget"} {
+		t.Run(leaf, func(t *testing.T) {
+			t.Parallel()
+			descriptor := inputDescriptorRegistry[leaf]
+			data, err := cli.InputExample(descriptor)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var input map[string]any
+			if err := json.Unmarshal(data, &input); err != nil {
+				t.Fatal(err)
+			}
+			p24ExpandDescriptorObjects(t, input, descriptor.Fields)
+			path := "input.repository"
+			if leaf == "run observe-budget" {
+				input["measurement_ref"].(map[string]any)["repository"] = map[string]any{}
+				path = "input.measurement_ref.repository"
+			} else {
+				input["repository"] = map[string]any{}
+			}
+			payload, err := json.Marshal(input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			root := t.TempDir()
+			filename := filepath.Join(t.TempDir(), "input.json")
+			if err := os.WriteFile(filename, payload, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			args := append([]string{"--json"}, strings.Split(leaf, " ")...)
+			args = append(args, "--input", filename, "--actor", "ACT-1", "--idempotency-key", "removed")
+			response := executeCommandForTest(root, args...)
+			if cli.ExitCode(response.err) != 2 || response.stdout != "" || !strings.Contains(response.stderr, `"argument":"`+path+`"`) {
+				t.Fatalf("removed member: %#v", response)
+			}
+			entries, err := os.ReadDir(root)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("refusal changed root: %v %v", entries, err)
 			}
 		})
 	}

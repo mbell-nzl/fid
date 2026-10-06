@@ -10,6 +10,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/project"
 )
 
 const runStartAction = "run.start"
@@ -20,14 +21,14 @@ type Executor struct {
 }
 
 type RunStartRequest struct {
-	IssueID          string     `json:"issue_id"`
-	EnvelopeID       string     `json:"envelope_id"`
-	EnvelopeRevision int        `json:"envelope_revision"`
-	ClaimID          string     `json:"claim_id"`
-	ClaimVersion     int        `json:"claim_version"`
-	Executor         Executor   `json:"executor"`
-	ObligationID     *string    `json:"obligation_id"`
-	Repository       Repository `json:"repository"`
+	IssueID            string                     `json:"issue_id"`
+	EnvelopeID         string                     `json:"envelope_id"`
+	EnvelopeRevision   int                        `json:"envelope_revision"`
+	ClaimID            string                     `json:"claim_id"`
+	ClaimVersion       int                        `json:"claim_version"`
+	Executor           Executor                   `json:"executor"`
+	ObligationID       *string                    `json:"obligation_id"`
+	ExpectedRepository project.ExpectedRepository `json:"expected_repository"`
 }
 
 type RunOptions struct {
@@ -90,6 +91,13 @@ func (err *RunInactiveError) Error() string {
 
 type RunInvalidError struct{ Reason string }
 
+type RunRepositoryMismatchError struct {
+	Expected project.ExpectedRepository
+	Observed Repository
+}
+
+func (err *RunRepositoryMismatchError) Error() string { return "repository identity does not match" }
+
 func (err *RunInvalidError) Error() string { return err.Reason }
 
 type RunVersionConflictError struct {
@@ -109,6 +117,13 @@ func StartRun(options RunOptions, request RunStartRequest) (RunMutationResult, e
 		return RunMutationResult{}, invalidRun("run start input is invalid")
 	}
 	return mutateRun(options, runStartAction, request, func(conn *sql.DB, projectID string, now time.Time) (journal.Event, Run, error) {
+		observed, err := project.ObserveRecordedRepository(options.WorkspaceRoot, projectID)
+		if err != nil {
+			return journal.Event{}, Run{}, err
+		}
+		if !request.ExpectedRepository.MatchesRecordedRepository(observed) {
+			return journal.Event{}, Run{}, &RunRepositoryMismatchError{Expected: request.ExpectedRepository, Observed: Repository(observed)}
+		}
 		stops, err := ApplicableStops(conn, runStartAction, Subject{Type: "envelope", ID: request.EnvelopeID})
 		if err != nil {
 			return journal.Event{}, Run{}, err
@@ -120,7 +135,7 @@ func StartRun(options RunOptions, request RunStartRequest) (RunMutationResult, e
 			}
 			return journal.Event{}, Run{}, blocked
 		}
-		if err := validateRunStartBinding(conn, options, projectID, request, now); err != nil {
+		if err := validateRunStartBinding(conn, options, projectID, request, Repository(observed), now); err != nil {
 			return journal.Event{}, Run{}, err
 		}
 		actor, err := ResolveTrustedActor(options.WorkspaceRoot, options.MigrationsDir, options.ActorID)
@@ -139,7 +154,7 @@ func StartRun(options RunOptions, request RunStartRequest) (RunMutationResult, e
 		if err != nil {
 			return journal.Event{}, Run{}, err
 		}
-		run := Run{ID: id, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, EnvelopeRevision: request.EnvelopeRevision, ClaimID: request.ClaimID, ClaimVersion: request.ClaimVersion, Version: 1, Executor: request.Executor, ObligationID: request.ObligationID, ActorID: options.ActorID, StartRepository: request.Repository, Status: "active", Budgets: envelope.Budgets, StartedAt: now.Format(time.RFC3339Nano)}
+		run := Run{ID: id, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, EnvelopeRevision: request.EnvelopeRevision, ClaimID: request.ClaimID, ClaimVersion: request.ClaimVersion, Version: 1, Executor: request.Executor, ObligationID: request.ObligationID, ActorID: options.ActorID, StartRepository: Repository(observed), Status: "active", Budgets: envelope.Budgets, StartedAt: now.Format(time.RFC3339Nano)}
 		event, err := runEvent(options.WorkspaceRoot, actor, run, "run.started", runStartAction, runStartEffects(run))
 		return event, run, err
 	})
@@ -207,8 +222,8 @@ func loadRunMutationReplay(outcome journal.IdempotencyOutcome, key string, resul
 	return nil
 }
 
-func validateRunStartBinding(conn *sql.DB, options RunOptions, projectID string, request RunStartRequest, now time.Time) error {
-	if !validEnvelopeRepository(request.Repository) || request.Repository.ProjectID != projectID {
+func validateRunStartBinding(conn *sql.DB, options RunOptions, projectID string, request RunStartRequest, observed Repository, now time.Time) error {
+	if !validEnvelopeRepository(observed) || observed.ProjectID != projectID {
 		return invalidRun("run repository is invalid")
 	}
 	var claim struct {
@@ -223,14 +238,14 @@ func validateRunStartBinding(conn *sql.DB, options RunOptions, projectID string,
 		return fmt.Errorf("load run claim: %w", err)
 	}
 	expiresAt, err := time.Parse(time.RFC3339Nano, claim.ExpiresAt)
-	if err != nil || !now.Before(expiresAt.UTC()) || claim.Status != "active" || claim.IssueID != request.IssueID || claim.EnvelopeID != request.EnvelopeID || claim.EnvelopeRevision != request.EnvelopeRevision || claim.Version != request.ClaimVersion || claim.ActorID != options.ActorID || claim.WorktreeID != request.Repository.WorktreeID {
+	if err != nil || !now.Before(expiresAt.UTC()) || claim.Status != "active" || claim.IssueID != request.IssueID || claim.EnvelopeID != request.EnvelopeID || claim.EnvelopeRevision != request.EnvelopeRevision || claim.Version != request.ClaimVersion || claim.ActorID != options.ActorID || !SameWorktree(options.WorkspaceRoot, Repository{ProjectID: projectID, WorktreeID: claim.WorktreeID}, observed) {
 		return invalidRun("run claim binding is invalid")
 	}
 	envelope, err := loadEnvelope(conn, request.EnvelopeID)
 	if err != nil {
 		return err
 	}
-	if envelope.Status != "active" || envelope.PrimaryIssueID != request.IssueID || envelope.CurrentRevision != request.EnvelopeRevision || !sameRepository(envelope.RepositoryScope, request.Repository) {
+	if envelope.Status != "active" || envelope.PrimaryIssueID != request.IssueID || envelope.CurrentRevision != request.EnvelopeRevision || !SameWorktree(options.WorkspaceRoot, envelope.RepositoryScope, observed) {
 		return invalidRun("run envelope binding is invalid")
 	}
 	if err := AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: runStartAction, Capability: runStartAction, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, Revision: request.EnvelopeRevision}); err != nil {

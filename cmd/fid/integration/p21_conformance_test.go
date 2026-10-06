@@ -140,7 +140,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 		t.Fatalf("two-process Claim race appended %d Events, want one", afterClaimRace-beforeClaimRace)
 	}
 	claimID := p21PathString(t, claim, "result", "claim", "id")
-	runInput := p21Input(t, workspace, "run-start", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-builder", "source": "activated-harness"}, "obligation_id": nil, "repository": repository})
+	runInput := p21Input(t, workspace, "run-start", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-builder", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": p24ExpectedRepository(repository)})
 	run := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", runInput, "--idempotency-key", "p21-run-start")
 	runID := p21PathString(t, run, "result", "run", "id")
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "transition", issueID, "--to", "started", "--actor", "agent:actor-builder", "--expected-revision", "1", "--idempotency-key", "p21-transition-nonterminal")
@@ -160,7 +160,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	currentRun := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "get", runID)
 	observeInput := p21Input(t, workspace, "run-observe", map[string]any{"run_id": runID, "expected_version": p21Path(t, currentRun, "result", "run", "version"), "liveness": map[string]any{"executor_id": "executor-builder", "state": "terminated", "source_ref": "p21:terminal", "observed_at": "2026-09-07T00:00:00Z"}})
 	observed := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "observe", "--actor", "actor-harness", "--input", observeInput, "--idempotency-key", "p21-run-observe")
-	closeInput := p21Input(t, workspace, "run-close", map[string]any{"run_id": runID, "expected_version": p21Path(t, observed, "result", "run", "version"), "observation_id": p21PathString(t, observed, "result", "observation", "id"), "repository": repository})
+	closeInput := p21Input(t, workspace, "run-close", map[string]any{"run_id": runID, "expected_version": p21Path(t, observed, "result", "run", "version"), "observation_id": p21PathString(t, observed, "result", "observation", "id"), "expected_repository": p24ExpectedRepository(repository)})
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "close", "--actor", "actor-builder", "--input", closeInput, "--idempotency-key", "p21-run-close")
 	releaseInput := p21Input(t, workspace, "claim-release", map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", releaseInput, "--idempotency-key", "p21-claim-release")

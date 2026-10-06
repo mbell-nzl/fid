@@ -178,7 +178,7 @@ predicate as acquisition (DEC-283).
 
 ```text
 fid claim acquire|renew|release|list
-fid run start|record-telemetry|finish|get|list|recover
+fid run start|observe|observe-budget|checkpoint|close|abandon|get|list|inspect|recover
 fid stop record|resolve|list
 fid attention list|resolve
 ```
@@ -191,6 +191,32 @@ lease version are explicit machine fields.
 and lifetime. fid observes and records the selected worktree ID, checking it
 against the Envelope scope. Renew, release and expire retain their existing
 inputs.
+
+`run start`, `run close` and `run abandon` require
+`expected_repository:{head_oid,dirty}` instead of `repository`. Use
+`git rev-parse HEAD` and `git status --porcelain` (excluding `.fid/`) for the
+expectation. fid observes under the write lock after replay lookup, compares
+these two preconditions, and records the full observation. A mismatch returns
+`repository-mismatch` with `{expected:{head_oid,dirty},observed:Repository}`
+and no Event. Start checks the Claim and Envelope as the same project and
+worktree, including a matching import destination binding; edits and commits
+since Envelope creation are accepted. A plain copy has no such binding and is
+refused before an Event. Close and abandon record `terminal_repository` with
+`base_oid` equal to observed HEAD. Close evaluates Obligations against that
+observation; stale Receipt-backed Evidence yields a failed Run. Unsafe or
+unobservable terminal repositories return `recovery-state-conflict`.
+
+`run observe-budget` accepts nullable `measurement_ref:SourceInput`. With a
+Source, fid observes the repository and checks a supplied project-file digest
+or computes an omitted digest; the stored Source and Event carry that
+observation. A null measurement does not observe. Start and budget observation
+return `repository-unavailable` on an unobservable worktree. Equal keyed
+retries replay before any repository or Source read, even after HEAD changes,
+a referenced file changes or disappears, or the worktree becomes unsafe.
+
+All seven Run mutation leaves document their closed input fields in `--help`
+and provide a standalone, exclusive `--example` JSON template. Structural
+failures name the exact `input.<path>` and do not append an Event.
 
 ### Registered gates and evidence
 

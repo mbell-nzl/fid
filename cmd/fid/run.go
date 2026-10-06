@@ -1,16 +1,14 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/review"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -208,6 +206,9 @@ func runMutationFlags(cmd *cobra.Command, inputPath, actor, key *string) {
 	cmd.Flags().StringVar(inputPath, "input", "", "JSON input file (or - for stdin)")
 	cmd.Flags().StringVar(actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(key, "idempotency-key", "", "Idempotency key")
+	if descriptor, ok := inputDescriptorRegistry["run "+cmd.Name()]; ok {
+		installInputDescriptor(cmd, descriptor)
+	}
 	cmd.SetFlagErrorFunc(canonicalFlagError(strings.ReplaceAll(rootCommandKey(cmd), " ", ".")))
 }
 
@@ -217,34 +218,8 @@ func runRequest(cmd *cobra.Command, operation, inputPath, actor, key string, tar
 			return err
 		}
 	}
-	if err := decodeClosedRunInput(cmd.InOrStdin(), inputPath, target); err != nil {
+	if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[strings.ReplaceAll(operation, ".", " ")], target); err != nil {
 		return renderRunError(cmd, operation, err)
-	}
-	return nil
-}
-
-func decodeClosedRunInput(stdin io.Reader, path string, target any) error {
-	var payload []byte
-	var err error
-	if path == "-" {
-		payload, err = io.ReadAll(io.LimitReader(stdin, 1_048_577))
-	} else {
-		payload, err = os.ReadFile(path)
-	}
-	if err != nil {
-		return fmt.Errorf("read run input: %w", err)
-	}
-	if len(payload) > 1_048_576 {
-		return fmt.Errorf("run input exceeds 1048576 bytes")
-	}
-	decoder := json.NewDecoder(strings.NewReader(string(payload)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		return fmt.Errorf("decode run input: %w", err)
-	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		return fmt.Errorf("run input must contain one object")
 	}
 	return nil
 }
@@ -294,6 +269,13 @@ func renderRunError(cmd *cobra.Command, operation string, cause error) error {
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	var mismatch *workflow.RunRepositoryMismatchError
+	if errors.As(cause, &mismatch) {
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRepositoryMismatch, "repository identity does not match", nil, map[string]any{"expected": map[string]any{"head_oid": mismatch.Expected.HeadOID, "dirty": mismatch.Expected.Dirty}, "observed": repositoryDetails(review.Repository(mismatch.Observed))})
+	}
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, operation, cause); ok {
+		return rendered
 	}
 	var idempotency *journal.IdempotencyConflictError
 	if errors.As(cause, &idempotency) {

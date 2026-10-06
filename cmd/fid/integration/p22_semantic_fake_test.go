@@ -87,7 +87,7 @@ func (model *p22MemoryModel) execute(t *testing.T, operation, key, actor string,
 		"stop.raise": "subject code blocked_actions details resolution_condition resolver_capability", "stop.list": "", "attention.list": "",
 		"stop.resolve": "stop_id fact_event_id", "attention.resolve": "attention_id expected_version fact_event_ids",
 		"run.observe-budget": "run_id expected_version budget_name source_sample_id sample_kind previous_sample_id value measurement_ref observed_at",
-		"run.close":          "run_id expected_version observation_id repository", "run.abandon": "run_id expected_version expected_claim_version observation_id authority repository",
+		"run.close":          "run_id expected_version observation_id expected_repository", "run.abandon": "run_id expected_version expected_claim_version observation_id authority expected_repository",
 	}
 	keys, known := allowed[operation]
 	if !known {
@@ -171,7 +171,14 @@ func (model *p22MemoryModel) execute(t *testing.T, operation, key, actor string,
 		result = map[string]any{"recovery": map[string]any{"id": fmt.Sprintf("REC-%d", model.sequence), "prior_run_id": prior, "successor_run_id": model.run["id"]}, "run": p22CloneMap(model.run), "claim": p22CloneMap(model.claim)}
 		model.liveness, model.observation = "unknown", ""
 	case "run.observe-budget":
-		if input["budget_name"] != "tokens" || input["measurement_ref"] == nil || p22Number(input["value"]) < 0 {
+		if source, ok := input["measurement_ref"].(map[string]any); ok {
+			for field := range source {
+				if !strings.Contains(" source_type display_label path section external_id digest ", " "+field+" ") {
+					return failure("invalid-argument", 2)
+				}
+			}
+		}
+		if input["budget_name"] != "tokens" || p22Number(input["value"]) < 0 {
 			return failure("invalid-argument", 2)
 		}
 		previous := input["previous_sample_id"]

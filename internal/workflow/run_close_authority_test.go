@@ -37,7 +37,7 @@ func TestAbandonRunRequiresExactCurrentAuthorityAndObservation(t *testing.T) {
 				} else {
 					want = mutateRecoveryAuthorityCase(t, options, &recovery, kind)
 				}
-				request := RunAbandonRequest{RunID: recovery.PriorRunID, ExpectedVersion: recovery.ExpectedRunVersion, ExpectedClaimVersion: recovery.ExpectedClaimVersion, ObservationID: recovery.ObservationID, Authority: recovery.Authority, Repository: repositoryForRun(t, options, recovery.PriorRunID)}
+				request := RunAbandonRequest{RunID: recovery.PriorRunID, ExpectedVersion: recovery.ExpectedRunVersion, ExpectedClaimVersion: recovery.ExpectedClaimVersion, ObservationID: recovery.ObservationID, Authority: recovery.Authority, ExpectedRepository: expectedRunRepositoryForTest(t, options.WorkspaceRoot)}
 				before := recoveryProjectionSnapshot(t, options.WorkspaceRoot)
 				history := readWorkflowTestFile(t, workflowJournalPath(t, options.WorkspaceRoot))
 				result, err := AbandonRun(options, request)
@@ -57,7 +57,7 @@ func TestAbandonRunRequiresExactCurrentAuthorityAndObservation(t *testing.T) {
 
 func assertAbandonProvenanceAndReplay(t *testing.T, options RunOptions, request RunAbandonRequest, result RunAbandonResult, before map[string][]string) {
 	t.Helper()
-	if result.Claim.ScopeJSON != `{"paths":["base.txt"]}` || result.Claim.ID != "CLM-prior" || result.Claim.ActorID != options.ActorID || result.Claim.WorktreeID != request.Repository.WorktreeID {
+	if result.Claim.ScopeJSON != `{"paths":["base.txt"]}` || result.Claim.ID != "CLM-prior" || result.Claim.ActorID != options.ActorID || result.Claim.WorktreeID != repositoryForRun(t, options, request.RunID).WorktreeID {
 		t.Fatal("abandon changed immutable Claim identity or scope")
 	}
 	if result.Replayed || result.Run.Status != "abandoned" || result.Run.Version != request.ExpectedVersion+1 || result.Run.EndedAt == nil || result.Claim.Status != "released" || result.Claim.Version != request.ExpectedClaimVersion+1 || result.Claim.ReleaseReason == nil || *result.Claim.ReleaseReason != "abandoned" || result.Claim.ReleasedAt == nil || *result.Claim.ReleasedAt != *result.Run.EndedAt {
@@ -108,7 +108,7 @@ func TestCloseRunRejectsUnqualifiedObservationVersionAndAuthority(t *testing.T) 
 			options, recovery := recoveryFixture(t)
 			closeAuthorize(t, options.WorkspaceRoot)
 			want := mutateRecoveryAuthorityCase(t, options, &recovery, kind)
-			request := RunCloseRequest{RunID: recovery.PriorRunID, ExpectedVersion: recovery.ExpectedRunVersion, ObservationID: recovery.ObservationID, Repository: repositoryForRun(t, options, recovery.PriorRunID)}
+			request := RunCloseRequest{RunID: recovery.PriorRunID, ExpectedVersion: recovery.ExpectedRunVersion, ObservationID: recovery.ObservationID, ExpectedRepository: expectedRunRepositoryForTest(t, options.WorkspaceRoot)}
 			before := recoveryProjectionSnapshot(t, options.WorkspaceRoot)
 			history := readWorkflowTestFile(t, workflowJournalPath(t, options.WorkspaceRoot))
 			_, err := CloseRun(options, request)

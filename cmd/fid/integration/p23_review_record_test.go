@@ -819,7 +819,7 @@ func p23AcquireClaim(t *testing.T, a *p22FIDRecoveryAdapter, actor, mode, key st
 
 func p23StartRun(t *testing.T, a *p22FIDRecoveryAdapter, actor string, claim map[string]any, key string) map[string]any {
 	t.Helper()
-	response := p23RunInput(t, a, "run", "start", actor, key, map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "claim_id": claim["id"], "claim_version": claim["version"], "executor": map[string]any{"id": "executor-" + key, "source": "activated-harness"}, "obligation_id": nil, "repository": a.repository})
+	response := p23RunInput(t, a, "run", "start", actor, key, map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "claim_id": claim["id"], "claim_version": claim["version"], "executor": map[string]any{"id": "executor-" + key, "source": "activated-harness"}, "obligation_id": nil, "expected_repository": p24ExpectedRepository(a.repository)})
 	p23AssertReviewSuccess(t, "start Run", response)
 	return p21Path(t, p23Envelope(t, response.Stdout), "result", "run").(map[string]any)
 }
@@ -832,7 +832,7 @@ func p23CloseAndRelease(t *testing.T, a *p22FIDRecoveryAdapter, actor, runID, cl
 	observed := p23RunInput(t, a, "run", "observe", actor, key+"-observe", map[string]any{"run_id": runID, "expected_version": version, "liveness": map[string]any{"executor_id": executorID, "state": "terminated", "source_ref": "process:p23-review", "observed_at": time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)}})
 	p23AssertReviewSuccess(t, "observe Run", observed)
 	observedEnvelope := p23Envelope(t, observed.Stdout)
-	close := p23RunInput(t, a, "run", "close", actor, key+"-close", map[string]any{"run_id": runID, "expected_version": p21Path(t, observedEnvelope, "result", "run", "version"), "observation_id": p21PathString(t, observedEnvelope, "result", "observation", "id"), "repository": a.repository})
+	close := p23RunInput(t, a, "run", "close", actor, key+"-close", map[string]any{"run_id": runID, "expected_version": p21Path(t, observedEnvelope, "result", "run", "version"), "observation_id": p21PathString(t, observedEnvelope, "result", "observation", "id"), "expected_repository": p24ExpectedRepository(a.repository)})
 	p23AssertReviewSuccess(t, "close Run", close)
 	release := p23RunInput(t, a, "claim", "release", actor, key+"-release", map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
 	p23AssertReviewSuccess(t, "release Claim", release)

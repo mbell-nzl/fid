@@ -1,9 +1,12 @@
 package workflow
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/project"
 )
 
 func TestActivationAdmitsRunCloseAndAbandonActions(t *testing.T) {
@@ -19,7 +22,7 @@ func TestCloseRunDerivesTerminalStateFromTrustedObservation(t *testing.T) {
 	closeAuthorize(t, options.WorkspaceRoot)
 	request := RunCloseRequest{
 		RunID: recovery.PriorRunID, ExpectedVersion: recovery.ExpectedRunVersion,
-		ObservationID: recovery.ObservationID, Repository: repositoryForRun(t, options, recovery.PriorRunID),
+		ObservationID: recovery.ObservationID, ExpectedRepository: expectedRunRepositoryForTest(t, options.WorkspaceRoot),
 	}
 
 	result, err := CloseRun(options, request)
@@ -44,7 +47,7 @@ func TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority(t *testing.T)
 		request := RunAbandonRequest{
 			RunID: recovery.PriorRunID, ExpectedVersion: recovery.ExpectedRunVersion, ExpectedClaimVersion: recovery.ExpectedClaimVersion,
 			ObservationID: recovery.ObservationID, Authority: RecoveryAuthority{Mode: "ordinary", ActorID: options.ActorID, Reason: "operator stopped work"},
-			Repository: repositoryForRun(t, options, recovery.PriorRunID),
+			ExpectedRepository: expectedRunRepositoryForTest(t, options.WorkspaceRoot),
 		}
 
 		result, err := AbandonRun(options, request)
@@ -67,7 +70,7 @@ func TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority(t *testing.T)
 		request := RunAbandonRequest{
 			RunID: recovery.PriorRunID, ExpectedVersion: recovery.ExpectedRunVersion, ExpectedClaimVersion: recovery.ExpectedClaimVersion,
 			ObservationID: recovery.ObservationID, Authority: RecoveryAuthority{Mode: "force", ActorID: options.ActorID, Reason: "operator stopped work", Reference: &reference, GrantRef: &RecoveryGrantRef{EnvelopeID: "ENV-recovery", Revision: 1, Ordinal: 0}},
-			Repository: repositoryForRun(t, options, recovery.PriorRunID),
+			ExpectedRepository: expectedRunRepositoryForTest(t, options.WorkspaceRoot),
 		}
 		_, err := AbandonRun(options, request)
 		var unknown *ExecutorLivenessUnknownError
@@ -125,4 +128,40 @@ func evidenceCount(t *testing.T, workspace string) int {
 		t.Fatalf("count Evidence: %v", err)
 	}
 	return count
+}
+
+func TestP24AbandonRecordsObservedBase(t *testing.T) {
+	t.Parallel()
+	options, recovery := recoveryFixture(t)
+	closeAuthorize(t, options.WorkspaceRoot)
+	activateRecoveryClaim(t, options.WorkspaceRoot)
+	repository, err := resumeObservedRepository(options.WorkspaceRoot, options.WorkspaceRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	repository.BaseOID = nil
+	data, err := json.Marshal(map[string]any{"run_id": recovery.PriorRunID, "expected_version": recovery.ExpectedRunVersion, "expected_claim_version": recovery.ExpectedClaimVersion, "observation_id": recovery.ObservationID, "authority": recovery.Authority, "repository": repository, "expected_repository": map[string]any{"head_oid": repository.HeadOID, "dirty": repository.Dirty}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var request RunAbandonRequest
+	if err := json.Unmarshal(data, &request); err != nil {
+		t.Fatal(err)
+	}
+	result, err := AbandonRun(options, request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Run.TerminalRepository.BaseOID == nil || *result.Run.TerminalRepository.BaseOID != repository.HeadOID {
+		t.Fatalf("terminal base = %v, want HEAD %s", result.Run.TerminalRepository.BaseOID, repository.HeadOID)
+	}
+}
+
+func expectedRunRepositoryForTest(t *testing.T, root string) project.ExpectedRepository {
+	t.Helper()
+	observed, err := project.ObserveRepository(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return project.ExpectedRepository{HeadOID: observed.HeadOID, Dirty: observed.Dirty}
 }

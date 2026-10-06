@@ -16,7 +16,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/evidence"
 	"github.com/mbell-nzl/fid/internal/issues"
-	"github.com/mbell-nzl/fid/internal/project"
+	fidproject "github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -82,7 +82,7 @@ func addJournalBackedExportFixtureFacts(t *testing.T, workspace string) string {
 	if err != nil {
 		t.Fatalf("acquire fixture claim: %v", err)
 	}
-	run, err := workflow.StartRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-run"}, workflow.RunStartRequest{IssueID: issue.ID, EnvelopeID: created.Envelope.ID, EnvelopeRevision: 1, ClaimID: claim.Claim.ID, ClaimVersion: claim.Claim.Version, Executor: workflow.Executor{ID: "executor-fixture", Source: "activated-harness"}, Repository: repository})
+	run, err := workflow.StartRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-run"}, workflow.RunStartRequest{IssueID: issue.ID, EnvelopeID: created.Envelope.ID, EnvelopeRevision: 1, ClaimID: claim.Claim.ID, ClaimVersion: claim.Claim.Version, Executor: workflow.Executor{ID: "executor-fixture", Source: "activated-harness"}, ExpectedRepository: fidproject.ExpectedRepository{HeadOID: repository.HeadOID, Dirty: repository.Dirty}})
 	if err != nil {
 		t.Fatalf("start fixture run: %v", err)
 	}
@@ -225,7 +225,7 @@ func fixtureRepository(t *testing.T, workspace, projectID string) workflow.Repos
 	}
 	fixtureGit(t, workspace, "add", ".gitignore", "project-docs/gates/fixture.json")
 	fixtureGit(t, workspace, "commit", "-qm", "fixture source")
-	observed, err := project.ObserveRepository(workspace)
+	observed, err := fidproject.ObserveRepository(workspace)
 	if err != nil {
 		t.Fatalf("capture fixture repository: %v", err)
 	}

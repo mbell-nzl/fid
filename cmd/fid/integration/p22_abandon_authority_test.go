@@ -34,7 +34,7 @@ func TestP22AbandonUsesExactHumanForceAndTypedObservationFailures(t *testing.T) 
 					authority["reference"] = "HUM-close-fixture"
 					authority["grant_ref"] = map[string]any{"envelope_id": p21Path(t, run, "result", "run", "envelope_id"), "revision": 1, "ordinal": 0}
 				}
-				input := map[string]any{"run_id": a.runID, "expected_version": a.runVersion, "expected_claim_version": a.claimVersion, "observation_id": a.observation, "authority": authority, "repository": a.repository}
+				input := map[string]any{"run_id": a.runID, "expected_version": a.runVersion, "expected_claim_version": a.claimVersion, "observation_id": a.observation, "authority": authority, "expected_repository": p24ExpectedRepository(a.repository)}
 				code, exit := "", 0
 				switch kind {
 				case "unknown":
@@ -55,7 +55,7 @@ func TestP22AbandonUsesExactHumanForceAndTypedObservationFailures(t *testing.T) 
 					code, exit = "invalid-argument", 2
 				case "forged-target":
 					p22Write(t, a.workspace, "base.txt", "changed terminal target\n")
-					code, exit = "recovery-state-conflict", 4
+					code, exit = "repository-mismatch", 4
 				}
 				before, events := p22FaultProjection(t, a.workspace), p21JournalEventCount(t, a.workspace)
 				response := a.p22RunInput(t, "run", "abandon", a.actor, input)

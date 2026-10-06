@@ -28,7 +28,7 @@ func TestP23ReviewClaimRejectsDirtyPathAdoption(t *testing.T) {
 		a.p22Observe(t, "terminated")
 		a.repository = p23CurrentRepository(t, a)
 		before := p21JournalEventCount(t, a.workspace)
-		response := a.p22RunInput(t, "run", "abandon", a.actor, map[string]any{"run_id": a.runID, "expected_version": a.runVersion, "expected_claim_version": a.claimVersion, "observation_id": a.observation, "authority": map[string]any{"mode": "ordinary", "actor_id": a.actor, "reason": "review abandon", "reference": nil, "grant_ref": nil}, "repository": a.repository})
+		response := a.p22RunInput(t, "run", "abandon", a.actor, map[string]any{"run_id": a.runID, "expected_version": a.runVersion, "expected_claim_version": a.claimVersion, "observation_id": a.observation, "authority": map[string]any{"mode": "ordinary", "actor_id": a.actor, "reason": "review abandon", "reference": nil, "grant_ref": nil}, "expected_repository": p24ExpectedRepository(a.repository)})
 		assertP22ProcessFailure(t, "run.abandon", "claim-mode-invalid", 4, response)
 		if p21JournalEventCount(t, a.workspace) != before {
 			t.Fatal("review abandon rejection appended an Event")
@@ -41,14 +41,14 @@ func TestP23ReviewRunRetainsPhase22Lifecycle(t *testing.T) {
 	t.Run("close", func(t *testing.T) {
 		a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, nil, "review")
 		a.p22Observe(t, "terminated")
-		response := a.p22RunInput(t, "run", "close", a.actor, map[string]any{"run_id": a.runID, "expected_version": a.runVersion, "observation_id": a.observation, "repository": a.repository})
+		response := a.p22RunInput(t, "run", "close", a.actor, map[string]any{"run_id": a.runID, "expected_version": a.runVersion, "observation_id": a.observation, "expected_repository": p24ExpectedRepository(a.repository)})
 		p23AssertRunSuccess(t, "run.close", response)
 	})
 
 	t.Run("abandon", func(t *testing.T) {
 		a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, nil, "review")
 		a.p22Observe(t, "terminated")
-		response := a.p22RunInput(t, "run", "abandon", a.actor, map[string]any{"run_id": a.runID, "expected_version": a.runVersion, "expected_claim_version": a.claimVersion, "observation_id": a.observation, "authority": map[string]any{"mode": "ordinary", "actor_id": a.actor, "reason": "review abandoned", "reference": nil, "grant_ref": nil}, "repository": a.repository})
+		response := a.p22RunInput(t, "run", "abandon", a.actor, map[string]any{"run_id": a.runID, "expected_version": a.runVersion, "expected_claim_version": a.claimVersion, "observation_id": a.observation, "authority": map[string]any{"mode": "ordinary", "actor_id": a.actor, "reason": "review abandoned", "reference": nil, "grant_ref": nil}, "expected_repository": p24ExpectedRepository(a.repository)})
 		p23AssertRunSuccess(t, "run.abandon", response)
 	})
 

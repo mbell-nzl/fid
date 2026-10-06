@@ -394,7 +394,7 @@ func closeReviewRun(t *testing.T, workspace string, run map[string]any, reposito
 	}
 	response := decodeCommandJSONStructure(t, observed.stdout).(map[string]any)["result"].(map[string]any)
 	closePath := filepath.Join(workspace, key+"-close.json")
-	writeActivationInput(t, closePath, map[string]any{"run_id": runID, "expected_version": response["run"].(map[string]any)["version"], "observation_id": response["observation"].(map[string]any)["id"], "repository": repository})
+	writeActivationInput(t, closePath, map[string]any{"run_id": runID, "expected_version": response["run"].(map[string]any)["version"], "observation_id": response["observation"].(map[string]any)["id"], "expected_repository": map[string]any{"head_oid": testEnvelopeRepository(t, workspace)["head_oid"], "dirty": testEnvelopeRepository(t, workspace)["dirty"]}})
 	closed := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "close", "--actor", actor, "--input", closePath, "--idempotency-key", key+"-close")
 	if closed.err != nil {
 		t.Fatalf("close Run as %s = %#v", actor, closed)

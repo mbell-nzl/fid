@@ -34,7 +34,10 @@ func TestP22CloseRunUsesObservedRepositoryAndQualifyingProof(t *testing.T) {
 			if kind == "missing-base" {
 				a.repository["base_oid"] = strings.Repeat("0", 40)
 			}
-			input := map[string]any{"run_id": a.runID, "expected_version": a.runVersion, "observation_id": a.observation, "repository": a.repository}
+			input := map[string]any{"run_id": a.runID, "expected_version": a.runVersion, "observation_id": a.observation, "expected_repository": p24ExpectedRepository(a.repository)}
+			if kind == "nil-base" || kind == "missing-base" {
+				input["repository"] = a.repository
+			}
 			if kind == "missing-observation" {
 				delete(input, "observation_id")
 			}
@@ -48,10 +51,10 @@ func TestP22CloseRunUsesObservedRepositoryAndQualifyingProof(t *testing.T) {
 			response := a.p22RunInput(t, "run", "close", a.actor, input)
 			wantCode, wantExit := "", 0
 			switch kind {
-			case "outstanding", "missing-observation", "null-observation":
+			case "outstanding", "missing-observation", "null-observation", "nil-base", "missing-base":
 				wantCode, wantExit = "invalid-argument", 2
-			case "forged-old-target", "missing-base":
-				wantCode, wantExit = "recovery-state-conflict", 4
+			case "forged-old-target":
+				wantCode, wantExit = "repository-mismatch", 4
 			case "live":
 				wantCode, wantExit = "executor-still-live", 4
 			case "unknown":

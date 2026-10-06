@@ -19,7 +19,7 @@ func TestP24RunStartConflictNamesChangedClaimVersion(t *testing.T) {
 		"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a),
 		"envelope_revision": 1, "claim_id": a.claimID, "claim_version": 2,
 		"executor":      map[string]any{"id": "executor-corpus-prior", "source": "activated-harness"},
-		"obligation_id": nil, "repository": a.repository,
+		"obligation_id": nil, "expected_repository": p24ExpectedRepository(a.repository),
 	}
 	response := p23RunInput(t, a, "run", "start", a.actor, "p22-corpus-run-start", input)
 	assertP22ProcessFailure(t, "run.start", "idempotency-conflict", 4, response)

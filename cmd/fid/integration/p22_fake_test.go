@@ -426,9 +426,8 @@ func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, ac
 	activated := p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-envelope-activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1}), "--idempotency-key", "p22-corpus-envelope-activate")
 	claim := p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-claim", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": claimMode, "ttl_seconds": leaseSeconds}), "--idempotency-key", "p22-corpus-claim-acquire")
 	claimID := p21PathString(t, claim, "result", "claim", "id")
-	run := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "start", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-run", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-corpus-prior", "source": "activated-harness"}, "obligation_id": nil, "repository": repository}), "--idempotency-key", "p22-corpus-run-start")
+	run := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "start", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-run", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-corpus-prior", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": p24ExpectedRepository(repository)}), "--idempotency-key", "p22-corpus-run-start")
 	measurement := cloneP23Repository(source)
-	measurement["repository"] = repository
 	measurement["digest"] = fmt.Sprintf("sha256:%x", sha256.Sum256([]byte("corpus source\n")))
 	return &p22FIDRecoveryAdapter{activation: map[string]any{"id": activationID}, binary: binary, workspace: workspace, projectID: projectID, issueID: issueID, actor: actor, repository: repository, claimID: claimID, claimVersion: 1, runID: p21PathString(t, run, "result", "run", "id"), runVersion: 1, executorID: "executor-corpus-prior", measurement: measurement, registrationID: registrationID, registrationVersion: registrationVersion,
 		firstResults: map[string]map[string]any{
@@ -539,7 +538,7 @@ func (adapter *p22FIDRecoveryAdapter) p22BuildArgs(t *testing.T, fixture p22Conf
 		input = map[string]any{"run_id": adapter.runID, "registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": adapter.repository}
 	case "run.close", "run.abandon":
 		args = append(args, "run", strings.TrimPrefix(fixture.Operation, "run."), "--actor", adapter.actor)
-		input = map[string]any{"run_id": adapter.runID, "expected_version": adapter.runVersion, "observation_id": adapter.observation, "repository": adapter.repository}
+		input = map[string]any{"run_id": adapter.runID, "expected_version": adapter.runVersion, "observation_id": adapter.observation, "expected_repository": p24ExpectedRepository(adapter.repository)}
 		if fixture.Operation == "run.abandon" {
 			input["expected_claim_version"] = adapter.claimVersion
 			input["authority"] = map[string]any{"mode": "ordinary", "actor_id": adapter.actor, "reason": "intentional conformance cessation", "reference": nil, "grant_ref": nil}
@@ -711,4 +710,8 @@ func assertP22ProcessFailure(t *testing.T, operation, code string, exit int, res
 		t.Fatalf("%s failure code = %#v, want %q", operation, errorValue["code"], code)
 	}
 	assertP23AddedFailureContract(t, operation, code, envelope)
+}
+
+func p24ExpectedRepository(repository map[string]any) map[string]any {
+	return map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]}
 }

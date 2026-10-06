@@ -306,7 +306,7 @@ func TestStopResolutionWorkEndedRequiresCurrentTerminalSubject(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			options, recovery := recoveryFixture(t)
 			closeAuthorize(t, options.WorkspaceRoot)
-			closed, err := CloseRun(options, RunCloseRequest{RunID: recovery.PriorRunID, ExpectedVersion: 1, ObservationID: recovery.ObservationID, Repository: repositoryForRun(t, options, recovery.PriorRunID)})
+			closed, err := CloseRun(options, RunCloseRequest{RunID: recovery.PriorRunID, ExpectedVersion: 1, ObservationID: recovery.ObservationID, ExpectedRepository: expectedRunRepositoryForTest(t, options.WorkspaceRoot)})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -340,7 +340,7 @@ func TestStopResolutionWorkEndedAcceptsCompletedEnvelopeFact(t *testing.T) {
 	t.Parallel()
 	options, recovery := recoveryFixture(t)
 	closeAuthorize(t, options.WorkspaceRoot)
-	if _, err := CloseRun(options, RunCloseRequest{RunID: recovery.PriorRunID, ExpectedVersion: 1, ObservationID: recovery.ObservationID, Repository: repositoryForRun(t, options, recovery.PriorRunID)}); err != nil {
+	if _, err := CloseRun(options, RunCloseRequest{RunID: recovery.PriorRunID, ExpectedVersion: 1, ObservationID: recovery.ObservationID, ExpectedRepository: expectedRunRepositoryForTest(t, options.WorkspaceRoot)}); err != nil {
 		t.Fatal(err)
 	}
 	conn, err := openWorkflowDB(options.WorkspaceRoot)

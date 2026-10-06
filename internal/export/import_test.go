@@ -17,6 +17,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/evidence"
+	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -260,11 +261,11 @@ func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = database.Close()
-	_, err = workflow.CloseRun(workflow.RunOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), ActorID: "actor-builder", IdempotencyKey: "old-observation-close"}, workflow.RunCloseRequest{RunID: run.ID, ExpectedVersion: run.Version, ObservationID: importedObservationID, Repository: inspection.Reconciliation.Repository})
+	_, err = workflow.CloseRun(workflow.RunOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), ActorID: "actor-builder", IdempotencyKey: "old-observation-close"}, workflow.RunCloseRequest{RunID: run.ID, ExpectedVersion: run.Version, ObservationID: importedObservationID, ExpectedRepository: project.ExpectedRepository{HeadOID: inspection.Reconciliation.Repository.HeadOID, Dirty: inspection.Reconciliation.Repository.Dirty}})
 	if err == nil || !strings.Contains(err.Error(), "imported history") {
 		t.Fatalf("close with imported observation error = %v, want imported-history rejection", err)
 	}
-	_, err = workflow.AbandonRun(workflow.RunOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), ActorID: "actor-builder", IdempotencyKey: "old-observation-abandon"}, workflow.RunAbandonRequest{RunID: run.ID, ExpectedVersion: run.Version, ExpectedClaimVersion: 1, ObservationID: importedObservationID, Authority: workflow.RecoveryAuthority{Mode: "ordinary", ActorID: "actor-builder", Reason: "fresh local liveness required"}, Repository: inspection.Reconciliation.Repository})
+	_, err = workflow.AbandonRun(workflow.RunOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), ActorID: "actor-builder", IdempotencyKey: "old-observation-abandon"}, workflow.RunAbandonRequest{RunID: run.ID, ExpectedVersion: run.Version, ExpectedClaimVersion: 1, ObservationID: importedObservationID, Authority: workflow.RecoveryAuthority{Mode: "ordinary", ActorID: "actor-builder", Reason: "fresh local liveness required"}, ExpectedRepository: project.ExpectedRepository{HeadOID: inspection.Reconciliation.Repository.HeadOID, Dirty: inspection.Reconciliation.Repository.Dirty}})
 	if err == nil || !strings.Contains(err.Error(), "imported history") {
 		t.Fatalf("abandon with imported observation error = %v, want imported-history rejection", err)
 	}

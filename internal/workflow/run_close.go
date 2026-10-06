@@ -19,19 +19,19 @@ const (
 )
 
 type RunCloseRequest struct {
-	RunID           string     `json:"run_id"`
-	ExpectedVersion int        `json:"expected_version"`
-	ObservationID   string     `json:"observation_id"`
-	Repository      Repository `json:"repository"`
+	RunID              string                     `json:"run_id"`
+	ExpectedVersion    int                        `json:"expected_version"`
+	ObservationID      string                     `json:"observation_id"`
+	ExpectedRepository project.ExpectedRepository `json:"expected_repository"`
 }
 
 type RunAbandonRequest struct {
-	RunID                string            `json:"run_id"`
-	ExpectedVersion      int               `json:"expected_version"`
-	ExpectedClaimVersion int               `json:"expected_claim_version"`
-	ObservationID        string            `json:"observation_id"`
-	Authority            RecoveryAuthority `json:"authority"`
-	Repository           Repository        `json:"repository"`
+	RunID                string                     `json:"run_id"`
+	ExpectedVersion      int                        `json:"expected_version"`
+	ExpectedClaimVersion int                        `json:"expected_claim_version"`
+	ObservationID        string                     `json:"observation_id"`
+	Authority            RecoveryAuthority          `json:"authority"`
+	ExpectedRepository   project.ExpectedRepository `json:"expected_repository"`
 }
 
 type RunAbandonResult struct {
@@ -75,10 +75,11 @@ func CloseRun(options RunOptions, request RunCloseRequest) (RunMutationResult, e
 		if err != nil {
 			return journal.Event{}, Run{}, err
 		}
-		if err := validateRunTerminalRepository(options.WorkspaceRoot, request.Repository); err != nil {
+		observed, err := observeRunTerminalRepository(options.WorkspaceRoot, request.ExpectedRepository)
+		if err != nil {
 			return journal.Event{}, Run{}, err
 		}
-		reasons, err := evaluateObligations(conn, envelope.Obligations, request.Repository)
+		reasons, err := evaluateObligations(conn, envelope.Obligations, observed)
 		if err != nil {
 			return journal.Event{}, Run{}, err
 		}
@@ -87,9 +88,9 @@ func CloseRun(options RunOptions, request RunCloseRequest) (RunMutationResult, e
 			status = "succeeded"
 		}
 		endedAt := nowTime.Format(time.RFC3339Nano)
-		run.Status, run.TerminalRepository, run.EndedAt, run.Version = status, &request.Repository, &endedAt, run.Version+1
+		run.Status, run.TerminalRepository, run.EndedAt, run.Version = status, &observed, &endedAt, run.Version+1
 		event, err := runEvent(options.WorkspaceRoot, actor, run, "run.closed", runCloseAction, []journal.Effect{
-			{Op: "update", Table: "runs", PK: map[string]any{"id": run.ID}, Values: map[string]any{"status": run.Status, "terminal_repository_json": string(mustRunJSON(request.Repository)), "ended_at": endedAt}, Preconditions: map[string]any{"status": "active"}},
+			{Op: "update", Table: "runs", PK: map[string]any{"id": run.ID}, Values: map[string]any{"status": run.Status, "terminal_repository_json": string(mustRunJSON(observed)), "ended_at": endedAt}, Preconditions: map[string]any{"status": "active"}},
 			{Op: "update", Table: "run_runtime", PK: map[string]any{"run_id": run.ID}, Values: map[string]any{"version": run.Version}, Preconditions: map[string]any{"version": run.Version - 1}},
 		})
 		return event, run, err
@@ -160,10 +161,11 @@ func AbandonRun(options RunOptions, request RunAbandonRequest) (RunAbandonResult
 		if claim.Version != request.ExpectedClaimVersion || claim.Status != "active" {
 			return invalidRun("run abandon claim is invalid")
 		}
-		if err := validateClaimModeAdoption(claim, request.Repository.Dirty); err != nil {
+		observed, err := observeRunTerminalRepository(options.WorkspaceRoot, request.ExpectedRepository)
+		if err != nil {
 			return err
 		}
-		if err := validateRunTerminalRepository(options.WorkspaceRoot, request.Repository); err != nil {
+		if err := validateClaimModeAdoption(claim, observed.Dirty); err != nil {
 			return err
 		}
 		actor, err := ResolveTrustedActor(options.WorkspaceRoot, options.MigrationsDir, options.ActorID)
@@ -172,13 +174,13 @@ func AbandonRun(options RunOptions, request RunAbandonRequest) (RunAbandonResult
 		}
 		nowTime := runNow(options.Now)
 		endedAt := nowTime.Format(time.RFC3339Nano)
-		run.Status, run.TerminalRepository, run.EndedAt, run.Version = "abandoned", &request.Repository, &endedAt, run.Version+1
+		run.Status, run.TerminalRepository, run.EndedAt, run.Version = "abandoned", &observed, &endedAt, run.Version+1
 		releasedAt := endedAt
 		claim.Version, claim.Status, claim.ReleasedAt = claim.Version+1, "released", &releasedAt
 		reason := "abandoned"
 		claim.ReleaseReason = &reason
 		event, err := runEvent(options.WorkspaceRoot, actor, run, "run.abandoned", runAbandonAction, []journal.Effect{
-			{Op: "update", Table: "runs", PK: map[string]any{"id": run.ID}, Values: map[string]any{"status": run.Status, "terminal_repository_json": string(mustRunJSON(request.Repository)), "ended_at": endedAt}, Preconditions: map[string]any{"status": "active"}},
+			{Op: "update", Table: "runs", PK: map[string]any{"id": run.ID}, Values: map[string]any{"status": run.Status, "terminal_repository_json": string(mustRunJSON(observed)), "ended_at": endedAt}, Preconditions: map[string]any{"status": "active"}},
 			{Op: "update", Table: "run_runtime", PK: map[string]any{"run_id": run.ID}, Values: map[string]any{"version": run.Version}, Preconditions: map[string]any{"version": run.Version - 1}},
 			{Op: "update", Table: "claims", PK: map[string]any{"id": claim.ID}, Values: map[string]any{"version": claim.Version, "status": claim.Status, "released_at": releasedAt, "release_reason": reason}, Preconditions: map[string]any{"status": "active", "version": claim.Version - 1}},
 		})
@@ -210,11 +212,11 @@ func AbandonRun(options RunOptions, request RunAbandonRequest) (RunAbandonResult
 }
 
 func validRunCloseRequest(request RunCloseRequest) bool {
-	return strings.TrimSpace(request.RunID) != "" && request.ExpectedVersion > 0 && strings.TrimSpace(request.ObservationID) != "" && validEnvelopeRepository(request.Repository)
+	return strings.TrimSpace(request.RunID) != "" && request.ExpectedVersion > 0 && strings.TrimSpace(request.ObservationID) != "" && validEnvelopeOID(request.ExpectedRepository.HeadOID)
 }
 
 func validRunAbandonRequest(request RunAbandonRequest) bool {
-	if strings.TrimSpace(request.RunID) == "" || request.ExpectedVersion < 1 || request.ExpectedClaimVersion < 1 || strings.TrimSpace(request.ObservationID) == "" || !validEnvelopeRepository(request.Repository) || strings.TrimSpace(request.Authority.ActorID) == "" || strings.TrimSpace(request.Authority.Reason) == "" {
+	if strings.TrimSpace(request.RunID) == "" || request.ExpectedVersion < 1 || request.ExpectedClaimVersion < 1 || strings.TrimSpace(request.ObservationID) == "" || !validEnvelopeOID(request.ExpectedRepository.HeadOID) || strings.TrimSpace(request.Authority.ActorID) == "" || strings.TrimSpace(request.Authority.Reason) == "" {
 		return false
 	}
 	if request.Authority.Mode == "ordinary" {
@@ -287,21 +289,13 @@ func validateAbandonAuthority(options RunOptions, run Run, authority RecoveryAut
 	return nil
 }
 
-func validateRunTerminalRepository(workspaceRoot string, asserted Repository) error {
+func observeRunTerminalRepository(workspaceRoot string, expected project.ExpectedRepository) (Repository, error) {
 	current, err := resumeObservedRepository(workspaceRoot, workspaceRoot)
 	if err != nil {
-		return recoveryConflict(nil, err.Error())
+		return Repository{}, recoveryConflict(nil, err.Error())
 	}
-	// Base is the retained comparison origin, while HEAD/tree/dirty identity
-	// must match the current observation. Never refresh a caller's assertion.
-	if asserted.BaseOID != nil {
-		if exists, err := project.IsAncestor(workspaceRoot, *asserted.BaseOID, *asserted.BaseOID); err != nil || !exists {
-			return recoveryConflict(nil, "repository base is unavailable")
-		}
+	if !expected.MatchesRecordedRepository(project.RecordedRepository(current)) {
+		return Repository{}, &RunRepositoryMismatchError{Expected: expected, Observed: current}
 	}
-	current.BaseOID = asserted.BaseOID
-	if !sameRepository(current, asserted) {
-		return recoveryConflict(nil, "terminal repository assertion is stale or changed")
-	}
-	return nil
+	return current, nil
 }

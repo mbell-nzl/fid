@@ -516,6 +516,12 @@ func activeRunIDForGateTest(t *testing.T, workspace, issueID, envelopeID, key st
 	if binding.runID != "" {
 		return binding.runID
 	}
+	// Starting a new Run checks the current worktree. Keep the caller's gate
+	// fixture on the exact observation the new Run will record until gate.run
+	// itself converges under Task 8.
+	for field, value := range cloneJSONMap(t, testEnvelopeRepository(t, workspace)) {
+		repository[field] = value
+	}
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, key+"-claim")
 	runPath := filepath.Join(workspace, key+"-run.json")
 	writeActivationInput(t, runPath, runStartInput(issueID, envelopeID, claim["id"], repository))

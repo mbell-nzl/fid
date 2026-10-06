@@ -373,7 +373,7 @@ func startExecutionTransitionFixture(t *testing.T, workspace, issueID, envelopeI
 	runPath := filepath.Join(workspace, "execution-transition-run.json")
 	writeActivationInput(t, runPath, map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"claim_id": claim["id"], "claim_version": 1, "executor": map[string]any{"id": "executor-builder", "source": "activated-harness"}, "obligation_id": nil, "repository": repository,
+		"claim_id": claim["id"], "claim_version": 1, "executor": map[string]any{"id": "executor-builder", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]},
 	})
 	started := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", runPath, "--idempotency-key", "execution-transition-run-start")
 	if started.err != nil {

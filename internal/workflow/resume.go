@@ -104,12 +104,8 @@ func resumeObservedRepository(workspaceRoot, repositoryRoot string) (Repository,
 	if err != nil {
 		return Repository{}, err
 	}
-	observation, err := project.ObserveRepository(repositoryRoot)
-	if err != nil {
-		return Repository{}, err
-	}
-	head := observation.HeadOID
-	return Repository{BaseOID: &head, CaptureSource: "git", Dirty: observation.Dirty, DirtyDigest: observation.DirtyDigest, HeadOID: observation.HeadOID, ProjectID: projectConfig.ProjectID, TreeOID: observation.TreeOID, WorktreeID: observation.WorktreeID}, nil
+	observation, err := project.ObserveRecordedRepository(repositoryRoot, projectConfig.ProjectID)
+	return Repository(observation), err
 }
 
 func resumeIssueState(conn *sql.DB, issueID string, repository Repository) (Resume, error) {

@@ -45,7 +45,7 @@ func TestP24FlagAndClaimKeyedLeafCorpus(t *testing.T) {
 	observed := p23RunInput(t, a, "run", "observe", a.actor, "p24-flag-observe", map[string]any{"run_id": a.runID, "expected_version": p21Path(t, run, "result", "run", "version"), "liveness": map[string]any{"executor_id": p21PathString(t, run, "result", "run", "executor", "id"), "state": "terminated", "source_ref": "process:p24", "observed_at": time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)}})
 	p23AssertReviewSuccess(t, "observe Run", observed)
 	observation := p23Envelope(t, observed.Stdout)
-	closed := p23RunInput(t, a, "run", "close", a.actor, "p24-flag-close", map[string]any{"run_id": a.runID, "expected_version": p21Path(t, observation, "result", "run", "version"), "observation_id": p21PathString(t, observation, "result", "observation", "id"), "repository": a.repository})
+	closed := p23RunInput(t, a, "run", "close", a.actor, "p24-flag-close", map[string]any{"run_id": a.runID, "expected_version": p21Path(t, observation, "result", "run", "version"), "observation_id": p21PathString(t, observation, "result", "observation", "id"), "expected_repository": p24ExpectedRepository(a.repository)})
 	p23AssertReviewSuccess(t, "close Run", closed)
 	released := p23RunInput(t, a, "claim", "release", a.actor, "p24-flag-release", map[string]any{"claim_id": a.claimID, "expected_version": 2, "reason": "completed"})
 	p23AssertReviewSuccess(t, "release Claim", released)
