@@ -240,9 +240,8 @@ The Run-start fixture line in p22NewFIDRecoveryAdapterWithClaimModeAt originated
 
 ## Commit hash
 
-- Pending commit
+- `8d1c83855c0f681515e44e2c3a61bbe543ef515b`
 
 ## Commit subject
 
-- Pending commit
-
+- `feat(run): observe repository expectations and adopt input descriptors`
