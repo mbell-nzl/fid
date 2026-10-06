@@ -13,6 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/evidence"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/review"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -40,7 +41,7 @@ func newGateRunCommand() *cobra.Command {
 			}
 		}
 		var request evidence.GateRunRequest
-		if err := decodeClosedGateInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["gate run"], &request); err != nil {
 			return renderGateError(cmd, "gate.run", err)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -84,6 +85,7 @@ func newGateRunCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("gate.run"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["gate run"])
 	return cmd
 }
 
@@ -309,6 +311,10 @@ func renderGateError(cmd *cobra.Command, operation string, cause error) error {
 	}
 	if failure, handled := renderJudgmentObservationError(cmd, jsonMode, operation, cause); handled {
 		return failure
+	}
+	var mismatch *workflow.RunRepositoryMismatchError
+	if errors.As(cause, &mismatch) {
+		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeRepositoryMismatch, "repository identity does not match", nil, map[string]any{"expected": map[string]any{"head_oid": mismatch.Expected.HeadOID, "dirty": mismatch.Expected.Dirty}, "observed": repositoryDetails(review.Repository(mismatch.Observed))})
 	}
 	var idempotency *journal.IdempotencyConflictError
 	if errors.As(cause, &idempotency) {

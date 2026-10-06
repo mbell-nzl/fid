@@ -226,10 +226,30 @@ fid receipt get|list|ingest-attested
 fid evidence link|get|evaluate
 ```
 
-`gate run` accepts a registration reference, subject, Run, repository identity,
-and idempotency key. It does not accept replacement command or execution-policy
-fields. Live-output framing and terminal JSON are specified in the execution
-slice before implementation.
+`gate run --input` accepts `registration_id`, `registration_version`,
+`obligation_id`, `run_id` and required `expected_repository:{head_oid,dirty}`.
+Use `git rev-parse HEAD` and `git status --porcelain` for the expectation.
+fid observes once before spawning and checks the expectation before any
+Attempt or Event. Registration and Run checks use the same project/worktree
+relationship, including a matching import binding. Edits since Run start are
+admitted with a matching expectation. Attempt, Receipt and execution Events
+retain that observation; process exit does not cause a second observation.
+The `fid.live.v1` framing contract is unchanged.
+
+`evidence link --input` supplies the Obligation, Evidence type, exactly one
+non-null subject ID (`receipt_id`, `review_id`, `human_outcome_id`) and sorted
+`required_artifact_ids`. It derives `target_repository` from the Receipt's
+terminal repository, the Review repository or the Human Outcome Event.
+Linking does not observe the current worktree. `evidence evaluate --input`
+takes `{obligation_id:?ID}` (null selects the active revision) and observes
+the current worktree once. Tree and dirty-state changes stale repository-bound
+Evidence; reverting restores freshness. Human Outcome Evidence stays fresh.
+
+These inputs reject the removed `repository` and `target_repository` members.
+`gate run`, `evidence link`, `evidence evaluate` and `artifact verify` document
+their field trees in `--help` and print exclusive editable `--example`
+templates without reading or writing a workspace. Structural failures name
+`input.<path>` and append no Event.
 
 `gate register --input` names the activated definition/version and Issue scope.
 fid observes the selected worktree and derives the Registration project ID,

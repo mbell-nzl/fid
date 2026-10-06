@@ -31,7 +31,7 @@ func newEvidenceLinkCommand() *cobra.Command {
 			}
 		}
 		var request evidence.EvidenceLinkRequest
-		if err := decodeClosedGateInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["evidence link"], &request); err != nil {
 			return renderEvidenceError(cmd, "evidence.link", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -54,6 +54,7 @@ func newEvidenceLinkCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("evidence.link"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["evidence link"])
 	return cmd
 }
 
@@ -67,7 +68,7 @@ func newEvidenceGetCommand() *cobra.Command {
 		if err != nil {
 			return renderEvidenceError(cmd, "evidence.get", err)
 		}
-		evaluations, err := evidence.EvaluateEvidence(workspace, issueMigrationsDir(), evidence.EvidenceEvaluateRequest{ObligationID: &record.ObligationID, TargetRepository: record.TargetRepository})
+		evaluations, err := evidence.EvaluateStoredEvidence(workspace, issueMigrationsDir(), record.ID)
 		if err != nil {
 			return renderEvidenceError(cmd, "evidence.get", err)
 		}
@@ -94,7 +95,7 @@ func newEvidenceEvaluateCommand() *cobra.Command {
 			return err
 		}
 		var request evidence.EvidenceEvaluateRequest
-		if err := decodeClosedGateInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["evidence evaluate"], &request); err != nil {
 			return renderEvidenceError(cmd, "evidence.evaluate", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -122,6 +123,7 @@ func newEvidenceEvaluateCommand() *cobra.Command {
 	}}
 	cmd.Flags().StringVar(&inputPath, "input", "", "Evidence evaluation JSON input")
 	cmd.SetFlagErrorFunc(canonicalFlagError("evidence.evaluate"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["evidence evaluate"])
 	return cmd
 }
 
@@ -129,6 +131,9 @@ func renderEvidenceError(cmd *cobra.Command, operation string, cause error) erro
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, operation, cause); ok {
+		return rendered
 	}
 	var conflict *journal.IdempotencyConflictError
 	if errors.As(cause, &conflict) {

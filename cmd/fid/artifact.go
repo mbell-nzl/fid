@@ -27,7 +27,7 @@ func newArtifactVerifyCommand() *cobra.Command {
 			}
 		}
 		var request evidence.ArtifactVerifyRequest
-		if err := decodeClosedGateInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["artifact verify"], &request); err != nil {
 			return renderGateError(cmd, "artifact.verify", err)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -52,5 +52,6 @@ func newArtifactVerifyCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("artifact.verify"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["artifact verify"])
 	return cmd
 }

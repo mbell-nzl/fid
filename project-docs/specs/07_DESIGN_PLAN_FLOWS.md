@@ -91,6 +91,19 @@ the activated Registration reference.
 
 Recovered code is not trusted evidence; gates/review run normally.
 
+For each gate execution, the caller supplies `expected_repository` from
+`git rev-parse HEAD` and `git status --porcelain`. fid compares it with one
+pre-spawn observation before appending an Attempt. A matching expectation
+permits testing edits made since the Run began in the same worktree, including
+a matching import destination. Attempt, Receipt and gate Events retain that
+observation even if the gate process changes files.
+
+Evidence linking copies the subject's recorded repository. Evaluation observes
+the current worktree and compares it with that Evidence target. Editing a
+tracked file stales Receipt or Review proof in evaluation, terminal-success
+transition and Envelope completion. Reverting the edit restores freshness;
+Human Outcome Evidence remains fresh under its `none` freshness target.
+
 ## 7. Review And Rework
 
 1. A fresh Reviewer Run binds the exact Envelope revision and the same

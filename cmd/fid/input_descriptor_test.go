@@ -474,7 +474,10 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 						t.Fatal(err)
 					}
 					args := append([]string{"--json"}, parts...)
-					args = append(args, "--input", input, "--actor", "ACT-1", "--idempotency-key", "structure")
+					args = append(args, "--input", input)
+					if leaf != "evidence evaluate" {
+						args = append(args, "--actor", "ACT-1", "--idempotency-key", "structure")
+					}
 					out, failure, exit := runAdoptedFID(t, binary, workspace, args...)
 					if exit != 2 || out != "" {
 						t.Fatalf("structural refusal: exit=%d stdout=%q stderr=%q", exit, out, failure)

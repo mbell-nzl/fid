@@ -14,16 +14,18 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 // GateRunRequest is the closed gate.run input after CLI decoding.
 type GateRunRequest struct {
-	RegistrationID      string     `json:"registration_id"`
-	RegistrationVersion int        `json:"registration_version"`
-	ObligationID        string     `json:"obligation_id"`
-	RunID               string     `json:"run_id"`
-	Repository          Repository `json:"repository"`
+	RegistrationID      string                     `json:"registration_id"`
+	RegistrationVersion int                        `json:"registration_version"`
+	ObligationID        string                     `json:"obligation_id"`
+	RunID               string                     `json:"run_id"`
+	ExpectedRepository  project.ExpectedRepository `json:"expected_repository"`
+	Repository          Repository                 `json:"-"`
 }
 
 // Attempt is the durable pre-spawn execution fact.
@@ -109,6 +111,7 @@ type gateRunBinding struct {
 	registration Registration
 	actor        storedActor
 	projectID    string
+	repository   Repository
 }
 
 type fidBudgetCharge struct {
@@ -204,7 +207,14 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 			return replayGateRunResult(conn, options, outcome, &prepared)
 		}
 
-		binding, requestDigest, fields, err := loadGateRunBinding(conn, options)
+		observed, err := project.ObserveRecordedRepository(options.WorkspaceRoot, projectConfig.ProjectID)
+		if err != nil {
+			return err
+		}
+		if !options.Request.ExpectedRepository.MatchesRecordedRepository(observed) {
+			return &workflow.RunRepositoryMismatchError{Expected: options.Request.ExpectedRepository, Observed: workflow.Repository(observed)}
+		}
+		binding, requestDigest, fields, err := loadGateRunBinding(conn, options, Repository(observed))
 		if err != nil {
 			return err
 		}
@@ -271,7 +281,7 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-		binding, requestDigest, fields, err := loadGateRunBinding(conn, options)
+		binding, requestDigest, fields, err := loadGateRunBinding(conn, options, prepared.Attempt.StartRepository)
 		if err != nil {
 			return err
 		}
@@ -314,7 +324,7 @@ func validateGateRunOptions(options GateRunOptions) error {
 	return nil
 }
 
-func loadGateRunBinding(conn *sql.DB, options GateRunOptions) (gateRunBinding, string, map[string]string, error) {
+func loadGateRunBinding(conn *sql.DB, options GateRunOptions, observed Repository) (gateRunBinding, string, map[string]string, error) {
 	project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
 	if err != nil {
 		return gateRunBinding{}, "", nil, fmt.Errorf("run gate: read project config: %w", err)
@@ -323,7 +333,7 @@ func loadGateRunBinding(conn *sql.DB, options GateRunOptions) (gateRunBinding, s
 	if err != nil {
 		return gateRunBinding{}, "", nil, err
 	}
-	if err := validateRepositoryBinding(RegisterRequest{WorktreeID: registration.WorktreeID, Repository: options.Request.Repository}, project.ProjectID); (err != nil && !importedGateDestination(conn, options.WorkspaceRoot, registration, options.Request)) || registration.ProjectID != project.ProjectID {
+	if !workflow.SameWorktree(options.WorkspaceRoot, workflow.Repository{ProjectID: registration.ProjectID, WorktreeID: registration.WorktreeID}, workflowRepository(observed)) {
 		return gateRunBinding{}, "", nil, fmt.Errorf("run gate: repository binding is invalid")
 	}
 	_, actor, err := loadActiveActor(conn, options.ActorID)
@@ -333,34 +343,17 @@ func loadGateRunBinding(conn *sql.DB, options GateRunOptions) (gateRunBinding, s
 	if !hasCapability(actor.Capabilities, "gate.run") {
 		return gateRunBinding{}, "", nil, &AuthorityDeniedError{ActorID: options.ActorID}
 	}
-	if err := validateGateRunReferences(conn, registration, actor.ActorID, options.Request); err != nil {
+	if err := validateGateRunReferences(conn, options.WorkspaceRoot, registration, actor.ActorID, options.Request, observed); err != nil {
 		return gateRunBinding{}, "", nil, err
 	}
 	digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "project_id": project.ProjectID, "request": options.Request}, options.ActorID, nil)
 	if err != nil {
 		return gateRunBinding{}, "", nil, fmt.Errorf("run gate: canonicalize request: %w", err)
 	}
-	return gateRunBinding{registration: registration, actor: actor, projectID: project.ProjectID}, digest, fields, nil
+	return gateRunBinding{registration: registration, actor: actor, projectID: project.ProjectID, repository: observed}, digest, fields, nil
 }
 
-func importedGateDestination(conn *sql.DB, workspaceRoot string, registration Registration, request GateRunRequest) bool {
-	binding, err := config.ReadImportBinding(workspaceRoot)
-	if err != nil || binding.ProjectID != registration.ProjectID || request.Repository.WorktreeID == registration.WorktreeID {
-		return false
-	}
-	root, err := filepath.Abs(workspaceRoot)
-	if err != nil || binding.TargetRoot != root {
-		return false
-	}
-	var repositoryJSON string
-	if err := conn.QueryRow(`SELECT start_repository_json FROM runs WHERE id = ?`, request.RunID).Scan(&repositoryJSON); err != nil {
-		return false
-	}
-	var start Repository
-	return json.Unmarshal([]byte(repositoryJSON), &start) == nil && sameGateRepository(start, request.Repository)
-}
-
-func validateGateRunReferences(conn *sql.DB, registration Registration, actorID string, request GateRunRequest) error {
+func validateGateRunReferences(conn *sql.DB, workspaceRoot string, registration Registration, actorID string, request GateRunRequest, observed Repository) error {
 	var envelopeID string
 	var revision int
 	err := conn.QueryRow(`SELECT envelope_id, revision FROM envelope_obligations WHERE id = ? AND registration_id = ? AND registration_version = ?`, request.ObligationID, registration.ID, registration.Version).Scan(&envelopeID, &revision)
@@ -382,7 +375,7 @@ func validateGateRunReferences(conn *sql.DB, registration Registration, actorID 
 		return fmt.Errorf("run gate: active Run binding is invalid")
 	}
 	var runRepository Repository
-	if err := json.Unmarshal([]byte(repositoryJSON), &runRepository); err != nil || !sameGateRepository(runRepository, request.Repository) {
+	if err := json.Unmarshal([]byte(repositoryJSON), &runRepository); err != nil || !workflow.SameWorktree(workspaceRoot, workflowRepository(runRepository), workflowRepository(observed)) {
 		return fmt.Errorf("run gate: repository does not match active Run")
 	}
 	return authorizeGateRunGrants(conn, envelopeID, revision, actorID, issueID)
@@ -447,11 +440,11 @@ func appendAttempt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 		return Attempt{}, err
 	}
 	now := time.Now().UTC()
-	repositoryJSON, err := journal.MarshalCanonicalJSON(options.Request.Repository)
+	repositoryJSON, err := journal.MarshalCanonicalJSON(binding.repository)
 	if err != nil {
 		return Attempt{}, err
 	}
-	attempt := Attempt{ID: id, RegistrationID: binding.registration.ID, RegistrationVersion: binding.registration.Version, ObligationID: options.Request.ObligationID, RunID: options.Request.RunID, ActorID: binding.actor.ActorID, StartRepository: options.Request.Repository, ResolvedPolicyDigest: binding.registration.DefinitionDigest, StartedAt: now.Format(time.RFC3339Nano)}
+	attempt := Attempt{ID: id, RegistrationID: binding.registration.ID, RegistrationVersion: binding.registration.Version, ObligationID: options.Request.ObligationID, RunID: options.Request.RunID, ActorID: binding.actor.ActorID, StartRepository: binding.repository, ResolvedPolicyDigest: binding.registration.DefinitionDigest, StartedAt: now.Format(time.RFC3339Nano)}
 	chains, err := loadBudgetChains(conn, attempt.RunID)
 	if err != nil {
 		return Attempt{}, err
@@ -473,7 +466,7 @@ func appendAttempt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 		return Attempt{}, err
 	}
 	effects = append(effects, budgetEffects...)
-	event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "gate.execution-started", ActorV2: journal.EventActor{ActorID: binding.actor.ActorID, ActorType: binding.actor.ActorType, Producer: binding.actor.Producer, ProvenanceRef: binding.actor.ProvenanceRef, SessionRef: binding.actor.SessionRef}, Aggregate: journal.Aggregate{ID: attempt.ID, Sequence: 1, Type: "attempt"}, CommandName: "gate.run", CorrelationID: &attempt.RunID, Idempotency: &journal.EventIdempotency{Key: options.IdempotencyKey, RequestDigest: requestDigest, Scope: "gate.run:" + binding.projectID}, Repository: repositoryEventValue(options.Request.Repository), Effects: effects}
+	event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "gate.execution-started", ActorV2: journal.EventActor{ActorID: binding.actor.ActorID, ActorType: binding.actor.ActorType, Producer: binding.actor.Producer, ProvenanceRef: binding.actor.ProvenanceRef, SessionRef: binding.actor.SessionRef}, Aggregate: journal.Aggregate{ID: attempt.ID, Sequence: 1, Type: "attempt"}, CommandName: "gate.run", CorrelationID: &attempt.RunID, Idempotency: &journal.EventIdempotency{Key: options.IdempotencyKey, RequestDigest: requestDigest, Scope: "gate.run:" + binding.projectID}, Repository: repositoryEventValue(binding.repository), Effects: effects}
 	prepared, err := journal.PrepareEvent(lock, event)
 	if err != nil {
 		return Attempt{}, err
@@ -620,7 +613,7 @@ func appendExecutionBlocked(lock *journal.WriteLock, conn *sql.DB, binding gateR
 	if err != nil {
 		return BudgetDenial{}, err
 	}
-	event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "run.execution-blocked", ActorV2: journal.EventActor{ActorID: binding.actor.ActorID, ActorType: binding.actor.ActorType, Producer: binding.actor.Producer, ProvenanceRef: binding.actor.ProvenanceRef, SessionRef: binding.actor.SessionRef}, Aggregate: journal.Aggregate{ID: options.Request.RunID, Sequence: sequence, Type: "run"}, CommandName: "gate.run", CorrelationID: &options.Request.RunID, Repository: repositoryEventValue(options.Request.Repository), Effects: effects}
+	event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "run.execution-blocked", ActorV2: journal.EventActor{ActorID: binding.actor.ActorID, ActorType: binding.actor.ActorType, Producer: binding.actor.Producer, ProvenanceRef: binding.actor.ProvenanceRef, SessionRef: binding.actor.SessionRef}, Aggregate: journal.Aggregate{ID: options.Request.RunID, Sequence: sequence, Type: "run"}, CommandName: "gate.run", CorrelationID: &options.Request.RunID, Repository: repositoryEventValue(binding.repository), Effects: effects}
 	prepared, err := journal.PrepareEvent(lock, event)
 	if err != nil {
 		return BudgetDenial{}, err
@@ -721,7 +714,7 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 	if int64(len(excerpt)) > binding.registration.Policy.ExcerptBytes {
 		excerpt = truncateUTF8(excerpt, int(binding.registration.Policy.ExcerptBytes))
 	}
-	repositoryJSON, err := journal.MarshalCanonicalJSON(options.Request.Repository)
+	repositoryJSON, err := journal.MarshalCanonicalJSON(binding.repository)
 	if err != nil {
 		return Receipt{}, "", err
 	}
@@ -751,7 +744,7 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 	if err != nil {
 		return Receipt{}, "", fmt.Errorf("run gate: canonicalize rejected Artifacts: %w", err)
 	}
-	receipt := Receipt{ID: id, AttemptID: attempt.ID, RegistrationID: attempt.RegistrationID, RegistrationVersion: attempt.RegistrationVersion, ObligationID: attempt.ObligationID, RunID: attempt.RunID, ActorID: attempt.ActorID, TrustSource: "fid-executed", Outcome: live.Outcome, ExitCode: live.ExitCode, Signal: live.Signal, TimedOut: live.TimedOut, StartedAt: attempt.StartedAt, EndedAt: endedAt.Format(time.RFC3339Nano), TerminalRepository: options.Request.Repository, Toolchain: toolchain, OutputExcerpt: excerpt, OutputDigest: "sha256:" + hex.EncodeToString(digest[:]), OutputBytes: live.OutputBytes, OutputTruncated: live.OutputTruncated, RedactionApplied: live.RedactionApplied, Artifacts: artifacts, RejectedArtifacts: rejectedArtifacts}
+	receipt := Receipt{ID: id, AttemptID: attempt.ID, RegistrationID: attempt.RegistrationID, RegistrationVersion: attempt.RegistrationVersion, ObligationID: attempt.ObligationID, RunID: attempt.RunID, ActorID: attempt.ActorID, TrustSource: "fid-executed", Outcome: live.Outcome, ExitCode: live.ExitCode, Signal: live.Signal, TimedOut: live.TimedOut, StartedAt: attempt.StartedAt, EndedAt: endedAt.Format(time.RFC3339Nano), TerminalRepository: binding.repository, Toolchain: toolchain, OutputExcerpt: excerpt, OutputDigest: "sha256:" + hex.EncodeToString(digest[:]), OutputBytes: live.OutputBytes, OutputTruncated: live.OutputTruncated, RedactionApplied: live.RedactionApplied, Artifacts: artifacts, RejectedArtifacts: rejectedArtifacts}
 	chains, err := loadBudgetChains(conn, receipt.RunID)
 	if err != nil {
 		return Receipt{}, "", err
@@ -765,7 +758,7 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 		return Receipt{}, "", err
 	}
 	effects = append(effects, budgetEffects...)
-	event := receiptEvent(binding.actor, receipt, string(repositoryJSON), string(toolchainJSON), string(rejectedJSON), options.Request.Repository, effects)
+	event := receiptEvent(binding.actor, receipt, string(repositoryJSON), string(toolchainJSON), string(rejectedJSON), binding.repository, effects)
 	resultJSON, err := journal.MarshalCanonicalJSON(map[string]any{"receipt": receipt, "idempotency_key": options.IdempotencyKey, "replayed": false})
 	if err != nil {
 		return Receipt{}, "", err
