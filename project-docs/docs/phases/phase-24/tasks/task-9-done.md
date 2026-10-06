@@ -268,8 +268,8 @@ Historical checkpoint scope findings (now resolved by the authorized implementat
 
 ## Commit hash
 
-- Pending commit
+- `d6e03c9f9ec7a445f3af50451cb9b14d4d52dd5c`
 
 ## Commit subject
 
-- Pending commit
+- `docs(task): record task 9 completion evidence`
