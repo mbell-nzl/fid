@@ -4,7 +4,9 @@ package integration
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,13 +14,53 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/project"
 )
 
 type p24JudgmentRow struct {
 	operation, key string
 	input          map[string]any
+}
+
+func p24JudgmentExpectedRepository(t *testing.T, a *p22FIDRecoveryAdapter) map[string]any {
+	t.Helper()
+	git := func(args ...string) string {
+		t.Helper()
+		output, err := exec.Command("git", append([]string{"-C", a.workspace}, args...)...).Output()
+		if err != nil {
+			t.Fatalf("independent Git observation %v: %v", args, err)
+		}
+		return strings.TrimSpace(string(output))
+	}
+	head, tree := git("rev-parse", "HEAD"), git("rev-parse", "HEAD^{tree}")
+	// These normal-state fixtures are clean, so the full dirty contract is
+	// independently known: false with a null digest. Refuse to assume that
+	// when Git reports a change; unavailable-state fixtures never call here.
+	if status := git("status", "--porcelain", "--untracked-files=all", "--", ".", ":!.fid"); status != "" {
+		t.Fatalf("repository parity fixture must be clean: %s", status)
+	}
+	root, err := filepath.Abs(a.workspace)
+	if err != nil {
+		t.Fatal(err)
+	}
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(a.workspace, ".fid", "config.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return map[string]any{"base_oid": head, "capture_source": "git", "dirty": false, "dirty_digest": nil,
+		"head_oid": head, "project_id": projectConfig.ProjectID, "tree_oid": tree,
+		"worktree_id": fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(root)))}
+}
+
+func TestP24JudgmentRepositoryOracleUsesConfig(t *testing.T) {
+	t.Parallel()
+	a := p24JudgmentAdapter(t)
+	configProjectID := a.projectID
+	a.projectID = "decoy-cached-project-id"
+	if got := p24JudgmentExpectedRepository(t, a)["project_id"]; got != configProjectID {
+		t.Fatalf("oracle project_id = %v, want config %s", got, configProjectID)
+	}
 }
 
 func p24RecordedSource(t *testing.T, operation string, envelope map[string]any) map[string]any {
@@ -79,17 +121,13 @@ func TestP24JudgmentSourceDigestsAndRepositoryParity(t *testing.T) {
 	wrong := "sha256:" + p22Zeros(64)
 	for index, row := range p24JudgmentRows(a, "matching", "CON-unused", "implements")[:5] {
 		p24RowSource(row)["digest"] = matching
-		observation, err := project.ObserveRecordedRepository(a.workspace, a.projectID)
-		if err != nil {
-			t.Fatal(err)
-		}
+		wantRepository := p24JudgmentExpectedRepository(t, a)
 		response := p24RunJudgment(t, a, row)
 		if response.ExitCode != 0 || response.Stderr != "" {
 			t.Fatalf("matching Source %d %s: %#v", index, row.operation, response)
 		}
 		envelope := p23Envelope(t, response.Stdout)
 		stored := p24RecordedSource(t, row.operation, envelope)
-		wantRepository := p24JSONMap(t, observation)
 		if stored["digest"] != matching || !reflect.DeepEqual(stored["repository"], wantRepository) {
 			t.Fatalf("%s stored Source = %#v, observation = %#v", row.operation, stored, wantRepository)
 		}
@@ -262,18 +300,51 @@ func TestP24JudgmentLeavesRepositoryUnavailable(t *testing.T) {
 			normalRows := p24JudgmentRows(a, "normal", "CON-pre-one", "implements")
 			originals := make(map[string]map[string]any, len(normalRows))
 			for _, row := range normalRows {
-				observation, err := project.ObserveRecordedRepository(a.workspace, a.projectID)
-				if err != nil {
-					t.Fatal(err)
-				}
+				observation := p24JudgmentExpectedRepository(t, a)
 				response := p24RunJudgment(t, a, row)
 				if response.ExitCode != 0 || response.Stderr != "" {
 					t.Fatalf("normal %s: %#v", row.operation, response)
 				}
 				envelope := p23Envelope(t, response.Stdout)
 				event := p24EventByID(t, a.workspace, envelope["event"].(map[string]any)["id"].(string))
-				if !reflect.DeepEqual(p24JSONMap(t, event.Repository), p24JSONMap(t, observation)) {
+				if !reflect.DeepEqual(p24JSONMap(t, event.Repository), observation) {
 					t.Fatalf("%s Event repository differs from independent observation", row.operation)
+				}
+				// The seven record shapes have no standalone Repository. Five
+				// carry Sources; disposal's setup Concern has no references, and
+				// RequirementLink has no Source. Walk every applicable member,
+				// and pin the count so a missing Source cannot pass vacuously.
+				recordName := map[string]string{"decision.record-reference": "decision", "requirement.record-reference": "requirement",
+					"human-outcome.record": "outcome", "concern.record": "concern", "deviation.record": "deviation",
+					"concern.dispose": "concern", "requirement.link": "link"}[row.operation]
+				count := 0
+				var compare func(any)
+				compare = func(value any) {
+					switch value := value.(type) {
+					case map[string]any:
+						for key, member := range value {
+							if key == "repository" {
+								count++
+								if !reflect.DeepEqual(member, observation) {
+									t.Fatalf("%s stored repository = %#v, want %#v", row.operation, member, observation)
+								}
+							} else {
+								compare(member)
+							}
+						}
+					case []any:
+						for _, member := range value {
+							compare(member)
+						}
+					}
+				}
+				compare(envelope["result"].(map[string]any)[recordName].(map[string]any))
+				wantCount := 1
+				if row.operation == "concern.dispose" || row.operation == "requirement.link" {
+					wantCount = 0
+				}
+				if count != wantCount {
+					t.Fatalf("%s stored repository members = %d, want %d", row.operation, count, wantCount)
 				}
 				originals[row.operation] = envelope
 			}
