@@ -112,8 +112,8 @@ Provenance was obtained with `git log -S` for the live-accounting text and helpe
 
 ## Commit hash
 
-- Pending commit
+- `785a22491f1ba07bb748d1d4fb85f88ea1a8d45d`
 
 ## Commit subject
 
-- Pending commit
+- `feat(cli): checkpoint activation input descriptors`
