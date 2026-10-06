@@ -39,7 +39,7 @@ func init() {
 func newConcernRecordCommand() *cobra.Command {
 	return newConcernMutationCommand("record", func(cmd *cobra.Command, inputPath string) (concernMutation, error) {
 		var request review.ConcernRecordRequest
-		if err := decodeClosedJudgmentInput(cmd, inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[rootCommandKey(cmd)], &request); err != nil {
 			return nil, err
 		}
 		return func(options review.JudgmentOptions) (review.ConcernMutationResult, error) {
@@ -51,7 +51,7 @@ func newConcernRecordCommand() *cobra.Command {
 func newConcernDisposeCommand() *cobra.Command {
 	return newConcernMutationCommand("dispose", func(cmd *cobra.Command, inputPath string) (concernMutation, error) {
 		var request review.ConcernDisposeRequest
-		if err := decodeClosedJudgmentInput(cmd, inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[rootCommandKey(cmd)], &request); err != nil {
 			return nil, err
 		}
 		return func(options review.JudgmentOptions) (review.ConcernMutationResult, error) {
@@ -142,10 +142,6 @@ func renderConcernError(cmd *cobra.Command, operation string, cause error) error
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeResultLimitExceeded, "Concern result limit exceeded", nil, map[string]any{"collection": "items", "limit": resultLimit.Limit, "observed": resultLimit.Observed})
 	}
 	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Concern request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
-}
-
-func decodeClosedJudgmentInput(cmd *cobra.Command, path string, target any) error {
-	return readDescriptorInput(cmd.InOrStdin(), path, inputDescriptorRegistry[rootCommandKey(cmd)], target)
 }
 
 func newConcernListCommand() *cobra.Command {

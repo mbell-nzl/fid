@@ -32,11 +32,11 @@ func newRequirementMutationCommand(leaf string) *cobra.Command {
 		var recordRequest review.RequirementReferenceRequest
 		var linkRequest review.RequirementLinkRequest
 		if leaf == "record-reference" {
-			if err := decodeClosedJudgmentInput(cmd, inputPath, &recordRequest); err != nil {
+			if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[rootCommandKey(cmd)], &recordRequest); err != nil {
 				return renderRequirementError(cmd, operation, err)
 			}
 		} else {
-			if err := decodeClosedJudgmentInput(cmd, inputPath, &linkRequest); err != nil {
+			if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[rootCommandKey(cmd)], &linkRequest); err != nil {
 				return renderRequirementError(cmd, operation, err)
 			}
 		}

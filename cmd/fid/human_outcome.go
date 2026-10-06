@@ -56,7 +56,7 @@ func newHumanOutcomeRecordCommand() *cobra.Command {
 			}
 		}
 		var request review.HumanOutcomeRequest
-		if err := decodeClosedJudgmentInput(cmd, inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[rootCommandKey(cmd)], &request); err != nil {
 			return renderHumanOutcomeError(cmd, "human-outcome.record", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)

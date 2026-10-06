@@ -603,6 +603,13 @@ Structural `--input` failures name the field in `invalid-argument.details.argume
 (for example `input.resolution_condition.subject.id`) before domain validation.
 The remaining `--input` leaves enter this convention in their owning tasks.
 
+Task 9's partial checkpoint adopts the same descriptor help, `--example`,
+and field-path structural validation for `activation prepare`, `commit`,
+`abort`, `finalize`, `resource`, `recover`, and `recover-complete`. The input
+shapes retain the Phase 21 baseline and Phase 22 version/resource additions.
+`activation component` and whole-tree conformance await the same-task
+continuation recorded in the Task 9 completion report.
+
 Task 4 adopts `SourceInput` for `decision record-reference`, `requirement
 record-reference`, `human-outcome record`, `concern record`, and `deviation
 record`. It is a Source without `repository`; a project-file digest may be

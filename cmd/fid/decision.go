@@ -55,7 +55,7 @@ func newDecisionRecordReferenceCommand() *cobra.Command {
 			}
 		}
 		var request review.DecisionReferenceRequest
-		if err := decodeClosedJudgmentInput(cmd, inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[rootCommandKey(cmd)], &request); err != nil {
 			return renderDecisionError(cmd, "decision.record-reference", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)

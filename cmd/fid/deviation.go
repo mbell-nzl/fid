@@ -30,7 +30,7 @@ func newDeviationRecordCommand() *cobra.Command {
 			}
 		}
 		var request review.DeviationRecordRequest
-		if err := decodeClosedJudgmentInput(cmd, inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[rootCommandKey(cmd)], &request); err != nil {
 			return renderDeviationError(cmd, "deviation.record", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)

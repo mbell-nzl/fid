@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
@@ -264,7 +265,7 @@ func TestInputDescriptorRegistryMatchesLiveTreeAndTypes(t *testing.T) {
 		}
 	}
 	for key := range live {
-		if _, registered := inputDescriptorRegistry[key]; !registered && !pendingInputDescriptors[key] {
+		if _, registered := inputDescriptorRegistry[key]; !registered {
 			t.Errorf("live --input leaf %s is unaccounted", key)
 		}
 	}
@@ -272,6 +273,47 @@ func TestInputDescriptorRegistryMatchesLiveTreeAndTypes(t *testing.T) {
 	mismatch.Fields[0].Name = "wrong_stop_id"
 	if err := cli.CheckInputType(mismatch); err == nil {
 		t.Error("seeded descriptor/type mismatch passed")
+	}
+}
+
+func TestP24ActivationSimpleDescriptorProcessCorpus(t *testing.T) {
+	t.Parallel()
+	leaves := make(map[string]cli.InputDescriptor)
+	for _, name := range []string{"abort", "commit", "finalize", "prepare", "recover", "recover-complete", "resource"} {
+		leaf := "activation " + name
+		descriptor, found := inputDescriptorRegistry[leaf]
+		if !found {
+			t.Fatalf("missing descriptor for %s", leaf)
+		}
+		leaves[leaf] = descriptor
+	}
+	p24DescriptorProcessCorpus(t, leaves)
+}
+
+func TestP24ActivationComponentRawArrayReflection(t *testing.T) {
+	t.Parallel()
+	actor := inputObject("actor", "Activated Actor profile.",
+		judgmentID("actor_id", "Actor ID."), bindingString("actor_type", "Actor type."),
+		bindingString("producer", "Producer."), bindingString("provenance_ref", "Provenance reference."),
+		bindingNullable("session_ref", "Session reference, if available."), inputArray("capabilities", "Actor capabilities.", "ID", false))
+	descriptor := cli.InputDescriptor{Operation: "activation.component", Type: reflect.TypeFor[workflow.ActivationComponentRequest](), Fields: []cli.InputField{
+		judgmentID("activation_id", "Activation ID."), bindingString("component_type", "Component type."), judgmentID("component_id", "Component ID."),
+		inputInteger("component_version", "Component version.", 1), inputString("expected_prior_digest", "nullable", "Prior digest.", "digest", ""),
+		bindingArray("content", "Selected component content.", actor, 1), inputInteger("expected_version", "Activation version.", 1),
+	}}
+	if err := cli.CheckInputType(descriptor); err != nil {
+		t.Fatalf("accepted ActorProfile[] raw content cannot be reflected: %v", err)
+	}
+}
+
+func TestP24InputDescriptorsHaveNoTopLevelSensitiveFields(t *testing.T) {
+	t.Parallel()
+	for leaf, descriptor := range inputDescriptorRegistry {
+		for _, field := range descriptor.Fields {
+			if field.Sensitive {
+				t.Errorf("%s: top-level input.%s is sensitive", leaf, field.Name)
+			}
+		}
 	}
 }
 
@@ -533,6 +575,15 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 						check(path+"/long", path, object, func() { object[field.Name] = strings.Repeat("x", *field.MaxLen+1) }, func() { object[field.Name] = original })
 					}
 					if field.Type == "array" {
+						mutateElement := func(value any) {
+							entries := append([]any(nil), original.([]any)...)
+							if len(entries) == 0 {
+								entries = []any{value}
+							} else {
+								entries[0] = value
+							}
+							object[field.Name] = entries
+						}
 						if field.MinLen != nil && *field.MinLen > 0 {
 							check(path+"/short", path, object, func() { object[field.Name] = []any{} }, func() { object[field.Name] = original })
 						}
@@ -540,12 +591,20 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 							check(path+"/long", path, object, func() { object[field.Name] = make([]any, *field.MaxLen+1) }, func() { object[field.Name] = original })
 						}
 						if field.Element != nil {
-							check(path+"/element-type", path+"[0]", object, func() { object[field.Name] = []any{true} }, func() { object[field.Name] = original })
+							check(path+"/element-type", path+"[0]", object, func() { mutateElement(true) }, func() { object[field.Name] = original })
 							if field.Element.Type == "string" && field.Element.Format != "" && field.Element.Format != "text" {
-								check(path+"/element-format", path+"[0]", object, func() { object[field.Name] = []any{""} }, func() { object[field.Name] = original })
+								check(path+"/element-format", path+"[0]", object, func() { mutateElement("") }, func() { object[field.Name] = original })
 							}
 							if field.Format == "sorted-unique" {
-								check(path+"/order", path, object, func() { object[field.Name] = []any{"duplicate", "duplicate"} }, func() { object[field.Name] = original })
+								check(path+"/order", path, object, func() {
+									entries := append([]any(nil), original.([]any)...)
+									if len(entries) < 2 {
+										entries = []any{"duplicate", "duplicate"}
+									} else {
+										entries[1] = entries[0]
+									}
+									object[field.Name] = entries
+								}, func() { object[field.Name] = original })
 							}
 						}
 					}
@@ -587,6 +646,17 @@ func p24ExpandDescriptorObjects(t *testing.T, object map[string]any, fields []cl
 		if field.Format == "timestamp" && object[field.Name] != nil {
 			object[field.Name] = "2026-10-06T00:00:00Z"
 		}
+		if field.Element != nil && field.Element.Format == "digest" {
+			count := 1
+			if field.MinLen != nil && *field.MinLen > count {
+				count = *field.MinLen
+			}
+			values := make([]any, count)
+			for i := range values {
+				values[i] = fmt.Sprintf("sha256:%064x", i+1)
+			}
+			object[field.Name] = values
+		}
 		children := field.Children
 		if field.Element != nil {
 			children = field.Element.Children
@@ -604,7 +674,15 @@ func p24ExpandDescriptorObjects(t *testing.T, object map[string]any, fields []cl
 		}
 		p24ExpandDescriptorObjects(t, child, children)
 		if field.Type == "array" {
-			object[field.Name] = []any{child}
+			count := 1
+			if field.MinLen != nil && *field.MinLen > count {
+				count = *field.MinLen
+			}
+			values := make([]any, count)
+			for i := range values {
+				values[i] = child
+			}
+			object[field.Name] = values
 		} else {
 			object[field.Name] = child
 		}
