@@ -250,8 +250,8 @@ The following is the complete original report read before this repair, including
 
 ## Commit hash
 
-- Pending commit
+- `c0115bd500c1bedd0384b13e5eb352a64c26c865`
 
 ## Commit subject
 
-- Pending commit
+- `test(judgment): complete repository and descriptor QA evidence`
