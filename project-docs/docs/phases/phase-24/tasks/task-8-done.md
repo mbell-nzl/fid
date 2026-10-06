@@ -178,8 +178,8 @@ The phase-23/task-6, phase-24/task-7 and phase-21/task-17 retained reports were 
 
 ## Commit hash
 
-- Pending commit
+- `32a9ae535dbfb34be0dff7e369c715c2a4640b90`
 
 ## Commit subject
 
-- Pending commit
+- `feat(evidence): checkpoint gate observation and real freshness`
