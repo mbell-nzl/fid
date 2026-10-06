@@ -367,8 +367,8 @@ Attempt 1 report preserved verbatim with one quote prefix per line, including al
 
 ## Commit hash
 
-- Pending commit
+- `226cdc94e6460cc254d1b4e916344b8ea2e2cdb3`
 
 ## Commit subject
 
-- Pending commit
+- `fix(cli): enforce declared Review OID formats`
