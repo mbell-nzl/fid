@@ -121,6 +121,6 @@ func TestP22RecoveryAdoptedTargetPermitsTerminalTransitionWithFreshSuccessorProo
 		"run_id": successorRunID, "expected_version": p21Path(t, observed, "result", "run", "version"), "observation_id": p21PathString(t, observed, "result", "observation", "id"), "repository": successorRepository,
 	}), "--idempotency-key", "p22-adopted-terminal-close-b")
 	p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "envelope", "complete", "--actor", adapter.actor, "--input", p21Input(t, adapter.workspace, "p22-adopted-terminal-complete-b", map[string]any{
-		"envelope_id": p21PathString(t, run, "result", "run", "envelope_id"), "expected_revision": 1, "repository": successorRepository,
+		"envelope_id": p21PathString(t, run, "result", "run", "envelope_id"), "expected_revision": 1,
 	}), "--idempotency-key", "p22-adopted-terminal-complete-b")
 }

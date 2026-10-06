@@ -319,20 +319,7 @@ func mutateExecutionTransitionFixture(t *testing.T, workspace, statement string,
 
 func executionTransitionFixture(t *testing.T) (string, string, string, map[string]any) {
 	t.Helper()
-	workspace, values := cloneReusableWorkspaceFixture(t, "execution-transition", func() (string, []string) {
-		workspace, issueID, envelopeID, repository := buildExecutionTransitionEnvelopeFixture(t, false)
-		repositoryJSON, err := json.Marshal(repository)
-		if err != nil {
-			t.Fatalf("encode execution-transition repository: %v", err)
-		}
-		return workspace, []string{issueID, envelopeID, string(repositoryJSON)}
-	})
-	repository := make(map[string]any)
-	if err := json.Unmarshal([]byte(values[2]), &repository); err != nil {
-		t.Fatalf("decode execution-transition repository: %v", err)
-	}
-	startExecutionTransitionFixture(t, workspace, values[0], values[1], repository)
-	return workspace, values[0], values[1], repository
+	return buildExecutionTransitionFixture(t, false)
 }
 
 func executionTransitionObservedFixture(t *testing.T) (string, string, string, map[string]any) {
@@ -347,7 +334,7 @@ func buildExecutionTransitionFixture(t *testing.T, observedRepository bool) (str
 	return workspace, issueID, envelopeID, repository
 }
 
-// Cache only durable setup; each clone acquires its own live claim and Run.
+// Build Registration, Envelope, Claim and Run in the root that consumes them.
 func buildExecutionTransitionEnvelopeFixture(t *testing.T, observedRepository bool) (string, string, string, map[string]any) {
 	t.Helper()
 	var workspace, issueID string
