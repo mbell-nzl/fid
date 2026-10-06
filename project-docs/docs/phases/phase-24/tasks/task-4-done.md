@@ -64,7 +64,7 @@ Working directory: `/home/mark/projects/fid`, except the direct CLI invocation e
 - F3 byte-identical green: `go test -run '^TestP24JudgmentEvidenceRejectsIncompleteMetadata$' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.156s` (terminated `exit_code: 0`).
 - Expanded corpus: `go test -run '^(TestP24JudgmentDescriptorSourcePositionsAndExamples|TestP24JudgmentStructuralValidationCorpus|TestP24JudgmentEvidenceRejectsIncompleteMetadata)$' -count=1 ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`). The expected oversize-text alternative initially ignored existing enum-before-format precedence. Repairing only that expected fixture made the byte-identical command PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.535s` (terminated `exit_code: 0`).
 - Expanded array corpus: the byte-identical expanded-corpus command - FAIL - `FAIL` (terminated `exit_code: 1`), because the test generator indexed an empty baseline `scope.paths` array. Supplying a valid test element for the maximum-length fixture made the byte-identical command PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.656s` (terminated `exit_code: 0`).
-- `go test -tags integration -run '^(TestP24JudgmentSourceDigestsAndRepositoryParity|TestP24JudgmentLeavesRepositoryUnavailable)$' -count=1 ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	5.164s` (terminated `exit_code: 0`).
+- `go test -tags integration -run '^(TestP24JudgmentSourceDigestsAndRepositoryParity|TestP24JudgmentLeavesRepositoryUnavailable)$' -count=1 ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	5.164s` (terminated `exit_code: 0`)
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	242.901s` (terminated `exit_code: 0`)
 - `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24Judgment' -count=1 ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	9.219s` (terminated `exit_code: 0`)
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^(TestP24JudgmentDescriptorSourcePositionsAndExamples|TestP24JudgmentStructuralValidationCorpus|TestP24JudgmentEvidenceRejectsIncompleteMetadata)$' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	4.150s` (terminated `exit_code: 0`)
@@ -74,6 +74,10 @@ Working directory: `/home/mark/projects/fid`, except the direct CLI invocation e
 The direct `decision record-reference --help` entrypoint ran from `/tmp`. Its emitted help contains exact nested SourceInput and authority types, requirements, digest/ID formats, label/array limits and the standalone example line.
 
 ### First required-gate attempt
+
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-24/tasks/task-4-done.md project-docs/docs/phases/phase-24/tasks/task-4.md` - FAIL - `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`)
+
+The first committed-report control rejected punctuation after a termination field. The correction removes only that trailing period; the failed result is retained here.
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - FAIL - `* staticcheck: 2` (terminated `exit_code: 1`)
@@ -130,6 +134,8 @@ Working directory: `/home/mark/projects/fid`. The five commands below ran byte-i
 Fresh reported package wall times: `cmd/fid` 374.499 s; `internal/workflow` 102.588 s; `internal/issues` 198.298 s (slowest other ordinary package); `cmd/fid/integration` 276.204 s. Ordinary packages stay below the 600 s budget and 480 s warning; tagged integration stays below the 900 s budget and 720 s warning. None of these measurements is cached. Overall statement coverage is 60.9%; the accepted coverage policy remains unchanged.
 
 ## Deviations from spec
+
+- Mandatory report-control failure note: the first `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-24/tasks/task-4-done.md project-docs/docs/phases/phase-24/tasks/task-4.md` returned `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`). A trailing period after one focused PASS row's termination field violated the control's recorded-result syntax. Removing the period preserves the exact observed evidence. The byte-identical committed-report rerun will provide the later result.
 
 - No accepted Observation, SourceInput, judgment, public-interface, command, assertion semantics, coverage policy or budget changed. This recovery is limited to review-3 F1-F3 and its exact allowed files.
 - Mandatory first-failure note: the initial `golangci-lint run ./...` returned `* staticcheck: 2` (terminated `exit_code: 1`). Two new test-helper `if/else` chains triggered QF1003. Rewriting those chains as tagged switches, with identical expected values and assertions, repaired the in-scope cause. The byte-identical lint command later returned `0 issues.` (terminated `exit_code: 0`), and all five final required commands passed. The first failure remains immutable failed evidence.
