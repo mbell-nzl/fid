@@ -79,6 +79,14 @@ func (model *p22MemoryModel) execute(t *testing.T, operation, key, actor string,
 		return failure("invalid-argument", 2)
 	}
 	if operation == "gate.run" {
+		for field := range input {
+			if !strings.Contains(" registration_id registration_version obligation_id run_id expected_repository ", " "+field+" ") {
+				return p22FixtureResponse(t, map[string]any{"contract_version": "fid-cli.v1", "ok": false, "operation": operation,
+					"error": map[string]any{"code": "invalid-argument", "category": "invalid-input", "retryable": false, "subject": nil,
+						"message": "invalid input." + field, "details": map[string]any{"argument": "input." + field, "value": field,
+							"allowed": []string{"expected_repository", "obligation_id", "registration_id", "registration_version", "run_id"}}}}, false, 2)
+			}
+		}
 		return model.denyGate(t, key)
 	}
 	allowed := map[string]string{

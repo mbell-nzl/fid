@@ -107,7 +107,7 @@ func TestP24GateRunPersistsNamedFieldsThroughReceipt(t *testing.T) {
 	if err := json.Unmarshal([]byte(encoded), &fields); err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range []string{"run_id", "registration_id", "registration_version", "obligation_id", "repository", "--actor"} {
+	for _, name := range []string{"run_id", "registration_id", "registration_version", "obligation_id", "expected_repository", "--actor"} {
 		if !strings.HasPrefix(fields[name], "sha256:") {
 			t.Fatalf("gate.run field %s = %q; all fields = %v", name, fields[name], fields)
 		}

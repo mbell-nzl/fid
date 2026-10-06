@@ -45,7 +45,7 @@ func TestAttentionResolveUnknownFieldNamesInputPath(t *testing.T) {
 func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 	t.Parallel()
 	leaves := []string{"stop raise", "stop resolve", "attention resolve", "decision record-reference",
-		"requirement record-reference", "requirement link", "human-outcome record", "concern record", "concern dispose", "deviation record", "review record", "finding address", "gate register", "envelope create", "envelope activate", "envelope complete", "claim acquire", "claim renew", "claim release", "claim expire", "run start", "run close", "run abandon", "run observe-budget", "run observe", "run checkpoint", "run recover"}
+		"requirement record-reference", "requirement link", "human-outcome record", "concern record", "concern dispose", "deviation record", "review record", "finding address", "gate register", "envelope create", "envelope activate", "envelope complete", "claim acquire", "claim renew", "claim release", "claim expire", "run start", "run close", "run abandon", "run observe-budget", "run observe", "run checkpoint", "run recover", "gate run", "evidence link", "evidence evaluate", "artifact verify"}
 	conflicts := []struct {
 		name, argument string
 		value          any
@@ -64,8 +64,8 @@ func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 		{"key first", "--idempotency-key", "key-1", func(string) []string { return []string{"--idempotency-key", "key-1", "extra"} }},
 		{"positional", "arguments", "extra", func(string) []string { return []string{"extra"} }},
 	}
-	if got := len(leaves) * len(conflicts); got != 162 {
-		t.Fatalf("exclusivity corpus has %d rows, want 162", got)
+	if got := len(leaves) * len(conflicts); got != 186 {
+		t.Fatalf("exclusivity corpus has %d rows, want 186", got)
 	}
 	binary := buildAdoptedFID(t)
 	for _, leaf := range leaves {

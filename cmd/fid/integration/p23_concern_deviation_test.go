@@ -118,7 +118,7 @@ func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
 	if err != nil || gate.Receipt == nil {
 		t.Fatalf("run qualifying gate: result=%#v error=%v", gate, err)
 	}
-	linked := p23RunInput(t, a, "evidence", "link", a.actor, "task8-proof-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	linked := p23RunInput(t, a, "evidence", "link", a.actor, "task8-proof-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	p23AssertReviewSuccess(t, "link qualifying proof", linked)
 	p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "transition", a.issueID, "--to", "in_progress", "--actor", "agent:"+a.actor, "--expected-revision", "1", "--idempotency-key", "task8-in-progress")
 	p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "transition", a.issueID, "--to", "dev_complete", "--actor", "agent:"+a.actor, "--expected-revision", "2", "--idempotency-key", "task8-dev-complete")
@@ -239,7 +239,7 @@ func assertConcernDeviationEvidenceRejected(t *testing.T, a *p22FIDRecoveryAdapt
 	t.Helper()
 	for _, test := range []struct{ evidenceType, subjectID string }{{"concern", concernID}, {"deviation", deviationID}} {
 		before := p21JournalEventCount(t, a.workspace)
-		response := p23RunInput(t, a, "evidence", "link", a.actor, "evidence-reject-"+test.evidenceType, map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": test.evidenceType, "receipt_id": test.subjectID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+		response := p23RunInput(t, a, "evidence", "link", a.actor, "evidence-reject-"+test.evidenceType, map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": test.evidenceType, "receipt_id": test.subjectID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 		assertP22ProcessFailure(t, "evidence.link", "invalid-argument", 2, response)
 		if p21JournalEventCount(t, a.workspace) != before {
 			t.Fatalf("%s Evidence rejection appended an Event", test.evidenceType)

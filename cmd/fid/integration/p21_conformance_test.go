@@ -145,12 +145,12 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	runID := p21PathString(t, run, "result", "run", "id")
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "transition", issueID, "--to", "started", "--actor", "agent:actor-builder", "--expected-revision", "1", "--idempotency-key", "p21-transition-nonterminal")
 
-	gate := p21GateRun(t, binary, workspace, map[string]any{"registration_id": registrationID, "registration_version": registrationVersion, "obligation_id": "OBL-1", "run_id": runID, "repository": repository})
+	gate := p21GateRun(t, binary, workspace, map[string]any{"registration_id": registrationID, "registration_version": registrationVersion, "obligation_id": "OBL-1", "run_id": runID, "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]}})
 	receiptID := p21PathString(t, gate, "result", "receipt", "id")
 	p21AssertBudgetBoundaryAndLaterGateDenial(t, binary, workspace, registrationID, registrationVersion, runID, repository)
-	linkInput := p21Input(t, workspace, "evidence-link", map[string]any{"obligation_id": "OBL-1", "evidence_type": "receipt", "receipt_id": receiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository, "required_artifact_ids": []string{}})
+	linkInput := p21Input(t, workspace, "evidence-link", map[string]any{"obligation_id": "OBL-1", "evidence_type": "receipt", "receipt_id": receiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkInput, "--idempotency-key", "p21-evidence-link")
-	evaluateInput := p21Input(t, workspace, "evidence-evaluate", map[string]any{"obligation_id": "OBL-1", "target_repository": repository})
+	evaluateInput := p21Input(t, workspace, "evidence-evaluate", map[string]any{"obligation_id": "OBL-1"})
 	evaluation := p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", evaluateInput)
 	if status := p21PathString(t, evaluation, "result", "evaluation", "status"); status != "satisfied" {
 		t.Fatalf("Gate Evidence evaluation status = %q, want satisfied", status)
@@ -270,7 +270,7 @@ func p21AssertBudgetBoundaryAndLaterGateDenial(t *testing.T, binary, workspace, 
 	if strings.Count(string(before), `"table":"execution_attempts"`) != 1 || strings.Count(string(before), `"table":"budget_samples"`) != 1 || strings.Count(string(before), `"table":"stops"`) != 1 || strings.Count(string(before), `"table":"attention_items"`) != 1 || strings.Count(string(before), `"table":"attention_stop_links"`) != 1 {
 		t.Fatalf("boundary Event effects = %q, want one Attempt, budget sample, Stop, Attention, and link", before)
 	}
-	input := p21Input(t, workspace, "gate-run-after-exhaustion", map[string]any{"registration_id": registrationID, "registration_version": registrationVersion, "obligation_id": "OBL-1", "run_id": runID, "repository": repository})
+	input := p21Input(t, workspace, "gate-run-after-exhaustion", map[string]any{"registration_id": registrationID, "registration_version": registrationVersion, "obligation_id": "OBL-1", "run_id": runID, "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]}})
 	stdout, stderr, runErr := closureRunCommand(workspace, binary, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", input, "--idempotency-key", "p21-gate-run-after-exhaustion")
 	if processExitCode(t, runErr) != 4 || stderr != "" || !strings.Contains(stdout, `"stream":"terminal"`) || !strings.Contains(stdout, `"outcome":"fid-error"`) || !strings.Contains(stdout, `"code":"budget-exhausted"`) || strings.Contains(stdout, `"attempt_id":"`) {
 		t.Fatalf("later gate denial = exit:%d stdout:%q stderr:%q, want committed pre-start denial terminal", processExitCode(t, runErr), stdout, stderr)

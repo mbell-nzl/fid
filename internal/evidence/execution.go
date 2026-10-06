@@ -25,7 +25,6 @@ type GateRunRequest struct {
 	ObligationID        string                     `json:"obligation_id"`
 	RunID               string                     `json:"run_id"`
 	ExpectedRepository  project.ExpectedRepository `json:"expected_repository"`
-	Repository          Repository                 `json:"-"`
 }
 
 // Attempt is the durable pre-spawn execution fact.

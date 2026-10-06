@@ -535,7 +535,7 @@ func (adapter *p22FIDRecoveryAdapter) p22BuildArgs(t *testing.T, fixture p22Conf
 		input = map[string]any{"run_id": adapter.runID, "expected_version": adapter.runVersion, "budget_name": "tokens", "source_sample_id": fixture.Name, "sample_kind": kind, "previous_sample_id": previous, "value": 3, "measurement_ref": adapter.measurement, "observed_at": time.Now().UTC().Format(time.RFC3339Nano)}
 	case "gate.run":
 		args = append(args, "gate", "run", "--actor", adapter.actor)
-		input = map[string]any{"run_id": adapter.runID, "registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": adapter.repository}
+		input = map[string]any{"run_id": adapter.runID, "registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "expected_repository": map[string]any{"head_oid": adapter.repository["head_oid"], "dirty": adapter.repository["dirty"]}}
 	case "run.close", "run.abandon":
 		args = append(args, "run", strings.TrimPrefix(fixture.Operation, "run."), "--actor", adapter.actor)
 		input = map[string]any{"run_id": adapter.runID, "expected_version": adapter.runVersion, "observation_id": adapter.observation, "expected_repository": p24ExpectedRepository(adapter.repository)}

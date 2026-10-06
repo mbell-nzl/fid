@@ -172,7 +172,7 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	// review-unsatisfied state is only reachable before the review is linked.
 	gate := p23RunQualifyingGateSession(t, a, "human-outcome-proof")
 	beforeGateLink := p21JournalEventCount(t, a.workspace)
-	linkedGate := p23RunInput(t, a, "evidence", "link", a.actor, "human-outcome-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	linkedGate := p23RunInput(t, a, "evidence", "link", a.actor, "human-outcome-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	assertP23HumanOutcomeSuccess(t, linkedGate)
 	if after := p21JournalEventCount(t, a.workspace); after != beforeGateLink+1 {
 		t.Fatalf("gate evidence.link appended %d Event(s), want 1", after-beforeGateLink)
@@ -409,7 +409,7 @@ func TestP23HumanOutcomeRequiredRaisedByReviewRecord(t *testing.T) {
 	pass := p23ReviewRecord(t, a, "actor-reviewer-two", "review-raise-pass", p23ReviewInput(a, p21PathString(t, passRun, "id"), p23Number(t, passRun["version"]), "pass", []any{}, nil))
 	p23AssertReviewSuccess(t, "pass Review", pass)
 	passReview := p23ReviewFromResponse(t, pass)
-	linked := p23RunInput(t, a, "evidence", "link", "actor-reviewer-two", "review-raise-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil, "review_id": passReview["id"], "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	linked := p23RunInput(t, a, "evidence", "link", "actor-reviewer-two", "review-raise-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil, "review_id": passReview["id"], "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	p23AssertReviewSuccess(t, "linked pass Review Evidence", linked)
 	p23CloseAndRelease(t, a, "actor-reviewer-two", p21PathString(t, passRun, "id"), p21PathString(t, passClaim, "id"), "review-raise-pass")
 
@@ -463,7 +463,7 @@ func p23RecordHumanOutcome(t *testing.T, a *p22FIDRecoveryAdapter, suffix, actor
 
 func p23LinkHumanOutcome(t *testing.T, a *p22FIDRecoveryAdapter, suffix, obligationID, outcomeID string) p22ConformanceResponse {
 	t.Helper()
-	return p23RunInput(t, a, "evidence", "link", a.actor, "p23-human-outcome-link-"+suffix, map[string]any{"obligation_id": obligationID, "evidence_type": "human-outcome", "receipt_id": nil, "review_id": nil, "human_outcome_id": outcomeID, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	return p23RunInput(t, a, "evidence", "link", a.actor, "p23-human-outcome-link-"+suffix, map[string]any{"obligation_id": obligationID, "evidence_type": "human-outcome", "receipt_id": nil, "review_id": nil, "human_outcome_id": outcomeID, "required_artifact_ids": []string{}})
 }
 
 // assertP23AuthorityMissing asserts a VAL-043 negative: exit 5 with
@@ -853,7 +853,7 @@ func p23SatisfyCoexistingReview(t *testing.T, a *p22FIDRecoveryAdapter, key stri
 	p23AssertReviewSuccess(t, "coexisting pass Review", pass)
 	review := p23ReviewFromResponse(t, pass)
 	beforeLink := p21JournalEventCount(t, a.workspace)
-	linked := p23RunInput(t, a, "evidence", "link", a.actor, key+"-link", map[string]any{"obligation_id": "OBL-p23-review", "evidence_type": "review", "receipt_id": nil, "review_id": review["id"], "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	linked := p23RunInput(t, a, "evidence", "link", a.actor, key+"-link", map[string]any{"obligation_id": "OBL-p23-review", "evidence_type": "review", "receipt_id": nil, "review_id": review["id"], "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	p23AssertReviewSuccess(t, "coexisting review Evidence link", linked)
 	if after := p21JournalEventCount(t, a.workspace); after != beforeLink+1 {
 		t.Fatalf("review evidence.link appended %d Event(s), want 1", after-beforeLink)
@@ -882,7 +882,7 @@ func p23RunQualifyingGateSession(t *testing.T, a *p22FIDRecoveryAdapter, key str
 	runID := p21PathString(t, run, "id")
 	sample := p23RunInput(t, a, "run", "observe-budget", runner, key+"-budget", map[string]any{"run_id": runID, "expected_version": run["version"], "budget_name": "tokens", "source_sample_id": key + "-sample", "sample_kind": "baseline", "previous_sample_id": nil, "value": 0, "measurement_ref": a.measurement, "observed_at": time.Now().UTC().Format(time.RFC3339Nano)})
 	p23AssertReviewSuccess(t, "observe budget baseline for gate Run", sample)
-	request, err := json.Marshal(map[string]any{"run_id": runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": a.repository})
+	request, err := json.Marshal(map[string]any{"run_id": runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "expected_repository": map[string]any{"head_oid": a.repository["head_oid"], "dirty": a.repository["dirty"]}})
 	p22FaultOK(t, err)
 	options := evidence.GateRunOptions{WorkspaceRoot: a.workspace, MigrationsDir: filepath.Join(integrationRepositoryRoot(), "migrations"), ActorID: runner, IdempotencyKey: key}
 	p22FaultOK(t, json.Unmarshal(request, &options.Request))
@@ -964,7 +964,7 @@ func TestP23HumanOutcomeRequiredRaisedByArtifactAvailability(t *testing.T) {
 		return eventID
 	}
 	verify("artifact-readiness-missing", "missing")
-	linked := p23RunInput(t, a, "evidence", "link", a.actor, "artifact-readiness-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{artifact.ID}})
+	linked := p23RunInput(t, a, "evidence", "link", a.actor, "artifact-readiness-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{artifact.ID}})
 	assertP23HumanOutcomeSuccess(t, linked)
 	security := p23RecordHumanOutcome(t, a, "artifact-readiness-security", a.actor, "security", "approved")
 	assertP23HumanOutcomeSuccess(t, security)

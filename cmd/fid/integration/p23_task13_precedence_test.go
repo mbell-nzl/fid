@@ -36,7 +36,7 @@ func TestP23FailurePrecedenceWithReadinessStopAndObligation(t *testing.T) {
 	releaseID := p21PathString(t, p23Envelope(t, release.Stdout), "result", "outcome", "id")
 	assertP23HumanOutcomeSuccess(t, p23LinkHumanOutcome(t, a, "precedence-release-link", "OBL-human-release", releaseID))
 	gate := p23RunQualifyingGateSession(t, a, "precedence-gate")
-	assertP23HumanOutcomeSuccess(t, p23RunInput(t, a, "evidence", "link", a.actor, "precedence-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}}))
+	assertP23HumanOutcomeSuccess(t, p23RunInput(t, a, "evidence", "link", a.actor, "precedence-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}}))
 	p23SatisfyCoexistingReview(t, a, "precedence-review")
 	assertP23HumanOutcomeStopState(t, a, "security", "open")
 	rejected := p23RecordHumanOutcome(t, a, "precedence-release-rejected", a.actor, "release", "rejected")

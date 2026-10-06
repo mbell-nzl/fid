@@ -359,22 +359,6 @@ func validateRegisterRequest(request RegisterRequest) error {
 	return nil
 }
 
-func validateRepositoryBinding(request RegisterRequest, projectID string) error {
-	repository := request.Repository
-	if repository.CaptureSource != "git" || repository.ProjectID != projectID || repository.WorktreeID != request.WorktreeID || !validOID(repository.HeadOID) || !validOID(repository.TreeOID) || (repository.BaseOID != nil && !validOID(*repository.BaseOID)) || (repository.Dirty && (repository.DirtyDigest == nil || !validDigest(*repository.DirtyDigest))) || (!repository.Dirty && repository.DirtyDigest != nil) {
-		return &ExecutorPolicyUnsupportedError{Fields: []string{"repository"}}
-	}
-	return nil
-}
-
-func validOID(value string) bool {
-	return len(value) == 40 && strings.Trim(value, "0123456789abcdef") == ""
-}
-
-func validDigest(value string) bool {
-	return strings.HasPrefix(value, "sha256:") && len(value) == 71 && strings.TrimPrefix(value, "sha256:") != ""
-}
-
 func gateBindingDigest(request RegisterRequest) (string, error) {
 	payload, err := journal.MarshalCanonicalJSON(map[string]any{"repository": request.Repository, "scope": request.Scope, "worktree_id": request.WorktreeID})
 	if err != nil {

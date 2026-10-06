@@ -25,7 +25,7 @@ func TestP22RunReplayRetainsHistoricalBudgetSnapshot(t *testing.T) {
 			if operation == "run.abandon" {
 				p22StartAfterAbandon(t, adapter, before)
 			}
-			gate := p22GateRun(t, adapter.binary, adapter.workspace, adapter.actor, p21Input(t, adapter.workspace, "later-budget-charge", map[string]any{"run_id": adapter.runID, "registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": adapter.repository}), "later-budget-charge")
+			gate := p22GateRun(t, adapter.binary, adapter.workspace, adapter.actor, p21Input(t, adapter.workspace, "later-budget-charge", map[string]any{"run_id": adapter.runID, "registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "expected_repository": map[string]any{"head_oid": adapter.repository["head_oid"], "dirty": adapter.repository["dirty"]}}), "later-budget-charge")
 			if p21PathString(t, gate, "result", "receipt", "outcome") != "succeeded" {
 				t.Fatalf("later Gate failed: %#v", gate)
 			}

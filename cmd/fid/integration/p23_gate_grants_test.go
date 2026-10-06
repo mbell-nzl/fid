@@ -49,7 +49,7 @@ func TestP23GateRunAuthorizesEveryEnvelopeGrantThroughBuiltBinary(t *testing.T) 
 	p23AssertReviewSuccess(t, "activate the three-Grant Envelope", activated)
 
 	gateInput := func(runID string) map[string]any {
-		return map[string]any{"run_id": runID, "registration_id": registration["id"], "registration_version": registration["version"], "obligation_id": "OBL-p23-gate-grants", "repository": a.repository}
+		return map[string]any{"run_id": runID, "registration_id": registration["id"], "registration_version": registration["version"], "obligation_id": "OBL-p23-gate-grants", "expected_repository": map[string]any{"head_oid": a.repository["head_oid"], "dirty": a.repository["dirty"]}}
 	}
 	session := func(actor string) (runID, claimID string) {
 		claim := p23RunInput(t, a, "claim", "acquire", actor, "p23-gate-grants-claim-"+actor, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 3600})

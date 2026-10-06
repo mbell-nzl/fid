@@ -297,7 +297,7 @@ func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *test
 	linkPath := filepath.Join(workspace, "artifact-lifecycle-evidence.json")
 	writeActivationInput(t, linkPath, map[string]any{
 		"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": receiptID, "review_id": nil, "human_outcome_id": nil,
-		"target_repository": repository, "required_artifact_ids": []string{artifactID},
+		"required_artifact_ids": []string{artifactID},
 	})
 	linked := executeCommandForTest(workspace,
 		"--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder",
@@ -425,7 +425,7 @@ func artifactIdentitySnapshot(t *testing.T, conn *sql.DB, artifactID, receiptID 
 func evaluateEvidenceForArtifactTest(t *testing.T, workspace, obligationID string, repository map[string]any) map[string]any {
 	t.Helper()
 	path := filepath.Join(workspace, "artifact-lifecycle-evaluate.json")
-	writeActivationInput(t, path, map[string]any{"obligation_id": obligationID, "target_repository": repository})
+	writeActivationInput(t, path, map[string]any{"obligation_id": obligationID})
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", path)
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("evaluate lifecycle Evidence = %#v, want evaluation", result)

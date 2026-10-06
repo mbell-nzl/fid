@@ -6,9 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
-	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/evidence"
@@ -269,35 +266,6 @@ func newGateResolveCommand() *cobra.Command {
 	cmd.Flags().IntVar(&version, "version", 0, "Registration version")
 	cmd.SetFlagErrorFunc(canonicalFlagError("gate.resolve"))
 	return cmd
-}
-
-func decodeClosedGateInput(stdin io.Reader, path string, target any) error {
-	var payload []byte
-	var err error
-	if path == "-" {
-		payload, err = io.ReadAll(io.LimitReader(stdin, 1_048_577))
-	} else {
-		payload, err = os.ReadFile(path)
-	}
-	if err != nil {
-		return fmt.Errorf("read gate input: %w", err)
-	}
-	if len(payload) > 1_048_576 {
-		return fmt.Errorf("gate input exceeds 1048576 bytes")
-	}
-	decoder := json.NewDecoder(strings.NewReader(string(payload)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		return fmt.Errorf("decode gate input: %w", err)
-	}
-	if decoder.More() {
-		return fmt.Errorf("gate input must contain one object")
-	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		return fmt.Errorf("gate input must contain one object")
-	}
-	return nil
 }
 
 func renderGateError(cmd *cobra.Command, operation string, cause error) error {

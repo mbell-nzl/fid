@@ -41,7 +41,7 @@ func TestStopPredicatesAcrossRunStartAndGateRunCommands(t *testing.T) {
 				} else {
 					inputPath := filepath.Join(workspace, "stop-operation-gate-run.json")
 					binding := envelopeBindingForWorkspace(t, workspace)
-					writeActivationInput(t, inputPath, map[string]any{"registration_id": binding.registrationID, "registration_version": binding.registrationVersion, "obligation_id": binding.obligationID, "run_id": runID, "repository": repository})
+					writeActivationInput(t, inputPath, map[string]any{"registration_id": binding.registrationID, "registration_version": binding.registrationVersion, "obligation_id": binding.obligationID, "run_id": runID, "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]}})
 					result = executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", "stop-operation-gate-run-"+state)
 				}
 
@@ -192,7 +192,7 @@ func TestStopOperationFixtureExecutesInEachClonedWorkspace(t *testing.T) {
 		runID := startStopMatrixRun(t, row.root, row.issue, row.envelope, claim["id"], repository, "fixture")
 		input := filepath.Join(row.root, "fixture-gate.json")
 		binding := envelopeBindingForWorkspace(t, row.root)
-		writeActivationInput(t, input, map[string]any{"registration_id": binding.registrationID, "registration_version": binding.registrationVersion, "obligation_id": binding.obligationID, "run_id": runID, "repository": repository})
+		writeActivationInput(t, input, map[string]any{"registration_id": binding.registrationID, "registration_version": binding.registrationVersion, "obligation_id": binding.obligationID, "run_id": runID, "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]}})
 		result := executeCommandForTest(row.root, "--project", row.root, "--json", "gate", "run", "--actor", "actor-builder", "--input", input, "--idempotency-key", "fixture-gate")
 		if result.err != nil {
 			t.Fatalf("execute clone %d: %v: %s", index, result.err, result.stderr)

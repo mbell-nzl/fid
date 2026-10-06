@@ -17,7 +17,7 @@ func TestP24GateEvidenceAndEnvelopeKeyedLeafCorpus(t *testing.T) {
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, p22FinalActions)
 	p24StartKeyedCapture(a.workspace)
 	p22AcceptedCall(t, a, "p24-gate-evidence-budget", "run.observe-budget", map[string]any{"value": 0})
-	input := map[string]any{"run_id": a.runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": a.repository}
+	input := map[string]any{"run_id": a.runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "expected_repository": map[string]any{"head_oid": a.repository["head_oid"], "dirty": a.repository["dirty"]}}
 	baseline := p23RunInput(t, a, "gate", "run", a.actor, "p24-gate-evidence", input)
 	if baseline.ExitCode != 0 || baseline.Stderr != "" {
 		t.Fatalf("gate.run baseline = %d stderr=%q stdout=%q", baseline.ExitCode, baseline.Stderr, baseline.Stdout)
@@ -52,7 +52,7 @@ func TestP24GateEvidenceAndEnvelopeKeyedLeafCorpus(t *testing.T) {
 	if after := p21JournalEventCount(t, a.workspace); after != gateEvents {
 		t.Fatalf("gate.run replay/conflict appended Events: %d -> %d", gateEvents, after)
 	}
-	linked := p23RunInput(t, a, "evidence", "link", a.actor, "p24-evidence-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": receiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	linked := p23RunInput(t, a, "evidence", "link", a.actor, "p24-evidence-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": receiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	if linked.ExitCode != 0 || linked.Stderr != "" {
 		t.Fatalf("evidence.link = %d %q", linked.ExitCode, linked.Stderr)
 	}

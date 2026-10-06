@@ -88,7 +88,7 @@ func TestRecoveryLiveRebuildImportParity(t *testing.T) {
 		"registration_version": destination.registrationVersion,
 		"obligation_id":        "OBL-p22-corpus",
 		"run_id":               destination.runID,
-		"repository":           destination.repository,
+		"expected_repository":  p24ExpectedRepository(destination.repository),
 	})
 	gate := p22GateRun(t, destination.binary, target, destination.actor, gateInput, "p22-import-successor-gate")
 	if receipt := p21PathString(t, gate, "result", "receipt", "id"); receipt == "" {

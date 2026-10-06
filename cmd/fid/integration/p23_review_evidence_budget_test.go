@@ -53,7 +53,7 @@ func TestP23ReviewEvidenceRealProcessJourney(t *testing.T) {
 	conflict := p23RunInput(t, a, "evidence", "link", "actor-recovery", "evidence-pass", map[string]any{
 		"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil,
 		"review_id": passReview["id"], "human_outcome_id": nil,
-		"target_repository": a.repository, "required_artifact_ids": []string{"ART-conflicting"},
+		"required_artifact_ids": []string{"ART-conflicting"},
 	})
 	assertP22ProcessFailure(t, "evidence.link", "idempotency-conflict", 4, conflict)
 	if after := p21JournalEventCount(t, a.workspace); after != before {
@@ -303,12 +303,12 @@ func p23AssertReviewCyclesUnchanged(t *testing.T, stage string, want, got []p23R
 
 func p23EvidenceLink(t *testing.T, a *p22FIDRecoveryAdapter, key, reviewID string) p22ConformanceResponse {
 	t.Helper()
-	return p23RunInput(t, a, "evidence", "link", "actor-recovery", key, map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil, "review_id": reviewID, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	return p23RunInput(t, a, "evidence", "link", "actor-recovery", key, map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil, "review_id": reviewID, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 }
 
 func p23EvidenceEvaluate(t *testing.T, a *p22FIDRecoveryAdapter) p22ConformanceResponse {
 	t.Helper()
-	response := a.p22Run(t, "evidence", "evaluate", "--input", p21Input(t, a.workspace, "p23-evaluate", map[string]any{"obligation_id": nil, "target_repository": a.repository}))
+	response := a.p22Run(t, "evidence", "evaluate", "--input", p21Input(t, a.workspace, "p23-evaluate", map[string]any{"obligation_id": nil}))
 	p23AssertReviewSuccess(t, "evidence evaluate", response)
 	return response
 }

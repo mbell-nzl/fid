@@ -8,6 +8,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/evidence"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 func init() {
@@ -124,7 +125,59 @@ func newEvidenceEvaluateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&inputPath, "input", "", "Evidence evaluation JSON input")
 	cmd.SetFlagErrorFunc(canonicalFlagError("evidence.evaluate"))
 	installInputDescriptor(cmd, inputDescriptorRegistry["evidence evaluate"])
+	installEvidenceEvaluateExampleParsing(cmd)
 	return cmd
+}
+
+// Evaluation has no Actor or key flags. Parse those spellings only in an
+// example request so the exclusive template contract can name its conflict.
+func installEvidenceEvaluateExampleParsing(cmd *cobra.Command) {
+	originalRun := cmd.RunE
+	cmd.DisableFlagParsing, cmd.Args = true, nil
+	cmd.RunE = func(cmd *cobra.Command, raw []string) error {
+		example := false
+		for _, arg := range raw {
+			if arg == "--" {
+				break
+			}
+			example = example || arg == "--example" || arg == "--example=true"
+		}
+		if example {
+			flags := pflag.NewFlagSet("evidence.evaluate example", pflag.ContinueOnError)
+			flags.AddFlagSet(cmd.Flags())
+			flags.AddFlagSet(cmd.InheritedFlags())
+			flags.String("actor", "", "")
+			flags.String("idempotency-key", "", "")
+			if err := flags.Parse(raw); err != nil {
+				return canonicalFlagError("evidence.evaluate")(cmd, err)
+			}
+			for _, spelling := range []string{"json", "project", "input", "actor", "idempotency-key"} {
+				flag := flags.Lookup(spelling)
+				if flag != nil && flag.Changed {
+					var value any = flag.Value.String()
+					if spelling == "json" {
+						value = nil
+					}
+					return writeExampleConflict(cmd, "evidence.evaluate", "--"+spelling, value)
+				}
+			}
+			return originalRun(cmd, flags.Args())
+		}
+		cmd.DisableFlagParsing = false
+		parseErr := cmd.ParseFlags(raw)
+		cmd.DisableFlagParsing = true
+		if parseErr != nil {
+			return canonicalFlagError("evidence.evaluate")(cmd, parseErr)
+		}
+		if help, _ := cmd.Flags().GetBool("help"); help {
+			return cmd.Help()
+		}
+		args := cmd.Flags().Args()
+		if err := canonicalNoArgs("evidence.evaluate")(cmd, args); err != nil {
+			return err
+		}
+		return originalRun(cmd, args)
+	}
 }
 
 func renderEvidenceError(cmd *cobra.Command, operation string, cause error) error {

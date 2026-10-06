@@ -16,7 +16,7 @@ func TestP24ArtifactVerifyKeyedLeafCorpus(t *testing.T) {
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{artifactName}, p22FinalActions)
 	p22Write(t, a.workspace, artifactName, "phase 24 artifact\n")
 	p22AcceptedCall(t, a, "p24-artifact-budget", "run.observe-budget", map[string]any{"value": 0})
-	gate := p23RunInput(t, a, "gate", "run", a.actor, "p24-artifact-gate", map[string]any{"run_id": a.runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": a.repository})
+	gate := p23RunInput(t, a, "gate", "run", a.actor, "p24-artifact-gate", map[string]any{"run_id": a.runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "expected_repository": map[string]any{"head_oid": a.repository["head_oid"], "dirty": a.repository["dirty"]}})
 	if gate.ExitCode != 0 || gate.Stderr != "" {
 		t.Fatalf("artifact gate = %d stderr=%q", gate.ExitCode, gate.Stderr)
 	}

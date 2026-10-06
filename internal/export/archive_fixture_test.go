@@ -78,7 +78,7 @@ func addJournalBackedExportFixtureFacts(t *testing.T, workspace string) string {
 	if _, err := workflow.ActivateEnvelope(workflow.EnvelopeOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-envelope-activate"}, workflow.EnvelopeActivateRequest{EnvelopeID: created.Envelope.ID, ExpectedRevision: 1}); err != nil {
 		t.Fatalf("activate fixture envelope: %v", err)
 	}
-	claim, err := claims.AcquireGeneric(claims.MutationOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-claim"}, claims.AcquireRequest{IssueID: issue.ID, EnvelopeID: created.Envelope.ID, EnvelopeRevision: 1, WorktreeID: repository.WorktreeID, Scope: claims.Scope{Paths: []string{"fixture-artifact.txt"}}, TTLSeconds: 3600})
+	claim, err := claims.AcquireGeneric(claims.MutationOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-claim"}, claims.AcquireRequest{IssueID: issue.ID, EnvelopeID: created.Envelope.ID, EnvelopeRevision: 1, WorktreeID: repository.WorktreeID, Scope: claims.Scope{Paths: []string{"fixture-artifact.txt", "fixture-work.txt"}}, TTLSeconds: 3600})
 	if err != nil {
 		t.Fatalf("acquire fixture claim: %v", err)
 	}
@@ -91,7 +91,7 @@ func addJournalBackedExportFixtureFacts(t *testing.T, workspace string) string {
 	if err := os.WriteFile(filepath.Join(workspace, "fixture-artifact.txt"), artifactData, 0o600); err != nil {
 		t.Fatalf("write fixture artifact input: %v", err)
 	}
-	gate, err := evidence.RunGate(context.Background(), evidence.GateRunOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-gate-run", Request: evidence.GateRunRequest{RegistrationID: registration.Registration.ID, RegistrationVersion: registration.Registration.Version, ObligationID: obligation.ID, RunID: run.Run.ID, Repository: evidenceRepository(repository)}})
+	gate, err := evidence.RunGate(context.Background(), evidence.GateRunOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-gate-run", Request: evidence.GateRunRequest{RegistrationID: registration.Registration.ID, RegistrationVersion: registration.Registration.Version, ObligationID: obligation.ID, RunID: run.Run.ID, ExpectedRepository: fidproject.ExpectedRepository{HeadOID: repository.HeadOID, Dirty: repository.Dirty}}})
 	if err != nil {
 		t.Fatalf("run fixture gate: %v", err)
 	}
@@ -127,11 +127,16 @@ func addRecoveredExportFixtureFacts(t *testing.T, workspace string) string {
 	if _, err := claims.ReleaseGeneric(claims.MutationOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-claim-release"}, claims.ReleaseRequest{ClaimID: prior.ClaimID, ExpectedVersion: claimVersion, Reason: "operator-released"}); err != nil {
 		t.Fatalf("release fixture predecessor Claim: %v", err)
 	}
+	// Artifact material remains ignored. Recovery adopts an actual tracked
+	// work change rather than using generated material as repository proof.
+	if err := os.WriteFile(filepath.Join(workspace, "fixture-work.txt"), []byte("work to adopt\n"), 0o600); err != nil {
+		t.Fatalf("edit fixture recovery work: %v", err)
+	}
 	inspection, err := workflow.InspectRun(workspace, migrationsDir, prior.ID, workspace)
 	if err != nil {
 		t.Fatalf("inspect fixture Run for recovery: %v", err)
 	}
-	if _, err := workflow.RecoverRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-run-recover"}, workflow.RunRecoveryRequest{PriorRunID: prior.ID, ExpectedRunVersion: observation.Run.Version, ExpectedClaimVersion: claimVersion + 1, ObservationID: observation.Observation.ID, ReconciliationDigest: inspection.Reconciliation.Digest, AdoptedPaths: []string{"fixture-artifact.txt"}, Authority: workflow.RecoveryAuthority{Mode: "ordinary", ActorID: "actor-builder", Reason: "trusted termination"}, Executor: workflow.Executor{ID: "executor-recovered", Source: "activated-harness"}, TTLSeconds: 60}); err != nil {
+	if _, err := workflow.RecoverRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-run-recover"}, workflow.RunRecoveryRequest{PriorRunID: prior.ID, ExpectedRunVersion: observation.Run.Version, ExpectedClaimVersion: claimVersion + 1, ObservationID: observation.Observation.ID, ReconciliationDigest: inspection.Reconciliation.Digest, AdoptedPaths: []string{"fixture-work.txt"}, Authority: workflow.RecoveryAuthority{Mode: "ordinary", ActorID: "actor-builder", Reason: "trusted termination"}, Executor: workflow.Executor{ID: "executor-recovered", Source: "activated-harness"}, TTLSeconds: 60}); err != nil {
 		t.Fatalf("recover fixture Run: %v", err)
 	}
 	return artifactEntry
@@ -217,13 +222,16 @@ func fixtureRepository(t *testing.T, workspace, projectID string) workflow.Repos
 	if err := os.MkdirAll(filepath.Join(workspace, "project-docs", "gates"), 0o755); err != nil {
 		t.Fatalf("create fixture Source directory: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(workspace, ".gitignore"), []byte(".fid/\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(workspace, ".gitignore"), []byte(".fid/\nfixture-artifact.txt\n"), 0o644); err != nil {
 		t.Fatalf("write fixture gitignore: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(workspace, "project-docs", "gates", "fixture.json"), []byte("{\"fixture\":true}\n"), 0o644); err != nil {
 		t.Fatalf("write fixture Source prose: %v", err)
 	}
-	fixtureGit(t, workspace, "add", ".gitignore", "project-docs/gates/fixture.json")
+	if err := os.WriteFile(filepath.Join(workspace, "fixture-work.txt"), []byte("original work\n"), 0o600); err != nil {
+		t.Fatalf("write fixture recovery work: %v", err)
+	}
+	fixtureGit(t, workspace, "add", ".gitignore", "project-docs/gates/fixture.json", "fixture-work.txt")
 	fixtureGit(t, workspace, "commit", "-qm", "fixture source")
 	observed, err := fidproject.ObserveRepository(workspace)
 	if err != nil {

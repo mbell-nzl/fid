@@ -273,7 +273,7 @@ func p23ProtectedDecisionFixture(t *testing.T, binary, root string) p23HumanChec
 	if err != nil || gate.Receipt == nil {
 		t.Fatalf("fixture gate: %#v %v", gate, err)
 	}
-	linked := p23RunInput(t, a, "evidence", "link", a.actor, "fixture-proof-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	linked := p23RunInput(t, a, "evidence", "link", a.actor, "fixture-proof-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	assertP23DecisionCommandSuccess(t, "fixture evidence", linked)
 	reference := p23RecordDecision(t, a, "fixture-security", "security", "approved", []string{"decision.record-reference"}, p23DecisionSource(a, true))
 	assertP23DecisionSuccess(t, reference, 0)

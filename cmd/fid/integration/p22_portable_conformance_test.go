@@ -111,7 +111,7 @@ func p22PortableSource(t *testing.T, state string) (*p22FIDRecoveryAdapter, []st
 		activations = append(activations, p21PathString(t, prepared, "result", "activation", "id"))
 	case "missing-artifact":
 		accepted("portable-artifact-budget", "run.observe-budget", nil)
-		gate := p22GateRun(t, a.binary, a.workspace, a.actor, p21Input(t, a.workspace, "portable-artifact-gate", map[string]any{"run_id": a.runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": a.repository}), "portable-artifact-gate")
+		gate := p22GateRun(t, a.binary, a.workspace, a.actor, p21Input(t, a.workspace, "portable-artifact-gate", map[string]any{"run_id": a.runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "expected_repository": map[string]any{"head_oid": a.repository["head_oid"], "dirty": a.repository["dirty"]}}), "portable-artifact-gate")
 		artifacts := p21Path(t, gate, "result", "receipt", "artifacts").([]any)
 		if len(artifacts) != 1 {
 			t.Fatalf("portable artifact fixture = %#v", artifacts)

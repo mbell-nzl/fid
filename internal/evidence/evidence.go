@@ -42,18 +42,16 @@ type Evaluation struct {
 }
 
 type EvidenceLinkRequest struct {
-	ObligationID        string     `json:"obligation_id"`
-	EvidenceType        string     `json:"evidence_type"`
-	ReceiptID           *string    `json:"receipt_id"`
-	ReviewID            *string    `json:"review_id"`
-	HumanOutcomeID      *string    `json:"human_outcome_id"`
-	TargetRepository    Repository `json:"-"`
-	RequiredArtifactIDs []string   `json:"required_artifact_ids"`
+	ObligationID        string   `json:"obligation_id"`
+	EvidenceType        string   `json:"evidence_type"`
+	ReceiptID           *string  `json:"receipt_id"`
+	ReviewID            *string  `json:"review_id"`
+	HumanOutcomeID      *string  `json:"human_outcome_id"`
+	RequiredArtifactIDs []string `json:"required_artifact_ids"`
 }
 
 type EvidenceEvaluateRequest struct {
-	ObligationID     *string    `json:"obligation_id"`
-	TargetRepository Repository `json:"-"`
+	ObligationID *string `json:"obligation_id"`
 }
 
 type EvidenceLinkOptions struct {

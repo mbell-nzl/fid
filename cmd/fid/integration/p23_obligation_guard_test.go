@@ -100,7 +100,7 @@ func p23AdvanceToQAReview(t *testing.T, a *p22FIDRecoveryAdapter, key string) {
 func p23SatisfyGateEvidence(t *testing.T, a *p22FIDRecoveryAdapter, key string) {
 	t.Helper()
 	gate := p23RunQualifyingGateSession(t, a, key+"-proof")
-	linked := p23RunInput(t, a, "evidence", "link", a.actor, key+"-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	linked := p23RunInput(t, a, "evidence", "link", a.actor, key+"-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	assertP23HumanOutcomeSuccess(t, linked)
 }
 

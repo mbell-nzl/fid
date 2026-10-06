@@ -49,19 +49,19 @@ func TestArtifactLossHonorsRequiredMaterialAndPreservesProofIdentity(t *testing.
 			}
 			repository := runRepositoryForTest(t, workspace)
 			linkPath := filepath.Join(workspace, "material-policy-link.json")
-			writeActivationInput(t, linkPath, map[string]any{"obligation_id": testEvidenceObligationID, "evidence_type": "receipt", "receipt_id": receiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository, "required_artifact_ids": requiredIDs})
+			writeActivationInput(t, linkPath, map[string]any{"obligation_id": testEvidenceObligationID, "evidence_type": "receipt", "receipt_id": receiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": requiredIDs})
 			linked := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "material-policy-link")
 			if linked.err != nil {
 				t.Fatalf("link Evidence: %#v", linked)
 			}
 			evidence := decodeCanonicalResult(t, linked.stdout)["evidence"].(map[string]any)
 			fixture := linkedEvidenceFixture{workspace: workspace, obligationID: testEvidenceObligationID, evidenceID: evidence["id"].(string), artifactID: artifactID, digest: artifact["digest"].(string), repository: repository}
-			assertEvaluation(t, fixture.evaluate(t, repository), "valid", "fresh", "available", []string{})
+			assertEvaluation(t, fixture.evaluate(t), "valid", "fresh", "available", []string{})
 			fixture.observeArtifactMissing(t)
 			if required {
-				assertEvaluation(t, fixture.evaluate(t, repository), "valid", "fresh", "missing", []string{"artifact-unavailable"})
+				assertEvaluation(t, fixture.evaluate(t), "valid", "fresh", "missing", []string{"artifact-unavailable"})
 			} else {
-				assertEvaluation(t, fixture.evaluate(t, repository), "valid", "fresh", "available", []string{})
+				assertEvaluation(t, fixture.evaluate(t), "valid", "fresh", "available", []string{})
 			}
 			if got := read("evidence", fixture.evidenceID); !reflect.DeepEqual(got, evidence) {
 				t.Fatalf("loss changed immutable Evidence: before=%#v after=%#v", evidence, got)

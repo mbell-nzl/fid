@@ -157,6 +157,10 @@ func TestP24ReceiptEvidenceUsesSubjectAndCurrentObservation(t *testing.T) {
 		t.Fatal(err)
 	}
 	writeActivationInput(t, path, map[string]any{"obligation_id": input["obligation_id"], "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
+	savedGit := filepath.Join(t.TempDir(), "saved-git")
+	if err := os.Rename(filepath.Join(root, ".git"), savedGit); err != nil {
+		t.Fatal(err)
+	}
 	linked := executeCommandForTest(root, "--project", root, "--json", "evidence", "link", "--actor", "actor-builder", "--input", path, "--idempotency-key", "p24-derived-link")
 	if linked.err != nil {
 		t.Fatalf("link: %#v", linked)
@@ -165,6 +169,9 @@ func TestP24ReceiptEvidenceUsesSubjectAndCurrentObservation(t *testing.T) {
 		t.Fatalf("target = %#v, want subject %#v", got, observed)
 	}
 	p24AssertBindingEventRepository(t, root, observed)
+	if err := os.Rename(savedGit, filepath.Join(root, ".git")); err != nil {
+		t.Fatal(err)
+	}
 	for _, state := range []string{"edited", "reverted"} {
 		if state == "reverted" {
 			if err := os.Remove(filepath.Join(root, "later.txt")); err != nil {

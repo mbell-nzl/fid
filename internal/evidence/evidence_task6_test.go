@@ -104,7 +104,7 @@ func TestEvidenceWireCarriesExactlyOneNullableSubject(t *testing.T) {
 func TestEvidenceLinkInputRequiresOneSubjectMatchingType(t *testing.T) {
 	t.Parallel()
 	receiptID, reviewID := "RCP-1", "REV-1"
-	base := EvidenceLinkOptions{WorkspaceRoot: "/workspace", MigrationsDir: "/migrations", ActorID: "ACT-1", IdempotencyKey: "key", Request: EvidenceLinkRequest{ObligationID: "OBL-1", EvidenceType: "receipt", ReceiptID: &receiptID, TargetRepository: task6EvidenceRepository(), RequiredArtifactIDs: []string{}}}
+	base := EvidenceLinkOptions{WorkspaceRoot: "/workspace", MigrationsDir: "/migrations", ActorID: "ACT-1", IdempotencyKey: "key", Request: EvidenceLinkRequest{ObligationID: "OBL-1", EvidenceType: "receipt", ReceiptID: &receiptID, RequiredArtifactIDs: []string{}}}
 	if err := validateEvidenceLinkOptions(base); err != nil {
 		t.Fatalf("valid typed Evidence input = %v", err)
 	}
@@ -155,7 +155,7 @@ func TestLoadReviewEvidenceBindingEnforcesVerdictTypeAndLinkTimeIndependence(t *
 	execReviewEvidenceSQL(t, conn, `INSERT INTO review_records VALUES ('REV-pass','RUN-review','ISS-1','ENV-1',1,'ACT-reviewer','standard',?,'pass')`, string(repositoryJSON))
 
 	reviewID := "REV-pass"
-	request := EvidenceLinkRequest{ObligationID: "OBL-review", EvidenceType: "review", ReviewID: &reviewID, TargetRepository: repository, RequiredArtifactIDs: []string{}}
+	request := EvidenceLinkRequest{ObligationID: "OBL-review", EvidenceType: "review", ReviewID: &reviewID, RequiredArtifactIDs: []string{}}
 	binding := reviewEvidenceBindingForTest("review")
 	if err := loadReviewEvidenceBinding(conn, request, &binding); err != nil {
 		t.Fatalf("load pass Review binding: %v", err)

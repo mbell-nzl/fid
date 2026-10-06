@@ -60,7 +60,7 @@ func p24SingleGateAndArtifact(t *testing.T, a *p22FIDRecoveryAdapter) {
 	t.Helper()
 	p22Write(t, a.workspace, "artifact.json", "phase 24 artifact\n")
 	p22AcceptedCall(t, a, "p24-single-budget", "run.observe-budget", map[string]any{"value": 0})
-	gate := p23RunInput(t, a, "gate", "run", a.actor, "p24-single-gate", map[string]any{"run_id": a.runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": a.repository})
+	gate := p23RunInput(t, a, "gate", "run", a.actor, "p24-single-gate", map[string]any{"run_id": a.runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "expected_repository": map[string]any{"head_oid": a.repository["head_oid"], "dirty": a.repository["dirty"]}})
 	if gate.ExitCode != 0 || gate.Stderr != "" {
 		t.Fatalf("single-journal gate.run = %d stderr=%q", gate.ExitCode, gate.Stderr)
 	}
@@ -72,7 +72,7 @@ func p24SingleGateAndArtifact(t *testing.T, a *p22FIDRecoveryAdapter) {
 	}
 	artifact := artifacts[0].(map[string]any)
 	p24SingleInput(t, a, "artifact", "verify", "p24-single-artifact", map[string]any{"artifact_id": artifact["id"]})
-	p24SingleInput(t, a, "evidence", "link", "p24-single-evidence", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": receipt["id"], "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	p24SingleInput(t, a, "evidence", "link", "p24-single-evidence", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": receipt["id"], "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 }
 
 func p24SingleRenew(t *testing.T, a *p22FIDRecoveryAdapter) {

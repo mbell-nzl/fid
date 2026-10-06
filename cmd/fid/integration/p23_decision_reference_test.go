@@ -95,7 +95,7 @@ func TestP23DecisionReferenceProtectedLifecycleRealProcess(t *testing.T) {
 	if err != nil || gate.Receipt == nil {
 		t.Fatalf("run qualifying gate: result=%#v error=%v", gate, err)
 	}
-	linked := p23RunInput(t, a, "evidence", "link", a.actor, "task9-proof-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	linked := p23RunInput(t, a, "evidence", "link", a.actor, "task9-proof-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	assertP23DecisionCommandSuccess(t, "link qualifying Evidence", linked)
 	assertP23DecisionCommandSuccess(t, "transition terminal with unrelated release Decision open", p23IssueTransition(t, a, "qa_pass", 4, "task9-qa-pass"))
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "task9-close")

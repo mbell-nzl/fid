@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -18,29 +19,34 @@ func TestEvidenceLinkAndEvaluateKeepsTrustedDimensionsIndependent(t *testing.T) 
 	t.Parallel()
 	t.Run("validity changes only validity", func(t *testing.T) {
 		fixture := newLinkedEvidenceFixture(t, "validity")
-		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "valid", "fresh", "available", []string{})
+		assertEvaluation(t, fixture.evaluate(t), "valid", "fresh", "available", []string{})
 		fixture.updateValidity(t, "invalid")
-		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "invalid", "fresh", "available", []string{"evidence-invalid"})
+		assertEvaluation(t, fixture.evaluate(t), "invalid", "fresh", "available", []string{"evidence-invalid"})
 	})
 
 	t.Run("tree state changes freshness while branch label does not", func(t *testing.T) {
 		fixture := newLinkedEvidenceFixture(t, "freshness")
-		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "valid", "fresh", "available", []string{})
+		assertEvaluation(t, fixture.evaluate(t), "valid", "fresh", "available", []string{})
 
-		branchMoved := cloneJSONMap(t, fixture.repository)
-		branchMoved["head_oid"] = strings.Repeat("c", 40)
-		assertEvaluation(t, fixture.evaluate(t, branchMoved), "valid", "fresh", "available", []string{})
+		before := testEnvelopeRepository(t, fixture.workspace)
+		runGitForTest(t, fixture.workspace, "commit", "--allow-empty", "-m", "branch label only")
+		after := testEnvelopeRepository(t, fixture.workspace)
+		if before["head_oid"] == after["head_oid"] || before["tree_oid"] != after["tree_oid"] {
+			t.Fatal("branch control must change HEAD without changing tree")
+		}
+		assertEvaluation(t, fixture.evaluate(t), "valid", "fresh", "available", []string{})
 
-		changedTree := cloneJSONMap(t, fixture.repository)
-		changedTree["tree_oid"] = strings.Repeat("d", 40)
-		assertEvaluation(t, fixture.evaluate(t, changedTree), "valid", "stale", "available", []string{"evidence-stale"})
+		if err := os.WriteFile(filepath.Join(fixture.workspace, "tracked-proof.txt"), []byte("changed"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		assertEvaluation(t, fixture.evaluate(t), "valid", "stale", "available", []string{"evidence-stale"})
 	})
 
 	t.Run("Artifact availability changes only Artifact availability", func(t *testing.T) {
 		fixture := newLinkedEvidenceFixture(t, "artifact")
-		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "valid", "fresh", "available", []string{})
+		assertEvaluation(t, fixture.evaluate(t), "valid", "fresh", "available", []string{})
 		fixture.observeArtifactMissing(t)
-		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "valid", "fresh", "missing", []string{"artifact-unavailable"})
+		assertEvaluation(t, fixture.evaluate(t), "valid", "fresh", "missing", []string{"artifact-unavailable"})
 		got := executeCommandForTest(fixture.workspace, "--project", fixture.workspace, "--json", "evidence", "get", fixture.evidenceID)
 		if got.err != nil || got.stderr != "" {
 			t.Fatalf("Artifact loss changed Evidence identity: %#v", got)
@@ -56,12 +62,13 @@ func TestEvidenceEvaluationMultiFailureGoldenSurvivesRepeatAndRebuild(t *testing
 	t.Parallel()
 	fixture := newLinkedEvidenceFixture(t, "golden")
 	fixture.observeArtifactMissing(t)
-	staleRepository := cloneJSONMap(t, fixture.repository)
-	staleRepository["tree_oid"] = strings.Repeat("e", 40)
+	if err := os.WriteFile(filepath.Join(fixture.workspace, "tracked-proof.txt"), []byte("changed"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 
-	assertEvaluation(t, fixture.evaluate(t, staleRepository), "valid", "stale", "missing", []string{"evidence-stale", "artifact-unavailable"})
-	first := fixture.evaluateGolden(t, staleRepository)
-	if repeated := fixture.evaluateGolden(t, staleRepository); repeated != first {
+	assertEvaluation(t, fixture.evaluate(t), "valid", "stale", "missing", []string{"evidence-stale", "artifact-unavailable"})
+	first := fixture.evaluateGolden(t)
+	if repeated := fixture.evaluateGolden(t); repeated != first {
 		t.Fatalf("repeated multi-failure Evaluation = %s, want byte-identical %s", repeated, first)
 	}
 
@@ -69,7 +76,7 @@ func TestEvidenceEvaluationMultiFailureGoldenSurvivesRepeatAndRebuild(t *testing
 	if rebuilt.err != nil || rebuilt.stderr != "" {
 		t.Fatalf("rebuild Evidence fixture = %#v, want journal rebuild", rebuilt)
 	}
-	if afterRebuild := fixture.evaluateGolden(t, staleRepository); afterRebuild != first {
+	if afterRebuild := fixture.evaluateGolden(t); afterRebuild != first {
 		t.Fatalf("post-rebuild multi-failure Evaluation = %s, want byte-identical %s", afterRebuild, first)
 	}
 }
@@ -91,7 +98,7 @@ func TestEvidenceEvaluateNullObligationReturnsActiveRevisionInIDOrder(t *testing
 		t.Fatalf("activate multi-Obligation Envelope = %#v", activated)
 	}
 
-	writeActivationInput(t, path, map[string]any{"obligation_id": nil, "target_repository": testEnvelopeRepository(t, workspace)})
+	writeActivationInput(t, path, map[string]any{"obligation_id": nil})
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", path)
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("evaluate active Envelope = %#v", result)
@@ -133,6 +140,14 @@ func buildLinkedEvidenceFixture(t *testing.T, key string) linkedEvidenceFixture 
 	if err := os.WriteFile(filepath.Join(workspace, "evidence.txt"), []byte("trusted evidence\n"), 0o600); err != nil {
 		t.Fatalf("write declared Artifact: %v", err)
 	}
+	if err := os.WriteFile(filepath.Join(workspace, ".gitignore"), []byte(".fid/\n*.json\nevidence.txt\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(workspace, "tracked-proof.txt"), []byte("original"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	runGitForTest(t, workspace, "add", ".gitignore", "tracked-proof.txt")
+	runGitForTest(t, workspace, "commit", "-m", "proof fixture")
 	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "evidence-"+key)
 	if gateRun.err != nil || terminal.Data.ReceiptID == "" {
 		t.Fatalf("gate run = %#v, terminal=%#v, want successful Receipt", gateRun, terminal)
@@ -152,7 +167,7 @@ func buildLinkedEvidenceFixture(t *testing.T, key string) linkedEvidenceFixture 
 	linkPath := filepath.Join(workspace, "evidence-link.json")
 	writeActivationInput(t, linkPath, map[string]any{
 		"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil,
-		"target_repository": repository, "required_artifact_ids": []string{artifactID},
+		"required_artifact_ids": []string{artifactID},
 	})
 	linked := executeCommandForTest(workspace,
 		"--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder",
@@ -168,10 +183,10 @@ func buildLinkedEvidenceFixture(t *testing.T, key string) linkedEvidenceFixture 
 	return linkedEvidenceFixture{workspace: workspace, obligationID: obligationID, evidenceID: evidence["id"].(string), artifactID: artifactID, digest: digest, repository: repository}
 }
 
-func (fixture linkedEvidenceFixture) evaluate(t *testing.T, repository map[string]any) map[string]any {
+func (fixture linkedEvidenceFixture) evaluate(t *testing.T) map[string]any {
 	t.Helper()
 	path := filepath.Join(fixture.workspace, "evidence-evaluate.json")
-	writeActivationInput(t, path, map[string]any{"obligation_id": fixture.obligationID, "target_repository": repository})
+	writeActivationInput(t, path, map[string]any{"obligation_id": fixture.obligationID})
 	result := executeCommandForTest(fixture.workspace, "--project", fixture.workspace, "--json", "evidence", "evaluate", "--input", path)
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("evidence evaluate = %#v", result)
@@ -179,9 +194,9 @@ func (fixture linkedEvidenceFixture) evaluate(t *testing.T, repository map[strin
 	return decodeCanonicalResult(t, result.stdout)["evaluation"].(map[string]any)
 }
 
-func (fixture linkedEvidenceFixture) evaluateGolden(t *testing.T, repository map[string]any) string {
+func (fixture linkedEvidenceFixture) evaluateGolden(t *testing.T) string {
 	t.Helper()
-	payload, err := journal.MarshalCanonicalJSON(fixture.evaluate(t, repository))
+	payload, err := journal.MarshalCanonicalJSON(fixture.evaluate(t))
 	if err != nil {
 		t.Fatalf("canonicalize Evaluation: %v", err)
 	}
@@ -232,17 +247,17 @@ func TestEvidenceLinkRejectsEveryCallerAuthoredProof(t *testing.T) {
 	if gateRun.err != nil || terminal.Data.ReceiptID == "" {
 		t.Fatalf("gate run = %#v, terminal=%#v, want successful Receipt", gateRun, terminal)
 	}
-	repository := runRepositoryForTest(t, workspace)
 	obligationID := testEvidenceObligationID
 	for _, proof := range []string{"pass", "command", "import", "attestation", "role"} {
 		t.Run(proof, func(t *testing.T) {
 			path := filepath.Join(workspace, proof+"-evidence.json")
-			input := map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository, "required_artifact_ids": []string{}}
+			input := map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}}
 			input[proof] = true
 			writeActivationInput(t, path, input)
 			before := snapshotWorkspacePersistence(t, workspace)
 			result := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", path, "--idempotency-key", "caller-"+proof)
 			assertEvidenceLinkRejectedWithoutEvidenceEvent(t, workspace, result, before)
+
 		})
 	}
 }
@@ -327,14 +342,30 @@ func TestEvidenceLinkRejectsPersistedReceiptBindingMismatches(t *testing.T) {
 			linkPath := filepath.Join(workspace, "binding-mismatch-evidence.json")
 			writeActivationInput(t, linkPath, map[string]any{
 				"obligation_id": testEvidenceObligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil,
-				"target_repository": repository, "required_artifact_ids": []string{},
+				"required_artifact_ids": []string{},
 			})
+			if testCase.mutateLink != nil {
+				request := decodeCommandJSONStructure(t, string(mustReadCommandFile(t, linkPath))).(map[string]any)
+				request["target_repository"] = repository
+				writeActivationInput(t, linkPath, request)
+			}
 			before := snapshotWorkspacePersistence(t, workspace)
 			result := executeCommandForTest(workspace,
 				"--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder",
 				"--input", linkPath, "--idempotency-key", "binding-mismatch-"+strings.ReplaceAll(testCase.name, " ", "-"),
 			)
 			assertEvidenceLinkRejectedWithoutEvidenceEvent(t, workspace, result, before)
+			if testCase.mutateLink != nil {
+				failure := decodeCommandJSONStructure(t, result.stderr).(map[string]any)
+				want := map[string]any{"contract_version": "fid-cli.v1", "ok": false, "operation": "evidence.link",
+					"error": map[string]any{"code": "invalid-argument", "category": "invalid-input", "retryable": false, "subject": nil,
+						"message": "invalid input.target_repository", "details": map[string]any{
+							"argument": "input.target_repository", "value": "target_repository",
+							"allowed": []any{"evidence_type", "human_outcome_id", "obligation_id", "receipt_id", "required_artifact_ids", "review_id"}}}}
+				if cli.ExitCode(result.err) != 2 || !reflect.DeepEqual(failure, want) {
+					t.Fatalf("removed repository target = %#v, want %#v with exit 2", failure, want)
+				}
+			}
 		})
 	}
 }

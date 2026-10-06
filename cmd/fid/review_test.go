@@ -171,7 +171,7 @@ func TestReviewRecordIndependentReworkAndReceiptBinding(t *testing.T) {
 	mutationClaim := acquireReviewClaim(t, workspace, issueID, envelopeID, "actor-builder", "mutation", "review-mutation")
 	mutationRun := startReviewRun(t, workspace, issueID, envelopeID, mutationClaim, "actor-builder", "mutation")
 	gatePath := filepath.Join(workspace, "review-mutation-gate.json")
-	writeActivationInput(t, gatePath, map[string]any{"registration_id": registration.ID, "registration_version": registration.Version, "obligation_id": testEvidenceObligationID, "run_id": mutationRun["id"], "repository": repository})
+	writeActivationInput(t, gatePath, map[string]any{"registration_id": registration.ID, "registration_version": registration.Version, "obligation_id": testEvidenceObligationID, "run_id": mutationRun["id"], "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]}})
 	gate := executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", gatePath, "--idempotency-key", "review-mutation-gate")
 	if gate.err != nil || gate.stderr != "" {
 		t.Fatalf("record Receipt on mutation Run = %#v", gate)

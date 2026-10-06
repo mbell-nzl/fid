@@ -87,7 +87,7 @@ func p22ResumeActionArgs(t *testing.T, adapter *p22FIDRecoveryAdapter, operation
 	case "run.observe":
 		input = map[string]any{"run_id": adapter.runID, "expected_version": 1, "liveness": map[string]any{"executor_id": adapter.executorID, "state": "live", "source_ref": "process:resume-actions", "observed_at": time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)}}
 	case "gate.run":
-		input = map[string]any{"registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "run_id": adapter.runID, "repository": adapter.repository}
+		input = map[string]any{"registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "run_id": adapter.runID, "expected_repository": map[string]any{"head_oid": adapter.repository["head_oid"], "dirty": adapter.repository["dirty"]}}
 	case "claim.renew":
 		input = map[string]any{"claim_id": adapter.claimID, "expected_version": 1, "ttl_seconds": 60}
 	case "claim.release":

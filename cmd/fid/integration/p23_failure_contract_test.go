@@ -34,7 +34,7 @@ var p23FailureContracts = map[string]struct {
 	"outcome-not-permitted":       {"precondition", "", "obligation_id obligation_type outcome_id result", "evidence.link"},
 	"evidence-type-not-accepted":  {"precondition", "", "obligation_id evidence_type accepted_evidence_types", "evidence.link"},
 	"source-digest-mismatch":      {"precondition", "", "display_label path expected_digest observed_digest", "decision.record-reference requirement.record-reference human-outcome.record concern.record deviation.record review.record run.observe-budget"},
-	"repository-mismatch":         {"conflict", "", "expected observed", "review.record run.start run.close run.abandon"},
+	"repository-mismatch":         {"conflict", "", "expected observed", "review.record run.start run.close run.abandon gate.run"},
 }
 
 func assertP23AddedFailureContract(t *testing.T, operation, code string, envelope map[string]any) {

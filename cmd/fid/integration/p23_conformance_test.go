@@ -107,14 +107,22 @@ type p23LeafOutcome struct {
 func TestP23CallerProvidedReviewIDsRemainDistinct(t *testing.T) {
 	t.Parallel()
 	const first, second = "REV-abcdef", "REV-123456"
+	a := p24RunAdapter(t)
+	p22AcceptedCall(t, a, "review-id-proof-budget", "run.observe-budget", map[string]any{"value": 0})
+	_, gateInput := a.p22BuildArgs(t, p22ConformanceCase{Operation: "gate.run"})
+	gate := p23RunInput(t, a, "gate", "run", a.actor, "review-id-proof", gateInput)
+	if gate.ExitCode != 0 || gate.Stderr != "" {
+		t.Fatalf("Review ID fixture gate = %d %q", gate.ExitCode, gate.Stderr)
+	}
+	receiptID := p21PathString(t, p24GateTerminal(t, gate.Stdout), "response", "result", "receipt", "id")
 	var models []map[string]any
 	for _, reviewID := range []string{first, second} {
 		request := map[string]any{
-			"obligation_id": "OBL-input", "evidence_type": "receipt", "receipt_id": "RCT-input",
-			"review_id": reviewID, "human_outcome_id": nil, "target_repository": "repo",
+			"obligation_id": "OBL-input", "evidence_type": "receipt", "receipt_id": receiptID,
+			"review_id": reviewID, "human_outcome_id": nil,
 			"required_artifact_ids": []any{},
 		}
-		workspace := t.TempDir()
+		workspace := a.workspace
 		pair := p23HumanLeafPair{Operation: "evidence.link", CWD: workspace, JSONArgs: []string{
 			"--input", p21Input(t, workspace, "evidence", request), "--idempotency-key", "key",
 		}}
@@ -412,7 +420,7 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 	altGate := p22GateRun(t, a.binary, a.workspace, a.actor,
 		p21Input(t, a.workspace, "p23-shared-alt-gate", map[string]any{
 			"run_id": a.runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion,
-			"obligation_id": "OBL-p22-corpus", "repository": a.repository,
+			"obligation_id": "OBL-p22-corpus", "expected_repository": p24ExpectedRepository(a.repository),
 		}), "p23-shared-alt-gate")
 	altReceiptID := p21PathString(t, altGate, "result", "receipt", "id")
 	accepted := map[string]p23LeafOutcome{}
@@ -454,7 +462,7 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 				p23CompareLeafOutcome(t, "unknown-field", fake.UnknownField(), fid.UnknownField(t))
 				p23CompareLeafOutcome(t, "different-payload", fake.Conflict(fid.pair), fid.Conflict(t))
 			}
-			removed := map[string][]string{"envelope.create": {"repository_scope", "risk_result.source.repository"}, "claim.acquire": {"worktree_id"}}
+			removed := map[string][]string{"envelope.create": {"repository_scope", "risk_result.source.repository"}, "claim.acquire": {"worktree_id"}, "evidence.link": {"target_repository"}, "evidence.evaluate": {"target_repository"}}
 			for _, field := range removed[fixture.operation] {
 				allowed := p24AdoptedTopLevelFields[fixture.operation]
 				if strings.Contains(field, ".") {
@@ -481,8 +489,8 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 			if fixture.operation == "evidence.link" {
 				p23CompareLeafOutcome(t, "repository-binding", p23LeafOutcome{Operation: fixture.operation,
 					Code: "invalid-argument", Category: "invalid-input", Exit: 2,
-					Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted evidence.link input"}}},
-					fid.InvalidBinding(t, "target_repository.worktree_id", "worktree-other"))
+					Details: map[string]any{"argument": "input.target_repository", "value": "target_repository", "allowed": p24AdoptedTopLevelFields["evidence.link"]}},
+					fid.InvalidBinding(t, "target_repository", map[string]any{"worktree_id": "worktree-other"}))
 			}
 			if leaf.Mutation {
 				p23CompareLeafOutcome(t, "untrusted-actor", fake.UntrustedActor(), fid.UntrustedActor(t))
@@ -518,6 +526,8 @@ func (a p23FakeLeafAdapter) UnknownField() p23LeafOutcome {
 }
 
 var p24AdoptedTopLevelFields = map[string][]any{
+	"evidence.link":                {"evidence_type", "human_outcome_id", "obligation_id", "receipt_id", "required_artifact_ids", "review_id"},
+	"evidence.evaluate":            {"obligation_id"},
 	"envelope.create":              {"authority_grants", "budgets", "non_goals", "obligations", "outcome", "primary_issue_id", "protected_decisions", "related_issue_ids", "risk_result", "sources"},
 	"envelope.activate":            {"envelope_id", "expected_revision"},
 	"envelope.complete":            {"envelope_id", "expected_revision"},

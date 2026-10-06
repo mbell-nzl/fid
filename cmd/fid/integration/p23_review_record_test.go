@@ -605,7 +605,7 @@ func TestP23ReviewRecordRealProcessJourney(t *testing.T) {
 	}
 	secondReview := p23ReviewFromResponse(t, second)
 	beforeTypeMismatch := p21JournalEventCount(t, a.workspace)
-	wrongEvidenceType := p23RunInput(t, a, "evidence", "link", "actor-recovery", "review-on-gate-obligation", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil, "review_id": secondReview["id"], "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	wrongEvidenceType := p23RunInput(t, a, "evidence", "link", "actor-recovery", "review-on-gate-obligation", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil, "review_id": secondReview["id"], "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	assertP22ProcessFailure(t, "evidence.link", "evidence-type-not-accepted", 4, wrongEvidenceType)
 	if p21JournalEventCount(t, a.workspace) != beforeTypeMismatch {
 		t.Fatal("wrong Evidence type appended an Event")

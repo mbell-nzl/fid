@@ -23,11 +23,10 @@ func TestTerminalSuccessTransitionRejectsUnsuccessfulReceiptEvidence(t *testing.
 		t.Fatalf("failed gate run = %#v, terminal=%#v, want failed Receipt", gateRun, terminal)
 	}
 
-	repository := runRepositoryForTest(t, workspace)
 	linkPath := filepath.Join(workspace, "task18-evidence-link.json")
 	writeActivationInput(t, linkPath, map[string]any{
 		"obligation_id": testEvidenceObligationID, "evidence_type": "receipt",
-		"receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository,
+		"receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil,
 		"required_artifact_ids": []string{},
 	})
 	linked := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task18-unsuccessful-evidence")
@@ -121,19 +120,18 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 	if gateRun.err != nil || terminal.Data.ReceiptID == "" {
 		t.Fatalf("qualified gate run = %#v, terminal=%#v", gateRun, terminal)
 	}
-	repository := runRepositoryForTest(t, workspace)
 	linkPath := filepath.Join(workspace, "task18-qualified-evidence.json")
 	obligationID := testEvidenceObligationID
 	writeActivationInput(t, linkPath, map[string]any{
 		"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil,
-		"target_repository": repository, "required_artifact_ids": []string{},
+		"required_artifact_ids": []string{},
 	})
 	linked := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task18-qualified-evidence")
 	if linked.err != nil || linked.stderr != "" {
 		t.Fatalf("link qualified Evidence = %#v", linked)
 	}
 	evaluatePath := filepath.Join(workspace, "task18-qualified-evaluate.json")
-	writeActivationInput(t, evaluatePath, map[string]any{"obligation_id": obligationID, "target_repository": repository})
+	writeActivationInput(t, evaluatePath, map[string]any{"obligation_id": obligationID})
 	evaluated := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", evaluatePath)
 	if evaluated.err != nil || evaluated.stderr != "" {
 		t.Fatalf("evaluate qualified Evidence = %#v", evaluated)
@@ -156,7 +154,7 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 	}
 
 	runID, claimID := task18RunAndClaim(t, workspace, issueID)
-	closeRunForTest(t, workspace, runID, repository, "task18-close-run")
+	closeRunForTest(t, workspace, runID, runRepositoryForTest(t, workspace), "task18-close-run")
 	releasePath := filepath.Join(workspace, "task18-release-claim.json")
 	writeActivationInput(t, releasePath, map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
 	released := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "task18-release-claim")
@@ -248,7 +246,7 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 		repository := runRepositoryForTest(t, workspace)
 		obligationID := testEvidenceObligationID
 		linkPath := filepath.Join(workspace, "task18-resume-completed-evidence.json")
-		writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository, "required_artifact_ids": []string{}})
+		writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 		linked := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task18-resume-completed-evidence")
 		if linked.err != nil || linked.stderr != "" {
 			t.Fatalf("completed resume Evidence link = %#v", linked)
@@ -410,7 +408,6 @@ func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence boo
 	if gateRun.err != nil || terminal.Data.ReceiptID == "" {
 		t.Fatalf("qualified terminal gate run = %#v, terminal=%#v", gateRun, terminal)
 	}
-	repository := runRepositoryForTest(t, workspace)
 	obligationID := testEvidenceObligationID
 	artifactID := ""
 	if withArtifact {
@@ -434,7 +431,7 @@ func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence boo
 	if artifactID != "" {
 		artifactIDs = append(artifactIDs, artifactID)
 	}
-	writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository, "required_artifact_ids": artifactIDs})
+	writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": artifactIDs})
 	linked := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task18-terminal-evidence-link")
 	if linked.err != nil || linked.stderr != "" {
 		t.Fatalf("link terminal Evidence = %#v", linked)
