@@ -303,7 +303,7 @@ func matchesInputFormat(format string, value any) bool {
 		return len(text) <= 4096
 	case "digest":
 		return strings.HasPrefix(text, "sha256:") && len(text) == 71 && inputHex.MatchString(text[7:])
-	case "OID":
+	case "OID", "oid":
 		return len(text) == 40 && inputHex.MatchString(text)
 	case "relative path":
 		return text != "" && !strings.HasPrefix(text, "/") && path.Clean(text) == text && !strings.HasPrefix(text, "..") && !strings.ContainsRune(text, 0)
@@ -311,7 +311,7 @@ func matchesInputFormat(format string, value any) bool {
 		_, err := time.Parse(time.RFC3339Nano, text)
 		return err == nil
 	}
-	return true
+	return false
 }
 
 func inputSortedUnique(entries []json.RawMessage) bool {

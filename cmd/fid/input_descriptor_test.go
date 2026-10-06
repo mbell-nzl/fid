@@ -631,8 +631,106 @@ func TestP24ReviewHelpEvidenceRejectsIncompleteMetadata(t *testing.T) {
 	}
 }
 
+func TestP24UnknownInputFormatRejects(t *testing.T) {
+	t.Parallel()
+	for _, format := range []string{"unknown-format", "Oid", "oID"} {
+		t.Run(format, func(t *testing.T) {
+			t.Parallel()
+			descriptor := cli.InputDescriptor{Fields: []cli.InputField{{Name: "head_oid", Type: "string", Requirement: "required", Format: format}}}
+			payload := []byte(`{"head_oid":"a0ca854133ae98b77e36cf51ad596ff0e8c6e096"}`)
+			invalid, ok := cli.ValidateInput(payload, descriptor).(*cli.InputError)
+			want := &cli.InputError{Path: "input.head_oid", Value: "a0ca854133ae98b77e36cf51ad596ff0e8c6e096", Allowed: []string{format}}
+			if !ok || !p24JudgmentDetailsMatch(invalid, want) || !reflect.DeepEqual(invalid.Details(), want.Details()) {
+				t.Fatalf("unknown format %q: got %#v, want %#v", format, invalid, want)
+			}
+		})
+	}
+}
+
+func TestP24OIDFormatDispatch(t *testing.T) {
+	t.Parallel()
+	for _, format := range []string{"OID", "oid"} {
+		t.Run(format, func(t *testing.T) {
+			t.Parallel()
+			descriptor := cli.InputDescriptor{Fields: []cli.InputField{{Name: "head_oid", Type: "string", Requirement: "required", Format: format}}}
+			for _, row := range []struct {
+				name, value string
+				valid       bool
+			}{
+				{"valid", "a0ca854133ae98b77e36cf51ad596ff0e8c6e096", true},
+				{"malformed", "not-an-oid", false},
+				{"empty", "", false},
+				{"short", "a0ca854", false},
+				{"nonhex", strings.Repeat("g", 40), false},
+				{"uppercase hex", strings.Repeat("A", 40), false},
+				{"alternate length", strings.Repeat("a", 64), false},
+				{"placeholder", "<head-oid>", false},
+			} {
+				t.Run(row.name, func(t *testing.T) {
+					t.Parallel()
+					payload, err := json.Marshal(map[string]string{"head_oid": row.value})
+					if err != nil {
+						t.Fatal(err)
+					}
+					validation := cli.ValidateInput(payload, descriptor)
+					if row.valid {
+						if validation != nil {
+							t.Fatalf("valid %s rejected: %v", format, validation)
+						}
+						return
+					}
+					invalid, ok := validation.(*cli.InputError)
+					want := &cli.InputError{Path: "input.head_oid", Value: row.value, Allowed: []string{format}}
+					if !ok || !p24JudgmentDetailsMatch(invalid, want) || !reflect.DeepEqual(invalid.Details(), want.Details()) {
+						t.Fatalf("invalid %s: got %#v, want %#v", format, invalid, want)
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestP24ReviewMalformedOIDProcess(t *testing.T) {
+	t.Parallel()
+	descriptor := inputDescriptorRegistry["review record"]
+	example, err := cli.InputExample(descriptor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	binary := buildAdoptedFID(t)
+	for _, value := range []string{"not-an-oid", "", "a0ca854", strings.Repeat("g", 40)} {
+		t.Run(value, func(t *testing.T) {
+			t.Parallel()
+			workspace := t.TempDir()
+			input := filepath.Join(t.TempDir(), "input.json")
+			payload := bytes.ReplaceAll(example, []byte("<head-oid>"), []byte(value))
+			if err := os.WriteFile(input, payload, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			stdout, stderr, exit := runAdoptedFID(t, binary, workspace, "--json", "review", "record", "--input", input, "--actor", "ACT-1", "--idempotency-key", "oid-process")
+			if exit != 2 || stdout != "" {
+				t.Fatalf("process exit=%d stdout=%q stderr=%q", exit, stdout, stderr)
+			}
+			assertAdoptedJSONFailure(t, stderr, "review.record", "input.expected_repository.head_oid", value, []string{"oid"})
+			var envelope map[string]any
+			if err := json.Unmarshal([]byte(stderr), &envelope); err != nil {
+				t.Fatal(err)
+			}
+			failure := envelope["error"].(map[string]any)
+			if len(envelope) != 4 || len(failure) != 6 || failure["retryable"] != false || failure["subject"] != nil || failure["message"] != "invalid input.expected_repository.head_oid" {
+				t.Fatalf("closed structural envelope: %s", stderr)
+			}
+			entries, err := os.ReadDir(workspace)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("process changed workspace: %v / %v", entries, err)
+			}
+		})
+	}
+}
+
 func TestP24ReviewAndFindingDescriptorHelpAndStructure(t *testing.T) {
 	t.Parallel()
+	binary := buildAdoptedFID(t)
 	for _, leaf := range []string{"review record", "finding address"} {
 		t.Run(leaf, func(t *testing.T) {
 			descriptor := inputDescriptorRegistry[leaf]
@@ -640,9 +738,15 @@ func TestP24ReviewAndFindingDescriptorHelpAndStructure(t *testing.T) {
 				t.Fatalf("%s remains behind the descriptor fence", leaf)
 			}
 			example, err := cli.InputExample(descriptor)
-			if err != nil || cli.ValidateInput(example, descriptor) != nil {
-				t.Fatalf("template is not structurally valid: %s, %v", example, err)
+			if err != nil {
+				t.Fatalf("template generation: %v", err)
 			}
+			// VAL-014 checks typed placeholders, not executable OID values.
+			var template map[string]any
+			if err := json.Unmarshal(example, &template); err != nil {
+				t.Fatal(err)
+			}
+			p24ReviewTemplateObject(t, template, descriptor.Fields, "input")
 			typed := reflect.New(descriptor.Type).Interface()
 			decoder := json.NewDecoder(bytes.NewReader(example))
 			decoder.DisallowUnknownFields()
@@ -650,6 +754,25 @@ func TestP24ReviewAndFindingDescriptorHelpAndStructure(t *testing.T) {
 				t.Fatalf("template does not decode: %v", err)
 			}
 			parts := strings.Split(leaf, " ")
+			workspace := t.TempDir()
+			stdout, stderr, exit := runAdoptedFID(t, binary, workspace, append(parts, "--example")...)
+			if exit != 0 || stderr != "" || stdout != string(example) {
+				t.Fatalf("ordered example: exit=%d stdout=%q stderr=%q", exit, stdout, stderr)
+			}
+			entries, err := os.ReadDir(workspace)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("example changed non-project directory: %v / %v", entries, err)
+			}
+			if leaf == "review record" {
+				if template["expected_repository"].(map[string]any)["head_oid"] != "<head-oid>" {
+					t.Fatal("OID placeholder changed")
+				}
+				// Runtime controls use a real Git commit OID.
+				example = bytes.ReplaceAll(example, []byte("<head-oid>"), []byte("a0ca854133ae98b77e36cf51ad596ff0e8c6e096"))
+			}
+			if err := cli.ValidateInput(example, descriptor); err != nil {
+				t.Fatalf("qualifying runtime structure: %v", err)
+			}
 			help := executeCommandForTest(t.TempDir(), append(parts, "--help")...)
 			if help.err != nil || !p24ReviewHelpMatches(help.stdout, leaf) {
 				t.Fatalf("descriptor help = %#v", help)
@@ -745,6 +868,65 @@ func TestP24ReviewAndFindingDescriptorHelpAndStructure(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+func p24ReviewTemplateObject(t *testing.T, object map[string]any, fields []cli.InputField, prefix string) {
+	t.Helper()
+	want := 0
+	for _, field := range fields {
+		value, present := object[field.Name]
+		if field.Requirement == "optional" {
+			if present {
+				t.Fatalf("optional template member %s.%s", prefix, field.Name)
+			}
+			continue
+		}
+		want++
+		if !present {
+			t.Fatalf("missing template member %s.%s", prefix, field.Name)
+		}
+		p24ReviewTemplateValue(t, value, field, prefix+"."+field.Name)
+	}
+	if len(object) != want {
+		t.Fatalf("template object %s has %d keys, want %d", prefix, len(object), want)
+	}
+}
+
+func p24ReviewTemplateValue(t *testing.T, value any, field cli.InputField, path string) {
+	t.Helper()
+	if value == nil && field.Requirement == "nullable" {
+		return
+	}
+	valid := false
+	switch field.Type {
+	case "string":
+		_, valid = value.(string)
+	case "boolean":
+		_, valid = value.(bool)
+	case "integer":
+		number, ok := value.(float64)
+		valid = ok && number == float64(int64(number))
+	case "object":
+		object, ok := value.(map[string]any)
+		valid = ok
+		if ok {
+			p24ReviewTemplateObject(t, object, field.Children, path)
+		}
+	case "array":
+		array, ok := value.([]any)
+		valid = ok
+		if ok {
+			if field.MinLen != nil && len(array) < *field.MinLen {
+				t.Fatalf("template %s lacks required elements", path)
+			}
+			for i, entry := range array {
+				p24ReviewTemplateValue(t, entry, *field.Element, fmt.Sprintf("%s[%d]", path, i))
+			}
+		}
+	}
+	if !valid {
+		t.Fatalf("template %s type = %T, want %s", path, value, field.Type)
 	}
 }
 
@@ -954,6 +1136,9 @@ func p24ReviewRecursiveStructuralDetails(t *testing.T, leaf string, descriptor c
 		t.Fatal(err)
 	}
 	p24ExpandDescriptorObjects(t, baseline, descriptor.Fields)
+	if leaf == "review record" {
+		baseline["expected_repository"].(map[string]any)["head_oid"] = "a0ca854133ae98b77e36cf51ad596ff0e8c6e096"
+	}
 	// Valid controls go through the same CLI, from a non-project directory.
 	// Reaching the family fallback proves structural decoding was accepted.
 	exercise := func(name string, payload []byte, want *cli.InputError) {
