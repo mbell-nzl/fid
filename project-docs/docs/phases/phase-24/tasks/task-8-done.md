@@ -390,8 +390,8 @@ Removed unused decodeClosedGateInput (introducing commit 0c4c04ea0c7d0786e2e6cf8
 
 ## Commit hash
 
-- Pending commit
+- `9f0fc3577128857c8f5523870b965daded1b3f1c`
 
 ## Commit subject
 
-- Pending commit
+- `feat(evidence): complete observed gate and subject convergence`
