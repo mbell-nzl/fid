@@ -231,8 +231,8 @@ Original Task 5 report follows verbatim with a quote prefix only. It was finaliz
 
 ## Commit hash
 
-- Pending commit
+- `04246029c4488eec46eba76323dee7fbe8260c8d`
 
 ## Commit subject
 
-- Pending commit
+- `test(review): checkpoint Window B evidence repair`
