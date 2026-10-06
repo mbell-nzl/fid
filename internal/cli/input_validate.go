@@ -153,6 +153,9 @@ func validateInputField(value json.RawMessage, field InputField, location string
 	}
 	if field.Type == "string" {
 		length := len([]byte(item.(string)))
+		if field.scalarBounds {
+			length = utf8.RuneCountInString(item.(string))
+		}
 		if field.MinLen != nil && length < *field.MinLen || field.MaxLen != nil && length > *field.MaxLen {
 			return inputValueError(field, location, item, []string{inputBounds(field)})
 		}
@@ -348,8 +351,17 @@ func matchesInputFormat(format string, value any) bool {
 		return err == nil
 	case "environment name":
 		return regexp.MustCompile(`^[A-Z_][A-Z0-9_]{0,127}$`).MatchString(text)
+	case "cwd path":
+		return text == "." || componentInputPath(text)
+	case "artifact path":
+		return componentInputPath(text)
 	}
 	return false
+}
+
+func componentInputPath(text string) bool {
+	return text != "" && text != "." && len(text) <= 512 && !strings.HasPrefix(text, "/") &&
+		!strings.Contains(text, "\\") && path.Clean(text) == text && !strings.HasPrefix(text, "../") && text != ".." && !strings.ContainsRune(text, 0)
 }
 
 func inputSortedUnique(entries []json.RawMessage) bool {

@@ -96,11 +96,12 @@ func activationBoundedInteger(name, meaning string, minimum, maximum int64) cli.
 }
 
 func activationActorFields() []cli.InputField {
+	session := bindingNullable("session_ref", "Session reference, or null.")
+	session.Format = ""
 	return []cli.InputField{
 		judgmentID("actor_id", "Actor ID; profiles are sorted by Actor ID."), activationInputEnum("actor_type", "Actor type.", "agent", "human", "service"),
-		activationInputString("producer", "Actor producer.", 1, 128), activationInputString("provenance_ref", "Actor provenance reference.", 1, 512),
-		bindingNullable("session_ref", "Session reference, or null."),
-		activationArray("capabilities", "Sorted unique nonempty capabilities.", activationInputString("capability", "Capability name.", 1, 128), 1, true),
+		activationComponentString("producer", "Actor producer.", 1, 128), activationComponentString("provenance_ref", "Actor provenance reference.", 1, 512), session,
+		activationArray("capabilities", "Sorted unique nonempty capabilities.", activationComponentString("capability", "Capability name.", 1, 128), 1, true),
 	}
 }
 
@@ -108,26 +109,33 @@ func activationGateFields() []cli.InputField {
 	environmentName := activationInputString("name", "Environment name: uppercase letters, digits and underscores, starting with a letter or underscore.", 1, 128)
 	environmentName.Format = "environment name"
 	value := bindingNullable("value", "Literal value for literal sources; null for credential and inherit. Sensitive.")
+	value.Format = ""
 	value.Sensitive = true
 	environment := inputObject("entry", "Environment entry.", environmentName, activationInputEnum("source", "Value source.", "credential", "inherit", "literal"), value)
-	literals := activationArray("redact_literals", "Sorted unique literals to redact. Sensitive.", bindingString("literal", "Sensitive literal."), 0, true)
+	literals := activationArray("redact_literals", "Sorted unique literals to redact. Sensitive.", inputString("literal", "required", "Sensitive literal.", "", "<literal>"), 0, true)
 	literals.Sensitive, literals.Element.Sensitive = true, true
-	argv := activationArray("argv", "Command arguments.", activationInputString("argument", "One command argument.", 1, 4096), 1, false)
+	argv := activationArray("argv", "Command arguments.", activationComponentString("argument", "One command argument.", 1, 4096), 1, false)
 	maximum := 128
 	argv.MaxLen = &maximum
 	shell := cli.InputField{Name: "shell", Type: "boolean", Requirement: "required", Meaning: "Shell execution is disabled.", Members: []string{"false"}}
 	return []cli.InputField{
 		judgmentID("definition_id", "Gate Definition ID; definitions are sorted by ID and version."), activationBoundedInteger("definition_version", "Gate Definition version.", 1, 2147483647),
-		argv, inputString("cwd", "required", "Relative working directory; use . for the workspace root.", "relative path", "."), shell,
+		argv, inputString("cwd", "required", "Relative working directory; use . for the workspace root.", "cwd path", "."), shell,
 		activationArray("environment", "Environment entries sorted by name.", environment, 0, false),
 		activationBoundedInteger("timeout_ms", "Execution timeout in milliseconds.", 1, 600000), activationBoundedInteger("output_bytes", "Output byte limit.", 1, 10485760),
 		activationBoundedInteger("excerpt_bytes", "Excerpt byte limit, also no greater than output_bytes.", 0, 16384),
 		activationArray("success_exit_codes", "Sorted unique successful exit codes.", activationBoundedInteger("code", "Successful exit code.", -255, 255), 1, true),
-		activationArray("credential_names", "Sorted unique credential names matching credential environment entries.", bindingString("credential", "Credential name."), 0, true), literals,
-		activationArray("artifact_paths", "Sorted unique relative artifact paths.", inputString("path", "required", "Artifact path.", "relative path", "<artifact-path>"), 0, true),
+		activationArray("credential_names", "Sorted unique credential names matching credential environment entries.", inputString("credential", "required", "Credential name.", "", "<credential>"), 0, true), literals,
+		activationArray("artifact_paths", "Sorted unique relative artifact paths.", inputString("path", "required", "Artifact path.", "artifact path", "<artifact-path>"), 0, true),
 		activationBoundedInteger("artifact_bytes", "Artifact byte limit.", 1, 1073741824), activationInputEnum("sandbox", "Sandbox policy.", "none"),
 		activationInputEnum("network", "Network policy.", "allowed"), activationInputEnum("write", "Write policy.", "allowed"),
 	}
+}
+
+func activationComponentString(name, meaning string, minimum, maximum int) cli.InputField {
+	field := activationInputString(name, meaning, minimum, maximum)
+	field.Format = ""
+	return field
 }
 
 func activationComponentDescriptor() cli.InputDescriptor {

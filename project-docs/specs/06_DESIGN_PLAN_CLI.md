@@ -614,7 +614,10 @@ trees, including nested environment entries and bounds. Its deterministic
 example uses the first variant, `authority-profile`, with one ActorProfile.
 Structural errors identify the selected nested path; mismatched content
 identifies `input.content[i]`. Environment values and redaction literals
-remain sensitive in failure details. All 39 input leaves use descriptors
+remain sensitive in failure details. Raw variant string bounds count Unicode
+scalars; session references and sensitive literals have no additional text
+limit. cwd accepts `.`, while Artifact paths exclude dot segments and are
+bounded to 512 bytes. All 39 input leaves use descriptors
 for help, examples and closed structural validation.
 
 Task 4 adopts `SourceInput` for `decision record-reference`, `requirement

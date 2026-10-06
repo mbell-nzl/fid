@@ -195,7 +195,7 @@ func TestP24DescriptorVariantProcessCorpus(t *testing.T) {
 func TestP24ActivationComponentHelpPin(t *testing.T) {
 	t.Parallel()
 	help := executeCommandForTest(t.TempDir(), "activation", "component", "--help")
-	const digest = "aeb756c3956bd1b847547da551a8d6cce66c4a1bde712f453d411d29d2ea91e0"
+	const digest = "301357ce9975f00a63dac43f6fd894f85da852544834801546b54c5694094168"
 	if got := fmt.Sprintf("%x", sha256.Sum256([]byte(help.stdout))); help.err != nil || got != digest {
 		t.Fatalf("component help SHA-256 = %s; help=%s", got, help.stdout)
 	}
@@ -248,6 +248,48 @@ func TestP24ActivationComponentVariantMismatchAndSensitive(t *testing.T) {
 			t.Fatalf("sensitive field: %#v", invalid)
 		}
 		p24ComponentRefusal(t, binary, data, invalid)
+	}
+}
+
+func TestP24ActivationComponentAcceptedStringAndPathBounds(t *testing.T) {
+	t.Parallel()
+	descriptor := activationComponentDescriptor()
+	for _, test := range []struct {
+		name, kind, field string
+		value             any
+		path              string
+	}{
+		{"unbounded session", "authority-profile", "session_ref", strings.Repeat("x", 10000), ""},
+		{"producer scalars", "authority-profile", "producer", strings.Repeat("é", 128), ""},
+		{"producer over bound", "authority-profile", "producer", strings.Repeat("é", 129), "input.content[0].producer"},
+		{"argv scalars", "gate-definitions", "argv", []any{strings.Repeat("é", 4096)}, ""},
+		{"unbounded literal", "gate-definitions", "environment", []any{map[string]any{"name": "SECRET", "source": "literal", "value": strings.Repeat("x", 10000)}}, ""},
+		{"unbounded redaction", "gate-definitions", "redact_literals", []any{strings.Repeat("x", 10000)}, ""},
+		{"cwd root", "gate-definitions", "cwd", ".", ""},
+		{"artifact dot", "gate-definitions", "artifact_paths", []any{"."}, "input.content[0].artifact_paths[0]"},
+		{"artifact bound", "gate-definitions", "artifact_paths", []any{strings.Repeat("x", 513)}, "input.content[0].artifact_paths[0]"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			input := map[string]any{"activation_id": "ACT-1", "component_type": test.kind, "component_id": "CMP-1", "component_version": 1, "expected_prior_digest": nil, "expected_version": 1}
+			p24ExpandDescriptorObjects(t, input, descriptor.Fields)
+			input["content"].([]any)[0].(map[string]any)[test.field] = test.value
+			data, err := json.Marshal(input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = cli.ValidateInput(data, descriptor)
+			if test.path == "" {
+				if err != nil {
+					t.Fatalf("accepted shape rejected: %v", err)
+				}
+				return
+			}
+			invalid, ok := err.(*cli.InputError)
+			if !ok || invalid.Path != test.path {
+				t.Fatalf("bound error=%#v, want %s", err, test.path)
+			}
+		})
 	}
 }
 

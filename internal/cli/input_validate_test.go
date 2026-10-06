@@ -166,3 +166,21 @@ func TestInputCodeObjectVariantsRemainSelected(t *testing.T) {
 		t.Fatalf("code example=%s / %v", example, err)
 	}
 }
+
+func TestInputRawArrayScalarBoundsPreserveOrdinaryCallers(t *testing.T) {
+	t.Parallel()
+	descriptor := rawArrayDescriptor()
+	minimum, maximum := 1, 1
+	field := &descriptor.Fields[1].Variants["authority-profile"][0]
+	field.MinLen, field.MaxLen = &minimum, &maximum
+	if err := ValidateInput([]byte(`{"component_type":"authority-profile","content":[{"actor_id":"é"}]}`), descriptor); err != nil {
+		t.Fatalf("raw scalar bound: %v", err)
+	}
+	if err := ValidateInput([]byte(`{"component_type":"authority-profile","content":[{"actor_id":"éé"}]}`), descriptor); err == nil {
+		t.Fatal("raw scalar bound weakened")
+	}
+	ordinary := InputDescriptor{Fields: []InputField{*field}}
+	if err := ValidateInput([]byte(`{"actor_id":"é"}`), ordinary); err == nil {
+		t.Fatal("ordinary string length behavior changed")
+	}
+}

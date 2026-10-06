@@ -4,7 +4,7 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: Recovery attempt 2 has implemented the component variants and remaining Task 9 conformance; touched-package race checks and the exact final gates are pending at this durable checkpoint.
+- Condition: Component and whole-tree conformance is implemented, including accepted unbounded strings, raw variant Unicode bounds and cwd/artifact path rules. The earlier touched-package race tier passed; the final changed tree needs its fresh tier and exact gates before close.
 - Recovery attempts: 2
 - Next action: Run the touched-package race tier, the touched tagged corpus, and all six byte-identical Task 9 commands in order. Finalize this report from observed termination results; the Phase Runner independently runs report-lint.
 - Human attention required: no
@@ -95,6 +95,10 @@ The following six commands ran exactly in task-spec order on the checkpoint sour
 Report-lint is the Runner's control under DEC-158 and was not run by the Developer at the implementation checkpoint. This report-only recovery explicitly authorizes the exact report-lint verification recorded above.
 
 ## Deviations from spec
+
+- Attempt 2 found and repaired accidentally imposed generic text bounds on unbounded component strings. The focused accepted-string/path test failed with `FAIL` (terminated `exit_code: 1`) for session/literal/redaction strings, Unicode bounds and artifact paths. Component descriptors now follow the accepted Phase 21 fields; raw variant bounds count Unicode scalars while existing ordinary callers retain their length behavior. The same command passed with `ok  	github.com/mbell-nzl/fid/cmd/fid	0.160s` (terminated `exit_code: 0`). The component help pin is converged to these corrected declared fields, preserving its whole-text assertion.
+
+Historical deviations and failed attempts (preserved):
 
 - Report-only recovery attempt 1 reproduced `FAIL report-lint found 11 failure(s)` (terminated `exit_code: 11`). Root cause: the 11 historical PASS rows had punctuation or explanatory text after their termination fields, but report-lint requires those fields at the end of each evidence line. Repair: remove only trailing punctuation and move explanations to continuation lines, preserving every historical command, status, token, observed termination, provenance, scope finding and the typed RECOVERY_REQUIRED outcome. The later byte-identical verification ended with `PASS report-lint completed with no failures` (terminated `exit_code: 0`) and printed `OUTCOME RECOVERY_REQUIRED`.
 - Task 9 is incomplete. The empty-fence removal, component descriptor, both discriminated variants, complete whole-tree corpora, fake/fid assembly, and remaining decoder removals are deferred to the same task's continuation, with their failures retained. No accepted shape, enum, threshold, gate command, status or assertion semantics changed.
