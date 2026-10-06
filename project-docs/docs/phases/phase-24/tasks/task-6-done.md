@@ -56,6 +56,23 @@ The named ordinary tests below ran in this session's uncached cmd/fid race/cover
 
 ## Tests run
 
+QA Window B report-only repair of review-3 F8: the following R5 receipt was captured in this repair session at phase HEAD `be56892031fd3bfc9b152598364a6e4e9079c973`, working directory /home/mark/projects/fid. R5 is an inventory/accounting command with matches and observed exit 0; it is not an absence-proof PASS. F8 has no VAL assertion. The earlier focused tests, runtime interaction, R6/R7 receipts and five final gate rows remain their original-session evidence and were not rerun or re-attested by this report-only repair.
+
+- `rg -n "func decodeClosed[A-Za-z]*Input" cmd/fid` - PASS - `cmd/fid/gate.go:272:func decodeClosedGateInput(stdin io.Reader, path string, target any) error {` (terminated `exit_code: 0`)
+
+All six current matches are accounted for:
+
+| Decoder | Current match |
+|---|---|
+| Review | `cmd/fid/review.go:135`: `decodeClosedReviewInput` |
+| Judgment | `cmd/fid/concern.go:147`: `decodeClosedJudgmentInput` |
+| Run | `cmd/fid/run.go:226`: `decodeClosedRunInput` |
+| Activation | `cmd/fid/activation.go:328`: `decodeClosedActivationInput` |
+| Envelope | `cmd/fid/envelope.go:178`: `decodeClosedEnvelopeInput` |
+| Gate | `cmd/fid/gate.go:272`: `decodeClosedGateInput` |
+
+Task 6's removed `decodeClosedClaimInput` is gone; it is not among these six current matches. Introducing/removal provenance was checked with `git log -S 'func decodeClosedClaimInput' --format='%H %s%n%b' -- cmd/fid/claim.go` and `git show 1baaecc7983872b06e2a47e6df0801bfb1370ea0 -- cmd/fid/claim.go`: the decoder was introduced at `0b67c8304a84e4e5bcb8df44d79f899e40a16acb` (phase-21/task-10) and removed at `1baaecc7983872b06e2a47e6df0801bfb1370ea0` (phase-24/task-6). The remaining six decoders are inventoried, with no absence claim or implementation change.
+
 Working directory: /home/mark/projects/fid. The runtime driver uses newly allocated Git workspace roots. Focused red precedes edits for all four subjects; each focused green uses the byte-identical command. Every result below has an observed command termination.
 
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid -run '^(TestExecutionBound.*|TestExecutionTransitionFixtureDoesNotInheritExpiredClaim)$'` - FAIL - `FAIL` (terminated `exit_code: 1`)
@@ -595,6 +612,8 @@ Working directory: /home/mark/projects/fid. These commands ran sequentially in t
 Observed package wall times: cmd/fid 283.342s; slowest other freshly timed ordinary package internal/export 116.978s; cmd/fid/integration 274.935s. internal/workflow was explicitly `(cached)` in this session's exact ordinary gate and emitted no fresh wall time; attempt 4's 114.227s remains historical evidence below, not a fresh attestation. Other cached package rows are also distinguished from fresh timing. The pre-gate cmd/fid race check took 304.689s.
 
 ## Deviations from spec
+
+- QA review-3 F8 identified a report omission: the owned R5 decoder inventory command/token/termination was missing although R6/R7 were recorded. Under the latest TASK-RECOVERY task-6 (2026-10-06 23:11), Category `qa-rework`, Repair mode `task-scope`, Repair authority `QA review`, Trigger signature `review-3:qa-rework:task-6`, Attempt count `1`, and Allowed files `project-docs/docs/phases/phase-24/tasks/task-6-done.md` were confirmed as exact ledger values, not paraphrases. This report-only repair adds the fresh exact R5 receipt and six-match accounting under Tests run, with removal provenance and no VAL claim. It preserves every prior command result, failed attempt, focused red/green row, final gate row, DEC-283/TRG-24-004 record, provenance row and COMPLETE outcome. The original implementation commit `01e518f460d7339848c6549ecb7dbd4d58a2f6f4` and finalized report checkpoint `7f64268a9081d8ea97532b917ddf36d4b8e8093b` were verified with `git show -s`; the existing Commit hash/subject fields remain those of the implementation commit. This repair changes only this report; the runner-owned ledger and triage log remain untouched. The fresh R5 command exited 0 with the recorded final token; fresh report-lint follows the report commit as required by F8.
 
 - Historical required failures remain FAIL/BLOCKED evidence in the complete quotation above. In particular, attempt 4's ordinary and tagged gates each ended `FAIL` (terminated `exit_code: 1`), at 316.372s and 332.169s respectively. TRG-24-004 grants the four-path bounded convergence without retroactively widening attempt 4.
 - The first focused ordinary failure ended `FAIL` (terminated `exit_code: 1`), caused by copying observed Envelope history into another root, which the accepted Task 6 same-worktree rule correctly rejects. Building Registration/Envelope history in the consuming root and explicitly separating expired-prior from fresh-Claim controls repairs that setup. The identical command later ended `ok  	github.com/mbell-nzl/fid/cmd/fid	18.053s` (terminated `exit_code: 0`). The byte-identical full ordinary gate subsequently passed as recorded above.
