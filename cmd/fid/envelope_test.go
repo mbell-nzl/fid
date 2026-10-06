@@ -17,7 +17,6 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/project"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 const testEvidenceObligationID = "OBL-1"
@@ -941,10 +940,38 @@ func TestDecodeClosedEnvelopeInputRejectsAuthoredBudgetState(t *testing.T) {
 	t.Parallel()
 	for _, state := range []string{`""`, `null`} {
 		t.Run(state, func(t *testing.T) {
-			var request workflow.EnvelopeCreateRequest
-			err := decodeClosedEnvelopeInput(strings.NewReader(`{"budgets":[{"state":`+state+`}]}`), "-", &request)
-			if err == nil || !strings.Contains(err.Error(), "budget state is output-only") {
-				t.Fatalf("decodeClosedEnvelopeInput() error = %v, want output-only state rejection", err)
+			t.Parallel()
+			descriptor := inputDescriptorRegistry["envelope create"]
+			example, err := cli.InputExample(descriptor)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var input map[string]any
+			if err := json.Unmarshal(example, &input); err != nil {
+				t.Fatal(err)
+			}
+			p24ExpandDescriptorObjects(t, input, descriptor.Fields)
+			var authored any
+			if err := json.Unmarshal([]byte(state), &authored); err != nil {
+				t.Fatal(err)
+			}
+			input["budgets"].([]any)[0].(map[string]any)["state"] = authored
+			root := t.TempDir()
+			path := filepath.Join(t.TempDir(), "authored-state.json")
+			writeActivationInput(t, path, input)
+			result := executeCommandForTest(root, "--json", "envelope", "create", "--input", path, "--actor", "ACT-1", "--idempotency-key", "authored-state")
+			argument, allowed := "input", []string{"accepted envelope.create input"}
+			value := any(nil)
+			if state == "null" {
+				argument, allowed, value = "input.budgets[0].state", []string{"string"}, "null"
+			}
+			if cli.ExitCode(result.err) != 2 || result.stdout != "" {
+				t.Fatalf("authored state accepted: %#v", result)
+			}
+			assertAdoptedJSONFailure(t, result.stderr, "envelope.create", argument, value, allowed)
+			entries, err := os.ReadDir(root)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("authored state changed root: %v / %v", entries, err)
 			}
 		})
 	}

@@ -63,6 +63,5 @@ func runDescriptors() map[string]cli.InputDescriptor {
 func init() {
 	for leaf, descriptor := range runDescriptors() {
 		inputDescriptorRegistry[leaf] = descriptor
-		delete(pendingInputDescriptors, leaf)
 	}
 }

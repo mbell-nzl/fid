@@ -1,17 +1,22 @@
-# Phase 24 - Task 9: Activation descriptors; whole-tree input conformance - Recovery Report
+# Phase 24 - Task 9: Activation descriptors; whole-tree input conformance - Completion Report
 
 ## Workflow outcome
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: Seven activation leaves are adopted, but activation.component requires shared descriptor changes outside Task 9's named source-file scope. The preserved reflection regression and whole-tree registry assertion are red. Whole-tree corpora, fake/fid assembly and three decoder removals remain unfinished.
-- Recovery attempts: 0
-- Next action: Obtain a Task 9 scope amendment for `internal/cli/input_descriptor.go`, `internal/cli/input_render.go`, `internal/cli/input_validate.go`, and `internal/cli/input_validate_test.go`; dispatch a same-task continuation from this checkpoint. Implement the accepted component_type discriminator and raw typed array variants, finish the remaining accepted criteria, and rerun the byte-identical required gates.
+- Condition: Recovery attempt 2 has implemented the component variants and remaining Task 9 conformance; touched-package race checks and the exact final gates are pending at this durable checkpoint.
+- Recovery attempts: 2
+- Next action: Run the touched-package race tier, the touched tagged corpus, and all six byte-identical Task 9 commands in order. Finalize this report from observed termination results; the Phase Runner independently runs report-lint.
 - Human attention required: no
 
 OUTCOME RECOVERY_REQUIRED
 
 ## Summary of what was implemented
+
+- Recovery attempt 2: added component_type-selected raw typed arrays with actual ActorProfile and GateDefinition reflection, selected duplicate scanning, closed validation, mismatch paths, sensitive redaction and deterministic variant help/examples. Existing code-selected object variants remain covered.
+- Registered the final component descriptor, removed the pending fence and all family decoder wrappers, completed the 39-leaf corpora and the nine-leaf fake/fid input-admission assembly. Kept authored budget state rejection before workspace work and converged the retained decoder fixtures to qualifying inputs.
+
+Historical implementation checkpoint (785a224) and report-repair evidence below are preserved; their pending findings do not describe the new source tree:
 
 - Added descriptors for activation prepare, commit, abort, finalize, resource, recover and recover-complete. The descriptors retain the accepted Phase 21 shapes and Phase 22 version/resource additions, with help, required-only examples, typed decoding, bounds and closed structural validation.
 - Moved transition and recovery decoding ahead of workspace resolution. Structural failures now retain their exact field path through the activation failure mapper, without workspace writes.
@@ -75,6 +80,8 @@ Working directory is `/home/mark/projects/fid` unless stated otherwise. Every te
 
 ## Exact quality-gate results
 
+Historical first gate attempt, retained verbatim. Attempt 2 has not yet run its final gate; no historical result is used as current-session completion evidence.
+
 The following six commands ran exactly in task-spec order on the checkpoint source tree. The ordinary failure was preserved and the remaining commands still ran. No source or test edits followed this gate attempt.
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
@@ -109,6 +116,8 @@ Provenance was obtained with `git log -S` for the live-accounting text and helpe
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
+Historical checkpoint concerns (resolved implementation scope under DEC-284; current gate evidence pending):
+
 - Scope gap: `internal/cli/input_descriptor.go:88` treats raw content as a slice of uint8 and recursively requires an object element. `internal/cli/input_validate.go:99` and `:181` select object variants only through root `code`; `internal/cli/input_render.go:52` labels variants as code and `:109` selects example variants through code. These shared files and their regression tests require ordinary Task 9 source scope, not a tools-only control-conformance directive. The accepted component_type shapes need no new product or architecture decision; the missing authority is the file scope.
 - Continue with all eight activation descriptors, both typed content variants and exact mismatch paths; remove the final pending fence while retaining registry=live. Complete all six 39-leaf corpora, the sensitive nested failure cases, component help pin and fake-dispatch-derived nine-leaf assembly. Remove all three remaining family decoders without retaining another structural source.
 - Pending decoder-fixture provenance was inspected but no convergence is claimed: TestDecodeClosedReviewInputRejectsMalformedInapplicability was introduced by `0be596e9068795ceb3a0a89bdac50d538f8e8791` (phase-23/task-5); TestDecodeClosedEnvelopeInputRejectsAuthoredBudgetState by `2339dc9ebd8d0e6b5502ca32e1562892cf704ce6` (phase-22/task-12). Preserve valid empty optional-array acceptance and both output-only-state rejection states when converging them to descriptor validation.
@@ -121,8 +130,8 @@ Provenance was obtained with `git log -S` for the live-accounting text and helpe
 
 ## Commit hash
 
-- `785a22491f1ba07bb748d1d4fb85f88ea1a8d45d`
+- Pending commit
 
 ## Commit subject
 
-- `feat(cli): checkpoint activation input descriptors`
+- Pending commit

@@ -45,8 +45,7 @@ func TestAttentionResolveUnknownFieldNamesInputPath(t *testing.T) {
 
 func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 	t.Parallel()
-	leaves := []string{"stop raise", "stop resolve", "attention resolve", "decision record-reference",
-		"requirement record-reference", "requirement link", "human-outcome record", "concern record", "concern dispose", "deviation record", "review record", "finding address", "gate register", "envelope create", "envelope activate", "envelope complete", "claim acquire", "claim renew", "claim release", "claim expire", "run start", "run close", "run abandon", "run observe-budget", "run observe", "run checkpoint", "run recover", "gate run", "evidence link", "evidence evaluate", "artifact verify"}
+	leaves := p24LiveInputLeaves(t)
 	conflicts := []struct {
 		name, argument string
 		value          any
@@ -65,8 +64,8 @@ func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 		{"key first", "--idempotency-key", "key-1", func(string) []string { return []string{"--idempotency-key", "key-1", "extra"} }},
 		{"positional", "arguments", "extra", func(string) []string { return []string{"extra"} }},
 	}
-	if got := len(leaves) * len(conflicts); got != 186 {
-		t.Fatalf("exclusivity corpus has %d rows, want 186", got)
+	if got := len(leaves) * len(conflicts); got != 234 {
+		t.Fatalf("exclusivity corpus has %d rows, want 234", got)
 	}
 	binary := buildAdoptedFID(t)
 	for _, leaf := range leaves {
@@ -126,6 +125,147 @@ func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 				t.Fatalf("standalone touched non-project workspace: entries=%v err=%v", entries, err)
 			}
 		})
+	}
+}
+
+func p24LiveInputLeaves(t *testing.T) []string {
+	t.Helper()
+	var leaves []string
+	var walk func(*cobra.Command)
+	walk = func(command *cobra.Command) {
+		if len(command.Commands()) == 0 && command.Flags().Lookup("input") != nil {
+			leaves = append(leaves, rootCommandKey(command))
+		}
+		for _, child := range command.Commands() {
+			walk(child)
+		}
+	}
+	walk(newRootCommandAt(t.TempDir()))
+	slices.Sort(leaves)
+	if len(leaves) != 39 {
+		t.Fatalf("live input leaves = %d, want 39", len(leaves))
+	}
+	return leaves
+}
+
+func TestP24WholeTreeDescriptorProcessCorpus(t *testing.T) {
+	t.Parallel()
+	leaves := make(map[string]cli.InputDescriptor)
+	for _, leaf := range p24LiveInputLeaves(t) {
+		descriptor, exists := inputDescriptorRegistry[leaf]
+		if !exists {
+			t.Fatalf("missing descriptor %s", leaf)
+		}
+		leaves[leaf] = descriptor
+	}
+	p24DescriptorProcessCorpus(t, leaves)
+}
+
+func TestP24DescriptorVariantProcessCorpus(t *testing.T) {
+	t.Parallel()
+	for _, leaf := range []string{"stop raise", "activation component"} {
+		descriptor := inputDescriptorRegistry[leaf]
+		for _, field := range descriptor.Fields {
+			selector := field.Discriminator
+			if selector == "" {
+				selector = "code"
+			}
+			for variant := range field.Variants {
+				t.Run(leaf+"/"+variant, func(t *testing.T) {
+					selected := descriptor
+					selected.Fields = append([]cli.InputField(nil), descriptor.Fields...)
+					for i, candidate := range selected.Fields {
+						if candidate.Name == selector {
+							selected.Fields[i].Members = []string{variant}
+							for _, member := range candidate.Members {
+								if member != variant {
+									selected.Fields[i].Members = append(selected.Fields[i].Members, member)
+								}
+							}
+						}
+					}
+					// Structural rows use this variant; the real template remains the first declared member.
+					p24DescriptorProcessCorpus(t, map[string]cli.InputDescriptor{leaf: selected})
+				})
+			}
+		}
+	}
+}
+
+func TestP24ActivationComponentHelpPin(t *testing.T) {
+	t.Parallel()
+	help := executeCommandForTest(t.TempDir(), "activation", "component", "--help")
+	const digest = "aeb756c3956bd1b847547da551a8d6cce66c4a1bde712f453d411d29d2ea91e0"
+	if got := fmt.Sprintf("%x", sha256.Sum256([]byte(help.stdout))); help.err != nil || got != digest {
+		t.Fatalf("component help SHA-256 = %s; help=%s", got, help.stdout)
+	}
+}
+
+func TestP24ActivationComponentVariantMismatchAndSensitive(t *testing.T) {
+	t.Parallel()
+	descriptor := activationComponentDescriptor()
+	baseline := func(kind string) map[string]any {
+		input := map[string]any{"activation_id": "ACT-1", "component_type": kind, "component_id": "CMP-1", "component_version": 1, "expected_prior_digest": nil, "expected_version": 1}
+		p24ExpandDescriptorObjects(t, input, descriptor.Fields)
+		return input
+	}
+	binary := buildAdoptedFID(t)
+	for _, kind := range []string{"authority-profile", "gate-definitions"} {
+		other := "authority-profile"
+		if kind == other {
+			other = "gate-definitions"
+		}
+		input := baseline(kind)
+		input["content"] = baseline(other)["content"]
+		data, err := json.Marshal(input)
+		if err != nil {
+			t.Fatal(err)
+		}
+		invalid, ok := cli.ValidateInput(data, descriptor).(*cli.InputError)
+		if !ok || invalid.Path != "input.content[0]" || invalid.Value != nil {
+			t.Fatalf("mismatch %s: %#v", kind, invalid)
+		}
+		p24ComponentRefusal(t, binary, data, invalid)
+	}
+	for _, field := range []string{"environment", "redact_literals"} {
+		input := baseline("gate-definitions")
+		gate := input["content"].([]any)[0].(map[string]any)
+		if field == "environment" {
+			gate[field].([]any)[0].(map[string]any)["value"] = []any{"TASK9-SENSITIVE-SENTINEL"}
+		} else {
+			gate[field] = []any{[]any{"TASK9-SENSITIVE-SENTINEL"}}
+		}
+		data, err := json.Marshal(input)
+		if err != nil {
+			t.Fatal(err)
+		}
+		invalid, ok := cli.ValidateInput(data, descriptor).(*cli.InputError)
+		path := "input.content[0].redact_literals[0]"
+		if field == "environment" {
+			path = "input.content[0].environment[0].value"
+		}
+		if !ok || invalid.Path != path || invalid.Value != nil {
+			t.Fatalf("sensitive field: %#v", invalid)
+		}
+		p24ComponentRefusal(t, binary, data, invalid)
+	}
+}
+
+func p24ComponentRefusal(t *testing.T, binary string, data []byte, invalid *cli.InputError) {
+	t.Helper()
+	root := t.TempDir()
+	input := filepath.Join(t.TempDir(), "component.json")
+	if err := os.WriteFile(input, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	out, failure, exit := runAdoptedFID(t, binary, root, "--json", "activation", "component", "--input", input, "--idempotency-key", "component-refusal")
+	if exit != 2 || out != "" || strings.Contains(failure, "TASK9-SENSITIVE-SENTINEL") {
+		t.Fatalf("component refusal: %d / %s / %s", exit, out, failure)
+	}
+	assertAdoptedJSONFailure(t, failure, "activation.component", invalid.Path, nil, invalid.Allowed)
+	entries, err := os.ReadDir(root)
+	if err != nil || len(entries) != 0 {
+		t.Fatalf("refusal changed root: %v / %v", entries, err)
 	}
 }
 
@@ -252,16 +392,11 @@ func TestInputDescriptorRegistryMatchesLiveTreeAndTypes(t *testing.T) {
 	}
 	walk(root)
 	for key, descriptor := range inputDescriptorRegistry {
-		if pendingInputDescriptors[key] || !live[key] {
-			t.Errorf("registered %s overlaps fence or is not live", key)
+		if !live[key] {
+			t.Errorf("registered %s is not live", key)
 		}
 		if err := cli.CheckInputType(descriptor); err != nil {
 			t.Errorf("%s: %v", key, err)
-		}
-	}
-	for key := range pendingInputDescriptors {
-		if !live[key] {
-			t.Errorf("pending %s is not live", key)
 		}
 	}
 	for key := range live {
@@ -296,10 +431,14 @@ func TestP24ActivationComponentRawArrayReflection(t *testing.T) {
 		judgmentID("actor_id", "Actor ID."), bindingString("actor_type", "Actor type."),
 		bindingString("producer", "Producer."), bindingString("provenance_ref", "Provenance reference."),
 		bindingNullable("session_ref", "Session reference, if available."), inputArray("capabilities", "Actor capabilities.", "ID", false))
+	content := bindingArray("content", "Selected component content.", actor, 1)
+	content.Discriminator = "component_type"
+	content.Variants = map[string][]cli.InputField{"authority-profile": actor.Children}
+	content.VariantTypes = map[string]reflect.Type{"authority-profile": reflect.TypeFor[workflow.ActorProfile]()}
 	descriptor := cli.InputDescriptor{Operation: "activation.component", Type: reflect.TypeFor[workflow.ActivationComponentRequest](), Fields: []cli.InputField{
 		judgmentID("activation_id", "Activation ID."), bindingString("component_type", "Component type."), judgmentID("component_id", "Component ID."),
 		inputInteger("component_version", "Component version.", 1), inputString("expected_prior_digest", "nullable", "Prior digest.", "digest", ""),
-		bindingArray("content", "Selected component content.", actor, 1), inputInteger("expected_version", "Activation version.", 1),
+		content, inputInteger("expected_version", "Activation version.", 1),
 	}}
 	if err := cli.CheckInputType(descriptor); err != nil {
 		t.Fatalf("accepted ActorProfile[] raw content cannot be reflected: %v", err)
@@ -321,7 +460,7 @@ func TestP24GateEnvelopeClaimDescriptors(t *testing.T) {
 	t.Parallel()
 	for _, leaf := range []string{"gate register", "envelope create", "envelope activate", "envelope complete", "claim acquire", "claim renew", "claim release", "claim expire"} {
 		descriptor, ok := inputDescriptorRegistry[leaf]
-		if !ok || pendingInputDescriptors[leaf] {
+		if !ok {
 			t.Errorf("%s has no adopted descriptor", leaf)
 			continue
 		}
@@ -381,7 +520,7 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 	for leaf, descriptor := range leaves {
 		t.Run(leaf, func(t *testing.T) {
 			t.Parallel()
-			if pendingInputDescriptors[leaf] || cli.CheckInputType(descriptor) != nil {
+			if cli.CheckInputType(descriptor) != nil {
 				t.Fatal("descriptor missing or mismatched")
 			}
 			workspace := t.TempDir()
@@ -420,6 +559,11 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 						} else if field.Element.Format != "" {
 							constraints = append(constraints, "element format: "+field.Element.Format)
 						}
+						for _, constraint := range p24JudgmentHelpMetadata(*field.Element) {
+							if strings.HasPrefix(constraint, "integer range ") || strings.HasPrefix(constraint, "length ") {
+								constraints = append(constraints, "element "+constraint)
+							}
+						}
 					}
 					minimum, maximum := "unbounded", "unbounded"
 					if field.MinInt != nil {
@@ -447,13 +591,20 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 						}
 					}
 					helpFields(field.Children, path)
+					for _, children := range field.Variants {
+						variantPath := path
+						if field.Type == "array" {
+							variantPath += "[i]"
+						}
+						helpFields(children, variantPath)
+					}
 					if field.Element != nil {
 						helpFields(field.Element.Children, path+"[i]")
 					}
 				}
 			}
-			helpFields(descriptor.Fields, "input")
-			template, err := cli.InputExample(descriptor)
+			helpFields(inputDescriptorRegistry[leaf].Fields, "input")
+			template, err := cli.InputExample(inputDescriptorRegistry[leaf])
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -473,9 +624,15 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 				t.Fatalf("example side effects: %v / %v", entries, err)
 			}
 			var baseline map[string]any
-			if err := json.Unmarshal(template, &baseline); err != nil {
+			baselineTemplate, err := cli.InputExample(descriptor)
+			if err != nil {
 				t.Fatal(err)
 			}
+			if err := json.Unmarshal(baselineTemplate, &baseline); err != nil {
+				t.Fatal(err)
+			}
+			p24ReviewTemplateObject(t, baseline, p24SelectedFields(descriptor.Fields, baseline), "input")
+			p24TemplateOrder(t, baselineTemplate, p24SelectedFields(descriptor.Fields, baseline), baseline)
 			p24ExpandDescriptorObjects(t, baseline, descriptor.Fields)
 			payload, err := json.Marshal(baseline)
 			if err != nil {
@@ -507,7 +664,7 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 						}
 						data = []byte(strings.Replace(string(marked), `"__p24_duplicate_target":"marker",`, `"`+field+`":`+string(value)+`,`, 1))
 					}
-					invalid, ok := cli.ValidateInput(data, descriptor).(*cli.InputError)
+					invalid, ok := cli.ValidateInput(data, inputDescriptorRegistry[leaf]).(*cli.InputError)
 					if !ok || invalid.Path != path || len(invalid.Allowed) == 0 {
 						t.Fatalf("structural path: %#v, want %s", invalid, path)
 					}
@@ -543,6 +700,7 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 			}
 			var walk func(map[string]any, []cli.InputField, string)
 			walk = func(object map[string]any, fields []cli.InputField, prefix string) {
+				fields = p24SelectedFields(fields, baseline)
 				check(prefix+"/unknown", prefix+".bogus", object, func() { object["bogus"] = true }, func() { delete(object, "bogus") })
 				for _, field := range fields {
 					path, original := prefix+"."+field.Name, object[field.Name]
@@ -595,11 +753,28 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 							if field.Element.Type == "string" && field.Element.Format != "" && field.Element.Format != "text" {
 								check(path+"/element-format", path+"[0]", object, func() { mutateElement("") }, func() { object[field.Name] = original })
 							}
+							if len(field.Element.Members) > 0 {
+								check(path+"/element-enum", path+"[0]", object, func() { mutateElement("not-a-member") }, func() { object[field.Name] = original })
+							}
+							if field.Element.MinInt != nil {
+								check(path+"/element-min", path+"[0]", object, func() { mutateElement(*field.Element.MinInt - 1) }, func() { object[field.Name] = original })
+							}
+							if field.Element.MaxInt != nil {
+								check(path+"/element-max", path+"[0]", object, func() { mutateElement(*field.Element.MaxInt + 1) }, func() { object[field.Name] = original })
+							}
+							if field.Element.MinLen != nil && *field.Element.MinLen > 0 {
+								check(path+"/element-short", path+"[0]", object, func() { mutateElement("") }, func() { object[field.Name] = original })
+							}
+							if field.Element.MaxLen != nil {
+								check(path+"/element-long", path+"[0]", object, func() { mutateElement(strings.Repeat("x", *field.Element.MaxLen+1)) }, func() { object[field.Name] = original })
+							}
 							if field.Format == "sorted-unique" {
 								check(path+"/order", path, object, func() {
 									entries := append([]any(nil), original.([]any)...)
-									if len(entries) < 2 {
+									if len(entries) == 0 {
 										entries = []any{"duplicate", "duplicate"}
+									} else if len(entries) == 1 {
+										entries = append(entries, entries[0])
 									} else {
 										entries[1] = entries[0]
 									}
@@ -621,8 +796,62 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 	}
 }
 
+func p24TemplateOrder(t *testing.T, data []byte, fields []cli.InputField, root map[string]any) {
+	t.Helper()
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	if token, err := decoder.Token(); err != nil || token != json.Delim('{') {
+		t.Fatalf("template object: %v / %v", token, err)
+	}
+	for _, field := range p24SelectedFields(fields, root) {
+		if field.Requirement == "optional" {
+			continue
+		}
+		if token, err := decoder.Token(); err != nil || token != field.Name {
+			t.Fatalf("template key order: %v / %v, want %s", token, err, field.Name)
+		}
+		var value json.RawMessage
+		if err := decoder.Decode(&value); err != nil {
+			t.Fatal(err)
+		}
+		if field.Requirement == "nullable" {
+			if string(value) != "null" {
+				t.Fatal("nullable template is not null")
+			}
+			continue
+		}
+		if field.Type == "object" {
+			p24TemplateOrder(t, value, field.Children, root)
+		}
+		if field.Type == "array" {
+			var entries []json.RawMessage
+			if err := json.Unmarshal(value, &entries); err != nil {
+				t.Fatal(err)
+			}
+			want := 0
+			if field.MinLen != nil && *field.MinLen > 0 {
+				want = 1
+			}
+			if len(entries) != want {
+				t.Fatalf("template array %s: length=%d want %d", field.Name, len(entries), want)
+			}
+			for _, entry := range entries {
+				if field.Element.Type == "object" {
+					p24TemplateOrder(t, entry, field.Element.Children, root)
+				}
+			}
+		}
+	}
+	if decoder.More() {
+		t.Fatal("extra template member")
+	}
+	if _, err := decoder.Token(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func p24ExpandDescriptorObjects(t *testing.T, object map[string]any, fields []cli.InputField) {
 	t.Helper()
+	fields = p24SelectedFields(fields, object)
 	for _, field := range fields {
 		if field.Requirement == "optional" {
 			valueField := field
@@ -645,6 +874,9 @@ func p24ExpandDescriptorObjects(t *testing.T, object map[string]any, fields []cl
 		}
 		if field.Format == "timestamp" && object[field.Name] != nil {
 			object[field.Name] = "2026-10-06T00:00:00Z"
+		}
+		if field.Format == "environment name" {
+			object[field.Name] = "SECRET"
 		}
 		if field.Element != nil && field.Element.Format == "digest" {
 			count := 1
@@ -687,6 +919,28 @@ func p24ExpandDescriptorObjects(t *testing.T, object map[string]any, fields []cl
 			object[field.Name] = child
 		}
 	}
+}
+
+func p24SelectedFields(fields []cli.InputField, root map[string]any) []cli.InputField {
+	selected := append([]cli.InputField(nil), fields...)
+	for i, field := range selected {
+		if len(field.Variants) == 0 {
+			continue
+		}
+		selector := field.Discriminator
+		if selector == "" {
+			selector = "code"
+		}
+		children := field.Variants[fmt.Sprint(root[selector])]
+		if field.Type == "array" {
+			element := *field.Element
+			element.Children = children
+			selected[i].Element = &element
+		} else {
+			selected[i].Children = children
+		}
+	}
+	return selected
 }
 
 func p24ReviewHelpMatches(help, leaf string) bool {
@@ -835,7 +1089,7 @@ func TestP24ReviewAndFindingDescriptorHelpAndStructure(t *testing.T) {
 	for _, leaf := range []string{"review record", "finding address"} {
 		t.Run(leaf, func(t *testing.T) {
 			descriptor := inputDescriptorRegistry[leaf]
-			if pendingInputDescriptors[leaf] {
+			if _, exists := inputDescriptorRegistry[leaf]; !exists {
 				t.Fatalf("%s remains behind the descriptor fence", leaf)
 			}
 			example, err := cli.InputExample(descriptor)
@@ -1018,8 +1272,8 @@ func p24ReviewTemplateValue(t *testing.T, value any, field cli.InputField, path 
 		array, ok := value.([]any)
 		valid = ok
 		if ok {
-			if field.MinLen != nil && len(array) < *field.MinLen {
-				t.Fatalf("template %s lacks required elements", path)
+			if field.MinLen != nil && *field.MinLen > 0 && len(array) != 1 {
+				t.Fatalf("template %s must contain one editable element", path)
 			}
 			for i, entry := range array {
 				p24ReviewTemplateValue(t, entry, *field.Element, fmt.Sprintf("%s[%d]", path, i))
@@ -1185,7 +1439,7 @@ func TestP24JudgmentDescriptorSourcePositionsAndExamples(t *testing.T) {
 		t.Run(leaf, func(t *testing.T) {
 			t.Parallel()
 			descriptor, exists := inputDescriptorRegistry[leaf]
-			if !exists || pendingInputDescriptors[leaf] {
+			if !exists {
 				t.Fatalf("%s lacks adopted descriptor", leaf)
 			}
 			found := positions(descriptor.Fields, "input")
@@ -2190,7 +2444,7 @@ func TestP24RunDescriptorsAdoptSevenLeaves(t *testing.T) {
 	t.Parallel()
 	for _, leaf := range []string{"run start", "run close", "run abandon", "run observe-budget", "run observe", "run checkpoint", "run recover"} {
 		descriptor, found := inputDescriptorRegistry[leaf]
-		if !found || pendingInputDescriptors[leaf] {
+		if !found {
 			t.Errorf("%s lacks adopted descriptor", leaf)
 			continue
 		}

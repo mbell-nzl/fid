@@ -100,6 +100,5 @@ func bindingDescriptors() map[string]cli.InputDescriptor {
 func init() {
 	for leaf, descriptor := range bindingDescriptors() {
 		inputDescriptorRegistry[leaf] = descriptor
-		delete(pendingInputDescriptors, leaf)
 	}
 }

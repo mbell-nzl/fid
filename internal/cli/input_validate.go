@@ -95,15 +95,7 @@ func scanInputDuplicates(decoder *json.Decoder, location string, fields []InputF
 		seen[key] = true
 		children := []InputField(nil)
 		if field != nil {
-			children = field.Children
-			if len(field.Variants) > 0 {
-				var name string
-				_ = json.Unmarshal(root["code"], &name)
-				children = field.Variants[name]
-			}
-			if field.Element != nil {
-				children = field.Element.Children
-			}
+			children = selectedInputChildren(*field, root)
 		}
 		if err := scanInputDuplicates(decoder, location+"."+key, children, root); err != nil {
 			return err
@@ -177,12 +169,7 @@ func validateInputField(value json.RawMessage, field InputField, location string
 	if field.Type == "object" {
 		var members map[string]json.RawMessage
 		_ = json.Unmarshal(value, &members)
-		children := field.Children
-		if len(field.Variants) > 0 {
-			var selector string
-			_ = json.Unmarshal(root["code"], &selector)
-			children = field.Variants[selector]
-		}
+		children := selectedInputChildren(field, root)
 		return validateInputObject(members, children, location, root)
 	}
 	if field.Type == "array" {
@@ -192,7 +179,16 @@ func validateInputField(value json.RawMessage, field InputField, location string
 			return inputValueError(field, location, entries, []string{inputBounds(field)})
 		}
 		for i, entry := range entries {
-			if err := validateInputField(entry, *field.Element, fmt.Sprintf("%s[%d]", location, i), root); err != nil {
+			element := *field.Element
+			element.Sensitive = element.Sensitive || field.Sensitive
+			entryPath := fmt.Sprintf("%s[%d]", location, i)
+			if len(field.Variants) > 0 {
+				element.Children = selectedInputChildren(field, root)
+				if inputVariantMismatch(entry, field, element.Children) {
+					return &InputError{Path: entryPath, Allowed: inputNames(element.Children)}
+				}
+			}
+			if err := validateInputField(entry, element, entryPath, root); err != nil {
 				return err
 			}
 		}
@@ -204,10 +200,50 @@ func validateInputField(value json.RawMessage, field InputField, location string
 }
 
 func inputValueError(field InputField, location string, value any, allowed []string) error {
-	if field.Sensitive {
+	if inputHasSensitive(field) {
 		value = nil
 	}
 	return &InputError{Path: location, Value: value, Allowed: allowed}
+}
+
+func selectedInputChildren(field InputField, root map[string]json.RawMessage) []InputField {
+	var selector string
+	_ = json.Unmarshal(root[inputDiscriminator(field)], &selector)
+	return inputVariantChildren(field, selector)
+}
+
+func inputVariantMismatch(entry json.RawMessage, field InputField, selected []InputField) bool {
+	var members map[string]json.RawMessage
+	if json.Unmarshal(entry, &members) != nil {
+		return false
+	}
+	for _, variant := range field.Variants {
+		for _, candidate := range variant {
+			if _, exists := members[candidate.Name]; exists && findInputField(selected, candidate.Name) == nil {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func inputHasSensitive(field InputField) bool {
+	if field.Sensitive {
+		return true
+	}
+	if field.Element != nil && inputHasSensitive(*field.Element) {
+		return true
+	}
+	children := append([]InputField(nil), field.Children...)
+	for _, variant := range field.Variants {
+		children = append(children, variant...)
+	}
+	for _, child := range children {
+		if inputHasSensitive(child) {
+			return true
+		}
+	}
+	return false
 }
 
 func jsonKind(value []byte) string {
@@ -310,13 +346,24 @@ func matchesInputFormat(format string, value any) bool {
 	case "timestamp":
 		_, err := time.Parse(time.RFC3339Nano, text)
 		return err == nil
+	case "environment name":
+		return regexp.MustCompile(`^[A-Z_][A-Z0-9_]{0,127}$`).MatchString(text)
 	}
 	return false
 }
 
 func inputSortedUnique(entries []json.RawMessage) bool {
 	last := ""
-	for _, entry := range entries {
+	var lastNumber int64
+	for i, entry := range entries {
+		if jsonKind(entry) == "integer" {
+			var number int64
+			if json.Unmarshal(entry, &number) != nil || i > 0 && number <= lastNumber {
+				return false
+			}
+			lastNumber = number
+			continue
+		}
 		var item string
 		if err := json.Unmarshal(entry, &item); err != nil || item <= last {
 			return false

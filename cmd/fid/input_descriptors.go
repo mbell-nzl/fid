@@ -116,15 +116,3 @@ var inputDescriptorRegistry = map[string]cli.InputDescriptor{
 	"stop resolve":      stopResolveDescriptor(),
 	"attention resolve": attentionResolveDescriptor(),
 }
-
-var pendingInputDescriptors = map[string]bool{
-	"activation abort": true, "activation commit": true, "activation component": true, "activation finalize": true,
-	"activation prepare": true, "activation recover": true, "activation recover-complete": true, "activation resource": true,
-	"artifact verify": true, "claim acquire": true, "claim expire": true, "claim release": true, "claim renew": true,
-	"concern record": true, "concern dispose": true, "decision record-reference": true, "deviation record": true,
-	"envelope create": true, "envelope complete": true, "envelope activate": true, "evidence link": true, "evidence evaluate": true,
-	"finding address": true, "gate register": true, "gate run": true, "human-outcome record": true,
-	"requirement record-reference": true, "requirement link": true, "review record": true,
-	"run start": true, "run close": true, "run abandon": true, "run observe-budget": true, "run observe": true,
-	"run checkpoint": true, "run recover": true,
-}

@@ -15,7 +15,6 @@ func gateRunDescriptor() cli.InputDescriptor {
 
 func init() {
 	inputDescriptorRegistry["gate run"] = gateRunDescriptor()
-	delete(pendingInputDescriptors, "gate run")
 	kind := bindingString("evidence_type", "Type of the linked subject.")
 	kind.Members = []string{"receipt", "review", "human-outcome"}
 	nullID := func(name, meaning string) cli.InputField {
@@ -31,7 +30,4 @@ func init() {
 	obligation := nullID("obligation_id", "Evaluate this Obligation; use null to evaluate the active revision.")
 	inputDescriptorRegistry["evidence evaluate"] = cli.InputDescriptor{Operation: "evidence.evaluate", Purpose: "Evaluate Evidence freshness against the current repository observation.", Type: reflect.TypeFor[evidence.EvidenceEvaluateRequest](), Fields: []cli.InputField{obligation}}
 	inputDescriptorRegistry["artifact verify"] = cli.InputDescriptor{Operation: "artifact.verify", Purpose: "Observe retained Artifact availability.", Type: reflect.TypeFor[evidence.ArtifactVerifyRequest](), Fields: []cli.InputField{judgmentID("artifact_id", "Artifact ID.")}}
-	for _, leaf := range []string{"evidence link", "evidence evaluate", "artifact verify"} {
-		delete(pendingInputDescriptors, leaf)
-	}
 }

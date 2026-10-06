@@ -94,6 +94,5 @@ func judgmentDescriptors() map[string]cli.InputDescriptor {
 func init() {
 	for leaf, descriptor := range judgmentDescriptors() {
 		inputDescriptorRegistry[leaf] = descriptor
-		delete(pendingInputDescriptors, leaf)
 	}
 }

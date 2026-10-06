@@ -36,22 +36,29 @@ func writeInputHelpFields(output *strings.Builder, fields []InputField, prefix s
 		if field.Element != nil && field.Element.Format != "" && len(field.Element.Members) == 0 {
 			_, _ = fmt.Fprintf(output, ", element format: %s", field.Element.Format)
 		}
+		if field.Element != nil && (field.Element.MinInt != nil || field.Element.MaxInt != nil || field.Element.MinLen != nil || field.Element.MaxLen != nil) {
+			_, _ = fmt.Fprintf(output, ", element %s", inputBounds(*field.Element))
+		}
 		if field.MinInt != nil || field.MaxInt != nil || field.MinLen != nil || field.MaxLen != nil {
 			_, _ = fmt.Fprintf(output, ", %s", inputBounds(field))
 		}
 		_, _ = fmt.Fprintf(output, " — %s\n", field.Meaning)
 		if field.Type == "object" {
 			writeInputHelpFields(output, field.Children, prefix+"."+field.Name)
-			if len(field.Variants) > 0 {
-				keys := make([]string, 0, len(field.Variants))
-				for key := range field.Variants {
-					keys = append(keys, key)
+		}
+		if len(field.Variants) > 0 {
+			keys := make([]string, 0, len(field.Variants))
+			for key := range field.Variants {
+				keys = append(keys, key)
+			}
+			sort.Strings(keys)
+			for _, key := range keys {
+				_, _ = fmt.Fprintf(output, "    when %s=%s:\n", inputDiscriminator(field), key)
+				variantPath := prefix + "." + field.Name
+				if field.Type == "array" {
+					variantPath += "[i]"
 				}
-				sort.Strings(keys)
-				for _, key := range keys {
-					_, _ = fmt.Fprintf(output, "    when code=%s:\n", key)
-					writeInputHelpFields(output, field.Variants[key], prefix+"."+field.Name)
-				}
+				writeInputHelpFields(output, field.Variants[key], variantPath)
 			}
 		}
 		if field.Type == "array" && field.Element != nil && field.Element.Type == "object" {
@@ -105,21 +112,16 @@ func writeInputExampleValue(output *bytes.Buffer, field InputField, depth int, d
 	}
 	switch field.Type {
 	case "object":
-		children := field.Children
-		if len(field.Variants) > 0 {
-			code := ""
-			for _, candidate := range descriptor.Fields {
-				if candidate.Name == "code" && len(candidate.Members) > 0 {
-					code = candidate.Members[0]
-				}
-			}
-			children = field.Variants[code]
-		}
+		children := exampleInputChildren(field, descriptor)
 		return writeInputExampleObject(output, children, depth, descriptor)
 	case "array":
 		output.WriteByte('[')
 		if field.MinLen != nil && *field.MinLen > 0 {
-			if err := writeInputExampleValue(output, *field.Element, depth, descriptor); err != nil {
+			element := *field.Element
+			if len(field.Variants) > 0 {
+				element.Children = exampleInputChildren(field, descriptor)
+			}
+			if err := writeInputExampleValue(output, element, depth, descriptor); err != nil {
 				return err
 			}
 		}
@@ -144,4 +146,14 @@ func writeInputExampleValue(output *bytes.Buffer, field InputField, depth int, d
 		return fmt.Errorf("unsupported input field %s type %s", field.Name, field.Type)
 	}
 	return nil
+}
+
+func exampleInputChildren(field InputField, descriptor InputDescriptor) []InputField {
+	selector := ""
+	for _, candidate := range descriptor.Fields {
+		if candidate.Name == inputDiscriminator(field) && len(candidate.Members) > 0 {
+			selector = candidate.Members[0]
+		}
+	}
+	return inputVariantChildren(field, selector)
 }

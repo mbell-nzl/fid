@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/evidence"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -73,6 +74,70 @@ func activationSimpleDescriptors() map[string]cli.InputDescriptor {
 func init() {
 	for leaf, descriptor := range activationSimpleDescriptors() {
 		inputDescriptorRegistry[leaf] = descriptor
-		delete(pendingInputDescriptors, leaf)
 	}
+	inputDescriptorRegistry["activation component"] = activationComponentDescriptor()
+}
+
+func activationArray(name, meaning string, element cli.InputField, minimum int, sorted bool) cli.InputField {
+	field := cli.InputField{Name: name, Type: "array", Requirement: "required", Meaning: meaning, Element: &element}
+	if minimum > 0 {
+		field.MinLen = &minimum
+	}
+	if sorted {
+		field.Format = "sorted-unique"
+	}
+	return field
+}
+
+func activationBoundedInteger(name, meaning string, minimum, maximum int64) cli.InputField {
+	field := inputInteger(name, meaning, minimum)
+	field.MaxInt = &maximum
+	return field
+}
+
+func activationActorFields() []cli.InputField {
+	return []cli.InputField{
+		judgmentID("actor_id", "Actor ID; profiles are sorted by Actor ID."), activationInputEnum("actor_type", "Actor type.", "agent", "human", "service"),
+		activationInputString("producer", "Actor producer.", 1, 128), activationInputString("provenance_ref", "Actor provenance reference.", 1, 512),
+		bindingNullable("session_ref", "Session reference, or null."),
+		activationArray("capabilities", "Sorted unique nonempty capabilities.", activationInputString("capability", "Capability name.", 1, 128), 1, true),
+	}
+}
+
+func activationGateFields() []cli.InputField {
+	environmentName := activationInputString("name", "Environment name: uppercase letters, digits and underscores, starting with a letter or underscore.", 1, 128)
+	environmentName.Format = "environment name"
+	value := bindingNullable("value", "Literal value for literal sources; null for credential and inherit. Sensitive.")
+	value.Sensitive = true
+	environment := inputObject("entry", "Environment entry.", environmentName, activationInputEnum("source", "Value source.", "credential", "inherit", "literal"), value)
+	literals := activationArray("redact_literals", "Sorted unique literals to redact. Sensitive.", bindingString("literal", "Sensitive literal."), 0, true)
+	literals.Sensitive, literals.Element.Sensitive = true, true
+	argv := activationArray("argv", "Command arguments.", activationInputString("argument", "One command argument.", 1, 4096), 1, false)
+	maximum := 128
+	argv.MaxLen = &maximum
+	shell := cli.InputField{Name: "shell", Type: "boolean", Requirement: "required", Meaning: "Shell execution is disabled.", Members: []string{"false"}}
+	return []cli.InputField{
+		judgmentID("definition_id", "Gate Definition ID; definitions are sorted by ID and version."), activationBoundedInteger("definition_version", "Gate Definition version.", 1, 2147483647),
+		argv, inputString("cwd", "required", "Relative working directory; use . for the workspace root.", "relative path", "."), shell,
+		activationArray("environment", "Environment entries sorted by name.", environment, 0, false),
+		activationBoundedInteger("timeout_ms", "Execution timeout in milliseconds.", 1, 600000), activationBoundedInteger("output_bytes", "Output byte limit.", 1, 10485760),
+		activationBoundedInteger("excerpt_bytes", "Excerpt byte limit, also no greater than output_bytes.", 0, 16384),
+		activationArray("success_exit_codes", "Sorted unique successful exit codes.", activationBoundedInteger("code", "Successful exit code.", -255, 255), 1, true),
+		activationArray("credential_names", "Sorted unique credential names matching credential environment entries.", bindingString("credential", "Credential name."), 0, true), literals,
+		activationArray("artifact_paths", "Sorted unique relative artifact paths.", inputString("path", "required", "Artifact path.", "relative path", "<artifact-path>"), 0, true),
+		activationBoundedInteger("artifact_bytes", "Artifact byte limit.", 1, 1073741824), activationInputEnum("sandbox", "Sandbox policy.", "none"),
+		activationInputEnum("network", "Network policy.", "allowed"), activationInputEnum("write", "Write policy.", "allowed"),
+	}
+}
+
+func activationComponentDescriptor() cli.InputDescriptor {
+	content := activationArray("content", "Nonempty typed content selected by component_type.", inputObject("entry", "Selected component entry."), 1, false)
+	content.Discriminator = "component_type"
+	content.Variants = map[string][]cli.InputField{"authority-profile": activationActorFields(), "gate-definitions": activationGateFields()}
+	content.VariantTypes = map[string]reflect.Type{"authority-profile": reflect.TypeFor[workflow.ActorProfile](), "gate-definitions": reflect.TypeFor[evidence.GateDefinition]()}
+	return cli.InputDescriptor{Operation: "activation.component", Purpose: "Stage an untrusted activation component.", Type: reflect.TypeFor[workflow.ActivationComponentRequest](), Fields: []cli.InputField{
+		judgmentID("activation_id", "Activation ID."), activationInputEnum("component_type", "Component content type.", "authority-profile", "gate-definitions"), judgmentID("component_id", "Component ID."),
+		inputInteger("component_version", "Component version.", 1), inputString("expected_prior_digest", "nullable", "Prior component digest, or null.", "digest", "<digest>"), content,
+		inputInteger("expected_version", "Expected Activation version.", 1),
+	}}
 }

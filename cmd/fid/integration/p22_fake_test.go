@@ -6,10 +6,14 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +22,103 @@ import (
 )
 
 const p22CorpusDir = "testdata/p22_conformance"
+
+func TestP24ChangedFakeFIDAssembly(t *testing.T) {
+	t.Parallel()
+	changed := strings.Fields("gate.register envelope.create envelope.complete claim.acquire run.start run.close run.abandon gate.run run.observe-budget evidence.link evidence.evaluate review.record decision.record-reference requirement.record-reference concern.record deviation.record human-outcome.record")
+	dispatch := map[string]bool{}
+	file, err := parser.ParseFile(token.NewFileSet(), "p22_semantic_fake_test.go", nil, 0)
+	p22FaultOK(t, err)
+	ast.Inspect(file, func(node ast.Node) bool {
+		entry, ok := node.(*ast.KeyValueExpr)
+		if !ok {
+			return true
+		}
+		key, ok := entry.Key.(*ast.BasicLit)
+		if !ok || key.Kind != token.STRING {
+			return true
+		}
+		operation, err := strconv.Unquote(key.Value)
+		p22FaultOK(t, err)
+		for _, candidate := range changed {
+			if operation == candidate {
+				dispatch[operation] = true
+			}
+		}
+		return true
+	})
+	corpus := map[string]struct{ file, key, removed string }{
+		"gate.register":     {"p22-corpus-gate-register", "p22-corpus-gate-register", "repository"},
+		"envelope.create":   {"p22-corpus-envelope", "p22-corpus-envelope-create", "repository_scope"},
+		"claim.acquire":     {"p22-corpus-claim", "p22-corpus-claim-acquire", "worktree_id"},
+		"run.start":         {"p22-corpus-run", "p22-corpus-run-start", "repository"},
+		"envelope.complete": {removed: "repository"}, "run.close": {removed: "repository"}, "run.abandon": {removed: "repository"},
+		"gate.run": {removed: "repository"}, "run.observe-budget": {removed: "measurement_ref.repository"},
+	}
+	if len(dispatch) != len(corpus) {
+		t.Fatalf("fake dispatch=%v; corpus=%v", dispatch, corpus)
+	}
+	for operation, fixture := range corpus {
+		if !dispatch[operation] {
+			t.Fatalf("one-sided corpus row %s", operation)
+		}
+		t.Run(operation, func(t *testing.T) {
+			t.Parallel()
+			a := p24RunAdapter(t)
+			fake := p22NewFakeRecoveryAdapter()
+			var input map[string]any
+			key := fixture.key
+			if fixture.file != "" {
+				data, err := os.ReadFile(filepath.Join(a.workspace, fixture.file+".json"))
+				p22FaultOK(t, err)
+				p22FaultOK(t, json.Unmarshal(data, &input))
+			} else if operation == "envelope.complete" {
+				p22AcceptedCall(t, a, "assembly-budget", "run.observe-budget", map[string]any{"value": 0})
+				p22JourneyProof(t, a, "assembly-proof")
+				for i, state := range []string{"in_progress", "dev_complete", "qa_review", "qa_pass"} {
+					p21Run(t, a.binary, a.workspace, "--json", "issue", "transition", a.issueID, "--to", state, "--actor", "agent:"+a.actor, "--expected-revision", strconv.Itoa(i+1), "--idempotency-key", "assembly-"+state)
+				}
+				input = map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1}
+			} else {
+				if operation == "run.close" || operation == "run.abandon" {
+					a.p22Observe(t, "terminated")
+					fake.model.liveness, fake.model.observation = "terminated", a.observation
+					fake.model.run["version"] = a.runVersion
+				}
+				_, input = a.p22BuildArgs(t, p22ConformanceCase{Operation: operation, Name: "assembly", Input: map[string]any{"value": 0}})
+			}
+			parts := strings.Split(operation, ".")
+			removed := p23Clone(input)
+			if fixture.removed == "measurement_ref.repository" {
+				removed["measurement_ref"].(map[string]any)["repository"] = a.repository
+			} else {
+				removed[fixture.removed] = a.repository
+			}
+			before, sequence := p21JournalEventCount(t, a.workspace), fake.model.sequence
+			fid := p23RunInput(t, a, parts[0], parts[1], a.actor, "assembly-reject", removed)
+			model := fake.model.execute(t, operation, "assembly-reject", a.actor, removed, false)
+			assertP22ProcessFailure(t, operation, "invalid-argument", 2, fid)
+			assertP22ProcessFailure(t, operation, "invalid-argument", 2, model)
+			if !reflect.DeepEqual(p21Path(t, p23Envelope(t, fid.Stderr), "error", "details"), p21Path(t, p23Envelope(t, model.Stderr), "error", "details")) {
+				t.Fatalf("rejection details differ: fid=%s fake=%s", fid.Stderr, model.Stderr)
+			}
+			if p21JournalEventCount(t, a.workspace) != before || fake.model.sequence != sequence {
+				t.Fatal("rejected input changed state")
+			}
+			if key == "" {
+				key = "assembly-accept"
+			}
+			fid = p23RunInput(t, a, parts[0], parts[1], a.actor, key, input)
+			model = fake.model.execute(t, operation, "assembly-accept", a.actor, input, false)
+			if operation == "gate.run" {
+				assertP22LiveDenial(t, fid, false)
+				assertP22LiveDenial(t, model, false)
+			} else if fid.ExitCode != 0 || model.ExitCode != 0 {
+				t.Fatalf("accepted shape parity: fid=%#v fake=%#v", fid, model)
+			}
+		})
+	}
+}
 
 type p22ConformanceCase struct {
 	Name         string         `json:"name"`

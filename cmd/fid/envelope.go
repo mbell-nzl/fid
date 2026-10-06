@@ -1,12 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
-	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -44,6 +40,9 @@ func newEnvelopeCreateCommand() *cobra.Command {
 		}
 		var request workflow.EnvelopeCreateRequest
 		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["envelope create"], &request); err != nil {
+			return renderEnvelopeError(cmd, "envelope.create", err, actor)
+		}
+		if err := rejectAuthoredBudgetState(request.InputAsWritten); err != nil {
 			return renderEnvelopeError(cmd, "envelope.create", err, actor)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -175,51 +174,11 @@ func writeEnvelopeSuccess(cmd *cobra.Command, operation string, result workflow.
 	return err
 }
 
-func decodeClosedEnvelopeInput(stdin io.Reader, path string, target any) error {
-	var payload []byte
-	var err error
-	if path == "-" {
-		payload, err = io.ReadAll(io.LimitReader(stdin, 1_048_577))
-	} else {
-		payload, err = os.ReadFile(path)
-	}
-	if err != nil {
-		return fmt.Errorf("read envelope input: %w", err)
-	}
-	if len(payload) > 1_048_576 {
-		return fmt.Errorf("envelope input exceeds 1048576 bytes")
-	}
-	if err := rejectAuthoredBudgetState(payload, target); err != nil {
-		return err
-	}
-	decoder := json.NewDecoder(strings.NewReader(string(payload)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		return fmt.Errorf("decode envelope input: %w", err)
-	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		return fmt.Errorf("envelope input must contain one object")
-	}
-	if request, ok := target.(*workflow.EnvelopeCreateRequest); ok {
-		if err := json.Unmarshal(payload, &request.InputAsWritten); err != nil {
-			return fmt.Errorf("decode envelope input members: %w", err)
-		}
-	}
-	return nil
-}
-
-func rejectAuthoredBudgetState(payload []byte, target any) error {
-	if _, ok := target.(*workflow.EnvelopeCreateRequest); !ok {
-		return nil
-	}
-	var input struct {
-		Budgets []map[string]json.RawMessage `json:"budgets"`
-	}
-	if err := json.Unmarshal(payload, &input); err != nil {
-		return nil
-	}
-	for _, budget := range input.Budgets {
+// Authored budget state is a domain prohibition, including an empty or null value.
+func rejectAuthoredBudgetState(input map[string]any) error {
+	budgets, _ := input["budgets"].([]any)
+	for _, entry := range budgets {
+		budget, _ := entry.(map[string]any)
 		if _, found := budget["state"]; found {
 			return fmt.Errorf("envelope budget state is output-only")
 		}

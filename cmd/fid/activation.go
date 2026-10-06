@@ -1,13 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"reflect"
-	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -237,7 +233,7 @@ func newActivationComponentCommand() *cobra.Command {
 				return err
 			}
 			var request workflow.ActivationComponentRequest
-			if err := decodeClosedActivationInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+			if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["activation component"], &request); err != nil {
 				return renderActivationError(cmd, "activation.component", err)
 			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -263,6 +259,7 @@ func newActivationComponentCommand() *cobra.Command {
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.Flags().StringVar(&bootstrapActor, "actor", "", "Untrusted bootstrap attribution")
 	cmd.SetFlagErrorFunc(canonicalFlagError("activation.component"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["activation component"])
 	return cmd
 }
 
@@ -321,35 +318,6 @@ func readActivationPrepareInput(cmd *cobra.Command, path string) (workflow.Activ
 		return workflow.ActivationPrepareRequest{}, err
 	}
 	return request, nil
-}
-
-func decodeClosedActivationInput(stdin io.Reader, path string, target any) error {
-	var payload []byte
-	var err error
-	if path == "-" {
-		payload, err = io.ReadAll(io.LimitReader(stdin, 1_048_577))
-	} else {
-		payload, err = os.ReadFile(path)
-	}
-	if err != nil {
-		return fmt.Errorf("read activation input: %w", err)
-	}
-	if len(payload) > 1_048_576 {
-		return fmt.Errorf("activation input exceeds 1048576 bytes")
-	}
-	decoder := json.NewDecoder(strings.NewReader(string(payload)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		return fmt.Errorf("decode activation input: %w", err)
-	}
-	if decoder.More() {
-		return fmt.Errorf("activation input must contain one object")
-	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		return fmt.Errorf("activation input must contain one object")
-	}
-	return nil
 }
 
 func renderActivationError(cmd *cobra.Command, operation string, cause error) error {
