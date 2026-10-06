@@ -7,6 +7,10 @@ None.
 ## Recently resolved
 
 Phase 24, archived in [Phase 24 escalations](../phases/phase-24/tl-escalations.md):
+- ESC-24-003: the sequence verifier rejected the corrected Task 9
+  recovery; resolved 2026-10-07 by DEC-284 without a verifier change. The
+  Runner appends correcting TRIAGE TRG-24-008 and the bound recovery, then
+  runs QA window C after Task 9.
 - ESC-24-002: the accepted Task 6 RUN-RESUME bound an unsatisfiable recovery
   tuple; resolved 2026-10-06 by DEC-283. The Runner then does the verifier
   maintenance and the ledger sequence.

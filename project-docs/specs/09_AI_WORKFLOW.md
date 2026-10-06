@@ -274,7 +274,13 @@ Triage rules:
   blocker candidate returned by an active schema-v2 recovery awaiting its
   REPAIR event, the immediately bound TASK-RECOVERY replaces that pending
   dispatch only for the same task. It does not permit cross-task replacement or
-  bypass any other recovery stage.
+  bypass any other recovery stage. A REPAIR TRG that continues a recovery
+  whose last REPAIR was not `RESOLVED` keeps that recovery's `Trigger
+  signature` and the next attempt. The trigger is chain identity, not a
+  description of the new defect. Its `Repair category` is one of the
+  run-ledger recovery categories. An unconsumed ordinary REPAIR TRG is
+  corrected only by a later REPAIR TRG for the same task and attempt (DEC-190).
+  A correction written inside the original section binds nothing (DEC-284).
 - A **protected gate/control definition change** changes a command, assertion's
   accepted pass/fail semantics, accepted status, scope,
   threshold/budget/tolerance, or governing policy. It requires `BLOCK` unless

@@ -56,6 +56,21 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - Fake/fid conformance assembly in `cmd/fid/integration/` (the Phase 22 fake
   corpus files)
 
+### DEC-284 Amendment (recovery attempt 2)
+
+- TRG-24-006, carried forward by TRG-24-008, adds exactly these shared files
+  for the activation `component_type`-selected raw typed arrays:
+  `internal/cli/input_descriptor.go`, `internal/cli/input_render.go`,
+  `internal/cli/input_validate.go`, `internal/cli/input_validate_test.go`.
+  The ordinary race/coverage gate and `golangci-lint run ./...` below
+  already execute them.
+- Existing code-selected object variants and every current caller keep
+  their behavior. Shared regression evidence is reviewed at window D1.
+- No input shape, descriptor semantics, VAL row or command changes.
+- The recovery identity is the chain trigger
+  `task-9:report-lint:noncanonical-pass-evidence-termination` at attempt 2
+  (DEC-284 clause 2).
+
 ### Files To Read For Context
 
 - `project-docs/docs/phases/phase-24/public-interface.md` section 8

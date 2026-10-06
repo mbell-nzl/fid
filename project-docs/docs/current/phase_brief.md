@@ -1,4 +1,4 @@
-# Phase Brief - Phase 24 (executing; Task 6 recovery under DEC-283)
+# Phase Brief - Phase 24 (executing; Task 9 recovery under DEC-284)
 
 ## Phase Goal
 
@@ -11,28 +11,30 @@ expectations a check uses. Request digests cover the input as written.
 
 ## Status
 
-**Executing on branch `phase-24`.** Tasks 1-5 are complete, and QA window A
-passed (review-2). Task 6 is `RECOVERY_REQUIRED` at `1baaecc`/`7298964`.
-The run ledger is `REPAIR_PENDING`.
+**Executing on branch `phase-24`.** Tasks 1-8 are complete. QA window A
+passed (review-2), and window B passed on re-review (review-4). Task 9 is
+`RECOVERY_REQUIRED` at implementation `785a224` and report `f680b20`. The
+run ledger is `REPAIR_PENDING`.
 
-**DEC-283 (2026-10-06)** clears the Task 6 blocker:
+**DEC-284 (2026-10-07)** closes ESC-24-003 without a verifier change:
 
-- It closes ESC-24-001 (model capacity restored) and ESC-24-002, an
-  unsatisfiable RUN-RESUME recovery tuple that wedged the ledger.
-- It reconciles that tuple to attempt 3 of the session-liveness trigger,
-  without rewriting history.
-- It authorizes a bounded two-file `workflow-sequence-lint.sh` repair,
-  run outside the run sequence.
-- It amends Task 6's scope with 21 retained fixtures and rules on stored
-  Claim authority.
+- TRG-24-006 found the right product repair: the four-file shared
+  descriptor extension. But it recorded a non-enum category and a new
+  trigger, so no recovery could bind it.
+- TRG-24-008 (Tech Lead) corrects it in the accepted DEC-190 form. It
+  keeps the chain trigger
+  `task-9:report-lint:noncanonical-pass-evidence-termination` at attempt 2,
+  with category `in-scope-implementation`. Product scope is unchanged.
+- QA window C (tasks 7-8) was skipped after Task 8. It runs late, right
+  after Task 9 completes.
 
 **Next:**
 
-1. The Phase Runner records the base, has a Developer apply DEC-283 clause 4
-   in a clean temporary worktree, verifies it, and integrates with `--ff-only`.
-2. It appends clause 6 (a)-(c), then dispatches the Task 6 attempt-4
-   continuation.
-3. QA window B follows Task 6.
+1. The Phase Runner follows DEC-284 clause 4. If it is a new session, it
+   appends a normal RUN-RESUME. It then appends TRIAGE TRG-24-008 and the
+   bound TASK-RECOVERY, and dispatches the Task 9 attempt-2 continuation.
+2. After `TASK task-9 COMPLETE`, it runs QA window C (tasks 7-8), then
+   task 9a, then window D1 (tasks 9, 9a).
 
 ## Operating Mode
 
@@ -53,7 +55,9 @@ Human checklist's "take control" scenario is the Human run.
   DEC-276 (help and template rules), DEC-277 (plan approval), DEC-278
   (QA-plan dispositions), DEC-279 (unknown-command `operation`), DEC-280
   (readiness-refresh dispositions), DEC-281 (generic-fallback messages),
-  DEC-282 (QA recheck corrections). See `../phases/phase-24/decisions.md`.
+  DEC-282 (QA recheck corrections), DEC-283 (Task 6 resume reconciliation),
+  DEC-284 (Task 9 correcting TRIAGE; late window C). See
+  `../phases/phase-24/decisions.md`.
 
 ## Task Index
 
@@ -62,12 +66,12 @@ Human checklist's "take control" scenario is the Human run.
 | 1 | Idempotency field-digest storage (migration 0019) | Complete | None |
 | 2 | Input-as-written digests and named conflict fields, every keyed leaf | Complete | 1 |
 | 3 | Input descriptor framework, help, templates, field-named validation | Complete (window A PASS) | None |
-| 4 | Repository observation and SourceInput; judgment reference leaves | Complete | 2, 3 |
-| 5 | Review leaves and repository expectations | Complete | 4 |
-| 6 | Gate registration, Envelope and Claim leaves | Recovery (DEC-283) | 4 |
-| 7 | Run leaves (DEC-273) | Pending | 5, 6 |
-| 8 | Gate run and Evidence leaves; real freshness (DEC-273) | Pending | 7 |
-| 9 | Activation descriptors; whole-tree input and help conformance | Pending | 3-8 |
+| 4 | Repository observation and SourceInput; judgment reference leaves | Complete (window B PASS) | 2, 3 |
+| 5 | Review leaves and repository expectations | Complete (window B PASS) | 4 |
+| 6 | Gate registration, Envelope and Claim leaves | Complete (window B PASS) | 4 |
+| 7 | Run leaves (DEC-273) | Complete (window C pending) | 5, 6 |
+| 8 | Gate run and Evidence leaves; real freshness (DEC-273) | Complete (window C pending) | 7 |
+| 9 | Activation descriptors; whole-tree input and help conformance | Recovery (DEC-284) | 3-8 |
 | 9a | Grammar failures and unknown commands across the live tree (DEC-280) | Pending | 9 |
 | 10 | Human failure lines in every family; generic-fallback messages (DEC-281) | Pending | 9a |
 | 11 | Readable Stop, Attention and repository lines; Human fixture generator | Pending | 10 |
@@ -102,7 +106,7 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 | Artifact | Path | Status |
 |---|---|---|
 | QA plan | `../phases/phase-24/qa/qa-plan.md` | READY (`7e41e6b`, section 12.7); RC-01/02 closed |
-| Mid-phase reviews | A after 3 (review-2 PASS); B after 6; C after 8; D1 after 9a; D2 after 11; E after 14 | Six windows per QA plan section 8 (DEC-280/282). Human walkthrough after task 11 |
+| Mid-phase reviews | A after 3 (review-2 PASS); B after 6 (review-4 PASS); C after 8 (missed; runs after task 9, DEC-284); D1 after 9a; D2 after 11; E after 14 | Six windows per QA plan section 8 (DEC-280/282). Human walkthrough after task 11 |
 | Human fixtures | `TestP24HumanFixtures` (task 11, extended by task 14) | Pending |
 | Final review / Human checklist | `../phases/phase-24/qa/` | Pending |
 
@@ -135,5 +139,5 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 
 ## Next Planning Checkpoint
 
-Task 6 completes under DEC-283, then QA window B runs. Phase 25
-"Parallel and evolving work" follows Phase 24.
+Task 9 completes under DEC-284. Then the late QA window C runs, then task
+9a and window D1. Phase 25 "Parallel and evolving work" follows Phase 24.

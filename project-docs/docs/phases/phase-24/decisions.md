@@ -752,6 +752,166 @@
   `:1024-1029`, `:1034-1100`, `:1312-1345`; `internal/claims/generic.go:380-388`;
   `09_AI_WORKFLOW.md` sections 2.3-2.4, 9.
 
+### DEC-284: Correct unconsumed TRG-24-006 through a DEC-190 correcting TRIAGE; no verifier change; late QA window C. Closes ESC-24-003
+
+- **Date:** 2026-10-07. Tech Lead ESC resolution on the Human's instruction
+  "Resolve ESC-24-003". Precedents: DEC-190 (Phase 22 correcting TRIAGE and
+  its contract), DEC-283 clause 2 (chain trigger is identity).
+- **Context:**
+  - Ledger tail: 02:17 TASK-RECOVERY task-9 (`report-repair`, trigger
+    `task-9:report-lint:noncanonical-pass-evidence-termination`, attempt 1);
+    02:20 REPAIR `MATERIAL-PROGRESS`; 02:24 TRIAGE TRG-24-006 `REPAIR` with
+    trigger `task-9:scope-gap:shared-descriptor-variant-adoption`, attempt 2,
+    `Repair category` `scope-gap`. The ledger validates
+    `VALID state=REPAIR_PENDING` at `f680b20`.
+  - TRG-24-006 is right on substance (the four-file shared extension) and
+    wrong on identity, twice. (1) `scope-gap` is not a recovery category
+    (`run-ledger-template.md:155`). (2) It minted a new trigger while the
+    report-repair continuation was active. Section 2.3 says REPAIR keeps the
+    task's trigger budget, and the DEC-190 rule (section 9) says "an active
+    continuation still retains its trigger and next attempt". The verifier
+    checks neither at TRIAGE time, but enforces both at TASK-RECOVERY time
+    (`workflow-sequence-lint.sh:710`, `:751-757`, `:817-819`). This is the
+    DEC-283 defect class again: an accepted record with no satisfiable
+    successor. DEC-283 workflow note (i) predicted the trigger half.
+  - The in-section "Correction to TRG-24-006" is not a form the accepted
+    contract parses. `section_field_matches` reads only the original labels,
+    and the H3 sits inside the TRG-24-006 section. The accepted correction
+    form is DEC-190's later correcting REPAIR TRIAGE for the same task and
+    attempt (`pending_triage_reconciliation`, `:488-511`).
+  - TRG-24-007's BLOCK was never recorded in the ledger, and could not be,
+    because a pending TRIAGE REPAIR admits no TRIAGE BLOCK. No STOP exists.
+    That is exactly the DEC-190 situation ("neither rejected BLOCK nor STOP
+    was persisted").
+  - Tech Lead dry runs were made on scratch copies of the phase files with
+    the unchanged verifier at `f680b20` (results in the clause 5 table).
+    Both TL-Lite rejections reproduce. No TASK-RECOVERY variant satisfies
+    the current state, and TRIAGE BLOCK is rejected. The DEC-190 route
+    appends at every step, and its guards reject.
+  - Separately, QA plan section 8 window C (after task 8, tasks 7-8, plus
+    feasibility of the commands tasks 9-14 prescribe) never ran. The ledger
+    goes from 01:51 `TASK task-8 COMPLETE` to 02:17 TASK-RECOVERY task-9, and
+    `qa/review-5.md` does not exist. No decision waived it.
+- **Decision:**
+  1. **ESC-24-003 closed; BLOCK premise rejected.** TL-Lite was right
+     not to self-repair a protected verifier or rewrite history. But no
+     verifier change is needed, so none is authorized. Parsing in-section
+     corrections would add a second correction form beside DEC-190's,
+     which is a protected definition change, so it is rejected.
+     TRG-24-007 stays immutable as a triage-log-only BLOCK. It gets no
+     ledger event, STOP, control amendment or STOP-resume RUN-RESUME.
+  2. **Binding semantics.**
+     (a) The effective external authority is **TRG-24-008**: a Tech Lead
+     correcting TRG under this decision, written like TRG-22-005. It
+     copies TRG-24-006's operative fields byte-for-byte: accepted contract
+     and mismatch, `Allowed files`, recovery scope, `Forbidden changes`,
+     required evidence, `Exact verification`, `Originating report` and
+     independent re-review. Product scope is therefore unchanged: the
+     `task-9.md` ordinary scope plus exactly
+     `internal/cli/input_descriptor.go,internal/cli/input_render.go,internal/cli/input_validate.go,internal/cli/input_validate_test.go`.
+     (b) TRG-24-006, its in-section correction, and the 02:24 ledger TRIAGE
+     stay unedited. They are superseded, not rewritten. The in-section
+     correction is evidence only and binds nothing.
+     (c) Identity: `task-9`; trigger
+     `task-9:report-lint:noncanonical-pass-evidence-termination`; attempt
+     `2`; category `in-scope-implementation`; authority
+     `task spec; DEC-284`. The trigger is chain identity, not a
+     description (DEC-283 clause 2). The product defect keeps its
+     descriptive name `task-9:scope-gap:shared-descriptor-variant-adoption`
+     in TRG-24-006/008 prose only.
+     (d) Budget: attempts are 1 (report repair), then 2. The 02:20
+     `MATERIAL-PROGRESS` gives `0/2`, so nothing resets and nothing is
+     consumed by rejected candidates.
+  3. **Route.** This is ordinary task-scope continuation in the phase
+     worktree. No verifier, drill, scope-verifier, route or report-lint
+     change, no out-of-sequence maintenance, and no temporary worktree. The
+     "ledger-only dirt" precondition that TL-Lite cited governs isolated
+     control-conformance dispatch, which this route does not use. This
+     decision's commit still includes the triage log, so the Runner-owned
+     ledger is the only dirty path.
+  4. **Ledger sequence** (Runner, transactional append; each step requires
+     `APPEND_CONFIRMED state=REPAIR_PENDING` with observed `exit_code: 0`;
+     append before dispatch):
+     (a) A new Runner session first appends a normal schema-v2 RUN-RESUME:
+     STOP-only fields `N/A`, `Continuing task: task-9` (DEC-190 runner
+     restart).
+     (b) `TRIAGE TRG-24-008` with exactly these five values:
+     `Originating task: task-9`,
+     `Trigger signature: task-9:report-lint:noncanonical-pass-evidence-termination`,
+     `Attempt count: 2`, `Repair category: in-scope-implementation`,
+     `Repair authority: task spec; DEC-284`, and `Verdict: REPAIR`.
+     (c) `TASK-RECOVERY task-9` with the same task, trigger, attempt,
+     `Category`, and `Repair authority`. `Repair mode: task-scope`,
+     `Triage disposition: N/A`, `0/2`, `Source` citing TRG-24-008 and
+     DEC-284, control fields and base `N/A`. `Allowed files` is
+     `ordinary task-9.md scope plus exact shared extension ` followed by
+     the four paths. `Forbidden changes`, `Exact verification` and
+     `Originating report` are copied byte-for-byte from TRG-24-008.
+     `Resolution evidence` discloses TRG-24-007/ESC-24-003, DEC-284, and
+     both rejected candidates with their messages and `exit_code: 1`.
+     Then dispatch the same-task Developer continuation.
+     Its later REPAIR uses the same trigger and attempt.
+  5. **Verification contract.** Positive: (a)-(c) each give the receipt
+     above, and the ledger then validates `VALID state=REPAIR_PENDING`. The
+     Tech Lead dry run gave exactly that both with and without (a).
+     Negative guards from the same dry run, each `exit_code: 1` with the
+     ledger byte-unchanged:
+
+     | Candidate | Diagnostic |
+     |---|---|
+     | Rejected corrected candidate (product trigger, `in-scope-implementation`) | `does not preserve its governing schema v2 TRIAGE REPAIR authority`; `continuing recovery must preserve task and Trigger signature` |
+     | Rejected original candidate (`scope-gap`) | `has missing or invalid Category`; `continuing recovery must preserve task and Trigger signature` |
+     | Chain trigger with either category, before TRG-24-008 | `does not preserve its governing schema v2 TRIAGE REPAIR authority` |
+     | TRIAGE BLOCK TRG-24-007 | `TRIAGE REPAIR must be followed by its bound TASK-RECOVERY before TRIAGE` |
+     | TRG-24-008 with the product trigger | the line above plus `schema v2 TRIAGE identity does not match its unique external record` |
+     | TRG-24-008 whose category differs from its record | `schema v2 TRIAGE identity does not match its unique external record` |
+     | After TRG-24-008: product trigger; `Source` without TRG-24-008; authority `task spec`; attempt 3 | `does not preserve its governing schema v2 TRIAGE REPAIR authority` (product trigger and attempt 3 also give their continuation messages) |
+     | After TRG-24-008: `1/2` | `continuing recovery has invalid Consecutive no-progress attempts; expected 0/2` |
+
+     Immutable history: every existing ledger event, TRG-24-001..007, the
+     in-section correction and both rejected candidates stay as recorded.
+     If (a)-(c) as written is rejected, that is new information: return
+     to the Tech Lead. Never substitute field values.
+  6. **QA window C, late.** The Runner's omission is a deviation, not a
+     cadence change. The window's scope is unchanged. A window C `REPAIR`
+     naming tasks 7 or 8 cannot be routed while Task 9's recovery is open
+     (overlapping-recovery rule). So the Runner runs window C immediately
+     after `TASK task-9 COMPLETE` and before dispatching task 9a, as the
+     next unused `qa/review-M.md`. It reviews tasks 7-8 at their recorded
+     close commits plus current HEAD, and feasibility for tasks 9a-14.
+     Task 9's own gates evidence its own feasibility. D1 (tasks 9, 9a)
+     is unchanged. Dry run: `REVIEW` PASS after Task 9 completion appends
+     `APPEND_CONFIRMED state=ADVANCEABLE`.
+  7. **Recurrence guard (spec sync, clarifying only).** Section 2.3 and
+     `tl-lite.md` now state three accepted rules explicitly: a continuation
+     TRG keeps the chain trigger and the next attempt; `Repair category` is a
+     ledger recovery category; and an unconsumed ordinary REPAIR TRG is
+     corrected only by a later correcting TRG. No rule changes.
+  8. No other product behavior, public interface, VAL row, task boundary,
+     gate command or budget changes. Task 9 gains a DEC-284 amendment
+     that records the TRG-24-006/008 extension. The required ordinary
+     race/coverage gate and `golangci-lint run ./...` already execute
+     those four files.
+- **Workflow notes for wrap-up:** (i) This is the second identity defect at
+  a continuation TRIAGE in this phase, after DEC-283 note (i). (ii) A
+  candidate hardening is to fail fast at TRIAGE: reject a REPAIR whose
+  category is outside the enum, or whose trigger differs from an active
+  continuation's, rather than wedge at TASK-RECOVERY. This is protected
+  verifier maintenance and is not authorized here. (iii) The ledger has no
+  legal record for a BLOCK while a TRIAGE REPAIR is pending (compare DEC-149
+  clause 6 and DEC-283 note iii). (iv) The Runner skipped a QA window
+  without a recorded decision. The route or Runner should check section 8
+  cadence before dispatching the next task.
+- **Artifact/spec sync:** `09_AI_WORKFLOW.md` section 2.3 and
+  `agents/tl-lite.md` (with generated copies) get clause 7. `tasks/task-9.md`
+  gets the amendment. The triage log gets TRG-24-008. The ESC register,
+  archive, brief and progress are refreshed. No PRD, TRD, data model,
+  glossary, template, validation-contract or QA-plan change.
+- **Refs:** ESC-24-003; TRG-24-006 (and correction), TRG-24-007, TRG-24-008;
+  DEC-190, DEC-283; `run-ledger.md` 02:17, 02:20, 02:24;
+  `workflow-sequence-lint.sh:488-511`, `:535-538`, `:705-760`, `:817-819`, `:1343-1377`;
+  `qa/qa-plan.md` section 8; `09_AI_WORKFLOW.md` sections 2.3, 9.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.

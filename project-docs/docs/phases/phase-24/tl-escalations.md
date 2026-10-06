@@ -1,5 +1,37 @@
 # Phase 24 Escalations
 
+## ESC-24-003 - Protected sequence validator rejects corrected Task 9 recovery
+
+- **Raised:** 2026-10-07 by TL-Lite in TRG-24-007 (triage log only; the
+  ledger admits no TRIAGE BLOCK while a TRIAGE REPAIR is pending, so no
+  STOP was recorded).
+- **Protected category:** protected canonical workflow verifier authority /
+  orchestration integrity.
+- **Originating task:** task-9.
+- **Trigger signature:** task-9:workflow-control:append-only-triage-category-override
+- **Condition:** TRG-24-006 (REPAIR, attempt 2) recorded category
+  `scope-gap`, which is not a ledger recovery category, and minted a new
+  trigger while Task 9's report-repair continuation was active. An
+  in-section correction changed only the category. Both rejected candidates
+  are below; the ledger stayed unchanged at `VALID state=REPAIR_PENDING`.
+  - Corrected candidate: `does not preserve its governing schema v2 TRIAGE
+    REPAIR authority` and `continuing recovery must preserve task and
+    Trigger signature` (`exit_code: 1`).
+  - Original candidate: `missing or invalid Category`, a Runner-side
+    disposition error, and the same continuation message.
+- **Status:** RESOLVED 2026-10-07 by DEC-284 (decision). No verifier change
+  is needed. The accepted DEC-190 correcting-TRIAGE route binds the repair.
+  TRG-24-008 (Tech Lead) keeps the chain trigger
+  `task-9:report-lint:noncanonical-pass-evidence-termination` at attempt 2,
+  with category `in-scope-implementation` and authority
+  `task spec; DEC-284`. Product scope is unchanged. Tech Lead dry runs
+  confirm each step appends `APPEND_CONFIRMED state=REPAIR_PENDING`. The
+  Runner follows DEC-284 clause 4, then runs the missed QA window C after
+  Task 9 (clause 6). No further Tech Lead or Human input is needed unless
+  a clause 4 append is rejected as written.
+- **Links:** [DEC-284](decisions.md); [TRG-24-006..008](triage-log.md);
+  [run ledger](run-ledger.md); [Task 9 report](tasks/task-9-done.md).
+
 ## ESC-24-002 - Accepted Task 6 RUN-RESUME binds an unsatisfiable recovery tuple
 
 - **Raised:** 2026-10-06 by the Phase Runner (reported to the Human).

@@ -119,6 +119,15 @@ when it crosses one of these triggers.
   Direct REPAIR binds all five byte-for-byte to ledger TRIAGE and the ensuing
   TASK-RECOVERY; `Repair category` maps to its `Category`. Use `N/A` for the
   latter two fields on RESUME/BLOCK when no repair authority applies.
+- `Repair category` must be a run-ledger recovery category:
+  `in-scope-implementation`, `gate-repair`, `report-repair`, `qa-rework`,
+  `session-continuation`, or `local-environment`. When the task's recovery
+  last ended in a REPAIR that was not `RESOLVED`, the REPAIR TRG keeps that
+  recovery's `Trigger signature` (chain identity, not a description) and
+  uses the next attempt. Describe the new defect in prose. To correct an
+  unconsumed ordinary REPAIR TRG, write a new REPAIR TRG for the same task
+  and attempt (DEC-190). A correction written inside the original section
+  binds nothing (DEC-284).
 - **Attempt the write before claiming you cannot.** "I have no write
   mechanism" is not a conclusion you may reach by reading your own
   instructions - the command prohibition is not a write prohibition. Report a
