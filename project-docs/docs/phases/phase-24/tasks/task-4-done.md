@@ -76,6 +76,7 @@ The direct `decision record-reference --help` entrypoint ran from `/tmp`. Its em
 ### First required-gate attempt
 
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-24/tasks/task-4-done.md project-docs/docs/phases/phase-24/tasks/task-4.md` - FAIL - `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`)
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-24/tasks/task-4-done.md project-docs/docs/phases/phase-24/tasks/task-4.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
 
 The first committed-report control rejected punctuation after a termination field. The correction removes only that trailing period; the failed result is retained here.
 
@@ -135,7 +136,7 @@ Fresh reported package wall times: `cmd/fid` 374.499 s; `internal/workflow` 102.
 
 ## Deviations from spec
 
-- Mandatory report-control failure note: the first `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-24/tasks/task-4-done.md project-docs/docs/phases/phase-24/tasks/task-4.md` returned `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`). A trailing period after one focused PASS row's termination field violated the control's recorded-result syntax. Removing the period preserves the exact observed evidence. The byte-identical committed-report rerun will provide the later result.
+- Mandatory report-control failure note: the first `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-24/tasks/task-4-done.md project-docs/docs/phases/phase-24/tasks/task-4.md` returned `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`). A trailing period after one focused PASS row's termination field violated the control's recorded-result syntax. Removing the period preserves the exact observed evidence. The byte-identical committed-report rerun returned `PASS report-lint completed with no failures` (terminated `exit_code: 0`) and literal `OUTCOME COMPLETE`.
 
 - No accepted Observation, SourceInput, judgment, public-interface, command, assertion semantics, coverage policy or budget changed. This recovery is limited to review-3 F1-F3 and its exact allowed files.
 - Mandatory first-failure note: the initial `golangci-lint run ./...` returned `* staticcheck: 2` (terminated `exit_code: 1`). Two new test-helper `if/else` chains triggered QF1003. Rewriting those chains as tagged switches, with identical expected values and assertions, repaired the in-scope cause. The byte-identical lint command later returned `0 issues.` (terminated `exit_code: 0`), and all five final required commands passed. The first failure remains immutable failed evidence.
