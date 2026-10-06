@@ -588,6 +588,49 @@ func p24ExpandDescriptorObjects(t *testing.T, object map[string]any, fields []cl
 	}
 }
 
+func p24ReviewHelpMatches(help, leaf string) bool {
+	return p24JudgmentHelpMatches(help, inputDescriptorRegistry[leaf].Fields, "input") && strings.Contains(help, "fid "+leaf+" --example") && (leaf != "review record" ||
+		strings.Contains(help, "git rev-parse HEAD") && strings.Contains(help, "git status --porcelain"))
+}
+
+func TestP24ReviewHelpEvidenceRejectsIncompleteMetadata(t *testing.T) {
+	t.Parallel()
+	for leaf, descriptor := range reviewDescriptors() {
+		t.Run(leaf, func(t *testing.T) {
+			t.Parallel()
+			help := executeCommandForTest(t.TempDir(), append(strings.Split(leaf, " "), "--help")...).stdout
+			if !p24ReviewHelpMatches(help, leaf) {
+				t.Fatal("valid help rejected")
+			}
+			var corrupt func([]cli.InputField, string)
+			corrupt = func(fields []cli.InputField, prefix string) {
+				for _, field := range fields {
+					path := prefix + "." + field.Name
+					for _, metadata := range append(p24JudgmentHelpMetadata(field), field.Meaning) {
+						lines := strings.Split(help, "\n")
+						for i, line := range lines {
+							if strings.HasPrefix(strings.TrimSpace(line), path+": ") {
+								lines[i] = strings.Replace(line, metadata, "WRONG", 1)
+								if lines[i] == line {
+									t.Fatalf("seed did not change %s metadata %s", path, metadata)
+								}
+							}
+						}
+						if p24ReviewHelpMatches(strings.Join(lines, "\n"), leaf) {
+							t.Errorf("help checker accepted wrong %s metadata %s", path, metadata)
+						}
+					}
+					corrupt(field.Children, path)
+					if field.Element != nil {
+						corrupt(field.Element.Children, path+"[i]")
+					}
+				}
+			}
+			corrupt(descriptor.Fields, "input")
+		})
+	}
+}
+
 func TestP24ReviewAndFindingDescriptorHelpAndStructure(t *testing.T) {
 	t.Parallel()
 	for _, leaf := range []string{"review record", "finding address"} {
@@ -608,12 +651,13 @@ func TestP24ReviewAndFindingDescriptorHelpAndStructure(t *testing.T) {
 			}
 			parts := strings.Split(leaf, " ")
 			help := executeCommandForTest(t.TempDir(), append(parts, "--help")...)
-			if help.err != nil || !strings.Contains(help.stdout, "fid "+leaf+" --example") {
+			if help.err != nil || !p24ReviewHelpMatches(help.stdout, leaf) {
 				t.Fatalf("descriptor help = %#v", help)
 			}
 			if leaf == "review record" && (!strings.Contains(help.stdout, "git rev-parse HEAD") || !strings.Contains(help.stdout, "git status --porcelain")) {
 				t.Fatalf("review help omits git commands: %s", help.stdout)
 			}
+			p24ReviewRecursiveStructuralDetails(t, leaf, descriptor)
 			first := descriptor.Fields[0].Name
 			cases := []struct {
 				name, path string
@@ -897,6 +941,235 @@ func TestP24JudgmentDescriptorSourcePositionsAndExamples(t *testing.T) {
 			}
 		})
 	}
+}
+
+func p24ReviewRecursiveStructuralDetails(t *testing.T, leaf string, descriptor cli.InputDescriptor) {
+	t.Helper()
+	template, err := cli.InputExample(descriptor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var baseline map[string]any
+	if err := json.Unmarshal(template, &baseline); err != nil {
+		t.Fatal(err)
+	}
+	p24ExpandDescriptorObjects(t, baseline, descriptor.Fields)
+	// Valid controls go through the same CLI, from a non-project directory.
+	// Reaching the family fallback proves structural decoding was accepted.
+	exercise := func(name string, payload []byte, want *cli.InputError) {
+		t.Helper()
+		t.Run("recursive/"+name, func(t *testing.T) {
+			t.Parallel()
+			validation := cli.ValidateInput(payload, descriptor)
+			if want == nil {
+				if validation != nil {
+					t.Fatalf("qualifying structure: %v", validation)
+				}
+			} else if invalid, ok := validation.(*cli.InputError); !ok || !p24JudgmentDetailsMatch(invalid, want) {
+				t.Fatalf("details = %#v, want %#v", validation, want)
+			}
+			workspace := t.TempDir()
+			input := filepath.Join(t.TempDir(), "request.json")
+			if err := os.WriteFile(input, payload, 0o600); err != nil {
+				t.Fatal(err)
+			}
+			args := append([]string{"--json"}, strings.Split(leaf, " ")...)
+			args = append(args, "--input", input, "--actor", "ACT-1", "--idempotency-key", "recursive")
+			result := executeCommandForTest(workspace, args...)
+			if cli.ExitCode(result.err) != 2 || result.stdout != "" {
+				t.Fatalf("CLI: %#v", result)
+			}
+			if want == nil {
+				want = &cli.InputError{Path: "input", Allowed: []string{"accepted " + descriptor.Operation + " input"}}
+			}
+			wireValue := want.Value
+			if wireValue != nil {
+				if _, ok := wireValue.(string); !ok {
+					value, err := json.Marshal(wireValue)
+					if err != nil {
+						t.Fatal(err)
+					}
+					wireValue = string(value)
+				}
+			}
+			assertAdoptedJSONFailure(t, result.stderr, descriptor.Operation, want.Path, wireValue, want.Allowed)
+			var envelope map[string]any
+			if err := json.Unmarshal([]byte(result.stderr), &envelope); err != nil {
+				t.Fatal(err)
+			}
+			failure := envelope["error"].(map[string]any)
+			if failure["retryable"] != false || failure["subject"] != nil {
+				t.Fatalf("wrong failure metadata: %s", result.stderr)
+			}
+			entries, err := os.ReadDir(workspace)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("CLI changed non-project directory: %v / %v", entries, err)
+			}
+		})
+	}
+	encode := func() []byte {
+		t.Helper()
+		payload, err := json.Marshal(baseline)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return payload
+	}
+	exercise("valid", encode(), nil)
+	var walk func(map[string]any, []cli.InputField, string)
+	walk = func(object map[string]any, fields []cli.InputField, prefix string) {
+		keys := make([]string, len(fields))
+		for i, field := range fields {
+			keys[i] = field.Name
+		}
+		slices.Sort(keys)
+		object["bogus"] = true
+		payload := encode()
+		delete(object, "bogus")
+		exercise(prefix+"/unknown", payload, &cli.InputError{Path: prefix + ".bogus", Value: "bogus", Allowed: keys})
+		for _, field := range fields {
+			path := prefix + "." + field.Name
+			original := object[field.Name]
+			mutate := func(class string, value any, allowed []string, valid bool) {
+				object[field.Name] = value
+				payload := encode()
+				object[field.Name] = original
+				var want *cli.InputError
+				if !valid {
+					want = &cli.InputError{Path: path, Value: value, Allowed: allowed}
+					switch class {
+					case "null":
+						want.Value = "null"
+					case "type":
+						if field.Type == "integer" {
+							want.Value = "boolean"
+						} else {
+							want.Value = "integer"
+						}
+					}
+				}
+				exercise(path+"/"+class, payload, want)
+			}
+			delete(object, field.Name)
+			payload := encode()
+			object[field.Name] = original
+			var missing *cli.InputError
+			if field.Requirement != "optional" {
+				missing = &cli.InputError{Path: path, Allowed: []string{field.Name}}
+			}
+			exercise(path+"/missing", payload, missing)
+			mutate("null", nil, []string{field.Type}, field.Requirement == "nullable")
+			if field.Type == "integer" {
+				mutate("type", false, []string{field.Type}, false)
+			} else {
+				mutate("type", 1, []string{field.Type}, false)
+			}
+			if len(field.Members) > 0 {
+				mutate("enum", "not-a-member", field.Members, false)
+			}
+			switch field.Format {
+			case "oid":
+				mutate("format", "not-an-oid", []string{"oid"}, false)
+			case "ID", "digest", "relative-path":
+				mutate("format", "", []string{field.Format}, false)
+			case "text":
+				allowed := []string{"text"}
+				if len(field.Members) > 0 {
+					// Closed membership rejects before the text-length check.
+					allowed = field.Members
+				}
+				mutate("format", strings.Repeat("x", 4097), allowed, false)
+			}
+			if field.MinInt != nil {
+				mutate("integer-minimum", float64(*field.MinInt-1), []string{fmt.Sprintf("integer range %d..unbounded", *field.MinInt)}, false)
+			}
+			if field.MinLen != nil && field.Type == "string" {
+				mutate("minimum", "", []string{fmt.Sprintf("length %d..%d", *field.MinLen, *field.MaxLen)}, false)
+			}
+			if field.MaxLen != nil && field.Type == "string" {
+				mutate("maximum", strings.Repeat("x", *field.MaxLen+1), []string{fmt.Sprintf("length %d..%d", *field.MinLen, *field.MaxLen)}, false)
+			}
+			if field.Element != nil {
+				for _, bad := range []struct {
+					value any
+					kind  string
+				}{{nil, "null"}, {1, "integer"}} {
+					object[field.Name] = []any{bad.value}
+					payload := encode()
+					object[field.Name] = original
+					exercise(path+"/element-"+bad.kind, payload, &cli.InputError{Path: path + "[0]", Value: bad.kind, Allowed: []string{field.Element.Type}})
+				}
+				if field.Element.Format == "ID" {
+					object[field.Name] = []any{""}
+					payload := encode()
+					object[field.Name] = original
+					exercise(path+"/element-format", payload, &cli.InputError{Path: path + "[0]", Value: "", Allowed: []string{"ID"}})
+				}
+				if field.MinLen != nil || field.MaxLen != nil || field.Format == "sorted-unique" {
+					minimum, maximum := "0", "unbounded"
+					if field.MinLen != nil {
+						minimum = fmt.Sprint(*field.MinLen)
+					}
+					if field.MaxLen != nil {
+						maximum = fmt.Sprint(*field.MaxLen)
+					}
+					arrays := map[string][]any{}
+					if field.MinLen != nil && *field.MinLen > 0 {
+						arrays["array-minimum"] = []any{}
+					}
+					if field.MaxLen != nil {
+						oversize := make([]any, *field.MaxLen+1)
+						var element any = "scope/path"
+						if entries := original.([]any); len(entries) > 0 {
+							element = entries[0]
+						}
+						for i := range oversize {
+							oversize[i] = element
+						}
+						arrays["array-maximum"] = oversize
+					}
+					if field.Format == "sorted-unique" {
+						arrays["sorted-unique"] = []any{"z", "a"}
+					}
+					for class, value := range arrays {
+						object[field.Name] = value
+						payload := encode()
+						object[field.Name] = original
+						encoded, err := json.Marshal(value)
+						if err != nil {
+							t.Fatal(err)
+						}
+						var raw []json.RawMessage
+						if err := json.Unmarshal(encoded, &raw); err != nil {
+							t.Fatal(err)
+						}
+						allowed := "length " + minimum + ".." + maximum
+						if class == "sorted-unique" {
+							allowed = "sorted-unique"
+						}
+						exercise(path+"/"+class, payload, &cli.InputError{Path: path, Value: raw, Allowed: []string{allowed}})
+					}
+				}
+			}
+			// Insert a duplicate into this exact object, even when sibling
+			// objects contain the same field spelling.
+			object["__duplicate_target"] = true
+			marked := encode()
+			delete(object, "__duplicate_target")
+			value, err := json.Marshal(original)
+			if err != nil {
+				t.Fatal(err)
+			}
+			duplicate := strings.Replace(string(marked), `"__duplicate_target":true,`, `"`+field.Name+`":`+string(value)+`,`, 1)
+			exercise(path+"/duplicate", []byte(duplicate), &cli.InputError{Path: path, Value: field.Name, Allowed: keys})
+			if field.Type == "object" {
+				walk(original.(map[string]any), field.Children, path)
+			} else if field.Element != nil && field.Element.Type == "object" {
+				walk(original.([]any)[0].(map[string]any), field.Element.Children, path+"[0]")
+			}
+		}
+	}
+	walk(baseline, descriptor.Fields, "input")
 }
 
 func p24JudgmentRecursiveStructuralDetails(t *testing.T, leaf string, descriptor cli.InputDescriptor) {

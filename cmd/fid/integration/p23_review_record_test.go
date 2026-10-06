@@ -12,7 +12,288 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
+
+// The completeness guard binds the real-process rows to the Source positions
+// independently enumerated from review record --help.
+func p24ReviewSourceStates() []string {
+	return []string{"matching", "mismatching", "omitted-existing", "omitted-missing"}
+}
+
+func TestP24ReviewSourceMatrixCompleteness(t *testing.T) {
+	t.Parallel()
+	want := []string{"matching", "mismatching", "omitted-existing", "omitted-missing"}
+	if !reflect.DeepEqual(p24ReviewSourceStates(), want) {
+		t.Fatalf("Review Source states = %v, want %v", p24ReviewSourceStates(), want)
+	}
+}
+
+func p24ReviewReplayMatches(original, replay map[string]any) bool {
+	expected := p23Clone(original)
+	expected["result"].(map[string]any)["replayed"] = true
+	return reflect.DeepEqual(expected, replay)
+}
+
+func TestP24ReviewReplayEvidenceRejectsChangedHistory(t *testing.T) {
+	t.Parallel()
+	original := map[string]any{"event": map[string]any{"id": "EV-original"}, "result": map[string]any{"replayed": false, "review": map[string]any{"id": "REV-original"}}}
+	replay := p23Clone(original)
+	replay["result"].(map[string]any)["replayed"] = true
+	if !p24ReviewReplayMatches(original, replay) {
+		t.Fatal("unchanged replay rejected")
+	}
+	for _, changed := range []string{"event", "result"} {
+		bad := p23Clone(replay)
+		if changed == "event" {
+			bad["event"].(map[string]any)["id"] = "EV-wrong"
+		} else {
+			bad["result"].(map[string]any)["review"].(map[string]any)["id"] = "REV-wrong"
+		}
+		if p24ReviewReplayMatches(original, bad) {
+			t.Errorf("replay checker accepted changed %s", changed)
+		}
+	}
+}
+
+func p24ReviewAdapter(t *testing.T) (*p22FIDRecoveryAdapter, map[string]any, map[string]any) {
+	t.Helper()
+	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.create", "gate.register", "review.record", "run.close", "run.observe", "run.start"}
+	a := p22NewFIDRecoveryAdapterWithClaimModeAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, actions, "mutation")
+	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "matrix-builder")
+	claim := p23AcquireClaim(t, a, "actor-denied", "review", "matrix-reviewer")
+	run := p23StartRun(t, a, "actor-denied", claim, "matrix-reviewer")
+	return a, claim, run
+}
+
+func p24ReviewSources(value map[string]any) []map[string]any {
+	coverage := value["coverage"].(map[string]any)
+	return []map[string]any{
+		coverage["items"].([]any)[0].(map[string]any)["source"].(map[string]any),
+		coverage["exclusions"].([]any)[0].(map[string]any)["source"].(map[string]any),
+		value["evidence_refs"].([]any)[0].(map[string]any),
+	}
+}
+
+func p24ReviewProjectInput(t *testing.T, a *p22FIDRecoveryAdapter, run map[string]any) map[string]any {
+	t.Helper()
+	input := p23ReviewInput(a, p21PathString(t, run, "id"), p23Number(t, run["version"]), "pass", nil, nil)
+	source := func(path string) map[string]any {
+		return map[string]any{"source_type": "project-file", "display_label": path, "path": path, "section": nil, "external_id": nil}
+	}
+	input["coverage"] = map[string]any{"items": []any{map[string]any{"source": source("base.txt"), "assessed": true}},
+		"exclusions": []any{map[string]any{"source": source(".gitignore"), "reason": "outside review scope"}}}
+	input["evidence_refs"] = []any{source("base.txt")}
+	return input
+}
+
+func p24ReviewAssertFailure(t *testing.T, a *p22FIDRecoveryAdapter, response p22ConformanceResponse, code string, details map[string]any, before int) {
+	t.Helper()
+	assertP22ProcessFailure(t, "review.record", code, 4, response)
+	envelope := p23Envelope(t, response.Stderr)
+	failure := envelope["error"].(map[string]any)
+	if !reflect.DeepEqual(failure["details"], details) || failure["subject"] != nil {
+		t.Fatalf("failure = %#v, want closed details %#v and null subject", failure, details)
+	}
+	if _, present := envelope["event"]; present || p21JournalEventCount(t, a.workspace) != before {
+		t.Fatal("refusal emitted or appended an Event")
+	}
+}
+
+func TestP24ReviewSourceMatrix(t *testing.T) {
+	t.Parallel()
+	binary := integrationFIDBinary(t)
+	stdout, stderr, err := closureRunCommand(t.TempDir(), binary, "review", "record", "--help")
+	if err != nil || stderr != "" {
+		t.Fatalf("descriptor help: %v / %s", err, stderr)
+	}
+	positions := []string{}
+	for _, line := range strings.Split(stdout, "\n") {
+		path := strings.Split(strings.TrimSpace(line), ": ")[0]
+		if strings.HasSuffix(path, ".source_type") {
+			positions = append(positions, strings.TrimSuffix(path, ".source_type"))
+		}
+	}
+	want := []string{"input.coverage.items[i].source", "input.coverage.exclusions[i].source", "input.evidence_refs[i]"}
+	if !reflect.DeepEqual(positions, want) {
+		t.Fatalf("descriptor Source positions = %v, want %v", positions, want)
+	}
+	for position, path := range positions {
+		for _, state := range p24ReviewSourceStates() {
+			t.Run(path+"/"+state, func(t *testing.T) {
+				t.Parallel()
+				a, _, run := p24ReviewAdapter(t)
+				input := p24ReviewProjectInput(t, a, run)
+				source := p24ReviewSources(input)[position]
+				content, err := os.ReadFile(filepath.Join(a.workspace, source["path"].(string)))
+				if err != nil {
+					t.Fatal(err)
+				}
+				digest := fmt.Sprintf("sha256:%x", sha256.Sum256(content))
+				wrong := "sha256:" + p22Zeros(64)
+				if state == "matching" {
+					source["digest"] = digest
+				} else if state == "mismatching" {
+					source["digest"] = wrong
+				} else if state == "omitted-missing" {
+					source["path"] = "missing.md"
+				}
+				observation := p24JudgmentExpectedRepository(t, a)
+				before := p21JournalEventCount(t, a.workspace)
+				response := p23ReviewRecord(t, a, "actor-denied", "source-matrix", input)
+				if state == "mismatching" || state == "omitted-missing" {
+					var expected, observed any
+					if state == "mismatching" {
+						expected, observed = wrong, digest
+					}
+					p24ReviewAssertFailure(t, a, response, "source-digest-mismatch", map[string]any{
+						"display_label": source["display_label"], "path": source["path"], "expected_digest": expected, "observed_digest": observed}, before)
+					return
+				}
+				p23AssertReviewSuccess(t, "Source matrix", response)
+				if got := p24ReviewSources(p23ReviewFromResponse(t, response))[position]["digest"]; got != digest {
+					t.Fatalf("stored %s digest = %v, want independently hashed %s", path, got, digest)
+				}
+				p24ReviewAssertRepositories(t, a, response, observation)
+				if p21JournalEventCount(t, a.workspace) != before+1 {
+					t.Fatal("accepted matrix row did not append one Event")
+				}
+			})
+		}
+	}
+}
+
+func p24ReviewAssertRepositories(t *testing.T, a *p22FIDRecoveryAdapter, response p22ConformanceResponse, observation map[string]any) {
+	t.Helper()
+	review := p23ReviewFromResponse(t, response)
+	for i, repository := range []any{review["repository"], p24ReviewSources(review)[0]["repository"], p24ReviewSources(review)[1]["repository"], p24ReviewSources(review)[2]["repository"]} {
+		if !reflect.DeepEqual(repository, observation) {
+			t.Fatalf("stored repository %d = %#v, want independent observation %#v", i, repository, observation)
+		}
+	}
+	event := p24EventByID(t, a.workspace, p21PathString(t, p23Envelope(t, response.Stdout), "event", "id"))
+	if !reflect.DeepEqual(p24JSONMap(t, event.Repository), observation) {
+		t.Fatalf("Event repository = %#v, want %#v", event.Repository, observation)
+	}
+}
+
+// This fixture has exactly one untracked regular file. Git proves that fact;
+// the test hashes its known image and the canonical dirty entries independently.
+func p24ReviewDirtyRepository(t *testing.T, a *p22FIDRecoveryAdapter, path string, content []byte) map[string]any {
+	t.Helper()
+	if status := p22GitOutput(t, a.workspace, "status", "--porcelain", "--untracked-files=all", "--", ".", ":!.fid"); status != "?? "+path {
+		t.Fatalf("dirty fixture status = %q, want one untracked %s", status, path)
+	}
+	root, err := filepath.Abs(a.workspace)
+	if err != nil {
+		t.Fatal(err)
+	}
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(a.workspace, ".fid", "config.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	head := p22GitOutput(t, a.workspace, "rev-parse", "HEAD")
+	entries := []any{map[string]any{"path": path, "head": nil, "index": nil, "worktree": map[string]any{"mode": "100644", "digest": fmt.Sprintf("sha256:%x", sha256.Sum256(content))}}}
+	payload, err := json.Marshal(map[string]any{"schema": "fid.repository-dirty.v1", "entries": entries})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return map[string]any{"base_oid": head, "capture_source": "git", "dirty": true, "dirty_digest": fmt.Sprintf("sha256:%x", sha256.Sum256(payload)),
+		"head_oid": head, "project_id": projectConfig.ProjectID, "tree_oid": p22GitOutput(t, a.workspace, "rev-parse", "HEAD^{tree}"),
+		"worktree_id": fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(root)))}
+}
+
+func TestP24ReviewReplayUnavailableAndRestoredControls(t *testing.T) {
+	t.Parallel()
+	for _, state := range []string{"head-advanced", "not-a-repository", "unmerged-paths", "deleted-source"} {
+		t.Run(state, func(t *testing.T) {
+			t.Parallel()
+			a, claim, run := p24ReviewAdapter(t)
+			input := p24ReviewProjectInput(t, a, run)
+			// This project-owned file is ignored by Git. Its absence isolates
+			// Source observation from the repository expectation check.
+			p22Write(t, a.workspace, ".fid/coverage.md", "review source\n")
+			for _, position := range []int{0, 2} {
+				p24ReviewSources(input)[position]["path"] = ".fid/coverage.md"
+			}
+			observation := p24JudgmentExpectedRepository(t, a)
+			original := p23ReviewRecord(t, a, "actor-denied", "before-unavailable", input)
+			p23AssertReviewSuccess(t, "normal Review", original)
+			p24ReviewAssertRepositories(t, a, original, observation)
+			eventID := p21PathString(t, p23Envelope(t, original.Stdout), "event", "id")
+			originalEvent := p24EventByID(t, a.workspace, eventID)
+			p23CloseAndRelease(t, a, "actor-denied", run["id"].(string), claim["id"].(string), "before-control")
+			controlClaim := p23AcquireClaim(t, a, "actor-denied", "review", "fresh-control")
+			controlRun := p23StartRun(t, a, "actor-denied", controlClaim, "fresh-control")
+			control := p23Clone(input)
+			control["run_id"], control["expected_run_version"] = controlRun["id"], controlRun["version"]
+			gitBackup := filepath.Join(t.TempDir(), "git-backup")
+			switch state {
+			case "head-advanced":
+				p22Write(t, a.workspace, "base.txt", "advanced control HEAD\n")
+				p22Git(t, a.workspace, "commit", "-qam", "advance control HEAD")
+			case "not-a-repository":
+				if err := os.Rename(filepath.Join(a.workspace, ".git"), gitBackup); err != nil {
+					t.Fatal(err)
+				}
+			case "unmerged-paths":
+				p24MakeUnmerged(t, a.workspace)
+			case "deleted-source":
+				if err := os.Remove(filepath.Join(a.workspace, ".fid", "coverage.md")); err != nil {
+					t.Fatal(err)
+				}
+			}
+			before := p21JournalEventCount(t, a.workspace)
+			replay := p23ReviewRecord(t, a, "actor-denied", "before-unavailable", input)
+			p23AssertReviewSuccess(t, "unavailable replay", replay)
+			if !p24ReviewReplayMatches(p23Envelope(t, original.Stdout), p23Envelope(t, replay.Stdout)) ||
+				!reflect.DeepEqual(originalEvent, p24EventByID(t, a.workspace, eventID)) || p21JournalEventCount(t, a.workspace) != before {
+				t.Fatal("retry changed original result/Event or appended an Event")
+			}
+			refused := p23ReviewRecord(t, a, "actor-denied", "fresh-control-key", control)
+			if state == "head-advanced" {
+				p24ReviewAssertFailure(t, a, refused, "repository-mismatch", map[string]any{
+					"expected": control["expected_repository"], "observed": p24JudgmentExpectedRepository(t, a)}, before)
+			} else if state == "deleted-source" {
+				source := p24ReviewSources(control)[0]
+				p24ReviewAssertFailure(t, a, refused, "source-digest-mismatch", map[string]any{"display_label": source["display_label"],
+					"path": source["path"], "expected_digest": nil, "observed_digest": nil}, before)
+			} else {
+				detail := "repository has unmerged paths"
+				if state == "not-a-repository" {
+					detail = "repository root: exit status 128"
+				}
+				p24ReviewAssertFailure(t, a, refused, "repository-unavailable", map[string]any{"reason": state, "detail": detail}, before)
+				failure := p23Envelope(t, refused.Stderr)["error"].(map[string]any)
+				if failure["category"] != "precondition" || failure["retryable"] != true {
+					t.Fatalf("unavailable metadata = %#v", failure)
+				}
+			}
+			switch state {
+			case "head-advanced":
+				p22Git(t, a.workspace, "reset", "--hard", observation["head_oid"].(string))
+			case "not-a-repository":
+				if err := os.Rename(gitBackup, filepath.Join(a.workspace, ".git")); err != nil {
+					t.Fatal(err)
+				}
+			case "unmerged-paths":
+				p22Git(t, a.workspace, "merge", "--abort")
+				p22Git(t, a.workspace, "reset", "--hard", observation["head_oid"].(string))
+			case "deleted-source":
+				p22Write(t, a.workspace, ".fid/coverage.md", "review source\n")
+			}
+			// Exact same fresh Run, key and request now succeeds. No stale
+			// expectation or duplicate Review can masquerade as a control.
+			restored := p23ReviewRecord(t, a, "actor-denied", "fresh-control-key", control)
+			p23AssertReviewSuccess(t, "restored observable control", restored)
+			p24ReviewAssertRepositories(t, a, restored, p24JudgmentExpectedRepository(t, a))
+			if p21JournalEventCount(t, a.workspace) != before+1 {
+				t.Fatal("restored control did not append exactly one Event")
+			}
+		})
+	}
+}
 
 func TestP24ReviewRecordResolvesSourcesAndReplaysWithoutObservation(t *testing.T) {
 	t.Parallel()
@@ -118,15 +399,17 @@ func TestP24ReviewRecordResolvesSourcesAndReplaysWithoutObservation(t *testing.T
 	if repository := review["repository"].(map[string]any); repository["head_oid"] != head || repository["dirty"] != dirty || repository["tree_oid"] != p22GitOutput(t, a.workspace, "rev-parse", "HEAD^{tree}") {
 		t.Fatalf("stored repository differs from git observation: %#v", repository)
 	}
+	p24ReviewAssertRepositories(t, a, response, p24ReviewDirtyRepository(t, a, exclusionPath, excludedBytes))
 	if p21JournalEventCount(t, a.workspace) != before+1 {
 		t.Fatal("accepted Review did not append exactly one Event")
 	}
+	p22Write(t, a.workspace, "base.txt", "advanced Review source\n")
 	p22Git(t, a.workspace, "add", "base.txt", "excluded.md")
 	p22Git(t, a.workspace, "commit", "-qm", "advance Review HEAD")
 	before = p21JournalEventCount(t, a.workspace)
 	replay := p23ReviewRecord(t, a, "actor-denied", "review-source-record", input)
 	p23AssertReviewSuccess(t, "HEAD-advanced replay", replay)
-	if p21Path(t, p23Envelope(t, replay.Stdout), "result", "replayed") != true || p21JournalEventCount(t, a.workspace) != before {
+	if !p24ReviewReplayMatches(p23Envelope(t, response.Stdout), p23Envelope(t, replay.Stdout)) || p21JournalEventCount(t, a.workspace) != before {
 		t.Fatal("HEAD-advanced retry did not replay without Event")
 	}
 	newKey := p23ReviewRecord(t, a, "actor-denied", "review-head-control", input)
@@ -137,7 +420,7 @@ func TestP24ReviewRecordResolvesSourcesAndReplaysWithoutObservation(t *testing.T
 	}
 	replay = p23ReviewRecord(t, a, "actor-denied", "review-source-record", input)
 	p23AssertReviewSuccess(t, "unobservable replay", replay)
-	if p21Path(t, p23Envelope(t, replay.Stdout), "result", "replayed") != true || p21JournalEventCount(t, a.workspace) != before {
+	if !p24ReviewReplayMatches(p23Envelope(t, response.Stdout), p23Envelope(t, replay.Stdout)) || p21JournalEventCount(t, a.workspace) != before {
 		t.Fatal("unobservable retry did not replay without Event")
 	}
 	unavailable := p23ReviewRecord(t, a, "actor-denied", "review-unobservable-control", input)
@@ -150,7 +433,7 @@ func TestP24ReviewRecordResolvesSourcesAndReplaysWithoutObservation(t *testing.T
 	}
 	replay = p23ReviewRecord(t, a, "actor-denied", "review-source-record", input)
 	p23AssertReviewSuccess(t, "deleted Source replay", replay)
-	if p21Path(t, p23Envelope(t, replay.Stdout), "result", "replayed") != true || p21JournalEventCount(t, a.workspace) != before {
+	if !p24ReviewReplayMatches(p23Envelope(t, response.Stdout), p23Envelope(t, replay.Stdout)) || p21JournalEventCount(t, a.workspace) != before {
 		t.Fatal("deleted Source retry did not replay without Event")
 	}
 	deleted := p23Clone(input)
