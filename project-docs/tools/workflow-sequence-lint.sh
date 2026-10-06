@@ -144,6 +144,65 @@ function decision_repair_owners_match(id, owners, line, in_section, found) {
   return found
 }
 
+function consistent_resume_tuple(tuple, fields, count) {
+  count = split(tuple, fields, / [|] /)
+  return count == 5 && fields[1] == event_continuing_task &&
+    fields[2] ~ /^(in-scope-implementation|gate-repair|report-repair|qa-rework|session-continuation|local-environment)$/ &&
+    fields[3] ~ /^(task-scope|control-conformance)$/ &&
+    fields[4] == event_trigger_signature && fields[5] == event_attempt
+}
+
+function collect_resume_reconciliation(id, keys, tuples, tuple, recorded, reconciled) {
+  if (id == "" || !keys) {
+    return
+  }
+  reconciliation_keys += keys
+  split(event_next_recovery, recorded, / [|] /)
+  split(tuple, reconciled, / [|] /)
+  if (keys == 1 && tuples == 1 && consistent_resume_tuple(tuple) &&
+      reconciled[2] == recorded[2] && reconciled[3] == recorded[3]) {
+    event_reconciliation_decision = id
+    event_reconciled_next_recovery = tuple
+  }
+}
+
+function check_resume_next_recovery(line, id, keys, tuples, tuple, key, consistent) {
+  reconciliation_keys = 0
+  event_reconciliation_decision = ""
+  event_reconciled_next_recovery = ""
+  key = "- Reconciles RUN-RESUME: " event_heading_time " / " event_governing_trg
+  consistent = consistent_resume_tuple(event_next_recovery)
+  while ((getline line < decisions_file) > 0) {
+    line = trim_surrounding_space(line)
+    if (index(line, "## ") == 1 || index(line, "### ") == 1) {
+      collect_resume_reconciliation(id, keys, tuples, tuple)
+      id = line ~ /^### DEC-[0-9]+:/ ? decision_id(line) : ""
+      keys = 0
+      tuples = 0
+      tuple = ""
+      continue
+    }
+    if (id == "") {
+      continue
+    }
+    if (line == key) {
+      keys++
+    }
+    if (index(line, "- Reconciled next recovery: ") == 1) {
+      tuples++
+      tuple = substr(line, length("- Reconciled next recovery: ") + 1)
+    }
+  }
+  close(decisions_file)
+  collect_resume_reconciliation(id, keys, tuples, tuple)
+  if (consistent && reconciliation_keys) {
+    invalid("RUN-RESUME next-recovery reconciliation targets a consistent Next recovery")
+  } else if (!consistent &&
+             (reconciliation_keys != 1 || event_reconciliation_decision == "")) {
+    invalid("schema v2 RUN-RESUME Next recovery does not retain its Continuing task, Trigger signature, and Attempt count")
+  }
+}
+
 function first_owner(value, parts) {
   split(value, parts, ",")
   return trim_surrounding_space(parts[1])
@@ -731,6 +790,11 @@ function finish_event() {
            !references_id(event_source, resume_decision))) {
         invalid("TASK-RECOVERY does not retain its RUN-RESUME decision authority")
       }
+      if (resume_reconciliation_decision != "" &&
+          (!references_id(event_source, resume_reconciliation_decision) ||
+           !references_id(event_repair_authority, resume_reconciliation_decision))) {
+        invalid("TASK-RECOVERY does not cite its RUN-RESUME next-recovery reconciliation")
+      }
       if (event_directive_v2 && resume_resolution_authority != "" &&
           (!references_exact_token(event_repair_authority, resume_resolution_authority) ||
            !references_exact_token(event_source, resume_resolution_authority))) {
@@ -1033,6 +1097,8 @@ function finish_event() {
   }
   if (event_strict && event_directive_strict && event == "RUN-RESUME" && stopped) {
     resume_owner_route_ok = 0
+    event_reconciliation_decision = ""
+    event_reconciled_next_recovery = ""
     if (event_prior_run == "" || event_trigger_signature == "" ||
         event_attempt !~ /^[1-9][0-9]*$/ || event_checkpoint == "" ||
         event_resolution_evidence == "" || event_continuing_task !~ /^task-[0-9]+[a-z]*$/) {
@@ -1083,6 +1149,9 @@ function finish_event() {
           (event_governing_trg_count != 1 || event_governing_esc_count != 1 ||
            event_resolution_authority_count != 1 || event_next_recovery_count != 1)) {
         invalid("schema v2 RUN-RESUME authority fields must each occur exactly once")
+      }
+      if (event_directive_v2 && !event_repair_owners_count) {
+        check_resume_next_recovery()
       }
       decision_text = event_directive_v2 ? event_resolution_authority : event_resolution_evidence
       resume_decision = decision_id(event_resolution_authority)
@@ -1330,7 +1399,8 @@ function finish_event() {
         resume_attempt = event_attempt
         resume_decision = decision_id(event_resolution_evidence " " event_resolution_authority)
         resume_resolution_authority = event_resolution_authority
-        resume_next_recovery = event_next_recovery
+        resume_reconciliation_decision = event_reconciliation_decision
+        resume_next_recovery = resume_reconciliation_decision != "" ? event_reconciled_next_recovery : event_next_recovery
         resume_owner_route = event_repair_owners_count == 1 && resume_owner_route_ok
         resume_owner_route_ok = 0
         if (resume_owner_route) {
@@ -1512,6 +1582,7 @@ function finish_event() {
 
 /^### / {
   finish_event()
+  event_heading_time = $2 " " $3
   heading_prefix_canonical = $1 == "###" &&
     $2 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ &&
     $3 ~ /^[0-9][0-9]:[0-9][0-9]$/
