@@ -288,8 +288,8 @@ The Run-start fixture line in p22NewFIDRecoveryAdapterWithClaimModeAt originated
 
 ## Commit hash
 
-- Pending commit
+- `cdb7e01f630b3e10291237d5912e63ddf0b33783`
 
 ## Commit subject
 
-- Pending commit
+- `test(run): independently verify dirty repository observations`
