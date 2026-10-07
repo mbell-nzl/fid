@@ -63,7 +63,7 @@ func renderReviewListError(cmd *cobra.Command, cause error) error {
 	if errors.As(cause, &limit) {
 		return writeClaimFailure(cmd, jsonMode, "review.list", cause, cli.CodeResultLimitExceeded, "review result limit exceeded", nil, map[string]any{"collection": "items", "limit": limit.Limit, "observed": limit.Observed})
 	}
-	return writeClaimFailure(cmd, jsonMode, "review.list", cause, cli.CodeInvalidArgument, "invalid review list request", nil, map[string]any{"argument": "filter", "value": nil, "allowed": []string{"accepted review.list filters"}})
+	return writeGenericFailure(cmd, jsonMode, "review.list", cause, cli.CodeInvalidArgument, "invalid review list request", nil, map[string]any{"argument": "filter", "value": nil, "allowed": []string{"accepted review.list filters"}})
 }
 
 func newReviewGetCommand() *cobra.Command {
@@ -170,7 +170,7 @@ func renderReviewError(cmd *cobra.Command, cause error) error {
 	if errors.As(cause, &conflict) {
 		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(conflict))
 	}
-	return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeInvalidArgument, "invalid review request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted review.record input"}})
+	return writeGenericFailure(cmd, jsonMode, "review.record", cause, cli.CodeInvalidArgument, "invalid review request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted review.record input"}})
 }
 
 func repositoryDetails(repository review.Repository) map[string]any {

@@ -137,7 +137,7 @@ func renderDecisionError(cmd *cobra.Command, operation string, cause error) erro
 	if errors.As(cause, &resultLimit) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeResultLimitExceeded, "Decision Reference result limit exceeded", nil, map[string]any{"collection": "items", "limit": resultLimit.Limit, "observed": resultLimit.Observed})
 	}
-	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Decision Reference request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Decision Reference request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
 func renderJudgmentObservationError(cmd *cobra.Command, jsonMode bool, operation string, cause error) (error, bool) {

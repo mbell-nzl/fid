@@ -29,7 +29,8 @@ func TestV01DLinkFlowAndRebuildParity(t *testing.T) {
 	}
 
 	_, linkRequirementStderr, linkRequirementErr := runFIDCommandExpectError(t, workspace, "link", "add", primaryIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
-	if linkRequirementErr == nil || !strings.Contains(linkRequirementStderr, "to-type must be issue") {
+	if linkRequirementErr == nil || !strings.Contains(linkRequirementErr.Error(), "to-type must be issue") ||
+		linkRequirementStderr != "error: invalid link endpoint type\nreason: invalid-argument; argument=to-type, allowed=issue\n" {
 		t.Fatalf("removed requirement endpoint = (%q, %v)", linkRequirementStderr, linkRequirementErr)
 	}
 	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforePhase12Writes+1 {

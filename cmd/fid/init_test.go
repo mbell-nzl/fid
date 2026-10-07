@@ -424,7 +424,7 @@ func TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename(t *testing
 	if err == nil {
 		t.Fatal("Execute() error = nil, want explicit-prefix rejection")
 	}
-	if got, want := stderr.String(), "error: invalid project initialization argument\n"; got != want {
+	if got, want := stderr.String(), "error: invalid project initialization argument\nreason: invalid-argument; argument=prefix, allowed=valid project.init input\n"; got != want {
 		t.Fatalf("stderr = %q, want %q", got, want)
 	}
 	if _, statErr := os.Stat(filepath.Join(workspace, ".fid")); !os.IsNotExist(statErr) {
@@ -496,7 +496,7 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 	if err == nil {
 		t.Fatal("Execute() error = nil, want re-init rejection")
 	}
-	if got, want := stderr.String(), "error: project is already initialized\n  choose a new directory or use the existing project\n"; got != want {
+	if got, want := stderr.String(), "error: project is already initialized\n"+p24ExpectedReason("reason: project-already-initialized; path="+workspace)+"\n"; got != want {
 		t.Fatalf("stderr = %q, want %q", got, want)
 	}
 	if stdout.Len() != 0 {

@@ -23,8 +23,6 @@ func writeCapabilityUnavailable(cmd *cobra.Command, operation, capabilityID stri
 	}
 	if jsonMode {
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("capability %q is unavailable", capabilityID))
-	} else if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "error: capability is unavailable"); err != nil {
-		return err
 	}
-	return cli.NewFailureError(failure, fmt.Errorf("capability %q is unavailable", capabilityID))
+	return writeHumanFailure(cmd, operation, failure, fmt.Errorf("capability %q is unavailable", capabilityID))
 }

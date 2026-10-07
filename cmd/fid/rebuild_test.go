@@ -453,7 +453,7 @@ func TestRebuildCommandReportsCorruptJournal(t *testing.T) {
 	if err == nil {
 		t.Fatal("Execute() error = nil, want corrupt journal error")
 	}
-	if got := stderr.String(); !strings.Contains(got, "malformed journal entry at .fid/journal/2026-06-05.jsonl:2") {
+	if got := stderr.String(); got != "error: journal replay stopped\nreason: journal-replay-stopped; event_id=null, journal_file=.fid/journal/2026-06-05.jsonl, line=2\n" {
 		t.Fatalf("stderr = %q, want corrupt journal line", got)
 	}
 }
@@ -482,17 +482,15 @@ func TestRebuildCommandReportsPreconditionConflict(t *testing.T) {
 	}
 
 	got := stderr.String()
-	for _, want := range []string{
-		"error: replay precondition conflict at .fid/journal/2026-06-05.jsonl:2",
-		"event: EVT-20260605-000002 (issue.transitioned)",
-		"entity: issues pk={id:FID-a1b2c3}",
-		"expected: {status:in_progress}",
-		"actual: {status:todo}",
-	} {
-		if !strings.Contains(got, want) {
-			t.Fatalf("stderr = %q, want substring %q", got, want)
+	if got != "error: journal replay stopped\nreason: journal-replay-stopped; event_id=EVT-20260605-000002, journal_file=.fid/journal/2026-06-05.jsonl, line=2\n" {
+		t.Fatalf("stderr = %q", got)
+	}
+	for _, want := range []string{"replay precondition conflict at 2026-06-05.jsonl:2", "event EVT-20260605-000002 (issue.transitioned)", "on issues pk=map[id:FID-a1b2c3]", "expected=map[status:in_progress]", "actual=map[status:todo]"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("replay conflict cause = %q, want %q", err.Error(), want)
 		}
 	}
+
 }
 
 func newRebuildWorkspace(t *testing.T) string {

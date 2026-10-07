@@ -206,7 +206,7 @@ func renderClaimError(cmd *cobra.Command, operation string, cause error) error {
 	if errors.As(cause, &denied) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor_id": denied.ActorID, "required_actions": []string{denied.Action}, "required_capabilities": []string{denied.Capability}})
 	}
-	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid claim request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid claim request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
 func writeClaimConflict(cmd *cobra.Command, jsonMode bool, operation string, original error, code cli.Code, cause *claims.ClaimConflictError) error {
@@ -240,8 +240,7 @@ func writeClaimFailure(cmd *cobra.Command, jsonMode bool, operation string, caus
 		return err
 	}
 	if !jsonMode {
-		_ = renderIssueError(cmd.ErrOrStderr(), cause)
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, operation, failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 }

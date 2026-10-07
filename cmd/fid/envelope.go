@@ -214,15 +214,14 @@ func renderEnvelopeError(cmd *cobra.Command, operation string, cause error, acto
 			return err
 		}
 		if !jsonMode {
-			_ = renderIssueError(cmd.ErrOrStderr(), cause)
-			return cli.NewFailureError(failure, cause)
+			return writeHumanFailure(cmd, operation, failure, cause)
 		}
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 	}
 	if errors.As(cause, &completion) {
 		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeObligationUnsatisfied, "Envelope completion obligations are unsatisfied", &cli.Subject{Type: cli.SubjectEnvelope, ID: completion.EnvelopeID}, map[string]any{"reasons": envelopeReasonValues(completion.Reasons)})
 	}
-	return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid envelope input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid envelope input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
 // envelopeStopBlockedFailure renders whichever Stop-carried denial precedence
@@ -249,8 +248,7 @@ func writeEnvelopeFailure(cmd *cobra.Command, jsonMode bool, operation string, c
 		return err
 	}
 	if !jsonMode {
-		_ = renderIssueError(cmd.ErrOrStderr(), cause)
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, operation, failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 }

@@ -74,6 +74,11 @@ func newGateRunCommand() *cobra.Command {
 			return err
 		}
 		if failure != nil {
+			if jsonMode, err := readJSONMode(cmd); err != nil {
+				return err
+			} else if !jsonMode {
+				return writeHumanFailure(cmd, "gate.run", *failure, fmt.Errorf("gate run observed %s", result.Receipt.Outcome))
+			}
 			return cli.NewFailureError(*failure, fmt.Errorf("gate run observed %s", result.Receipt.Outcome))
 		}
 		return nil
@@ -112,7 +117,7 @@ func writeCommittedBudgetDenial(cmd *cobra.Command, runID string, result evidenc
 		return err
 	}
 	if !jsonMode {
-		return cli.NewFailureError(failure, fmt.Errorf("gate run admission denied"))
+		return writeHumanFailure(cmd, "gate.run", failure, fmt.Errorf("gate run admission denied"))
 	}
 	response := failureEnvelope("gate.run", failure)
 	if err := result.Live.AppendCommittedFidError(runID, response, result.Replayed); err != nil {
@@ -194,7 +199,17 @@ func writeGateLiveResult(cmd *cobra.Command, result evidence.LiveResult, obligat
 		return nil
 	}
 	_, err = fmt.Fprint(cmd.OutOrStdout(), renderLiveHuman(result, obligationStatus))
-	return err
+	if err != nil {
+		return err
+	}
+	if fidError {
+		failure, err := cli.NewFailure(cli.CodeInternalError, "gate execution infrastructure failed", nil, map[string]any{})
+		if err != nil {
+			return err
+		}
+		return writeHumanFailure(cmd, "gate.run", failure, fmt.Errorf("gate execution infrastructure failed"))
+	}
+	return nil
 }
 
 func newGateRegisterCommand() *cobra.Command {
@@ -309,7 +324,7 @@ func renderGateError(cmd *cobra.Command, operation string, cause error) error {
 	case errors.As(cause, &deniedErr):
 		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "finalized activation actor is denied", nil, map[string]any{"operation": operation, "actor_id": deniedErr.ActorID, "required_actions": []string{requiredCapability}, "required_capabilities": []string{requiredCapability}})
 	default:
-		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid gate request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted gate registration input"}})
+		return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid gate request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted gate registration input"}})
 	}
 }
 
@@ -330,10 +345,7 @@ func writeGateFailure(cmd *cobra.Command, jsonMode bool, operation string, cause
 		return err
 	}
 	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, operation, failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 }

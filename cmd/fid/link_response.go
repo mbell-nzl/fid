@@ -18,10 +18,7 @@ func renderLinkError(cmd *cobra.Command, operation string, cause error) error {
 		return err
 	}
 	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, operation, failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 }
@@ -85,7 +82,7 @@ func linkFailure(cmd *cobra.Command, operation string, cause error) (cli.Failure
 			"allowed":  []string{"distinct endpoint ids"},
 		})
 	}
-	return cli.NewFailure(cli.CodeInvalidArgument, "invalid link request", nil, map[string]any{
+	return genericFailure(cause, cli.CodeInvalidArgument, "invalid link request", nil, map[string]any{
 		"argument": "request", "value": nil, "allowed": []string{"accepted " + operation + " input"},
 	})
 }

@@ -613,13 +613,12 @@ func TestIssueTransitionRejectsInvalidEdgeAndLeavesStateUnchanged(t *testing.T) 
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	for _, want := range []string{
-		"error: transition issue",
-		`"todo"`,
-		`"done"`,
-	} {
-		if !strings.Contains(stderr, want) {
-			t.Fatalf("stderr = %q, want substring %q", stderr, want)
+	if stderr != "error: Issue transition is not permitted\nreason: transition-not-permitted\n" {
+		t.Fatalf("stderr = %q, want canonical transition refusal", stderr)
+	}
+	for _, want := range []string{`"todo"`, `"done"`} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("transition cause = %q, want %q", err.Error(), want)
 		}
 	}
 

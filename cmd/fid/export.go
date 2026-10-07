@@ -115,10 +115,7 @@ func renderExportError(cmd *cobra.Command, operation, archivePath string, cause 
 		if jsonMode {
 			return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 		}
-		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "error: export archive is invalid"); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, operation, failure, cause)
 	}
 	var targetConflict *export.ImportTargetConflictError
 	if errors.As(cause, &targetConflict) {
@@ -129,10 +126,7 @@ func renderExportError(cmd *cobra.Command, operation, archivePath string, cause 
 		if jsonMode {
 			return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 		}
-		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "error: import target conflicts with portable recovery archive"); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, operation, failure, cause)
 	}
 	failure, err := cli.NewFailure(cli.CodeInternalError, "export operation failed", nil, map[string]any{})
 	if err != nil {
@@ -141,8 +135,5 @@ func renderExportError(cmd *cobra.Command, operation, archivePath string, cause 
 	if jsonMode {
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
-	if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "error: export operation failed"); err != nil {
-		return err
-	}
-	return cli.NewFailureError(failure, cause)
+	return writeHumanFailure(cmd, operation, failure, cause)
 }

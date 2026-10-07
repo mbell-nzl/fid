@@ -360,7 +360,7 @@ func TestP24GateOriginalCopyAndImport(t *testing.T) {
 				t.Fatalf("plain copy: %#v", response)
 			}
 			failure := decodeCommandJSONStructure(t, response.stderr).(map[string]any)["error"].(map[string]any)
-			if failure["code"] != "invalid-argument" || failure["message"] != "invalid gate request" || !reflect.DeepEqual(failure["details"], map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted gate registration input"}}) {
+			if failure["code"] != "invalid-argument" || failure["message"] != "run gate: repository binding is invalid" || !reflect.DeepEqual(failure["details"], map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted gate registration input"}}) {
 				t.Fatalf("plain-copy refusal: %#v", failure)
 			}
 			assertRunStateUnchanged(t, workspace, before)

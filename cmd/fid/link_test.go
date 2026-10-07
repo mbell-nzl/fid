@@ -128,7 +128,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 		journalPath := mustJournalPath(t, workspace)
 		before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "link", "add", issueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
-		if err == nil || stdout != "" || !strings.Contains(stderr, `to-type must be issue`) {
+		if err == nil || stdout != "" || (!strings.Contains(stderr, "error: invalid link endpoint type\nreason: invalid-argument; argument=to-type, allowed=issue\n") || !strings.Contains(err.Error(), `to-type must be issue`)) {
 			t.Fatalf("removed endpoint result = (%q, %q, %v)", stdout, stderr, err)
 		}
 
@@ -160,7 +160,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					return []string{firstIssueID, secondIssueID}
 				},
 				command:       []string{"link", "add", "", "blocks", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-				wantSubstring: "error: link add: link already exists:",
+				wantSubstring: "error: entity already exists\nreason: duplicate-entity; entity_type=link",
 			},
 			{
 				name: "unknown relation",
@@ -168,7 +168,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					return []string{createCommandIssue(t, workspace, "First issue"), createCommandIssue(t, workspace, "Second issue")}
 				},
 				command:       []string{"link", "add", "", "parent_of", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-				wantSubstring: `error: link add: unknown relation "parent_of"`,
+				wantSubstring: "error: link relation is unsupported\n" + p24ExpectedReason("reason: unsupported-relation; allowed=blocks,blocked_by,relates_to,duplicates,duplicated_by,supersedes,superseded_by,caused_by,causes,discovered_from,discovered, argument=relation, value=parent_of"),
 			},
 			{
 				name: "self link",
@@ -177,7 +177,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					return []string{issueID, issueID}
 				},
 				command:       []string{"link", "add", "", "relates_to", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-				wantSubstring: "error: link add: self link is not allowed:",
+				wantSubstring: "error: self link is not permitted\nreason: invalid-argument; argument=link, allowed=distinct endpoint ids",
 			},
 			{
 				name: "implements issue to issue",
@@ -185,7 +185,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					return []string{createCommandIssue(t, workspace, "First issue"), createCommandIssue(t, workspace, "Second issue")}
 				},
 				command:       []string{"link", "add", "", "implements", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-				wantSubstring: `error: link add: unknown relation "implements"`,
+				wantSubstring: "error: link relation is unsupported\n" + p24ExpectedReason("reason: unsupported-relation; allowed=blocks,blocked_by,relates_to,duplicates,duplicated_by,supersedes,superseded_by,caused_by,causes,discovered_from,discovered, argument=relation, value=implements"),
 			},
 			{
 				name: "blocks issue to requirement",
@@ -194,7 +194,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					return []string{issueID, "PRD-LINK-002"}
 				},
 				command:       []string{"link", "add", "", "blocks", "", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},
-				wantSubstring: `error: link add: to-type must be issue`,
+				wantSubstring: "error: invalid link endpoint type\nreason: invalid-argument; argument=to-type, allowed=issue",
 			},
 			{
 				name: "missing requirement endpoint",
@@ -202,7 +202,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					return []string{createCommandIssue(t, workspace, "Issue"), "PRD-LINK-002"}
 				},
 				command:       []string{"link", "add", "", "implements", "", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},
-				wantSubstring: `error: link add: to-type must be issue`,
+				wantSubstring: "error: invalid link endpoint type\nreason: invalid-argument; argument=to-type, allowed=issue",
 			},
 		}
 
@@ -351,7 +351,7 @@ func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
 				return []string{createCommandIssue(t, workspace, "First issue"), createCommandIssue(t, workspace, "Second issue")}
 			},
 			command:       []string{"link", "remove", "", "blocks", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-			wantSubstring: "error: link remove: link does not exist:",
+			wantSubstring: "error: link was not found\nreason: link-not-found;",
 		},
 		{
 			name: "project-local actor",

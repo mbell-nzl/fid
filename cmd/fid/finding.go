@@ -141,5 +141,5 @@ func renderFindingError(cmd *cobra.Command, operation string, cause error) error
 	if errors.As(cause, &target) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Finding target", nil, map[string]any{"argument": "finding_id", "value": target.ID, "allowed": []string{"earlier Finding on the same Issue and Envelope revision"}})
 	}
-	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Finding request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Finding request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }

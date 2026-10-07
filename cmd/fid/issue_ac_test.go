@@ -279,7 +279,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 			args: func(t *testing.T, workspace string) []string {
 				return []string{"issue", "ac", "add", "FID-missing", "--text", "Missing issue", "--ordinal", "1", "--by", "developer"}
 			},
-			wantErr: `error: issue "FID-missing" not found`,
+			wantErr: "error: issue was not found\nreason: issue-not-found; id=FID-missing",
 		},
 		{
 			name: "epic rejection before append",
@@ -498,7 +498,7 @@ func TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues(t
 			if stdout != "" {
 				t.Fatalf("stdout = %q, want empty", stdout)
 			}
-			if stderr != "error: unknown flag: --format\n" {
+			if stderr != "error: unknown flag: --format\nreason: invalid-argument; argument=--format, allowed=\n" {
 				t.Fatalf("stderr = %q, want concise removed-flag error", stderr)
 			}
 			if !strings.Contains(err.Error(), "unknown flag: --format") {

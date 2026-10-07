@@ -288,7 +288,7 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 		if stdout != "" {
 			t.Fatalf("missing label stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, `error: label "missing" not found`) {
+		if !strings.Contains(stderr, "error: label was not found\nreason: label-not-found; id=missing") {
 			t.Fatalf("missing label stderr = %q, want missing-label error", stderr)
 		}
 
@@ -299,7 +299,7 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 		if stdout != "" {
 			t.Fatalf("duplicate label stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, `error: issue "`+issueID+`" already has label "core"`) {
+		if stderr != "error: entity already exists\nreason: duplicate-entity; entity_type=issue_label\n" || !strings.Contains(err.Error(), `issue "`+issueID+`" already has label "core"`) {
 			t.Fatalf("duplicate label stderr = %q, want duplicate-label error", stderr)
 		}
 
@@ -490,7 +490,7 @@ func TestIssueLabelRemoveRejectsAbsentLabelBeforeAppend(t *testing.T) {
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	if !strings.Contains(stderr, `error: label "legacy" not found`) {
+	if !strings.Contains(stderr, "error: label was not found\nreason: label-not-found; id=legacy") {
 		t.Fatalf("stderr = %q, want absent-label error", stderr)
 	}
 	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {

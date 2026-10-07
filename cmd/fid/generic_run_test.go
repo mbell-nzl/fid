@@ -161,7 +161,11 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 					t.Fatalf("immutable budgets: %#v", result)
 				}
 			default:
-				assertRunStartInvalidArgument(t, result)
+				message := "run claim binding is invalid"
+				if testCase.name == "mismatched Envelope revision" {
+					message = "run start input is invalid"
+				}
+				assertRunStartInvalidArgument(t, result, message)
 			}
 			assertRunStateUnchanged(t, workspace, before)
 		})
@@ -397,7 +401,7 @@ func assertRunStateUnchanged(t *testing.T, workspace string, want workspacePersi
 	}
 }
 
-func assertRunStartInvalidArgument(t *testing.T, result commandExecutionResult) {
+func assertRunStartInvalidArgument(t *testing.T, result commandExecutionResult, message string) {
 	t.Helper()
 	if result.err == nil || result.stdout != "" {
 		t.Fatalf("run start = %#v, want stderr-only rejection", result)
@@ -408,7 +412,7 @@ func assertRunStartInvalidArgument(t *testing.T, result commandExecutionResult) 
 	assertNestedEnvelopeKeySet(t, []byte(result.stderr), "error.details", []string{"allowed", "argument", "value"})
 	errorValue := failure["error"].(map[string]any)
 	if failure["contract_version"] != "fid-cli.v1" || failure["ok"] != false || failure["operation"] != "run.start" ||
-		errorValue["category"] != "invalid-input" || errorValue["code"] != "invalid-argument" || errorValue["message"] != "invalid Run request" ||
+		errorValue["category"] != "invalid-input" || errorValue["code"] != "invalid-argument" || errorValue["message"] != message ||
 		errorValue["retryable"] != false || errorValue["subject"] != nil {
 		t.Fatalf("run start failure = %#v, want canonical invalid-argument envelope", failure)
 	}

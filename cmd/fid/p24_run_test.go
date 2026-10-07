@@ -198,7 +198,7 @@ func TestP24RunStartOriginalCopyAndImport(t *testing.T) {
 		writeActivationInput(t, path, input)
 		response := executeCommandForTest(root, "--project", root, "--json", "run", "start", "--actor", "actor-builder", "--input", path, "--idempotency-key", "p24-binding-start")
 		if root == copied {
-			assertRunStartInvalidArgument(t, response)
+			assertRunStartInvalidArgument(t, response, "run claim binding is invalid")
 			if cli.ExitCode(response.err) != 2 {
 				t.Fatalf("copy exit: %v", response.err)
 			}

@@ -330,10 +330,7 @@ func renderActivationError(cmd *cobra.Command, operation string, cause error) er
 		return err
 	}
 	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, operation, failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 }
@@ -375,7 +372,7 @@ func activationFailure(cause error) (cli.Failure, error) {
 	if errors.As(cause, &invalid) {
 		return cli.NewFailure(cli.CodeActivationInvalid, "activation state is not permitted", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"status": invalid.Status, "expected_statuses": invalid.ExpectedStatuses, "component_errors": []map[string]any{}})
 	}
-	return cli.NewFailure(cli.CodeInvalidArgument, "invalid activation input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted activation input"}})
+	return genericFailure(cause, cli.CodeInvalidArgument, "invalid activation input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted activation input"}})
 }
 
 func activationConflictID(value *string) any {

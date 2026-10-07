@@ -91,7 +91,7 @@ func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 					}
 					if conflict.argument == "--json" {
 						assertAdoptedFailure(t, stderr, operation, conflict.argument, value)
-					} else if stderr != "error: --example cannot be combined with "+conflict.argument+"\n" {
+					} else if stderr != "error: --example cannot be combined with "+conflict.argument+"\nreason: invalid-argument; argument="+conflict.argument+", allowed=--example\nnext: see fid "+leaf+" --help; template: fid "+leaf+" --example\n" {
 						t.Fatalf("first conflict = %q, want %s", stderr, conflict.argument)
 					}
 					// Human output predates typed details; exercise its shared detail writer in JSON mode.
@@ -2612,7 +2612,7 @@ func TestP24ActivationPrepareIdentityScalarBoundaries(t *testing.T) {
 						if !reflect.DeepEqual(envelope, want) {
 							t.Fatalf("failure metadata: %s", failure)
 						}
-					} else if failure != "error: invalid input."+field+"\n" {
+					} else if failure != "error: invalid input."+field+"\nreason: invalid-argument; argument=input."+field+", allowed=length 1..128\nnext: see fid activation prepare --help; template: fid activation prepare --example\n" {
 						t.Fatalf("Human failure: %q", failure)
 					}
 					if !reflect.DeepEqual(snapshotWorkspace(t, root), before) {

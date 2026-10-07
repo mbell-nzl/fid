@@ -108,10 +108,7 @@ func renderCanonicalRequestError(cmd *cobra.Command, operation string, cause err
 	if jsonMode {
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
-	if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-		return err
-	}
-	return cli.NewFailureError(failure, cause)
+	return writeHumanFailure(cmd, operation, failure, cause)
 }
 
 // Every stable leaf gets grammar validation before its workspace-aware handler.
@@ -176,8 +173,33 @@ func writeGrammarFailure(cmd *cobra.Command, operation string, code cli.Code, me
 	if jsonMode {
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
-	if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "error: %s\n", message); err != nil {
-		return fmt.Errorf("write grammar failure: %w", err)
+	return writeHumanFailure(cmd, operation, failure, cause)
+}
+
+// writeHumanFailure supplies live leaf context to the single shared renderer.
+func writeHumanFailure(cmd *cobra.Command, operation string, failure cli.Failure, cause error) error {
+	if err := cli.WriteHumanFailure(cmd.ErrOrStderr(), operation, cmd.CommandPath(), failure, cmd.Flags().Lookup("input") != nil); err != nil {
+		return err
 	}
 	return cli.NewFailureError(failure, cause)
+}
+
+// genericFailure keeps the fixed message only for an empty domain cause.
+func genericFailure(cause error, code cli.Code, fixed string, subject *cli.Subject, details map[string]any) (cli.Failure, error) {
+	message := fixed
+	if cause != nil && strings.TrimSpace(cause.Error()) != "" {
+		message = cli.BoundedMessage(cause.Error())
+	}
+	return cli.NewFailure(code, message, subject, details)
+}
+
+func writeGenericFailure(cmd *cobra.Command, jsonMode bool, operation string, cause error, code cli.Code, fixed string, subject *cli.Subject, details map[string]any) error {
+	failure, err := genericFailure(cause, code, fixed, subject, details)
+	if err != nil {
+		return err
+	}
+	if !jsonMode {
+		return writeHumanFailure(cmd, operation, failure, cause)
+	}
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 }

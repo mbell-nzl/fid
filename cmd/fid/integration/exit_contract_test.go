@@ -102,8 +102,19 @@ func assertRemovedCommandFailure(t *testing.T, args []string, stdout, stderr str
 		}
 	}
 	if !jsonMode {
-		if stderr != "error: "+message+"\n" {
-			t.Fatalf("removed command %v stderr=%q, want %q", args, stderr, message)
+		detail := "argument=" + argument + ", allowed=" + strings.Join(allowed, "|")
+		if code == "operation-unavailable" {
+			detail = "allowed=" + strings.Join(allowed, ",") + ", argument=command, value=" + value
+		}
+		reason := "reason: " + code + "; " + detail
+		// These retained invocations contain ASCII only; their independent
+		// expectation counts the complete label and retains 200 scalars.
+		if scalars := []rune(reason); len(scalars) > 200 {
+			reason = string(scalars[:200]) + "…"
+		}
+		want := "error: " + message + "\n" + reason + "\n"
+		if stderr != want {
+			t.Fatalf("removed command %v stderr=%q, want %q", args, stderr, want)
 		}
 		return
 	}

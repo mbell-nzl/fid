@@ -270,9 +270,9 @@ func TestP24EnvelopeAndClaimOriginalCopyAndImport(t *testing.T) {
 				t.Fatalf("plain copy: %#v", refused)
 			}
 			failure := decodeCommandJSONStructure(t, refused.stderr).(map[string]any)["error"].(map[string]any)
-			message, allowed := "invalid envelope input", "accepted envelope.create input"
+			message, allowed := "prior registration binding does not match envelope", "accepted envelope.create input"
 			if leaf == "claim acquire" {
-				message, allowed = "invalid claim request", "accepted claim.acquire input"
+				message, allowed = "claim acquire binding is invalid", "accepted claim.acquire input"
 			}
 			if failure["code"] != "invalid-argument" || failure["message"] != message || !reflect.DeepEqual(failure["details"], map[string]any{"argument": "input", "value": nil, "allowed": []any{allowed}}) {
 				t.Fatalf("plain copy failure: %#v", failure)
@@ -382,7 +382,7 @@ func TestP24ImportedClaimStoredAuthority(t *testing.T) {
 						t.Fatalf("copy exit: %#v", refused)
 					}
 					failure := decodeCommandJSONStructure(t, refused.stderr).(map[string]any)["error"].(map[string]any)
-					if failure["code"] != "invalid-argument" || failure["message"] != "invalid claim request" || !reflect.DeepEqual(failure["details"], map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted claim." + action + " input"}}) {
+					if failure["code"] != "invalid-argument" || failure["message"] != "claim worktree binding is invalid" || !reflect.DeepEqual(failure["details"], map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted claim." + action + " input"}}) {
 						t.Fatalf("copy failure: %#v", failure)
 					}
 					if !before.equal(p24BindingPersistenceSnapshot(t, copied)) {

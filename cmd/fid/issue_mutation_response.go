@@ -106,10 +106,7 @@ func renderIssueMutationError(cmd *cobra.Command, operation, issueID string, mut
 		return err
 	}
 	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), mutationErr); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, mutationErr)
+		return writeHumanFailure(cmd, operation, failure, mutationErr)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, mutationErr)
 }
@@ -218,7 +215,7 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 		}
 		return transitionNotPermittedFailure(blockedTransition.IssueID, blockedTransition.CurrentState, blockedTransition.RequestedState, unsatisfied)
 	}
-	return cli.NewFailure(cli.CodeInvalidArgument, "invalid Issue mutation request", nil, map[string]any{"argument": "request", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return genericFailure(mutationErr, cli.CodeInvalidArgument, "invalid Issue mutation request", nil, map[string]any{"argument": "request", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
 func transitionNotPermittedFailure(issueID, fromState, toState string, unsatisfied []string) (cli.Failure, error) {

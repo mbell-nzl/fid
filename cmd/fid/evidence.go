@@ -220,5 +220,5 @@ func renderEvidenceError(cmd *cobra.Command, operation string, cause error) erro
 	if errors.As(cause, &outcomeNotFound) {
 		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeOutcomeNotFound, "Human Outcome was not found", &cli.Subject{Type: cli.SubjectHumanOutcome, ID: outcomeNotFound.ID}, map[string]any{"id": outcomeNotFound.ID})
 	}
-	return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Evidence request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Evidence request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }

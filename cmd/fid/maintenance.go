@@ -157,10 +157,7 @@ func renderMaintenanceDivergence(cmd *cobra.Command, result maintenanceCheckResu
 		return err
 	}
 	if !jsonMode {
-		if err := writeIssueLine(cmd.ErrOrStderr(), "error: %s\n", errMaintenanceCheckFailed); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, errMaintenanceCheckFailed)
+		return writeHumanFailure(cmd, "maintenance.check", failure, errMaintenanceCheckFailed)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "maintenance.check", failure, errMaintenanceCheckFailed)
 }
@@ -175,10 +172,7 @@ func renderMaintenanceCheckError(cmd *cobra.Command, cause error) error {
 		return err
 	}
 	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, "maintenance.check", failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "maintenance.check", failure, cause)
 }

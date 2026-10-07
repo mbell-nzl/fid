@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -175,7 +174,7 @@ func renderStopError(cmd *cobra.Command, operation string, cause error) error {
 		}
 		return writeStopFailure(cmd, jsonMode, operation, cause, cli.CodeResolutionInvalid, "Stop resolution is invalid", &cli.Subject{Type: kind, ID: nil}, map[string]any{"subject": map[string]any{"type": resolutionInvalid.Subject.Type, "id": resolutionInvalid.Subject.ID}, "fact_event_ids": resolutionInvalid.FactEventIDs, "reasons": cliEvaluationReasons(resolutionInvalid.Reasons)})
 	}
-	return writeStopFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Stop request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Stop request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
 func writeStopFailure(cmd *cobra.Command, jsonMode bool, operation string, cause error, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
@@ -186,15 +185,7 @@ func writeStopFailure(cmd *cobra.Command, jsonMode bool, operation string, cause
 	if jsonMode {
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
-	if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "error: "+failure.Message); err != nil {
-		return err
-	}
-	if code == cli.CodeReviewReworkExhausted && subject != nil {
-		if _, err := fmt.Fprintln(cmd.ErrOrStderr(), "next: an activated Human records an approved Human Outcome of class review-rework-extension for this Envelope's Issue; see fid stop list --subject envelope:"+fmt.Sprint(subject.ID)); err != nil {
-			return err
-		}
-	}
-	return cli.NewFailureError(failure, cause)
+	return writeHumanFailure(cmd, operation, failure, cause)
 }
 
 func cliEvaluationReasons(reasons []workflow.EvaluationReason) []map[string]any {

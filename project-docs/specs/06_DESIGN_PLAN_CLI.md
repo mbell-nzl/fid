@@ -591,8 +591,8 @@ govern the message clarifications recorded in DEC-282:
   escape or cut. Codes, details and exits retain their accepted values.
 
 The exact leaf, input, failure and view changes remain indexed in that phase
-contract. The task deliveries below identify the implemented portions; task
-10's additional Human failure lines remain pending.
+contract. The shared Human failure renderer follows section 9; the task
+deliveries below identify the other implemented portions.
 
 Task 9a delivers grammar failures before workspace resolution on every live
 leaf except the Human-only `journal inspect` and `sql` diagnostics. Each is
@@ -643,9 +643,27 @@ Up to 512 scalars remains intact; longer text retains the first 511 plus `…`,
 dropping any escape crossing the cut whole, without padding. Count before JSON
 serialization and without the Human label or terminator. This precedence can
 shorten the specified source text; details always preserve the full spelling
-or value. Human stderr is exactly `error: <final JSON message>` plus a newline,
-with exit 2 and no second escape or cut. Task 10 adds the reason and guidance
-lines using the same construction.
+or value. Human stderr starts with `error: <final JSON message>` plus a newline,
+with exit 2 and no second escape or cut. It then prints `reason: <code>` with
+key details, followed by `blocked by:` only for nonempty Stop/Attention IDs
+and `next:` only for section 9's closed table. The reason line counts its
+label and escaped detail toward 200 scalars; a longer line retains 200 plus
+`…`, dropping an escape crossing the cut whole. Grammar `invalid-argument`
+failures on `--input` leaves include the help/template hint; unknown commands
+and failures on leaves without `--input` omit it.
+
+```text
+error: unknown flag: --bogus
+reason: invalid-argument; argument=--bogus, allowed=--actor|--example|--idempotency-key|--input
+next: see fid stop raise --help; template: fid stop raise --example
+```
+
+Generic fallback messages use the escaped, bounded domain cause. The four
+plain-copy refusals retain code `invalid-argument`, exit 2 and their existing
+details, with messages `prior registration binding does not match envelope`,
+`claim acquire binding is invalid`, `run claim binding is invalid`, and
+`run gate: repository binding is invalid`. A terminal gate non-success writes
+the same failure lines on stderr after its streamed Human stdout.
 
 Flag combinations and disagreements between accepted rows and live flag sets
 retain their existing behavior (CF-047); task 9a records them in its completion

@@ -232,7 +232,7 @@ func grammarCheck(t *testing.T, row grammarRow, jsonMode bool, result commandExe
 		t.Fatalf("%s: exit %d result %#v", row.name, exit, result)
 	}
 	if !jsonMode {
-		if result.stderr != "error: "+row.message+"\n" {
+		if result.stderr != p24GrammarHumanText(t, row) {
 			t.Fatalf("%s Human = %q want %q", row.name, result.stderr, row.message)
 		}
 		return

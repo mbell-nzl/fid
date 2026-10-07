@@ -164,7 +164,7 @@ func TestRetainedInventoryRequiredActorHumanErrorsRemainProse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 			result := executeCommandForTest(workspace, tt.args...)
-			if result.err == nil || result.stdout != "" || result.stderr != tt.stderr {
+			if result.err == nil || result.stdout != "" || result.stderr != tt.stderr+"reason: invalid-argument; argument=--actor, allowed="+map[bool]string{true: "--actor", false: "^(agent|human|service):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"}[strings.Contains(tt.name, "missing")]+"\n" {
 				t.Fatalf("result = %#v, want concise Human required-actor error", result)
 			}
 			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
