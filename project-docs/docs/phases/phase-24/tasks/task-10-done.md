@@ -1,15 +1,25 @@
-# Phase 24 - Task 10: Human failure lines - Recovery checkpoint
+# Phase 24 - Task 10: Human failure lines - Protected blocker report
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: in-scope-implementation
-- Condition: RegisteredCodes pairing and R20 domain-process completeness are unfinished; the R9 caller audit found the stable activity.list raw renderer call outside the named function scope.
-- Recovery attempts: 0
-- Next action: Resume task-10 from this checkpoint, complete both closed process corpora and Human plain-copy pairing, and obtain the task-scope disposition for cmd/fid/activity.go before changing its handler; finish the no-bypass caller audit and rerun the exact gate.
-- Human attention required: no
+- Task outcome: BLOCKED
+- Category: public-interface-decision
+- Condition: activity.list has no fid-cli.v1 failure producer on its raw domain-error path; the authorized repair cannot preserve existing JSON code/details/exit while deriving Human lines from an absent JSON failure without choosing a protected producer mapping.
+- Recovery attempts: 1
+- Next action: Return the observed activity.list transport evidence to the Phase Runner for Tech Lead authority identifying the accepted producer mapping or explicitly resolving its code/details/exit; obtain bounded dispositions for the audited stats/AC-list caller gaps, then resume the same task's remaining corpora, pairing, renderer adoption and exact gates.
+- Human attention required: yes
 
 ## Summary of what was implemented
+
+Continuation attempt 1, 2026-10-07, remains phase-24/task-10 under TRG-24-009, trigger `task-10:in-scope-implementation:human-failure-corpus-and-caller-audit`, repair category `in-scope-implementation`, repair authority `task spec`. The ledger's five binding values (task identity from the event heading, trigger, attempt, category and authority) and Forbidden changes were checked against the governing TRG without paraphrasing its values. The extension is exactly `cmd/fid/activity.go`.
+
+- Reproduced the activity.list raw transport in a freshly built fid binary, in both modes, with unchanged filesystem snapshots. The JSON envelope prerequisite check is red; no product mapping was invented to obtain green.
+- Completed the requested stats.go assessment and identified the same forced-JSON failure path in issue.ac.list during the caller audit. These are concrete additional caller scope gaps, not assignments to another task.
+- Reran all seven exact Task 10 commands in order and watched each terminate. No product, test, renderer, contract or control was edited in this continuation; the only tracked edit is this report.
+- The RegisteredCodes corpus, complete R20 domain-process corpus and four-leaf built-binary plain-copy pairing remain unfinished. These are ordinary incomplete work, not the protected blocker. The blocker is the independently reproduced absence of the activity JSON producer the directive requires preserving.
+- Prior implementation checkpoint: `d574cf4587d790a83bbd14de22ff918edbe1e115`, `feat(cli): checkpoint task 10 Human failure rendering`; prior finalized report/entry HEAD: `f1ad50fa18eb45b308cc52ffb3ea0c65b6dd198d`. Its typed outcome was RECOVERY_REQUIRED.
+
+Historical implementation summary follows unchanged:
 
 - Added one internal/cli Human failure renderer: verbatim bounded JSON message, escaped scalar/key-detail reason, exact Stop/Attention ordering, and the closed next table. Reason fixtures cover the whole-line 200/201-scalar boundary, Unicode, and whole-escape cuts; nullable object values render null, while nested objects and object arrays are omitted outside the overrides.
 - Adopted it in the scoped family writers, grammar/unknown-command transport, standalone init/rebuild/maintenance/export/capabilities/unavailable failures, and gate post-frame refusals. Streamed gate output remains on stdout.
@@ -17,6 +27,10 @@
 - Added real-binary protected-Decision, unsuccessful terminal gate, and sensitive duplicate-component refusal checks. Converged retained Human assertions with provenance and retained the original rejection/state assertions. This is partial task-10 work, not task completion.
 
 ## Files created or modified
+
+Current continuation: only `project-docs/docs/phases/phase-24/tasks/task-10-done.md`. The existing dirty run-ledger.md and triage-log.md were present on entry and were not edited or staged. No second task or agent was started.
+
+Historical checkpoint file inventory follows unchanged:
 
 - `cmd/fid/activation.go`
 - `cmd/fid/canonical_request.go`
@@ -73,11 +87,38 @@
 
 ## Documentation updated
 
+Current continuation: this report adds the protected authority question, actual-binary caller audit, own-session red observation and fresh exact-gate evidence. No specification document changed in this continuation.
+
+Historical documentation record follows unchanged:
+
 - project-docs/specs/05_DESIGN_PLAN.md section 6: exact Human failure labels, ordering, cut behavior, and gate-streaming exception.
 - project-docs/specs/06_DESIGN_PLAN_CLI.md: bounded domain-cause messages, the four plain-copy sentences, and section 9 examples.
 - This report records the incomplete corpus and adoption criteria explicitly. No ledger, triage, decisions, QA artifact, task contract, dependency, or task-11/task-13 view was edited.
 
 ## Validation Contract Coverage
+
+Current continuation evidence and limits:
+
+- VAL-036: BLOCKED for activity.list adoption. `cmd/fid/activity.go:35` returns workspace resolution errors without transport; `:46` renders List errors through the raw helper, and `:49` returns the untyped error. Actual-binary `activity list --since invalid` and `--on invalid` in both modes produce prose only with exit 7; missing-project calls are silent with exit 7. There is no JSON failure to pair or supply to the shared renderer. The existing RegisteredCodes completeness obligation is also unfinished.
+- VAL-037/038/039: the retained named tests in the historical coverage rows below were included in this continuation's fresh ordinary and tagged gates, both exit 0. No new corpus completeness claim is made.
+- VAL-067 and VAL-027/028/029 message pairing: FAIL (unfinished acceptance work, not the protected category). The complete R20 registry and built-binary Human/JSON plain-copy pairs are still absent. Existing unit boundary/sensitive-process and original/copy/import assertions remain intact and pass the current full suites; those retained tests do not establish the missing process corpus.
+- VAL-052: PASS from this continuation's exact gates: cmd/fid 412.776s; internal/workflow 120.190s; slowest other ordinary package internal/export 197.915s; tagged cmd/fid/integration 361.027s. All ordinary packages are below 600s and 480s warning; integration is below 900s.
+- VAL-054: UNVERIFIED Human judgment. D2 after task 11, fixture regeneration and the Human walkthrough remain required; this report does not advance to task 11.
+
+Current caller-level audit supplements the unchanged R9 function/adoption table below:
+
+| Caller / source | Current trace and own-session observation | Disposition |
+|---|---|---|
+| activity.list / activity.go:35,46,49 | Resolution returns an untyped error with no output. List failure calls renderIssueError -> raw error text and returns the untyped error. JSON mode therefore has no code/details; both exits are 7. | Protected mapping authority required under TRG-24-009's explicit boundary. |
+| stats.tokens / stats.go:38,48 | Forces renderIssueReadError(cmd,true,...); Human and JSON missing-project requests both emit the same fid-cli.v1 project-not-found envelope, exit 3, with no effects. | Audit only; no stats.go edit authority. Human-mode renderer adoption remains unsatisfied. |
+| stats.cost / stats.go:73,83 | Same forced-JSON read mapper and observed project-not-found envelope/exit 3 in both modes. | Same audit-only scope gap. |
+| issue.ac.list / issue_ac.go:109,118 | Same forced-JSON read mapper. Both missing-project modes emit project-not-found, exit 3, with no effects. | Additional exact caller scope gap; issue_ac.go is not named by R9 and has no extension here. No edit or alternative-task assignment. |
+| journal inspect, sql / journal.go:70,90; sql.go:39,59 | Remaining raw-helper callers are the two explicitly excluded diagnostics. | Honest diagnostic exclusion already stated by the task; no stable-caller exclusion invented. |
+| root-flag rejection / root.go:121 | Raw rejection is guarded by the capability registry. Stable leaves are registered for both global transports; journal inspect/sql keep their excluded diagnostic flag rejection. | No new stable renderer exception claimed. |
+
+The exact sixth/seventh commands regenerated 43 R9 functions and 23 R20 matches. R20 still has the 18 final generic mappers and five non-generic sites already accounted for below. This is inventory/audit evidence, not a completed no-bypass or process-completeness gate.
+
+Historical coverage, pending-row dispositions and retained-convergence provenance follow unchanged. Historical PASS receipts are preserved evidence from the original session; the current gate receipts below are independently captured in this continuation:
 
 - VAL-036: FAIL (unfinished evidence). TestP24HumanProtectedDecisionFailure and TestP24HumanGateTerminalFailure in cmd/fid/integration/p24_human_failure_test.go exercise the actual binary; TestGrammarBuiltBinaryCorpus in cmd/fid/grammar_corpus_test.go preserves short/long/512/513/Unicode/escape-cut and near-miss rows with exact Human expectations. The required complete RegisteredCodes pairing registry with pinned exclusions is not implemented. The R9 activity caller gap also remains.
 - VAL-037: PASS for the deterministic renderer states. TestHumanFailureLines/stops in internal/cli/human_failure_test.go pins stop_ids then attention_ids; its scalars/controls/no-input rows pin absence. TestP23StopFailureCodeMatrix and TestP23StopFailureHumanAndJSONParity in cmd/fid/integration/p23_human_failure_test.go compare exact actual-process lines, including both blocking-ID arrays and nonblocking not-found/version/invalid rows.
@@ -212,6 +253,55 @@ Retained convergence provenance. Locations below are the pre-task HEAD's displac
 
 ## Tests run
 
+Current continuation, cwd /home/mark/projects/fid unless a fixture cwd is stated:
+
+- `go build -o /tmp/fid-task10-recovery ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Its yielded exec session was polled to its own exit before any binary observation.
+- `python3 -` (the envelope-prerequisite program below on stdin) - FAIL - `FAIL activity.list JSON failure envelope absent; stdout=''; stderr='error: activity list: --since must be YYYY-MM-DD or RFC3339\n'; observed exit_code=7` (terminated `exit_code: 1`). This red check asserts accepted transport presence and operation only; it selects no failure code/details/exit. Green was not attempted by inventing a mapping.
+- `python3 -` (14 subprocess/snapshot observations summarized below) - PASS - `OBSERVED 14 caller transport probes; all filesystem snapshots unchanged` (terminated `exit_code: 0`). The script records each subprocess returncode and separate stdout/stderr; expected refusals retain their actual non-zero codes rather than becoming gate PASS assertions.
+- `/tmp/fid-task10-recovery --json activity list --since invalid` and `/tmp/fid-task10-recovery activity list --since invalid`, cwd /tmp/fid-task10-audit-D5s0O5 - OBSERVED REFUSALS - `error: activity list: --since must be YYYY-MM-DD or RFC3339` (each terminated `exit_code: 7`). These were also executed directly through exec_command before the snapshot matrix.
+
+The prerequisite program was executed byte-for-byte as:
+
+```python
+import json,subprocess,sys
+p=subprocess.run(['/tmp/fid-task10-recovery','--json','activity','list','--since','invalid'],cwd='/tmp/fid-task10-audit-D5s0O5',text=True,capture_output=True)
+try:
+    envelope=json.loads(p.stderr)
+except json.JSONDecodeError:
+    print('FAIL activity.list JSON failure envelope absent; stdout='+repr(p.stdout)+'; stderr='+repr(p.stderr)+'; observed exit_code='+str(p.returncode))
+    sys.exit(1)
+assert envelope['contract_version']=='fid-cli.v1' and envelope['ok'] is False and envelope['operation']=='activity.list'
+print('PASS activity.list JSON failure envelope exists')
+```
+
+Actual-binary observations: build as above; initialize the project fixture with `/tmp/fid-task10-recovery init --prefix AUD --json` (observed exit 0), then run each argv below both without and with the root `--json` flag. All stdout is empty on refusal. The fixture snapshot consists of every regular file's relative path, mode and SHA-256 content hash, including SQLite and journal. All fourteen before/after snapshots were equal.
+
+| Fixture cwd | Leaf argv | Human stderr / exit | JSON stderr / exit | Success/no-effects control |
+|---|---|---|---|---|
+| /tmp/fid-task10-audit-D5s0O5 | activity list --since invalid | `error: activity list: --since must be YYYY-MM-DD or RFC3339` plus LF / 7 | Identical prose plus LF / 7 | Both no effects. |
+| Same initialized fixture | activity list --on invalid | `error: activity list: --on must be <type>/<id>` plus LF / 7 | Identical prose plus LF / 7 | Both no effects. |
+| Same initialized fixture | activity list | Empty / 0 | Empty / 0 | Human stdout empty for empty timeline; JSON stdout exactly fid-cli.v1 success, activity.list, event:null, result:{items:[]}; both no effects. |
+| /tmp/fid-task10-no-project-fjh2k3i8 | stats tokens | project-not-found JSON envelope / 3 | Same envelope / 3 | Both no effects. |
+| Same non-project fixture | stats cost | project-not-found JSON envelope / 3 | Same envelope / 3 | Both no effects. |
+| Same non-project fixture | issue ac list AUD-missing | project-not-found JSON envelope / 3 | Same envelope / 3 | Both no effects. |
+| Same non-project fixture | activity list | Empty / 7 | Empty / 7 | Both no effects. |
+
+Each stats/AC failure is exactly fid-cli.v1, ok:false, operation matching its leaf, code:project-not-found, category:not-found, retryable:false, message:"fid project was not found", subject:{id:"",type:"project"}, details:{path:""}.
+
+Caller provenance was established with git blame and git show:
+
+- activity.go raw List caller: `977974c0ec00d3d9a63f7d7515e633683c9b9ac5`, phase-16/task-1.
+- stats.go forced read transport: `e51afe3c3e0ea157ee960fb643996453250a37c6`, phase-21/task-9.
+- issue_ac.go forced read transport: `16f4f8d2d2b5870d1502e6713300f5671dcfdf4e`, phase-20/task-10.
+
+For each full hash, its individual `git merge-base --is-ancestor <hash> 304aa45f12cf3966567231e6986e3070df409c68` command was executed and terminated `exit_code: 0` with `exit 0 (no output)`. Earlier provenance does not excuse the task-10 no-bypass requirement.
+
+Historical Runner report-lint evidence is preserved and explicitly attributed: the 20:15 TASK-RECOVERY records `OUTCOME RECOVERY_REQUIRED`, observed `exit_code: 10`, and ten failures against the prior checkpoint. The 20:17 bound recovery repeats that non-complete result. These are Runner observations, not a PASS captured in this Developer continuation; individual diagnostics are not supplied in those records and are not reconstructed. Root cause recorded by the checkpoint/Runner is incomplete acceptance evidence and caller adoption. This continuation narrows the caller failure to an absent typed activity producer plus forced-JSON callers; the corpus and pairing findings remain unresolved. Finalized-report lint remains the Runner's independent control and was not executed or claimed PASS here.
+
+No Go source/test was edited; this report-only protected hand-back does not substitute a green implementation for the red transport observation. The test-result cache was cleared as setup before the seven-command continuation gate to collect fresh times; setup is not gate evidence.
+
+Historical tests, runtime observations and all failed/passing receipts follow unchanged:
+
 All tests/gates ran from /home/mark/projects/fid unless explicitly stated. All listed terminations were observed from the nested command result; empty polling output was never treated as success. Red attempts remain failed evidence. The test-result cache was cleared once as setup before gate attempt 2 to obtain fresh required package times; cleanup is not PASS evidence.
 
 - `go test -tags integration ./cmd/fid/integration -run '^TestP24HumanProtectedDecisionFailure$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`). Specified first behavior red: Human printed the old execution-bound-transition cause rather than the protected-Decision JSON sentence; package 2.518s. The identical selection subsequently passed in 2.470s in this session.
@@ -259,6 +349,20 @@ QA-plan section 8 assigns D2 review and Human fixture regeneration after task-11
 
 ## Exact quality-gate results
 
+Continuation gate (third full sequence across the durable Task 10 history), cwd /home/mark/projects/fid. All seven commands ran byte-identically, in this order, without concurrent heavy test work. Each receipt below was captured in this session and its nested result supplied the termination. The source/test tree remains the original checkpoint.
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	120.190s	coverage: 62.1% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					62.6%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	361.027s` (terminated `exit_code: 0`)
+- `rg -n "func (write[A-Za-z]*Failure|render[A-Za-z]*Error)\(" cmd/fid -g '!*_test.go'` - PASS - `cmd/fid/activation.go:323:func renderActivationError(cmd *cobra.Command, operation string, cause error) error {` (terminated `exit_code: 0`)
+- `rg -n 'CodeInvalidArgument, "invalid [^"]*"' cmd/fid -g '!*_test.go'` - PASS - `cmd/fid/finding.go:144:	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Finding request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})` (terminated `exit_code: 0`)
+
+Fresh required timings: cmd/fid 412.776s; internal/workflow 120.190s; slowest other ordinary package internal/export 197.915s; cmd/fid/integration 361.027s. Both rg commands observed the declared matches and exit_code: 0. No required command failed in this continuation. Passing these existing gates does not close the independently red activity transport or missing acceptance corpus.
+
+Historical gate attempts 1 and 2 follow unchanged:
+
 Both full attempts executed all seven byte-identical task commands in order from the repository root. Attempt 1 is immutable failed evidence; attempt 2 is the final checkpoint gate. The rg commands both expect and observed exit_code: 0 with declared matches; no narrower command substituted for any gate.
 
 Attempt 1:
@@ -285,6 +389,17 @@ Final fresh package times: cmd/fid 409.529s; internal/workflow 112.664s; slowest
 
 ## Deviations from spec
 
+Current continuation:
+
+- Protected boundary: TRG-24-009's Recovery scope says, "If the activity repair requires inventing a failure mapping or changing the accepted JSON contract, return to triage rather than inventing it." The observed JSON request emits raw prose with exit 7, and a missing-project request emits nothing with exit 7. activity.go reads jsonMode only after List succeeds, and its failure path constructs no cli.Failure. Existing renderIssueReadError/issueReadFailure would select invalid-argument with request-level details and exit 2 for the filter cause, project-not-found/exit 3 for missing project, or journal-replay-stopped/exit 6 for replay failures. Those are changed exits and newly selected producer mappings. Constructing internal-error solely from the raw exit 7 would also invent a producer mapping and message/details contract. The shared renderer requires a typed Failure; an empty fabricated Failure cannot supply accepted semantics.
+- Resolution needed: identify the authoritative existing activity failure mapping, or record precise protected authority reconciling the missing JSON producer and its accepted code/details/exit with the preservation boundary. No accepted mapping was guessed, code changed, assertion weakened, or success output altered.
+- The two finite corpora and four-leaf built-binary plain-copy pairing remain incomplete. They are not labelled BLOCKED merely because they are unfinished; the protected outcome comes from the separate activity producer constraint above.
+- The prerequisite check's last token is preserved in Tests run with exit_code: 1. Its cause is the actual raw JSON transport, and no later green is claimed. This is supplemental failed evidence, not a required-command failure or an authorized change to the task's assertions.
+- The original report-lint non-complete result and all historical red/green/gate receipts remain preserved. This session's exact gates all passed; there is no new failed required-command attempt to erase.
+- Developer report-lint was not run: Task 10 explicitly assigns that control to the Runner, and the invoking instructions require the Runner to run it after this finalized report commit. D2 re-review and the Human walkthrough remain mandatory after task 11; neither is waived.
+
+Historical deviations follow unchanged:
+
 - The task is unfinished: complete RegisteredCodes and R20 domain-process completeness registries, Human plain-copy process pairing, and the no-bypass caller audit remain. These are RECOVERY_REQUIRED work; a green automated gate does not establish these missing acceptance criteria.
 - Mandatory required-command failed-attempt note: gate attempt 1's exact tagged integration command ended with `FAIL` (terminated `exit_code: 1`, 357.104s). Task-10's accepted second Human line displaced assertRemovedCommandFailure's single-line expectation (introduced by task-9a). Preserving the invocation and typed JSON/journal checks, the in-scope assertion was converged. The focused rerun then reached a later unsupported-link assertion introduced by phase-23/task-12; task-10's accepted fixed JSON sentence displaced its raw-domain Human substring. Its exact canonical error/reason expectation now retains the relation value, while the original no-append checks remain. The focused journey and combined tagged race checks passed; gate attempt 2 reran the byte-identical full tagged command with exit_code: 0. No failure was routed to another task.
 - The first ordinary touched-package race attempt ended with `FAIL` (terminated `exit_code: 1`, cmd/fid 308.286s); task-10 displaced the retained governance single-line assertion and removed-endpoint raw wording. Provenance was checked, canonical lines added, and the original cause/empty-stdout/journal checks retained. The byte-identical touched-package command passed (cmd/fid 307.357s; cli 1.115s).
@@ -292,6 +407,17 @@ Final fresh package times: cmd/fid 409.529s; internal/workflow 112.664s; slowest
 - Other red attempts retained in Tests run cover the specified protected-Decision first failure, missing renderer API, generic cause construction, empty nested array and 12-hex repository reason, terminal gate stderr, displaced retained output, and fixture/script construction mistakes. No test was deleted, command narrowed, pass condition changed, or flaky green mined.
 
 ## Concerns, technical debt, or notes for the Tech Lead
+
+Current protected candidate and scope notes:
+
+- Activity mapping authority is needed for the exact raw producer paths at activity.go:35,46,49. This is the explicit return-to-triage condition in TRG-24-009, not a request to expand its one-file extension independently. Its file-scope question is resolved; its runtime JSON-producer prerequisite is absent.
+- Stats tokens/cost at stats.go:38,48,73,83 and issue.ac.list at issue_ac.go:109,118 have verified Human-mode JSON failure bypasses. The shared mapper is adopted, but these callers force its JSON branch. Both exact caller files lie outside the named R9-function scope and only activity.go has the authorized extension. Record bounded scope disposition within the same task; no other task is assigned and no file scope is expanded by this report.
+- Remaining decision-free work after authority resolution: complete RegisteredCodes row/exclusion completeness, the eighteen R20 domain-process rows/honest unreachable exclusions, and actual-binary envelope.create/claim.acquire/run.start/gate.run plain-copy Human/JSON pairs while retaining the valid Claim and original/copy/import controls. The closed contract is unchanged.
+- Headroom warning: none for this continuation; maximum ordinary package is 412.776s, below the 480s warning. Tagged integration is 361.027s.
+- Entry branch and HEAD were phase-24 at f1ad50fa18eb45b308cc52ffb3ea0c65b6dd198d. Both run-ledger.md and triage-log.md were dirty on entry, despite the recovery prose saying ledger-only dirt. Their initial contents were retained; only the report is staged/committed. No protected control, generated artifact, dependency, task-11/task-13 surface or held-out material was edited/read.
+- This is a Developer BLOCKED candidate for the Phase Runner's triage decision. It does not rewrite the ledger state or allocate any TRG/ESC.
+
+Historical checkpoint notes follow unchanged (the previously requested activity file extension is now granted by TRG-24-009, with the protected mapping condition above still unresolved):
 
 - Same task-10 continuation is required. Complete the two finite process corpora and their honest row/exclusion completeness checks, including exact both-mode plain-copy messages with the valid Claim prerequisite; retain all checkpoint evidence.
 - Scope gap: cmd/fid/activity.go:46 calls the R9 renderIssueError(io.Writer,error) without operation/leaf context; its handler is not a named R9 function. The uniform task-10 accepted change exposes this stable caller's raw failure path. Obtain the bounded task-scope disposition before editing that caller. The call was introduced by 977974c0ec00d3d9a63f7d7515e633683c9b9ac5 (phase-16/task-1), and git merge-base --is-ancestor confirmed it predates phase-24's approved task-pack commit 304aa45f12cf3966567231e6986e3070df409c68. This is not assigned to task-11 or task-13. Also audit stats.go's explicit JSON-port calls against their accepted caller contract before claiming no bypass.
@@ -304,8 +430,8 @@ Final fresh package times: cmd/fid 409.529s; internal/workflow 112.664s; slowest
 
 ## Commit hash
 
-- `d574cf4587d790a83bbd14de22ff918edbe1e115`
+- Pending commit
 
 ## Commit subject
 
-- `feat(cli): checkpoint task 10 Human failure rendering`
+- Pending commit
