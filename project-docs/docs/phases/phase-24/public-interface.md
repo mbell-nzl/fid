@@ -9,6 +9,8 @@
 > D6 to section 13, decided as DEC-281 (sections 5 and 9).
 > DEC-282 corrects the plain-copy Run cause in section 5 and applies the
 > bounded message rule to grammar failures and unknown commands in section 9.
+> DEC-285 clarifies section 9 for leaves that emit no JSON failure today
+> (`activity.list`).
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -251,6 +253,11 @@ next: <resolving action>                 # only for the codes in the next-table 
   mode prints today.
 - The `error:` line repairs A5. Today `issue transition` prints a different
   sentence from its JSON `message`.
+- **Leaves with no JSON failure today (DEC-285).** A leaf whose failure
+  path emits no `fid-cli.v1` failure does not conform to Phase 21 section 1.
+  There is no accepted exit to preserve. It emits the failure its family
+  mapper gives. `activity.list` uses the retained-read mapper of its Phase 21
+  section 4.1 siblings, and the exact causes are in DEC-285 clause 2.
 - **Key detail.** Scalar detail members render as `name=value` in key order;
   scalar arrays are comma-joined. A closed override table renders nested
   details:

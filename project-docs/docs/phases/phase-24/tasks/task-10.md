@@ -104,6 +104,32 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - A built-binary Human/JSON pairing corpus (new), enumerated from
   `cli.RegisteredCodes()` with a pinned exclusion list
 
+### DEC-285 Amendment (recovery attempt 2)
+
+- Three stable callers outside the R9 functions adopt the renderer.
+  TRG-24-009 added `cmd/fid/activity.go`; DEC-285 clause 3 adds
+  `cmd/fid/stats.go` and `cmd/fid/issue_ac.go`. The ordinary race/coverage
+  gate, `golangci-lint run ./...` and the tagged integration gate below
+  already execute all three files.
+- `activity.list` reads JSON mode first. It sends the unwrapped
+  workspace-resolution error and every `activity.List` error to
+  `renderIssueReadError(cmd, jsonMode, "activity.list", err)`. That is the
+  retained-read mapper its Phase 21 section 4.1 siblings use. The exact
+  expected failures are in the DEC-285 clause 2 table: `--since`/`--on`
+  give `invalid-argument`/2 with the domain cause as message; no project
+  gives `project-not-found`/3; replay stopped gives
+  `journal-replay-stopped`/6. Today's raw exit 7 is a Phase 21
+  nonconformance, not an accepted contract.
+- In `stats.go` and `issue_ac.go`, the six forced `true` arguments become the
+  live JSON mode. JSON failures stay byte-identical. Human success output
+  is unchanged (stats prints JSON there today).
+- Do not edit `internal/activity`, `issueReadFailure`, `genericFailure` or
+  the flag-domain declarations. Retained assertions these callers displace
+  converge with provenance (DEC-162/165/166) in the test file that holds
+  them.
+- Recovery identity: `task-10:public-interface:activity-list-failure-envelope-mapping`
+  at attempt 2 (DEC-285 clause 7).
+
 ### Files To Read For Context
 
 - `project-docs/docs/phases/phase-24/public-interface.md` section 9
@@ -155,7 +181,15 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   and one of 201 (first 200 plus `…`), and an escape sequence at the cut
   (dropped whole). (VAL-039)
 - [ ] `rg` over R9 shows no Human-mode branch that bypasses the renderer
-  (the report lists each R9 function and its call).
+  (the report lists each R9 function and its call, plus the `activity.go`,
+  `stats.go` and `issue_ac.go` callers).
+- [ ] Built-binary rows, both modes (DEC-285 clause 6): `activity list
+  --since invalid`, `activity list --on invalid` and `activity list` with no
+  project, each matching the DEC-285 clause 2 table; and `stats tokens`,
+  `stats cost` and `issue ac list <id>` with no project. In every row
+  Human stderr is the section 9 lines for the JSON failure, the exits
+  match, stdout is empty and nothing in the filesystem changes. (VAL-036,
+  VAL-067)
 - [ ] The generic-fallback corpus has one row per R20 site, driven by a
   reachable domain cause in both modes. A fallback with neither a row nor a
   pinned unreachability reason fails the test.

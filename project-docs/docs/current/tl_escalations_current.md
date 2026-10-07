@@ -7,6 +7,11 @@ None.
 ## Recently resolved
 
 Phase 24, archived in [Phase 24 escalations](../phases/phase-24/tl-escalations.md):
+- ESC-24-004: `activity.list` had no `fid-cli.v1` failure, so Task 10
+  had no accepted mapping to adopt. Resolved 2026-10-07 by DEC-285: it
+  adopts the retained-read mapper (Phase 21 sections 1/4.1/7), and Task 10
+  gains the stats and AC-list callers. The Runner appends the clause 8
+  RUN-RESUME and TASK-RECOVERY (attempt 2).
 - ESC-24-003: the sequence verifier rejected the corrected Task 9
   recovery; resolved 2026-10-07 by DEC-284 without a verifier change. The
   Runner appends correcting TRIAGE TRG-24-008 and the bound recovery, then

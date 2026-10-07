@@ -2,18 +2,17 @@
 
 Updated 2026-10-07. **Phase 24 "Operating experience and input
 convergence" is executing** (Heavy mode, DEC-277; 15 tasks with 9a). Tasks
-1-8 are complete. QA window A passed (review-2), and window B passed on
-re-review (review-4). Task 9 is `RECOVERY_REQUIRED` at implementation
-`785a224` and report `f680b20`, and the ledger is `REPAIR_PENDING`. Task 9's
-report-only repair is done. The shared descriptor extension for activation
-component arrays remains.
+1-9a are complete. QA windows A, B, C (late, DEC-284) and D1 have passed.
+Task 10 is in recovery: implementation `d574cf4`, report `9c3e003`. The
+ledger is `STOPPED` at TRG-24-010/ESC-24-004.
 
-DEC-284 closes ESC-24-003. TRG-24-006 recorded the right product repair
-under a non-enum category and a new trigger, so no recovery could bind it.
-Tech Lead TRG-24-008 corrects it in the accepted DEC-190 form, with no
-verifier change. The missed QA window C runs after Task 9. Earlier:
-DEC-283 closed ESC-24-001/002 (Task 6). Planning history: DEC-278..282.
-Phase 23 closed under DEC-271 (PR #25, `a46ec77`).
+DEC-285 closes ESC-24-004. `activity.list` had no `fid-cli.v1` failure,
+only raw exit 7. That is a Phase 21 nonconformance, so it adopts the
+retained-read mapper its siblings use. Task 10 also gains the forced-JSON
+`stats` and `issue ac list` callers. Recovery continues at attempt 2 under
+TRG-24-010's trigger. Earlier: DEC-284 (Task 9, ESC-24-003) and DEC-283
+(Task 6, ESC-24-001/002). Planning history: DEC-278..282. Phase 23 closed
+under DEC-271 (PR #25, `a46ec77`).
 
 - Contract: [public interface](../phases/phase-24/public-interface.md);
   [inventory](../phases/phase-24/input-inventory.md);
@@ -24,17 +23,16 @@ Phase 23 closed under DEC-271 (PR #25, `a46ec77`).
 
 ## Next
 
-1. Phase Runner: DEC-284 clause 4. Append a normal RUN-RESUME if this is a
-   new session, then TRIAGE TRG-24-008 and the bound TASK-RECOVERY. Then
-   dispatch the Task 9 attempt-2 continuation.
-2. QA windows: C (tasks 7-8) after task 9, which is late under DEC-284
-   clause 6; D1 after 9a, D2 after 11, E after 14. The Human walkthrough
-   follows task 11.
+1. Phase Runner: DEC-285 clause 8. Append the STOP-resume RUN-RESUME and
+   TASK-RECOVERY task-10 (attempt 2), then dispatch the Task 10
+   continuation.
+2. Task 11, then QA window D2 (tasks 10-11) and the Human walkthrough. Then
+   tasks 12-14 and window E.
 3. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and
    baseline convergence" follow.
 
 A deep workflow retrospective is recommended under CF-036/039 (see Phase 23
-workflow notes). Add DEC-283/284 workflow notes to it. It is separate from
+workflow notes). Add the DEC-283/284/285 workflow notes to it. It is separate from
 Phase 24.
 
 ## Earlier phases

@@ -912,6 +912,187 @@
   `workflow-sequence-lint.sh:488-511`, `:535-538`, `:705-760`, `:817-819`, `:1343-1377`;
   `qa/qa-plan.md` section 8; `09_AI_WORKFLOW.md` sections 2.3, 9.
 
+### DEC-285: `activity.list` failures use the accepted retained-read mapper; stats and AC-list Human failures adopt the renderer. Closes ESC-24-004
+
+- **Date:** 2026-10-07. Tech Lead ESC resolution on the Human's instruction
+  "Resolve ESC-24-004". This decision clarifies accepted text. It adds no
+  failure code, detail shape, message rule or exit class. Precedents:
+  DEC-280 item 3 (an exit change that an accepted Phase 21 section
+  authorizes), DEC-194 (an accepted allocation that was never delivered),
+  DEC-175 (a latent defect first exposed by a task's new requirement belongs
+  to that task) and DEC-283 clause 2 (STOP-resume identity).
+- **Context:**
+  - TRG-24-010 (BLOCK) and the 20:50 STOP. The Task 10 report at `9c3e003`
+    records built-binary `activity list --since invalid` and
+    `--on invalid`. Both print raw prose in both modes and exit 7. From a
+    directory with no project the command prints nothing and exits 7.
+    Neither mode emits a `fid-cli.v1` failure. Report-lint returns
+    `OUTCOME BLOCKED` (exit 11).
+  - Source at `9c3e003`: `cmd/fid/activity.go:33-35` returns the
+    workspace-resolution error wrapped and untyped. Lines 45-49 call the raw
+    `renderIssueError` and return the untyped error. JSON mode is read only
+    after success. `internal/activity` `validateListOptions` returns untyped
+    `--on` and `--since` causes before any read.
+  - **What is accepted.**
+    (a) `activity.list` is a Phase 21 section 4.1 `fid-cli.v1` leaf. Phase 20
+    `contracts.md` section 6 kept it as unenveloped legacy JSON only until
+    Phase 22. Phase 21 section 1 requires one failure envelope on stderr with
+    the section 7 exit class. Phase 20 section 2.4 says that
+    `internal-error`'s "presence in a test is a defect, not a contract". So
+    the raw exit-7 output is a latent Phase 21 nonconformance, not an
+    accepted JSON code, details or exit. On these paths there is nothing for
+    TRG-24-009's "preserve accepted JSON code/details/exit" to preserve. The
+    raw caller dates from `977974c` (phase-16/task-1). `ab09b47`
+    (phase-21/task-9) enveloped only the success path.
+    (b) The retained standalone reads in the same section 4.1 table already
+    share one failure mapper: `issueReadFailure`, reached through
+    `renderIssueReadError` (`cmd/fid/issue_get_list.go`). `issue.get`,
+    `issue.list`, `issue.ac.list`, `stats.tokens` and `stats.cost` use it.
+    `stats.*` resolve the workspace with the same `issueMutationWorkspaceRoot`
+    that `activity.list` uses. The mapper's branches are: `project-not-found`,
+    `issue-not-found`, `result-limit-exceeded`, `journal-replay-stopped`, then
+    the R20 generic fallback (DEC-281).
+    (c) `--since` and `--on` have no declared flag domain, and none was
+    required. DEC-280 item 5 limits completeness to non-string flags (R18)
+    and string domains that a Phase 21-24 row states. The `activity.list`
+    row states no `--since` domain and has no `--on` (CF-047(b)). Their
+    checks are therefore domain-package checks. Task 9a left those
+    unchanged, and they reach the family mapper. DEC-280 item 5 cites
+    `receipt list --outcome bogus` reaching `argument:"request"` as a check
+    of the same kind. VAL-064 is not engaged.
+    (d) Task 10's One renderer constraint says: "A family that formats Human
+    failures without a JSON failure constructs the same failure it would
+    emit in JSON mode." For `activity.list`, that failure is (a) produced
+    through (b).
+  - **Caller audit** (report Concerns). `stats.go:38,48,73,83` and
+    `issue_ac.go:109,118` call `renderIssueReadError(cmd, true, …)`, so
+    Human mode prints the JSON envelope on stderr. Contract section 9 says
+    "Every Human-mode failure on stderr is exactly these lines". Their JSON
+    mode is already correct. The forced arguments came from `e51afe3`
+    (phase-21/task-9) and `16f4f8d` (phase-20/task-10), both before the
+    Phase 24 task pack. Neither TRG-24-009 nor TRG-24-010 grants an edit
+    there, so Task 10 cannot meet its R9 no-bypass criterion without this
+    decision.
+  - `stats.tokens` and `stats.cost` print the JSON success envelope in Human
+    mode too; the retained `TestStatsTokensDefaultsToJSONByActorAttribution`
+    asserts this. Success output is outside Task 10.
+- **Decision:**
+  1. **ESC-24-004 closed.** The BLOCK was correct: TRG-24-009 forbade
+     inventing a mapping, and this decision invents none. The accepted
+     mapping is Phase 21 sections 1, 4.1 and 7, applied through the
+     retained-read family mapper. No new contract rule, code, detail shape,
+     message rule or Human decision is needed; section 9 gains only a
+     clarifying note. The exit change
+     from 7 to 2, 3 or 6 restores Phase 21 conformance, as DEC-280 item 3
+     did for unknown words.
+  2. **`activity.list` mapping.** `activity.go` reads JSON mode first, as
+     `issue get` does. It passes both the unwrapped `issueMutationWorkspaceRoot`
+     error (as `stats.go` does) and every `activity.List` error to
+     `renderIssueReadError(cmd, jsonMode, "activity.list", err)`. It adds no
+     activity-specific branch. Expected failures, all with
+     `retryable:false` and `operation:"activity.list"`:
+
+     | Cause | Code / category / exit | `message` | `subject` | `details` |
+     |---|---|---|---|---|
+     | `--since` refused by `internal/activity` (e.g. `invalid`) | `invalid-argument` / invalid-input / 2 | `activity list: --since must be YYYY-MM-DD or RFC3339` (the DEC-281 cause) | null | `{argument:"request", value:"", allowed:["accepted issue read input"]}` |
+     | `--on` refused by `internal/activity` (e.g. `invalid`) | same | `activity list: --on must be <type>/<id>` | null | same |
+     | No `.fid/` in an existing directory (cwd or `--project`) | `project-not-found` / not-found / 3 | `fid project was not found` | `{type:"project", id:""}` | `{path:""}` |
+     | Journal replay stopped | `journal-replay-stopped` / integrity / 6 | `journal replay stopped` | null | the existing `journalReplayStoppedFailure` details |
+     | Any other cause | the mapper's final branch, unchanged (DEC-281) | | | |
+
+     Human mode renders through `writeHumanFailure` with leaf
+     `fid activity list`. The leaf has no `--input`, so there is no `next:`
+     line. `--event` keeps its task 9a grammar failure. stdout and success
+     output are unchanged. The no-project failure is byte-identical to
+     `stats tokens` except for `operation`.
+  3. **Stats and AC-list callers.** Task 10 gains `cmd/fid/stats.go` and
+     `cmd/fid/issue_ac.go`, for one change only: the six forced `true`
+     arguments become the live JSON mode. JSON failures stay byte-identical.
+     Human failures become the section 9 lines. Exits are unchanged. Human
+     success output (stats JSON) is out of scope (CF-047(c)).
+  4. **No other product change.** Do not edit `internal/activity`,
+     `issueReadFailure`, `genericFailure`, the flag-domain declarations or
+     their texts. Declaring `--since` and `--on` domains belongs with the
+     `activity.list` row convergence (CF-047(b), Phase 26).
+  5. **Retained convergence.** If these four callers displace a retained
+     assertion, converge it under DEC-162/165/166 with introducing-commit
+     provenance, in the `cmd/fid` or `cmd/fid/integration` test file that
+     holds it. The ordinary race gate and the tagged integration gate
+     already run both directories (DEC-167/173). Keep the assertion: never
+     delete or weaken it.
+  6. **Evidence (VAL-036, VAL-067).** The built-binary pairing corpus gains
+     a row for each clause 2 cause the CLI can reach: `--since`, `--on`, and
+     no project. It also gains a no-project row each for `stats tokens`,
+     `stats cost` and `issue ac list`. Each row is run in both modes. It
+     checks the Human `error:` and `reason:` lines against JSON, the exit,
+     empty stdout, and that nothing in the filesystem changes. The `--since`
+     row may drive the R20 row for the `issueReadFailure` fallback. The
+     report's R9 table lists all three callers.
+  7. **Recovery identity** (STOP resume; DEC-283 clause 2). The chain trigger
+     moves to TRG-24-010's trigger at attempt 2: `task-10`,
+     `task-10:public-interface:activity-list-failure-envelope-mapping`,
+     attempt `2`, `in-scope-implementation`, `task-scope`, `0/2`. Attempts
+     stay monotonic: 1 (the TRG-24-009 continuation, which returned BLOCKED),
+     then 2. The TRG-24-009 trigger stays in history.
+  8. **Ledger sequence** (Runner, transactional append). Each step must
+     return `APPEND_CONFIRMED state=REPAIR_PENDING` with observed
+     `exit_code: 0`, and the step must be appended before dispatch.
+     (a) **RUN-RESUME** (schema v2 STOP resume). Set
+     `Prior run/session or STOP: 2026-10-07 20:50 STOP / TRG-24-010 / ESC-24-004`,
+     `Governing TRG: TRG-24-010`, `Governing ESC: ESC-24-004`, the trigger
+     and attempt from clause 7, and `Resolution authority: DEC-285`. Set
+     `Continuing task: task-10` and
+     `Next recovery: task-10 | in-scope-implementation | task-scope | task-10:public-interface:activity-list-failure-envelope-mapping | 2`.
+     `Checkpoint` names the post-DEC-285 phase HEAD and the preserved
+     `d574cf4`/`9c3e003` checkpoints.
+     (b) **TASK-RECOVERY task-10**, with the same tuple and `0/2`.
+     `Source: TRG-24-010 / ESC-24-004 / DEC-285; project-docs/docs/phases/phase-24/tasks/task-10-done.md`.
+     `Repair authority: TRG-24-010 / DEC-285`.
+     `Triage disposition: N/A`. Control fields and base are `N/A`.
+     `Originating report: N/A`. `Exact verification: N/A`. Set
+     `Allowed files: ordinary task-10.md scope plus cmd/fid/activity.go (TRG-24-009) and cmd/fid/stats.go,cmd/fid/issue_ac.go (DEC-285 clause 3)`.
+     `Forbidden changes` is TRG-24-009's list, plus: no edit to
+     `internal/activity`, `issueReadFailure`, `genericFailure` or flag-domain
+     declarations, and no stats success-output change. Dispatch the
+     same-task Developer continuation only after (b) is appended. Its later
+     REPAIR uses the same trigger and attempt.
+  9. **Verification.** The Tech Lead dry-ran the sequence on a scratch copy
+     of the phase files with the unchanged verifier. The current ledger
+     validates `VALID state=STOPPED`, and (a) and (b) each returned
+     `APPEND_CONFIRMED state=REPAIR_PENDING` (exit 0). The ledger then
+     validates `VALID state=REPAIR_PENDING`. The negative guards below each
+     returned exit 1 with the scratch ledger byte-unchanged:
+
+     | Candidate | Diagnostic |
+     |---|---|
+     | RUN-RESUME at attempt 1 | `RUN-RESUME Attempt count must increment its governing TRIAGE` |
+     | RUN-RESUME with the TRG-24-009 trigger | `RUN-RESUME Trigger signature does not match its governing TRIAGE` |
+     | TASK-RECOVERY whose `Source` omits DEC-285 | `TASK-RECOVERY does not retain its RUN-RESUME decision authority`; `… typed RUN-RESUME resolution authority` |
+     | TASK-RECOVERY with the TRG-24-009 trigger | `TASK-RECOVERY does not preserve its RUN-RESUME checkpoint`; `… does not match the exact schema v2 RUN-RESUME recovery tuple` |
+
+     If (a) or (b) is rejected as written, that is new information. Return to
+     the Tech Lead, and never substitute field values.
+  10. **Unchanged.** TRG-24-009, TRG-24-010, the STOP, the report, every
+      failed probe and the recovery history stay as recorded. Task 10's
+      seven commands, VAL identity, thresholds, budgets and the QA cadence
+      are unchanged. Window D2 after Task 11 and the Human walkthrough are
+      not waived.
+- **Artifact/spec sync:** `tasks/task-10.md` gains a DEC-285 amendment.
+  `public-interface.md` section 9 gains one clarifying note. The VAL-036
+  method and the change log record the clause 6 rows. Inventory R9 notes
+  the three callers. CF-047 gains (b) and (c) wording in
+  `decisions_active.md`. The ESC register, archive, brief and progress are
+  refreshed. There is no PRD, TRD, data model, glossary, template, QA-plan,
+  tool or prompt change.
+- **Workflow note for wrap-up:** TRG-24-009 bounded the file scope correctly.
+  But no one checked whether the target leaf had a JSON failure at all. A
+  caller-scope disposition should first confirm that the "existing mapping"
+  it relies on exists.
+- **Refs:** ESC-24-004; TRG-24-009, TRG-24-010; `run-ledger.md` 20:15,
+  20:17, 20:49, 20:50; `tasks/task-10-done.md` at `9c3e003`; Phase 20
+  `contracts.md` sections 2.4, 6; Phase 21 `public-interface.md` sections
+  1, 2, 4.1, 7; DEC-175, DEC-194, DEC-280, DEC-281, DEC-283.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.

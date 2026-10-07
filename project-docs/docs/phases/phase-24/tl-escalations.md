@@ -1,5 +1,35 @@
 # Phase 24 Escalations
 
+## ESC-24-004 - Activity list failure mapping needs public-interface authority
+
+- **Raised:** 2026-10-07 by TL-Lite in TRG-24-010 (BLOCK); ledger STOP
+  2026-10-07 20:50.
+- **Protected category:** protected public-interface/contract decision.
+- **Originating task:** task-10.
+- **Trigger signature:** task-10:public-interface:activity-list-failure-envelope-mapping
+  (attempt 1).
+- **Condition:** In both modes, built-binary `activity list --since invalid`
+  and `--on invalid` printed raw prose and exited 7. With no project the
+  command was silent and exited 7. Neither mode emitted a `fid-cli.v1`
+  failure, so TRG-24-009's renderer adoption had no JSON failure to
+  preserve. The Task 10 report at `9c3e003` had report-lint
+  `OUTCOME BLOCKED` (exit 11). The report also found `stats.go` and
+  `issue_ac.go` forcing JSON failures in Human mode, with no edit scope.
+- **Status:** RESOLVED 2026-10-07 by DEC-285 (decision). No mapping is
+  invented. `activity.list` is a Phase 21 section 4.1 leaf, so the raw
+  exit-7 output is a Phase 21 section 1/7 nonconformance, not an accepted
+  contract. It now fails through `issueReadFailure`, the retained-read
+  mapper its section 4.1 siblings already use, and DEC-285 clause 2 gives
+  the exact rows. Task 10 also gains `stats.go` and `issue_ac.go`; there,
+  the forced `true` becomes the live JSON mode. The recovery identity moves
+  to TRG-24-010's trigger at attempt 2. Tech Lead dry runs confirm the
+  clause 8 RUN-RESUME and TASK-RECOVERY each append
+  `APPEND_CONFIRMED state=REPAIR_PENDING`. No further Tech Lead or Human
+  input is needed unless a clause 8 append is rejected as written.
+- **Links:** [DEC-285](decisions.md); [TRG-24-009, TRG-24-010](triage-log.md);
+  [run ledger](run-ledger.md); [Task 10 report](tasks/task-10-done.md);
+  [Task 10 spec](tasks/task-10.md).
+
 ## ESC-24-003 - Protected sequence validator rejects corrected Task 9 recovery
 
 - **Raised:** 2026-10-07 by TL-Lite in TRG-24-007 (triage log only; the
