@@ -12,6 +12,8 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/config"
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -29,7 +31,7 @@ func TestP24GatePreSpawnObservationAfterEdit(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "tracked.txt"), []byte("edited"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	observed := cloneJSONMap(t, testEnvelopeRepository(t, root))
+	observed := p24GateDirtyRepository(t, root, "tracked.txt")
 	git := func(args ...string) string {
 		t.Helper()
 		data, err := exec.Command("git", append([]string{"-C", root}, args...)...).Output()
@@ -62,7 +64,10 @@ func TestP24GatePreSpawnObservationAfterEdit(t *testing.T) {
 	if !reflect.DeepEqual(receipt["terminal_repository"], observed) {
 		t.Fatalf("Receipt repository = %#v, want pre-spawn %#v", receipt["terminal_repository"], observed)
 	}
+	p24AssertGatePersistedRepositories(t, root, terminal, observed)
 	count := 0
+	eventCounts := map[string]int{}
+	attemptEffects, receiptEffects := 0, 0
 	for _, line := range strings.Split(strings.TrimSpace(string(mustReadCommandFile(t, mustJournalPath(t, root)))), "\n") {
 		var event journal.Event
 		if err := json.Unmarshal([]byte(line), &event); err != nil {
@@ -72,6 +77,7 @@ func TestP24GatePreSpawnObservationAfterEdit(t *testing.T) {
 			continue
 		}
 		count++
+		eventCounts[event.EventType]++
 		data, err := json.Marshal(event.Repository)
 		if err != nil {
 			t.Fatal(err)
@@ -81,8 +87,15 @@ func TestP24GatePreSpawnObservationAfterEdit(t *testing.T) {
 		}
 		for _, effect := range event.Effects {
 			if effect.Table == "execution_attempts" {
+				attemptEffects++
 				if !reflect.DeepEqual(decodeCommandJSONStructure(t, effect.Values["start_repository_json"].(string)), observed) {
 					t.Fatal("Attempt differs from pre-spawn observation")
+				}
+			}
+			if effect.Table == "execution_receipts" {
+				receiptEffects++
+				if !reflect.DeepEqual(decodeCommandJSONStructure(t, effect.Values["terminal_repository_json"].(string)), observed) {
+					t.Fatal("Receipt Effect differs from pre-spawn observation")
 				}
 			}
 		}
@@ -90,8 +103,101 @@ func TestP24GatePreSpawnObservationAfterEdit(t *testing.T) {
 	if count != 2 {
 		t.Fatalf("gate Events = %d", count)
 	}
+	if eventCounts["gate.execution-started"] != 1 || eventCounts["gate.receipt-recorded"] != 1 || attemptEffects != 1 || receiptEffects != 1 {
+		t.Fatalf("gate Event/Effect counts = %v / %d Attempts / %d Receipts", eventCounts, attemptEffects, receiptEffects)
+	}
 	if _, err := os.Stat(filepath.Join(root, "spawned.txt")); err != nil {
 		t.Fatal(err)
+	}
+}
+
+// This fixture has one unstaged tracked edit. Build its expected repository
+// from Git, config and file images, without fid's observer or repository output.
+func p24GateDirtyRepository(t *testing.T, workspace, path string) map[string]any {
+	t.Helper()
+	gitBytes := func(args ...string) []byte {
+		t.Helper()
+		data, err := exec.Command("git", append([]string{"-C", workspace}, args...)...).Output()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return data
+	}
+	git := func(args ...string) string {
+		t.Helper()
+		return strings.TrimSuffix(string(gitBytes(args...)), "\n")
+	}
+	if status := git("status", "--porcelain", "--untracked-files=all", "--", ".", ":!.fid"); status != " M "+path {
+		t.Fatalf("dirty fixture status = %q, want one tracked edit %s", status, path)
+	}
+	root, err := filepath.Abs(git("rev-parse", "--show-toplevel"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(root, ".fid", "config.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	head := git("rev-parse", "HEAD")
+	headEntry := strings.Fields(git("ls-tree", "HEAD", "--", path))
+	indexEntry := strings.Fields(git("ls-files", "-s", "--", path))
+	if len(headEntry) != 4 || headEntry[1] != "blob" || len(indexEntry) != 4 || indexEntry[2] != "0" {
+		t.Fatalf("unsupported tracked fixture: HEAD %v / index %v", headEntry, indexEntry)
+	}
+	info, err := os.Lstat(filepath.Join(root, path))
+	if err != nil || !info.Mode().IsRegular() {
+		t.Fatalf("worktree fixture must be regular: %v", err)
+	}
+	content, err := os.ReadFile(filepath.Join(root, path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	mode := "100644"
+	if info.Mode().Perm()&0o111 != 0 {
+		mode = "100755"
+	}
+	image := func(mode string, data []byte) map[string]any {
+		return map[string]any{"mode": mode, "digest": fmt.Sprintf("sha256:%x", sha256.Sum256(data))}
+	}
+	// Stdlib JSON sorts these map keys to independently construct the accepted
+	// fid.repository-dirty.v1 image; no production observer/canonicalizer is used.
+	entries := []any{map[string]any{"path": path,
+		"head":     image(headEntry[0], gitBytes("cat-file", "blob", headEntry[2])),
+		"index":    image(indexEntry[0], gitBytes("cat-file", "blob", indexEntry[1])),
+		"worktree": image(mode, content)}}
+	payload, err := json.Marshal(map[string]any{"schema": "fid.repository-dirty.v1", "entries": entries})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return map[string]any{"base_oid": head, "capture_source": "git", "dirty": true, "dirty_digest": fmt.Sprintf("sha256:%x", sha256.Sum256(payload)),
+		"head_oid": head, "project_id": projectConfig.ProjectID, "tree_oid": git("rev-parse", "HEAD^{tree}"),
+		"worktree_id": fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(root)))}
+}
+
+func p24AssertGatePersistedRepositories(t *testing.T, root string, terminal gateTerminalFrame, repository map[string]any) {
+	t.Helper()
+	conn, err := fiddb.Open(filepath.Join(root, ".fid", config.DatabaseFileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = conn.Close() }()
+	for _, record := range []struct {
+		name, query, id string
+	}{
+		{"Attempt", `SELECT COUNT(*), MIN(id), MIN(start_repository_json) FROM execution_attempts`, terminal.Data.AttemptID},
+		{"Receipt", `SELECT COUNT(*), MIN(id), MIN(terminal_repository_json) FROM execution_receipts`, terminal.Data.ReceiptID},
+	} {
+		var count int
+		var id, data string
+		if err := conn.QueryRow(record.query).Scan(&count, &id, &data); err != nil {
+			t.Fatal(err)
+		}
+		if count != 1 || id == "" || id != record.id {
+			t.Fatalf("persisted %s count/id = %d/%q, want 1/%q", record.name, count, id, record.id)
+		}
+		if got := decodeCommandJSONStructure(t, data); !reflect.DeepEqual(got, repository) {
+			t.Fatalf("persisted %s repository = %#v, want pre-spawn %#v", record.name, got, repository)
+		}
 	}
 }
 

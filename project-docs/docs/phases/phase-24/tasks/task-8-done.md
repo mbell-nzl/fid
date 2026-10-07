@@ -5,7 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 1
+- Recovery attempts: 2
 - Next action: None.
 - Human attention required: no
 
@@ -13,6 +13,7 @@ OUTCOME COMPLETE
 
 ## Summary of what was implemented
 
+- QA review-5 F2 recovery (`review-5:qa-rework:task-8`, attempt 1): replaced the dirty Gate pre-spawn expected repository with a test-local Git/config/root/file-image oracle. It independently derives all eight fields, including the canonical dirty-image SHA-256, and compares the persisted Attempt, persisted Receipt and both actual journal Events with that map. Counts require one Attempt, one Receipt, one execution-started Event and one receipt-recorded Event; both repository Effects are also required and compared. Post-spawn tree change, mismatch no-effects and every retained Gate/Evidence/freshness assertion remain.
 - gate.run validates closed input, replays keyed results before observation, then checks expected_repository against one pre-spawn observation. Attempt, Receipt, both gate Events and committed run.execution-blocked Events carry that observation; terminal handling does not re-observe.
 - Registration and Run binding use SameWorktree, including the accepted import binding. Original and imported destinations admit; an observable plain copy gives the exact Task 8 fallback refusal without Attempt, process or Event.
 - evidence.link derives its target and Event repository from the immutable Receipt, Review or Human Outcome Event. All three subject kinds link even without Git observation. Temporary json-ignored caller-repository fields are removed.
@@ -21,6 +22,8 @@ OUTCOME COMPLETE
 - Converged retained ordinary, integration, fake and digest fixtures with introducing-commit provenance. Real edits/reverts prove freshness through evaluation, terminal transition and completion, while ignored Artifact paths and immutable Evidence targets remain intact.
 
 ## Files created or modified
+
+This QA continuation changes only `cmd/fid/p24_gate_evidence_test.go` and this report. The original Task 8 implementation file inventory below is retained as history.
 
 - `cmd/fid/artifact.go`
 - `cmd/fid/artifact_material_policy_test.go`
@@ -83,6 +86,7 @@ OUTCOME COMPLETE
 
 ## Documentation updated
 
+- QA recovery updates this report only: review-5 F2 authority, first failing test recorded before repair, green verification, fresh ordered gates and package timings. All prior failed and passing command receipts remain unchanged.
 - project-docs/specs/06_DESIGN_PLAN_CLI.md and 07_DESIGN_PLAN_FLOWS.md document gate expectations, subject-derived Evidence inputs and freshness from observations (implementation checkpoint retained).
 - This report replaces the partial outcome with final evidence and preserves failed attempts. Runner-owned run-ledger.md and triage-log.md remain excluded from Developer edits and commits.
 
@@ -97,21 +101,34 @@ All PASS evidence below was exercised by this continuation's exact final ordinar
 - VAL-014: PASS - The same corpus type-checks templates against descriptors and verifies allowed enum/example values; the whole registry reflection test detects seeded mismatch.
 - VAL-015: PASS - TestAdoptedExampleProcessExclusivity (cmd/fid/input_descriptor_test.go:45) includes all four leaves, six conflicts (--json, --project, --input, --actor, --idempotency-key and positional), both modes, fixed precedence, exact typed details/exit 2 and unchanged non-project directories.
 - VAL-016: PASS - TestP24GateEvidenceDescriptorProcessCorpus checks recursive structural failures at field paths, closed allowed sets, sensitive redaction, typed stderr/exit and no filesystem effects, alongside valid examples.
-- VAL-017: PASS - TestP24RemovedGateEvidenceMembers (cmd/fid/p24_gate_evidence_test.go:267) rejects gate repository and both Evidence target_repository members at their exact paths without effects. Retained TestEvidenceLinkRejectsPersistedReceiptBindingMismatches/repository target and TestP23SharedAmendedLeafConformance/repository-binding preserve the removed-target refusal with current typed envelopes/no state change.
-- VAL-022: PASS - TestP24GatePreSpawnObservationAfterEdit compares stored Attempt/Receipt and journal Event repositories with an independent Git/root/config observation after a tracked edit. TestP24GateChangedFakeFIDInputParity (cmd/fid/integration/p24_evidence_subject_test.go:93) also verifies a committed execution-blocked Event equals the independently observed edited repository.
+- VAL-017: PASS - TestP24RemovedGateEvidenceMembers (cmd/fid/p24_gate_evidence_test.go:373) rejects gate repository and both Evidence target_repository members at their exact paths without effects. Retained TestEvidenceLinkRejectsPersistedReceiptBindingMismatches/repository target and TestP23SharedAmendedLeafConformance/repository-binding preserve the removed-target refusal with current typed envelopes/no state change.
+- VAL-022: PASS - TestP24GatePreSpawnObservationAfterEdit (cmd/fid/p24_gate_evidence_test.go:20) now constructs its complete expected map with p24GateDirtyRepository (:116), from Git HEAD/tree/status, config project_id, root SHA-256 and independently hashed HEAD/index/worktree file modes and raw bytes. p24AssertGatePersistedRepositories (:177) requires exactly one stored Attempt and Receipt, checks their IDs against the terminal frame and compares their complete repositories with that map. Both actual gate Events and both repository Effects equal the same independent map; each Event/Effect count is exactly one. TestP24GateChangedFakeFIDInputParity (cmd/fid/integration/p24_evidence_subject_test.go:93) also verifies a committed execution-blocked Event equals the independently observed edited repository.
 - VAL-023: PASS - TestP24GateAndEvaluateUnsafeAndReplay (cmd/fid/integration/p24_gate_observation_test.go:19) covers normal admission/evaluation, unmerged-paths and non-Git mapped repository-unavailable failures, complete reason/detail shape, exit 4 and unchanged persistence. Gate controls produce no Attempt/process/Event. TestRepositoryUnavailableCauseFixtures, TestRepositoryCaptureChangeReason and TestRepositoryUnmergedAndSizeClassification in internal/project/repository_reason_test.go:24/:56/:69 exercise Task 4's unchanged cause mapping through the ordinary gate.
-- VAL-024: PASS - TestP24GateExpectationBeforeAttempt (cmd/fid/p24_gate_evidence_test.go:98) rejects separate HEAD and dirty differences before Attempt/process/Event. TestP24GatePreSpawnObservationAfterEdit admits the matching edited expectation.
+- VAL-024: PASS - TestP24GateExpectationBeforeAttempt (cmd/fid/p24_gate_evidence_test.go:204) rejects separate HEAD and dirty differences before Attempt/process/Event. TestP24GatePreSpawnObservationAfterEdit admits the matching edited expectation.
 - VAL-025: PASS - Both mismatch rows in TestP24GateExpectationBeforeAttempt compare exact expected:{head_oid,dirty} and observed repository, with no extra details. The repository-mismatch producer registry in cmd/fid/integration/p23_failure_contract_test.go:37 retains gate.run alongside the previous producers.
-- VAL-029: PASS - TestP24GateOriginalCopyAndImport (cmd/fid/p24_gate_evidence_test.go:222) proves original/import admission and observable plain-copy exact invalid-argument/invalid gate request refusal with accepted gate registration details and unchanged persistence. This is the fixed fallback required before Task 10.
-- VAL-032: PASS - TestP24GatePreSpawnObservationAfterEdit compares Attempt.start_repository, Receipt.terminal_repository, gate.execution-started and gate.receipt-recorded against the same independent pre-spawn observation, after editing since Run start. Its gate changes the tree during execution, proving the terminal path retains that pre-spawn observation.
+- VAL-029: PASS - TestP24GateOriginalCopyAndImport (cmd/fid/p24_gate_evidence_test.go:328) proves original/import admission and observable plain-copy exact invalid-argument/invalid gate request refusal with accepted gate registration details and unchanged persistence. This is the fixed fallback required before Task 10.
+- VAL-032: PASS - TestP24GatePreSpawnObservationAfterEdit (:20), its independent eight-field oracle (:116) and persisted comparison (:177) prove equality of Attempt.start_repository, Receipt.terminal_repository and both actual Events after the prescribed tracked edit since Run start. Stored record counts, per-type Event counts and repository Effect counts each require one. The retained /bin/touch spawned.txt gate changes the tree during execution, while the returned Receipt, persisted records and Events retain the independently computed pre-spawn digest. TestP24GateExpectationBeforeAttempt (:204) retains both mismatch controls and unchanged database/journal plus absent process marker.
 - VAL-033: PASS - TestP24ReceiptFreshnessRealGuardedActions (cmd/fid/integration/p24_gate_observation_test.go:77) covers unchanged, tracked edit and revert across evaluation, terminal transition and completion. Unchanged/reverted states proceed; edited state reports evidence-stale in evaluation and both denials. TestEvidenceLinkAndEvaluateKeepsTrustedDimensionsIndependent retains real HEAD-only/fresh and edited/stale controls; multi-failure repeat/rebuild remains byte-identical.
-- VAL-034: PASS - TestP24ReceiptEvidenceUsesSubjectAndCurrentObservation (cmd/fid/p24_gate_evidence_test.go:135) copies Receipt target/Event despite current-state change and Git absence. TestP24ReviewAndHumanEvidenceSubjectRepositories (cmd/fid/integration/p24_evidence_subject_test.go:18) does the same for Review repository and the exact human-outcome.recorded Event, then proves edited Review stale versus Human Outcome fresh. All target and evidence.linked Event repositories equal their immutable subjects.
+- VAL-034: PASS - TestP24ReceiptEvidenceUsesSubjectAndCurrentObservation (cmd/fid/p24_gate_evidence_test.go:241) copies Receipt target/Event despite current-state change and Git absence. TestP24ReviewAndHumanEvidenceSubjectRepositories (cmd/fid/integration/p24_evidence_subject_test.go:18) does the same for Review repository and the exact human-outcome.recorded Event, then proves edited Review stale versus Human Outcome fresh. All target and evidence.linked Event repositories equal their immutable subjects.
 - VAL-035: PASS - TestP24GateChangedFakeFIDInputParity derives Task 8's changed-leaf intersection from the fake execute dispatch AST and checks exact equality with the shared corpus: gate.run. Both fake and fid reject removed repository with identical full typed details/no state change, then accept expected_repository through their matching committed budget-denial frames. Retained TestP23SharedAmendedLeafConformance preserves full Evidence result/replay/read/rejection parity.
 - VAL-052: PASS - Exact final gates below record cmd/fid, internal/workflow, slowest other ordinary package and tagged integration under the unchanged budgets.
 - VAL-060: PASS - TestP24GateEvidenceDescriptorProcessCorpus invokes all four real --example entrypoints outside a project, checks exit 0/empty stderr and identical directory snapshots.
 - VAL-066: PASS - TestP24GateAndEvaluateUnsafeAndReplay retries the original successful Gate in unmerged and non-Git states, returning original result with no append. New-key controls from viable active-Run/budget state fail only with mapped repository-unavailable and no Attempt/process/Event.
 
 ## Tests run
+
+QA review-5 F2 recovery, trigger `review-5:qa-rework:task-8`, attempt 1, working directory `/home/mark/projects/fid`:
+
+- `go test -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP24GatePreSpawnObservationAfterEdit$' ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`). First recovery RED: the independent map's dirty digest is not yet implemented (`null`); the returned Receipt has a non-null digest. Recorded before implementing the test-local file-image derivation.
+
+- `go test -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^TestP24GatePreSpawnObservationAfterEdit$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.924s` (terminated `exit_code: 0`)
+- `gofmt -w cmd/fid/p24_gate_evidence_test.go` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `goimports -w cmd/fid/p24_gate_evidence_test.go` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^(TestP24Gate.*|TestP24ReceiptEvidenceUsesSubjectAndCurrentObservation|TestP24RemovedGateEvidenceMembers|TestEvidenceLinkAndEvaluateKeepsTrustedDimensionsIndependent|TestEvidenceEvaluationMultiFailureGoldenSurvivesRepeatAndRebuild)$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	17.787s` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 -run '^(TestP24GateAndEvaluateUnsafeAndReplay|TestP24ReceiptFreshnessRealGuardedActions|TestP24ReviewAndHumanEvidenceSubjectRepositories|TestP24GateChangedFakeFIDInputParity|TestP23SharedAmendedLeafConformance|TestP23FreshnessAndOutcomeSupersessionRealProcessJourney)$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.405s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	282.529s` (terminated `exit_code: 0`)
+
+The tagged selection exercises the real built fid CLI for Gate admission/refusal/replay, Evidence subjects and tracked edit/revert freshness through evaluation and guarded actions. This recovery changes test evidence only. The following originating/ordinary-continuation receipts are preserved as history; this recovery's fresh exact gate is recorded separately below.
 
 Working directory: /home/mark/projects/fid unless stated. Current command rows below copy each command's own final token and observed termination. Failed attempts remain immutable; focused selections supplement the required gates.
 
@@ -268,7 +285,39 @@ Final continuation gate, run serially in the exact prescribed order on the compl
 
 The five commands match the task spec and task-applicable QA-plan section 5. No conditional command applies. Phase-end benchmarks, archive-scale controls, Human checks and QA review are outside this Developer task. Coverage policy and all time budgets remain unchanged.
 
+QA review-5 F2 recovery: first partial gate attempt, working directory `/home/mark/projects/fid`:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 62.1% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.8%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - BLOCKED - Not run in this partial attempt: the ordinary gate returned cached internal/workflow output, so required fresh timing evidence was incomplete. Completed in the restarted exact sequence below. No termination observed in this partial attempt.
+
+The ordinary command passed and reported cmd/fid 300.764 s and internal/export 107.632 s; internal/workflow and most other packages printed `(cached)`, with no fresh wall time. These passing receipts are preserved. Go's test-result cache was expired before restarting the byte-identical gate sequence; cache expiry is operational preparation, not evidence or a gate.
+
+QA review-5 F2 recovery: final fresh ordered gate, working directory `/home/mark/projects/fid`, unchanged test tree:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	103.339s	coverage: 62.1% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.8%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	347.525s` (terminated `exit_code: 0`)
+
+| Package | Reported fresh final-gate wall time | Budget |
+|---|---|---|
+| cmd/fid | 372.613 s | <= 600 s |
+| internal/workflow | 103.339 s | <= 600 s |
+| internal/export (slowest other ordinary package) | 199.131 s | <= 600 s |
+| cmd/fid/integration (tagged) | 347.525 s | < 900 s |
+
+All four required wall times are fresh from the final exact commands. Every ordinary package is below 480 s and tagged integration is below 720 s, so no headroom warning applies. The five commands also satisfy the task-applicable QA-plan section 5; no conditional command applies.
+
 ## Deviations from spec
+
+- QA review-5 F2 recovery resumed at phase HEAD `856c36d6be4457c36e718fb0bb376bf705025949`. The latest TASK-RECOVERY values were verified as exact copies: Source `project-docs/docs/phases/phase-24/qa/review-5.md F2; QA Reviewer outcome REPAIR`, Category `qa-rework`, Repair mode `task-scope`, Repair authority `QA review`, Trigger signature `review-5:qa-rework:task-8`, Attempt count `1`, and Allowed files `cmd/fid/p24_gate_evidence_test.go,project-docs/docs/phases/phase-24/tasks/task-8-done.md`. Only those two files changed; Runner-owned ledger and triage artifacts were not edited. This is one same-task continuation.
+- F2's cause was circular expected-value evidence: the dirty Gate expected map called the production observer, and propagation equality omitted independent dirty-image/config derivation and non-vacuous persisted record counts. The first recovery RED was `FAIL` (terminated `exit_code: 1`), with the new independent map's unimplemented dirty_digest `null` disagreeing with the Receipt. That result was recorded before repair. Implemented the test-local canonical file-image hash and retained every existing assertion; the byte-identical focused command then passed with `ok  	github.com/mbell-nzl/fid/cmd/fid	0.924s` (terminated `exit_code: 0`). Both affected selections, the full touched-package race tier and the exact five-command gate passed. No production path or protected contract/definition changed.
+- The first recovery gate's commands passed, but cached internal/workflow output provided no fresh package time. The partial attempt and its unexecuted tagged step remain explicitly recorded. Expired test results and restarted all five byte-identical commands in order, obtaining fresh required timings and the final passing receipts above; no command, status, threshold or policy was changed.
+- Prior task/report identity remains historical: implementation `9f0fc3577128857c8f5523870b965daded1b3f1c`, subject `feat(evidence): complete observed gate and subject convergence`, report/ending HEAD `697e1562acf1103f7239e7804b291a3deaf27a97`. The finalized Commit fields below identify this QA repair's task commit. Fresh independent Window C re-review remains the QA/Runner follow-up required by review-5.
 
 - No accepted freshness, input/Event schema, gate definition, assertion semantics, coverage policy, status/scope, threshold, budget, tolerance or policy changed. No live-frame change or terminal re-observation occurred.
 - Recovery resumed from implementation 32a9ae535dbfb34be0dff7e369c715c2a4640b90 and ending report HEAD e2a92f2a58785750931d2a8558deea0122bfa1e8. TASK-RECOVERY trigger task-8:session-continuation:retained-gate-evidence-convergence and attempt 1 were verified as exact ledger copies; no Runner-owned artifact was edited.
@@ -390,8 +439,8 @@ Removed unused decodeClosedGateInput (introducing commit 0c4c04ea0c7d0786e2e6cf8
 
 ## Commit hash
 
-- `9f0fc3577128857c8f5523870b965daded1b3f1c`
+- Pending commit
 
 ## Commit subject
 
-- `feat(evidence): complete observed gate and subject convergence`
+- Pending commit
