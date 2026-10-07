@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -28,7 +29,7 @@ func TestP24RunStartAfterCommitAndEdit(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(workspace, "tracked.txt"), []byte("edited"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	repository := cloneJSONMap(t, testEnvelopeRepository(t, workspace))
+	repository := p24RunDirtyRepository(t, workspace, "tracked.txt")
 	input := runStartInput(issueID, envelopeID, claim["id"], repository)
 	delete(input, "repository")
 	input["expected_repository"] = map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]}
@@ -93,7 +94,7 @@ func TestP24RunCloseAfterCommitAndEdit(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(workspace, "tracked.txt"), []byte("edited"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	repository := cloneJSONMap(t, testEnvelopeRepository(t, workspace))
+	repository := p24RunDirtyRepository(t, workspace, "tracked.txt")
 	writeActivationInput(t, path, map[string]any{"run_id": run["id"], "expected_version": 2, "observation_id": observation["id"], "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]}})
 	closed := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "close", "--actor", "actor-builder", "--input", path, "--idempotency-key", "p24-close")
 	if closed.err != nil {
@@ -102,6 +103,70 @@ func TestP24RunCloseAfterCommitAndEdit(t *testing.T) {
 	if got := runFromResponse(t, closed.stdout)["terminal_repository"]; !reflect.DeepEqual(got, repository) {
 		t.Fatalf("terminal = %#v, want %#v", got, repository)
 	}
+	p24AssertBindingEventRepository(t, workspace, repository)
+}
+
+// The fixture has exactly one unstaged tracked edit. Require that complete
+// status before constructing the expected repository without fid observation.
+func p24RunDirtyRepository(t *testing.T, workspace, path string) map[string]any {
+	t.Helper()
+	gitBytes := func(args ...string) []byte {
+		t.Helper()
+		data, err := exec.Command("git", append([]string{"-C", workspace}, args...)...).Output()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return data
+	}
+	git := func(args ...string) string {
+		t.Helper()
+		return strings.TrimSuffix(string(gitBytes(args...)), "\n")
+	}
+	if status := git("status", "--porcelain", "--untracked-files=all", "--", ".", ":!.fid"); status != " M "+path {
+		t.Fatalf("dirty fixture status = %q, want one tracked edit %s", status, path)
+	}
+	root, err := filepath.Abs(git("rev-parse", "--show-toplevel"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	head := git("rev-parse", "HEAD")
+	image := func(mode string, data []byte) map[string]any {
+		return map[string]any{"mode": mode, "digest": fmt.Sprintf("sha256:%x", sha256.Sum256(data))}
+	}
+	headEntry := strings.Fields(git("ls-tree", "HEAD", "--", path))
+	indexEntry := strings.Fields(git("ls-files", "-s", "--", path))
+	if len(headEntry) != 4 || headEntry[1] != "blob" || len(indexEntry) != 4 || indexEntry[2] != "0" {
+		t.Fatalf("unsupported tracked fixture: HEAD %v / index %v", headEntry, indexEntry)
+	}
+	info, err := os.Lstat(filepath.Join(root, path))
+	if err != nil || !info.Mode().IsRegular() {
+		t.Fatalf("worktree fixture must be regular: %v", err)
+	}
+	content, err := os.ReadFile(filepath.Join(root, path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	mode := "100644"
+	if info.Mode().Perm()&0o111 != 0 {
+		mode = "100755"
+	}
+	// encoding/json sorts map keys, independently producing the accepted
+	// fid.repository-dirty.v1 canonical image (no production JSON helper).
+	entries := []any{map[string]any{"path": path,
+		"head":     image(headEntry[0], gitBytes("cat-file", "blob", headEntry[2])),
+		"index":    image(indexEntry[0], gitBytes("cat-file", "blob", indexEntry[1])),
+		"worktree": image(mode, content)}}
+	payload, err := json.Marshal(map[string]any{"schema": "fid.repository-dirty.v1", "entries": entries})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return map[string]any{"base_oid": head, "capture_source": "git", "dirty": true, "dirty_digest": fmt.Sprintf("sha256:%x", sha256.Sum256(payload)),
+		"head_oid": head, "project_id": projectConfig.ProjectID, "tree_oid": git("rev-parse", "HEAD^{tree}"),
+		"worktree_id": fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(root)))}
 }
 
 func TestP24RunStartOriginalCopyAndImport(t *testing.T) {

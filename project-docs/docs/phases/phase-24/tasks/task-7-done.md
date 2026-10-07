@@ -5,7 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 0
+- Recovery attempts: 1
 - Next action: None.
 - Human attention required: no
 
@@ -13,6 +13,8 @@ OUTCOME COMPLETE
 
 ## Summary of what was implemented
 
+- QA review-5 F1 recovery (`review-5:qa-rework:task-7`, attempt 1): replaced the dirty start/close/abandon expected values with test-local Git/config/root/file-image oracles. Each fixture proves its entire dirty state is one unstaged tracked edit, reads HEAD and index blob modes/bytes plus the actual worktree mode/bytes, independently hashes the canonical dirty image with stdlib JSON/SHA-256, and compares all eight fields with the returned Run and journal Event. The terminal process matrix also checks the Event identified by the response. All retained qualifying/refusing/replay/Source assertions remain.
+- This continuation changes only the two test files named by F1 and this report. Original implementation history is retained below; original task commit `8d1c83855c0f681515e44e2c3a61bbe543ef515b` (`feat(run): observe repository expectations and adopt input descriptors`), original finalized report commit `9b585b73bf78188fb34cca4938734ded597afe55`. Fresh independent Window C re-review remains the Runner/QA step; this report records Developer completion of the bounded F1 repair.
 - Start, close and abandon accept required expected_repository and record fid's observation under the write lock after keyed replay. Mismatches have the amended closed repository-mismatch details; unsafe terminal observations retain recovery-state-conflict.
 - Start checks Claim then Envelope through the accepted same-worktree predicate. Commits and edits are accepted, genuine import destinations are accepted, and plain copies keep the exact fixed fallback and domain reason run claim binding is invalid, without an Event.
 - Close/abandon record terminal_repository with base_oid equal to observed HEAD. Close evaluates Obligations against that observation, retaining Receipt-backed success and stale-Evidence failure.
@@ -21,6 +23,8 @@ OUTCOME COMPLETE
 - Converged retained Run callers and assertions with introducing-commit provenance below. Gate-run and Evidence product behavior is outside this implementation; their fixtures use the repository actually recorded by the new Run.
 
 ## Files created or modified
+
+This recovery modifies exactly `cmd/fid/p24_run_test.go`, `cmd/fid/integration/p24_run_inputs_test.go`, and this report. The original implementation file inventory is preserved:
 
 - `cmd/fid/gate_run_test.go`
 - `cmd/fid/generic_run_test.go`
@@ -65,6 +69,7 @@ OUTCOME COMPLETE
 
 ## Documentation updated
 
+- Recovery documentation update: this report only, with the review-5 F1 authority, red/green evidence, fresh exact gates, timings, and preserved prior results.
 - project-docs/specs/06_DESIGN_PLAN_CLI.md: current Run leaves, expectation inputs, observation and digest/replay rules, same-worktree/import semantics and authoring surface.
 - project-docs/specs/07_DESIGN_PLAN_FLOWS.md: review/rework Run admission after changes and terminal Obligation evaluation.
 - This completion report records evidence, convergence provenance and failed attempts. Runner-owned run-ledger.md and triage-log.md were neither edited nor included in either task commit.
@@ -72,6 +77,14 @@ OUTCOME COMPLETE
 ## Validation Contract Coverage
 
 Scope is the Task 7 Run slice of the phase assertions; whole-phase completion is not claimed. Named tests are covered by this session's final ordinary or tagged command results. Unchanged packages marked (cached) in the output are identified as such; touched packages have fresh results.
+
+Review-5 F1 found the original dirty-observation independence claims below insufficient. The original entries are retained; the following fresh recovery evidence supplies the missing independent fields, and the exact gates re-execute the retained named tests. The final gates report fresh times for every tested package after the test-result cache was invalidated.
+
+- VAL-022: PASS - `TestP24RunStartAfterCommitAndEdit` and `TestP24RunCloseAfterCommitAndEdit` use `cmd/fid/p24_run_test.go:111` to derive the full map independently, compare the returned start/terminal repository, and check the journal Event at lines 60/106. `TestP24RunTerminalExpectationObservationAndUnsafe/close/match` and `/abandon/match` use `cmd/fid/integration/p24_run_inputs_test.go:118`, compare all eight terminal fields at line 82, preserve Event-to-record equality at line 85, and independently compare the response-identified Event at lines 86-89. Each oracle reads project_id from `.fid/config.toml`, derives the Git root/HEAD/tree, and hashes HEAD/index/worktree images including modes and actual file bytes. Budget Source matching/omitted and mismatch/missing pairs remain exercised by the focused process selection and final tagged gate.
+- VAL-030: PASS - `TestP24RunStartAfterCommitAndEdit` commits and edits tracked.txt after Envelope creation; the full start record and Event equal the independently derived dirty repository, including dirty_digest and config project_id (cmd/fid/p24_run_test.go:32, :42, :60). `TestP24RunStartExpectationMatrix/HEAD` and `/dirty` retain refusal with exact details and no state change; `/match` retains acceptance.
+- VAL-031: PASS - `TestP24RunCloseAfterCommitAndEdit` and both process terminal `/match` rows commit and edit after Run start, then compare returned terminal repositories and actual Events to the full independent map with base_oid=HEAD. The process `/HEAD`, `/dirty`, `/unmerged`, and `/non-Git` rows retain both leaves' typed refusals and no durable changes.
+- VAL-009, VAL-018, VAL-019, VAL-024, VAL-025, VAL-029, VAL-035, VAL-061, VAL-062, VAL-066: PASS - named qualifying/refusing/replay/Source/proof fixtures in the original entries below remain intact and are re-executed by the fresh exact ordinary/tagged gates. Focused recovery selections additionally execute original/copy/import, start/terminal expectation, Budget Source, unavailable/deleted-source replay and fake/fid pairs.
+- VAL-052: PASS - fresh exact-gate package times are cmd/fid 412.793 s, internal/workflow 109.901 s, slowest other ordinary package internal/issues 204.714 s, and tagged cmd/fid/integration 323.135 s. No package reaches its 80% headroom warning or accepted budget.
 
 - VAL-009: PASS - TestP24RunReplayBeforeObservationAndSourceReads (cmd/fid/integration/p24_run_inputs_test.go), all four leaves / HEAD-and-file: retry after a commit and Source edit returns the original result/EventRef except replayed:true, with unchanged projection and journal.
 - VAL-011: PASS - TestInputDescriptorRegistryMatchesLiveTreeAndTypes (cmd/fid/input_descriptor_test.go) checks the live tree versus registry/fence and rejects a seeded type mismatch; TestP24RunDescriptorsAdoptSevenLeaves checks all seven registrations and types.
@@ -100,6 +113,24 @@ Scope is the Task 7 Run slice of the phase assertions; whole-phase completion is
 ## Tests run
 
 Working directory: /home/mark/projects/fid unless stated otherwise. RED attempts remain failed evidence. Every recorded result was watched through the nested command's observed termination.
+
+QA review-5 F1 recovery, trigger `review-5:qa-rework:task-7`, attempt 1:
+
+- `go test ./cmd/fid -run '^TestP24RunStartAfterCommitAndEdit$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -tags integration ./cmd/fid/integration -run '^TestP24RunTerminalExpectationObservationAndUnsafe$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+
+First recovery RED: the independent Git/config/root map has an unimplemented dirty digest (`null`); the full eight-field comparison rejects the returned non-null dirty digest. This failure was captured before implementing the test-local image hashing. All prior command evidence below is preserved as historical evidence from the original task session.
+
+- `go test ./cmd/fid -run '^TestP24RunStartAfterCommitAndEdit$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.751s` (terminated `exit_code: 0`)
+- `go test -tags integration ./cmd/fid/integration -run '^TestP24RunTerminalExpectationObservationAndUnsafe$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.613s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid -run '^TestP24Run(StartAfterCommitAndEdit|CloseAfterCommitAndEdit|StartOriginalCopyAndImport|StartExpectationMatrix)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	1.506s` (terminated `exit_code: 0`)
+- `go test -tags integration ./cmd/fid/integration -run '^TestP24Run(TerminalExpectationObservationAndUnsafe|BudgetSourceInputMatrix|ReplayBeforeObservationAndSourceReads|ChangedFakeFIDInputParity)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	11.038s` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	276.604s` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24Run(TerminalExpectationObservationAndUnsafe|BudgetSourceInputMatrix|ReplayBeforeObservationAndSourceReads|ChangedFakeFIDInputParity)$' -count=1 ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	15.832s` (terminated `exit_code: 0`)
+- `gofmt -w cmd/fid/p24_run_test.go cmd/fid/integration/p24_run_inputs_test.go` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `goimports -w cmd/fid/p24_run_test.go cmd/fid/integration/p24_run_inputs_test.go` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+
+The real-process terminal matrix invokes the built fid CLI for `run close` and `run abandon` after the prescribed commit/edit and verifies their returned records and response-identified journal Events. The Source/replay process selection also exercises the actual CLI; this is test-evidence repair with unchanged production behavior. All results below this recovery block retain the original session's observations, rather than being newly attested from memory.
 
 - `go test ./cmd/fid -run '^TestP24RunStartAfterCommitAndEdit$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
 - `go test ./cmd/fid -run '^TestP24RunCloseAfterCommitAndEdit$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
@@ -157,6 +188,8 @@ Inventory regeneration (accepted input-inventory.md syntax; Markdown-escaped alt
 
 ## Exact quality-gate results
 
+The original attempts below remain immutable historical results. Current recovery gates follow them in their own ordered block.
+
 Attempt 1 stopped for in-scope causal repair after lint; its failed result is retained:
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
@@ -172,7 +205,19 @@ Exact task-spec and task-applicable QA-plan gate order, final tree / attempt 2:
 
 Reported final gate times: cmd/fid **342.375 s**; internal/workflow **121.978 s**; slowest other ordinary package with a fresh reported time, internal/issues **177.502 s** (internal/export 171.061 s); tagged cmd/fid/integration **344.128 s**. All measured ordinary packages are below 600 s and tagged integration below 900 s. None reaches the 480 s ordinary or 720 s tagged warning threshold. Unchanged ordinary packages marked (cached) in the captured output have no new wall time; no historical time is substituted. Overall statement coverage: **61.1%**.
 
+QA review-5 F1 recovery: fresh ordered gate, working directory `/home/mark/projects/fid`, final test tree:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	109.901s	coverage: 62.1% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					61.8%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	323.135s` (terminated `exit_code: 0`)
+
+Fresh reported wall times: cmd/fid **412.793 s**; internal/workflow **109.901 s**; slowest other ordinary package internal/issues **204.714 s** (internal/export 194.849 s, internal/journal 188.295 s); tagged cmd/fid/integration **323.135 s**. All ordinary packages are under 600 s and tagged integration under 900 s; none reaches the 480/720 s headroom warnings. Overall statement coverage: **61.8%**. Every required command terminated with its own observed exit_code: 0, in the prescribed order.
+
 ## Deviations from spec
+
+- QA review-5 F1 recovery preserves accepted behavior, schemas, interface, gates, assertion semantics and policy. The defect was circular expected-value evidence: dirty Run expectations depended on the same production observer being verified, and terminal Event equality alone did not prove the expected digest. The first focused ordinary and tagged recovery REDs each ended with `FAIL` (terminated `exit_code: 1`), because the new independent map's digest was still unimplemented (`null`); the terminal matrix failed both qualifying and mismatch comparisons on that missing digest. Implemented only the test-local canonical file-image SHA-256 derivation. The byte-identical focused commands then passed with `ok  	github.com/mbell-nzl/fid/cmd/fid	0.751s` and `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.613s` (each terminated `exit_code: 0`). The broader retained-state selections, both race tiers and all five exact gates subsequently passed. Prior failures and passing receipts remain unchanged in this report; this repair does not change a protected definition or any production path.
 
 - Report-lint attempt 1 failed with `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`). The `git diff --check` evidence row had a period after the canonical termination field. Removed only that punctuation; no command, observed result or control definition changed. After committing the correction, the byte-identical attempt 2 emitted literal `OUTCOME COMPLETE` and ended with `PASS report-lint completed with no failures` (terminated `exit_code: 0`). Both attempts are retained under Tests run; the finalized evidence is committed and checked again.
 - Tagged race attempt 1 ended token FAIL (terminated exit_code:1; 305.005 s): ordinary/force forged-target abandon rows still expected recovery-state-conflict, although DEC-273 / Task 7 expressly maps an expectation mismatch to repository-mismatch. Introducing commit c0003e0c5df7 (phase-22/task-8) was verified with git log -S. The focused reproduction failed with token FAIL (exit_code:1); converged only that expected code, retaining both authority modes, exit 4, typed details and no-state-change checks. The identical focused command passed, and the byte-identical full tagged race tier rerun passed.
@@ -243,8 +288,8 @@ The Run-start fixture line in p22NewFIDRecoveryAdapterWithClaimModeAt originated
 
 ## Commit hash
 
-- `8d1c83855c0f681515e44e2c3a61bbe543ef515b`
+- Pending commit
 
 ## Commit subject
 
-- `feat(run): observe repository expectations and adopt input descriptors`
+- Pending commit

@@ -7,11 +7,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func p24RunInput(t *testing.T, a *p22FIDRecoveryAdapter, leaf, key string, input map[string]any) p22ConformanceResponse {
@@ -45,7 +48,7 @@ func TestP24RunTerminalExpectationObservationAndUnsafe(t *testing.T) {
 				p22Write(t, a.workspace, "base.txt", "committed after start\n")
 				p22Git(t, a.workspace, "commit", "-qam", "advance Run HEAD")
 				p22Write(t, a.workspace, "base.txt", "edited after commit\n")
-				a.repository = p22CorpusRepository(t, a.workspace, a.projectID)
+				a.repository = p24RunDirtyRepository(t, a.workspace, "base.txt")
 				input := p24TerminalInput(t, a, leaf)
 				expected := input["expected_repository"].(map[string]any)
 				if kind == "HEAD" {
@@ -76,7 +79,14 @@ func TestP24RunTerminalExpectationObservationAndUnsafe(t *testing.T) {
 					if record["head_oid"] != head || record["base_oid"] != head || record["tree_oid"] != tree || record["dirty"] != true || p22GitOutput(t, a.workspace, "status", "--porcelain", "--", "base.txt") == "" || record["worktree_id"] != fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(root))) || record["project_id"] != a.projectID || record["capture_source"] != "git" {
 						t.Fatalf("terminal observation: %#v", record)
 					}
+					if !reflect.DeepEqual(record, a.repository) {
+						t.Fatalf("terminal = %#v, want independent repository %#v", record, a.repository)
+					}
 					p24AssertRunEventRepository(t, a, record)
+					event := p24EventByID(t, a.workspace, p21PathString(t, p23Envelope(t, response.Stdout), "event", "id"))
+					if !reflect.DeepEqual(p24JSONMap(t, event.Repository), a.repository) {
+						t.Fatalf("Event repository = %#v, want independent repository %#v", event.Repository, a.repository)
+					}
 					return
 				}
 				code := "repository-mismatch"
@@ -101,6 +111,69 @@ func TestP24RunTerminalExpectationObservationAndUnsafe(t *testing.T) {
 			})
 		}
 	}
+}
+
+// Require the entire dirty fixture to be one unstaged tracked edit, and derive
+// its identity from Git and config rather than the production observer.
+func p24RunDirtyRepository(t *testing.T, workspace, path string) map[string]any {
+	t.Helper()
+	gitBytes := func(args ...string) []byte {
+		t.Helper()
+		data, err := exec.Command("git", append([]string{"-C", workspace}, args...)...).Output()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return data
+	}
+	git := func(args ...string) string {
+		t.Helper()
+		return strings.TrimSuffix(string(gitBytes(args...)), "\n")
+	}
+	if status := git("status", "--porcelain", "--untracked-files=all", "--", ".", ":!.fid"); status != " M "+path {
+		t.Fatalf("dirty fixture status = %q, want one tracked edit %s", status, path)
+	}
+	root, err := filepath.Abs(git("rev-parse", "--show-toplevel"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	head := git("rev-parse", "HEAD")
+	image := func(mode string, data []byte) map[string]any {
+		return map[string]any{"mode": mode, "digest": fmt.Sprintf("sha256:%x", sha256.Sum256(data))}
+	}
+	headEntry := strings.Fields(git("ls-tree", "HEAD", "--", path))
+	indexEntry := strings.Fields(git("ls-files", "-s", "--", path))
+	if len(headEntry) != 4 || headEntry[1] != "blob" || len(indexEntry) != 4 || indexEntry[2] != "0" {
+		t.Fatalf("unsupported tracked fixture: HEAD %v / index %v", headEntry, indexEntry)
+	}
+	info, err := os.Lstat(filepath.Join(root, path))
+	if err != nil || !info.Mode().IsRegular() {
+		t.Fatalf("worktree fixture must be regular: %v", err)
+	}
+	content, err := os.ReadFile(filepath.Join(root, path))
+	if err != nil {
+		t.Fatal(err)
+	}
+	mode := "100644"
+	if info.Mode().Perm()&0o111 != 0 {
+		mode = "100755"
+	}
+	// Hash the actual HEAD, index and worktree bytes, with sorted map keys
+	// from encoding/json instead of production observation/canonicalization.
+	entries := []any{map[string]any{"path": path,
+		"head":     image(headEntry[0], gitBytes("cat-file", "blob", headEntry[2])),
+		"index":    image(indexEntry[0], gitBytes("cat-file", "blob", indexEntry[1])),
+		"worktree": image(mode, content)}}
+	payload, err := json.Marshal(map[string]any{"schema": "fid.repository-dirty.v1", "entries": entries})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return map[string]any{"base_oid": head, "capture_source": "git", "dirty": true, "dirty_digest": fmt.Sprintf("sha256:%x", sha256.Sum256(payload)),
+		"head_oid": head, "project_id": projectConfig.ProjectID, "tree_oid": git("rev-parse", "HEAD^{tree}"),
+		"worktree_id": fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(root)))}
 }
 
 func p24AssertRunEventRepository(t *testing.T, a *p22FIDRecoveryAdapter, want map[string]any) {
