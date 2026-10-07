@@ -20,6 +20,12 @@ func activationInputEnum(name, meaning string, members ...string) cli.InputField
 	return field
 }
 
+func activationPrepareIdentity(name, meaning string) cli.InputField {
+	field := activationInputString(name, meaning, 1, 128)
+	field.ScalarBounds = true
+	return field
+}
+
 func activationPrepareDescriptor() cli.InputDescriptor {
 	phase := inputInteger("phase", "Activation protocol phase (21).", 21)
 	maximum := int64(21)
@@ -33,7 +39,7 @@ func activationPrepareDescriptor() cli.InputDescriptor {
 	maximumLength := 5
 	resources.MaxLen = &maximumLength
 	return cli.InputDescriptor{Operation: "activation.prepare", Purpose: "Prepare an untrusted activation.", Type: reflect.TypeFor[workflow.ActivationPrepareRequest](), Fields: []cli.InputField{
-		activationInputString("kit_identity", "Kit identity.", 1, 128), activationInputString("backend_identity", "Backend identity.", 1, 128), phase,
+		activationPrepareIdentity("kit_identity", "Kit identity."), activationPrepareIdentity("backend_identity", "Backend identity."), phase,
 		activationInputEnum("direction", "Activation direction.", "activate"),
 		inputString("expected_prior_activation_id", "nullable", "Prior Activation ID, or null for the first activation.", "ID", "<activation-id>"), priorVersion, resources,
 	}}

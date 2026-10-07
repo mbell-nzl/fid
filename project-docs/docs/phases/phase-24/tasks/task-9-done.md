@@ -5,13 +5,18 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 2
+- Recovery attempts: 3
 - Next action: None.
 - Human attention required: no
 
 OUTCOME COMPLETE
 
+This completion records the bounded Developer repair of review-7 F1, trigger `review-7:qa-rework:task-9`, attempt `1`. The two earlier recovery attempts and every historical command result remain below. Fresh independent D1 re-review remains the Runner's next acceptance checkpoint.
+
 ## Summary of what was implemented
+
+- QA review-7 F1 repair: Activation prepare's kit_identity and backend_identity now opt into the already accepted 1..128 Unicode scalar bounds. ASCII128 and Unicode127/128 accept; Unicode129 refuses in both output modes. Ordinary string fields keep byte bounds; existing component variants retain scalar bounds.
+- Added 16 fresh-project real-process boundary cases with exact input paths, full JSON refusal metadata, Human prose, accepted identity persistence and unchanged whole-tree snapshots on refusal. Added explicit scalar/default-byte regression rows, including supplementary-plane scalars, while retaining all earlier assertions.
 
 - Completed all eight activation descriptors without changing accepted input shapes. `activation component` retains raw typed ActorProfile[] / GateDefinition[] content selected by component_type.
 - Extended shared reflection, duplicate scanning, closed validation, help and deterministic examples for those selected raw arrays. Reflection checks both actual element structs; foreign-variant members reject at input.content[i]. Nested sensitive values remain redacted. Accepted Unicode scalar bounds and cwd/artifact path rules are scoped to the component contract; existing code-selected object callers preserve their behavior.
@@ -19,7 +24,12 @@ OUTCOME COMPLETE
 - Assembled fake/fid input-admission parity over the exact nine-leaf intersection with the 17 changed leaves. Removed the remaining activation, Review and Envelope family decoder wrappers; retained output-only budget state rejection and converged displaced decoder fixtures to qualifying shared-reader input.
 - Implementation checkpoints before long commands: `9d654e976792836cbdf7de8c114d0831b73f721e` (`feat(cli): complete activation descriptor conformance`) and final source checkpoint `69589747ca77a1a3dae7e4d6083229d0193ed52f` (`fix(cli): preserve accepted component string and path bounds`). Both contain Refs: phase-24/task-9. Historical failed implementation/report attempts remain recorded below.
 
+Previous finalized report identity, retained as provenance: `d6e03c9f9ec7a445f3af50451cb9b14d4d52dd5c`, subject `docs(task): record task 9 completion evidence`. The fields below identify this QA repair's task commit.
+
 ## Files created or modified
+
+Review-7 F1 continuation changes exactly these six regular files: `cmd/fid/input_descriptors_activation.go`, `cmd/fid/input_descriptor_test.go`, `internal/cli/input_descriptor.go`, `internal/cli/input_validate.go`, `internal/cli/input_validate_test.go`, and this report. Shared support only exposes the existing per-field scalar marker and preserves its validation/variant behavior.
+
 
 Task-wide file inventory (including the earlier checkpoint and this continuation):
 
@@ -54,10 +64,19 @@ The shared extension is exactly the four DEC-284 files. This continuation did no
 
 ## Documentation updated
 
+- This recovery updates only this report with F1 authority, red/green, exact gates, runtime results and retained evidence. Existing accepted CLI documentation already states scalar bounds and needs no change.
+
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md`: documents activation adoption across all 39 input leaves, both component content variants, sensitive fields, Unicode scalar bounds, unbounded strings and distinct cwd/artifact path rules.
 - This report records both historical failures and the current red/green, provenance, runtime and full-gate receipts.
 
 ## Validation Contract Coverage
+
+- VAL-016, review-7 F1: PASS - `TestP24ActivationPrepareIdentityScalarBoundaries` (`cmd/fid/input_descriptor_test.go:2544`) permanently exercises both identities x ASCII128/Unicode127/Unicode128/Unicode129 x Human/JSON modes through a built binary. Twelve qualifying cases exit 0 and persist the identity; four over-limit cases exit 2 with empty stdout, exact input.kit_identity/input.backend_identity details, allowed:["length 1..128"], full echoed value, invalid-input/invalid-argument, retryable:false, subject:null, no Event and unchanged filesystem/DB/journal snapshots. Human refusal is exactly error: invalid input.<field>.
+- Shared policy preservation: `TestInputExplicitScalarBoundsPreserveDefaultByteBounds` (`internal/cli/input_validate_test.go:188`) checks the separate byte/scalar acceptance matrices, exact refusal paths/values/bounds, empty lower-bound refusal and supplementary-plane 128/129 boundaries. Retained `TestInputRawArrayScalarBoundsPreserveOrdinaryCallers` and `TestP24ActivationComponentAcceptedStringAndPathBounds` remain unchanged and pass the focused and full ordinary commands.
+- VAL-011..016/060 and VAL-035 retained impact: the current exact ordinary gate reruns the named 39-leaf, template, exclusivity, variant, sensitive and grammar corpora below; the exact tagged gate reruns fake/fid parity and retained task-9/task-9a real-process journeys.
+- VAL-052, current QA recovery: PASS - exact ordinary package output is cmd/fid 418.624 s, internal/workflow 103.615 s and slowest other ordinary internal/issues 188.589 s; tagged integration is 318.051 s. Every ordinary package is below 600 s and 480 s warning; tagged is below 900 s and 720 s warning.
+
+Historical task-wide evidence follows unchanged; the fresh recovery receipts supplement it.
 
 - VAL-011: PASS - `TestInputDescriptorRegistryMatchesLiveTreeAndTypes` (`cmd/fid/input_descriptor_test.go:419`) compares all 39 live leaves with the registry, reflects their types, rejects overlap and preserves the seeded mismatch failure. `TestP24ActivationComponentRawArrayReflection` (line 470) reflects both ActorProfile and GateDefinition element trees. `TestInputRawArrayReflectionRejectsVariantDrift` (`internal/cli/input_validate_test.go:122`) rejects missing/extra fields in either variant and the untyped-raw-array exemption.
 - VAL-012: PASS - `TestP24WholeTreeDescriptorProcessCorpus` (line 151) walks help metadata for every field in all 39 descriptors, including both component trees and element bounds; `TestP24ActivationComponentHelpPin` (line 195) pins the full component help. Existing representative help pins remain in the ordinary gate.
@@ -72,7 +91,23 @@ The shared extension is exactly the four DEC-284 files. This continuation did no
 
 ## Tests run
 
-Historical implementation checkpoint and report-only recovery receipts are preserved below. These are the earlier sessions' records, not current-session verification of the finalized report. The original task outcome was RECOVERY_REQUIRED. Current attempt-2 receipts follow them.
+QA review-7 F1 recovery, trigger `review-7:qa-rework:task-9`, attempt `1`, authority `QA review`. The latest TASK-RECOVERY's task, category `qa-rework`, mode `task-scope`, authority, trigger, attempt and ordered six-file allowlist were checked as exact copies against the recovery instructions and review-7 Repair Plan; the Runner-owned ledger remains untouched. The historical implementation/report receipts after this recovery block remain unchanged and are not re-attested as current evidence.
+
+- `go test ./cmd/fid -run '^TestP24ActivationPrepareIdentityScalarBoundaries$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  First recovery boundary red observed before implementation changes: all eight Unicode127/128 acceptance cases rejected with exit 2, for both prepare identities and Human/JSON real-process modes. ASCII128 qualifying controls and Unicode129 refusals passed. Each mode initialized a fresh project, and refusal checks required exact metadata and unchanged whole-tree file/mode/content snapshots including DB and journal.
+
+
+- `go test ./cmd/fid -run '^TestP24ActivationPrepareIdentityScalarBoundaries$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	1.885s` (terminated `exit_code: 0`)
+  Byte-identical green after the minimum opt-in scalar repair.
+- `go test ./cmd/fid ./internal/cli -run '^(TestP24ActivationPrepareIdentityScalarBoundaries|TestP24ActivationComponentAcceptedStringAndPathBounds|TestP24ActivationComponentVariantMismatchAndSensitive|TestInputExplicitScalarBoundsPreserveDefaultByteBounds|TestInputRawArrayScalarBoundsPreserveOrdinaryCallers|TestInputRawArrayVariants|TestInputCodeObjectVariantsRemainSelected)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/cli	0.004s` (terminated `exit_code: 0`)
+  cmd/fid 1.402 s; retained variants, redaction and default byte behavior pass.
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -count=1 ./cmd/fid ./internal/cli` - PASS - `ok  	github.com/mbell-nzl/fid/internal/cli	1.112s` (terminated `exit_code: 0`)
+  Full touched-package pre-gate tier: cmd/fid 286.835 s. No tagged test file was edited.
+- `go build -o /tmp/fid-task9-qa-recovery-UQlxzg/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `python3 -` - PASS - `PASS real CLI identity matrix: 12 accepted, 4 refused without effects` (terminated `exit_code: 0`)
+  Real CLI matrix supplied on Python stdin. Real entrypoint interaction, separate from Go tests: each fresh cwd is /tmp/fid-task9-qa-recovery-UQlxzg/<field>-<boundary>-<mode>. Initialize using /tmp/fid-task9-qa-recovery-UQlxzg/fid init --prefix QA, then invoke that binary with activation prepare --input - --idempotency-key qa-scalar, adding root --json only in JSON mode. The request matches the permanent fixture at input_descriptor_test.go:2567: phase 21, direction activate, null prior ID/version, and five sorted backend/kit/overlay/project/provider resources, each old_identity:null/new_identity:new; change only the selected kit_identity or backend_identity to a*128 or é*127/128/129. All 12 accepted CLI subprocesses were observed exit_code: 0; all four Unicode129 subprocesses were observed exit_code: 2 with empty stdout, exact metadata/Human prose and equal pre/post file-mode/content maps including DB/journal. Supplemental exact argv/cwd/payload/streams/status/snapshots are in /tmp/fid-task9-qa-recovery-UQlxzg/runtime-receipts.json; the permanent test supplies reproducible evidence independent of scratch availability.
+
+Historical implementation checkpoint and report-only recovery receipts are preserved below. These are the earlier sessions' records, not current-session verification of the finalized report. The original task outcome was RECOVERY_REQUIRED. Historical attempt-2 receipts follow them.
 
 Working directory is `/home/mark/projects/fid` unless stated otherwise. Every termination below was observed from the nested command result.
 
@@ -97,7 +132,7 @@ Working directory is `/home/mark/projects/fid` unless stated otherwise. Every te
 Historical timing finding retained: required ordinary cmd/fid 282.333 s (failed assertions); slowest other uncached package internal/export 103.313 s; required tagged integration 333.935 s; internal/workflow was cached in that gate, followed by its supplemental fresh 55.650 s run recorded above.
 
 
-Attempt 2 evidence, captured in this session. Focused red/green selections below precede the shared product edits or their corresponding repairs; they do not replace the exact gate.
+Historical attempt 2 evidence, captured in the earlier implementation session. Focused red/green selections below precede the shared product edits or their corresponding repairs; they do not replace the exact gate.
 
 - `go test ./internal/cli -run '^TestInputRawArrayVariants$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   First shared red before product edits: raw arrays reflected as uint8; both selected variant trees, nested duplicate redaction and help/example rendering failed.
@@ -186,7 +221,7 @@ The following six commands ran exactly in task-spec order on the checkpoint sour
 
 Report-lint is the Runner's control under DEC-158 and was not run by the Developer at the implementation checkpoint. This report-only recovery explicitly authorizes the exact report-lint verification recorded above.
 
-Current attempt 2: the final source checkpoint `69589747ca77a1a3dae7e4d6083229d0193ed52f` preceded the final touched-package race tiers and all six required commands. Tests were uncached for fresh timing. The following exact commands ran serially in task-spec order from `/home/mark/projects/fid`; each terminated and these receipts are captured in this session.
+Historical completed implementation attempt 2: the final source checkpoint `69589747ca77a1a3dae7e4d6083229d0193ed52f` preceded the final touched-package race tiers and all six required commands. Tests were uncached for fresh timing. The following exact commands ran serially in task-spec order from `/home/mark/projects/fid`; each terminated and these receipts are captured in this session.
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
@@ -201,7 +236,24 @@ The last command's no-match condition is the task-spec-declared non-zero success
 
 The Phase Runner independently runs report-lint against this committed report. It was not run here, and no historical or remembered control result is claimed as current evidence.
 
+
+Current QA review-7 F1 recovery, attempt 1: all six commands below ran serially from /home/mark/projects/fid, in the exact required order, on the final source/test tree. Every nested session was polled to its own observed exit_code. Test-cache reset was preparation, not gate evidence; no package result below is cached.
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	103.615s	coverage: 62.1% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:											(statements)					62.3%` (terminated `exit_code: 0`)
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	318.051s` (terminated `exit_code: 0`)
+- `rg -n "func decodeClosed[A-Za-z]*Input" cmd/fid` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+
+Fresh package wall times: cmd/fid 418.624 s (75.4% coverage), internal/workflow 103.615 s (62.1%), slowest other ordinary internal/issues 188.589 s (79.6%), tagged integration 318.051 s. Overall coverage: 62.3%. All are below budgets and warning levels. The sixth command's no-output exit 1 is exactly the predeclared absence pass condition.
+
+The newly finalized committed report is checked with the exact two-argument report-lint command after its commit; the Runner independently repeats that control. Historical statements above that report-lint was not run refer to their earlier implementation attempts.
+
 ## Deviations from spec
+
+- QA review-7 F1 mandatory failure/repair note: the first boundary command ended with `FAIL` (terminated `exit_code: 1`) before implementation changes. Its eight qualifying Unicode127/128 calls were rejected because the descriptor introduced by `785a22491f1ba07bb748d1d4fb85f88ea1a8d45d` (inspected git log -S and Refs: phase-24/task-9) left the two identity fields on byte counting. Repair: expose the existing per-field scalar marker and enable it only for these two prepare fields; preserve raw variant scalar selection and ordinary defaults. The byte-identical boundary command then ended with `ok  	github.com/mbell-nzl/fid/cmd/fid	1.885s` (terminated `exit_code: 0`). All six exact required gates subsequently passed, with original failures and passing receipts retained.
+- This QA recovery changes no accepted input/public interface, command, assertion semantics, coverage policy, status/scope, threshold, budget, tolerance, dependency or policy. No retained assertion was deleted, narrowed, re-pointed, replaced or weakened. Task-9a behavior and report/provenance remain intact. No workflow control, ledger, triage, task/QA contract or other path was edited.
 
 - Attempt 2 used only the ordinary Task 9 scope plus the four shared paths explicitly authorized by TRG-24-008 and DEC-284 clauses 4-6. The recovery identity remains task-9, chain trigger `task-9:report-lint:noncanonical-pass-evidence-termination`, attempt 2, authority `task spec; DEC-284`; these were checked against the ledger and governing triage entry as exact values.
 - The first required ordinary failure remains `FAIL` (terminated `exit_code: 1`); its causal defect was missing typed raw-array reflection and registration for the accepted component content. Attempt 2 added selected typed element trees and the final component descriptor under the authorized shared extension, preserving registry=live and seeded mismatch. The byte-identical ordinary command now passes; its final token and observed termination are in the current gate receipts below.
@@ -258,6 +310,11 @@ Historical checkpoint scope findings (now resolved by the authorized implementat
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
+- Current QA recovery times are below all 80% warning thresholds: cmd/fid 418.624 s, internal/workflow 103.615 s, internal/issues 188.589 s and tagged integration 318.051 s.
+- The Runner must obtain a fresh independent D1 re-review citing review-7 and dispositioning F1 before advancement. This Developer completion supplies the bounded repair and its evidence, not an independent QA verdict.
+
+Historical Tech Lead notes from the preceding implementation continuation follow:
+
 - Fresh gate wall times are below both budgets and their 80% warning thresholds: cmd/fid 410.123 s, internal/workflow 102.835 s, slowest other ordinary internal/issues 199.339 s, tagged integration 278.829 s. No headroom warning is required.
 - Per DEC-284 clause 6, the Runner performs the late window C immediately after Task 9 completion and before dispatching Task 9a, reviewing tasks 7-8 at their close commits plus current HEAD and feasibility for tasks 9a-14. D1 remains after Task 9a and reviews the shared regression evidence.
 - Report-lint remains the Runner's independent control. Grammar/unknown commands and Human failure lines were kept outside Task 9; no workflow control, authority or ledger edit was made by this continuation.
@@ -268,8 +325,8 @@ Historical checkpoint scope findings (now resolved by the authorized implementat
 
 ## Commit hash
 
-- `d6e03c9f9ec7a445f3af50451cb9b14d4d52dd5c`
+- Pending commit
 
 ## Commit subject
 
-- `docs(task): record task 9 completion evidence`
+- Pending commit

@@ -184,3 +184,49 @@ func TestInputRawArrayScalarBoundsPreserveOrdinaryCallers(t *testing.T) {
 		t.Fatal("ordinary string length behavior changed")
 	}
 }
+
+func TestInputExplicitScalarBoundsPreserveDefaultByteBounds(t *testing.T) {
+	t.Parallel()
+	minimum, maximum := 1, 128
+	for _, scalar := range []bool{false, true} {
+		for _, test := range []struct {
+			name, value      string
+			byteOK, scalarOK bool
+		}{
+			{"empty", "", false, false},
+			{"ASCII128", strings.Repeat("a", 128), true, true},
+			{"ASCII129", strings.Repeat("a", 129), false, false},
+			{"Unicode64", strings.Repeat("é", 64), true, true},
+			{"Unicode65", strings.Repeat("é", 65), false, true},
+			{"Unicode127", strings.Repeat("é", 127), false, true},
+			{"Unicode128", strings.Repeat("é", 128), false, true},
+			{"Unicode129", strings.Repeat("é", 129), false, false},
+			{"Astral128", strings.Repeat("😀", 128), false, true},
+			{"Astral129", strings.Repeat("😀", 129), false, false},
+		} {
+			mode := "bytes"
+			if scalar {
+				mode = "scalars"
+			}
+			t.Run(mode+"/"+test.name, func(t *testing.T) {
+				t.Parallel()
+				descriptor := InputDescriptor{Fields: []InputField{{Name: "identity", Type: "string", Requirement: "required", MinLen: &minimum, MaxLen: &maximum, ScalarBounds: scalar}}}
+				payload, err := json.Marshal(map[string]string{"identity": test.value})
+				if err != nil {
+					t.Fatal(err)
+				}
+				err = ValidateInput(payload, descriptor)
+				if !scalar && test.byteOK || scalar && test.scalarOK {
+					if err != nil {
+						t.Fatalf("accepted bound rejected: %v", err)
+					}
+					return
+				}
+				want := &InputError{Path: "input.identity", Value: test.value, Allowed: []string{"length 1..128"}}
+				if !reflect.DeepEqual(err, want) {
+					t.Fatalf("error=%#v, want %#v", err, want)
+				}
+			})
+		}
+	}
+}

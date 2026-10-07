@@ -153,7 +153,7 @@ func validateInputField(value json.RawMessage, field InputField, location string
 	}
 	if field.Type == "string" {
 		length := len([]byte(item.(string)))
-		if field.scalarBounds {
+		if field.ScalarBounds {
 			length = utf8.RuneCountInString(item.(string))
 		}
 		if field.MinLen != nil && length < *field.MinLen || field.MaxLen != nil && length > *field.MaxLen {

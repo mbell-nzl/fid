@@ -2540,3 +2540,86 @@ func TestP24RemovedRunRepositoryMembers(t *testing.T) {
 		})
 	}
 }
+
+func TestP24ActivationPrepareIdentityScalarBoundaries(t *testing.T) {
+	t.Parallel()
+	binary := buildAdoptedFID(t)
+	for _, field := range []string{"kit_identity", "backend_identity"} {
+		for _, boundary := range []struct {
+			name, value string
+			accepted    bool
+		}{
+			{"ASCII128", strings.Repeat("a", 128), true},
+			{"Unicode127", strings.Repeat("é", 127), true},
+			{"Unicode128", strings.Repeat("é", 128), true},
+			{"Unicode129", strings.Repeat("é", 129), false},
+		} {
+			for _, mode := range []string{"Human", "JSON"} {
+				t.Run(field+"/"+boundary.name+"/"+mode, func(t *testing.T) {
+					t.Parallel()
+					root := t.TempDir()
+					out, failure, exit := runAdoptedFID(t, binary, root, "init", "--prefix", "QA")
+					if exit != 0 || failure != "" {
+						t.Fatalf("init: exit=%d stdout=%q stderr=%q", exit, out, failure)
+					}
+					input := map[string]any{
+						"kit_identity": "kit", "backend_identity": "backend", "phase": 21, "direction": "activate",
+						"expected_prior_activation_id": nil, "expected_prior_version": nil,
+					}
+					resources := make([]any, 0, 5)
+					for _, component := range []string{"backend", "kit", "overlay", "project", "provider"} {
+						resources = append(resources, map[string]any{"component": component, "old_identity": nil, "new_identity": "new"})
+					}
+					input["resources"], input[field] = resources, boundary.value
+					payload, err := json.Marshal(input)
+					if err != nil {
+						t.Fatal(err)
+					}
+					filename := filepath.Join(t.TempDir(), "prepare.json")
+					if err := os.WriteFile(filename, payload, 0o600); err != nil {
+						t.Fatal(err)
+					}
+					before := snapshotWorkspace(t, root)
+					args := []string{"activation", "prepare", "--input", filename, "--idempotency-key", "qa-scalar"}
+					if mode == "JSON" {
+						args = append([]string{"--json"}, args...)
+					}
+					out, failure, exit = runAdoptedFID(t, binary, root, args...)
+					if boundary.accepted {
+						if exit != 0 || failure != "" || out == "" {
+							t.Fatalf("accepted identity rejected: exit=%d stdout=%q stderr=%q", exit, out, failure)
+						}
+						journal := snapshotWorkspacePersistence(t, root).journal
+						if !bytes.Contains(journal, []byte(boundary.value)) || reflect.DeepEqual(snapshotWorkspace(t, root), before) {
+							t.Fatalf("accepted identity was not persisted: %s", journal)
+						}
+						return
+					}
+					if exit != 2 || out != "" {
+						t.Fatalf("over-limit identity: exit=%d stdout=%q stderr=%q", exit, out, failure)
+					}
+					if mode == "JSON" {
+						assertAdoptedJSONFailure(t, failure, "activation.prepare", "input."+field, boundary.value, []string{"length 1..128"})
+						var envelope map[string]any
+						if err := json.Unmarshal([]byte(failure), &envelope); err != nil {
+							t.Fatal(err)
+						}
+						want := map[string]any{
+							"contract_version": "fid-cli.v1", "ok": false, "operation": "activation.prepare",
+							"error": map[string]any{"category": "invalid-input", "code": "invalid-argument", "message": "invalid input." + field,
+								"retryable": false, "subject": nil, "details": map[string]any{"argument": "input." + field, "value": boundary.value, "allowed": []any{"length 1..128"}}},
+						}
+						if !reflect.DeepEqual(envelope, want) {
+							t.Fatalf("failure metadata: %s", failure)
+						}
+					} else if failure != "error: invalid input."+field+"\n" {
+						t.Fatalf("Human failure: %q", failure)
+					}
+					if !reflect.DeepEqual(snapshotWorkspace(t, root), before) {
+						t.Fatal("refusal changed workspace files, database or journal")
+					}
+				})
+			}
+		}
+	}
+}

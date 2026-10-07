@@ -25,7 +25,7 @@ type InputField struct {
 	Discriminator string                  // defaults to code for existing object variants
 	VariantTypes  map[string]reflect.Type // actual element types of raw array variants
 	Sensitive     bool
-	scalarBounds  bool // raw component variants use their contract's Unicode scalar bounds
+	ScalarBounds  bool // opt into Unicode scalar string bounds; default bounds count bytes
 }
 
 type InputDescriptor struct {
@@ -164,7 +164,7 @@ func inputVariantChildren(field InputField, selector string) []InputField {
 func inputScalarBoundFields(fields []InputField) []InputField {
 	selected := append([]InputField(nil), fields...)
 	for i, field := range selected {
-		selected[i].scalarBounds = true
+		selected[i].ScalarBounds = true
 		selected[i].Children = inputScalarBoundFields(field.Children)
 		if field.Element != nil {
 			elements := inputScalarBoundFields([]InputField{*field.Element})
