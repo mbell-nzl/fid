@@ -325,8 +325,8 @@ Historical Tech Lead notes from the preceding implementation continuation follow
 
 ## Commit hash
 
-- Pending commit
+- `29c8682c98c612443ed85df503d818dacc70552c`
 
 ## Commit subject
 
-- Pending commit
+- `fix(cli): honor activation prepare identity scalar bounds`
