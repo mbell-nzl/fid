@@ -385,9 +385,8 @@ Report-lint is the independent Runner control specified by task-9a, not a Develo
 
 ## Commit hash
 
-- Pending commit
+- `2d5e9d55c83086b46268ca69793f30f65031b91b`
 
 ## Commit subject
 
-- Pending commit
-
+- `feat(cli): converge grammar failures and unknown commands`
