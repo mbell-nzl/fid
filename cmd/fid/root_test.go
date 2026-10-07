@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/cli"
 )
 
 func TestPromisedGovernanceCommandsAreAbsent(t *testing.T) {
@@ -28,8 +30,8 @@ func TestPromisedGovernanceCommandsAreAbsent(t *testing.T) {
 			if stdout.Len() != 0 {
 				t.Fatalf("stdout = %q, want empty", stdout.String())
 			}
-			if stderr.Len() != 0 {
-				t.Fatalf("stderr = %q, want empty", stderr.String())
+			if stderr.String() != `error: unknown command "`+commandName+`" for "fid"`+"\n" || cli.ExitCode(err) != 2 {
+				t.Fatalf("stderr = %q exit=%d, want typed unknown-command rejection", stderr.String(), cli.ExitCode(err))
 			}
 		})
 	}

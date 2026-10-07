@@ -110,7 +110,7 @@ func TestIssueUpdateRejectsInvalidInputAndLeavesStateUnchanged(t *testing.T) {
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	if !strings.Contains(stderr, "error: update issue: priority must be between 0 and 5") {
+	if !strings.Contains(stderr, `error: invalid argument "8" for "--priority" flag`) {
 		t.Fatalf("stderr = %q, want invalid priority error", stderr)
 	}
 
@@ -328,11 +328,17 @@ func TestIssueCreateAndUpdateRejectRemovedOwnerFlagsWithCanonicalFailures(t *tes
 			if err := json.Unmarshal([]byte(result.stderr), &failure); err != nil {
 				t.Fatalf("Unmarshal(stderr) error = %v; stderr = %q", err, result.stderr)
 			}
-			if failure.Version != "fid-cli.v1" || failure.OK || failure.Operation != "issue."+tt.operation || failure.Error.Code != "invalid-argument" || failure.Error.Category != "invalid-input" || failure.Error.Retryable || failure.Error.Message != "invalid Issue mutation request" || failure.Error.Subject != nil {
+			if failure.Version != "fid-cli.v1" || failure.OK || failure.Operation != "issue."+tt.operation || failure.Error.Code != "invalid-argument" || failure.Error.Category != "invalid-input" || failure.Error.Retryable || failure.Error.Message != "unknown flag: --"+tt.flag || failure.Error.Subject != nil {
 				t.Fatalf("failure = %+v, want canonical invalid-argument envelope", failure)
 			}
-			if failure.Error.Details.Argument != "request" || failure.Error.Details.Value != nil || strings.Join(failure.Error.Details.Allowed, ",") != "accepted issue."+tt.operation+" input" {
-				t.Fatalf("failure details = %+v, want request/null/accepted operation input", failure.Error.Details)
+			root := newRootCommandAt(workspace)
+			command, _, err := root.Find([]string{"issue", tt.operation})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := grammarUnknownFlagRow(command).allowed
+			if failure.Error.Details.Argument != "--"+tt.flag || failure.Error.Details.Value != "--"+tt.flag || strings.Join(failure.Error.Details.Allowed, ",") != strings.Join(want, ",") {
+				t.Fatalf("failure details = %+v, want full offending spelling and exact local flags %v", failure.Error.Details, want)
 			}
 			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
 				t.Fatalf("journal lines after rejected %s = %d, want %d", tt.operation, got, linesBefore)

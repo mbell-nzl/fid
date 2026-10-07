@@ -75,7 +75,7 @@ func TestPhase22AttentionReadBoundary(t *testing.T) {
 	}
 
 	if got, want := phase21AttentionUnavailableSurfaceMatches(t), []string{
-		"cmd/fid/attention.go", "cmd/fid/decision.go", "cmd/fid/gate.go", "cmd/fid/human_outcome.go", "cmd/fid/input_descriptors.go", "cmd/fid/live_output.go", "cmd/fid/p23_human.go", "cmd/fid/resume_human.go", "cmd/fid/review.go", "cmd/fid/root.go", "cmd/fid/run.go", "cmd/fid/stop.go", "cmd/fid/stop_human.go",
+		"cmd/fid/attention.go", "cmd/fid/decision.go", "cmd/fid/flag_domains.go", "cmd/fid/gate.go", "cmd/fid/human_outcome.go", "cmd/fid/input_descriptors.go", "cmd/fid/live_output.go", "cmd/fid/p23_human.go", "cmd/fid/resume_human.go", "cmd/fid/review.go", "cmd/fid/root.go", "cmd/fid/run.go", "cmd/fid/stop.go", "cmd/fid/stop_human.go",
 		"internal/workflow/activation.go", "internal/workflow/activation_recovery.go", "internal/workflow/budget.go", "internal/workflow/capabilities.go", "internal/workflow/envelope.go", "internal/workflow/human_outcome_readiness.go", "internal/workflow/resume.go", "internal/workflow/run_budget.go", "internal/workflow/stop.go", "internal/workflow/stop_errors.go", "internal/workflow/stop_read.go",
 	}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("production Attention paths = %v, want exactly %v", got, want)
@@ -167,7 +167,6 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"run recover",
 		"run get",
 		"run list",
-		"run",
 		"stop raise",
 		"stop resolve",
 		"stop list",
@@ -185,10 +184,8 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"issue transition",
 		"issue ac add",
 		"issue ac list",
-		"issue ac",
 		"issue label add",
 		"issue label remove",
-		"issue",
 		"label add",
 		"label list",
 		"link add",
@@ -202,7 +199,6 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"maintenance vacuum",
 		"activity list",
 		"concern list",
-		"concern",
 		"concern record",
 		"concern dispose",
 		"deviation record",
@@ -225,10 +221,10 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	}
 	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 94 || len(legacy) != 2 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 94 and 2", len(retained), len(legacy))
+	if len(retained) != 90 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 90 and 2", len(retained), len(legacy))
 	}
-	want := append(append([]string{}, retained...), "export")
+	want := append([]string{}, retained...)
 	want = append(want, legacy...)
 	sort.Strings(want)
 	got := liveExecutableLeafCommands(newRootCommandAt(t.TempDir()))
@@ -317,7 +313,7 @@ func liveExecutableLeafCommands(root *cobra.Command) []string {
 	var leaves []string
 	var walk func(*cobra.Command)
 	walk = func(command *cobra.Command) {
-		if command != root && (command.Run != nil || command.RunE != nil) {
+		if command != root && !command.HasSubCommands() && (command.Run != nil || command.RunE != nil) {
 			leaves = append(leaves, rootCommandKey(command))
 		}
 		for _, child := range command.Commands() {

@@ -39,6 +39,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 	t.Parallel()
 	expectations := []failureCodeExpectation{
 		{CodeInvalidArgument, CategoryInvalidInput, false, nil, argumentDetails()},
+		{CodeOperationUnavailable, CategoryInvalidInput, false, nil, argumentDetails()},
 		{CodeUnsupportedKind, CategoryInvalidInput, false, nil, argumentDetails()},
 		{CodeUnsupportedRelation, CategoryInvalidInput, false, nil, argumentDetails()},
 		{CodeProjectNotFound, CategoryNotFound, false, []SubjectType{SubjectProject}, stringDetails("path")},

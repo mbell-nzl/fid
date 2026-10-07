@@ -23,12 +23,6 @@ func newRunCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "run",
 		Short: "Manage generic Runs.",
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				return nil
-			}
-			return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
-		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Help()
 		},

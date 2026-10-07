@@ -263,7 +263,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 				issueID := parseCreatedIssueID(t, createStderr)
 				return []string{"issue", "ac", "add", issueID, "--text", "Bad ordinal", "--ordinal", "0", "--by", "developer"}
 			},
-			wantErr: "error: add acceptance criterion: ordinal must be a positive integer",
+			wantErr: `error: invalid argument "0" for "--ordinal" flag`,
 		},
 		{
 			name: "invalid actor",
@@ -272,7 +272,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 				issueID := parseCreatedIssueID(t, createStderr)
 				return []string{"issue", "ac", "add", issueID, "--text", "Invalid actor", "--ordinal", "1", "--actor", "intern"}
 			},
-			wantErr: `error: Issue actor must match <agent|human|service>:<id>`,
+			wantErr: `error: invalid argument "intern" for "--actor" flag`,
 		},
 		{
 			name: "missing issue",

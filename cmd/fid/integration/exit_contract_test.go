@@ -3,8 +3,11 @@
 package integration
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os/exec"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -43,8 +46,11 @@ func TestProcessExitContract(t *testing.T) {
 			if test.code != "" && !strings.Contains(stderr, `"code":"`+test.code+`"`) {
 				t.Fatalf("%v stderr = %q, want code %q", test.args, stderr, test.code)
 			}
-			if test.removed && (stdout != "" || stderr != "" || p21JournalEventCount(t, workspace) != before) {
-				t.Fatalf("removed leaf %v changed output or journal: stdout=%q stderr=%q", test.args, stdout, stderr)
+			if test.removed {
+				assertRemovedCommandFailure(t, test.args, stdout, stderr, err)
+				if p21JournalEventCount(t, workspace) != before {
+					t.Fatalf("removed leaf %v changed journal", test.args)
+				}
 			}
 		})
 	}
@@ -57,4 +63,69 @@ func processExitCode(t *testing.T, err error) int {
 		t.Fatalf("process error = %v, want exit error", err)
 	}
 	return exitError.ExitCode()
+}
+
+// Retained absent-command calls keep their flags: parsing rejects an unknown
+// flag before the group's unknown-word check. Neither rejection opens a project.
+func assertRemovedCommandFailure(t *testing.T, args []string, stdout, stderr string, cause error) {
+	t.Helper()
+	if processExitCode(t, cause) != 2 || stdout != "" {
+		t.Fatalf("removed command %v: stdout=%q stderr=%q cause=%v", args, stdout, stderr, cause)
+	}
+	jsonMode := args[0] == "--json"
+	if jsonMode {
+		args = args[1:]
+	}
+	group, word, allowed := args[0], args[1], []string{}
+	switch group {
+	case "policy":
+		group, word = "fid", "policy"
+		allowed = []string{"activation", "activity", "artifact", "attention", "capabilities", "claim", "completion", "concern", "decision", "deviation", "envelope", "evidence", "export", "finding", "gate", "help", "human-outcome", "init", "issue", "journal", "label", "link", "maintenance", "ready", "rebuild", "receipt", "requirement", "resume", "review", "run", "sql", "stats", "stop", "workflow"}
+	case "issue":
+		group, word, allowed = "issue.ac", args[2], []string{"add", "list"}
+	case "concern":
+		allowed = []string{"dispose", "list", "record"}
+	case "requirement":
+		allowed = []string{"get", "link", "list", "record-reference"}
+	}
+	code, argument, value := "operation-unavailable", "command", word
+	path := "fid " + strings.ReplaceAll(group, ".", " ")
+	if group == "fid" {
+		path = "fid"
+	}
+	message := fmt.Sprintf("unknown command %q for %q", word, path)
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "--") {
+			code, argument, value, allowed = "invalid-argument", arg, arg, []string{}
+			message = "unknown flag: " + arg
+			break
+		}
+	}
+	if !jsonMode {
+		if stderr != "error: "+message+"\n" {
+			t.Fatalf("removed command %v stderr=%q, want %q", args, stderr, message)
+		}
+		return
+	}
+	want := map[string]any{
+		"contract_version": "fid-cli.v1", "operation": group, "ok": false,
+		"error": map[string]any{
+			"code": code, "category": "invalid-input", "retryable": false, "subject": nil,
+			"message": message, "details": map[string]any{"argument": argument, "value": value, "allowed": allowed},
+		},
+	}
+	wantBytes, marshalErr := json.Marshal(want)
+	if marshalErr != nil {
+		t.Fatal(marshalErr)
+	}
+	var got, normalizedWant map[string]any
+	if err := json.Unmarshal([]byte(stderr), &got); err != nil {
+		t.Fatalf("removed command failure JSON: %v; stderr=%q", err, stderr)
+	}
+	if err := json.Unmarshal(wantBytes, &normalizedWant); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, normalizedWant) {
+		t.Fatalf("removed command %v envelope=%s, want %s", args, stderr, wantBytes)
+	}
 }

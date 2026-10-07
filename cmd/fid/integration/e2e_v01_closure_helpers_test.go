@@ -305,9 +305,10 @@ func assertClosureUnknownCommandWithoutJournalAppend(t *testing.T, binary, works
 	if err == nil {
 		t.Fatalf("fid %s succeeded, want rejection", strings.Join(args, " "))
 	}
-	if stdout != "" || stderr != "" {
-		t.Fatalf("fid %s = (%v, %q, %q), want absent-command rejection with empty output", strings.Join(args, " "), err, stdout, stderr)
-	}
+	assertRemovedCommandFailure(t, args, stdout, stderr, err)
+	jsonArgs := append([]string{"--json"}, args...)
+	jsonOut, jsonErr, jsonCause := closureRunFIDExpectError(t, binary, workspace, jsonArgs...)
+	assertRemovedCommandFailure(t, jsonArgs, jsonOut, jsonErr, jsonCause)
 	assertClosureJournalBytesEqual(t, journalPath, before, strings.Join(args, " "))
 }
 
@@ -376,10 +377,7 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 		closureRunFID(t, binary, workspace, args...)
 		assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, strings.Join(args, " "))
 	}
-	stdout, stderr, err = closureRunFIDExpectError(t, binary, workspace, "policy", "show")
-	if err == nil || stdout != "" || stderr != "" {
-		t.Fatalf("policy show = (%v, %q, %q), want absent public command", err, stdout, stderr)
-	}
+	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, closureJournalPath(t, workspace), []string{"policy", "show"})
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "policy show")
 }
 

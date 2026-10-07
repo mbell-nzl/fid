@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/cli"
+
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -575,28 +577,34 @@ func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
 	}{
 		{
 			name: "add omitted from type", operation: "link.add",
-			args:   []string{"--json", "link", "add", firstID, "blocks", secondID, "--to-type", "issue", "--by", "developer"},
-			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.add") },
+			args: []string{"--json", "link", "add", firstID, "blocks", secondID, "--to-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) {
+				assertLinkInvalidRequestEnvelope(t, output, "link.add", "from-type")
+			},
 		},
 		{
 			name: "add omitted to type", operation: "link.add",
 			args:   []string{"--json", "link", "add", firstID, "blocks", secondID, "--from-type", "issue", "--by", "developer"},
-			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.add") },
+			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.add", "to-type") },
 		},
 		{
 			name: "remove omitted from type", operation: "link.remove",
-			args:   []string{"--json", "link", "remove", firstID, "blocks", secondID, "--to-type", "issue", "--by", "developer"},
-			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.remove") },
+			args: []string{"--json", "link", "remove", firstID, "blocks", secondID, "--to-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) {
+				assertLinkInvalidRequestEnvelope(t, output, "link.remove", "from-type")
+			},
 		},
 		{
 			name: "remove omitted to type", operation: "link.remove",
-			args:   []string{"--json", "link", "remove", firstID, "blocks", secondID, "--from-type", "issue", "--by", "developer"},
-			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.remove") },
+			args: []string{"--json", "link", "remove", firstID, "blocks", secondID, "--from-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) {
+				assertLinkInvalidRequestEnvelope(t, output, "link.remove", "to-type")
+			},
 		},
 		{
 			name: "list omitted type", operation: "link.list",
 			args:   []string{"--json", "link", "list", firstID},
-			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.list") },
+			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.list", "type") },
 		},
 		{
 			name: "self link", operation: "link.add",
@@ -637,6 +645,9 @@ func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
 			result := executeCommandForTest(workspace, test.args...)
 			if result.err == nil || result.stdout != "" {
 				t.Fatalf("%s result = %#v, want stderr-only rejection", test.operation, result)
+			}
+			if cli.ExitCode(result.err) != 2 && strings.Contains(test.name, "omitted") {
+				t.Fatalf("missing flag exit=%d", cli.ExitCode(result.err))
 			}
 			test.assert(t, result.stderr)
 			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
@@ -724,10 +735,14 @@ func assertLinkMutationEnvelope(t *testing.T, result commandExecutionResult, jou
 	}
 }
 
-func assertLinkInvalidRequestEnvelope(t *testing.T, output, operation string) {
+func assertLinkInvalidRequestEnvelope(t *testing.T, output, operation, flag string) {
 	t.Helper()
+	envelope := decodeCommandJSONStructure(t, output).(map[string]any)
+	if failure := envelope["error"].(map[string]any); failure["message"] != "--"+flag+" is required" || failure["category"] != "invalid-input" {
+		t.Fatalf("required flag failure = %#v", failure)
+	}
 	assertLinkFailure(t, output, operation, "invalid-argument", nil, map[string]any{
-		"argument": "request", "value": nil, "allowed": []any{"accepted " + operation + " input"},
+		"argument": "--" + flag, "value": nil, "allowed": []any{"--" + flag},
 	})
 }
 

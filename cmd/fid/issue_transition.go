@@ -28,6 +28,9 @@ func newIssueTransitionCommand() *cobra.Command {
 			if err := requireCanonicalFlag(cmd, "issue.transition", "idempotency-key"); err != nil {
 				return err
 			}
+			if err := requireCanonicalFlag(cmd, "issue.transition", "to"); err != nil {
+				return err
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.transition", args[0], err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
@@ -27,28 +28,7 @@ func execute() error {
 	if err != nil {
 		return err
 	}
-	err = cmd.Execute()
-	if err != nil && isCobraInputError(err) {
-		failure, failureErr := cli.NewFailure(cli.CodeInvalidArgument, "invalid command request", nil, map[string]any{
-			"argument": "request",
-			"value":    nil,
-			"allowed":  []string{"accepted command input"},
-		})
-		if failureErr != nil {
-			return failureErr
-		}
-		return cli.NewFailureError(failure, err)
-	}
-	return err
-}
-
-func isCobraInputError(err error) bool {
-	message := err.Error()
-	return strings.HasPrefix(message, "unknown command ") ||
-		strings.HasPrefix(message, "unknown flag: ") ||
-		strings.HasPrefix(message, "accepts ") ||
-		strings.HasPrefix(message, "requires at least ") ||
-		strings.HasPrefix(message, "requires at most ")
+	return cmd.Execute()
 }
 
 func newRootCommand() (*cobra.Command, error) {
@@ -109,6 +89,8 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.AddCommand(newStatsCommand())
 	cmd.AddCommand(newStopCommand())
 	cmd.AddCommand(newWorkflowCommand())
+	installCommandGroups(cmd)
+	installLeafGrammar(cmd)
 
 	return cmd
 }
@@ -123,6 +105,9 @@ func commandWorkingDirectory(cmd *cobra.Command) (string, error) {
 
 func rejectUnavailableRootFlags(root *cobra.Command) func(*cobra.Command, []string) error {
 	return func(command *cobra.Command, _ []string) error {
+		if command.HasSubCommands() {
+			return nil
+		}
 		capability := rootFlagCapabilities[rootCommandKey(command)]
 		for _, flag := range []struct {
 			name    string
@@ -141,6 +126,37 @@ func rejectUnavailableRootFlags(root *cobra.Command) func(*cobra.Command, []stri
 		}
 		return nil
 	}
+}
+
+// installCommandGroups makes unknown words reach one validator at every depth.
+// Cobra otherwise treats a non-runnable group with arguments as a help request.
+func installCommandGroups(command *cobra.Command) {
+	if !command.HasSubCommands() {
+		return
+	}
+	command.Args = func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return nil
+		}
+		allowed := []string{}
+		for _, child := range cmd.Commands() {
+			if child.IsAvailableCommand() || child.Name() == "help" {
+				allowed = append(allowed, child.Name())
+			}
+		}
+		sort.Strings(allowed)
+		return writeGrammarFailure(cmd, rootCommandOperation(cmd), cli.CodeOperationUnavailable,
+			fmt.Sprintf("unknown command %q for %q", args[0], cmd.CommandPath()),
+			map[string]any{"argument": "command", "value": args[0], "allowed": allowed})
+	}
+	command.RunE = func(cmd *cobra.Command, _ []string) error { return cmd.Help() }
+	for _, child := range command.Commands() {
+		installCommandGroups(child)
+	}
+}
+
+func rootCommandOperation(cmd *cobra.Command) string {
+	return strings.ReplaceAll(rootCommandKey(cmd), " ", ".")
 }
 
 func rootCommandKey(command *cobra.Command) string {

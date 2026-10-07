@@ -18,10 +18,7 @@ func init() {
 
 func newExportCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "export", Short: "Create and validate portable recovery archives.", RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			return cmd.Help()
-		}
-		return fmt.Errorf("unknown command %q for %q", args[0], "fid export")
+		return cmd.Help()
 	}}
 	cmd.AddCommand(newExportCreateCommand(), newExportValidateCommand(), newExportImportCommand())
 	return cmd

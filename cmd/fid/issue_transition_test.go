@@ -666,7 +666,7 @@ func TestIssueTransitionRequiresTargetStateAndKnownByRole(t *testing.T) {
 		if stdout != "" {
 			t.Fatalf("stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, "error: transition issue: target state is required") {
+		if !strings.Contains(stderr, "error: --to is required") {
 			t.Fatalf("stderr = %q, want missing --to error", stderr)
 		}
 	})

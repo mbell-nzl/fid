@@ -568,7 +568,7 @@ schedules the remaining Human operating-experience items (Stop-detail
 rendering, denial reasons, hint verbosity, recorded reasoning in Human views,
 `--input` authoring and repository-input convergence) as Phase 24.
 
-### Phase 24 accepted amendment (implementation pending)
+### Phase 24 accepted amendment (delivery in progress)
 
 `../docs/phases/phase-24/public-interface.md` is the accepted target contract
 (DEC-277, amended by DEC-278..282); the preceding delivered rules describe
@@ -591,7 +591,66 @@ govern the message clarifications recorded in DEC-282:
   escape or cut. Codes, details and exits retain their accepted values.
 
 The exact leaf, input, failure and view changes remain indexed in that phase
-contract; this entry records accepted planning, not completed delivery.
+contract. The task deliveries below identify the implemented portions; task
+10's additional Human failure lines remain pending.
+
+Task 9a delivers grammar failures before workspace resolution on every live
+leaf except the Human-only `journal inspect` and `sql` diagnostics. Each is
+`invalid-argument`, category `invalid-input`, not retryable, exit 2, subject
+null, with the leaf's operation ID and these exact details:
+
+| Class | `argument` | `value` | `allowed` | Message source |
+|---|---|---|---|---|
+| Unknown flag | full spelling (`--bogus` or `-x`) | full spelling | sorted local long flags, excluding `--help`, `--json`, `--project`; `[]` at root/groups | pflag's detecting text |
+| Missing required flag | `--<name>` | null | `["--<name>"]` | `--<name> is required` |
+| Malformed flag value, missing value, or value outside its domain | `--<name>` | full supplied value, or null when missing | declared domain | pflag's detecting text; domain checks use `invalid argument "<value>" for "--<name>" flag` |
+| Wrong positional count | `arguments` | first extra argument, or null when missing | positional spellings from `Use`, or `["no arguments"]` | Cobra's argument-count text; a no-argument leaf uses `<path without fid> accepts no arguments` |
+
+Flag domains are declared by leaf and spelling in `cmd/fid/flag_domains.go`
+and `cmd/fid/flag_domain_text.go`
+from the newest Phase 21–24 contract row. Both parsing and the malformed-value
+corpus use that declaration. Enumerations are sorted bytewise, integer ranges
+use `"<lo>..<hi>"`, patterns retain the contract spelling (including
+`<type>:<id>`), and other domains use the pflag type name. Free text missing a
+value therefore has `allowed:["string"]`. Range checks retain pflag's integer
+syntax; the string `--expected-revision` retains its decimal-only constraint.
+The declarations cover limits, priorities, sequence, ordinal, version,
+expected revision, all leaf booleans including `--example`, and closed string
+values for issue/workflow/link/statistics and execution/judgment filters.
+Inherited title, AC text, description, colour and label bounds retain Phase
+20’s byte limits and trimming. Opaque IDs and workflow states use the newer
+Phase 21 printable Unicode scalar domain; activated Actor flags are IDs.
+`issue update --labels=` retains its explicit empty-list clearing behavior.
+Workflow CSV membership, uniqueness and per-flag bounds are checked here;
+cross-flag relationships keep their existing domain checks. Idempotency keys
+and standalone Actor flags retain their accepted text constraints. Input
+shapes and domain-package validation remain governed by their slice contracts.
+
+An unknown word at the root or any group returns `operation-unavailable`,
+category `invalid-input`, not retryable, exit 2, subject null, and
+`{argument:"command",value:<full word>,allowed:<sorted help subcommands>}`.
+Its envelope operation is the known dotted path (`fid`, `concern`, `issue.ac`),
+and its message source is `unknown command "<word>" for "<CommandPath>"`
+without suggestions. The root alternatives include `help` and `completion`;
+those generated commands have no operation ID. A group without a word keeps
+its Human help on stdout and exit 0. An extra word on a leaf is a positional
+failure.
+
+All these message sources pass through the shared `internal/cli` construction:
+escape LF/CR/TAB as `\n`, `\r`, `\t` and other control characters as
+`\uXXXX`, preserving existing Go `%q` escapes, then count Unicode scalars.
+Up to 512 scalars remains intact; longer text retains the first 511 plus `…`,
+dropping any escape crossing the cut whole, without padding. Count before JSON
+serialization and without the Human label or terminator. This precedence can
+shorten the specified source text; details always preserve the full spelling
+or value. Human stderr is exactly `error: <final JSON message>` plus a newline,
+with exit 2 and no second escape or cut. Task 10 adds the reason and guidance
+lines using the same construction.
+
+Flag combinations and disagreements between accepted rows and live flag sets
+retain their existing behavior (CF-047); task 9a records them in its completion
+report. The live tree is the corpus scope. Family request fallbacks remain
+available only for their existing non-grammar causes.
 
 Task 3 adopts descriptor-generated input help and `--example` templates for
 `stop raise`, `stop resolve`, and `attention resolve`. Each adopted leaf's help
@@ -643,4 +702,4 @@ returns `source-digest-mismatch` with nullable `expected_digest` and
 `observed_digest`; an unobservable worktree returns `repository-unavailable`
 with a typed reason and detail. Both refuse without appending an Event.
 
-*Last updated: 2026-10-05 (Phase 24 Task 4 judgment SourceInput delivery)*
+*Last updated: 2026-10-07 (Phase 24 Task 9a grammar and unknown-command delivery)*

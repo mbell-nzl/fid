@@ -15,13 +15,7 @@ func newConcernCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "concern",
 		Short: "Manage concerns.",
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) > 0 {
-				return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
-			}
-			return nil
-		},
-		RunE: func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
+		RunE:  func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
 	}
 
 	cmd.AddCommand(newConcernDisposeCommand())

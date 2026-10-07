@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/cli"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/spf13/cobra"
@@ -81,8 +84,9 @@ func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 	}
 
 	result = executeCommandForTest(workspace, "policy", "show", "--by", "developer")
-	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "policy"`) {
-		t.Fatalf("policy show with V1 flag = %#v, want absent public command", result)
+	grammarCheck(t, grammarRow{name: "absent policy with removed flag", operation: "fid", code: "invalid-argument", argument: "--by", value: "--by", allowed: []string{}, message: "unknown flag: --by"}, false, result, cli.ExitCode(result.err))
+	if after := mustReadCommandFile(t, journalPath); !bytes.Equal(after, beforePayload) || countActivityLogRows(t, conn) != activityBefore {
+		t.Fatal("absent policy with removed flag mutated state")
 	}
 }
 

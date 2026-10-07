@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/spf13/cobra"
@@ -12,13 +10,7 @@ func newIssueACCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ac",
 		Short: "Manage issue acceptance criteria.",
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) > 0 {
-				return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
-			}
-			return nil
-		},
-		RunE: func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
+		RunE:  func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
 	}
 
 	cmd.AddCommand(newIssueACAddCommand())
