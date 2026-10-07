@@ -439,8 +439,8 @@ Removed unused decodeClosedGateInput (introducing commit 0c4c04ea0c7d0786e2e6cf8
 
 ## Commit hash
 
-- Pending commit
+- `a59fa4d1dbca96193e257d6b55d3fa67cab619fc`
 
 ## Commit subject
 
-- Pending commit
+- `fix(test): independently verify gate pre-spawn repositories`
