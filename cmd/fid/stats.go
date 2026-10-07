@@ -33,9 +33,13 @@ func newStatsTokensCommand() *cobra.Command {
 		Short: "Aggregate run tokens.",
 		Args:  canonicalNoArgs("stats.tokens"),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
+				return err
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return renderIssueReadError(cmd, true, "stats.tokens", err)
+				return renderIssueReadError(cmd, jsonMode, "stats.tokens", err)
 			}
 
 			items, err := stats.Tokens(stats.TokensOptions{
@@ -45,7 +49,7 @@ func newStatsTokensCommand() *cobra.Command {
 				EpicID:        epicID,
 			})
 			if err != nil {
-				return renderIssueReadError(cmd, true, "stats.tokens", err)
+				return renderIssueReadError(cmd, jsonMode, "stats.tokens", err)
 			}
 			return cli.WriteSuccess(cmd.OutOrStdout(), "stats.tokens", map[string]any{"items": tokenStatsResult(items)}, nil)
 		},
@@ -68,9 +72,13 @@ func newStatsCostCommand() *cobra.Command {
 		Short: "Aggregate run costs.",
 		Args:  canonicalNoArgs("stats.cost"),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
+				return err
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return renderIssueReadError(cmd, true, "stats.cost", err)
+				return renderIssueReadError(cmd, jsonMode, "stats.cost", err)
 			}
 
 			items, err := stats.Cost(stats.CostOptions{
@@ -80,7 +88,7 @@ func newStatsCostCommand() *cobra.Command {
 				EpicID:        epicID,
 			})
 			if err != nil {
-				return renderIssueReadError(cmd, true, "stats.cost", err)
+				return renderIssueReadError(cmd, jsonMode, "stats.cost", err)
 			}
 			return cli.WriteSuccess(cmd.OutOrStdout(), "stats.cost", map[string]any{"items": costStatsResult(items)}, nil)
 		},
