@@ -58,14 +58,7 @@ func canonicalFlagError(operation string) func(*cobra.Command, error) error {
 				argument = "-" + unknown.GetSpecifiedName()
 			}
 			value = argument
-			if !cmd.HasSubCommands() {
-				cmd.LocalNonPersistentFlags().VisitAll(func(flag *pflag.Flag) {
-					if flag.Name != "help" && flag.Name != "project" && flag.Name != "json" {
-						allowed = append(allowed, "--"+flag.Name)
-					}
-				})
-				sort.Strings(allowed)
-			}
+			allowed = allowedLocalFlags(cmd)
 		case errors.As(cause, &missing):
 			argument = "--" + missing.GetFlag().Name
 			allowed = flagDomainFor(cmd, missing.GetFlag()).Allowed
@@ -81,6 +74,24 @@ func canonicalFlagError(operation string) func(*cobra.Command, error) error {
 		return writeGrammarFailure(cmd, operation, cli.CodeInvalidArgument, cause.Error(),
 			map[string]any{"argument": argument, "value": value, "allowed": allowed})
 	}
+}
+
+// allowedLocalFlags is the unknown/forbidden flag alternative list.
+func allowedLocalFlags(cmd *cobra.Command) []string {
+	allowed := []string{}
+	if !cmd.HasSubCommands() {
+		cmd.LocalNonPersistentFlags().VisitAll(func(flag *pflag.Flag) {
+			if flag.Name != "help" && flag.Name != "project" && flag.Name != "json" {
+				allowed = append(allowed, "--"+flag.Name)
+			}
+		})
+		sort.Strings(allowed)
+	}
+	return allowed
+}
+
+func diagnosticLeaf(cmd *cobra.Command) bool {
+	return rootCommandKey(cmd) == "sql" || rootCommandKey(cmd) == "journal inspect"
 }
 
 func requireCanonicalFlag(cmd *cobra.Command, operation, name string) error {
@@ -121,7 +132,7 @@ func installLeafGrammar(cmd *cobra.Command) {
 		}
 		return
 	}
-	if rootCommandKey(cmd) == "sql" || rootCommandKey(cmd) == "journal inspect" {
+	if diagnosticLeaf(cmd) {
 		return
 	}
 	operation := leafOperation(cmd)

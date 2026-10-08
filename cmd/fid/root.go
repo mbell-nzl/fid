@@ -117,11 +117,17 @@ func rejectUnavailableRootFlags(root *cobra.Command) func(*cobra.Command, []stri
 			{"json", capability.JSON},
 		} {
 			if root.PersistentFlags().Changed(flag.name) && !flag.enabled {
-				err := fmt.Errorf("--%s is not available for %s until its fid-cli.v1 transport is migrated", flag.name, rootCommandKey(command))
-				if _, writeErr := fmt.Fprintf(command.ErrOrStderr(), "error: %v\n", err); writeErr != nil {
-					return fmt.Errorf("write root-flag rejection: %w", writeErr)
+				if diagnosticLeaf(command) {
+					err := fmt.Errorf("--%s is not available for %s until its fid-cli.v1 transport is migrated", flag.name, rootCommandKey(command))
+					if _, writeErr := fmt.Fprintf(command.ErrOrStderr(), "error: %v\n", err); writeErr != nil {
+						return fmt.Errorf("write root-flag rejection: %w", writeErr)
+					}
+					return err
 				}
-				return err
+				spelling := "--" + flag.name
+				return writeGrammarFailure(command, leafOperation(command), cli.CodeInvalidArgument,
+					fmt.Sprintf("%s is not available for %s", spelling, rootCommandKey(command)),
+					map[string]any{"argument": spelling, "value": spelling, "allowed": allowedLocalFlags(command)})
 			}
 		}
 		return nil

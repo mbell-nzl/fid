@@ -82,7 +82,7 @@ func p24ActivationCodePair(t *testing.T, code string) p24CodePair {
 		boundary = "committed"
 	}
 	if code == "activation-incomplete" {
-		boundary = "staged"
+		boundary = "committed"
 	}
 	root, id := p22ActivationBoundaryFixture(t, integrationFIDBinary(t), boundary)
 	activation := p21ActivationStatus(t, root, id)
@@ -91,15 +91,20 @@ func p24ActivationCodePair(t *testing.T, code string) p24CodePair {
 	switch code {
 	case "activation-conflict":
 		operation = "activation.prepare"
-		input = map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "other-kit", "expected_prior_activation_id": nil, "expected_prior_activation_version": nil, "phase": 21, "resources": p21ActivationResources()}
+		input = map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "other-kit", "expected_prior_activation_id": nil, "expected_prior_version": nil, "phase": 21, "resources": p21ActivationResources()}
 	case "activation-version-conflict":
 		input["expected_version"] = 999
 	case "activation-invalid":
 		operation = "activation.finalize"
 		input = map[string]any{"activation_id": id, "expected_version": activation.Version, "expected_status": "committed"}
 	case "activation-incomplete":
-		operation = "activation.commit"
-		input = map[string]any{"activation_id": id, "expected_version": activation.Version, "expected_status": "staged", "component_digests": []string{}}
+		// A committed activation can lose agreement before finalization.
+		conn := p22FaultDB(t, root)
+		_, err := conn.Exec("UPDATE activation_resources SET state='pending',observed_identity=NULL WHERE activation_id=?", id)
+		p22FaultOK(t, err)
+		p22FaultOK(t, conn.Close())
+		operation = "activation.finalize"
+		input = map[string]any{"activation_id": id, "expected_version": activation.Version, "expected_status": "committed"}
 	}
 	return p24InputPair(t, root, operation, "", input)
 }

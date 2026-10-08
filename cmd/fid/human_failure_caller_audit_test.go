@@ -26,24 +26,17 @@ func TestP24HumanFailureCallerAudit(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		if path == "root.go" {
+			if count := p24RawRootFailures(file, false); count != 0 {
+				t.Errorf("root-flag failure bypasses shared renderer: %s (%d)", path, count)
+			}
+		}
 		ast.Inspect(file, func(node ast.Node) bool {
 			call, ok := node.(*ast.CallExpr)
 			if !ok {
 				return true
 			}
-			if path == "root.go" {
-				for _, arg := range call.Args {
-					if value, ok := arg.(*ast.BasicLit); ok && value.Kind == token.STRING {
-						text, err := strconv.Unquote(value.Value)
-						if err != nil {
-							t.Fatal(err)
-						}
-						if strings.HasPrefix(text, "error: ") {
-							t.Errorf("root-flag failure bypasses shared renderer: %s", path)
-						}
-					}
-				}
-			}
+
 			fn, ok := call.Fun.(*ast.Ident)
 			if !ok {
 				return true
@@ -62,5 +55,56 @@ func TestP24HumanFailureCallerAudit(t *testing.T) {
 			}
 			return true
 		})
+	}
+}
+
+// Follow the AST branch, rather than allowing raw text by filename or function.
+// Only the positive diagnosticLeaf branch permits the retained raw refusal.
+func p24RawRootFailures(node ast.Node, diagnostic bool) int {
+	count := 0
+	ast.Inspect(node, func(node ast.Node) bool {
+		if branch, ok := node.(*ast.IfStmt); ok {
+			permitted := false
+			if call, ok := branch.Cond.(*ast.CallExpr); ok {
+				if fn, ok := call.Fun.(*ast.Ident); ok && fn.Name == "diagnosticLeaf" {
+					permitted = true
+				}
+			}
+			count += p24RawRootFailures(branch.Cond, diagnostic)
+			count += p24RawRootFailures(branch.Body, diagnostic || permitted)
+			if branch.Else != nil {
+				count += p24RawRootFailures(branch.Else, diagnostic)
+			}
+			return false
+		}
+		if literal, ok := node.(*ast.BasicLit); ok && literal.Kind == token.STRING && !diagnostic {
+			text, err := strconv.Unquote(literal.Value)
+			if err == nil && strings.HasPrefix(text, "error: ") {
+				count++
+			}
+		}
+		return true
+	})
+	return count
+}
+
+func TestP24RootFailureAuditNegativeControl(t *testing.T) {
+	t.Parallel()
+	for _, row := range []struct {
+		source string
+		want   int
+	}{
+		{`package main; func reject(c any) { if diagnosticLeaf(c) { println("error: diagnostic") } }`, 0},
+		{`package main; func reject(c any) { if diagnosticLeaf(c) { println("error: diagnostic") } else { println("error: stable") } }`, 1},
+		{`package main; func reject(c any) { println("error: stable") }`, 1},
+		{`package main; func reject(c any) { if !diagnosticLeaf(c) { println("error: stable") } }`, 1},
+	} {
+		file, err := parser.ParseFile(token.NewFileSet(), "root.go", row.source, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := p24RawRootFailures(file, false); got != row.want {
+			t.Fatalf("raw failure count=%d want=%d: %s", got, row.want, row.source)
+		}
 	}
 }

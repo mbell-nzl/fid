@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -101,33 +100,35 @@ func p24FailureFilesystem(t *testing.T, root string) map[string]string {
 	return result
 }
 
-// The root-flag rejection runs before the import handler. This test requires
-// transport parity without inventing the absent code/details/exit mapping.
+// DEC-286: refusal precedes all workspace and archive access.
 func TestP24UnavailableImportRootFlagFailurePair(t *testing.T) {
 	t.Parallel()
-	binary, root := integrationFIDBinary(t), t.TempDir()
-	before := p24FailureFilesystem(t, root)
-	args := []string{"--project", root, "export", "import", "missing.zip", "--repository", root, "--idempotency-key", "root-flag"}
-	var jsonMessage string
-	for _, jsonMode := range []bool{false, true} {
-		request := append([]string(nil), args...)
-		if jsonMode {
-			request = append([]string{"--json"}, request...)
-		}
-		out, stderr, err := closureRunCommand(root, binary, request...)
-		if err == nil || out != "" || !reflect.DeepEqual(before, p24FailureFilesystem(t, root)) {
-			t.Fatalf("root flag refusal: %v %q %q", err, out, stderr)
-		}
-		if jsonMode {
-			payload := p23Envelope(t, stderr)
-			jsonMessage = payload["error"].(map[string]any)["message"].(string)
-		} else {
-			if !strings.Contains(stderr, "\nreason: ") {
-				t.Errorf("Human root flag bypass: exit=%d stderr=%q", processExitCode(t, err), stderr)
+	const jsonFailure = `{"contract_version":"fid-cli.v1","error":{"category":"invalid-input","code":"invalid-argument","details":{"allowed":["--idempotency-key","--repository"],"argument":"--project","value":"--project"},"message":"--project is not available for export import","retryable":false,"subject":null},"ok":false,"operation":"export.import"}` + "\n"
+	const humanFailure = "error: --project is not available for export import\nreason: invalid-argument; argument=--project, allowed=--idempotency-key|--repository\n"
+	for _, missing := range []bool{false, true} {
+		t.Run(fmt.Sprintf("missing-project=%t", missing), func(t *testing.T) {
+			t.Parallel()
+			binary, root := integrationFIDBinary(t), t.TempDir()
+			project := root
+			if missing {
+				project = filepath.Join(root, "nonexistent")
 			}
-		}
-	}
-	if jsonMessage == "" {
-		t.Fatal("JSON root flag failure has no message")
+			before := p24FailureFilesystem(t, root)
+			args := []string{"--project", project, "export", "import", "missing.zip", "--repository", root, "--idempotency-key", "root-flag"}
+			for _, jsonMode := range []bool{false, true} {
+				request, want := append([]string(nil), args...), humanFailure
+				if jsonMode {
+					request = append([]string{"--json"}, request...)
+					want = jsonFailure
+				}
+				out, stderr, err := closureRunCommand(root, binary, request...)
+				if err == nil || processExitCode(t, err) != 2 || out != "" || stderr != want {
+					t.Fatalf("json=%t refusal: %v stdout=%q stderr=%q want=%q", jsonMode, err, out, stderr, want)
+				}
+				if !reflect.DeepEqual(before, p24FailureFilesystem(t, root)) {
+					t.Fatal("refusal changed filesystem")
+				}
+			}
+		})
 	}
 }

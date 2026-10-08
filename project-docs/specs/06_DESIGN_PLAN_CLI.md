@@ -665,6 +665,21 @@ details, with messages `prior registration binding does not match envelope`,
 `run gate: repository binding is invalid`. A terminal gate non-success writes
 the same failure lines on stderr after its streamed Human stdout.
 
+A root flag that a stable leaf does not accept fails before workspace access
+with `invalid-argument`, exit 2 (DEC-286). For `export import --project`, both
+`details.argument` and `details.value` are `--project`; `allowed` contains
+`--idempotency-key` and `--repository`, the sorted local long flags excluding
+help and root flags. Human stderr is exactly:
+
+```text
+error: --project is not available for export import
+reason: invalid-argument; argument=--project, allowed=--idempotency-key|--repository
+```
+
+This leaf has no `--input`, so it prints no `next:`. The same refusal applies
+outside a project and for a nonexistent project path. The `sql` and
+`journal inspect` diagnostics retain their raw root-flag refusals.
+
 Flag combinations and disagreements between accepted rows and live flag sets
 retain their existing behavior (CF-047); task 9a records them in its completion
 report. The live tree is the corpus scope. Family request fallbacks remain

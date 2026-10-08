@@ -19,8 +19,11 @@ func TestP24HumanProtectedDecisionFailure(t *testing.T) {
 	}
 	denial := p23IssueTransition(t, a, "qa_pass", 4, "p24-denial")
 	assertP22ProcessFailure(t, "issue.transition", "protected-decision-required", 5, denial)
+	replay := p23IssueTransition(t, a, "qa_pass", 4, "p24-denial")
+	assertP22ProcessFailure(t, "issue.transition", "protected-decision-required", 5, replay)
+	want := p24ExpectedFailureText(t, p23Envelope(t, replay.Stderr), "issue.transition", false)
 	stdout, stderr, err := closureRunCommand(a.workspace, a.binary, "--project", a.workspace, "issue", "transition", a.issueID, "--to", "qa_pass", "--actor", "agent:"+a.actor, "--expected-revision", "4", "--idempotency-key", "p24-denial")
-	if err == nil || processExitCode(t, err) != 5 || stdout != "" || !strings.HasPrefix(stderr, "error: protected Decision requires an approved reference and Human Outcome\nreason: protected-decision-required") {
+	if err == nil || processExitCode(t, err) != 5 || stdout != "" || stderr != want {
 		t.Fatalf("protected Decision Human refusal: stdout=%q stderr=%q error=%v", stdout, stderr, err)
 	}
 }
@@ -40,7 +43,7 @@ func TestP24HumanGateTerminalFailure(t *testing.T) {
 		t.Fatalf("code=%s", got)
 	}
 	humanOut, humanErr, humanExit := closureRunCommand(a.workspace, a.binary, args...)
-	if humanExit == nil || processExitCode(t, humanExit) != 8 || humanOut == "" || !strings.HasPrefix(humanErr, "error: gate execution was unsuccessful\nreason: gate-unsuccessful;") {
+	if humanExit == nil || processExitCode(t, humanExit) != 8 || humanOut == "" || humanErr != p24ExpectedFailureText(t, response, "gate.run", true) {
 		t.Fatalf("Human gate: %v stdout=%q stderr=%q", humanExit, humanOut, humanErr)
 	}
 }

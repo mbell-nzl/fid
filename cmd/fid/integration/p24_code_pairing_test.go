@@ -42,9 +42,25 @@ var p24CodeRows = map[string]p24CodeFactory{
 	"authority-unknown-actor":       p24GateCodePair,
 	"authority-unavailable":         p24GateCodePair,
 	"executor-policy-unsupported":   p24GateCodePair,
-	"budget-data-unavailable":       p24GateCodePair,
-	"budget-exhausted":              p24GateCodePair,
 	"repository-unavailable":        p24GateCodePair,
+
+	"claim-mode-invalid":         p24ReviewClaimPair,
+	"obligation-unsatisfied":     p24ObligationCodePair,
+	"human-outcome-required":     p24ObligationCodePair,
+	"finding-not-found":          p24JudgmentCodePair,
+	"concern-not-found":          p24JudgmentCodePair,
+	"deviation-not-found":        p24JudgmentCodePair,
+	"concern-already-disposed":   p24JudgmentCodePair,
+	"source-digest-mismatch":     p24JudgmentCodePair,
+	"authority-missing":          p24OutcomeCodePair,
+	"outcome-not-found":          p24OutcomeCodePair,
+	"outcome-not-permitted":      p24OutcomeCodePair,
+	"review-verdict-invalid":     p24ReviewCodePair,
+	"review-not-independent":     p24ReviewCodePair,
+	"review-changes-required":    p24ReviewCodePair,
+	"evidence-type-not-accepted": p24ReviewCodePair,
+	"finding-already-disposed":   p24ReviewCodePair,
+	"result-limit-exceeded":      p24JudgmentCodePair,
 
 	"invalid-argument":      p24SimplePair("stop.raise", "stop", "raise", "--bogus"),
 	"operation-unavailable": p24SimplePair("fid", "isue"),
@@ -97,6 +113,8 @@ var p24CodeExclusions = map[string]string{
 
 var p24SpecialCodePairs = map[string]func(*testing.T){
 	"gate-unsuccessful":           TestP24HumanGateTerminalFailure,
+	"budget-data-unavailable":     p24BudgetTerminalPair,
+	"budget-exhausted":            p24BudgetTerminalPair,
 	"protected-decision-required": TestP24HumanProtectedDecisionFailure,
 	"review-rework-exhausted":     TestP23StopFailureHumanAndJSONParity,
 }
@@ -393,7 +411,7 @@ func p24ExpectedFailureText(t *testing.T, payload map[string]any, operation stri
 			case []any:
 				// The accepted activation failure schema declares this as an object
 				// array even when JSON contains an empty array; section 9 omits it.
-				if key == "component_errors" && strings.HasPrefix(code, "activation-") {
+				if (key == "component_errors" && strings.HasPrefix(code, "activation-")) || (code == "projection-divergence" && (key == "warnings" || key == "errors")) {
 					continue
 				}
 				scalars := []string{}
