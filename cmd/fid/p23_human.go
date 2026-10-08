@@ -136,8 +136,9 @@ func p23HumanItem(kind string, item map[string]any) []string {
 			fmt.Sprintf("    Run: %v; Reviewer: %v; Profile: %v", item["run_id"], item["actor_id"], item["profile"]),
 			fmt.Sprintf("    Verdict: %v; Independence: %v", item["verdict"], item["independence"]))
 		repo := p23HumanMap(item["repository"])
-		lines = append(lines, fmt.Sprintf("    Repository: project %v; worktree %v; HEAD %v; tree %v", repo["project_id"], repo["worktree_id"], repo["head_oid"], repo["tree_oid"]))
-		lines = append(lines, fmt.Sprintf("    Repository capture: %v; base %v; dirty %v; dirty digest %v", repo["capture_source"], repo["base_oid"], repo["dirty"], repo["dirty_digest"]))
+		head, _ := repo["head_oid"].(string)
+		dirty, _ := repo["dirty"].(bool)
+		lines = append(lines, "    Repository: "+repositoryHumanSummary(head, dirty))
 		counts := map[string]int{}
 		for _, finding := range p23HumanSlice(item["findings"]) {
 			counts[fmt.Sprint(p23HumanMap(finding)["severity"])]++

@@ -17,6 +17,13 @@ func writeRunRecoveryHuman(cmd *cobra.Command, result workflow.RunRecoveryResult
 
 func writeResumeHuman(cmd *cobra.Command, resume workflow.Resume, context workflow.RecoveryReadContext) error {
 	lines := resumeContextHumanLines(resume)
+	if resume.Run != nil {
+		relation, err := repositoryHumanRelation(cmd, resume.Run.StartRepository, resume.Repository)
+		if err != nil {
+			return err
+		}
+		lines = append(lines, "  Worktree comparison: "+relation)
+	}
 	lines = append(lines, recoveryLocalContextLines(context, resume.Run != nil && resume.Run.Status == "active")...)
 	if context.Import != nil {
 		lines = append(lines, livenessHumanLines(context)...)
@@ -30,11 +37,17 @@ func writeResumeHuman(cmd *cobra.Command, resume workflow.Resume, context workfl
 	}
 	if len(resume.Stops)+len(resume.Attention) > 0 {
 		lines = append(lines, "", "Blockers and attention")
+		known := map[string]workflow.Stop{}
 		for _, stop := range resume.Stops {
+			known[stop.ID] = stop
 			lines = append(lines, stopHumanDescription(stop))
 		}
 		for _, attention := range resume.Attention {
-			lines = append(lines, fmt.Sprintf("Attention %s: %s; %s; linked Stops: %s", attention.ID, attention.Status, attention.Code, strings.Join(attention.StopIDs, ", ")))
+			description, err := attentionHumanDescription(cmd, attention, known)
+			if err != nil {
+				return err
+			}
+			lines = append(lines, description)
 		}
 	}
 	lines = append(lines, resumeCompletionHumanLines(resume)...)
@@ -108,13 +121,9 @@ func resumeContextHumanLines(resume workflow.Resume) []string {
 	} else {
 		lines = append(lines, "", "Current Claim: none.")
 	}
-	lines = append(lines, "", "Repository",
-		"  Project: "+resume.Repository.ProjectID,
-		"  Current worktree: "+resume.Repository.WorktreeID,
-		"  HEAD: "+resume.Repository.HeadOID,
-		fmt.Sprintf("  Uncommitted changes: %t", resume.Repository.Dirty))
+	lines = append(lines, "", "Repository", "  Current repository: "+repositoryHumanSummary(resume.Repository.HeadOID, resume.Repository.Dirty))
 	if resume.Run != nil {
-		lines = append(lines, "  Run's recorded worktree: "+resume.Run.StartRepository.WorktreeID)
+		lines = append(lines, "  Recorded repository: "+repositoryHumanSummary(resume.Run.StartRepository.HeadOID, resume.Run.StartRepository.Dirty))
 	}
 	return lines
 }

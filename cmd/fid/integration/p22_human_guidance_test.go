@@ -25,7 +25,7 @@ func TestP22HumanGuidance(t *testing.T) {
 		imported.workspace = target
 		before := p21JournalEventCount(t, target)
 		p22AssertGuidanceOutput(t, &imported, []string{"resume", a.issueID}, "Imported project", a.projectID, target, "preserved", "Before continuing work here", "run.observe", "run.inspect", "does not grant mutation authority")
-		p22AssertGuidanceOutput(t, &imported, []string{"run", "inspect", a.runID}, "Historical liveness", "fresh destination", "Recorded worktree", "Current worktree")
+		p22AssertGuidanceOutput(t, &imported, []string{"run", "inspect", a.runID}, "Historical liveness", "fresh destination", "Recorded repository", "Current repository", "same worktree")
 		if after := p21JournalEventCount(t, target); after != before {
 			t.Errorf("Human reads appended Events: %d -> %d", before, after)
 		}

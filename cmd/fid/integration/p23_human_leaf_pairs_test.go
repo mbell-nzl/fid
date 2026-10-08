@@ -224,8 +224,7 @@ func p23LeafFactLines(t *testing.T, kind string, item map[string]any) []string {
 			fmt.Sprintf("    Issue: %v; Envelope: %v revision %v", item["issue_id"], item["envelope_id"], item["envelope_revision"]),
 			fmt.Sprintf("    Run: %v; Reviewer: %v; Profile: %v", item["run_id"], item["actor_id"], item["profile"]),
 			fmt.Sprintf("    Verdict: %v; Independence: %v", item["verdict"], item["independence"]),
-			fmt.Sprintf("    Repository: project %v; worktree %v; HEAD %v; tree %v", repo["project_id"], repo["worktree_id"], repo["head_oid"], repo["tree_oid"]),
-			fmt.Sprintf("    Repository capture: %v; base %v; dirty %v; dirty digest %v", repo["capture_source"], repo["base_oid"], repo["dirty"], repo["dirty_digest"]),
+			fmt.Sprintf("    Repository: HEAD %.12s; %s", repo["head_oid"], map[bool]string{false: "clean", true: "dirty"}[repo["dirty"].(bool)]),
 			fmt.Sprintf("    Findings by severity: blocker %d; major %d; minor %d; nit %d", counts["blocker"], counts["major"], counts["minor"], counts["nit"]))
 		for _, raw := range findings {
 			lines = append(lines, p23LeafFactLines(t, "finding", raw.(map[string]any))...)
