@@ -899,8 +899,8 @@ Fresh recorded package wall times: cmd/fid 484.734s; internal/workflow 116.440s;
 
 ## Commit hash
 
-- Pending commit
+- `d11bec713c470596131190c1ca9c33274fd6133c`
 
 ## Commit subject
 
-- Pending commit
+- `fix(cli): complete task 10 root-flag failure mapping and corpus`
