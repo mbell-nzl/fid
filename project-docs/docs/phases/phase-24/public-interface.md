@@ -13,6 +13,8 @@
 > (`activity.list`).
 > DEC-286 clarifies section 9 for a root flag that a leaf's row does not
 > accept (`export import --project`).
+> DEC-287 clarifies section 10: `run.inspect` keeps its refusal of a
+> plain copy, so its comparison line only says `same worktree`.
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -351,6 +353,12 @@ next: <resolving action>                 # only for the codes in the next-table 
   `same worktree` or `different worktree`. No Human view prints `worktree_id`,
   `tree_oid`, `dirty_digest`, `capture_source` or a nil marker. JSON is
   unchanged.
+  A view whose producer refuses a plain copy keeps that refusal (section 2).
+  `run.inspect` refuses a worktree other than the Run's recorded one, unless
+  an import binding matches, with Phase 22 `recovery-state-conflict`
+  (`repository identity changed`, exit 4). So its comparison line only says
+  `same worktree`. `resume` shows `different worktree` for a plain copy.
+  The exact rows are in DEC-287 clause 2.
 - **A6.** Keep each view's `Purpose:` line. Each section that lists Human
   Outcomes, Concerns or Deviations prints its judgment disclaimer exactly
   once, before the items. Items carry none. An empty section prints `none`

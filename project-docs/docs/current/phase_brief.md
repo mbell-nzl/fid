@@ -1,4 +1,4 @@
-# Phase Brief - Phase 24 (executing; Task 10 recovery under DEC-286)
+# Phase Brief - Phase 24 (executing; Task 11 recovery under DEC-287)
 
 ## Phase Goal
 
@@ -11,32 +11,30 @@ expectations a check uses. Request digests cover the input as written.
 
 ## Status
 
-**Executing on branch `phase-24`.** Tasks 1-9a are complete. Every QA
+**Executing on branch `phase-24`.** Tasks 1-10 are complete. Every QA
 window so far has passed: A (review-2), B (review-4 re-review), C (review-6
-re-review, run late under DEC-284) and D1 (review-8 re-review). Task 10 is in
-recovery. Its checkpoints are `6607143` (implementation) and `e0495b5`
-(report). The ledger is `STOPPED` at the 2026-10-08 05:24 STOP
-(TRG-24-011, ESC-24-005).
+re-review, run late under DEC-284) and D1 (review-8 re-review). Task 10
+closed at `a6b6203` under DEC-285/286. Task 11 is in recovery. Its
+checkpoints are `ab05e49` (implementation) and `9ce8896` (report). The
+ledger is `STOPPED` at the 2026-10-09 08:55 STOP (TRG-24-012, ESC-24-006).
 
-DEC-285 closed ESC-24-004 (`activity.list` uses the retained-read mapper);
-its six built-binary pairs are green at `e0495b5`.
-
-**DEC-286 (2026-10-09)** closes ESC-24-005. `export import --project`
-printed raw text and exited 7. As a Phase 21 section 2 forbidden flag it
-now returns `invalid-argument`/2 (`export.import`; argument and value
-`--project`; task 9a's allowed list). Clause 2 has the exact bytes. Task
-10 gains `root.go`, a pure `canonical_request.go` extraction and three
-test files. Recovery: `task-10:public-interface:unavailable-root-flag-failure-mapping`,
+**DEC-287 (2026-10-09)** closes ESC-24-006. VAL-041 asked plain-copy
+`run inspect` to print `different worktree`. Its Phase 22 refusal
+(`recovery-state-conflict`, exit 4) is kept by contract section 2, so it
+stays, unchanged in both modes. `resume` proves the plain-copy state. The
+one fixture row `<state>-different-run.inspect` asserts the exact refusal
+pair (clause 2). No product source, path or command changes. Recovery:
+`task-11:public-interface:plain-copy-run-inspect-repository-view`,
 attempt 2, `in-scope-implementation`, `0/2`.
 
 **Next:**
 
-1. The Phase Runner appends the DEC-286 clause 8 RUN-RESUME and
-   TASK-RECOVERY task-10. Each must confirm
-   `APPEND_CONFIRMED state=REPAIR_PENDING`. It then dispatches the Task 10
-   continuation.
-2. After `TASK task-10 COMPLETE`: task 11, then window D2 (tasks 10-11,
-   including the DEC-285/286 rows) and the Human walkthrough.
+1. The Phase Runner appends the DEC-287 clause 7 RUN-RESUME and
+   TASK-RECOVERY task-11. Each must confirm
+   `APPEND_CONFIRMED state=REPAIR_PENDING`. It then dispatches the Task 11
+   continuation (six commands).
+2. After `TASK task-11 COMPLETE`: window D2 (tasks 10-11, including the
+   DEC-285/286/287 rows) and the Human walkthrough.
 
 ## Operating Mode
 
@@ -49,7 +47,7 @@ Human checklist's "take control" scenario is the Human run.
 ## Authority
 
 - Contract: `../phases/phase-24/public-interface.md` (ACCEPTED, DEC-277;
-  clarified by DEC-278/280/282/285/286; D6 decided by DEC-281).
+  clarified by DEC-278/280/282/285/286/287; D6 decided by DEC-281).
 - Inventory: `../phases/phase-24/input-inventory.md` (R1-R20). Every task
   reruns its registry commands.
 - Decisions: DEC-272 (scope), DEC-273 (real-worktree run and gate checks),
@@ -60,7 +58,7 @@ Human checklist's "take control" scenario is the Human run.
   DEC-282 (QA recheck corrections), DEC-283 (Task 6 resume reconciliation),
   DEC-284 (Task 9 correcting TRIAGE; late window C), DEC-285 (`activity.list`
   failure mapping; Task 10 caller scope), DEC-286 (root-flag refusal
-  mapping). See
+  mapping), DEC-287 (plain-copy `run.inspect` keeps its refusal). See
   `../phases/phase-24/decisions.md`.
 
 ## Task Index
@@ -77,8 +75,8 @@ Human checklist's "take control" scenario is the Human run.
 | 8 | Gate run and Evidence leaves; real freshness (DEC-273) | Complete (window C PASS) | 7 |
 | 9 | Activation descriptors; whole-tree input and help conformance | Complete (window D1 PASS) | 3-8 |
 | 9a | Grammar failures and unknown commands across the live tree (DEC-280) | Complete (window D1 PASS) | 9 |
-| 10 | Human failure lines in every family; generic-fallback messages (DEC-281) | Recovery attempt 2 (DEC-286) | 9a |
-| 11 | Readable Stop, Attention and repository lines; Human fixture generator | Pending | 10 |
+| 10 | Human failure lines in every family; generic-fallback messages (DEC-281) | Complete (`a6b6203`) | 9a |
+| 11 | Readable Stop, Attention and repository lines; Human fixture generator | Recovery attempt 2 (DEC-287) | 10 |
 | 12 | Concern, Deviation and Human Outcome `get` leaves (DEC-274) | Pending | 4, 10 |
 | 13 | Judgment disclaimers once per section; recorded reasoning shown | Pending | 11, 12 |
 | 14 | Human-takes-control journey and phase conformance | Pending | 1-13, 9a |
@@ -134,8 +132,8 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
   Tasks 1 and 2 run the 100k benchmark (VAL-005).
 - **Breadth:** tasks 2, 9, 9a and 10 touch every family or the whole tree.
   Their corpora are enumerated from registries, not hand-picked.
-- **Package time:** `cmd/fid` takes 330.8 s (55% of 600 s). Tasks 3-10 add
-  corpora there, so reports watch the 480 s warning.
+- **Package time:** `cmd/fid` took 484.7 s at Task 10 close, above the
+  480 s warning (budget 600 s). Task 11 adds corpora there; reports watch it.
 - **Scratch space:** `/tmp` is a 3.9 GB tmpfs with 0.7 GB free at DEC-280.
   The QA refresh measured 1.2 GB. Most of the space is held by other
   projects' directories. A gate can fail for environmental reasons
@@ -143,5 +141,5 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 
 ## Next Planning Checkpoint
 
-Task 10 completes under DEC-286. Then task 11, window D2 and the Human
+Task 11 completes under DEC-287. Then window D2 and the Human
 walkthrough. Phase 25 "Parallel and evolving work" follows Phase 24.

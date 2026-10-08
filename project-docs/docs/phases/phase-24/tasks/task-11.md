@@ -35,8 +35,10 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   `HEAD <12 hex>` with `clean` or `dirty`. Recorded-versus-current
   comparisons say `same worktree` or `different worktree`, using the task 6
   predicate. A plain copy read with `--repository <copy>` is a different
-  worktree. No Human view prints `worktree_id`, `tree_oid`, `dirty_digest`,
-  `capture_source` or a nil marker.
+  worktree: `resume` shows it. `run.inspect` keeps its Phase 22 refusal of
+  a plain copy (contract section 2), so its comparison line only says
+  `same worktree` (DEC-287). No Human view prints `worktree_id`,
+  `tree_oid`, `dirty_digest`, `capture_source` or a nil marker.
 - Labelled sections and `Purpose:` lines stay (DEC-219 pattern).
 - **Human fixture generator (DEC-278, R-14).** Add `TestP24HumanFixtures`
   (tagged), following `TestP23HumanFixtures`:
@@ -66,6 +68,35 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - Human fixtures in ordinary and tagged suites, including
   `TestP23HumanFixtures`: convergence with provenance
 
+### DEC-287 Amendment (plain-copy `run.inspect`)
+
+- `run.inspect` refuses a worktree other than the Run's recorded one,
+  unless an import binding matches. This is its Phase 22 behaviour, and
+  contract section 2 keeps it. For a plain copy, clean or dirty, both modes
+  exit 4 with empty stdout (DEC-287 clause 2):
+  - JSON: `recovery-state-conflict`, category `conflict`, message
+    `recovery state conflict`, details
+    `{observation_digest:null, paths:[], reasons:["repository identity changed"], run_id:<run>}`,
+    subject the Run, operation `run.inspect`.
+  - Human: `error: recovery state conflict`, then
+    `reason: recovery-state-conflict; observation_digest=null, paths=, reasons=repository identity changed, run_id=<run>`.
+    There is no `blocked by:` or `next:` line, and no repository view line.
+- In `p24_human_fixtures_test.go`, only `<state>-different-run.inspect`
+  changes its expectation: from exit 0 and `different worktree` to that
+  refusal, with code `recovery-state-conflict` and expected exit 4. Its
+  Human stderr must equal `p24ExpectedFailureText` of its JSON failure.
+  Keep the row's name, both states, every other row, and the manifest's
+  five denial names and 28 view names. `<state>-different-resume` keeps
+  `different worktree`. `<state>-same-run.inspect` keeps `same worktree`.
+- Do not edit `InspectRun`, `reconcileRunRepository`,
+  `reconcileRepository`, `importedDestinationBinding`, `SameWorktree`, the
+  `recovery-state-conflict` mapping or the section 9 renderer. Do not
+  substitute an import for the copy, relabel it, or remove the row. No new
+  path is added; the six commands are unchanged and already execute the
+  file.
+- Recovery identity: `task-11:public-interface:plain-copy-run-inspect-repository-view`
+  at attempt 2 (DEC-287 clause 6).
+
 ### Files To Read For Context
 
 - `project-docs/docs/phases/phase-24/public-interface.md` section 10
@@ -89,10 +120,12 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   after-the-fact step. Resolved Stops print their resolution Event and no
   `Next:`. No raw-JSON `{` appears. (VAL-040)
 - [ ] Clean and dirty fixtures across every R11 view print only the short
-  repository form, and the forbidden tokens are absent. Recorded-versus-
-  current views print `same worktree` for the same root and
-  `different worktree` for a plain copy read with `--repository <copy>`.
-  (VAL-041)
+  repository form, and the forbidden tokens are absent. `resume` prints
+  `same worktree` for the same root and `different worktree` for a plain
+  copy read with `--repository <copy>`. `run.inspect` prints
+  `same worktree` for the same root. For the plain copy it returns the
+  DEC-287 clause 2 refusal in both modes: exit 4, empty stdout, and no
+  repository view. (VAL-041)
 - [ ] `TestP24HumanFixtures` passes under the tagged gate with the variable
   unset, and its manifest lists the five denials and four views above.
   (VAL-054, VAL-055 preparation)

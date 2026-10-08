@@ -1,5 +1,40 @@
 # Phase 24 Escalations
 
+## ESC-24-006 - Plain-copy run.inspect success conflicts with retained repository refusal
+
+- **Raised:** 2026-10-09 by TL-Lite in TRG-24-012 (BLOCK); ledger STOP
+  2026-10-09 08:55.
+- **Protected category:** protected public-interface/contract decision;
+  specification contradiction.
+- **Originating task:** task-11.
+- **Trigger signature:** task-11:public-interface:plain-copy-run-inspect-repository-view
+  (attempt 1). The separate session-continuation recovery
+  (`task-11:session-continuation:developer-session-interrupted`, attempt 1)
+  is unchanged.
+- **Condition:** Task 11 and VAL-041 required every recorded-versus-current
+  Human view, `run.inspect` included, to print `different worktree` for a
+  plain copy. Contract section 2 keeps `run.inspect`'s Phase 21-23
+  behaviour, and section 10 keeps JSON unchanged. Built-binary plain-copy
+  `run inspect --repository <copy>` refused in both modes with
+  `recovery-state-conflict` (`repository identity changed`, exit 4).
+  `InspectRun` reconciles first (`run_inspect.go:45`;
+  `reconciliation.go:53`; `ac5e6f9`, phase-22/task-4). Both focused
+  `TestP24HumanFixtures` runs failed (exit 1). The Task 11 report at
+  `9ce8896` had report-lint `OUTCOME BLOCKED` (exit 0).
+- **Status:** RESOLVED 2026-10-09 by DEC-287 (decision). Option A: keep the
+  accepted refusal, with no behaviour or JSON change. Under accepted
+  contracts, a successful `run.inspect` only ever says `same worktree`.
+  VAL-041 proves `different worktree` on `resume`. The
+  `<state>-different-run.inspect` fixture row asserts the exact clause 2
+  refusal pair (exit 4). Option B (inspect a plain copy) is CF-046(c) and
+  CF-026a. Tech Lead dry runs confirm that the clause 7 RUN-RESUME and
+  TASK-RECOVERY each append `APPEND_CONFIRMED state=REPAIR_PENDING`. No
+  further Tech Lead or Human input is needed unless a clause 7 append is
+  rejected as written.
+- **Links:** [DEC-287](decisions.md); [TRG-24-012](triage-log.md);
+  [run ledger](run-ledger.md); [Task 11 report](tasks/task-11-done.md);
+  [Task 11 spec](tasks/task-11.md).
+
 ## ESC-24-005 - Root-flag refusal needs public-interface mapping authority
 
 - **Raised:** 2026-10-08 by TL-Lite in TRG-24-011 (BLOCK); ledger STOP

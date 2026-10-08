@@ -2,16 +2,18 @@
 
 Updated 2026-10-09. **Phase 24 "Operating experience and input
 convergence" is executing** (Heavy mode, DEC-277; 15 tasks with 9a). Tasks
-1-9a are complete. QA windows A, B, C (late, DEC-284) and D1 have passed.
-Task 10 is in recovery: implementation `6607143`, report `e0495b5`. The
-ledger is `STOPPED` at TRG-24-011/ESC-24-005.
+1-10 are complete (Task 10 at `a6b6203`). QA windows A, B, C (late,
+DEC-284) and D1 have passed. Task 11 is in recovery: implementation
+`ab05e49`, report `9ce8896`. The ledger is `STOPPED` at
+TRG-24-012/ESC-24-006.
 
-DEC-286 closes ESC-24-005. `export import --project` printed raw text and
-exited 7 in both modes. It is a Phase 21 section 2 forbidden flag, so it
-now returns `invalid-argument`/2 with the flag spelling and task 9a's
-allowed list. Task 10 gains `root.go` and a pure `canonical_request.go`
-extraction; `sql` and `journal inspect` keep their raw refusal. Recovery
-continues at attempt 2 under TRG-24-011's trigger. Earlier: DEC-285
+DEC-287 closes ESC-24-006. VAL-041 asked plain-copy `run inspect` to print
+`different worktree`, but contract section 2 keeps its Phase 22 refusal
+(`recovery-state-conflict`, exit 4). The refusal stays, unchanged in both
+modes. `resume` proves the plain-copy state, and the one fixture row
+asserts the exact refusal pair. No product source, path or command
+changes. Recovery continues at attempt 2 under TRG-24-012's trigger.
+Earlier: DEC-286 (root-flag refusal, ESC-24-005), DEC-285
 (`activity.list`, ESC-24-004), DEC-284 (Task 9, ESC-24-003) and DEC-283
 (Task 6, ESC-24-001/002). Planning history: DEC-278..282. Phase 23 closed
 under DEC-271 (PR #25, `a46ec77`).
@@ -25,16 +27,16 @@ under DEC-271 (PR #25, `a46ec77`).
 
 ## Next
 
-1. Phase Runner: DEC-286 clause 8. Append the STOP-resume RUN-RESUME and
-   TASK-RECOVERY task-10 (attempt 2), then dispatch the Task 10
+1. Phase Runner: DEC-287 clause 7. Append the STOP-resume RUN-RESUME and
+   TASK-RECOVERY task-11 (attempt 2), then dispatch the Task 11
    continuation.
-2. Task 11, then QA window D2 (tasks 10-11) and the Human walkthrough. Then
-   tasks 12-14 and window E.
+2. QA window D2 (tasks 10-11) and the Human walkthrough. Then tasks 12-14
+   and window E.
 3. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and
    baseline convergence" follow.
 
 A deep workflow retrospective is recommended under CF-036/039 (see Phase 23
-workflow notes). Add the DEC-283/284/285/286 workflow notes to it. It is separate from
+workflow notes). Add the DEC-283..287 workflow notes to it. It is separate from
 Phase 24.
 
 ## Earlier phases

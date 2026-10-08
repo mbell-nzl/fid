@@ -1326,6 +1326,226 @@
   section 1 and the `export.import` row; task 9a class table; DEC-175,
   DEC-280, DEC-282, DEC-283, DEC-285.
 
+### DEC-287: A plain copy keeps `run.inspect`'s retained refusal; VAL-041 proves `different worktree` on `resume`. Closes ESC-24-006
+
+- **Date:** 2026-10-09. Tech Lead ESC resolution on the Human's instruction
+  to resolve ESC-24-006. This decision clarifies accepted text. It changes
+  no behaviour, output, code, exit or JSON in either mode. It corrects the
+  VAL-041 method and the Task 11 binding constraint and acceptance
+  criterion, which required a successful plain-copy view from every
+  recorded-versus-current view, so that they agree with contract section 2.
+  The Human may override by DEC before Task 11 closes (rejected option B,
+  clause 1).
+- **Context:**
+  - TRG-24-012 (BLOCK) and the 2026-10-09 08:55 STOP. Task 11 checkpoints:
+    `ab05e49` (implementation) and `9ce8896` (report, report-lint
+    `OUTCOME BLOCKED`, exit 0). The tagged generator row
+    `clean-different-run.inspect` expects exit 0 and `different worktree`.
+    Both focused `TestP24HumanFixtures` runs fail (exit 1) at that row.
+  - **Tech Lead reproduction** with the retained binary
+    `.cache/task-11-blocker-evidence/fixtures-1289185125/fid`, project
+    `clean-same`, Run `RUN-d5c15a`. With `--repository` set to the same
+    root, both modes exit 0 and Human prints
+    `Worktree comparison: same worktree`. With `--repository` set to the
+    plain copy `clean-different`, both modes exit 4, stdout is empty, and
+    stderr carries the clause 2 bytes.
+  - **Source.** `InspectRun` reconciles before composing its result
+    (`internal/workflow/run_inspect.go:45`). `reconcileRunRepository`
+    (`import_binding.go:11`) takes the imported-destination path only with
+    a matching import binding. Otherwise `reconcileRepository` refuses a
+    changed `WorktreeID` with `repository identity changed`
+    (`reconciliation.go:53`; `ac5e6f9`, phase-22/task-4). So a successful
+    `run.inspect` always compares the recorded worktree or a bound
+    destination, and `SameWorktree` accepts both. Its view can only say
+    `same worktree`. Under accepted contracts, `different worktree` is
+    unreachable in `run.inspect`.
+  - **What is accepted.**
+    (a) Contract section 2 names `run.inspect` among the leaves that keep
+    their Phase 21-23 behaviour.
+    (b) Phase 22 `contracts.md` section 3: `run.inspect` is read-only and
+    compares the observation with Run start or the latest checkpoint.
+    "Changed repository identity" is among the states that "do not
+    qualify". The delivered refusal, `recovery-state-conflict` (category
+    `conflict`, exit 4) with `repository identity changed`, dates from
+    `ac5e6f9` (phase-22/task-4). Phase 22 closed with it in place.
+    (c) Contract section 10 and Task 11: JSON is unchanged. Section 10 says
+    what a comparison line says when a view renders. It does not require a
+    view whose producer refuses a plain copy to render one.
+    (d) DEC-278 R-11 disposed "Same-worktree and plain-copy fixtures". The
+    QA plan's R-11 proposal offered
+    "`fid resume --repository <copy>` or `fid run inspect --repository <copy>`".
+    `resume` renders a plain copy: the Task 11 report records Human
+    `different worktree`, exit 0. So the plain-copy state is provable on
+    `resume`.
+    (e) CF-046(b) and CF-026a already leave `run.inspect`'s repository
+    behaviour, and inspection beyond accepted recovery, to Phase 25 and
+    future design.
+  - **Cause.** The VAL-041 method and Task 11 (DEC-277/278) generalized
+    R-11's "either leaf" proposal to every recorded-versus-current view
+    without checking that `run.inspect` refuses a plain copy. This is a
+    Tech Lead planning defect. The Developer and TL-Lite were right not
+    to choose.
+- **Decision:**
+  1. **ESC-24-006 closed; option A.** Keep the accepted behaviour. No
+     Human public-interface choice is needed, because nothing changes in
+     either mode. Rejected option B: make `run.inspect` render a plain copy,
+     for example by skipping reconciliation or by returning a
+     non-qualifying comparison. B turns an accepted exit-4 failure into a
+     success, so it changes JSON (section 10) and reverses section 2. It
+     also needs a result shape for a non-qualifying reconciliation that
+     Phase 22 does not define. That is CF-026a and CF-046 work for Phase 25
+     parallel worktrees, and it needs Human approval.
+  2. **Plain-copy `run.inspect` outcome (unchanged Phase 22 refusal).** It
+     applies when the observed worktree (`--repository`, else the current
+     worktree) differs from the Run's recorded base worktree and no import
+     binding matches, clean or dirty. Both modes exit 4 with empty stdout and append
+     no Event. Exact JSON (stderr):
+
+     ```json
+     {"contract_version":"fid-cli.v1","error":{"category":"conflict","code":"recovery-state-conflict","details":{"observation_digest":null,"paths":[],"reasons":["repository identity changed"],"run_id":"<run-id>"},"message":"recovery state conflict","retryable":false,"subject":{"id":"<run-id>","type":"run"}},"ok":false,"operation":"run.inspect"}
+     ```
+
+     Exact Human (stderr), the live Task 10 section 9 rendering of that
+     failure:
+
+     ```text
+     error: recovery state conflict
+     reason: recovery-state-conflict; observation_digest=null, paths=, reasons=repository identity changed, run_id=<run-id>
+     ```
+
+     There is no `blocked by:` or `next:` line, and no repository view line
+     (`Recorded repository:`, `Current repository:` or
+     `Worktree comparison:`). The identity check runs before the base,
+     ancestry, unmerged and operation checks, so a dirty plain copy gives
+     the same bytes with its own Run ID.
+  3. **VAL-041 amended.**
+     - Method: every Human view that shows a repository (inventory R11),
+       with clean and dirty fixtures. `resume` gets a same-worktree fixture
+       and a plain-copy fixture (`--repository <copy>`). `run.inspect` gets a
+       same-root fixture and a plain-copy refusal row.
+     - Pass: shows `HEAD <12 hex>` with `clean` or `dirty`. `resume` says
+       `same worktree` for the same root and `different worktree` for the
+       plain copy. `run.inspect` says `same worktree` for the same root. For
+       the plain copy it returns the clause 2 refusal in both modes. No
+       forbidden text appears.
+     - Fail: any forbidden text, a wrong state, or a plain-copy
+       `run.inspect` that succeeds or differs from clause 2.
+     - Notes: JSON is unchanged. A successful `run.inspect` only ever says
+       `same worktree` (DEC-287); different-worktree inspection is
+       CF-046(c).
+  4. **Task 11 amended; preserved assertions.** No row is deleted or
+     renamed, and both states (clean, dirty) are kept. In
+     `cmd/fid/integration/p24_human_fixtures_test.go`, only
+     `<state>-different-run.inspect` changes its expectation, from exit 0
+     and `different worktree` to the clause 2 refusal. The row has code
+     `recovery-state-conflict` and expected exit 4. Its Human stderr equals
+     the shared-renderer derivation of its JSON failure
+     (`p24ExpectedFailureText`) and the clause 2 bytes with that fixture's
+     Run ID. Its details carry `reasons:["repository identity changed"]`
+     and its subject is that Run. Human stdout stays empty. These stay
+     unchanged:
+     - `<state>-different-resume`: `different worktree`, the short form and
+       the forbidden-token scan.
+     - `<state>-same-run.inspect` and `<state>-same-resume`:
+       `same worktree`.
+     - Every other row.
+     - The manifest check's five denial names and 28 view names.
+     - The imported-destination `same worktree` assertion in
+       `p22_human_guidance_test.go`.
+     `TestP24RepositoryHumanViews` may keep its synthetic `run.inspect`
+     different-worktree row as renderer coverage. It is not VAL-041
+     plain-copy evidence.
+  5. **Scope.** Ordinary `task-11.md` scope, with no new path. This
+     decision changes only `p24_human_fixtures_test.go`, Task 11's new
+     file, which the tagged gate executes (DEC-167/173). No product source
+     changes for this row. Forbidden:
+     - edits to `InspectRun`, `reconcileRunRepository`,
+       `reconcileRepository`, `importedDestinationBinding` or
+       `SameWorktree`;
+     - edits to the `recovery-state-conflict` mapping or the section 9
+       renderer;
+     - `run_inspect_human.go` changes beyond Task 11's repository lines;
+     - substituting an import for the copy, relabelling it, or removing the
+       row.
+     Task 11's six commands are unchanged. The 08:45 ledger prose says
+     "seven"; Task 11 has six.
+  6. **Recovery identity** (STOP resume; DEC-283 clause 2, DEC-286
+     clause 7). `task-11`,
+     `task-11:public-interface:plain-copy-run-inspect-repository-view`,
+     attempt `2`, `in-scope-implementation`, `task-scope`, `0/2`. Attempt 1
+     is the replacement continuation dispatched after the 08:46
+     `INTERRUPTED` REPAIR. It returned BLOCKED at `9ce8896` after material
+     progress (renderers, Stop corpus, five denials).
+     `task-11:session-continuation:developer-session-interrupted` attempt 1
+     and its 08:45 and 08:46 entries stay in history unchanged.
+  7. **Ledger sequence** (Runner, transactional append). Each step must
+     return `APPEND_CONFIRMED state=REPAIR_PENDING` with observed
+     `exit_code: 0`, and each must be appended before dispatch.
+     (a) **RUN-RESUME** (schema v2 STOP resume). Set
+     `Prior run/session or STOP: 2026-10-09 08:55 STOP / TRG-24-012 / ESC-24-006`,
+     `Governing TRG: TRG-24-012`, `Governing ESC: ESC-24-006`, the trigger
+     and attempt from clause 6, and `Resolution authority: DEC-287`. Set
+     `Continuing task: task-11` and
+     `Next recovery: task-11 | in-scope-implementation | task-scope | task-11:public-interface:plain-copy-run-inspect-repository-view | 2`.
+     `Checkpoint` names the post-DEC-287 phase HEAD and the preserved
+     `ab05e49` (implementation) and `9ce8896` (report) checkpoints.
+     (b) **TASK-RECOVERY task-11**, with the same tuple and `0/2`.
+     `Source: TRG-24-012 / ESC-24-006 / DEC-287; project-docs/docs/phases/phase-24/tasks/task-11-done.md`.
+     `Repair authority: TRG-24-012 / DEC-287`.
+     `Triage disposition: N/A`. Control fields and base are `N/A`.
+     `Originating report: N/A`. `Exact verification: N/A`.
+     `Allowed files: ordinary task-11.md scope`. `Forbidden changes` is
+     the 08:45 TASK-RECOVERY list, plus clause 5's list. The one
+     validation-assertion change permitted is the clause 4 row. Dispatch
+     the same-task Developer continuation only after (b) is appended. Its
+     later REPAIR uses the same trigger and attempt.
+  8. **Verification.** The Tech Lead dry-ran the sequence on a scratch copy
+     of the phase files (with this decision) and the unchanged verifier.
+     The live ledger validates `VALID state=STOPPED`. (a) and (b) each
+     returned `APPEND_CONFIRMED state=REPAIR_PENDING` (exit 0), and the
+     ledger then validates `VALID state=REPAIR_PENDING`. Each negative
+     guard below returned exit 1 with the scratch ledger byte-unchanged:
+
+     | Candidate | Diagnostic |
+     |---|---|
+     | RUN-RESUME at attempt 1 | `RUN-RESUME Attempt count must increment its governing TRIAGE` |
+     | RUN-RESUME with the session-continuation trigger | `RUN-RESUME Trigger signature does not match its governing TRIAGE` |
+     | RUN-RESUME citing an unrecorded DEC-288 | `RUN-RESUME cites an unrecorded or malformed phase decision` |
+     | TASK-RECOVERY whose `Source` omits DEC-287 | `TASK-RECOVERY does not retain its RUN-RESUME decision authority`; `… typed RUN-RESUME resolution authority` |
+     | TASK-RECOVERY with the session-continuation trigger, attempt 1 | `TASK-RECOVERY does not preserve its RUN-RESUME checkpoint`; `… exact schema v2 RUN-RESUME recovery tuple` |
+     | TASK-RECOVERY with no RUN-RESUME | `continuing recovery must preserve task and Trigger signature` |
+
+     As under DEC-286, the verifier also accepted a RUN-RESUME citing
+     `Resolution authority: DEC-286`, because it checks only that the DEC
+     exists (CF-036). (a) must cite DEC-287 as written. If (a) or (b) is
+     rejected as written, that is new information. Return to the Tech
+     Lead, and never substitute field values.
+  9. **Unchanged.** TRG-24-012, the STOP, the Task 11 report, both focused
+     failures, the built-binary probes and the session-continuation
+     recovery stay as recorded. The rest of Task 11 is ordinary work under
+     its existing rules: the real `stop raise` corpus with qualifying
+     resolution Events, the dirty matrix, the manifest, retained Human
+     fixtures, the `06_DESIGN_PLAN_CLI.md` examples and the six commands in
+     order. Report-lint `OUTCOME COMPLETE` is still required. Window D2
+     (tasks 10-11, with the DEC-285/286 rows and this clause 2 pair), the
+     fixture regeneration at Task 11's close commit and the Human
+     walkthrough are not waived.
+- **Artifact/spec sync:** `public-interface.md` section 10 gains one
+  clarifying note. VAL-041 and the change log record clause 3.
+  `tasks/task-11.md` gains a DEC-287 amendment. `decisions_active.md`
+  CF-046 gains item (c). The ESC register, archive, brief and progress are
+  refreshed. There is no PRD, TRD, data model, glossary, inventory,
+  QA-plan, template, tool or prompt change.
+- **Workflow note for wrap-up:** when a VAL row requires a state for every
+  view of a class, check that each view's producer can reach that state
+  under the retained contracts. R-11 offered either leaf; planning
+  generalized it to both.
+- **Refs:** ESC-24-006; TRG-24-012; `run-ledger.md` 2026-10-09 08:45,
+  08:46, 08:55; `tasks/task-11-done.md` at `9ce8896`; contract sections 2
+  and 10; Phase 22 `contracts.md` section 3 and `public-interface.md`
+  `run.inspect` row; `qa/qa-plan.md` R-11; DEC-278 R-11; CF-026a; CF-046;
+  DEC-283, DEC-286.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.

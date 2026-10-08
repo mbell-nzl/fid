@@ -7,6 +7,13 @@ None.
 ## Recently resolved
 
 Phase 24, archived in [Phase 24 escalations](../phases/phase-24/tl-escalations.md):
+- ESC-24-006: Task 11/VAL-041 required plain-copy `run.inspect` to
+  render `different worktree`, but its retained Phase 22 refusal
+  (`recovery-state-conflict`, exit 4) is kept by contract section 2.
+  Resolved 2026-10-09 by DEC-287: the refusal stays, unchanged in both
+  modes. `resume` proves the plain-copy state, and the one fixture row
+  asserts the exact refusal. The Runner appends the clause 7 RUN-RESUME
+  and TASK-RECOVERY (attempt 2).
 - ESC-24-005: `export import --project` printed raw text and exited 7 in
   both modes, with no `fid-cli.v1` failure. Resolved 2026-10-09 by
   DEC-286: it is a Phase 21 section 2 forbidden flag, so it returns
