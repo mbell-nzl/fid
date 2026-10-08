@@ -1093,6 +1093,239 @@
   `contracts.md` sections 2.4, 6; Phase 21 `public-interface.md` sections
   1, 2, 4.1, 7; DEC-175, DEC-194, DEC-280, DEC-281, DEC-283.
 
+### DEC-286: A root flag a stable leaf does not accept is a Phase 21 section 2 grammar failure; `export import --project` adopts it. Closes ESC-24-005
+
+- **Date:** 2026-10-09. Tech Lead ESC resolution on the Human's instruction
+  "Resolve ESC-24-005". This decision clarifies accepted text. It adds no
+  failure code, detail shape or exit class, and it changes no success
+  output or existing JSON failure. One message is chosen (clause 3). The
+  Human may override that wording by DEC before Task 10 closes.
+  Precedents: DEC-285 (a leaf path with no `fid-cli.v1` failure has no
+  accepted exit to preserve), DEC-280 item 4 (task 9a's class table) and
+  DEC-175 (a latent defect first exposed by a task's new requirement
+  belongs to that task).
+- **Context:**
+  - TRG-24-011 (BLOCK) and the 2026-10-08 05:24 STOP. The Task 10 report
+    at `e0495b5` records built-binary
+    `fid [--json] --project <dir> export import missing.zip --repository <dir> --idempotency-key probe`.
+    In both modes it prints
+    `error: --project is not available for export import until its fid-cli.v1 transport is migrated`,
+    exits 7, leaves stdout empty and changes no file. Report-lint returns
+    `OUTCOME BLOCKED` (exit 23). The Tech Lead reproduced both modes on a
+    scratch build of `e0495b5`.
+  - **Source.** `rejectUnavailableRootFlags` (`cmd/fid/root.go:106-128`)
+    is the root `PersistentPreRunE`. For a leaf whose `rootFlagCapabilities`
+    entry disables a root flag that was set, it writes raw `error: …` and
+    returns an untyped error, which `cli.ExitCode` maps to 7. Cobra v1.10.2
+    runs it after flag parsing and the positional check, and before the
+    handler (`command.go:968,986`), so before any workspace read. Two kinds
+    of leaf reach it. (i) `sql` and `journal inspect` have no registry
+    entry, so both flags are refused. (ii) `export import` is registered
+    `{JSON: true}` by `5ec69e6` (phase-22/task-15). Every other stable
+    leaf is registered for both flags. So `export import --project` is the
+    only stable-leaf instance. The guard dates from `cd53c43`
+    (phase-20/task-2) as the temporary "not yet migrated" rule.
+  - **What is accepted.**
+    (a) Phase 21 section 2: "Missing required arguments/flags, forbidden or
+    unknown flags, extra arguments, mutually exclusive flag violations, and
+    malformed flag values return `invalid-argument` with the offending
+    spelling/value and the row's exact accepted alternatives in `allowed`;
+    they perform no read or write." Section 7 makes `invalid-argument`
+    invalid-input, not retryable, exit 2, subject null, with details
+    `{argument, value, allowed}`. The refusal itself is delivered Phase 22
+    behaviour. The Phase 22 `export.import` row names its target as
+    `--repository` and lists no `--project`, and the registry refuses it.
+    So `--project` is a forbidden flag on that leaf, and accepted text
+    fixes its code, category, retryable, exit, subject and detail shape.
+    (b) `export.import` is a `fid-cli.v1` leaf (Phase 22 section 1 and its
+    row), so the raw exit 7 is a Phase 21 section 1/7 nonconformance, as
+    `activity.list` was under DEC-285. No accepted exit or message exists
+    to preserve. "Until its transport is migrated" describes Phase 20
+    scaffolding; the transport was migrated in Phase 22.
+    (c) Task 9a's envelope rule gives a grammar failure the leaf's
+    operation ID (`export.import`). Its unknown-flag class sets `argument`
+    and `value` to the spelling, and `allowed` to the leaf's local long
+    flags, sorted, without `--help`, `--json` and `--project`. Live
+    `fid export import a.zip --bogus` returns
+    `allowed:["--idempotency-key","--repository"]`, the Phase 22 row's
+    two flags.
+    (d) Contract section 9 derives the Human lines from the JSON failure.
+    `export import` has no `--input`, so there is no `next:` line.
+  - **What was not determined.** Section 2's "spelling/value" does not say
+    which belongs in `value` for a recognized flag that carries a value.
+    Task 9a's class table has no row for a recognized but forbidden flag.
+    No accepted message exists. TRG-24-011 was right not to choose them.
+- **Decision:**
+  1. **ESC-24-005 closed.** The BLOCK was correct. The code, category,
+     retryable, exit, subject, detail shape and operation come from
+     accepted text (Context a-d). Clause 2 fixes the remaining values, and
+     section 9 gains one clarifying note. No code, detail shape, exit
+     class, renderer rule or success output changes.
+  2. **Mapping: a root flag that a stable leaf's row does not accept.**
+     This applies to every leaf except `sql` and `journal inspect`. Today
+     the only instance is `export import` with `--project`. It is a
+     grammar failure, a fifth class beside task 9a's table:
+
+     | Field | Value |
+     |---|---|
+     | `code` / `category` / `retryable` / exit | `invalid-argument` / `invalid-input` / `false` / 2 |
+     | `subject` | `null` |
+     | `operation` | the leaf's operation ID (task 9a): `export.import` |
+     | `details.argument` | the flag spelling: `--project` |
+     | `details.value` | the flag spelling: `--project`, as for task 9a's unknown flag. The supplied path is not echoed: the flag is what is refused, and Phase 21 section 7 bars unrelated absolute paths from details. |
+     | `details.allowed` | computed exactly as task 9a's unknown-flag class: the leaf's local long flags, sorted bytewise, without `--help`, `--json` and `--project`. For `export import`: `["--idempotency-key","--repository"]` |
+     | `message`, before the DEC-282 bounded rule | `--<flag> is not available for <command path without "fid ">`: `--project is not available for export import` |
+
+     Exact JSON failure (stderr; stdout empty; exit 2):
+
+     ```json
+     {"contract_version":"fid-cli.v1","error":{"category":"invalid-input","code":"invalid-argument","details":{"allowed":["--idempotency-key","--repository"],"argument":"--project","value":"--project"},"message":"--project is not available for export import","retryable":false,"subject":null},"ok":false,"operation":"export.import"}
+     ```
+
+     Exact Human failure (stderr; stdout empty; exit 2), from the shared
+     renderer with leaf `fid export import`:
+
+     ```text
+     error: --project is not available for export import
+     reason: invalid-argument; argument=--project, allowed=--idempotency-key|--repository
+     ```
+
+     JSON mode is the live `--json` value. The check keeps its position:
+     after flag parsing and the positional check, before the handler. No
+     workspace is read, so the failure is identical from a non-project
+     directory and with a nonexistent `--project` path. An unknown flag or
+     a wrong positional count still fails first, with its task 9a class. A
+     missing `--repository` or `--idempotency-key` is reported only when
+     `--project` is absent. Nothing is written.
+  3. **Message.** The Phase 20 clause "until its fid-cli.v1 transport is
+     migrated" is dropped because it is false for a `fid-cli.v1` leaf. The
+     kept stem is the detecting check's own text, as in task 9a's "missing
+     required flag" class. Messages are never control flow (Phase 21
+     section 7), so later rewording needs only a DEC.
+  4. **Unchanged.** `sql` and `journal inspect` keep their byte-identical
+     raw refusal and exit. They are outside `fid-cli.v1` (Phase 21 section
+     5), and Task 10 excludes them. Their retained assertions in
+     `root_flags_test.go` and `contract_surface_test.go`
+     (`assertLegacyLeafRejectsRootFlag`) stay unchanged. The
+     `rootFlagCapabilities` registry is unchanged, so `export import` still
+     refuses `--project`; this decision does not consider accepting it as a
+     target. `writeGrammarFailure`, `writeHumanFailure`, `genericFailure`,
+     `internal/cli` and the flag-domain declarations are not edited.
+  5. **Task 10 scope.** Task 10's One renderer requirement is the first to
+     expose this latent Phase 20 guard (DEC-175). Product changes:
+     - `cmd/fid/root.go` `rejectUnavailableRootFlags`: for any leaf other
+       than `sql` and `journal inspect`, return
+       `writeGrammarFailure(command, leafOperation(command), cli.CodeInvalidArgument, <clause 2 message>, <clause 2 details>)`.
+       The raw branch for the two diagnostics stays byte-identical.
+     - `cmd/fid/canonical_request.go`: pure extraction with no behaviour
+       change. The unknown-flag `allowed` computation in
+       `canonicalFlagError`, and the `sql`/`journal inspect` test in
+       `installLeafGrammar`, each move to one unexported helper. The
+       original caller and the root guard both call it. The task 9a corpus
+       in the ordinary race gate proves nothing else changed.
+
+     Tests. Each is new or Task 10's own, and no retained assertion
+     changes:
+     - `cmd/fid/root_flags_test.go`: add in-process clause 2 rows in both
+       modes. Include a non-project working directory, a nonexistent
+       `--project` path, and a check that the two diagnostics still print
+       their raw text. Existing tests in this file are unchanged.
+     - `cmd/fid/human_failure_caller_audit_test.go` (added by `6607143`,
+       phase-24/task-10): the `root.go` check may permit an `error: `
+       literal only in the branch that `sql` and `journal inspect` reach.
+       It must still fail on any other raw `error: ` text in `root.go`. A
+       negative control proves it, for example a parsed source fixture
+       whose stable-leaf branch writes raw text.
+     - `cmd/fid/integration/p24_retained_read_failure_test.go`
+       `TestP24UnavailableImportRootFlagFailurePair` (added by `6607143`):
+       assert the exact clause 2 JSON bytes and the exact two Human lines,
+       exit 2 in both modes, empty stdout and an unchanged filesystem. Keep
+       it separate from the valid `export.import --repository` fixture.
+
+     `gofmt -l cmd internal`, `golangci-lint run ./...`, the ordinary
+     race/coverage gate and the tagged integration gate already execute
+     every file above (DEC-167/173). The seven commands are unchanged.
+  6. **Evidence (VAL-036).** The built-binary pairing corpus gains the
+     clause 2 row in both modes. The report's R9 table lists the root guard
+     as a renderer caller beside the DEC-285 callers.
+  7. **Recovery identity** (STOP resume; DEC-283 clause 2, DEC-285 clause
+     7). The chain trigger moves to TRG-24-011's trigger at attempt 2:
+     `task-10`, `task-10:public-interface:unavailable-root-flag-failure-mapping`,
+     attempt `2`, `in-scope-implementation`, `task-scope`, `0/2`. Attempt 1
+     of this trigger is the DEC-285 continuation, which returned BLOCKED
+     at `e0495b5` after material progress (the six DEC-285 pairs went
+     green). The TRG-24-009 and TRG-24-010 triggers and the DEC-285
+     recovery stay in history.
+  8. **Ledger sequence** (Runner, transactional append). Each step must
+     return `APPEND_CONFIRMED state=REPAIR_PENDING` with observed
+     `exit_code: 0`, and each must be appended before dispatch.
+     (a) **RUN-RESUME** (schema v2 STOP resume). Set
+     `Prior run/session or STOP: 2026-10-08 05:24 STOP / TRG-24-011 / ESC-24-005`,
+     `Governing TRG: TRG-24-011`, `Governing ESC: ESC-24-005`, the trigger
+     and attempt from clause 7, and `Resolution authority: DEC-286`. Set
+     `Continuing task: task-10` and
+     `Next recovery: task-10 | in-scope-implementation | task-scope | task-10:public-interface:unavailable-root-flag-failure-mapping | 2`.
+     `Checkpoint` names the post-DEC-286 phase HEAD and the preserved
+     `6607143` (implementation) and `e0495b5` (report) checkpoints.
+     (b) **TASK-RECOVERY task-10**, with the same tuple and `0/2`.
+     `Source: TRG-24-011 / ESC-24-005 / DEC-286; project-docs/docs/phases/phase-24/tasks/task-10-done.md`.
+     `Repair authority: TRG-24-011 / DEC-286`.
+     `Triage disposition: N/A`. Control fields and base are `N/A`.
+     `Originating report: N/A`. `Exact verification: N/A`. Set
+     `Allowed files: ordinary task-10.md scope plus cmd/fid/activity.go (TRG-24-009), cmd/fid/stats.go,cmd/fid/issue_ac.go (DEC-285 clause 3), and cmd/fid/root.go,cmd/fid/canonical_request.go,cmd/fid/root_flags_test.go,cmd/fid/human_failure_caller_audit_test.go,cmd/fid/integration/p24_retained_read_failure_test.go (DEC-286 clause 5)`.
+     `Forbidden changes` is the 04:27 TASK-RECOVERY list, plus: no change
+     to the `rootFlagCapabilities` registry, to the `sql`/`journal inspect`
+     refusal bytes or their retained assertions, or to `writeGrammarFailure`
+     or `writeHumanFailure`, and no `canonical_request.go` change beyond the
+     clause 5 extraction. Dispatch the same-task Developer continuation only
+     after (b) is appended. Its later REPAIR uses the same trigger and
+     attempt.
+  9. **Verification.** The Tech Lead dry-ran the sequence on a scratch copy
+     of the phase files (with this decision) and the unchanged verifier.
+     The current ledger validates `VALID state=STOPPED`. (a) and (b) each
+     returned `APPEND_CONFIRMED state=REPAIR_PENDING` (exit 0), and the
+     ledger then validates `VALID state=REPAIR_PENDING`. Each negative
+     guard below returned exit 1 with the scratch ledger byte-unchanged:
+
+     | Candidate | Diagnostic |
+     |---|---|
+     | RUN-RESUME at attempt 1 | `RUN-RESUME Attempt count must increment its governing TRIAGE` |
+     | RUN-RESUME with the TRG-24-010 trigger at attempt 3 | `RUN-RESUME Trigger signature does not match its governing TRIAGE`; `… Attempt count must increment …` |
+     | TASK-RECOVERY whose `Source` omits DEC-286 | `TASK-RECOVERY does not retain its RUN-RESUME decision authority`; `… typed RUN-RESUME resolution authority` |
+     | TASK-RECOVERY with the TRG-24-010 trigger | `TASK-RECOVERY does not preserve its RUN-RESUME checkpoint`; `… does not match the exact schema v2 RUN-RESUME recovery tuple` |
+
+     The verifier also accepted a RUN-RESUME citing
+     `Resolution authority: DEC-285`. It checks only that the cited DEC
+     exists, not that it resolves the governing ESC. This is observed
+     control friction for CF-036, not a blocker: (a) must cite DEC-286 as
+     written. If (a) or (b) is rejected as written, that is new
+     information. Return to the Tech Lead, and never substitute field
+     values.
+  10. **Unchanged.** TRG-24-009, TRG-24-010, TRG-24-011, both STOPs, every
+      report, failed probe and recovery entry stay as recorded, and so do
+      DEC-285 and its six pairs. The seventeen missing `RegisteredCodes`
+      rows and the activation, projection and budget fixtures remain
+      ordinary Task 10 work under its existing rules: no invented exclusion
+      or stdout exception. Task 10's seven commands, VAL identity,
+      thresholds, budgets and the QA cadence are unchanged. Window D2 after
+      Task 11 and the Human walkthrough are not waived.
+- **Artifact/spec sync:** `tasks/task-10.md` gains a DEC-286 amendment.
+  `public-interface.md` section 9 gains one clarifying note. The VAL-036
+  method and the change log record the clause 6 row. Inventory R9 notes the
+  root guard. CF-047 records the `sql`/`journal inspect` refusal wording in
+  `decisions_active.md`. The ESC register, archive, brief and progress are
+  refreshed. There is no PRD, TRD, data model, glossary, template, QA-plan,
+  tool or prompt change.
+- **Workflow note for wrap-up:** TRG-24-009 and DEC-285 audited family
+  writers and named callers, but not the root `PersistentPreRunE`, which
+  emits failures before any family writer runs. A renderer-adoption audit
+  should walk pre-handler hooks as well as handlers.
+- **Refs:** ESC-24-005; TRG-24-011; `run-ledger.md` 2026-10-08 04:26,
+  04:27, 05:24; `tasks/task-10-done.md` at `e0495b5`; Phase 21
+  `public-interface.md` sections 1, 2, 5, 7; Phase 22 `public-interface.md`
+  section 1 and the `export.import` row; task 9a class table; DEC-175,
+  DEC-280, DEC-282, DEC-283, DEC-285.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.

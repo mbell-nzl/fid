@@ -11,6 +11,8 @@
 > bounded message rule to grammar failures and unknown commands in section 9.
 > DEC-285 clarifies section 9 for leaves that emit no JSON failure today
 > (`activity.list`).
+> DEC-286 clarifies section 9 for a root flag that a leaf's row does not
+> accept (`export import --project`).
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -258,6 +260,14 @@ next: <resolving action>                 # only for the codes in the next-table 
   There is no accepted exit to preserve. It emits the failure its family
   mapper gives. `activity.list` uses the retained-read mapper of its Phase 21
   section 4.1 siblings, and the exact causes are in DEC-285 clause 2.
+- **Root flags a leaf does not accept (DEC-286).** A root flag that a
+  stable leaf's row does not accept (today only `export import --project`)
+  is a Phase 21 section 2 forbidden flag. It returns `invalid-argument`
+  before any read, with the leaf's operation ID. `argument` and `value`
+  are the flag spelling, and `allowed` is computed as for task 9a's
+  unknown flag. The message is `--<flag> is not available for <leaf>`.
+  The exact rows are in DEC-286 clause 2. `sql` and `journal inspect` keep
+  their raw refusal (Phase 21 section 5).
 - **Key detail.** Scalar detail members render as `name=value` in key order;
   scalar arrays are comma-joined. A closed override table renders nested
   details:

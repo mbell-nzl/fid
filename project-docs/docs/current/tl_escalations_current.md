@@ -7,6 +7,12 @@ None.
 ## Recently resolved
 
 Phase 24, archived in [Phase 24 escalations](../phases/phase-24/tl-escalations.md):
+- ESC-24-005: `export import --project` printed raw text and exited 7 in
+  both modes, with no `fid-cli.v1` failure. Resolved 2026-10-09 by
+  DEC-286: it is a Phase 21 section 2 forbidden flag, so it returns
+  `invalid-argument`/2 with the flag spelling and the task 9a allowed
+  list. Task 10 gains `root.go` and a `canonical_request.go` extraction.
+  The Runner appends the clause 8 RUN-RESUME and TASK-RECOVERY (attempt 2).
 - ESC-24-004: `activity.list` had no `fid-cli.v1` failure, so Task 10
   had no accepted mapping to adopt. Resolved 2026-10-07 by DEC-285: it
   adopts the retained-read mapper (Phase 21 sections 1/4.1/7), and Task 10

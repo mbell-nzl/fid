@@ -130,6 +130,37 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - Recovery identity: `task-10:public-interface:activity-list-failure-envelope-mapping`
   at attempt 2 (DEC-285 clause 7).
 
+### DEC-286 Amendment (root-flag refusal)
+
+- The root `PersistentPreRunE` `rejectUnavailableRootFlags` (`root.go`)
+  is a Human failure path outside the R9 functions. `export import
+  --project` is its only stable-leaf instance. It printed raw text and
+  exited 7 in both modes. It is a Phase 21 section 2 forbidden flag, and
+  DEC-286 clause 2 gives the exact failure:
+  - `invalid-argument`, invalid-input, not retryable, exit 2, subject
+    null, operation `export.import`.
+  - `details` `{argument:"--project", value:"--project", allowed:["--idempotency-key","--repository"]}`.
+  - message `--project is not available for export import`.
+  - Human: `error: --project is not available for export import`, then
+    `reason: invalid-argument; argument=--project, allowed=--idempotency-key|--repository`.
+    There is no `next:` line.
+- `root.go` returns it through the existing `writeGrammarFailure` for
+  every leaf except `sql` and `journal inspect`. Those two keep their
+  byte-identical raw refusal and retained assertions.
+- `canonical_request.go` changes by pure extraction only. The unknown-flag
+  `allowed` computation and the `sql`/`journal inspect` test each move to
+  one shared unexported helper.
+- Tests: new clause 2 rows in `cmd/fid/root_flags_test.go`. Refine Task
+  10's own `human_failure_caller_audit_test.go` root check so that it
+  permits only the diagnostics branch, with a negative control. Assert the
+  exact clause 2 bytes in Task 10's own
+  `TestP24UnavailableImportRootFlagFailurePair`.
+- Do not change the `rootFlagCapabilities` registry, `writeGrammarFailure`,
+  `writeHumanFailure`, `internal/cli` or the flag-domain declarations. The
+  seven commands already execute every added file.
+- Recovery identity: `task-10:public-interface:unavailable-root-flag-failure-mapping`
+  at attempt 2 (DEC-286 clause 7).
+
 ### Files To Read For Context
 
 - `project-docs/docs/phases/phase-24/public-interface.md` section 9
@@ -182,7 +213,14 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   (dropped whole). (VAL-039)
 - [ ] `rg` over R9 shows no Human-mode branch that bypasses the renderer
   (the report lists each R9 function and its call, plus the `activity.go`,
-  `stats.go` and `issue_ac.go` callers).
+  `stats.go` and `issue_ac.go` callers and the `root.go` root-flag guard,
+  DEC-286).
+- [ ] Built-binary rows, both modes (DEC-286 clause 6):
+  `export import --project <dir> <archive> --repository <dir> --idempotency-key <key>`
+  gives the exact DEC-286 clause 2 JSON failure and Human lines, with exit
+  2, empty stdout and nothing in the filesystem changed. The same failure
+  appears from a non-project directory. `sql` and `journal inspect` keep
+  their raw refusal. (VAL-036)
 - [ ] Built-binary rows, both modes (DEC-285 clause 6): `activity list
   --since invalid`, `activity list --on invalid` and `activity list` with no
   project, each matching the DEC-285 clause 2 table; and `stats tokens`,

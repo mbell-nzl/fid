@@ -1,5 +1,40 @@
 # Phase 24 Escalations
 
+## ESC-24-005 - Root-flag refusal needs public-interface mapping authority
+
+- **Raised:** 2026-10-08 by TL-Lite in TRG-24-011 (BLOCK); ledger STOP
+  2026-10-08 05:24.
+- **Protected category:** protected public-interface/contract decision.
+- **Originating task:** task-10.
+- **Trigger signature:** task-10:public-interface:unavailable-root-flag-failure-mapping
+  (attempt 1). The DEC-285 activity-mapping recovery stayed at attempt 2.
+- **Condition:** Built-binary
+  `fid [--json] --project <dir> export import … --repository <dir>` printed
+  `error: --project is not available for export import until its
+  fid-cli.v1 transport is migrated` and exited 7 in both modes. stdout was
+  empty and no file changed, but there was no `fid-cli.v1` failure and no
+  `reason:` line. The guard is `rejectUnavailableRootFlags`
+  (`cmd/fid/root.go`; `cd53c43`, phase-20/task-2), and `export import`
+  refuses `--project` by registry (`5ec69e6`, phase-22/task-15). The Task 10
+  report at `e0495b5` had report-lint `OUTCOME BLOCKED` (exit 23). The
+  seventeen missing registry rows and unfinished fixtures were ordinary
+  Task 10 work, not part of this escalation.
+- **Status:** RESOLVED 2026-10-09 by DEC-286 (decision). Phase 21 section 2
+  makes a forbidden flag `invalid-argument` (invalid-input, exit 2, subject
+  null) with the offending spelling and the row's alternatives. Task 9a
+  supplies the operation and the unknown-flag `allowed` computation, and
+  section 9 supplies the Human lines. DEC-286 fixes the remaining values:
+  `value` is the flag spelling, and the message is `--project is not
+  available for export import` (the false Phase 20 clause is dropped). The
+  scope is `root.go`, a pure `canonical_request.go` extraction and three
+  test files. `sql` and `journal inspect` keep their raw refusal. Tech Lead
+  dry runs confirm that the clause 8 RUN-RESUME and TASK-RECOVERY each
+  append `APPEND_CONFIRMED state=REPAIR_PENDING`. No further Tech Lead or
+  Human input is needed unless a clause 8 append is rejected as written.
+- **Links:** [DEC-286](decisions.md); [TRG-24-011](triage-log.md);
+  [run ledger](run-ledger.md); [Task 10 report](tasks/task-10-done.md);
+  [Task 10 spec](tasks/task-10.md).
+
 ## ESC-24-004 - Activity list failure mapping needs public-interface authority
 
 - **Raised:** 2026-10-07 by TL-Lite in TRG-24-010 (BLOCK); ledger STOP
