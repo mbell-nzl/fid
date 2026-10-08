@@ -5,9 +5,11 @@
 - Task outcome: BLOCKED
 - Category: specification-contradiction
 - Condition: Task 11/VAL-041 requires every recorded-versus-current Human repository view, including run.inspect, to print different worktree for a plain copy selected with --repository. Phase 24 public-interface.md section 2 simultaneously preserves run.inspect's Phase 21-23 behavior, which rejects that copy before rendering; section 10 and the task prohibit changing JSON. The required success view cannot be produced by a Human-renderer-only change.
-- Recovery attempts: 1 same-task session-continuation; two focused fixture reproductions in this replacement session. The external interruption consumes no no-progress budget.
+- Recovery attempts: 1
 - Next action: Tech Lead must reconcile the run.inspect plain-copy requirement with the preserved rejection contract by protected decision authority, stating the accepted Human/JSON result and bounded source/test scope. Then resume this same Task 11 from the checkpoint, preserve both failures, finish the real Stop corpus and fixture manifest, update the CLI examples, and run all six exact task gates and independent Runner report validation.
 - Human attention required: yes
+
+One same-task session-continuation and two focused fixture reproductions were performed. The external interruption consumes no no-progress budget.
 
 This is a Developer blocker candidate for Phase Runner triage, not a ledger STOP or task completion. No new task, trigger, TRG or ESC is allocated here.
 
@@ -73,24 +75,44 @@ Runner-owned `run-ledger.md` remains outside this checkpoint's edits and staging
 
 All commands in this section were run from `/home/mark/projects/fid` unless their real-entrypoint cwd is stated. Every current receipt is copied from the nested command's own observed termination.
 
-- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24(StopHuman|RepositoryHuman)' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.404s` (terminated `exit_code: 0`). This validates incoming partial renderer work, not a new red/green implementation in this continuation.
-- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24HumanFixtures$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`). Package time 8.148s; test time 7.19s. Root variable unset, exercising t.TempDir. The failure was clean-different-run.inspect, JSON exit 4 versus required success exit 0, with recovery-state-conflict and reasons:[repository identity changed].
-- `FID_P24_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/task-11-blocker-evidence go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24HumanFixtures$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`). Package time 22.536s; test time 21.99s. The same assertion fails with the root variable set, retaining the workspace and binary for real-entrypoint diagnosis. The variable does not evade the test.
-- `git merge-base --is-ancestor ac5e6f9bec80e06bfe5b7b33e3611a894d16038a 304aa45f12cf3966567231e6986e3070df409c68` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). The rejected repository-identity path predates phase approval; this does not excuse the current assertion or assign a different task.
+- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24(StopHuman|RepositoryHuman)' -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.404s` (terminated `exit_code: 0`)
+
+This validates incoming partial renderer work, not a new red/green implementation in this continuation.
+- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24HumanFixtures$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`)
+
+Package time 8.148s; test time 7.19s. Root variable unset, exercising t.TempDir. The failure was clean-different-run.inspect, JSON exit 4 versus required success exit 0, with recovery-state-conflict and reasons:[repository identity changed].
+- `FID_P24_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/task-11-blocker-evidence go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24HumanFixtures$' -count=1 ./cmd/fid/integration` - FAIL - `FAIL` (terminated `exit_code: 1`)
+
+Package time 22.536s; test time 21.99s. The same assertion fails with the root variable set, retaining the workspace and binary for real-entrypoint diagnosis. The variable does not evade the test.
+- `git merge-base --is-ancestor ac5e6f9bec80e06bfe5b7b33e3611a894d16038a 304aa45f12cf3966567231e6986e3070df409c68` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+
+The rejected repository-identity path predates phase approval; this does not excuse the current assertion or assign a different task.
 
 Real entrypoint interactions used the generator's actual executable at `/home/mark/projects/fid/.cache/task-11-blocker-evidence/fixtures-1289185125/fid`, cwd and project `/home/mark/projects/fid/.cache/task-11-blocker-evidence/fixtures-1289185125/clean-same`, and plain copy `/home/mark/projects/fid/.cache/task-11-blocker-evidence/fixtures-1289185125/clean-different`. These interactions were directly observed through exec_command, separately from the Go tests:
 
-- Human `stop list` with the stated binary and `--project` - PASS - `  Next: fid run close or fid run abandon; after the fact: fid stop resolve, then fid attention resolve where no lifecycle Event disposed it.` (terminated `exit_code: 0`). Output also contains labelled Subject, Code, Blocked actions, Reason, Reference, Resolution condition, Resolver capability and Status for STP-cdf9dc, with no raw JSON.
-- Human `run inspect RUN-d5c15a --repository <clean-same absolute path above>` with the stated binary and `--project` - PASS - `  No observation recorded for this Run; whether its executor is live is unknown.` (terminated `exit_code: 0`). Both repository lines are `HEAD b4ded0da37b2; clean`; comparison is `same worktree`.
-- Human `resume P22-d9d5d6 --repository <clean-different absolute path above>` with the stated binary and `--project` - PASS - `Budget tokens: remaining unknown input-tokens; consumed unknown; maximum 10; state unknown` (terminated `exit_code: 0`). Current, recorded and Review repositories use `HEAD b4ded0da37b2; clean`; comparison is `different worktree`.
-- Human `run inspect RUN-d5c15a --repository <clean-different absolute path above>` with the stated binary and `--project` - FAIL against VAL-041 success-view requirement - `reason: recovery-state-conflict; observation_digest=null, paths=, reasons=repository identity changed, run_id=RUN-d5c15a` (terminated `exit_code: 4`). Output is a failure, not a repository comparison view.
-- JSON `--json run inspect RUN-d5c15a --repository <clean-different absolute path above>` with the stated binary and `--project` - FAIL against VAL-041 success-view requirement - `{"contract_version":"fid-cli.v1","error":{"category":"conflict","code":"recovery-state-conflict","details":{"observation_digest":null,"paths":[],"reasons":["repository identity changed"],"run_id":"RUN-d5c15a"},"message":"recovery state conflict","retryable":false,"subject":{"id":"RUN-d5c15a","type":"run"}},"ok":false,"operation":"run.inspect"}` (terminated `exit_code: 4`). This is the accepted existing typed rejection; no protected failure mapping was changed.
+- Human `stop list` with the stated binary and `--project` - PASS - `  Next: fid run close or fid run abandon; after the fact: fid stop resolve, then fid attention resolve where no lifecycle Event disposed it.` (terminated `exit_code: 0`)
+
+Output also contains labelled Subject, Code, Blocked actions, Reason, Reference, Resolution condition, Resolver capability and Status for STP-cdf9dc, with no raw JSON.
+- Human `run inspect RUN-d5c15a --repository <clean-same absolute path above>` with the stated binary and `--project` - PASS - `  No observation recorded for this Run; whether its executor is live is unknown.` (terminated `exit_code: 0`)
+
+Both repository lines are `HEAD b4ded0da37b2; clean`; comparison is `same worktree`.
+- Human `resume P22-d9d5d6 --repository <clean-different absolute path above>` with the stated binary and `--project` - PASS - `Budget tokens: remaining unknown input-tokens; consumed unknown; maximum 10; state unknown` (terminated `exit_code: 0`)
+
+Current, recorded and Review repositories use `HEAD b4ded0da37b2; clean`; comparison is `different worktree`.
+- Human `run inspect RUN-d5c15a --repository <clean-different absolute path above>` with the stated binary and `--project` - FAIL against VAL-041 success-view requirement - `reason: recovery-state-conflict; observation_digest=null, paths=, reasons=repository identity changed, run_id=RUN-d5c15a` (terminated `exit_code: 4`)
+
+Output is a failure, not a repository comparison view.
+- JSON `--json run inspect RUN-d5c15a --repository <clean-different absolute path above>` with the stated binary and `--project` - FAIL against VAL-041 success-view requirement - `{"contract_version":"fid-cli.v1","error":{"category":"conflict","code":"recovery-state-conflict","details":{"observation_digest":null,"paths":[],"reasons":["repository identity changed"],"run_id":"RUN-d5c15a"},"message":"recovery state conflict","retryable":false,"subject":{"id":"RUN-d5c15a","type":"run"}},"ok":false,"operation":"run.inspect"}` (terminated `exit_code: 4`)
+
+This is the accepted existing typed rejection; no protected failure mapping was changed.
 
 ## Exact quality-gate results
 
 The task spec contains six exact commands. Ledger prose saying seven does not authorize an invented seventh command. Full task closure is blocked by the protected contradiction; no focused selection replaces the required gates.
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Run after gofmt and goimports on all twelve edited Go files.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+
+Run after gofmt and goimports on all twelve edited Go files.
 - `golangci-lint run ./...` - BLOCKED - Not run: protected contract disposition is required before the final-tree gate; no token or termination result exists for this command in this session.
 - `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - BLOCKED - Not run: protected contract disposition is required before the full task gate; no current ordinary-package wall times, token or termination result exist.
 - `go tool cover -func=coverage.out` - BLOCKED - Not run: this session has no completed required coverage gate; an earlier coverage.out would not be fresh Task 11 evidence.
@@ -100,6 +122,8 @@ The task spec contains six exact commands. Ledger prose saying seven does not au
 QA-plan sections 8 and 9 require independent Window D2 rechecks, fixture regeneration at the Task 11 close commit and Human judgment. Those are pending because Task 11 is not complete; no additional Developer-owned QA gate is attested. The Runner must independently validate this committed report. No Runner report-lint receipt is claimed here.
 
 ## Deviations from spec
+
+- Developer report validation first ended `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`). Root cause: Recovery attempts contained explanatory prose instead of an integer, and three receipt lines had explanatory prose after the termination field. Repair: retain the exact observed tokens/statuses, make the typed count exactly 1, and move explanations to separate paragraphs. This is report-format repair only; the BLOCKED outcome and every failed fixture/probe remain. The corrected committed report requires a fresh Developer check and independent Runner validation.
 
 - Protected contradiction: task-11.md:91-95 and VAL-041 require a successful different-worktree repository view for every recorded-versus-current R11 view. Phase 24 public-interface.md section 2 retains run.inspect's previous behavior; section 10 and the task keep JSON unchanged. InspectRun calls reconcileRunRepository and returns its error before composing RunInspection (`internal/workflow/run_inspect.go:45`); reconcileRepository rejects an unbound changed WorktreeID at `internal/workflow/reconciliation.go:53-54`. A plain copy has no import binding. Human renderer edits cannot observe or render a result that the producer never returns. Altering the domain rejection, JSON result/status, or reducing the accepted view corpus requires protected decision authority. No such repair was made and there is no later green to report.
 - Failed attempts remain immutable: the unset-root focused command ended `FAIL` (terminated `exit_code: 1`, 8.148s), and the set-root command ended `FAIL` (terminated `exit_code: 1`, 22.536s). Both have the same repository-identity root cause. The second run retains a concrete fixture for diagnosis; it is not a mined green. Built-binary probes confirm Human and JSON exit 4, and successful same-root run.inspect/plain-copy resume controls isolate the producer mismatch. These are focused failures; no required long-gate failure is invented.
