@@ -70,6 +70,269 @@ func TestP24HumanFixtures(t *testing.T) {
 	t.Logf("Retained Human fixture manifest: %s", filepath.Join(fresh, "manifest.json"))
 }
 
+func TestP24StopHumanRealCorpus(t *testing.T) {
+	t.Parallel()
+	codes, conditions := map[string]bool{}, map[string]bool{}
+	for _, row := range p24RealStopRows {
+		if codes[row.code] || conditions[row.condition] {
+			t.Fatal("duplicate real Stop code or Condition")
+		}
+		codes[row.code], conditions[row.condition] = true, true
+		t.Run(row.code, func(t *testing.T) {
+			t.Parallel()
+			p24RealStopCase(t, row)
+		})
+	}
+	if len(codes) != 10 || len(conditions) != 10 {
+		t.Fatalf("real stop.raise corpus has %d codes and %d Conditions, want 10 of each", len(codes), len(conditions))
+	}
+	for condition := range p23ConditionWireShapes {
+		if !conditions[condition] {
+			t.Errorf("missing real Condition %s", condition)
+		}
+	}
+}
+
+type p24RealStopRow struct {
+	code, condition, details, next string
+}
+
+var p24RealStopRows = []p24RealStopRow{
+	{"executor-liveness-unknown", "executor-terminated", `{"run_id":"RUN","executor_id":"executor-corpus-prior","observation_id":null}`, "fid run observe"},
+	{"recovery-state-conflict", "run-recovered", `{"run_id":"RUN","observation_digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","paths":["base.txt"],"reasons":["changed"]}`, "fid run recover"},
+	{"activation-incomplete", "activation-recovered", `{"activation_id":"ACT","point_of_no_return":true,"components":["kit"]}`, "fid activation recover"},
+	{"capability-unavailable", "capability-available", `{"capability_id":"evidence.receipts.v1","available":false,"owner_phase":26}`, "wait for the capability evidence.receipts.v1"},
+	{"budget-exhausted", "budget-observed", `{"envelope_id":"ENV","budget_name":"tokens","unit":"input-tokens","maximum":10,"consumed":10,"remaining":0}`, "fid run observe-budget"},
+	{"operator-stop", "work-ended", `{"reason":"operator approval","reference":"DEC-human"}`, "fid run close or fid run abandon"},
+	{"review-rework-exhausted", "review-recorded", `{"envelope_id":"ENV","budget_name":"reviews","unit":"review-cycles","maximum":1,"consumed":1,"remaining":0,"last_review_id":"REV-human"}`, "fid review record"},
+	{"budget-data-unavailable", "finding-resolved", `{"envelope_id":"ENV","budget_name":"tokens","unit":"input-tokens","maximum":10,"consumed":null,"remaining":null}`, "fid review record"},
+	{"human-outcome-required", "human-outcome-recorded", `{"envelope_id":"ENV","obligation_id":"OBL-human","outcome_class":"security"}`, "fid human-outcome record"},
+	{"protected-decision-required", "decision-satisfied", `{"envelope_id":"ENV","decision_class":"security","required_capabilities":["decision.record-reference"],"affected_actions":["envelope.complete"]}`, "fid decision record-reference then fid human-outcome record"},
+}
+
+func p24RealStopCase(t *testing.T, row p24RealStopRow) {
+	t.Helper()
+	var execution p22ExecutionFixture
+	if row.condition == "decision-satisfied" {
+		execution.ProtectedDecisions = []any{map[string]any{"ordinal": 0, "decision_class": "security", "required_capabilities": []string{"decision.record-reference"}, "affected_actions": []string{"envelope.complete"}}}
+	}
+	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 86400, []string{}, p24FixtureActions, execution)
+	subject := map[string]any{"type": "run", "id": a.runID}
+	var reviewRun map[string]any
+	if row.condition == "review-recorded" || row.condition == "finding-resolved" {
+		subject = map[string]any{"type": "envelope", "id": p23EnvelopeID(t, a)}
+		p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "corpus-builder")
+		claim := p23AcquireClaim(t, a, "actor-denied", "review", "corpus-review")
+		reviewRun = p23StartRun(t, a, "actor-denied", claim, "corpus-review")
+		if row.condition == "finding-resolved" {
+			response := p23ReviewRecord(t, a, "actor-denied", "corpus-finding", p23ReviewInput(a, reviewRun["id"].(string), p23Number(t, reviewRun["version"]), "changes-required", []any{p23Finding(a.issueID, "FND-human", "major", true)}, nil))
+			p23AssertReviewSuccess(t, "corpus finding", response)
+			p23CloseAndRelease(t, a, "actor-denied", reviewRun["id"].(string), claim["id"].(string), "corpus-first-review")
+			claim = p23AcquireClaim(t, a, "actor-denied", "review", "corpus-second-review")
+			reviewRun = p23StartRun(t, a, "actor-denied", claim, "corpus-second-review")
+		}
+	}
+	if row.condition == "activation-recovered" || row.condition == "capability-available" {
+		subject = map[string]any{"type": "activation", "id": a.activation["id"]}
+	}
+	condition := p22ConditionFields(row.condition)
+	condition["subject"] = subject
+	switch row.condition {
+	case "budget-observed":
+		condition["budget_name"] = "tokens"
+	case "capability-available":
+		condition["capability_id"] = "evidence.receipts.v1"
+	case "finding-resolved":
+		condition["finding_id"] = "FND-human"
+	case "human-outcome-recorded":
+		condition["outcome_class"] = "security"
+	case "decision-satisfied":
+		condition["decision_class"] = "security"
+	}
+	detailText := strings.NewReplacer(`"RUN"`, `"`+a.runID+`"`, `"ENV"`, `"`+p23EnvelopeID(t, a)+`"`, `"ACT"`, `"`+a.activation["id"].(string)+`"`).Replace(row.details)
+	var details map[string]any
+	if err := json.Unmarshal([]byte(detailText), &details); err != nil {
+		t.Fatal(err)
+	}
+	blocked := []string{"gate.run"}
+	if strings.HasPrefix(row.code, "budget-") {
+		blocked = []string{"gate.run", "run.recover", "run.start"}
+	}
+	raised := p22AcceptedCall(t, a, "real-corpus-stop", "stop.raise", map[string]any{"subject": subject, "code": row.code, "blocked_actions": blocked, "details": details, "resolution_condition": condition, "resolver_capability": "stop.resolve"})
+	stop := p21Path(t, raised, "result", "stop").(map[string]any)
+	attention := p21Path(t, raised, "result", "attention").(map[string]any)
+	p24AssertRealStopViews(t, a, row, stop, attention)
+	fact := p24RealStopFact(t, a, row.condition, reviewRun)
+	if p24EventByID(t, a.workspace, fact).EventType == "" {
+		t.Fatal("resolution fact is not a real journal Event")
+	}
+	listed := p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "stop", "list")
+	stop = p24StopByID(t, listed, stop["id"].(string))
+	if stop["resolution"] == nil {
+		resolved := p23RunInput(t, a, "stop", "resolve", a.actor, "real-corpus-resolve", map[string]any{"stop_id": stop["id"], "fact_event_id": fact})
+		p23AssertReviewSuccess(t, "resolve real corpus Stop", resolved)
+		stop = p21Path(t, p23Envelope(t, resolved.Stdout), "result", "stop").(map[string]any)
+	} // Judgment Events may have atomically disposed the Stop and Attention.
+	if p21PathString(t, stop, "resolution", "fact_event_id") != fact {
+		t.Fatalf("wrong qualifying resolution Event: %#v", stop)
+	}
+	// Before explicit Attention disposition, resume must render its resolved linked Stop.
+	attentionList := p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "attention", "list")
+	for _, raw := range p21Path(t, attentionList, "result", "items").([]any) {
+		item := raw.(map[string]any)
+		if item["id"] == attention["id"] {
+			attention = item
+		}
+	}
+	p24AssertRealStopViews(t, a, row, stop, attention)
+	if attention["status"] == "open" {
+		resolved := p23RunInput(t, a, "attention", "resolve", a.actor, "real-corpus-attention", map[string]any{"attention_id": attention["id"], "expected_version": attention["version"], "fact_event_ids": []string{p21PathString(t, stop, "resolution", "event_id")}})
+		p23AssertReviewSuccess(t, "resolve real corpus Attention", resolved)
+		attention = p21Path(t, p23Envelope(t, resolved.Stdout), "result", "attention").(map[string]any)
+	}
+	p24AssertRealStopViews(t, a, row, stop, attention)
+}
+
+func p24RealStopFact(t *testing.T, a *p22FIDRecoveryAdapter, condition string, reviewRun map[string]any) string {
+	t.Helper()
+	var response map[string]any
+	switch condition {
+	case "activation-recovered", "capability-available":
+		response = p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "activation", "finalize", "--input", filepath.Join(a.workspace, "activation-finalize.json"), "--idempotency-key", "p22-corpus-activation-finalize")
+	case "executor-terminated", "work-ended", "run-recovered":
+		response = p22AcceptedCall(t, a, "corpus-terminated", "run.observe", nil)
+		if condition == "work-ended" {
+			response = p22AcceptedCall(t, a, "corpus-ended", "run.close", nil)
+		} else if condition == "run-recovered" {
+			p22AcceptedCall(t, a, "corpus-inspect", "run.inspect", nil)
+			p22AcceptedCall(t, a, "corpus-failed", "run.close", nil)
+			released := p23RunInput(t, a, "claim", "release", a.actor, "corpus-release", map[string]any{"claim_id": a.claimID, "expected_version": a.claimVersion, "reason": "failed"})
+			p23AssertReviewSuccess(t, "release failed Run Claim", released)
+			a.claimVersion = p22Number(p21Path(t, p23Envelope(t, released.Stdout), "result", "claim", "version"))
+			response = p22AcceptedCall(t, a, "corpus-recovered", "run.recover", nil)
+		}
+	case "budget-observed":
+		response = p22AcceptedCall(t, a, "corpus-budget", "run.observe-budget", map[string]any{"value": 0})
+	case "review-recorded", "finding-resolved":
+		var findings []any
+		if condition == "finding-resolved" {
+			findings = []any{"FND-human"}
+		}
+		result := p23ReviewRecord(t, a, "actor-denied", "corpus-review-fact", p23ReviewInput(a, reviewRun["id"].(string), p23Number(t, reviewRun["version"]), "pass", nil, findings))
+		p23AssertReviewSuccess(t, "real Review fact", result)
+		response = p23Envelope(t, result.Stdout)
+	case "human-outcome-recorded", "decision-satisfied":
+		if condition == "decision-satisfied" {
+			result := p23RecordDecision(t, a, "corpus-security", "security", "approved", []string{"decision.record-reference"}, p23DecisionSource(a, true))
+			p23AssertReviewSuccess(t, "real Decision fact", result)
+		}
+		result := p23RecordHumanOutcome(t, a, "corpus-security", a.actor, "security", "approved")
+		p23AssertReviewSuccess(t, "real Human Outcome fact", result)
+		response = p23Envelope(t, result.Stdout)
+	default:
+		t.Fatalf("missing real fact for %s", condition)
+	}
+	return p21PathString(t, response, "event", "id")
+}
+
+func p24StopByID(t *testing.T, envelope map[string]any, id string) map[string]any {
+	t.Helper()
+	for _, raw := range p21Path(t, envelope, "result", "items").([]any) {
+		stop := raw.(map[string]any)
+		if stop["id"] == id {
+			return stop
+		}
+	}
+	t.Fatalf("Stop %s missing", id)
+	return nil
+}
+
+func p24AssertRealStopViews(t *testing.T, a *p22FIDRecoveryAdapter, row p24RealStopRow, stop, attention map[string]any) {
+	t.Helper()
+	labels := map[string]string{"run_id": "Run", "executor_id": "Executor", "observation_id": "Observation", "observation_digest": "Observation digest", "paths": "Paths", "reasons": "Reasons", "activation_id": "Activation", "point_of_no_return": "Point of no return", "components": "Components", "capability_id": "Capability", "available": "Available", "owner_phase": "Owner phase", "envelope_id": "Envelope", "budget_name": "Budget", "unit": "Unit", "maximum": "Maximum", "consumed": "Consumed", "remaining": "Remaining", "reason": "Reason", "reference": "Reference", "last_review_id": "Last Review", "obligation_id": "Obligation", "outcome_class": "Outcome class", "decision_class": "Decision class", "required_capabilities": "Required capabilities", "affected_actions": "Affected actions"}
+	for _, args := range [][]string{{"stop", "list"}, {"attention", "list"}, {"resume", a.issueID, "--repository", a.workspace}} {
+		before := p21JournalEventCount(t, a.workspace)
+		out, stderr, err := closureRunCommand(a.workspace, a.binary, append([]string{"--project", a.workspace}, args...)...)
+		if err != nil || stderr != "" || p21JournalEventCount(t, a.workspace) != before {
+			t.Fatalf("real corpus view %v failed or wrote state: %v %s", args, err, stderr)
+		}
+		start := strings.Index(out, "Stop "+stop["id"].(string))
+		if args[0] == "resume" && stop["resolution"] != nil {
+			// The accepted resume projection contains open Stops and open
+			// Attention. A resolved Stop remains visible through its open
+			// Attention until disposition; recovered predecessor Runs and
+			// atomically disposed judgment items can leave this projection.
+			projection := p21Run(t, a.binary, a.workspace, append([]string{"--project", a.workspace, "--json"}, args...)...)
+			visible := false
+			for _, raw := range p21Path(t, projection, "result", "resume", "attention").([]any) {
+				if raw.(map[string]any)["id"] == attention["id"] {
+					visible = true
+				}
+			}
+			if !visible {
+				if start >= 0 || strings.Contains(out, "Attention "+attention["id"].(string)) {
+					t.Fatal("Human resume retained a disposed item absent from its canonical projection")
+				}
+				continue
+			}
+		}
+		if start < 0 {
+			t.Fatalf("%s %v missing Stop %s: %s", row.code, args, stop["id"], out)
+		}
+		text := out[start:]
+		// Bound assertions to this Stop, excluding guidance for other Stops.
+		if end := strings.Index(text[5:], "\nStop "); end >= 0 {
+			text = text[:end+5]
+		}
+		if end := strings.Index(text, "\nAttention "); end >= 0 {
+			text = text[:end]
+		}
+		wants := []string{"Code: " + row.code, "Blocked actions: " + p24RealStopValue(stop["blocked_actions"]), "Resolver capability: stop.resolve", "Subject: " + p21PathString(t, stop, "subject", "type") + ":" + p21PathString(t, stop, "subject", "id"), "Resolution condition: " + row.condition}
+		for key, value := range stop["details"].(map[string]any) {
+			wants = append(wants, labels[key]+": "+p24RealStopValue(value))
+		}
+		if stop["resolution"] == nil {
+			wants = append(wants, "Status: open", "Next: "+row.next+"; after the fact: fid stop resolve, then fid attention resolve where no lifecycle Event disposed it.")
+		} else {
+			wants = append(wants, "Status: resolved", "Fact Event: "+p21PathString(t, stop, "resolution", "fact_event_id"), "Resolution Event: "+p21PathString(t, stop, "resolution", "event_id"))
+			if strings.Contains(text, "Next:") {
+				t.Fatalf("resolved Stop has Next guidance: %s", text)
+			}
+		}
+		for _, want := range wants {
+			if !strings.Contains(text, want) {
+				t.Errorf("%s %v missing %q: %s", row.code, args, want, text)
+			}
+		}
+		if strings.Contains(out, "{") || strings.Contains(out, "<nil>") {
+			t.Fatalf("%s %v leaked raw JSON/nil: %s", row.code, args, out)
+		}
+		if args[0] != "stop" {
+			want := "Attention " + attention["id"].(string) + "\n  Status: " + attention["status"].(string) + "\n  Code: " + row.code + "\n  Linked Stops: " + stop["id"].(string)
+			if !strings.Contains(out, want) {
+				t.Errorf("%s %v missing Attention state: %s", row.code, args, out)
+			}
+			if attention["status"] == "resolved" && !strings.Contains(out, "Resolution Event: "+attention["resolution_event_id"].(string)) {
+				t.Error("missing Attention resolution Event")
+			}
+		}
+	}
+}
+
+func p24RealStopValue(value any) string {
+	if value == nil {
+		return "unknown"
+	}
+	if items, ok := value.([]any); ok {
+		parts := make([]string, len(items))
+		for i, item := range items {
+			parts[i] = fmt.Sprint(item)
+		}
+		return strings.Join(parts, ", ")
+	}
+	return fmt.Sprint(value)
+}
+
 var p24FixtureActions = []string{"attention.resolve", "claim.acquire", "claim.expire", "claim.release", "decision.record-reference", "envelope.activate", "envelope.create", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "review.record", "run.close", "run.observe", "run.observe-budget", "run.recover", "run.start", "stop.raise", "stop.resolve"}
 
 func p24GenerateHumanFixtures(t *testing.T, root string) {
@@ -172,6 +435,27 @@ func p24HumanViewFixtures(t *testing.T, root string, manifest *p24HumanManifest,
 				project = repository
 			}
 			args := append([]string{"--project", project}, leaf...)
+			if operation == "run.inspect" && !same {
+				before := p21JournalEventCount(t, workspace)
+				row := p24AddHumanFixture(t, manifest, state+"-"+relation+"-"+operation, operation, "recovery-state-conflict", workspace, args, 4)
+				failure := p23Envelope(t, row.JSONStderr)
+				want := map[string]any{"observation_digest": nil, "paths": []any{}, "reasons": []any{"repository identity changed"}, "run_id": runID}
+				if !reflect.DeepEqual(p21Path(t, failure, "error", "details"), want) ||
+					!reflect.DeepEqual(p21Path(t, failure, "error", "subject"), map[string]any{"type": "run", "id": runID}) ||
+					p21PathString(t, failure, "error", "category") != "conflict" ||
+					p21PathString(t, failure, "error", "message") != "recovery state conflict" ||
+					p21PathString(t, failure, "operation") != operation ||
+					p21Path(t, failure, "error", "retryable") != false ||
+					p21Path(t, failure, "ok") != false ||
+					p21PathString(t, failure, "contract_version") != "fid-cli.v1" {
+					t.Fatalf("%s differs from DEC-287 refusal: %s", row.Name, row.JSONStderr)
+				}
+				wantHuman := "error: recovery state conflict\nreason: recovery-state-conflict; observation_digest=null, paths=, reasons=repository identity changed, run_id=" + runID + "\n"
+				if row.HumanStderr != wantHuman || p21JournalEventCount(t, workspace) != before {
+					t.Fatalf("%s refusal bytes or read-only state changed: %s", row.Name, row.HumanStderr)
+				}
+				continue
+			}
 			row := p24AddHumanFixture(t, manifest, state+"-"+relation+"-"+operation, operation, "", workspace, args, 0)
 			if leaf[0] == "resume" || leaf[0] == "run" || leaf[0] == "review" {
 				p24AssertShortHumanRepository(t, row.HumanStdout, p24FixtureHEAD(t, workspace), dirty)

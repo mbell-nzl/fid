@@ -179,13 +179,89 @@ predicate as acquisition (DEC-283).
 ```text
 fid claim acquire|renew|release|list
 fid run start|observe|observe-budget|checkpoint|close|abandon|get|list|inspect|recover
-fid stop record|resolve|list
+fid stop raise|resolve|list
 fid attention list|resolve
 ```
 
 No command assumes a Developer or QA role. Actor identity, capabilities,
 Envelope grants, Issue, worktree, mutation scope, optional Obligation, and
 lease version are explicit machine fields.
+
+Human `stop list`, `attention list` and `resume` render Stops as labelled
+facts. Every StopDetails member has its own line. An open Stop names the
+command for its resolution Condition, then the after-the-fact disposition
+commands. For example, an operator Stop appears in `stop list` as:
+
+```text
+Purpose: Inspect Stops, blocked actions and qualifying resolution conditions.
+
+stop.list
+Stop STP-example
+  Subject: run:RUN-example
+  Code: operator-stop
+  Blocked actions: gate.run
+  Reason: operator approval
+  Reference: DEC-human
+  Resolution condition: work-ended for run:RUN-example
+  Resolver capability: stop.resolve
+  Status: open
+  Next: fid run close or fid run abandon; after the fact: fid stop resolve, then fid attention resolve where no lifecycle Event disposed it.
+```
+
+`attention list` includes the linked Stop with the same labelled facts:
+
+```text
+Purpose: Inspect Attention and the dispositions of its linked Stops.
+
+attention.list
+Attention ATT-example
+  Status: open
+  Code: operator-stop
+  Linked Stops: STP-example
+  Stop STP-example
+  Subject: run:RUN-example
+  Code: operator-stop
+  Blocked actions: gate.run
+  Reason: operator approval
+  Reference: DEC-human
+  Resolution condition: work-ended for run:RUN-example
+  Resolver capability: stop.resolve
+  Status: open
+  Next: fid run close or fid run abandon; after the fact: fid stop resolve, then fid attention resolve where no lifecycle Event disposed it.
+```
+
+After qualified resolution, the Stop ends with these lines and has no
+`Next:` line. Resolved Attention also shows its resolution Event:
+
+```text
+  Status: resolved
+  Fact Event: EVT-fact
+  Resolution Event: EVT-stop-resolved
+
+Attention ATT-example
+  Status: resolved
+  Code: operator-stop
+  Linked Stops: STP-example
+  Resolution Event: EVT-attention-resolved
+```
+
+The Condition commands are `fid run observe` for `executor-terminated`,
+`fid run recover` for `run-recovered`, `fid activation recover` for
+`activation-recovered`, `fid run observe-budget` for `budget-observed`,
+`fid run close` or `fid run abandon` for `work-ended`, `fid review record`
+for `review-recorded` and `finding-resolved`, `fid human-outcome record`
+for `human-outcome-recorded`, and `fid decision record-reference` then
+`fid human-outcome record` for `decision-satisfied`. `capability-available`
+instead says to wait for the named capability. These are qualifying-fact
+steps; disposition follows only when a lifecycle Event has not disposed
+the Stop and Attention already.
+
+Human repository lines use only `HEAD <12 hex>; clean` or
+`HEAD <12 hex>; dirty`. `resume` shows `same worktree` for the recorded
+root and `different worktree` for a plain copy selected with `--repository`.
+`run inspect` shows `same worktree` on success; a plain copy keeps the
+`recovery-state-conflict` refusal (exit 4, empty stdout) in both modes,
+as specified by DEC-287. Full repository observations remain in JSON.
 
 `claim acquire --input` names the Issue, Envelope revision, path scope, mode
 and lifetime. fid observes and records the selected worktree ID, checking it
