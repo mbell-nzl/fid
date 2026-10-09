@@ -243,8 +243,8 @@ QA-plan sections 8 and 9 leave independent Window D2 rechecks, fixture regenerat
 
 ## Commit hash
 
-- Pending commit
+- `e6b49797cc1dba22012758922778bed805f8f16c`
 
 ## Commit subject
 
-- Pending commit
+- `test(cli): complete Stop corpus and plain-copy Human fixtures`
