@@ -149,6 +149,19 @@ Real entrypoint reads in this continuation used the retained checkpoint binary a
 - `/tmp/fid-task13-human.zZI1np/checkpoints-486060414/fid --project /tmp/fid-task13-human.zZI1np/checkpoints-486060414/leaf-contract concern list` - PASS - `    Reasoning: 界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界界…` (terminated `exit_code: 0`)
 - `/tmp/fid-task13-human.zZI1np/checkpoints-486060414/fid --project /tmp/fid-task13-human.zZI1np/checkpoints-486060414/leaf-contract concern get CON-runtime` - PASS - `      Recorded continuation: \u001b\r\u0007\u0000` (terminated `exit_code: 0`)
 
+### QA Window E report-only repair attempt 1 (current session)
+
+Working directory: `/home/mark/projects/fid`.
+
+- Source: `project-docs/docs/phases/phase-24/qa/review-11.md`, F1.
+- Recovery binding, copied exactly from the latest TASK-RECOVERY: trigger `task-13:qa-rework:review-11-r13-inventory-receipt`; category `qa-rework`; mode `task-scope`; authority `QA review; review-11`; attempt count `1`; allowed files `project-docs/docs/phases/phase-24/tasks/task-13-done.md`. These scalar values match the dispatch and ledger byte-for-byte.
+- `rg -n "p23CheckJudgmentQualifiers\|PRIVATE_" cmd` - BLOCKED - `exit 1 (no output)` (terminated `exit_code: 1`). Both output streams were empty; there is no printed token to quote. The required result is exit 0 with three qualifier references and no PRIVATE_ references, so this is a failed receipt, not a passing absence proof.
+- Accounted result: zero matching lines for the exact literal-pipe pattern. This execution does not establish the three qualifier references or the separate absence of PRIVATE_ references. Review 11's three-reference result remains reviewer evidence and is not relabelled as Developer evidence.
+- Continuation outcome: BLOCKED. Protected category: `specification-contradiction`. The exact dispatch command retains `\|` inside shell double quotes, so ripgrep searches for a literal pipe rather than regex alternation. Review 11 describes Markdown table escaping being decoded to alternation, but this dispatch explicitly requires the escaped command unchanged and its observed exit 0. No report-only edit can reconcile those requirements. No alternative command was run, no token or termination was invented, and no product gate was rerun.
+- Resolution action: the governing authority must reconcile the exact executable R13 command with its required accounted result and authorize that spelling before another same-task report-only continuation. F1 remains unresolved; no current-session R13 PASS is claimed.
+- The prior Task 13 completion, seven-command gates, failed attempts, deviation notes, provenance tables and commit identity remain accepted historical evidence and are preserved unchanged. This subsection records only the current report-repair candidate; it does not replace the prior workflow outcome or reopen product behavior. No new VAL assertion applies to this no-VAL evidence finding.
+- Refs: phase-24/task-13.
+
 ## Exact quality-gate results
 
 The final seven required commands were executed byte-identically, in their declared order, from `/home/mark/projects/fid`, and every nested command was watched to termination. The two absence searches passed with their declared non-zero exits. QA-plan section 5 adds no further command applicable to Task 13.
