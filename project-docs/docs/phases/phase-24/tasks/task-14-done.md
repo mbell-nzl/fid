@@ -103,8 +103,8 @@ QA-owned fixture-retention command remain phase-end QA work.
 
 ## Commit hash
 
-- Pending commit
+- `4b6a3837e52f24a5a8975a1d2abef94635c74823`
 
 ## Commit subject
 
-- Pending commit
+- `test(integration): checkpoint Task 14 terminal-state provenance blocker`
