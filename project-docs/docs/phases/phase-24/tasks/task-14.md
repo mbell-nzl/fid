@@ -15,6 +15,8 @@ and the removal-inventory absence proofs.
 - VAL-051: retired surfaces are absent.
 - VAL-063 (re-proved): the `PRIVATE_` checks stay removed.
 - VAL-052.
+- VAL-068 (DEC-290): `resume` shows the Issue's revision and next workflow
+  states.
 - Advances VAL-053, VAL-054, VAL-055, VAL-056 and VAL-057 (Human,
   phase-end). This task's extension of the task 11 fixture generator
   prepares their workspaces. The QA Lead runs it and writes no test code.
@@ -70,6 +72,25 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
     Human's choice can each be run validly (VAL-057).
 
   Keep the task 11 denials and views (VAL-054, VAL-055).
+- **DEC-290 amendment (ESC-24-008).** Attempt 1 found that no output
+  names the terminal-success state for `issue transition --to`, and the
+  Issue revision for `--expected-revision` appears only in JSON. Task 14
+  delivers the DEC-290 clause 3 contract before the journey:
+  - `Resume.issue` gains `next_states` (`{state, category}`): every state
+    for which `Registry.RulesForEdge` reports an edge from the current
+    status, `cancelled` included, sorted by `state`, `[]` when none.
+  - The Human `resume` Issue block adds `Revision: <n>` and
+    `Next states: <state> (<category>), …` (or `Next states: none.`) after
+    `Status:`.
+  - The `issue transition` `--to` and `--expected-revision` usages point
+    at `fid resume <issue-id>`.
+
+  The journey records `--to` and `--expected-revision` as `fid-output`
+  from those two `resume` lines (DEC-290 clause 4). DEC-278's classes are
+  unchanged. `TestP24TakeControlTerminalStateProvenance` stays and must
+  pass; it may be tightened, never loosened. A retained assertion that
+  clause 3 displaces may only gain the two lines or the member, with a
+  provenance row (DEC-290 clause 6).
 - **Parity** covers field-digest maps, observed repositories, the new `get`
   reads, and manifest `projection_schema` 19.
 - **Absence.** No descriptor anywhere contains a member named `worktree_id`,
@@ -88,18 +109,27 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - `cmd/fid/integration/p24_human_fixtures_test.go` (extension; the tagged
   gate executes it)
 - `cmd/fid/input_descriptor_test.go` (forbidden-member scan)
+- DEC-290 clause 5 (product change; the ordinary gate executes these):
+  `internal/workflow/registry.go`, `internal/workflow/resume.go`,
+  `cmd/fid/resume_human.go`, `cmd/fid/issue_transition.go`, and the new
+  tests `internal/workflow/registry_next_states_test.go` and
+  `cmd/fid/p24_resume_issue_test.go`. The JSON/Human pairing row for the
+  start state goes in `cmd/fid/integration/p24_take_control_test.go`.
+- `project-docs/specs/08_QUALITY_PLAN.md`
 
 ### Files To Read For Context
 
 - `project-docs/docs/phases/phase-24/public-interface.md` sections 4, 8-10
 - `project-docs/docs/phases/phase-24/input-inventory.md` all
-- `project-docs/docs/phases/phase-24/decisions.md` DEC-273..277
+- `project-docs/docs/phases/phase-24/decisions.md` DEC-273..277 and
+  DEC-290
 - `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md` Phase 24 row
 
 ### Out Of Scope
 
-- Human checklist content (QA Lead). New product behavior of any kind: a gap
-  the journey finds is escalated, not fixed here.
+- Human checklist content (QA Lead). New product behavior of any kind
+  beyond DEC-290 clause 3: any further gap the journey finds is escalated,
+  not fixed here.
 
 ## Acceptance Criteria
 
@@ -115,8 +145,18 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   workspaces in addition to the task 11 fixtures. (VAL-053..057
   preparation)
 - [ ] Wall times inside budget. (VAL-052)
+- [ ] `resume` JSON `issue.next_states` and the Human `Revision:` and
+  `Next states:` lines match DEC-290 clause 3 for several edges, none and
+  nil. The take-control start gives revision 4 and `qa_pass (completed)`
+  in both modes. The two `issue transition` usages point at
+  `fid resume <issue-id>`. No other `resume` output changes. (VAL-068)
 
 ## First Failing Test
+
+DEC-290 attempt 2: a clause 3 row in `registry_next_states_test.go` or
+`p24_resume_issue_test.go` fails before product code changes. The retained
+`TestP24TakeControlTerminalStateProvenance` is already red at `4b6a3837`.
+Attempt 1's first failing test follows.
 
 `TestP24HumanFixtures`'s manifest lists the take-control start state workspace. Today it lists only the task 11 fixtures. Task 10 already makes the journey's first `next:` line true, so that line cannot be the red test (DEC-280, RI-09).
 
@@ -124,6 +164,9 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 
 - `project-docs/specs/08_QUALITY_PLAN.md`: the Phase 24 journey as a
   retained real-process scenario.
+- `project-docs/specs/06_DESIGN_PLAN_CLI.md` already describes the DEC-290
+  `resume` Issue block (Tech Lead). Report any difference from the
+  delivered output as a deviation; do not edit the spec.
 
 ## Exact Commands To Run
 
@@ -170,7 +213,9 @@ List any conditional command required by this task and why:
 - Report path: `project-docs/docs/phases/phase-24/tasks/task-14-done.md`.
   Commit with `Refs: phase-24/task-14`.
 - Red first: record the first failing test before changing product code.
-- Retained-test convergence follows DEC-162/165/166. Record each displaced
+- Retained-test convergence follows the method in DEC-162/165/166 (Phase 21
+  standing decisions; method only, never ledger authority; DEC-290 clause 6
+  is this task's convergence authority). Record each displaced
   assertion with its introducing commit, phase and task. Never infer
   ownership from a filename or task label. Never delete or weaken an
   assertion to pass a gate.

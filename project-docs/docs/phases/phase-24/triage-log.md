@@ -509,3 +509,33 @@ Recorded 2026-10-07 before allocating the next escalation. ESC-24-002 already ex
 - **Human attention required:** yes
 - **Required resolution follow-through:** TRG-24-015 governs the Runner's schema-v2 ledger TRIAGE. Bind the exact typed task, trigger, attempt, repair category and repair authority above; the external typed verdict is BLOCK, while the ledger verdict and final TL-Lite response retain BLOCK (escalated as ESC-24-007). The corresponding STOP retains ESC-24-007. Preserve both rejected candidate diagnostics and observed exit_code: 1 values in Runner reconciliation evidence. Do not advance Window D2 or dispatch Task 12 before actual Human evidence and independent closure. Preserve TRG-24-013, TRG-24-014, every earlier escalation entry, review-9, Task 10/11 COMPLETE records and all failed evidence. Full Tech Lead routing remains: "Resolve ESC-24-007 in tl_escalations_current.md."
 - **References:** this log TRG-24-013 and TRG-24-014; project-docs/docs/current/tl_escalations_current.md ESC-24-007; project-docs/docs/phases/phase-24/qa/review-9.md Verdict, B1-H and Exact pending Human action; project-docs/docs/phases/phase-24/run-ledger.md 2026-10-09 16:08/16:19; project-docs/templates/triage-log-template.md append-only correction rule; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9; invoking Runner's two rejected candidate diagnostics and observed terminations.
+
+## TRG-24-016 - Task 14 terminal-success state has no permitted Human provenance
+
+- **Trigger:** Phase 24 Task 14 cannot complete the required Human-takes-control journey because the terminal-success state value is not available from any permitted Human provenance source.
+- **Originating task:** task-14
+- **Trigger signature:** task-14:public-interface-decision:terminal-state-provenance-qa-pass
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-24/tasks/task-14-done.md
+- **Candidate:** BLOCKED product/public-interface/provenance decision candidate.
+- **Checkpoint:** Runner-attached verification identifies implementation commit 4b6a3837e52f24a5a8975a1d2abef94635c74823, with git rev-parse --verify returning that hash and exact subject matching "test(integration): checkpoint Task 14 terminal-state provenance blocker"; report commit 98d45617b35c212683b4346d30a760eb8ed630d3 was verified with exact subject "docs(task): finalize completion report for phase-24 task-14". Independent report-lint returned OUTCOME BLOCKED, terminated exit_code: 0, with matching subject and report state. These are attached Runner evidence, not verification executed by TL-Lite.
+- **Verdict:** BLOCK
+- **Reasoning:** DEC-278 item 9 closes the five provenance classes and explicitly makes an unclassified journey value a product gap. Task 14 requires Human-only journey completion under VAL-049 and prohibits new product behavior. The terminal-success --to value qa_pass is absent from earlier Human output and advertised help; setup workflow states and caller-authored workflow-state values are not permitted substitutes. Choosing a Human read/help/output contract to expose the value requires protected product/public-interface authority. This is not control-conformance, and the checkpoint commits preserve the failure rather than clear it.
+- **Local decisions made:** none; allocate TRG-24-016 and ESC-24-008 from the highest recorded identifiers TRG-24-015 and ESC-24-007. No existing escalation covers this gap.
+- **Resolution evidence:** Runner reproduced `go test -tags integration -run '^TestP24TakeControlTerminalStateProvenance$' -count=1 ./cmd/fid/integration`: required result is a passing diagnostic obtaining the terminal-success --to value from an allowed Human fid-output or fid-help source; observed result is FAIL with `BLOCKED provenance: issue.transition --to requires terminal-success state qa_pass; no earlier Human fid output or help supplies it, and DEC-278 does not permit setup workflow states or caller-authored state values`, terminated exit_code: 1. The report also records the required tagged integration gate as BLOCKED with FAIL, terminated exit_code: 1. No resolving decision or successful post-resolution journey is attached.
+- **If REPAIR:** N/A; no same-task Developer continuation is authorized by this BLOCK.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** N/A
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** N/A
+- **If BLOCK:** category protected product/public-interface/provenance decision; ESC-24-008 raised in project-docs/docs/current/tl_escalations_current.md. Resolution condition: full Tech Lead records an accepted Phase 24 decision defining the permitted Human discovery contract for the terminal-success state and bounded implementation ownership/scope, preserving DEC-278 provenance classes and VAL-049. The supplied runner base 98d45617b35c212683b4346d30a760eb8ed630d3 is checkpoint evidence only; no control directive is issued.
+- **Human attention required:** yes
+- **Required resolution follow-through:** Runner records matching TRIAGE and STOP under TRG-24-016 / ESC-24-008, retaining task-14, its exact signature, attempt 1 and all failed evidence; no task completion or phase advance. Invoke full Tech Lead with "Resolve ESC-24-008 in tl_escalations_current.md." After accepted authority and its bounded implementation are in place, resume Task 14 through the governing recovery sequence, rerun the focused diagnostic and all byte-identical Task 14 required commands, require independent report-lint closure and fresh QA window E. Do not widen provenance, weaken assertions, replace the terminal workflow state, or use JSON, SQL, journal, or setup-state substitution to pass. The report's possible Issue-revision discovery gap remains a follow-up concern, not a separately proven blocker.
+- **References:** project-docs/docs/phases/phase-24/tasks/task-14.md Binding Constraints, Out Of Scope and Acceptance Criteria; project-docs/docs/phases/phase-24/tasks/task-14-done.md:7, diagnostic evidence, Exact quality-gate results and Tech Lead concerns; project-docs/docs/phases/phase-24/decisions.md:180 (DEC-278 item 9); project-docs/docs/phases/phase-24/qa/validation-contract.md:117 (VAL-049); project-docs/docs/current/phase_brief.md Active Constraints; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9; invoking Runner's commit-verification and reproduced diagnostic evidence.

@@ -1827,6 +1827,266 @@
   VAL-044, VAL-045; DEC-162/165/166, DEC-167/173 (Phase 21 standing);
   DEC-283 (scope-amendment precedent), DEC-288.
 
+### DEC-290: `resume` shows the Issue's revision and next workflow states; Task 14 owns the change. Closes ESC-24-008
+
+- **Date:** 2026-10-11. Tech Lead ESC resolution on the Human's
+  instruction "Resolve the ESC-24-008 issue". This is a bounded
+  public-interface addition: one JSON member on `Resume.issue`, two Human
+  lines in the `resume` Issue block, and two flag usage strings. No failure
+  code, exit, input, Event or other output changes. The Human may
+  override the choice by DEC before Task 14 closes (rejected options,
+  clause 2).
+- **Context:**
+  - TRG-24-016 (BLOCK) and the 2026-10-11 08:18 STOP. Task 14 checkpoints
+    are implementation `4b6a3837` and report `98d45617` (report-lint
+    `OUTCOME BLOCKED`, exit 0). `TestP24TakeControlTerminalStateProvenance`
+    walks the stuck start's Human reads (`issue list`, `resume`,
+    `workflow list`, `stop list`, `attention list`) and the whole advertised
+    help tree. It finds no source for the `--to` value `qa_pass`, and the
+    required tagged gate fails on it (exit 1).
+  - **Tech Lead reproduction.** A focused `-v` run of the diagnostic at
+    `98d45617` (investigation, not gate evidence) shows the stuck start in
+    Human mode. `resume` prints `Status: qa_review` and the completion
+    reason `issue-not-terminal-success for issue:<id>: completed workflow
+    category`, but no state in that category. `workflow list` prints only
+    workflow names. `issue transition --help` says `--to string Target
+    state`.
+  - **No output in either mode names workflow states.** `workflow list`
+    JSON carries `states` and `transitions` as counts (`workflow/list.go:30`).
+    `Resume.issue` is `{id,status,status_category,revision}` (Phase 21
+    `public-interface.md` Resume row). The default workflows are seeded by
+    migration `0007`, so a caller never typed them. This is a real product
+    gap, not a provenance-class gap. DEC-278 item 9 correctly refuses
+    `setup` or `caller-authored` for it.
+  - **Second gap on the same step (the report's follow-up concern).** An
+    Envelope-bound transition needs `--expected-revision` equal to the
+    Issue's current revision, or it is refused with
+    `issue-revision-conflict` (`workflow/evaluation.go:456`). No Human
+    output prints that revision: `issue get` and `issue list` print
+    `id | status | title`, and Human `resume` omits the `issue.revision` its
+    JSON already carries. Deciding it here avoids a second stop on the same
+    step.
+  - **Rest of the journey.** The Tech Lead walked the remaining steps
+    against current output and `--example` templates: `decision
+    record-reference`, `human-outcome record`, `evidence link` and
+    `envelope complete`. Their values come from `resume`, `stop list` and
+    help (IDs, classes, capabilities, `OBL-security`, Envelope revision 1),
+    from caller-authored IDs, keys, reasoning and files, or from `setup`
+    actor IDs. Recording the approving Decision Reference and Human Outcome
+    pair resolves both Stops atomically (Phase 23 DEC-250/269).
+    Envelope completion does not require a closed Run. No other value
+    without a class was found. That is a planning walk, not proof: Task 14
+    still records every value's class.
+- **Decision:**
+  1. **ESC-24-008 closed.** The BLOCK was correct. `resume`, the
+     take-control entry point, gains the Issue's revision and the workflow
+     states it can move to, in both modes (clause 3). The journey then
+     takes `--to` and `--expected-revision` as `fid-output`. DEC-278's
+     five classes and VAL-049 are unchanged.
+  2. **Rejected options.** (a) A Human-only line: Human output would carry
+     data that JSON lacks, and a JSON caller taking control would stay
+     stuck. (b) States in `workflow list`: the caller would still have to
+     infer which workflow the Issue uses, and no output names it. (c) A
+     new `workflow get` leaf: a new operation across every whole-tree
+     corpus (VAL-010/064/065), and it still needs the workflow ID.
+     (d) Lines on `issue get`: its JSON and Human output are pinned by the
+     v0.1 parity goldens (`cmd/fid/testdata/v01_parity/issue-get-*.json`),
+     and its object is shared with `issue list`. (e) Widening DEC-278:
+     forbidden by DEC-278 item 9.
+  3. **Contract.**
+     - **JSON.** `Resume.issue` gains `next_states: NextState[]`, with
+       `NextState = {state:string, category:string}`. The Phase 21 shape
+       becomes `issue:{id,status,status_category,revision,next_states}`.
+       It holds every state `S` for which
+       `Registry.RulesForEdge(<issue workflow>, <status>, S)` reports an
+       edge. That is the same edge predicate `issue.transition` uses
+       (`issues/transition.go:185`), so edges to `cancelled` are included.
+       The `Definition.Transitions` view omits them for v0.1 parity
+       (`registry.go:165`) and must not be used. `category` is `S`'s
+       workflow category. Items are sorted by `state`, bytewise ascending.
+       It is `[]`, never `null`, when the status has no outgoing edge.
+       These are edges only: rules, authority, Claim, Run, Stop and
+       Obligation checks still run when the request is made. A workflow
+       has at most 64 states, so no result limit is added. No other
+       `resume` member, order, code or exit changes.
+     - **Human.** The `resume` Issue block becomes:
+
+       ```text
+       Issue <issue-id>
+         Status: <status>
+         Revision: <revision>
+         Next states: <state> (<category>), <state> (<category>)
+         Completion: <completion status>
+         Envelope: <envelope-id> (revision <n>, <status>)
+       ```
+
+       Items appear in JSON order, joined by `, `. An empty or nil list
+       prints `  Next states: none.`. Values need no extra escaping: state
+       names match `^[a-z][a-z0-9_]{0,63}$` (`workflow/authoring.go:11`), and
+       categories are a closed set. No other `resume` line, section or
+       order changes. For the take-control start (`qa_review`, revision 4)
+       the lines read `Revision: 4` and
+       `Next states: cancelled (cancelled), qa_block (started), qa_pass (completed)`.
+     - **Help.** `issue transition` flag usages become
+       `--to`: `Target workflow state; fid resume <issue-id> lists the Issue's next states`
+       and `--expected-revision`:
+       `Required current Issue revision; fid resume <issue-id> shows it`.
+       No other help text changes, including `issue update`'s.
+  4. **Journey provenance (VAL-049, unchanged classes).** The Builder's
+     retried terminal-success transition records `--to qa_pass` as
+     `fid-output`, sourced from the `resume` `Next states:` line. It
+     records `--expected-revision` as `fid-output`, from the `Revision:`
+     line of a `resume` read after the last mutation before the transition.
+     The command `issue transition` is `fid-help` from `fid issue --help`.
+     The acting `--actor` stays `setup`. The diagnostic
+     `TestP24TakeControlTerminalStateProvenance` (Task 14's own, `4b6a3837`)
+     stays and must pass. It may be tightened to require these two lines.
+     Its forbidden-source guard (`--json`, `sql`, `journal`) must not be
+     loosened.
+  5. **Task 14 scope.** Clause 3 is the first product change this journey
+     needs, and Task 14's required gates are the first to expose the gap.
+     Task 14 owns it (DEC-175 precedent). Product files:
+     `internal/workflow/registry.go` (a registry method enumerating
+     `edges` from a state), `internal/workflow/resume.go`
+     (`ResumeIssue.NextStates`, filled in `resumeIssue`),
+     `cmd/fid/resume_human.go` (`resumeContextHumanLines`) and
+     `cmd/fid/issue_transition.go` (the two usages). New test files:
+     `internal/workflow/registry_next_states_test.go` (several edges
+     including `cancelled`, sorted with categories; a state with none) and
+     `cmd/fid/p24_resume_issue_test.go` (in-process Human lines for a full,
+     empty and nil list; the help usages). The JSON/Human pairing row for
+     the start state goes in `cmd/fid/integration/p24_take_control_test.go`,
+     which is already Task 14 scope; JSON is allowed there because that row
+     is not part of the journey. The ordinary race/coverage gate executes
+     `internal/workflow` and `cmd/fid`, and the tagged gate executes
+     `cmd/fid/integration` (DEC-167/173). The seven commands are
+     unchanged. Red first: a clause 3 row fails before product code. The
+     retained diagnostic is already red.
+  6. **Retained convergence.** The Tech Lead found no retained test pinning
+     the exact `resume` `issue` object or Issue block lines. The search
+     covered `status_category`, `Completion: `, `  Status: `,
+     `DisallowUnknownFields` and resume goldens across `cmd` and
+     `internal`. `TestHumanRecoveryGuidance` builds a nil list, and the
+     `p24_stop_corpus_test.go` `Next:` check does not match `Next states:`.
+     If clause 3 still displaces a retained assertion, Task 14 owns its
+     subject-preserving convergence, in any test file under `cmd/fid/`,
+     `cmd/fid/integration/` or `internal/workflow/`. The only permitted
+     edit is adding the two Human lines or the `next_states` member to an
+     exact expected value. Record a provenance row for each edit:
+     introducing commit, phase and task. Any other kind of displacement is
+     new information: return it to the Tech Lead.
+  7. **Recovery identity** (STOP resume; DEC-286 clause 7 precedent). The
+     chain trigger stays TRG-24-016's, at attempt 2: `task-14`,
+     `task-14:public-interface-decision:terminal-state-provenance-qa-pass`,
+     `in-scope-implementation`, `task-scope`, `0/2`. The signature stays
+     exact even though clause 3 also covers the revision. Attempt 1 is the
+     BLOCKED checkpoint `4b6a3837`/`98d45617`. Its failed diagnostic,
+     failed tagged gate, timing table and fixture-setup attempts stay in
+     history.
+  8. **Ledger sequence** (Runner, transactional append, each expected
+     exit 0, each appended before any dispatch).
+     (a) **RUN-RESUME** (schema v2 STOP resume):
+     `Sequence contract: v2`; `Recovery directive schema: v2`;
+     `Prior run/session or STOP: 2026-10-11 08:18 STOP / TRG-24-016 / ESC-24-008`;
+     `Governing TRG: TRG-24-016`; `Governing ESC: ESC-24-008`;
+     `Trigger signature: task-14:public-interface-decision:terminal-state-provenance-qa-pass`;
+     `Attempt count: 2`; `Resolution authority: DEC-290`;
+     `Continuing task: task-14`;
+     `Next recovery: task-14 | in-scope-implementation | task-scope | task-14:public-interface-decision:terminal-state-provenance-qa-pass | 2`.
+     `Checkpoint` names the post-DEC-290 phase HEAD and the preserved
+     `4b6a3837` (implementation) and `98d45617` (report) checkpoints.
+     `Resolution evidence` cites DEC-290 at the verified HEAD and the
+     unchanged ledger validating `VALID state=STOPPED`. Expect
+     `APPEND_CONFIRMED state=REPAIR_PENDING`.
+     (b) **TASK-RECOVERY task-14**, same tuple:
+     `Source: TRG-24-016 / ESC-24-008 / DEC-290; project-docs/docs/phases/phase-24/tasks/task-14-done.md`;
+     `Category: in-scope-implementation`; `Repair mode: task-scope`;
+     `Repair authority: TRG-24-016 / DEC-290`; `Triage disposition: N/A`;
+     `Attempt count: 2`; `Consecutive no-progress attempts: 0/2`.
+     `Control contract`, `Control mismatch`, `Originating report`,
+     `Exact verification`, `Control repair base` and
+     `Temporary repair worktree`: `N/A`.
+     `Allowed files: ordinary task-14.md scope plus internal/workflow/registry.go,internal/workflow/resume.go,cmd/fid/resume_human.go,cmd/fid/issue_transition.go,internal/workflow/registry_next_states_test.go,cmd/fid/p24_resume_issue_test.go (DEC-290 clause 5), and clause 6 convergence edits only`.
+     `Forbidden changes`: no `resume` JSON change other than
+     `issue.next_states`; no other `resume` Human line, section or order;
+     no change to `issue.transition` behaviour, validation, codes or
+     exits, or to help text beyond the two clause 3 usages; no change to
+     `issue get`/`list`, `workflow list`, `issue update` or the registry's
+     `Definition.Transitions` view. No change to DEC-278's provenance
+     classes, VAL-049 or any validation assertion, to Task 14 gate
+     commands, coverage policy, thresholds or budgets. No JSON, SQL,
+     journal or setup-state substitution for any journey value. Keep
+     `TestP24TakeControlTerminalStateProvenance` and its forbidden-source
+     guard: tighten, never loosen. Do not delete, weaken, narrow,
+     re-point or rename retained assertions beyond clause 6. Do not edit
+     task specs, decisions, the contract, the validation contract, QA
+     artifacts, the QA plan, workflow controls, prompts, templates,
+     dependencies, `run-ledger.md` or `triage-log.md`. Preserve the
+     attempt-1 BLOCKED evidence.
+     `Next action`: one same-task Developer continuation. It implements
+     clause 3 red-first, then completes ordinary Task 14: the VAL-049
+     journey with clause 4 provenance, VAL-050 parity, the VAL-051 scan,
+     the VAL-053..057 fixture extensions, VAL-068 rows and the
+     `08_QUALITY_PLAN.md` update. It runs all seven Task 14 commands
+     byte-identically, in order, with observed termination; both `rg`
+     commands must exit 1. It finalizes `task-14-done.md`
+     (`Refs: phase-24/task-14`). Independent report-lint must then
+     return `OUTCOME COMPLETE`, exit 0. Expect
+     `APPEND_CONFIRMED state=REPAIR_PENDING`.
+     (c) **REPAIR task-14**, same trigger and attempt, `Outcome: RESOLVED`
+     after the continuation's commits. Expect
+     `APPEND_CONFIRMED state=COMPLETION_PENDING`.
+     (d) **TASK task-14 COMPLETE** after report-lint `OUTCOME COMPLETE`.
+     Expect `APPEND_CONFIRMED state=ADVANCEABLE`. Then QA window E (QA
+     plan section 8: tasks 12-14) also validates VAL-068.
+  9. **Verification.** The Tech Lead dry-ran (a)-(d) on a scratch copy of
+     the phase ledger, decisions (with this decision) and triage log, using
+     the unchanged verifier. The current ledger validates
+     `VALID state=STOPPED`. (a) and (b) each returned
+     `APPEND_CONFIRMED state=REPAIR_PENDING`, then (c)
+     `APPEND_CONFIRMED state=COMPLETION_PENDING` and (d)
+     `APPEND_CONFIRMED state=ADVANCEABLE`, all exit 0. A final validate
+     returned `VALID state=ADVANCEABLE`. Each negative guard below
+     returned exit 1 with the scratch ledger byte-unchanged:
+
+     | Candidate | Diagnostic |
+     |---|---|
+     | (a) at attempt 1 | `RUN-RESUME Attempt count must increment its governing TRIAGE` |
+     | (a) against the decisions file before DEC-290 | `RUN-RESUME cites an unrecorded or malformed phase decision`; `… invalid or unverifiable Resolution authority` |
+     | (b) whose `Source` omits DEC-290 | `TASK-RECOVERY does not retain its RUN-RESUME decision authority`; `… typed RUN-RESUME resolution authority` |
+     | (b) with `Category: gate-repair` | `TASK-RECOVERY does not match the exact schema v2 RUN-RESUME recovery tuple` |
+     | TASK task-14 COMPLETE straight after (b) | `task completed before a resolved REPAIR event: task-14` |
+
+     The verifier also accepted (b) appended straight after the STOP with
+     no RUN-RESUME (`APPEND_CONFIRMED state=STOPPED`). This is control
+     friction recorded under CF-036, not a route: (a) must come first, as
+     written. If any append is rejected as written, that is new
+     information. Return to the Tech Lead and never substitute field
+     values.
+  10. **Unchanged.** TRG-24-016, the STOP, the attempt-1 report and every
+      failed result; DEC-278 items 9-10; VAL-049..057 and VAL-063; Task
+      14's seven commands, expected non-zero exits and budgets; the QA
+      cadence (window E after Task 14, then the final review and Human
+      checklist). CF-040's Human-output design revisit is not pulled
+      forward.
+- **Artifact/spec sync:** `public-interface.md` section 10 and its header
+  gain the clause 3 contract. `qa/validation-contract.md` gains VAL-068
+  (68 rows: 63 deterministic, 5 Human), with its coverage and revision log.
+  `tasks/task-14.md` gains the DEC-290 amendment.
+  `06_DESIGN_PLAN_CLI.md` describes the `resume` Issue block. The ESC
+  register, archive, brief and progress are refreshed. No PRD, TRD, schema,
+  data model, glossary, inventory, QA plan, tool or prompt change:
+  PRD-PROJ-006 and the roadmap journey already require taking control
+  from fid output alone, and nothing is persisted.
+- **Workflow note for wrap-up:** DEC-278 R-13 fixed the provenance
+  classes, but planning never walked each journey value against current
+  Human output. A per-step value walk at planning would have found both
+  gaps before Task 14. Journey tasks should carry that walk in their spec.
+- **Refs:** ESC-24-008; TRG-24-016; `run-ledger.md` 2026-10-11 08:17 and
+  08:18; `tasks/task-14.md`; `tasks/task-14-done.md` at `98d45617`;
+  `4b6a3837`; Phase 21 `public-interface.md` Resume row; contract sections
+  1 and 10; DEC-175, DEC-278 items 9-10, DEC-286 (route precedent).
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.

@@ -6,13 +6,15 @@
 > Last refined: 2026-10-04 by the Tech Lead, applying the QA plan's first
 > pass (`qa-plan.md`, R-01..R-17 and I-01..I-19) under DEC-278, and its
 > readiness refresh (RR-01..RR-09, RI-01..RI-13) under DEC-280.
-> 67 assertions: 62 deterministic and 5 Human, all `Ready`. VAL-065 became
+> 68 assertions: 63 deterministic and 5 Human, all `Ready`. VAL-065 became
 > `Ready` when the Human decided D5 (DEC-279). D6 = A (DEC-281) amended
 > VAL-027..029 and added VAL-067.
 > DEC-282 applies QA recheck RC-01/02: the Run plain-copy cause and bounded
 > grammar messages, with matching evidence in VAL-029/036/064/065/067.
 > DEC-287 aligns VAL-041 with contract section 2: a plain copy keeps
 > `run.inspect`'s refusal, and `resume` proves `different worktree`.
+> DEC-290 adds VAL-068: `resume` shows the Issue's revision and next
+> workflow states (ESC-24-008).
 > `Ready` describes planning; dispatch follows the readiness controls in the brief.
 
 ## Purpose
@@ -27,7 +29,8 @@ it.
 `VAL-NNN` is phase-scoped. VAL-044, VAL-047 and VAL-056 restate Phase 23
 VAL-060 and VAL-073 (contract section 11). They are not weakened.
 VAL-058..063 were split from bundled rows (R-17), VAL-064..066 were added
-under DEC-278, and VAL-067 under DEC-281. No ID was renumbered.
+under DEC-278, VAL-067 under DEC-281, and VAL-068 under DEC-290. No ID
+was renumbered.
 
 ## Shared Terms
 
@@ -133,6 +136,7 @@ under DEC-278, and VAL-067 under DEC-281. No ID was renumbered.
 | VAL-065 | Phase 21 contract 1 (message bound) and 5 (`operation-unavailable`); contract 9; DEC-279; DEC-280; DEC-282 | An unknown command or subcommand returns `operation-unavailable`. | An unknown word under the root and under every group, enumerated from the live tree (R17: the root plus 28 groups at planning), in both modes. Plus the near-miss `fid isue`, a 600-character unknown word, short exact text, escaped-text 512/513 boundaries, non-ASCII scalars and an escape crossing the cut (including already escaped `%q` text), and each group with no word in Human mode. Shared-construction units cover those boundaries too. | QA Reviewer | task 9a | JSON: `operation-unavailable`, invalid-input, not retryable, exit 2, subject null, details `{argument:"command",value:<full word>,allowed:[...]}`. Message source is exactly `unknown command "<word>" for "<command path>"` without suggestions, then escaped and bounded by contract 9: at most 512 scalars unchanged; over 512, first 511 plus `…`, dropping an escape crossing the cut whole. Envelope `operation` = the dotted path of the known command that received the word (`fid`, `concern`, `issue.ac`; DEC-279). `allowed` = that command's `--help` subcommands, sorted, with `completion` and `help` at the root. Human: matching `error:` payload, exit 2. No word: the group's help on stdout, exit 0, unchanged. A group without a row fails the completeness check. | Silence, help with exit 0 for an unknown word, a raw control or multi-line message, wrong cut or split escape, truncated details, different metadata/code/exit, or a wrong `operation`. | Ready | Baseline (DEC-280): 23 groups print help and exit 0 today; the root and 5 groups exit 2 silently. |
 | VAL-066 | PRD-OPS-012; contract 2, 7 | A replay never observes. | For every observing mutation: commit, then make the worktree unobservable (unmerged paths) and retry the same key and input. For a project-file Source, delete the file and retry. In the same state, send a control request under a new key, chosen to succeed from the same pre-state in an observable worktree (RI-04). | QA Reviewer | tasks 2, 4-8 (rows per owned leaf) | Every retry replays the original result with no Event. Each control fails with no Event (from task 4: `repository-unavailable`, `recovery-state-conflict` for close/abandon, `source-digest-mismatch` for the deleted file). | A retry fails or appends, or a control succeeds or fails for a reason other than the unobservable state. | Ready | Added under DEC-278 (R-03). Create-style leaves need a new record ID in the control, and completed subjects need a fresh subject. |
 | VAL-067 | PRD-OPS-014; PRD-OPS-007; contract 9; DEC-281; DEC-282 | A generic fallback's message is the domain cause it caught. | Built-binary corpus in both modes, one row per generic fallback (inventory R20, 18 at planning), each driven by a reachable domain cause. Unit rows: escaped causes of exactly 512 and of 513 scalars, non-ASCII scalar counting, a cause holding ESC, an escape crossing the cut, and empty/all-whitespace causes. Guard row: an `activation component` domain failure reaching the generic fallback, whose `gate-definitions` input holds a sentinel `environment[].value` literal; an earlier structural/typed failure is insufficient. A fallback with neither a row nor a pinned unreachability reason fails the completeness check. | QA Reviewer | task 10 | JSON `message` is the cause's text, escaped then bounded by contract 9. Code, details and exit are those of the fixed fallback. The Human `error:` line shows the same text. Escaped text up to 512 scalars stays uncut; over 512 becomes the first 511 plus `…`, dropping an escape crossing the cut whole. An empty or all-whitespace cause keeps the fixed message. The sentinel appears in neither stream. | A fixed message for a non-whitespace cause, a changed code, detail or exit, a raw control byte, a wrong cut or split escape, the sentinel in output, or an unaccounted fallback. | Ready | Plain-copy messages are VAL-027..029. Added under DEC-281; QA recheck evidence refinements recorded under DEC-282. |
+| VAL-068 | roadmap Phase 24 journey; PRD-PROJ-006; DEC-290 | `resume` shows the Issue's revision and the workflow states it can move to. | (a) Unit rows over a loaded registry: a status with several edges, one of them to `cancelled`, and a status with none. (b) In-process Human rows for a full, an empty and a nil list. (c) Built-binary `resume` of the Task 14 take-control start in both modes. (d) `issue transition --help`. | QA Reviewer | task 14 | JSON `issue.next_states` lists exactly the states with a workflow edge from the current status (the `issue.transition` edge predicate), each with its category, sorted by `state`, and is `[]` when there is none. No other `resume` JSON changes. The Human Issue block shows `Revision: <n>` equal to `issue.revision`, then `Next states: <state> (<category>), …` in JSON order or `Next states: none.`. For the start state both modes give revision 4 and `cancelled (cancelled), qa_block (started), qa_pass (completed)`. The `--to` and `--expected-revision` usages name `fid resume <issue-id>` (DEC-290 clause 3). | A missing, extra or misordered state; a wrong category; `null`; a Human/JSON mismatch; any other `resume` JSON or Human change; or help without the pointer. | Ready | Added under DEC-290 (ESC-24-008). Edges only; rules, authority and Stops are still checked when the request runs. |
 
 ## Coverage
 
@@ -142,7 +146,7 @@ under DEC-278, and VAL-067 under DEC-281. No ID was renumbered.
 | PRD-OPS-012 | 006-009, 066 |
 | PRD-OPS-013 | 010-016, 049, 057, 059 |
 | PRD-OPS-014 | 036-039, 049, 054, 064, 065, 067 |
-| PRD-PROJ-006 | 040, 041, 055 |
+| PRD-PROJ-006 | 040, 041, 055, 068 |
 | PRD-PROJ-007 | 045, 047, 048, 063 |
 | PRD-HUM-001 | 044, 056 |
 | PRD-EVID-003 / EVID-001 | 033 / 034 |
@@ -153,11 +157,12 @@ under DEC-278, and VAL-067 under DEC-281. No ID was renumbered.
 | PRD-FOUND-003, PRD-REC-001, PRD-REC-004 | 001-004, 050, 058 |
 | PRD-OPS-007 | 036, 039, 046, 064, 065, 067 |
 | DEC-273 / 274 / 275 / 276 | 024, 030, 032 / 042, 043 / 001-006, 058 / 011-015, 060 |
+| DEC-290 (`resume` Issue position) | 068 |
 | Contract sections 2, 6 (unobservable, codes) | 023, 025, 061 |
 | Phase 21 contract 2, 5 (delivered under DEC-194) | 064, 065 |
 | Phase 21 contract 1 (message bound); DEC-282 | 036, 064, 065, 067 |
 | Roadmap section 7 (shared fake) | 035 |
-| Roadmap Phase 24 journey | 049, 053 |
+| Roadmap Phase 24 journey | 049, 053, 068 |
 | Roadmap Phase 24 removal column | 051 |
 | Phase 23 VAL-079; DEC-227 (wall time) | 052 |
 
@@ -193,3 +198,4 @@ under DEC-278, and VAL-067 under DEC-281. No ID was renumbered.
 | 2026-10-09 | VAL-036 | row for the `export import --project` root-flag refusal (Phase 21 section 2 forbidden flag); no assertion semantics change | ESC-24-005; Phase 21 sections 1, 2 conformance | DEC-286 |
 | 2026-10-09 | VAL-041 | plain-copy `different worktree` proven on `resume`; `run.inspect` plain copy keeps the retained `recovery-state-conflict` refusal (exact pair); no behaviour or JSON change | ESC-24-006; contract sections 2, 10 | DEC-287 |
 | 2026-10-11 | VAL-044 | empty-section marker named as the retained `None.` line; observable and fail condition unchanged | contract section 10 A6 said `none` while the retained Phase 23 marker is `None.` | DEC-289 |
+| 2026-10-11 | VAL-068 | added: `resume` Issue revision and next workflow states, both modes, plus `issue transition` help pointers; owner task 14, window E | ESC-24-008: the journey's `--to` and `--expected-revision` had no permitted source | DEC-290 |

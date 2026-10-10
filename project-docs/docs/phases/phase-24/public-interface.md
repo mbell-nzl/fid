@@ -15,6 +15,8 @@
 > accept (`export import --project`).
 > DEC-287 clarifies section 10: `run.inspect` keeps its refusal of a
 > plain copy, so its comparison line only says `same worktree`.
+> DEC-290 amends section 10: `resume` shows the Issue's revision and next
+> workflow states, and Phase 21 `Resume.issue` gains `next_states`.
 > Phase 21, 22 and 23 `public-interface.md` remain the baseline for every
 > leaf, value, code and exit this file does not replace. Inventory and task
 > ownership: [`input-inventory.md`](input-inventory.md).
@@ -380,6 +382,19 @@ next: <resolving action>                 # only for the codes in the next-table 
   - The `PRIVATE_` leak checks are replaced by a guard that seeds referenced
     files with sentinel content and proves no Human view prints it.
   - GLOSSARY distinguishes project-owned prose from recorded reasoning.
+- **Issue position in `resume` (DEC-290).** Phase 21 `Resume.issue`
+  becomes `{id,status,status_category,revision,next_states}`, with
+  `next_states: {state:string, category:string}[]`. It lists every state
+  with a workflow edge from the Issue's current status, using the edge
+  predicate `issue.transition` uses (edges to `cancelled` included). Each
+  item carries that state's category. Items are sorted by `state`, and the
+  list is `[]` when there is no edge. These are edges only: the request
+  is still checked when it runs. The Human Issue block adds two lines
+  after `Status:`. They are `Revision: <revision>` and
+  `Next states: <state> (<category>), …`, in JSON order, or
+  `Next states: none.`. `issue transition --help` points `--to` and
+  `--expected-revision` at `fid resume <issue-id>`. The exact text is in
+  DEC-290 clause 3.
 - **Detail views (D2, DEC-274).** New read leaves `concern.get` /
   `fid concern get <concern-id>`, `deviation.get` /
   `fid deviation get <deviation-id>` and `human-outcome.get` /

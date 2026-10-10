@@ -7,6 +7,12 @@ None.
 ## Recently resolved
 
 Phase 24, archived in [Phase 24 escalations](../phases/phase-24/tl-escalations.md):
+- ESC-24-008: Task 14's journey had no permitted source for the
+  terminal-success `--to` state (`qa_pass`) or the Issue revision.
+  Resolved 2026-10-11 by DEC-290: `resume` shows `Revision:` and
+  `Next states:` (JSON `issue.next_states`), and `issue transition` help
+  points there. Task 14 owns the change (VAL-068). The Runner appends the
+  clause 8 RUN-RESUME and TASK-RECOVERY (attempt 2).
 - ESC-24-007: Window D2 (review-9 BLOCK, B1-H) lacked the interim
   VAL-054/055 Human walkthrough. Resolved 2026-10-10 by DEC-288: the
   Human recorded all nine rows (`a23b9f33`). Five refusals were clear

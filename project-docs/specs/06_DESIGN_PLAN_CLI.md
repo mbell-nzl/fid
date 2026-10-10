@@ -156,6 +156,27 @@ all projection commands are derived reads. `human-brief` may explicitly render
 its named Human schema as terminal text, Markdown, or HTML; JSON remains
 canonical.
 
+`resume` shows where the Issue stands in its workflow (Phase 24 DEC-290).
+Its JSON `issue` object carries `revision` and `next_states`. That is every
+state with a workflow edge from the current status, as `issue transition`
+checks it (`cancelled` included). Each item is `{state, category}`, sorted
+by state, and the list is `[]` when there is none. The Human Issue block
+reads:
+
+```text
+Issue P24-example
+  Status: qa_review
+  Revision: 4
+  Next states: cancelled (cancelled), qa_block (started), qa_pass (completed)
+  Completion: incomplete
+  Envelope: ENV-example (revision 1, active)
+```
+
+An Issue with no outgoing edge prints `Next states: none.`. These are
+workflow edges, not permissions: authority, Claim, Run, Stop and
+Obligation checks still apply when the transition runs. `issue transition`
+help points `--to` and `--expected-revision` at `fid resume <issue-id>`.
+
 `envelope create --input` omits `repository_scope` and every Source
 `repository`. fid observes the selected project's Git worktree and records that
 observation as the scope and on `risk_result.source`, `sources[]`, and every
@@ -869,4 +890,4 @@ returns `source-digest-mismatch` with nullable `expected_digest` and
 `observed_digest`; an unobservable worktree returns `repository-unavailable`
 with a typed reason and detail. Both refuse without appending an Event.
 
-*Last updated: 2026-10-07 (Phase 24 Task 9a grammar and unknown-command delivery)*
+*Last updated: 2026-10-11 (Phase 24 DEC-290 `resume` Issue revision and next states)*

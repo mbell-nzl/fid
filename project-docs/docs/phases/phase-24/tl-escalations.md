@@ -1,5 +1,39 @@
 # Phase 24 Escalations
 
+## ESC-24-008 - Task 14 terminal-success state has no permitted Human provenance
+
+- **Raised:** 2026-10-11 by TL-Lite in TRG-24-016 (BLOCK); ledger STOP
+  2026-10-11 08:18.
+- **Protected category:** protected product/public-interface/provenance
+  decision.
+- **Originating task:** task-14.
+- **Trigger signature:** task-14:public-interface-decision:terminal-state-provenance-qa-pass
+  (attempt 1).
+- **Condition:** The VAL-049 journey needs `issue transition --to qa_pass`.
+  No Human output or help names any workflow state: `workflow list` prints
+  names in Human mode and counts in JSON, and `Resume.issue` has no
+  states. DEC-278 item 9 does not allow `setup` or `caller-authored` for
+  that value. `TestP24TakeControlTerminalStateProvenance` and the required
+  tagged gate failed (exit 1). The Task 14 report at `98d45617` had
+  report-lint `OUTCOME BLOCKED` (exit 0). It also flagged a second gap:
+  no Human output prints the Issue revision that `--expected-revision`
+  needs.
+- **Status:** RESOLVED 2026-10-11 by DEC-290 (decision). `resume` gains
+  the Issue's revision and next workflow states in both modes. JSON
+  `Resume.issue.next_states` is `{state, category}[]`. The Human Issue
+  block adds `Revision:` and `Next states:` lines, and the
+  `issue transition` help points `--to` and `--expected-revision` at
+  `resume`. Task 14 owns the change, with a bounded scope and VAL-068.
+  The journey takes both values as `fid-output`, and DEC-278's classes
+  are unchanged. The Tech Lead dry run confirmed the clause 8 route
+  through to `ADVANCEABLE`, plus five negative guards. The Human may
+  override the choice by DEC before Task 14 closes. No further Tech Lead
+  or Human input is needed unless a clause 8 append is rejected as
+  written or the journey finds another value with no class.
+- **Links:** [DEC-290](decisions.md); [TRG-24-016](triage-log.md);
+  [run ledger](run-ledger.md); [Task 14 report](tasks/task-14-done.md);
+  [Task 14 spec](tasks/task-14.md).
+
 ## ESC-24-007 - Window D2 Human walkthrough and interim judgment absent
 
 - **Raised:** 2026-10-09 by TL-Lite in TRG-24-013 (BLOCK). Record-identity

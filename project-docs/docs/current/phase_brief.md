@@ -1,4 +1,4 @@
-# Phase Brief - Phase 24 (executing; Task 13 recovery under DEC-289)
+# Phase Brief - Phase 24 (executing; Task 14 resume under DEC-290)
 
 ## Phase Goal
 
@@ -11,28 +11,30 @@ expectations a check uses. Request digests cover the input as written.
 
 ## Status
 
-**Executing on branch `phase-24`.** Tasks 1-12 are complete (Task 11 at
-`93a1f792`, Task 12 at `fc4bdff7`). QA windows A, B, C (late, DEC-284), D1
-and D2 have passed; review-10 (`3f920f31`) closed D2 after DEC-288. The
-ledger is `ADVANCEABLE`.
+**Executing on branch `phase-24`.** Tasks 1-13 are complete (Task 12 at
+`fc4bdff7`, Task 13 at `fd6783f9` under DEC-289). QA windows A, B, C (late,
+DEC-284), D1 and D2 have passed; review-10 (`3f920f31`) closed D2.
 
-Task 13 is checkpointed at `595738e7` / `50e75fc8` (`RECOVERY_REQUIRED`).
-Its full tagged gate fails on one retained Phase 23 assertion,
-`p23_concern_list_human_test.go:29` (`59d2653d`, phase-23/task-14), which
-still forbids the summary that A7 now shows. **DEC-289 (2026-10-11)** gives
-Task 13 that file for that one convergence edit. It also says the empty
-section marker is the retained `None.` line, and binds the recovery tuple.
-The Runner's earlier append was rejected because it cited Phase 21's
-DEC-162/165/166.
+Task 14 attempt 1 returned BLOCKED at `4b6a3837` / `98d45617`. The journey
+had no permitted source for the terminal-success `--to` state (`qa_pass`),
+and none for the Issue revision `--expected-revision` needs. TRG-24-016
+raised ESC-24-008, and the ledger is `STOPPED` (2026-10-11 08:18).
+**DEC-290 (2026-10-11)** closes it. `resume` gains `Revision:` and
+`Next states:` lines (JSON `issue.next_states`), and the `issue transition`
+help points there. Task 14 owns the change (bounded scope, VAL-068). The
+journey takes both values as `fid-output`; DEC-278's classes are unchanged.
+The Human may override the choice by DEC before Task 14 closes.
 
 **Next:**
 
-1. Phase Runner, DEC-289 clause 4: append TASK-RECOVERY task-13
-   (`gate-repair`, `task-scope`, `task spec; DEC-289`,
-   `task-13:gate-repair:retained-concern-list-hidden-summary-predicate`,
-   attempt 1, `0/2`), dispatch one same-task continuation, then REPAIR
-   `RESOLVED` and TASK task-13 COMPLETE.
-2. Task 14, then QA window E, the final review and the Human checklist.
+1. Phase Runner, DEC-290 clause 8: append RUN-RESUME (TRG-24-016 /
+   ESC-24-008, attempt 2, `Resolution authority: DEC-290`), then
+   TASK-RECOVERY task-14 (`in-scope-implementation`, `task-scope`,
+   `task-14:public-interface-decision:terminal-state-provenance-qa-pass`,
+   attempt 2, `0/2`). Dispatch one same-task continuation, then REPAIR
+   `RESOLVED` and TASK task-14 COMPLETE.
+2. QA window E (tasks 12-14, including VAL-068), then the final review and
+   the Human checklist.
 
 ## Operating Mode
 
@@ -45,7 +47,7 @@ Human checklist's "take control" scenario is the Human run.
 ## Authority
 
 - Contract: `../phases/phase-24/public-interface.md` (ACCEPTED, DEC-277;
-  clarified by DEC-278/280/282/285/286/287; D6 decided by DEC-281).
+  clarified by DEC-278/280/282/285/286/287; D6 by DEC-281; DEC-290 adds).
 - Inventory: `../phases/phase-24/input-inventory.md` (R1-R20). Every task
   reruns its registry commands.
 - Decisions: DEC-272 (scope), DEC-273 (real-worktree run and gate checks),
@@ -58,7 +60,8 @@ Human checklist's "take control" scenario is the Human run.
   failure mapping; Task 10 caller scope), DEC-286 (root-flag refusal
   mapping), DEC-287 (plain-copy `run.inspect` keeps its refusal), DEC-288
   (window D2 Human walkthrough; evidence-only resume), DEC-289 (Task 13
-  retained-predicate scope; `None.` marker). See
+  retained-predicate scope; `None.` marker), DEC-290 (`resume` Issue
+  revision and next states; Task 14 scope). See
   `../phases/phase-24/decisions.md`.
 
 ## Task Index
@@ -78,15 +81,14 @@ Human checklist's "take control" scenario is the Human run.
 | 10 | Human failure lines in every family; generic-fallback messages (DEC-281) | Complete (`a6b6203`) | 9a |
 | 11 | Readable Stop, Attention and repository lines; Human fixture generator | Complete (`93a1f792`; window D2 PASS, review-10) | 10 |
 | 12 | Concern, Deviation and Human Outcome `get` leaves (DEC-274) | Complete (`fc4bdff7`) | 4, 10 |
-| 13 | Judgment disclaimers once per section; recorded reasoning shown | Recovery (DEC-289) | 11, 12 |
-| 14 | Human-takes-control journey and phase conformance | Pending | 1-13, 9a |
+| 13 | Judgment disclaimers once per section; recorded reasoning shown | Complete (`fd6783f9`, DEC-289) | 11, 12 |
+| 14 | Human-takes-control journey and phase conformance; `resume` Issue position (DEC-290) | Resume attempt 2 (DEC-290) | 1-13, 9a |
 
 ## Validation Contract
 
-Full contract: `../phases/phase-24/qa/validation-contract.md`. It has 67
-rows (62 deterministic, 5 Human), all `Ready`. VAL-058..063 were split from
-bundled rows. VAL-064..066 are new (DEC-278), and so is VAL-067 (DEC-281).
-DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
+Full contract: `../phases/phase-24/qa/validation-contract.md`: 68 rows (63
+deterministic, 5 Human), all `Ready` (planning status, not QA PASS). Split:
+058..063. Added: 064..066 (DEC-278), 067 (DEC-281), 068 (DEC-290).
 
 | VAL range | Subject | Owning tasks | Validator |
 |---|---|---|---|
@@ -100,7 +102,7 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 | 040-041 | Stop, Attention and repository Human lines | 11 | QA Reviewer |
 | 042-043 | `get` leaves | 12 | QA Reviewer |
 | 044-048, 063 | Disclaimers, recorded reasoning, sentinel guard, glossary, `PRIVATE_` removal | 13 | QA Reviewer (048 QA Lead) |
-| 049-052 | Take-control journey, parity, absence, wall-time budgets | 14 (052 every task) | QA Reviewer (051 QA Lead) |
+| 049-052, 068 | Take-control journey, parity, absence, wall-time budgets; `resume` Issue position | 14 (052 every task) | QA Reviewer (051 QA Lead) |
 | 053-057 | Human: take control, failure lines, views, guidance, authoring | phase-end (054/055 also at window D2) | Human |
 
 ## QA Artifacts
@@ -108,7 +110,7 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 | Artifact | Path | Status |
 |---|---|---|
 | QA plan | `../phases/phase-24/qa/qa-plan.md` | READY (`7e41e6b`, section 12.7); RC-01/02 closed |
-| Mid-phase reviews | A after 3 (review-2 PASS); B after 6 (review-4 PASS); C late, after 9 (review-6 PASS, DEC-284); D1 after 9a (review-8 PASS); D2 after 11 (review-9 BLOCK; review-10 PASS, DEC-288); E after 14 | Six windows per QA plan section 8 (DEC-280/282). Human walkthrough after task 11 |
+| Mid-phase reviews | A after 3 (review-2 PASS); B after 6 (review-4 PASS); C late, after 9 (review-6 PASS, DEC-284); D1 after 9a (review-8 PASS); D2 after 11 (review-9 BLOCK; review-10 PASS, DEC-288); E after 14 (also VAL-068, DEC-290) | Six windows per QA plan section 8 (DEC-280/282). Human walkthrough after task 11 |
 | Human fixtures | `TestP24HumanFixtures` (task 11, extended by task 14) | D2 interim walkthrough recorded (`a23b9f33`); phase-end pending |
 | Final review / Human checklist | `../phases/phase-24/qa/` | Pending |
 
@@ -122,7 +124,8 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 - Task 8 makes freshness real. A displaced journey row is convergence of the
   accepted change, never a reason to weaken freshness.
 - The journey's provenance classes are closed (DEC-278). A missing value is a
-  product gap to escalate, never a reason to widen them.
+  product gap to escalate, never a reason to widen them. DEC-290 is the only
+  product change Task 14 may make.
 - Agent prompts and `09_AI_WORKFLOW.md` gain no fid product features.
 
 ## Known Risks
@@ -133,13 +136,13 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
   Tasks 1 and 2 run the 100k benchmark (VAL-005).
 - **Breadth:** tasks 2, 9, 9a and 10 touch every family or the whole tree.
   Their corpora are enumerated from registries, not hand-picked.
-- **Package time:** `cmd/fid` took 484.7 s at Task 10 close, above the
-  480 s warning (budget 600 s). Task 11 adds corpora there; reports watch it.
-- **Scratch space:** `/tmp` is a 3.9 GB tmpfs with 0.7 GB free at DEC-280.
-  The QA refresh measured 1.2 GB. Most of the space is held by other
-  projects' directories. A gate can fail for environmental reasons
+- **Package time:** `cmd/fid` took 484.7 s at Task 10 close (warning 480 s,
+  budget 600 s) and 337.6 s at Task 14 attempt 1; reports watch it.
+- **Scratch space:** `/tmp` is a 3.9 GB tmpfs (1.3 GB free at DEC-290),
+  mostly held by other projects. A gate can fail for environmental reasons
   (CF-042).
 
 ## Next Planning Checkpoint
 
-Task 13 closes under DEC-289. Then Task 14, window E and the phase-end review. Phase 25 "Parallel and evolving work" follows Phase 24.
+Task 14 closes under DEC-290, then window E and the phase-end review.
+Phase 25 "Parallel and evolving work" follows.
