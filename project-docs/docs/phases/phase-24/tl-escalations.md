@@ -20,7 +20,8 @@
   cannot stand in for Human judgment. Two Runner TRIAGE candidates were
   rejected before append and are preserved in TRG-24-015.
 - **Status:** RESOLVED 2026-10-10 by DEC-288 (decision). The Human recorded
-  his own answers at `a23b9f33`, bound to manifest
+  his own answers at `a23b9f33`, clarified on his instruction at
+  `fcc60def`, bound to manifest
   `.cache/phase-24-human/fixtures-2268063598/manifest.json`. All five
   refusals were clear from the output alone, and all four views were
   accepted with reasons. No row is rejected or unclear. The verifier has

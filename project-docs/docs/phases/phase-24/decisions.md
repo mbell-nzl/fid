@@ -1564,8 +1564,13 @@
   - **Human evidence.** The Human (Mark Bell) recorded his own answers in
     `qa/human-walkthrough-after-task-11.md`, commit
     `a23b9f33` (`docs(qa): record phase-24 Window D2 Human walkthrough`).
-    The Tech Lead created only the blank template on the Human's request
-    and wrote no answer. The artifact names the manifest
+    The Tech Lead created the blank template on the Human's request. At the
+    Human's instruction it then committed `fcc60def`
+    (`docs(qa): clarify phase-24 Window D2 Human walkthrough answers`). That
+    commit fixes HUMAN-02a wording and HUMAN-02c's boolean spelling, and
+    adds to HUMAN-03a..03d what each accepted view shows. The artifact's
+    edit note attributes those edits; no judgment changed. The artifact
+    names the manifest
     `.cache/phase-24-human/fixtures-2268063598/manifest.json`, binary
     `sha256:61fa7a4c…f55b7` and Task 11 close `93a1f792`. The Tech Lead
     confirmed that the retained binary still has that digest. All nine
@@ -1599,8 +1604,9 @@
      trigger and attempt, `Resolution authority: DEC-288`,
      `Continuing task: task-11` and
      `Next recovery: task-11 | qa-rework | task-scope | task-11:qa-window-d2:human-walkthrough:val-054-055-pending | 2`.
-     `Checkpoint` names the post-DEC-288 phase HEAD, walkthrough commit
-     `a23b9f33`, review-9 `b9083f3b` and Task 11 close `93a1f792`. Expect
+     `Checkpoint` names the post-DEC-288 phase HEAD, walkthrough commits
+     `a23b9f33` (answers) and `fcc60def` (attributed edits), review-9
+     `b9083f3b` and Task 11 close `93a1f792`. Expect
      `APPEND_CONFIRMED state=REPAIR_PENDING`.
      (b) **TASK-RECOVERY task-11**, with the same tuple and `0/2`.
      `Source: TRG-24-015 / ESC-24-007 / DEC-288; project-docs/docs/phases/phase-24/qa/review-9.md`.
@@ -1612,13 +1618,13 @@
      artifacts (including review-9 and the walkthrough), the validation
      contract, QA plan, decisions, workflow controls or Human fixtures; no
      fixture regeneration; no invented or edited Human answer. `Next
-     action`: verify `a23b9f33` (`git rev-parse --verify`, exact subject,
-     walkthrough unchanged since that commit), then append (c). Expect
-     `APPEND_CONFIRMED state=REPAIR_PENDING`.
+     action`: verify `a23b9f33` and `fcc60def` (`git rev-parse --verify`,
+     exact subjects, walkthrough unchanged since `fcc60def`), then append
+     (c). Expect `APPEND_CONFIRMED state=REPAIR_PENDING`.
      (c) **REPAIR task-11**, same trigger and attempt, `Outcome: RESOLVED`.
      `Ending checkpoint` is the unchanged phase HEAD. It has no new
-     Developer commit, and the evidence is `a23b9f33`. Control and
-     integration fields are `N/A`. Expect
+     Developer commit, and the evidence is `a23b9f33` and `fcc60def`.
+     Control and integration fields are `N/A`. Expect
      `APPEND_CONFIRMED state=COMPLETION_PENDING`.
      (d) **TASK task-11 COMPLETE.** Rerun
      `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-24/tasks/task-11-done.md project-docs/docs/phases/phase-24/tasks/task-11.md`
@@ -1631,7 +1637,8 @@
      walkthrough rows against VAL-054/055 and QA plan section 9, and the
      provenance (manifest, binary digest, close commit, Human attribution).
      Keep every review-9 deterministic result as evidence and don't repeat
-     the full gates. Append `REVIEW review-10` with `Re-review of: review-9`
+     the full gates. Check the `fcc60def` edit note against its diff
+     from `a23b9f33`. Append `REVIEW review-10` with `Re-review of: review-9`
      and `Owning task: none` for PASS or BLOCK. A PASS closes B1-H and window D2, and
      the Runner then dispatches Task 12. A REPAIR or BLOCK goes through
      ordinary TL-Lite triage. A rejected or unclear row found by QA is an
@@ -1676,7 +1683,8 @@
   the Human for the walkthrough before the window review is dispatched, or
   give the verifier a Human-evidence resume route (CF-036).
 - **Refs:** ESC-24-007; TRG-24-013, TRG-24-014, TRG-24-015; `qa/review-9.md`
-  B1-H; `qa/human-walkthrough-after-task-11.md` at `a23b9f33`;
+  B1-H; `qa/human-walkthrough-after-task-11.md` at `a23b9f33` and
+  `fcc60def`;
   `qa/qa-plan.md` sections 8 and 9; VAL-054, VAL-055; `run-ledger.md`
   2026-10-09 16:08, 16:19, 16:28; DEC-283, DEC-287.
 
