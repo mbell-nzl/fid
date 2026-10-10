@@ -1,0 +1,546 @@
+{
+  "id": "G05",
+  "cmd": "go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...",
+  "cwd": "/home/mark/projects/fid",
+  "chunks": [
+    {
+      "chunk_id": "5ca245",
+      "wall_time_seconds": 1.001175936,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "c8544d",
+      "wall_time_seconds": 5.001420449,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "4a9ccf",
+      "wall_time_seconds": 5.001059575,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "64da7f",
+      "wall_time_seconds": 5.001900592,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "40bf17",
+      "wall_time_seconds": 5.001215781,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "2f220e",
+      "wall_time_seconds": 5.220560163,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "852a23",
+      "wall_time_seconds": 5.000618144,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "859847",
+      "wall_time_seconds": 5.001181793,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "c6a08d",
+      "wall_time_seconds": 5.003093563,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "730535",
+      "wall_time_seconds": 5.002630641,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "0e1529",
+      "wall_time_seconds": 5.001767071,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "cdc006",
+      "wall_time_seconds": 5.001369034,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "042d23",
+      "wall_time_seconds": 5.001002511,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "5d4faf",
+      "wall_time_seconds": 5.000532758,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "67de55",
+      "wall_time_seconds": 5.000809073,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "07a2d9",
+      "wall_time_seconds": 5.000782618,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "9ceb76",
+      "wall_time_seconds": 5.001130952,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "615b13",
+      "wall_time_seconds": 5.001116412,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "9f9c1a",
+      "wall_time_seconds": 5.000831315,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "5099d4",
+      "wall_time_seconds": 5.001153899,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "d97722",
+      "wall_time_seconds": 5.001094787,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "7cb826",
+      "wall_time_seconds": 5.001529249,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "4f4afa",
+      "wall_time_seconds": 5.001041136,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "ab1751",
+      "wall_time_seconds": 5.00095695,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "7d1010",
+      "wall_time_seconds": 5.00164052,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "6eafb9",
+      "wall_time_seconds": 5.00070112,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "ee7b2b",
+      "wall_time_seconds": 5.001773095,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "8cf028",
+      "wall_time_seconds": 5.001991692,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "e09b77",
+      "wall_time_seconds": 5.000672679,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "b927a3",
+      "wall_time_seconds": 5.001450353,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "542f73",
+      "wall_time_seconds": 5.001102624,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "9f9982",
+      "wall_time_seconds": 5.000776979,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "1d5eae",
+      "wall_time_seconds": 5.001029078,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "44210f",
+      "wall_time_seconds": 5.001002404,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "da8523",
+      "wall_time_seconds": 5.001466807,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "ba1508",
+      "wall_time_seconds": 5.001278967,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "e22090",
+      "wall_time_seconds": 5.001132556,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "e1d8ab",
+      "wall_time_seconds": 5.001585515,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "89eb34",
+      "wall_time_seconds": 5.001464874,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "1fdc5f",
+      "wall_time_seconds": 5.000647801,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "4b35c6",
+      "wall_time_seconds": 5.002038822,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "d249f1",
+      "wall_time_seconds": 5.00104505,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "f946f1",
+      "wall_time_seconds": 5.001285264,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "5c7e76",
+      "wall_time_seconds": 5.000833799,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "0c39b0",
+      "wall_time_seconds": 5.001920932,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "c94384",
+      "wall_time_seconds": 5.00164364,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "11c549",
+      "wall_time_seconds": 5.000980395,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "286980",
+      "wall_time_seconds": 5.001799716,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "c7e8f3",
+      "wall_time_seconds": 5.000525292,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "1b0f30",
+      "wall_time_seconds": 5.001375471,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "c89f48",
+      "wall_time_seconds": 5.001330835,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "3d4348",
+      "wall_time_seconds": 5.001438607,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "baa19c",
+      "wall_time_seconds": 5.000425045,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "3f00ea",
+      "wall_time_seconds": 5.001038398,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "5d2526",
+      "wall_time_seconds": 5.000841034,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "206bdc",
+      "wall_time_seconds": 5.001909072,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "a759ee",
+      "wall_time_seconds": 5.001108647,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "35a1c0",
+      "wall_time_seconds": 5.001676936,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "751cb1",
+      "wall_time_seconds": 5.001165842,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "a5fa76",
+      "wall_time_seconds": 5.001045912,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "2a85bd",
+      "wall_time_seconds": 5.001015266,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "736adf",
+      "wall_time_seconds": 5.001290341,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "67a100",
+      "wall_time_seconds": 5.001104318,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "ef795c",
+      "wall_time_seconds": 5.000709824,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "430d56",
+      "wall_time_seconds": 5.001087095,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "0ea6ed",
+      "wall_time_seconds": 5.004961733,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "be5291",
+      "wall_time_seconds": 5.001095185,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "dd1896",
+      "wall_time_seconds": 5.000990978,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "d1b474",
+      "wall_time_seconds": 5.001592231,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "6d6d62",
+      "wall_time_seconds": 5.000084435,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "b66f92",
+      "wall_time_seconds": 5.001022214,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "6abecf",
+      "wall_time_seconds": 5.001209974,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "717f14",
+      "wall_time_seconds": 5.001247881,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "0c4b16",
+      "wall_time_seconds": 5.001457243,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "84dfc9",
+      "wall_time_seconds": 5.001120878,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "bd2c3b",
+      "wall_time_seconds": 5.001303021,
+      "session_id": 47595,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "862a31",
+      "wall_time_seconds": 0.59669343,
+      "exit_code": 0,
+      "original_token_count": 15,
+      "output": "ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t440.177s\n"
+    }
+  ]
+}

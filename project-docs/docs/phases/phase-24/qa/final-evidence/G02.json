@@ -1,0 +1,21 @@
+{
+  "id": "G02",
+  "cmd": "golangci-lint run ./...",
+  "cwd": "/home/mark/projects/fid",
+  "chunks": [
+    {
+      "chunk_id": "11fd6f",
+      "wall_time_seconds": 1.000662474,
+      "session_id": 85834,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "c40fd7",
+      "wall_time_seconds": 3.333713339,
+      "exit_code": 0,
+      "original_token_count": 3,
+      "output": "0 issues.\n"
+    }
+  ]
+}

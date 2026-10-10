@@ -1,0 +1,9 @@
+Purpose: Inspect authorized Human judgments and their provenance.
+
+Human Outcomes
+  These Outcomes express authorized Human judgment, not deterministic proof.
+  Human Outcome OUT-leaf
+    Actor: actor-recovery; Class: security; Result: approved
+    Activation: ACT-91e63e revision 10; Profile: activation:p22-corpus
+    Reference: Judgment source; path project-docs/p24-judgment-sentinel.json; digest sha256:963c5bd5d3319ebbc4de1d055751870ff152900573ec2ffc6251062971fd03b9
+    Reasoning: RECORDED_OUTCOME_REASONING

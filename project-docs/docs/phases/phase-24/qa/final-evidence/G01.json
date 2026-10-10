@@ -1,0 +1,14 @@
+{
+  "id": "G01",
+  "cmd": "gofmt -l cmd internal",
+  "cwd": "/home/mark/projects/fid",
+  "chunks": [
+    {
+      "chunk_id": "11364b",
+      "wall_time_seconds": 0.177486209,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    }
+  ]
+}

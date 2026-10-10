@@ -1,0 +1,8 @@
+Purpose: Inspect Finding dispositions and current blocking state.
+
+Findings
+  Finding FND-leaf
+    Review: REV-8e1533; Severity: major; Blocking: true; Disposition: addressed
+    Addressed is a Builder assertion, not a resolution.
+    Summary: real-process Review finding
+    Disposition reason: RECORDED_FINDING_REASON

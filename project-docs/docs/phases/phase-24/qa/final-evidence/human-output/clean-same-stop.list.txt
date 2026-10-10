@@ -1,0 +1,13 @@
+Purpose: Inspect Stops, blocked actions and qualifying resolution conditions.
+
+stop.list
+Stop STP-661dbf
+  Subject: run:RUN-bf2f48
+  Code: operator-stop
+  Blocked actions: gate.run
+  Reason: conformance operator intervention
+  Reference: policy:conformance
+  Resolution condition: work-ended for run:RUN-bf2f48
+  Resolver capability: stop.resolve
+  Status: open
+  Next: fid run close or fid run abandon; after the fact: fid stop resolve, then fid attention resolve where no lifecycle Event disposed it.

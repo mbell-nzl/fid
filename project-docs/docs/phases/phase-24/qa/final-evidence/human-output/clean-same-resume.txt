@@ -1,0 +1,95 @@
+Issue P22-a8e36e
+  Status: todo
+  Revision: 1
+  Next states: cancelled (cancelled), in_progress (started)
+  Completion: incomplete
+  Envelope: ENV-f0c927 (revision 1, active)
+
+Current Run: RUN-c54020
+  Status: active
+  Actor ID: actor-denied
+  Executor ID: executor-human-review
+
+Claim CLM-72a80c
+  Lease status now: active
+  Recorded status: active
+  Expires: 2026-10-10T23:50:16.772213409Z
+  An active lease alone does not authorize an operation; its authority and repository checks still apply.
+
+Repository
+  Current repository: HEAD a1cdb1f43cfd; clean
+  Recorded repository: HEAD a1cdb1f43cfd; clean
+  Worktree comparison: same worktree
+
+Next steps
+  Candidate operations below are not an execution sequence.
+  Ready means the recorded prerequisites permit a request; supplied inputs and authority are checked when it runs.
+  Action run.inspect run:RUN-c54020: ready
+    Purpose: Compare this repository with the Run's recorded start or checkpoint; inspect changed paths without recording a checkpoint.
+  Action run.observe run:RUN-c54020: ready
+    Purpose: Have the activated harness record a fresh observation of whether this Run's executor is live, terminated or unknown.
+    Requires: run.observe
+  Action gate.run run:RUN-c54020: blocked
+    Purpose: Execute the configured check to produce Evidence for the current work.
+    Requires: gate.run
+  budget-data-unavailable for envelope:ENV-f0c927: tokens
+  Action claim.renew claim:CLM-72a80c: blocked
+    Purpose: Extend an eligible work lease after checking authority.
+    Requires: claim.renew
+  authority-unavailable for actor:actor-denied: claim.renew
+  Action claim.release claim:CLM-72a80c: ready
+    Purpose: Give up an eligible work lease after checking authority; this does not prove the work complete.
+    Requires: claim.release
+  Action concern.record issue:P22-a8e36e: blocked
+    Purpose: Inspect the operation's requirements before submitting a request.
+    Requires: concern.record
+  authority-unavailable for issue:P22-a8e36e: concern.record
+  Action deviation.record issue:P22-a8e36e: blocked
+    Purpose: Inspect the operation's requirements before submitting a request.
+    Requires: deviation.record
+  authority-unavailable for issue:P22-a8e36e: deviation.record
+  Action decision.record-reference issue:P22-a8e36e: ready
+    Purpose: Inspect the operation's requirements before submitting a request.
+    Requires: decision.record-reference
+  Action human-outcome.record issue:P22-a8e36e: ready
+    Purpose: Inspect the operation's requirements before submitting a request.
+    Requires: human-outcome.record
+  Action review.record run:RUN-c54020: blocked
+    Purpose: Inspect the operation's requirements before submitting a request.
+    Requires: review.record
+  review-not-independent for run:RUN-c54020: Run already reviewed
+
+Completion requirements
+  These describe what is needed to finish the Issue, separately from recovery checks above.
+  Obligation OBL-p22-corpus: unsatisfied
+    Evidence validity: invalid; freshness: stale; Artifacts: missing
+  obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent
+  Overall completion: incomplete
+  obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent
+  issue-not-terminal-success for issue:P22-a8e36e: completed workflow category
+  Open Findings: 0
+
+Review and judgment
+Reviews
+  Review REV-88bffe
+    Issue: P22-a8e36e; Envelope: ENV-f0c927 revision 1
+    Run: RUN-c54020; Reviewer: actor-denied; Profile: review-default
+    Verdict: pass; Independence: distinct-actor
+    Repository: HEAD a1cdb1f43cfd; clean
+    Findings by severity: blocker 0; major 0; minor 0; nit 0
+Open Findings
+  None.
+Concerns
+  None.
+Deviations
+  None.
+Decision References
+  None.
+Human Outcomes
+  None.
+Protected Decisions
+  None.
+
+Budgets
+Budget attempts: remaining 3 attempts; consumed 0; maximum 3; state available
+Budget tokens: remaining unknown input-tokens; consumed unknown; maximum 10; state unknown

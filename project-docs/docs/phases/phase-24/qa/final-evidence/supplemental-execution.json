@@ -1,0 +1,364 @@
+{
+  "id": "supplemental",
+  "cmd": "python3 project-docs/docs/phases/phase-24/qa/final-evidence/audit.py supplemental",
+  "cwd": "/home/mark/projects/fid",
+  "chunks": [
+    {
+      "chunk_id": "0e864e",
+      "wall_time_seconds": 1.000603422,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "f5965f",
+      "wall_time_seconds": 5.001883292,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "52f6a7",
+      "wall_time_seconds": 5.005966454,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "ccfc40",
+      "wall_time_seconds": 5.002008233,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "183556",
+      "wall_time_seconds": 5.001998088,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "d95d9f",
+      "wall_time_seconds": 5.001769004,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "636d72",
+      "wall_time_seconds": 5.001205081,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "997a26",
+      "wall_time_seconds": 5.003631586,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "2b3a68",
+      "wall_time_seconds": 5.001118975,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "015ea3",
+      "wall_time_seconds": 5.002399417,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "7afee5",
+      "wall_time_seconds": 5.002965439,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "0dab1e",
+      "wall_time_seconds": 5.001407362,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "e2b646",
+      "wall_time_seconds": 5.000411045,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "d8a049",
+      "wall_time_seconds": 5.000487202,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "795844",
+      "wall_time_seconds": 5.001508605,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "675d7c",
+      "wall_time_seconds": 5.001732752,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "ffd22e",
+      "wall_time_seconds": 5.001740301,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "a6ab0a",
+      "wall_time_seconds": 5.006935069,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "4130d9",
+      "wall_time_seconds": 5.000717474,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "c04792",
+      "wall_time_seconds": 5.002022263,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "cf1f04",
+      "wall_time_seconds": 5.001379287,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "154cd2",
+      "wall_time_seconds": 5.000782441,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "35215f",
+      "wall_time_seconds": 5.005829432,
+      "session_id": 22296,
+      "original_token_count": 19,
+      "output": "S1 0 109.58560943603516 ok  \tgithub.com/mbell-nzl/fid/internal/cli\t1.074s\n"
+    },
+    {
+      "chunk_id": "79f5ed",
+      "wall_time_seconds": 5.001245039,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "3e8c96",
+      "wall_time_seconds": 5.000355781,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "96b381",
+      "wall_time_seconds": 5.003674466,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "21fa2f",
+      "wall_time_seconds": 5.001102276,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "0d8a97",
+      "wall_time_seconds": 5.001276293,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "8fb04b",
+      "wall_time_seconds": 5.001364738,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "646412",
+      "wall_time_seconds": 5.001379603,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "7d2b76",
+      "wall_time_seconds": 5.001681526,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "f9a528",
+      "wall_time_seconds": 5.002141281,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "dc5221",
+      "wall_time_seconds": 5.00179289,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "eb3ec5",
+      "wall_time_seconds": 5.00234261,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "b3bdbb",
+      "wall_time_seconds": 5.001637759,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "70dbff",
+      "wall_time_seconds": 5.000628353,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "10e563",
+      "wall_time_seconds": 5.000908683,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "c9bb3a",
+      "wall_time_seconds": 5.000324436,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "d60647",
+      "wall_time_seconds": 5.001344596,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "d6b255",
+      "wall_time_seconds": 5.00067867,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "15a83b",
+      "wall_time_seconds": 5.000701031,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "af565b",
+      "wall_time_seconds": 5.000329883,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "52424b",
+      "wall_time_seconds": 5.000607079,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "8144cf",
+      "wall_time_seconds": 5.001162831,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "a98949",
+      "wall_time_seconds": 5.001263545,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "75c749",
+      "wall_time_seconds": 5.001106527,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "344676",
+      "wall_time_seconds": 5.000684189,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "25f223",
+      "wall_time_seconds": 5.003712824,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "25c414",
+      "wall_time_seconds": 5.000133875,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "ff132e",
+      "wall_time_seconds": 5.001462182,
+      "session_id": 22296,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "0831f9",
+      "wall_time_seconds": 1.8685283209999999,
+      "exit_code": 0,
+      "original_token_count": 21,
+      "output": "S2 0 138.7688343524933 ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t137.995s\n"
+    }
+  ]
+}

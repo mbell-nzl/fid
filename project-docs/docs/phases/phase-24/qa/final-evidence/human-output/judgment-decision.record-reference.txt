@@ -1,0 +1,7 @@
+Purpose: Inspect Decision References and their authority.
+
+Decision References
+  Decision Reference DREF-leaf
+    Class: security; Outcome: approved; Authority Actor: actor-recovery
+    Required capabilities: decision.record-reference
+    Reference: Judgment source; path project-docs/p24-judgment-sentinel.json; digest sha256:963c5bd5d3319ebbc4de1d055751870ff152900573ec2ffc6251062971fd03b9

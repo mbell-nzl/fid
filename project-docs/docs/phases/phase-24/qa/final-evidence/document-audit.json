@@ -1,0 +1,1235 @@
+{
+  "owned_inventory_receipts": [
+    {
+      "registry": "R1",
+      "task": "2",
+      "command": "rg -n \"RequestDigest:\" internal cmd -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R2",
+      "task": "2",
+      "command": "rg -n \"func [a-zA-Z]*(RequestDigest|requestDigest|judgmentDigest)\\(\" internal -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R3",
+      "task": "1",
+      "command": "rg -n \"idempotency_results\" migrations internal -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R4",
+      "task": "1",
+      "command": "ls migrations; rg -n \"ProjectionSchemaVersion|projection_schema\" internal -g '!*_test.go'",
+      "receipt_present": false
+    },
+    {
+      "registry": "R5",
+      "task": "3",
+      "command": "rg -n \"func decodeClosed[A-Za-z]*Input\" cmd/fid",
+      "receipt_present": true
+    },
+    {
+      "registry": "R5",
+      "task": "4",
+      "command": "rg -n \"func decodeClosed[A-Za-z]*Input\" cmd/fid",
+      "receipt_present": true
+    },
+    {
+      "registry": "R5",
+      "task": "5",
+      "command": "rg -n \"func decodeClosed[A-Za-z]*Input\" cmd/fid",
+      "receipt_present": true
+    },
+    {
+      "registry": "R5",
+      "task": "6",
+      "command": "rg -n \"func decodeClosed[A-Za-z]*Input\" cmd/fid",
+      "receipt_present": true
+    },
+    {
+      "registry": "R5",
+      "task": "7",
+      "command": "rg -n \"func decodeClosed[A-Za-z]*Input\" cmd/fid",
+      "receipt_present": true
+    },
+    {
+      "registry": "R5",
+      "task": "8",
+      "command": "rg -n \"func decodeClosed[A-Za-z]*Input\" cmd/fid",
+      "receipt_present": true
+    },
+    {
+      "registry": "R5",
+      "task": "9",
+      "command": "rg -n \"func decodeClosed[A-Za-z]*Input\" cmd/fid",
+      "receipt_present": true
+    },
+    {
+      "registry": "R6",
+      "task": "4",
+      "command": "rg -n \"func (same[A-Za-z]*Repository|validateRepositoryBinding|validEnvelopeRepository|validEnvelopeSource|validEvidenceRepository|validateRunTerminalRepository|verifyDecisionSource|importedGateDestination)\" internal -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R6",
+      "task": "5",
+      "command": "rg -n \"func (same[A-Za-z]*Repository|validateRepositoryBinding|validEnvelopeRepository|validEnvelopeSource|validEvidenceRepository|validateRunTerminalRepository|verifyDecisionSource|importedGateDestination)\" internal -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R6",
+      "task": "6",
+      "command": "rg -n \"func (same[A-Za-z]*Repository|validateRepositoryBinding|validEnvelopeRepository|validEnvelopeSource|validEvidenceRepository|validateRunTerminalRepository|verifyDecisionSource|importedGateDestination)\" internal -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R6",
+      "task": "7",
+      "command": "rg -n \"func (same[A-Za-z]*Repository|validateRepositoryBinding|validEnvelopeRepository|validEnvelopeSource|validEvidenceRepository|validateRunTerminalRepository|verifyDecisionSource|importedGateDestination)\" internal -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R6",
+      "task": "8",
+      "command": "rg -n \"func (same[A-Za-z]*Repository|validateRepositoryBinding|validEnvelopeRepository|validEnvelopeSource|validEvidenceRepository|validateRunTerminalRepository|verifyDecisionSource|importedGateDestination)\" internal -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R7",
+      "task": "6",
+      "command": "rg -n \"Request\\.Repository|request\\.Repository|Request\\.TargetRepository|request\\.RepositoryScope|Request\\.WorktreeID|request\\.WorktreeID\" internal -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R7",
+      "task": "7",
+      "command": "rg -n \"Request\\.Repository|request\\.Repository|Request\\.TargetRepository|request\\.RepositoryScope|Request\\.WorktreeID|request\\.WorktreeID\" internal -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R7",
+      "task": "8",
+      "command": "rg -n \"Request\\.Repository|request\\.Repository|Request\\.TargetRepository|request\\.RepositoryScope|Request\\.WorktreeID|request\\.WorktreeID\" internal -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R9",
+      "task": "10",
+      "command": "rg -n \"func (write[A-Za-z]*Failure|render[A-Za-z]*Error)\\(\" cmd/fid -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R10",
+      "task": "10",
+      "command": "rg -n '\"error: ' cmd internal -g '*_test.go'",
+      "receipt_present": false
+    },
+    {
+      "registry": "R11",
+      "task": "11",
+      "command": "rg -n -i \"worktree|dirty digest|HeadOID|head_oid\" cmd/fid -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R13",
+      "task": "13",
+      "command": "rg -n \"p23CheckJudgmentQualifiers|PRIVATE_\" cmd",
+      "receipt_present": true
+    },
+    {
+      "registry": "R14",
+      "task": "12",
+      "command": "rg -n \"func TestLiveLeafCommandsMatchContractInventories\" cmd/fid",
+      "receipt_present": true
+    },
+    {
+      "registry": "R19",
+      "task": "9a",
+      "command": "rg -n '\"argument\": *\"request\"' cmd/fid -g '!*_test.go'",
+      "receipt_present": true
+    },
+    {
+      "registry": "R20",
+      "task": "10",
+      "command": "rg -n 'CodeInvalidArgument, \"invalid [^\"]*\"' cmd/fid -g '!*_test.go'",
+      "receipt_present": true
+    }
+  ],
+  "tasks": [
+    {
+      "task": "1",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-1-done.md",
+      "sha256": "96c28a81ec26673c725f0249ecb3427f2588cfac3839ddaa9fbb0695e251b454",
+      "claimed_hash": "64a8228295095a686a171d081a8ab4a8b9ff2052",
+      "claimed_subject": "test(idempotency): prove QA review-1 replay and archive refusals",
+      "identity": {
+        "command": "git show -s --format=fuller 64a8228295095a686a171d081a8ab4a8b9ff2052",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.006467580795288086,
+        "stdout": "commit 64a8228295095a686a171d081a8ab4a8b9ff2052\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Mon Oct 5 04:28:52 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Mon Oct 5 04:28:52 2026 +1300\n\n    test(idempotency): prove QA review-1 replay and archive refusals\n    \n    Refs: phase-24/task-1\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-1-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.00476384162902832,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-1-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.03137564659118652,
+        "stdout": "commit 67615ef90bf94a5e6eaa65f983eef4e42a524270\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Mon Oct 5 04:31:16 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Mon Oct 5 04:31:16 2026 +1300\n\n    docs(task): finalize task-1 QA evidence rows\n    \n    Refs: phase-24/task-1\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "- VAL-052: PASS - the final ordinary gate reported `cmd/fid` 215.296 s and `internal/workflow` 72.492 s. The first full attempt reported the slowest other ordinary package, `internal/issues`, at 194.345 s; that package was cached on the final attempt after only a workflow fixture changed. Tagged `cmd/fid/integration` took 253.353 s. No package reached the 480 s headroom warning or its budget.",
+        "- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 62.6% of statements` (terminated `exit_code: 0`)",
+        "- QA review-1 F1/F2 are addressed by the added assertions. The original task implementation commit was `58352c73edf81ac8e89ffb7d7d824a67def3e3c4` (`feat(idempotency): store request field digests in schema 19`); its earlier failed and later passing gate evidence remains above. No new ordinary package reached the 480 s headroom warning; tagged integration remained below 900 s."
+      ]
+    },
+    {
+      "task": "2",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-2-done.md",
+      "sha256": "623ebe1642deb9bf9584739178ff84fd8e9f64944bee741fec51a66bea374f6c",
+      "claimed_hash": "ed1ce980e52ba4eeb6af00b58dbd6670c3b70731",
+      "claimed_subject": "test(idempotency): pair deleted-source replay with new-key controls",
+      "identity": {
+        "command": "git show -s --format=fuller ed1ce980e52ba4eeb6af00b58dbd6670c3b70731",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.004797697067260742,
+        "stdout": "commit ed1ce980e52ba4eeb6af00b58dbd6670c3b70731\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Mon Oct 5 04:54:17 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Mon Oct 5 04:54:17 2026 +1300\n\n    test(idempotency): pair deleted-source replay with new-key controls\n    \n    Refs: phase-24/task-2\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-2-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.007327079772949219,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-2-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.01739645004272461,
+        "stdout": "commit 74c8f60ee04ba5055878b57c3b3c53ef7008c4a4\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Mon Oct 5 04:54:35 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Mon Oct 5 04:54:35 2026 +1300\n\n    docs(task): finalize completion report for phase-24 task-2\n    \n    Refs: phase-24/task-2\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "- VAL-052: PASS - Fresh ordinary gate reported `cmd/fid` 221.607 s, `internal/export` 98.415 s as the slowest other uncached package, and cached `internal/workflow`; the fresh tagged `cmd/fid/integration` run reported 288.286 s. The original Task 2 final-tree uncached race run observed `internal/workflow` 67.367 s and `internal/issues` 113.986 s. All recorded ordinary package times are below 600 s and the 480 s warning; tagged integration is below 900 s.",
+        "- The same uncached race command printed `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t67.367s` before its final Issues line.",
+        "- Fresh exact-gate wall evidence: format 0.025 s; lint 3.501 s; ordinary race gate's longest reported package `cmd/fid` 221.607 s (slowest other ordinary package `internal/export` 98.415 s; `internal/workflow` cached); coverage tool 0.095 s; tagged integration package 288.286 s; benchmark tool 24.832 s (22,006 ms/rebuild); each `rg` tool call <0.001 s. The execution surface did not provide a single aggregate elapsed value across the ordinary gate's polling chunks; the reported package times are its reproducible wall evidence.",
+        "- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 62.6% of statements` (terminated `exit_code: 0`)",
+        "- An intermediate ordinary gate failed with token `FAIL` (terminated `exit_code: 1`) after an attempted `--actor` Event-validator guard rejected historical synthetic `{}` maps. The guard was removed; real CLI field-name assertions remain in the new corpus. The final byte-identical ordinary gate passed with `ok  \\tgithub.com/mbell-nzl/fid/internal/workflow\\t(cached)\\tcoverage: 62.6% of statements` (terminated `exit_code: 0`).",
+        "- QA review-1 F3 limit: the deleted-source control runs while the fixture is also unmerged, exactly matching the retained state after the first refusal. The three reference leaves' isolated missing-file acceptance is left for Task 4; this test proves replay bypasses observation and that a fresh viable request is refused in the combined state. Fresh gates reported `cmd/fid` 221.607 s, `internal/export` 98.415 s and tagged integration 288.286 s, below their 600/900 s budgets and 480 s ordinary headroom warning.",
+        "- Retained-test provenance: `cmd/fid/activation_test.go` replay assertion was introduced by `0444ccc458f3ac5a720724825f7f81589cb41e09` (`phase-21/task-4`); `cmd/fid/integration/p23_conformance_test.go` fake conflict details by `2e7fd2f9fa05bce648510789453c8d2ed8633b1d` (`phase-23/task-18`); `cmd/fid/integration/p23_portable_recovery_test.go` by `d02614e6c26757076a91d8a12e08dfa328fe699d` (`phase-23/task-16`). Each preserves its replay, exact-envelope, or round-trip subject while asserting Task 2's accepted maps or details.",
+        "- The 49-row TSV, live-tree test, executable corpus, per-workspace rebuild checks, and attempt 3's singular-journal rebuild check all pass. The final ordinary gate reported `cmd/fid` 196.324 s; the final tagged gate reported `cmd/fid/integration` 248.512 s. An uncached final-tree race run reported `internal/workflow` 67.367 s and slowest other ordinary package `internal/issues` 113.986 s. No ordinary package reached the 480 s warning or 600 s limit; tagged integration remained under 900 s."
+      ]
+    },
+    {
+      "task": "3",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-3-done.md",
+      "sha256": "bba192a4ebed5724a2df218adb844b7dd82f5ce744483b1a413fb66a8f4d5aa1",
+      "claimed_hash": "2b380e3fbf746396e067e94a3e2d486430c8418a",
+      "claimed_subject": "docs(task): record phase-24 task-3 QA repair evidence",
+      "identity": {
+        "command": "git show -s --format=fuller 2b380e3fbf746396e067e94a3e2d486430c8418a",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.00515294075012207,
+        "stdout": "commit 2b380e3fbf746396e067e94a3e2d486430c8418a\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Mon Oct 5 05:24:08 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Mon Oct 5 05:24:08 2026 +1300\n\n    docs(task): record phase-24 task-3 QA repair evidence\n    \n    Refs: phase-24/task-3\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-3-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.008000612258911133,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-3-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.021450281143188477,
+        "stdout": "commit 34e550ff3bc60530fbc1e8a7b8061eb6cc1ed0ac\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Mon Oct 5 05:25:11 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Mon Oct 5 05:25:11 2026 +1300\n\n    docs(task): align task-3 QA evidence rows with report lint\n    \n    Refs: phase-24/task-3\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "- VAL-052: PASS - this continuation's exact ordinary gate reports `cmd/fid` 223.497 s and `internal/export` 98.884 s; the touched uncached packages report `cmd/fid` 195.175 s and `internal/cli` 1.116 s. The prior uncached `internal/workflow` 93.837 s and `internal/issues` 166.391 s are preserved. The exact tagged integration gate reports 298.059 s. All ordinary packages were below 600 s, tagged integration below 900 s, and no ordinary package reached the 480 s warning.",
+        "- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 62.6% of statements` (terminated `exit_code: 0`)",
+        "- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 62.6% of statements` (terminated `exit_code: 0`)",
+        "- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 62.6% of statements` (terminated `exit_code: 0`)",
+        "- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 62.6% of statements` (terminated `exit_code: 0`)",
+        "- VAL-052 timing evidence: `cmd/fid` 200.072 s in the exact ordinary gate, `internal/workflow` 93.837 s and `internal/issues` 166.391 s in the uncached internal-package check, and tagged integration 302.158 s in the exact gate. No ordinary package crossed the 480 s warning."
+      ]
+    },
+    {
+      "task": "4",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-4-done.md",
+      "sha256": "909b198d1940ac0d0a09ab1379803f39e15b20307c13f7b44fe3fc603bec2801",
+      "claimed_hash": "c0115bd500c1bedd0384b13e5eb352a64c26c865",
+      "claimed_subject": "test(judgment): complete repository and descriptor QA evidence",
+      "identity": {
+        "command": "git show -s --format=fuller c0115bd500c1bedd0384b13e5eb352a64c26c865",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.007665157318115234,
+        "stdout": "commit c0115bd500c1bedd0384b13e5eb352a64c26c865\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Tue Oct 6 22:08:10 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Tue Oct 6 22:08:10 2026 +1300\n\n    test(judgment): complete repository and descriptor QA evidence\n    \n    Refs: phase-24/task-4\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-4-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.009383916854858398,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-4-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.02005481719970703,
+        "stdout": "commit 6352f94c564cbf248980e3056f355a40f611c95d\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Tue Oct 6 22:09:11 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Tue Oct 6 22:09:11 2026 +1300\n\n    docs(task): preserve Task 4 report-control repair results\n    \n    Refs: phase-24/task-4\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "- VAL-022: PASS for all seven leaves (F2) \u2014 `p24JudgmentExpectedRepository` at `cmd/fid/integration/p23_judgment_repository_test.go:26` independently executes Git HEAD/tree/status, reads config project ID and computes SHA-256 of the absolute root. The clean normal fixtures are explicitly checked through Git (excluding accepted `.fid` state), giving false dirty/null dirty digest; base is independently HEAD and capture source is Git. No production `project.ObserveRecordedRepository` is used. `TestP24JudgmentRepositoryOracleUsesConfig` at line 56 proves a decoy cached adapter ID cannot become the expected config ID. `TestP24JudgmentLeavesRepositoryUnavailable` at line 294 compares the full eight-field Event repository for every leaf and recursively every returned record/Source repository, pinning one Source repository for each of five reference-bearing records and zero for the source-free disposal/link fixtures. `TestP24JudgmentSourceDigestsAndRepositoryParity` independently compares the five stored Source repositories and Events as well.",
+        "- F2 first focused red: `go test -tags integration -run '^TestP24JudgmentRepositoryOracleUsesConfig$' -count=1 ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`). The previous production-observer fixture accepted the decoy cached project ID instead of config identity.",
+        "Fresh reported package wall times: `cmd/fid` 374.499 s; `internal/workflow` 102.588 s; `internal/issues` 198.298 s (slowest other ordinary package); `cmd/fid/integration` 276.204 s. Ordinary packages stay below the 600 s budget and 480 s warning; tagged integration stays below the 900 s budget and 720 s warning. None of these measurements is cached. Overall statement coverage is 60.9%; the accepted coverage policy remains unchanged."
+      ]
+    },
+    {
+      "task": "5",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-5-done.md",
+      "sha256": "3ad4ac42bcf1eb8accb6b58d52b125598577d5592f5236b8a007248dd1e6e1a7",
+      "claimed_hash": "226cdc94e6460cc254d1b4e916344b8ea2e2cdb3",
+      "claimed_subject": "fix(cli): enforce declared Review OID formats",
+      "identity": {
+        "command": "git show -s --format=fuller 226cdc94e6460cc254d1b4e916344b8ea2e2cdb3",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.004702568054199219,
+        "stdout": "commit 226cdc94e6460cc254d1b4e916344b8ea2e2cdb3\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Tue Oct 6 23:07:21 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Tue Oct 6 23:07:21 2026 +1300\n\n    fix(cli): enforce declared Review OID formats\n    \n    Refs: phase-24/task-5\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-5-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.005167722702026367,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-5-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.022686481475830078,
+        "stdout": "commit be56892031fd3bfc9b152598364a6e4e9079c973\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Tue Oct 6 23:07:35 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Tue Oct 6 23:07:35 2026 +1300\n\n    docs(task): finalize completion report for phase-24 task-5\n    \n    Refs: phase-24/task-5\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "- VAL-052: PASS - fresh ordinary times: cmd/fid 366.509 s, internal/workflow 101.002 s, slowest other internal/issues 190.218 s. Tagged integration 313.544 s. All are below 600/900 s budgets and 480/720 s warnings. These are gate-reported durations, not cached or focused substitutes.",
+        "Ordinary gate: cmd/fid 366.509 s, internal/workflow 101.002 s, slowest other internal/issues 190.218 s; next slowest internal/export 177.391 s and internal/journal 173.714 s. Tagged gate: 313.544 s. No package reached its 80% warning or budget. Coverage reporting does not replace either test gate; both terminated successfully here.",
+        "- VAL-052 headroom: cmd/fid 366.509 s, internal/workflow 101.002 s, slowest other ordinary internal/issues 190.218 s are below 480 s warning/600 s budget. Tagged integration 313.544 s is below 720 s warning/900 s budget. No headroom warning."
+      ]
+    },
+    {
+      "task": "6",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-6-done.md",
+      "sha256": "5bcc4bc1fed7f51486ed0e83b7fe0a845fa51b209eebe6f08af75051e046faea",
+      "claimed_hash": "01e518f460d7339848c6549ecb7dbd4d58a2f6f4",
+      "claimed_subject": "test(binding): converge retained task 6 execution fixtures",
+      "identity": {
+        "command": "git show -s --format=fuller 01e518f460d7339848c6549ecb7dbd4d58a2f6f4",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.007810354232788086,
+        "stdout": "commit 01e518f460d7339848c6549ecb7dbd4d58a2f6f4\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Tue Oct 6 21:20:11 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Tue Oct 6 21:20:11 2026 +1300\n\n    test(binding): converge retained task 6 execution fixtures\n    \n    Refs: phase-24/task-6\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-6-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.007050991058349609,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-6-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.026261329650878906,
+        "stdout": "commit 86f18761c72633df12ed99b2fb2eb4bcc27bf3ea\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Tue Oct 6 23:10:49 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Tue Oct 6 23:10:49 2026 +1300\n\n    docs(task): add task 6 R5 inventory receipt\n    \n    Refs: phase-24/task-6\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "The named ordinary tests below ran in this session's uncached cmd/fid race/coverage gate; named integration tests ran in this session's uncached exact tagged gate. Evidence is limited to Task 6's slice of each assertion, with both qualifying and refusing states cited where applicable.",
+        "- VAL-052: PASS (observed execution budgets) - cmd/fid 283.342s; slowest other freshly timed ordinary package internal/export 116.978s; cmd/fid/integration 274.935s. internal/workflow was explicitly `(cached)` in this session's exact ordinary gate and emitted no fresh wall time; attempt 4's 114.227s remains historical evidence below, not a fresh attestation. Other cached package rows are also distinguished from fresh timing. The pre-gate cmd/fid race check took 304.689s. Fresh ordinary timings are below 600s and tagged timing below 900s; none reaches the respective 480s/720s warning. No cached duration is invented.",
+        "- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 62.1% of statements` (terminated `exit_code: 0`)",
+        "Observed package wall times: cmd/fid 283.342s; slowest other freshly timed ordinary package internal/export 116.978s; cmd/fid/integration 274.935s. internal/workflow was explicitly `(cached)` in this session's exact ordinary gate and emitted no fresh wall time; attempt 4's 114.227s remains historical evidence below, not a fresh attestation. Other cached package rows are also distinguished from fresh timing. The pre-gate cmd/fid race check took 304.689s.",
+        "- No measured package reached 80% of its budget: ordinary warning 480s/limit 600s; tagged warning 720s/limit 900s. internal/workflow and other cached packages emitted no fresh duration; their historical timings are retained only as history. No fresh timing is claimed for a cached package."
+      ]
+    },
+    {
+      "task": "7",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-7-done.md",
+      "sha256": "3bb01d50eff67f76f603663ed8140ac56a32492ad143ec932da720bbc351e079",
+      "claimed_hash": "cdb7e01f630b3e10291237d5912e63ddf0b33783",
+      "claimed_subject": "test(run): independently verify dirty repository observations",
+      "identity": {
+        "command": "git show -s --format=fuller cdb7e01f630b3e10291237d5912e63ddf0b33783",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.008114099502563477,
+        "stdout": "commit cdb7e01f630b3e10291237d5912e63ddf0b33783\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Wed Oct 7 15:47:21 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Wed Oct 7 15:47:21 2026 +1300\n\n    test(run): independently verify dirty repository observations\n    \n    Refs: phase-24/task-7\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-7-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.009330272674560547,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-7-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.0167388916015625,
+        "stdout": "commit 856c36d6be4457c36e718fb0bb376bf705025949\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Wed Oct 7 15:47:29 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Wed Oct 7 15:47:29 2026 +1300\n\n    docs(task): finalize completion report for phase-24 task-7\n    \n    Refs: phase-24/task-7\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "Scope is the Task 7 Run slice of the phase assertions; whole-phase completion is not claimed. Named tests are covered by this session's final ordinary or tagged command results. Unchanged packages marked (cached) in the output are identified as such; touched packages have fresh results.",
+        "- VAL-052: PASS - fresh exact-gate package times are cmd/fid 412.793 s, internal/workflow 109.901 s, slowest other ordinary package internal/issues 204.714 s, and tagged cmd/fid/integration 323.135 s. No package reaches its 80% headroom warning or accepted budget.",
+        "- VAL-023: PASS - TestP24RunReplayBeforeObservationAndSourceReads/start proves initial acceptance and fresh unmerged/non-Git control refusals; TestP24RunBudgetSourceInputMatrix compares matching/omitted acceptance with unsafe/missing-Git refusal and checks mapped reason/detail, no Event. Both null unsafe cases succeed. Shared classifier cause fixtures in internal/project/repository_reason_test.go are included in the unchanged internal/project result (cached) reported by the ordinary gate.",
+        "- VAL-052: PASS - Final ordinary and tagged package times are recorded below. Every ordinary package is below 600 s and tagged integration below 900 s; the 480/720 s warning thresholds were checked.",
+        "Reported final gate times: cmd/fid **342.375 s**; internal/workflow **121.978 s**; slowest other ordinary package with a fresh reported time, internal/issues **177.502 s** (internal/export 171.061 s); tagged cmd/fid/integration **344.128 s**. All measured ordinary packages are below 600 s and tagged integration below 900 s. None reaches the 480 s ordinary or 720 s tagged warning threshold. Unchanged ordinary packages marked (cached) in the captured output have no new wall time; no historical time is substituted. Overall statement coverage: **61.1%**.",
+        "Fresh reported wall times: cmd/fid **412.793 s**; internal/workflow **109.901 s**; slowest other ordinary package internal/issues **204.714 s** (internal/export 194.849 s, internal/journal 188.295 s); tagged cmd/fid/integration **323.135 s**. All ordinary packages are under 600 s and tagged integration under 900 s; none reaches the 480/720 s headroom warnings. Overall statement coverage: **61.8%**. Every required command terminated with its own observed exit_code: 0, in the prescribed order."
+      ]
+    },
+    {
+      "task": "8",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-8-done.md",
+      "sha256": "a265301bdece667618c8271faae08a444d74ddc8926fb169304c730906c3a02c",
+      "claimed_hash": "a59fa4d1dbca96193e257d6b55d3fa67cab619fc",
+      "claimed_subject": "fix(test): independently verify gate pre-spawn repositories",
+      "identity": {
+        "command": "git show -s --format=fuller a59fa4d1dbca96193e257d6b55d3fa67cab619fc",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.004542350769042969,
+        "stdout": "commit a59fa4d1dbca96193e257d6b55d3fa67cab619fc\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Wed Oct 7 16:21:07 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Wed Oct 7 16:21:07 2026 +1300\n\n    fix(test): independently verify gate pre-spawn repositories\n    \n    Refs: phase-24/task-8\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-8-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.00519251823425293,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-8-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.015388011932373047,
+        "stdout": "commit 95280952c09d1d7996ef9f26e569dc16230e521b\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Wed Oct 7 16:21:13 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Wed Oct 7 16:21:13 2026 +1300\n\n    docs(task): finalize completion report for phase-24 task-8\n    \n    Refs: phase-24/task-8\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "- VAL-052: PASS - Exact final gates below record cmd/fid, internal/workflow, slowest other ordinary package and tagged integration under the unchanged budgets.",
+        "Budget evidence pending for all four required records: cmd/fid, internal/workflow, slowest other ordinary package and tagged integration. Limits remain ordinary 600 s/tagged 900 s; warn at 480 s/720 s respectively. No full-gate headroom claim is made.",
+        "| cmd/fid | 389.949 s | <= 600 s |",
+        "| internal/workflow | 103.583 s | <= 600 s |",
+        "| internal/issues (slowest other ordinary package) | 198.966 s | <= 600 s |",
+        "| cmd/fid/integration (tagged) | 340.478 s | < 900 s |",
+        "- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 62.1% of statements` (terminated `exit_code: 0`)",
+        "- `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m ./cmd/fid/integration/...` - BLOCKED - Not run in this partial attempt: the ordinary gate returned cached internal/workflow output, so required fresh timing evidence was incomplete. Completed in the restarted exact sequence below. No termination observed in this partial attempt.",
+        "The ordinary command passed and reported cmd/fid 300.764 s and internal/export 107.632 s; internal/workflow and most other packages printed `(cached)`, with no fresh wall time. These passing receipts are preserved. Go's test-result cache was expired before restarting the byte-identical gate sequence; cache expiry is operational preparation, not evidence or a gate.",
+        "| cmd/fid | 372.613 s | <= 600 s |",
+        "| internal/workflow | 103.339 s | <= 600 s |",
+        "| internal/export (slowest other ordinary package) | 199.131 s | <= 600 s |",
+        "| cmd/fid/integration (tagged) | 347.525 s | < 900 s |",
+        "All four required wall times are fresh from the final exact commands. Every ordinary package is below 480 s and tagged integration is below 720 s, so no headroom warning applies. The five commands also satisfy the task-applicable QA-plan section 5; no conditional command applies.",
+        "- The first recovery gate's commands passed, but cached internal/workflow output provided no fresh package time. The partial attempt and its unexecuted tagged step remain explicitly recorded. Expired test results and restarted all five byte-identical commands in order, obtaining fresh required timings and the final passing receipts above; no command, status, threshold or policy was changed.",
+        "| `cmd/fid/integration/p21_conformance_test.go`; `TestPhase21RealProcessJourneyStartsOneActivatedEnvelope` | `236540c48a2129d70480b3222ba4122a5471eb48` | phase-21/task-22 | Replace gate repository with observed head/dirty expectation and remove Evidence caller targets where present; retain original success/rejection, identity, replay, recovery, import/rebuild and no-effect assertions. |",
+        "| `cmd/fid/integration/p22_import_recovery_test.go`; `TestRecoveryLiveRebuildImportParity` | `5ec69e6ef31dd93229c3d42fc76a4c02d60084ee` | phase-22/task-15 | Replace gate repository with observed head/dirty expectation and remove Evidence caller targets where present; retain original success/rejection, identity, replay, recovery, import/rebuild and no-effect assertions. |",
+        "| `cmd/fid/integration/p22_portable_conformance_test.go`; `p22PortableSource` | `5ec69e6ef31dd93229c3d42fc76a4c02d60084ee` | phase-22/task-15 | Replace gate repository with observed head/dirty expectation and remove Evidence caller targets where present; retain original success/rejection, identity, replay, recovery, import/rebuild and no-effect assertions. |",
+        "| `cmd/fid/integration/p23_conformance_test.go`; `TestP23CallerProvidedReviewIDsRemainDistinct` | `3227197d5f190528825cca3a8c01a480c06712e2` | phase-23/task-18 | Use a real Receipt for the subject-derived oracle; preserve both exact caller Review IDs and all ID/envelope-ID distinction checks. |"
+      ]
+    },
+    {
+      "task": "9",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-9-done.md",
+      "sha256": "e6180524e326b14d38b41f615393363f778ba82589359d0c15b71a0009e85e4a",
+      "claimed_hash": "29c8682c98c612443ed85df503d818dacc70552c",
+      "claimed_subject": "fix(cli): honor activation prepare identity scalar bounds",
+      "identity": {
+        "command": "git show -s --format=fuller 29c8682c98c612443ed85df503d818dacc70552c",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.005614042282104492,
+        "stdout": "commit 29c8682c98c612443ed85df503d818dacc70552c\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Wed Oct 7 18:31:02 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Wed Oct 7 18:31:02 2026 +1300\n\n    fix(cli): honor activation prepare identity scalar bounds\n    \n    Refs: phase-24/task-9\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-9-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.00920414924621582,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-9-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.017833232879638672,
+        "stdout": "commit 0dbb3e45f5a993efbd4bd336c7e816f76c8e6ddd\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Wed Oct 7 18:31:09 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Wed Oct 7 18:31:09 2026 +1300\n\n    docs(task): finalize completion report for phase-24 task-9\n    \n    Refs: phase-24/task-9\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "- VAL-052, current QA recovery: PASS - exact ordinary package output is cmd/fid 418.624 s, internal/workflow 103.615 s and slowest other ordinary internal/issues 188.589 s; tagged integration is 318.051 s. Every ordinary package is below 600 s and 480 s warning; tagged is below 900 s and 720 s warning.",
+        "- VAL-052: PASS - the fresh exact ordinary gate reports cmd/fid 410.123 s, internal/workflow 102.835 s and slowest other ordinary package internal/issues 199.339 s; all tested packages are under 600 s. The exact tagged gate reports 278.829 s, under 900 s. No recorded package reaches the 80% headroom thresholds (480 s ordinary / 720 s tagged). Current gate receipts below include actual termination results; cached historical timings do not supply this evidence.",
+        "  Supplemental fresh timing after the required gate's cached result; does not replace the required ordinary gate.",
+        "Historical timing finding retained: required ordinary cmd/fid 282.333 s (failed assertions); slowest other uncached package internal/export 103.313 s; required tagged integration 333.935 s; internal/workflow was cached in that gate, followed by its supplemental fresh 55.650 s run recorded above.",
+        "  Final whole-text SHA-256: 301357ce9975f00a63dac43f6fd894f85da852544834801546b54c5694094168.",
+        "Historical completed implementation attempt 2: the final source checkpoint `69589747ca77a1a3dae7e4d6083229d0193ed52f` preceded the final touched-package race tiers and all six required commands. Tests were uncached for fresh timing. The following exact commands ran serially in task-spec order from `/home/mark/projects/fid`; each terminated and these receipts are captured in this session.",
+        "Required ordinary package timing: cmd/fid 410.123 s (coverage 73.6%), internal/workflow 102.835 s (62.1%), slowest other ordinary package internal/issues 199.339 s (79.6%). Overall coverage is 61.8%. Required tagged integration: 278.829 s.",
+        "Current QA review-7 F1 recovery, attempt 1: all six commands below ran serially from /home/mark/projects/fid, in the exact required order, on the final source/test tree. Every nested session was polled to its own observed exit_code. Test-cache reset was preparation, not gate evidence; no package result below is cached.",
+        "Fresh package wall times: cmd/fid 418.624 s (75.4% coverage), internal/workflow 103.615 s (62.1%), slowest other ordinary internal/issues 188.589 s (79.6%), tagged integration 318.051 s. Overall coverage: 62.3%. All are below budgets and warning levels. The sixth command's no-output exit 1 is exactly the predeclared absence pass condition.",
+        "- Fresh gate wall times are below both budgets and their 80% warning thresholds: cmd/fid 410.123 s, internal/workflow 102.835 s, slowest other ordinary internal/issues 199.339 s, tagged integration 278.829 s. No headroom warning is required."
+      ]
+    },
+    {
+      "task": "9a",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-9a-done.md",
+      "sha256": "3978a80da957e58ded0ca1665a072fff91ef85951ffe2bbced6b12e477cd8068",
+      "claimed_hash": "2d5e9d55c83086b46268ca69793f30f65031b91b",
+      "claimed_subject": "feat(cli): converge grammar failures and unknown commands",
+      "identity": {
+        "command": "git show -s --format=fuller 2d5e9d55c83086b46268ca69793f30f65031b91b",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.01027226448059082,
+        "stdout": "commit 2d5e9d55c83086b46268ca69793f30f65031b91b\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Wed Oct 7 17:53:07 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Wed Oct 7 17:53:07 2026 +1300\n\n    feat(cli): converge grammar failures and unknown commands\n    \n    Refs: phase-24/task-9a\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-9a-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.008371829986572266,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-9a-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.01715087890625,
+        "stdout": "commit a8ae5b3c86a80fff7c245fdf72a0cbf9a920be97\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Wed Oct 7 17:53:14 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Wed Oct 7 17:53:14 2026 +1300\n\n    docs(task): finalize completion report for phase-24 task-9a\n    \n    Refs: phase-24/task-9a\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "- VAL-065: PASS \u2014 `TestGrammarWholeTreeClasses` includes unknown words at all 29 R17 paths; `TestGrammarBuiltBinaryCorpus` includes these, root `isue`, short exact messages and 600-character words in both modes and both directory states. `TestGrammarGroupHelpWithoutWord` (:544) retains help/exit-0 controls at all 29 paths in-process and in the binary. `TestReasonCodeDetailSchemaIsExactForEveryCode` (`internal/cli/codes_test.go:38`) proves the new closed schema.",
+        "- VAL-064 and VAL-065 boundary evidence: `TestGrammarMessageBoundaries` (:374), the binary corpus and `TestBoundedMessage` (`internal/cli/message_test.go:8`) cover escaped 512/513-scalar sources, non-ASCII counting, already escaped Go text, dropped crossing escapes and complete details. The binary long-flag spelling and long word are each exactly 600 ASCII characters.",
+        "- VAL-052: PASS \u2014 exact-gate package output and timing table below establish all four requested measurements, including the slowest other ordinary package.",
+        "| issue update/transition --expected-revision | decimal digits representing 1..9223372036854775807 | P21 \u00a74.1 retaining P20 contracts \u00a73.2.1 |",
+        "R18 additionally declares all 17 native integer flags and 44 booleans: priority 0..5, sequence/ordinal 1..2147483647, gate.resolve version 1..9223372036854775807, twelve list limits 1..10000 (attention, claim, concern, decision, deviation, finding, human-outcome, receipt, requirement, review, run, stop), five existing leaf booleans and 39 adopted --example booleans (P24 \u00a78). Missing free-string/stringSlice values use their pflag type domain. Input file paths, repository paths and bootstrap activation Actor text retain their existing contextual/structural validation; input shape validation is outside this grammar task.",
+        "  Final binary corpus including exact 600-character flag spelling.",
+        "Gate 5's BLOCKED status describes this failed attempt only; the causal repair and later complete exact attempt follow. Ordinary timings were cmd/fid 451.329s, internal/workflow 107.322s and internal/export 210.863s (slowest other package); tagged integration 367.898s. Coverage was 62.3%.",
+        "Fresh final gate timing (go test package wall times; no cached test results):",
+        "| cmd/fid | 399.177 | 600 | 480 |",
+        "| internal/workflow | 115.306 | 600 | 480 |",
+        "| internal/issues (slowest other ordinary package) | 196.455 | 600 | 480 |",
+        "| cmd/fid/integration (tagged) | 340.634 | under 900 | 720 |"
+      ]
+    },
+    {
+      "task": "10",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-10-done.md",
+      "sha256": "ee139082257967e70593ae6e4085e0be9aedabef7a068240fc4cad165fed3424",
+      "claimed_hash": "d11bec713c470596131190c1ca9c33274fd6133c",
+      "claimed_subject": "fix(cli): complete task 10 root-flag failure mapping and corpus",
+      "identity": {
+        "command": "git show -s --format=fuller d11bec713c470596131190c1ca9c33274fd6133c",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.005270719528198242,
+        "stdout": "commit d11bec713c470596131190c1ca9c33274fd6133c\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Fri Oct 9 08:30:30 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Fri Oct 9 08:30:30 2026 +1300\n\n    fix(cli): complete task 10 root-flag failure mapping and corpus\n    \n    Refs: phase-24/task-10\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-10-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.009413719177246094,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-10-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.010683298110961914,
+        "stdout": "commit a6b6203d62ec6061dcac84210f6fef6df13d4ef2\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Fri Oct 9 08:30:40 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Fri Oct 9 08:30:40 2026 +1300\n\n    docs(task): finalize completion report for phase-24 task-10\n    \n    Refs: phase-24/task-10\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "- VAL-036: PASS. `TestP24RegisteredCodePairingCompleteness` (`cmd/fid/integration/p24_code_pairing_test.go:127`) binds all 80 RegisteredCodes members to 79 real-process pairs plus the unchanged pinned unsupported-kind exclusion. `TestP24RegisteredCodePairs` (:155) checks operation/code, no control characters, matching exits and exact independently derived Human text, including labels/order/optional lines. All 74 ordinary rows require empty stdout in both modes. The five special pairs are protected-decision-required, review-rework-exhausted, gate-unsuccessful and the two budget terminal denials. `TestP24HumanProtectedDecisionFailure` (:12 in p24_human_failure_test.go), `TestP24HumanGateTerminalFailure` (:31) and `TestP23StopFailureHumanAndJSONParity` pin complete text and typed exits. Budget rows pin the existing singleton fid.live.v1 terminal denial and exact Human stderr with empty Human stdout (Phase 22 section 4; no new transport exception). `TestGrammarBuiltBinaryCorpus` (`cmd/fid/grammar_corpus_test.go:523`) retains short exact and near-miss isue rows, 600-character flag/word, 512/513 escaped-message boundaries, Unicode and whole-escape cuts with full uncut details. `TestP24RetainedReadFailurePairs` (`p24_retained_read_failure_test.go:15`) retains all six DEC-285 pairs. `TestP24UnavailableImportRootFlagFailurePair` (:104) pins literal DEC-286 JSON bytes and exactly two Human lines/exit 2, empty stdout and whole-filesystem equality for both non-project and nonexistent-project cases. In-process root rows and unchanged diagnostic rows pass in the ordinary gate. No reachable stable leaf is excluded.",
+        "- VAL-052: PASS. Fresh numeric package times from the exact count-cache-cleared gates are recorded below; all ordinary packages are under 600 seconds and integration under 900 seconds. No cached timing is claimed as fresh.",
+        "| `cmd/fid/rebuild_test.go:456` | `dc49d3d5f73a3850b900e76828c3a044240e48e6` | `phase-1/task-4` |",
+        "Fresh ownership checks for this continuation: code-pairing corpus, fixture helpers, caller audit and unavailable-import regression were introduced by `6607143b68ab2d08444cf5d5ecf9ddfd84ff7f49` (`Refs: phase-24/task-10`); protected-Decision/terminal-gate tests by `d574cf4587d790a83bbd14de22ff918edbe1e115` (`Refs: phase-24/task-10`). DEC-286 clauses 5 and 10 authorize completion of these own fixtures. Existing root-flag assertions originate at `cd53c43319a3301d3a8cc0089b6785d9afbb163f` (`Refs: phase-20/task-2`); their bodies remain byte-identical, as does the complete canonical_request.go suffix starting at writeGrammarFailure. The export.import registry row originates at `5ec69e6ef31dd93229c3d42fc76a4c02d60084ee` (`Refs: phase-22/task-15`); its capability values are unchanged. No ownership was inferred from labels."
+      ]
+    },
+    {
+      "task": "11",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-11-done.md",
+      "sha256": "74eb28ea4dac1188eb519f14e2ca76cb9f5d15a67c430c3ce49d8a3c0a17bce4",
+      "claimed_hash": "e6b49797cc1dba22012758922778bed805f8f16c",
+      "claimed_subject": "test(cli): complete Stop corpus and plain-copy Human fixtures",
+      "identity": {
+        "command": "git show -s --format=fuller e6b49797cc1dba22012758922778bed805f8f16c",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.005650043487548828,
+        "stdout": "commit e6b49797cc1dba22012758922778bed805f8f16c\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Fri Oct 9 16:05:55 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Fri Oct 9 16:05:55 2026 +1300\n\n    test(cli): complete Stop corpus and plain-copy Human fixtures\n    \n    Refs: phase-24/task-11\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-11-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.007650136947631836,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-11-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.011014223098754883,
+        "stdout": "commit 93a1f792d27f001b4052113e9056faf97706c3e5\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Fri Oct 9 16:06:05 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Fri Oct 9 16:06:05 2026 +1300\n\n    docs(task): finalize completion report for phase-24 task-11\n    \n    Refs: phase-24/task-11\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "This continuation started on branch `phase-24`, HEAD `28dbad27ec666391b7848956830f1835a2cb3cb3`, preserving implementation checkpoint `ab05e496206809860081f941d6c1c171eb845cca` and report checkpoint `9ce8896fd28d4aa0349cdbe7447ac7256e05cfe7`. DEC-287 resolves the protected contradiction below and authorizes only the two plain-copy inspect fixture expectations. It does not change repository behavior or the Human failure renderer. Runner-owned run-ledger.md was never edited, staged, committed or hidden.",
+        "- VAL-052: PASS. Full ordinary gate package times: cmd/fid 390.671s; internal/workflow 105.826s; slowest other freshly timed ordinary package internal/export 136.519s (internal/db 53.914s, internal/project 1.976s); tagged cmd/fid/integration 338.886s. Other unchanged ordinary packages reported `(cached)` and supplied no fresh package time; no timing is reconstructed for them. No ordinary package exceeds 600s; tagged integration is below 900s. Headroom notes appear below.",
+        "| Resolved Attention result in stop_test.go | `a0a93c7ce4dd0c7dfda4eb39a6ba40760068e460`, Refs: phase-22/task-9 | Supply the existing Stop as known fixture data because resolved Attention must now render linked Stops too. The Attention ID/code/resolution-Event assertions remain intact. |",
+        "- No headroom warning on current recorded times: cmd/fid 390.671s is below 480s, and tagged integration 338.886s is below 720s. The earlier Task 10 cmd/fid 484.734s warning stays historical context, not current timing evidence."
+      ]
+    },
+    {
+      "task": "12",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-12-done.md",
+      "sha256": "c1756eb875fe6b5ee0585a1d5d7930c2a1d9201ae6ac8b5cf4107b9d36c798f0",
+      "claimed_hash": "815a6b66af0381adee77077e826657511ac62292",
+      "claimed_subject": "feat(cli): add judgment get leaves",
+      "identity": {
+        "command": "git show -s --format=fuller 815a6b66af0381adee77077e826657511ac62292",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.004960298538208008,
+        "stdout": "commit 815a6b66af0381adee77077e826657511ac62292\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Sat Oct 10 21:56:41 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Sat Oct 10 21:56:41 2026 +1300\n\n    feat(cli): add judgment get leaves\n    \n    Refs: phase-24/task-12\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-12-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.007805824279785156,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-12-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.008342742919921875,
+        "stdout": "commit fc4bdff7102b5bcac6a566addf4327d92478c11d\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Sat Oct 10 21:57:00 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Sat Oct 10 21:57:00 2026 +1300\n\n    docs(task): finalize completion report for phase-24 task-12\n    \n    Refs: phase-24/task-12\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "- VAL-052: PASS \u2014 the exact gates below terminated successfully on the final tree. Recorded package times are below the accepted 600 s ordinary / 900 s tagged budgets. The earlier cmd/fid warning is retained in Tech Lead notes.",
+        "| cmd/fid | 484.599 s | 376.609 s | 600 s |",
+        "| internal/workflow | 142.144 s | cached; no new duration reported | 600 s |",
+        "| internal/export (slowest other ordinary package with a reported duration) | 183.669 s | 122.143 s | 600 s |",
+        "| cmd/fid/integration | 370.826 s, failed retained assertions | 381.138 s, PASS | 900 s |",
+        "Other timed ordinary packages in the first attempt were internal/db 71.210 s, internal/project 2.289 s and internal/review 1.262 s. Unchanged packages reported cached results; no duration was reconstructed for them.",
+        "- The Python stdin diagnostic attempted to enumerate Concern, Deviation and Human Outcome IDs from the cached Human fixture databases using Python's SQLite adapter.",
+        "- `git diff --cached --check` - FAIL - `project-docs/docs/phases/phase-24/tasks/task-12-done.md:158: new blank line at EOF.` (terminated `exit_code: 2`)",
+        "- `git diff --cached --check` - FAIL - `project-docs/docs/phases/phase-24/tasks/task-12-done.md:158: new blank line at EOF.` (terminated `exit_code: 2`)",
+        "- `git diff --cached --check` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)",
+        "- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 62.1% of statements` (terminated `exit_code: 0`)",
+        "- Exploratory cached-fixture probes failed: Python's adapter rejected a trigger schema, and the rebuilt CLI reported `no such column: subject_type`. These inputs were unsuitable for current read acceptance. Fresh initialization and current CLI-created records supplied the later evidence; no fixture or product semantics were changed to accommodate those probes.",
+        "- Headroom warning: the first exact ordinary gate reported cmd/fid at 484.599 s, 80.8% of the 600 s budget, above the 480 s warning and leaving 115.401 s headroom. The final attempt reported 376.609 s. Both observations are retained; no budget or command was changed.",
+        "- Final tagged integration time is 381.138 s, below the 900 s budget. internal/workflow's observed 142.144 s belongs to the first exact attempt; the second returned cached success, not a new timing sample."
+      ]
+    },
+    {
+      "task": "13",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-13-done.md",
+      "sha256": "68ce0aa0647cba05b2ed96c20e68310e4021fa47a471ea0ec46ac70fc0f3d6ce",
+      "claimed_hash": "558c9bc02a911a4c0402465c8585814cb37d9822",
+      "claimed_subject": "test(cli): converge retained concern list reasoning assertion",
+      "identity": {
+        "command": "git show -s --format=fuller 558c9bc02a911a4c0402465c8585814cb37d9822",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.005063772201538086,
+        "stdout": "commit 558c9bc02a911a4c0402465c8585814cb37d9822\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Sun Oct 11 07:59:04 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Sun Oct 11 07:59:04 2026 +1300\n\n    test(cli): converge retained concern list reasoning assertion\n    \n    Refs: phase-24/task-13\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-13-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.005733489990234375,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-13-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.007318735122680664,
+        "stdout": "commit a9aa99f93ec753ff954711f39b5467507385e11e\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Sun Oct 11 10:51:29 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Sun Oct 11 10:51:29 2026 +1300\n\n    docs(task): finalize completion report for phase-24 task-13\n    \n    Refs: phase-24/task-13\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "- VAL-052: PASS \u2014 the current exact ordinary gate reported `cmd/fid` at 340.352 s and `internal/export` (slowest other ordinary package with a fresh numeric timing) at 108.394 s. The exact tagged gate reported 342.605 s. Each fresh numeric ordinary result is under 600 s and tagged integration is under 900 s. `internal/workflow` and the remaining ordinary packages returned `(cached)` with no new numeric timing; no fresh duration is inferred for them. The required command was not altered to suppress caching.",
+        "| cmd/fid | 340.352 s | 600 s |",
+        "| internal/workflow | `(cached)`; no fresh numeric time | 600 s |",
+        "| internal/export (slowest other freshly timed ordinary package) | 108.394 s | 600 s |",
+        "| cmd/fid/integration | 342.605 s | 900 s |",
+        "| cmd/fid | 530.445 s | 600 s |",
+        "| internal/workflow | 136.519 s | 600 s |",
+        "| internal/issues (slowest other ordinary package) | 238.583 s | 600 s |",
+        "| cmd/fid/integration (failed exact attempt) | 358.688 s | 900 s |",
+        "- `go test -race -gcflags=modernc.org/...=-d=checkptr=0 -timeout 30m -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 62.1% of statements` (terminated `exit_code: 0`)",
+        "- Historical headroom warning retained: attempt 1 reported `cmd/fid` at 530.445 s, 88.4% of its 600 s budget, above the 480 s warning with 69.555 s headroom. The current gate reported 340.352 s, below the warning threshold; cached packages expose no new numeric duration. Current tagged integration was 342.605 s, below its 720 s headroom-warning threshold and 900 s budget."
+      ]
+    },
+    {
+      "task": "14",
+      "report": "project-docs/docs/phases/phase-24/tasks/task-14-done.md",
+      "sha256": "c05ca152e24975b1cd077223a3f054c33db7b67c2fc0bf0f4d81a246730fc570",
+      "claimed_hash": "e97835b9f9983e357b45e80c3dbe4e4b02cedb6d",
+      "claimed_subject": "feat(workflow): expose resume position for Human take-control",
+      "identity": {
+        "command": "git show -s --format=fuller e97835b9f9983e357b45e80c3dbe4e4b02cedb6d",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.006014108657836914,
+        "stdout": "commit e97835b9f9983e357b45e80c3dbe4e4b02cedb6d\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Sun Oct 11 10:05:33 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Sun Oct 11 10:05:33 2026 +1300\n\n    feat(workflow): expose resume position for Human take-control\n    \n    Refs: phase-24/task-14\n",
+        "stderr": ""
+      },
+      "report_clean": true,
+      "state": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/tasks/task-14-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.005098819732666016,
+        "stdout": "",
+        "stderr": ""
+      },
+      "equals_HEAD_blob": true,
+      "commit_receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/tasks/task-14-done.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.005539655685424805,
+        "stdout": "commit 86e0c26ab8c5f9e820259b740438ca90cf7aa93b\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Sun Oct 11 10:05:38 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Sun Oct 11 10:05:38 2026 +1300\n\n    docs(task): finalize completion report for phase-24 task-14\n    \n    Refs: phase-24/task-14\n",
+        "stderr": ""
+      },
+      "inventory_receipt_literals": {
+        "R4": false,
+        "R10": false
+      },
+      "timing_lines": [
+        "- VAL-052: PASS \u2014 the final-tree ordinary and tagged gates report fresh, uncached elapsed values in the timing table below. Every ordinary package is below 600 s and tagged integration below 900 s. The earlier, superseded ordinary attempt's `cmd/fid` time of 530.567 s is preserved and flagged as headroom, not copied into the final timing evidence.",
+        "| `cmd/fid` | 488.166 s | Below 600 s; above 480 s warning |",
+        "| `internal/workflow` | 120.646 s | Below 600 s |",
+        "| Slowest other ordinary: `internal/issues` | 228.100 s | Below 600 s |",
+        "| Tagged `cmd/fid/integration` | 431.049 s | Below 900 s |",
+        "All values are freshly printed in this continuation, not cached or inherited.",
+        "- Retained-test provenance: `p24_human_fixtures_test.go` assertions originated in `ab05e496206809860081f941d6c1c171eb845cca`, `feat(cli): checkpoint task 11 Human views and fixture contract blocker`, `Refs: phase-24/task-11`. This task's changes to that file are additions only. The terminal-state diagnostic originated in `4b6a3837e52f24a5a8975a1d2abef94635c74823`, `test(integration): checkpoint Task 14 terminal-state provenance blocker`, `Refs: phase-24/task-14`; it keeps its original checks, fatal diagnostic and forbidden-source guard and gains the exact two-line position check. No assertion displaced by clause 3 required clause 6 convergence.",
+        "| `cmd/fid` | 530.567 s | Below 600 s; above 480 s warning |",
+        "| `internal/workflow` | 162.186 s | Below 600 s |",
+        "| Slowest other ordinary: `internal/export` | 266.660 s | Below 600 s |",
+        "| Tagged `cmd/fid/integration` | 390.024 s | Below 900 s |",
+        "- Headroom warning: final-tree `cmd/fid` is 488.166 s, at or above 80% of its 600 s budget (480 s). The superseded current-session run was 530.567 s and carries the same warning. Both terminated successfully and are below the budget; no timing threshold was changed."
+      ]
+    }
+  ],
+  "reviews": [
+    {
+      "review": 1,
+      "sha256": "4fae21bef1dde97d3f936f9f4ac99e5cba0abcf2ddbffd84cc3b612ce0a177a1",
+      "receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/qa/review-1.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.016112565994262695,
+        "stdout": "commit a5052db6e9cf882e596d34262ca574e17fe6f638\nAuthor:     qa-reviewer <qa-reviewer@local>\nAuthorDate: Mon Oct 5 04:00:58 2026 +1300\nCommit:     qa-reviewer <qa-reviewer@local>\nCommitDate: Mon Oct 5 04:00:58 2026 +1300\n\n    docs(qa): review phase 24 window A\n    \n    Refs: phase-24\n",
+        "stderr": ""
+      },
+      "clean": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/qa/review-1.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.007634639739990234,
+        "stdout": "",
+        "stderr": ""
+      },
+      "verdict_heading": "## Verdict"
+    },
+    {
+      "review": 2,
+      "sha256": "0165be2c14938b067f090abe18c15c773736dc2ae2b40680c2dc7787497102fc",
+      "receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/qa/review-2.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.016199111938476562,
+        "stdout": "commit b2aadb3b6089bb86dd9029cfa8757e6920c9418a\nAuthor:     Mark Bell <mark.bell.nzl@gmail.com>\nAuthorDate: Mon Oct 5 05:33:27 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Mon Oct 5 05:33:27 2026 +1300\n\n    docs(qa): pass phase 24 window A re-review\n    \n    Refs: phase-24\n",
+        "stderr": ""
+      },
+      "clean": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/qa/review-2.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.006421327590942383,
+        "stdout": "",
+        "stderr": ""
+      },
+      "verdict_heading": "## Verdict"
+    },
+    {
+      "review": 3,
+      "sha256": "e8d552cc938eb7ec20672d3f659a317c9ae3b943c14c3cb175ed3cf6080a02b9",
+      "receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/qa/review-3.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.016338586807250977,
+        "stdout": "commit 4f7bc7c213531dff57976f8f07de584f54cb4290\nAuthor:     qa-reviewer <qa-reviewer@fid.local>\nAuthorDate: Tue Oct 6 21:38:53 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Tue Oct 6 21:38:53 2026 +1300\n\n    docs(qa): review phase 24 window B\n    \n    Refs: phase-24\n",
+        "stderr": ""
+      },
+      "clean": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/qa/review-3.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.004537343978881836,
+        "stdout": "",
+        "stderr": ""
+      },
+      "verdict_heading": "## Verdict"
+    },
+    {
+      "review": 4,
+      "sha256": "8bf1d9161491bba1aee6951e44bd0ef5ff86622d87dba4e460ed1c89c19e09a6",
+      "receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/qa/review-4.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.015457391738891602,
+        "stdout": "commit a302f11d624185cef22e81f9708957bf34271939\nAuthor:     qa-reviewer <qa-reviewer@fid.local>\nAuthorDate: Tue Oct 6 23:20:37 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Tue Oct 6 23:20:37 2026 +1300\n\n    docs(qa): re-review phase 24 window B\n    \n    Refs: phase-24\n",
+        "stderr": ""
+      },
+      "clean": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/qa/review-4.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.009860515594482422,
+        "stdout": "",
+        "stderr": ""
+      },
+      "verdict_heading": "## Verdict"
+    },
+    {
+      "review": 5,
+      "sha256": "8d580d9d15f26bb02397eafd62bd383ada2181094aaf34c8ea7fe8de03ee6107",
+      "receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/qa/review-5.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.021704673767089844,
+        "stdout": "commit c690cb939255c63b546180b4477da974a51b58b4\nAuthor:     qa-reviewer <qa-reviewer@fid.invalid>\nAuthorDate: Wed Oct 7 15:22:57 2026 +1300\nCommit:     qa-reviewer <qa-reviewer@fid.invalid>\nCommitDate: Wed Oct 7 15:22:57 2026 +1300\n\n    docs(qa): review phase 24 Window C evidence\n    \n    Refs: phase-24\n",
+        "stderr": ""
+      },
+      "clean": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/qa/review-5.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.010722875595092773,
+        "stdout": "",
+        "stderr": ""
+      },
+      "verdict_heading": "| VAL-034 | 8 | ON TRACK | Receipt, Review and Human Outcome subject repositories drive target/Event repository even after current state changes; linking works without Git. Stored get remains distinct from current evaluate. |"
+    },
+    {
+      "review": 6,
+      "sha256": "e641df23049af036dd851ec7018024a932260af95c27f5c96cf8e957254181ad",
+      "receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/qa/review-6.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.01514124870300293,
+        "stdout": "commit 149f494a9eee202914c6784ed3cbfdb7ce4c01c4\nAuthor:     qa-reviewer <qa-reviewer@fid.local>\nAuthorDate: Wed Oct 7 16:28:51 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Wed Oct 7 16:28:51 2026 +1300\n\n    docs(qa): pass phase 24 Window C independent re-review\n    \n    Refs: phase-24\n",
+        "stderr": ""
+      },
+      "clean": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/qa/review-6.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.005151033401489258,
+        "stdout": "",
+        "stderr": ""
+      },
+      "verdict_heading": "| VAL-034 | 8 | ON TRACK | O1/I1 Receipt, Review and Human Outcome target/Event repositories come from their immutable subjects despite later edits or Git absence; evaluate remains distinct from stored reads. |"
+    },
+    {
+      "review": 7,
+      "sha256": "8dcf72b9ff10719a3f6e895d14248da205d029275f5064c3010388fe67c1c58b",
+      "receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/qa/review-7.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.013631820678710938,
+        "stdout": "commit a5e5b79e8133f5550edc773a4c1797a6a3559c79\nAuthor:     qa-reviewer <qa-reviewer@fid.local>\nAuthorDate: Wed Oct 7 18:06:47 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Wed Oct 7 18:06:47 2026 +1300\n\n    docs(qa): review phase 24 Window D1\n    \n    Refs: phase-24\n",
+        "stderr": ""
+      },
+      "clean": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/qa/review-7.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.00584864616394043,
+        "stdout": "",
+        "stderr": ""
+      },
+      "verdict_heading": null
+    },
+    {
+      "review": 8,
+      "sha256": "63e1b352192b5a83d5389ca1d3c31ace0e7efbcee84bf5fbc2e7f35c5c59db2a",
+      "receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/qa/review-8.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.011227846145629883,
+        "stdout": "commit 0181fc75d6fde6e6f0aa8b156c7f6125b09c0921\nAuthor:     qa-reviewer <qa-reviewer@fid.local>\nAuthorDate: Wed Oct 7 19:02:32 2026 +1300\nCommit:     qa-reviewer <qa-reviewer@fid.local>\nCommitDate: Wed Oct 7 19:02:32 2026 +1300\n\n    docs(qa): pass phase 24 Window D1 independent re-review\n    \n    Refs: phase-24\n",
+        "stderr": ""
+      },
+      "clean": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/qa/review-8.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.005987644195556641,
+        "stdout": "",
+        "stderr": ""
+      },
+      "verdict_heading": null
+    },
+    {
+      "review": 9,
+      "sha256": "09faff8d7c35b774b83328a70c46c8ff9cc8b1e863230c38269aa1101ce589f8",
+      "receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/qa/review-9.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.010984420776367188,
+        "stdout": "commit b9083f3b5914d3274782d79c5568300e68169017\nAuthor:     qa-reviewer <qa-reviewer@fid.local>\nAuthorDate: Fri Oct 9 16:18:54 2026 +1300\nCommit:     qa-reviewer <qa-reviewer@fid.local>\nCommitDate: Fri Oct 9 16:18:54 2026 +1300\n\n    docs(qa): review phase 24 Window D2 and record pending Human checkpoint\n    \n    Refs: phase-24\n",
+        "stderr": ""
+      },
+      "clean": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/qa/review-9.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.008957386016845703,
+        "stdout": "",
+        "stderr": ""
+      },
+      "verdict_heading": "## Verdict"
+    },
+    {
+      "review": 10,
+      "sha256": "146b03d6a19c38d95de535c72c8370837251af0c0b609da0a06e271e49d22913",
+      "receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/qa/review-10.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.009175539016723633,
+        "stdout": "commit 3f920f31df411d07400e7c5591b6a6e5a0c2560f\nAuthor:     qa-reviewer <qa-reviewer@fid.local>\nAuthorDate: Sat Oct 10 21:07:13 2026 +1300\nCommit:     qa-reviewer <qa-reviewer@fid.local>\nCommitDate: Sat Oct 10 21:07:13 2026 +1300\n\n    docs(qa): pass phase 24 Window D2 Human evidence re-review\n    \n    Refs: phase-24\n",
+        "stderr": ""
+      },
+      "clean": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/qa/review-10.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.006201982498168945,
+        "stdout": "",
+        "stderr": ""
+      },
+      "verdict_heading": "## Verdict"
+    },
+    {
+      "review": 11,
+      "sha256": "ed1714113c8a5f453bf4fbce5a402eb5bf9667f4f7c6555d04df1ffc937ce2d3",
+      "receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/qa/review-11.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.006007194519042969,
+        "stdout": "commit 562583d9325a7953b8e991f20383f1df56fa7fb3\nAuthor:     qa-reviewer <qa-reviewer@openai.com>\nAuthorDate: Sun Oct 11 10:16:35 2026 +1300\nCommit:     Mark Bell <mark.bell.nzl@gmail.com>\nCommitDate: Sun Oct 11 10:16:35 2026 +1300\n\n    docs(qa): review phase 24 Window E evidence\n    \n    Refs: phase-24\n",
+        "stderr": ""
+      },
+      "clean": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/qa/review-11.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.008761882781982422,
+        "stdout": "",
+        "stderr": ""
+      },
+      "verdict_heading": "## Verdict"
+    },
+    {
+      "review": 12,
+      "sha256": "5b01219456b769bd48eb108c48ab611c4119d2c913fe306915620ed90dab91ed",
+      "receipt": {
+        "command": "git log -1 --format=fuller -- project-docs/docs/phases/phase-24/qa/review-12.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.004957437515258789,
+        "stdout": "commit d63c9bae6a343e49ae46146a597edf7f0620281c\nAuthor:     qa-reviewer <qa-reviewer@users.noreply.github.com>\nAuthorDate: Sun Oct 11 11:18:42 2026 +1300\nCommit:     qa-reviewer <qa-reviewer@users.noreply.github.com>\nCommitDate: Sun Oct 11 11:18:42 2026 +1300\n\n    docs(qa): close phase 24 Window E F1 re-review\n    \n    Refs: phase-24\n",
+        "stderr": ""
+      },
+      "clean": {
+        "command": "git status --porcelain -- project-docs/docs/phases/phase-24/qa/review-12.md",
+        "cwd": "/home/mark/projects/fid",
+        "exit_code": 0,
+        "expected_exit_code": 0,
+        "elapsed_seconds": 0.006035566329956055,
+        "stdout": "",
+        "stderr": ""
+      },
+      "verdict_heading": "## Verdict"
+    }
+  ],
+  "dependency_diff": {
+    "command": "git diff 304aa45 -- go.mod go.sum",
+    "cwd": "/home/mark/projects/fid",
+    "exit_code": 0,
+    "expected_exit_code": 0,
+    "elapsed_seconds": 0.009036064147949219,
+    "stdout": "",
+    "stderr": ""
+  },
+  "spec_diff": {
+    "command": "git diff 304aa45 -- project-docs/specs/03_TRD_SCHEMA.md project-docs/specs/05_DESIGN_PLAN.md project-docs/specs/06_DESIGN_PLAN_CLI.md project-docs/specs/07_DESIGN_PLAN_FLOWS.md project-docs/specs/08_QUALITY_PLAN.md project-docs/specs/GLOSSARY.md",
+    "cwd": "/home/mark/projects/fid",
+    "exit_code": 0,
+    "expected_exit_code": 0,
+    "elapsed_seconds": 0.013035058975219727,
+    "stdout": "diff --git a/project-docs/specs/03_TRD_SCHEMA.md b/project-docs/specs/03_TRD_SCHEMA.md\nindex e821e7e8..fb735927 100644\n--- a/project-docs/specs/03_TRD_SCHEMA.md\n+++ b/project-docs/specs/03_TRD_SCHEMA.md\n@@ -68,7 +68,7 @@ indexes, checks, and migration numbers are accepted with the owning slice.\n | Table | Minimum identity and content | Rules |\n |---|---|---|\n | `projection_meta` | singleton schema version, last Event ID/hash, applied count | Updated only after the projection transaction commits. |\n-| `idempotency_results` | operation scope, key, request digest, result entity/Event, created time | Same key/digest returns original result; different digest conflicts. |\n+| `idempotency_results` | operation scope, key, request digest, request field digests JSON, result entity/Event, created time | Same key/digest returns original result; different digest conflicts. Field digests are immutable after insertion. |\n | `system_capabilities` | capability ID/version, schema range, availability, limits, trust sources | Derived from running binary and active migration state. |\n \n ### 3.2 Issue tracker\n@@ -741,4 +741,20 @@ Phase 23 development binary are not supported: where a stored result no longer\n matches the current closed shape, rebuild stops with `journal-replay-stopped`\n and leaves the source journal unchanged (DEC-270, ADR-0011).\n \n-*Last updated: 2026-10-03 (Phase 23 delivered baseline; DEC-264/270/271)*\n+### 8.5 Phase 24 - idempotency field digest storage\n+\n+Migration 0019 adds one column to `idempotency_results`, after the schema-18\n+baseline (DEC-275):\n+\n+```sql\n+ALTER TABLE idempotency_results ADD COLUMN request_field_digests_json TEXT NOT NULL CHECK (json_valid(request_field_digests_json));\n+```\n+\n+The column holds a canonical JSON object mapping public input names to SHA-256\n+digests. Every idempotency insert Effect carries it. The receipt-recorded\n+update guards the stored value and never changes it (DEC-278). Migration 0019\n+down drops only this column and restores schema 18 byte for byte. The active\n+projection and export manifest schema are 19; projection meta format remains 5.\n+Earlier journals that lack the field are unsupported and fail closed (DEC-270).\n+\n+*Last updated: 2026-10-04 (Phase 24 task 1 storage baseline; DEC-275/278)*\ndiff --git a/project-docs/specs/05_DESIGN_PLAN.md b/project-docs/specs/05_DESIGN_PLAN.md\nindex 518d8aac..1d42b324 100644\n--- a/project-docs/specs/05_DESIGN_PLAN.md\n+++ b/project-docs/specs/05_DESIGN_PLAN.md\n@@ -123,8 +123,39 @@ Every failure maps to a stable code and category. Important categories:\n - activation conflict; and\n - maintenance/recovery conflict.\n \n-Human messages state what failed, the subject, and the next legitimate action.\n-They never advise editing `.fid/` internals or weakening an Obligation.\n+Human failures use the accepted Phase 24 section 9 order on stderr:\n+\n+```text\n+error: <JSON message, verbatim>\n+reason: <code>[; <key detail>]\n+blocked by: <stop_ids, then attention_ids>\n+next: <closed-table resolving action>\n+```\n+\n+`blocked by:` appears only for nonempty blocking ID arrays. `next:` appears\n+only for the closed table in\n+[Phase 24 section 9](../docs/phases/phase-24/public-interface.md#9-human-failure-lines-part-3-a5-handoff-item-c),\n+including grammar failures on `--input` leaves. Other failures omit it.\n+Scalar details appear in key order; arrays join with commas. The reason line\n+escapes controls before counting the whole line, label included. Exactly 200\n+Unicode scalars stays intact; longer lines keep 200 plus `\u2026`, dropping an\n+escape crossing the cut whole. Error messages reuse their escaped, bounded\n+JSON value without a second escape or cut. Generic fallbacks carry their\n+caught domain cause under DEC-281/282, retaining their fixed message only for\n+empty or all-whitespace causes.\n+\n+For example, `fid stop raise --bogus` writes:\n+\n+```text\n+error: unknown flag: --bogus\n+reason: invalid-argument; argument=--bogus, allowed=--actor|--example|--idempotency-key|--input\n+next: see fid stop raise --help; template: fid stop raise --example\n+```\n+\n+Gate terminal failures write these stderr lines after streamed stdout.\n+`journal inspect` and `sql` remain Human-only diagnostics outside this\n+contract. Guidance never advises editing `.fid/` internals or weakening an\n+Obligation.\n \n ## 7. Accessibility And Safety\n \ndiff --git a/project-docs/specs/06_DESIGN_PLAN_CLI.md b/project-docs/specs/06_DESIGN_PLAN_CLI.md\nindex 717e61c9..bd442c41 100644\n--- a/project-docs/specs/06_DESIGN_PLAN_CLI.md\n+++ b/project-docs/specs/06_DESIGN_PLAN_CLI.md\n@@ -156,12 +156,51 @@ all projection commands are derived reads. `human-brief` may explicitly render\n its named Human schema as terminal text, Markdown, or HTML; JSON remains\n canonical.\n \n+`resume` shows where the Issue stands in its workflow (Phase 24 DEC-290).\n+Its JSON `issue` object carries `revision` and `next_states`. That is every\n+state with a workflow edge from the current status, as `issue transition`\n+checks it (`cancelled` included). Each item is `{state, category}`, sorted\n+by state, and the list is `[]` when there is none. The Human Issue block\n+reads:\n+\n+```text\n+Issue P24-example\n+  Status: qa_review\n+  Revision: 4\n+  Next states: cancelled (cancelled), qa_block (started), qa_pass (completed)\n+  Completion: incomplete\n+  Envelope: ENV-example (revision 1, active)\n+```\n+\n+An Issue with no outgoing edge prints `Next states: none.`. These are\n+workflow edges, not permissions: authority, Claim, Run, Stop and\n+Obligation checks still apply when the transition runs. `issue transition`\n+help points `--to` and `--expected-revision` at `fid resume <issue-id>`.\n+\n+`envelope create --input` omits `repository_scope` and every Source\n+`repository`. fid observes the selected project's Git worktree and records that\n+observation as the scope and on `risk_result.source`, `sources[]`, and every\n+Obligation Source. A project-file Source may omit `digest`; fid reads the file\n+and records its SHA-256 digest, or checks a supplied digest. External\n+references require a digest. `envelope complete --input` names the Envelope\n+and expected revision; fid observes the completion repository itself.\n+\n+An Obligation's `registration` is nullable: gate-evidence names its immutable\n+Registration, while Review and Human Outcome Obligations supply null. Prior\n+Registrations and Envelope scopes must name the same project and worktree,\n+or an imported destination whose binding names that project and exact root.\n+A plain copy with no import binding is refused without an Event. Claim Events\n+retain the Envelope scope; the acquired Claim records its local observed\n+worktree. A Claim acquired in an imported destination may be renewed,\n+released or expired there; stored authority uses the same shared worktree\n+predicate as acquisition (DEC-283).\n+\n ### Claims, Runs, Stops, and Attention\n \n ```text\n fid claim acquire|renew|release|list\n-fid run start|record-telemetry|finish|get|list|recover\n-fid stop record|resolve|list\n+fid run start|observe|observe-budget|checkpoint|close|abandon|get|list|inspect|recover\n+fid stop raise|resolve|list\n fid attention list|resolve\n ```\n \n@@ -169,6 +208,113 @@ No command assumes a Developer or QA role. Actor identity, capabilities,\n Envelope grants, Issue, worktree, mutation scope, optional Obligation, and\n lease version are explicit machine fields.\n \n+Human `stop list`, `attention list` and `resume` render Stops as labelled\n+facts. Every StopDetails member has its own line. An open Stop names the\n+command for its resolution Condition, then the after-the-fact disposition\n+commands. For example, an operator Stop appears in `stop list` as:\n+\n+```text\n+Purpose: Inspect Stops, blocked actions and qualifying resolution conditions.\n+\n+stop.list\n+Stop STP-example\n+  Subject: run:RUN-example\n+  Code: operator-stop\n+  Blocked actions: gate.run\n+  Reason: operator approval\n+  Reference: DEC-human\n+  Resolution condition: work-ended for run:RUN-example\n+  Resolver capability: stop.resolve\n+  Status: open\n+  Next: fid run close or fid run abandon; after the fact: fid stop resolve, then fid attention resolve where no lifecycle Event disposed it.\n+```\n+\n+`attention list` includes the linked Stop with the same labelled facts:\n+\n+```text\n+Purpose: Inspect Attention and the dispositions of its linked Stops.\n+\n+attention.list\n+Attention ATT-example\n+  Status: open\n+  Code: operator-stop\n+  Linked Stops: STP-example\n+  Stop STP-example\n+  Subject: run:RUN-example\n+  Code: operator-stop\n+  Blocked actions: gate.run\n+  Reason: operator approval\n+  Reference: DEC-human\n+  Resolution condition: work-ended for run:RUN-example\n+  Resolver capability: stop.resolve\n+  Status: open\n+  Next: fid run close or fid run abandon; after the fact: fid stop resolve, then fid attention resolve where no lifecycle Event disposed it.\n+```\n+\n+After qualified resolution, the Stop ends with these lines and has no\n+`Next:` line. Resolved Attention also shows its resolution Event:\n+\n+```text\n+  Status: resolved\n+  Fact Event: EVT-fact\n+  Resolution Event: EVT-stop-resolved\n+\n+Attention ATT-example\n+  Status: resolved\n+  Code: operator-stop\n+  Linked Stops: STP-example\n+  Resolution Event: EVT-attention-resolved\n+```\n+\n+The Condition commands are `fid run observe` for `executor-terminated`,\n+`fid run recover` for `run-recovered`, `fid activation recover` for\n+`activation-recovered`, `fid run observe-budget` for `budget-observed`,\n+`fid run close` or `fid run abandon` for `work-ended`, `fid review record`\n+for `review-recorded` and `finding-resolved`, `fid human-outcome record`\n+for `human-outcome-recorded`, and `fid decision record-reference` then\n+`fid human-outcome record` for `decision-satisfied`. `capability-available`\n+instead says to wait for the named capability. These are qualifying-fact\n+steps; disposition follows only when a lifecycle Event has not disposed\n+the Stop and Attention already.\n+\n+Human repository lines use only `HEAD <12 hex>; clean` or\n+`HEAD <12 hex>; dirty`. `resume` shows `same worktree` for the recorded\n+root and `different worktree` for a plain copy selected with `--repository`.\n+`run inspect` shows `same worktree` on success; a plain copy keeps the\n+`recovery-state-conflict` refusal (exit 4, empty stdout) in both modes,\n+as specified by DEC-287. Full repository observations remain in JSON.\n+\n+`claim acquire --input` names the Issue, Envelope revision, path scope, mode\n+and lifetime. fid observes and records the selected worktree ID, checking it\n+against the Envelope scope. Renew, release and expire retain their existing\n+inputs.\n+\n+`run start`, `run close` and `run abandon` require\n+`expected_repository:{head_oid,dirty}` instead of `repository`. Use\n+`git rev-parse HEAD` and `git status --porcelain` (excluding `.fid/`) for the\n+expectation. fid observes under the write lock after replay lookup, compares\n+these two preconditions, and records the full observation. A mismatch returns\n+`repository-mismatch` with `{expected:{head_oid,dirty},observed:Repository}`\n+and no Event. Start checks the Claim and Envelope as the same project and\n+worktree, including a matching import destination binding; edits and commits\n+since Envelope creation are accepted. A plain copy has no such binding and is\n+refused before an Event. Close and abandon record `terminal_repository` with\n+`base_oid` equal to observed HEAD. Close evaluates Obligations against that\n+observation; stale Receipt-backed Evidence yields a failed Run. Unsafe or\n+unobservable terminal repositories return `recovery-state-conflict`.\n+\n+`run observe-budget` accepts nullable `measurement_ref:SourceInput`. With a\n+Source, fid observes the repository and checks a supplied project-file digest\n+or computes an omitted digest; the stored Source and Event carry that\n+observation. A null measurement does not observe. Start and budget observation\n+return `repository-unavailable` on an unobservable worktree. Equal keyed\n+retries replay before any repository or Source read, even after HEAD changes,\n+a referenced file changes or disappears, or the worktree becomes unsafe.\n+\n+All seven Run mutation leaves document their closed input fields in `--help`\n+and provide a standalone, exclusive `--example` JSON template. Structural\n+failures name the exact `input.<path>` and do not append an Event.\n+\n ### Registered gates and evidence\n \n ```text\n@@ -177,20 +323,102 @@ fid receipt get|list|ingest-attested\n fid evidence link|get|evaluate\n ```\n \n-`gate run` accepts a registration reference, subject, Run, repository identity,\n-and idempotency key. It does not accept replacement command or execution-policy\n-fields. Live-output framing and terminal JSON are specified in the execution\n-slice before implementation.\n+`gate run --input` accepts `registration_id`, `registration_version`,\n+`obligation_id`, `run_id` and required `expected_repository:{head_oid,dirty}`.\n+Use `git rev-parse HEAD` and `git status --porcelain` for the expectation.\n+fid observes once before spawning and checks the expectation before any\n+Attempt or Event. Registration and Run checks use the same project/worktree\n+relationship, including a matching import binding. Edits since Run start are\n+admitted with a matching expectation. Attempt, Receipt and execution Events\n+retain that observation; process exit does not cause a second observation.\n+The `fid.live.v1` framing contract is unchanged.\n+\n+`evidence link --input` supplies the Obligation, Evidence type, exactly one\n+non-null subject ID (`receipt_id`, `review_id`, `human_outcome_id`) and sorted\n+`required_artifact_ids`. It derives `target_repository` from the Receipt's\n+terminal repository, the Review repository or the Human Outcome Event.\n+Linking does not observe the current worktree. `evidence evaluate --input`\n+takes `{obligation_id:?ID}` (null selects the active revision) and observes\n+the current worktree once. Tree and dirty-state changes stale repository-bound\n+Evidence; reverting restores freshness. Human Outcome Evidence stays fresh.\n+\n+These inputs reject the removed `repository` and `target_repository` members.\n+`gate run`, `evidence link`, `evidence evaluate` and `artifact verify` document\n+their field trees in `--help` and print exclusive editable `--example`\n+templates without reading or writing a workspace. Structural failures name\n+`input.<path>` and append no Event.\n+\n+`gate register --input` names the activated definition/version and Issue scope.\n+fid observes the selected worktree and derives the Registration project ID,\n+worktree ID and binding digest from that observation and scope.\n \n ### Review and judgment\n \n ```text\n fid review record|get|list\n fid finding address|list\n-fid concern record|dispose|list\n-fid deviation record|list\n+fid concern record|dispose|get|list\n+fid deviation record|get|list\n fid decision record-reference|list\n-fid human-outcome record|list\n+fid human-outcome record|get|list\n+```\n+\n+Phase 24 Task 12 adds `fid concern get <concern-id>`,\n+`fid deviation get <deviation-id>` and `fid human-outcome get <outcome-id>`\n+(DEC-274). Each takes exactly one ID and only global flags. JSON returns\n+`{concern:Concern}`, `{deviation:Deviation}` or `{outcome:HumanOutcome}`\n+inside the success envelope, equal to that ID's list item, with `event:null`\n+and exit 0. The operation IDs are `concern.get`, `deviation.get` and\n+`human-outcome.get`. Unknown IDs return `concern-not-found`,\n+`deviation-not-found` or `outcome-not-found`, respectively, with exit 3,\n+subject ID equal to the requested ID, and details `{id}`. Missing or extra\n+arguments and unknown flags return the accepted `invalid-argument` grammar\n+failure with exit 2. Human output shows full recorded reasoning with line breaks retained and\n+continuation lines indented. Capability rows are unchanged.\n+\n+Task 13 delivers A6/A7 (DEC-272; Phase 24 contract sections 10 and 11).\n+Each non-empty Concerns, Deviations or Human Outcomes section prints one\n+judgment disclaimer before its items; an empty section prints `None.` and\n+no disclaimer. Every view keeps its `Purpose:` line. The switch is deferred\n+to Phase 26.\n+\n+Human views show Concern summary, reasoning and disposition reason; Finding\n+summary and every disposition reason; Deviation expected, observed and\n+reasoning; and Human Outcome reasoning. Every `list` and `resume` judgment\n+section collapses whitespace to one line per field, retaining 80 Unicode\n+scalars uncut and cutting longer text to the first 80 plus `\u2026`. Detail reads,\n+mutation outputs and `review get` show the full text, retaining line breaks\n+and indenting continuation lines. Controls including ESC, CR, BEL and NUL\n+are escaped. Reference labels, paths and digests appear; referenced file\n+contents remain in the project.\n+\n+For example, a list displays collapsed recorded fields:\n+\n+```text\n+Purpose: Inspect a raised concern and its disposition as judgment.\n+\n+Concerns\n+  These records express judgment, not deterministic proof.\n+  Concern CON-example\n+    Subject: issue:ISS-example\n+    Severity: major; Status: open; Raised by: actor-builder\n+    Summary: Validation needs a second sample\n+    Reasoning: The first sample varied. Repeat before accepting.\n+```\n+\n+The matching `concern get CON-example` retains the recorded line break:\n+\n+```text\n+Purpose: Inspect a raised concern and its disposition as judgment.\n+\n+Concerns\n+  These records express judgment, not deterministic proof.\n+  Concern CON-example\n+    Subject: issue:ISS-example\n+    Severity: major; Status: open; Raised by: actor-builder\n+    Summary: Validation needs a second sample\n+    Reasoning: The first sample varied.\n+      Repeat before accepting.\n ```\n \n Review and Outcome inputs are versioned structured records. Protected Human\n@@ -220,6 +448,24 @@ invalid. No independent terminal-disposition leaf is added. The accepted\n [Phase 23 input contract](../docs/phases/phase-23/public-interface.md) fixes\n bounds, rejection codes and existing Finding disposition readback.\n \n+Phase 24 Task 5 makes `review record` take required\n+`expected_repository:{head_oid,dirty}` in place of a caller-supplied\n+`repository`. Use the full output of `git rev-parse HEAD` for `head_oid` and\n+set `dirty` from `git status --porcelain`, ignoring `.fid/` paths. The\n+coverage item and exclusion Sources, and `evidence_refs`, take `SourceInput`\n+without `repository`; project-file digests may be omitted for fid to compute.\n+The stored Review and its Sources carry fid's single observed Repository.\n+For example, the repository portion of a Review input is:\n+\n+```json\n+{\"expected_repository\":{\"head_oid\":\"0123456789abcdef0123456789abcdef01234567\",\"dirty\":false}}\n+```\n+\n+A mismatch returns `repository-mismatch` with exactly\n+`{expected:{head_oid,dirty},observed:Repository}` and appends no Event.\n+`finding address` keeps its input shape and gains descriptor help and\n+`--example`.\n+\n Phase 23 Task 10 adds provenanced Human Outcomes. `human-outcome record`\n requires a human Actor type in a finalized Kit Activation profile carrying the\n `human-outcome.record` capability, established through that active provenance\n@@ -253,6 +499,20 @@ Every mutation:\n    and metadata update; and\n 5. returns the entity revision and Event identity.\n \n+For a keyed mutation, the request digest covers the closed input object as\n+written, plus the operation, project ID and resolved Actor components already\n+used by its family. Optional members enter the digest only when supplied;\n+`review.record` treats `inapplicable_findings:[]` as omission (DEC-242). Values\n+observed by fid, including repository state and Source digests, do not enter\n+the request digest. A same-key replay returns the original result before any\n+observation. Each keyed mutation also records a `sha256:` digest of the\n+canonical JSON value for every top-level public input name and `--actor`.\n+Flag names include `--`; positional names follow the leaf's `Use` line.\n+An `idempotency-conflict` JSON details object contains the operation scope,\n+key, stored and supplied request digests, and `differing_fields`: the sorted,\n+unique, nonempty names whose field digest or presence differs. The conflict\n+appends no Event.\n+\n Validation failure appends nothing. A projection failure after append is a\n detectable catch-up state and never a reason to append a duplicate Event.\n \n@@ -341,7 +601,7 @@ the entity ID in the producing rejection. All are `retryable:false`.\n | `outcome-not-permitted` | precondition / 4 | null | `obligation_id`, `obligation_type`, `outcome_id`, `result` |\n | `evidence-type-not-accepted` | precondition / 4 | null | `obligation_id`, `evidence_type`, `accepted_evidence_types` |\n | `source-digest-mismatch` | precondition / 4 | null | `display_label`, `path`, `expected_digest`, `observed_digest` |\n-| `repository-mismatch` | conflict / 4 | null | `expected`, `observed` |\n+| `repository-mismatch` | conflict / 4 | null | `expected:{head_oid,dirty}`, `observed:Repository` |\n | `human-outcome-required` | precondition / 4 | envelope | `envelope_id`, `obligation_id`, `outcome_class`, `stop_ids`, `attention_ids`, `event`, `replayed` |\n \n `requirement-not-found` retains its earlier not-found / 3 registration with\n@@ -461,7 +721,173 @@ Later accepted amendments, all delivered and recorded in that contract:\n DEC-271 records technical qualification and the Human re-check. DEC-272\n schedules the remaining Human operating-experience items (Stop-detail\n rendering, denial reasons, hint verbosity, recorded reasoning in Human views,\n-`--input` authoring and repository-input convergence) as Phase 24. Until that\n-phase's contract is accepted, the rules above remain in force.\n+`--input` authoring and repository-input convergence) as Phase 24.\n+\n+### Phase 24 accepted amendment (delivery in progress)\n+\n+`../docs/phases/phase-24/public-interface.md` is the accepted target contract\n+(DEC-277, amended by DEC-278..282); the preceding delivered rules describe\n+the implementation until the owning Phase 24 tasks land. Sections 5 and 9\n+govern the message clarifications recorded in DEC-282:\n+\n+- A plain-copy `run.start` refusal reaches the Claim binding check first.\n+  Its generic fallback carries `run claim binding is invalid` once task 10\n+  applies D6=A. Task 7 preserves the Claim-before-Envelope check order and\n+  the original/copy/import-binding cases.\n+- Task 9a constructs grammar and unknown-command messages from their\n+  specified source text, escapes controls, then enforces the inherited\n+  512-Unicode-scalar bound. Escaped text up to 512 stays intact; longer text\n+  keeps the first 511 plus `\u2026`, dropping an escape crossing the cut whole.\n+  Count before JSON serialization, excluding the Human label/terminator.\n+  This bound takes precedence over exact parser text or the unknown-command\n+  formula. Structured details retain the full offending spelling/value.\n+- Task 10 reuses that construction for DEC-281 generic fallbacks and prints\n+  the resulting JSON message verbatim after `error: `, without a second\n+  escape or cut. Codes, details and exits retain their accepted values.\n+\n+The exact leaf, input, failure and view changes remain indexed in that phase\n+contract. The shared Human failure renderer follows section 9; the task\n+deliveries below identify the other implemented portions.\n+\n+Task 9a delivers grammar failures before workspace resolution on every live\n+leaf except the Human-only `journal inspect` and `sql` diagnostics. Each is\n+`invalid-argument`, category `invalid-input`, not retryable, exit 2, subject\n+null, with the leaf's operation ID and these exact details:\n+\n+| Class | `argument` | `value` | `allowed` | Message source |\n+|---|---|---|---|---|\n+| Unknown flag | full spelling (`--bogus` or `-x`) | full spelling | sorted local long flags, excluding `--help`, `--json`, `--project`; `[]` at root/groups | pflag's detecting text |\n+| Missing required flag | `--<name>` | null | `[\"--<name>\"]` | `--<name> is required` |\n+| Malformed flag value, missing value, or value outside its domain | `--<name>` | full supplied value, or null when missing | declared domain | pflag's detecting text; domain checks use `invalid argument \"<value>\" for \"--<name>\" flag` |\n+| Wrong positional count | `arguments` | first extra argument, or null when missing | positional spellings from `Use`, or `[\"no arguments\"]` | Cobra's argument-count text; a no-argument leaf uses `<path without fid> accepts no arguments` |\n+\n+Flag domains are declared by leaf and spelling in `cmd/fid/flag_domains.go`\n+and `cmd/fid/flag_domain_text.go`\n+from the newest Phase 21\u201324 contract row. Both parsing and the malformed-value\n+corpus use that declaration. Enumerations are sorted bytewise, integer ranges\n+use `\"<lo>..<hi>\"`, patterns retain the contract spelling (including\n+`<type>:<id>`), and other domains use the pflag type name. Free text missing a\n+value therefore has `allowed:[\"string\"]`. Range checks retain pflag's integer\n+syntax; the string `--expected-revision` retains its decimal-only constraint.\n+The declarations cover limits, priorities, sequence, ordinal, version,\n+expected revision, all leaf booleans including `--example`, and closed string\n+values for issue/workflow/link/statistics and execution/judgment filters.\n+Inherited title, AC text, description, colour and label bounds retain Phase\n+20\u2019s byte limits and trimming. Opaque IDs and workflow states use the newer\n+Phase 21 printable Unicode scalar domain; activated Actor flags are IDs.\n+`issue update --labels=` retains its explicit empty-list clearing behavior.\n+Workflow CSV membership, uniqueness and per-flag bounds are checked here;\n+cross-flag relationships keep their existing domain checks. Idempotency keys\n+and standalone Actor flags retain their accepted text constraints. Input\n+shapes and domain-package validation remain governed by their slice contracts.\n+\n+An unknown word at the root or any group returns `operation-unavailable`,\n+category `invalid-input`, not retryable, exit 2, subject null, and\n+`{argument:\"command\",value:<full word>,allowed:<sorted help subcommands>}`.\n+Its envelope operation is the known dotted path (`fid`, `concern`, `issue.ac`),\n+and its message source is `unknown command \"<word>\" for \"<CommandPath>\"`\n+without suggestions. The root alternatives include `help` and `completion`;\n+those generated commands have no operation ID. A group without a word keeps\n+its Human help on stdout and exit 0. An extra word on a leaf is a positional\n+failure.\n+\n+All these message sources pass through the shared `internal/cli` construction:\n+escape LF/CR/TAB as `\\n`, `\\r`, `\\t` and other control characters as\n+`\\uXXXX`, preserving existing Go `%q` escapes, then count Unicode scalars.\n+Up to 512 scalars remains intact; longer text retains the first 511 plus `\u2026`,\n+dropping any escape crossing the cut whole, without padding. Count before JSON\n+serialization and without the Human label or terminator. This precedence can\n+shorten the specified source text; details always preserve the full spelling\n+or value. Human stderr starts with `error: <final JSON message>` plus a newline,\n+with exit 2 and no second escape or cut. It then prints `reason: <code>` with\n+key details, followed by `blocked by:` only for nonempty Stop/Attention IDs\n+and `next:` only for section 9's closed table. The reason line counts its\n+label and escaped detail toward 200 scalars; a longer line retains 200 plus\n+`\u2026`, dropping an escape crossing the cut whole. Grammar `invalid-argument`\n+failures on `--input` leaves include the help/template hint; unknown commands\n+and failures on leaves without `--input` omit it.\n+\n+```text\n+error: unknown flag: --bogus\n+reason: invalid-argument; argument=--bogus, allowed=--actor|--example|--idempotency-key|--input\n+next: see fid stop raise --help; template: fid stop raise --example\n+```\n+\n+Generic fallback messages use the escaped, bounded domain cause. The four\n+plain-copy refusals retain code `invalid-argument`, exit 2 and their existing\n+details, with messages `prior registration binding does not match envelope`,\n+`claim acquire binding is invalid`, `run claim binding is invalid`, and\n+`run gate: repository binding is invalid`. A terminal gate non-success writes\n+the same failure lines on stderr after its streamed Human stdout.\n+\n+A root flag that a stable leaf does not accept fails before workspace access\n+with `invalid-argument`, exit 2 (DEC-286). For `export import --project`, both\n+`details.argument` and `details.value` are `--project`; `allowed` contains\n+`--idempotency-key` and `--repository`, the sorted local long flags excluding\n+help and root flags. Human stderr is exactly:\n+\n+```text\n+error: --project is not available for export import\n+reason: invalid-argument; argument=--project, allowed=--idempotency-key|--repository\n+```\n+\n+This leaf has no `--input`, so it prints no `next:`. The same refusal applies\n+outside a project and for a nonexistent project path. The `sql` and\n+`journal inspect` diagnostics retain their raw root-flag refusals.\n+\n+Flag combinations and disagreements between accepted rows and live flag sets\n+retain their existing behavior (CF-047); task 9a records them in its completion\n+report. The live tree is the corpus scope. Family request fallbacks remain\n+available only for their existing non-grammar causes.\n+\n+Task 3 adopts descriptor-generated input help and `--example` templates for\n+`stop raise`, `stop resolve`, and `attention resolve`. Each adopted leaf's help\n+lists field paths, JSON types, required/optional/nullable status, declared\n+limits and allowed values, and the template command. `--example` prints a\n+two-space-indented JSON object with required fields in documented order; it\n+works outside a project and cannot be combined with another flag or argument.\n+Structural `--input` failures name the field in `invalid-argument.details.argument`\n+(for example `input.resolution_condition.subject.id`) before domain validation.\n+The remaining `--input` leaves enter this convention in their owning tasks.\n+\n+Task 9 adopts the same descriptor help, `--example`,\n+and field-path structural validation for `activation prepare`, `commit`,\n+`abort`, `finalize`, `resource`, `recover`, and `recover-complete`. The input\n+shapes retain the Phase 21 baseline and Phase 22 version/resource additions.\n+`activation component` selects a raw typed `content` array using\n+`component_type`: `authority-profile` contains ActorProfiles, and\n+`gate-definitions` contains GateDefinitions. Its help lists both variant\n+trees, including nested environment entries and bounds. Its deterministic\n+example uses the first variant, `authority-profile`, with one ActorProfile.\n+Structural errors identify the selected nested path; mismatched content\n+identifies `input.content[i]`. Environment values and redaction literals\n+remain sensitive in failure details. Raw variant string bounds count Unicode\n+scalars; session references and sensitive literals have no additional text\n+limit. cwd accepts `.`, while Artifact paths exclude dot segments and are\n+bounded to 512 bytes. All 39 input leaves use descriptors\n+for help, examples and closed structural validation.\n+\n+Task 4 adopts `SourceInput` for `decision record-reference`, `requirement\n+record-reference`, `human-outcome record`, `concern record`, and `deviation\n+record`. It is a Source without `repository`; a project-file digest may be\n+omitted, while an external-reference digest is required. fid resolves each\n+project-file path under the project root, checks a supplied SHA-256 digest or\n+records the observed one, and attaches its own repository observation to the\n+stored Source and Event. `requirement link` and `concern dispose` gain\n+descriptor help and templates as observing leaves without Source fields.\n+\n+For example, `fid decision record-reference --example` shows the complete\n+required input shape. Its `source` can be edited to name a file as follows;\n+the optional digest is shown only here to illustrate a caller-supplied check:\n+\n+```json\n+{\"source_type\":\"project-file\",\"display_label\":\"Accepted decision\",\"path\":\"project-docs/decision.md\",\"section\":null,\"external_id\":null,\"digest\":\"sha256:<64 lowercase hexadecimal digits>\"}\n+```\n+\n+Omitting `digest` asks fid to observe the file. A same-key retry replays the\n+original Source and Event even after HEAD or the file changes. A mismatch\n+returns `source-digest-mismatch` with nullable `expected_digest` and\n+`observed_digest`; an unobservable worktree returns `repository-unavailable`\n+with a typed reason and detail. Both refuse without appending an Event.\n \n-*Last updated: 2026-10-03 (Phase 23 wrap; DEC-263/265/266/269/270/271)*\n+*Last updated: 2026-10-11 (Phase 24 DEC-290 `resume` Issue revision and next states)*\ndiff --git a/project-docs/specs/07_DESIGN_PLAN_FLOWS.md b/project-docs/specs/07_DESIGN_PLAN_FLOWS.md\nindex 0a41e7eb..eefe8db0 100644\n--- a/project-docs/specs/07_DESIGN_PLAN_FLOWS.md\n+++ b/project-docs/specs/07_DESIGN_PLAN_FLOWS.md\n@@ -31,10 +31,14 @@ keeps fid useful as an Issue tracker without requiring the V2 kit.\n    validation/review/Human Obligations, budgets, Stops, and repository scope.\n 3. Human approval is obtained where kit policy requires it.\n 4. fid creates immutable Gate Definition Registrations from the activated Gate\n-   Definition values that the Envelope will reference.\n+   Definition values that the Envelope will reference. Registration binds\n+   fid's observed project and worktree, not a caller-supplied identity.\n 5. Kit submits the complete versioned Envelope through the backend port.\n-6. fid validates references, capability support, provenance, non-weakening, and\n-   revision invariants, then records the approved/active revision.\n+6. fid observes the worktree, resolves and checks every Source, and validates\n+   references, capability support, provenance, non-weakening, and revision\n+   invariants. It records that observation as the Envelope repository scope\n+   and on each Source. An imported destination with a matching project and\n+   target-root binding can continue imported history.\n \n fid does not persist or recalculate the external kit's risk lane and does not\n create Issue copies. A caller cannot substitute a mutable Gate Definition for\n@@ -46,7 +50,8 @@ the activated Registration reference.\n 2. fid derives actionable state from Issue, Envelope, authority, dependencies,\n    Obligations, Claim/Run, evidence, Stops, and Attention.\n 3. Harness acquires a mutation Claim for one selected Issue, exact Envelope\n-   revision, worktree, and declared scope.\n+   revision, and declared path scope. fid observes the worktree, checks it\n+   against the Envelope scope, and records its ID on the Claim.\n 4. fid rejects overlapping or unknown parallel mutation with\n    `mutation-conflict`.\n 5. Harness starts a Run and records observed telemetry incrementally.\n@@ -86,15 +91,38 @@ the activated Registration reference.\n \n Recovered code is not trusted evidence; gates/review run normally.\n \n+For each gate execution, the caller supplies `expected_repository` from\n+`git rev-parse HEAD` and `git status --porcelain`. fid compares it with one\n+pre-spawn observation before appending an Attempt. A matching expectation\n+permits testing edits made since the Run began in the same worktree, including\n+a matching import destination. Attempt, Receipt and gate Events retain that\n+observation even if the gate process changes files.\n+\n+Evidence linking copies the subject's recorded repository. Evaluation observes\n+the current worktree and compares it with that Evidence target. Editing a\n+tracked file stales Receipt or Review proof in evaluation, terminal-success\n+transition and Envelope completion. Reverting the edit restores freshness;\n+Human Outcome Evidence remains fresh under its `none` freshness target.\n+\n ## 7. Review And Rework\n \n-1. A fresh Reviewer Run binds the exact Envelope revision and repository\n-   identity.\n+1. A fresh Reviewer Run binds the exact Envelope revision and the same\n+   project/worktree. `run start` checks `expected_repository` against fid's\n+   current observation and records it, so commits and edits since Envelope\n+   creation do not require an Envelope revision. A matching imported\n+   destination binding preserves the worktree relationship; a plain copy is\n+   refused.\n 2. Reviewer records coverage, verdict, evidence, and zero or more Findings.\n 3. `pass` may satisfy the review Obligation when every other condition holds.\n 4. `changes-required` leaves it unsatisfied and derives Builder rework on the\n    original Issue/Envelope.\n-5. Builder acquires a new Claim/Run and may mark Findings addressed.\n+5. Builder acquires a new Claim/Run and may mark Findings addressed. Its\n+   matching repository expectation permits the rework Run after the Builder's\n+   changes. On `run close`, fid records the terminal observation with\n+   `base_oid` equal to HEAD and evaluates Obligations against it. A Run with\n+   Receipt-backed Evidence succeeds in the proven tree and fails after a\n+   tracked-file edit stales that Evidence. `run abandon` records the same\n+   terminal observation and releases the Claim without creating Evidence.\n 6. Only a later qualifying independent Review Record resolves a Finding or\n    marks it inapplicable with a reason; those dispositions commit in that\n    Review's atomic Event. An addressed assertion remains nonterminal. The\n@@ -162,6 +190,13 @@ satisfy either guarded action.\n    Receipts/Evidence, Reviews/Findings, Outcomes, activation, and telemetry\n    match the source semantics.\n 5. Projections are regenerated; project prose is not copied.\n+6. New Envelope creation and Claim acquisition may use imported history when\n+   the import binding names this project and the selected workspace root.\n+   Sources are read from the destination checkout, new scopes and Claims\n+   record local observations, and Claim Events retain their Envelope scope.\n+   A Claim acquired in the destination can be renewed, released or expired\n+   there under the same worktree equivalence (DEC-283).\n+   Copying the worktree without that binding does not grant equivalence.\n \n Phase 21 delivered deterministic export creation and non-mutating validation.\n Phase 22 now delivers empty-target import, identity/history preservation and\ndiff --git a/project-docs/specs/08_QUALITY_PLAN.md b/project-docs/specs/08_QUALITY_PLAN.md\nindex fc0493ff..938f40db 100644\n--- a/project-docs/specs/08_QUALITY_PLAN.md\n+++ b/project-docs/specs/08_QUALITY_PLAN.md\n@@ -159,6 +159,7 @@ The conformance and workflow suites must cover at least these scenarios:\n | Freshness | A source or artifact change invalidates only the evidence whose declared inputs changed. |\n | Review coverage | Required Reviewer coverage and finding disposition are enforced without embedding a global role taxonomy. |\n | Protected decision | A pending Human decision blocks only its declared protected transition; the recorded Outcome unblocks or redirects it. |\n+| Human takes control (Phase 24) | Retain `TestP24HumanTakeControlJourney` as a real-process scenario: a protected Decision refuses terminal success, Human help/templates and labelled output supply every command/value, the Decision Reference and approving Outcome resolve the Stops, linked Evidence permits the transition, and the Envelope completes. The transition target and current Issue revision come from the last Human `resume` read. `TestP24TakeControlRebuildExportImportParity` proves that completed workspace survives rebuild and schema-19 export/validate/import, including field-digest maps, observed repositories and judgment detail reads. |\n | Stop and resume | A typed Stop releases or retains Claims according to policy and produces a bounded recovery projection. |\n | Revision after progress | New work uses the new Envelope Revision while prior Receipts and Outcomes retain their original revision lineage. |\n | Completion | Completion is derived only when Issue state, Claims/Runs, Obligations, reviews, Outcomes, and Stops permit it. |\ndiff --git a/project-docs/specs/GLOSSARY.md b/project-docs/specs/GLOSSARY.md\nindex 673031fa..a9a576b5 100644\n--- a/project-docs/specs/GLOSSARY.md\n+++ b/project-docs/specs/GLOSSARY.md\n@@ -20,15 +20,24 @@ Avoid: unqualified \u201csource of truth.\u201d\n \n **Project-owned prose**\n Definition: Requirements, architecture, validation strategy, decisions, and\n-other durable Human-authored intent whose canonical form remains in project\n-files and Git.\n-Use when: content may be referenced by fid but must not be copied into its\n-operational model.\n-Avoid: \u201cfid document\u201d or \u201cbackend prose.\u201d\n-Not project-owned prose: the short **recorded reasoning** an Actor types into\n-a fid record (a Concern summary, a disposition or addressed reason, Human\n-Outcome reasoning). That text is fid's own record and may be shown in Human\n-views (Phase 23 DEC-272).\n+other durable Human-authored intent whose canonical content remains in\n+project files and Git. fid references this content through source metadata\n+such as labels, paths and digests, without reproducing referenced file content\n+in Human views.\n+Use when: distinguishing referenced project-file content from fid's recorded\n+operational facts and reasoning.\n+Avoid: \u201cfid document\u201d or \u201cbackend prose,\u201d or treating recorded reasoning as\n+referenced file content.\n+\n+**Recorded reasoning**\n+Definition: Actor-authored text stored in a fid judgment record: Concern\n+`summary` and `reasoning`, Concern disposition `reason`, Finding `summary`\n+and every FindingDisposition `reason`, Deviation `expected`, `observed` and\n+`reasoning`, and Human Outcome `reasoning`. It belongs to the fid record and\n+may be shown in Human views; it does not establish deterministic proof.\n+Use when: explaining the recorded basis for a judgment, distinct from the\n+content of a referenced project file (DEC-272; Phase 24 contract section 10).\n+Avoid: calling this text project-owned prose, or treating it as Evidence.\n \n **Routine (external kit term)**\n Definition: An external kit risk-lane classification for work the kit judges\n@@ -550,6 +559,23 @@ Use when: describing discovery, explicit selection, or path normalization.\n Avoid: \"workspace,\" which historically named the same directory and now invites\n confusion with a Git worktree.\n \n+**Expected repository**\n+Definition: A caller's narrow expectation of the current Git worktree,\n+containing `head_oid` and `dirty`. A leaf that accepts it compares both values\n+with fid's own repository observation before committing.\n+Use when: guarding an observing mutation against a stale caller view.\n+Avoid: treating it as the full recorded Repository or as a worktree identity.\n+\n+**SourceInput**\n+Definition: The caller-written source reference, equivalent to a stored Source\n+without `repository`. A project-file `digest` is optional: fid checks it when\n+supplied or observes the file when omitted. An external-reference digest is\n+required because fid cannot read its content. The stored Source retains the\n+resolved digest and fid's observed Repository.\n+Use when: authoring a judgment reference or other Source-bearing mutation.\n+Avoid: sending a Repository inside the input or treating an omitted digest as\n+an assertion about the file's bytes.\n+\n ## Retired Product Terms\n \n `Work Item`, fid `Role`, `QA Plan`, `Validation Contract`, `Validation\n@@ -558,5 +584,4 @@ forward fid entities. They may appear in historical phase records, the current\n V1 repository delivery process, or the external kit's temporary engineering\n memory. New fid product specifications must use the retained terms above.\n \n-*Last updated: 2026-10-03 (Phase 23 wrap: Requirement Reference identities and\n-Human Outcome Stop resolution, DEC-269)*\n+*Last updated: 2026-10-05 (Phase 24 Task 4 SourceInput terminology)*\n",
+    "stderr": ""
+  },
+  "package_changes": {
+    "command": "git diff --name-status 304aa45 -- cmd internal",
+    "cwd": "/home/mark/projects/fid",
+    "exit_code": 0,
+    "expected_exit_code": 0,
+    "elapsed_seconds": 0.008880138397216797,
+    "stdout": "M\tcmd/fid/activation.go\nM\tcmd/fid/activation_test.go\nM\tcmd/fid/activity.go\nM\tcmd/fid/artifact.go\nM\tcmd/fid/artifact_material_policy_test.go\nM\tcmd/fid/artifact_test.go\nM\tcmd/fid/attention.go\nM\tcmd/fid/budget_projection_replay_test.go\nM\tcmd/fid/canonical_request.go\nM\tcmd/fid/capabilities.go\nM\tcmd/fid/claim.go\nM\tcmd/fid/concern.go\nM\tcmd/fid/contract_surface_test.go\nM\tcmd/fid/decision.go\nM\tcmd/fid/deviation.go\nM\tcmd/fid/e2e_v01d_link_test.go\nM\tcmd/fid/envelope.go\nM\tcmd/fid/envelope_test.go\nM\tcmd/fid/evidence.go\nM\tcmd/fid/evidence_test.go\nM\tcmd/fid/execution_transition_fixture_test.go\nM\tcmd/fid/export.go\nM\tcmd/fid/finding.go\nM\tcmd/fid/finding_test.go\nA\tcmd/fid/flag_domain_text.go\nA\tcmd/fid/flag_domains.go\nM\tcmd/fid/gate.go\nM\tcmd/fid/gate_run_test.go\nM\tcmd/fid/gate_test.go\nM\tcmd/fid/generic_claim_test.go\nM\tcmd/fid/generic_run_test.go\nA\tcmd/fid/grammar_corpus_test.go\nA\tcmd/fid/human_failure_caller_audit_test.go\nA\tcmd/fid/human_failure_test.go\nM\tcmd/fid/human_outcome.go\nA\tcmd/fid/idempotency_conflict.go\nM\tcmd/fid/init.go\nM\tcmd/fid/init_test.go\nA\tcmd/fid/input_descriptor_command.go\nA\tcmd/fid/input_descriptor_test.go\nA\tcmd/fid/input_descriptors.go\nA\tcmd/fid/input_descriptors_activation.go\nA\tcmd/fid/input_descriptors_binding.go\nA\tcmd/fid/input_descriptors_evidence.go\nA\tcmd/fid/input_descriptors_judgment.go\nA\tcmd/fid/input_descriptors_review.go\nA\tcmd/fid/input_descriptors_run.go\nM\tcmd/fid/integration/e2e_v01_closure_helpers_test.go\nM\tcmd/fid/integration/e2e_v01_closure_test.go\nM\tcmd/fid/integration/exit_contract_test.go\nM\tcmd/fid/integration/p21_conformance_test.go\nM\tcmd/fid/integration/p22_abandon_authority_test.go\nM\tcmd/fid/integration/p22_activation_fault_assertions_test.go\nM\tcmd/fid/integration/p22_close_proof_test.go\nM\tcmd/fid/integration/p22_event_nested_values_test.go\nM\tcmd/fid/integration/p22_fake_test.go\nM\tcmd/fid/integration/p22_final_journey_test.go\nM\tcmd/fid/integration/p22_human_guidance_test.go\nM\tcmd/fid/integration/p22_import_recovery_test.go\nM\tcmd/fid/integration/p22_portable_conformance_test.go\nM\tcmd/fid/integration/p22_portable_schema_test.go\nM\tcmd/fid/integration/p22_recovery_adopted_target_test.go\nM\tcmd/fid/integration/p22_recovery_journey_test.go\nM\tcmd/fid/integration/p22_resume_actions_test.go\nM\tcmd/fid/integration/p22_run_replay_snapshot_test.go\nM\tcmd/fid/integration/p22_semantic_fake_test.go\nM\tcmd/fid/integration/p23_amended_claim_oracle_test.go\nM\tcmd/fid/integration/p23_amended_envelope_oracle_test.go\nM\tcmd/fid/integration/p23_amended_evidence_oracle_test.go\nM\tcmd/fid/integration/p23_attention_resolution_test.go\nM\tcmd/fid/integration/p23_claim_mode_test.go\nM\tcmd/fid/integration/p23_concern_deviation_test.go\nM\tcmd/fid/integration/p23_concern_leaf_oracle_test.go\nM\tcmd/fid/integration/p23_concern_list_human_test.go\nM\tcmd/fid/integration/p23_conformance_test.go\nM\tcmd/fid/integration/p23_decision_reference_test.go\nM\tcmd/fid/integration/p23_failure_contract_test.go\nM\tcmd/fid/integration/p23_freshness_supersession_test.go\nM\tcmd/fid/integration/p23_gate_grants_test.go\nM\tcmd/fid/integration/p23_human_failure_test.go\nM\tcmd/fid/integration/p23_human_fixtures_test.go\nM\tcmd/fid/integration/p23_human_leaf_pairs_test.go\nM\tcmd/fid/integration/p23_human_outcome_test.go\nM\tcmd/fid/integration/p23_judgment_leaf_oracle_test.go\nA\tcmd/fid/integration/p23_judgment_repository_test.go\nM\tcmd/fid/integration/p23_obligation_guard_test.go\nM\tcmd/fid/integration/p23_portable_recovery_test.go\nM\tcmd/fid/integration/p23_requirement_leaf_oracle_test.go\nM\tcmd/fid/integration/p23_review_evidence_budget_test.go\nM\tcmd/fid/integration/p23_review_leaf_oracle_test.go\nM\tcmd/fid/integration/p23_review_record_test.go\nM\tcmd/fid/integration/p23_stop_resolution_conditions_test.go\nM\tcmd/fid/integration/p23_task13_precedence_test.go\nA\tcmd/fid/integration/p24_activation_corpus_test.go\nA\tcmd/fid/integration/p24_artifact_corpus_test.go\nA\tcmd/fid/integration/p24_budget_failure_pair_test.go\nA\tcmd/fid/integration/p24_code_pairing_fixtures_test.go\nA\tcmd/fid/integration/p24_code_pairing_test.go\nA\tcmd/fid/integration/p24_corpus_completeness_test.go\nA\tcmd/fid/integration/p24_evidence_subject_test.go\nA\tcmd/fid/integration/p24_flag_corpus_test.go\nA\tcmd/fid/integration/p24_foundation_corpus_test.go\nA\tcmd/fid/integration/p24_gate_evidence_corpus_test.go\nA\tcmd/fid/integration/p24_gate_observation_test.go\nA\tcmd/fid/integration/p24_generic_fallback_corpus_test.go\nA\tcmd/fid/integration/p24_human_failure_test.go\nA\tcmd/fid/integration/p24_human_fixtures_test.go\nA\tcmd/fid/integration/p24_idempotency_test.go\nA\tcmd/fid/integration/p24_judgment_corpus_test.go\nA\tcmd/fid/integration/p24_judgment_failure_pairs_test.go\nA\tcmd/fid/integration/p24_judgment_get_test.go\nA\tcmd/fid/integration/p24_keyed_capture_test.go\nA\tcmd/fid/integration/p24_map_parity_test.go\nA\tcmd/fid/integration/p24_plain_copy_failure_test.go\nA\tcmd/fid/integration/p24_recovery_corpus_test.go\nA\tcmd/fid/integration/p24_retained_read_failure_test.go\nA\tcmd/fid/integration/p24_run_inputs_test.go\nA\tcmd/fid/integration/p24_single_journal_test.go\nA\tcmd/fid/integration/p24_take_control_parity_test.go\nA\tcmd/fid/integration/p24_take_control_test.go\nA\tcmd/fid/integration/p24_workflow_digest_test.go\nM\tcmd/fid/integration/testdata/p23_conformance/operations.json\nM\tcmd/fid/integration/testdata/p23_conformance/product-surface.json\nA\tcmd/fid/integration/testdata/p24_keyed_leaves.tsv\nM\tcmd/fid/issue.go\nM\tcmd/fid/issue_ac.go\nM\tcmd/fid/issue_ac_test.go\nM\tcmd/fid/issue_create.go\nM\tcmd/fid/issue_get_list.go\nM\tcmd/fid/issue_label_test.go\nM\tcmd/fid/issue_mutation_response.go\nM\tcmd/fid/issue_transition.go\nM\tcmd/fid/issue_transition_test.go\nM\tcmd/fid/issue_update_test.go\nM\tcmd/fid/label_response.go\nM\tcmd/fid/label_test.go\nM\tcmd/fid/link_response.go\nM\tcmd/fid/link_test.go\nM\tcmd/fid/maintenance.go\nM\tcmd/fid/p23_human.go\nM\tcmd/fid/p23_human_test.go\nA\tcmd/fid/p24_gate_evidence_test.go\nA\tcmd/fid/p24_keyed_inventory_test.go\nA\tcmd/fid/p24_keyed_tree_test.go\nA\tcmd/fid/p24_repository_human_test.go\nA\tcmd/fid/p24_resume_issue_test.go\nA\tcmd/fid/p24_run_test.go\nA\tcmd/fid/p24_stop_corpus_test.go\nA\tcmd/fid/p24_stop_human_test.go\nM\tcmd/fid/policy_test.go\nM\tcmd/fid/rebuild.go\nM\tcmd/fid/rebuild_test.go\nM\tcmd/fid/receipt.go\nM\tcmd/fid/requirement.go\nM\tcmd/fid/resume_human.go\nM\tcmd/fid/retained_actor_request_contract_test.go\nM\tcmd/fid/review.go\nM\tcmd/fid/review_test.go\nM\tcmd/fid/root.go\nM\tcmd/fid/root_flags_test.go\nM\tcmd/fid/root_test.go\nM\tcmd/fid/run.go\nM\tcmd/fid/run_inspect_human.go\nM\tcmd/fid/stats.go\nM\tcmd/fid/stop.go\nM\tcmd/fid/stop_evaluation_matrix_test.go\nM\tcmd/fid/stop_human.go\nM\tcmd/fid/stop_operation_matrix_test.go\nM\tcmd/fid/stop_test.go\nM\tcmd/fid/task12_execution_transition_test.go\nM\tcmd/fid/task18_completion_resume_test.go\nM\tcmd/fid/task21_maintenance_rebuild_test.go\nM\tcmd/fid/unavailable.go\nM\tcmd/fid/workflow.go\nM\tinternal/claims/generic.go\nM\tinternal/cli/codes.go\nM\tinternal/cli/codes_test.go\nA\tinternal/cli/human_failure.go\nA\tinternal/cli/human_failure_test.go\nA\tinternal/cli/input_descriptor.go\nA\tinternal/cli/input_render.go\nA\tinternal/cli/input_validate.go\nA\tinternal/cli/input_validate_test.go\nA\tinternal/cli/message.go\nA\tinternal/cli/message_test.go\nM\tinternal/db/escalation_removal_test.go\nA\tinternal/db/migration0019_test.go\nM\tinternal/db/projection_meta.go\nM\tinternal/evidence/artifact.go\nM\tinternal/evidence/evidence.go\nM\tinternal/evidence/evidence_task6_test.go\nM\tinternal/evidence/execution.go\nM\tinternal/evidence/execution_gate_authority_test.go\nM\tinternal/evidence/human_outcome_binding_test.go\nM\tinternal/evidence/registration.go\nM\tinternal/export/archive_fixture_test.go\nM\tinternal/export/archive_semantics.go\nM\tinternal/export/archive_semantics_test.go\nM\tinternal/export/export_test.go\nM\tinternal/export/import_test.go\nM\tinternal/issues/ac.go\nM\tinternal/issues/actor.go\nM\tinternal/issues/create_commit.go\nM\tinternal/issues/label.go\nM\tinternal/issues/transition.go\nM\tinternal/issues/update.go\nM\tinternal/journal/checkpoint_projection_test.go\nM\tinternal/journal/current_event_columns.go\nM\tinternal/journal/current_event_idempotency.go\nM\tinternal/journal/current_event_json.go\nM\tinternal/journal/current_event_updates.go\nM\tinternal/journal/current_event_validation_test.go\nM\tinternal/journal/idempotency.go\nM\tinternal/journal/idempotency_test.go\nA\tinternal/journal/request_digest.go\nA\tinternal/journal/request_digest_test.go\nM\tinternal/journal/task9_prechange_replay_test.go\nM\tinternal/labels/add.go\nM\tinternal/labels/attribution.go\nM\tinternal/links/add.go\nM\tinternal/links/attribution.go\nM\tinternal/links/remove.go\nM\tinternal/maintenance/check_test.go\nA\tinternal/project/expected_repository.go\nA\tinternal/project/expected_repository_test.go\nM\tinternal/project/repository.go\nA\tinternal/project/repository_reason_test.go\nA\tinternal/project/source.go\nA\tinternal/project/source_test.go\nM\tinternal/review/concern.go\nM\tinternal/review/concern_list.go\nM\tinternal/review/concern_task8_test.go\nM\tinternal/review/decision.go\nM\tinternal/review/decision_test.go\nM\tinternal/review/deviation.go\nM\tinternal/review/finding.go\nM\tinternal/review/human_outcome.go\nM\tinternal/review/judgment.go\nM\tinternal/review/requirement.go\nM\tinternal/review/review.go\nM\tinternal/review/review_test.go\nM\tinternal/workflow/activation.go\nM\tinternal/workflow/activation_recovery.go\nM\tinternal/workflow/assign.go\nM\tinternal/workflow/attribution.go\nM\tinternal/workflow/define.go\nM\tinternal/workflow/envelope.go\nM\tinternal/workflow/import_binding.go\nM\tinternal/workflow/recovery.go\nM\tinternal/workflow/recovery_test.go\nM\tinternal/workflow/registry.go\nA\tinternal/workflow/registry_next_states_test.go\nM\tinternal/workflow/resume.go\nM\tinternal/workflow/run.go\nM\tinternal/workflow/run_budget.go\nM\tinternal/workflow/run_budget_test.go\nM\tinternal/workflow/run_checkpoint.go\nM\tinternal/workflow/run_close.go\nM\tinternal/workflow/run_close_authority_test.go\nM\tinternal/workflow/run_close_test.go\nM\tinternal/workflow/run_observation.go\nM\tinternal/workflow/stop.go\nM\tinternal/workflow/stop_conditions_test.go\nM\tinternal/workflow/stop_test.go\n",
+    "stderr": ""
+  },
+  "head": {
+    "command": "git rev-parse HEAD",
+    "cwd": "/home/mark/projects/fid",
+    "exit_code": 0,
+    "expected_exit_code": 0,
+    "elapsed_seconds": 0.002886533737182617,
+    "stdout": "d63c9bae6a343e49ae46146a597edf7f0620281c\n",
+    "stderr": ""
+  },
+  "branch": {
+    "command": "git branch --show-current",
+    "cwd": "/home/mark/projects/fid",
+    "exit_code": 0,
+    "expected_exit_code": 0,
+    "elapsed_seconds": 0.002897977828979492,
+    "stdout": "phase-24\n",
+    "stderr": ""
+  }
+}

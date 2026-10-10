@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "/home/mark/projects/fid/.cache/phase-24-human/fixtures-2145711523/fid",
+    "--project",
+    "/home/mark/projects/fid/.cache/phase-24-human/fixtures-2145711523/authoring-run-close",
+    "--example"
+  ],
+  "cwd": "/tmp/p24-support-bad-example-o66mab_o",
+  "exit_code": 2,
+  "stdout": "",
+  "stderr": "error: unknown flag: --example\nreason: invalid-argument; argument=--example, allowed=\n",
+  "kind": "diagnostic reproduction of QA helper malformed leaf command, not a required product gate"
+}
