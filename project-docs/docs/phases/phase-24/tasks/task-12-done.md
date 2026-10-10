@@ -159,8 +159,8 @@ Retained-test convergence provenance, established with git log/blame rather than
 
 ## Commit hash
 
-- Pending commit
+- `815a6b66af0381adee77077e826657511ac62292`
 
 ## Commit subject
 
-- Pending commit
+- `feat(cli): add judgment get leaves`
