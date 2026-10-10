@@ -1546,6 +1546,140 @@
   `run.inspect` row; `qa/qa-plan.md` R-11; DEC-278 R-11; CF-026a; CF-046;
   DEC-283, DEC-286.
 
+### DEC-288: Window D2 Human walkthrough recorded; review-10 closes B1-H through an evidence-only Task 11 recovery. Closes ESC-24-007
+
+- **Date:** 2026-10-10. Tech Lead ESC resolution on the Human's instruction
+  to resolve ESC-24-007. This decision records no product judgment of its
+  own and changes no behaviour, output, code, JSON, assertion, gate or QA
+  artifact. It binds the ledger route from the 2026-10-09 16:28 STOP to a
+  fresh independent QA checkpoint review.
+- **Context:**
+  - Review-9 (`b9083f3b`) returned BLOCK with one finding, B1-H. Its
+    deterministic D2 checks and the fixture regeneration at Task 11 close
+    `93a1f792` passed, but the interim VAL-054/VAL-055 Human walkthrough
+    (QA plan section 8, window D2) was missing. TL-Lite recorded
+    TRG-24-013, then the identity corrections TRG-24-014 and TRG-24-015
+    (governing), and raised ESC-24-007. The Runner appended TRIAGE
+    TRG-24-015 and the STOP.
+  - **Human evidence.** The Human (Mark Bell) recorded his own answers in
+    `qa/human-walkthrough-after-task-11.md`, commit
+    `a23b9f33` (`docs(qa): record phase-24 Window D2 Human walkthrough`).
+    The Tech Lead created only the blank template on the Human's request
+    and wrote no answer. The artifact names the manifest
+    `.cache/phase-24-human/fixtures-2268063598/manifest.json`, binary
+    `sha256:61fa7a4c…f55b7` and Task 11 close `93a1f792`. The Tech Lead
+    confirmed that the retained binary still has that digest. All nine
+    rows are answered: HUMAN-02a..02e each state a reason and a next action
+    and are marked clear from the output alone; HUMAN-03a..03d are each
+    `accept` with a reason. No row is rejected or unclear, so no acceptance
+    finding needs an owner or authority disposition.
+  - **Ledger constraint.** The unchanged sequence verifier lets a STOP
+    resume only through `RUN-RESUME` with a continuing task, followed by
+    that task's `TASK-RECOVERY`. It has no direct route from a STOP to a
+    REVIEW. `REVIEW BLOCK` with `Owning task: none` opens no QA repair, so
+    the Repair owners route does not apply. The governing trigger is
+    task-prefixed (`task-11:…`, TRG-24-014/015). The only legal route is
+    therefore a Task 11 recovery whose single obligation, the Human
+    evidence, is already met.
+- **Decision:**
+  1. **ESC-24-007 closed.** The Human authority it waited for has been
+     supplied. Closing B1-H stays with QA (clause 4): this decision
+     neither validates the answers nor claims VAL-054/055 PASS.
+  2. **Recovery identity** (STOP resume; DEC-283 clause 2). `task-11`,
+     `task-11:qa-window-d2:human-walkthrough:val-054-055-pending`, attempt
+     `2`, `qa-rework`, `task-scope`, `0/2`. Attempt 1 is the TRG-24-015
+     BLOCK. No Developer is dispatched: the continuation's work was
+     Human-authored and is already committed. Task 11's product and report
+     state is unchanged since `93a1f792`.
+  3. **Ledger sequence** (Runner, transactional append, each with observed
+     `exit_code: 0`):
+     (a) **RUN-RESUME** (schema v2 STOP resume):
+     `Prior run/session or STOP: 2026-10-09 16:28 STOP / TRG-24-015 / ESC-24-007`,
+     `Governing TRG: TRG-24-015`, `Governing ESC: ESC-24-007`, the clause 2
+     trigger and attempt, `Resolution authority: DEC-288`,
+     `Continuing task: task-11` and
+     `Next recovery: task-11 | qa-rework | task-scope | task-11:qa-window-d2:human-walkthrough:val-054-055-pending | 2`.
+     `Checkpoint` names the post-DEC-288 phase HEAD, walkthrough commit
+     `a23b9f33`, review-9 `b9083f3b` and Task 11 close `93a1f792`. Expect
+     `APPEND_CONFIRMED state=REPAIR_PENDING`.
+     (b) **TASK-RECOVERY task-11**, with the same tuple and `0/2`.
+     `Source: TRG-24-015 / ESC-24-007 / DEC-288; project-docs/docs/phases/phase-24/qa/review-9.md`.
+     `Repair authority: TRG-24-015 / DEC-288`. `Triage disposition: N/A`.
+     Control fields, `Originating report`, `Exact verification` and
+     `Control repair base` are `N/A`.
+     `Allowed files: none; no Developer dispatch`. `Forbidden changes`:
+     no edits to product code, tests, task specs, the Task 11 report, QA
+     artifacts (including review-9 and the walkthrough), the validation
+     contract, QA plan, decisions, workflow controls or Human fixtures; no
+     fixture regeneration; no invented or edited Human answer. `Next
+     action`: verify `a23b9f33` (`git rev-parse --verify`, exact subject,
+     walkthrough unchanged since that commit), then append (c). Expect
+     `APPEND_CONFIRMED state=REPAIR_PENDING`.
+     (c) **REPAIR task-11**, same trigger and attempt, `Outcome: RESOLVED`.
+     `Ending checkpoint` is the unchanged phase HEAD. It has no new
+     Developer commit, and the evidence is `a23b9f33`. Control and
+     integration fields are `N/A`. Expect
+     `APPEND_CONFIRMED state=COMPLETION_PENDING`.
+     (d) **TASK task-11 COMPLETE.** Rerun
+     `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-24/tasks/task-11-done.md project-docs/docs/phases/phase-24/tasks/task-11.md`
+     on the unchanged report and record its `OUTCOME COMPLETE` and
+     termination. `Commit` is `93a1f792…` with its subject. Expect
+     `APPEND_CONFIRMED state=ADVANCEABLE`.
+  4. **Fresh QA checkpoint review.** Spawn a fresh independent QA Reviewer
+     for the next unused path, `qa/review-10.md`, as the window D2
+     re-review of review-9 (tasks 10-11). Scope: B1-H only. Check the nine
+     walkthrough rows against VAL-054/055 and QA plan section 9, and the
+     provenance (manifest, binary digest, close commit, Human attribution).
+     Keep every review-9 deterministic result as evidence and don't repeat
+     the full gates. Append `REVIEW review-10` with `Re-review of: review-9`
+     and `Owning task: none` for PASS or BLOCK. A PASS closes B1-H and window D2, and
+     the Runner then dispatches Task 12. A REPAIR or BLOCK goes through
+     ordinary TL-Lite triage. A rejected or unclear row found by QA is an
+     acceptance finding for its existing owner. It is never re-answered on
+     the Human's behalf.
+  5. **Unchanged.** TRG-24-013/014/015, the STOP, review-9, the Task 10/11
+     COMPLETE records, all failed and recovery history, VAL-054/055, the
+     QA plan and every gate. These interim answers don't replace the
+     phase-end HUMAN-02/HUMAN-03 rows. The QA Lead still regenerates the
+     fixtures at Task 14 close.
+  6. **Verification.** The Tech Lead dry-ran (a)-(d) and a review-10 PASS
+     on a scratch copy of the phase files (with this decision) and the
+     unchanged verifier. The live ledger validates `VALID state=STOPPED`.
+     (a) through (d) returned the expected receipts in order, all exit 0:
+     `REPAIR_PENDING`, `REPAIR_PENDING`, `COMPLETION_PENDING`,
+     `ADVANCEABLE`. A review-10 PASS then returned
+     `APPEND_CONFIRMED state=ADVANCEABLE`. Report-lint on the unchanged
+     Task 11 report returned `OUTCOME COMPLETE` (exit 0). Each negative
+     guard below returned exit 1 with the scratch ledger byte-unchanged:
+
+     | Candidate | Diagnostic |
+     |---|---|
+     | RUN-RESUME at attempt 1 | `RUN-RESUME Attempt count must increment its governing TRIAGE` |
+     | RUN-RESUME citing an unrecorded DEC-289 | `RUN-RESUME cites an unrecorded or malformed phase decision` |
+     | REVIEW right after (a), no TASK-RECOVERY | `RUN-RESUME must be followed by its bound TASK-RECOVERY before REVIEW` |
+     | TASK-RECOVERY with `in-scope-implementation` | `TASK-RECOVERY does not match the exact schema v2 RUN-RESUME recovery tuple` |
+     | TASK-RECOVERY whose `Source` omits DEC-288 | `TASK-RECOVERY does not retain its RUN-RESUME decision authority` |
+     | TASK COMPLETE before (c) | `task completed before a resolved REPAIR event: task-11` |
+
+     A REVIEW appended straight after the STOP, with no RUN-RESUME, is
+     accepted but leaves `VALID state=STOPPED`. So the Runner must not
+     dispatch review-10 before (d). If any append is rejected as written,
+     that is new information: return to the Tech Lead and never substitute
+     field values.
+- **Artifact/spec sync:** none. No PRD, TRD, design, data model, glossary,
+  public interface, inventory, validation contract, QA plan, task spec,
+  template, tool or prompt change. The ESC register, archive, brief and
+  progress are refreshed. CF-036 records the control friction.
+- **Workflow note for wrap-up:** a planned mid-phase Human checkpoint
+  reaches the ledger as a QA BLOCK and a STOP. It can only resume through
+  an evidence-only task recovery. Two ways to avoid this next phase: ask
+  the Human for the walkthrough before the window review is dispatched, or
+  give the verifier a Human-evidence resume route (CF-036).
+- **Refs:** ESC-24-007; TRG-24-013, TRG-24-014, TRG-24-015; `qa/review-9.md`
+  B1-H; `qa/human-walkthrough-after-task-11.md` at `a23b9f33`;
+  `qa/qa-plan.md` sections 8 and 9; VAL-054, VAL-055; `run-ledger.md`
+  2026-10-09 16:08, 16:19, 16:28; DEC-283, DEC-287.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.

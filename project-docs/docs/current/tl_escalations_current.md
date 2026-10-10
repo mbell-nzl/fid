@@ -7,6 +7,12 @@ None.
 ## Recently resolved
 
 Phase 24, archived in [Phase 24 escalations](../phases/phase-24/tl-escalations.md):
+- ESC-24-007: Window D2 (review-9 BLOCK, B1-H) lacked the interim
+  VAL-054/055 Human walkthrough. Resolved 2026-10-10 by DEC-288: the
+  Human recorded all nine rows (`a23b9f33`). Five refusals were clear
+  and four views were accepted. The Runner resumes through an
+  evidence-only Task 11 recovery (attempt 2, `qa-rework`), then a fresh
+  QA review-10 closes B1-H.
 - ESC-24-006: Task 11/VAL-041 required plain-copy `run.inspect` to
   render `different worktree`, but its retained Phase 22 refusal
   (`recovery-state-conflict`, exit 4) is kept by contract section 2.

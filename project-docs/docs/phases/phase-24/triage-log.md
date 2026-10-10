@@ -416,3 +416,96 @@ Recorded 2026-10-07 before allocating the next escalation. ESC-24-002 already ex
 - **Human attention required:** yes
 - **Required resolution follow-through:** Invoke full Tech Lead to resolve ESC-24-006. After accepted decision authority and Runner STOP-resume reconciliation, continue the same Task 11 from the checkpoint, preserve all failed receipts and separate recovery history, prove actual-binary same-root and plain-copy Human/JSON run.inspect plus plain-copy resume controls against the resolved contract, finish the real Stop raise/resolution corpus, fixture manifest and CLI examples, and run all six byte-identical task commands in their declared order and working directory with observed termination. Require independent Runner report-lint OUTCOME COMPLETE with exit_code: 0 and fresh independent QA window D2, affected re-review, fixture regeneration at task-close HEAD and the Human walkthrough. These are resolution requirements, not present repair authority.
 - **References:** project-docs/docs/phases/phase-24/tasks/task-11.md Binding Constraints, Acceptance Criteria and Exact Commands To Run; project-docs/docs/phases/phase-24/tasks/task-11-done.md Workflow outcome, Tests run, Exact quality-gate results and Deviations from spec; project-docs/docs/phases/phase-24/public-interface.md sections 2 and 10; project-docs/docs/phases/phase-24/qa/validation-contract.md:107 (VAL-041); project-docs/docs/phases/phase-24/qa/qa-plan.md EVID-27 and window D2; project-docs/docs/phases/phase-24/decisions.md DEC-278 item 1 and R-11; project-docs/docs/phases/phase-24/run-ledger.md 2026-10-09 08:45/08:46; internal/workflow/run_inspect.go:45; internal/workflow/import_binding.go:11; internal/workflow/reconciliation.go:53; project-docs/specs/09_AI_WORKFLOW.md sections 2.3, 2.4, 8 and 9.
+
+## TRG-24-013 - Window D2 requires the Human walkthrough and interim judgments
+
+- **Trigger:** QA Window D2 returned typed BLOCK because the mandatory Human walkthrough and interim Human judgments are absent.
+- **Originating task:** task-11
+- **Trigger signature:** qa-window-d2:human-walkthrough:val-054-055-pending
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-24/qa/review-9.md
+- **Candidate:** QA BLOCK; B1-H protected Human product judgment / external action required.
+- **Checkpoint:** Invoking Runner identifies review-9 commit b9083f3b5914d3274782d79c5568300e68169017 as verified current HEAD with subject matching the committed Window D2 review. Review covers Task 10 close a6b6203d62ec6061dcac84210f6fef6df13d4ef2 and Task 11 close 93a1f792d27f001b4052113e9056faf97706c3e5. Ledger records TASK task-11 COMPLETE at 2026-10-09 16:08 and REVIEW review-9 BLOCK at 16:19 (owning task none). Review reports Must-fix 1, Improvement 0, blocker candidates 1. Required project-docs/docs/phases/phase-24/qa/human-walkthrough-after-task-11.md and all nine Human answers remain absent per review and invocation evidence; TL-Lite ran no verification commands.
+- **Verdict:** BLOCK
+- **Reasoning:** VAL-054 and VAL-055 explicitly assign judgment to the Human at Window D2. Deterministic preparation and fixture regeneration passed, but cannot establish Human comprehension or acceptance. RESUME would bypass a mandatory checkpoint; ordinary REPAIR would wrongly delegate protected product judgment to Developer or QA. This is missing external Human authority/evidence, not incomplete implementation, a report repair, a control mismatch or recovery-budget exhaustion.
+- **Local decisions made:** none; retain accepted Human-only authority and all existing contracts. Allocate TRG-24-013 and ESC-24-007 from the highest recorded identifiers TRG-24-012 and ESC-24-006; closed ESC-24-001 through ESC-24-006 are not reused.
+- **Resolution evidence:** Unresolved protected Human judgment condition B1-H. Review-9 records passing deterministic D2 checks, regenerated Task 11 close manifest, DEC-285 activity.list pairs, DEC-286 root-flag refusal pair, DEC-287 clean/dirty plain-copy run.inspect refusal pair, same-root run.inspect same-worktree controls and plain-copy resume different-worktree controls. Those are the review's evidence, not new TL-Lite PASS attestations. Manifest .cache/phase-24-human/fixtures-2268063598/manifest.json was generated at 93a1f792d27f001b4052113e9056faf97706c3e5 and preserves Human streams, commands and cwd. No Human reason/next-action answers or accept/reject judgments are recorded; deterministic evidence does not substitute for Human judgment.
+- **If REPAIR:** N/A; no Developer continuation or product/report/spec/QA-contract/gate/control repair is authorized.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** No product code, tests, task specs, QA artifacts, run ledger, decisions or workflow controls may be edited by this triage. Do not invent Human answers, waive the checkpoint, change assertion semantics or gate policy, or infer product changes from absent judgment. Human evidence recording and independent checkpoint closure belong to separately authorized roles.
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** N/A
+- **If BLOCK:** category protected product judgment / external Human authority; ESC-24-007 raised in project-docs/docs/current/tl_escalations_current.md. Resolution condition: Human supplies actual answers for HUMAN-02a..02e / VAL-054 and accept/reject judgments with reasons for HUMAN-03a..03d / VAL-055 from retained Human output alone; an authorized recorder captures them at project-docs/docs/phases/phase-24/qa/human-walkthrough-after-task-11.md and a fresh independent QA checkpoint review closes B1-H. Any rejected/unclear row requires its concrete acceptance finding to be classified under existing owner/authority before D2 advances. Phase-end Human confirmation remains mandatory.
+- **Human attention required:** yes
+- **Trigger/budget:** Retain qa-window-d2:human-walkthrough:val-054-055-pending at attempt 1. No repair attempt is dispatched or counted and no no-progress exhaustion is claimed; preserve earlier recovery history and budgets.
+- **Required resolution follow-through:** Phase Runner records the matching TRIAGE and STOP with TRG-24-013 / ESC-24-007, then requests the Human checkpoint through full Tech Lead escalation routing. Do not advance Window D2 or dispatch Task 12 before actual judgment and independent checkpoint closure. Task 10/11 COMPLETE records and prior failed evidence stay intact.
+- **References:** project-docs/docs/phases/phase-24/qa/review-9.md Verdict, Validation Contract Coverage, Blocker Candidates and Exact pending Human action; project-docs/docs/phases/phase-24/qa/qa-plan.md sections 8 and 9; project-docs/docs/phases/phase-24/qa/validation-contract.md VAL-054 and VAL-055; project-docs/docs/phases/phase-24/tasks/task-10-done.md VAL-054 and Concerns; project-docs/docs/phases/phase-24/tasks/task-11-done.md VAL-054/055 and Concerns; project-docs/docs/phases/phase-24/decisions.md DEC-287 clause 8; project-docs/docs/phases/phase-24/run-ledger.md 2026-10-09 16:08/16:19; project-docs/specs/09_AI_WORKFLOW.md sections 2.3, 2.4, 8 and 9.
+
+## TRG-24-014 - Record-identity correction for the Window D2 Human checkpoint BLOCK
+
+- **Trigger:** The unchanged verifier rejected the Runner's candidate before append: INVALID schema v2 TRIAGE Originating task does not match Trigger signature; observed exit_code: 1. The ledger remains VALID state=TRIAGE_PENDING.
+- **Originating task:** task-11
+- **Trigger signature:** task-11:qa-window-d2:human-walkthrough:val-054-055-pending
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-24/qa/review-9.md
+- **Candidate:** Record-identity correction of TRG-24-013; unchanged QA BLOCK / B1-H protected Human product judgment.
+- **Checkpoint:** The current run ledger ends with TASK task-11 COMPLETE at 2026-10-09 16:08 and REVIEW review-9 BLOCK at 16:19, owning task none. The invoking Runner supplies the rejected candidate diagnostic and observed termination, and reports the unchanged ledger VALID state=TRIAGE_PENDING. No verifier, git, test, build or quality gate was executed by TL-Lite.
+- **Verdict:** BLOCK (escalated as ESC-24-007)
+- **Reasoning:** TRG-24-013 remains immutable history. Its task-11 attribution and unprefixed qa-window-d2 trigger cannot bind the schema-v2 ledger TRIAGE. This new separate record corrects only that identity: the corrected task-prefixed trigger governs the Runner's ledger TRIAGE under TRG-24-014. It preserves the same review-9 QA BLOCK and existing ESC-24-007; it is not duplicate product triage, a resolved BLOCK, a control repair or a new escalation.
+- **Local decisions made:** Use the next unique phase-scoped identifier TRG-24-014, following the highest recorded TRG-24-013. Retain attempt 1 and the existing Human-authority escalation ESC-24-007. Task-11 identifies the checkpoint only; no Developer continuation is authorized.
+- **Resolution evidence:** Runner-attached rejected ledger candidate output is exactly `INVALID schema v2 TRIAGE Originating task does not match Trigger signature`, with observed `exit_code: 1`. The rejection occurred before append; the ledger remains `VALID state=TRIAGE_PENDING`. The unchanged verifier correctly rejected the incompatible record identity. Review-9 records that deterministic D2 checks and fixture regeneration passed; these are preserved review evidence, not new TL-Lite PASS attestations. Human answers remain absent for five VAL-054 reason/next-action rows (HUMAN-02a..02e) and four VAL-055 accept/reject rows with reasons (HUMAN-03a..03d). The manifest is `.cache/phase-24-human/fixtures-2268063598/manifest.json`, generated at Task 11 close `93a1f792d27f001b4052113e9056faf97706c3e5`. The required `project-docs/docs/phases/phase-24/qa/human-walkthrough-after-task-11.md` is absent per review-9 and the invocation. Deterministic output cannot resolve the Human judgment condition.
+- **If REPAIR:** N/A; no Developer continuation is authorized.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** Do not modify product code, tests, task specs, QA artifacts, the run ledger, workflow controls, decisions, or any earlier triage/escalation entry. Do not invent Human answers, waive the checkpoint, change assertion semantics, commands, accepted status/scope, thresholds, budgets, tolerances or policy. This correction authorizes no implementation or control-conformance recovery.
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** N/A
+- **Trigger/budget:** Correct record identity only, retaining attempt 1 and all prior recovery history and budgets. No repair attempt is dispatched or counted; no recovery-budget exhaustion is claimed.
+- **If BLOCK:** category protected Human product judgment / external Human authority; existing ESC-24-007 remains the governing Human-authority escalation in project-docs/docs/current/tl_escalations_current.md. No new ESC is allocated. Resolution still requires actual Human answers for all five VAL-054 rows and accept/reject judgments with reasons for all four VAL-055 rows from the retained Human output, authorized recording at the named walkthrough path, and fresh independent QA checkpoint closure of B1-H. Any rejected/unclear row requires a concrete acceptance finding and appropriate owner/authority disposition; phase-end Human confirmation remains required.
+- **Human attention required:** yes
+- **Required resolution follow-through:** Runner binds its schema-v2 ledger TRIAGE to TRG-24-014 and copies the corrected originating task, trigger signature, attempt count, repair category, repair authority and exact verdict byte-for-byte, preserving the rejected diagnostic and termination in reconciliation evidence. The corresponding STOP retains ESC-24-007. Do not advance Window D2 or dispatch Task 12 before actual Human evidence and independent closure. Preserve TRG-24-013, review-9, Task 10/11 COMPLETE records and all failed evidence. Full Tech Lead routing remains: "Resolve ESC-24-007 in tl_escalations_current.md."
+- **References:** this log TRG-24-013; project-docs/docs/current/tl_escalations_current.md ESC-24-007; project-docs/docs/phases/phase-24/qa/review-9.md Verdict, B1-H and Exact pending Human action; project-docs/docs/phases/phase-24/run-ledger.md 2026-10-09 16:08/16:19; project-docs/templates/triage-log-template.md append-only correction rule; project-docs/specs/09_AI_WORKFLOW.md sections 2.4 and 8; invoking Runner's rejected candidate evidence.
+
+## TRG-24-015 - Second record-identity correction for the Window D2 Human checkpoint BLOCK
+
+- **Trigger:** The Runner's corrected ledger TRIAGE candidate for TRG-24-014 was rejected before append: INVALID TRIAGE verdict does not match the phase triage log; observed exit_code: 1. The ledger remains VALID state=TRIAGE_PENDING.
+- **Originating task:** task-11
+- **Trigger signature:** task-11:qa-window-d2:human-walkthrough:val-054-055-pending
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-24/qa/review-9.md
+- **Candidate:** Second orchestration-record identity correction for the same QA BLOCK / B1-H protected Human product judgment; existing ESC-24-007.
+- **Checkpoint:** The read run ledger ends with TASK task-11 COMPLETE at 2026-10-09 16:08 and REVIEW review-9 BLOCK at 16:19, owning task none. The Runner reports both candidate rejections occurred before append and the unchanged ledger remains VALID state=TRIAGE_PENDING. TL-Lite executed no verification, git, test, build or quality-gate commands.
+- **Verdict:** BLOCK
+- **Reasoning:** TRG-24-013 and TRG-24-014 remain immutable history. TRG-24-014 corrected the task-prefixed trigger but placed the escalation suffix in its external typed verdict. The schema parses the external verdict as BLOCK while the ledger requires the full BLOCK (escalated as ESC-24-007), preventing that record from binding. TRG-24-015 governs the Runner's schema-v2 ledger TRIAGE with the exact typed verdict BLOCK and retained task, trigger and attempt. This is a second record-identity correction, not new product triage or resolution of the QA BLOCK. ESC-24-007 remains the same Human-authority escalation.
+- **Local decisions made:** Allocate the next unique phase-scoped identifier TRG-24-015 after the highest recorded TRG-24-014; retain existing ESC-24-007 without allocating a new ESC. Task-11 is checkpoint attribution only; no Developer continuation is authorized.
+- **Resolution evidence:** First rejected Runner candidate: `INVALID schema v2 TRIAGE Originating task does not match Trigger signature` (observed `exit_code: 1`). Second rejected Runner candidate: `INVALID TRIAGE verdict does not match the phase triage log` (observed `exit_code: 1`). Both are invoking Runner evidence, rejected before append; the ledger remains `VALID state=TRIAGE_PENDING`. Review-9 records passing deterministic D2 checks and fixture regeneration; these are preserved review evidence, not new TL-Lite PASS attestations. Five VAL-054 refusal reason/next-action answers (HUMAN-02a..02e) and four VAL-055 accept/reject judgments with reasons (HUMAN-03a..03d) remain absent. Manifest `.cache/phase-24-human/fixtures-2268063598/manifest.json` was generated at Task 11 close `93a1f792d27f001b4052113e9056faf97706c3e5`. The required `project-docs/docs/phases/phase-24/qa/human-walkthrough-after-task-11.md` is absent per review-9 and the invocation. The protected Human judgment condition remains unresolved; deterministic evidence cannot substitute for it.
+- **If REPAIR:** N/A; no Developer continuation is authorized.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** Do not modify product code, tests, task specs, QA artifacts, the run ledger, workflow controls, decisions, or any earlier triage/escalation entry. Do not invent Human answers, waive the checkpoint, or change assertion semantics, commands, accepted status/scope, thresholds, budgets, tolerances or policy. This correction authorizes no implementation or control-conformance recovery.
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** N/A
+- **Trigger/budget:** Retain task-11:qa-window-d2:human-walkthrough:val-054-055-pending at attempt 1 and preserve all recovery history and budgets. No repair attempt is dispatched or counted; no recovery-budget exhaustion is claimed.
+- **If BLOCK:** category protected Human product judgment / external Human authority; reference existing ESC-24-007 in project-docs/docs/current/tl_escalations_current.md. No new ESC is allocated. Resolution still requires all five actual VAL-054 answers and all four VAL-055 judgments with reasons from retained Human output, authorized recording in the named walkthrough artifact, and fresh independent QA checkpoint closure of B1-H. Rejected/unclear rows require a concrete acceptance finding and appropriate owner/authority disposition. Phase-end Human confirmation remains mandatory.
+- **Human attention required:** yes
+- **Required resolution follow-through:** TRG-24-015 governs the Runner's schema-v2 ledger TRIAGE. Bind the exact typed task, trigger, attempt, repair category and repair authority above; the external typed verdict is BLOCK, while the ledger verdict and final TL-Lite response retain BLOCK (escalated as ESC-24-007). The corresponding STOP retains ESC-24-007. Preserve both rejected candidate diagnostics and observed exit_code: 1 values in Runner reconciliation evidence. Do not advance Window D2 or dispatch Task 12 before actual Human evidence and independent closure. Preserve TRG-24-013, TRG-24-014, every earlier escalation entry, review-9, Task 10/11 COMPLETE records and all failed evidence. Full Tech Lead routing remains: "Resolve ESC-24-007 in tl_escalations_current.md."
+- **References:** this log TRG-24-013 and TRG-24-014; project-docs/docs/current/tl_escalations_current.md ESC-24-007; project-docs/docs/phases/phase-24/qa/review-9.md Verdict, B1-H and Exact pending Human action; project-docs/docs/phases/phase-24/run-ledger.md 2026-10-09 16:08/16:19; project-docs/templates/triage-log-template.md append-only correction rule; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9; invoking Runner's two rejected candidate diagnostics and observed terminations.

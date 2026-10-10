@@ -1,5 +1,42 @@
 # Phase 24 Escalations
 
+## ESC-24-007 - Window D2 Human walkthrough and interim judgment absent
+
+- **Raised:** 2026-10-09 by TL-Lite in TRG-24-013 (BLOCK). Record-identity
+  corrections TRG-24-014 and TRG-24-015 followed; TRG-24-015 governs.
+  Ledger STOP 2026-10-09 16:28.
+- **Protected category:** protected Human product judgment / external
+  Human authority.
+- **Originating task:** task-11 (checkpoint attribution only; review-9
+  names no owning task).
+- **Trigger signature:** task-11:qa-window-d2:human-walkthrough:val-054-055-pending
+  (attempt 1).
+- **Condition:** Review-9 (`b9083f3b`) was BLOCK with one finding, B1-H.
+  The deterministic D2 checks and the fixture regeneration at Task 11
+  close `93a1f792` passed. QA plan section 8 requires the interim
+  VAL-054/055 Human walkthrough at window D2, but
+  `qa/human-walkthrough-after-task-11.md` and its nine Human rows
+  (HUMAN-02a..02e, HUMAN-03a..03d) were missing. Deterministic evidence
+  cannot stand in for Human judgment. Two Runner TRIAGE candidates were
+  rejected before append and are preserved in TRG-24-015.
+- **Status:** RESOLVED 2026-10-10 by DEC-288 (decision). The Human recorded
+  his own answers at `a23b9f33`, bound to manifest
+  `.cache/phase-24-human/fixtures-2268063598/manifest.json`. All five
+  refusals were clear from the output alone, and all four views were
+  accepted with reasons. No row is rejected or unclear. The verifier has
+  no direct route from a STOP to a REVIEW, so the Runner resumes through
+  an evidence-only Task 11 recovery: attempt 2, `qa-rework`,
+  `task-scope`, no Developer dispatch. That runs RUN-RESUME,
+  TASK-RECOVERY, REPAIR RESOLVED and TASK COMPLETE, then a fresh QA
+  `review-10` re-review of review-9 closes B1-H. The Tech Lead's dry run
+  confirmed every receipt. The interim answers don't replace the
+  phase-end HUMAN-02/03 rows. No further Tech Lead or Human input is
+  needed unless a DEC-288 append is rejected as written or review-10
+  does not pass.
+- **Links:** [DEC-288](decisions.md); [TRG-24-013..015](triage-log.md);
+  [run ledger](run-ledger.md); [review-9](qa/review-9.md);
+  [Human walkthrough](qa/human-walkthrough-after-task-11.md).
+
 ## ESC-24-006 - Plain-copy run.inspect success conflicts with retained repository refusal
 
 - **Raised:** 2026-10-09 by TL-Lite in TRG-24-012 (BLOCK); ledger STOP
