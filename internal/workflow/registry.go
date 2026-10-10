@@ -3,6 +3,7 @@ package workflow
 import (
 	"database/sql"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -10,6 +11,28 @@ import (
 type Registry struct {
 	workflows map[string]Definition
 	edges     map[transitionKey][]RuleReference
+}
+
+// NextState describes a workflow edge's target state and category.
+type NextState struct {
+	State    string `json:"state"`
+	Category string `json:"category"`
+}
+
+// NextStates lists every allowed edge target, without evaluating its rules.
+func (registry *Registry) NextStates(workflowID, fromState string) []NextState {
+	states := []NextState{}
+	definition, ok := registry.workflows[workflowID]
+	if !ok {
+		return states
+	}
+	for state, category := range definition.States {
+		if _, edge := registry.RulesForEdge(workflowID, fromState, state); edge {
+			states = append(states, NextState{State: state, Category: category})
+		}
+	}
+	sort.Slice(states, func(i, j int) bool { return states[i].State < states[j].State })
+	return states
 }
 
 type transitionKey struct {

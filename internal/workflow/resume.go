@@ -14,10 +14,11 @@ import (
 )
 
 type ResumeIssue struct {
-	ID             string `json:"id"`
-	Status         string `json:"status"`
-	StatusCategory string `json:"status_category"`
-	Revision       int    `json:"revision"`
+	ID             string      `json:"id"`
+	Status         string      `json:"status"`
+	StatusCategory string      `json:"status_category"`
+	Revision       int         `json:"revision"`
+	NextStates     []NextState `json:"next_states"`
 }
 
 type ResumeClaim struct {
@@ -316,6 +317,7 @@ func resumeIssue(conn *sql.DB, issueID string) (ResumeIssue, bool, error) {
 		return ResumeIssue{}, false, fmt.Errorf("resume Issue: workflow state is unknown")
 	}
 	issue.StatusCategory = category
+	issue.NextStates = registry.NextStates(workflowID, issue.Status)
 	return issue, category == "completed", nil
 }
 

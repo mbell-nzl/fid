@@ -14,6 +14,7 @@ import (
 )
 
 type p24HumanFixture struct {
+	Authoring    bool     `json:"authoring,omitempty"`
 	Name         string   `json:"name"`
 	Operation    string   `json:"operation"`
 	Code         string   `json:"code,omitempty"`
@@ -73,6 +74,15 @@ func TestP24HumanFixtures(t *testing.T) {
 	}
 	if !foundStart {
 		t.Fatal("manifest missing take-control-start workspace")
+	}
+	for _, name := range []string{"authoring-run-close", "authoring-decision-reference", "authoring-third-leaf", "judgment-concern.get", "judgment-deviation.get", "judgment-human-outcome.get", "judgment-resume"} {
+		found := false
+		for _, row := range manifest.Fixtures {
+			found = found || row.Name == name
+		}
+		if !found {
+			t.Errorf("manifest missing %s workspace", name)
+		}
 	}
 	t.Logf("Retained Human fixture manifest: %s", filepath.Join(fresh, "manifest.json"))
 }
@@ -358,6 +368,8 @@ func p24GenerateHumanFixtures(t *testing.T, root string) {
 	}
 	start := p24NewTakeControlStart(t, manifest.Binary, root)
 	p24AddHumanFixture(t, &manifest, "take-control-start", "issue.transition", "protected-decision-required", start.workspace, start.blockedArgs, 5)
+	p24HumanJudgmentFixtures(t, root, &manifest)
+	p24HumanAuthoringFixtures(t, root, &manifest)
 	data, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
 		t.Fatal(err)
@@ -568,6 +580,13 @@ func p24AssertHumanManifest(t *testing.T, manifest p24HumanManifest) {
 			t.Fatalf("incomplete/duplicate manifest row %s", row.Name)
 		}
 		seen[row.Name] = true
+		if row.Authoring {
+			humanOut, humanErr, jsonOut, jsonErr := p24RehearseAuthoring(t, manifest.Binary, row)
+			if humanOut != row.HumanStdout || humanErr != row.HumanStderr || p21PathString(t, p23Envelope(t, jsonOut), "operation") != row.Operation || p21Path(t, p23Envelope(t, jsonOut), "result", "replayed") != true || jsonErr != row.JSONStderr {
+				t.Fatalf("authoring fixture %s drifted", row.Name)
+			}
+			continue
+		}
 		out, stderr := p24FixtureRun(t, manifest.Binary, row, false)
 		if out != row.HumanStdout || stderr != row.HumanStderr {
 			t.Fatalf("retained fixture %s Human drifted", row.Name)
@@ -599,4 +618,78 @@ func p24AssertHumanManifest(t *testing.T, manifest p24HumanManifest) {
 			}
 		}
 	}
+}
+
+func p24HumanJudgmentFixtures(t *testing.T, root string, manifest *p24HumanManifest) {
+	t.Helper()
+	pairs := p23GenerateLeafPairs(t, manifest.Binary, root)
+	workspace := pairs[0].CWD
+	// The shared retained generator provides every judgment list/detail pair.
+	for _, pair := range pairs {
+		p24AddHumanFixture(t, manifest, "judgment-"+pair.Operation, pair.Operation, "", workspace, pair.HumanArgs, 0)
+	}
+	for family, id := range map[string]string{"concern": "CON-leaf", "deviation": "DEV-leaf", "human-outcome": "OUT-leaf"} {
+		p24AddHumanFixture(t, manifest, "judgment-"+family+".get", family+".get", "", workspace, []string{family, "get", id}, 0)
+	}
+	issues := p21Run(t, manifest.Binary, workspace, "--json", "issue", "list")
+	issueID := p21Path(t, issues, "result", "issues").([]any)[0].(map[string]any)["id"].(string)
+	p24AddHumanFixture(t, manifest, "judgment-resume", "resume", "", workspace, []string{"resume", issueID, "--repository", workspace}, 0)
+}
+
+func p24HumanAuthoringFixtures(t *testing.T, root string, manifest *p24HumanManifest) {
+	t.Helper()
+	for _, kind := range []string{"run-close", "decision-reference", "third-leaf"} {
+		workspace := p22HumanDirectory(t, root, "authoring-"+kind)
+		actions := append(append([]string{}, p24FixtureActions...), "concern.record")
+		a := p22NewFIDRecoveryAdapterAt(t, manifest.Binary, workspace, "human", 86400, []string{}, actions)
+		var parts []string
+		var input map[string]any
+		switch kind {
+		case "run-close":
+			a.p22Observe(t, "terminated")
+			parts, input = a.p22BuildArgs(t, p22ConformanceCase{Operation: "run.close"})
+			parts = p22WithoutJSON(parts)
+		case "decision-reference":
+			parts = []string{"decision", "record-reference", "--actor", a.actor}
+			source := p23DecisionSource(a, false)
+			delete(source, "digest")
+			input = map[string]any{"id": "DREF-authoring", "class": "security", "source": source, "authority": map[string]any{"actor_id": a.actor, "required_capabilities": []string{"decision.record-reference"}}, "outcome": "approved", "scope": map[string]any{"issue_id": a.issueID}}
+		case "third-leaf":
+			parts = []string{"concern", "record", "--actor", a.actor}
+			input = map[string]any{"id": "CON-authoring", "subject": map[string]any{"type": "issue", "id": a.issueID}, "scope": map[string]any{"paths": []string{}}, "severity": "minor", "summary": "Human authored concern", "reasoning": "Human chooses another input leaf", "references": []any{}}
+		}
+		path := p21Input(t, root, "authoring-"+kind, input)
+		args := append(parts, "--input", path, "--idempotency-key", "authoring-"+kind)
+		operation := map[string]string{"run-close": "run.close", "decision-reference": "decision.record-reference", "third-leaf": "concern.record"}[kind]
+		row := p24HumanFixture{Authoring: true, Name: "authoring-" + kind, Operation: operation, Workspace: workspace, CWD: workspace, HumanArgs: args, JSONArgs: append([]string{"--json"}, args...), ExpectedExit: 0, BinarySHA256: manifest.BinarySHA256}
+		row.HumanCommand, row.JSONCommand = p24FixtureCommand(manifest.Binary, row.HumanArgs), p24FixtureCommand(manifest.Binary, row.JSONArgs)
+		row.HumanStdout, row.HumanStderr, row.JSONStdout, row.JSONStderr = p24RehearseAuthoring(t, manifest.Binary, row)
+		manifest.Fixtures = append(manifest.Fixtures, row)
+	}
+}
+
+// Rehearse in the recorded physical worktree, then restore its pre-action
+// workspace. The Human receives a valid first request, not a replay-only key.
+func p24RehearseAuthoring(t *testing.T, binary string, row p24HumanFixture) (string, string, string, string) {
+	t.Helper()
+	scratch, err := os.MkdirTemp(filepath.Dir(row.Workspace), "authoring-rehearsal-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.RemoveAll(scratch); err != nil {
+			t.Error(err)
+		}
+	}()
+	snapshot := filepath.Join(scratch, "before")
+	copyParityFixture(t, filepath.Join(row.Workspace, ".fid"), snapshot)
+	humanOut, humanErr := p24FixtureRun(t, binary, row, false)
+	jsonOut, jsonErr := p24FixtureRun(t, binary, row, true)
+	if err := os.Rename(filepath.Join(row.Workspace, ".fid"), filepath.Join(scratch, "after")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(snapshot, filepath.Join(row.Workspace, ".fid")); err != nil {
+		t.Fatal(err)
+	}
+	return humanOut, humanErr, jsonOut, jsonErr
 }

@@ -18,6 +18,32 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func TestP24DescriptorForbiddenMembers(t *testing.T) {
+	t.Parallel()
+	for leaf, descriptor := range inputDescriptorRegistry {
+		t.Run(leaf, func(t *testing.T) {
+			t.Parallel()
+			var walk func([]cli.InputField, string)
+			walk = func(fields []cli.InputField, path string) {
+				for _, field := range fields {
+					next := path + "." + field.Name
+					if slices.Contains([]string{"worktree_id", "capture_source", "repository_scope", "target_repository", "repository"}, field.Name) {
+						t.Errorf("forbidden descriptor member %s", next)
+					}
+					walk(field.Children, next)
+					if field.Element != nil {
+						walk([]cli.InputField{*field.Element}, next+"[]")
+					}
+					for variant, members := range field.Variants {
+						walk(members, next+"["+variant+"]")
+					}
+				}
+			}
+			walk(descriptor.Fields, "input")
+		})
+	}
+}
+
 func TestAttentionResolveUnknownFieldNamesInputPath(t *testing.T) {
 	t.Parallel()
 	path := filepath.Join(t.TempDir(), "request.json")

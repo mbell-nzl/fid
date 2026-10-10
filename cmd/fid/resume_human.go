@@ -98,9 +98,19 @@ func resumeJudgmentHumanLines(resume workflow.Resume) []string {
 }
 
 func resumeContextHumanLines(resume workflow.Resume) []string {
+	states := make([]string, 0, len(resume.Issue.NextStates))
+	for _, next := range resume.Issue.NextStates {
+		states = append(states, fmt.Sprintf("%s (%s)", next.State, next.Category))
+	}
+	nextStates := "none."
+	if len(states) > 0 {
+		nextStates = strings.Join(states, ", ")
+	}
 	lines := []string{
 		fmt.Sprintf("Issue %s", resume.Issue.ID),
 		"  Status: " + resume.Issue.Status,
+		fmt.Sprintf("  Revision: %d", resume.Issue.Revision),
+		"  Next states: " + nextStates,
 		"  Completion: " + resume.Completion.Status,
 		fmt.Sprintf("  Envelope: %s (revision %d, %s)", resume.Envelope.ID, resume.Envelope.CurrentRevision, resume.Envelope.Status),
 	}
