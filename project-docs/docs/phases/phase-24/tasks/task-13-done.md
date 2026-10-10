@@ -168,8 +168,8 @@ Retained-test convergence provenance was established with introducing-commit Git
 
 ## Commit hash
 
-- Pending commit
+- `595738e780967bb9e9a0a7049d939a4540d011a5`
 
 ## Commit subject
 
-- Pending commit
+- `feat(cli): checkpoint judgment rendering and scope gap`
