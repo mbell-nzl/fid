@@ -296,8 +296,8 @@ labels are not attestations of commands executed in this continuation.
 
 ## Commit hash
 
-- Pending commit
+- `e97835b9f9983e357b45e80c3dbe4e4b02cedb6d`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): expose resume position for Human take-control`
