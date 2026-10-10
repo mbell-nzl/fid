@@ -2315,6 +2315,296 @@
   `f446a3be`; `qa/review-5.md` R13; DEC-278 (R13 correction), DEC-288 and
   DEC-290 (route precedent).
 
+### DEC-292: Phase-end final review disposition. The Human records VAL-053..057; Tasks 1 and 10 add their missing inventory receipts; a fresh final-review-1 closes B1-H, F1, F2 and QA-36. Disposes ESC-24-010
+
+- **Date:** 2026-10-11. Tech Lead ESC disposition on the Human's
+  instruction to address the QA Lead's final-review issues. This decision
+  makes no product judgment. It changes no behaviour, output, code, test,
+  gate command, registry, assertion, threshold, budget, fixture, QA
+  artifact or validation contract. It arranges the Human checklist, routes
+  F1 and F2 to their owners, and binds the ledger route from the
+  2026-10-11 12:12 STOP to a fresh final review.
+- **Status:** ESC-24-010 stays **OPEN** for B1-H until the Human has
+  committed the checklist and the Tech Lead has appended clause 9. The F1
+  and F2 routes and the final-review scope are decided here.
+- **Context:**
+  - `qa/final-review.md` (`6d633351`, BLOCK): 63 deterministic VAL PASS,
+    all required gates, full-checkptr, archive-scale and three rebuild
+    samples passing. VAL-053..057 are BLOCKED because the phase-end Human
+    checklist is blank (B1-H). QA-36 FAILs on two report findings. F1:
+    Task 1's report has no receipt for its owned R4. F2: Task 10's report
+    has no receipt for its owned R10. TL-Lite's first triage, TRG-24-018,
+    used a phase-level trigger that the verifier rejected. TRG-24-019
+    corrected it to `task-14:qa-block:phase-end-final-review` (attempt 1,
+    BLOCK) and kept ESC-24-010. The Runner appended TRIAGE TRG-24-019 and
+    the STOP (12:12).
+  - **F1 and F2 confirmed.** Neither report contains its command or
+    output. Task 1's spec (line 95) lists R3 and R4, and Task 10's spec
+    (line 167) lists R8, R9 and R10. The inventory header requires each
+    owner to rerun its registry commands and record the result before
+    close. Report-lint parses only `## Exact Commands To Run`, so its PASS
+    does not cover this rule. The Tech Lead ran both commands at
+    `6d633351` from `/home/mark/projects/fid` (investigation only, not
+    report evidence). Rendered R4 exited 0: the listing ends at
+    `0019_p24_idempotency_fields.{down,up}.sql` and is followed by 17
+    match lines in five files, including `internal/db/projection_meta.go:10`
+    `ProjectionSchemaVersion = 5` (the projection meta format; Task 1
+    spec line 64). The escaped bytes `\|` match nothing, the same trap as
+    DEC-291. R10 exited 0 with 63 lines in 27 files, against 32 in 13 at
+    planning.
+  - **Fixtures are current.** `git diff --name-only 86e0c26a 6d633351`
+    lists only `project-docs/` paths, so the product is unchanged since
+    Task 14 close. `fixtures-2145711523` was generated at 11:50 NZDT on
+    2026-10-11. Its manifest SHA-256 `9d0e3472…89715983` and binary
+    SHA-256 `78447902…f43e3484` match `final-review.md`. Claims have an
+    86400 s TTL, so the live workspaces expire at about 11:50 NZDT on
+    2026-10-12.
+  - **Ledger constraint.** The verifier binds a STOP resume to the
+    trigger's task, which is task-14. A RUN-RESUME continuing task-1 is
+    rejected (clause 11). The route is therefore DEC-288's pattern:
+    1. an evidence-only Task 14 recovery, whose evidence is the Human's
+       committed checklist;
+    2. once the ledger is `ADVANCEABLE`, separate report-only recoveries
+       for Tasks 1 and 10.
+
+    Task 14 only anchors the identity (TRG-24-019 agrees). F1 and F2 stay
+    with the owners QA named.
+  - **Checklist size.** QA plan section 9 planned 24 Human rows, and the
+    checklist has 143. VAL-056 is split by view and point, VAL-055 by view
+    and repository state, and VAL-054 into reason and next action. That
+    matches VAL-056's fail rule ("any view fails a point") and section 9's
+    "accept/reject per view", so the checklist stands as written.
+- **Decision:**
+  1. **B1-H: the Human records the checklist** in
+     `qa/human-checklist.md`, following its instructions.
+     (a) Each row: Outcome `PASS`, `FAIL` or `PARTIAL`, and Notes in the
+     Human's own words. HUMAN-01 rows quote each source line used.
+     HUMAN-05 rows give the leaf, attempts, sources and final input. Fill
+     in Tester, the Summary counts, Overall result and Date completed.
+     (b) Permitted sources: Human fid output, `--help`/`--example`, and
+     the Git commands the help names. Never the QA manifest, the
+     generator's input files, source, specs, JSON internals or `.fid/`. No
+     agent suggests a command, value or answer for HUMAN-01 or HUMAN-05.
+     That would be outside help, which VAL-053 and VAL-057 fail on. At the
+     Human's instruction an agent may transcribe the Human's own words
+     verbatim, with an edit note naming the transcriber (DEC-288).
+     (c) HUMAN-01 and HUMAN-05 use the live workspaces. After about 11:50
+     NZDT on 2026-10-12, first regenerate them with the exact G14 command
+     in `final-review.md`. The Human may run it, or ask for a QA Lead
+     session to run it. Record the new fixture directory, manifest and
+     binary SHA-256 and HEAD in the checklist header. HUMAN-02/03/04 judge
+     the captured outputs in `qa/final-evidence/human-output/`, which do
+     not expire.
+     (d) Commit the checklist under the Human's authorship, subject
+     `docs(qa): record phase 24 phase-end Human checklist`, footer
+     `Refs: phase-24`. Then ask the Tech Lead to "close ESC-24-010 under
+     DEC-292 clause 9".
+  2. **Rejected or partial rows.** All PASS: clause 9 closes ESC-24-010
+     and clause 6 runs unchanged. A `FAIL` or `PARTIAL` row is an
+     acceptance finding. Before any RUN-RESUME, the Tech Lead dispositions
+     it with the Human in a new decision: repair in Phase 24 under a named
+     owner, or carry it forward with the Human's acceptance. It is never
+     re-answered, reclassified or weakened. A blank row keeps the BLOCK.
+  3. **F1 to Task 1, F2 to Task 10, report-only.** The final review's
+     Repair Plan applies unchanged: owners, files, evidence and re-review
+     scope. Each command is the rendered table command (DEC-291 clause 2):
+     - R4: `ls migrations; rg -n "ProjectionSchemaVersion|projection_schema" internal -g '!*_test.go'`
+     - R10: `rg -n '"error: ' cmd internal -g '*_test.go'`
+
+     Each Developer records only its own session's output. It never
+     copies the Tech Lead's numbers above or QA's `inventory-and-help.json`.
+  4. **Recovery identities.**
+     - Task 14: `task-14 | qa-rework | task-scope | task-14:qa-block:phase-end-final-review | 2`,
+       `0/2`. Attempt 1 is the TRG-24-019 BLOCK. There is no Developer
+       dispatch.
+     - Task 1: `task-1:qa-rework:final-review-f1-r4-receipt`, attempt 1,
+       `qa-rework`, `task-scope`, `0/2`.
+     - Task 10: `task-10:qa-rework:final-review-f2-r10-receipt`, attempt 1,
+       `qa-rework`, `task-scope`, `0/2`.
+  5. **Runner preconditions.** Do not append (a) until both hold:
+     (i) the Human's checklist commit exists with no blank row;
+     (ii) clause 9 records that commit and closes ESC-24-010 in the
+     register, or names the later decision that governs.
+
+     The verifier cannot check either. It accepts (a) as soon as this
+     decision exists (clause 11).
+  6. **Ledger sequence.** The Runner appends each event transactionally,
+     each with expected exit 0 and each before the dispatch it allows.
+     (a) **RUN-RESUME** (schema v2 STOP resume):
+     `Sequence contract: v2`; `Recovery directive schema: v2`;
+     `Prior run/session or STOP: 2026-10-11 12:12 STOP / TRG-24-019 / ESC-24-010`;
+     `Governing TRG: TRG-24-019`; `Governing ESC: ESC-24-010`;
+     `Trigger signature: task-14:qa-block:phase-end-final-review`;
+     `Attempt count: 2`; `Resolution authority: DEC-292`;
+     `Continuing task: task-14`;
+     `Next recovery: task-14 | qa-rework | task-scope | task-14:qa-block:phase-end-final-review | 2`.
+     `Checkpoint` names the phase HEAD, the Human checklist commit, the
+     clause 9 commit and `final-review.md` at `6d633351`. Expect
+     `APPEND_CONFIRMED state=REPAIR_PENDING`.
+     (b) **TASK-RECOVERY task-14**, same tuple:
+     `Source: TRG-24-019 / ESC-24-010 / DEC-292; project-docs/docs/phases/phase-24/qa/final-review.md`;
+     `Category: qa-rework`; `Repair mode: task-scope`;
+     `Repair authority: TRG-24-019 / DEC-292`; `Triage disposition: N/A`;
+     `Attempt count: 2`; `Consecutive no-progress attempts: 0/2`.
+     Control fields, `Originating report`, `Exact verification`,
+     `Control repair base` and `Temporary repair worktree` are `N/A`.
+     `Allowed files: none; no Developer dispatch`.
+     `Forbidden changes`: no edit to product code, tests, task specs,
+     reports, QA artifacts (including `final-review.md` and the
+     checklist), the validation contract, QA plan, decisions, workflow
+     controls or fixtures; no invented or edited Human answer.
+     `Next action`: verify the checklist commit (`git rev-parse --verify`,
+     exact subject, checklist unchanged since, no blank row) and clause 9,
+     then append (c). Expect `APPEND_CONFIRMED state=REPAIR_PENDING`.
+     (c) **REPAIR task-14**, `Outcome: RESOLVED`, with each of the eleven
+     schema v2 fields exactly once (DEC-291 clause 10). `Ending checkpoint`
+     is the unchanged phase HEAD. The evidence is the checklist commit and
+     clause 9. The four control and integration fields are `N/A`, and
+     `Next checkpoint` is (d). Expect `APPEND_CONFIRMED state=COMPLETION_PENDING`.
+     (d) **TASK task-14 COMPLETE.** Rerun report-lint on the unchanged
+     Task 14 report. `Commit` is `86e0c26ab8c5f9e820259b740438ca90cf7aa93b`
+     with its subject. Expect `APPEND_CONFIRMED state=ADVANCEABLE`.
+     (e) **TASK-RECOVERY task-1** (F1), with the clause 4 tuple:
+     `Source: project-docs/docs/phases/phase-24/qa/final-review.md F1; DEC-292`;
+     `Repair authority: DEC-292; QA final review; final-review`;
+     `Triage disposition: N/A`;
+     `Allowed files: project-docs/docs/phases/phase-24/tasks/task-1-done.md`.
+     The control fields, `Originating report`, `Exact verification` and
+     `Control repair base` are `N/A`. `Forbidden changes`: no change to
+     product code, tests, specs, the inventory, task specs, decisions, the
+     validation contract, QA artifacts, the QA plan, workflow controls,
+     prompts, templates, dependencies, `run-ledger.md` or
+     `triage-log.md`. Do not edit, delete or relabel earlier report
+     content. Do not rerun a product gate or record a new result for one.
+     Do not copy Tech Lead, TL-Lite or QA output into a Developer result.
+     `Next action`: one same-task Developer continuation edits only
+     `task-1-done.md`.
+     - From `/home/mark/projects/fid`, run the clause 3 R4 command.
+     - In a new subsection, record the command, an output token, the
+       working directory, the observed `exit_code: 0` and the nonempty
+       output.
+     - Account for the latest migration and the constant lines observed.
+     - Note that the original close lacked this receipt (final-review F1),
+       and cite DEC-291 for the spelling.
+     - Finalize the report (`Refs: phase-24/task-1`) and commit only the
+       report.
+
+     Independent two-argument report-lint must then return
+     `OUTCOME COMPLETE`, exit 0. Expect `APPEND_CONFIRMED state=REPAIR_PENDING`.
+     (f) **REPAIR task-1**, `RESOLVED`, eleven fields. Expect
+     `COMPLETION_PENDING`.
+     (g) **TASK task-1 COMPLETE**, with the new report commit. Expect
+     `ADVANCEABLE`.
+     (h)-(j) **Task 10 (F2)**, the same as (e)-(g) with `task-10`, F2,
+     `task-10-done.md`, the clause 3 R10 command and
+     `Refs: phase-24/task-10`. The receipt records the line and file count
+     at the current HEAD. It labels that count a current-HEAD measurement,
+     not Task 10's close count, and keeps every earlier failure, scope and
+     provenance entry.
+     (k) **Final review** (clause 7), then `RUN-END` after a PASS.
+
+     Do not dispatch the final review before (j), and do not append
+     `RUN-END` before a PASS. The verifier accepts both early (clause 11),
+     so the ordering is the Runner's obligation. The fresh final review is
+     the substantive guard. If any append is rejected as written, return
+     to the Tech Lead; never substitute field values. The DEC-291 clause 10
+     corrected-resubmission rule still applies to a missing or repeated
+     schema field.
+  7. **Fresh final review**, `qa/final-review-1.md`. A fresh independent
+     QA Lead session, not the author of `final-review.md`, writes it.
+     Header: follow-up review; `Prior review: final-review.md`, which
+     stays unchanged.
+     (a) **B1-H.** Confirm that every row is recorded and attributed to
+     the Human by commit author. Confirm the fixture identity (manifest,
+     binary, HEAD), and that no non-test product file changed between the
+     fixture HEAD and the reviewed HEAD. Set VAL-053..057 from the
+     Human's recorded judgments only. Cite the disposing decision for any
+     FAIL or PARTIAL row.
+     (b) **F1 and F2.** Rerun rendered R4 and R10 and both report-lint
+     invocations. Check that each delta is confined to its report, earlier
+     history is preserved, and the commit identity and `Refs` are right.
+     (c) **QA-36**, re-evaluated.
+     (d) **Carry-forward evidence.** Every other `final-review.md` result
+     stands as evidence. Confirm with `git diff --name-only 6d633351 HEAD`
+     that only `project-docs/` paths changed. If any product, test,
+     migration, tool or build file changed, rerun the full section 5
+     gates.
+     (e) **All 68 VAL outcomes**, recorded.
+
+     Ledger event: `REVIEW review-13`,
+     `Path: project-docs/docs/phases/phase-24/qa/final-review-1.md`,
+     `Tasks covered: task-1 through task-14, task-9a`,
+     `Re-review of: none` (`final-review.md` has no ledger REVIEW
+     identity; Phase 23 review-16 precedent) and `Owning task: none` for
+     PASS. A PASS leads to `RUN-END` and Tech Lead wrap-up. A REPAIR takes
+     the ordinary owner route, followed by `final-review-2.md`. A BLOCK
+     goes to TL-Lite.
+  8. **Final-review improvements: deferred to wrap-up, none blocking.**
+     (a) Keep the Task 10/12/13/14 ordinary-gate headroom warnings visible
+     under Known Risks. (b) Wrap-up spec sync covers:
+     - the "delivery in progress" amendment wording in
+       `06_DESIGN_PLAN_CLI`;
+     - the stale GLOSSARY last-updated date;
+     - the QA-plan "quality section 5.2" locator (CF-033);
+     - the seven-spec and glossary phase-end state.
+
+     (c) Note the Runner's task-3 hash and coverage transcription cleanup
+     in the wrap-up provenance notes. (d) The stale current docs that
+     still scheduled review-12 are refreshed in this commit.
+  9. **Human record.** The Tech Lead appends this clause after the Human
+     commits the checklist (clause 1d). Until then, ESC-24-010 is OPEN and
+     the Runner does not resume.
+  10. **Unchanged.** `final-review.md`, TRG-24-018 and TRG-24-019, the
+      STOP, every report's history, every VAL row, the QA plan, the
+      checklist rows, every gate and the fixtures.
+  11. **Verification.** The Tech Lead dry-ran (a)-(j), a review-13 PASS
+      and `RUN-END`. The run used a scratch copy of the live ledger,
+      decisions (this decision as a heading) and triage log, and the
+      unchanged verifier. The live ledger validates `VALID state=STOPPED`
+      (SHA-256 `c4bb10dc…c71fe0cd`; Runner-owned and uncommitted). The
+      receipts were, in order, all exit 0: `REPAIR_PENDING`,
+      `REPAIR_PENDING`, `COMPLETION_PENDING`, `ADVANCEABLE`; then for each
+      of Task 1 and Task 10 `REPAIR_PENDING`, `COMPLETION_PENDING`,
+      `ADVANCEABLE`; then `ADVANCEABLE` for both review-13 and `RUN-END`.
+      A final validate returned `VALID state=ADVANCEABLE`. Each negative
+      guard returned exit 1 with the scratch ledger unchanged:
+
+      | Candidate | Diagnostic |
+      |---|---|
+      | (a) continuing `task-1` | `RUN-RESUME Continuing task does not match its Trigger signature` |
+      | (a) at attempt 1 | `RUN-RESUME Attempt count must increment its governing TRIAGE` |
+      | (a) against the decisions file without DEC-292 | `RUN-RESUME cites an unrecorded or malformed phase decision`; `… invalid or unverifiable Resolution authority` |
+      | (e) straight after (a) | `TASK-RECOVERY does not preserve its RUN-RESUME checkpoint`; `… exact schema v2 RUN-RESUME recovery tuple` |
+      | (e) straight after (b) | `overlapping TASK-RECOVERY precedes required REPAIR`; `… changes task identity from task-14 to task-1` |
+      | (b) without DEC-292 in `Source`/`Repair authority` | `TASK-RECOVERY does not retain its RUN-RESUME decision authority` |
+      | (d) straight after (b) | `task completed before a resolved REPAIR event: task-14` |
+
+      Accepted, and so a Runner obligation: a REVIEW straight after the
+      STOP (the ledger stays `STOPPED`); and, after (d), a review-13 or
+      `RUN-END` before F1 and F2 (`ADVANCEABLE`).
+- **Artifact/spec sync:** none. No PRD, TRD, design, data model,
+  glossary, public interface, inventory, validation contract, QA plan,
+  task spec, template, tool or prompt change. The ESC register, brief and
+  progress are refreshed.
+- **Workflow notes for wrap-up:**
+  1. QA writes the phase-end checklist in the same session as the final
+     review, so the final review BLOCKs on B1-H by construction (Phase 23
+     too). Splitting phase-end QA into checklist preparation, then the
+     Human, then the final review would avoid a STOP and a TL round-trip
+     (CF-036).
+  2. Owned inventory receipts sit outside `## Exact Commands To Run`, so
+     report-lint cannot see them. R13 (review-11), R4 and R10 surfaced
+     only at review. Later task specs should list each owned registry
+     command under `## Exact Commands To Run`.
+  3. The 143-row checklist against 24 planned rows is a Human-time cost.
+     The QA plan should size the per-view fan-out at planning.
+- **Refs:** ESC-24-010; TRG-24-018, TRG-24-019; `run-ledger.md` 2026-10-11
+  12:12 TRIAGE and STOP; `qa/final-review.md` F1, F2, B1-H, Repair Plan and
+  Blocker Candidates; `qa/human-checklist.md`; `qa/qa-plan.md` sections 9
+  and 10; VAL-053..057; `input-inventory.md` header, R4, R10;
+  `tasks/task-1.md`, `tasks/task-10.md`; DEC-267 (Phase 23 phase-end
+  precedent), DEC-288 (evidence-only route), DEC-291 (rendered commands).
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.
