@@ -226,8 +226,8 @@ Current DEC-289 convergence provenance, reverified with `git log --diff-filter=A
 
 ## Commit hash
 
-- Pending commit
+- `558c9bc02a911a4c0402465c8585814cb37d9822`
 
 ## Commit subject
 
-- Pending commit
+- `test(cli): converge retained concern list reasoning assertion`
