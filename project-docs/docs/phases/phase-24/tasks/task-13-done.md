@@ -162,6 +162,35 @@ Working directory: `/home/mark/projects/fid`.
 - The prior Task 13 completion, seven-command gates, failed attempts, deviation notes, provenance tables and commit identity remain accepted historical evidence and are preserved unchanged. This subsection records only the current report-repair candidate; it does not replace the prior workflow outcome or reopen product behavior. No new VAL assertion applies to this no-VAL evidence finding.
 - Refs: phase-24/task-13.
 
+### QA Window E report-only repair attempt 3 (DEC-291; current session)
+
+Working directory: `/home/mark/projects/fid`, branch `phase-24`.
+
+- Source: TRG-24-017 / ESC-24-009 / DEC-291; project-docs/docs/phases/phase-24/qa/review-11.md
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: TRG-24-017 / DEC-291; QA review; review-11
+- Trigger signature: task-13:qa-rework:review-11-r13-command-contradiction
+- Attempt count: 3
+- Allowed files: project-docs/docs/phases/phase-24/tasks/task-13-done.md
+- Consecutive no-progress attempts: 0/2
+- These ledger values were checked against DEC-291 clauses 5 and 6(b) and are exact copies, not paraphrases.
+- DEC-291 clauses 1 and 2 authorize the rendered Markdown command bytes below: the table escape is removed, leaving a plain pipe with no backslash.
+- `rg -n "p23CheckJudgmentQualifiers|PRIVATE_" cmd` - PASS - `cmd/fid/integration/p23_human_fixtures_test.go:144:		p23CheckJudgmentQualifiers(t, pair.Operation, human)` (terminated `exit_code: 0`)
+
+Complete stdout captured from this Developer execution; stderr was empty:
+
+```text
+cmd/fid/integration/p23_human_leaf_pairs_test.go:132:	p23CheckJudgmentQualifiers(t, operation, human)
+cmd/fid/integration/p23_human_leaf_pairs_test.go:152:func p23CheckJudgmentQualifiers(t *testing.T, operation, human string) {
+cmd/fid/integration/p23_human_fixtures_test.go:144:		p23CheckJudgmentQualifiers(t, pair.Operation, human)
+```
+
+- Accounted result: exactly three `p23CheckJudgmentQualifiers` references in two test files: one call and the helper definition in `p23_human_leaf_pairs_test.go`, and one call in `p23_human_fixtures_test.go`. No `PRIVATE_` reference appears in the complete alternation-search output.
+- Mandatory repair note: attempt 1's `exit 1 (no output)` (terminated `exit_code: 1`) remains unchanged above. Its directive copied a Markdown table escape into shell command bytes, producing a literal-pipe search. DEC-291 resolves the spelling authority; this fresh rendered R13 execution returned the final stdout line quoted above and observed `exit_code: 0`. The earlier failed command is not relabelled as R13 evidence.
+- Continuation outcome: COMPLETE for the authorized R13 receipt repair. Review-11 F1's independent Window E re-review remains the Runner's next step under DEC-291 clause 7. This no-VAL report finding adds no new validation assertion; prior product evidence and all seven product-gate receipts remain verbatim history. No product gate was rerun and no other role's reproduction was copied into this receipt.
+- Refs: phase-24/task-13.
+
 ## Exact quality-gate results
 
 The final seven required commands were executed byte-identically, in their declared order, from `/home/mark/projects/fid`, and every nested command was watched to termination. The two absence searches passed with their declared non-zero exits. QA-plan section 5 adds no further command applicable to Task 13.
