@@ -27,12 +27,11 @@ The inventory header now says so.
 
 **Next:**
 
-1. Phase Runner, DEC-291 clause 6: append RUN-RESUME (TRG-24-017 /
-   ESC-24-009, attempt 3, `Resolution authority: DEC-291`), then
-   TASK-RECOVERY task-13 (`qa-rework`, `task-scope`,
-   `task-13:qa-rework:review-11-r13-command-contradiction`, attempt 3,
-   `0/2`). Dispatch one report-only continuation, then REPAIR `RESOLVED`
-   and TASK task-13 COMPLETE (expect `REREVIEW_PENDING`).
+1. Phase Runner, DEC-291 clauses 6 and 10: RUN-RESUME and TASK-RECOVERY
+   task-13 (attempt 3) are appended, and the report-only receipt is
+   committed (`a9aa99f9`, report-lint `OUTCOME COMPLETE`). Append the
+   corrected REPAIR `RESOLVED` with all eleven schema fields, then TASK
+   task-13 COMPLETE (expect `REREVIEW_PENDING`).
 2. Fresh review-12: the window E re-review of review-11, F1 only (clause
    7). A PASS returns `ADVANCEABLE`.
 3. QA Lead final review and Human checklist.

@@ -27,9 +27,9 @@ Planning history: DEC-278..282. Phase 23 closed under DEC-271 (PR #25,
 
 ## Next
 
-1. Phase Runner: DEC-291 clause 6. Append RUN-RESUME and TASK-RECOVERY
-   task-13 (attempt 3), dispatch one report-only continuation for the R13
-   receipt, then REPAIR `RESOLVED` and TASK task-13 COMPLETE.
+1. Phase Runner: DEC-291 clauses 6 and 10. The R13 receipt is committed
+   (`a9aa99f9`); append the corrected REPAIR `RESOLVED` and TASK task-13
+   COMPLETE.
 2. Fresh review-12 re-reviews review-11 F1 and closes window E.
 3. QA Lead final review and Human checklist.
 4. Phase 25 "Parallel and evolving work" and Phase 26 "Qualification and

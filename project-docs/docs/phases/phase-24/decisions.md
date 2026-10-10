@@ -2217,8 +2217,13 @@
      `OUTCOME COMPLETE`, exit 0. Expect
      `APPEND_CONFIRMED state=REPAIR_PENDING`.
      (c) **REPAIR task-13**, same trigger and attempt, `Outcome: RESOLVED`
-     after the report commit. Expect
-     `APPEND_CONFIRMED state=COMPLETION_PENDING`.
+     after the report commit. Schema v2 needs each of these eleven fields
+     exactly once (clause 10): `Trigger signature`, `Attempt count`,
+     `Starting checkpoint`, `Ending checkpoint`, `Control repair base`,
+     `Control repair head`, `Control scope check`,
+     `Phase-branch integration`, `Outcome`, `Resolution evidence` and
+     `Next checkpoint`. The four control and integration fields are `N/A`.
+     Expect `APPEND_CONFIRMED state=COMPLETION_PENDING`.
      (d) **TASK task-13 COMPLETE**, with the new report commit, after
      report-lint `OUTCOME COMPLETE`. Expect
      `APPEND_CONFIRMED state=REREVIEW_PENDING`: review-11 stays open until
@@ -2268,6 +2273,32 @@
      plain `|` in the command, and the verifier accepted it.
      If any append is rejected as written, that is new information.
      Return to the Tech Lead and never substitute field values.
+  10. **Addendum (2026-10-11, after the Runner's return).** (a) and (b)
+      were accepted at 10:49. The Developer committed the receipt
+      `51e1030b` (`docs(task): record rendered R13 receipt for
+      phase-24 task-13`) and the finalized report `a9aa99f9`
+      (`docs(task): finalize completion report for phase-24 task-13`).
+      Only `task-13-done.md` changed since `71e63ce5`. The receipt records
+      three references in two test files, no `PRIVATE_` and exit 0, and
+      it keeps the attempt-1 receipt unchanged. Report-lint returns
+      `OUTCOME COMPLETE`, exit 0 (Tech Lead rerun). The Runner's (c)
+      candidate left out `Next checkpoint` and was rejected, exit 1, with
+      `schema v2 REPAIR must contain each checkpoint field exactly once`
+      and `REPAIR is missing Next checkpoint`. The ledger was unchanged at
+      `VALID state=REPAIR_PENDING`. The fault was in clause 6(c), which
+      did not list the fields; it does now. The corrected (c) names the
+      `71e63ce5` start, the `51e1030b`/`a9aa99f9` end and this rejection
+      in its `Resolution evidence`. Its `Next checkpoint` is (d). On a
+      copy of the live ledger, the corrected (c) returned
+      `COMPLETION_PENDING`, (d) with `a9aa99f9` returned
+      `REREVIEW_PENDING` and a review-12 PASS returned `ADVANCEABLE`, all
+      exit 0. With `Next checkpoint` removed, (c) reproduced both
+      rejection lines. With it twice, or at attempt 2, (c) was rejected.
+      Each rejection left the ledger unchanged. A missing or repeated
+      schema field is the template's corrected-resubmission case: fix it,
+      keep the rejected output in the event's evidence, and resubmit. It
+      is not a reason to stop. The values still come only from this
+      decision and observed evidence.
 - **Artifact/spec sync:** the `input-inventory.md` header (clause 3a).
   No PRD, TRD, design, data model, glossary, public interface, validation
   contract, QA plan, task spec, template, tool or prompt change. The ESC
