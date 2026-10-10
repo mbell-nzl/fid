@@ -3,6 +3,7 @@
 package integration
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -26,6 +27,7 @@ func p23GenerateLeafPairs(t *testing.T, binary, root string) []p23HumanLeafPair 
 func p23GenerateLeafPairsForAdapter(t *testing.T, a *p22FIDRecoveryAdapter) []p23HumanLeafPair {
 	t.Helper()
 	workspace, binary := a.workspace, a.binary
+	source := p24SeedJudgmentSource(t, a)
 	pairs := []p23HumanLeafPair{}
 	addMutation := func(operation, actor, key string, input map[string]any) {
 		t.Helper()
@@ -40,7 +42,7 @@ func p23GenerateLeafPairsForAdapter(t *testing.T, a *p22FIDRecoveryAdapter) []p2
 	}
 
 	addMutation("requirement.record-reference", a.actor, "leaf-requirement", map[string]any{
-		"id": "REQ-leaf", "source": p23DecisionSource(a, true), "status": "active",
+		"id": "REQ-leaf", "source": source, "status": "active",
 	})
 	addMutation("requirement.link", a.actor, "leaf-link", map[string]any{
 		"requirement_id": "REQ-leaf", "issue_id": a.issueID, "relation": "implements",
@@ -48,28 +50,28 @@ func p23GenerateLeafPairsForAdapter(t *testing.T, a *p22FIDRecoveryAdapter) []p2
 	addMutation("concern.record", a.actor, "leaf-concern", map[string]any{
 		"id": "CON-leaf", "subject": map[string]any{"type": "issue", "id": a.issueID},
 		"scope": map[string]any{"paths": []string{}}, "severity": "major",
-		"summary": "PRIVATE_CONCERN_SUMMARY", "reasoning": "PRIVATE_CONCERN_REASONING", "references": []any{p23DecisionSource(a, true)},
+		"summary": "RECORDED_CONCERN_SUMMARY", "reasoning": "RECORDED_CONCERN_REASONING", "references": []any{source},
 	})
 	addMutation("concern.dispose", a.actor, "leaf-dispose", map[string]any{
 		"concern_id": "CON-leaf", "action": "carried-forward", "issue_id": a.issueID,
-		"supersedes_concern_id": nil, "supersedes_finding_id": nil, "reason": "PRIVATE_DISPOSITION_REASON",
+		"supersedes_concern_id": nil, "supersedes_finding_id": nil, "reason": "RECORDED_DISPOSITION_REASON",
 	})
 	addMutation("deviation.record", a.actor, "leaf-deviation", map[string]any{
 		"id": "DEV-leaf", "subject": map[string]any{"type": "issue", "id": a.issueID},
-		"expected": "PRIVATE_EXPECTED", "observed": "PRIVATE_OBSERVED",
+		"expected": "RECORDED_EXPECTED", "observed": "RECORDED_OBSERVED",
 		"authority":   map[string]any{"actor_id": a.actor, "reference": nil},
-		"disposition": "pending-decision", "reasoning": "PRIVATE_DEVIATION_REASONING",
-		"references": []any{p23DecisionSource(a, true)}, "supersedes_deviation_id": nil,
+		"disposition": "pending-decision", "reasoning": "RECORDED_DEVIATION_REASONING",
+		"references": []any{source}, "supersedes_deviation_id": nil,
 	})
 	addMutation("decision.record-reference", a.actor, "leaf-decision", map[string]any{
-		"id": "DREF-leaf", "class": "security", "source": p23DecisionSource(a, true),
+		"id": "DREF-leaf", "class": "security", "source": source,
 		"authority": map[string]any{"actor_id": a.actor, "required_capabilities": []string{"decision.record-reference"}},
 		"outcome":   "approved", "scope": map[string]any{"issue_id": a.issueID},
 	})
 	addMutation("human-outcome.record", a.actor, "leaf-outcome", map[string]any{
 		"id": "OUT-leaf", "class": "security", "subject": map[string]any{"type": "issue", "id": a.issueID},
 		"result": "approved", "scope": map[string]any{"issue_id": a.issueID},
-		"reasoning": "PRIVATE_OUTCOME_REASONING", "references": []any{p23DecisionSource(a, true)},
+		"reasoning": "RECORDED_OUTCOME_REASONING", "references": []any{source},
 	})
 
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "leaf-builder")
@@ -83,7 +85,7 @@ func p23GenerateLeafPairsForAdapter(t *testing.T, a *p22FIDRecoveryAdapter) []p2
 	mutationClaim := p23AcquireClaim(t, a, a.actor, "mutation", "leaf-address-claim")
 	addMutation("finding.address", a.actor, "leaf-address", map[string]any{
 		"finding_id": "FND-leaf", "claim_id": mutationClaim["id"],
-		"expected_claim_version": mutationClaim["version"], "reason": "PRIVATE_FINDING_REASON",
+		"expected_claim_version": mutationClaim["version"], "reason": "RECORDED_FINDING_REASON",
 	})
 	p23ReleaseClaim(t, a, a.actor, mutationClaim, "leaf-address")
 
@@ -126,9 +128,7 @@ func p23LeafPair(t *testing.T, binary, workspace, operation string, leaf []strin
 	if human != expected {
 		t.Fatalf("%s Human:\n%s\nwant from JSON facts:\n%s", operation, human, expected)
 	}
-	if strings.Contains(human, "PRIVATE_") {
-		t.Fatalf("%s leaked project prose: %s", operation, human)
-	}
+	p24CheckProjectContentSentinel(t, operation, human)
 	p23CheckJudgmentQualifiers(t, operation, human)
 	if mutation {
 		replayText, replayErrText, replayErr := closureRunCommand(workspace, binary, jsonArgs...)
@@ -196,7 +196,7 @@ func p23LeafReferenceLines(value any) []string {
 	return lines
 }
 
-func p23LeafFactLines(t *testing.T, kind string, item map[string]any) []string {
+func p23LeafFactLines(t *testing.T, kind string, item map[string]any, list bool) []string {
 	t.Helper()
 	id := item["id"]
 	if kind == "requirement" {
@@ -227,7 +227,7 @@ func p23LeafFactLines(t *testing.T, kind string, item map[string]any) []string {
 			fmt.Sprintf("    Repository: HEAD %.12s; %s", repo["head_oid"], map[bool]string{false: "clean", true: "dirty"}[repo["dirty"].(bool)]),
 			fmt.Sprintf("    Findings by severity: blocker %d; major %d; minor %d; nit %d", counts["blocker"], counts["major"], counts["minor"], counts["nit"]))
 		for _, raw := range findings {
-			lines = append(lines, p23LeafFactLines(t, "finding", raw.(map[string]any))...)
+			lines = append(lines, p23LeafFactLines(t, "finding", raw.(map[string]any), list)...)
 		}
 	case "finding":
 		lines = append(lines, fmt.Sprintf("    Review: %v; Severity: %v; Blocking: %v; Disposition: %v", item["review_id"], item["severity"], item["blocking"], item["state"]))
@@ -245,14 +245,12 @@ func p23LeafFactLines(t *testing.T, kind string, item map[string]any) []string {
 			}
 		}
 		lines = append(lines, p23LeafReferenceLines(item["references"])...)
-		lines = append(lines, "    This Concern is recorded judgment, not deterministic proof.")
 	case "deviation":
 		subject := item["subject"].(map[string]any)
 		authority := item["authority"].(map[string]any)
 		lines = append(lines, fmt.Sprintf("    Subject: %v:%v", subject["type"], subject["id"]),
 			fmt.Sprintf("    Disposition: %v; Authority Actor: %v", item["disposition"], authority["actor_id"]))
 		lines = append(lines, p23LeafReferenceLines(item["references"])...)
-		lines = append(lines, "    This Deviation is recorded judgment, not deterministic proof.")
 	case "decision":
 		authority := item["authority"].(map[string]any)
 		capabilities, _ := authority["required_capabilities"].([]any)
@@ -265,11 +263,10 @@ func p23LeafFactLines(t *testing.T, kind string, item map[string]any) []string {
 	case "human-outcome":
 		provenance := item["provenance"].(map[string]any)
 		lines = append(lines, fmt.Sprintf("    Actor: %v; Class: %v; Result: %v", item["actor_id"], item["class"], item["result"]),
-			fmt.Sprintf("    Activation: %v revision %v; Profile: %v", provenance["activation_id"], provenance["activation_version"], provenance["profile_ref"]),
-			"    This Outcome is authorized Human judgment, not deterministic proof.")
+			fmt.Sprintf("    Activation: %v revision %v; Profile: %v", provenance["activation_id"], provenance["activation_version"], provenance["profile_ref"]))
 		lines = append(lines, p23LeafReferenceLines(item["references"])...)
 	}
-	return lines
+	return append(lines, p24ExpectedRecordedLines(kind, item, list)...)
 }
 
 func p23ExpectedLeafText(t *testing.T, operation string, facts map[string]any) string {
@@ -323,11 +320,19 @@ func p23ExpectedLeafText(t *testing.T, operation string, facts map[string]any) s
 	default:
 		items = p23LeafItems(t, facts, "items")
 	}
+	if len(items) > 0 {
+		switch kind {
+		case "concern", "deviation":
+			lines = append(lines, "  These records express judgment, not deterministic proof.")
+		case "human-outcome":
+			lines = append(lines, "  These Outcomes express authorized Human judgment, not deterministic proof.")
+		}
+	}
 	if len(items) == 0 {
 		lines = append(lines, "  None.")
 	}
 	for _, raw := range items {
-		lines = append(lines, p23LeafFactLines(t, kind, raw.(map[string]any))...)
+		lines = append(lines, p23LeafFactLines(t, kind, raw.(map[string]any), strings.HasSuffix(operation, ".list"))...)
 	}
 	if operation == "requirement.get" {
 		lines = append(lines, "", "Issue links")
@@ -336,7 +341,7 @@ func p23ExpectedLeafText(t *testing.T, operation string, facts map[string]any) s
 			lines = append(lines, "  None.")
 		}
 		for _, raw := range links {
-			lines = append(lines, p23LeafFactLines(t, kind, raw.(map[string]any))...)
+			lines = append(lines, p23LeafFactLines(t, kind, raw.(map[string]any), strings.HasSuffix(operation, ".list"))...)
 		}
 	}
 	if budget, ok := facts["budget"].(map[string]any); ok {
@@ -355,4 +360,152 @@ func p23ExpectedLeafText(t *testing.T, operation string, facts map[string]any) s
 		lines = append(lines, "", "Review budget", line)
 	}
 	return strings.Join(lines, "\n") + "\n"
+}
+
+const p24ProjectContentSentinel = "PROJECT_FILE_CONTENT_SENTINEL_P24_JUDGMENT"
+
+func p24SeedJudgmentSource(t *testing.T, a *p22FIDRecoveryAdapter) map[string]any {
+	t.Helper()
+	const path = "project-docs/p24-judgment-sentinel.json"
+	content := p24ProjectContentSentinel + "\n"
+	p22Write(t, a.workspace, path, content)
+	// The existing fixture ignores *.json. Referenced file bytes are checked
+	// without changing a repository tree already bound to Gate Evidence.
+	return map[string]any{"source_type": "project-file", "display_label": "Judgment source", "path": path, "section": nil, "external_id": nil, "digest": fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(content)))}
+}
+
+func p24CheckProjectContentSentinel(t *testing.T, view, human string) {
+	t.Helper()
+	if strings.Contains(human, p24ProjectContentSentinel) {
+		t.Fatalf("%s leaked referenced project-file content", view)
+	}
+}
+
+// Independent expected text preserves the exact JSON-fact comparison introduced
+// in b71ed1ba (Phase 23 task 14), converged under DEC-272/274.
+func p24ExpectedRecordedLines(kind string, item map[string]any, list bool) []string {
+	fields := []struct {
+		label string
+		value any
+	}{}
+	switch kind {
+	case "concern":
+		fields = append(fields, struct {
+			label string
+			value any
+		}{"Summary", item["summary"]}, struct {
+			label string
+			value any
+		}{"Reasoning", item["reasoning"]})
+		if disposition, ok := item["disposition"].(map[string]any); ok {
+			fields = append(fields, struct {
+				label string
+				value any
+			}{"Disposition reason", disposition["reason"]})
+		}
+	case "finding":
+		fields = append(fields, struct {
+			label string
+			value any
+		}{"Summary", item["summary"]})
+		if dispositions, ok := item["dispositions"].([]any); ok {
+			for _, raw := range dispositions {
+				fields = append(fields, struct {
+					label string
+					value any
+				}{"Disposition reason", raw.(map[string]any)["reason"]})
+			}
+		}
+	case "deviation":
+		fields = append(fields, struct {
+			label string
+			value any
+		}{"Expected", item["expected"]}, struct {
+			label string
+			value any
+		}{"Observed", item["observed"]}, struct {
+			label string
+			value any
+		}{"Reasoning", item["reasoning"]})
+	case "human-outcome":
+		fields = append(fields, struct {
+			label string
+			value any
+		}{"Reasoning", item["reasoning"]})
+	}
+	lines := []string{}
+	for _, field := range fields {
+		text, ok := field.value.(string)
+		if !ok {
+			continue
+		}
+		text = strings.NewReplacer("\x1b", `\u001b`, "\r", `\r`, "\a", `\u0007`, "\x00", `\u0000`).Replace(text)
+		if list {
+			text = strings.Join(strings.Fields(text), " ")
+			scalars := []rune(text)
+			if len(scalars) > 80 {
+				text = string(scalars[:80]) + "…"
+			}
+		}
+		lines = append(lines, "    "+field.label+": "+strings.ReplaceAll(text, "\n", "\n      "))
+	}
+	return lines
+}
+
+func TestP24JudgmentDetailAndResumeSentinel(t *testing.T) {
+	t.Parallel()
+	binary := integrationFIDBinary(t)
+	pairs := p23GenerateLeafPairs(t, binary, t.TempDir())
+	workspace := pairs[0].CWD
+	var issueID string
+	for _, pair := range pairs {
+		if pair.Operation == "concern.record" {
+			issueID = pair.JSONFacts["concern"].(map[string]any)["subject"].(map[string]any)["id"].(string)
+		}
+	}
+	if issueID == "" {
+		t.Fatal("missing fixture Issue")
+	}
+	views := []struct {
+		args     []string
+		recorded []string
+	}{
+		{[]string{"concern", "get", "CON-leaf"}, []string{"RECORDED_CONCERN_SUMMARY", "RECORDED_CONCERN_REASONING", "RECORDED_DISPOSITION_REASON"}},
+		{[]string{"deviation", "get", "DEV-leaf"}, []string{"RECORDED_EXPECTED", "RECORDED_OBSERVED", "RECORDED_DEVIATION_REASONING"}},
+		{[]string{"human-outcome", "get", "OUT-leaf"}, []string{"RECORDED_OUTCOME_REASONING"}},
+		{[]string{"resume", issueID, "--repository", workspace}, []string{"RECORDED_CONCERN_SUMMARY", "RECORDED_CONCERN_REASONING", "RECORDED_DISPOSITION_REASON", "RECORDED_EXPECTED", "RECORDED_OBSERVED", "RECORDED_DEVIATION_REASONING", "RECORDED_OUTCOME_REASONING", "RECORDED_FINDING_REASON"}},
+	}
+	for _, view := range views {
+		stdout, stderr, err := closureRunCommand(workspace, binary, append([]string{"--project", workspace}, view.args...)...)
+		if err != nil || stderr != "" {
+			t.Fatalf("%v: %v %q", view.args, err, stderr)
+		}
+		p24CheckProjectContentSentinel(t, strings.Join(view.args, " "), stdout)
+		for _, marker := range view.recorded {
+			if !strings.Contains(stdout, marker) {
+				t.Fatalf("%v missing %s: %s", view.args, marker, stdout)
+			}
+		}
+		if !strings.Contains(stdout, "Reference: Judgment source; path project-docs/p24-judgment-sentinel.json; digest sha256:") {
+			t.Fatalf("%v missing referenced metadata", view.args)
+		}
+		want := 1
+		if view.args[0] == "resume" {
+			want = 3
+		}
+		if strings.Count(stdout, "not deterministic proof.") != want {
+			t.Fatalf("%v disclaimer count: %s", view.args, stdout)
+		}
+	}
+}
+
+func TestP24SentinelPreservesRepositoryBinding(t *testing.T) {
+	t.Parallel()
+	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, nil)
+	before := p22CorpusRepository(t, a.workspace, a.projectID)
+	p24SeedJudgmentSource(t, a)
+	after := p22CorpusRepository(t, a.workspace, a.projectID)
+	if !reflect.DeepEqual(before, after) {
+		t.Fatalf("seeding referenced content changed the bound repository: before=%v after=%v", before, after)
+	}
 }

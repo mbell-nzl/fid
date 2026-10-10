@@ -20,15 +20,24 @@ Avoid: unqualified “source of truth.”
 
 **Project-owned prose**
 Definition: Requirements, architecture, validation strategy, decisions, and
-other durable Human-authored intent whose canonical form remains in project
-files and Git.
-Use when: content may be referenced by fid but must not be copied into its
-operational model.
-Avoid: “fid document” or “backend prose.”
-Not project-owned prose: the short **recorded reasoning** an Actor types into
-a fid record (a Concern summary, a disposition or addressed reason, Human
-Outcome reasoning). That text is fid's own record and may be shown in Human
-views (Phase 23 DEC-272).
+other durable Human-authored intent whose canonical content remains in
+project files and Git. fid references this content through source metadata
+such as labels, paths and digests, without reproducing referenced file content
+in Human views.
+Use when: distinguishing referenced project-file content from fid's recorded
+operational facts and reasoning.
+Avoid: “fid document” or “backend prose,” or treating recorded reasoning as
+referenced file content.
+
+**Recorded reasoning**
+Definition: Actor-authored text stored in a fid judgment record: Concern
+`summary` and `reasoning`, Concern disposition `reason`, Finding `summary`
+and every FindingDisposition `reason`, Deviation `expected`, `observed` and
+`reasoning`, and Human Outcome `reasoning`. It belongs to the fid record and
+may be shown in Human views; it does not establish deterministic proof.
+Use when: explaining the recorded basis for a judgment, distinct from the
+content of a referenced project file (DEC-272; Phase 24 contract section 10).
+Avoid: calling this text project-owned prose, or treating it as Evidence.
 
 **Routine (external kit term)**
 Definition: An external kit risk-lane classification for work the kit judges

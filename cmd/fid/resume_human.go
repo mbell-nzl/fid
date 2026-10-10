@@ -76,11 +76,12 @@ func resumeJudgmentHumanLines(resume workflow.Resume) []string {
 	}
 	for _, section := range sections {
 		lines = append(lines, section.label)
+		lines = append(lines, judgmentSectionDisclaimer(section.kind, len(section.items))...)
 		if len(section.items) == 0 {
 			lines = append(lines, "  None.")
 		}
 		for _, item := range section.items {
-			lines = append(lines, p23HumanItem(section.kind, item)...)
+			lines = append(lines, p23HumanItem(section.kind, item, true)...)
 		}
 	}
 	lines = append(lines, "Protected Decisions")

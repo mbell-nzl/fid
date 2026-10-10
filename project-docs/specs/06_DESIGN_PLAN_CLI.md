@@ -352,8 +352,53 @@ and exit 0. The operation IDs are `concern.get`, `deviation.get` and
 `deviation-not-found` or `outcome-not-found`, respectively, with exit 3,
 subject ID equal to the requested ID, and details `{id}`. Missing or extra
 arguments and unknown flags return the accepted `invalid-argument` grammar
-failure with exit 2. Human output uses the existing item view; Task 13 adds
-full recorded reasoning and section disclaimers. Capability rows are unchanged.
+failure with exit 2. Human output shows full recorded reasoning with line breaks retained and
+continuation lines indented. Capability rows are unchanged.
+
+Task 13 delivers A6/A7 (DEC-272; Phase 24 contract sections 10 and 11).
+Each non-empty Concerns, Deviations or Human Outcomes section prints one
+judgment disclaimer before its items; an empty section prints `None.` and
+no disclaimer. Every view keeps its `Purpose:` line. The switch is deferred
+to Phase 26.
+
+Human views show Concern summary, reasoning and disposition reason; Finding
+summary and every disposition reason; Deviation expected, observed and
+reasoning; and Human Outcome reasoning. Every `list` and `resume` judgment
+section collapses whitespace to one line per field, retaining 80 Unicode
+scalars uncut and cutting longer text to the first 80 plus `…`. Detail reads,
+mutation outputs and `review get` show the full text, retaining line breaks
+and indenting continuation lines. Controls including ESC, CR, BEL and NUL
+are escaped. Reference labels, paths and digests appear; referenced file
+contents remain in the project.
+
+For example, a list displays collapsed recorded fields:
+
+```text
+Purpose: Inspect a raised concern and its disposition as judgment.
+
+Concerns
+  These records express judgment, not deterministic proof.
+  Concern CON-example
+    Subject: issue:ISS-example
+    Severity: major; Status: open; Raised by: actor-builder
+    Summary: Validation needs a second sample
+    Reasoning: The first sample varied. Repeat before accepting.
+```
+
+The matching `concern get CON-example` retains the recorded line break:
+
+```text
+Purpose: Inspect a raised concern and its disposition as judgment.
+
+Concerns
+  These records express judgment, not deterministic proof.
+  Concern CON-example
+    Subject: issue:ISS-example
+    Severity: major; Status: open; Raised by: actor-builder
+    Summary: Validation needs a second sample
+    Reasoning: The first sample varied.
+      Repeat before accepting.
+```
 
 Review and Outcome inputs are versioned structured records. Protected Human
 authority is established through active provenance, not a free-form `--by

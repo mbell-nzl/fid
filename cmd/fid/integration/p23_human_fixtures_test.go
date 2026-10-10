@@ -140,9 +140,7 @@ func TestP23HumanFixtures(t *testing.T) {
 		if want := p23ExpectedLeafText(t, pair.Operation, facts); human != want {
 			t.Fatalf("post-exit %s Human/JSON fact mismatch: got=%q want=%q", pair.Operation, human, want)
 		}
-		if strings.Contains(human, "PRIVATE_") {
-			t.Fatalf("post-exit %s leaked project prose", pair.Operation)
-		}
+		p24CheckProjectContentSentinel(t, pair.Operation, human)
 		p23CheckJudgmentQualifiers(t, pair.Operation, human)
 	}
 	for _, checkpoint := range manifest.Checkpoints {
@@ -153,6 +151,9 @@ func TestP23HumanFixtures(t *testing.T) {
 			stdout, stderr, err := closureRunCommand(inspection.CWD, manifest.Binary, inspection.Args...)
 			if err != nil || stderr != "" || strings.TrimSpace(stdout) == "" {
 				t.Fatalf("post-exit inspection %s %v: %v stdout=%q stderr=%q", checkpoint.Name, inspection.Args, err, stdout, stderr)
+			}
+			if !containsAction(inspection.Args, "--json") {
+				p24CheckProjectContentSentinel(t, checkpoint.Name, stdout)
 			}
 			if !containsAction(inspection.Args, "--json") && stdout != checkpoint.ExpectedHuman[strings.Join(inspection.Args, "\x00")] {
 				t.Fatalf("post-exit Human text changed for %s %v", checkpoint.Name, inspection.Args)
@@ -221,6 +222,7 @@ func p23GenerateHumanFixtures(t *testing.T, root string) {
 			if err != nil || stderr != "" {
 				t.Fatalf("seed Human text %s: %v %q", checkpoint.Name, err, stderr)
 			}
+			p24CheckProjectContentSentinel(t, checkpoint.Name, stdout)
 			checkpoint.ExpectedHuman[strings.Join(inspection.Args, "\x00")] = stdout
 		}
 	}
@@ -265,6 +267,7 @@ func p23ProtectedDecisionFixture(t *testing.T, binary, root string) p23HumanChec
 	actions := []string{"claim.acquire", "claim.release", "decision.record-reference", "envelope.activate", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start"}
 	decisions := []any{map[string]any{"ordinal": 0, "decision_class": "security", "required_capabilities": []string{"decision.record-reference"}, "affected_actions": []string{"issue.transition-terminal-success"}}}
 	a := p22NewFIDRecoveryAdapterAt(t, binary, workspace, "agent", 3600, []string{}, actions, p22ExecutionFixture{ProtectedDecisions: decisions})
+	source := p24SeedJudgmentSource(t, a)
 	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
 		assertP23DecisionCommandSuccess(t, "fixture transition "+state, p23IssueTransition(t, a, state, revision+1, "fixture-"+state))
 	}
@@ -275,7 +278,7 @@ func p23ProtectedDecisionFixture(t *testing.T, binary, root string) p23HumanChec
 	}
 	linked := p23RunInput(t, a, "evidence", "link", a.actor, "fixture-proof-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	assertP23DecisionCommandSuccess(t, "fixture evidence", linked)
-	reference := p23RecordDecision(t, a, "fixture-security", "security", "approved", []string{"decision.record-reference"}, p23DecisionSource(a, true))
+	reference := p23RecordDecision(t, a, "fixture-security", "security", "approved", []string{"decision.record-reference"}, source)
 	assertP23DecisionSuccess(t, reference, 0)
 	blockedArgs := []string{"--project", workspace, "--json", "issue", "transition", a.issueID, "--to", "qa_pass", "--actor", "agent:" + a.actor, "--expected-revision", "4", "--idempotency-key", "fixture-human-transition"}
 	stdout, stderr, err := closureRunCommand(workspace, binary, blockedArgs...)
