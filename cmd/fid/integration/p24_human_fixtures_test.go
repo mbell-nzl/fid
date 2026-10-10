@@ -67,6 +67,13 @@ func TestP24HumanFixtures(t *testing.T) {
 		t.Fatalf("manifest has %d fixtures, want five denials and four views in four states", len(manifest.Fixtures))
 	}
 	p24AssertHumanManifest(t, manifest)
+	foundStart := false
+	for _, row := range manifest.Fixtures {
+		foundStart = foundStart || row.Name == "take-control-start"
+	}
+	if !foundStart {
+		t.Fatal("manifest missing take-control-start workspace")
+	}
 	t.Logf("Retained Human fixture manifest: %s", filepath.Join(fresh, "manifest.json"))
 }
 
@@ -349,6 +356,8 @@ func p24GenerateHumanFixtures(t *testing.T, root string) {
 	for _, dirty := range []bool{false, true} {
 		p24HumanViewFixtures(t, root, &manifest, dirty)
 	}
+	start := p24NewTakeControlStart(t, manifest.Binary, root)
+	p24AddHumanFixture(t, &manifest, "take-control-start", "issue.transition", "protected-decision-required", start.workspace, start.blockedArgs, 5)
 	data, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
 		t.Fatal(err)
