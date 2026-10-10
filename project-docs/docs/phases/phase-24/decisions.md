@@ -2087,6 +2087,203 @@
   `4b6a3837`; Phase 21 `public-interface.md` Resume row; contract sections
   1 and 10; DEC-175, DEC-278 items 9-10, DEC-286 (route precedent).
 
+### DEC-291: R13 runs as its rendered Markdown command; the Task 13 report-only recovery resumes. Closes ESC-24-009
+
+- **Date:** 2026-10-11. Tech Lead ESC resolution on the Human's instruction
+  "Resolve ESC-24-009". This decision changes no product code, test, gate
+  command, registry, assertion, threshold or budget. It says how a command
+  written in a Markdown table is read, adds that rule to the inventory
+  header, and binds the ledger route from the 2026-10-11 10:43 STOP to a
+  fresh window E re-review.
+- **Context:**
+  - Review-11 (`562583d9`, REPAIR) F1: Task 13's report does not record
+    its owned R13 inventory command. The 10:26 TASK-RECOVERY task-13
+    (`task-13:qa-rework:review-11-r13-inventory-receipt`, attempt 1)
+    told the Developer to run
+    `rg -n "p23CheckJudgmentQualifiers\|PRIVATE_" cmd` and to observe
+    exit 0 with three qualifier references. The Developer ran exactly
+    those bytes. It got no output and exit 1, and recorded a BLOCKED
+    receipt (`f446a3be`, report-lint `OUTCOME COMPLETE`, exit 0).
+    TL-Lite returned BLOCK in TRG-24-017 and raised ESC-24-009. The
+    Runner appended TRIAGE and STOP (10:42, 10:43).
+  - **Cause: a Markdown table escape was copied as command bytes.** The
+    inventory R13 row and review-11's Repair Plan and regeneration rows
+    are GitHub-Flavored Markdown table cells. A `|` inside a cell must be
+    written `\|`, even inside a code span, or it splits the cell. The
+    renderer removes the backslash. The Tech Lead rendered inventory
+    line 94 with `markdown-it` (`gfm-like`). The cell renders as
+    `<code>rg -n "p23CheckJudgmentQualifiers|PRIVATE_" cmd</code>`.
+    The escaped bytes appear outside a table only where someone copied
+    them from a cell: the 10:26 TASK-RECOVERY `Next action` and its
+    dispatch. Outside a table the backslash is literal. Inside a
+    double-quoted shell string it reaches `rg`, which reads `\|` as a
+    literal pipe, so nothing matches.
+  - **Every other record reads the cell this way.** (a) The R13 planning
+    count (15 matches, DEC-278) and the R13 count at each earlier window
+    (reviews 1 and 3-9) match only with alternation. (b) Review-5 wrote
+    R13 outside a table as `rg -n "p23CheckJudgmentQualifiers|PRIVATE_" cmd`.
+    (c) R2, R4, R6, R7 and R11 use the same escape. Tasks 2, 4-8 and 11
+    recorded their owned commands with a plain `|`, and every QA window
+    accepted those receipts. (d) Review-11's F1 prose writes the plain
+    `|`. Its regeneration section says "Markdown-escaped table
+    alternations were executed as regex alternation." Rendered, review-11
+    agrees with itself.
+  - **Tech Lead reproduction** (investigation, not gate evidence), at
+    `f446a3be` from `/home/mark/projects/fid`: the escaped bytes printed
+    nothing and exited 1. The rendered command printed three lines and
+    exited 0: `cmd/fid/integration/p23_human_leaf_pairs_test.go:132` and
+    `:152`, and `cmd/fid/integration/p23_human_fixtures_test.go:144`.
+    That matches both attempts the Runner attached.
+  - **The BLOCK was correct.** The directive fixed the bytes and forbade
+    command changes. Deciding how canonical text is read needs Tech Lead
+    authority, which TL-Lite does not have.
+- **Decision:**
+  1. **ESC-24-009 closed.** R13 is unchanged. Its command is the
+     rendered cell, `rg -n "p23CheckJudgmentQualifiers|PRIVATE_" cmd`. Its
+     required result is unchanged: exit 0, three
+     `p23CheckJudgmentQualifiers` references in two test files, and no
+     `PRIVATE_` reference. This is not a command change: the escaped
+     spelling was never the accepted command.
+  2. **Reading rule** (Phase 24, every role). A command in a Markdown
+     table cell is its rendered text, and `\|` is the cell escape for
+     `|`. A command copied out of a table into a ledger field, a dispatch,
+     a report line or a code block is written with the plain `|`.
+     "Byte-identical" compares rendered commands. The rule covers
+     inventory R2, R4, R6, R7, R11 and R13, and every other command in a
+     Phase 24 table (QA plan, reviews, phase-end evidence).
+  3. **Reconciliation.** (a) The `input-inventory.md` header now states
+     the clause 2 rule and gives R13's rendered command. The R13 row stays
+     as it is; it is correct Markdown. (b) Review-11 is a committed QA
+     record and is not edited. Rendered, its Repair Plan cell gives the
+     same command as F1. Review-12 cites this decision. (c) The 10:26
+     TASK-RECOVERY, TRG-24-017, the STOP and the `f446a3be` report
+     subsection stay as history. The attempt-1 receipt stays in the report
+     as a failed attempt of a command that was not R13. It is never
+     relabelled as R13 evidence.
+  4. **Budget.** The attempt-1 directive named bytes that are not R13 and
+     forbade changing them, so it could not make progress. It does not
+     count as a no-progress attempt (TRG-24-017 agrees). The count is
+     `0/2`.
+  5. **Recovery identity** (STOP resume; DEC-290 clause 7 precedent).
+     `task-13`, `qa-rework`, `task-scope`, `0/2`, trigger
+     `task-13:qa-rework:review-11-r13-command-contradiction`. That is
+     TRG-24-017's trigger; the verifier binds the RUN-RESUME to it and to
+     attempt 3 (TRG-24-017 is attempt 2). The earlier
+     `task-13:qa-rework:review-11-r13-inventory-receipt` attempt-1 chain
+     stays in history and is not renamed.
+  6. **Ledger sequence** (Runner, transactional append, each expected
+     exit 0, each appended before the dispatch it allows).
+     (a) **RUN-RESUME** (schema v2 STOP resume):
+     `Sequence contract: v2`; `Recovery directive schema: v2`;
+     `Prior run/session or STOP: 2026-10-11 10:43 STOP / TRG-24-017 / ESC-24-009`;
+     `Governing TRG: TRG-24-017`; `Governing ESC: ESC-24-009`;
+     `Trigger signature: task-13:qa-rework:review-11-r13-command-contradiction`;
+     `Attempt count: 3`; `Resolution authority: DEC-291`;
+     `Continuing task: task-13`;
+     `Next recovery: task-13 | qa-rework | task-scope | task-13:qa-rework:review-11-r13-command-contradiction | 3`.
+     `Checkpoint` names the post-DEC-291 phase HEAD, the Task 13 report
+     commits `fd6783f9` (close) and `f446a3be` (blocked receipt), and
+     review-11 `562583d9`. `Resolution evidence` cites DEC-291 at the
+     verified HEAD and the unchanged ledger validating
+     `VALID state=STOPPED`. Expect `APPEND_CONFIRMED state=REPAIR_PENDING`.
+     (b) **TASK-RECOVERY task-13**, same tuple:
+     `Source: TRG-24-017 / ESC-24-009 / DEC-291; project-docs/docs/phases/phase-24/qa/review-11.md`;
+     `Category: qa-rework`; `Repair mode: task-scope`;
+     `Repair authority: TRG-24-017 / DEC-291; QA review; review-11`;
+     `Triage disposition: N/A`; `Attempt count: 3`;
+     `Consecutive no-progress attempts: 0/2`. `Control contract`,
+     `Control mismatch`, `Originating report`, `Exact verification`,
+     `Control repair base` and `Temporary repair worktree`: `N/A`.
+     `Allowed files: project-docs/docs/phases/phase-24/tasks/task-13-done.md`.
+     `Forbidden changes`: no change to product code, tests, specs, the
+     inventory, task specs, decisions, the validation contract, QA
+     artifacts (including review-11), the QA plan, workflow controls,
+     prompts, templates, dependencies, `run-ledger.md` or
+     `triage-log.md`. Do not edit, delete or relabel the attempt-1
+     subsection or its exit-1 receipt. Do not rerun any product gate or
+     record a new result for one. Do not copy TL, TL-Lite or QA
+     reproduction into a Developer result. Do not weaken the
+     three-reference, no-`PRIVATE_` result.
+     `Next action`: one same-task Developer continuation edits only
+     `task-13-done.md`. From `/home/mark/projects/fid` it runs the
+     rendered R13 command `rg -n "p23CheckJudgmentQualifiers|PRIVATE_" cmd`
+     (DEC-291 clause 1). In a new subsection it records the command, an
+     output token, the working directory and the observed exit
+     `exit_code: 0`, and it accounts for three
+     `p23CheckJudgmentQualifiers` references in two test files and no
+     `PRIVATE_` reference. It cites DEC-291 for the spelling. It
+     finalizes the report (`Refs: phase-24/task-13`) and commits only the
+     report. Independent two-argument report-lint must then return
+     `OUTCOME COMPLETE`, exit 0. Expect
+     `APPEND_CONFIRMED state=REPAIR_PENDING`.
+     (c) **REPAIR task-13**, same trigger and attempt, `Outcome: RESOLVED`
+     after the report commit. Expect
+     `APPEND_CONFIRMED state=COMPLETION_PENDING`.
+     (d) **TASK task-13 COMPLETE**, with the new report commit, after
+     report-lint `OUTCOME COMPLETE`. Expect
+     `APPEND_CONFIRMED state=REREVIEW_PENDING`: review-11 stays open until
+     its re-review (clause 7). Do not dispatch any other task or review
+     first.
+  7. **Fresh window E re-review.** Spawn a fresh independent QA Reviewer
+     for `qa/review-12.md`, the window E re-review of review-11. Scope:
+     F1 only. It checks the new receipt and the report delta and history.
+     It regenerates R13 with the rendered command, and reruns
+     representative judgment and sentinel evidence, as the review-11
+     Repair Plan says. It keeps every other review-11 result as evidence
+     and does not repeat the full gates. Append `REVIEW review-12` with
+     `Re-review of: review-11` and `Owning task: none` for PASS. A PASS
+     closes F1 and window E, with expected
+     `APPEND_CONFIRMED state=ADVANCEABLE`. The Runner then spawns the QA
+     Lead for the final review and Human checklist. A REPAIR or BLOCK goes
+     through ordinary TL-Lite triage.
+  8. **Unchanged.** Task 13's product state, its seven commands and their
+     receipts, VAL-044..048 and VAL-063, the inventory rows and counts,
+     review-11, the QA plan, all earlier history and the window cadence.
+  9. **Verification.** The Tech Lead dry-ran (a)-(d) and a review-12
+     PASS on a scratch copy of the phase ledger, decisions (with this
+     decision) and triage log, using the unchanged verifier. The live
+     ledger validates `VALID state=STOPPED` (SHA-256 `d08356ae…cecd9f8`).
+     (a) and (b) each returned `APPEND_CONFIRMED state=REPAIR_PENDING`,
+     (c) `APPEND_CONFIRMED state=COMPLETION_PENDING`, (d)
+     `APPEND_CONFIRMED state=REREVIEW_PENDING` and the review-12 PASS
+     `APPEND_CONFIRMED state=ADVANCEABLE`, all exit 0. A final validate
+     returned `VALID state=ADVANCEABLE`. Each negative guard below
+     returned exit 1 with the scratch ledger byte-unchanged:
+
+     | Candidate | Diagnostic |
+     |---|---|
+     | (a) at attempt 2 | `RUN-RESUME Attempt count must increment its governing TRIAGE` |
+     | (a) against the decisions file before DEC-291 | `RUN-RESUME cites an unrecorded or malformed phase decision`; `… invalid or unverifiable Resolution authority` |
+     | (b) whose `Source` and `Repair authority` omit DEC-291 | `TASK-RECOVERY does not retain its RUN-RESUME decision authority`; `… typed RUN-RESUME resolution authority` |
+     | (b) with `Category: in-scope-implementation` | `TASK-RECOVERY does not match the exact schema v2 RUN-RESUME recovery tuple` |
+     | (b) with the attempt-1 trigger `…-r13-inventory-receipt` | `TASK-RECOVERY does not preserve its RUN-RESUME checkpoint`; `… exact schema v2 RUN-RESUME recovery tuple` |
+     | (b) straight after the STOP, with no (a) | `overlapping TASK-RECOVERY precedes required REPAIR` |
+     | TASK task-13 COMPLETE straight after (b) | `task completed before a resolved REPAIR event: task-13` |
+     | review-12 PASS straight after (c) | `QA re-review passed before owning task completed: task-13` |
+     | review-12 PASS with `Re-review of: none` | `QA PASS does not reference required re-review review-11: review-12` |
+
+     Unlike DEC-290, (b) without (a) is rejected here, because the
+     attempt-1 recovery is still open. The (b) `Checkpoint` must name the
+     same post-DEC-291 phase HEAD as (a). The `Next action` carries the
+     plain `|` in the command, and the verifier accepted it.
+     If any append is rejected as written, that is new information.
+     Return to the Tech Lead and never substitute field values.
+- **Artifact/spec sync:** the `input-inventory.md` header (clause 3a).
+  No PRD, TRD, design, data model, glossary, public interface, validation
+  contract, QA plan, task spec, template, tool or prompt change. The ESC
+  register, archive, brief and progress are refreshed. CF-036 records the
+  control friction.
+- **Workflow note for wrap-up:** tables are a poor place for commands
+  that contain `|`. In later inventories, put each registry command in a
+  fenced code block (or one block per section), and let the table cite
+  the registry ID. The workflow's "byte-identical" rule could also say
+  that it compares rendered commands.
+- **Refs:** ESC-24-009; TRG-24-017; `run-ledger.md` 2026-10-11 10:25,
+  10:26, 10:42 and 10:43; `qa/review-11.md` F1, Repair Plan and R13
+  regeneration; `input-inventory.md` R13; `tasks/task-13-done.md` at
+  `f446a3be`; `qa/review-5.md` R13; DEC-278 (R13 correction), DEC-288 and
+  DEC-290 (route precedent).
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.

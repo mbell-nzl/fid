@@ -1,5 +1,38 @@
 # Phase 24 Escalations
 
+## ESC-24-009 - Task 13 R13 required command contradicts its required result
+
+- **Raised:** 2026-10-11 by TL-Lite in TRG-24-017 (BLOCK); ledger STOP
+  2026-10-11 10:43.
+- **Protected category:** protected required-command definition /
+  specification contradiction.
+- **Originating task:** task-13.
+- **Trigger signature:** task-13:qa-rework:review-11-r13-command-contradiction
+  (attempt 2). The attempt-1 chain
+  `task-13:qa-rework:review-11-r13-inventory-receipt` stays in history.
+- **Condition:** Review-11 F1 asked for Task 13's owned R13 receipt. The
+  10:26 TASK-RECOVERY told the Developer to run
+  `rg -n "p23CheckJudgmentQualifiers\|PRIVATE_" cmd` and observe exit 0
+  with three qualifier references. Those bytes printed nothing and exited
+  1 (report `f446a3be`). The plain-`|` spelling printed three references
+  and exited 0. The directive forbade changing the command.
+- **Status:** RESOLVED 2026-10-11 by DEC-291 (decision). There was no
+  contradiction in the accepted command. The R13 row is a Markdown table
+  cell, where `\|` is the escape for `|`; rendered, R13 is
+  `rg -n "p23CheckJudgmentQualifiers|PRIVATE_" cmd`. The escaped bytes
+  were copied out of the cell into the ledger directive. Every earlier
+  R13 count, and the owned receipts for R2, R6 and R11, used the rendered
+  form. The inventory header now states the rule. Review-11 is not
+  edited. The Runner resumes Task 13 at attempt 3 through the clause 6
+  route, then a fresh review-12 re-reviews F1. The Tech Lead dry run
+  confirmed the route through to `ADVANCEABLE`, plus nine negative
+  guards. No further Tech Lead or Human input is needed unless an append
+  is rejected as written or the receipt does not show the required
+  result.
+- **Links:** [DEC-291](decisions.md); [TRG-24-017](triage-log.md);
+  [run ledger](run-ledger.md); [Task 13 report](tasks/task-13-done.md);
+  [review-11](qa/review-11.md); [inventory](input-inventory.md).
+
 ## ESC-24-008 - Task 14 terminal-success state has no permitted Human provenance
 
 - **Raised:** 2026-10-11 by TL-Lite in TRG-24-016 (BLOCK); ledger STOP

@@ -12,6 +12,12 @@
 > `eb34889`). DEC-280 labelled the section 1 lists and added R17-R19 for
 > task 9a (measured at `87f1071`). DEC-281 added R20 for task 10 (measured
 > at `62dddab`).
+>
+> **Reading table commands (DEC-291).** A command in a table cell is its
+> rendered text. `\|` is the Markdown cell escape for `|`, so R2, R4, R6,
+> R7, R11 and R13 use regex alternation. When you copy a command out of a
+> table into a ledger, dispatch, report or code block, write the plain `|`.
+> For example, R13 runs `rg -n "p23CheckJudgmentQualifiers|PRIVATE_" cmd`.
 
 ## 1. `--input` Leaves (39)
 

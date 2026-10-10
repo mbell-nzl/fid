@@ -7,6 +7,12 @@ None.
 ## Recently resolved
 
 Phase 24, archived in [Phase 24 escalations](../phases/phase-24/tl-escalations.md):
+- ESC-24-009: Task 13's R13 receipt directive carried the Markdown
+  table escape `\|` as command bytes, so `rg` found nothing (exit 1).
+  Resolved 2026-10-11 by DEC-291: a table command is its rendered text,
+  so R13 is `rg -n "p23CheckJudgmentQualifiers|PRIVATE_" cmd`, unchanged.
+  The Runner resumes the report-only Task 13 recovery (attempt 3), then
+  review-12 re-reviews F1.
 - ESC-24-008: Task 14's journey had no permitted source for the
   terminal-success `--to` state (`qa_pass`) or the Issue revision.
   Resolved 2026-10-11 by DEC-290: `resume` shows `Revision:` and
