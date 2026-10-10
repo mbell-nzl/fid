@@ -12,12 +12,13 @@ import (
 
 func init() {
 	rootFlagCapabilities["deviation record"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["deviation get"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["deviation list"] = rootFlagCapability{Project: true, JSON: true}
 }
 
 func newDeviationCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "deviation", Short: "Record and list append-only Deviations."}
-	cmd.AddCommand(newDeviationRecordCommand(), newDeviationListCommand())
+	cmd.AddCommand(newDeviationRecordCommand(), newDeviationListCommand(), newDeviationGetCommand())
 	return cmd
 }
 
@@ -115,4 +116,27 @@ func renderDeviationError(cmd *cobra.Command, operation string, cause error) err
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeResultLimitExceeded, "Deviation result limit exceeded", nil, map[string]any{"collection": "items", "limit": resultLimit.Limit, "observed": resultLimit.Observed})
 	}
 	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Deviation request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+}
+
+func newDeviationGetCommand() *cobra.Command {
+	cmd := &cobra.Command{Use: "get <deviation-id>", Short: "Read one Deviation.", Args: canonicalExactArgs("deviation.get", 1), RunE: func(cmd *cobra.Command, args []string) error {
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderDeviationError(cmd, "deviation.get", err)
+		}
+		value, err := review.GetDeviation(workspace, issueMigrationsDir(), args[0])
+		if err != nil {
+			return renderDeviationError(cmd, "deviation.get", err)
+		}
+		jsonMode, err := readJSONMode(cmd)
+		if err != nil {
+			return err
+		}
+		if jsonMode {
+			return cli.WriteSuccess(cmd.OutOrStdout(), "deviation.get", map[string]any{"deviation": value}, nil)
+		}
+		return writeP23Human(cmd, "deviation.get", value)
+	}}
+	cmd.SetFlagErrorFunc(canonicalFlagError("deviation.get"))
+	return cmd
 }

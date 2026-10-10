@@ -62,3 +62,16 @@ func ListConcerns(options ConcernListOptions) ([]map[string]any, error) {
 	}
 	return items, nil
 }
+
+// GetConcern returns the same record as the corresponding list item.
+func GetConcern(workspaceRoot, migrationsDir, id string) (map[string]any, error) {
+	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
+		return nil, err
+	}
+	conn, err := fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	if err != nil {
+		return nil, fmt.Errorf("open concern projection: %w", err)
+	}
+	defer func() { _ = conn.Close() }()
+	return loadConcern(conn, id)
+}

@@ -216,6 +216,9 @@ func loadHumanOutcome(conn *sql.DB, id string) (map[string]any, error) {
 	var actorID, activationID, profileRef, class, subjectType, subjectID, result, scopeIssueID, reasoning, refsJSON, createdAt, eventID string
 	var activationVersion int
 	err := conn.QueryRow(`SELECT actor_id,activation_id,activation_version,profile_ref,class,subject_type,subject_id,result,scope_issue_id,reasoning,references_json,created_at,created_event_id FROM human_outcomes WHERE id=?`, id).Scan(&actorID, &activationID, &activationVersion, &profileRef, &class, &subjectType, &subjectID, &result, &scopeIssueID, &reasoning, &refsJSON, &createdAt, &eventID)
+	if err == sql.ErrNoRows {
+		return nil, &HumanOutcomeNotFoundError{ID: id}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -240,4 +243,23 @@ func replayHumanOutcome(outcome journal.IdempotencyOutcome, key string, result *
 	decoded.IdempotencyKey, decoded.Replayed, decoded.EventID = key, outcome.Replayed, outcome.EventID
 	*result = decoded
 	return nil
+}
+
+// GetHumanOutcome returns the same record as the corresponding list item.
+func GetHumanOutcome(workspaceRoot, migrationsDir, id string) (map[string]any, error) {
+	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
+		return nil, err
+	}
+	conn, err := fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	if err != nil {
+		return nil, fmt.Errorf("open human outcome projection: %w", err)
+	}
+	defer func() { _ = conn.Close() }()
+	return loadHumanOutcome(conn, id)
+}
+
+type HumanOutcomeNotFoundError struct{ ID string }
+
+func (err *HumanOutcomeNotFoundError) Error() string {
+	return fmt.Sprintf("Human Outcome %q was not found", err.ID)
 }

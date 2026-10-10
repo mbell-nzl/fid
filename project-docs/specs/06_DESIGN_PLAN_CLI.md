@@ -336,11 +336,24 @@ worktree ID and binding digest from that observation and scope.
 ```text
 fid review record|get|list
 fid finding address|list
-fid concern record|dispose|list
-fid deviation record|list
+fid concern record|dispose|get|list
+fid deviation record|get|list
 fid decision record-reference|list
-fid human-outcome record|list
+fid human-outcome record|get|list
 ```
+
+Phase 24 Task 12 adds `fid concern get <concern-id>`,
+`fid deviation get <deviation-id>` and `fid human-outcome get <outcome-id>`
+(DEC-274). Each takes exactly one ID and only global flags. JSON returns
+`{concern:Concern}`, `{deviation:Deviation}` or `{outcome:HumanOutcome}`
+inside the success envelope, equal to that ID's list item, with `event:null`
+and exit 0. The operation IDs are `concern.get`, `deviation.get` and
+`human-outcome.get`. Unknown IDs return `concern-not-found`,
+`deviation-not-found` or `outcome-not-found`, respectively, with exit 3,
+subject ID equal to the requested ID, and details `{id}`. Missing or extra
+arguments and unknown flags return the accepted `invalid-argument` grammar
+failure with exit 2. Human output uses the existing item view; Task 13 adds
+full recorded reasoning and section disclaimers. Capability rows are unchanged.
 
 Review and Outcome inputs are versioned structured records. Protected Human
 authority is established through active provenance, not a free-form `--by

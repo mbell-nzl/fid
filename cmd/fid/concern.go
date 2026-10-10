@@ -19,12 +19,13 @@ func newConcernCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(newConcernDisposeCommand())
-	cmd.AddCommand(newConcernListCommand())
+	cmd.AddCommand(newConcernListCommand(), newConcernGetCommand())
 	cmd.AddCommand(newConcernRecordCommand())
 	return cmd
 }
 
 func init() {
+	rootFlagCapabilities["concern get"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["concern list"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["concern record"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["concern dispose"] = rootFlagCapability{Project: true, JSON: true}
@@ -178,5 +179,28 @@ func newConcernListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&severity, "severity", "", "Filter by severity")
 	cmd.Flags().IntVar(&limit, "limit", 100, "Maximum Concerns to return")
 	cmd.SetFlagErrorFunc(canonicalFlagError("concern.list"))
+	return cmd
+}
+
+func newConcernGetCommand() *cobra.Command {
+	cmd := &cobra.Command{Use: "get <concern-id>", Short: "Read one Concern.", Args: canonicalExactArgs("concern.get", 1), RunE: func(cmd *cobra.Command, args []string) error {
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderConcernError(cmd, "concern.get", err)
+		}
+		value, err := review.GetConcern(workspace, issueMigrationsDir(), args[0])
+		if err != nil {
+			return renderConcernError(cmd, "concern.get", err)
+		}
+		jsonMode, err := readJSONMode(cmd)
+		if err != nil {
+			return err
+		}
+		if jsonMode {
+			return cli.WriteSuccess(cmd.OutOrStdout(), "concern.get", map[string]any{"concern": value}, nil)
+		}
+		return writeP23Human(cmd, "concern.get", value)
+	}}
+	cmd.SetFlagErrorFunc(canonicalFlagError("concern.get"))
 	return cmd
 }

@@ -16,6 +16,7 @@ import (
 
 func init() {
 	rootFlagCapabilities["human-outcome record"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["human-outcome get"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["human-outcome list"] = rootFlagCapability{Project: true, JSON: true}
 }
 
@@ -43,7 +44,7 @@ func humanOutcomeRequiredFailure(blocked *workflow.StopBlockedError) (cli.Failur
 
 func newHumanOutcomeCommand() *cobra.Command {
 	command := &cobra.Command{Use: "human-outcome", Short: "Record and list Human Outcomes."}
-	command.AddCommand(newHumanOutcomeRecordCommand(), newHumanOutcomeListCommand())
+	command.AddCommand(newHumanOutcomeRecordCommand(), newHumanOutcomeListCommand(), newHumanOutcomeGetCommand())
 	return command
 }
 
@@ -126,6 +127,10 @@ func renderHumanOutcomeError(cmd *cobra.Command, operation string, cause error) 
 	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, operation, cause); ok {
 		return rendered
 	}
+	var missing *review.HumanOutcomeNotFoundError
+	if errors.As(cause, &missing) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeOutcomeNotFound, "Human Outcome was not found", &cli.Subject{Type: cli.SubjectHumanOutcome, ID: missing.ID}, map[string]any{"id": missing.ID})
+	}
 	var authorityMissing *review.AuthorityMissingError
 	if errors.As(cause, &authorityMissing) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityMissing, "active Kit Activation authority is missing", nil, map[string]any{"operation": authorityMissing.Operation, "actor_id": authorityMissing.ActorID, "required_actions": []string{authorityMissing.Operation}, "required_capabilities": []string{authorityMissing.Operation}})
@@ -143,4 +148,27 @@ func renderHumanOutcomeError(cmd *cobra.Command, operation string, cause error) 
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeResultLimitExceeded, "Human Outcome result limit exceeded", nil, map[string]any{"collection": "items", "limit": resultLimit.Limit, "observed": resultLimit.Observed})
 	}
 	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Human Outcome request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+}
+
+func newHumanOutcomeGetCommand() *cobra.Command {
+	cmd := &cobra.Command{Use: "get <outcome-id>", Short: "Read one Human Outcome.", Args: canonicalExactArgs("human-outcome.get", 1), RunE: func(cmd *cobra.Command, args []string) error {
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderHumanOutcomeError(cmd, "human-outcome.get", err)
+		}
+		value, err := review.GetHumanOutcome(workspace, issueMigrationsDir(), args[0])
+		if err != nil {
+			return renderHumanOutcomeError(cmd, "human-outcome.get", err)
+		}
+		jsonMode, err := readJSONMode(cmd)
+		if err != nil {
+			return err
+		}
+		if jsonMode {
+			return cli.WriteSuccess(cmd.OutOrStdout(), "human-outcome.get", map[string]any{"outcome": value}, nil)
+		}
+		return writeP23Human(cmd, "human-outcome.get", value)
+	}}
+	cmd.SetFlagErrorFunc(canonicalFlagError("human-outcome.get"))
+	return cmd
 }
