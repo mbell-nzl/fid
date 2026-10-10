@@ -1,4 +1,4 @@
-# Phase Brief - Phase 24 (executing; window D2 closing under DEC-288)
+# Phase Brief - Phase 24 (executing; Task 13 recovery under DEC-289)
 
 ## Phase Goal
 
@@ -11,28 +11,28 @@ expectations a check uses. Request digests cover the input as written.
 
 ## Status
 
-**Executing on branch `phase-24`.** Tasks 1-11 are complete (Task 10 at
-`a6b6203`, Task 11 at `93a1f792`). QA windows A (review-2), B (review-4),
-C (review-6, late under DEC-284) and D1 (review-8) passed. Window D2
-review-9 (`b9083f3b`) was BLOCK. Its deterministic checks passed; its one
-finding, B1-H, was the missing Human walkthrough. The ledger is `STOPPED`
-at the 2026-10-09 16:28 STOP (TRG-24-015, ESC-24-007).
+**Executing on branch `phase-24`.** Tasks 1-12 are complete (Task 11 at
+`93a1f792`, Task 12 at `fc4bdff7`). QA windows A, B, C (late, DEC-284), D1
+and D2 have passed; review-10 (`3f920f31`) closed D2 after DEC-288. The
+ledger is `ADVANCEABLE`.
 
-**DEC-288 (2026-10-10)** closes ESC-24-007. The Human recorded the interim
-walkthrough at `a23b9f33`: five VAL-054 refusals clear, four VAL-055 views
-accepted, none rejected. The verifier only resumes a STOP into a task
-recovery. So the Runner resumes through an evidence-only Task 11 recovery
-(`task-11:qa-window-d2:human-walkthrough:val-054-055-pending`, attempt 2,
-`qa-rework`, `task-scope`, `0/2`, no Developer dispatch).
+Task 13 is checkpointed at `595738e7` / `50e75fc8` (`RECOVERY_REQUIRED`).
+Its full tagged gate fails on one retained Phase 23 assertion,
+`p23_concern_list_human_test.go:29` (`59d2653d`, phase-23/task-14), which
+still forbids the summary that A7 now shows. **DEC-289 (2026-10-11)** gives
+Task 13 that file for that one convergence edit. It also says the empty
+section marker is the retained `None.` line, and binds the recovery tuple.
+The Runner's earlier append was rejected because it cited Phase 21's
+DEC-162/165/166.
 
 **Next:**
 
-1. Phase Runner, DEC-288 clause 3: append RUN-RESUME, TASK-RECOVERY,
-   REPAIR `RESOLVED` and TASK task-11 COMPLETE, with the expected
-   receipts.
-2. Clause 4: a fresh QA Reviewer writes `qa/review-10.md`, the re-review
-   of review-9 for B1-H. On PASS, window D2 closes and Task 12 is
-   dispatched.
+1. Phase Runner, DEC-289 clause 4: append TASK-RECOVERY task-13
+   (`gate-repair`, `task-scope`, `task spec; DEC-289`,
+   `task-13:gate-repair:retained-concern-list-hidden-summary-predicate`,
+   attempt 1, `0/2`), dispatch one same-task continuation, then REPAIR
+   `RESOLVED` and TASK task-13 COMPLETE.
+2. Task 14, then QA window E, the final review and the Human checklist.
 
 ## Operating Mode
 
@@ -57,7 +57,8 @@ Human checklist's "take control" scenario is the Human run.
   DEC-284 (Task 9 correcting TRIAGE; late window C), DEC-285 (`activity.list`
   failure mapping; Task 10 caller scope), DEC-286 (root-flag refusal
   mapping), DEC-287 (plain-copy `run.inspect` keeps its refusal), DEC-288
-  (window D2 Human walkthrough; evidence-only resume). See
+  (window D2 Human walkthrough; evidence-only resume), DEC-289 (Task 13
+  retained-predicate scope; `None.` marker). See
   `../phases/phase-24/decisions.md`.
 
 ## Task Index
@@ -75,9 +76,9 @@ Human checklist's "take control" scenario is the Human run.
 | 9 | Activation descriptors; whole-tree input and help conformance | Complete (window D1 PASS) | 3-8 |
 | 9a | Grammar failures and unknown commands across the live tree (DEC-280) | Complete (window D1 PASS) | 9 |
 | 10 | Human failure lines in every family; generic-fallback messages (DEC-281) | Complete (`a6b6203`) | 9a |
-| 11 | Readable Stop, Attention and repository lines; Human fixture generator | Complete (`93a1f792`); D2 re-review pending (DEC-288) | 10 |
-| 12 | Concern, Deviation and Human Outcome `get` leaves (DEC-274) | Pending | 4, 10 |
-| 13 | Judgment disclaimers once per section; recorded reasoning shown | Pending | 11, 12 |
+| 11 | Readable Stop, Attention and repository lines; Human fixture generator | Complete (`93a1f792`; window D2 PASS, review-10) | 10 |
+| 12 | Concern, Deviation and Human Outcome `get` leaves (DEC-274) | Complete (`fc4bdff7`) | 4, 10 |
+| 13 | Judgment disclaimers once per section; recorded reasoning shown | Recovery (DEC-289) | 11, 12 |
 | 14 | Human-takes-control journey and phase conformance | Pending | 1-13, 9a |
 
 ## Validation Contract
@@ -107,7 +108,7 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 | Artifact | Path | Status |
 |---|---|---|
 | QA plan | `../phases/phase-24/qa/qa-plan.md` | READY (`7e41e6b`, section 12.7); RC-01/02 closed |
-| Mid-phase reviews | A after 3 (review-2 PASS); B after 6 (review-4 PASS); C late, after 9 (review-6 PASS, DEC-284); D1 after 9a (review-8 PASS); D2 after 11 (review-9 BLOCK; review-10 pending, DEC-288); E after 14 | Six windows per QA plan section 8 (DEC-280/282). Human walkthrough after task 11 |
+| Mid-phase reviews | A after 3 (review-2 PASS); B after 6 (review-4 PASS); C late, after 9 (review-6 PASS, DEC-284); D1 after 9a (review-8 PASS); D2 after 11 (review-9 BLOCK; review-10 PASS, DEC-288); E after 14 | Six windows per QA plan section 8 (DEC-280/282). Human walkthrough after task 11 |
 | Human fixtures | `TestP24HumanFixtures` (task 11, extended by task 14) | D2 interim walkthrough recorded (`a23b9f33`); phase-end pending |
 | Final review / Human checklist | `../phases/phase-24/qa/` | Pending |
 
@@ -115,7 +116,8 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 
 - No compatibility with pre-Phase-24 journals (ADR-0011, DEC-270).
 - Retained-test convergence needs introducing-commit provenance
-  (DEC-162/165/166). A gap in a closed registry needs the missing authority,
+  (DEC-162/165/166, Phase 21: method only; ledger authority fields cite
+  Phase 24 decisions, DEC-289). A gap in a closed registry needs the missing authority,
   not a weakened assertion (DEC-195).
 - Task 8 makes freshness real. A displaced journey row is convergence of the
   accepted change, never a reason to weaken freshness.
@@ -140,4 +142,4 @@ DEC-282 refines 029/036/064/065/067; `Ready` is planning status, not QA PASS.
 
 ## Next Planning Checkpoint
 
-Review-10 closes window D2 (DEC-288). Then tasks 12-14 and window E. Phase 25 "Parallel and evolving work" follows Phase 24.
+Task 13 closes under DEC-289. Then Task 14, window E and the phase-end review. Phase 25 "Parallel and evolving work" follows Phase 24.

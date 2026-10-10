@@ -40,8 +40,8 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
   `review get`): full text, with line breaks kept and indented.
 - **Disclaimer:** exactly one per section that lists Human Outcomes,
   Concerns or Deviations, before the items. None on items. An empty section
-  prints `none` and no disclaimer. The `Purpose:` lines stay. The on/off
-  switch is Phase 26.
+  prints the retained `None.` line and no disclaimer (DEC-289). The
+  `Purpose:` lines stay. The on/off switch is Phase 26.
   - One shared section-disclaimer function prints it. The VAL-044 view set
     is its call sites plus every leaf that prints these records, so a view
     that skips the function is still in the set.
@@ -75,6 +75,12 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 - `cmd/fid/integration/testdata/p23_conformance/operations.json` and, if its
   reader needs it, `cmd/fid/integration/p23_conformance_test.go` (value
   rename, with provenance; the tagged gate executes both)
+- `cmd/fid/integration/p23_concern_list_human_test.go` (DEC-289 scope
+  amendment; the tagged gate executes it). Only one edit is allowed:
+  replace the line 29 `strings.Contains(human, "private concern prose")`
+  rejection with positive checks for `Summary: private concern prose` and
+  `Reasoning: private reasoning`. Every other assertion and value stays
+  byte-unchanged. Provenance: `59d2653d`, phase-23/task-14.
 - `project-docs/specs/GLOSSARY.md`
 
 ### Files To Read For Context
@@ -93,8 +99,8 @@ Assertions live in `project-docs/docs/phases/phase-24/qa/validation-contract.md`
 ## Acceptance Criteria
 
 - [ ] Every judgment view in the enumerated set, with zero, one and three
-  items: one disclaimer when items exist, none on items, and `none` when
-  empty. (VAL-044)
+  items: one disclaimer when items exist, none on items, and the retained
+  `None.` line when empty (DEC-289). (VAL-044)
 - [ ] Every closed field with 80-scalar, 81-scalar and multi-line text
   renders cut in lists and in full in detail views. (VAL-045)
 - [ ] Reasoning containing ESC, CR, BEL and NUL is escaped in every view
@@ -160,7 +166,9 @@ List any conditional command required by this task and why:
 - Report path: `project-docs/docs/phases/phase-24/tasks/task-13-done.md`.
   Commit with `Refs: phase-24/task-13`.
 - Red first: record the first failing test before changing product code.
-- Retained-test convergence follows DEC-162/165/166. Record each displaced
+- Retained-test convergence follows the method in DEC-162/165/166 (Phase 21
+  standing decisions; method only, never ledger authority; DEC-289 is this
+  task's convergence authority). Record each displaced
   assertion with its introducing commit, phase and task. Never infer
   ownership from a filename or task label. Never delete or weaken an
   assertion to pass a gate.

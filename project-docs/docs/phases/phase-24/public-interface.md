@@ -361,8 +361,9 @@ next: <resolving action>                 # only for the codes in the next-table 
   The exact rows are in DEC-287 clause 2.
 - **A6.** Keep each view's `Purpose:` line. Each section that lists Human
   Outcomes, Concerns or Deviations prints its judgment disclaimer exactly
-  once, before the items. Items carry none. An empty section prints `none`
-  and no disclaimer. The on/off switch is Phase 26.
+  once, before the items. Items carry none. An empty section prints the
+  retained `None.` line and no disclaimer (DEC-289). The on/off switch is
+  Phase 26.
 - **A7 recorded reasoning.** Human views show recorded reasoning. The closed
   list:
   - Concern `summary` and `reasoning`;

@@ -1688,6 +1688,145 @@
   `qa/qa-plan.md` sections 8 and 9; VAL-054, VAL-055; `run-ledger.md`
   2026-10-09 16:08, 16:19, 16:28; DEC-283, DEC-287.
 
+### DEC-289: Task 13 owns convergence of the retained Concern-list hidden-summary predicate; scope amended; empty marker is `None.`
+
+- **Date:** 2026-10-11. Tech Lead resolution of a Phase Runner return. No
+  TRG or ESC was allocated: the Runner returned before any triage, and the
+  ledger was never stopped. This decision changes no product behaviour,
+  gate command, threshold or validation-assertion semantics.
+- **Context:**
+  - Task 13 checkpointed implementation `595738e7` and report `50e75fc8`
+    (`RECOVERY_REQUIRED`, `gate-repair`; report-lint `OUTCOME
+    RECOVERY_REQUIRED`, exit 0). Required command 5, the full tagged
+    gate, failed. The in-scope cause (the sentinel helper made earlier
+    Evidence stale) was repaired in scope, and a focused selection then
+    passed. One cause remains:
+    `cmd/fid/integration/p23_concern_list_human_test.go:29`, in
+    `TestP23ConcernListHumanProjection`, rejects Human output containing
+    the recorded summary `private concern prose`. Task 13's accepted A7
+    change (contract section 10) requires that summary to be shown. The
+    file is outside Task 13's named scope.
+  - **Provenance (Tech Lead verified, `git log` and `git blame`).** Lines
+    20-31, including the predicate, were introduced by `59d2653d`
+    (`feat(review): checkpoint Phase 23 Human projections`,
+    `Refs: phase-23/task-14`). Lines 32+ came from `cdcc4f01` (same
+    task). No other test under `cmd/fid` matches the hidden-prose values.
+    The file has `//go:build integration` and is in
+    `./cmd/fid/integration`, so Task 13 required command 5 compiles and
+    runs it.
+  - **Runner rejection.** The Runner's `TASK-RECOVERY task-13` cited
+    DEC-162/165/166 as authority. Those are standing Phase 21 decisions
+    (`decisions_active.md`), not Phase 24 decisions, so the verifier
+    correctly returned
+    `INVALID TASK-RECOVERY cites an unrecorded or malformed phase decision`.
+    The live ledger is unchanged, with `VALID state=ADVANCEABLE` and
+    SHA-256 `82b416d1…69d07`.
+  - **Planning miss.** Task 13's scope named the other Phase 23 Human
+    tests but missed this one. That broke DEC-167/173 (scope must cover
+    every path the gates walk). It is a Tech Lead planning defect, not a
+    Developer error.
+  - **Empty-section marker.** Contract section 10 A6, VAL-044 and the
+    Task 13 acceptance criterion say an empty section prints `none`. The
+    retained Phase 23 renderer (`59d2653d`, `p23_human.go`) has always
+    printed `  None.` with no disclaimer. Task 13 kept that marker, and
+    `06_DESIGN_PLAN_CLI.md` now documents it. A6 never meant to change the
+    marker: it removes the disclaimer from empty sections. A literal
+    reading would be a false VAL-044 failure at window E.
+- **Decision:**
+  1. **Ownership.** Subject-preserving convergence of the line 29
+     predicate belongs to Task 13. Task 13's accepted A7 change displaced
+     it, and the required tagged gate executes it. No gate, command or
+     other task changes.
+  2. **Scope amendment.** Task 13 gains
+     `cmd/fid/integration/p23_concern_list_human_test.go`. The only
+     permitted edit is to replace the
+     `strings.Contains(human, "private concern prose")` rejection on line
+     29 with positive checks for both of these list-view lines in `human`:
+     `Summary: private concern prose` and `Reasoning: private reasoning`.
+     Both values are under 80 scalars, so they appear uncut. Keep every
+     other assertion and value in the file byte-unchanged. That includes
+     the `err`/`stderr`, `Purpose: Inspect a raised concern` and
+     `CON-human-list` checks; the JSON list; both recorded Concerns; the
+     four filter subtests; and every later assertion. Record the
+     provenance row (`59d2653d`, phase-23/task-14) in the report.
+  3. **Empty-marker clarification.** In contract section 10 A6, VAL-044
+     and the Task 13 acceptance criterion, "prints `none`" means the
+     retained `None.` line. The text now says `None.`. The observable and
+     its fail condition are unchanged, so no code change follows.
+  4. **Ledger route** (from `ADVANCEABLE`; each append transactional,
+     expected exit 0):
+     (a) **TASK-RECOVERY task-13** with these exact scalars:
+     `Source: project-docs/docs/phases/phase-24/tasks/task-13-done.md typed RECOVERY_REQUIRED and report-lint OUTCOME RECOVERY_REQUIRED; DEC-289`;
+     `Category: gate-repair`; `Repair mode: task-scope`;
+     `Repair authority: task spec; DEC-289`; `Triage disposition: N/A`;
+     `Trigger signature: task-13:gate-repair:retained-concern-list-hidden-summary-predicate`;
+     `Attempt count: 1`; `Consecutive no-progress attempts: 0/2`.
+     `Control contract`, `Control mismatch`, `Originating report`,
+     `Exact verification`, `Control repair base` and
+     `Temporary repair worktree`: `N/A`.
+     `Allowed files: cmd/fid/p23_human.go,cmd/fid/resume_human.go,cmd/fid/p23_human_test.go,cmd/fid/integration/p23_human_leaf_pairs_test.go,cmd/fid/integration/p23_human_fixtures_test.go,cmd/fid/integration/testdata/p23_conformance/operations.json,cmd/fid/integration/p23_conformance_test.go,cmd/fid/integration/p23_concern_list_human_test.go,project-docs/specs/GLOSSARY.md,project-docs/specs/06_DESIGN_PLAN_CLI.md,project-docs/docs/phases/phase-24/tasks/task-13-done.md`.
+     `Forbidden changes`: no change to accepted A6/A7 rendering, the
+     closed field list, the 80-scalar cut, escaping, the sentinel guard,
+     JSON output, Task 13 gate commands, validation assertions, coverage
+     policy, thresholds or budgets. In
+     `p23_concern_list_human_test.go`, no edit other than clause 2. Do not
+     delete, weaken, narrow, re-point or rename any other retained
+     assertion. Do not edit Task 11/12/14 surfaces, task specs,
+     decisions, QA artifacts, workflow controls, prompts, templates,
+     dependencies, `run-ledger.md` or `triage-log.md`. Preserve the
+     attempt-1 failures and provenance table in the report.
+     `Checkpoint` names implementation `595738e7`, report `50e75fc8` and
+     the DEC-289 commit. `Next action`: one same-task Developer
+     continuation applies clause 2. It then runs all seven Task 13
+     commands byte-identically, in order, with observed termination; the
+     two `rg` commands must exit 1. It finalizes `task-13-done.md`
+     (`Refs: phase-24/task-13`), and independent report-lint must return
+     `OUTCOME COMPLETE`, exit 0. Expect
+     `APPEND_CONFIRMED state=REPAIR_PENDING`.
+     (b) **REPAIR task-13**, same trigger and attempt, `Outcome: RESOLVED`
+     after the continuation's commits. Expect
+     `APPEND_CONFIRMED state=COMPLETION_PENDING`.
+     (c) **TASK task-13 COMPLETE** after report-lint `OUTCOME COMPLETE`.
+     Expect `APPEND_CONFIRMED state=ADVANCEABLE`. Then dispatch Task 14.
+     QA window E stays after Task 14 (QA plan section 8).
+  5. **Unchanged.** Task 13's other scope, its commands and expected
+     non-zero exits, VAL-044..048, VAL-052, VAL-063, the QA plan, all
+     Task 1-12 records and the attempt-1 history. DEC-162/165/166 remain
+     standing principles for how convergence is done. Phase 24 ledger
+     authority fields cite Phase 24 decisions only.
+  6. **Verification.** The Tech Lead dry-ran (a)-(c) on a scratch copy of
+     the phase files (with this decision) using the unchanged verifier.
+     (a) returned `APPEND_CONFIRMED state=REPAIR_PENDING`, (b)
+     `APPEND_CONFIRMED state=COMPLETION_PENDING` and (c)
+     `APPEND_CONFIRMED state=ADVANCEABLE`, all exit 0. A final validate
+     returned `VALID state=ADVANCEABLE`. Each negative guard below
+     returned exit 1 with the scratch ledger byte-unchanged:
+
+     | Candidate | Diagnostic |
+     |---|---|
+     | (a) with `Repair authority: task spec; DEC-162/165/166` (the Runner's rejected append) | `TASK-RECOVERY cites an unrecorded or malformed phase decision` |
+     | (a) against the decisions file before DEC-289 | `TASK-RECOVERY cites an unrecorded or malformed phase decision` |
+     | TASK task-13 COMPLETE straight after (a) | `task completed before a resolved REPAIR event: task-13` |
+     | (b) with a different trigger signature | `REPAIR Trigger signature does not match TASK-RECOVERY` |
+
+     If any append is rejected as written, that is new information. Return
+     to the Tech Lead and never substitute field values.
+- **Artifact/spec sync:** `public-interface.md` section 10 A6 and
+  `qa/validation-contract.md` VAL-044 now say `None.` (clause 3).
+  `tasks/task-13.md` has the clause 2 scope and the clause 3 acceptance
+  wording. `06_DESIGN_PLAN_CLI.md` already says `None.`. No change to the
+  PRD, TRD, data model, glossary, inventory, QA plan, tools or prompts.
+- **Workflow note for wrap-up:** when a task's accepted change reverses a
+  prior phase's suppression rule, grep for that rule's retained
+  predicates at planning, not only for the named markers. Here,
+  `PRIVATE_` was found but the lowercase `private concern prose` was
+  missed. Task specs should name DEC-162/165/166 as method, not ledger
+  authority, so the Runner doesn't cite them in authority fields.
+- **Refs:** `tasks/task-13.md`, `tasks/task-13-done.md` at `50e75fc8`;
+  `595738e7`; `59d2653d`, `cdcc4f01`; contract sections 10 and 11;
+  VAL-044, VAL-045; DEC-162/165/166, DEC-167/173 (Phase 21 standing);
+  DEC-283 (scope-amendment precedent), DEC-288.
+
 ## Spec Sync Verdict
 
 Recorded at wrap-up.
