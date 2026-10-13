@@ -22,8 +22,9 @@
 - **Requested resolution:** Human completes project-docs/docs/phases/phase-24/qa/human-checklist.md using the prepared public fixtures and permitted guidance, supplying actual outcomes/reasons and required attempts/inputs for all five assertions. Full Tech Lead arranges the two separate bounded report continuations and classifies any Human rejection/partial result without weakening the accepted contract. Fresh independent QA Lead then writes the next unused final-review-R.md, citing the unchanged initial final review and closing B1-H, F1/F2 and QA-36 with evidence.
 - **Resume condition:** Protected Human condition resolved through recorded actual judgment and appropriate authority, both report findings independently closed, and fresh final-review acceptance. A report fix or verified commit containing the original BLOCK review alone is insufficient. Runner retains TRG-24-018 / ESC-24-010 for STOP resolution; no phase advance or wrap-up while open.
 - **Next:** The Human records every row of `qa/human-checklist.md` (DEC-292
-  clause 1; live workspaces expire about 11:50 NZDT 2026-10-12, after which
-  the fixtures are regenerated first) and commits it. Then invoke the Tech
+  clause 1) and commits it. The live workspaces were regenerated on
+  2026-10-13 as `fixtures-2666841344` (recorded in the checklist header)
+  and expire about 19:57 NZDT on 2026-10-14. Then invoke the Tech
   Lead with "Close ESC-24-010 under DEC-292 clause 9." The Runner does not
   resume before clause 9 (DEC-292 clause 5).
 - **References:** Phase 24 validation contract VAL-053 through VAL-057; QA plan sections 8-9; human-checklist.md instructions/Summary; final-review.md Findings/Repair Plan/Blocker Candidates; input-inventory.md rendered-command header/R4/R10; 09_AI_WORKFLOW.md sections 2.3, 2.6 and 9.

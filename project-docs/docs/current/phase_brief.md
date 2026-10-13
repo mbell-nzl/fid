@@ -23,9 +23,9 @@ ESC-24-010 stays OPEN until the Human records the checklist.
 **Next:**
 
 1. Human: record every row of `../phases/phase-24/qa/human-checklist.md`
-   (143 rows) and commit it (DEC-292 clause 1). Live workspaces
-   (HUMAN-01, HUMAN-05) expire about 11:50 NZDT 2026-10-12; regenerate
-   them first after that.
+   (143 rows) and commit it (DEC-292 clause 1). The live workspaces
+   (HUMAN-01, HUMAN-05) were regenerated on 2026-10-13 as
+   `fixtures-2666841344` and expire about 19:57 NZDT on 2026-10-14.
 2. Tech Lead: append DEC-292 clause 9 and close ESC-24-010, or disposition
    any FAIL/PARTIAL row in a new decision (clause 2).
 3. Phase Runner, DEC-292 clause 6: evidence-only Task 14 recovery, then
@@ -110,7 +110,7 @@ deterministic, 5 Human), all `Ready` (planning status, not QA PASS). Split:
 |---|---|---|
 | QA plan | `../phases/phase-24/qa/qa-plan.md` | READY (`7e41e6b`, section 12.7); RC-01/02 closed |
 | Mid-phase reviews | A after 3 (review-2 PASS); B after 6 (review-4 PASS); C late, after 9 (review-6 PASS, DEC-284); D1 after 9a (review-8 PASS); D2 after 11 (review-9 BLOCK; review-10 PASS, DEC-288); E after 14 (also VAL-068; review-11 REPAIR F1, review-12 PASS under DEC-291) | Six windows per QA plan section 8 (DEC-280/282). Human walkthrough after task 11 |
-| Human fixtures | `TestP24HumanFixtures` (task 11, extended by task 14) | D2 interim walkthrough `a23b9f33`; phase-end set `fixtures-2145711523` (11:50 2026-10-11) |
+| Human fixtures | `TestP24HumanFixtures` (task 11, extended by task 14) | D2 interim walkthrough `a23b9f33`; phase-end set `fixtures-2145711523` (11:50 2026-10-11; captured outputs); live set regenerated as `fixtures-2666841344` (19:57 2026-10-13, DEC-292 clause 1(c)) |
 | Final review / Human checklist | `../phases/phase-24/qa/` | `final-review.md` BLOCK (`6d633351`); checklist awaits the Human; `final-review-1.md` next (DEC-292) |
 
 ## Active Constraints

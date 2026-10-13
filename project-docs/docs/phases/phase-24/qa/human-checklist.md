@@ -6,13 +6,22 @@
 
 This is the phase-end Human subset. Record pass/fail/partial, quoted output, attempts and your own explanation in each row. Prior Task 11 answers remain interim. Exact output/count/grammar/privacy checks are recorded by QA in final-review.md.
 
-Use the fresh binary `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2145711523/fid` and each workspace below. For live journey/authoring, stay in that original physical root. Source project files belong inside that root; write temporary --input JSON files outside it, for example in a fresh /tmp directory. Read only Human fid output, --help/--example, and Git commands the help names. Acting Actor IDs and project directory are supplied setup; new record IDs, keys, reasoning and files are your choices.
+Use the fresh binary `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2666841344/fid` and each workspace below. For live journey/authoring, stay in that original physical root. Source project files belong inside that root; write temporary --input JSON files outside it, for example in a fresh /tmp directory. Read only Human fid output, --help/--example, and Git commands the help names. Acting Actor IDs and project directory are supplied setup; new record IDs, keys, reasoning and files are your choices.
 
 If the prepared Claims have expired, QA reruns the exact generator command in final-review.md and refreshes workspace references. Captured Human-only text remains available below for view judgments. Do not use the internal QA manifest or completed test input files to obtain journey/authoring values.
 
+Fixture refresh (DEC-292 clause 1(c)), 2026-10-13. The original set `fixtures-2145711523` expired about 11:50 NZDT on 2026-10-12. At the Human's instruction, a Tech Lead session reran the exact generator command in final-review.md at HEAD `0006eccc711c0de35ceb03091cc1c1fbfa2acccf` (19:56:47 to 19:57:47 NZDT, exit 0). The product is unchanged since Task 14 (`86e0c26a`): `git diff --name-only 86e0c26a 0006eccc` lists only `project-docs/` paths. The binary embeds `vcs.revision=0006eccc…` and `vcs.modified=true`. The only uncommitted file was the Runner-owned `run-ledger.md`, and the original set was built the same way.
+- New set: `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2666841344` (59 manifest rows).
+- Manifest SHA-256: `4315ddb90d93e4020cab42608d244d2f3a53d2ec5d80f80ba602a2d86c5cd9f2`.
+- Binary SHA-256: `b478ecfe9bc8c3c2521b3fd0c7ee542003c93dba42d8be37633c1d84473e2c1c`.
+- Expiry: the live Claims (86400 s TTL) expire about 19:57 NZDT on 2026-10-14.
+- Discarded run: an earlier run, with `-v` added (`fixtures-2591929048`), was not the exact command; it was deleted unused.
+- What changed: the binary and workspace paths, and the HUMAN-01 start output. That output now shows the new set's record IDs: [fixtures-2666841344/take-control-start.txt](fixtures-2666841344/take-control-start.txt), copied byte for byte from the new set's start refusal. The original is kept in `final-evidence/`.
+- What did not change: the captured outputs for HUMAN-02/03/04 still come from the original set.
+
 ## Human takes control - VAL-053
 
-Workspace: `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2145711523/take-control`. Acting Actors: `human` and `agent:builder`. Begin with [Human output](final-evidence/human-output/take-control-start.txt) showing the already-refused terminal-success step. Discover the rest from fid --help, the refusal, and subsequent Human reads. Do not copy the setup refusal’s transition arguments as your own solution. Record each source line used.
+Workspace: `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2666841344/take-control`. Acting Actors: `human` and `agent:builder`. Begin with [Human output](fixtures-2666841344/take-control-start.txt) showing the already-refused terminal-success step. Discover the rest from fid --help, the refusal, and subsequent Human reads. Do not copy the setup refusal’s transition arguments as your own solution. Record each source line used.
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
@@ -184,9 +193,9 @@ Use your own input files and new keys; do not read the generator’s completed i
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HUMAN-05a | VAL-057 | Author run close with expected_repository. Workspace `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2145711523/authoring-run-close`. Acting Actor `actor-recovery`. Start from `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2145711523/fid run close --help` and --example. (human) | Accepted on your first or second try using only permitted guidance. | | Record chosen leaf, attempts, sources and final input. |
-| HUMAN-05b | VAL-057 | Author decision record-reference with project-file digest omitted. Workspace `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2145711523/authoring-decision-reference`. Acting Actor `actor-recovery`. Start from `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2145711523/fid decision record-reference --help` and --example. (human) | Accepted on your first or second try using only permitted guidance. | | Record chosen leaf, attempts, sources and final input. |
-| HUMAN-05c | VAL-057 | Choose and author a third --input leaf. Workspace `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2145711523/authoring-third-leaf`. Acting Actor `actor-recovery`. Start from `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2145711523/fid concern record --help` and --example. (human) | Accepted on your first or second try using only permitted guidance. | | Record chosen leaf, attempts, sources and final input. |
+| HUMAN-05a | VAL-057 | Author run close with expected_repository. Workspace `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2666841344/authoring-run-close`. Acting Actor `actor-recovery`. Start from `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2666841344/fid run close --help` and --example. (human) | Accepted on your first or second try using only permitted guidance. | | Record chosen leaf, attempts, sources and final input. |
+| HUMAN-05b | VAL-057 | Author decision record-reference with project-file digest omitted. Workspace `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2666841344/authoring-decision-reference`. Acting Actor `actor-recovery`. Start from `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2666841344/fid decision record-reference --help` and --example. (human) | Accepted on your first or second try using only permitted guidance. | | Record chosen leaf, attempts, sources and final input. |
+| HUMAN-05c | VAL-057 | Choose and author a third --input leaf. Workspace `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2666841344/authoring-third-leaf`. Acting Actor `actor-recovery`. Start from `/home/mark/projects/fid/.cache/phase-24-human/fixtures-2666841344/fid concern record --help` and --example. (human) | Accepted on your first or second try using only permitted guidance. | | Record chosen leaf, attempts, sources and final input. |
 
 ## Summary
 

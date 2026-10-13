@@ -29,7 +29,8 @@ Planning history: DEC-278..282. Phase 23 closed under DEC-271 (PR #25,
 ## Next
 
 1. Human: record and commit `../phases/phase-24/qa/human-checklist.md`
-   (DEC-292 clause 1). Live workspaces expire about 11:50 NZDT 2026-10-12.
+   (DEC-292 clause 1). Live workspaces were regenerated as
+   `fixtures-2666841344` and expire about 19:57 NZDT on 2026-10-14.
 2. Tech Lead: DEC-292 clause 9 closes ESC-24-010 (or a new decision
    dispositions any FAIL/PARTIAL row).
 3. Phase Runner: DEC-292 clause 6 route, then review-13 /
