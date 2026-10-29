@@ -1,5 +1,34 @@
 # Phase 24 Escalations
 
+## ESC-24-010 - Phase-end Human acceptance for VAL-053 through VAL-057
+
+- **Status:** RESOLVED 2026-10-29 by DEC-293. The Human recorded the
+  checklist (VAL-053 FAIL, VAL-054 PASS, VAL-055 and VAL-056 PARTIAL,
+  VAL-057 SUPERSEDED) and carried the findings forward to the fid reset.
+  F1 and F2 were waived, and DEC-292's recovery route and final-review-1
+  were cancelled. Earlier: OPEN 2026-10-11, dispositioned by DEC-292.
+- **Governing triage:** TRG-24-019 (corrected task-bound identity; the STOP and
+  DEC-292 bind to it). TRG-24-018 is the historical phase-level record.
+- **Source:** project-docs/docs/phases/phase-24/qa/final-review.md; QA artifacts at 6d633351774d804a80b90a8c888d2a93cc0d615b, with invoking Runner's attached commit-resolution and exact-subject verification evidence.
+- **Originating task:** task-14 (identity anchor only; F1/F2 keep their owners)
+- **Trigger signature:** task-14:qa-block:phase-end-final-review (TRG-24-018 used
+  phase-24:qa-block:final-review-b1h-human-judgment-and-report-receipts)
+- **Attempt count:** 1
+- **Protected category:** product-owner judgment / unresolved Human-only validation (B1-H).
+- **Condition:** Five phase-end Human assertions VAL-053 through VAL-057 remain BLOCKED; the phase-end checklist has no recorded outcomes. The Task 11 walkthrough was interim and cannot substitute. Workflow section 2.6 requires BLOCK for unresolved Human-only validation. ESC-24-007 resolved only the earlier Window D2 checkpoint and is not reopened or reused.
+- **Retained deterministic evidence:** Final review records 63 deterministic VAL PASS and passing required product gates, full-checkptr, archive-scale and three rebuild samples. These results remain intact; they do not supply Human acceptance. QA-36 remains FAIL on F1/F2.
+- **Preserved bounded F1:** Owner phase-24/task-1; only project-docs/docs/phases/phase-24/tasks/task-1-done.md. Fresh report-author execution of rendered R4 `ls migrations; rg -n "ProjectionSchemaVersion|projection_schema" internal -g '!*_test.go'` at /home/mark/projects/fid, own-session output/status/observed termination and missing-receipt note, preserving history. Independent exact two-argument report lint against task-1.md must return OUTCOME COMPLETE/exit 0. Fresh independent QA Lead reruns R4 and report lint and reviews only the report delta/history and QA-36.
+- **Preserved bounded F2:** Owner phase-24/task-10; only project-docs/docs/phases/phase-24/tasks/task-10-done.md. Fresh report-author execution of R10 `rg -n '"error: ' cmd internal -g '*_test.go'` at /home/mark/projects/fid, own-session nonempty output/exit 0 with observed termination and missing-receipt note, preserving failures and history. Independent exact two-argument report lint against task-10.md must return OUTCOME COMPLETE/exit 0. Fresh independent QA Lead reruns R10 and report lint and reviews the report delta/history/identity and QA-36. Exact lint commands and full boundaries are retained in TRG-24-018.
+- **Requested resolution:** Human completes project-docs/docs/phases/phase-24/qa/human-checklist.md using the prepared public fixtures and permitted guidance, supplying actual outcomes/reasons and required attempts/inputs for all five assertions. Full Tech Lead arranges the two separate bounded report continuations and classifies any Human rejection/partial result without weakening the accepted contract. Fresh independent QA Lead then writes the next unused final-review-R.md, citing the unchanged initial final review and closing B1-H, F1/F2 and QA-36 with evidence.
+- **Resume condition:** Protected Human condition resolved through recorded actual judgment and appropriate authority, both report findings independently closed, and fresh final-review acceptance. A report fix or verified commit containing the original BLOCK review alone is insufficient. Runner retains TRG-24-018 / ESC-24-010 for STOP resolution; no phase advance or wrap-up while open.
+- **Next:** The Human records every row of `qa/human-checklist.md` (DEC-292
+  clause 1) and commits it. The live workspaces were regenerated on
+  2026-10-13 as `fixtures-2666841344` (recorded in the checklist header)
+  and expire about 19:57 NZDT on 2026-10-14. Then invoke the Tech
+  Lead with "Close ESC-24-010 under DEC-292 clause 9." The Runner does not
+  resume before clause 9 (DEC-292 clause 5).
+- **References:** Phase 24 validation contract VAL-053 through VAL-057; QA plan sections 8-9; human-checklist.md instructions/Summary; final-review.md Findings/Repair Plan/Blocker Candidates; input-inventory.md rendered-command header/R4/R10; 09_AI_WORKFLOW.md sections 2.3, 2.6 and 9.
+
 ## ESC-24-009 - Task 13 R13 required command contradicts its required result
 
 - **Raised:** 2026-10-11 by TL-Lite in TRG-24-017 (BLOCK); ledger STOP

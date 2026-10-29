@@ -2605,14 +2605,90 @@
   `tasks/task-1.md`, `tasks/task-10.md`; DEC-267 (Phase 23 phase-end
   precedent), DEC-288 (evidence-only route), DEC-291 (rendered commands).
 
+### DEC-293: Phase 24 closes with its Human acceptance findings carried forward to the fid reset. F1 and F2 are waived and the rest of DEC-292's route is cancelled. Closes ESC-24-010
+
+- **Date:** 2026-10-29. Recorded by a Claude session at the Human's direct
+  instruction ("close Phase 24 and make its PR"), outside the Tech Lead
+  and Phase Runner roles. This deliberately leaves the V1 workflow; see
+  the last Context bullet.
+- **Status:** Accepted by the Human. ESC-24-010 is closed.
+- **Context:**
+  - The Human checklist is recorded in `qa/human-checklist.md`, committed
+    on this branch as `docs(qa): record phase 24 phase-end Human
+    checklist`. Its 143 rows are 36 PASS, 1 FAIL, 103 PARTIAL and 3
+    SUPERSEDED, with no blank row.
+  - HUMAN-01 (VAL-053) fails on 01g. 01e, 01h, 01j and 01k needed outside
+    help on concept bindings: the Human Outcome class, the subject an
+    Outcome binds to, "completed" against "terminal-success", which
+    actor to act as, and Issue against Envelope revisions. HUMAN-02
+    (VAL-054) passes 10/10. HUMAN-03 (VAL-055) is PARTIAL on layout in
+    every view. HUMAN-04 (VAL-056) is PARTIAL with partial coverage:
+    30 rows were answered individually and 71 apply common feedback at
+    the Human's direction.
+  - HUMAN-05 (VAL-057) was not attempted. The Human superseded it: "I
+    don't see the point in completing that test: I'm confident the
+    current human-facing interface is miserable and indecipherable based
+    on the other 100+ rows in that checklist."
+  - F1 and F2 are report-only. The product is unchanged since Task 14
+    (`86e0c26a`). DEC-292's Context records the Tech Lead's own R4 and
+    R10 runs at `6d633351`, both exit 0. Those runs are not report
+    evidence, so QA-36 stays FAIL as `final-review.md` records it.
+  - The Human has chosen to reset fid and the kit instead of continuing
+    the phase workflow. The proposal is
+    `../../reviews/2026-10-29-fid-kit-reset-proposal.html`, with the
+    research in `../../reviews/2026-10-29-agentic-workflow-landscape.html`.
+    Its decisions are still open. ADR-0013 will record the commitments
+    it supersedes.
+- **Decision:**
+  1. **Human acceptance is recorded as is.** Under DEC-292 clause 2,
+     every FAIL and PARTIAL row is carried forward with the Human's
+     acceptance and is not repaired in Phase 24. No row is re-answered,
+     reclassified or weakened. The results are:
+     - VAL-053: FAIL;
+     - VAL-054: PASS;
+     - VAL-055: PARTIAL;
+     - VAL-056: PARTIAL, with partial coverage;
+     - VAL-057: SUPERSEDED, an explicit Human outcome rather than a blank.
+  2. **The carried-forward findings are inputs to the reset:**
+     - the HUMAN-01 concept bindings;
+     - the HUMAN-03 layout feedback (no preamble, aligned key/value or
+       table layout);
+     - the HUMAN-04 common feedback.
+  3. **F1 and F2 are waived** by the Human. There is no Task 1 or Task 10
+     recovery.
+  4. **The rest of DEC-292 is cancelled.** That covers clauses 4–7 and
+     clause 9: no RUN-RESUME, no evidence-only Task 14 recovery, and no
+     `final-review-1.md` (review-13). `final-review.md` stays BLOCK as
+     recorded, and this decision accepts the phase over it.
+  5. **The Runner's `run-ledger.md` is committed unchanged as history.**
+     Its last event is the 2026-10-11 12:12 STOP, and
+     `workflow-sequence-lint.sh` reports `VALID state=STOPPED`. No
+     RUN-END is appended, because the Phase Runner workflow is retired
+     for this repository pending the reset.
+  6. **Phase 24's product merges to main as delivered.** This covers
+     tasks 1–14 and 9a, and migration 0019. 63 deterministic VAL rows
+     pass at `6d633351`.
+  7. **Phases 25 and 26 are not started.** The next work is decided under
+     the reset proposal and recorded in ADR-0013.
+  8. **No standard wrap-up.** The spec-sync audit, the triage-log audit
+     and carry-forward re-disposition are not performed. Each task
+     updated its own specs. The reset will revise the specs, the
+     carry-forwards (including CF-036) and `09_AI_WORKFLOW.md` as a whole.
+- **Refs:** ESC-24-010; DEC-292 clauses 1, 2 and 4–9; `qa/human-checklist.md`
+  Summary; `qa/final-review.md` B1-H, F1, F2 and QA-36; `run-ledger.md`
+  2026-10-11 12:12 STOP; `../../reviews/2026-10-29-fid-kit-reset-proposal.html`.
+
 ## Spec Sync Verdict
 
-Recorded at wrap-up.
+Not performed (DEC-293 clause 8). Each task updated the specs it changed;
+the reset revises the specs as a whole.
 
 ## Triage-Log Audit
 
-Recorded at wrap-up.
+Not performed (DEC-293 clause 8).
 
 ## Workflow Notes
 
-Recorded at wrap-up.
+Phase 24 closes the V1 phase workflow for this repository (DEC-293). The
+reasons, and the method that replaces it, are in
+`../../reviews/2026-10-29-fid-kit-reset-proposal.html`.

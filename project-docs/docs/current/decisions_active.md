@@ -3,6 +3,10 @@
 > Current commitments and carry-forwards. Historical reasoning stays in ADRs
 > and phase decisions; standing delivery rules also live in decisions_principles.md.
 
+> **2026-10-29:** Phase 24 closed under DEC-293. A fid and kit reset is proposed
+> (`../reviews/2026-10-29-fid-kit-reset-proposal.html`). Its decisions are open,
+> and the commitments below stand until ADR-0013 records what it supersedes.
+
 ## Durable Architecture
 
 - ADR-0001: journal canonical; SQLite is a rebuildable projection.

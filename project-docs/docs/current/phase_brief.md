@@ -1,4 +1,4 @@
-# Phase Brief - Phase 24 (phase-end; final review BLOCK, ESC-24-010 under DEC-292)
+# Phase Brief - Phase 24 (closed 2026-10-29 under DEC-293)
 
 ## Phase Goal
 
@@ -11,27 +11,24 @@ expectations a check uses. Request digests cover the input as written.
 
 ## Status
 
-**Phase-end on branch `phase-24`.** Tasks 1-14 are complete. QA windows
-A-E have passed (review-12 closed E). The final review `qa/final-review.md`
-(`6d633351`) returned BLOCK: 63 deterministic VAL PASS and every gate
-passing. VAL-053..057 are BLOCKED because the Human checklist is blank
-(B1-H). QA-36 fails on two report-only findings: Task 1 lacks its owned R4
-receipt (F1), and Task 10 its owned R10 receipt (F2). TRG-24-019 raised
-ESC-24-010; the ledger is `STOPPED` (12:12). **DEC-292** disposes it;
-ESC-24-010 stays OPEN until the Human records the checklist.
+**Closed on 2026-10-29 under DEC-293.** Tasks 1-14 and 9a are complete,
+and 63 deterministic VAL rows pass (`qa/final-review.md`, `6d633351`). The
+Human checklist is recorded:
 
-**Next:**
+- VAL-053 FAIL (HUMAN-01g);
+- VAL-054 PASS;
+- VAL-055 and VAL-056 PARTIAL;
+- VAL-057 SUPERSEDED.
 
-1. Human: record every row of `../phases/phase-24/qa/human-checklist.md`
-   (143 rows) and commit it (DEC-292 clause 1). The live workspaces
-   (HUMAN-01, HUMAN-05) were regenerated on 2026-10-13 as
-   `fixtures-2666841344` and expire about 19:57 NZDT on 2026-10-14.
-2. Tech Lead: append DEC-292 clause 9 and close ESC-24-010, or disposition
-   any FAIL/PARTIAL row in a new decision (clause 2).
-3. Phase Runner, DEC-292 clause 6: evidence-only Task 14 recovery, then
-   report-only Task 1 (R4) and Task 10 (R10) recoveries.
-4. Fresh QA Lead `qa/final-review-1.md` (review-13) closes B1-H, F1, F2
-   and QA-36 (clause 7); a PASS leads to RUN-END and wrap-up.
+Those findings carry forward to the fid reset. F1 and F2 are waived,
+DEC-292's recovery route and `final-review-1.md` are cancelled, and
+ESC-24-010 is closed. The Phase Runner ledger ends at the 2026-10-11 12:12
+STOP.
+
+**Next:** the fid and kit reset in
+`../reviews/2026-10-29-fid-kit-reset-proposal.html`. Its decisions are
+open and will be recorded in ADR-0013. Phases 25 and 26 are not started,
+and this brief is historical until the reset replaces it.
 
 ## Operating Mode
 
@@ -67,7 +64,7 @@ Human checklist's "take control" scenario is the Human run.
 
 | Task | Title | Status | Dependencies |
 |---|---|---|---|
-| 1 | Idempotency field-digest storage (migration 0019) | Complete; R4 receipt pending (final F1, DEC-292) | None |
+| 1 | Idempotency field-digest storage (migration 0019) | Complete; R4 receipt waived (final F1, DEC-293) | None |
 | 2 | Input-as-written digests and named conflict fields, every keyed leaf | Complete | 1 |
 | 3 | Input descriptor framework, help, templates, field-named validation | Complete (window A PASS) | None |
 | 4 | Repository observation and SourceInput; judgment reference leaves | Complete (window B PASS) | 2, 3 |
@@ -77,7 +74,7 @@ Human checklist's "take control" scenario is the Human run.
 | 8 | Gate run and Evidence leaves; real freshness (DEC-273) | Complete (window C PASS) | 7 |
 | 9 | Activation descriptors; whole-tree input and help conformance | Complete (window D1 PASS) | 3-8 |
 | 9a | Grammar failures and unknown commands across the live tree (DEC-280) | Complete (window D1 PASS) | 9 |
-| 10 | Human failure lines in every family; generic-fallback messages (DEC-281) | Complete (`a6b6203`); R10 receipt pending (final F2, DEC-292) | 9a |
+| 10 | Human failure lines in every family; generic-fallback messages (DEC-281) | Complete (`a6b6203`); R10 receipt waived (final F2, DEC-293) | 9a |
 | 11 | Readable Stop, Attention and repository lines; Human fixture generator | Complete (`93a1f792`; window D2 PASS, review-10) | 10 |
 | 12 | Concern, Deviation and Human Outcome `get` leaves (DEC-274) | Complete (`fc4bdff7`) | 4, 10 |
 | 13 | Judgment disclaimers once per section; recorded reasoning shown | Complete (`a9aa99f9`; R13 receipt DEC-291, review-12 PASS) | 11, 12 |
@@ -111,7 +108,7 @@ deterministic, 5 Human), all `Ready` (planning status, not QA PASS). Split:
 | QA plan | `../phases/phase-24/qa/qa-plan.md` | READY (`7e41e6b`, section 12.7); RC-01/02 closed |
 | Mid-phase reviews | A after 3 (review-2 PASS); B after 6 (review-4 PASS); C late, after 9 (review-6 PASS, DEC-284); D1 after 9a (review-8 PASS); D2 after 11 (review-9 BLOCK; review-10 PASS, DEC-288); E after 14 (also VAL-068; review-11 REPAIR F1, review-12 PASS under DEC-291) | Six windows per QA plan section 8 (DEC-280/282). Human walkthrough after task 11 |
 | Human fixtures | `TestP24HumanFixtures` (task 11, extended by task 14) | D2 interim walkthrough `a23b9f33`; phase-end set `fixtures-2145711523` (11:50 2026-10-11; captured outputs); live set regenerated as `fixtures-2666841344` (19:57 2026-10-13, DEC-292 clause 1(c)) |
-| Final review / Human checklist | `../phases/phase-24/qa/` | `final-review.md` BLOCK (`6d633351`); checklist awaits the Human; `final-review-1.md` next (DEC-292) |
+| Final review / Human checklist | `../phases/phase-24/qa/` | `final-review.md` BLOCK (`6d633351`); checklist recorded (VAL-053 FAIL, VAL-057 SUPERSEDED); `final-review-1.md` cancelled (DEC-293) |
 
 ## Active Constraints
 

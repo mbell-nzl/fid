@@ -1,23 +1,21 @@
 # Progress — Current
 
-Updated 2026-10-11. **Phase 24 "Operating experience and input
-convergence" is at phase end** (Heavy mode, DEC-277; 15 tasks with 9a).
-Tasks 1-14 are complete and QA windows A-E have passed (review-12 closed
-window E under DEC-291).
+Updated 2026-10-29. **Phase 24 "Operating experience and input
+convergence" is closed** under DEC-293 (Heavy mode, DEC-277; 15 tasks with
+9a). Tasks 1-14 are complete, QA windows A-E passed, and 63 deterministic
+VAL rows pass.
 
-The final review (`qa/final-review.md`, `6d633351`) returned BLOCK. All 63
-deterministic VAL rows PASS and every gate passes. VAL-053..057 wait for
-the Human checklist (B1-H), and QA-36 fails on two missing owned inventory
-receipts: Task 1 R4 (F1) and Task 10 R10 (F2). TRG-24-019 raised ESC-24-010
-and the ledger is `STOPPED`. DEC-292 disposes it: the Human records the
-checklist, then an evidence-only Task 14 recovery, report-only Task 1 and
-Task 10 recoveries, and a fresh `final-review-1.md`. ESC-24-010 stays open
-until the Human's checklist is committed and DEC-292 clause 9 is appended.
-Earlier: DEC-291 (ESC-24-009), DEC-290 (ESC-24-008), DEC-289 (Task 13
-scope), DEC-288 (ESC-24-007), DEC-287 (ESC-24-006), DEC-286 (ESC-24-005),
-DEC-285 (ESC-24-004), DEC-284 (ESC-24-003) and DEC-283 (ESC-24-001/002).
-Planning history: DEC-278..282. Phase 23 closed under DEC-271 (PR #25,
-`a46ec77`).
+The Human checklist is recorded:
+
+- VAL-053 FAIL;
+- VAL-054 PASS;
+- VAL-055 and VAL-056 PARTIAL;
+- VAL-057 SUPERSEDED.
+
+The findings carry forward to the fid reset. F1 and F2 are waived and
+ESC-24-010 is closed. Earlier: DEC-292 (ESC-24-010 route, now cancelled),
+DEC-291 (ESC-24-009), DEC-290 (ESC-24-008) and DEC-283..289. Phase 23
+closed under DEC-271 (PR #25, `a46ec77`).
 
 - Contract: [public interface](../phases/phase-24/public-interface.md);
   [inventory](../phases/phase-24/input-inventory.md);
@@ -28,22 +26,7 @@ Planning history: DEC-278..282. Phase 23 closed under DEC-271 (PR #25,
 
 ## Next
 
-1. Human: record and commit `../phases/phase-24/qa/human-checklist.md`
-   (DEC-292 clause 1). Live workspaces were regenerated as
-   `fixtures-2666841344` and expire about 19:57 NZDT on 2026-10-14.
-2. Tech Lead: DEC-292 clause 9 closes ESC-24-010 (or a new decision
-   dispositions any FAIL/PARTIAL row).
-3. Phase Runner: DEC-292 clause 6 route, then review-13 /
-   `final-review-1.md` and RUN-END.
-4. Tech Lead wrap-up; then Phase 25 "Parallel and evolving work" and
-   Phase 26 "Qualification and baseline convergence".
-
-A deep workflow retrospective is recommended under CF-036/039 (see Phase 23
-workflow notes). Add the DEC-283..292 workflow notes to it. It is separate from
-Phase 24.
-
-## Earlier phases
-
-Phase 22 closed under DEC-220/221: [wrap audit](../phases/phase-22/wrap-up-audit.md).
-Claims qualification is Phase 25; external adapter qualification Phase 26.
-Live carry-forwards are in [active decisions](decisions_active.md).
+1. Human and Claude: settle the reset decisions (F1-F5, D1-D14) in
+   `../reviews/2026-10-29-fid-kit-reset-proposal.html`.
+2. Write ADR-0013 and `RESET.md`; rewrite `AGENTS.md` and `CLAUDE.md`.
+3. Phases 25 and 26 are not started; the reset decides what replaces them.
