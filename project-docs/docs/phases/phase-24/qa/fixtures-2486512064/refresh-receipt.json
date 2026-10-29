@@ -1,0 +1,69 @@
+{
+  "purpose": "Phase 24 live Human fixture refresh under DEC-292 clause 1(c); preparation only, no Human acceptance result",
+  "working_directory": "/home/mark/projects/fid",
+  "command": "FID_P24_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/phase-24-human go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24HumanFixtures$' -count=1 ./cmd/fid/integration",
+  "results": [
+    {
+      "chunk_id": "37d93f",
+      "wall_time_seconds": 1.001361365,
+      "session_id": 28689,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "8997ef",
+      "wall_time_seconds": 5.001720649,
+      "session_id": 28689,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "0d0439",
+      "wall_time_seconds": 5.001201855,
+      "session_id": 28689,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "ef677b",
+      "wall_time_seconds": 0.000007835,
+      "exit_code": 0,
+      "original_token_count": 15,
+      "output": "ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t61.062s\n"
+    }
+  ],
+  "identity": {
+    "fixture_dir": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-2486512064",
+    "binary": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-2486512064/fid",
+    "manifest_sha256": "cbf5a83b53c2e824d2d3b469552265fa58d6e7bdeef763b96590ee559ee0a66e",
+    "binary_sha256": "c89a9338bf2616702cabc08a1dbfdba429cea8c2f3d5abc03f848c285e7016d4",
+    "head": "d50c378cbdd6f914cd5dec9c09fb9609ea2c5ad9",
+    "public_start_output": "/home/mark/projects/fid/.cache/phase-24-human/refresh-0z6cwc84/take-control-start.txt",
+    "binary_build_info": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-2486512064/fid: go1.26.2\n\tpath\tgithub.com/mbell-nzl/fid/cmd/fid\n\tmod\tgithub.com/mbell-nzl/fid\tv0.1.1-0.20261013070009-d50c378cbdd6+dirty\t\n\tdep\tgithub.com/dustin/go-humanize\tv1.0.1\th1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=\n\tdep\tgithub.com/golang-migrate/migrate/v4\tv4.19.1\th1:OCyb44lFuQfYXYLx1SCxPZQGU7mcaZ7gH9yH4jSFbBA=\n\tdep\tgithub.com/google/uuid\tv1.6.0\th1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=\n\tdep\tgithub.com/remyoudompheng/bigfft\tv0.0.0-20230129092748-24d4a6f8daec\th1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=\n\tdep\tgithub.com/spf13/cobra\tv1.10.2\th1:DMTTonx5m65Ic0GOoRY2c16WCbHxOOw6xxezuLaBpcU=\n\tdep\tgithub.com/spf13/pflag\tv1.0.9\th1:9exaQaMOCwffKiiiYk6/BndUBv+iRViNW+4lEMi0PvY=\n\tdep\tgolang.org/x/sys\tv0.42.0\th1:omrd2nAlyT5ESRdCLYdm3+fMfNFE/+Rf4bDIQImRJeo=\n\tdep\tmodernc.org/libc\tv1.72.3\th1:ZnDF4tXn4NBXFutMMQC4vtbTFSXhhKzR73fv0beZEAU=\n\tdep\tmodernc.org/mathutil\tv1.7.1\th1:GCZVGXdaN8gTqB1Mf/usp1Y/hSqgI2vAGGP4jZMCxOU=\n\tdep\tmodernc.org/memory\tv1.11.0\th1:o4QC8aMQzmcwCK3t3Ux/ZHmwFPzE6hf2Y5LbkRs+hbI=\n\tdep\tmodernc.org/sqlite\tv1.51.0\th1:aH/MMSoayAIhozZ7uJbVTT9QO/VhzBf0J9tymmmuC/U=\n\tbuild\t-buildmode=exe\n\tbuild\t-compiler=gc\n\tbuild\tCGO_ENABLED=1\n\tbuild\tCGO_CFLAGS=\n\tbuild\tCGO_CPPFLAGS=\n\tbuild\tCGO_CXXFLAGS=\n\tbuild\tCGO_LDFLAGS=\n\tbuild\tGOARCH=amd64\n\tbuild\tGOOS=linux\n\tbuild\tGOAMD64=v1\n\tbuild\tvcs=git\n\tbuild\tvcs.revision=d50c378cbdd6f914cd5dec9c09fb9609ea2c5ad9\n\tbuild\tvcs.time=2026-10-13T07:00:09Z\n\tbuild\tvcs.modified=true\n",
+    "claim_expires_at": "2026-10-18T01:56:58.374465355Z",
+    "claim_expires_local": "2026-10-18T14:56:58.374465+13:00",
+    "preparation_observed_at_utc": "2026-10-17T01:59:21.899229+00:00"
+  },
+  "initial_refusal": {
+    "capture": "Public fid Human-mode refusal captured in the new physical take-control root; command arguments remain in the administrative scratch receipt.",
+    "terminated_exit_code": 5,
+    "output_file": "take-control-start.txt"
+  },
+  "preparation_notes": [
+    {
+      "attempt": 1,
+      "kind": "supporting metadata probe",
+      "terminated_exit_code": 1,
+      "last_output_line": "AssertionError: Human start output unavailable at expected public output paths",
+      "cause": "Neither assumed standalone public text path exists in the generated set.",
+      "repair": "Captured the initial refusal from the public CLI in the new physical root. No generator input files were read; the manifest was hashed only, without extracting authoring values."
+    },
+    {
+      "attempt": 2,
+      "kind": "supporting metadata and public-output capture",
+      "terminated_exit_code": 0,
+      "last_output_line": "}",
+      "result": "Recorded binary/manifest digests, build identity, active lease expiry and the protected-Decision refusal."
+    }
+  ]
+}
