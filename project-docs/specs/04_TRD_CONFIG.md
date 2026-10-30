@@ -140,7 +140,7 @@ reinitialized. No automatic migration from pre-ADR-0011 schema or journal
 events is a product requirement.
 
 Phase 20 convergence may also write `.fid/pricing.toml` solely for the legacy
-stats commands owned for deletion in Phase 25. It is not part of `config.toml`,
+stats commands owned for deletion in Phase 26 (renumbered by DEC-272). It is not part of `config.toml`,
 is not accepted by the strict config parser, and is absent from the first
 supported baseline.
 

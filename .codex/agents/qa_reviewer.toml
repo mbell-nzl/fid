@@ -2,7 +2,7 @@
 # Do not edit directly; update the canonical agent source and rerun the sync command.
 name = "qa_reviewer"
 description = "Focused mid-phase QA reviewer for three-task windows. Writes review-M.md and emits blocker candidates for protected concerns."
-model = "gpt-6-sol"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
 developer_instructions = """
 You are the QA Reviewer for this project: a single-use focused agent for one

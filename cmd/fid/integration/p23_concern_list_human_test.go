@@ -26,7 +26,7 @@ func TestP23ConcernListHumanProjection(t *testing.T) {
 		t.Fatalf("generic Concern list = %#v", items)
 	}
 	human, stderr, err := closureRunCommand(a.workspace, a.binary, "--project", a.workspace, "concern", "list", "--subject", "issue:"+a.issueID)
-	if err != nil || stderr != "" || !strings.Contains(human, "Purpose: Inspect a raised concern") || !strings.Contains(human, "CON-human-list") || strings.Contains(human, "private concern prose") {
+	if err != nil || stderr != "" || !strings.Contains(human, "Purpose: Inspect a raised concern") || !strings.Contains(human, "CON-human-list") || !strings.Contains(human, "Summary: private concern prose") || !strings.Contains(human, "Reasoning: private reasoning") {
 		t.Fatalf("generic Concern Human list = %q / %q / %v", human, stderr, err)
 	}
 	second := p23ConcernMutation(t, a, "record", "human-list-minor", map[string]any{

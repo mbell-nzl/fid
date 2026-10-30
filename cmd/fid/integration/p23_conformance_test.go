@@ -3,6 +3,7 @@
 package integration
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -17,6 +18,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 type p23LeafCase struct {
@@ -104,14 +107,22 @@ type p23LeafOutcome struct {
 func TestP23CallerProvidedReviewIDsRemainDistinct(t *testing.T) {
 	t.Parallel()
 	const first, second = "REV-abcdef", "REV-123456"
+	a := p24RunAdapter(t)
+	p22AcceptedCall(t, a, "review-id-proof-budget", "run.observe-budget", map[string]any{"value": 0})
+	_, gateInput := a.p22BuildArgs(t, p22ConformanceCase{Operation: "gate.run"})
+	gate := p23RunInput(t, a, "gate", "run", a.actor, "review-id-proof", gateInput)
+	if gate.ExitCode != 0 || gate.Stderr != "" {
+		t.Fatalf("Review ID fixture gate = %d %q", gate.ExitCode, gate.Stderr)
+	}
+	receiptID := p21PathString(t, p24GateTerminal(t, gate.Stdout), "response", "result", "receipt", "id")
 	var models []map[string]any
 	for _, reviewID := range []string{first, second} {
 		request := map[string]any{
-			"obligation_id": "OBL-input", "evidence_type": "receipt", "receipt_id": "RCT-input",
-			"review_id": reviewID, "human_outcome_id": nil, "target_repository": "repo",
+			"obligation_id": "OBL-input", "evidence_type": "receipt", "receipt_id": receiptID,
+			"review_id": reviewID, "human_outcome_id": nil,
 			"required_artifact_ids": []any{},
 		}
-		workspace := t.TempDir()
+		workspace := a.workspace
 		pair := p23HumanLeafPair{Operation: "evidence.link", CWD: workspace, JSONArgs: []string{
 			"--input", p21Input(t, workspace, "evidence", request), "--idempotency-key", "key",
 		}}
@@ -228,7 +239,7 @@ func TestP23SharedLeafConformance(t *testing.T) {
 		a := p22NewFIDRecoveryAdapter(t)
 		before := p21JournalEventCount(t, a.workspace)
 		response := p23RunInput(t, a, "requirement", "record-reference", "actor-not-activated", "p23-shared-authority", map[string]any{
-			"id": "REQ-shared-authority", "source": a.measurement, "status": "active",
+			"id": "REQ-shared-authority", "source": p23DecisionSource(a, true), "status": "active",
 		})
 		var failure struct {
 			Operation string `json:"operation"`
@@ -329,6 +340,50 @@ func TestP23SharedLeafConformance(t *testing.T) {
 	})
 }
 
+// p24ModelSource derives stored fields independently from the caller's input,
+// project config and Git capture for the Phase 24 SourceInput convergence.
+func p24ModelSource(t *testing.T, pair p23HumanLeafPair, raw any) map[string]any {
+	t.Helper()
+	input := raw.(map[string]any)
+	stored := make(map[string]any, len(input)+1)
+	for key, value := range input {
+		stored[key] = value
+	}
+	if _, supplied := stored["digest"]; !supplied && stored["source_type"] == "project-file" {
+		path := stored["path"].(string)
+		contents, err := os.ReadFile(filepath.Join(pair.CWD, filepath.FromSlash(path)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		sum := sha256.Sum256(contents)
+		stored["digest"] = "sha256:" + hex.EncodeToString(sum[:])
+	}
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(pair.CWD, config.WorkspaceDirName, config.ConfigFileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	repository := p22CorpusRepository(t, pair.CWD, projectConfig.ProjectID)
+	if digest, ok := repository["dirty_digest"].(*string); ok {
+		if digest == nil {
+			repository["dirty_digest"] = nil
+		} else {
+			repository["dirty_digest"] = *digest
+		}
+	}
+	stored["repository"] = repository
+	return stored
+}
+
+func p24ModelSources(t *testing.T, pair p23HumanLeafPair, raw any) []any {
+	t.Helper()
+	inputs := raw.([]any)
+	sources := make([]any, 0, len(inputs))
+	for _, input := range inputs {
+		sources = append(sources, p24ModelSource(t, pair, input))
+	}
+	return sources
+}
+
 func TestP23SharedAmendedLeafConformance(t *testing.T) {
 	t.Parallel()
 	data, err := os.ReadFile(filepath.Join("testdata", "p23_conformance", "operations.json"))
@@ -365,7 +420,7 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 	altGate := p22GateRun(t, a.binary, a.workspace, a.actor,
 		p21Input(t, a.workspace, "p23-shared-alt-gate", map[string]any{
 			"run_id": a.runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion,
-			"obligation_id": "OBL-p22-corpus", "repository": a.repository,
+			"obligation_id": "OBL-p22-corpus", "expected_repository": p24ExpectedRepository(a.repository),
 		}), "p23-shared-alt-gate")
 	altReceiptID := p21PathString(t, altGate, "result", "receipt", "id")
 	accepted := map[string]p23LeafOutcome{}
@@ -407,6 +462,17 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 				p23CompareLeafOutcome(t, "unknown-field", fake.UnknownField(), fid.UnknownField(t))
 				p23CompareLeafOutcome(t, "different-payload", fake.Conflict(fid.pair), fid.Conflict(t))
 			}
+			removed := map[string][]string{"envelope.create": {"repository_scope", "risk_result.source.repository"}, "claim.acquire": {"worktree_id"}, "evidence.link": {"target_repository"}, "evidence.evaluate": {"target_repository"}}
+			for _, field := range removed[fixture.operation] {
+				allowed := p24AdoptedTopLevelFields[fixture.operation]
+				if strings.Contains(field, ".") {
+					allowed = []any{"digest", "display_label", "external_id", "path", "section", "source_type"}
+				}
+				value := field[strings.LastIndex(field, ".")+1:]
+				p23CompareLeafOutcome(t, "removed-member/"+field, p23LeafOutcome{Operation: fixture.operation,
+					Code: "invalid-argument", Category: "invalid-input", Exit: 2,
+					Details: map[string]any{"argument": "input." + field, "value": value, "allowed": allowed}}, fid.InvalidBinding(t, field, nil))
+			}
 			for _, missing := range leaf.NotFoundCases {
 				p23CompareLeafOutcome(t, "not-found/"+missing.Name, p23ExpectedNotFound(fixture.operation, missing), fid.NotFoundVariant(t, missing))
 			}
@@ -423,8 +489,8 @@ func TestP23SharedAmendedLeafConformance(t *testing.T) {
 			if fixture.operation == "evidence.link" {
 				p23CompareLeafOutcome(t, "repository-binding", p23LeafOutcome{Operation: fixture.operation,
 					Code: "invalid-argument", Category: "invalid-input", Exit: 2,
-					Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted evidence.link input"}}},
-					fid.InvalidBinding(t, "target_repository.worktree_id", "worktree-other"))
+					Details: map[string]any{"argument": "input.target_repository", "value": "target_repository", "allowed": p24AdoptedTopLevelFields["evidence.link"]}},
+					fid.InvalidBinding(t, "target_repository", map[string]any{"worktree_id": "worktree-other"}))
 			}
 			if leaf.Mutation {
 				p23CompareLeafOutcome(t, "untrusted-actor", fake.UntrustedActor(), fid.UntrustedActor(t))
@@ -451,8 +517,30 @@ func (a p23FakeLeafAdapter) Accepted() p23LeafOutcome {
 }
 
 func (a p23FakeLeafAdapter) UnknownField() p23LeafOutcome {
+	if allowed, ok := p24AdoptedTopLevelFields[a.fixture.Operation]; ok {
+		return p23LeafOutcome{Operation: a.fixture.Operation, Code: "invalid-argument", Category: "invalid-input", Exit: 2,
+			Details: map[string]any{"argument": "input.unaccepted_field", "value": "unaccepted_field", "allowed": allowed}}
+	}
 	return p23LeafOutcome{Operation: a.fixture.Operation, Code: "invalid-argument", Category: "invalid-input", Exit: 2,
 		Details: map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted " + a.fixture.Operation + " input"}}}
+}
+
+var p24AdoptedTopLevelFields = map[string][]any{
+	"evidence.link":                {"evidence_type", "human_outcome_id", "obligation_id", "receipt_id", "required_artifact_ids", "review_id"},
+	"evidence.evaluate":            {"obligation_id"},
+	"envelope.create":              {"authority_grants", "budgets", "non_goals", "obligations", "outcome", "primary_issue_id", "protected_decisions", "related_issue_ids", "risk_result", "sources"},
+	"envelope.activate":            {"envelope_id", "expected_revision"},
+	"envelope.complete":            {"envelope_id", "expected_revision"},
+	"claim.acquire":                {"envelope_id", "envelope_revision", "issue_id", "mode", "scope", "ttl_seconds"},
+	"review.record":                {"coverage", "evidence_refs", "expected_repository", "expected_run_version", "findings", "inapplicable_findings", "profile", "receipt_ids", "resolves_finding_ids", "run_id", "verdict"},
+	"finding.address":              {"claim_id", "expected_claim_version", "finding_id", "reason"},
+	"decision.record-reference":    {"authority", "class", "id", "outcome", "scope", "source"},
+	"requirement.record-reference": {"id", "source", "status"},
+	"requirement.link":             {"issue_id", "relation", "requirement_id"},
+	"human-outcome.record":         {"class", "id", "reasoning", "references", "result", "scope", "subject"},
+	"concern.record":               {"id", "reasoning", "references", "scope", "severity", "subject", "summary"},
+	"concern.dispose":              {"action", "concern_id", "issue_id", "reason", "supersedes_concern_id", "supersedes_finding_id"},
+	"deviation.record":             {"authority", "disposition", "expected", "id", "observed", "reasoning", "references", "subject", "supersedes_deviation_id"},
 }
 
 func (a p23FakeLeafAdapter) UntrustedActor() p23LeafOutcome {
@@ -488,9 +576,15 @@ func (a p23FakeLeafAdapter) Conflict(pair p23HumanLeafPair) p23LeafOutcome {
 			key = pair.JSONArgs[i+1]
 		}
 	}
+	changedField := map[string]string{
+		"review.record": "profile", "finding.address": "reason", "concern.record": "summary",
+		"concern.dispose": "reason", "deviation.record": "reasoning", "decision.record-reference": "outcome",
+		"human-outcome.record": "reasoning", "requirement.record-reference": "status", "requirement.link": "relation",
+		"envelope.create": "outcome", "envelope.activate": "--actor", "claim.acquire": "ttl_seconds", "evidence.link": "receipt_id",
+	}[a.fixture.Operation]
 	return p23LeafOutcome{Operation: a.fixture.Operation, Code: "idempotency-conflict", Category: "conflict", Exit: 4,
 		Details: map[string]any{"operation_scope": a.fixture.Operation + ":<generated:project>", "idempotency_key": key,
-			"stored_request_digest": "<generated:digest>", "supplied_request_digest": "<generated:digest>"}}
+			"stored_request_digest": "<generated:digest>", "supplied_request_digest": "<generated:digest>", "differing_fields": []any{changedField}}}
 }
 
 func (a p23FakeLeafAdapter) NotFound() p23LeafOutcome {

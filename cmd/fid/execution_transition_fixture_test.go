@@ -4,16 +4,19 @@ import "testing"
 
 func TestExecutionTransitionFixtureDoesNotInheritExpiredClaim(t *testing.T) {
 	t.Parallel()
-	// This test is serial so no parallel case can clone the template while its
-	// age is simulated. No sleep or dependence on suite duration is necessary.
-	executionTransitionFixture(t)
-	fixture := reusableWorkspaceFixtureFor("execution-transition")
-	fixture.Lock()
-	mutateExecutionTransitionFixture(t, fixture.root,
+	// Expire a prior root's Claim explicitly, without waiting for suite time.
+	priorWorkspace, priorIssueID, _, _ := executionTransitionFixture(t)
+	mutateExecutionTransitionFixture(t, priorWorkspace,
 		`UPDATE claims SET expires_at = '2000-01-01T00:00:00Z'`)
-	fixture.Unlock()
+	assertExecutionTransitionRejectionWithoutMutation(t, priorWorkspace, priorIssueID,
+		"in_progress", "agent:actor-builder", "1", "fixture-expired-prior-transition",
+		[]string{"claim-expired", "run-inactive"},
+	)
 
 	workspace, issueID, _, _ := executionTransitionFixture(t)
+	if workspace == priorWorkspace {
+		t.Fatal("fresh execution fixture reused the expired Claim's root")
+	}
 	assertExecutionTransitionRejectionWithoutMutation(t, workspace, issueID,
 		"missing-state", "agent:actor-builder", "1", "fixture-age-transition",
 		[]string{"workflow-transition-invalid"},

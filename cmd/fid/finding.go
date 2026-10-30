@@ -25,14 +25,14 @@ func newFindingCommand() *cobra.Command {
 
 func newFindingAddressCommand() *cobra.Command {
 	var inputPath, actor, key string
-	cmd := &cobra.Command{Use: "address", Args: canonicalNoArgs("finding.address"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "address", Short: "Address a Review Finding.", Args: canonicalNoArgs("finding.address"), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, "finding.address", flag); err != nil {
 				return err
 			}
 		}
 		var request review.AddressRequest
-		if err := decodeClosedReviewInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["finding address"], &request); err != nil {
 			return renderFindingError(cmd, "finding.address", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -58,13 +58,14 @@ func newFindingAddressCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("finding.address"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["finding address"])
 	return cmd
 }
 
 func newFindingListCommand() *cobra.Command {
 	var issueID, reviewID, state, severity string
 	var limit int
-	cmd := &cobra.Command{Use: "list", Args: canonicalNoArgs("finding.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "list", Short: "List Review Findings.", Args: canonicalNoArgs("finding.list"), RunE: func(cmd *cobra.Command, _ []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderFindingError(cmd, "finding.list", err)
@@ -100,6 +101,9 @@ func renderFindingError(cmd *cobra.Command, operation string, cause error) error
 	if err != nil {
 		return err
 	}
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, operation, cause); ok {
+		return rendered
+	}
 	var missing *review.FindingNotFoundError
 	if errors.As(cause, &missing) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeFindingNotFound, "Finding was not found", &cli.Subject{Type: cli.SubjectFinding, ID: missing.ID}, map[string]any{"id": missing.ID})
@@ -127,7 +131,7 @@ func renderFindingError(cmd *cobra.Command, operation string, cause error) error
 	}
 	var conflict *journal.IdempotencyConflictError
 	if errors.As(cause, &conflict) {
-		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(conflict))
 	}
 	var limit *review.ResultLimitExceededError
 	if errors.As(cause, &limit) {
@@ -137,5 +141,5 @@ func renderFindingError(cmd *cobra.Command, operation string, cause error) error
 	if errors.As(cause, &target) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Finding target", nil, map[string]any{"argument": "finding_id", "value": target.ID, "allowed": []string{"earlier Finding on the same Issue and Envelope revision"}})
 	}
-	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Finding request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Finding request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }

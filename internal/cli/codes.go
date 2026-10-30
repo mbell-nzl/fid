@@ -21,6 +21,7 @@ const (
 
 const (
 	CodeInvalidArgument             Code = "invalid-argument"
+	CodeOperationUnavailable        Code = "operation-unavailable"
 	CodeUnsupportedKind             Code = "unsupported-kind"
 	CodeUnsupportedRelation         Code = "unsupported-relation"
 	CodeProjectNotFound             Code = "project-not-found"
@@ -91,6 +92,7 @@ const (
 	CodeEvidenceTypeNotAccepted     Code = "evidence-type-not-accepted"
 	CodeOutcomeNotPermitted         Code = "outcome-not-permitted"
 	CodeRepositoryMismatch          Code = "repository-mismatch"
+	CodeRepositoryUnavailable       Code = "repository-unavailable"
 	CodeReviewNotFound              Code = "review-not-found"
 	CodeFindingNotFound             Code = "finding-not-found"
 	CodeFindingAlreadyDisposed      Code = "finding-already-disposed"
@@ -230,6 +232,8 @@ func definition(category Category, retryable bool, subjects []SubjectType, detai
 }
 
 var failureCodeDefinitions = map[Code]reasonDefinition{
+	CodeOperationUnavailable: definition(CategoryInvalidInput, false, nil,
+		stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeReviewNotIndependent: definition(CategoryPrecondition, false, nil,
 		stringField("review_actor_id"), objectField("conflicting_subject", stringField("type"), stringField("id")), stringField("conflicting_actor_id")),
 	CodeReviewVerdictInvalid: definition(CategoryInvalidInput, false, nil,
@@ -243,7 +247,7 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 	CodeOutcomeNotPermitted: definition(CategoryPrecondition, false, nil,
 		stringField("obligation_id"), stringField("obligation_type"), stringField("outcome_id"), stringField("result")),
 	CodeRepositoryMismatch: definition(CategoryConflict, false, nil,
-		objectField("expected", repositoryFields()...), objectField("observed", repositoryFields()...)),
+		objectField("expected", stringField("head_oid"), booleanField("dirty")), objectField("observed", repositoryFields()...)),
 	CodeReviewNotFound:  definition(CategoryNotFound, false, []SubjectType{SubjectReview}, stringField("id")),
 	CodeFindingNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectFinding}, stringField("id")),
 	CodeFindingAlreadyDisposed: definition(CategoryConflict, false, []SubjectType{SubjectFinding},
@@ -253,12 +257,14 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 	CodeConcernAlreadyDisposed: definition(CategoryConflict, false, []SubjectType{SubjectConcern},
 		stringField("concern_id"), stringField("disposed_at")),
 	CodeIdempotencyConflict: definition(CategoryConflict, false, nil,
-		stringField("operation_scope"), stringField("idempotency_key"), stringField("stored_request_digest"), stringField("supplied_request_digest")),
+		stringField("operation_scope"), stringField("idempotency_key"), stringField("stored_request_digest"), stringField("supplied_request_digest"), stringsField("differing_fields")),
 	CodeProtectedDecisionRequired: definition(CategoryAuthority, false, []SubjectType{SubjectEnvelope},
 		stringField("envelope_id"), stringField("decision_class"), stringsField("required_capabilities"), stringsField("affected_actions"),
 		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
 	CodeSourceDigestMismatch: definition(CategoryPrecondition, false, nil,
-		stringField("display_label"), nullableStringField("path"), stringField("expected_digest"), nullableStringField("observed_digest")),
+		stringField("display_label"), nullableStringField("path"), nullableStringField("expected_digest"), nullableStringField("observed_digest")),
+	CodeRepositoryUnavailable: definition(CategoryPrecondition, true, nil,
+		stringField("reason"), stringField("detail")),
 	CodeHumanOutcomeRequired: definition(CategoryPrecondition, false, []SubjectType{SubjectEnvelope},
 		stringField("envelope_id"), stringField("obligation_id"), stringField("outcome_class"),
 		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
@@ -360,7 +366,7 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 }
 
 var registeredCodes = []Code{
-	CodeInvalidArgument, CodeUnsupportedKind, CodeUnsupportedRelation, CodeProjectNotFound, CodeProjectAlreadyInit,
+	CodeInvalidArgument, CodeOperationUnavailable, CodeUnsupportedKind, CodeUnsupportedRelation, CodeProjectNotFound, CodeProjectAlreadyInit,
 	CodeIssueNotFound, CodeRequirementNotFound, CodeLabelNotFound, CodeLinkNotFound, CodeWorkflowNotFound,
 	CodeDuplicateEntity, CodeStateConflict, CodeLockUnavailable, CodeHierarchyInvalid, CodeDependencyCycle,
 	CodeTransitionNotPermitted, CodeAuthorityMissing, CodeAuthorityUnknownActor, CodeAuthorityDenied,
@@ -385,7 +391,7 @@ var registeredCodes = []Code{
 	CodeImportTargetConflict,
 	CodeFindingNotFound, CodeFindingAlreadyDisposed,
 	CodeConcernNotFound, CodeDeviationNotFound, CodeConcernAlreadyDisposed,
-	CodeProtectedDecisionRequired, CodeSourceDigestMismatch, CodeHumanOutcomeRequired, CodeOutcomeNotFound,
+	CodeProtectedDecisionRequired, CodeSourceDigestMismatch, CodeRepositoryUnavailable, CodeHumanOutcomeRequired, CodeOutcomeNotFound,
 }
 
 func findingFields() []detailField {

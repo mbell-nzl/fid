@@ -20,6 +20,7 @@ type DefineOptions struct {
 	Actor          string
 	IdempotencyKey string
 	Request        DefinitionRequest
+	RequestInput   map[string]any
 }
 
 // DefineResult reports the projected rows written for one workflow declaration.
@@ -79,11 +80,16 @@ func defineWorkflowLocked(lock *journal.WriteLock, options DefineOptions, actor 
 	if err != nil {
 		return err
 	}
-	digest, err := workflowRequestDigest("workflow.define", projectConfig.ProjectID, actor, options.Request)
+	requestInput := any(map[string]any{"Name": options.Request.Name, "AppliesTo": options.Request.AppliesTo, "States": options.Request.States, "Categories": options.Request.Categories, "Transitions": options.Request.Transitions})
+	aliases := map[string]string{"Name": "--name", "AppliesTo": "--applies-to", "States": "--states", "Categories": "--categories", "Transitions": "--transitions"}
+	if options.RequestInput != nil {
+		requestInput, aliases = options.RequestInput, nil
+	}
+	digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "workflow.define", "project_id": projectConfig.ProjectID, "request": requestInput}, options.Actor, aliases)
 	if err != nil {
 		return err
 	}
-	idempotencyRequest := journal.IdempotencyRequest{OperationScope: "workflow.define:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+	idempotencyRequest := journal.IdempotencyRequest{OperationScope: "workflow.define:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 	if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
 		return err
 	} else if found {

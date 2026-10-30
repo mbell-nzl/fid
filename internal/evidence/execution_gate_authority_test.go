@@ -49,7 +49,7 @@ func TestValidateGateRunReferencesAuthorizesAgainstEveryEnvelopeGrant(t *testing
 	}
 	for _, test := range tests {
 		t.Run(test.actor, func(t *testing.T) {
-			err := validateGateRunReferences(conn, registration, test.actor, GateRunRequest{RunID: "RUN-" + test.actor, ObligationID: "OBL-1", Repository: repository})
+			err := validateGateRunReferences(conn, "", registration, test.actor, GateRunRequest{RunID: "RUN-" + test.actor, ObligationID: "OBL-1"}, repository)
 			if test.granted && err != nil {
 				t.Fatalf("granted Actor %s = %v, want gate.run authorized by its own Grant", test.actor, err)
 			}

@@ -214,18 +214,18 @@ func RaiseStop(options StopOptions, request StopRaiseRequest) (StopRaiseResult, 
 		if err != nil {
 			return err
 		}
-		if err := authorizeStop(conn, options, request.Subject, "stop.raise", ""); err != nil {
-			return err
-		}
-		digest, err := stopDigest("stop.raise", project.ProjectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "stop.raise", "project_id": project.ProjectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idem := journal.IdempotencyRequest{OperationScope: "stop.raise:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idem := journal.IdempotencyRequest{OperationScope: "stop.raise:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idem); err != nil {
 			return err
 		} else if found {
 			return loadStopRaiseResult(replay, &result)
+		}
+		if err := authorizeStop(conn, options, request.Subject, "stop.raise", ""); err != nil {
+			return err
 		}
 		stopID, err := newStopID(conn)
 		if err != nil {
@@ -318,11 +318,11 @@ func ResolveStop(options StopOptions, request StopResolveRequest) (StopResolveRe
 		if err != nil {
 			return err
 		}
-		digest, err := stopDigest("stop.resolve", project.ProjectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "stop.resolve", "project_id": project.ProjectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idem := journal.IdempotencyRequest{OperationScope: "stop.resolve:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idem := journal.IdempotencyRequest{OperationScope: "stop.resolve:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idem); err != nil {
 			return err
 		} else if found {
@@ -383,11 +383,11 @@ func ResolveAttention(options StopOptions, request AttentionResolveRequest) (Att
 		if err != nil {
 			return err
 		}
-		digest, err := stopDigest("attention.resolve", project.ProjectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "attention.resolve", "project_id": project.ProjectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idem := journal.IdempotencyRequest{OperationScope: "attention.resolve:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idem := journal.IdempotencyRequest{OperationScope: "attention.resolve:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idem); err != nil {
 			return err
 		} else if found {
@@ -517,15 +517,6 @@ func attentionSemanticKey(subject Subject, code string, condition Condition) (st
 	}
 	sum := sha256.Sum256(payload)
 	return "sha256:" + hex.EncodeToString(sum[:]), nil
-}
-
-func stopDigest(operation, projectID, actorID string, request any) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"operation": operation, "project_id": projectID, "actor_id": actorID, "request": request})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(payload)
-	return hex.EncodeToString(sum[:]), nil
 }
 
 func newStopID(conn *sql.DB) (string, error) {

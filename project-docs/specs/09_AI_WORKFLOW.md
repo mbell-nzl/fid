@@ -274,7 +274,13 @@ Triage rules:
   blocker candidate returned by an active schema-v2 recovery awaiting its
   REPAIR event, the immediately bound TASK-RECOVERY replaces that pending
   dispatch only for the same task. It does not permit cross-task replacement or
-  bypass any other recovery stage.
+  bypass any other recovery stage. A REPAIR TRG that continues a recovery
+  whose last REPAIR was not `RESOLVED` keeps that recovery's `Trigger
+  signature` and the next attempt. The trigger is chain identity, not a
+  description of the new defect. Its `Repair category` is one of the
+  run-ledger recovery categories. An unconsumed ordinary REPAIR TRG is
+  corrected only by a later REPAIR TRG for the same task and attempt (DEC-190).
+  A correction written inside the original section binds nothing (DEC-284).
 - A **protected gate/control definition change** changes a command, assertion's
   accepted pass/fail semantics, accepted status, scope,
   threshold/budget/tolerance, or governing policy. It requires `BLOCK` unless
@@ -673,7 +679,15 @@ Autonomous triage and resolved resume:
   verified commit, or restored
   capability, verify it and append `RUN-RESUME` retaining the
   governing TRG/ESC, trigger, next attempt, continuing task, and exact next
-  recovery. That tuple binds the next TASK-RECOVERY. Record exactly one
+  recovery. That tuple binds the next TASK-RECOVERY. Without `Repair
+  owners`, the tuple's task, trigger and attempt must equal the RUN-RESUME's
+  `Continuing task`, `Trigger signature` and `Attempt count`. An accepted
+  RUN-RESUME that breaks this is never rewritten. Exactly one phase DEC
+  reconciles it with the line pair `- Reconciles RUN-RESUME: <date> <time> /
+  <TRG>` and `- Reconciled next recovery: <tuple>`. The reconciled tuple
+  restates those three fields and keeps the recorded category and mode. The
+  bound TASK-RECOVERY cites that DEC in `Source` and `Repair authority`
+  (DEC-283). Record exactly one
   `Resolution authority` as `verified-commit:<40hex>`,
   `restored-capability:<stable-id>`, or `DEC-<NNN>`, with separate
   Runner-observed resolution evidence. The next recovery's `Source` and

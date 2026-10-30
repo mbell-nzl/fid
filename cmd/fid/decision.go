@@ -9,6 +9,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/review"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
@@ -47,14 +48,14 @@ func newDecisionCommand() *cobra.Command {
 
 func newDecisionRecordReferenceCommand() *cobra.Command {
 	var inputPath, actor, key string
-	command := &cobra.Command{Use: "record-reference", Args: canonicalNoArgs("decision.record-reference"), RunE: func(cmd *cobra.Command, _ []string) error {
+	command := &cobra.Command{Use: "record-reference", Short: "Record a Decision Reference.", Args: canonicalNoArgs("decision.record-reference"), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, "decision.record-reference", flag); err != nil {
 				return err
 			}
 		}
 		var request review.DecisionReferenceRequest
-		if err := decodeClosedJudgmentInput(cmd.InOrStdin(), inputPath, []string{"id", "class", "source", "authority", "outcome", "scope"}, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[rootCommandKey(cmd)], &request); err != nil {
 			return renderDecisionError(cmd, "decision.record-reference", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -79,13 +80,14 @@ func newDecisionRecordReferenceCommand() *cobra.Command {
 	command.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	command.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	command.SetFlagErrorFunc(canonicalFlagError("decision.record-reference"))
+	installInputDescriptor(command, inputDescriptorRegistry["decision record-reference"])
 	return command
 }
 
 func newDecisionListCommand() *cobra.Command {
 	var class, outcome, issueID string
 	var limit int
-	command := &cobra.Command{Use: "list", Args: canonicalNoArgs("decision.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+	command := &cobra.Command{Use: "list", Short: "List Decision References.", Args: canonicalNoArgs("decision.list"), RunE: func(cmd *cobra.Command, _ []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderDecisionError(cmd, "decision.list", err)
@@ -120,9 +122,8 @@ func renderDecisionError(cmd *cobra.Command, operation string, cause error) erro
 	if err != nil {
 		return err
 	}
-	var mismatch *review.SourceDigestMismatchError
-	if errors.As(cause, &mismatch) {
-		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeSourceDigestMismatch, "Source digest does not match the observed project file", nil, map[string]any{"display_label": mismatch.DisplayLabel, "path": optionalString(mismatch.Path), "expected_digest": mismatch.ExpectedDigest, "observed_digest": optionalString(mismatch.ObservedDigest)})
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, operation, cause); ok {
+		return rendered
 	}
 	var denied *policy.EnvelopeAuthorityDeniedError
 	if errors.As(cause, &denied) {
@@ -130,11 +131,39 @@ func renderDecisionError(cmd *cobra.Command, operation string, cause error) erro
 	}
 	var conflict *journal.IdempotencyConflictError
 	if errors.As(cause, &conflict) {
-		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(conflict))
 	}
 	var resultLimit *review.ResultLimitExceededError
 	if errors.As(cause, &resultLimit) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeResultLimitExceeded, "Decision Reference result limit exceeded", nil, map[string]any{"collection": "items", "limit": resultLimit.Limit, "observed": resultLimit.Observed})
 	}
-	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Decision Reference request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Decision Reference request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+}
+
+func renderJudgmentObservationError(cmd *cobra.Command, jsonMode bool, operation string, cause error) (error, bool) {
+	var structural *cli.InputError
+	if errors.As(cause, &structural) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument,
+			structural.Error(), nil, structural.Details()), true
+	}
+	var mismatch *project.SourceDigestMismatchError
+	if errors.As(cause, &mismatch) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeSourceDigestMismatch,
+			"Source digest does not match the observed project file", nil,
+			map[string]any{"display_label": mismatch.DisplayLabel, "path": optionalString(mismatch.Path),
+				"expected_digest": optionalString(mismatch.ExpectedDigest), "observed_digest": optionalString(mismatch.ObservedDigest)}), true
+	}
+	var unavailable *project.RepositoryUnavailableError
+	if errors.As(cause, &unavailable) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeRepositoryUnavailable,
+			"repository observation is unavailable", nil,
+			map[string]any{"reason": unavailable.Reason, "detail": unavailable.Detail}), true
+	}
+	var invalid *project.InvalidSourceInputError
+	if errors.As(cause, &invalid) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument,
+			invalid.Detail, nil, map[string]any{"argument": invalid.Field, "value": nil,
+				"allowed": []string{"valid SourceInput " + invalid.Field}}), true
+	}
+	return nil, false
 }

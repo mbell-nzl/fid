@@ -1,34 +1,32 @@
 # Progress — Current
 
-Updated 2026-10-03. **No phase is active. Phase 23 "Review and Human
-judgment" is complete (DEC-271)** on branch `phase-23`, ready for PR and
-merge.
+Updated 2026-10-29. **Phase 24 "Operating experience and input
+convergence" is closed** under DEC-293 (Heavy mode, DEC-277; 15 tasks with
+9a). Tasks 1-14 are complete, QA windows A-E passed, and 63 deterministic
+VAL rows pass.
 
-- 21 tasks (18 planned plus supplemental 19-21) and 89/89 validation
-  assertions. Final review 2 (review-16a) PASS with no Must-fix; Human
-  checklist 2 7/7 PASS after checklist 1 failed.
-- VAL-071 and VAL-073 pass by Tech Lead disposition; their residual Human
-  notes go to CF-045. The Human may reverse either disposition.
-- `reviews.coverage.v1` and `human.outcomes.v1` are qualified.
-- Evidence: [final acceptance](../phases/phase-23/qa/final-acceptance.md),
-  [wrap audit](../phases/phase-23/wrap-up-audit.md),
-  [phase history](../phases/phase-23/progress.md),
-  [decisions](../phases/phase-23/decisions.md) (DEC-222..271 and workflow
-  notes).
+The Human checklist is recorded:
+
+- VAL-053 FAIL;
+- VAL-054 PASS;
+- VAL-055 and VAL-056 PARTIAL;
+- VAL-057 SUPERSEDED.
+
+The findings carry forward to the fid reset. F1 and F2 are waived and
+ESC-24-010 is closed. Earlier: DEC-292 (ESC-24-010 route, now cancelled),
+DEC-291 (ESC-24-009), DEC-290 (ESC-24-008) and DEC-283..289. Phase 23
+closed under DEC-271 (PR #25, `a46ec77`).
+
+- Contract: [public interface](../phases/phase-24/public-interface.md);
+  [inventory](../phases/phase-24/input-inventory.md);
+  [validation contract](../phases/phase-24/qa/validation-contract.md);
+  [decisions](../phases/phase-24/decisions.md).
+- Phase 23 evidence: [final acceptance](../phases/phase-23/qa/final-acceptance.md),
+  [wrap audit](../phases/phase-23/wrap-up-audit.md).
 
 ## Next
 
-1. Human creates the Phase 23 PR and merges it.
-2. Human and Tech Lead decide when and how CF-045 (Human operating
-   experience: A4-A8 and residual PARTIALs) is planned.
-3. Tech Lead plans Phase 24 "Parallel and evolving work" (multi-Issue
-   revision, parallel Claims, `retry-exhausted`, `work.claims.v1`).
-
-A deep workflow retrospective is recommended under CF-036/039 (see Phase 23
-workflow notes). It is separate from Phase 24.
-
-## Earlier phases
-
-Phase 22 closed under DEC-220/221: [wrap audit](../phases/phase-22/wrap-up-audit.md).
-Claims qualification remains Phase 24; external adapter qualification Phase 25.
-Live carry-forwards are in [active decisions](decisions_active.md).
+1. Human and Claude: settle the reset decisions (F1-F5, D1-D14) in
+   `../reviews/2026-10-29-fid-kit-reset-proposal.html`.
+2. Write ADR-0013 and `RESET.md`; rewrite `AGENTS.md` and `CLAUDE.md`.
+3. Phases 25 and 26 are not started; the reset decides what replaces them.

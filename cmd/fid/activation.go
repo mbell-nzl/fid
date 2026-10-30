@@ -1,14 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
-	"strings"
+	"reflect"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -49,7 +47,7 @@ func newActivationFinalizeCommand() *cobra.Command {
 			return err
 		}
 		var request workflow.ActivationFinalizeRequest
-		if err := decodeClosedActivationInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["activation finalize"], &request); err != nil {
 			return renderActivationError(cmd, "activation.finalize", err)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -74,6 +72,7 @@ func newActivationFinalizeCommand() *cobra.Command {
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.Flags().StringVar(&bootstrapActor, "actor", "", "Untrusted bootstrap attribution")
 	cmd.SetFlagErrorFunc(canonicalFlagError("activation.finalize"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["activation finalize"])
 	return cmd
 }
 
@@ -101,39 +100,30 @@ func newActivationStatusCommand() *cobra.Command {
 }
 
 func newActivationResourceCommand() *cobra.Command {
-	return newActivationRecoveryMutationCommand("resource", func(options workflow.ActivationTransitionOptions, inputPath string, cmd *cobra.Command) (workflow.ActivationPrepareResult, *workflow.ActivationResourceResult, error) {
-		var request workflow.ActivationResourceObservationRequest
-		if err := decodeClosedActivationInput(cmd.InOrStdin(), inputPath, &request); err != nil {
-			return workflow.ActivationPrepareResult{}, nil, err
-		}
-		result, err := workflow.ObserveActivationResource(options, request)
+	return newActivationRecoveryMutationCommand("resource", func(options workflow.ActivationTransitionOptions, input any) (workflow.ActivationPrepareResult, *workflow.ActivationResourceResult, error) {
+		request := input.(*workflow.ActivationResourceObservationRequest)
+		result, err := workflow.ObserveActivationResource(options, *request)
 		return workflow.ActivationPrepareResult{}, &result, err
 	})
 }
 
 func newActivationRecoverCommand() *cobra.Command {
-	return newActivationRecoveryMutationCommand("recover", func(options workflow.ActivationTransitionOptions, inputPath string, cmd *cobra.Command) (workflow.ActivationPrepareResult, *workflow.ActivationResourceResult, error) {
-		var request workflow.ActivationRecoveryRequest
-		if err := decodeClosedActivationInput(cmd.InOrStdin(), inputPath, &request); err != nil {
-			return workflow.ActivationPrepareResult{}, nil, err
-		}
-		result, err := workflow.RecoverActivation(options, request)
+	return newActivationRecoveryMutationCommand("recover", func(options workflow.ActivationTransitionOptions, input any) (workflow.ActivationPrepareResult, *workflow.ActivationResourceResult, error) {
+		request := input.(*workflow.ActivationRecoveryRequest)
+		result, err := workflow.RecoverActivation(options, *request)
 		return result, nil, err
 	})
 }
 
 func newActivationRecoverCompleteCommand() *cobra.Command {
-	return newActivationRecoveryMutationCommand("recover-complete", func(options workflow.ActivationTransitionOptions, inputPath string, cmd *cobra.Command) (workflow.ActivationPrepareResult, *workflow.ActivationResourceResult, error) {
-		var request workflow.ActivationRecoveryCompleteRequest
-		if err := decodeClosedActivationInput(cmd.InOrStdin(), inputPath, &request); err != nil {
-			return workflow.ActivationPrepareResult{}, nil, err
-		}
-		result, err := workflow.CompleteActivationRecovery(options, request)
+	return newActivationRecoveryMutationCommand("recover-complete", func(options workflow.ActivationTransitionOptions, input any) (workflow.ActivationPrepareResult, *workflow.ActivationResourceResult, error) {
+		request := input.(*workflow.ActivationRecoveryCompleteRequest)
+		result, err := workflow.CompleteActivationRecovery(options, *request)
 		return result, nil, err
 	})
 }
 
-type activationRecoveryMutation func(workflow.ActivationTransitionOptions, string, *cobra.Command) (workflow.ActivationPrepareResult, *workflow.ActivationResourceResult, error)
+type activationRecoveryMutation func(workflow.ActivationTransitionOptions, any) (workflow.ActivationPrepareResult, *workflow.ActivationResourceResult, error)
 
 func newActivationRecoveryMutationCommand(name string, mutate activationRecoveryMutation) *cobra.Command {
 	var inputPath, key, bootstrapActor string
@@ -145,12 +135,17 @@ func newActivationRecoveryMutationCommand(name string, mutate activationRecovery
 		if err := requireCanonicalFlag(cmd, operation, "idempotency-key"); err != nil {
 			return err
 		}
+		descriptor := inputDescriptorRegistry["activation "+name]
+		request := reflect.New(descriptor.Type).Interface()
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, descriptor, request); err != nil {
+			return renderActivationError(cmd, operation, err)
+		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderActivationError(cmd, operation, err)
 		}
 		options := workflow.ActivationTransitionOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), BootstrapActor: bootstrapActor, IdempotencyKey: key}
-		activationResult, resourceResult, err := mutate(options, inputPath, cmd)
+		activationResult, resourceResult, err := mutate(options, request)
 		if err != nil {
 			return renderActivationError(cmd, operation, err)
 		}
@@ -175,6 +170,7 @@ func newActivationRecoveryMutationCommand(name string, mutate activationRecovery
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.Flags().StringVar(&bootstrapActor, "actor", "", "Untrusted bootstrap attribution")
 	cmd.SetFlagErrorFunc(canonicalFlagError(operation))
+	installInputDescriptor(cmd, inputDescriptorRegistry["activation "+name])
 	return cmd
 }
 
@@ -188,6 +184,11 @@ func newActivationTransitionCommand(name string) *cobra.Command {
 		if err := requireCanonicalFlag(cmd, operation, "idempotency-key"); err != nil {
 			return err
 		}
+		descriptor := inputDescriptorRegistry["activation "+name]
+		request := reflect.New(descriptor.Type).Interface()
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, descriptor, request); err != nil {
+			return renderActivationError(cmd, operation, err)
+		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderActivationError(cmd, operation, err)
@@ -195,17 +196,9 @@ func newActivationTransitionCommand(name string) *cobra.Command {
 		options := workflow.ActivationTransitionOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), BootstrapActor: bootstrapActor, IdempotencyKey: key}
 		var result workflow.ActivationPrepareResult
 		if name == "commit" {
-			var request workflow.ActivationCommitRequest
-			if err := decodeClosedActivationInput(cmd.InOrStdin(), inputPath, &request); err != nil {
-				return renderActivationError(cmd, operation, err)
-			}
-			result, err = workflow.CommitActivation(options, request)
+			result, err = workflow.CommitActivation(options, *request.(*workflow.ActivationCommitRequest))
 		} else {
-			var request workflow.ActivationAbortRequest
-			if err := decodeClosedActivationInput(cmd.InOrStdin(), inputPath, &request); err != nil {
-				return renderActivationError(cmd, operation, err)
-			}
-			result, err = workflow.AbortActivation(options, request)
+			result, err = workflow.AbortActivation(options, *request.(*workflow.ActivationAbortRequest))
 		}
 		if err != nil {
 			return renderActivationError(cmd, operation, err)
@@ -224,6 +217,7 @@ func newActivationTransitionCommand(name string) *cobra.Command {
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.Flags().StringVar(&bootstrapActor, "actor", "", "Untrusted bootstrap attribution")
 	cmd.SetFlagErrorFunc(canonicalFlagError(operation))
+	installInputDescriptor(cmd, inputDescriptorRegistry["activation "+name])
 	return cmd
 }
 
@@ -239,7 +233,7 @@ func newActivationComponentCommand() *cobra.Command {
 				return err
 			}
 			var request workflow.ActivationComponentRequest
-			if err := decodeClosedActivationInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+			if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["activation component"], &request); err != nil {
 				return renderActivationError(cmd, "activation.component", err)
 			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -265,6 +259,7 @@ func newActivationComponentCommand() *cobra.Command {
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.Flags().StringVar(&bootstrapActor, "actor", "", "Untrusted bootstrap attribution")
 	cmd.SetFlagErrorFunc(canonicalFlagError("activation.component"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["activation component"])
 	return cmd
 }
 
@@ -313,44 +308,16 @@ func newActivationPrepareCommand() *cobra.Command {
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.Flags().StringVar(&bootstrapActor, "actor", "", "Untrusted bootstrap attribution")
 	cmd.SetFlagErrorFunc(canonicalFlagError("activation.prepare"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["activation prepare"])
 	return cmd
 }
 
 func readActivationPrepareInput(cmd *cobra.Command, path string) (workflow.ActivationPrepareRequest, error) {
 	var request workflow.ActivationPrepareRequest
-	if err := decodeClosedActivationInput(cmd.InOrStdin(), path, &request); err != nil {
+	if err := readDescriptorInput(cmd.InOrStdin(), path, inputDescriptorRegistry["activation prepare"], &request); err != nil {
 		return workflow.ActivationPrepareRequest{}, err
 	}
 	return request, nil
-}
-
-func decodeClosedActivationInput(stdin io.Reader, path string, target any) error {
-	var payload []byte
-	var err error
-	if path == "-" {
-		payload, err = io.ReadAll(io.LimitReader(stdin, 1_048_577))
-	} else {
-		payload, err = os.ReadFile(path)
-	}
-	if err != nil {
-		return fmt.Errorf("read activation input: %w", err)
-	}
-	if len(payload) > 1_048_576 {
-		return fmt.Errorf("activation input exceeds 1048576 bytes")
-	}
-	decoder := json.NewDecoder(strings.NewReader(string(payload)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		return fmt.Errorf("decode activation input: %w", err)
-	}
-	if decoder.More() {
-		return fmt.Errorf("activation input must contain one object")
-	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		return fmt.Errorf("activation input must contain one object")
-	}
-	return nil
 }
 
 func renderActivationError(cmd *cobra.Command, operation string, cause error) error {
@@ -363,15 +330,20 @@ func renderActivationError(cmd *cobra.Command, operation string, cause error) er
 		return err
 	}
 	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, operation, failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 }
 
 func activationFailure(cause error) (cli.Failure, error) {
+	var structural *cli.InputError
+	if errors.As(cause, &structural) {
+		return cli.NewFailure(cli.CodeInvalidArgument, structural.Error(), nil, structural.Details())
+	}
+	var idempotency *journal.IdempotencyConflictError
+	if errors.As(cause, &idempotency) {
+		return cli.NewFailure(cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(idempotency))
+	}
 	var conflict *workflow.ActivationConflictError
 	if errors.As(cause, &conflict) {
 		return cli.NewFailure(cli.CodeActivationConflict, "another activation blocks this request", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"active_id": activationConflictID(conflict.ActiveID), "nonterminal_id": activationConflictID(conflict.NonterminalID), "requested_direction": "activate"})
@@ -400,7 +372,7 @@ func activationFailure(cause error) (cli.Failure, error) {
 	if errors.As(cause, &invalid) {
 		return cli.NewFailure(cli.CodeActivationInvalid, "activation state is not permitted", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"status": invalid.Status, "expected_statuses": invalid.ExpectedStatuses, "component_errors": []map[string]any{}})
 	}
-	return cli.NewFailure(cli.CodeInvalidArgument, "invalid activation input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted activation input"}})
+	return genericFailure(cause, cli.CodeInvalidArgument, "invalid activation input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted activation input"}})
 }
 
 func activationConflictID(value *string) any {

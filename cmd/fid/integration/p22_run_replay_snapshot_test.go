@@ -25,7 +25,7 @@ func TestP22RunReplayRetainsHistoricalBudgetSnapshot(t *testing.T) {
 			if operation == "run.abandon" {
 				p22StartAfterAbandon(t, adapter, before)
 			}
-			gate := p22GateRun(t, adapter.binary, adapter.workspace, adapter.actor, p21Input(t, adapter.workspace, "later-budget-charge", map[string]any{"run_id": adapter.runID, "registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": adapter.repository}), "later-budget-charge")
+			gate := p22GateRun(t, adapter.binary, adapter.workspace, adapter.actor, p21Input(t, adapter.workspace, "later-budget-charge", map[string]any{"run_id": adapter.runID, "registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "expected_repository": map[string]any{"head_oid": adapter.repository["head_oid"], "dirty": adapter.repository["dirty"]}}), "later-budget-charge")
 			if p21PathString(t, gate, "result", "receipt", "outcome") != "succeeded" {
 				t.Fatalf("later Gate failed: %#v", gate)
 			}
@@ -62,7 +62,7 @@ func p22SnapshotResponse(t *testing.T, response p22ConformanceResponse) map[stri
 func p22StartAfterAbandon(t *testing.T, adapter *p22FIDRecoveryAdapter, response map[string]any) {
 	t.Helper()
 	run := p21Path(t, response, "result", "run").(map[string]any)
-	claim := p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "claim", "acquire", "--actor", adapter.actor, "--input", p21Input(t, adapter.workspace, "after-abandon-claim", map[string]any{"issue_id": run["issue_id"], "envelope_id": run["envelope_id"], "envelope_revision": run["envelope_revision"], "worktree_id": adapter.repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "ttl_seconds": 60}), "--idempotency-key", "after-abandon-claim")
-	started := p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "run", "start", "--actor", adapter.actor, "--input", p21Input(t, adapter.workspace, "after-abandon-run", map[string]any{"issue_id": run["issue_id"], "envelope_id": run["envelope_id"], "envelope_revision": run["envelope_revision"], "claim_id": p21PathString(t, claim, "result", "claim", "id"), "claim_version": 1, "executor": map[string]any{"id": "executor-after-abandon", "source": "activated-harness"}, "obligation_id": nil, "repository": adapter.repository}), "--idempotency-key", "after-abandon-run")
+	claim := p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "claim", "acquire", "--actor", adapter.actor, "--input", p21Input(t, adapter.workspace, "after-abandon-claim", map[string]any{"issue_id": run["issue_id"], "envelope_id": run["envelope_id"], "envelope_revision": run["envelope_revision"], "scope": map[string]any{"paths": []string{"base.txt"}}, "ttl_seconds": 60}), "--idempotency-key", "after-abandon-claim")
+	started := p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "run", "start", "--actor", adapter.actor, "--input", p21Input(t, adapter.workspace, "after-abandon-run", map[string]any{"issue_id": run["issue_id"], "envelope_id": run["envelope_id"], "envelope_revision": run["envelope_revision"], "claim_id": p21PathString(t, claim, "result", "claim", "id"), "claim_version": 1, "executor": map[string]any{"id": "executor-after-abandon", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": p24ExpectedRepository(adapter.repository)}), "--idempotency-key", "after-abandon-run")
 	adapter.runID = p21PathString(t, started, "result", "run", "id")
 }

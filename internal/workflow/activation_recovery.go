@@ -264,11 +264,11 @@ func activationMutation(options ActivationTransitionOptions, operation string, r
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		digest, err := activationRequestDigest(operation, project.ProjectID, options.BootstrapActor, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"bootstrap_actor": options.BootstrapActor, "operation": operation, "project_id": project.ProjectID, "request": request}, options.BootstrapActor, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: operation + ":" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: operation + ":" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replayed, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {

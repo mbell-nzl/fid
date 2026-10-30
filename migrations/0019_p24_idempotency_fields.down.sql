@@ -1,0 +1,1 @@
+ALTER TABLE idempotency_results DROP COLUMN request_field_digests_json;

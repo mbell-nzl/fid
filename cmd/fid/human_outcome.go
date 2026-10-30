@@ -16,6 +16,7 @@ import (
 
 func init() {
 	rootFlagCapabilities["human-outcome record"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["human-outcome get"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["human-outcome list"] = rootFlagCapability{Project: true, JSON: true}
 }
 
@@ -43,20 +44,20 @@ func humanOutcomeRequiredFailure(blocked *workflow.StopBlockedError) (cli.Failur
 
 func newHumanOutcomeCommand() *cobra.Command {
 	command := &cobra.Command{Use: "human-outcome", Short: "Record and list Human Outcomes."}
-	command.AddCommand(newHumanOutcomeRecordCommand(), newHumanOutcomeListCommand())
+	command.AddCommand(newHumanOutcomeRecordCommand(), newHumanOutcomeListCommand(), newHumanOutcomeGetCommand())
 	return command
 }
 
 func newHumanOutcomeRecordCommand() *cobra.Command {
 	var inputPath, actor, key string
-	command := &cobra.Command{Use: "record", Args: canonicalNoArgs("human-outcome.record"), RunE: func(cmd *cobra.Command, _ []string) error {
+	command := &cobra.Command{Use: "record", Short: "Record a Human Outcome.", Args: canonicalNoArgs("human-outcome.record"), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, "human-outcome.record", flag); err != nil {
 				return err
 			}
 		}
 		var request review.HumanOutcomeRequest
-		if err := decodeClosedJudgmentInput(cmd.InOrStdin(), inputPath, []string{"id", "class", "subject", "result", "scope", "reasoning", "references"}, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[rootCommandKey(cmd)], &request); err != nil {
 			return renderHumanOutcomeError(cmd, "human-outcome.record", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -81,13 +82,14 @@ func newHumanOutcomeRecordCommand() *cobra.Command {
 	command.Flags().StringVar(&actor, "actor", "", "Finalized activation human actor ID")
 	command.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	command.SetFlagErrorFunc(canonicalFlagError("human-outcome.record"))
+	installInputDescriptor(command, inputDescriptorRegistry["human-outcome record"])
 	return command
 }
 
 func newHumanOutcomeListCommand() *cobra.Command {
 	var class, result, issueID string
 	var limit int
-	command := &cobra.Command{Use: "list", Args: canonicalNoArgs("human-outcome.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+	command := &cobra.Command{Use: "list", Short: "List Human Outcomes.", Args: canonicalNoArgs("human-outcome.list"), RunE: func(cmd *cobra.Command, _ []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderHumanOutcomeError(cmd, "human-outcome.list", err)
@@ -122,6 +124,13 @@ func renderHumanOutcomeError(cmd *cobra.Command, operation string, cause error) 
 	if err != nil {
 		return err
 	}
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, operation, cause); ok {
+		return rendered
+	}
+	var missing *review.HumanOutcomeNotFoundError
+	if errors.As(cause, &missing) {
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeOutcomeNotFound, "Human Outcome was not found", &cli.Subject{Type: cli.SubjectHumanOutcome, ID: missing.ID}, map[string]any{"id": missing.ID})
+	}
 	var authorityMissing *review.AuthorityMissingError
 	if errors.As(cause, &authorityMissing) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityMissing, "active Kit Activation authority is missing", nil, map[string]any{"operation": authorityMissing.Operation, "actor_id": authorityMissing.ActorID, "required_actions": []string{authorityMissing.Operation}, "required_capabilities": []string{authorityMissing.Operation}})
@@ -132,11 +141,34 @@ func renderHumanOutcomeError(cmd *cobra.Command, operation string, cause error) 
 	}
 	var conflict *journal.IdempotencyConflictError
 	if errors.As(cause, &conflict) {
-		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(conflict))
 	}
 	var resultLimit *review.ResultLimitExceededError
 	if errors.As(cause, &resultLimit) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeResultLimitExceeded, "Human Outcome result limit exceeded", nil, map[string]any{"collection": "items", "limit": resultLimit.Limit, "observed": resultLimit.Observed})
 	}
-	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Human Outcome request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Human Outcome request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+}
+
+func newHumanOutcomeGetCommand() *cobra.Command {
+	cmd := &cobra.Command{Use: "get <outcome-id>", Short: "Read one Human Outcome.", Args: canonicalExactArgs("human-outcome.get", 1), RunE: func(cmd *cobra.Command, args []string) error {
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderHumanOutcomeError(cmd, "human-outcome.get", err)
+		}
+		value, err := review.GetHumanOutcome(workspace, issueMigrationsDir(), args[0])
+		if err != nil {
+			return renderHumanOutcomeError(cmd, "human-outcome.get", err)
+		}
+		jsonMode, err := readJSONMode(cmd)
+		if err != nil {
+			return err
+		}
+		if jsonMode {
+			return cli.WriteSuccess(cmd.OutOrStdout(), "human-outcome.get", map[string]any{"outcome": value}, nil)
+		}
+		return writeP23Human(cmd, "human-outcome.get", value)
+	}}
+	cmd.SetFlagErrorFunc(canonicalFlagError("human-outcome.get"))
+	return cmd
 }

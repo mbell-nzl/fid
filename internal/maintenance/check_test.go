@@ -344,7 +344,7 @@ func task21MaintenanceEvent(eventID string, sequence int) journal.Event {
 func seedTask21CorruptProjection(t *testing.T, db *sql.DB) {
 	t.Helper()
 	statements := []string{
-		`INSERT INTO idempotency_results (operation_scope, idempotency_key, request_digest, result_entity_id, result_event_id, aggregate_sequence, result_json, created_at) VALUES ('task21', 'binding', 'sha256:test', 'LABEL-maintenance', 'EVT-missing', 9, '{}', '2026-08-22T00:00:00Z')`,
+		`INSERT INTO idempotency_results (operation_scope, idempotency_key, request_digest, result_entity_id, result_event_id, aggregate_sequence, result_json, created_at, request_field_digests_json) VALUES ('task21', 'binding', 'sha256:test', 'LABEL-maintenance', 'EVT-missing', 9, '{}', '2026-08-22T00:00:00Z', '{}')`,
 		`INSERT INTO kit_activations (id, kit_identity, backend_identity, phase, status, point_of_no_return, direction, created_at, updated_at) VALUES ('ACT-1', 'kit-1', 'fid-1', 21, 'finalized', 1, 'activate', '2026-08-22T00:00:00Z', '2026-08-22T00:00:00Z')`,
 		`INSERT INTO activation_gate_definitions (activation_id, definition_id, definition_version, definition_digest, definition_json) VALUES ('ACT-1', 'DEF-1', 1, 'sha256:def', '{}')`,
 		`INSERT INTO gate_registrations (id, version, activation_id, definition_id, definition_version, definition_digest, binding_digest, project_id, worktree_id, scope_json, policy_json, authorization_provenance, created_event_id, created_at) VALUES ('REG-1', 1, 'ACT-1', 'DEF-1', 1, 'sha256:def', 'sha256:binding', 'project-1', 'worktree-1', '{}', '{}', 'test', 'EVT-20260822-000001', '2026-08-22T00:00:00Z')`,

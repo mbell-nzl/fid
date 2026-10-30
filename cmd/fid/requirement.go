@@ -23,10 +23,21 @@ func newRequirementCommand() *cobra.Command {
 func newRequirementMutationCommand(leaf string) *cobra.Command {
 	operation := "requirement." + leaf
 	var inputPath, actor, key string
-	command := &cobra.Command{Use: leaf, Args: canonicalNoArgs(operation), RunE: func(cmd *cobra.Command, _ []string) error {
+	command := &cobra.Command{Use: leaf, Short: "Record a Requirement Reference.", Args: canonicalNoArgs(operation), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, operation, flag); err != nil {
 				return err
+			}
+		}
+		var recordRequest review.RequirementReferenceRequest
+		var linkRequest review.RequirementLinkRequest
+		if leaf == "record-reference" {
+			if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[rootCommandKey(cmd)], &recordRequest); err != nil {
+				return renderRequirementError(cmd, operation, err)
+			}
+		} else {
+			if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[rootCommandKey(cmd)], &linkRequest); err != nil {
+				return renderRequirementError(cmd, operation, err)
 			}
 		}
 		options, err := requirementMutationOptions(cmd, actor, key)
@@ -35,17 +46,9 @@ func newRequirementMutationCommand(leaf string) *cobra.Command {
 		}
 		var result review.RequirementMutationResult
 		if leaf == "record-reference" {
-			var request review.RequirementReferenceRequest
-			if err := decodeClosedJudgmentInput(cmd.InOrStdin(), inputPath, []string{"id", "source", "status"}, &request); err != nil {
-				return renderRequirementError(cmd, operation, err)
-			}
-			result, err = review.RecordRequirementReference(options, request)
+			result, err = review.RecordRequirementReference(options, recordRequest)
 		} else {
-			var request review.RequirementLinkRequest
-			if err := decodeClosedJudgmentInput(cmd.InOrStdin(), inputPath, []string{"requirement_id", "issue_id", "relation"}, &request); err != nil {
-				return renderRequirementError(cmd, operation, err)
-			}
-			result, err = review.LinkRequirement(options, request)
+			result, err = review.LinkRequirement(options, linkRequest)
 		}
 		if err != nil {
 			return renderRequirementError(cmd, operation, err)
@@ -70,6 +73,7 @@ func newRequirementMutationCommand(leaf string) *cobra.Command {
 	command.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	command.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	command.SetFlagErrorFunc(canonicalFlagError(operation))
+	installInputDescriptor(command, inputDescriptorRegistry["requirement "+leaf])
 	return command
 }
 
@@ -82,7 +86,7 @@ func requirementMutationOptions(cmd *cobra.Command, actor, key string) (review.J
 }
 
 func newRequirementGetCommand() *cobra.Command {
-	return &cobra.Command{Use: "get <requirement-id>", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	return &cobra.Command{Use: "get <requirement-id>", Short: "Read a Requirement Reference.", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderRequirementError(cmd, "requirement.get", err)
@@ -105,7 +109,7 @@ func newRequirementGetCommand() *cobra.Command {
 func newRequirementListCommand() *cobra.Command {
 	var status, issueID string
 	var limit int
-	command := &cobra.Command{Use: "list", Args: canonicalNoArgs("requirement.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+	command := &cobra.Command{Use: "list", Short: "List Requirement References.", Args: canonicalNoArgs("requirement.list"), RunE: func(cmd *cobra.Command, _ []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderRequirementError(cmd, "requirement.list", err)

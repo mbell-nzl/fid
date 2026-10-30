@@ -10,18 +10,19 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
+	fidproject "github.com/mbell-nzl/fid/internal/project"
 )
 
 type RunBudgetObserveRequest struct {
-	RunID            string  `json:"run_id"`
-	ExpectedVersion  int     `json:"expected_version"`
-	BudgetName       string  `json:"budget_name"`
-	SourceSampleID   string  `json:"source_sample_id"`
-	SampleKind       string  `json:"sample_kind"`
-	PreviousSampleID *string `json:"previous_sample_id"`
-	Value            *int64  `json:"value"`
-	MeasurementRef   *Source `json:"measurement_ref"`
-	ObservedAt       string  `json:"observed_at"`
+	RunID            string                  `json:"run_id"`
+	ExpectedVersion  int                     `json:"expected_version"`
+	BudgetName       string                  `json:"budget_name"`
+	SourceSampleID   string                  `json:"source_sample_id"`
+	SampleKind       string                  `json:"sample_kind"`
+	PreviousSampleID *string                 `json:"previous_sample_id"`
+	Value            *int64                  `json:"value"`
+	MeasurementRef   *fidproject.SourceInput `json:"measurement_ref"`
+	ObservedAt       string                  `json:"observed_at"`
 }
 
 type RunBudgetObserveResult struct {
@@ -54,15 +55,33 @@ func ObserveRunBudget(options RunOptions, request RunBudgetObserveRequest) (RunB
 		if err != nil {
 			return err
 		}
-		digest, err := runRequestDigest("run.observe-budget", project.ProjectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "operation": "run.observe-budget", "project_id": project.ProjectID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idem := journal.IdempotencyRequest{OperationScope: "run.observe-budget:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idem := journal.IdempotencyRequest{OperationScope: "run.observe-budget:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idem); err != nil {
 			return err
 		} else if found {
 			return loadBudgetObserveReplay(conn, replay, options.IdempotencyKey, &result)
+		}
+		var measurement *Source
+		var observed *fidproject.RecordedRepository
+		if request.MeasurementRef != nil {
+			repository, err := fidproject.ObserveRecordedRepository(options.WorkspaceRoot, project.ProjectID)
+			if err != nil {
+				return err
+			}
+			digest, err := fidproject.ResolveSourceInput(options.WorkspaceRoot, *request.MeasurementRef)
+			if err != nil {
+				return err
+			}
+			input := request.MeasurementRef
+			measurement = &Source{SourceType: input.SourceType, DisplayLabel: input.DisplayLabel, Path: input.Path, Section: input.Section, ExternalID: input.ExternalID, Digest: digest, Repository: Repository(repository)}
+			if !validEnvelopeSource(*measurement) {
+				return invalidRun("run observe-budget measurement source is invalid")
+			}
+			observed = &repository
 		}
 		run, err := loadRun(conn, request.RunID)
 		if err != nil {
@@ -88,7 +107,7 @@ func ObserveRunBudget(options RunOptions, request RunBudgetObserveRequest) (RunB
 		if err != nil {
 			return err
 		}
-		sample := BudgetSample{EnvelopeID: run.EnvelopeID, EnvelopeRevision: run.EnvelopeRevision, BudgetName: request.BudgetName, RunID: run.ID, ActorID: options.ActorID, Source: "activated-harness", SourceSampleID: request.SourceSampleID, SampleKind: request.SampleKind, PreviousSampleID: request.PreviousSampleID, Value: request.Value, MeasurementRef: request.MeasurementRef, ObservedAt: request.ObservedAt}
+		sample := BudgetSample{EnvelopeID: run.EnvelopeID, EnvelopeRevision: run.EnvelopeRevision, BudgetName: request.BudgetName, RunID: run.ID, ActorID: options.ActorID, Source: "activated-harness", SourceSampleID: request.SourceSampleID, SampleKind: request.SampleKind, PreviousSampleID: request.PreviousSampleID, Value: request.Value, MeasurementRef: measurement, ObservedAt: request.ObservedAt}
 		admission, err := AdmitBudgetSample(budget, samples, sample)
 		if err != nil {
 			return err
@@ -123,6 +142,9 @@ func ObserveRunBudget(options RunOptions, request RunBudgetObserveRequest) (RunB
 		event, err := runEvent(options.WorkspaceRoot, actor, run, "run.budget-observed", "run.observe-budget", effects)
 		if err != nil {
 			return err
+		}
+		if observed != nil {
+			event.Repository = envelopeRepository(Repository(*observed))
 		}
 		prepared, err := journal.PrepareEvent(lock, event)
 		if err != nil {
@@ -162,7 +184,7 @@ func validRunBudgetObserveRequest(request RunBudgetObserveRequest) bool {
 	if _, err := time.Parse(time.RFC3339Nano, request.ObservedAt); err != nil {
 		return false
 	}
-	return request.MeasurementRef == nil || validEnvelopeSource(*request.MeasurementRef)
+	return true // SourceInput is checked after replay without reading on retries.
 }
 
 func loadRunBudget(conn *sql.DB, envelopeID string, revision int, name string) (Budget, error) {

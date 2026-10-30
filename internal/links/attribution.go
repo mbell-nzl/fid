@@ -1,8 +1,6 @@
 package links
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -34,13 +32,4 @@ func validActorID(value string) bool {
 
 func (actor standaloneActor) eventActor() journal.EventActor {
 	return journal.EventActor{ActorID: actor.id, ActorType: actor.typeName, Producer: "fid-standalone", ProvenanceRef: "project-local-attribution"}
-}
-
-func linkRequestDigest(operation, projectID string, actor standaloneActor, request any) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"actor": actor, "operation": operation, "project_id": projectID, "request": request})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }

@@ -45,7 +45,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	assertClosureLinkReadback(t, binary, workspace, mainIssueID, peerIssueID)
 	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
 		[]string{"link", "add", mainIssueID, "implements", peerIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-		"unknown relation")
+		"error: link relation is unsupported\nreason: unsupported-relation; allowed=blocks,blocked_by,relates_to,duplicates,duplicated_by,supersedes,superseded_by,caused_by,causes,discovered_from,discovered, argument=relation, value=implements\n")
 
 	seqEpicID := closureCreateIssue(t, binary, workspace, "epic", "Sequential closure epic", stringPointer("sequential"), nil, nil)
 	seqCurrentID := closureCreateIssue(t, binary, workspace, "task", "Sequential current", nil, stringPointer(seqEpicID), intPointer(1))

@@ -24,7 +24,7 @@ func TestGateRunPersistsAttemptAndSuccessfulReceiptBeforeTerminalFrame(t *testin
 		definition["argv"] = []string{"/bin/true"}
 	})
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "gate-run-claim")
-	repository := runRepositoryForTest(t, workspace)
+	repository := cloneJSONMap(t, testEnvelopeRepository(t, workspace))
 	runPath := filepath.Join(workspace, "gate-run-start.json")
 	writeActivationInput(t, runPath, runStartInput(issueID, envelopeID, claim["id"], repository))
 	started := executeCommandForTest(workspace,
@@ -44,7 +44,7 @@ func TestGateRunPersistsAttemptAndSuccessfulReceiptBeforeTerminalFrame(t *testin
 	inputPath := filepath.Join(workspace, "gate-run.json")
 	writeActivationInput(t, inputPath, map[string]any{
 		"registration_id": registration["id"], "registration_version": registration["version"],
-		"obligation_id": obligation["id"], "run_id": runID, "repository": repository,
+		"obligation_id": obligation["id"], "run_id": runID, "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]},
 	})
 
 	result := executeCommandForTest(workspace,
@@ -484,21 +484,21 @@ func readImmutableReceiptFields(t *testing.T, conn *sql.DB, receiptID string) im
 
 func gateRunInputForTest(t *testing.T, workspace, issueID, envelopeID, key string) (string, string) {
 	t.Helper()
-	repository := runRepositoryForTest(t, workspace)
+	repository := cloneJSONMap(t, testEnvelopeRepository(t, workspace))
 	binding := envelopeBindingForWorkspace(t, workspace)
 	runID := activeRunIDForGateTest(t, workspace, issueID, envelopeID, key, repository, binding)
 	inputPath := filepath.Join(workspace, key+".json")
-	writeActivationInput(t, inputPath, map[string]any{"registration_id": binding.registrationID, "registration_version": binding.registrationVersion, "obligation_id": binding.obligationID, "run_id": runID, "repository": repository})
+	writeActivationInput(t, inputPath, map[string]any{"registration_id": binding.registrationID, "registration_version": binding.registrationVersion, "obligation_id": binding.obligationID, "run_id": runID, "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]}})
 	return inputPath, key
 }
 
 func executeGateRunForTest(t *testing.T, workspace, issueID, envelopeID, key string) (gateTerminalFrame, commandExecutionResult) {
 	t.Helper()
-	repository := runRepositoryForTest(t, workspace)
+	repository := cloneJSONMap(t, testEnvelopeRepository(t, workspace))
 	binding := envelopeBindingForWorkspace(t, workspace)
 	runID := activeRunIDForGateTest(t, workspace, issueID, envelopeID, key, repository, binding)
 	inputPath := filepath.Join(workspace, key+".json")
-	writeActivationInput(t, inputPath, map[string]any{"registration_id": binding.registrationID, "registration_version": binding.registrationVersion, "obligation_id": binding.obligationID, "run_id": runID, "repository": repository})
+	writeActivationInput(t, inputPath, map[string]any{"registration_id": binding.registrationID, "registration_version": binding.registrationVersion, "obligation_id": binding.obligationID, "run_id": runID, "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]}})
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", key)
 	lines := strings.Split(strings.TrimSpace(result.stdout), "\n")
 	if len(lines) == 0 || lines[0] == "" {
@@ -515,6 +515,11 @@ func activeRunIDForGateTest(t *testing.T, workspace, issueID, envelopeID, key st
 	t.Helper()
 	if binding.runID != "" {
 		return binding.runID
+	}
+	// Starting a new Run uses a current expectation; the Gate independently
+	// observes that same worktree before spawning.
+	for field, value := range cloneJSONMap(t, testEnvelopeRepository(t, workspace)) {
+		repository[field] = value
 	}
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, key+"-claim")
 	runPath := filepath.Join(workspace, key+"-run.json")

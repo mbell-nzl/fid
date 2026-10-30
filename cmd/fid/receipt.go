@@ -84,5 +84,5 @@ func renderReceiptError(cmd *cobra.Command, operation string, cause error) error
 	if errors.As(cause, &notFound) {
 		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeReceiptNotFound, "Receipt was not found", &cli.Subject{Type: cli.SubjectReceipt, ID: notFound.ID}, map[string]any{"id": notFound.ID})
 	}
-	return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Receipt request", nil, map[string]any{"argument": "request", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Receipt request", nil, map[string]any{"argument": "request", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }

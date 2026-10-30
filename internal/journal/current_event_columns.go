@@ -25,7 +25,7 @@ var currentEventTables = map[string]currentTable{
 	"envelope_protected_decisions": currentTableColumns("envelope_id revision ordinal", "envelope_id:s revision:i ordinal:i decision_class:s required_capabilities_json:s affected_actions_json:s"),
 	"requirement_refs":             currentTableColumns("id", "id:s requirement_id:s source_json:s status:s superseded_by_id:s? created_at:s created_event_id:s"),
 	"requirement_issue_links":      currentTableColumns("requirement_id issue_id relation", "requirement_id:s issue_id:s relation:s created_at:s created_event_id:s"),
-	"idempotency_results":          currentTableColumns("operation_scope idempotency_key", "operation_scope:s idempotency_key:s request_digest:s result_entity_id:s result_event_id:s aggregate_sequence:i result_json:s created_at:s"),
+	"idempotency_results":          currentTableColumns("operation_scope idempotency_key", "operation_scope:s idempotency_key:s request_digest:s result_entity_id:s result_event_id:s aggregate_sequence:i result_json:s created_at:s request_field_digests_json:s"),
 	"kit_activations":              currentTableColumns("id", "id:s prior_activation_id:s? kit_identity:s backend_identity:s phase:i status:s point_of_no_return:b direction:s created_at:s updated_at:s version:i"),
 	"receipt_artifacts":            currentTableColumns("receipt_id artifact_id", "receipt_id:s artifact_id:s declared_path:s"),
 	"referenced_artifacts":         currentTableColumns("id", "id:s digest:s media_type:s size_bytes:i retention_class:s availability:s location_policy:s created_at:s expires_at:s?"),

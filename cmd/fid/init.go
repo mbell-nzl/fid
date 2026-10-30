@@ -137,10 +137,7 @@ func renderInitFailure(cmd *cobra.Command, workspaceRoot string, initErr error) 
 	if jsonMode {
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "project.init", failure, initErr)
 	}
-	if err := renderInitError(cmd, initErr); err != nil {
-		return err
-	}
-	return cli.NewFailureError(failure, initErr)
+	return writeHumanFailure(cmd, "project.init", failure, initErr)
 }
 
 func initFailure(workspaceRoot string, initErr error) (cli.Failure, error) {
@@ -160,21 +157,6 @@ func initFailure(workspaceRoot string, initErr error) (cli.Failure, error) {
 		})
 	}
 	return cli.NewFailure(cli.CodeInternalError, "project initialization failed", nil, map[string]any{})
-}
-
-func renderInitError(cmd *cobra.Command, initErr error) error {
-	var alreadyInitialized *bootstrap.AlreadyInitializedError
-	if errors.As(initErr, &alreadyInitialized) {
-		if err := writeInitLine(cmd.ErrOrStderr(), "error: project is already initialized\n"); err != nil {
-			return err
-		}
-		return writeInitLine(cmd.ErrOrStderr(), "  choose a new directory or use the existing project\n")
-	}
-	var argumentErr *initArgumentError
-	if errors.As(initErr, &argumentErr) {
-		return writeInitLine(cmd.ErrOrStderr(), "error: invalid project initialization argument\n")
-	}
-	return writeInitLine(cmd.ErrOrStderr(), "error: project initialization failed\n")
 }
 
 func writeInitLine(writer io.Writer, format string, args ...any) error {

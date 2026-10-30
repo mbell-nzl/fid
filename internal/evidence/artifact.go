@@ -391,6 +391,22 @@ func VerifyArtifact(options ArtifactVerifyOptions) (ArtifactVerifyResult, error)
 		if err != nil {
 			return fmt.Errorf("verify Artifact: read project config: %w", err)
 		}
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "artifact_id": options.Request.ArtifactID, "project_id": project.ProjectID, "request": options.Request}, options.ActorID, nil)
+		if err != nil {
+			return err
+		}
+		idempotency := journal.IdempotencyRequest{OperationScope: "artifact.verify:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
+			return err
+		} else if found {
+			if err := json.Unmarshal([]byte(outcome.ResultJSON), &result); err != nil {
+				return fmt.Errorf("verify Artifact: decode replay: %w", err)
+			}
+			result.EventID = outcome.EventID
+			result.IdempotencyKey = options.IdempotencyKey
+			result.Replayed = true
+			return nil
+		}
 		_, actor, err := loadActiveActor(conn, options.ActorID)
 		if err != nil {
 			return err
@@ -404,23 +420,6 @@ func VerifyArtifact(options ArtifactVerifyOptions) (ArtifactVerifyResult, error)
 		}
 		if !found {
 			return fmt.Errorf("verify Artifact: Artifact %q was not found", options.Request.ArtifactID)
-		}
-		payload, err := journal.MarshalCanonicalJSON(map[string]any{"actor_id": options.ActorID, "artifact_id": artifact.ID, "project_id": project.ProjectID})
-		if err != nil {
-			return err
-		}
-		sum := sha256.Sum256(payload)
-		idempotency := journal.IdempotencyRequest{OperationScope: "artifact.verify:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: "sha256:" + fmt.Sprintf("%x", sum[:])}
-		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
-			return err
-		} else if found {
-			if err := json.Unmarshal([]byte(outcome.ResultJSON), &result); err != nil {
-				return fmt.Errorf("verify Artifact: decode replay: %w", err)
-			}
-			result.EventID = outcome.EventID
-			result.IdempotencyKey = options.IdempotencyKey
-			result.Replayed = true
-			return nil
 		}
 
 		storeRoot, err := artifactStoreRoot(options.WorkspaceRoot, project.ArtifactRoot)

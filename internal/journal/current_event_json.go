@@ -95,6 +95,17 @@ func validateCurrentJSON(event Event, effect Effect, column, raw string) error {
 		kind = "[]Source"
 	case "idempotency_results.result_json":
 		return validateCurrentResultJSON(event, value)
+	case "idempotency_results.request_field_digests_json":
+		fields, ok := value.(map[string]any)
+		if !ok {
+			return fmt.Errorf("idempotency field digests must be a JSON object")
+		}
+		for _, digest := range fields {
+			if err := validateCurrentValue("Digest", digest); err != nil {
+				return fmt.Errorf("invalid idempotency field digest: %w", err)
+			}
+		}
+		return nil
 	default:
 		if column == "start_repository_json" || column == "terminal_repository_json" {
 			kind = "Repository"

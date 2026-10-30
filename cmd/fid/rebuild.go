@@ -153,29 +153,28 @@ func renderRebuildProjectError(cmd *cobra.Command, jsonMode bool, rebuildErr err
 }
 
 func renderRebuildOperationError(cmd *cobra.Command, jsonMode bool, rebuildErr error) error {
-	if !jsonMode {
-		if renderErr := renderRebuildError(cmd, rebuildErr); renderErr != nil {
-			return renderErr
-		}
-		failure, err := cli.NewFailure(cli.CodeInternalError, "projection rebuild failed", nil, map[string]any{})
-		if err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, rebuildErr)
-	}
 	if failure, handled, err := lockUnavailableFailure(rebuildErr); err != nil {
 		return err
 	} else if handled {
-		return renderRebuildFailure(cmd, jsonMode, failure.Code, failure.Message, failure.Subject, failure.Details)
+		if !jsonMode {
+			return writeHumanFailure(cmd, "project.rebuild", failure, rebuildErr)
+		}
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "project.rebuild", failure, rebuildErr)
 	}
 	if failure, handled, err := journalReplayStoppedFailure(rebuildErr); err != nil {
 		return err
 	} else if handled {
-		return renderRebuildFailure(cmd, jsonMode, failure.Code, failure.Message, failure.Subject, failure.Details)
+		if !jsonMode {
+			return writeHumanFailure(cmd, "project.rebuild", failure, rebuildErr)
+		}
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "project.rebuild", failure, rebuildErr)
 	}
 	failure, err := cli.NewFailure(cli.CodeInternalError, "projection rebuild failed", nil, map[string]any{})
 	if err != nil {
 		return err
+	}
+	if !jsonMode {
+		return writeHumanFailure(cmd, "project.rebuild", failure, rebuildErr)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "project.rebuild", failure, rebuildErr)
 }
@@ -188,10 +187,7 @@ func renderRebuildFailure(cmd *cobra.Command, jsonMode bool, code cli.Code, mess
 	if jsonMode {
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "project.rebuild", failure, fmt.Errorf("%s", code))
 	}
-	if err := writeRebuildLine(cmd.ErrOrStderr(), "error: %s\n", message); err != nil {
-		return err
-	}
-	return cli.NewFailureError(failure, fmt.Errorf("%s", code))
+	return writeHumanFailure(cmd, "project.rebuild", failure, fmt.Errorf("%s", code))
 }
 
 func rebuildMigrationsDir() string {
@@ -201,17 +197,6 @@ func rebuildMigrationsDir() string {
 	}
 
 	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
-}
-
-func renderRebuildError(cmd *cobra.Command, err error) error {
-	handled, renderErr := renderJournalReplayError(func(format string, args ...any) error {
-		return writeRebuildLine(cmd.ErrOrStderr(), format, args...)
-	}, err, "rebuild stopped - manual repair required")
-	if handled {
-		return renderErr
-	}
-
-	return writeRebuildLine(cmd.ErrOrStderr(), "error: %v\n", err)
 }
 
 func writeRebuildLine(writer io.Writer, format string, args ...any) error {

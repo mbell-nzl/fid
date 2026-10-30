@@ -100,6 +100,13 @@ continuing task, and exact recovery tuple. Those fields bind the next
 invalid. That recovery's `Source` and `Repair authority` also contain the exact
 typed `Resolution authority`. `Resolution evidence` contains the
 Runner-observed verification.
+Without `Repair owners`, the tuple's task, trigger, and attempt must equal
+`Continuing task`, `Trigger signature`, and `Attempt count`; write the tuple
+from those fields, never from escalation prose. A defective accepted tuple is
+never rewritten. It is reconciled by one phase DEC carrying
+`- Reconciles RUN-RESUME: <date> <time> / <TRG>` and
+`- Reconciled next recovery: <tuple>`, and the bound recovery cites that DEC
+(DEC-283).
 A STOP resume after a BLOCK re-review may include one optional
 `Repair owners: <ordered, distinct task list>` field under DEC-257. Its value
 must be byte-identical to the `- Repair owners:` line in the resolution DEC;

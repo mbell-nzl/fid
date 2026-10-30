@@ -36,7 +36,7 @@ func TestStopSuccessHumanNamesBlockingReasonAndQualifyingResolution(t *testing.T
 	}
 
 	output.Reset()
-	if err := writeStopSuccess(cmd, "attention.resolve", map[string]any{"attention": attention}, "EVT-attention-resolved", "2026-09-07T00:00:01Z"); err != nil {
+	if err := writeStopSuccess(cmd, "attention.resolve", map[string]any{"attention": attention, "stop": stop}, "EVT-attention-resolved", "2026-09-07T00:00:01Z"); err != nil {
 		t.Fatalf("write Attention Human result: %v", err)
 	}
 	for _, want := range []string{"Attention ATT-22", "operator-stop", "EVT-attention-resolved"} {

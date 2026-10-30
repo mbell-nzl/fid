@@ -28,6 +28,9 @@ func newIssueTransitionCommand() *cobra.Command {
 			if err := requireCanonicalFlag(cmd, "issue.transition", "idempotency-key"); err != nil {
 				return err
 			}
+			if err := requireCanonicalFlag(cmd, "issue.transition", "to"); err != nil {
+				return err
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.transition", args[0], err)
@@ -54,8 +57,8 @@ func newIssueTransitionCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&toState, "to", "", "Target state")
-	cmd.Flags().StringVar(&expectedRevision, "expected-revision", "", "Required current Issue revision")
+	cmd.Flags().StringVar(&toState, "to", "", "Target workflow state; fid resume <issue-id> lists the Issue's next states")
+	cmd.Flags().StringVar(&expectedRevision, "expected-revision", "", "Required current Issue revision; fid resume <issue-id> shows it")
 	cmd.Flags().StringVar(&actor, "actor", "", "Standalone actor attribution")
 	cmd.Flags().StringVar(&idempotencyKey, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(issueMutationFlagError("issue.transition"))

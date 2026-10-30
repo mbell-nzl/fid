@@ -68,11 +68,11 @@ func Add(options AddOptions) (AddResult, error) {
 		if err != nil {
 			return err
 		}
-		digest, err := linkRequestDigest("link.add", projectConfig.ProjectID, actor, map[string]any{"from_id": fromID, "from_type": fromType, "relation": declaredRelation, "to_id": toID, "to_type": toType})
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "link.add", "project_id": projectConfig.ProjectID, "request": map[string]any{"from_id": options.FromID, "from_type": options.FromType, "relation": options.Relation, "to_id": options.ToID, "to_type": options.ToType}}, options.Actor, map[string]string{"from_id": "from-id", "from_type": "--from-type", "relation": "relation", "to_id": "to-id", "to_type": "--to-type"})
 		if err != nil {
 			return err
 		}
-		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "link.add:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "link.add:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
 			return err
 		} else if found {

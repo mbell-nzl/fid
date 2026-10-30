@@ -20,11 +20,24 @@ Avoid: unqualified “source of truth.”
 
 **Project-owned prose**
 Definition: Requirements, architecture, validation strategy, decisions, and
-other durable Human-authored intent whose canonical form remains in project
-files and Git.
-Use when: content may be referenced by fid but must not be copied into its
-operational model.
-Avoid: “fid document” or “backend prose.”
+other durable Human-authored intent whose canonical content remains in
+project files and Git. fid references this content through source metadata
+such as labels, paths and digests, without reproducing referenced file content
+in Human views.
+Use when: distinguishing referenced project-file content from fid's recorded
+operational facts and reasoning.
+Avoid: “fid document” or “backend prose,” or treating recorded reasoning as
+referenced file content.
+
+**Recorded reasoning**
+Definition: Actor-authored text stored in a fid judgment record: Concern
+`summary` and `reasoning`, Concern disposition `reason`, Finding `summary`
+and every FindingDisposition `reason`, Deviation `expected`, `observed` and
+`reasoning`, and Human Outcome `reasoning`. It belongs to the fid record and
+may be shown in Human views; it does not establish deterministic proof.
+Use when: explaining the recorded basis for a judgment, distinct from the
+content of a referenced project file (DEC-272; Phase 24 contract section 10).
+Avoid: calling this text project-owned prose, or treating it as Evidence.
 
 **Routine (external kit term)**
 Definition: An external kit risk-lane classification for work the kit judges
@@ -546,6 +559,23 @@ Use when: describing discovery, explicit selection, or path normalization.
 Avoid: "workspace," which historically named the same directory and now invites
 confusion with a Git worktree.
 
+**Expected repository**
+Definition: A caller's narrow expectation of the current Git worktree,
+containing `head_oid` and `dirty`. A leaf that accepts it compares both values
+with fid's own repository observation before committing.
+Use when: guarding an observing mutation against a stale caller view.
+Avoid: treating it as the full recorded Repository or as a worktree identity.
+
+**SourceInput**
+Definition: The caller-written source reference, equivalent to a stored Source
+without `repository`. A project-file `digest` is optional: fid checks it when
+supplied or observes the file when omitted. An external-reference digest is
+required because fid cannot read its content. The stored Source retains the
+resolved digest and fid's observed Repository.
+Use when: authoring a judgment reference or other Source-bearing mutation.
+Avoid: sending a Repository inside the input or treating an omitted digest as
+an assertion about the file's bytes.
+
 ## Retired Product Terms
 
 `Work Item`, fid `Role`, `QA Plan`, `Validation Contract`, `Validation
@@ -554,5 +584,4 @@ forward fid entities. They may appear in historical phase records, the current
 V1 repository delivery process, or the external kit's temporary engineering
 memory. New fid product specifications must use the retained terms above.
 
-*Last updated: 2026-10-03 (Phase 23 wrap: Requirement Reference identities and
-Human Outcome Stop resolution, DEC-269)*
+*Last updated: 2026-10-05 (Phase 24 Task 4 SourceInput terminology)*

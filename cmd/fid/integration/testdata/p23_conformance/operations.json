@@ -64,7 +64,7 @@
       "finding.id": "FND-leaf",
       "finding.state": "addressed",
       "finding.dispositions.0.action": "addressed",
-      "finding.dispositions.0.reason": "PRIVATE_FINDING_REASON"
+      "finding.dispositions.0.reason": "RECORDED_FINDING_REASON"
     }
   },
   {
@@ -111,7 +111,7 @@
       "concern.id": "CON-leaf",
       "concern.status": "disposed",
       "concern.disposition.action": "carried-forward",
-      "concern.disposition.reason": "PRIVATE_DISPOSITION_REASON"
+      "concern.disposition.reason": "RECORDED_DISPOSITION_REASON"
     }
   },
   {
@@ -141,8 +141,8 @@
     "semantics": {
       "deviation.id": "DEV-leaf",
       "deviation.disposition": "pending-decision",
-      "deviation.expected": "PRIVATE_EXPECTED",
-      "deviation.observed": "PRIVATE_OBSERVED"
+      "deviation.expected": "RECORDED_EXPECTED",
+      "deviation.observed": "RECORDED_OBSERVED"
     }
   },
   {

@@ -14,11 +14,11 @@ func TestP22RecoveryAdoptsChangedTargetForSuccessorEvidence(t *testing.T) {
 	priorRepository := adapter.repository
 
 	priorGate := p22GateRun(t, adapter.binary, adapter.workspace, adapter.actor, p21Input(t, adapter.workspace, "p22-adopted-gate-a", map[string]any{
-		"registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "run_id": priorRunID, "repository": priorRepository,
+		"registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "run_id": priorRunID, "expected_repository": map[string]any{"head_oid": priorRepository["head_oid"], "dirty": priorRepository["dirty"]},
 	}), "p22-adopted-gate-a")
 	priorReceiptID := p21PathString(t, priorGate, "result", "receipt", "id")
 	priorEvidence := p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "evidence", "link", "--actor", adapter.actor, "--input", p21Input(t, adapter.workspace, "p22-adopted-evidence-a", map[string]any{
-		"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": priorReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": priorRepository, "required_artifact_ids": []string{},
+		"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": priorReceiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{},
 	}), "--idempotency-key", "p22-adopted-evidence-a")
 	priorEvidenceID := p21PathString(t, priorEvidence, "result", "evidence", "id")
 	priorRun := p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "run", "get", priorRunID)
@@ -39,11 +39,11 @@ func TestP22RecoveryAdoptsChangedTargetForSuccessorEvidence(t *testing.T) {
 	}
 
 	successorGate := p22GateRun(t, adapter.binary, adapter.workspace, adapter.actor, p21Input(t, adapter.workspace, "p22-adopted-gate-b", map[string]any{
-		"registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "run_id": successorRunID, "repository": successorRepository,
+		"registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "run_id": successorRunID, "expected_repository": map[string]any{"head_oid": successorRepository["head_oid"], "dirty": successorRepository["dirty"]},
 	}), "p22-adopted-gate-b")
 	successorReceiptID := p21PathString(t, successorGate, "result", "receipt", "id")
 	successorEvidence := p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "evidence", "link", "--actor", adapter.actor, "--input", p21Input(t, adapter.workspace, "p22-adopted-evidence-b", map[string]any{
-		"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": successorReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": successorRepository, "required_artifact_ids": []string{},
+		"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": successorReceiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{},
 	}), "--idempotency-key", "p22-adopted-evidence-b")
 	successorEvidenceID := p21PathString(t, successorEvidence, "result", "evidence", "id")
 	if successorReceiptID == priorReceiptID || successorEvidenceID == priorEvidenceID {
@@ -68,7 +68,7 @@ func TestP22RecoveryAdoptedTargetPermitsTerminalTransitionWithFreshSuccessorProo
 	priorRunID := adapter.runID
 	priorRepository := adapter.repository
 	priorGate := p22GateRun(t, adapter.binary, adapter.workspace, adapter.actor, p21Input(t, adapter.workspace, "p22-adopted-terminal-gate-a", map[string]any{
-		"registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "run_id": priorRunID, "repository": priorRepository,
+		"registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "run_id": priorRunID, "expected_repository": map[string]any{"head_oid": priorRepository["head_oid"], "dirty": priorRepository["dirty"]},
 	}), "p22-adopted-terminal-gate-a")
 	priorReceiptID := p21PathString(t, priorGate, "result", "receipt", "id")
 	priorRun := p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "run", "get", priorRunID)
@@ -89,11 +89,11 @@ func TestP22RecoveryAdoptedTargetPermitsTerminalTransitionWithFreshSuccessorProo
 	}
 
 	successorGate := p22GateRun(t, adapter.binary, adapter.workspace, adapter.actor, p21Input(t, adapter.workspace, "p22-adopted-terminal-gate-b", map[string]any{
-		"registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "run_id": successorRunID, "repository": successorRepository,
+		"registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "run_id": successorRunID, "expected_repository": map[string]any{"head_oid": successorRepository["head_oid"], "dirty": successorRepository["dirty"]},
 	}), "p22-adopted-terminal-gate-b")
 	successorReceiptID := p21PathString(t, successorGate, "result", "receipt", "id")
 	p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "evidence", "link", "--actor", adapter.actor, "--input", p21Input(t, adapter.workspace, "p22-adopted-terminal-evidence-b", map[string]any{
-		"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": successorReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": successorRepository, "required_artifact_ids": []string{},
+		"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": successorReceiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{},
 	}), "--idempotency-key", "p22-adopted-terminal-evidence-b")
 	if successorReceiptID == priorReceiptID {
 		t.Fatalf("successor Receipt = prior Receipt %q, want new retained proof at B", priorReceiptID)
@@ -118,9 +118,9 @@ func TestP22RecoveryAdoptedTargetPermitsTerminalTransitionWithFreshSuccessorProo
 		"liveness": map[string]any{"executor_id": "executor-adopted-terminal", "state": "terminated", "source_ref": "p22:adopted-target-b", "observed_at": time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)},
 	}), "--idempotency-key", "p22-adopted-terminal-observe-b")
 	p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "run", "close", "--actor", adapter.actor, "--input", p21Input(t, adapter.workspace, "p22-adopted-terminal-close-b", map[string]any{
-		"run_id": successorRunID, "expected_version": p21Path(t, observed, "result", "run", "version"), "observation_id": p21PathString(t, observed, "result", "observation", "id"), "repository": successorRepository,
+		"run_id": successorRunID, "expected_version": p21Path(t, observed, "result", "run", "version"), "observation_id": p21PathString(t, observed, "result", "observation", "id"), "expected_repository": p24ExpectedRepository(successorRepository),
 	}), "--idempotency-key", "p22-adopted-terminal-close-b")
 	p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "envelope", "complete", "--actor", adapter.actor, "--input", p21Input(t, adapter.workspace, "p22-adopted-terminal-complete-b", map[string]any{
-		"envelope_id": p21PathString(t, run, "result", "run", "envelope_id"), "expected_revision": 1, "repository": successorRepository,
+		"envelope_id": p21PathString(t, run, "result", "run", "envelope_id"), "expected_revision": 1,
 	}), "--idempotency-key", "p22-adopted-terminal-complete-b")
 }

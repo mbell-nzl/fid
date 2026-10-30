@@ -170,6 +170,9 @@ func p22RejectActivationFaultConflicts(t *testing.T, binary string, input p22Act
 		p22FaultOK(t, os.WriteFile(path, encoded, 0o600))
 		stdout, stderr, err := closureRunCommand(root, binary, "--json", "activation", input.Operation, "--actor", input.Options.BootstrapActor, "--input", path, "--idempotency-key", key)
 		wantCode, wantExit := "invalid-argument", 2
+		if kind == "changed-request" {
+			wantCode, wantExit = "idempotency-conflict", 4
+		}
 		if kind == "opposite-direction" {
 			wantCode, wantExit = "activation-direction-conflict", 4
 		}

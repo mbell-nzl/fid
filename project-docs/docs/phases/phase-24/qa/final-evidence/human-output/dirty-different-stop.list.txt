@@ -1,0 +1,13 @@
+Purpose: Inspect Stops, blocked actions and qualifying resolution conditions.
+
+stop.list
+Stop STP-ca4d0c
+  Subject: run:RUN-413ff3
+  Code: operator-stop
+  Blocked actions: gate.run
+  Reason: conformance operator intervention
+  Reference: policy:conformance
+  Resolution condition: work-ended for run:RUN-413ff3
+  Resolver capability: stop.resolve
+  Status: open
+  Next: fid run close or fid run abandon; after the fact: fid stop resolve, then fid attention resolve where no lifecycle Event disposed it.

@@ -2322,6 +2322,171 @@ sed 's/Next recovery: task-1 | gate-repair | task-scope/Next recovery: task-1 | 
   "$resumed_budget" > "$wrong_resume_tuple"
 run_invalid_sequence "drill-18 schema v2 resume binds exact recovery tuple" "does not match the exact schema v2 RUN-RESUME recovery tuple" "$wrong_resume_tuple"
 
+# DEC-283 fixtures: retain the contradictory resume and reconcile it in a DEC.
+reconciliation_root="$workspace/next-recovery-reconciliation"
+gap_phase="$reconciliation_root/f1/phase-1"
+wedge_phase="$reconciliation_root/f2/phase-1"
+mkdir -p "$gap_phase" "$wedge_phase"
+cat > "$gap_phase/triage-log.md" <<'EOF'
+# Phase 1 Triage Log
+## TRG-1-030 - restored Developer capability
+- **Verdict:** BLOCK
+- **Escalation:** ESC-1-030
+- **Originating task:** task-1
+- **Trigger signature:** task-1:session-liveness:trigger-B
+- **Attempt count:** 2
+- **Repair category:** N/A
+- **Repair authority:** N/A
+EOF
+cat > "$gap_phase/decisions.md" <<'EOF'
+# Phase 1 Decisions
+EOF
+cat > "$gap_phase/run-ledger.md" <<'EOF'
+# Phase 1 Run Ledger
+### 2026-10-06 10:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1 in workspace/phase-1
+- Starting task: task-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: complete
+### 2026-10-06 10:01 TASK-RECOVERY task-1
+- Source: failed gate
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Triage disposition: N/A
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Trigger signature: task-1:session-continuation:trigger-A
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: first failed gate
+- Phase worktree: workspace/phase-1 on phase-1
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - repair and rerun
+- Next action: repair and rerun gate
+- Human attention required: no
+### 2026-10-06 10:02 TRIAGE TRG-1-030
+- Trigger: Developer capacity after bounded retry
+- Originating task: task-1
+- Trigger signature: task-1:session-liveness:trigger-B
+- Attempt count: 2
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: Developer unavailable
+- Verdict: BLOCK (escalated as ESC-1-030)
+- Resolution evidence: capability restoration required
+- Triage log: TRG-1-030 / ESC-1-030 confirmed
+### 2026-10-06 10:03 STOP
+- Cause: TRG-1-030 / ESC-1-030 Developer capacity
+- Triage: TRG-1-030 / ESC-1-030
+- Protected category: external capability
+- Next Human or external-authority action: restore Developer capacity
+### 2026-10-06 10:04 RUN-RESUME
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: TRG-1-030 / ESC-1-030 STOP
+- Governing TRG: TRG-1-030
+- Governing ESC: ESC-1-030
+- Trigger signature: task-1:session-liveness:trigger-B
+- Attempt count: 3
+- Checkpoint: capability restored
+- Resolution evidence: restored Developer verified
+- Resolution authority: restored-capability:developer-role-capacity
+- Continuing task: task-1
+- Next recovery: task-1 | in-scope-implementation | task-scope | task-1:session-continuation:trigger-A | 1
+EOF
+cp "$gap_phase/triage-log.md" "$wedge_phase/triage-log.md"
+cat > "$wedge_phase/decisions.md" <<'EOF'
+# Phase 1 Decisions
+### DEC-283: Reconcile the recorded next recovery
+- Reconciles RUN-RESUME: 2026-10-06 10:04 / TRG-1-030
+- Reconciled next recovery: task-1 | in-scope-implementation | task-scope | task-1:session-liveness:trigger-B | 3
+EOF
+cp "$gap_phase/run-ledger.md" "$wedge_phase/run-ledger.md"
+cat >> "$wedge_phase/run-ledger.md" <<'EOF'
+### 2026-10-06 10:05 TASK-RECOVERY task-1
+- Source: TRG-1-030 / ESC-1-030 / DEC-283 / restored-capability:developer-role-capacity
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: TRG-1-030 / ESC-1-030 / DEC-283 / restored-capability:developer-role-capacity
+- Triage disposition: N/A
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Trigger signature: task-1:session-liveness:trigger-B
+- Attempt count: 3
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: reconciled resume
+- Phase worktree: workspace/phase-1 on phase-1
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - continue after restored capability
+- Next action: repair and rerun gate
+- Human attention required: no
+EOF
+# DEC-283 fixture construction ends here.
+tuple_message="schema v2 RUN-RESUME Next recovery does not retain its Continuing task, Trigger signature, and Attempt count"
+citation_message="TASK-RECOVERY does not cite its RUN-RESUME next-recovery reconciliation"
+run_invalid_sequence "drill-18 DEC-283 F1 rejects unsatisfiable resume" "$tuple_message" "$gap_phase/run-ledger.md"
+run_sequence "drill-18 DEC-283 F2 reconciles the bound successor" REPAIR_PENDING "$wedge_phase/run-ledger.md"
+
+for citation_field in Source 'Repair authority'; do
+  missing_citation="$wedge_phase/missing-citation.md"
+  sed "/^- $citation_field: /s@ / DEC-283@@" "$wedge_phase/run-ledger.md" > "$missing_citation"
+  run_invalid_sequence "drill-18 DEC-283 successor requires DEC in $citation_field" "$citation_message" "$missing_citation"
+done
+old_successor="$wedge_phase/old-successor.md"
+sed '/^### 2026-10-06 10:05 TASK-RECOVERY/,$ {
+  s/task-1:session-liveness:trigger-B/task-1:session-continuation:trigger-A/
+  s/Attempt count: 3/Attempt count: 1/
+}' "$wedge_phase/run-ledger.md" > "$old_successor"
+run_invalid_sequence "drill-18 DEC-283 old successor retains checkpoint rejection" \
+  "TASK-RECOVERY does not preserve its RUN-RESUME checkpoint" "$old_successor"
+
+for fault in wrong-time wrong-trg wrong-attempt changed-category changed-mode two-decs missing-tuple duplicated-tuple; do
+  fault_phase="$reconciliation_root/$fault/phase-1"
+  mkdir -p "$fault_phase"
+  cp "$wedge_phase/run-ledger.md" "$fault_phase/run-ledger.md"
+  cp "$wedge_phase/triage-log.md" "$fault_phase/triage-log.md"
+  case "$fault" in
+    wrong-time) sed 's/10:04/10:06/' "$wedge_phase/decisions.md" ;;
+    wrong-trg) sed 's/TRG-1-030/TRG-1-031/' "$wedge_phase/decisions.md" ;;
+    wrong-attempt) sed 's/ | 3$/ | 2/' "$wedge_phase/decisions.md" ;;
+    changed-category) sed 's/in-scope-implementation/gate-repair/' "$wedge_phase/decisions.md" ;;
+    changed-mode) sed 's/task-scope/control-conformance/' "$wedge_phase/decisions.md" ;;
+    two-decs)
+      cat "$wedge_phase/decisions.md"
+      sed 's/DEC-283/DEC-284/' "$wedge_phase/decisions.md"
+      ;;
+    missing-tuple) sed '/^- Reconciled next recovery: /d' "$wedge_phase/decisions.md" ;;
+    duplicated-tuple)
+      sed '/^- Reconciled next recovery: /p' "$wedge_phase/decisions.md"
+      ;;
+  esac > "$fault_phase/decisions.md"
+  run_invalid_sequence "drill-18 DEC-283 reconciliation rejects $fault" "$tuple_message" "$fault_phase/run-ledger.md"
+done
+consistent_phase="$reconciliation_root/consistent/phase-1"
+mkdir -p "$consistent_phase"
+cp "$wedge_phase/decisions.md" "$consistent_phase/decisions.md"
+cp "$wedge_phase/triage-log.md" "$consistent_phase/triage-log.md"
+sed 's/Next recovery: task-1 | in-scope-implementation | task-scope | task-1:session-continuation:trigger-A | 1/Next recovery: task-1 | in-scope-implementation | task-scope | task-1:session-liveness:trigger-B | 3/' \
+  "$wedge_phase/run-ledger.md" > "$consistent_phase/run-ledger.md"
+run_invalid_sequence "drill-18 DEC-283 reconciliation cannot replace a consistent binding" \
+  "RUN-RESUME next-recovery reconciliation targets a consistent Next recovery" "$consistent_phase/run-ledger.md"
+# DEC-283 drills end here.
+
 third_no_progress_recovery="$workspace/third-no-progress-recovery.md"
 cat "$exhausted_budget" > "$third_no_progress_recovery"
 cat >> "$third_no_progress_recovery" <<'EOF'

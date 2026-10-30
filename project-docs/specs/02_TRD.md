@@ -150,12 +150,12 @@ define canonical dirty/reconciliation digests. Caller-supplied targets use the
 same digest grammar; replay/import never translate historical digests into
 fresh proof. DEC-187's `kit-contract-mapping.md` records the kit coordinator's
 recovery-export binding and derived-terminal-state adapter obligations, with
-production conformance deferred to Phase 25 qualification.
+production conformance deferred to Phase 26 qualification.
 
 The delivered matrix enables Attention, activation recovery, and portable
 export/import with complete scoped conformance evidence (DEC-220). Claims
 recovery does not by itself qualify `work.claims.v1`: parallel scope semantics
-remain Phase 24, so that capability remains unavailable. Phase 22 final
+remain Phase 25, so that capability remains unavailable. Phase 22 final
 acceptance is recorded in `../docs/phases/phase-22/qa/final-acceptance.md`.
 
 Phase 23 qualifies `reviews.coverage.v1` and `human.outcomes.v1` after the
@@ -164,8 +164,9 @@ recovery proofs in `../docs/phases/phase-23/tasks/task-4-done.md` through
 `task-16-done.md`. The final `attention.v1` limit reports
 `human_outcome_resolution:true`. Its three changed rows use the exact limits
 and trust sources in `../docs/phases/phase-23/contracts.md` section 15.
-`work.claims.v1` remains unavailable under Phase 24 ownership and
-`telemetry.trajectory.v1` under Phase 25 ownership.
+`work.claims.v1` remains unavailable under Phase 25 ownership and
+`telemetry.trajectory.v1` under Phase 26 ownership (phases renumbered by
+DEC-272).
 
 - JSON objects include a schema or contract version at the operation envelope
   or record level.

@@ -34,7 +34,10 @@ func TestP22CloseRunUsesObservedRepositoryAndQualifyingProof(t *testing.T) {
 			if kind == "missing-base" {
 				a.repository["base_oid"] = strings.Repeat("0", 40)
 			}
-			input := map[string]any{"run_id": a.runID, "expected_version": a.runVersion, "observation_id": a.observation, "repository": a.repository}
+			input := map[string]any{"run_id": a.runID, "expected_version": a.runVersion, "observation_id": a.observation, "expected_repository": p24ExpectedRepository(a.repository)}
+			if kind == "nil-base" || kind == "missing-base" {
+				input["repository"] = a.repository
+			}
 			if kind == "missing-observation" {
 				delete(input, "observation_id")
 			}
@@ -48,10 +51,10 @@ func TestP22CloseRunUsesObservedRepositoryAndQualifyingProof(t *testing.T) {
 			response := a.p22RunInput(t, "run", "close", a.actor, input)
 			wantCode, wantExit := "", 0
 			switch kind {
-			case "outstanding", "missing-observation", "null-observation":
+			case "outstanding", "missing-observation", "null-observation", "nil-base", "missing-base":
 				wantCode, wantExit = "invalid-argument", 2
-			case "forged-old-target", "missing-base":
-				wantCode, wantExit = "recovery-state-conflict", 4
+			case "forged-old-target":
+				wantCode, wantExit = "repository-mismatch", 4
 			case "live":
 				wantCode, wantExit = "executor-still-live", 4
 			case "unknown":
@@ -142,7 +145,7 @@ func p22CloseProofFixture(t *testing.T, kind string) *p22FIDRecoveryAdapter {
 		if gate.Receipt.Outcome != expected {
 			t.Fatal("proof fixture did not observe expected process outcome")
 		}
-		p21Run(t, a.binary, a.workspace, "--json", "evidence", "link", "--actor", a.actor, "--input", p21Input(t, a.workspace, "close-proof-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}}), "--idempotency-key", "close-proof-link")
+		p21Run(t, a.binary, a.workspace, "--json", "evidence", "link", "--actor", a.actor, "--input", p21Input(t, a.workspace, "close-proof-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}}), "--idempotency-key", "close-proof-link")
 	}
 	current := p21Run(t, a.binary, a.workspace, "--json", "run", "get", a.runID)
 	a.runVersion = p22Number(p21Path(t, current, "result", "run", "version"))

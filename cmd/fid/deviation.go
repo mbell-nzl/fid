@@ -12,26 +12,26 @@ import (
 
 func init() {
 	rootFlagCapabilities["deviation record"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["deviation get"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["deviation list"] = rootFlagCapability{Project: true, JSON: true}
 }
 
 func newDeviationCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "deviation", Short: "Record and list append-only Deviations."}
-	cmd.AddCommand(newDeviationRecordCommand(), newDeviationListCommand())
+	cmd.AddCommand(newDeviationRecordCommand(), newDeviationListCommand(), newDeviationGetCommand())
 	return cmd
 }
 
 func newDeviationRecordCommand() *cobra.Command {
 	var inputPath, actor, key string
-	cmd := &cobra.Command{Use: "record", Args: canonicalNoArgs("deviation.record"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "record", Short: "Record a Deviation.", Args: canonicalNoArgs("deviation.record"), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, "deviation.record", flag); err != nil {
 				return err
 			}
 		}
 		var request review.DeviationRecordRequest
-		fields := []string{"id", "subject", "expected", "observed", "authority", "disposition", "reasoning", "references", "supersedes_deviation_id"}
-		if err := decodeClosedJudgmentInput(cmd.InOrStdin(), inputPath, fields, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[rootCommandKey(cmd)], &request); err != nil {
 			return renderDeviationError(cmd, "deviation.record", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -55,13 +55,14 @@ func newDeviationRecordCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("deviation.record"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["deviation record"])
 	return cmd
 }
 
 func newDeviationListCommand() *cobra.Command {
 	var subject, disposition string
 	var limit int
-	cmd := &cobra.Command{Use: "list", Args: canonicalNoArgs("deviation.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "list", Short: "List Deviations.", Args: canonicalNoArgs("deviation.list"), RunE: func(cmd *cobra.Command, _ []string) error {
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
 			return renderDeviationError(cmd, "deviation.list", err)
@@ -95,6 +96,9 @@ func renderDeviationError(cmd *cobra.Command, operation string, cause error) err
 	if err != nil {
 		return err
 	}
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, operation, cause); ok {
+		return rendered
+	}
 	var missing *review.DeviationNotFoundError
 	if errors.As(cause, &missing) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeDeviationNotFound, "Deviation was not found", &cli.Subject{Type: cli.SubjectDeviation, ID: missing.ID}, map[string]any{"id": missing.ID})
@@ -105,11 +109,34 @@ func renderDeviationError(cmd *cobra.Command, operation string, cause error) err
 	}
 	var conflict *journal.IdempotencyConflictError
 	if errors.As(cause, &conflict) {
-		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(conflict))
 	}
 	var resultLimit *review.ResultLimitExceededError
 	if errors.As(cause, &resultLimit) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeResultLimitExceeded, "Deviation result limit exceeded", nil, map[string]any{"collection": "items", "limit": resultLimit.Limit, "observed": resultLimit.Observed})
 	}
-	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Deviation request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Deviation request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+}
+
+func newDeviationGetCommand() *cobra.Command {
+	cmd := &cobra.Command{Use: "get <deviation-id>", Short: "Read one Deviation.", Args: canonicalExactArgs("deviation.get", 1), RunE: func(cmd *cobra.Command, args []string) error {
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderDeviationError(cmd, "deviation.get", err)
+		}
+		value, err := review.GetDeviation(workspace, issueMigrationsDir(), args[0])
+		if err != nil {
+			return renderDeviationError(cmd, "deviation.get", err)
+		}
+		jsonMode, err := readJSONMode(cmd)
+		if err != nil {
+			return err
+		}
+		if jsonMode {
+			return cli.WriteSuccess(cmd.OutOrStdout(), "deviation.get", map[string]any{"deviation": value}, nil)
+		}
+		return writeP23Human(cmd, "deviation.get", value)
+	}}
+	cmd.SetFlagErrorFunc(canonicalFlagError("deviation.get"))
+	return cmd
 }

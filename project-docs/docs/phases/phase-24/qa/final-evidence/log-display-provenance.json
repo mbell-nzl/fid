@@ -1,0 +1,18 @@
+[
+  {
+    "display_log": "supplemental-1.log",
+    "canonical_exact_output": "supplemental-1.json",
+    "raw_output_sha256": "d8ba2abbf548479ee73d98999f93b87e6948a0ad615590da7a6c2fe50a3307a0",
+    "display_sha256": "d8ba2abbf548479ee73d98999f93b87e6948a0ad615590da7a6c2fe50a3307a0",
+    "canonical_json_sha256": "2542c8b86360c0334ef9cf67edf6ebd237d1176c999b674cdd627381ef5d81bf",
+    "normalization": "trim display-line trailing whitespace only; exact stdout/stderr remain immutable in canonical JSON"
+  },
+  {
+    "display_log": "supplemental-2.log",
+    "canonical_exact_output": "supplemental-2.json",
+    "raw_output_sha256": "40ca350ab400155057edc12467a4875d1d8047cc22f1d13a1e66e41208ad48a5",
+    "display_sha256": "1f9b45fca5748181f0cbb1b43d8707761d15ce72d695a5a5f27dbe46edeaea35",
+    "canonical_json_sha256": "c58a95709338e767f1a95134bddb16ae0b4587af94f08102ab2eeab51266fe9f",
+    "normalization": "trim display-line trailing whitespace only; exact stdout/stderr remain immutable in canonical JSON"
+  }
+]

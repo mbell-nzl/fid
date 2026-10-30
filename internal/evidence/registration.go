@@ -13,14 +13,15 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
+	fidproject "github.com/mbell-nzl/fid/internal/project"
 )
 
 type RegisterRequest struct {
 	DefinitionID      string     `json:"definition_id"`
 	DefinitionVersion int        `json:"definition_version"`
-	WorktreeID        string     `json:"worktree_id"`
+	WorktreeID        string     `json:"-"`
 	Scope             GateScope  `json:"scope"`
-	Repository        Repository `json:"repository"`
+	Repository        Repository `json:"-"`
 }
 
 type GateScope struct {
@@ -126,6 +127,23 @@ func Register(options RegisterOptions) (RegisterResult, error) {
 		if err != nil {
 			return fmt.Errorf("register gate: read project config: %w", err)
 		}
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "project_id": project.ProjectID, "request": options.Request}, options.ActorID, nil)
+		if err != nil {
+			return err
+		}
+		idempotency := journal.IdempotencyRequest{OperationScope: "gate.register:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
+			return err
+		} else if found {
+			var stored struct {
+				Registration Registration `json:"registration"`
+			}
+			if err := json.Unmarshal([]byte(outcome.ResultJSON), &stored); err != nil {
+				return fmt.Errorf("decode gate registration replay: %w", err)
+			}
+			result = RegisterResult{Registration: stored.Registration, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: outcome.EventID}
+			return nil
+		}
 		activationID, actor, err := loadActiveActor(conn, options.ActorID)
 		if err != nil {
 			return err
@@ -133,9 +151,12 @@ func Register(options RegisterOptions) (RegisterResult, error) {
 		if !hasCapability(actor.Capabilities, "gate.register") {
 			return &AuthorityDeniedError{ActorID: options.ActorID}
 		}
-		if err := validateRepositoryBinding(options.Request, project.ProjectID); err != nil {
-			return err
+		observed, err := fidproject.ObserveRecordedRepository(options.WorkspaceRoot, project.ProjectID)
+		if err != nil {
+			return fmt.Errorf("register gate: %w", err)
 		}
+		options.Request.Repository = Repository(observed)
+		options.Request.WorktreeID = observed.WorktreeID
 		definition, digest, err := loadActivatedDefinition(conn, activationID, options.Request.DefinitionID, options.Request.DefinitionVersion)
 		if err != nil {
 			return err
@@ -169,16 +190,12 @@ func Register(options RegisterOptions) (RegisterResult, error) {
 		if err != nil {
 			return err
 		}
-		requestDigest, err := requestDigest(project.ProjectID, options.ActorID, options.Request)
-		if err != nil {
-			return err
-		}
 		resultJSON, err := resultJSON(registration, options.IdempotencyKey)
 		if err != nil {
 			return err
 		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "gate.registered", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: registration.ID, Sequence: registration.Version, Type: "gate-registration"}, CommandName: "gate.register", Repository: repositoryEventValue(options.Request.Repository), Effects: []journal.Effect{{Op: "insert", Table: "gate_registrations", PK: map[string]any{"id": registration.ID, "version": registration.Version}, Values: map[string]any{"activation_id": activationID, "definition_id": definition.DefinitionID, "definition_version": definition.DefinitionVersion, "definition_digest": digest, "binding_digest": bindingDigest, "project_id": project.ProjectID, "worktree_id": options.Request.WorktreeID, "scope_json": string(scopeJSON), "policy_json": string(policyJSON), "authorization_provenance": actor.ProvenanceRef, "created_event_id": "<event-id>", "created_at": createdAt}}}}
-		outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: "gate.register:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			prepared.Effects[0].Values["created_event_id"] = prepared.EventID
 			return journal.IdempotencyMutation{EntityID: registration.ID, ResultJSON: resultJSON}, nil
 		})
@@ -336,35 +353,10 @@ func hasCapability(capabilities []string, required string) bool {
 }
 
 func validateRegisterRequest(request RegisterRequest) error {
-	if strings.TrimSpace(request.DefinitionID) == "" || request.DefinitionVersion < 1 || strings.TrimSpace(request.WorktreeID) == "" || strings.TrimSpace(request.Scope.IssueID) == "" {
+	if strings.TrimSpace(request.DefinitionID) == "" || request.DefinitionVersion < 1 || strings.TrimSpace(request.Scope.IssueID) == "" {
 		return &ExecutorPolicyUnsupportedError{Fields: []string{"binding"}}
 	}
 	return nil
-}
-
-func validateRepositoryBinding(request RegisterRequest, projectID string) error {
-	repository := request.Repository
-	if repository.CaptureSource != "git" || repository.ProjectID != projectID || repository.WorktreeID != request.WorktreeID || !validOID(repository.HeadOID) || !validOID(repository.TreeOID) || (repository.BaseOID != nil && !validOID(*repository.BaseOID)) || (repository.Dirty && (repository.DirtyDigest == nil || !validDigest(*repository.DirtyDigest))) || (!repository.Dirty && repository.DirtyDigest != nil) {
-		return &ExecutorPolicyUnsupportedError{Fields: []string{"repository"}}
-	}
-	return nil
-}
-
-func validOID(value string) bool {
-	return len(value) == 40 && strings.Trim(value, "0123456789abcdef") == ""
-}
-
-func validDigest(value string) bool {
-	return strings.HasPrefix(value, "sha256:") && len(value) == 71 && strings.TrimPrefix(value, "sha256:") != ""
-}
-
-func requestDigest(projectID, actorID string, request RegisterRequest) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"actor_id": actorID, "project_id": projectID, "request": request})
-	if err != nil {
-		return "", fmt.Errorf("canonicalize gate registration request: %w", err)
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func gateBindingDigest(request RegisterRequest) (string, error) {

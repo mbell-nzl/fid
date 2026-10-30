@@ -4,7 +4,6 @@ package integration
 
 import (
 	"reflect"
-	"strings"
 	"testing"
 )
 
@@ -23,9 +22,9 @@ func TestP23FreshnessAndOutcomeSupersessionRealProcessJourney(t *testing.T) {
 	p23AssertReviewSuccess(t, "freshness Review Evidence", linked)
 	beforeReview := p23ReviewGet(t, a, reviewID)
 
-	changed := cloneP23Repository(a.repository)
-	changed["tree_oid"] = strings.Repeat("f", 40)
-	initial := p23EvidenceEvaluateTarget(t, a, "freshness-initial", changed)
+	p22Write(t, a.workspace, "base.txt", "changed review target\n")
+	a.repository = p22CorpusRepository(t, a.workspace, a.projectID)
+	initial := p23EvidenceEvaluateTarget(t, a, "freshness-initial")
 	reviewEvaluation := p23EvaluationByID(t, initial, "OBL-p22-corpus")
 	p23AssertEvaluation(t, reviewEvaluation, "unsatisfied", "valid", "stale", "not-applicable", "evidence-stale")
 	if afterReview := p23ReviewGet(t, a, reviewID); !reflect.DeepEqual(afterReview, beforeReview) {
@@ -43,7 +42,7 @@ func TestP23FreshnessAndOutcomeSupersessionRealProcessJourney(t *testing.T) {
 	securityRejected := p23RecordHumanOutcome(t, a, "security-rejected", "actor-human-outcome", "security", "rejected")
 	assertP23HumanOutcomeSuccess(t, securityRejected)
 	initialOutcomes := p23OutcomeRows(t, a)
-	initial = p23EvidenceEvaluateTarget(t, a, "freshness-human-initial", changed)
+	initial = p23EvidenceEvaluateTarget(t, a, "freshness-human-initial")
 	p23AssertEvaluation(t, p23EvaluationByID(t, initial, "OBL-human-release"), "satisfied", "valid", "fresh", "not-applicable", "")
 	p23AssertEvaluation(t, p23EvaluationByID(t, initial, "OBL-human-security"), "unsatisfied", "invalid", "fresh", "not-applicable", "human-outcome-absent")
 
@@ -54,7 +53,7 @@ func TestP23FreshnessAndOutcomeSupersessionRealProcessJourney(t *testing.T) {
 	securityApprovedID := p21Path(t, p23Envelope(t, securityApproved.Stdout), "result", "outcome").(map[string]any)["id"].(string)
 	assertP23HumanOutcomeSuccess(t, p23LinkHumanOutcome(t, a, "security-approved", "OBL-human-security", securityApprovedID))
 	allOutcomes := p23OutcomeRows(t, a)
-	after := p23EvidenceEvaluateTarget(t, a, "freshness-human-superseded", changed)
+	after := p23EvidenceEvaluateTarget(t, a, "freshness-human-superseded")
 	p23AssertEvaluation(t, p23EvaluationByID(t, after, "OBL-human-release"), "unsatisfied", "valid", "fresh", "not-applicable", "outcome-superseded")
 	p23AssertEvaluation(t, p23EvaluationByID(t, after, "OBL-human-security"), "satisfied", "valid", "fresh", "not-applicable", "")
 	if reread := p23OutcomeRows(t, a); !reflect.DeepEqual(reread, allOutcomes) || !p23RowsRetained(reread, initialOutcomes) {
@@ -86,9 +85,9 @@ func cloneP23Repository(repository map[string]any) map[string]any {
 	return cloned
 }
 
-func p23EvidenceEvaluateTarget(t *testing.T, a *p22FIDRecoveryAdapter, key string, repository map[string]any) p22ConformanceResponse {
+func p23EvidenceEvaluateTarget(t *testing.T, a *p22FIDRecoveryAdapter, key string) p22ConformanceResponse {
 	t.Helper()
-	response := a.p22Run(t, "evidence", "evaluate", "--input", p21Input(t, a.workspace, key, map[string]any{"obligation_id": nil, "target_repository": repository}))
+	response := a.p22Run(t, "evidence", "evaluate", "--input", p21Input(t, a.workspace, key, map[string]any{"obligation_id": nil}))
 	p23AssertReviewSuccess(t, "evidence evaluate "+key, response)
 	return response
 }

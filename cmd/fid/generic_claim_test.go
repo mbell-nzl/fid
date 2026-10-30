@@ -12,7 +12,7 @@ import (
 
 func TestClaimAcquireBindsActiveEnvelopeActorWorktreeScopeAndTTL(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+	workspace, issueID, registration := finalizedObservedEnvelopeWorkspaceWithDefinitions(t, gateDefinitionsForTest(nil))
 	envelopeInput := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := envelopeInput["authority_grants"].([]any)[0].(map[string]any)
 	grant["actions"] = []string{"claim.acquire", "envelope.activate"}
@@ -42,7 +42,7 @@ func TestClaimAcquireBindsActiveEnvelopeActorWorktreeScopeAndTTL(t *testing.T) {
 	claimPath := filepath.Join(workspace, "claim-acquire.json")
 	writeActivationInput(t, claimPath, map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+		"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
 	})
 	result := executeCommandForTest(workspace,
 		"--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder",
@@ -56,7 +56,7 @@ func TestClaimAcquireBindsActiveEnvelopeActorWorktreeScopeAndTTL(t *testing.T) {
 	claim := payload["result"].(map[string]any)["claim"].(map[string]any)
 	for field, want := range map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": "1", "actor_id": "actor-builder",
-		"worktree_id": "worktree-1", "mode": "mutation", "version": "1", "status": "active",
+		"worktree_id": testEnvelopeRepository(t, workspace)["worktree_id"], "mode": "mutation", "version": "1", "status": "active",
 	} {
 		if got := stringifyClaimValue(claim[field]); got != want {
 			t.Fatalf("claim.%s = %#v, want %#v", field, got, want)
@@ -68,10 +68,9 @@ func TestClaimAcquireAcceptsReviewMode(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
 	path := filepath.Join(workspace, "claim-acquire-review.json")
-	worktreeID := testEnvelopeRepository(t, workspace)["worktree_id"]
 	writeActivationInput(t, path, map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"worktree_id": worktreeID, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": "review", "ttl_seconds": 60,
+		"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": "review", "ttl_seconds": 60,
 	})
 	result := executeCommandForTest(workspace,
 		"--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder",
@@ -91,10 +90,9 @@ func TestClaimAcquireKeepsOneActiveClaimAcrossModes(t *testing.T) {
 	review, _ := acquireGenericClaimForTestWithMode(t, workspace, issueID, envelopeID, "claim-mode-review", 60, "review")
 
 	mutationPath := filepath.Join(workspace, "claim-mode-mutation.json")
-	worktreeID := testEnvelopeRepository(t, workspace)["worktree_id"]
 	writeActivationInput(t, mutationPath, map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"worktree_id": worktreeID, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": "mutation", "ttl_seconds": 60,
+		"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": "mutation", "ttl_seconds": 60,
 	})
 	beforeConflict := snapshotWorkspacePersistence(t, workspace)
 	competing := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", mutationPath, "--idempotency-key", "claim-mode-mutation-conflict")
@@ -123,7 +121,7 @@ func TestClaimAcquireKeepsOneActiveClaimAcrossModes(t *testing.T) {
 	reviewAgainPath := filepath.Join(workspace, "claim-mode-review-again.json")
 	writeActivationInput(t, reviewAgainPath, map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"worktree_id": worktreeID, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": "review", "ttl_seconds": 60,
+		"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": "review", "ttl_seconds": 60,
 	})
 	reviewAgain := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", reviewAgainPath, "--idempotency-key", "claim-mode-review-after-mutation")
 	if reviewAgain.err != nil || reviewAgain.stderr != "" || claimFromResponse(t, reviewAgain.stdout)["mode"] != "review" {
@@ -136,7 +134,7 @@ func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
 	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
 	qualifying := map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+		"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
 	}
 	path := filepath.Join(workspace, "claim-acquire-binding-matrix.json")
 	writeActivationInput(t, path, qualifying)
@@ -159,7 +157,7 @@ func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
 			name: "missing Issue",
 			input: map[string]any{
 				"issue_id": "", "envelope_id": envelopeID, "envelope_revision": 1,
-				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+				"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
 			},
 			actor: "actor-builder", wantCode: "invalid-argument",
 		},
@@ -167,7 +165,7 @@ func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
 			name: "mismatched Issue",
 			input: map[string]any{
 				"issue_id": "ISSUE-mismatched", "envelope_id": envelopeID, "envelope_revision": 1,
-				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+				"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
 			},
 			actor: "actor-builder", wantCode: "invalid-argument",
 		},
@@ -175,7 +173,7 @@ func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
 			name: "missing Envelope",
 			input: map[string]any{
 				"issue_id": issueID, "envelope_id": "", "envelope_revision": 1,
-				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+				"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
 			},
 			actor: "actor-builder", wantCode: "invalid-argument",
 		},
@@ -183,7 +181,7 @@ func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
 			name: "mismatched Envelope revision",
 			input: map[string]any{
 				"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 2,
-				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+				"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
 			},
 			actor: "actor-builder", wantCode: "invalid-argument",
 		},
@@ -191,7 +189,7 @@ func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
 			name: "Actor authority",
 			input: map[string]any{
 				"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+				"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
 			},
 			actor: "actor-other", wantCode: "authority-denied",
 		},
@@ -199,7 +197,7 @@ func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
 			name: "mismatched worktree",
 			input: map[string]any{
 				"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-				"worktree_id": "worktree-other", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+				"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
 			},
 			actor: "actor-builder", wantCode: "invalid-argument",
 		},
@@ -207,7 +205,7 @@ func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
 			name: "missing scope",
 			input: map[string]any{
 				"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{}}, "ttl_seconds": 60,
+				"scope": map[string]any{"paths": []string{}}, "ttl_seconds": 60,
 			},
 			actor: "actor-builder", wantCode: "invalid-argument",
 		},
@@ -215,7 +213,7 @@ func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
 			name: "invalid TTL",
 			input: map[string]any{
 				"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 0,
+				"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 0,
 			},
 			actor: "actor-builder", wantCode: "invalid-argument",
 		},
@@ -223,16 +221,23 @@ func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
 
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {
-			before := snapshotWorkspacePersistence(t, workspace)
+			root := workspace
+			if testCase.name == "mismatched worktree" {
+				root = t.TempDir()
+				if err := copyWorkspaceTree(workspace, root); err != nil {
+					t.Fatal(err)
+				}
+			}
+			before := snapshotWorkspacePersistence(t, root)
 			writeActivationInput(t, path, testCase.input)
-			result := executeCommandForTest(workspace,
-				"--project", workspace, "--json", "claim", "acquire", "--actor", testCase.actor,
+			result := executeCommandForTest(root,
+				"--project", root, "--json", "claim", "acquire", "--actor", testCase.actor,
 				"--input", path, "--idempotency-key", "claim-acquire-binding-"+strings.ReplaceAll(testCase.name, " ", "-"),
 			)
 			if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"`+testCase.wantCode+`"`) {
 				t.Fatalf("%s acquire = %#v, want typed %s rejection", testCase.name, result, testCase.wantCode)
 			}
-			assertClaimStateUnchanged(t, workspace, before)
+			assertClaimStateUnchanged(t, root, before)
 		})
 	}
 }
@@ -261,7 +266,7 @@ func TestClaimConflictsExpiryAndWrongHolderFailWithoutMutation(t *testing.T) {
 	conflictPath := filepath.Join(workspace, "claim-conflict.json")
 	writeActivationInput(t, conflictPath, map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"internal/claims/generic.go"}}, "ttl_seconds": 60,
+		"scope": map[string]any{"paths": []string{"internal/claims/generic.go"}}, "ttl_seconds": 60,
 	})
 	conflict := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", conflictPath, "--idempotency-key", "claim-acquire-conflict-2")
 	if conflict.err == nil || !strings.Contains(conflict.stderr, `"code":"claim-conflict"`) {
@@ -323,7 +328,7 @@ func TestExpiredClaimWithUnresolvedExecutorCannotBeReacquired(t *testing.T) {
 	reacquirePath := filepath.Join(workspace, "expired-unresolved-reacquire.json")
 	writeActivationInput(t, reacquirePath, map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+		"scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
 	})
 	reacquired := executeCommandForTest(workspace,
 		"--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder",
@@ -505,11 +510,7 @@ func TestClaimRenewReleaseVersionAndReplayAreExact(t *testing.T) {
 
 func claimEnvelopeForTest(t *testing.T) (string, string, string) {
 	t.Helper()
-	workspace, values := cloneReusableWorkspaceFixture(t, "claim-envelope", func() (string, []string) {
-		workspace, issueID, envelopeID := buildClaimEnvelopeForTest(t)
-		return workspace, []string{issueID, envelopeID}
-	})
-	return workspace, values[0], values[1]
+	return buildClaimEnvelopeForTest(t)
 }
 
 func buildClaimEnvelopeForTest(t *testing.T) (string, string, string) {
@@ -546,8 +547,7 @@ func acquireGenericClaimForTestWithTTL(t *testing.T, workspace, issueID, envelop
 func acquireGenericClaimForTestWithMode(t *testing.T, workspace, issueID, envelopeID, key string, ttlSeconds int, mode string) (map[string]any, string) {
 	t.Helper()
 	path := filepath.Join(workspace, key+".json")
-	worktreeID := testEnvelopeRepository(t, workspace)["worktree_id"]
-	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": worktreeID, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": mode, "ttl_seconds": ttlSeconds})
+	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "mode": mode, "ttl_seconds": ttlSeconds})
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", path, "--idempotency-key", key)
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("acquire = %#v, want stdout-only success", result)
@@ -586,7 +586,7 @@ func TestClaimResponseCarriesOnlyContractFields(t *testing.T) {
 	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "claim-contract-fields")
 	encoded, err := json.Marshal(claim)
-	if err != nil || !strings.Contains(string(encoded), `"worktree_id":"worktree-1"`) {
+	if err != nil || claim["worktree_id"] != testEnvelopeRepository(t, workspace)["worktree_id"] {
 		t.Fatalf("claim JSON = %q, %v; want contract binding", encoded, err)
 	}
 }

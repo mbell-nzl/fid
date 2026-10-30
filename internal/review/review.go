@@ -2,10 +2,9 @@
 package review
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -22,13 +21,13 @@ type RecordRequest struct {
 	RunID                string                     `json:"run_id"`
 	ExpectedRunVersion   int                        `json:"expected_run_version"`
 	Profile              string                     `json:"profile"`
-	Repository           Repository                 `json:"repository"`
-	Coverage             Coverage                   `json:"coverage"`
+	ExpectedRepository   project.ExpectedRepository `json:"expected_repository"`
+	Coverage             CoverageInput              `json:"coverage"`
 	Verdict              string                     `json:"verdict"`
 	Findings             []FindingInput             `json:"findings"`
 	ResolvesFindingIDs   []string                   `json:"resolves_finding_ids"`
 	InapplicableFindings []InapplicableFindingInput `json:"inapplicable_findings,omitempty"`
-	EvidenceRefs         []Source                   `json:"evidence_refs"`
+	EvidenceRefs         []SourceInput              `json:"evidence_refs"`
 	ReceiptIDs           []string                   `json:"receipt_ids"`
 }
 
@@ -69,6 +68,29 @@ type Source struct {
 	Repository   Repository `json:"repository"`
 }
 
+type SourceInput = project.SourceInput
+
+func resolveSources(root string, inputs []SourceInput, repository Repository, field string) ([]Source, error) {
+	resolved := make([]Source, 0, len(inputs))
+	for index, input := range inputs {
+		digest, err := project.ResolveSourceInput(root, input)
+		if err != nil {
+			var invalid *project.InvalidSourceInputError
+			if errors.As(err, &invalid) {
+				position := fmt.Sprintf("%s[%d]", field, index)
+				if field == "source" || strings.HasSuffix(field, ".source") {
+					position = field
+				}
+				return nil, &project.InvalidSourceInputError{Field: "input." + position + "." + invalid.Field, Detail: invalid.Detail}
+			}
+			return nil, err
+		}
+		resolved = append(resolved, Source{SourceType: input.SourceType, DisplayLabel: input.DisplayLabel,
+			Path: input.Path, Section: input.Section, ExternalID: input.ExternalID, Digest: digest, Repository: repository})
+	}
+	return resolved, nil
+}
+
 type CoverageItem struct {
 	Source   Source `json:"source"`
 	Assessed bool   `json:"assessed"`
@@ -82,6 +104,40 @@ type CoverageExclusion struct {
 type Coverage struct {
 	Items      []CoverageItem      `json:"items"`
 	Exclusions []CoverageExclusion `json:"exclusions"`
+}
+
+type CoverageItemInput struct {
+	Source   SourceInput `json:"source"`
+	Assessed bool        `json:"assessed"`
+}
+
+type CoverageExclusionInput struct {
+	Source SourceInput `json:"source"`
+	Reason string      `json:"reason"`
+}
+
+type CoverageInput struct {
+	Items      []CoverageItemInput      `json:"items"`
+	Exclusions []CoverageExclusionInput `json:"exclusions"`
+}
+
+func resolveReviewCoverage(root string, input CoverageInput, repository Repository) (Coverage, error) {
+	coverage := Coverage{Items: make([]CoverageItem, 0, len(input.Items)), Exclusions: make([]CoverageExclusion, 0, len(input.Exclusions))}
+	for index, item := range input.Items {
+		sources, err := resolveSources(root, []SourceInput{item.Source}, repository, fmt.Sprintf("coverage.items[%d].source", index))
+		if err != nil {
+			return Coverage{}, err
+		}
+		coverage.Items = append(coverage.Items, CoverageItem{Source: sources[0], Assessed: item.Assessed})
+	}
+	for index, exclusion := range input.Exclusions {
+		sources, err := resolveSources(root, []SourceInput{exclusion.Source}, repository, fmt.Sprintf("coverage.exclusions[%d].source", index))
+		if err != nil {
+			return Coverage{}, err
+		}
+		coverage.Exclusions = append(coverage.Exclusions, CoverageExclusion{Source: sources[0], Reason: exclusion.Reason})
+	}
+	return coverage, nil
 }
 
 type Subject struct {
@@ -134,7 +190,7 @@ type RecordResult struct {
 }
 
 type RepositoryMismatchError struct {
-	Expected Repository
+	Expected project.ExpectedRepository
 	Observed Repository
 }
 
@@ -225,11 +281,11 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if err != nil {
 			return fmt.Errorf("review record: read project config: %w", err)
 		}
-		requestDigest, err := reviewRequestDigest(projectConfig.ProjectID, options.ActorID, request)
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "review.record", "project_id": projectConfig.ProjectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "review.record:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "review.record:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
@@ -245,12 +301,6 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if binding.Version != request.ExpectedRunVersion || binding.Status != "active" || binding.ClaimMode != "review" || binding.ClaimActorID != options.ActorID {
 			return fmt.Errorf("review record Run binding is invalid")
 		}
-		if err := validateCoverage(request.Coverage); err != nil {
-			return err
-		}
-		if err := validateVerdictFindingAgreement(request.Verdict, request.Findings, request.Coverage); err != nil {
-			return err
-		}
 		if err := validateTerminalFindingInputs(request.ResolvesFindingIDs, request.InapplicableFindings); err != nil {
 			return err
 		}
@@ -264,8 +314,22 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if err != nil {
 			return err
 		}
-		if !sameRepository(request.Repository, observed) {
-			return &RepositoryMismatchError{Expected: request.Repository, Observed: observed}
+		if !request.ExpectedRepository.MatchesRecordedRepository(project.RecordedRepository(observed)) {
+			return &RepositoryMismatchError{Expected: request.ExpectedRepository, Observed: observed}
+		}
+		coverage, err := resolveReviewCoverage(options.WorkspaceRoot, request.Coverage, observed)
+		if err != nil {
+			return err
+		}
+		if err := validateCoverage(coverage); err != nil {
+			return err
+		}
+		if err := validateVerdictFindingAgreement(request.Verdict, request.Findings, coverage); err != nil {
+			return err
+		}
+		evidenceRefs, err := resolveSources(options.WorkspaceRoot, request.EvidenceRefs, observed, "evidence_refs")
+		if err != nil {
+			return err
 		}
 		var existing string
 		if err := conn.QueryRow(`SELECT id FROM review_records WHERE run_id = ?`, request.RunID).Scan(&existing); err == nil {
@@ -299,7 +363,7 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if err != nil {
 			return err
 		}
-		review, err := recordReviewValue(reviewID, binding, options.ActorID, request, observed, "<occurred-at>", "<event-id>")
+		review, err := recordReviewValue(reviewID, binding, options.ActorID, request, coverage, evidenceRefs, observed, "<occurred-at>", "<event-id>")
 		if err != nil {
 			return err
 		}
@@ -625,23 +689,11 @@ func loadRecordBinding(conn *sql.DB, runID string) (recordBinding, error) {
 }
 
 func observedRepository(root, projectID string) (Repository, error) {
-	observation, err := project.ObserveRepository(root)
+	observation, err := project.ObserveRecordedRepository(root, projectID)
 	if err != nil {
 		return Repository{}, fmt.Errorf("review record: observe repository: %w", err)
 	}
-	base := observation.HeadOID
-	return Repository{BaseOID: &base, CaptureSource: "git", Dirty: observation.Dirty, DirtyDigest: observation.DirtyDigest, HeadOID: observation.HeadOID, ProjectID: projectID, TreeOID: observation.TreeOID, WorktreeID: observation.WorktreeID}, nil
-}
-
-func sameRepository(left, right Repository) bool {
-	return left.CaptureSource == right.CaptureSource && left.Dirty == right.Dirty && sameString(left.BaseOID, right.BaseOID) && sameString(left.DirtyDigest, right.DirtyDigest) && left.HeadOID == right.HeadOID && left.ProjectID == right.ProjectID && left.TreeOID == right.TreeOID && left.WorktreeID == right.WorktreeID
-}
-
-func sameString(left, right *string) bool {
-	if left == nil || right == nil {
-		return left == right
-	}
-	return *left == *right
+	return Repository(observation), nil
 }
 
 func workflowRepository(repository Repository) workflow.Repository {
@@ -654,15 +706,6 @@ func journalRepository(repository Repository) *journal.Repository {
 		base = *repository.BaseOID
 	}
 	return &journal.Repository{BaseOID: base, CaptureSource: repository.CaptureSource, Dirty: repository.Dirty, DirtyDigest: repository.DirtyDigest, HeadOID: repository.HeadOID, ProjectID: repository.ProjectID, TreeOID: repository.TreeOID, WorktreeID: repository.WorktreeID}
-}
-
-func reviewRequestDigest(projectID, actorID string, request RecordRequest) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"operation": "review.record", "project_id": projectID, "actor_id": actorID, "request": request})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func recordReplay(outcome journal.IdempotencyOutcome, key string, result *RecordResult) error {
@@ -780,8 +823,8 @@ func findingState(dispositions []any) string {
 	return dispositions[len(dispositions)-1].(map[string]any)["action"].(string)
 }
 
-func recordReviewValue(id string, binding recordBinding, actorID string, request RecordRequest, repository Repository, recordedAt, eventID string) (map[string]any, error) {
-	value, err := reviewJSONValue(map[string]any{"id": id, "run_id": request.RunID, "issue_id": binding.IssueID, "envelope_id": binding.EnvelopeID, "envelope_revision": binding.EnvelopeRevision, "actor_id": actorID, "profile": request.Profile, "repository": repository, "coverage": request.Coverage, "verdict": request.Verdict, "evidence_refs": request.EvidenceRefs, "receipt_ids": request.ReceiptIDs, "findings": request.Findings, "resolved_finding_ids": request.ResolvesFindingIDs, "independence": "distinct-actor", "recorded_at": recordedAt, "event_id": eventID})
+func recordReviewValue(id string, binding recordBinding, actorID string, request RecordRequest, coverage Coverage, evidenceRefs []Source, repository Repository, recordedAt, eventID string) (map[string]any, error) {
+	value, err := reviewJSONValue(map[string]any{"id": id, "run_id": request.RunID, "issue_id": binding.IssueID, "envelope_id": binding.EnvelopeID, "envelope_revision": binding.EnvelopeRevision, "actor_id": actorID, "profile": request.Profile, "repository": repository, "coverage": coverage, "verdict": request.Verdict, "evidence_refs": evidenceRefs, "receipt_ids": request.ReceiptIDs, "findings": request.Findings, "resolved_finding_ids": request.ResolvesFindingIDs, "independence": "distinct-actor", "recorded_at": recordedAt, "event_id": eventID})
 	if err != nil {
 		return nil, err
 	}

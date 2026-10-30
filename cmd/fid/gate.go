@@ -6,12 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
-	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/evidence"
+	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/review"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -39,7 +38,7 @@ func newGateRunCommand() *cobra.Command {
 			}
 		}
 		var request evidence.GateRunRequest
-		if err := decodeClosedGateInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["gate run"], &request); err != nil {
 			return renderGateError(cmd, "gate.run", err)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -75,6 +74,11 @@ func newGateRunCommand() *cobra.Command {
 			return err
 		}
 		if failure != nil {
+			if jsonMode, err := readJSONMode(cmd); err != nil {
+				return err
+			} else if !jsonMode {
+				return writeHumanFailure(cmd, "gate.run", *failure, fmt.Errorf("gate run observed %s", result.Receipt.Outcome))
+			}
 			return cli.NewFailureError(*failure, fmt.Errorf("gate run observed %s", result.Receipt.Outcome))
 		}
 		return nil
@@ -83,6 +87,7 @@ func newGateRunCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("gate.run"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["gate run"])
 	return cmd
 }
 
@@ -112,7 +117,7 @@ func writeCommittedBudgetDenial(cmd *cobra.Command, runID string, result evidenc
 		return err
 	}
 	if !jsonMode {
-		return cli.NewFailureError(failure, fmt.Errorf("gate run admission denied"))
+		return writeHumanFailure(cmd, "gate.run", failure, fmt.Errorf("gate run admission denied"))
 	}
 	response := failureEnvelope("gate.run", failure)
 	if err := result.Live.AppendCommittedFidError(runID, response, result.Replayed); err != nil {
@@ -194,7 +199,17 @@ func writeGateLiveResult(cmd *cobra.Command, result evidence.LiveResult, obligat
 		return nil
 	}
 	_, err = fmt.Fprint(cmd.OutOrStdout(), renderLiveHuman(result, obligationStatus))
-	return err
+	if err != nil {
+		return err
+	}
+	if fidError {
+		failure, err := cli.NewFailure(cli.CodeInternalError, "gate execution infrastructure failed", nil, map[string]any{})
+		if err != nil {
+			return err
+		}
+		return writeHumanFailure(cmd, "gate.run", failure, fmt.Errorf("gate execution infrastructure failed"))
+	}
+	return nil
 }
 
 func newGateRegisterCommand() *cobra.Command {
@@ -210,7 +225,7 @@ func newGateRegisterCommand() *cobra.Command {
 			return err
 		}
 		var request evidence.RegisterRequest
-		if err := decodeClosedGateInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["gate register"], &request); err != nil {
 			return renderGateError(cmd, "gate.register", err)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -235,6 +250,7 @@ func newGateRegisterCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("gate.register"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["gate register"])
 	return cmd
 }
 
@@ -267,35 +283,6 @@ func newGateResolveCommand() *cobra.Command {
 	return cmd
 }
 
-func decodeClosedGateInput(stdin io.Reader, path string, target any) error {
-	var payload []byte
-	var err error
-	if path == "-" {
-		payload, err = io.ReadAll(io.LimitReader(stdin, 1_048_577))
-	} else {
-		payload, err = os.ReadFile(path)
-	}
-	if err != nil {
-		return fmt.Errorf("read gate input: %w", err)
-	}
-	if len(payload) > 1_048_576 {
-		return fmt.Errorf("gate input exceeds 1048576 bytes")
-	}
-	decoder := json.NewDecoder(strings.NewReader(string(payload)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		return fmt.Errorf("decode gate input: %w", err)
-	}
-	if decoder.More() {
-		return fmt.Errorf("gate input must contain one object")
-	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		return fmt.Errorf("gate input must contain one object")
-	}
-	return nil
-}
-
 func renderGateError(cmd *cobra.Command, operation string, cause error) error {
 	var stopped *workflow.StopBlockedError
 	if errors.As(cause, &stopped) {
@@ -304,6 +291,17 @@ func renderGateError(cmd *cobra.Command, operation string, cause error) error {
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
+	}
+	if failure, handled := renderJudgmentObservationError(cmd, jsonMode, operation, cause); handled {
+		return failure
+	}
+	var mismatch *workflow.RunRepositoryMismatchError
+	if errors.As(cause, &mismatch) {
+		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeRepositoryMismatch, "repository identity does not match", nil, map[string]any{"expected": map[string]any{"head_oid": mismatch.Expected.HeadOID, "dirty": mismatch.Expected.Dirty}, "observed": repositoryDetails(review.Repository(mismatch.Observed))})
+	}
+	var idempotency *journal.IdempotencyConflictError
+	if errors.As(cause, &idempotency) {
+		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key is bound to another request", nil, idempotencyConflictDetails(idempotency))
 	}
 	var unavailable *evidence.ActiveActivationUnavailableError
 	var policyErr *evidence.ExecutorPolicyUnsupportedError
@@ -326,7 +324,7 @@ func renderGateError(cmd *cobra.Command, operation string, cause error) error {
 	case errors.As(cause, &deniedErr):
 		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "finalized activation actor is denied", nil, map[string]any{"operation": operation, "actor_id": deniedErr.ActorID, "required_actions": []string{requiredCapability}, "required_capabilities": []string{requiredCapability}})
 	default:
-		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid gate request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted gate registration input"}})
+		return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid gate request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted gate registration input"}})
 	}
 }
 
@@ -347,10 +345,7 @@ func writeGateFailure(cmd *cobra.Command, jsonMode bool, operation string, cause
 		return err
 	}
 	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, operation, failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 }

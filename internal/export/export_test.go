@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
@@ -70,6 +72,175 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 	if sources, ok := manifest["sources"].([]any); !ok || len(sources) != 1 {
 		t.Fatalf("manifest sources = %#v, want one canonical source", manifest["sources"])
 	}
+}
+
+func TestSchema19ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
+	t.Parallel()
+	source := t.TempDir()
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+		t.Fatal(err)
+	}
+	addJournalBackedExportFixtureFacts(t, source)
+	archivePath := filepath.Join(t.TempDir(), "schema19.zip")
+	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archivePath}); err != nil {
+		t.Fatal(err)
+	}
+	if got := archiveManifest(t, archivePath)["projection_schema"]; got != float64(19) {
+		t.Fatalf("manifest projection_schema = %v, want 19", got)
+	}
+	if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)}); err != nil {
+		t.Fatalf("validate schema-19 archive: %#v", err)
+	}
+	if _, err := Import(ImportOptions{ArchivePath: archivePath, RepositoryRoot: t.TempDir(), MigrationsDir: testMigrationsDir(t), IdempotencyKey: "schema19"}); err != nil {
+		t.Fatal(err)
+	}
+	entries := archiveContents(t, archivePath)
+	manifest := decodeManifestMap(t, entries["manifest.json"])
+	manifest["projection_schema"] = json.Number("18")
+	entries["manifest.json"] = encodeManifestMap(t, manifest)
+	invalidArchive := filepath.Join(t.TempDir(), "schema18.zip")
+	writeTestArchive(t, invalidArchive, entries)
+	target := t.TempDir()
+	before := workspaceTreeDigest(t, target)
+	_, err := Import(ImportOptions{ArchivePath: invalidArchive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "schema18"})
+	assertArchiveCheck(t, err, "schema-unsupported")
+	invalid, ok := err.(*InvalidArchiveError)
+	if !ok {
+		t.Fatalf("schema-18 import error = %T, want archive-invalid", err)
+	}
+	foundManifest := false
+	for _, check := range invalid.Checks {
+		if check.Code == "schema-unsupported" && check.Entry != nil && *check.Entry == "manifest.json" {
+			foundManifest = true
+		}
+	}
+	if !foundManifest {
+		t.Fatalf("schema-18 archive checks = %#v, want schema-unsupported on manifest.json", invalid.Checks)
+	}
+	if after := workspaceTreeDigest(t, target); after != before {
+		t.Fatalf("invalid import changed target tree: %s to %s", before, after)
+	}
+}
+
+func TestGateReceiptFieldDigestGuardAndMalformedInsertFailClosedThroughCLI(t *testing.T) {
+	t.Parallel()
+	workspace := t.TempDir()
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+		t.Fatal(err)
+	}
+	addJournalBackedExportFixtureFacts(t, workspace)
+	journalFiles, err := filepath.Glob(filepath.Join(workspace, ".fid", "journal", "*.jsonl"))
+	if err != nil || len(journalFiles) == 0 {
+		t.Fatalf("journal files = %v, error %v", journalFiles, err)
+	}
+	original := make(map[string][]byte, len(journalFiles))
+	for _, path := range journalFiles {
+		original[path], err = os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	binary := filepath.Join(t.TempDir(), "fid")
+	build := exec.Command("go", "build", "-o", binary, "./cmd/fid")
+	build.Dir = filepath.Join("..", "..")
+	if output, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build fid: %v\n%s", err, output)
+	}
+	cases := []struct {
+		name, eventType string
+		mutate          func(*journal.Effect)
+		wantExit        int
+	}{
+		{"valid-receipt", "", nil, 0},
+		{"missing-insert-map", "gate.execution-started", func(e *journal.Effect) { delete(e.Values, "request_field_digests_json") }, 6},
+		{"array-insert-map", "gate.execution-started", func(e *journal.Effect) { e.Values["request_field_digests_json"] = `[]` }, 6},
+		{"non-digest-insert-map", "gate.execution-started", func(e *journal.Effect) { e.Values["request_field_digests_json"] = `{"--actor":"plain"}` }, 6},
+		{"mismatched-receipt-guard", "gate.receipt-recorded", func(e *journal.Effect) {
+			e.Preconditions["request_field_digests_json"] = `{"different-field":"sha256:` + strings.Repeat("a", 64) + `"}`
+		}, 6},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			for path, contents := range original {
+				if err := os.WriteFile(path, contents, 0o600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			var journalFile string
+			var line int
+			if tc.mutate != nil {
+				journalFile, line = mutateGateIdempotencyEffect(t, original, tc.eventType, tc.mutate)
+			}
+			before := workspaceTreeDigest(t, workspace)
+			cmd := exec.Command(binary, "--project", workspace, "--json", "rebuild")
+			var stdout, stderr bytes.Buffer
+			cmd.Stdout, cmd.Stderr = &stdout, &stderr
+			err := cmd.Run()
+			if tc.wantExit == 0 {
+				if err != nil || stderr.Len() != 0 {
+					t.Fatalf("valid receipt rebuild = %v, stderr %q", err, stderr.String())
+				}
+				return
+			}
+			var exit *exec.ExitError
+			if !errors.As(err, &exit) || exit.ExitCode() != tc.wantExit || stdout.Len() != 0 {
+				t.Fatalf("rebuild exit = %v, stdout = %q, stderr = %q", err, stdout.String(), stderr.String())
+			}
+			var failure struct {
+				Operation string `json:"operation"`
+				Error     struct {
+					Code     string `json:"code"`
+					Category string `json:"category"`
+					Details  struct {
+						JournalFile string `json:"journal_file"`
+						Line        int    `json:"line"`
+					} `json:"details"`
+				} `json:"error"`
+			}
+			if err := json.Unmarshal(stderr.Bytes(), &failure); err != nil {
+				t.Fatalf("decode rebuild failure: %v: %s", err, stderr.String())
+			}
+			if failure.Operation != "project.rebuild" || failure.Error.Code != "journal-replay-stopped" || failure.Error.Category != "integrity" || failure.Error.Details.JournalFile != journalFile || failure.Error.Details.Line != line {
+				t.Fatalf("rebuild failure = %+v, want journal-replay-stopped at %s:%d", failure, journalFile, line)
+			}
+			if after := workspaceTreeDigest(t, workspace); after != before {
+				t.Fatalf("rejected rebuild changed target tree: %s to %s", before, after)
+			}
+		})
+	}
+}
+
+func mutateGateIdempotencyEffect(t *testing.T, original map[string][]byte, eventType string, mutate func(*journal.Effect)) (string, int) {
+	t.Helper()
+	for path, contents := range original {
+		lines := bytes.Split(bytes.TrimSuffix(contents, []byte{'\n'}), []byte{'\n'})
+		for index, raw := range lines {
+			var event journal.Event
+			if err := event.UnmarshalJSON(raw); err != nil {
+				t.Fatal(err)
+			}
+			if event.EventType != eventType {
+				continue
+			}
+			for effectIndex := range event.Effects {
+				if event.Effects[effectIndex].Table != "idempotency_results" {
+					continue
+				}
+				mutate(&event.Effects[effectIndex])
+				encoded, err := journal.MarshalCanonicalJSON(event)
+				if err != nil {
+					t.Fatal(err)
+				}
+				lines[index] = encoded
+				if err := os.WriteFile(path, append(bytes.Join(lines, []byte{'\n'}), '\n'), 0o600); err != nil {
+					t.Fatal(err)
+				}
+				return filepath.ToSlash(filepath.Join(".fid", "journal", filepath.Base(path))), index + 1
+			}
+		}
+	}
+	t.Fatalf("missing %s idempotency Effect", eventType)
+	return "", 0
 }
 
 func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {

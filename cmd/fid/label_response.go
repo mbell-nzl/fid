@@ -20,10 +20,7 @@ func renderLabelError(cmd *cobra.Command, operation string, cause error) error {
 			return err
 		}
 		if !jsonMode {
-			if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-				return err
-			}
-			return cli.NewFailureError(failure, cause)
+			return writeHumanFailure(cmd, operation, failure, cause)
 		}
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
@@ -34,10 +31,7 @@ func renderLabelError(cmd *cobra.Command, operation string, cause error) error {
 			return err
 		}
 		if !jsonMode {
-			if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-				return err
-			}
-			return cli.NewFailureError(failure, cause)
+			return writeHumanFailure(cmd, operation, failure, cause)
 		}
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}

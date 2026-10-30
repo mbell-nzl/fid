@@ -2,8 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/cli"
 )
 
 func TestRetainedInventoryJSONRequestErrorsUseCanonicalEnvelope(t *testing.T) {
@@ -67,9 +70,8 @@ func TestRetainedInventoryJSONRequestErrorsUseCanonicalEnvelope(t *testing.T) {
 			if failure.ContractVersion != "fid-cli.v1" || failure.OK || failure.Operation != tt.operation || failure.Error.Code != "invalid-argument" || failure.Error.Category != "invalid-input" || failure.Error.Retryable || failure.Error.Message == "" || failure.Error.Subject != nil {
 				t.Fatalf("failure = %+v, want canonical %s invalid-argument", failure, tt.operation)
 			}
-			if failure.Error.Details.Argument != "request" || failure.Error.Details.Value != nil || strings.Join(failure.Error.Details.Allowed, ",") != "accepted "+tt.operation+" input" {
-				t.Fatalf("details = %+v, want request/null/accepted operation input", failure.Error.Details)
-			}
+			want := retainedRequestGrammarRow(t, tt.name, tt.operation)
+			grammarCheck(t, want, true, result, cli.ExitCode(result.err))
 			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
 				t.Fatalf("journal lines after rejection = %d, want %d", got, before)
 			}
@@ -130,9 +132,8 @@ func TestRetainedInventoryJSONMissingActorsUseCanonicalEnvelope(t *testing.T) {
 			if failure.ContractVersion != "fid-cli.v1" || failure.OK || failure.Operation != tt.operation || failure.Error.Code != "invalid-argument" || failure.Error.Category != "invalid-input" || failure.Error.Retryable || failure.Error.Message == "" || failure.Error.Subject != nil {
 				t.Fatalf("failure = %+v, want canonical %s invalid-argument", failure, tt.operation)
 			}
-			if failure.Error.Details.Argument != "request" || failure.Error.Details.Value != nil || strings.Join(failure.Error.Details.Allowed, ",") != "accepted "+tt.operation+" input" {
-				t.Fatalf("details = %+v, want request/null/accepted operation input", failure.Error.Details)
-			}
+			want := retainedRequestGrammarRow(t, tt.name, tt.operation)
+			grammarCheck(t, want, true, result, cli.ExitCode(result.err))
 			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
 				t.Fatalf("journal lines after rejection = %d, want %d", got, before)
 			}
@@ -152,18 +153,18 @@ func TestRetainedInventoryRequiredActorHumanErrorsRemainProse(t *testing.T) {
 		stderr string
 	}{
 		{"issue ac add missing actor", []string{"issue", "ac", "add", "FID-any", "--text", "criterion", "--ordinal", "1", "--idempotency-key", "human-missing-actor"}, "error: --actor is required\n"},
-		{"issue ac add malformed actor", []string{"issue", "ac", "add", "FID-any", "--text", "criterion", "--ordinal", "1", "--actor", " ", "--idempotency-key", "human-malformed-actor"}, "error: Issue actor must match <agent|human|service>:<id>\n"},
+		{"issue ac add malformed actor", []string{"issue", "ac", "add", "FID-any", "--text", "criterion", "--ordinal", "1", "--actor", " ", "--idempotency-key", "human-malformed-actor"}, `error: invalid argument " " for "--actor" flag` + "\n"},
 		{"label add missing actor", []string{"label", "add", "core", "--idempotency-key", "human-missing-label-actor"}, "error: --actor is required\n"},
-		{"label add malformed actor", []string{"label", "add", "core", "--actor", " ", "--idempotency-key", "human-malformed-label-actor"}, "error: label actor must match <agent|human|service>:<id>\n"},
+		{"label add malformed actor", []string{"label", "add", "core", "--actor", " ", "--idempotency-key", "human-malformed-label-actor"}, `error: invalid argument " " for "--actor" flag` + "\n"},
 		{"issue label add missing actor", []string{"issue", "label", "add", "FID-any", "core", "--idempotency-key", "human-missing-issue-label-add-actor"}, "error: --actor is required\n"},
-		{"issue label add malformed actor", []string{"issue", "label", "add", "FID-any", "core", "--actor", " ", "--idempotency-key", "human-malformed-issue-label-add-actor"}, "error: Issue actor must match <agent|human|service>:<id>\n"},
+		{"issue label add malformed actor", []string{"issue", "label", "add", "FID-any", "core", "--actor", " ", "--idempotency-key", "human-malformed-issue-label-add-actor"}, `error: invalid argument " " for "--actor" flag` + "\n"},
 		{"issue label remove missing actor", []string{"issue", "label", "remove", "FID-any", "core", "--idempotency-key", "human-missing-issue-label-remove-actor"}, "error: --actor is required\n"},
-		{"issue label remove malformed actor", []string{"issue", "label", "remove", "FID-any", "core", "--actor", " ", "--idempotency-key", "human-malformed-issue-label-remove-actor"}, "error: Issue actor must match <agent|human|service>:<id>\n"},
+		{"issue label remove malformed actor", []string{"issue", "label", "remove", "FID-any", "core", "--actor", " ", "--idempotency-key", "human-malformed-issue-label-remove-actor"}, `error: invalid argument " " for "--actor" flag` + "\n"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 			result := executeCommandForTest(workspace, tt.args...)
-			if result.err == nil || result.stdout != "" || result.stderr != tt.stderr {
+			if result.err == nil || result.stdout != "" || result.stderr != tt.stderr+"reason: invalid-argument; argument=--actor, allowed="+map[bool]string{true: "--actor", false: "^(agent|human|service):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"}[strings.Contains(tt.name, "missing")]+"\n" {
 				t.Fatalf("result = %#v, want concise Human required-actor error", result)
 			}
 			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
@@ -237,4 +238,47 @@ func assertRetainedInventoryProjectOperation(t *testing.T, result commandExecuti
 	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != operation {
 		t.Fatalf("%s envelope = %#v, want selected-project success", operation, envelope)
 	}
+}
+
+func retainedRequestGrammarRow(t *testing.T, name, operation string) grammarRow {
+	t.Helper()
+	root := newRootCommandAt(t.TempDir())
+	cmd, _, err := root.Find(strings.Split(operation, "."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	row := grammarRow{name: name, operation: operation, code: "invalid-argument"}
+	switch {
+	case strings.HasSuffix(name, "unknown flag"):
+		row = grammarUnknownFlagRow(cmd)
+		row.argument = "--unknown"
+		row.value = "--unknown"
+		row.message = "unknown flag: --unknown"
+	case strings.HasSuffix(name, "arity"):
+		row.argument = "arguments"
+		row.allowed = strings.Fields(cmd.Use)[1:]
+		row.message = fmt.Sprintf("accepts %d arg(s), received 0", len(row.allowed))
+		if len(row.allowed) == 0 {
+			row.allowed = []string{"no arguments"}
+			row.value = "extra"
+			row.message = strings.ReplaceAll(operation, ".", " ") + " accepts no arguments"
+		}
+	case strings.HasSuffix(name, "malformed actor"):
+		row.argument = "--actor"
+		row.value = " "
+		row.allowed = []string{`^(agent|human|service):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`}
+		row.message = `invalid argument " " for "--actor" flag`
+	default:
+		flag := "actor"
+		if strings.HasSuffix(name, "missing text") {
+			flag = "text"
+		}
+		if strings.HasSuffix(name, "missing ordinal") {
+			flag = "ordinal"
+		}
+		row.argument = "--" + flag
+		row.allowed = []string{row.argument}
+		row.message = row.argument + " is required"
+	}
+	return row
 }

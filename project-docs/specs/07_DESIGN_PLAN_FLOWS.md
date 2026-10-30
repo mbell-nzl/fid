@@ -31,10 +31,14 @@ keeps fid useful as an Issue tracker without requiring the V2 kit.
    validation/review/Human Obligations, budgets, Stops, and repository scope.
 3. Human approval is obtained where kit policy requires it.
 4. fid creates immutable Gate Definition Registrations from the activated Gate
-   Definition values that the Envelope will reference.
+   Definition values that the Envelope will reference. Registration binds
+   fid's observed project and worktree, not a caller-supplied identity.
 5. Kit submits the complete versioned Envelope through the backend port.
-6. fid validates references, capability support, provenance, non-weakening, and
-   revision invariants, then records the approved/active revision.
+6. fid observes the worktree, resolves and checks every Source, and validates
+   references, capability support, provenance, non-weakening, and revision
+   invariants. It records that observation as the Envelope repository scope
+   and on each Source. An imported destination with a matching project and
+   target-root binding can continue imported history.
 
 fid does not persist or recalculate the external kit's risk lane and does not
 create Issue copies. A caller cannot substitute a mutable Gate Definition for
@@ -46,7 +50,8 @@ the activated Registration reference.
 2. fid derives actionable state from Issue, Envelope, authority, dependencies,
    Obligations, Claim/Run, evidence, Stops, and Attention.
 3. Harness acquires a mutation Claim for one selected Issue, exact Envelope
-   revision, worktree, and declared scope.
+   revision, and declared path scope. fid observes the worktree, checks it
+   against the Envelope scope, and records its ID on the Claim.
 4. fid rejects overlapping or unknown parallel mutation with
    `mutation-conflict`.
 5. Harness starts a Run and records observed telemetry incrementally.
@@ -86,15 +91,38 @@ the activated Registration reference.
 
 Recovered code is not trusted evidence; gates/review run normally.
 
+For each gate execution, the caller supplies `expected_repository` from
+`git rev-parse HEAD` and `git status --porcelain`. fid compares it with one
+pre-spawn observation before appending an Attempt. A matching expectation
+permits testing edits made since the Run began in the same worktree, including
+a matching import destination. Attempt, Receipt and gate Events retain that
+observation even if the gate process changes files.
+
+Evidence linking copies the subject's recorded repository. Evaluation observes
+the current worktree and compares it with that Evidence target. Editing a
+tracked file stales Receipt or Review proof in evaluation, terminal-success
+transition and Envelope completion. Reverting the edit restores freshness;
+Human Outcome Evidence remains fresh under its `none` freshness target.
+
 ## 7. Review And Rework
 
-1. A fresh Reviewer Run binds the exact Envelope revision and repository
-   identity.
+1. A fresh Reviewer Run binds the exact Envelope revision and the same
+   project/worktree. `run start` checks `expected_repository` against fid's
+   current observation and records it, so commits and edits since Envelope
+   creation do not require an Envelope revision. A matching imported
+   destination binding preserves the worktree relationship; a plain copy is
+   refused.
 2. Reviewer records coverage, verdict, evidence, and zero or more Findings.
 3. `pass` may satisfy the review Obligation when every other condition holds.
 4. `changes-required` leaves it unsatisfied and derives Builder rework on the
    original Issue/Envelope.
-5. Builder acquires a new Claim/Run and may mark Findings addressed.
+5. Builder acquires a new Claim/Run and may mark Findings addressed. Its
+   matching repository expectation permits the rework Run after the Builder's
+   changes. On `run close`, fid records the terminal observation with
+   `base_oid` equal to HEAD and evaluates Obligations against it. A Run with
+   Receipt-backed Evidence succeeds in the proven tree and fails after a
+   tracked-file edit stales that Evidence. `run abandon` records the same
+   terminal observation and releases the Claim without creating Evidence.
 6. Only a later qualifying independent Review Record resolves a Finding or
    marks it inapplicable with a reason; those dispositions commit in that
    Review's atomic Event. An addressed assertion remains nonterminal. The
@@ -162,6 +190,13 @@ satisfy either guarded action.
    Receipts/Evidence, Reviews/Findings, Outcomes, activation, and telemetry
    match the source semantics.
 5. Projections are regenerated; project prose is not copied.
+6. New Envelope creation and Claim acquisition may use imported history when
+   the import binding names this project and the selected workspace root.
+   Sources are read from the destination checkout, new scopes and Claims
+   record local observations, and Claim Events retain their Envelope scope.
+   A Claim acquired in the destination can be renewed, released or expired
+   there under the same worktree equivalence (DEC-283).
+   Copying the worktree without that binding does not grant equivalence.
 
 Phase 21 delivered deterministic export creation and non-mutating validation.
 Phase 22 now delivers empty-target import, identity/history preservation and

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/spf13/cobra"
@@ -12,13 +10,7 @@ func newIssueACCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ac",
 		Short: "Manage issue acceptance criteria.",
-		Args: func(cmd *cobra.Command, args []string) error {
-			if len(args) > 0 {
-				return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
-			}
-			return nil
-		},
-		RunE: func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
+		RunE:  func(cmd *cobra.Command, _ []string) error { return cmd.Help() },
 	}
 
 	cmd.AddCommand(newIssueACAddCommand())
@@ -112,9 +104,13 @@ func newIssueACListCommand() *cobra.Command {
 		Short: "List acceptance criteria for an issue.",
 		Args:  canonicalExactArgs("issue.ac.list", 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
+				return err
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return renderIssueReadError(cmd, true, "issue.ac.list", err)
+				return renderIssueReadError(cmd, jsonMode, "issue.ac.list", err)
 			}
 
 			result, err := issues.ListAcceptanceCriteria(issues.ListAcceptanceCriteriaOptions{
@@ -123,11 +119,7 @@ func newIssueACListCommand() *cobra.Command {
 				IssueID:       args[0],
 			})
 			if err != nil {
-				return renderIssueReadError(cmd, true, "issue.ac.list", err)
-			}
-			jsonMode, err := readJSONMode(cmd)
-			if err != nil {
-				return err
+				return renderIssueReadError(cmd, jsonMode, "issue.ac.list", err)
 			}
 			if jsonMode {
 				criteria := make([]map[string]any, 0, len(result.Criteria))

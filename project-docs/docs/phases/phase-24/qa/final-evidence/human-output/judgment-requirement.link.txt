@@ -1,0 +1,4 @@
+Purpose: Inspect Requirement References and Issue links.
+
+Issue links
+  REQ-leaf implements P22-ee4576

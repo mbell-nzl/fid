@@ -101,10 +101,7 @@ func renderIssueReadError(cmd *cobra.Command, jsonMode bool, operation string, r
 		return err
 	}
 	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), readErr); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, readErr)
+		return writeHumanFailure(cmd, operation, failure, readErr)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, readErr)
 }
@@ -126,5 +123,5 @@ func issueReadFailure(operation string, readErr error) (cli.Failure, error) {
 	} else if handled {
 		return failure, nil
 	}
-	return cli.NewFailure(cli.CodeInvalidArgument, "invalid issue read argument", nil, map[string]any{"argument": "request", "value": "", "allowed": []string{"accepted issue read input"}})
+	return genericFailure(readErr, cli.CodeInvalidArgument, "invalid issue read argument", nil, map[string]any{"argument": "request", "value": "", "allowed": []string{"accepted issue read input"}})
 }

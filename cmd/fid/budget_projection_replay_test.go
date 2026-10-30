@@ -82,7 +82,7 @@ func TestBudgetProjectionAndHistoricalReplayAcrossCLI(t *testing.T) {
 	assertProjectedBudget(t, started, "available", "0", "3")
 	runID := started["id"].(string)
 	gatePath := filepath.Join(workspace, "projection-gate.json")
-	writeActivationInput(t, gatePath, map[string]any{"registration_id": registration.ID, "registration_version": registration.Version, "obligation_id": testEvidenceObligationID, "run_id": runID, "repository": repository})
+	writeActivationInput(t, gatePath, map[string]any{"registration_id": registration.ID, "registration_version": registration.Version, "obligation_id": testEvidenceObligationID, "run_id": runID, "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]}})
 	for index, state := range []string{"available", "warning", "exhausted"} {
 		result := executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", gatePath, "--idempotency-key", fmt.Sprintf("projection-gate-%d", index))
 		if result.err != nil {

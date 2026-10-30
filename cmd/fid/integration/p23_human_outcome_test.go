@@ -4,7 +4,9 @@ package integration
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -16,6 +18,29 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
+
+func TestP24HumanOutcomeRejectsReferenceDigestMismatch(t *testing.T) {
+	t.Parallel()
+	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "review.record", "run.close", "run.observe", "run.observe-budget", "run.start"}
+	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, actions,
+		p22ExecutionFixture{HumanObligations: true, CoexistingReviewObligation: true})
+	path := filepath.Join(a.workspace, "judgment-source.md")
+	if err := os.WriteFile(path, []byte("actual source bytes"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	input := map[string]any{
+		"id": "OUT-reference-mismatch", "class": "release", "subject": map[string]any{"type": "issue", "id": a.issueID},
+		"result": "approved", "scope": map[string]any{"issue_id": a.issueID}, "reasoning": "reference check",
+		"references": []any{map[string]any{"source_type": "project-file", "display_label": "judgment source",
+			"path": "judgment-source.md", "section": nil, "external_id": nil, "digest": "sha256:" + p22Zeros(64)}},
+	}
+	before := p21JournalEventCount(t, a.workspace)
+	response := p23RunInput(t, a, "human-outcome", "record", a.actor, "p24-reference-mismatch", input)
+	assertP22ProcessFailure(t, "human-outcome.record", "source-digest-mismatch", 4, response)
+	if after := p21JournalEventCount(t, a.workspace); after != before {
+		t.Fatalf("digest mismatch appended %d Events", after-before)
+	}
+}
 
 // TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess proves
 // provenanced Human Outcome recording end to end through the built binary:
@@ -147,7 +172,7 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	// review-unsatisfied state is only reachable before the review is linked.
 	gate := p23RunQualifyingGateSession(t, a, "human-outcome-proof")
 	beforeGateLink := p21JournalEventCount(t, a.workspace)
-	linkedGate := p23RunInput(t, a, "evidence", "link", a.actor, "human-outcome-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	linkedGate := p23RunInput(t, a, "evidence", "link", a.actor, "human-outcome-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	assertP23HumanOutcomeSuccess(t, linkedGate)
 	if after := p21JournalEventCount(t, a.workspace); after != beforeGateLink+1 {
 		t.Fatalf("gate evidence.link appended %d Event(s), want 1", after-beforeGateLink)
@@ -175,7 +200,7 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	// builder's re-acquired mutating Claim and Run stay active here; the
 	// terminal Issue transition below still needs them.
 	beforeDenial := p21JournalEventCount(t, a.workspace)
-	denied := p23RunInput(t, a, "envelope", "complete", a.actor, "human-outcome-complete-denied", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
+	denied := p23RunInput(t, a, "envelope", "complete", a.actor, "human-outcome-complete-denied", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1})
 	assertP23HumanOutcomeRequiredDenial(t, a, denied, "OBL-human-security", "security")
 	if after := p21JournalEventCount(t, a.workspace); after != beforeDenial {
 		t.Fatalf("human-outcome-required denial appended Event(s): %d -> %d", beforeDenial, after)
@@ -227,7 +252,7 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	// (issue.transition-terminal-success) and envelope.complete now succeed.
 	assertP23HumanOutcomeCommandSuccess(t, "transition Issue to qa_pass", p23IssueTransition(t, a, "qa_pass", 4, "human-outcome-qa-pass"))
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "human-outcome-close")
-	assertP23HumanOutcomeCommandSuccess(t, "complete Envelope after every Obligation satisfied", p23RunInput(t, a, "envelope", "complete", a.actor, "human-outcome-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository}))
+	assertP23HumanOutcomeCommandSuccess(t, "complete Envelope after every Obligation satisfied", p23RunInput(t, a, "envelope", "complete", a.actor, "human-outcome-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1}))
 
 	// VAL-025's remaining seven cells are supplied by Task 6 (receipt/review
 	// positives and the four residual evidence-type-not-accepted mismatches),
@@ -283,10 +308,14 @@ func TestP23HumanOutcomeRequiredRaisedByEnvelopeActivation(t *testing.T) {
 	p22Git(t, workspace, "config", "user.email", "p23-human-outcome-activation@example.test")
 	p22Git(t, workspace, "config", "user.name", "Phase 23 Human Outcome Activation")
 	p22Write(t, workspace, "base.txt", "base\n")
-	p22Git(t, workspace, "add", "base.txt")
+	if err := os.MkdirAll(filepath.Join(workspace, "project-docs"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	p22Write(t, workspace, "project-docs/p23-human-activation.md", "Human readiness policy\n")
+	p22Git(t, workspace, "add", "base.txt", "project-docs/p23-human-activation.md")
 	p22Git(t, workspace, "commit", "-qm", "base")
 	init := p21Run(t, binary, workspace, "--project", workspace, "--json", "init", "--prefix", "P23HA")
-	projectID := p21PathString(t, init, "result", "project", "id")
+	_ = p21PathString(t, init, "result", "project", "id")
 	issue := p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Human-only Envelope", "--actor", "agent:developer", "--idempotency-key", "p23-human-activation-issue")
 	issueID := p21PathString(t, issue, "result", "issue", "id")
 	actor := "actor-human-outcome"
@@ -302,10 +331,9 @@ func TestP23HumanOutcomeRequiredRaisedByEnvelopeActivation(t *testing.T) {
 	p21Activation(t, binary, workspace, "commit", "p23-human-activation-commit", map[string]any{"activation_id": activationID, "expected_status": "staged", "component_digests": digests})
 	p21Activation(t, binary, workspace, "finalize", "p23-human-activation-finalize", map[string]any{"activation_id": activationID, "expected_status": "committed"})
 
-	repository := p22CorpusRepository(t, workspace, projectID)
-	source := map[string]any{"digest": "sha256:" + p22Zeros(64), "display_label": "Human-only Envelope", "external_id": nil, "path": "project-docs/p23-human-activation.md", "repository": repository, "section": nil, "source_type": "project-file"}
-	obligation := map[string]any{"id": "OBL-human-only", "type": "human-outcome", "applicability": "required", "guarded_actions": []string{"envelope.complete"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "review_profile": nil, "outcome_class": "release", "accepted_evidence_types": []string{"human-outcome"}, "accepted_trust_sources": []string{"activated-human"}, "freshness_target": "none", "artifact_policy": "metadata-sufficient", "independence": "human", "required_lane": nil, "source": source}
-	envelopeRequest := map[string]any{"outcome": "Human-only readiness", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "authority_grants": []any{map[string]any{"actions": capabilities, "actor_selector": map[string]any{"actor_id": actor, "required_capabilities": capabilities}, "scope": map[string]any{"issue_id": issueID}}}, "obligations": []any{obligation}, "budgets": []any{}}
+	source := map[string]any{"digest": fmt.Sprintf("sha256:%x", sha256.Sum256([]byte("Human readiness policy\n"))), "display_label": "Human-only Envelope", "external_id": nil, "path": "project-docs/p23-human-activation.md", "section": nil, "source_type": "project-file"}
+	obligation := map[string]any{"id": "OBL-human-only", "type": "human-outcome", "applicability": "required", "guarded_actions": []string{"envelope.complete"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": nil, "outcome_class": "release", "accepted_evidence_types": []string{"human-outcome"}, "accepted_trust_sources": []string{"activated-human"}, "freshness_target": "none", "artifact_policy": "metadata-sufficient", "independence": "human", "required_lane": nil, "source": source}
+	envelopeRequest := map[string]any{"outcome": "Human-only readiness", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "authority_grants": []any{map[string]any{"actions": capabilities, "actor_selector": map[string]any{"actor_id": actor, "required_capabilities": capabilities}, "scope": map[string]any{"issue_id": issueID}}}, "obligations": []any{obligation}, "budgets": []any{}}
 	created := p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "create", "--actor", actor, "--input", p21Input(t, workspace, "p23-human-activation-envelope", envelopeRequest), "--idempotency-key", "p23-human-activation-envelope-create")
 	envelopeID := p21PathString(t, created, "result", "envelope", "id")
 
@@ -381,7 +409,7 @@ func TestP23HumanOutcomeRequiredRaisedByReviewRecord(t *testing.T) {
 	pass := p23ReviewRecord(t, a, "actor-reviewer-two", "review-raise-pass", p23ReviewInput(a, p21PathString(t, passRun, "id"), p23Number(t, passRun["version"]), "pass", []any{}, nil))
 	p23AssertReviewSuccess(t, "pass Review", pass)
 	passReview := p23ReviewFromResponse(t, pass)
-	linked := p23RunInput(t, a, "evidence", "link", "actor-reviewer-two", "review-raise-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil, "review_id": passReview["id"], "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	linked := p23RunInput(t, a, "evidence", "link", "actor-reviewer-two", "review-raise-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil, "review_id": passReview["id"], "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	p23AssertReviewSuccess(t, "linked pass Review Evidence", linked)
 	p23CloseAndRelease(t, a, "actor-reviewer-two", p21PathString(t, passRun, "id"), p21PathString(t, passClaim, "id"), "review-raise-pass")
 
@@ -435,7 +463,7 @@ func p23RecordHumanOutcome(t *testing.T, a *p22FIDRecoveryAdapter, suffix, actor
 
 func p23LinkHumanOutcome(t *testing.T, a *p22FIDRecoveryAdapter, suffix, obligationID, outcomeID string) p22ConformanceResponse {
 	t.Helper()
-	return p23RunInput(t, a, "evidence", "link", a.actor, "p23-human-outcome-link-"+suffix, map[string]any{"obligation_id": obligationID, "evidence_type": "human-outcome", "receipt_id": nil, "review_id": nil, "human_outcome_id": outcomeID, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	return p23RunInput(t, a, "evidence", "link", a.actor, "p23-human-outcome-link-"+suffix, map[string]any{"obligation_id": obligationID, "evidence_type": "human-outcome", "receipt_id": nil, "review_id": nil, "human_outcome_id": outcomeID, "required_artifact_ids": []string{}})
 }
 
 // assertP23AuthorityMissing asserts a VAL-043 negative: exit 5 with
@@ -656,7 +684,7 @@ func assertP23ThreeObligationTypesCoexist(t *testing.T, a *p22FIDRecoveryAdapter
 func assertP23GuardedActionsDenied(t *testing.T, a *p22FIDRecoveryAdapter, key string, completeUnsatisfied, terminalUnsatisfied []string) {
 	t.Helper()
 	beforeEvents, beforeProjection := p21JournalEventCount(t, a.workspace), p22FaultProjection(t, a.workspace)
-	complete := p23RunInput(t, a, "envelope", "complete", a.actor, key+"-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1, "repository": a.repository})
+	complete := p23RunInput(t, a, "envelope", "complete", a.actor, key+"-complete", map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1})
 	if complete.ExitCode != 4 || complete.Stdout != "" {
 		t.Fatalf("%s envelope.complete denial = %#v, want exit 4 with no stdout", key, complete)
 	}
@@ -825,7 +853,7 @@ func p23SatisfyCoexistingReview(t *testing.T, a *p22FIDRecoveryAdapter, key stri
 	p23AssertReviewSuccess(t, "coexisting pass Review", pass)
 	review := p23ReviewFromResponse(t, pass)
 	beforeLink := p21JournalEventCount(t, a.workspace)
-	linked := p23RunInput(t, a, "evidence", "link", a.actor, key+"-link", map[string]any{"obligation_id": "OBL-p23-review", "evidence_type": "review", "receipt_id": nil, "review_id": review["id"], "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	linked := p23RunInput(t, a, "evidence", "link", a.actor, key+"-link", map[string]any{"obligation_id": "OBL-p23-review", "evidence_type": "review", "receipt_id": nil, "review_id": review["id"], "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	p23AssertReviewSuccess(t, "coexisting review Evidence link", linked)
 	if after := p21JournalEventCount(t, a.workspace); after != beforeLink+1 {
 		t.Fatalf("review evidence.link appended %d Event(s), want 1", after-beforeLink)
@@ -854,7 +882,7 @@ func p23RunQualifyingGateSession(t *testing.T, a *p22FIDRecoveryAdapter, key str
 	runID := p21PathString(t, run, "id")
 	sample := p23RunInput(t, a, "run", "observe-budget", runner, key+"-budget", map[string]any{"run_id": runID, "expected_version": run["version"], "budget_name": "tokens", "source_sample_id": key + "-sample", "sample_kind": "baseline", "previous_sample_id": nil, "value": 0, "measurement_ref": a.measurement, "observed_at": time.Now().UTC().Format(time.RFC3339Nano)})
 	p23AssertReviewSuccess(t, "observe budget baseline for gate Run", sample)
-	request, err := json.Marshal(map[string]any{"run_id": runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": a.repository})
+	request, err := json.Marshal(map[string]any{"run_id": runID, "registration_id": a.registrationID, "registration_version": a.registrationVersion, "obligation_id": "OBL-p22-corpus", "expected_repository": map[string]any{"head_oid": a.repository["head_oid"], "dirty": a.repository["dirty"]}})
 	p22FaultOK(t, err)
 	options := evidence.GateRunOptions{WorkspaceRoot: a.workspace, MigrationsDir: filepath.Join(integrationRepositoryRoot(), "migrations"), ActorID: runner, IdempotencyKey: key}
 	p22FaultOK(t, json.Unmarshal(request, &options.Request))
@@ -936,7 +964,7 @@ func TestP23HumanOutcomeRequiredRaisedByArtifactAvailability(t *testing.T) {
 		return eventID
 	}
 	verify("artifact-readiness-missing", "missing")
-	linked := p23RunInput(t, a, "evidence", "link", a.actor, "artifact-readiness-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{artifact.ID}})
+	linked := p23RunInput(t, a, "evidence", "link", a.actor, "artifact-readiness-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{artifact.ID}})
 	assertP23HumanOutcomeSuccess(t, linked)
 	security := p23RecordHumanOutcome(t, a, "artifact-readiness-security", a.actor, "security", "approved")
 	assertP23HumanOutcomeSuccess(t, security)

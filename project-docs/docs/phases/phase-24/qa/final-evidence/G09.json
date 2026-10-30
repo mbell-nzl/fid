@@ -1,0 +1,217 @@
+{
+  "id": "G09",
+  "cmd": "go test -tags archive_scale -race ./internal/export -run '^TestArchive(ExpandedByteBoundaries|CumulativeBoundary|EntryCountBoundaries)$' -count=1",
+  "cwd": "/home/mark/projects/fid",
+  "chunks": [
+    {
+      "chunk_id": "db55c7",
+      "wall_time_seconds": 1.000826413,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "34ad75",
+      "wall_time_seconds": 5.001839637,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "882781",
+      "wall_time_seconds": 5.001469537,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "00b147",
+      "wall_time_seconds": 5.001787591,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "aa7be9",
+      "wall_time_seconds": 5.00045593,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "e9e9d4",
+      "wall_time_seconds": 5.001176183,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "a423ea",
+      "wall_time_seconds": 5.001443536,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "45a868",
+      "wall_time_seconds": 5.001742355,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "8a68c7",
+      "wall_time_seconds": 5.00068634,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "4ff3eb",
+      "wall_time_seconds": 5.000935749,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "fb9c54",
+      "wall_time_seconds": 5.000603666,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "9f2c3f",
+      "wall_time_seconds": 5.001308504,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "3f0add",
+      "wall_time_seconds": 5.001773456,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "580717",
+      "wall_time_seconds": 5.001561675,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "38c0a8",
+      "wall_time_seconds": 5.001305785,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "33eac2",
+      "wall_time_seconds": 5.001441725,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "7ef55f",
+      "wall_time_seconds": 5.000600514,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "d3dd8c",
+      "wall_time_seconds": 5.000496763,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "abdec5",
+      "wall_time_seconds": 5.001414804,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "6a8da3",
+      "wall_time_seconds": 5.001721439,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "1e1594",
+      "wall_time_seconds": 5.001006389,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "7134cc",
+      "wall_time_seconds": 5.001359999,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "d1802f",
+      "wall_time_seconds": 5.000677051,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "a03793",
+      "wall_time_seconds": 5.001526479,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "b0c005",
+      "wall_time_seconds": 5.001791702,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "5ad506",
+      "wall_time_seconds": 5.001258132,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "3e51f5",
+      "wall_time_seconds": 5.001450375,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "be8af9",
+      "wall_time_seconds": 5.001356937,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "bf9639",
+      "wall_time_seconds": 5.000823127,
+      "session_id": 45183,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "97aabe",
+      "wall_time_seconds": 3.910389588,
+      "exit_code": 0,
+      "original_token_count": 14,
+      "output": "ok  \tgithub.com/mbell-nzl/fid/internal/export\t143.108s\n"
+    }
+  ]
+}

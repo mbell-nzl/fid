@@ -24,6 +24,23 @@ func importedDestinationBinding(workspaceRoot string, start Repository, current 
 	return err == nil && binding.TargetRoot == root
 }
 
+// SameWorktree accepts a local observation or a destination bound to imported
+// history for this project. It deliberately ignores HEAD and dirty state.
+func SameWorktree(workspaceRoot string, recorded, observed Repository) bool {
+	if recorded.ProjectID == "" || recorded.ProjectID != observed.ProjectID || observed.WorktreeID == "" {
+		return false
+	}
+	if recorded.WorktreeID == observed.WorktreeID {
+		return true
+	}
+	binding, err := config.ReadImportBinding(workspaceRoot)
+	if err != nil || binding.ProjectID != observed.ProjectID {
+		return false
+	}
+	root, err := filepath.Abs(workspaceRoot)
+	return err == nil && binding.TargetRoot == root
+}
+
 func importedObservation(workspaceRoot string, conn *sql.DB, observationID string) bool {
 	binding, err := config.ReadImportBinding(workspaceRoot)
 	if err != nil {

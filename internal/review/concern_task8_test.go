@@ -44,7 +44,7 @@ func TestConcernSubjectAndDispositionMatrix(t *testing.T) {
 	t.Parallel()
 	options := JudgmentOptions{WorkspaceRoot: "root", MigrationsDir: "migrations", ActorID: "actor-builder", IdempotencyKey: "key"}
 	for _, subjectType := range []string{"issue", "envelope", "run", "review", "finding", "requirement"} {
-		request := ConcernRecordRequest{ID: "CON-" + subjectType, Subject: Subject{Type: subjectType, ID: "unresolved-" + subjectType}, Scope: Scope{Paths: []string{}}, Severity: "blocker", Summary: "observation", Reasoning: "reason", References: []Source{}}
+		request := ConcernRecordRequest{ID: "CON-" + subjectType, Subject: Subject{Type: subjectType, ID: "unresolved-" + subjectType}, Scope: Scope{Paths: []string{}}, Severity: "blocker", Summary: "observation", Reasoning: "reason", References: []SourceInput{}}
 		if err := validateConcernRecord(options, request); err != nil {
 			t.Fatalf("subject type %q rejected: %v", subjectType, err)
 		}
@@ -104,7 +104,7 @@ func TestConcernSelfDisposalKeepsRaisingAndDisposingActors(t *testing.T) {
 func TestDeviationAcceptsExplicitPredecessorReference(t *testing.T) {
 	t.Parallel()
 	options := JudgmentOptions{WorkspaceRoot: "root", MigrationsDir: "migrations", ActorID: "actor-builder", IdempotencyKey: "key"}
-	request := DeviationRecordRequest{ID: "DEV-next", Subject: Subject{Type: "requirement", ID: "REQ-unresolved"}, Expected: "accepted contract", Observed: "departure", Authority: DeviationAuthority{ActorID: "human-reviewer"}, Disposition: "accepted", Reasoning: "approved exception", References: []Source{}, SupersedesDeviationID: stringPointer("DEV-prior")}
+	request := DeviationRecordRequest{ID: "DEV-next", Subject: Subject{Type: "requirement", ID: "REQ-unresolved"}, Expected: "accepted contract", Observed: "departure", Authority: DeviationAuthority{ActorID: "human-reviewer"}, Disposition: "accepted", Reasoning: "approved exception", References: []SourceInput{}, SupersedesDeviationID: stringPointer("DEV-prior")}
 	if err := validateDeviationRecord(options, request); err != nil {
 		t.Fatalf("valid Deviation rejected: %v", err)
 	}

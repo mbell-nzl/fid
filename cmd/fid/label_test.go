@@ -216,7 +216,7 @@ func TestLabelListRejectsLegacyFormatFlag(t *testing.T) {
 			if stdout != "" {
 				t.Fatalf("stdout = %q, want empty", stdout)
 			}
-			if stderr != "error: unknown flag: --format\n" {
+			if stderr != "error: unknown flag: --format\nreason: invalid-argument; argument=--format, allowed=\n" {
 				t.Fatalf("stderr = %q, want concise removed-flag error", stderr)
 			}
 			if !strings.Contains(err.Error(), "unknown flag: --format") {
@@ -272,7 +272,7 @@ func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 		if stdout != "" {
 			t.Fatalf("duplicate stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, `error: label add: label "core" already exists`) {
+		if stderr != "error: entity already exists\nreason: duplicate-entity; entity_type=label\n" || !strings.Contains(err.Error(), `label "core" already exists`) {
 			t.Fatalf("duplicate stderr = %q, want duplicate-name error", stderr)
 		}
 		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {

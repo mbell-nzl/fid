@@ -1,0 +1,294 @@
+{
+  "id": "G06",
+  "cmd": "go test -bench . -benchmem ./...",
+  "cwd": "/home/mark/projects/fid",
+  "chunks": [
+    {
+      "chunk_id": "29a730",
+      "wall_time_seconds": 1.002231034,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "ab2dc3",
+      "wall_time_seconds": 5.003656977,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "7117f0",
+      "wall_time_seconds": 5.001388847,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "831578",
+      "wall_time_seconds": 5.001218728,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "bd095d",
+      "wall_time_seconds": 5.001173743,
+      "session_id": 74717,
+      "original_token_count": 294,
+      "output": "error: unknown command \"dev\" for \"fid\"\nreason: operation-unavailable; allowed=activation,activity,artifact,attention,capabilities,claim,completion,concern,decision,deviation,envelope,evidence,export,finding,gate,help,human-outcome,init,iss…\nerror: unknown command \"policy\" for \"fid\"\nreason: operation-unavailable; allowed=activation,activity,artifact,attention,capabilities,claim,completion,concern,decision,deviation,envelope,evidence,export,finding,gate,help,human-outcome,init,iss…\nerror: unknown command \"complete\" for \"fid issue\"\nreason: operation-unavailable; allowed=ac,create,get,label,list,transition,update, argument=command, value=complete\nerror: unknown command \"claim\" for \"fid issue\"\nreason: operation-unavailable; allowed=ac,create,get,label,list,transition,update, argument=command, value=claim\nerror: unknown command \"unclaim\" for \"fid issue\"\nreason: operation-unavailable; allowed=ac,create,get,label,list,transition,update, argument=command, value=unclaim\nerror: unknown command \"record\" for \"fid run\"\nreason: operation-unavailable; allowed=abandon,checkpoint,close,get,inspect,list,observe,observe-budget,recover,start, argument=command, value=record\n"
+    },
+    {
+      "chunk_id": "5266e3",
+      "wall_time_seconds": 5.000815493,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "ba6cd7",
+      "wall_time_seconds": 5.001282461,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "49cc74",
+      "wall_time_seconds": 5.000765179,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "c6f63e",
+      "wall_time_seconds": 5.001513042,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "a9aa6e",
+      "wall_time_seconds": 5.001100238,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "be63e4",
+      "wall_time_seconds": 5.001513983,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "1868e9",
+      "wall_time_seconds": 5.002585288,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "71e13d",
+      "wall_time_seconds": 5.001005956,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "7885ca",
+      "wall_time_seconds": 5.000569471,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "57624c",
+      "wall_time_seconds": 5.001248606,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "1be09e",
+      "wall_time_seconds": 5.001704317,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "659c7a",
+      "wall_time_seconds": 5.000692367,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "cc21d2",
+      "wall_time_seconds": 5.001034853,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "907a17",
+      "wall_time_seconds": 5.001292125,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "f643d6",
+      "wall_time_seconds": 5.000493164,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "d34caf",
+      "wall_time_seconds": 5.001175141,
+      "session_id": 74717,
+      "original_token_count": 69,
+      "output": "PASS\nok  \tgithub.com/mbell-nzl/fid/cmd/fid\t96.176s\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/activity\t0.334s\ngoos: linux\ngoarch: amd64\npkg: github.com/mbell-nzl/fid/internal/bootstrap\ncpu: AMD Ryzen 7 5700G with Radeon Graphics         \nBenchmarkInitializeWorkspace-6   \t"
+    },
+    {
+      "chunk_id": "b70b51",
+      "wall_time_seconds": 5.001614094,
+      "session_id": 74717,
+      "original_token_count": 167,
+      "output": "       7\t 160110685 ns/op\t       284.6 activated-ns/op\t     29851 activation-finish-ns/op\t    687613 compared-ns/op\t   2874486 genesis-appended-ns/op\t  80056783 rebuilt-ns/op\t  76224564 schema-initialized-ns/op\t    114731 staged-ns/op\t    100095 synced-ns/op\t     49780 validated-ns/op\t 7809374 B/op\t    5971 allocs/op\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/bootstrap\t2.098s\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/claims\t0.010s\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/cli\t0.025s\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/config\t0.011s\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/db\t3.984s\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/evidence\t0.191s\n"
+    },
+    {
+      "chunk_id": "c1b7ac",
+      "wall_time_seconds": 5.001100156,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "6f7c62",
+      "wall_time_seconds": 5.000974915,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "f25dc0",
+      "wall_time_seconds": 5.001136438,
+      "session_id": 74717,
+      "original_token_count": 15,
+      "output": "PASS\nok  \tgithub.com/mbell-nzl/fid/internal/export\t11.829s\n"
+    },
+    {
+      "chunk_id": "bb751d",
+      "wall_time_seconds": 5.001270184,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "40fd8d",
+      "wall_time_seconds": 5.000851079,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "423467",
+      "wall_time_seconds": 5.00147996,
+      "session_id": 74717,
+      "original_token_count": 42,
+      "output": "goos: linux\ngoarch: amd64\npkg: github.com/mbell-nzl/fid/internal/issues\ncpu: AMD Ryzen 7 5700G with Radeon Graphics         \nBenchmarkList10kIssuesWithRegistry-6   \t"
+    },
+    {
+      "chunk_id": "118f88",
+      "wall_time_seconds": 5.001332096,
+      "session_id": 74717,
+      "original_token_count": 38,
+      "output": "      24\t  47940236 ns/op\t        47.94 ms/registry-read\t 7975422 B/op\t  191018 allocs/op\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/issues\t20.647s\n"
+    },
+    {
+      "chunk_id": "7badca",
+      "wall_time_seconds": 5.001756882,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "f32e8e",
+      "wall_time_seconds": 5.000614665,
+      "session_id": 74717,
+      "original_token_count": 42,
+      "output": "goos: linux\ngoarch: amd64\npkg: github.com/mbell-nzl/fid/internal/journal\ncpu: AMD Ryzen 7 5700G with Radeon Graphics         \nBenchmarkRebuildWorkspace1kEvents-6     \t"
+    },
+    {
+      "chunk_id": "6bd57c",
+      "wall_time_seconds": 5.00118974,
+      "session_id": 74717,
+      "original_token_count": 52,
+      "output": "       4\t 305347447 ns/op\t       305.3 ms/rebuild\t25972958 B/op\t  348170 allocs/op\nBenchmarkRebuildWorkspace10kEvents-6    \t       1\t2695091658 ns/op\t      2695 ms/rebuild\t232130224 B/op\t 3460164 allocs/op\n"
+    },
+    {
+      "chunk_id": "7f091f",
+      "wall_time_seconds": 5.001033961,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "e77a30",
+      "wall_time_seconds": 5.001168698,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "9795d7",
+      "wall_time_seconds": 5.001345136,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "f4fe89",
+      "wall_time_seconds": 5.00211794,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "a62108",
+      "wall_time_seconds": 5.000849797,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "adf932",
+      "wall_time_seconds": 5.001248295,
+      "session_id": 74717,
+      "original_token_count": 61,
+      "output": "BenchmarkRebuildWorkspace100kEvents-6   \t       1\t25057316244 ns/op\t     25057 ms/rebuild\t2296565432 B/op\t34583205 allocs/op\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/journal\t44.662s\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/labels\t2.195s\n"
+    },
+    {
+      "chunk_id": "cf14a9",
+      "wall_time_seconds": 5.000941349,
+      "session_id": 74717,
+      "original_token_count": 120,
+      "output": "PASS\nok  \tgithub.com/mbell-nzl/fid/internal/links\t2.990s\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/maintenance\t1.360s\n?   \tgithub.com/mbell-nzl/fid/internal/policy\t[no test files]\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/project\t0.375s\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/review\t0.030s\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/sqlquery\t0.292s\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/stats\t0.453s\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/validation\t0.010s\n"
+    },
+    {
+      "chunk_id": "9acc9e",
+      "wall_time_seconds": 5.001133043,
+      "session_id": 74717,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "2a8349",
+      "wall_time_seconds": 4.985080367,
+      "exit_code": 0,
+      "original_token_count": 16,
+      "output": "PASS\nok  \tgithub.com/mbell-nzl/fid/internal/workflow\t10.939s\n"
+    }
+  ]
+}

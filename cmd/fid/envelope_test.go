@@ -1,20 +1,623 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/project"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 const testEvidenceObligationID = "OBL-1"
+
+// Retained fixtures that use caller snapshots keep their local observation as
+// the input to later Run/Gate/Evidence leaves. Observing fixtures still capture
+// their current worktree. Neither kind shares observed history across roots.
+var retainedRepositoryInputs sync.Map
+
+func TestP24EnvelopeReplayAfterSourceChangeOrDeletion(t *testing.T) {
+	t.Parallel()
+	for _, position := range p24EnvelopeSourcePositions(t) {
+		for _, state := range []string{"changed", "deleted"} {
+			t.Run(position+"/"+state, func(t *testing.T) {
+				t.Parallel()
+				workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+				input := cloneEnvelopeInput(t, envelopeCreateInput(t, workspace, issueID, registration))
+				source := p24EnvelopeSource(input, position)
+				delete(source, "digest")
+				source["path"] = "referenced.json"
+				path := filepath.Join(workspace, "referenced.json")
+				if err := os.WriteFile(path, []byte("original\n"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+				first := p24BindingMutation(t, workspace, "envelope create", input, "original")
+				if first.err != nil {
+					t.Fatalf("original: %#v", first)
+				}
+				if state == "deleted" {
+					if err := os.Remove(path); err != nil {
+						t.Fatal(err)
+					}
+				} else if err := os.WriteFile(path, []byte("changed\n"), 0o600); err != nil {
+					t.Fatal(err)
+				}
+				before := snapshotWorkspacePersistence(t, workspace)
+				replayed := p24BindingMutation(t, workspace, "envelope create", input, "original")
+				if replayed.err != nil {
+					t.Fatalf("replay: %#v", replayed)
+				}
+				want := decodeCommandJSONStructure(t, first.stdout).(map[string]any)
+				got := decodeCommandJSONStructure(t, replayed.stdout).(map[string]any)
+				if got["result"].(map[string]any)["replayed"] != true {
+					t.Fatalf("not replayed: %#v", got)
+				}
+				got["result"].(map[string]any)["replayed"] = false
+				if !reflect.DeepEqual(got, want) {
+					t.Fatalf("Source replay changed: %#v / %#v", got, want)
+				}
+				assertClaimStateUnchanged(t, workspace, before)
+				control := cloneEnvelopeInput(t, input)
+				control["obligations"].([]any)[0].(map[string]any)["id"] = "OBL-control"
+				newKey := p24BindingMutation(t, workspace, "envelope create", control, "new-key")
+				if state == "deleted" {
+					if cli.ExitCode(newKey.err) != 4 || !strings.Contains(newKey.stderr, `"code":"source-digest-mismatch"`) || !strings.Contains(newKey.stderr, `"observed_digest":null`) || !strings.Contains(newKey.stderr, `"expected_digest":null`) {
+						t.Fatalf("deleted Source control: %#v", newKey)
+					}
+					assertClaimStateUnchanged(t, workspace, before)
+					if err := os.WriteFile(path, []byte("changed\n"), 0o600); err != nil {
+						t.Fatal(err)
+					}
+					newKey = p24BindingMutation(t, workspace, "envelope create", control, "new-key")
+				}
+				if newKey.err != nil {
+					t.Fatalf("viable Source control: %#v", newKey)
+				}
+				envelope := decodeCanonicalResult(t, newKey.stdout)["envelope"].(map[string]any)
+				if p24EnvelopeSource(envelope, position)["digest"] != fmt.Sprintf("sha256:%x", sha256.Sum256([]byte("changed\n"))) {
+					t.Fatal("new-key control did not read changed Source")
+				}
+			})
+		}
+	}
+}
+
+func TestP24BindingReplayBeforeObservation(t *testing.T) {
+	t.Parallel()
+	for _, leaf := range []string{"gate register", "envelope create", "claim acquire", "envelope complete"} {
+		for _, state := range []string{"head-change", "non-git", "unmerged"} {
+			t.Run(leaf+"/"+state, func(t *testing.T) {
+				t.Parallel()
+				workspace, input, control := p24BindingReplayFixture(t, leaf)
+				originalRepository := p24IndependentBindingRepository(t, workspace)
+				first := p24BindingMutation(t, workspace, leaf, input, "original")
+				if first.err != nil {
+					t.Fatalf("original: %#v", first)
+				}
+				p24AssertBindingEventRepository(t, workspace, originalRepository)
+				if leaf == "claim acquire" {
+					claim := claimFromResponse(t, first.stdout)
+					released := p24BindingMutation(t, workspace, "claim release", map[string]any{"claim_id": claim["id"], "expected_version": 1, "reason": "completed"}, "release")
+					if released.err != nil {
+						t.Fatalf("release for viable new-key control: %#v", released)
+					}
+				}
+				git := func(args ...string) {
+					t.Helper()
+					if data, err := exec.Command("git", append([]string{"-C", workspace}, args...)...).CombinedOutput(); err != nil {
+						t.Fatalf("git %v: %v (%s)", args, err, data)
+					}
+				}
+				restore := func() {}
+				switch state {
+				case "head-change":
+					git("commit", "--allow-empty", "-qm", "new HEAD")
+				case "non-git":
+					if err := os.Rename(filepath.Join(workspace, ".git"), filepath.Join(workspace, ".git-hidden")); err != nil {
+						t.Fatal(err)
+					}
+					restore = func() {
+						if err := os.Rename(filepath.Join(workspace, ".git-hidden"), filepath.Join(workspace, ".git")); err != nil {
+							t.Fatal(err)
+						}
+					}
+				case "unmerged":
+					blob, err := exec.Command("git", "-C", workspace, "rev-parse", "HEAD:.gitignore").Output()
+					if err != nil {
+						t.Fatal(err)
+					}
+					cmd := exec.Command("git", "-C", workspace, "update-index", "--index-info")
+					cmd.Stdin = strings.NewReader(fmt.Sprintf("0 %s\t.gitignore\n100644 %s 1\t.gitignore\n100644 %s 2\t.gitignore\n", strings.Repeat("0", 40), strings.TrimSpace(string(blob)), strings.TrimSpace(string(blob))))
+					if data, err := cmd.CombinedOutput(); err != nil {
+						t.Fatalf("unmerged fixture: %v (%s)", err, data)
+					}
+					restore = func() { git("reset", "-q", "HEAD", "--", ".gitignore") }
+				}
+				before := snapshotWorkspacePersistence(t, workspace)
+				replayed := p24BindingMutation(t, workspace, leaf, input, "original")
+				if replayed.err != nil {
+					t.Fatalf("replay %s: %#v", state, replayed)
+				}
+				originalJSON := decodeCommandJSONStructure(t, first.stdout).(map[string]any)
+				replayJSON := decodeCommandJSONStructure(t, replayed.stdout).(map[string]any)
+				if replayJSON["result"].(map[string]any)["replayed"] != true {
+					t.Fatalf("not a replay: %#v", replayJSON)
+				}
+				replayJSON["result"].(map[string]any)["replayed"] = false
+				if !reflect.DeepEqual(originalJSON, replayJSON) {
+					t.Fatalf("replay changed original: %#v / %#v", originalJSON, replayJSON)
+				}
+				assertClaimStateUnchanged(t, workspace, before)
+				newKey := p24BindingMutation(t, workspace, leaf, control, "new-key")
+				if state != "head-change" {
+					if cli.ExitCode(newKey.err) != 4 || newKey.stdout != "" {
+						t.Fatalf("unavailable new-key control: %#v", newKey)
+					}
+					failure := decodeCommandJSONStructure(t, newKey.stderr).(map[string]any)["error"].(map[string]any)
+					wantReason := "not-a-repository"
+					if state == "unmerged" {
+						wantReason = "unmerged-paths"
+					}
+					if failure["code"] != "repository-unavailable" || failure["category"] != "precondition" || failure["retryable"] != true || failure["subject"] != nil || len(failure["details"].(map[string]any)) != 2 || failure["details"].(map[string]any)["reason"] != wantReason {
+						t.Fatalf("unavailable failure: %#v", failure)
+					}
+					assertClaimStateUnchanged(t, workspace, before)
+					restore()
+					newKey = p24BindingMutation(t, workspace, leaf, control, "new-key")
+				}
+				if newKey.err != nil {
+					t.Fatalf("viable new-key control after restoring observation: %#v", newKey)
+				}
+			})
+		}
+	}
+}
+
+func p24BindingReplayFixture(t *testing.T, leaf string) (string, map[string]any, map[string]any) {
+	t.Helper()
+	if leaf == "gate register" {
+		workspace := finalizedGateWorkspace(t, nil)
+		input := gateRegisterInput(t, workspace)
+		control := cloneEnvelopeInput(t, input)
+		control["scope"] = map[string]any{"issue_id": "ISS-control"}
+		return workspace, input, control
+	}
+	if leaf == "claim acquire" {
+		workspace, issueID, envelopeID := claimEnvelopeForTest(t)
+		input := map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"cmd"}}, "ttl_seconds": 3600}
+		return workspace, input, cloneEnvelopeInput(t, input)
+	}
+	if leaf == "envelope create" {
+		workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+		input := envelopeCreateInput(t, workspace, issueID, registration)
+		control := cloneEnvelopeInput(t, input)
+		control["obligations"].([]any)[0].(map[string]any)["id"] = "OBL-control"
+		return workspace, input, control
+	}
+	workspace, issueID, envelopeID, _, _ := task18QualifiedEvidenceFixture(t, false, true)
+	for index, state := range []string{"in_progress", "dev_complete", "qa_review", "qa_pass"} {
+		result := executeCommandForTest(workspace, "--json", "issue", "transition", issueID, "--to", state, "--actor", "agent:actor-builder", "--expected-revision", fmt.Sprint(index+1), "--idempotency-key", "p24-"+state)
+		if result.err != nil {
+			t.Fatalf("terminal fixture: %#v", result)
+		}
+	}
+	runID, claimID := task18RunAndClaim(t, workspace, issueID)
+	closeRunForTest(t, workspace, runID, runRepositoryForTest(t, workspace), "p24-close")
+	released := p24BindingMutation(t, workspace, "claim release", map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"}, "p24-release")
+	if released.err != nil {
+		t.Fatalf("release completion fixture: %#v", released)
+	}
+	registration := registerGateForTest(t, workspace, filepath.Join(workspace, "gate-register-envelope.json"), "p24-registration")
+	controlCreate := envelopeCreateInput(t, workspace, issueID, registration)
+	controlCreate["obligations"].([]any)[0].(map[string]any)["id"] = "OBL-control"
+	controlCreate["obligations"].([]any)[0].(map[string]any)["guarded_actions"] = []string{"issue.transition-terminal-success"}
+	grant := controlCreate["authority_grants"].([]any)[0].(map[string]any)
+	grant["actions"] = []string{"envelope.activate", "envelope.complete"}
+	grant["actor_selector"].(map[string]any)["required_capabilities"] = []string{"envelope.activate", "envelope.complete"}
+	created := p24BindingMutation(t, workspace, "envelope create", controlCreate, "control-create")
+	if created.err != nil {
+		t.Fatalf("fresh completion control: %#v", created)
+	}
+	controlID := decodeCanonicalResult(t, created.stdout)["envelope"].(map[string]any)["id"].(string)
+	activate := p24BindingMutation(t, workspace, "envelope activate", map[string]any{"envelope_id": controlID, "expected_revision": 1}, "control-activate")
+	if activate.err != nil {
+		t.Fatalf("fresh completion activation: %#v", activate)
+	}
+	return workspace, map[string]any{"envelope_id": envelopeID, "expected_revision": 1}, map[string]any{"envelope_id": controlID, "expected_revision": 1}
+}
+
+func TestP24EnvelopeAndClaimOriginalCopyAndImport(t *testing.T) {
+	t.Parallel()
+	for _, leaf := range []string{"envelope create", "claim acquire"} {
+		t.Run(leaf, func(t *testing.T) {
+			t.Parallel()
+			workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+			input := envelopeCreateInput(t, workspace, issueID, registration)
+			if leaf == "claim acquire" {
+				grant := input["authority_grants"].([]any)[0].(map[string]any)
+				grant["actions"] = []string{"claim.acquire", "envelope.activate"}
+				grant["actor_selector"].(map[string]any)["required_capabilities"] = []string{"claim.acquire", "envelope.activate"}
+				created := p24BindingMutation(t, workspace, "envelope create", input, "create")
+				if created.err != nil {
+					t.Fatalf("create: %#v", created)
+				}
+				envelopeID := assertEnvelopeShape(t, created.stdout, "draft")
+				activated := p24BindingMutation(t, workspace, "envelope activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1}, "activate")
+				if activated.err != nil {
+					t.Fatalf("activate: %#v", activated)
+				}
+				input = map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"cmd"}}, "ttl_seconds": 3600}
+			}
+			copyRoot := t.TempDir()
+			if err := copyWorkspaceTree(workspace, copyRoot); err != nil {
+				t.Fatal(err)
+			}
+			// The copy is observable, with the same history but a different root.
+			p24IndependentBindingRepository(t, copyRoot)
+			before := snapshotWorkspacePersistence(t, copyRoot)
+			refused := p24BindingMutation(t, copyRoot, leaf, input, "binding")
+			if cli.ExitCode(refused.err) != 2 || refused.stdout != "" {
+				t.Fatalf("plain copy: %#v", refused)
+			}
+			failure := decodeCommandJSONStructure(t, refused.stderr).(map[string]any)["error"].(map[string]any)
+			message, allowed := "prior registration binding does not match envelope", "accepted envelope.create input"
+			if leaf == "claim acquire" {
+				message, allowed = "claim acquire binding is invalid", "accepted claim.acquire input"
+			}
+			if failure["code"] != "invalid-argument" || failure["message"] != message || !reflect.DeepEqual(failure["details"], map[string]any{"argument": "input", "value": nil, "allowed": []any{allowed}}) {
+				t.Fatalf("plain copy failure: %#v", failure)
+			}
+			assertClaimStateUnchanged(t, copyRoot, before)
+			archive := filepath.Join(t.TempDir(), "archive.zip")
+			exported := executeCommandForTest(workspace, "export", "create", archive, "--json")
+			if exported.err != nil {
+				t.Fatalf("export: %#v", exported)
+			}
+			target := filepath.Join(t.TempDir(), "imported")
+			if data, err := exec.Command("git", "clone", "-q", workspace, target).CombinedOutput(); err != nil {
+				t.Fatalf("clone: %v (%s)", err, data)
+			}
+			imported := executeCommandForTest(target, "export", "import", archive, "--repository", target, "--idempotency-key", "import", "--json")
+			if imported.err != nil {
+				t.Fatalf("import: %#v", imported)
+			}
+			// Project sources are supplied by the destination checkout.
+			if err := os.MkdirAll(filepath.Join(target, "project-docs/gates"), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(target, "project-docs/gates/unit.json"), []byte("gate policy fixture\n"), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			accepted := p24BindingMutation(t, target, leaf, input, "binding")
+			if accepted.err != nil || accepted.stderr != "" {
+				t.Fatalf("imported destination: %#v", accepted)
+			}
+			original := p24BindingMutation(t, workspace, leaf, input, "binding")
+			if original.err != nil || original.stderr != "" {
+				t.Fatalf("original control: %#v", original)
+			}
+			for _, result := range []struct {
+				root     string
+				response commandExecutionResult
+			}{{workspace, original}, {target, accepted}} {
+				repository := p24IndependentBindingRepository(t, result.root)
+				if leaf == "claim acquire" {
+					if claimFromResponse(t, result.response.stdout)["worktree_id"] != repository["worktree_id"] {
+						t.Fatalf("Claim did not record local worktree: %#v", result.response)
+					}
+					// Claim Events retain the Envelope's observed scope, including imported history.
+					envelopeID := input["envelope_id"].(string)
+					get := executeCommandForTest(result.root, "--json", "envelope", "get", envelopeID)
+					if get.err != nil {
+						t.Fatalf("read scope: %#v", get)
+					}
+					repository = decodeCanonicalResult(t, get.stdout)["envelope"].(map[string]any)["repository_scope"].(map[string]any)
+				}
+				p24AssertBindingEventRepository(t, result.root, repository)
+			}
+		})
+	}
+}
+
+func TestP24ImportedClaimStoredAuthority(t *testing.T) {
+	t.Parallel()
+	for _, action := range []string{"renew", "release", "expire"} {
+		t.Run(action, func(t *testing.T) {
+			t.Parallel()
+			workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+			input := envelopeCreateInput(t, workspace, issueID, registration)
+			grant := input["authority_grants"].([]any)[0].(map[string]any)
+			actions := []string{"claim.acquire", "claim.expire", "claim.release", "claim.renew", "envelope.activate"}
+			grant["actions"] = actions
+			grant["actor_selector"].(map[string]any)["required_capabilities"] = actions
+			created := p24BindingMutation(t, workspace, "envelope create", input, "create")
+			if created.err != nil {
+				t.Fatalf("create: %#v", created)
+			}
+			envelopeID := assertEnvelopeShape(t, created.stdout, "draft")
+			if activated := p24BindingMutation(t, workspace, "envelope activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1}, "activate"); activated.err != nil {
+				t.Fatalf("activate: %#v", activated)
+			}
+			archive := filepath.Join(t.TempDir(), "archive.zip")
+			if exported := executeCommandForTest(workspace, "export", "create", archive, "--json"); exported.err != nil {
+				t.Fatalf("export: %#v", exported)
+			}
+			target := filepath.Join(t.TempDir(), "imported")
+			if data, err := exec.Command("git", "clone", "-q", workspace, target).CombinedOutput(); err != nil {
+				t.Fatalf("clone: %v (%s)", err, data)
+			}
+			if imported := executeCommandForTest(target, "export", "import", archive, "--repository", target, "--idempotency-key", "import", "--json"); imported.err != nil {
+				t.Fatalf("import: %#v", imported)
+			}
+			for _, root := range []string{workspace, target} {
+				claim, _ := acquireGenericClaimForTest(t, root, issueID, envelopeID, "stored-authority-acquire")
+				if claim["worktree_id"] != p24IndependentBindingRepository(t, root)["worktree_id"] {
+					t.Fatalf("Claim did not record destination: %#v", claim)
+				}
+				request := map[string]any{"claim_id": claim["id"], "expected_version": 1}
+				if action == "renew" {
+					request["ttl_seconds"] = 120
+				}
+				if action == "release" {
+					request["reason"] = "completed"
+				}
+				if root == target {
+					copied := t.TempDir()
+					if err := copyWorkspaceTree(target, copied); err != nil {
+						t.Fatal(err)
+					}
+					before := p24BindingPersistenceSnapshot(t, copied)
+					refused := p24BindingMutation(t, copied, "claim "+action, request, "stored-authority")
+					if cli.ExitCode(refused.err) != 2 || refused.stdout != "" {
+						t.Fatalf("copy exit: %#v", refused)
+					}
+					failure := decodeCommandJSONStructure(t, refused.stderr).(map[string]any)["error"].(map[string]any)
+					if failure["code"] != "invalid-argument" || failure["message"] != "claim worktree binding is invalid" || !reflect.DeepEqual(failure["details"], map[string]any{"argument": "input", "value": nil, "allowed": []any{"accepted claim." + action + " input"}}) {
+						t.Fatalf("copy failure: %#v", failure)
+					}
+					if !before.equal(p24BindingPersistenceSnapshot(t, copied)) {
+						t.Fatal("copy changed persistence")
+					}
+				}
+				mutated := p24BindingMutation(t, root, "claim "+action, request, "stored-authority")
+				if mutated.err != nil || mutated.stderr != "" || stringifyClaimValue(claimFromResponse(t, mutated.stdout)["version"]) != "2" {
+					t.Fatalf("%s in %s: %#v", action, root, mutated)
+				}
+				before := p24BindingPersistenceSnapshot(t, root)
+				replayed := p24BindingMutation(t, root, "claim "+action, request, "stored-authority")
+				if replayed.err != nil || !claimResponseReplayed(t, replayed.stdout) || !reflect.DeepEqual(claimFromResponse(t, replayed.stdout), claimFromResponse(t, mutated.stdout)) {
+					t.Fatalf("replay %s: %#v", action, replayed)
+				}
+				if !before.equal(p24BindingPersistenceSnapshot(t, root)) {
+					t.Fatal("replay changed persistence")
+				}
+				if action == "renew" {
+					released := p24BindingMutation(t, root, "claim release", map[string]any{"claim_id": claim["id"], "expected_version": 2, "reason": "completed"}, "release-renewed")
+					if released.err != nil || released.stderr != "" || stringifyClaimValue(claimFromResponse(t, released.stdout)["version"]) != "3" || claimFromResponse(t, released.stdout)["status"] != "released" {
+						t.Fatalf("release renewed Claim: %#v", released)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestP24EnvelopeSourcePositions(t *testing.T) {
+	t.Parallel()
+	positions := p24EnvelopeSourcePositions(t)
+	for _, position := range positions {
+		for _, state := range []string{"matching", "omitted", "mismatch", "missing", "removed-repository"} {
+			t.Run(position+"/"+state, func(t *testing.T) {
+				t.Parallel()
+				workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+				input := cloneEnvelopeInput(t, envelopeCreateInput(t, workspace, issueID, registration))
+				source := p24EnvelopeSource(input, position)
+				digest := fmt.Sprintf("sha256:%x", sha256.Sum256([]byte("gate policy fixture\n")))
+				switch state {
+				case "matching":
+					source["digest"] = digest
+				case "omitted":
+					delete(source, "digest")
+				case "mismatch":
+					source["digest"] = "sha256:" + strings.Repeat("0", 64)
+				case "missing":
+					delete(source, "digest")
+					source["path"] = "missing.json"
+				case "removed-repository":
+					source["repository"] = testEnvelopeRepository(t, workspace)
+				}
+				observation := p24IndependentBindingRepository(t, workspace)
+				before := snapshotWorkspacePersistence(t, workspace)
+				result := p24BindingMutation(t, workspace, "envelope create", input, "source-position")
+				if state == "matching" || state == "omitted" {
+					if result.err != nil || result.stderr != "" {
+						t.Fatalf("Source %s: %#v", state, result)
+					}
+					envelope := decodeCanonicalResult(t, result.stdout)["envelope"].(map[string]any)
+					stored := p24EnvelopeSource(envelope, position)
+					if stored["digest"] != digest || !sameJSONMap(stored["repository"].(map[string]any), observation) || !sameJSONMap(envelope["repository_scope"].(map[string]any), observation) {
+						t.Fatalf("stored Source/scope differs from independent observation: %#v / %#v", stored, observation)
+					}
+					p24AssertBindingEventRepository(t, workspace, observation)
+					return
+				}
+				assertClaimStateUnchanged(t, workspace, before)
+				failure := decodeCommandJSONStructure(t, result.stderr).(map[string]any)["error"].(map[string]any)
+				if state == "removed-repository" {
+					if cli.ExitCode(result.err) != 2 || failure["code"] != "invalid-argument" || failure["details"].(map[string]any)["argument"] != "input."+position+".repository" {
+						t.Fatalf("removed repository: %#v", result)
+					}
+					return
+				}
+				if cli.ExitCode(result.err) != 4 || failure["code"] != "source-digest-mismatch" {
+					t.Fatalf("Source refusal: %#v", result)
+				}
+				wantExpected, wantObserved := source["digest"], any(digest)
+				if state == "missing" {
+					wantObserved = nil
+				}
+				want := map[string]any{"display_label": source["display_label"], "path": source["path"], "expected_digest": wantExpected, "observed_digest": wantObserved}
+				if !reflect.DeepEqual(failure["details"], want) {
+					t.Fatalf("Source details = %#v, want %#v", failure["details"], want)
+				}
+			})
+		}
+	}
+}
+
+func p24EnvelopeSourcePositions(t *testing.T) []string {
+	t.Helper()
+	var positions []string
+	var walk func([]cli.InputField, string)
+	walk = func(fields []cli.InputField, prefix string) {
+		for _, field := range fields {
+			if field.Name == "source_type" {
+				positions = append(positions, prefix)
+			}
+			path := strings.TrimPrefix(prefix+"."+field.Name, ".")
+			walk(field.Children, path)
+			if field.Element != nil {
+				walk(field.Element.Children, path+"[0]")
+			}
+		}
+	}
+	walk(inputDescriptorRegistry["envelope create"].Fields, "")
+	want := []string{"risk_result.source", "sources[0]", "obligations[0].source"}
+	if !reflect.DeepEqual(positions, want) {
+		t.Fatalf("Source corpus positions = %v, want %v", positions, want)
+	}
+	return positions
+}
+
+func p24EnvelopeSource(input map[string]any, position string) map[string]any {
+	switch position {
+	case "risk_result.source":
+		return input["risk_result"].(map[string]any)["source"].(map[string]any)
+	case "sources[0]":
+		return input["sources"].([]any)[0].(map[string]any)
+	default:
+		return input["obligations"].([]any)[0].(map[string]any)["source"].(map[string]any)
+	}
+}
+
+func p24BindingMutation(t *testing.T, workspace, leaf string, input map[string]any, key string) commandExecutionResult {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "input.json")
+	writeActivationInput(t, path, input)
+	args := append([]string{"--project", workspace, "--json"}, strings.Split(leaf, " ")...)
+	args = append(args, "--actor", "actor-builder", "--input", path, "--idempotency-key", key)
+	return executeCommandForTest(workspace, args...)
+}
+
+func p24IndependentBindingRepository(t *testing.T, workspace string) map[string]any {
+	t.Helper()
+	git := func(args ...string) string {
+		t.Helper()
+		data, err := exec.Command("git", append([]string{"-C", workspace}, args...)...).Output()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return strings.TrimSpace(string(data))
+	}
+	head, tree := git("rev-parse", "HEAD"), git("rev-parse", "HEAD^{tree}")
+	if status := git("status", "--porcelain", "--untracked-files=all"); status != "" {
+		t.Fatalf("independent fixture must be clean: %s", status)
+	}
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, err := filepath.Abs(workspace)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return map[string]any{"base_oid": head, "capture_source": "git", "dirty": false, "dirty_digest": nil, "head_oid": head, "project_id": projectConfig.ProjectID, "tree_oid": tree, "worktree_id": fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(root)))}
+}
+
+func p24BindingPersistenceSnapshot(t *testing.T, workspace string) workspacePersistenceSnapshot {
+	t.Helper()
+	paths, err := filepath.Glob(filepath.Join(workspace, ".fid/journal/*.jsonl"))
+	if err != nil || len(paths) == 0 {
+		t.Fatalf("journal inventory: %v / %v", paths, err)
+	}
+	snapshot := workspacePersistenceSnapshot{database: mustReadCommandFile(t, filepath.Join(workspace, ".fid/fid.sqlite"))}
+	for _, path := range paths {
+		snapshot.journal = append(snapshot.journal, mustReadCommandFile(t, path)...)
+	}
+	return snapshot
+}
+
+func p24AssertBindingEventRepository(t *testing.T, workspace string, repository map[string]any) {
+	t.Helper()
+	paths, err := filepath.Glob(filepath.Join(workspace, ".fid/journal/*.jsonl"))
+	if err != nil || len(paths) == 0 {
+		t.Fatalf("journal inventory: %v / %v", paths, err)
+	}
+	var event journal.Event
+	for _, path := range paths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, line := range splitJournalLines(data) {
+			var candidate journal.Event
+			if err := json.Unmarshal([]byte(line), &candidate); err != nil {
+				t.Fatal(err)
+			}
+			if event.EventID == "" || candidate.OccurredAt.After(event.OccurredAt) {
+				event = candidate
+			}
+		}
+	}
+	encoded, err := json.Marshal(event.Repository)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(encoded, &got); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got, repository) {
+		t.Fatalf("Event repository = %#v, want %#v", got, repository)
+	}
+}
+
+func TestEnvelopeCreateObservesScopeAndSourcesWithoutCallerRepository(t *testing.T) {
+	t.Parallel()
+	workspace, issueID, registration := finalizedObservedEnvelopeWorkspaceWithDefinitions(t, gateDefinitionsForTest(nil))
+	input := envelopeCreateInput(t, workspace, issueID, registration)
+	delete(input, "repository_scope")
+	source := input["sources"].([]any)[0].(map[string]any)
+	delete(source, "repository")
+	source["source_type"] = "external-reference"
+	source["path"] = nil
+	source["external_id"] = "gate-policy"
+	source["digest"] = "sha256:" + strings.Repeat("0", 64)
+	path := filepath.Join(workspace, "observed-envelope.json")
+	writeActivationInput(t, path, input)
+	created := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", path, "--idempotency-key", "observed-envelope")
+	if created.err != nil {
+		t.Fatalf("create observed Envelope: %v; stderr=%q", created.err, created.stderr)
+	}
+	envelope := decodeCommandJSONStructure(t, created.stdout).(map[string]any)["result"].(map[string]any)["envelope"].(map[string]any)
+	if got, want := envelope["repository_scope"].(map[string]any)["worktree_id"], testEnvelopeRepository(t, workspace)["worktree_id"]; got != want {
+		t.Fatalf("repository_scope.worktree_id = %v, want %v", got, want)
+	}
+	storedSource := envelope["sources"].([]any)[0].(map[string]any)
+	if got, want := storedSource["repository"].(map[string]any)["worktree_id"], testEnvelopeRepository(t, workspace)["worktree_id"]; got != want {
+		t.Fatalf("source.repository.worktree_id = %v, want %v", got, want)
+	}
+}
 
 func TestEnvelopeCreateGetActivateRoundTripAndRejectsWidening(t *testing.T) {
 	t.Parallel()
@@ -337,10 +940,38 @@ func TestDecodeClosedEnvelopeInputRejectsAuthoredBudgetState(t *testing.T) {
 	t.Parallel()
 	for _, state := range []string{`""`, `null`} {
 		t.Run(state, func(t *testing.T) {
-			var request workflow.EnvelopeCreateRequest
-			err := decodeClosedEnvelopeInput(strings.NewReader(`{"budgets":[{"state":`+state+`}]}`), "-", &request)
-			if err == nil || !strings.Contains(err.Error(), "budget state is output-only") {
-				t.Fatalf("decodeClosedEnvelopeInput() error = %v, want output-only state rejection", err)
+			t.Parallel()
+			descriptor := inputDescriptorRegistry["envelope create"]
+			example, err := cli.InputExample(descriptor)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var input map[string]any
+			if err := json.Unmarshal(example, &input); err != nil {
+				t.Fatal(err)
+			}
+			p24ExpandDescriptorObjects(t, input, descriptor.Fields)
+			var authored any
+			if err := json.Unmarshal([]byte(state), &authored); err != nil {
+				t.Fatal(err)
+			}
+			input["budgets"].([]any)[0].(map[string]any)["state"] = authored
+			root := t.TempDir()
+			path := filepath.Join(t.TempDir(), "authored-state.json")
+			writeActivationInput(t, path, input)
+			result := executeCommandForTest(root, "--json", "envelope", "create", "--input", path, "--actor", "ACT-1", "--idempotency-key", "authored-state")
+			argument, allowed := "input", []string{"accepted envelope.create input"}
+			value := any(nil)
+			if state == "null" {
+				argument, allowed, value = "input.budgets[0].state", []string{"string"}, "null"
+			}
+			if cli.ExitCode(result.err) != 2 || result.stdout != "" {
+				t.Fatalf("authored state accepted: %#v", result)
+			}
+			assertAdoptedJSONFailure(t, result.stderr, "envelope.create", argument, value, allowed)
+			entries, err := os.ReadDir(root)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("authored state changed root: %v / %v", entries, err)
 			}
 		})
 	}
@@ -365,23 +996,7 @@ func finalizedObservedEnvelopeWorkspaceWithDefinitions(t *testing.T, definitions
 
 func finalizedEnvelopeWorkspaceWithRepository(t *testing.T, definitions []any, observeRepository bool) (string, string, gateRegistrationView) {
 	t.Helper()
-	if observeRepository {
-		return buildFinalizedEnvelopeWorkspaceWithRepository(t, definitions, true)
-	}
-	key := reusableWorkspaceFixtureKey(t, "finalized-envelope", map[string]any{"definitions": definitions, "observed_repository": observeRepository})
-	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, registration := buildFinalizedEnvelopeWorkspaceWithRepository(t, definitions, observeRepository)
-		registrationJSON, err := json.Marshal(registration)
-		if err != nil {
-			t.Fatalf("encode cached gate registration: %v", err)
-		}
-		return workspace, []string{issueID, string(registrationJSON)}
-	})
-	var registration gateRegistrationView
-	if err := json.Unmarshal([]byte(values[1]), &registration); err != nil {
-		t.Fatalf("decode cached gate registration: %v", err)
-	}
-	return workspace, values[0], registration
+	return buildFinalizedEnvelopeWorkspaceWithRepository(t, definitions, observeRepository)
 }
 
 func buildFinalizedEnvelopeWorkspace(t *testing.T, definitions []any) (string, string, gateRegistrationView) {
@@ -398,14 +1013,16 @@ func buildFinalizedEnvelopeWorkspaceWithRepository(t *testing.T, definitions []a
 		return root, []string{issueID}
 	})
 	issueID := values[0]
-	if observeRepository {
-		initializeObservedRepositoryForTest(t, workspace)
-	}
+	initializeObservedRepositoryForTest(t, workspace)
 	registrationInput := gateRegisterInput(t, workspace)
 	registrationInput["scope"] = map[string]any{"issue_id": issueID}
 	registrationPath := filepath.Join(workspace, "gate-register-envelope.json")
 	writeActivationInput(t, registrationPath, registrationInput)
-	return workspace, issueID, registerGateForTest(t, workspace, registrationPath, "gate-register-envelope")
+	registration := registerGateForTest(t, workspace, registrationPath, "gate-register-envelope")
+	if !observeRepository {
+		retainedRepositoryInputs.Store(workspace, testEnvelopeRepository(t, workspace))
+	}
+	return workspace, issueID, registration
 }
 
 func buildUnregisteredEnvelopeWorkspace(t *testing.T, definitions []any) (string, string) {
@@ -472,15 +1089,22 @@ func authorityCapabilities() []string {
 
 func envelopeCreateInput(t *testing.T, workspace, issueID string, registration gateRegistrationView) map[string]any {
 	t.Helper()
-	repository := testEnvelopeRepository(t, workspace)
+	sourcePath := filepath.Join(workspace, "project-docs", "gates", "unit.json")
+	if err := os.MkdirAll(filepath.Dir(sourcePath), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(sourcePath, []byte("gate policy fixture\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	source := map[string]any{
-		"digest": "sha256:" + strings.Repeat("0", 64), "display_label": "Gate policy", "external_id": nil,
-		"path": "project-docs/gates/unit.json", "repository": repository, "section": nil, "source_type": "project-file",
+		"digest":        fmt.Sprintf("sha256:%x", sha256.Sum256([]byte("gate policy fixture\n"))),
+		"display_label": "Gate policy", "external_id": nil,
+		"path": "project-docs/gates/unit.json", "section": nil, "source_type": "project-file",
 	}
 	return map[string]any{
 		"outcome": "Prove the envelope value", "non_goals": []string{},
-		"risk_result":      map[string]any{"source": source, "result_digest": "sha256:" + strings.Repeat("1", 64)},
-		"repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{},
+		"risk_result": map[string]any{"source": source, "result_digest": "sha256:" + strings.Repeat("1", 64)},
+		"sources":     []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "protected_decisions": []any{},
 		"authority_grants": []any{map[string]any{
 			"actions":        []string{"envelope.activate"},
 			"actor_selector": map[string]any{"actor_id": "actor-builder", "required_capabilities": []string{"envelope.activate"}},

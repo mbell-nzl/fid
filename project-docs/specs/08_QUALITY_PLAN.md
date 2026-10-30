@@ -159,6 +159,7 @@ The conformance and workflow suites must cover at least these scenarios:
 | Freshness | A source or artifact change invalidates only the evidence whose declared inputs changed. |
 | Review coverage | Required Reviewer coverage and finding disposition are enforced without embedding a global role taxonomy. |
 | Protected decision | A pending Human decision blocks only its declared protected transition; the recorded Outcome unblocks or redirects it. |
+| Human takes control (Phase 24) | Retain `TestP24HumanTakeControlJourney` as a real-process scenario: a protected Decision refuses terminal success, Human help/templates and labelled output supply every command/value, the Decision Reference and approving Outcome resolve the Stops, linked Evidence permits the transition, and the Envelope completes. The transition target and current Issue revision come from the last Human `resume` read. `TestP24TakeControlRebuildExportImportParity` proves that completed workspace survives rebuild and schema-19 export/validate/import, including field-digest maps, observed repositories and judgment detail reads. |
 | Stop and resume | A typed Stop releases or retains Claims according to policy and produces a bounded recovery projection. |
 | Revision after progress | New work uses the new Envelope Revision while prior Receipts and Outcomes retain their original revision lineage. |
 | Completion | Completion is derived only when Issue state, Claims/Runs, Obligations, reviews, Outcomes, and Stops permit it. |

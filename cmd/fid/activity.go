@@ -30,9 +30,13 @@ func newActivityListCommand() *cobra.Command {
 		Short: "List projected activity entries.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
+				return err
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return renderIssueReadError(cmd, jsonMode, "activity.list", err)
 			}
 
 			items, err := internalactivity.List(internalactivity.ListOptions{
@@ -43,16 +47,9 @@ func newActivityListCommand() *cobra.Command {
 				Event:         eventName,
 			})
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
+				return renderIssueReadError(cmd, jsonMode, "activity.list", err)
 			}
 
-			jsonMode, err := readJSONMode(cmd)
-			if err != nil {
-				return err
-			}
 			if jsonMode {
 				return cli.WriteSuccess(cmd.OutOrStdout(), "activity.list", map[string]any{"items": items}, nil)
 			}

@@ -1,0 +1,9 @@
+Purpose: Record an independent Review of a Run and its bound Issue.
+
+Reviews
+  Review REV-88bffe
+    Issue: P22-a8e36e; Envelope: ENV-f0c927 revision 1
+    Run: RUN-c54020; Reviewer: actor-denied; Profile: review-default
+    Verdict: pass; Independence: distinct-actor
+    Repository: HEAD a1cdb1f43cfd; clean
+    Findings by severity: blocker 0; major 0; minor 0; nit 0

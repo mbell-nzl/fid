@@ -11,9 +11,10 @@ import (
 )
 
 type IdempotencyRequest struct {
-	OperationScope string
-	IdempotencyKey string
-	RequestDigest  string
+	OperationScope      string
+	IdempotencyKey      string
+	RequestDigest       string
+	RequestFieldDigests map[string]string
 }
 
 type IdempotencyMutation struct {
@@ -34,6 +35,8 @@ type IdempotencyConflictError struct {
 	IdempotencyKey        string
 	StoredRequestDigest   string
 	SuppliedRequestDigest string
+	StoredFieldDigests    map[string]string
+	SuppliedFieldDigests  map[string]string
 }
 
 // CommitEvent appends and projects one non-idempotent Event-v2 mutation.
@@ -174,7 +177,7 @@ func ReplayIdempotent(conn *sql.DB, request IdempotencyRequest) (IdempotencyOutc
 		return IdempotencyOutcome{}, false, nil
 	}
 	if stored.requestDigest != request.RequestDigest {
-		return IdempotencyOutcome{}, false, &IdempotencyConflictError{request.OperationScope, request.IdempotencyKey, stored.requestDigest, request.RequestDigest}
+		return IdempotencyOutcome{}, false, &IdempotencyConflictError{OperationScope: request.OperationScope, IdempotencyKey: request.IdempotencyKey, StoredRequestDigest: stored.requestDigest, SuppliedRequestDigest: request.RequestDigest, StoredFieldDigests: stored.fieldDigests, SuppliedFieldDigests: request.RequestFieldDigests}
 	}
 	replayedJSON, err := replayedResultJSON(stored.resultJSON)
 	if err != nil {
@@ -185,6 +188,7 @@ func ReplayIdempotent(conn *sql.DB, request IdempotencyRequest) (IdempotencyOutc
 
 type storedIdempotencyResult struct {
 	requestDigest     string
+	fieldDigests      map[string]string
 	entityID          string
 	eventID           string
 	aggregateSequence int
@@ -193,11 +197,13 @@ type storedIdempotencyResult struct {
 
 func findIdempotencyResult(conn *sql.DB, request IdempotencyRequest) (storedIdempotencyResult, bool, error) {
 	var result storedIdempotencyResult
+	var fieldDigestsJSON string
 	err := conn.QueryRow(`
-SELECT request_digest, result_entity_id, result_event_id, aggregate_sequence, result_json
+SELECT request_digest, request_field_digests_json, result_entity_id, result_event_id, aggregate_sequence, result_json
 FROM idempotency_results
 WHERE operation_scope = ? AND idempotency_key = ?`, request.OperationScope, request.IdempotencyKey).Scan(
 		&result.requestDigest,
+		&fieldDigestsJSON,
 		&result.entityID,
 		&result.eventID,
 		&result.aggregateSequence,
@@ -209,10 +215,18 @@ WHERE operation_scope = ? AND idempotency_key = ?`, request.OperationScope, requ
 	if err != nil {
 		return storedIdempotencyResult{}, false, fmt.Errorf("commit idempotent: read stored result: %w", err)
 	}
+	if err := json.Unmarshal([]byte(fieldDigestsJSON), &result.fieldDigests); err != nil {
+		return storedIdempotencyResult{}, false, fmt.Errorf("commit idempotent: decode stored field digests: %w", err)
+	}
 	return result, true, nil
 }
 
 func idempotencyResultEffect(request IdempotencyRequest, event Event, entityID, resultJSON string) Effect {
+	fields := request.RequestFieldDigests
+	if fields == nil {
+		fields = map[string]string{}
+	}
+	fieldJSON, _ := MarshalCanonicalJSON(fields)
 	return Effect{
 		Op:    "insert",
 		Table: "idempotency_results",
@@ -221,12 +235,13 @@ func idempotencyResultEffect(request IdempotencyRequest, event Event, entityID, 
 			"idempotency_key": request.IdempotencyKey,
 		},
 		Values: map[string]any{
-			"request_digest":     request.RequestDigest,
-			"result_entity_id":   entityID,
-			"result_event_id":    event.EventID,
-			"aggregate_sequence": event.Aggregate.Sequence,
-			"result_json":        resultJSON,
-			"created_at":         event.OccurredAt.UTC().Format(time.RFC3339Nano),
+			"request_digest":             request.RequestDigest,
+			"request_field_digests_json": string(fieldJSON),
+			"result_entity_id":           entityID,
+			"result_event_id":            event.EventID,
+			"aggregate_sequence":         event.Aggregate.Sequence,
+			"result_json":                resultJSON,
+			"created_at":                 event.OccurredAt.UTC().Format(time.RFC3339Nano),
 		},
 	}
 }

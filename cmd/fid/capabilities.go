@@ -67,10 +67,7 @@ func renderCapabilitiesInvalidRequest(cmd *cobra.Command, argument, value string
 		return err
 	}
 	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, "capabilities.get", failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "capabilities.get", failure, cause)
 }
@@ -85,10 +82,7 @@ func renderCapabilitiesError(cmd *cobra.Command, cause error) error {
 		return err
 	}
 	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, "capabilities.get", failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "capabilities.get", failure, cause)
 }

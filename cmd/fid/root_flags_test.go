@@ -7,7 +7,56 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/cli"
 )
+
+const p24UnavailableProjectJSON = `{"contract_version":"fid-cli.v1","error":{"category":"invalid-input","code":"invalid-argument","details":{"allowed":["--idempotency-key","--repository"],"argument":"--project","value":"--project"},"message":"--project is not available for export import","retryable":false,"subject":null},"ok":false,"operation":"export.import"}` + "\n"
+
+func TestP24UnavailableRootFlagMapping(t *testing.T) {
+	t.Parallel()
+	for _, missing := range []bool{false, true} {
+		for _, jsonMode := range []bool{false, true} {
+			root := t.TempDir()
+			project := root
+			if missing {
+				project = filepath.Join(root, "nonexistent")
+			}
+			args := []string{"--project", project, "export", "import", "missing.zip", "--repository", root, "--idempotency-key", "refusal"}
+			want := "error: --project is not available for export import\nreason: invalid-argument; argument=--project, allowed=--idempotency-key|--repository\n"
+			if jsonMode {
+				args = append([]string{"--json"}, args...)
+				want = p24UnavailableProjectJSON
+			}
+			result := executeCommandForTest(root, args...)
+			if result.err == nil || cli.ExitCode(result.err) != 2 || result.stdout != "" || result.stderr != want {
+				t.Fatalf("missing=%t json=%t: %#v, want stderr=%q exit=2", missing, jsonMode, result, want)
+			}
+			entries, err := os.ReadDir(root)
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("refusal changed directory: %v %v", entries, err)
+			}
+		}
+	}
+}
+
+func TestP24DiagnosticRootFlagBytesPreserved(t *testing.T) {
+	t.Parallel()
+	for _, leaf := range [][]string{{"sql", "SELECT 1"}, {"journal", "inspect", "EVT-missing"}} {
+		for _, flag := range []string{"--json", "--project"} {
+			args := []string{flag}
+			if flag == "--project" {
+				args = append(args, filepath.Join(t.TempDir(), "missing"))
+			}
+			result := executeCommandForTest(t.TempDir(), append(args, leaf...)...)
+			path := strings.Join(leaf[:len(leaf)-1], " ")
+			want := "error: " + flag + " is not available for " + path + " until its fid-cli.v1 transport is migrated\n"
+			if result.err == nil || cli.ExitCode(result.err) != 7 || result.stdout != "" || result.stderr != want {
+				t.Fatalf("diagnostic refusal: %#v want %q", result, want)
+			}
+		}
+	}
+}
 
 func TestRootCommandUsesInjectedWorkingDirectoryWithoutChangingProcess(t *testing.T) {
 	t.Parallel()

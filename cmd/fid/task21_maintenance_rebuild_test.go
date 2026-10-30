@@ -75,10 +75,10 @@ func task21CompletedWorkspace(t *testing.T) (string, string, string, string) {
 	repository := runRepositoryForTest(t, workspace)
 	obligationID := testEvidenceObligationID
 	linkPath := filepath.Join(workspace, "task21-link-evidence.json")
-	writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "target_repository": repository, "required_artifact_ids": []string{}})
+	writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	task21Mutate(t, workspace, "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task21-link-evidence")
 	evaluatePath := filepath.Join(workspace, "task21-evaluate-evidence.json")
-	writeActivationInput(t, evaluatePath, map[string]any{"obligation_id": obligationID, "target_repository": repository})
+	writeActivationInput(t, evaluatePath, map[string]any{"obligation_id": obligationID})
 
 	for _, step := range []struct{ state, revision string }{{"in_progress", "1"}, {"dev_complete", "2"}, {"qa_review", "3"}, {"qa_pass", "4"}} {
 		task21Mutate(t, workspace, "issue", "transition", issueID, "--to", step.state, "--actor", "agent:actor-builder", "--expected-revision", step.revision, "--idempotency-key", "task21-"+step.state)
@@ -89,7 +89,7 @@ func task21CompletedWorkspace(t *testing.T) (string, string, string, string) {
 	writeActivationInput(t, releasePath, map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
 	task21Mutate(t, workspace, "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "task21-release-claim")
 	completePath := filepath.Join(workspace, "task21-complete-envelope.json")
-	writeActivationInput(t, completePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1, "repository": repository})
+	writeActivationInput(t, completePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
 	task21Mutate(t, workspace, "envelope", "complete", "--actor", "actor-builder", "--input", completePath, "--idempotency-key", "task21-complete-envelope")
 	return workspace, issueID, envelopeID, evaluatePath
 }

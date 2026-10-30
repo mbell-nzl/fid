@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -69,6 +70,18 @@ func (adapter *p22FakeRecoveryAdapter) Execute(t *testing.T, fixture p22Conforma
 
 func (model *p22MemoryModel) execute(t *testing.T, operation, key, actor string, input map[string]any, invalidFlag bool) p22ConformanceResponse {
 	t.Helper()
+	if fields, ok := p22ChangedInputFields[operation]; ok {
+		if invalidFlag {
+			return *p22ChangedFieldFailure(t, operation, "request", "--unknown-field", strings.Fields(fields))
+		}
+		if invalid := p22ChangedInputFailure(t, operation, input, fields); invalid != nil {
+			return *invalid
+		}
+		switch operation {
+		case "gate.register", "envelope.create", "envelope.complete", "claim.acquire", "run.start":
+			return model.acceptChangedSetup(t, operation, key, input)
+		}
+	}
 	if strings.HasPrefix(operation, "activation.") {
 		return model.executeActivation(t, operation, key, actor, input, invalidFlag)
 	}
@@ -79,6 +92,14 @@ func (model *p22MemoryModel) execute(t *testing.T, operation, key, actor string,
 		return failure("invalid-argument", 2)
 	}
 	if operation == "gate.run" {
+		for field := range input {
+			if !strings.Contains(" registration_id registration_version obligation_id run_id expected_repository ", " "+field+" ") {
+				return p22FixtureResponse(t, map[string]any{"contract_version": "fid-cli.v1", "ok": false, "operation": operation,
+					"error": map[string]any{"code": "invalid-argument", "category": "invalid-input", "retryable": false, "subject": nil,
+						"message": "invalid input." + field, "details": map[string]any{"argument": "input." + field, "value": field,
+							"allowed": []string{"expected_repository", "obligation_id", "registration_id", "registration_version", "run_id"}}}}, false, 2)
+			}
+		}
 		return model.denyGate(t, key)
 	}
 	allowed := map[string]string{
@@ -87,7 +108,7 @@ func (model *p22MemoryModel) execute(t *testing.T, operation, key, actor string,
 		"stop.raise": "subject code blocked_actions details resolution_condition resolver_capability", "stop.list": "", "attention.list": "",
 		"stop.resolve": "stop_id fact_event_id", "attention.resolve": "attention_id expected_version fact_event_ids",
 		"run.observe-budget": "run_id expected_version budget_name source_sample_id sample_kind previous_sample_id value measurement_ref observed_at",
-		"run.close":          "run_id expected_version observation_id repository", "run.abandon": "run_id expected_version expected_claim_version observation_id authority repository",
+		"run.close":          "run_id expected_version observation_id expected_repository", "run.abandon": "run_id expected_version expected_claim_version observation_id authority expected_repository",
 	}
 	keys, known := allowed[operation]
 	if !known {
@@ -171,7 +192,14 @@ func (model *p22MemoryModel) execute(t *testing.T, operation, key, actor string,
 		result = map[string]any{"recovery": map[string]any{"id": fmt.Sprintf("REC-%d", model.sequence), "prior_run_id": prior, "successor_run_id": model.run["id"]}, "run": p22CloneMap(model.run), "claim": p22CloneMap(model.claim)}
 		model.liveness, model.observation = "unknown", ""
 	case "run.observe-budget":
-		if input["budget_name"] != "tokens" || input["measurement_ref"] == nil || p22Number(input["value"]) < 0 {
+		if source, ok := input["measurement_ref"].(map[string]any); ok {
+			for field := range source {
+				if !strings.Contains(" source_type display_label path section external_id digest ", " "+field+" ") {
+					return failure("invalid-argument", 2)
+				}
+			}
+		}
+		if input["budget_name"] != "tokens" || p22Number(input["value"]) < 0 {
 			return failure("invalid-argument", 2)
 		}
 		previous := input["previous_sample_id"]
@@ -259,6 +287,90 @@ func (model *p22MemoryModel) execute(t *testing.T, operation, key, actor string,
 		model.replies[key], model.requests[key] = p22CloneMap(envelope), request
 	}
 	return p22FixtureResponse(t, envelope, true, 0)
+}
+
+// This input-admission model consumes requests and stores its own memory state.
+// The schema is independently transcribed from the accepted Phase 24 input rows.
+var p22ChangedInputFields = map[string]string{
+	"gate.register":      "definition_id definition_version scope",
+	"envelope.create":    "outcome non_goals risk_result sources primary_issue_id related_issue_ids authority_grants obligations protected_decisions budgets",
+	"envelope.complete":  "envelope_id expected_revision",
+	"claim.acquire":      "issue_id envelope_id envelope_revision scope mode ttl_seconds",
+	"run.start":          "issue_id envelope_id envelope_revision claim_id claim_version executor obligation_id expected_repository",
+	"run.close":          "run_id expected_version observation_id expected_repository",
+	"run.abandon":        "run_id expected_version expected_claim_version observation_id authority expected_repository",
+	"gate.run":           "registration_id registration_version obligation_id run_id expected_repository",
+	"run.observe-budget": "run_id expected_version budget_name source_sample_id sample_kind previous_sample_id value measurement_ref observed_at",
+}
+
+func p22ChangedInputFailure(t *testing.T, operation string, input map[string]any, fields string) *p22ConformanceResponse {
+	t.Helper()
+	allowed := strings.Fields(fields)
+	sort.Strings(allowed)
+	for name := range input {
+		if !strings.Contains(" "+fields+" ", " "+name+" ") {
+			return p22ChangedFieldFailure(t, operation, "input."+name, name, allowed)
+		}
+	}
+	if operation == "run.observe-budget" {
+		if ref, ok := input["measurement_ref"].(map[string]any); ok {
+			if _, exists := ref["repository"]; exists {
+				return p22ChangedFieldFailure(t, operation, "input.measurement_ref.repository", "repository", []string{"digest", "display_label", "external_id", "path", "section", "source_type"})
+			}
+		}
+	}
+	return nil
+}
+
+func p22ChangedFieldFailure(t *testing.T, operation, path, value string, allowed []string) *p22ConformanceResponse {
+	t.Helper()
+	response := p22FixtureResponse(t, map[string]any{"contract_version": "fid-cli.v1", "ok": false, "operation": operation,
+		"error": map[string]any{"code": "invalid-argument", "category": "invalid-input", "retryable": false, "subject": nil,
+			"message": "invalid " + path, "details": map[string]any{"argument": path, "value": value, "allowed": allowed}}}, false, 2)
+	return &response
+}
+
+func (model *p22MemoryModel) acceptChangedSetup(t *testing.T, operation, key string, input map[string]any) p22ConformanceResponse {
+	t.Helper()
+	for _, name := range strings.Fields(p22ChangedInputFields[operation]) {
+		if name == "mode" || name == "protected_decisions" {
+			continue
+		}
+		if _, exists := input[name]; !exists {
+			return *p22ChangedFieldFailure(t, operation, "input."+name, "", []string{name})
+		}
+	}
+	encoded, err := json.Marshal(input)
+	p22FaultOK(t, err)
+	if prior, exists := model.requests[key]; exists && prior != string(encoded) {
+		return p22FixtureResponse(t, map[string]any{"contract_version": "fid-cli.v1", "ok": false, "operation": operation, "error": map[string]any{"code": "idempotency-conflict"}}, false, 4)
+	}
+	if prior, exists := model.replies[key]; exists {
+		return p22FixtureResponse(t, prior, true, 0)
+	}
+	model.sequence++
+	model.requests[key] = string(encoded)
+	record := p22CloneMap(input)
+	record["id"] = fmt.Sprintf("REC-%d", model.sequence)
+	member := "registration"
+	switch operation {
+	case "envelope.create":
+		member, record["status"], record["revision"] = "envelope", "draft", 1
+	case "envelope.complete":
+		member, record["id"], record["status"] = "envelope", input["envelope_id"], "completed"
+	case "claim.acquire":
+		member, record["status"], record["version"] = "claim", "active", 1
+		model.claim = record
+	case "run.start":
+		member, record["status"], record["version"] = "run", "active", 1
+		model.run = record
+	default:
+		record["version"] = 1
+	}
+	response := map[string]any{"contract_version": "fid-cli.v1", "ok": true, "operation": operation,
+		"result": map[string]any{member: record, "idempotency_key": key, "replayed": false}, "event": map[string]any{"id": fmt.Sprintf("EVT-%d", model.sequence), "occurred_at": "2026-09-07T00:00:00Z"}}
+	model.replies[key] = response
+	return p22FixtureResponse(t, response, true, 0)
 }
 
 func p22CloneMap(value map[string]any) map[string]any {

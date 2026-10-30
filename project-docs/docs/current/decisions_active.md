@@ -3,6 +3,10 @@
 > Current commitments and carry-forwards. Historical reasoning stays in ADRs
 > and phase decisions; standing delivery rules also live in decisions_principles.md.
 
+> **2026-10-29:** Phase 24 closed under DEC-293. A fid and kit reset is proposed
+> (`../reviews/2026-10-29-fid-kit-reset-proposal.html`). Its decisions are open,
+> and the commitments below stand until ADR-0013 records what it supersedes.
+
 ## Durable Architecture
 
 - ADR-0001: journal canonical; SQLite is a rebuildable projection.
@@ -13,7 +17,7 @@
 - ADR-0010/0011: generic activated Actor/Envelope authority replaces global role
   policy; no pre-dogfood compatibility surface or old fid-data migration;
   JSON is the sole machine format; optional products remain evidence-gated.
-- ADR-0012: six vertical scenario phases, 20..25, with explicit removal owners.
+- ADR-0012: vertical scenario phases 20..26 (DEC-272), explicit removal owners.
   All ADRs live under `../../../docs/adr/`.
 
 ## Ratified Product Commitments
@@ -113,9 +117,10 @@ Phase 23 is complete; full reasoning is in
 
 ## Prior Phase and Future Qualification
 
-- Phase 23 [wrap audit](../phases/phase-23/wrap-up-audit.md); Phase 22
-  [wrap audit](../phases/phase-22/wrap-up-audit.md) (DEC-220/221).
-- Claims qualification remains Phase 24; external adapter qualification Phase 25.
+- Wrap audits: [Phase 23](../phases/phase-23/wrap-up-audit.md), [Phase 22](../phases/phase-22/wrap-up-audit.md).
+- DEC-272: new Phase 24 operating experience and input convergence (scope in
+  [phase decisions](../phases/phase-23/decisions.md)); Claims qualification is
+  Phase 25; external adapter qualification Phase 26.
 
 ## Open Carry-Forward Register
 
@@ -129,21 +134,21 @@ Phase 23 is complete; full reasoning is in
 | CF-029 | Workflow maintainer: QA evidence-token validator improvements in dedicated maintenance. |
 | CF-030 | Workflow maintainer: report-lint rejected-token diagnostics in dedicated maintenance. |
 | CF-033 | Workflow maintainer: AGENTS package inventory (lists nonexistent packages) and nonexistent quality section locator. `internal/review/` added at Phase 23 wrap. |
-| CF-036 | Dedicated workflow retrospective/maintenance: cross-phase/task ledger identities, fail-closed ESC registration and observed control friction. DEC-190/191 bounded repairs do not close it. |
-| CF-037 | Phase 25 TL/adapter owner: exact coordinator/port obligations in Phase 22 kit-contract-mapping.md; fid conformance alone is insufficient. |
+| CF-036 | Dedicated workflow retrospective/maintenance: cross-phase/task ledger identities, fail-closed ESC registration and observed control friction. DEC-190/191 bounded repairs do not close it. DEC-286: the sequence verifier accepts any existing DEC as RUN-RESUME resolution authority. DEC-288: a planned mid-phase Human checkpoint can only resume from its STOP through an evidence-only task recovery; there is no Human-evidence route to REVIEW. DEC-289: a task spec named cross-phase standing decisions (DEC-162/165/166) as convergence guidance, and the Runner cited them in a ledger authority field; the verifier accepts only same-phase DECs there. DEC-290: the verifier accepts a TASK-RECOVERY appended straight after a STOP with no RUN-RESUME (`APPEND_CONFIRMED state=STOPPED`). DEC-291: a Runner directive copied a command out of a Markdown table cell with its `\|` escape, so the Developer ran a command that was not R13; a table command is its rendered text, and later inventories should keep `|`-bearing commands out of tables. DEC-292: the verifier accepts a STOP resume as soon as its decision exists, before the Human evidence it waits for, and accepts a final REVIEW or RUN-END before decided report recoveries; a phase-end BLOCK bound to task-14 also forces a Task 14 anchor recovery ahead of the real owners (Tasks 1 and 10). |
+| CF-037 | Phase 26 TL/adapter owner: exact coordinator/port obligations in Phase 22 kit-contract-mapping.md; fid conformance alone is insufficient. |
 | CF-038 | Future causal editor of cmd/fid/live_output_test.go: same-stream coalescing hardening. Post-truncation output_bytes documentation half closed under DEC-189/220. |
 | CF-039 | Dedicated workflow maintainer: executable cross-check of contract clauses, schema, task ownership and acceptance criteria; existing scope-audit item now formally indexed. |
-| CF-040 | Phase 25 operating-experience qualification: polish/verbosity of pre-existing views. Phase 23's new views passed VAL-073; A4 (raw Stop JSON) moved to CF-045. |
+| CF-040 | Phase 26 operating-experience qualification: polish of pre-existing views and the A6 hint on/off switch; then, after Phase 26 and live use, a full Human-output design revisit (layout, spacing, tables, scannability) (DEC-272). Also (DEC-280): `evidence-stale` has no Phase 24 `next:` row or `reason:` override, so a stale-Evidence denial names no next action; the Phase 24 journey avoids it by design. |
 | CF-041 | Workflow/CI maintainer: hosted CI runs only format, lint, build, shard verification, and the ordinary race/coverage shards. The tagged integration suite and the rebuild benchmark are local-only gates, so a green PR is not phase-level evidence. Dedicated maintenance. |
 | CF-042 | Workflow/test-infra maintainer: `cmd/fid/integration/main_test.go` binary-directory leak. Phase 23 task 1 made children reuse the parent binary and added a 24-hour prune; durable cleanup-on-kill stays in dedicated maintenance. |
 | CF-043 | Future TL (after Phase 23): open one SQLite connection per command. Each command re-opens the projection several times (`journal.ensureProjectionFresh`, `workflow.openWorkflowDB` at 32 sites), and each open re-parses the schema, about 33% of race-test CPU (`qa/esc-23-005-repair.md`). Needs planning plus VAL coverage for rebuild/catch-up file replacement, transaction scope and locking. |
 | CF-044 | Future causal editor of `cmd/fid` test helpers: `mustJournalPath` assumes one journal file, but journals split per UTC day. A gate crossing 00:00 UTC fails with `journal files = 2, want 1` (ESC-23-005 attempt 1). |
-| CF-045 | Human + Tech Lead, before Phase 24 planning: decide when and how to plan the Human operating experience from Phase 23 checklist 1 (DEC-268/271). A4 raw-JSON Stop details (`stop list`, `attention list`, `resume`); A5 Human denials omit the reason (Phase 21 two-guidance-line limit vs `05_DESIGN_PLAN.md` §6); A6 purpose/judgment hint verbosity (required by VAL-060/073); A7 `finding address` reason; A8 `--input` JSON authoring and values a Human cannot type, plus `attention resolve --help` "Run JSON input" text. Residual PARTIALs HUMAN-02a-before, HUMAN-04c-03. Unscheduled. |
+| CF-045 | SCHEDULED in Phase 24 (DEC-272; plan approved DEC-277): A4 Stop/Attention rendering, A5 Human failure reason lines, A6 once-per-section disclaimers, A7 recorded reasoning in Human views, A8 option C (`--help` input docs, `--example`, guidance), and repository-input convergence with the input-as-written digest rule. Closes when Phase 24 is accepted. |
+| CF-046 | Phase 25 TL (parallel worktrees), recorded under DEC-278. (a) A plain-copy worktree refusal returns each leaf's generic fallback `invalid-argument` (`argument:"input"`), as Phase 24 contract section 5 accepts ("refused as today"); a dedicated worktree-binding failure belongs with parallel worktrees. (b) Leaves that observe outside the Phase 24 observing-leaf list (`run.recover`, `run.checkpoint`, `artifact.verify`, terminal `issue.transition`, `resume`, `run.inspect`) keep their earlier unobservable-repository codes; decide whether they should return `repository-unavailable`. (c) `run.inspect` refuses a plain copy with `recovery-state-conflict` (`repository identity changed`, exit 4), so its Human comparison line only says `same worktree` (DEC-287). Decide, with CF-026a, whether inspection should show a different worktree. |
+| CF-047 | Phase 26 TL (qualification and baseline convergence), recorded under DEC-280: Phase 21 section 2 grammar items Phase 24 task 9a does not deliver. (a) Flag-combination rules keep pre-Phase-24 failures, often `argument:"request"`: exclusive selectors such as `issue create --epic`/`--parent`, exactly-one or at-least-one groups, and kind-conditional flags. (b) Live flag sets that differ from their accepted rows: `activity list` has live `--on` and no `--limit`, while the Phase 21 row lists `--ref` and `--limit <1..10000>`; plus any others the task 9a report lists. Until then, malformed `--since`/`--on` values reach the retained-read fallback (`argument:"request"`, DEC-285); declare their domains with that row. (c) `stats.tokens`/`stats.cost` Human success prints the JSON success envelope, despite the row's Human obligation (DEC-285). (d) The `sql`/`journal inspect` root-flag refusal still says "until its fid-cli.v1 transport is migrated", though Phase 21 section 5 keeps them outside `fid-cli.v1` (DEC-286). |
 
-CF-024/034/035 closed (IDs retired). DEC-222: CF-040/041; DEC-227/229: CF-042;
-DEC-258/259: CF-043/044; DEC-271: CF-045. See [phase decisions](../phases/phase-23/decisions.md).
+CF-024/034/035 closed (IDs retired). DEC-222: CF-040/041; DEC-227/229: CF-042; DEC-258/259: CF-043/044; DEC-271: CF-045; DEC-278/287: CF-046; DEC-280/285/286: CF-047. See [Phase 23](../phases/phase-23/decisions.md) and [Phase 24](../phases/phase-24/decisions.md) decisions.
 
 ## Environment
 
-Go/tool caches remain redirected into gitignored repository directories by
-.codex/config.toml; configuration changes require a fresh session.
+Go/tool caches stay redirected into gitignored repo directories by .codex/config.toml; config changes need a fresh session.

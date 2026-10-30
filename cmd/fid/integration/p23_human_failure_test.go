@@ -22,9 +22,13 @@ func TestP23StopFailureHumanAndJSONParity(t *testing.T) {
 		}
 	}
 	stdout, stderr, err := closureRunCommand(fixture.Project, integrationFIDBinary(t), args...)
-	want := "error: review rework budget is exhausted\nnext: an activated Human records an approved Human Outcome of class review-rework-extension for this Envelope's Issue; see fid stop list --subject envelope:" + fixture.IDs["envelope_id"] + "\n"
+	jsonOut, jsonErr, jsonExit := closureRunCommand(fixture.Project, integrationFIDBinary(t), append([]string{"--json"}, args...)...)
+	if jsonExit == nil || processExitCode(t, jsonExit) != 4 || jsonOut != "" {
+		t.Fatalf("JSON rework denial: %v %q %q", jsonExit, jsonOut, jsonErr)
+	}
+	want := p24StopFailureText(t, p23Envelope(t, jsonErr), "claim.acquire")
 	if err == nil || processExitCode(t, err) != 4 || stdout != "" || stderr != want {
-		t.Fatalf("claim acquire Human denial = (exit %v, stdout %q, stderr %q), want exit 4 and two exact lines", err, stdout, stderr)
+		t.Fatalf("claim acquire Human denial = (exit %v, stdout %q, stderr %q), want exit 4 and exact section 9 lines", err, stdout, stderr)
 	}
 	if strings.Contains(stderr, "guidance:") {
 		t.Fatalf("unexpected guidance: %q", stderr)
@@ -58,8 +62,8 @@ func TestP23StopFailureCodeMatrix(t *testing.T) {
 		return []string{"--project", a.workspace, group, leaf, "--actor", a.actor,
 			"--input", p21Input(t, a.workspace, "human-"+key, input), "--idempotency-key", key}
 	}
-	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": a.repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
-	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": a.claimID, "claim_version": a.claimVersion, "executor": map[string]any{"id": "executor-human-failure", "source": "activated-harness"}, "obligation_id": nil, "repository": a.repository}
+	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
+	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": a.claimID, "claim_version": a.claimVersion, "executor": map[string]any{"id": "executor-human-failure", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": p24ExpectedRepository(a.repository)}
 	_, gateInput := a.p22BuildArgs(t, p22ConformanceCase{Operation: "gate.run"})
 	stopResolve := func(key, id, event string) []string {
 		return mutation("stop", "resolve", key, map[string]any{"stop_id": id, "fact_event_id": event})
@@ -81,6 +85,11 @@ func TestP23StopFailureCodeMatrix(t *testing.T) {
 		{"attention-list/invalid-argument", "CodeInvalidArgument", "invalid-argument", "attention.list", a.workspace, []string{"--project", a.workspace, "attention", "list", "--subject", "issue:ISS-1"}},
 		{"stop-list/invalid-argument", "CodeInvalidArgument", "invalid-argument", "stop.list", a.workspace, []string{"--project", a.workspace, "stop", "list", "--subject", "issue:ISS-1"}},
 		{"stop-raise/invalid-argument", "CodeInvalidArgument", "invalid-argument", "stop.raise", a.workspace, mutation("stop", "raise", "stop-raise-invalid", map[string]any{})},
+		{"stop-raise/idempotency-conflict", "CodeIdempotencyConflict", "idempotency-conflict", "stop.raise", a.workspace, mutation("stop", "raise", "human-envelope-stop", map[string]any{
+			"subject": envelopeSubject, "code": "operator-stop", "blocked_actions": []string{"claim.acquire", "run.start"},
+			"details":              map[string]any{"reason": "changed operator review", "reference": "policy:human-failure"},
+			"resolution_condition": p23HumanOutcomeCondition(envelopeSubject, "security"), "resolver_capability": "stop.resolve",
+		})},
 	}
 	rework := p23StopFailureReworkFixture(t, binary)
 	cases = append(cases,
@@ -113,8 +122,8 @@ func p23StopFailureReworkFixture(t *testing.T, binary string) p23StopFailureRewo
 			"--input", p21Input(t, a.workspace, "human-"+key, input), "--idempotency-key", key}
 	}
 	envelopeID := p23EnvelopeID(t, a)
-	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": a.repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
-	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": "CLM-would-be-rework", "claim_version": 1, "executor": map[string]any{"id": "executor-would-be-rework", "source": "activated-harness"}, "obligation_id": nil, "repository": a.repository}
+	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
+	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": "CLM-would-be-rework", "claim_version": 1, "executor": map[string]any{"id": "executor-would-be-rework", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": p24ExpectedRepository(a.repository)}
 	return p23StopFailureRework{a.workspace, mutation("claim", "acquire", "rework-claim", claimInput), mutation("run", "start", "rework-run", runInput)}
 }
 
@@ -174,15 +183,11 @@ func p23AssertStopFailurePair(t *testing.T, binary string, tc p23StopFailureCase
 		t.Fatalf("%s Human succeeded: %q", tc.operation, humanOut)
 	}
 	humanStatus := processExitCode(t, humanExit)
-	wantHuman := "error: " + envelope.Error.Message + "\n"
-	if tc.code == "review-rework-exhausted" {
-		var payload map[string]any
-		if err := json.Unmarshal([]byte(jsonErr), &payload); err != nil {
-			t.Fatal(err)
-		}
-		id := p21Path(t, payload, "error", "subject", "id").(string)
-		wantHuman += "next: an activated Human records an approved Human Outcome of class review-rework-extension for this Envelope's Issue; see fid stop list --subject envelope:" + id + "\n"
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(jsonErr), &payload); err != nil {
+		t.Fatal(err)
 	}
+	wantHuman := p24StopFailureText(t, payload, tc.operation)
 	if humanStatus != jsonStatus || humanOut != "" || humanErr != wantHuman {
 		t.Fatalf("%s Human = (exit %d, stdout %q, stderr %q), JSON = (exit %d, stderr %q)", tc.name, humanStatus, humanOut, humanErr, jsonStatus, jsonErr)
 	}

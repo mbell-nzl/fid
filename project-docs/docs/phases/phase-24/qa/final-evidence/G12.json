@@ -1,0 +1,56 @@
+{
+  "id": "G12",
+  "cmd": "go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchtime 1x ./internal/journal/",
+  "cwd": "/home/mark/projects/fid",
+  "chunks": [
+    {
+      "chunk_id": "a3f24a",
+      "wall_time_seconds": 1.001649266,
+      "session_id": 94007,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "eb3fbc",
+      "wall_time_seconds": 5.000704663,
+      "session_id": 94007,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "364878",
+      "wall_time_seconds": 5.000526357,
+      "session_id": 94007,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "59ac9b",
+      "wall_time_seconds": 5.00076621,
+      "session_id": 94007,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "aa7fe3",
+      "wall_time_seconds": 5.001548093,
+      "session_id": 94007,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "4d6d09",
+      "wall_time_seconds": 5.00206914,
+      "session_id": 94007,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "ddb169",
+      "wall_time_seconds": 0.610222168,
+      "exit_code": 0,
+      "original_token_count": 78,
+      "output": "goos: linux\ngoarch: amd64\npkg: github.com/mbell-nzl/fid/internal/journal\ncpu: AMD Ryzen 7 5700G with Radeon Graphics         \nBenchmarkRebuildWorkspace100kEvents-6   \t       1\t23837852429 ns/op\t     23838 ms/rebuild\t2297029936 B/op\t34583868 allocs/op\nPASS\nok  \tgithub.com/mbell-nzl/fid/internal/journal\t26.515s\n"
+    }
+  ]
+}

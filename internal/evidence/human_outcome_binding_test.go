@@ -31,7 +31,7 @@ func TestLoadHumanOutcomeEvidenceBindingRejectsClassMismatchAsOutcomeNotPermitte
 	binding := evidenceBinding{EnvelopeID: "ENV-1", Revision: 1, IssueID: "ISS-1", Obligation: obligation}
 
 	outcomeID := "OUT-security"
-	request := EvidenceLinkRequest{ObligationID: "OBL-release", EvidenceType: "human-outcome", HumanOutcomeID: &outcomeID, TargetRepository: Repository{ProjectID: "PRJ-1"}, RequiredArtifactIDs: []string{}}
+	request := EvidenceLinkRequest{ObligationID: "OBL-release", EvidenceType: "human-outcome", HumanOutcomeID: &outcomeID, RequiredArtifactIDs: []string{}}
 	err := loadHumanOutcomeEvidenceBinding(conn, request, &binding)
 	var denied *OutcomeNotPermittedError
 	if !errors.As(err, &denied) || denied.ObligationID != "OBL-release" || denied.ObligationType != "human-outcome" || denied.OutcomeID != "OUT-security" || denied.Result != "approved" {

@@ -1,0 +1,1219 @@
+<title>fid and Kit Reset</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+/* Layout: engineering proposal. Sticky contents rail on the left, one reading column on the right,
+   wide figures (tables, terminal mockups, diagrams) allowed to run wider than the prose. */
+:root {
+  --paper: #f5f6f3;
+  --sheet: #ffffff;
+  --ink: #1c2622;
+  --muted: #5a6661;
+  --rule: #d5dad6;
+  --tint: #e9ede9;
+  --accent: #1d6a5c;
+  --accent-soft: #dcebe6;
+  --hemp: #9a6a14;
+  --hemp-soft: #f4e9d2;
+  --ok: #2f7a45;
+  --bad: #a6362f;
+  --warn: #946200;
+  --ok-soft: #e3f1e6;
+  --bad-soft: #f8e5e2;
+  --warn-soft: #f8edd4;
+  --term-bg: #17201d;
+  --term-fg: #dbe4df;
+  --term-dim: #8a9a93;
+  --term-ok: #7fd394;
+  --term-bad: #ff8f84;
+  --term-warn: #f2c66b;
+  --term-hl: #ffffff;
+  --term-cyan: #86d3d6;
+  --font-display: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #121816; --sheet: #19211e; --ink: #e2e9e5; --muted: #9aa8a2; --rule: #2e3935; --tint: #202a26;
+    --accent: #6cc4b0; --accent-soft: #1c3631; --hemp: #d9a54a; --hemp-soft: #3a2f1a;
+    --ok: #79c98d; --bad: #f08b80; --warn: #e2b456; --ok-soft: #1d3324; --bad-soft: #3b211e; --warn-soft: #3a2f17;
+    --term-bg: #0c110f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #121816; --sheet: #19211e; --ink: #e2e9e5; --muted: #9aa8a2; --rule: #2e3935; --tint: #202a26;
+  --accent: #6cc4b0; --accent-soft: #1c3631; --hemp: #d9a54a; --hemp-soft: #3a2f1a;
+  --ok: #79c98d; --bad: #f08b80; --warn: #e2b456; --ok-soft: #1d3324; --bad-soft: #3b211e; --warn-soft: #3a2f17;
+  --term-bg: #0c110f;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.6; margin: 0; }
+a { color: var(--accent); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+code { font-family: var(--font-mono); font-size: 0.88em; background: var(--tint); padding: 0.08em 0.32em; border-radius: 3px; }
+strong { font-weight: 600; }
+
+.frame {
+  display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 48px; max-width: 1240px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 96px;
+}
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; max-height: calc(100vh - 48px); overflow-y: auto; font-size: 13.5px; line-height: 1.45; }
+nav.toc .brand { font-family: var(--font-display); font-size: 19px; font-weight: 600; margin-bottom: 4px; }
+nav.toc .brand-sub { color: var(--muted); font-size: 12.5px; margin-bottom: 20px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+nav.toc li a { display: block; padding: 4px 10px; border-radius: 5px; color: var(--ink); text-decoration: none; }
+nav.toc li a:hover { background: var(--tint); }
+nav.toc .group { margin: 14px 0 4px 10px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+
+main { min-width: 0; }
+.prose { max-width: 720px; }
+.wide { max-width: 940px; }
+
+header.masthead { padding-bottom: 28px; border-bottom: 1px solid var(--rule); margin-bottom: 40px; max-width: 940px; }
+.eyebrow { font-size: 12px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--hemp); font-weight: 600; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 42px; line-height: 1.12; margin: 8px 0 14px; text-wrap: balance; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); font-size: 13.5px; align-items: center; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--hemp-soft); color: var(--hemp); }
+.chip.green { background: var(--accent-soft); color: var(--accent); }
+.lede { font-size: 18px; line-height: 1.6; margin: 22px 0 0; max-width: 760px; }
+
+.motto { margin: 28px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); overflow: hidden; }
+.motto div { padding: 16px 18px; border-right: 1px solid var(--rule); }
+.motto div:last-child { border-right: 0; }
+.motto .m-line { font-family: var(--font-display); font-size: 19px; font-weight: 600; line-height: 1.3; }
+.motto .m-own { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+section { margin: 0 0 64px; scroll-margin-top: 24px; }
+h2 { font-family: var(--font-display); font-weight: 600; font-size: 28px; line-height: 1.2; margin: 0 0 6px; text-wrap: balance; }
+h2 .num { color: var(--hemp); font-size: 0.75em; margin-right: 10px; font-family: var(--font-mono); font-weight: 500; }
+.h2-sub { color: var(--muted); margin: 0 0 22px; max-width: 720px; }
+h3 { font-size: 18px; font-weight: 600; margin: 30px 0 8px; text-wrap: balance; scroll-margin-top: 24px; }
+h4 { font-size: 13px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin: 22px 0 8px; font-weight: 600; }
+p { margin: 0 0 14px; }
+ul, ol { margin: 0 0 14px; padding-left: 22px; }
+li { margin: 4px 0; }
+li::marker { color: var(--muted); }
+
+.tbl { overflow-x: auto; margin: 10px 0 18px; border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 14px; border-bottom: 1px solid var(--rule); }
+th { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--tint); }
+tr:last-child td { border-bottom: 0; }
+td.n { font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--font-mono); font-size: 13.5px; }
+td ul { margin: 4px 0 0; padding-left: 18px; }
+
+.note { border-left: 3px solid var(--hemp); background: var(--hemp-soft); padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0; max-width: 760px; }
+.note.green { border-color: var(--accent); background: var(--accent-soft); }
+.note p:last-child, .note ul:last-child { margin-bottom: 0; }
+blockquote { margin: 16px 0; padding: 4px 0 4px 18px; border-left: 3px solid var(--rule); font-style: italic; max-width: 720px; }
+blockquote cite { display: block; font-style: normal; color: var(--muted); font-size: 13px; margin-top: 6px; }
+
+pre.term { background: var(--term-bg); color: var(--term-fg); font-family: var(--font-mono); font-size: 13.2px; line-height: 1.55; padding: 16px 18px; border-radius: 8px; overflow-x: auto; margin: 10px 0 18px; max-width: 860px; }
+pre.term .p { color: var(--term-dim); }
+pre.term .c { color: var(--term-hl); font-weight: 500; }
+pre.term .ok { color: var(--term-ok); }
+pre.term .bad { color: var(--term-bad); }
+pre.term .warn { color: var(--term-warn); }
+pre.term .dim { color: var(--term-dim); }
+pre.term .hl { color: var(--term-hl); font-weight: 600; }
+pre.term .cy { color: var(--term-cyan); }
+.term-cap { font-size: 12.5px; color: var(--muted); margin: -10px 0 18px; max-width: 860px; }
+pre.code { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; font-family: var(--font-mono); font-size: 13px; line-height: 1.55; padding: 14px 16px; overflow-x: auto; max-width: 860px; margin: 10px 0 18px; }
+pre.code .cm { color: var(--muted); }
+
+.sheet { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 28px 32px 22px; max-width: 940px; }
+.sheet-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; border-bottom: 2px solid var(--ink); padding-bottom: 12px; margin-bottom: 18px; }
+.sheet-head .t { font-family: var(--font-display); font-size: 26px; font-weight: 600; }
+.sheet-head .s { color: var(--muted); font-size: 13px; }
+.def { font-size: 18px; line-height: 1.5; margin-bottom: 18px; }
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 32px; }
+.cols > div { min-width: 0; }
+.sheet h4 { margin-top: 14px; }
+.sheet ul { padding-left: 18px; font-size: 15px; }
+.sheet .foot { border-top: 1px solid var(--rule); margin-top: 14px; padding-top: 12px; font-size: 13.5px; color: var(--muted); }
+
+.timeline { max-width: 940px; margin: 14px 0 8px; }
+.tl-axis { position: relative; height: 20px; margin-left: 64px; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tl-axis span { position: absolute; transform: translateX(-50%); }
+.tl-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; margin: 8px 0; }
+.tl-row .lbl { font-size: 13px; font-weight: 600; }
+.tl-track { position: relative; height: 34px; background: var(--tint); border-radius: 5px; }
+.seg { position: absolute; top: 0; bottom: 0; border-radius: 4px; font-size: 11.5px; line-height: 1.2; padding: 3px 7px; overflow: hidden; display: flex; align-items: center; border: 1px solid var(--sheet); }
+.seg.a { background: var(--accent-soft); color: var(--accent); }
+.seg.b { background: var(--hemp-soft); color: var(--hemp); }
+.seg.c { background: var(--accent); color: var(--sheet); }
+.seg.d { background: repeating-linear-gradient(135deg, var(--tint), var(--tint) 6px, var(--rule) 6px, var(--rule) 8px); color: var(--muted); }
+.tl-marks { position: relative; height: 66px; margin-left: 64px; }
+.mark { position: absolute; top: 0; transform: translateX(-50%); font-size: 11.5px; color: var(--ink); text-align: center; white-space: nowrap; }
+.mark::before { content: ""; display: block; width: 1px; height: 10px; background: var(--ink); margin: 0 auto 2px; }
+.mark.r { color: var(--bad); }
+.mark.r::before { background: var(--bad); }
+.mark.low::before { height: 30px; }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); max-width: 940px; margin: 18px 0; }
+.stats div { padding: 14px 16px; border-right: 1px solid var(--rule); min-width: 0; }
+.stats div:last-child { border-right: 0; }
+.stats .v { font-family: var(--font-display); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stats .k { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+
+.diagram { max-width: 940px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); padding: 22px; margin: 14px 0 20px; overflow-x: auto; }
+.dg { display: grid; grid-template-columns: minmax(170px, 1fr) 46px minmax(200px, 1.2fr) 46px minmax(170px, 1fr); align-items: stretch; min-width: 720px; }
+.box { border: 1.5px solid var(--ink); border-radius: 8px; padding: 12px 14px; background: var(--paper); font-size: 13.5px; line-height: 1.45; }
+.box .bt { font-weight: 600; font-size: 14.5px; margin-bottom: 4px; }
+.box .bs { color: var(--muted); font-size: 12.5px; }
+.box.k { border-color: var(--hemp); }
+.box.f { border-color: var(--accent); border-width: 2px; }
+.box.h { border-style: dashed; }
+.arrow { display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: 11px; color: var(--muted); text-align: center; line-height: 1.2; }
+.arrow .ar { font-size: 20px; color: var(--ink); line-height: 1; }
+.dg-col { display: grid; gap: 10px; align-content: center; }
+.dg-under { min-width: 720px; display: grid; grid-template-columns: minmax(170px, 1fr) 46px minmax(200px, 1.2fr) 46px minmax(170px, 1fr); margin-top: 10px; }
+.dg-cap { font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+
+.flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; max-width: 940px; margin: 14px 0 18px; }
+.step { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 14px; min-width: 0; font-size: 14px; }
+.step .sn { font-family: var(--font-mono); color: var(--hemp); font-size: 12px; font-weight: 600; }
+.step .st { font-weight: 600; font-size: 15.5px; margin: 2px 0 6px; }
+.step ul { padding-left: 16px; margin: 0; font-size: 13.5px; }
+
+.lessons { counter-reset: l; list-style: none; padding: 0; max-width: 760px; }
+.lessons li { counter-increment: l; position: relative; padding: 10px 0 10px 40px; border-bottom: 1px solid var(--rule); margin: 0; }
+.lessons li::before { content: counter(l); position: absolute; left: 0; top: 10px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-size: 13px; display: grid; place-items: center; }
+
+.pill { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px; white-space: nowrap; background: var(--tint); color: var(--muted); }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+
+.idea-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 940px; }
+.idea { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px; min-width: 0; }
+.idea h3 { margin-top: 0; font-size: 16px; }
+.idea ul { font-size: 14.5px; margin-bottom: 0; }
+
+.found-list { display: grid; gap: 14px; max-width: 940px; }
+.found { background: var(--sheet); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 22px; }
+.found-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; margin-bottom: 8px; }
+.found-head .fn { font-family: var(--font-mono); color: var(--hemp); font-weight: 600; font-size: 13px; }
+.found-head .ft { font-weight: 600; font-size: 17px; }
+.found p, .found ul { font-size: 15px; }
+.found .rec { border-top: 1px solid var(--rule); margin-top: 10px; padding-top: 10px; font-size: 15px; }
+.found .rec strong { color: var(--accent); }
+
+.decisions { display: grid; gap: 10px; max-width: 880px; }
+.dec { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; }
+.dec .dn { font-family: var(--font-mono); font-weight: 600; color: var(--hemp); }
+.dec .dq { font-weight: 600; }
+.dec .dr { font-size: 14px; color: var(--muted); margin-top: 4px; }
+
+@media (max-width: 900px) {
+  .frame { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-block: 24px 64px; }
+  nav.toc { position: static; max-height: none; border-bottom: 1px solid var(--rule); padding-bottom: 16px; }
+  .cols, .idea-grid { grid-template-columns: minmax(0, 1fr); }
+  .motto, .stats { grid-template-columns: minmax(0, 1fr); }
+  .motto div, .stats div { border-right: 0; border-bottom: 1px solid var(--rule); }
+  .flow { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 32px; }
+  .sheet { padding: 20px 18px; }
+}
+</style>
+
+<div class="frame">
+<nav class="toc" aria-label="Contents">
+  <div class="brand">fid and Kit Reset</div>
+  <div class="brand-sub">Proposal · revised 29 October 2026</div>
+  <ol>
+    <li><a href="#summary">Summary</a></li>
+    <li class="group">Context</li>
+    <li><a href="#intent">1 · What you set out to do</a></li>
+    <li><a href="#achieved">2 · What exists today</a></li>
+    <li><a href="#diagnosis">3 · Why it feels stuck</a></li>
+    <li class="group">The proposal</li>
+    <li><a href="#fid-onepager">4 · fid on one page</a></li>
+    <li><a href="#kit-onepager">5 · The kit on one page</a></li>
+    <li><a href="#fit">6 · How the pieces fit</a></li>
+    <li><a href="#foundations">7 · Foundations to settle first</a></li>
+    <li class="group">Design detail</li>
+    <li><a href="#human">8 · The human interface</a></li>
+    <li><a href="#coordination">9 · Agent coordination</a></li>
+    <li><a href="#prose">10 · Where prose lives</a></li>
+    <li><a href="#findings">11 · Reviews and findings</a></li>
+    <li><a href="#validation">12 · Validation contracts</a></li>
+    <li><a href="#lanes">13 · Risk lanes</a></li>
+    <li><a href="#loop">14 · The loop</a></li>
+    <li class="group">Evidence</li>
+    <li><a href="#research">15 · What the research says</a></li>
+    <li><a href="#review">16 · Independent review</a></li>
+    <li class="group">Wrap-up</li>
+    <li><a href="#ideas">17 · Everything we discussed</a></li>
+    <li><a href="#plan">18 · Plan and kill criteria</a></li>
+    <li><a href="#how">19 · How to run the reset</a></li>
+    <li><a href="#decisions">20 · Decisions for you</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="masthead" id="summary">
+  <div class="eyebrow">fid · Agentic Engineering Kit · whet</div>
+  <h1>fid and Kit Reset</h1>
+  <div class="meta">
+    <span class="chip green">Revised after independent review and research</span>
+    <span>29 October 2026, during Phase 24 Human QA</span>
+    <span>Sources: the fid, kit, whet, kauri and atlas repositories, the <a href="https://claude.ai/artifact/1npbFXTrdS8eLrwMz8W3YL">Codex landscape report</a>, and our conversation</span>
+  </div>
+  <p class="lede">After five months, fid and the kit both hold real engineering, but neither is in daily use. They have been blocking each other, and the workflow built to make them has turned into agent waterfall. This proposal narrows fid to a ledger that proves agent work, with a human interface as good as whet's. It reduces the kit to a small skills plugin. It starts with a thin facade over fid's existing kernel and settles five foundations before any code changes. Rigour moves out of prose and into tests, receipts and records that fid enforces.</p>
+  <div class="motto" role="list">
+    <div role="listitem"><div class="m-line">Agents write the code.</div><div class="m-own">The kit: technique, as skills and one reviewer agent.</div></div>
+    <div role="listitem"><div class="m-line">Tools prove it.</div><div class="m-own">fid: state and evidence, held deterministically.</div></div>
+    <div role="listitem"><div class="m-line">Humans decide.</div><div class="m-own">fid's human CLI: drop in, see the situation, approve or redirect.</div></div>
+  </div>
+  <div class="note green" style="margin-top:22px">
+    <p><strong>What changed in this revision.</strong></p>
+    <ul>
+      <li>An independent Opus 5.5 review ran experiments against the repositories (<a href="#review">section 16</a>). As a result:
+        <ul>
+          <li>fid now gets a facade over its existing kernel instead of a concept collapse.</li>
+          <li>Five foundations are settled first: where the ledger lives, worktrees, the trust anchor for checks, approval integrity, and what "done" means.</li>
+          <li>Lanes are computed by fid and the plan is approved by you.</li>
+          <li>The loop reads fid state instead of exit codes.</li>
+          <li>The measurement plan is stronger, and several facts are corrected.</li>
+        </ul></li>
+      <li>The Codex research report (<a href="#research">section 15</a>) confirmed the core direction and tightened the hook, receipt and reviewer claims.</li>
+    </ul>
+  </div>
+</header>
+
+<!-- 1 -->
+<section id="intent" class="prose">
+  <h2><span class="num">1</span>What you set out to do</h2>
+  <p class="h2-sub">The goal under both projects, in your words and from the original charter.</p>
+  <blockquote>"I was excited about the idea of trying to craft my own tools and figure out for myself the best ways to build agent-driven engineering workflows, i.e. agents write all code and review most of it, but the engineering quality is high."<cite>You, in this conversation</cite></blockquote>
+  <p>Three goals ran through the work:</p>
+  <ol>
+    <li><strong>Learn by building.</strong> Find out how far agent-driven development can go when the engineering bar stays high, by making the tools yourself instead of adopting someone else's method. whet was the first round of this; its README calls it "a deliberate learning exercise".</li>
+    <li><strong>fid: durable state for agents.</strong> The May spec described a local-first, agent-first issue tracker. Hash-based IDs let parallel agents create issues without coordinating. An append-only journal makes state survive sessions and chat compaction. Machine-readable output keeps agents cheap to run. The charter later added the core principle: <em>evidence is observed, not reported</em>.</li>
+    <li><strong>The kit: a reusable method.</strong> A versioned engineering workflow you could install in any repository and run with Codex or Claude Code. It keeps project truth separate from the method, and asks for human judgment only where it matters.</li>
+  </ol>
+  <p>Those goals still hold up. The research report finds the same gaps across the industry: durable state outside the conversation, trusted evidence that work was done, and human attention as the scarce resource.</p>
+</section>
+
+<!-- 2 -->
+<section id="achieved">
+  <h2><span class="num">2</span>What exists today</h2>
+  <p class="h2-sub prose">A brief synopsis. The full record is in each repository's <code>project-docs/</code>.</p>
+
+  <div class="timeline" aria-label="Timeline from May to October 2026">
+    <div class="tl-axis">
+      <span style="left:0%">23 May</span><span style="left:5.7%">Jun</span><span style="left:24.5%">Jul</span><span style="left:44%">Aug</span><span style="left:63.5%">Sep</span><span style="left:82.4%">Oct</span><span style="left:98%">29 Oct</span>
+    </div>
+    <div class="tl-row"><div class="lbl">fid</div>
+      <div class="tl-track">
+        <div class="seg b" style="left:0;width:8.2%">Spec</div>
+        <div class="seg a" style="left:8.2%;width:27%">V1 · Phases 0–17</div>
+        <div class="seg a" style="left:35.2%;width:13.2%">Ph 18–19</div>
+        <div class="seg c" style="left:49.1%;width:50.9%">V2 convergence · Phases 20–24</div>
+      </div>
+    </div>
+    <div class="tl-row"><div class="lbl">Kit</div>
+      <div class="tl-track">
+        <div class="seg a" style="left:0;width:35.2%">V1 workflow in use</div>
+        <div class="seg c" style="left:35.2%;width:31.5%">V2 contracts, harness, reconciliation</div>
+        <div class="seg d" style="left:66.7%;width:33.3%">Waiting on fid</div>
+      </div>
+    </div>
+    <div class="tl-marks">
+      <div class="mark" style="left:35.2%">v0.1.0 · kit v1.0.0<br>18 Jul</div>
+      <div class="mark r low" style="left:47.8%">Viability review<br>7 Aug</div>
+      <div class="mark" style="left:66.7%">Kit last commit<br>6 Sep</div>
+    </div>
+  </div>
+  <p class="term-cap">Kit V2 started before July 18 (its deterministic harness, V2-2, closed on 26 July), so the kit segments are approximate.</p>
+
+  <div class="stats">
+    <div><div class="v">1,580</div><div class="k">fid commits across 25 phases (0–24)</div></div>
+    <div><div class="v">47k / 87k</div><div class="k">lines of Go product code / tests; 62.8% statement coverage (77% in August)</div></div>
+    <div><div class="v">1.8M</div><div class="k">words of markdown in <code>project-docs/</code></div></div>
+    <div><div class="v">DEC-292</div><div class="k">latest of about 290 decision records</div></div>
+  </div>
+
+  <div class="wide">
+  <h3>fid</h3>
+  <ul>
+    <li><strong>v0.1.0, 18 July:</strong> the core issue layer (Phases 0–17), built on a journal-canonical store with a derived SQLite projection. It covers epics, tasks, subtasks, acceptance criteria, labels, links, claims, workflows and the ready queue.</li>
+    <li><strong>7–9 August:</strong> the viability review scored fid about 4.7 out of 10. It recommended freezing features and running a ten-task comparative trial. The V2 direction session (ADR-0010, 0011, 0012) chose to converge fid with the kit's backend contract instead. Gate C deliberately skipped a live trial, because active projects were on the V1 kit.</li>
+    <li><strong>Phases 20–24</strong> delivered vertical slices:
+      <ul>
+        <li>20: a standalone Issue journey with a canonical JSON contract;</li>
+        <li>21: a one-Issue skeleton covering activation, authority, execution, trusted Receipts, evidence, guarded completion, resume and export;</li>
+        <li>22: failure and recovery, including linked successor Runs and budgets;</li>
+        <li>23: Review and Human judgment. Its first Human checklist failed (2 fail, 6 partial) and led to tasks 19–21.</li>
+        <li>24: operating experience, covering human failure lines, help, 39 <code>--example</code> templates and repository observation.</li>
+      </ul></li>
+    <li><strong>Phase 24 status:</strong> tasks 1–14 and 9a are complete, and 63 deterministic validations pass. The final review is blocked on the Human checklist (36 pass, 1 fail, 103 partial, 3 blank) and two report-only receipts. Phases 25 (parallel and evolving work) and 26 (qualification) are still on the roadmap.</li>
+    <li><strong>Size of the command surface:</strong> 33 top-level commands and 95 leaf commands. Most writes need <code>--actor</code>, <code>--idempotency-key</code> and often <code>--expected-revision</code>.</li>
+  </ul>
+
+  <h3>The kit</h3>
+  <ul>
+    <li><strong>v1.0.0, 18 July:</strong> the assurance-oriented workflow fid is built with. It has six role prompts, validation contracts, QA windows and Human checklists. <strong>kauri</strong> also uses it, and has the same symptom: 566k words of project docs while still in its early phases.</li>
+    <li><strong>V2</strong> has three parts:
+      <ul>
+        <li>V2-0, the contract;</li>
+        <li>V2-1, an <code>agentic</code> distribution CLI that packages, installs, diffs, upgrades and rolls back provider projections;</li>
+        <li>V2-2, a deterministic harness with a <code>ClaimNext</code> engine and scenario tests for rework, budgets, parallel isolation and interruption recovery.</li>
+      </ul>
+      V2-3 (fid integration) stalled on 6 September. About 12k lines of Go and 169k words of docs in total.</li>
+  </ul>
+
+  <h3>What is worth keeping</h3>
+  <ul>
+    <li><strong>The fid kernel:</strong>
+      <ul>
+        <li>journal and rebuild;</li>
+        <li>gate execution with an environment allowlist;</li>
+        <li>evidence bound to tree, worktree and dirty state;</li>
+        <li>fail-closed authority and idempotency;</li>
+        <li>Reviews with profiles, coverage and severities;</li>
+        <li>Deviations, budgets and <code>review-rework-exhausted</code>;</li>
+        <li>export.</li>
+      </ul></li>
+    <li><strong>Read models that already do most of the work:</strong> <code>fid resume --json</code> returns the whole task aggregate, covering issue, claim, run, repository, obligations, stops, findings, reviews, approvals and next actions. <code>fid ready</code> is the start of <code>fid next</code>.</li>
+    <li><strong>Your skills</strong> (<code>tdd</code>, <code>diagnose</code>, <code>zoom-out</code>, <code>task-pack</code>, <code>architecture-review</code> and others). They are 170–430 words each.</li>
+    <li><strong>The kit's best ideas and code:</strong> risk lanes, a computed lane floor, reviewer profiles, and the V2-2 harness scenarios. These can be ported as tests for the new loop.</li>
+    <li><strong><code>project-docs/tools/drills/run-drills.sh</code></strong>, a seeded-defect harness that is ideal for measuring the reset.</li>
+    <li><strong>ukraine-war-atlas's lighter workflow,</strong> which already works with 12 worktrees: owned paths per agent, one integrator for shared files, a separate verification reviewer, and promotion only by you.</li>
+  </ul>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="diagnosis">
+  <h2><span class="num">3</span>Why it feels stuck</h2>
+  <p class="h2-sub prose">You called it agent waterfall. The evidence supports that.</p>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Symptom</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td>The project passed the wrong test</td><td>The August ten-task trial never ran. Five heavy phases followed. The README still says "pre-dogfood" and still describes Phase 20 as active.</td></tr>
+      <tr><td>Process outgrew product</td><td>1.8M words of docs against 47k lines of code. Phase 24 alone produced about 260k words, a 68-row validation contract and a 143-row checklist. By type, the phase archives are:
+        <ul>
+          <li>completion reports 17%;</li>
+          <li>task specs 13%;</li>
+          <li>QA plans 10%;</li>
+          <li>decisions 10%;</li>
+          <li>run ledgers 9%;</li>
+          <li>reviews 9%;</li>
+          <li>progress, triage and escalation files about 6%.</li>
+        </ul></td></tr>
+      <tr><td>Two products blocking each other</td><td>The kit waits on fid's backend port. Much of fid's heaviest surface exists for the kit. Neither has a user.</td></tr>
+      <tr><td>Orchestration bloats, in prose and in code</td><td>The Phase Runner prompt is 4,216 words and the workflow spec 13,998, while each skill is under 450. The deterministic workflow verifiers grew to about 4,700 lines of shell.</td></tr>
+      <tr><td>Ceremony built for agent speed</td><td>Human fixtures expire after 24 hours and were regenerated four times (13, 17, 26 and 29 October). The claim lease is a day; human review takes longer.</td></tr>
+      <tr><td>Reviews mostly caught weak tests</td><td>Of about 19 Phase 24 mid-phase findings, roughly 12 were weak or circular tests, 6 were missing report receipts and 1 was a product bug. Receipts can't catch a weak test; review of test adequacy can.</td></tr>
+      <tr><td>The model leaks to the user</td><td>In HUMAN-01 you could not take control from fid output alone. You got stuck on:
+        <ul>
+          <li>the outcome class (01e);</li>
+          <li>whether the Human Outcome binds to the Envelope or the Issue (01g, FAIL);</li>
+          <li>"completed" against "terminal-success" (01h);</li>
+          <li>which <code>--actor</code> to use (01j);</li>
+          <li>the Envelope revision against the Issue revision (01k).</li>
+        </ul>
+        These are concept problems, not formatting problems. The failure-clarity rows (HUMAN-02) passed 10/10.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note prose"><p>Human QA found real defects in both Phase 23 and Phase 24. Keep human judgment. Point it at experiences instead of rows.</p></div>
+</section>
+
+<!-- 4 -->
+<section id="fid-onepager">
+  <h2><span class="num">4</span>fid on one page</h2>
+  <p class="h2-sub prose">What fid becomes.</p>
+  <div class="sheet">
+    <div class="sheet-head"><span class="t">fid</span><span class="s">Local-first work ledger with receipts · Go · SQLite + append-only journal</span></div>
+    <p class="def"><strong>A work ledger with receipts for agent-written code.</strong> Git records what changed. fid records whether it was proven, and refuses "done" until it is.</p>
+    <div class="cols">
+      <div>
+        <h4>What it does</h4>
+        <ul>
+          <li>Tracks <strong>epics, tasks and subtasks</strong> with dependencies, acceptance criteria and a lane.</li>
+          <li>Records <strong>proof</strong>:
+            <ul>
+              <li>a registered check ran on this tree and passed;</li>
+              <li>a reviewer in a separate session reviewed it;</li>
+              <li>you approved this exact change.</li>
+            </ul></li>
+          <li><strong>Computes the lane floor</strong> from what changed, and <strong>refuses "done"</strong> until the lane's evidence is there.</li>
+          <li>Holds an epic's <strong>validations</strong> and closes the epic only when each one is met or waived by you.</li>
+          <li>Answers <strong>"what's next?"</strong> deterministically and claims the work atomically.</li>
+          <li>Talks to people through a <strong>whet-quality CLI</strong> and to agents through <code>--json</code>. The human view is rendered from the same JSON.</li>
+        </ul>
+      </div>
+      <div>
+        <h4>What it stops being</h4>
+        <ul>
+          <li>A backend for the kit, or a party to capability negotiation.</li>
+          <li>A store for specs, decisions or status prose.</li>
+          <li>A role system, or a surface where callers manage Envelopes, Runs, revisions and keys by hand.</li>
+        </ul>
+        <h4>How it gets there</h4>
+        <ul>
+          <li><strong>Facade first.</strong> Golden-path commands compose existing kernel leaves. 57k of the 87k test lines touch activation, Envelope, Claim or Run, so collapse internals later, and only where the facade leaks.</li>
+          <li><strong>Foundations first.</strong> Five decisions come before code (<a href="#foundations">section 7</a>).</li>
+        </ul>
+        <h4>What stays from the kernel</h4>
+        <ul>
+          <li>Journal as the record; SQLite rebuilt from it.</li>
+          <li>Evidence is observed, not reported.</li>
+          <li>Fail closed when authority, evidence or repository state is missing.</li>
+        </ul>
+      </div>
+    </div>
+    <h4>Golden-path commands</h4>
+    <div class="tbl"><table>
+      <thead><tr><th>Command</th><th>Built from</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td><code>fid next --claim</code></td><td><code>ready</code> + dependency and claim checks + <code>claim acquire</code></td><td><span class="pill warn">extend</span> <code>ready</code> ignores dependencies today</td></tr>
+        <tr><td><code>fid start</code></td><td><code>envelope create</code> + <code>activate</code> + <code>claim acquire</code> + <code>run start</code></td><td><span class="pill ok">facade</span></td></tr>
+        <tr><td><code>fid check</code></td><td><code>gate run</code> + <code>evidence link</code></td><td><span class="pill ok">facade</span></td></tr>
+        <tr><td><code>fid review</code>, <code>fid finding address</code></td><td><code>review record</code>, <code>finding address</code></td><td><span class="pill ok">facade</span> flags instead of JSON</td></tr>
+        <tr><td><code>fid done</code></td><td><code>issue transition</code> + <code>envelope complete</code> + <code>run close</code></td><td><span class="pill ok">facade</span></td></tr>
+        <tr><td><code>fid approve</code></td><td><code>decision record-reference</code> + <code>human-outcome record</code> + <code>evidence link</code></td><td><span class="pill ok">facade</span> + tree binding</td></tr>
+        <tr><td><code>fid waive</code></td><td><code>deviation record</code></td><td><span class="pill ok">facade</span></td></tr>
+        <tr><td><code>fid status</code>, <code>fid show</code></td><td><code>resume --json</code> and list reads</td><td><span class="pill ok">facade</span> new rendering</td></tr>
+        <tr><td><code>fid block</code>, <code>fid park</code></td><td><code>stop raise</code>, <code>claim release</code></td><td><span class="pill ok">facade</span></td></tr>
+        <tr><td><code>fid check add</code></td><td><code>gate register</code> + local activation</td><td><span class="pill warn">extend</span> human-approved</td></tr>
+        <tr><td><code>fid validate add</code>, <code>fid brief</code>, <code>fid epic approve</code></td><td>Epic-level validation object</td><td><span class="pill bad">new schema</span></td></tr>
+        <tr><td>Everyday</td><td><code>init</code>, <code>list</code>, <code>new</code>, <code>edit</code>, <code>cancel</code>, <code>link</code>, <code>note</code></td><td><span class="pill ok">existing</span> renamed or wrapped</td></tr>
+        <tr><td>Plumbing</td><td><code>fid admin …</code>: journal, SQL, rebuild, export, maintenance, raw records</td><td><span class="pill ok">existing</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="foot">Ships with its own small plugin: a "using fid" skill, a SessionStart hook that adds <code>fid status</code>, and a PreToolUse hook that denies agents <code>fid approve</code>, <code>waive</code> and <code>admin</code>. Hooks are friction. fid's own refusals are the enforcement.</div>
+  </div>
+
+  <h3>Concepts people and agents see</h3>
+  <p class="prose">The kernel keeps its records. What a caller has to understand shrinks from about fifteen nouns to nine, each with one plain meaning.</p>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Surface concept</th><th>Kernel records underneath</th><th>Plain meaning</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Issue</strong></td><td>Issue (epic, task, subtask)</td><td>A unit of work, with a short description and ACs</td></tr>
+      <tr><td><strong>Owner</strong></td><td>Claim, Run, implicit Envelope</td><td>Who is working on it, until when, in which worktree</td></tr>
+      <tr><td><strong>Check</strong> and <strong>receipt</strong></td><td>Gate registration, Attempt, Receipt, Evidence, Obligation</td><td>A registered command fid ran, and the proof that it passed on this tree</td></tr>
+      <tr><td><strong>Review</strong> and <strong>finding</strong></td><td>Review Record, Review Finding</td><td>An independent verdict and the issues it raised</td></tr>
+      <tr><td><strong>Approval</strong></td><td>Decision Reference, Human Outcome</td><td>Your sign-off on this exact change</td></tr>
+      <tr><td><strong>Blocker</strong></td><td>Stop, Attention</td><td>Something that stops work, with its fix command</td></tr>
+      <tr><td><strong>Note</strong> and <strong>waiver</strong></td><td>Concern, Deviation</td><td>A recorded concern, or an accepted exception with a reason</td></tr>
+      <tr><td><strong>Lane</strong></td><td>Lane policy + computed floor</td><td>How much proof this change needs</td></tr>
+      <tr><td><strong>Validation</strong></td><td>New epic-level object</td><td>A key quality claim for the epic and how it's verified</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 5 -->
+<section id="kit-onepager">
+  <h2><span class="num">5</span>The kit on one page</h2>
+  <p class="h2-sub prose">What the kit becomes.</p>
+  <div class="sheet">
+    <div class="sheet-head"><span class="t">Agentic Engineering Kit</span><span class="s">Your engineering method as a skills plugin · Claude Code and Codex</span></div>
+    <p class="def"><strong>Your engineering method, packaged as a handful of skills, one reviewer agent and a short loop.</strong> It shows agents how to plan, build and review to your standard. fid enforces the policy; the kit explains it.</p>
+    <div class="cols">
+      <div>
+        <h4>Contents</h4>
+        <ul>
+          <li><strong><code>plan</code></strong>: write the epic brief, slice it into tasks with ACs, and propose 5–15 validations for you to approve.</li>
+          <li><strong><code>tdd</code></strong>: red/green on observable behaviour. Skip it for wiring and configuration, as Pocock's guide advises.</li>
+          <li><strong><code>reviewer</code> agent</strong>: read-only tools plus <code>fid review</code>, parameterised by profile (code, test adequacy, security). It runs in a separate session, and on another model for Assured work.</li>
+          <li><strong><code>verify-app</code></strong>: drive the real CLI or app, not only unit tests. Adapted from pstack's <code>create-verification-skill</code>.</li>
+          <li><strong><code>handoff</code></strong>: turn <code>fid brief</code> into a short human brief.</li>
+          <li><strong>The loop</strong>: a short script that reads fid state and stops when you're needed (<a href="#loop">section 14</a>).</li>
+        </ul>
+      </div>
+      <div>
+        <h4>Principles</h4>
+        <ul>
+          <li><strong>Borrow technique, own policy.</strong> Take generic skills from reputable libraries. Write your own only where your method differs.</li>
+          <li><strong>Boundaries, not personas.</strong> A subagent earns its place by a different context, permissions or model, not by a job title.</li>
+          <li><strong>Technique in skills, state in fid, sequence in code.</strong></li>
+          <li><strong>One-way dependency.</strong> The kit calls <code>fid --json</code>; fid knows nothing about the kit. The loop needs fid; the skills don't.</li>
+          <li><strong>Per-project policy</strong> (lanes, checks, protected paths, owned paths) lives in one project file. The kit pins a fid version range.</li>
+        </ul>
+        <h4>Leaves</h4>
+        <ul>
+          <li>The V2 package manager and activation rollback. Tag and archive them; the sync script remains the installer.</li>
+          <li>The Phase Runner and TL-Lite roles, and the workflow verifier scripts.</li>
+          <li>Per-phase status, triage and escalation files.</li>
+        </ul>
+      </div>
+    </div>
+    <h4>Roles become skills and boundaries</h4>
+    <div class="tbl"><table>
+      <thead><tr><th>Role today</th><th>Becomes</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Tech Lead</td><td><code>plan</code> skill + your <code>fid epic approve</code></td><td>Planning is technique; approving the plan is your decision</td></tr>
+        <tr><td>Developer</td><td><code>tdd</code> and <code>verify-app</code> skills</td><td>fid's refusals enforce receipts, so the prompt doesn't have to</td></tr>
+        <tr><td>QA Reviewer</td><td><code>reviewer</code> agent with profiles</td><td>Different context and tools are the real value; this is the one role kept as an agent</td></tr>
+        <tr><td>QA Lead</td><td><code>handoff</code> skill and <code>fid brief</code></td><td>Humans judge outcomes, not checklist rows</td></tr>
+        <tr><td>Phase Runner</td><td>Deleted: the loop plus fid state</td><td>Orchestration belongs in code, with a line budget</td></tr>
+        <tr><td>TL-Lite</td><td>Deleted</td><td>Triage is either a blocker for you or a call the agent makes inline</td></tr>
+      </tbody>
+    </table></div>
+    <div class="foot">Installation stays a copy, done by the existing <code>sync-agents.sh</code>. Claude Code reads <code>.claude/skills</code>; Codex reads <code>.agents/skills</code> and needs <code>.codex/agents/*.toml</code> plus config entries for subagents. kauri moves from the V1 kit with a short migration note.</div>
+  </div>
+
+  <h3>Lessons the five months taught</h3>
+  <p class="prose">These belong at the top of the kit's README.</p>
+  <ol class="lessons">
+    <li><strong>Orchestration bloats, in prose and in code; small skills don't.</strong> Put technique in skills, state in a tool and sequencing in a short script with a line budget.</li>
+    <li><strong>Agents' claims need receipts.</strong> "Tests pass" means nothing without proof bound to the tree that was tested.</li>
+    <li><strong>Receipts can't catch weak tests.</strong> Most review findings were about test adequacy, so review needs a test-adequacy profile.</li>
+    <li><strong>A separate-session reviewer catches real defects.</strong> Keep the reviewer and drop the paperwork around it.</li>
+    <li><strong>Status prose is a poor shared memory.</strong> Durable state belongs in a queryable tool.</li>
+    <li><strong>Humans should judge experiences, not rows.</strong> Human QA found real defects twice. HUMAN-01 said more than the other 130 rows.</li>
+    <li><strong>Contracts between unadopted products are pure cost.</strong> Build one thing someone uses, then integrate.</li>
+    <li><strong>The lighter workflow already works.</strong> In atlas: owned paths, one integrator, a verification reviewer, and promotion only by you.</li>
+  </ol>
+</section>
+
+<!-- 6 -->
+<section id="fit">
+  <h2><span class="num">6</span>How the pieces fit</h2>
+  <p class="h2-sub prose">Three jobs, one dependency direction. The ledger is shared by every worktree of a repository.</p>
+  <div class="diagram">
+    <div class="dg">
+      <div class="dg-col">
+        <div class="box k"><div class="bt">Kit plugin</div>skills · reviewer agent · loop<div class="bs">How agents write and review</div></div>
+      </div>
+      <div class="arrow"><span class="ar">→</span>loads into</div>
+      <div class="dg-col">
+        <div class="box"><div class="bt">Agents</div>Claude Code · Codex, one per worktree<div class="bs">Builder and reviewer sessions</div></div>
+      </div>
+      <div class="arrow"><span class="ar">→</span>fid --json</div>
+      <div class="dg-col">
+        <div class="box f"><div class="bt">fid ledger</div>one per repository, in the git common directory<div class="bs">Issues, receipts, reviews, approvals, blockers, validations</div></div>
+      </div>
+    </div>
+    <div class="dg-under">
+      <div class="box h"><div class="bt">Project files in git</div>code · <code>docs/specs</code> · <code>docs/adr</code> · <code>docs/epics</code> · <code>.fid.toml</code> policy<div class="bs">Prose and policy reviewed in PRs</div></div>
+      <div class="arrow"><span class="ar">↔</span>path + digest</div>
+      <div class="box"><div class="bt">CI</div>runs on the PR head<div class="bs">Trusted receipt for Standard and Assured "done"</div></div>
+      <div class="arrow"><span class="ar">←</span>fid (human)</div>
+      <div class="box h"><div class="bt">You</div><code>fid status</code> · <code>show</code> · <code>approve</code> · <code>brief</code><div class="bs">Drop in when needed</div></div>
+    </div>
+    <p class="dg-cap">fid never calls the kit. The ledger stays out of the tracked tree, so receipts aren't invalidated by recording them, and branches can't conflict over it. This is the recommended option under foundation F1.</p>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="foundations">
+  <h2><span class="num">7</span>Foundations to settle first</h2>
+  <p class="h2-sub prose">The independent review found that the first draft was silent on these. Each one changes the design, so each is decided before code. Recommendations are marked.</p>
+  <div class="found-list">
+    <div class="found" id="f1">
+      <div class="found-head"><span class="fn">F1</span><span class="ft">Where the ledger lives</span></div>
+      <p>ADR-0001 says journal merges are "textual JSONL line-merges, handled by git merge". The reviewer tested this. Two branches that each create and update issues produce a merge conflict. Keeping both sides yields duplicate event IDs and sequence numbers, and then <code>fid rebuild</code> and <code>fid issue list</code> both fail with exit 6. The cause is event IDs drawn from a per-day counter, and replay that requires contiguous sequences. A committed journal also changes the tree, which makes every receipt stale. fid's own repo ignores <code>/.fid/</code>, so this was never exercised.</p>
+      <ul>
+        <li><strong>Option A:</strong> keep the ledger out of git, at <code>$(git rev-parse --git-common-dir)/fid/</code>, with <code>fid export</code> for backup. Every worktree shares one ledger automatically.</li>
+        <li><strong>Option B:</strong> make events merge-safe (content-hash IDs, per-writer files, replay that tolerates any order) and exclude <code>.fid/</code> from the freshness tree.</li>
+      </ul>
+      <div class="rec"><strong>Recommended: A.</strong> It also solves F2. Add a two-branch scenario to the golden-path test. Revisit B only if you need the ledger on more than one machine.</div>
+    </div>
+    <div class="found" id="f2">
+      <div class="found-head"><span class="fn">F2</span><span class="ft">Worktrees and parallel agents</span></div>
+      <p>Project discovery stops at the git boundary, so each linked worktree sees its own ledger or none. Claims in one worktree are invisible to another. <code>WorktreeID</code> is a hash of the root path, so a receipt never moves between worktrees. Parallel claim semantics (<code>work.claims.v1</code>, roadmap Phase 25) are unbuilt. atlas already runs 12 worktrees.</p>
+      <div class="rec"><strong>Recommended:</strong> use a shared ledger (F1 option A) with claims keyed to issue and worktree, and an atomic <code>fid next --claim</code>. Builders can then run in parallel on different issues. Conflicts between shared files are handled by atlas-style owned paths and an integrator, then caught by CI at merge. ADR-0006's proofs of disjoint scope wait for real need.</div>
+    </div>
+    <div class="found" id="f3">
+      <div class="found-head"><span class="fn">F3</span><span class="ft">The trust anchor for checks and authority</span></div>
+      <p>Today, Kit Activation supplies gate definitions (argv, cwd, environment, timeout) and the actor authority profile. The V2 session's Gate B3 says fid never treats a mutable authoring file as runtime authority. Simply "configuring checks in <code>.fid/</code>" would break that. Separately, <code>make test</code> runs code the agent can edit in the same diff.</p>
+      <div class="rec"><strong>Recommended:</strong>
+        <ul>
+          <li><code>fid init</code> creates a local self-activation, and <code>fid check add</code> registers an immutable check that needs your approval.</li>
+          <li>fid records digests of the files that define a check (Makefile, test configuration, CI workflow).</li>
+          <li>A diff that touches those files, or deletes or skips tests, requires a test-adequacy review and raises the lane.</li>
+          <li>The environment allowlist stays.</li>
+        </ul></div>
+    </div>
+    <div class="found" id="f4">
+      <div class="found-head"><span class="fn">F4</span><span class="ft">Threat model and approval integrity</span></div>
+      <p>The first draft called the terminal prompt the source of approval integrity. That's wrong: an agent can get a pseudo-terminal through <code>script</code> or <code>expect</code>. Actor IDs are labels; in HUMAN-01j you had to act as <code>agent:builder</code>. Human-outcome Obligations are also set to no freshness, so an approval survives any later code change.</p>
+      <div class="rec"><strong>Recommended:</strong>
+        <ul>
+          <li>State the model plainly: <em>honest but fallible agents on a single-user machine</em>, as the charter's single-user trust root already assumes.</li>
+          <li>Under that model, the prompt and the PreToolUse hook are friction against mistakes.</li>
+          <li>Bind approvals to the tree, receipt IDs and review IDs, and make them go stale on change.</li>
+          <li>Show the diffstat, checks and review verdict before <code>[y/N]</code>.</li>
+          <li>For Assured work, offer a stronger path: an approval on the PR under your GitHub account, or an SSH signature.</li>
+        </ul></div>
+    </div>
+    <div class="found" id="f5">
+      <div class="found-head"><span class="fn">F5</span><span class="ft">What "done" means, and when compatibility starts</span></div>
+      <p>Local receipts are bound to a worktree and can't follow work to main. CI already runs four test shards on every PR. Under charter sections 7 and 9, the first dogfood ends the freedom to break compatibility.</p>
+      <div class="rec"><strong>Recommended:</strong>
+        <ul>
+          <li>Routine tasks and the inner loop use local receipts.</li>
+          <li>Standard and Assured tasks are done when merged with CI green; fid records the CI check run through <code>gh api</code> as the trusted receipt.</li>
+          <li>Squash the migrations and declare the baseline before dogfooding.</li>
+          <li>Dogfood with a pinned release binary.</li>
+        </ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="human">
+  <h2><span class="num">8</span>The human interface</h2>
+  <p class="h2-sub prose">fid is agent-first, but it has to be fully usable by a person who drops in. whet shows the standard: <code>✓ Person added</code> confirmations, a boxed <code>status</code> dashboard grouped by urgency, names instead of IDs, and one assembled <code>prep</code> view. It sits on a small <code>internal/display</code> package (about 330 lines plus tests) on the same stack, which fid can largely copy.</p>
+  <h3>Principles</h3>
+  <ol class="prose">
+    <li><strong>Human text is the default in a terminal</strong>, rendered from the same result as <code>--json</code>. Golden tests cover both. Any change to the <code>fid-cli.v1</code> error envelope is versioned.</li>
+    <li><strong>Lead with state and the next action.</strong> Explanations go in <code>--help</code>.</li>
+    <li><strong>Confirm every write</strong> with a ✓ line and the next step.</li>
+    <li><strong>Refusals follow What, Why and Fix</strong>, with the real values filled in.</li>
+    <li><strong>Use short refs and the current task</strong> from the branch or claim.</li>
+    <li><strong>Prompt or open <code>$EDITOR</code></strong> for input when a person is at the terminal. Agents keep JSON input.</li>
+    <li><strong>Hide the machinery</strong> (claims, runs, keys, revisions) unless <code>--verbose</code> asks for it.</li>
+    <li><strong>Use aligned key/value lines, symbols and colour roles</strong>, with a no-colour fallback.</li>
+  </ol>
+
+  <h3>Today's take-control start</h3>
+<pre class="term">error: protected Decision requires an approved reference and Human Outcome
+reason: protected-decision-required; affected_actions=envelope.complete,issue.transition-terminal-success, attention_ids=ATT-a6b825, decision_class=security, envelope_id=ENV-f0b36f, event=null, replay…
+blocked by: STP-1db83a,ATT-a6b825
+next: record the security Decision Reference and an approving Human Outcome: fid decision record-reference, fid human-outcome record (templates: --example)</pre>
+  <p class="term-cap">Captured Phase 24 output. Finishing from here took five commands, three hand-written JSON files, two kinds of revision and an actor you had to guess.</p>
+
+  <h3>The same scenario, redesigned</h3>
+  <p class="prose">These are mockups. Underneath, <code>approve</code> records the Decision Reference and Human Outcome, links the evidence and binds the approval to the tree. <code>done</code> moves the Issue to its completed state and closes the Envelope and Run.</p>
+<pre class="term"><span class="p">$</span> <span class="c">fid status</span>
+╭ <span class="hl">fid</span> ─────────────────────────────────────── <span class="dim">branch reset · 2026-10-29</span> ╮
+
+  <span class="hl">NEEDS YOU</span>
+  <span class="bad">✗</span> <span class="cy">FID-665340</span>  Harden login rate limiting      <span class="bad">approval needed</span> <span class="dim">· parked</span>
+      <span class="dim">→</span> fid approve FID-665340
+  <span class="warn">!</span> <span class="cy">FID-e3a1c0</span>  Operating experience (epic)      <span class="warn">plan awaiting approval</span>
+      <span class="dim">→</span> fid epic approve FID-e3a1c0
+
+  <span class="hl">IN PROGRESS</span>
+  <span class="warn">●</span> <span class="cy">FID-71a0c2</span>  Export validation     builder · wt-export · checks <span class="ok">✓</span> · review pending
+
+  <span class="hl">READY</span>
+  <span class="dim">○</span> <span class="cy">FID-9f13aa</span>  Tidy resume output
+╰───────────────────────────────────────────────────────────────────────╯</pre>
+<pre class="term"><span class="p">$</span> <span class="c">fid show FID-665340</span>
+<span class="cy">FID-665340</span>  <span class="hl">Harden login rate limiting</span>                          <span class="warn">needs you</span>
+  Lane       assured <span class="dim">· floor from internal/auth/** · needs checks, 2 reviews, your approval</span>
+  Owner      none <span class="dim">· parked by builder at 4c1e2a (claim released)</span>
+
+  Checks     <span class="ok">✓</span> test         passed 14:02 on tree 9b1f… clean <span class="dim">· current</span>
+  Reviews    <span class="ok">✓</span> pass  code       by reviewer (claude) <span class="dim">· 0 blocking, 2 minor</span>
+             <span class="ok">✓</span> pass  security   by reviewer (codex)  <span class="dim">· 0 findings</span>
+  Approval   <span class="bad">✗</span> missing
+
+  Next       fid approve FID-665340 --decision docs/adr/0014-rate-limits.md</pre>
+<pre class="term"><span class="p">$</span> <span class="c">fid approve FID-665340 --decision docs/adr/0014-rate-limits.md</span>
+  Change     4 files, +112 −18 <span class="dim">(internal/auth/limit.go, limit_test.go, …)</span>
+  Checks     <span class="ok">✓</span> test on tree 9b1f…
+  Reviews    <span class="ok">✓</span> code · <span class="ok">✓</span> security
+  Decision   docs/adr/0014-rate-limits.md <span class="dim">(3e9a1c…)</span>
+  Approve this exact change? Any later edit voids it. [y/N] <span class="hl">y</span>
+<span class="ok">✓ Approved.</span> Next: the loop will finish FID-665340, or run fid done FID-665340</pre>
+<pre class="term"><span class="p">$</span> <span class="c">fid done FID-71a0c2</span>
+<span class="bad">✗ Can't complete FID-71a0c2 yet</span>
+  Why   Review F-12 (major) is still open, and tests changed, so a test-adequacy review is required.
+  Fix   address F-12, then request a review with profile test-adequacy
+
+<span class="p">$</span> <span class="c">fid done FID-71a0c2 --json</span>   <span class="dim"># the agent's view (illustrative; a versioned contract change)</span>
+{"ok":false,"error":{"code":"evidence-incomplete","message":"open major finding; test-adequacy review required",
+ "blocking":[{"kind":"finding","id":"F-12","severity":"major"},{"kind":"review","profile":"test-adequacy"}],
+ "fix":[{"command":"fid finding address F-12"},{"command":"fid review FID-71a0c2 --profile test-adequacy","actor":"agent:reviewer"}]}}</pre>
+</section>
+
+<!-- 9 -->
+<section id="coordination">
+  <h2><span class="num">9</span>Agent coordination</h2>
+  <p class="h2-sub prose">Nothing that keeps agents safe is removed. It is hidden from people and made automatic for agents. Two of the first draft's defaults were unsafe and are corrected here.</p>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Mechanism</th><th>What it gives agents</th><th>After the reset</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Claim (lease)</strong></td><td>Only one builder owns a task; a crashed agent's lease expires</td><td><code>fid next --claim</code> claims atomically across worktrees. The owner's writes renew the lease. Tasks waiting on you are <strong>parked</strong>, releasing the claim, so day-long reviews don't expire anything.</td></tr>
+      <tr><td><strong>Run</strong></td><td>A session record with checkpoints; recovery through a linked successor Run (ADR-0007)</td><td>Created by <code>start</code>. On interrupt the loop calls <code>fid run abandon</code>. <code>fid show</code> offers to resume from the last checkpoint.</td></tr>
+      <tr><td><strong>Tree binding</strong></td><td>Receipts and reviews go stale when the code changes</td><td>No change. This is what makes "checks ✓ · current" trustworthy.</td></tr>
+      <tr><td><strong>Stops</strong></td><td>Circuit breakers: <code>review-rework-exhausted</code>, <code>budget-exhausted</code></td><td>Shown as blockers. <code>fid next</code> stops serving the task until you act.</td></tr>
+      <tr><td><strong>Authority</strong></td><td>A builder can't approve; the reviewer differs from the builder</td><td>A default policy from local self-activation (F3). Reviews record a <code>session_ref</code> so separate sessions can be shown.</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Defaults, corrected</h3>
+  <ul class="prose">
+    <li><strong>Idempotency key:</strong> derived from the canonical request digest plus <code>FID_SESSION</code>, never random per call. Retries after a timeout are then deduplicated automatically.</li>
+    <li><strong>Expected revision:</strong> claimed writes are exclusive, and append-only records (reviews, findings, approvals, notes) can't lose updates. Edits to mutable fields without a claim keep the check. Agents pass the revision they read; the human CLI fills it in from a fresh read and says <em>"changed since you looked"</em> on conflict.</li>
+    <li><strong>Actor:</strong> set per role by the loop or harness through <code>FID_ACTOR</code>. A non-interactive caller with no actor is refused. It never defaults to <code>human</code>.</li>
+  </ul>
+  <h3>How <code>fid next</code> chooses</h3>
+  <p class="prose">Today <code>fid ready</code> returns any unstarted task. The reviewer showed it still returns a task blocked by a dependency link. The new order:</p>
+  <ol class="prose">
+    <li>Rework first: your claimed or parked tasks with open findings.</li>
+    <li>Then unstarted tasks whose dependencies are done, in epic sequence and priority order.</li>
+    <li>Skip tasks that are claimed, blocked, waiting for you, or in an epic whose plan isn't approved.</li>
+    <li>Every skip has a typed reason code, so <code>fid next --explain</code> can say why nothing is ready.</li>
+  </ol>
+</section>
+
+<!-- 10 -->
+<section id="prose">
+  <h2><span class="num">10</span>Where prose lives</h2>
+  <p class="h2-sub prose">Prose people need to read lives in git files. State lives in fid. Issues link to their spec through <code>--spec-md</code>, which stores a path; the reset adds a digest, as Requirement and Decision References already have.</p>
+<pre class="code">docs/
+  specs/          <span class="cm">PRD, TRD, glossary: living docs, updated in the same PR as the code</span>
+  adr/            <span class="cm">decisions that outlive an epic</span>
+  epics/
+    FID-e3a1c0.md <span class="cm">epic brief: goal, approach, out of scope, why these validations (1–2 pages)</span>
+.fid.toml         <span class="cm">project policy: lanes, checks, protected and owned paths (reviewed in PRs)</span>
+$(git-common-dir)/fid/  <span class="cm">the ledger: issues, ACs, validations, findings, receipts, approvals, blockers</span></pre>
+  <div class="cols wide">
+    <div>
+      <h4>Stays as prose</h4>
+      <ul>
+        <li>Epic briefs: one per epic, short, approved by you.</li>
+        <li>Task specs, only where a description and ACs aren't enough.</li>
+        <li>Specs, updated in the same PR as the code.</li>
+        <li>ADRs for decisions that outlive an epic.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Becomes fid state</h4>
+      <ul>
+        <li>Completion reports (17% of the archive), which become receipts, reviews and <code>fid show</code>.</li>
+        <li>Run ledgers, progress, triage and escalation files.</li>
+        <li>QA plans and validation contracts, which become validations and tests.</li>
+        <li>Per-phase decision logs: small decisions become notes and waivers.</li>
+        <li><code>review-M.md</code>, <code>final-review.md</code> and <code>human-checklist.md</code>, which become reviews, findings and <code>fid brief</code>.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="prose">The research agrees with keeping documents that settle intent or decisions. Anthropic's AI-native SDLC playbook keeps an intent → spec → plan chain. What it doesn't support is duplicated status and copied validation tables.</p>
+</section>
+
+<!-- 11 -->
+<section id="findings">
+  <h2><span class="num">11</span>Reviews and findings</h2>
+  <p class="h2-sub prose">fid already has the model. <code>review record</code> takes a profile, coverage, findings with severity (<code>blocker</code>, <code>major</code>, <code>minor</code>, <code>nit</code>) and <code>resolves_finding_ids</code>. <code>finding address</code> records the builder's response. It needs a usable surface and a few rules.</p>
+<pre class="term"><span class="p">$</span> <span class="c">fid review FID-71a0c2 --profile code --verdict changes-required \
+    --finding "major internal/cli/stop.go:88  Next: line missing for resolved Stops" \
+    --finding "minor help text says 'Envelope' where the user sees 'task'"</span>
+<span class="ok">✓ Review recorded:</span> changes required <span class="dim">(1 major, 1 minor) · session rev-7f2c · tree 9b1f…</span>
+
+<span class="p">$</span> <span class="c">fid finding address F-12 --reason "fixed in 4c1e2a; added render test"</span>
+<span class="ok">✓ F-12 addressed</span> <span class="dim">· awaiting re-review</span></pre>
+  <h3>Rules</h3>
+  <ul class="prose">
+    <li>Open blocker or major findings refuse <code>fid done</code>. A re-review on the new tree closes them.</li>
+    <li>If tests, test data or check-defining files changed, a <strong>test-adequacy</strong> review is required in every lane, because weak tests were the most common defect.</li>
+    <li>Assured work needs two reviews, one from a different model, for example a reviewer run through <code>codex exec</code>.</li>
+    <li>After three rework cycles fid raises <code>review-rework-exhausted</code>, and the task comes to you.</li>
+    <li><code>fid finding promote F-13</code> turns an out-of-scope finding into a new task.</li>
+    <li>A reviewer uses Addy Osmani's criterion: approve when overall code health improves, not when the code is perfect. This avoids taste-driven review loops.</li>
+  </ul>
+</section>
+
+<!-- 12 -->
+<section id="validation">
+  <h2><span class="num">12</span>Validation contracts</h2>
+  <p class="h2-sub prose">One of the best ideas in the workflow, and the one that grew most out of proportion. The fix is to keep the contract and move its detail into tests.</p>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Row</th><th>Text (abridged)</th><th>Verdict</th></tr></thead>
+    <tbody>
+      <tr><td class="n">VAL-053</td><td>A Human takes control of a stuck journey using fid output alone.</td><td><span class="pill ok">good validation</span> A claim about the outcome, with a clear verifier.</td></tr>
+      <tr><td class="n">VAL-040</td><td>791 characters: every member each Stop line shows, the <code>Next:</code> rules, "no <code>{</code> from raw JSON"…</td><td><span class="pill warn">test spec in prose</span> It belongs in a test. The row should read "Stop views are complete and readable · check <code>stop-render</code>".</td></tr>
+    </tbody>
+  </table></div>
+  <p class="prose"><strong>A validation is a new epic-level record.</strong> Today, Obligations belong to Envelope revisions, an Envelope accepts only one gate-evidence Obligation, and acceptance criteria have no verifier. The reset therefore adds a small new schema rather than reusing Obligations as they stand:</p>
+  <ul class="prose">
+    <li>a validation has an epic, a statement, and a verifier (<code>check:&lt;name&gt;</code>, <code>review:&lt;profile&gt;</code> or <code>human</code>);</li>
+    <li>it is met only by matching evidence on the current tree;</li>
+    <li>acceptance criteria can optionally name a verifier too.</li>
+  </ul>
+<pre class="term"><span class="p">$</span> <span class="c">fid validate add FID-e3a1c0 "Every refusal names the command that fixes it" --by check:refusal-corpus</span>
+<span class="p">$</span> <span class="c">fid validate add FID-e3a1c0 "A human can take control of a stuck task from fid output alone" \
+    --by human --fixture "go test ./cmd/fid/integration -run TestTakeControlFixture"</span>
+<span class="p">$</span> <span class="c">fid epic approve FID-e3a1c0</span>   <span class="dim"># you approve the brief and validations; Standard/Assured tasks now get served</span>
+<span class="dim">…</span>
+<span class="p">$</span> <span class="c">fid show FID-e3a1c0</span>
+<span class="cy">FID-e3a1c0</span>  <span class="hl">Operating experience and input convergence</span>          epic <span class="dim">· 12/14 tasks done</span>
+  Validation  3 of 5 met
+    <span class="ok">✓</span> V1  Every refusal names the command that fixes it    check refusal-corpus <span class="dim">· tree 9b1f…</span>
+    <span class="ok">✓</span> V2  Migration baseline upgrades cleanly               check migrations <span class="dim">· tree 9b1f…</span>
+    <span class="ok">✓</span> V3  Stop/Attention views are complete and readable    check stop-render <span class="dim">· tree 9b1f…</span>
+    <span class="bad">✗</span> V4  Human can take control of a stuck task            <span class="bad">needs you</span> → fid brief FID-e3a1c0
+    <span class="dim">○</span> V5  No new concept leaks into human output            awaiting epic review (profile: ux)</pre>
+  <ul class="prose">
+    <li>The epic closes only when every validation is met or <strong>waived by you with a reason</strong> (<code>fid waive</code>, recorded as a Deviation).</li>
+    <li>Every human validation names a <strong>fixture recipe</strong>: a command that builds a fresh workspace on demand. It replaces fixtures that expire.</li>
+    <li><code>fid brief</code> lists only the <code>human</code> validations, each with its recipe and what to try. It replaces the 143-row checklist.</li>
+  </ul>
+  <h3>Life of an epic</h3>
+  <div class="flow">
+    <div class="step"><div class="sn">1</div><div class="st">Plan</div><ul><li><code>plan</code> skill writes the brief</li><li>Tasks, ACs and validations</li><li><strong>You approve the epic</strong></li></ul></div>
+    <div class="step"><div class="sn">2</div><div class="st">Build</div><ul><li>The loop takes <code>fid next --claim</code></li><li>TDD and <code>verify-app</code>, then <code>fid check</code></li><li>Specs updated in the same PR</li></ul></div>
+    <div class="step"><div class="sn">3</div><div class="st">Review</div><ul><li>The reviewer records findings by profile</li><li>Rework comes back first</li><li>An epic review checks the whole</li></ul></div>
+    <div class="step"><div class="sn">4</div><div class="st">Close</div><ul><li>Merged with CI green</li><li><code>fid brief</code> goes to you</li><li>You approve or waive, and the epic closes</li></ul></div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section id="lanes">
+  <h2><span class="num">13</span>Risk lanes</h2>
+  <p class="h2-sub prose">The kit's lanes become fid policy, set in <code>.fid.toml</code>. At <code>fid done</code>, fid computes a <strong>floor</strong> from the changed paths. Agents can raise the lane but never lower it. Following the review, classification weighs <strong>consequence and reversibility</strong>, not just surface. Classifying by surface alone made Phases 20–24 all Heavy.</p>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Lane</th><th>Required before <code>done</code></th><th>Typical work</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Routine</strong></td><td>Registered checks pass on the current tree. A test-adequacy review if tests or check files changed.</td><td>Refactors, docs, small fixes inside one package</td></tr>
+      <tr><td><strong>Standard</strong></td><td>Routine, plus a code review with no open major findings. The epic plan is approved by you. Done means merged with CI green.</td><td>Features, public interface changes while there are no users, migrations with no users</td></tr>
+      <tr><td><strong>Assured</strong></td><td>Standard, plus a second review from a different model, your approval bound to the tree, and a rollback note.</td><td>Security, authority and approval code, data loss risk, dependency or toolchain changes, protected paths, releases</td></tr>
+    </tbody>
+  </table></div>
+<pre class="code"><span class="cm"># .fid.toml (illustrative)</span>
+[lanes.assured]
+paths = ["internal/review/**", "internal/journal/**", "go.mod", ".github/workflows/**"]
+[lanes.standard]
+paths = ["cmd/fid/**", "internal/**", "migrations/**"]
+[review.test_adequacy]
+paths = ["**/*_test.go", "testdata/**", "Makefile"]</pre>
+  <h3>How the reset's own tasks would classify</h3>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Task</th><th>Lane</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Display package, <code>status</code>, <code>show</code></td><td>Standard</td><td>Public interface, but no users and reversible</td></tr>
+      <tr><td>Facade commands (<code>start</code>, <code>check</code>, <code>done</code>)</td><td>Standard</td><td>Compose existing tested leaves</td></tr>
+      <tr><td>Ledger location (F1), migration baseline</td><td>Standard</td><td>Persistence, but no users yet</td></tr>
+      <tr><td>Approval binding, self-activation, check registration</td><td>Assured</td><td>These are the trust boundary</td></tr>
+      <tr><td>README, AGENTS.md, archiving <code>project-docs/</code></td><td>Routine</td><td>Docs only</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 14 -->
+<section id="loop">
+  <h2><span class="num">14</span>The loop</h2>
+  <p class="h2-sub prose">It replaces the Phase Runner. It decides from fid's state, never from agent exit codes. fid supplies the rework order, caps and stops, so the script stays short.</p>
+<pre class="term"><span class="dim">#!/usr/bin/env bash
+# illustrative; check CLI flags against current Claude Code and Codex docs
+# fid next serves rework first and skips parked, blocked and unapproved work</span>
+set -euo pipefail
+trap 'fid run abandon --current --reason interrupted' INT TERM
+
+<span class="c">while</span> task=$(fid next --claim --json | jq -r '.task.id // empty'); [ -n "$task" ]; <span class="c">do</span>
+  FID_ACTOR=agent:builder claude -p --output-format json --max-turns 60 \
+    "Use the tdd and verify-app skills on fid task $task. Address open findings. Finish with fid check." \
+    | fid usage record --task "$task"
+
+  profile=$(fid show "$task" --json | jq -r '.review.required_profile')   <span class="dim"># code, test-adequacy, security…</span>
+  FID_ACTOR=agent:reviewer codex exec --json \
+    "Use the reviewer skill with profile $profile on fid task $task; record it with fid review." \
+    | fid usage record --task "$task"
+
+  <span class="c">case</span> $(fid show "$task" --json | jq -r '.next.kind') <span class="c">in</span>
+    ready-to-complete) fid done "$task" ;;
+    rework|needs-human|blocked) ;;                       <span class="dim"># fid decides what comes back, and when</span>
+    *) echo "unexpected state for $task" >&2; break ;;
+  <span class="c">esac</span>
+<span class="c">done</span></pre>
+  <ul class="prose">
+    <li><strong>Caps live in fid:</strong> per-task turn and token budgets (<code>budget-exhausted</code>) and three rework cycles (<code>review-rework-exhausted</code>).</li>
+    <li><strong>Usage is captured</strong> from <code>claude -p --output-format json</code> and <code>codex exec --json</code>, so tokens per task are measured, not guessed.</li>
+    <li><strong>Parallel:</strong> run one loop per worktree. <code>fid next --claim</code> is atomic over the shared ledger.</li>
+    <li><strong>Tests for the loop:</strong> port the kit's V2-2 harness scenarios (rework, budgets, interruption, parallel isolation). Give the loop a line budget, so it doesn't grow into a new 4,700-line verifier.</li>
+    <li><strong>Hooks are not the enforcement.</strong> The research found that blocking depends on exit codes, timeouts and per-event semantics, and differs between hosts. A small conformance test per host checks the friction hooks still work.</li>
+  </ul>
+</section>
+
+<!-- 15 -->
+<section id="research">
+  <h2><span class="num">15</span>What the research says</h2>
+  <p class="h2-sub prose">From the <a href="https://claude.ai/artifact/1npbFXTrdS8eLrwMz8W3YL">Codex landscape report</a> (29 October 2026, about 90 sources).</p>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Part of the plan</th><th>The field</th><th>Effect on this proposal</th></tr></thead>
+    <tbody>
+      <tr><td>Receipts as fid's differentiator</td><td><span class="pill ok">supports</span> No settled standard for trusted "done" receipts exists; verification skills only instruct agents to check.</td><td>Kept. The trust boundary is now explicit (F3, F4).</td></tr>
+      <tr><td>Small skills, one fresh-context reviewer, bounded deterministic loop</td><td><span class="pill ok">supports</span> Listed among the report's five ideas worth testing.</td><td>Kept, and treated as an experiment to measure.</td></tr>
+      <tr><td>"Roles are an anti-pattern"</td><td><span class="pill warn">pushes back</span> Superpowers and Cursor keep implementer and reviewer splits. The value is in context and permission boundaries.</td><td>Reframed as "boundaries, not personas". The reviewer gets read-only tools.</td></tr>
+      <tr><td>Hooks enforce "done needs receipt"</td><td><span class="pill warn">pushes back</span> Blocking depends on exit codes, timeouts and event types, and a hook that exists is weaker than a check that failed closed.</td><td>Hooks are now friction; fid refuses.</td></tr>
+      <tr><td>Remove planning prose</td><td><span class="pill warn">pushes back</span> Planning survives in Anthropic's playbook, Kiro, BMad and GSD. Debate is about proportion.</td><td>Keep decision-bearing documents; cut duplicated status.</td></tr>
+      <tr><td>Routine / Standard / Assured</td><td><span class="pill">local taxonomy</span> Adaptive effort is common; these names and thresholds aren't a standard.</td><td>Each lane must change evidence or authority, not paperwork.</td></tr>
+      <tr><td>Measure the workflow</td><td><span class="pill ok">supports</span> Human minutes, cost per accepted change, rework and escaped defects; track documentation-maintenance time to detect agent waterfall.</td><td>Adopted in the measurement plan.</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Candidates to borrow</h3>
+  <ul class="prose">
+    <li><strong>pstack (Lauren Tan, <code>cursor/plugins</code>):</strong> <code>create-verification-skill</code> for driving the real app, and <code>show-me-your-work</code>, an append-only decision log with evidence pointers that's close to fid's idea. Also its overnight guide: a checkable finish condition, a worktree, an escape hatch, and a morning audit by another model.</li>
+    <li><strong>Superpowers:</strong> <code>verification-before-completion</code> as the agent-side habit that fid's receipts then prove.</li>
+    <li><strong>Matt Pocock:</strong> the TDD guide's limit (no TDD for wiring or configuration) and domain-language skills. You already use <code>grill-with-docs</code>.</li>
+    <li><strong>Addy Osmani:</strong> the five-axis review skill and its code-health approval criterion.</li>
+    <li><strong>ECC:</strong> the verification-loop skill's shell discipline (<code>pipefail</code>) for checks.</li>
+    <li><strong>Beads or Backlog.md</strong> as a competitor arm in the trial, not as dependencies.</li>
+  </ul>
+</section>
+
+<!-- 16 -->
+<section id="review">
+  <h2><span class="num">16</span>Independent review</h2>
+  <p class="h2-sub prose">An Opus 5.5 reviewer at extra-high effort read the first draft against the fid, kit, whet, kauri and atlas repositories, and ran experiments in a scratch copy. It made 154 tool calls over about 22 minutes and modified no repository files.</p>
+  <blockquote>"The diagnosis holds up against the repositories, and so does the direction … As written, though, the fid design has three foundation-level holes the proposal never mentions … All of this is fixable inside the proposal's own framing. Most of it argues for a facade over the existing kernel rather than collapsing concepts inside it."<cite>Reviewer verdict, abridged</cite></blockquote>
+  <div class="tbl wide"><table>
+    <thead><tr><th>#</th><th>Finding</th><th>Severity</th><th>Disposition</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>A journal in git breaks on branch merge (reproduced), and committing it makes receipts stale</td><td><span class="pill bad">high</span></td><td><span class="pill ok">accepted</span> <a href="#f1">F1</a></td></tr>
+      <tr><td class="n">2</td><td>Worktrees and parallel agents unsupported; atlas relies on them</td><td><span class="pill bad">high</span></td><td><span class="pill ok">accepted</span> <a href="#f2">F2</a>, <a href="#coordination">§9</a></td></tr>
+      <tr><td class="n">3</td><td>Removing Kit Activation removes the trust anchor for checks and authority</td><td><span class="pill bad">high</span></td><td><span class="pill ok">accepted</span> <a href="#f3">F3</a></td></tr>
+      <tr><td class="n">4</td><td>Approval integrity overstated; approvals not bound to code</td><td><span class="pill bad">high</span></td><td><span class="pill ok">accepted</span> <a href="#f4">F4</a>, <a href="#human">§8</a></td></tr>
+      <tr><td class="n">5</td><td>Agents choose their own lane and validations; nobody approves the plan</td><td><span class="pill bad">high</span></td><td><span class="pill ok">accepted</span> <a href="#lanes">§13</a>, <code>fid epic approve</code></td></tr>
+      <tr><td class="n">6</td><td>The reset reverses accepted decisions but plans only a closing ADR</td><td><span class="pill bad">high</span></td><td><span class="pill ok">accepted</span> opening ADR-0013, <a href="#plan">§18</a></td></tr>
+      <tr><td class="n">7</td><td>fid telemetry records no tokens or minutes; the kill criteria have no baseline</td><td><span class="pill bad">high</span></td><td><span class="pill ok">accepted</span> usage capture, baseline tasks</td></tr>
+      <tr><td class="n">8</td><td>Facade over the kernel instead of a concept collapse</td><td><span class="pill bad">high</span></td><td><span class="pill ok">accepted</span> <a href="#fid-onepager">§4</a></td></tr>
+      <tr><td class="n">9</td><td>Much of the "new" surface already exists</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> golden-path status column</td></tr>
+      <tr><td class="n">10</td><td><code>fid ready</code> ignores dependencies and claims</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> <a href="#coordination">§9</a></td></tr>
+      <tr><td class="n">11</td><td>The loop lacks failure handling; kit V2-2 already has scenarios</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> <a href="#loop">§14</a></td></tr>
+      <tr><td class="n">12</td><td>Kill criteria weaker than the viability review's and the kit's plans</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> <a href="#plan">§18</a></td></tr>
+      <tr><td class="n">13</td><td>Lease expiry doesn't fit human timescales</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> parking, fixture recipes</td></tr>
+      <tr><td class="n">14</td><td>Lane table contradicts the kit classifier; surface rules recreate "Heavy by default"</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> consequence and reversibility</td></tr>
+      <tr><td class="n">15</td><td>One reviewer, and independence only an environment label</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> profiles, <code>session_ref</code>, two models for Assured</td></tr>
+      <tr><td class="n">16</td><td>Validations as epic Obligations is a new schema</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> <a href="#validation">§12</a></td></tr>
+      <tr><td class="n">17</td><td>Proposed defaults weaken safety (keys, revisions, actor)</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> <a href="#coordination">§9</a></td></tr>
+      <tr><td class="n">18</td><td>Use CI as the trusted runner for Standard and Assured</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> <a href="#f5">F5</a>, as a decision</td></tr>
+      <tr><td class="n">19</td><td>Install and provider projection aren't a file copy</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> sync script stays as installer</td></tr>
+      <tr><td class="n">20</td><td>Hooks can't "refuse done"; fid already does</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> hooks are friction</td></tr>
+      <tr><td class="n">21</td><td>Dogfood targets were dormant; dogfooding starts compatibility</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> fid and kauri, pinned binary</td></tr>
+      <tr><td class="n">22</td><td>Missing history in "what exists" and "lessons"</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> <a href="#achieved">§2</a>, <a href="#kit-onepager">§5</a></td></tr>
+      <tr><td class="n">23</td><td>Concept count and golden path don't line up</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> nine concepts, everyday commands</td></tr>
+      <tr><td class="n">24</td><td>Timeline too short for the scope</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> five-week plan, no scope growth</td></tr>
+      <tr><td class="n">25</td><td>Closing Phase 24 involves more than stated</td><td><span class="pill warn">medium</span></td><td><span class="pill ok">accepted</span> D3</td></tr>
+      <tr><td class="n">26</td><td>Smaller factual corrections</td><td><span class="pill">low</span></td><td><span class="pill ok">accepted</span> 95 leaves, about 290 DECs, 62.8% coverage, <code>make test</code>, and others</td></tr>
+      <tr><td class="n">27</td><td>Human CLI and JSON contract can drift</td><td><span class="pill">low</span></td><td><span class="pill ok">accepted</span> <a href="#human">§8</a> principle 1</td></tr>
+    </tbody>
+  </table></div>
+  <p class="prose">Every finding was accepted. The reviewer's scratch experiments (the two-branch merge and the dependency check) are in the session scratchpad. They are evidence for F1 and for the <code>fid next</code> fix.</p>
+</section>
+
+<!-- 17 -->
+<section id="ideas">
+  <h2><span class="num">17</span>Everything we discussed</h2>
+  <p class="h2-sub prose">The ideas and improvements from this conversation, the review and the research, grouped.</p>
+  <div class="idea-grid">
+    <div class="idea"><h3>Diagnosis</h3><ul>
+      <li>fid was validated as software, never as a tool.</li>
+      <li>The ten-task trial was deferred, and five heavy phases followed.</li>
+      <li>The kit and fid were blocked on each other's contracts.</li>
+      <li>HUMAN-01 failures point to too many concepts.</li>
+      <li>Most review findings were weak tests.</li>
+      <li>kauri shows the same pattern, so the method is the cause, not fid.</li>
+    </ul></div>
+    <div class="idea"><h3>Product focus</h3><ul>
+      <li>Narrow fid to receipts and proof, with the issue tracker as its backbone.</li>
+      <li>A facade over the existing kernel; collapse internals later.</li>
+      <li>Nine plain concepts and a golden path; everything else under <code>fid admin</code>.</li>
+      <li>Settle five foundations first: ledger location, worktrees, trust anchor, threat model, done.</li>
+      <li>Safe defaults: derived keys, revision checks kept where they matter, no default actor.</li>
+    </ul></div>
+    <div class="idea"><h3>Human interface</h3><ul>
+      <li>Port whet's display package.</li>
+      <li><code>status</code>, <code>show</code>, What/Why/Fix refusals, ✓ confirmations.</li>
+      <li>Approval shows the change and is bound to it.</li>
+      <li>Prompts or <code>$EDITOR</code> instead of JSON for people.</li>
+      <li>Human output is rendered from JSON, with golden tests for both.</li>
+    </ul></div>
+    <div class="idea"><h3>Work model</h3><ul>
+      <li>An epic replaces a phase; you approve its plan.</li>
+      <li>Prose in git files (briefs, specs, ADRs); state in fid; policy in <code>.fid.toml</code>.</li>
+      <li>Findings as records, with profiles, re-review, caps and promote.</li>
+      <li>Validations as a new epic record with a named verifier and fixture recipe.</li>
+      <li>Lanes computed by fid from consequence and reversibility.</li>
+      <li>Done means merged with CI green for Standard and Assured.</li>
+    </ul></div>
+    <div class="idea"><h3>Kit</h3><ul>
+      <li>Freeze V2; the kit becomes a skills plugin.</li>
+      <li>Boundaries, not personas: one reviewer agent with profiles.</li>
+      <li>A short loop driven by fid state, with tests and a line budget.</li>
+      <li>Borrow from pstack, Superpowers, Pocock, Osmani and ECC; own the policy.</li>
+      <li>One-way dependency; the sync script stays as the installer.</li>
+    </ul></div>
+    <div class="idea"><h3>Process</h3><ul>
+      <li>Close Phase 24 honestly: VAL-053 recorded as FAIL.</li>
+      <li>An opening ADR-0013 names every superseded record.</li>
+      <li>Rewrite AGENTS.md and CLAUDE.md before agents start.</li>
+      <li>No phase runner; small PRs; one <code>RESET.md</code> with plan and friction log.</li>
+      <li>A measured trial with a baseline and a competitor arm.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section id="plan">
+  <h2><span class="num">18</span>Plan and kill criteria</h2>
+  <div class="tbl wide"><table>
+    <thead><tr><th>When</th><th>Work</th><th>Done when</th></tr></thead>
+    <tbody>
+      <tr><td class="n">Week 0</td><td>
+        <ul>
+          <li>Close Phase 24 (D3).</li>
+          <li>Decide F1–F5 and the decisions in section 19.</li>
+          <li>Write ADR-0013, naming every superseded record:
+            <ul>
+              <li>ADR-0004;</li>
+              <li>the lane and capability clauses of ADR-0011 and ADR-0012;</li>
+              <li>Gates B1 and B3;</li>
+              <li>charter section 6;</li>
+              <li>roadmap section 6 and Phases 25–26;</li>
+              <li>the light-mode rule in <code>09_AI_WORKFLOW.md</code>.</li>
+            </ul></li>
+          <li>Rewrite AGENTS.md and CLAUDE.md.</li>
+          <li>Pre-register the trial tasks in <code>RESET.md</code> and run the Markdown baseline tasks.</li>
+        </ul></td><td>You've signed off the foundations and screens, and baseline numbers exist.</td></tr>
+      <tr><td class="n">Week 1</td><td>Display package; <code>status</code> and <code>show</code>; facades for <code>start</code>, <code>check</code>, <code>done</code> and <code>approve</code>; <code>next --claim</code> with the dependency fix; the ledger moved to the git common directory.</td><td>The take-control scenario takes two commands, and a two-worktree test passes.</td></tr>
+      <tr><td class="n">Week 2</td><td>Findings surface and review profiles; check registration and self-activation; approval binding; lane floor; usage capture; the fid plugin and the loop with its ported scenarios.</td><td>The golden path passes end to end, including rework, interruption and parallel runs.</td></tr>
+      <tr><td class="n">Week 3</td><td>Validations, <code>epic approve</code> and <code>brief</code>; migration baseline and pinned release; the kit stripped to the plugin; kauri migration note.</td><td>A pinned fid release is ready for dogfooding.</td></tr>
+      <tr><td class="n">Weeks 3–5</td><td>Ten pre-registered tasks across fid and kauri.</td><td>The criteria below are evaluated.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="prose"><strong>Scope rule:</strong> nothing joins the reset unless it's needed for a golden-path step or a kill criterion. Everything else goes in <code>RESET.md</code> under "later".</p>
+  <h3>The trial</h3>
+  <p class="prose">This follows the viability review's design, with the kit quality plan's thresholds.</p>
+  <ul class="prose">
+    <li><strong>Ten tasks of comparable size,</strong> pre-registered:
+      <ul>
+        <li>4 run with fid and the kit;</li>
+        <li>3 run with a competitor (Beads or Backlog.md plus a verification skill);</li>
+        <li>3 run with your Markdown workflow (baseline).</li>
+      </ul></li>
+    <li><strong>For each task, record:</strong>
+      <ul>
+        <li>active human minutes (manual log);</li>
+        <li>tokens (captured);</li>
+        <li>rework cycles;</li>
+        <li>workflow words written;</li>
+        <li>defects found later;</li>
+        <li>your answer to "would you choose this path again?"</li>
+      </ul></li>
+    <li><strong>Seeded defects:</strong> run <code>run-drills.sh</code> against each path.</li>
+  </ul>
+  <h3>Kill criteria, set in advance</h3>
+  <ul class="prose">
+    <li>Workflow words fall by at least 70% against the baseline.</li>
+    <li>fid catches at least two false, stale or inadequate claims that the other paths miss.</li>
+    <li>Human attention or tokens fall by at least 25%, and seeded-defect detection is no worse than the baseline. Any quality regression blocks adoption.</li>
+    <li>A fresh agent resumes an interrupted task from fid alone, and you take control of a stuck task in under five minutes with no outside help.</li>
+    <li>You would choose fid voluntarily for the next task.</li>
+  </ul>
+  <p class="prose">If the criteria fail, keep the receipts core as a small library or hook pack and stop building fid as a product. Either way you'll know.</p>
+  <h3>Deliberately not doing</h3>
+  <ul class="prose">
+    <li>Rewriting from scratch, or collapsing kernel concepts before the facade shows where it leaks.</li>
+    <li>Adding a TUI, dashboard, MCP server or web UI before daily use asks for one.</li>
+    <li>Per-phase decision logs. ADRs are only for decisions that outlive an epic.</li>
+    <li>Parallel-scope proofs, multi-machine sync or signed attestations until a real need appears.</li>
+  </ul>
+</section>
+
+<!-- 19 -->
+<section id="how">
+  <h2><span class="num">19</span>How to run the reset</h2>
+  <p class="h2-sub prose">Neither the V1 flow nor an unstructured "just do it". The reset is run with the new method, by hand, before the tool for it exists. Each step moves into fid as soon as that piece works.</p>
+  <div class="cols wide">
+    <div>
+      <h4>Why not the V1 flow</h4>
+      <p>By the workflow's own triggers, the reset is a public-interface and persistence change, so it would be classified Heavy. It would bring back the waterfall: a validation contract, QA windows, completion reports and another 200k words. The V1 flow has one remaining use, as the Markdown baseline arm of the trial, on small kauri tasks.</p>
+    </div>
+    <div>
+      <h4>Why not "just do it"</h4>
+      <p>Most reset tasks are specified well enough for a frontier model to finish in one session. But the foundations are decisions only you can make, and the trust-boundary code is where an unreviewed agent change hurts most. Working without structure would also drop the two things that worked: tests and an independent reviewer.</p>
+    </div>
+  </div>
+  <h3>The working method</h3>
+  <div class="tbl wide"><table>
+    <thead><tr><th>Step</th><th>What happens</th><th>Replaces</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Plan</strong></td><td>One short <code>RESET.md</code> as the epic brief. It holds the goal, the decided foundations, about 15 tasks with acceptance criteria and a lane each, 5–10 validations, the kill criteria and the pre-registered trial tasks. You approve it once.</td><td>Phase brief, task specs, validation contract, QA plan</td></tr>
+      <tr><td><strong>Build</strong></td><td>One interactive session per task, in a small PR, with TDD and <code>make test</code>. The PR description is the completion report.</td><td>Developer role, completion reports, run ledger</td></tr>
+      <tr><td><strong>Review</strong></td><td>A fresh session on a different model reviews each PR, focused on test adequacy: Codex reviews Claude's work, and Claude reviews Codex's. Findings go in PR review comments until <code>fid review</code> works.</td><td>QA Reviewer, QA windows, review files</td></tr>
+      <tr><td><strong>Lanes, by hand</strong></td><td>
+        <ul>
+          <li><strong>Routine:</strong> merge on green CI.</li>
+          <li><strong>Standard:</strong> also needs the cross-model review.</li>
+          <li><strong>Assured</strong> (approval binding, check registration, self-activation): also needs you to read the diff.</li>
+        </ul></td><td>Heavy, normal and light modes</td></tr>
+      <tr><td><strong>You</strong></td><td>Approve the plan, read Assured diffs and skim Standard PR summaries. At the end of weeks 1 and 2, try the take-control scenario yourself; that is the human validation.</td><td>The 143-row checklist</td></tr>
+      <tr><td><strong>Decisions</strong></td><td>Small decisions go in the PR description. The reversal of earlier decisions is recorded once, in ADR-0013.</td><td>Per-phase <code>decisions.md</code></td></tr>
+    </tbody>
+  </table></div>
+  <h3>Switch to fid as it comes to life</h3>
+  <ul class="prose">
+    <li><strong>Once <code>status</code>, <code>show</code> and <code>next</code> work</strong> (about week 1), move the remaining reset tasks from <code>RESET.md</code> into fid, run reviews through <code>fid review</code>, and start the friction log. From then on, fid tracks its own construction. This is the real dogfood moment.</li>
+    <li><strong>Once the loop works</strong> (week 2), let it run the rest of the reset unattended. The reset becomes the loop's first real test.</li>
+    <li><strong>Log minutes and tokens on every reset task.</strong> This is early data for the trial.</li>
+  </ul>
+  <h3>First, change what agents read</h3>
+  <p class="prose"><code>CLAUDE.md</code> and <code>AGENTS.md</code> still describe Heavy mode, the Phase Runner and validation contracts, and the generated role agents are still registered. Any session pointed at the repository would drag the work back into the V1 flow. Before the first task:</p>
+  <ol class="prose">
+    <li><strong>Close Phase 24</strong> (D3). Done: DEC-293 closes it with VAL-053 recorded as FAIL and HUMAN-05 as superseded.</li>
+    <li><strong>Settle F1–F5 and the decisions below</strong> in one focused session, about an hour, run as a grilling session against this report.</li>
+    <li><strong>Write ADR-0013 and <code>RESET.md</code>.</strong></li>
+    <li><strong>Rewrite <code>AGENTS.md</code> to about a page and simplify <code>CLAUDE.md</code>.</strong> Archive the role agents, keeping only a short reviewer agent converted from the QA Reviewer prompt. That reviewer is the first piece of the new kit.</li>
+  </ol>
+  <p class="prose">That is about a day of work. Every task after it is an ordinary session.</p>
+  <h3>Running the kit in parallel</h3>
+  <p class="prose">The kit can move at the same time because the dependency runs one way. The skills and the reviewer agent don't need fid at all; only the loop does. Two rules keep the products from blocking each other again:</p>
+  <ul class="prose">
+    <li>The kit consumes only the golden-path commands fid ships, through <code>--json</code>.</li>
+    <li>If the kit needs something from fid, that need becomes a task in fid's <code>RESET.md</code>, not a contract document between the two repositories.</li>
+  </ul>
+  <div class="tbl wide"><table>
+    <thead><tr><th>When</th><th>Kit track</th><th>Meets the fid track at</th></tr></thead>
+    <tbody>
+      <tr><td class="n">Week 0</td><td>Tag V2 as archived and add a README note. Convert the QA Reviewer prompt into the <code>reviewer</code> agent with profiles.</td><td>The fid reset uses this reviewer from its first PR. The reset is the kit's first customer.</td></tr>
+      <tr><td class="n">Weeks 1–2</td><td>
+        <ul>
+          <li>Write <code>plan</code>, <code>verify-app</code> and <code>handoff</code>.</li>
+          <li>Adopt <code>tdd</code> and verification skills from the research candidates.</li>
+          <li>Package the plugin, using <code>sync-agents.sh</code> as the installer.</li>
+          <li>Add a small conformance test showing skills and the reviewer are discovered and run in both Claude Code and Codex.</li>
+        </ul></td><td>Each skill is tried on the next fid reset task before it is called done.</td></tr>
+      <tr><td class="n">Week 2</td><td>Write the loop against fid's golden path, and port the V2-2 harness scenarios as its tests.</td><td>The loop needs <code>next --claim</code>, <code>show --json</code>, <code>done</code> and usage capture from fid's week 1 and 2 work.</td></tr>
+      <tr><td class="n">Week 3</td><td>Pin a fid version range. Write the kauri migration note from the V1 kit. Install the plugin in kauri.</td><td>kauri becomes the second dogfood project, now with fid.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="prose"><strong>Who works where:</strong> run the two tracks in separate repositories and sessions. Let one model build one track and review the other. For example, Codex builds the kit and reviews fid's PRs, while Claude builds fid and reviews the kit's. Each model then does both cross-model review and building.</p>
+</section>
+
+<!-- 20 -->
+<section id="decisions">
+  <h2><span class="num">20</span>Decisions for you</h2>
+  <p class="h2-sub prose">Recommendations first. Most of these come from the reviewer's open questions.</p>
+  <div class="decisions">
+    <div class="dec"><div class="dn">D1</div><div><div class="dq">Freeze kit V2 and rebuild the kit as a skills plugin?</div><div class="dr">Recommended. V1 stays tagged for kauri until it migrates. V2's harness scenarios are ported as tests for the loop.</div></div></div>
+    <div class="dec"><div class="dn">D2</div><div><div class="dq">Two repositories with a one-way dependency?</div><div class="dr">Recommended. fid ships its own plugin; the kit holds the method and pins a fid version range.</div></div></div>
+    <div class="dec"><div class="dn">D3</div><div><div class="dq">How to close Phase 24?</div><div class="dr">
+      <ul>
+        <li>Record VAL-053 as FAIL (HUMAN-01g), not waived, and note that VAL-056 has only partial coverage.</li>
+        <li><strong>Decided:</strong> record HUMAN-05 as superseded. The other 100+ rows already show the current human interface fails, so finishing it adds nothing.</li>
+        <li>Commit or discard the 1,464 uncommitted lines in <code>run-ledger.md</code>.</li>
+        <li>Write one closing DEC.</li>
+        <li>The HUMAN-01 failures become the first reset tasks.</li>
+      </ul></div></div></div>
+    <div class="dec"><div class="dn">D4</div><div><div class="dq">Where does the ledger live (F1)?</div><div class="dr">Recommended: outside git in the git common directory, with export. Merge-safe events can come later.</div></div></div>
+    <div class="dec"><div class="dn">D5</div><div><div class="dq">Threat model (F4)?</div><div class="dr">Recommended: honest but fallible agents. Add a stronger PR- or signature-based approval for Assured work.</div></div></div>
+    <div class="dec"><div class="dn">D6</div><div><div class="dq">Who sets lanes and validations?</div><div class="dr">Recommended: fid computes the lane floor, the plan skill proposes the validations, and you approve the epic before Standard or Assured work starts.</div></div></div>
+    <div class="dec"><div class="dn">D7</div><div><div class="dq">What does "done" mean (F5)?</div><div class="dr">Recommended: merged with CI green for Standard and Assured; local receipts for Routine.</div></div></div>
+    <div class="dec"><div class="dn">D8</div><div><div class="dq">Are parallel worktrees in scope?</div><div class="dr">Recommended: yes, minimally. A shared ledger and atomic claims on different issues; disjoint-scope proofs later.</div></div></div>
+    <div class="dec"><div class="dn">D9</div><div><div class="dq">Facade first, or collapse concepts now?</div><div class="dr">Recommended: facade first.</div></div></div>
+    <div class="dec"><div class="dn">D10</div><div><div class="dq">Should approvals go stale when the code changes after you approve?</div><div class="dr">Recommended: yes.</div></div></div>
+    <div class="dec"><div class="dn">D11</div><div><div class="dq">Which projects dogfood, and do you accept compatibility obligations from that day?</div><div class="dr">Recommended: fid and kauri, with a pinned release, after the migration baseline. Yes, from the baseline on.</div></div></div>
+    <div class="dec"><div class="dn">D12</div><div><div class="dq">What happens to Phases 25 and 26?</div><div class="dr">Recommended: absorb what the reset needs (shared-ledger claims, usage capture) and cancel the kit qualification work.</div></div></div>
+    <div class="dec"><div class="dn">D13</div><div><div class="dq">Run a competitor arm and a Markdown baseline?</div><div class="dr">Recommended: yes. Without them the trial can only tell you fid works, not that it's worth it.</div></div></div>
+    <div class="dec"><div class="dn">D14</div><div><div class="dq">Which external skills to adopt?</div><div class="dr">Candidates in section 15. Recommended: start with pstack's verification skill and Superpowers' verification-before-completion, and adopt others as the trial shows a need.</div></div></div>
+  </div>
+</section>
+</main>
+</div>

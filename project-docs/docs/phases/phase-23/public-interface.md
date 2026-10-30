@@ -333,9 +333,9 @@ rejections follow the single order in `contracts.md` section 13.
 | repository-mismatch | `review.record` |
 | review-not-found | `review.get`; `evidence.link` with an unknown `review_id` |
 | finding-not-found | `finding.address`; `review.record` with an unknown ID in `resolves_finding_ids` or `inapplicable_findings`; `concern.dispose` with an unknown `supersedes_finding_id` |
-| concern-not-found | `concern.dispose`, by `concern_id` or by `supersedes_concern_id` |
-| deviation-not-found | `deviation.record` with an unknown `supersedes_deviation_id`; there is no `deviation get` leaf |
-| outcome-not-found | `evidence.link` with an unknown `human_outcome_id`; there is no `human-outcome get` leaf |
+| concern-not-found | `concern.dispose`, by `concern_id` or by `supersedes_concern_id`; `concern.get` (Phase 24 DEC-274) |
+| deviation-not-found | `deviation.record` with an unknown `supersedes_deviation_id`; `deviation.get` (Phase 24 DEC-274) |
+| outcome-not-found | `evidence.link` with an unknown `human_outcome_id`; `human-outcome.get` (Phase 24 DEC-274) |
 | requirement-not-found | `requirement.get`; `requirement.link` with an unknown `requirement_id` |
 
 Where more than one applies to the same guarded-action request, exactly one code

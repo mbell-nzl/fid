@@ -1,0 +1,21 @@
+{
+  "id": "probes",
+  "cmd": "python3 project-docs/docs/phases/phase-24/qa/final-evidence/probes.py",
+  "cwd": "/home/mark/projects/fid",
+  "chunks": [
+    {
+      "chunk_id": "69bc9c",
+      "wall_time_seconds": 1.001399962,
+      "session_id": 75198,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "6ee192",
+      "wall_time_seconds": 1.5059339459999999,
+      "exit_code": 1,
+      "original_token_count": 69,
+      "output": "Traceback (most recent call last):\n  File \"/home/mark/projects/fid/project-docs/docs/phases/phase-24/qa/final-evidence/probes.py\", line 33, in <module>\n    assert help['exit_code']==example['exit_code']==0\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+    }
+  ]
+}

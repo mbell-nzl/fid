@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/project"
 )
 
 func TestDecisionReferenceSourceMustExistAndMatchDigest(t *testing.T) {
@@ -18,19 +20,20 @@ func TestDecisionReferenceSourceMustExistAndMatchDigest(t *testing.T) {
 	}
 	sum := sha256.Sum256([]byte("approved decision\n"))
 	path := "decision.md"
-	source := Source{SourceType: "project-file", DisplayLabel: "Decision", Path: &path, Digest: "sha256:" + hex.EncodeToString(sum[:])}
-	if err := verifyDecisionSource(root, source); err != nil {
+	digest := "sha256:" + hex.EncodeToString(sum[:])
+	source := SourceInput{SourceType: "project-file", DisplayLabel: "Decision", Path: &path, Digest: &digest}
+	if _, err := project.ResolveSourceInput(root, source); err != nil {
 		t.Fatalf("matching Source rejected: %v", err)
 	}
 
-	source.Digest = "sha256:" + strings.Repeat("0", 64)
+	digest = "sha256:" + strings.Repeat("0", 64)
 	var mismatch *SourceDigestMismatchError
-	if err := verifyDecisionSource(root, source); !errors.As(err, &mismatch) {
+	if _, err := project.ResolveSourceInput(root, source); !errors.As(err, &mismatch) {
 		t.Fatalf("digest mismatch error = %T %v", err, err)
 	}
 	missing := "missing.md"
 	source.Path = &missing
-	if err := verifyDecisionSource(root, source); err == nil {
+	if _, err := project.ResolveSourceInput(root, source); err == nil {
 		t.Fatal("missing Source file accepted")
 	}
 }

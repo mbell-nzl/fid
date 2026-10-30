@@ -1,12 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
-	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -43,7 +39,10 @@ func newEnvelopeCreateCommand() *cobra.Command {
 			return err
 		}
 		var request workflow.EnvelopeCreateRequest
-		if err := decodeClosedEnvelopeInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["envelope create"], &request); err != nil {
+			return renderEnvelopeError(cmd, "envelope.create", err, actor)
+		}
+		if err := rejectAuthoredBudgetState(request.InputAsWritten); err != nil {
 			return renderEnvelopeError(cmd, "envelope.create", err, actor)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -60,6 +59,7 @@ func newEnvelopeCreateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("envelope.create"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["envelope create"])
 	return cmd
 }
 
@@ -100,7 +100,7 @@ func newEnvelopeActivateCommand() *cobra.Command {
 			return err
 		}
 		var request workflow.EnvelopeActivateRequest
-		if err := decodeClosedEnvelopeInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["envelope activate"], &request); err != nil {
 			return renderEnvelopeError(cmd, "envelope.activate", err, actor)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -117,6 +117,7 @@ func newEnvelopeActivateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("envelope.activate"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["envelope activate"])
 	return cmd
 }
 
@@ -129,7 +130,7 @@ func newEnvelopeCompleteCommand() *cobra.Command {
 			}
 		}
 		var request workflow.EnvelopeCompleteRequest
-		if err := decodeClosedEnvelopeInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["envelope complete"], &request); err != nil {
 			return renderEnvelopeError(cmd, "envelope.complete", err, actor)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
@@ -146,6 +147,7 @@ func newEnvelopeCompleteCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("envelope.complete"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["envelope complete"])
 	return cmd
 }
 
@@ -172,46 +174,11 @@ func writeEnvelopeSuccess(cmd *cobra.Command, operation string, result workflow.
 	return err
 }
 
-func decodeClosedEnvelopeInput(stdin io.Reader, path string, target any) error {
-	var payload []byte
-	var err error
-	if path == "-" {
-		payload, err = io.ReadAll(io.LimitReader(stdin, 1_048_577))
-	} else {
-		payload, err = os.ReadFile(path)
-	}
-	if err != nil {
-		return fmt.Errorf("read envelope input: %w", err)
-	}
-	if len(payload) > 1_048_576 {
-		return fmt.Errorf("envelope input exceeds 1048576 bytes")
-	}
-	if err := rejectAuthoredBudgetState(payload, target); err != nil {
-		return err
-	}
-	decoder := json.NewDecoder(strings.NewReader(string(payload)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		return fmt.Errorf("decode envelope input: %w", err)
-	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		return fmt.Errorf("envelope input must contain one object")
-	}
-	return nil
-}
-
-func rejectAuthoredBudgetState(payload []byte, target any) error {
-	if _, ok := target.(*workflow.EnvelopeCreateRequest); !ok {
-		return nil
-	}
-	var input struct {
-		Budgets []map[string]json.RawMessage `json:"budgets"`
-	}
-	if err := json.Unmarshal(payload, &input); err != nil {
-		return nil
-	}
-	for _, budget := range input.Budgets {
+// Authored budget state is a domain prohibition, including an empty or null value.
+func rejectAuthoredBudgetState(input map[string]any) error {
+	budgets, _ := input["budgets"].([]any)
+	for _, entry := range budgets {
+		budget, _ := entry.(map[string]any)
 		if _, found := budget["state"]; found {
 			return fmt.Errorf("envelope budget state is output-only")
 		}
@@ -224,9 +191,12 @@ func renderEnvelopeError(cmd *cobra.Command, operation string, cause error, acto
 	if err != nil {
 		return err
 	}
+	if failure, handled := renderJudgmentObservationError(cmd, jsonMode, operation, cause); handled {
+		return failure
+	}
 	var idempotency *journal.IdempotencyConflictError
 	if errors.As(cause, &idempotency) {
-		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": idempotency.OperationScope, "idempotency_key": idempotency.IdempotencyKey, "stored_request_digest": idempotency.StoredRequestDigest, "supplied_request_digest": idempotency.SuppliedRequestDigest})
+		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(idempotency))
 	}
 	var notFound *workflow.EnvelopeNotFoundError
 	var authority *workflow.EnvelopeAuthorityError
@@ -244,15 +214,14 @@ func renderEnvelopeError(cmd *cobra.Command, operation string, cause error, acto
 			return err
 		}
 		if !jsonMode {
-			_ = renderIssueError(cmd.ErrOrStderr(), cause)
-			return cli.NewFailureError(failure, cause)
+			return writeHumanFailure(cmd, operation, failure, cause)
 		}
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 	}
 	if errors.As(cause, &completion) {
 		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeObligationUnsatisfied, "Envelope completion obligations are unsatisfied", &cli.Subject{Type: cli.SubjectEnvelope, ID: completion.EnvelopeID}, map[string]any{"reasons": envelopeReasonValues(completion.Reasons)})
 	}
-	return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid envelope input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid envelope input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
 // envelopeStopBlockedFailure renders whichever Stop-carried denial precedence
@@ -279,8 +248,7 @@ func writeEnvelopeFailure(cmd *cobra.Command, jsonMode bool, operation string, c
 		return err
 	}
 	if !jsonMode {
-		_ = renderIssueError(cmd.ErrOrStderr(), cause)
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, operation, failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 }

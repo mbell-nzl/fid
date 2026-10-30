@@ -2,8 +2,12 @@ package workflow
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/project"
 )
 
 func TestObserveRunBudgetAppendsExternalSampleAndBoundaryEffectsExactlyOnce(t *testing.T) {
@@ -131,5 +135,28 @@ func observeBudgetAuthorize(t *testing.T, workspace, unit string, maximum int64)
 		if _, err := conn.Exec(statement.query, statement.args...); err != nil {
 			t.Fatalf("authorize budget observation statement %d: %v", index, err)
 		}
+	}
+}
+
+func TestP24BudgetObservesOmittedSourceDigest(t *testing.T) {
+	t.Parallel()
+	options, recovery := recoveryFixture(t)
+	observeBudgetAuthorize(t, options.WorkspaceRoot, "input-tokens", 10)
+	path := "base.txt"
+	value := int64(1)
+	request := RunBudgetObserveRequest{RunID: recovery.PriorRunID, ExpectedVersion: 1, BudgetName: "external", SourceSampleID: "p24-sample", SampleKind: "baseline", Value: &value, ObservedAt: time.Now().UTC().Format(time.RFC3339Nano), MeasurementRef: &project.SourceInput{SourceType: "project-file", DisplayLabel: "measurement", Path: &path}}
+	result, err := ObserveRunBudget(options, request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Sample.MeasurementRef == nil || result.Sample.MeasurementRef.Digest == "" {
+		t.Fatalf("Source = %#v", result.Sample.MeasurementRef)
+	}
+	if err := os.Remove(filepath.Join(options.WorkspaceRoot, path)); err != nil {
+		t.Fatal(err)
+	}
+	replay, err := ObserveRunBudget(options, request)
+	if err != nil || !replay.Replayed || replay.EventID != result.EventID {
+		t.Fatalf("replay = %#v %v", replay, err)
 	}
 }

@@ -14,10 +14,11 @@ import (
 )
 
 type ResumeIssue struct {
-	ID             string `json:"id"`
-	Status         string `json:"status"`
-	StatusCategory string `json:"status_category"`
-	Revision       int    `json:"revision"`
+	ID             string      `json:"id"`
+	Status         string      `json:"status"`
+	StatusCategory string      `json:"status_category"`
+	Revision       int         `json:"revision"`
+	NextStates     []NextState `json:"next_states"`
 }
 
 type ResumeClaim struct {
@@ -104,12 +105,8 @@ func resumeObservedRepository(workspaceRoot, repositoryRoot string) (Repository,
 	if err != nil {
 		return Repository{}, err
 	}
-	observation, err := project.ObserveRepository(repositoryRoot)
-	if err != nil {
-		return Repository{}, err
-	}
-	head := observation.HeadOID
-	return Repository{BaseOID: &head, CaptureSource: "git", Dirty: observation.Dirty, DirtyDigest: observation.DirtyDigest, HeadOID: observation.HeadOID, ProjectID: projectConfig.ProjectID, TreeOID: observation.TreeOID, WorktreeID: observation.WorktreeID}, nil
+	observation, err := project.ObserveRecordedRepository(repositoryRoot, projectConfig.ProjectID)
+	return Repository(observation), err
 }
 
 func resumeIssueState(conn *sql.DB, issueID string, repository Repository) (Resume, error) {
@@ -320,6 +317,7 @@ func resumeIssue(conn *sql.DB, issueID string) (ResumeIssue, bool, error) {
 		return ResumeIssue{}, false, fmt.Errorf("resume Issue: workflow state is unknown")
 	}
 	issue.StatusCategory = category
+	issue.NextStates = registry.NextStates(workflowID, issue.Status)
 	return issue, category == "completed", nil
 }
 

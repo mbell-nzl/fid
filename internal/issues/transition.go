@@ -145,7 +145,11 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	if err != nil {
 		return TransitionResult{}, err
 	}
-	requestDigest, err := issueRequestDigest("issue.transition", projectConfig.ProjectID, actor, transitionRequestValue(toState, options.ExpectedRevision))
+	request := map[string]any{"id": options.ID, "to": options.ToState}
+	if options.ExpectedRevision != nil {
+		request["expected_revision"] = *options.ExpectedRevision
+	}
+	requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "issue.transition", "project_id": projectConfig.ProjectID, "request": request}, options.Actor, map[string]string{"id": "id", "to": "--to", "expected_revision": "--expected-revision"})
 	if err != nil {
 		return TransitionResult{}, err
 	}
@@ -161,7 +165,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 			return err
 		}
 		defer closeIssueDB(conn)
-		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "issue.transition:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "issue.transition:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
 			return err
 		} else if found {
@@ -284,8 +288,4 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	}
 
 	return result, nil
-}
-
-func transitionRequestValue(toState string, expectedRevision *int) map[string]any {
-	return map[string]any{"expected_revision": expectedRevision, "to": toState}
 }

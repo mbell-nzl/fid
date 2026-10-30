@@ -31,7 +31,7 @@ var p22PortableColumns = map[string]string{
 	"execution_attempts":           "id registration_id registration_version obligation_id run_id actor_id start_repository_json resolved_policy_digest producer started_at",
 	"execution_receipts":           "id attempt_id trust_source terminal_status exit_code signal timed_out started_at ended_at terminal_repository_json toolchain_json output_excerpt output_digest output_bytes output_truncated redaction_applied rejected_artifacts_json",
 	"gate_registrations":           "id version activation_id definition_id definition_version definition_digest binding_digest project_id worktree_id scope_json policy_json authorization_provenance created_event_id created_at",
-	"idempotency_results":          "operation_scope idempotency_key request_digest result_entity_id result_event_id aggregate_sequence result_json created_at",
+	"idempotency_results":          "operation_scope idempotency_key request_digest result_entity_id result_event_id aggregate_sequence result_json created_at request_field_digests_json",
 	"issue_labels":                 "issue_id label",
 	"issues":                       "id kind parent_id title workflow_id status priority sequence spec_md_path owner_role owner_actor created_at updated_at revision",
 	"kit_activations":              "id prior_activation_id kit_identity backend_identity phase status point_of_no_return direction created_at updated_at version",

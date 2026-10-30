@@ -123,8 +123,39 @@ Every failure maps to a stable code and category. Important categories:
 - activation conflict; and
 - maintenance/recovery conflict.
 
-Human messages state what failed, the subject, and the next legitimate action.
-They never advise editing `.fid/` internals or weakening an Obligation.
+Human failures use the accepted Phase 24 section 9 order on stderr:
+
+```text
+error: <JSON message, verbatim>
+reason: <code>[; <key detail>]
+blocked by: <stop_ids, then attention_ids>
+next: <closed-table resolving action>
+```
+
+`blocked by:` appears only for nonempty blocking ID arrays. `next:` appears
+only for the closed table in
+[Phase 24 section 9](../docs/phases/phase-24/public-interface.md#9-human-failure-lines-part-3-a5-handoff-item-c),
+including grammar failures on `--input` leaves. Other failures omit it.
+Scalar details appear in key order; arrays join with commas. The reason line
+escapes controls before counting the whole line, label included. Exactly 200
+Unicode scalars stays intact; longer lines keep 200 plus `…`, dropping an
+escape crossing the cut whole. Error messages reuse their escaped, bounded
+JSON value without a second escape or cut. Generic fallbacks carry their
+caught domain cause under DEC-281/282, retaining their fixed message only for
+empty or all-whitespace causes.
+
+For example, `fid stop raise --bogus` writes:
+
+```text
+error: unknown flag: --bogus
+reason: invalid-argument; argument=--bogus, allowed=--actor|--example|--idempotency-key|--input
+next: see fid stop raise --help; template: fid stop raise --example
+```
+
+Gate terminal failures write these stderr lines after streamed stdout.
+`journal inspect` and `sql` remain Human-only diagnostics outside this
+contract. Guidance never advises editing `.fid/` internals or weakening an
+Obligation.
 
 ## 7. Accessibility And Safety
 

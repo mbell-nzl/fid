@@ -1,0 +1,14 @@
+{
+  "id": "G07",
+  "cmd": "go build -o /tmp/fid ./cmd/fid",
+  "cwd": "/home/mark/projects/fid",
+  "chunks": [
+    {
+      "chunk_id": "0ffc58",
+      "wall_time_seconds": 0.964481048,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    }
+  ]
+}

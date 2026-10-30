@@ -143,7 +143,7 @@ func TestP23AttentionResolutionHumanOutcomeReadinessRejectsWrongClassAndWrongRes
 	if err != nil || gate.Receipt == nil {
 		t.Fatalf("run qualifying gate: result=%#v error=%v", gate, err)
 	}
-	linkedGate := p23RunInput(t, a, "evidence", "link", a.actor, "attn-human-outcome-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	linkedGate := p23RunInput(t, a, "evidence", "link", a.actor, "attn-human-outcome-gate-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	assertP23HumanOutcomeSuccess(t, linkedGate)
 	assertP23HumanOutcomeStopState(t, a, "security", "open")
 

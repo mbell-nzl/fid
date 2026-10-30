@@ -83,7 +83,23 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 	if err != nil {
 		return UpdateResult{}, err
 	}
-	requestDigest, err := issueRequestDigest("issue.update", projectConfig.ProjectID, actor, updateRequestValue(request, options.ExpectedRevision))
+	input := map[string]any{"id": options.ID}
+	if options.Title != nil {
+		input["title"] = *options.Title
+	}
+	if options.Priority != nil {
+		input["priority"] = *options.Priority
+	}
+	if options.Labels != nil {
+		input["labels"] = *options.Labels
+	}
+	if options.SpecMDPath != nil {
+		input["spec_md_path"] = *options.SpecMDPath
+	}
+	if options.ExpectedRevision != nil {
+		input["expected_revision"] = *options.ExpectedRevision
+	}
+	requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "issue.update", "project_id": projectConfig.ProjectID, "request": input}, options.Actor, map[string]string{"id": "id", "title": "--title", "priority": "--priority", "labels": "--labels", "spec_md_path": "--spec-md", "expected_revision": "--expected-revision"})
 	if err != nil {
 		return UpdateResult{}, err
 	}
@@ -99,7 +115,7 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 			return err
 		}
 		defer closeIssueDB(conn)
-		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "issue.update:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "issue.update:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
 			return err
 		} else if found {
@@ -196,16 +212,6 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 	}
 
 	return result, nil
-}
-
-func updateRequestValue(request normalizedUpdateRequest, expectedRevision *int) map[string]any {
-	return map[string]any{
-		"expected_revision": expectedRevision,
-		"labels":            request.labels,
-		"priority":          request.priority,
-		"spec_md_path":      request.specMDPath,
-		"title":             request.title,
-	}
 }
 
 func loadIssueUpdateState(conn *sql.DB, issueID string) (issueUpdateState, error) {

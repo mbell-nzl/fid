@@ -35,7 +35,14 @@ func Add(options AddOptions) (AddResult, error) {
 	if err != nil {
 		return AddResult{}, err
 	}
-	digest, err := labelRequestDigest("label.add", projectConfig.ProjectID, actor, map[string]any{"colour": colour, "description": description, "name": name})
+	request := map[string]any{"name": options.Name}
+	if options.Colour != nil {
+		request["colour"] = *options.Colour
+	}
+	if options.Description != nil {
+		request["description"] = *options.Description
+	}
+	digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "label.add", "project_id": projectConfig.ProjectID, "request": request}, options.Actor, map[string]string{"name": "name", "colour": "--colour", "description": "--description"})
 	if err != nil {
 		return AddResult{}, err
 	}
@@ -43,7 +50,7 @@ func Add(options AddOptions) (AddResult, error) {
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
-		return addLabelLocked(lock, options, actor, name, colour, description, digest, &result)
+		return addLabelLocked(lock, options, actor, name, colour, description, digest, fields, &result)
 	})
 	if err != nil {
 		return AddResult{}, err
@@ -83,7 +90,7 @@ func prepareLabelAdd(options AddOptions) (string, *string, *string, standaloneAc
 	return name, colour, description, actor, labelAddArgv(name, colour, description, options.Actor, options.IdempotencyKey), nil
 }
 
-func addLabelLocked(lock *journal.WriteLock, options AddOptions, actor standaloneActor, name string, colour, description *string, digest string, result *AddResult) error {
+func addLabelLocked(lock *journal.WriteLock, options AddOptions, actor standaloneActor, name string, colour, description *string, digest string, fields map[string]string, result *AddResult) error {
 	if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 		return err
 	}
@@ -98,7 +105,7 @@ func addLabelLocked(lock *journal.WriteLock, options AddOptions, actor standalon
 	if err != nil {
 		return err
 	}
-	idempotencyRequest := journal.IdempotencyRequest{OperationScope: "label.add:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+	idempotencyRequest := journal.IdempotencyRequest{OperationScope: "label.add:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 	if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
 		return err
 	} else if found {

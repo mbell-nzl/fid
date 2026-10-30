@@ -1,0 +1,11 @@
+{
+  "cmd": "git diff --cached --check",
+  "cwd": "/home/mark/projects/fid",
+  "result": {
+    "chunk_id": "945af1",
+    "wall_time_seconds": 0.000012885,
+    "exit_code": 0,
+    "original_token_count": 0,
+    "output": ""
+  }
+}

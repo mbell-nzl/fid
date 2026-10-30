@@ -1,0 +1,58 @@
+[
+  {
+    "id": "inventory-final",
+    "cmd": "python3 project-docs/docs/phases/phase-24/qa/final-evidence/audit.py inventory",
+    "cwd": "/home/mark/projects/fid",
+    "chunks": [
+      {
+        "chunk_id": "7f547d",
+        "wall_time_seconds": 1.000872885,
+        "session_id": 18688,
+        "original_token_count": 0,
+        "output": ""
+      },
+      {
+        "chunk_id": "796889",
+        "wall_time_seconds": 5.000876066,
+        "session_id": 18688,
+        "original_token_count": 0,
+        "output": ""
+      },
+      {
+        "chunk_id": "7796b5",
+        "wall_time_seconds": 0.583988914,
+        "exit_code": 0,
+        "original_token_count": 84,
+        "output": "R1 0 45\nR2 0 1\nR3 0 126\nR4 0 55\nR5 1 0\nR6 0 4\nR7 0 16\nR9 0 43\nR10 0 63\nR11 0 21\nR13 0 3\nR14 0 1\nR19 0 4\nR20 0 23\nsection1 0   95 /tmp/tmp.1FtuJyyg1I/leaves\n  29 /tmp/tmp.1FtuJyyg1I/groups\n  39 /tmp/tmp.1FtuJyyg1I/input\n  50 /tmp/tmp.1FtuJyyg1I/keyed\n   0 /tmp/tmp.1FtuJyyg1I/no-short\n  61 /tmp/tmp.1FtuJyyg1I/typed-flags\n 274 total\n\n"
+      }
+    ]
+  },
+  {
+    "id": "assemble",
+    "cmd": "python3 project-docs/docs/phases/phase-24/qa/final-evidence/assemble.py",
+    "cwd": "/home/mark/projects/fid",
+    "chunks": [
+      {
+        "chunk_id": "d9fa70",
+        "wall_time_seconds": 0.000017884,
+        "exit_code": 0,
+        "original_token_count": 18,
+        "output": "assembled final review: 68 VAL rows; 49 QA rows; Human-only rows 143\n"
+      }
+    ]
+  },
+  {
+    "id": "validate-artifacts",
+    "cmd": "python3 project-docs/docs/phases/phase-24/qa/final-evidence/validate-artifacts.py",
+    "cwd": "/home/mark/projects/fid",
+    "chunks": [
+      {
+        "chunk_id": "ea3854",
+        "wall_time_seconds": 0.000013415,
+        "exit_code": 0,
+        "original_token_count": 22,
+        "output": "PASS artifact completeness: 68 VAL, 49 QA, 143 Human-only rows, 346 valid local links\n"
+      }
+    ]
+  }
+]

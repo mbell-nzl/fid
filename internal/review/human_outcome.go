@@ -23,7 +23,7 @@ type HumanOutcomeRequest struct {
 	Result     string        `json:"result"`
 	Scope      DecisionScope `json:"scope"`
 	Reasoning  string        `json:"reasoning"`
-	References []Source      `json:"references"`
+	References []SourceInput `json:"references"`
 }
 
 type HumanOutcomeMutationResult struct {
@@ -84,18 +84,18 @@ func RecordHumanOutcome(options JudgmentOptions, request HumanOutcomeRequest) (H
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-		if actor.ActorType != "human" || !contains(actor.Capabilities, "human-outcome.record") {
-			return &AuthorityMissingError{Operation: "human-outcome.record", ActorID: options.ActorID}
-		}
-		digest, err := judgmentDigest("human-outcome.record", projectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"operation": "human-outcome.record", "project_id": projectID, "actor_id": options.ActorID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "human-outcome.record:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: "human-outcome.record:" + projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
 			return replayHumanOutcome(replay, options.IdempotencyKey, &result)
+		}
+		if actor.ActorType != "human" || !contains(actor.Capabilities, "human-outcome.record") {
+			return &AuthorityMissingError{Operation: "human-outcome.record", ActorID: options.ActorID}
 		}
 		if exists, err := rowExists(conn, "human_outcomes", request.ID); err != nil {
 			return err
@@ -115,7 +115,11 @@ func RecordHumanOutcome(options JudgmentOptions, request HumanOutcomeRequest) (H
 		if err != nil {
 			return err
 		}
-		referencesJSON, err := journal.MarshalCanonicalJSON(request.References)
+		references, err := resolveSources(options.WorkspaceRoot, request.References, repository, "references")
+		if err != nil {
+			return err
+		}
+		referencesJSON, err := journal.MarshalCanonicalJSON(references)
 		if err != nil {
 			return err
 		}
@@ -134,7 +138,7 @@ func RecordHumanOutcome(options JudgmentOptions, request HumanOutcomeRequest) (H
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "human-outcome.recorded", ActorV2: judgmentActor(actor), Aggregate: journal.Aggregate{ID: request.ID, Sequence: 1, Type: "human-outcome"}, CommandName: "human-outcome.record", Repository: journalRepository(repository), Effects: effects}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
 			setJudgmentEventIdentity(prepared.Effects, prepared)
-			value := humanOutcomeValue(request, provenance, prepared)
+			value := humanOutcomeValue(request, references, provenance, prepared)
 			finalizeDecisionResolutionValues(stops, attention, prepared)
 			payload, err := journal.MarshalCanonicalJSON(map[string]any{"outcome": value, "protected_decisions": decisions, "stops": stops, "attention": attention, "idempotency_key": options.IdempotencyKey, "replayed": false})
 			return journal.IdempotencyMutation{EntityID: request.ID, ResultJSON: string(payload)}, err
@@ -198,12 +202,12 @@ func loadActorProvenance(conn *sql.DB, actorID string) (actorProvenance, error) 
 	return provenance, err
 }
 
-func humanOutcomeValue(request HumanOutcomeRequest, provenance actorProvenance, event journal.Event) map[string]any {
+func humanOutcomeValue(request HumanOutcomeRequest, references []Source, provenance actorProvenance, event journal.Event) map[string]any {
 	return map[string]any{
 		"id": request.ID, "actor_id": event.ActorV2.ActorID,
 		"provenance": map[string]any{"activation_id": provenance.ActivationID, "activation_version": provenance.ActivationVersion, "profile_ref": provenance.ProfileRef},
 		"class":      request.Class, "subject": map[string]any{"type": request.Subject.Type, "id": request.Subject.ID},
-		"result": request.Result, "scope": map[string]any{"issue_id": request.Scope.IssueID}, "reasoning": request.Reasoning, "references": request.References,
+		"result": request.Result, "scope": map[string]any{"issue_id": request.Scope.IssueID}, "reasoning": request.Reasoning, "references": references,
 		"created_at": event.OccurredAt.UTC().Format(time.RFC3339Nano), "event_id": event.EventID,
 	}
 }
@@ -212,6 +216,9 @@ func loadHumanOutcome(conn *sql.DB, id string) (map[string]any, error) {
 	var actorID, activationID, profileRef, class, subjectType, subjectID, result, scopeIssueID, reasoning, refsJSON, createdAt, eventID string
 	var activationVersion int
 	err := conn.QueryRow(`SELECT actor_id,activation_id,activation_version,profile_ref,class,subject_type,subject_id,result,scope_issue_id,reasoning,references_json,created_at,created_event_id FROM human_outcomes WHERE id=?`, id).Scan(&actorID, &activationID, &activationVersion, &profileRef, &class, &subjectType, &subjectID, &result, &scopeIssueID, &reasoning, &refsJSON, &createdAt, &eventID)
+	if err == sql.ErrNoRows {
+		return nil, &HumanOutcomeNotFoundError{ID: id}
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -236,4 +243,23 @@ func replayHumanOutcome(outcome journal.IdempotencyOutcome, key string, result *
 	decoded.IdempotencyKey, decoded.Replayed, decoded.EventID = key, outcome.Replayed, outcome.EventID
 	*result = decoded
 	return nil
+}
+
+// GetHumanOutcome returns the same record as the corresponding list item.
+func GetHumanOutcome(workspaceRoot, migrationsDir, id string) (map[string]any, error) {
+	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
+		return nil, err
+	}
+	conn, err := fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	if err != nil {
+		return nil, fmt.Errorf("open human outcome projection: %w", err)
+	}
+	defer func() { _ = conn.Close() }()
+	return loadHumanOutcome(conn, id)
+}
+
+type HumanOutcomeNotFoundError struct{ ID string }
+
+func (err *HumanOutcomeNotFoundError) Error() string {
+	return fmt.Sprintf("Human Outcome %q was not found", err.ID)
 }

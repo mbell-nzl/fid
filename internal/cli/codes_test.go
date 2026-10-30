@@ -39,6 +39,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 	t.Parallel()
 	expectations := []failureCodeExpectation{
 		{CodeInvalidArgument, CategoryInvalidInput, false, nil, argumentDetails()},
+		{CodeOperationUnavailable, CategoryInvalidInput, false, nil, argumentDetails()},
 		{CodeUnsupportedKind, CategoryInvalidInput, false, nil, argumentDetails()},
 		{CodeUnsupportedRelation, CategoryInvalidInput, false, nil, argumentDetails()},
 		{CodeProjectNotFound, CategoryNotFound, false, []SubjectType{SubjectProject}, stringDetails("path")},
@@ -128,7 +129,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeReviewReworkExhausted, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, budgetDenialDetails()},
 		{CodeEvidenceTypeNotAccepted, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("obligation_id"), stringDetail("evidence_type"), {name: "accepted_evidence_types", kind: detailStringsKind}}},
 		{CodeOutcomeNotPermitted, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("obligation_id"), stringDetail("obligation_type"), stringDetail("outcome_id"), stringDetail("result")}},
-		{CodeRepositoryMismatch, CategoryConflict, false, nil, []detailExpectation{{name: "expected", kind: detailObjectKind, children: repositoryExpectations()}, {name: "observed", kind: detailObjectKind, children: repositoryExpectations()}}},
+		{CodeRepositoryMismatch, CategoryConflict, false, nil, []detailExpectation{{name: "expected", kind: detailObjectKind, children: []detailExpectation{{name: "head_oid", kind: detailStringKind}, {name: "dirty", kind: detailBooleanKind}}}, {name: "observed", kind: detailObjectKind, children: repositoryExpectations()}}},
 		{CodeReviewNotFound, CategoryNotFound, false, []SubjectType{SubjectReview}, stringDetails("id")},
 		{CodeGateUnsuccessful, CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt}, []detailExpectation{
 			stringDetail("attempt_id"), stringDetail("receipt_id"), stringDetail("outcome"), nullableIntegerDetail("exit_code"), nullableStringDetail("signal"), {name: "timed_out", kind: detailBooleanKind},
@@ -163,8 +164,9 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			{name: "event", kind: detailObjectKind, nullable: true, children: []detailExpectation{stringDetail("id"), stringDetail("occurred_at")}}, {name: "replayed", kind: detailBooleanKind},
 		}},
 		{CodeSourceDigestMismatch, CategoryPrecondition, false, nil, []detailExpectation{
-			stringDetail("display_label"), nullableStringDetail("path"), stringDetail("expected_digest"), nullableStringDetail("observed_digest"),
+			stringDetail("display_label"), nullableStringDetail("path"), nullableStringDetail("expected_digest"), nullableStringDetail("observed_digest"),
 		}},
+		{CodeRepositoryUnavailable, CategoryPrecondition, true, nil, []detailExpectation{stringDetail("reason"), stringDetail("detail")}},
 		{CodeHumanOutcomeRequired, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, []detailExpectation{
 			stringDetail("envelope_id"), stringDetail("obligation_id"), stringDetail("outcome_class"),
 			{name: "stop_ids", kind: detailStringsKind}, {name: "attention_ids", kind: detailStringsKind},

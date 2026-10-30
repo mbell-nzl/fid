@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -18,7 +19,7 @@ const (
 	task9PrechangeJournalDigest = "8fdf19380c9cf8e1627bbde730e5554e3d0f3b3006ffcff7e21d6162197f11df"
 )
 
-func TestTask9PrechangeBudgetObservedJournalReplaysWithoutMutation(t *testing.T) {
+func TestTask9PrechangeBudgetObservedJournalFailsClosedWithoutMutation(t *testing.T) {
 	t.Parallel()
 	encoded, err := os.ReadFile(filepath.Join("testdata", "task9-prechange-budget-observed.jsonl.gz.b64"))
 	if err != nil {
@@ -55,12 +56,10 @@ func TestTask9PrechangeBudgetObservedJournalReplaysWithoutMutation(t *testing.T)
 	if err := os.WriteFile(journalPath, journalBytes, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	stats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t))
-	if err != nil {
-		t.Fatalf("replay pre-change journal: %v", err)
-	}
-	if stats.EventsReplayed != 18 {
-		t.Fatalf("replayed Events = %d, want 18", stats.EventsReplayed)
+	_, err = RebuildWorkspace(workspace, testProjectMigrationsDir(t))
+	var corrupt *CorruptJournalError
+	if !errors.As(err, &corrupt) || corrupt.Line != 2 || !strings.Contains(err.Error(), "request_field_digests_json") {
+		t.Fatalf("rebuild pre-change journal = %v, want line-2 missing field-digests refusal", err)
 	}
 	after, err := os.ReadFile(journalPath)
 	if err != nil {

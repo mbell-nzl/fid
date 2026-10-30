@@ -1,0 +1,579 @@
+{
+  "purpose": "HUMAN-05 / VAL-057 fixture preparation under DEC-292 clause 1(c); Human judgments remain pending",
+  "prepared_at_local": "2026-10-29T17:14:27.751716+13:00",
+  "working_directory": "/home/mark/projects/fid",
+  "command": "FID_P24_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/phase-24-human go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 -run '^TestP24HumanFixtures$' -count=1 ./cmd/fid/integration",
+  "results": [
+    {
+      "chunk_id": "8b6821",
+      "wall_time_seconds": 1.001126387,
+      "session_id": 57409,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "c9b0c2",
+      "wall_time_seconds": 5.001252703,
+      "session_id": 57409,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "481bfb",
+      "wall_time_seconds": 5.001039753,
+      "session_id": 57409,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "7985bc",
+      "wall_time_seconds": 5.001329742,
+      "session_id": 57409,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "chunk_id": "04f455",
+      "wall_time_seconds": 1.0169e-05,
+      "exit_code": 0,
+      "original_token_count": 15,
+      "output": "ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t70.403s\n"
+    }
+  ],
+  "identity": {
+    "fixture_dir": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364",
+    "binary": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+    "manifest_sha256": "2a7840a5cfc6eae1ce77f2e552e3faa83d16b164ae89d1f57cce331ddc55a028",
+    "binary_sha256": "8206b5263c42edf82ac9e73438a25f25e8b0728f6f157aa3b48a64e50061afe7",
+    "head": "2f4d8ddc6998c98683dedab591c3f5d6cd44bc5b",
+    "manifest_rows": 59
+  },
+  "status_before": " M project-docs/docs/phases/phase-24/qa/human-checklist.md\n M project-docs/docs/phases/phase-24/run-ledger.md\n?? project-docs/docs/phases/phase-24/qa/fixtures-2486512064/\n?? project-docs/docs/phases/phase-24/qa/judgment-review.html\n",
+  "command_and_feasibility_validation": [
+    {
+      "command": [
+        "go",
+        "version",
+        "-m",
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid"
+      ],
+      "working_directory": "/home/mark/projects/fid",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "run",
+        "close",
+        "--help"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "run",
+        "close",
+        "--example"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "issue",
+        "list"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "resume",
+        "P22-898e4c"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "decision",
+        "record-reference",
+        "--help"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "decision",
+        "record-reference",
+        "--example"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "issue",
+        "list"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "resume",
+        "P22-f34b31"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "concern",
+        "record",
+        "--help"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "concern",
+        "record",
+        "--example"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "issue",
+        "list"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "resume",
+        "P22-fee0f6"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "working_directory": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    },
+    {
+      "command": [
+        "bash",
+        "--noprofile",
+        "--norc"
+      ],
+      "working_directory": "/home/mark/projects/fid",
+      "validation_method": "Actual public CLI/help, Git, build metadata or isolated Bash invocation with captured streams and subprocess returncode",
+      "result": "PASS (preparation only)",
+      "observed_termination": {
+        "exit_code": 0
+      }
+    }
+  ],
+  "prepared_authoring_workspaces": [
+    {
+      "name": "authoring-run-close",
+      "workspace": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "effective_claim_status": "active",
+      "claim_expires_at": "2026-10-30T04:13:05.753607477Z",
+      "claim_expires_local": "2026-10-30T17:13:05.753607+13:00",
+      "human_judgment": "pending; fixture preparation only"
+    },
+    {
+      "name": "authoring-decision-reference",
+      "workspace": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "effective_claim_status": "active",
+      "claim_expires_at": "2026-10-30T04:13:11.526744869Z",
+      "claim_expires_local": "2026-10-30T17:13:11.526744+13:00",
+      "human_judgment": "pending; fixture preparation only"
+    },
+    {
+      "name": "authoring-third-leaf",
+      "workspace": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "effective_claim_status": "active",
+      "claim_expires_at": "2026-10-30T04:13:17.05361114Z",
+      "claim_expires_local": "2026-10-30T17:13:17.053611+13:00",
+      "human_judgment": "pending; fixture preparation only"
+    }
+  ],
+  "probes": [
+    {
+      "argv": [
+        "go",
+        "version",
+        "-m",
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid"
+      ],
+      "cwd": "/home/mark/projects/fid",
+      "exit_code": 0,
+      "stdout": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid: go1.26.2\n\tpath\tgithub.com/mbell-nzl/fid/cmd/fid\n\tmod\tgithub.com/mbell-nzl/fid\tv0.1.1-0.20261025235644-2f4d8ddc6998+dirty\t\n\tdep\tgithub.com/dustin/go-humanize\tv1.0.1\th1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=\n\tdep\tgithub.com/golang-migrate/migrate/v4\tv4.19.1\th1:OCyb44lFuQfYXYLx1SCxPZQGU7mcaZ7gH9yH4jSFbBA=\n\tdep\tgithub.com/google/uuid\tv1.6.0\th1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=\n\tdep\tgithub.com/remyoudompheng/bigfft\tv0.0.0-20230129092748-24d4a6f8daec\th1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=\n\tdep\tgithub.com/spf13/cobra\tv1.10.2\th1:DMTTonx5m65Ic0GOoRY2c16WCbHxOOw6xxezuLaBpcU=\n\tdep\tgithub.com/spf13/pflag\tv1.0.9\th1:9exaQaMOCwffKiiiYk6/BndUBv+iRViNW+4lEMi0PvY=\n\tdep\tgolang.org/x/sys\tv0.42.0\th1:omrd2nAlyT5ESRdCLYdm3+fMfNFE/+Rf4bDIQImRJeo=\n\tdep\tmodernc.org/libc\tv1.72.3\th1:ZnDF4tXn4NBXFutMMQC4vtbTFSXhhKzR73fv0beZEAU=\n\tdep\tmodernc.org/mathutil\tv1.7.1\th1:GCZVGXdaN8gTqB1Mf/usp1Y/hSqgI2vAGGP4jZMCxOU=\n\tdep\tmodernc.org/memory\tv1.11.0\th1:o4QC8aMQzmcwCK3t3Ux/ZHmwFPzE6hf2Y5LbkRs+hbI=\n\tdep\tmodernc.org/sqlite\tv1.51.0\th1:aH/MMSoayAIhozZ7uJbVTT9QO/VhzBf0J9tymmmuC/U=\n\tbuild\t-buildmode=exe\n\tbuild\t-compiler=gc\n\tbuild\tCGO_ENABLED=1\n\tbuild\tCGO_CFLAGS=\n\tbuild\tCGO_CPPFLAGS=\n\tbuild\tCGO_CXXFLAGS=\n\tbuild\tCGO_LDFLAGS=\n\tbuild\tGOARCH=amd64\n\tbuild\tGOOS=linux\n\tbuild\tGOAMD64=v1\n\tbuild\tvcs=git\n\tbuild\tvcs.revision=2f4d8ddc6998c98683dedab591c3f5d6cd44bc5b\n\tbuild\tvcs.time=2026-10-25T23:56:44Z\n\tbuild\tvcs.modified=true\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "exit_code": 0,
+      "stdout": "?? .fid/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "run",
+        "close",
+        "--help"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "exit_code": 0,
+      "stdout": "Close a Run and evaluate Obligations against the observed repository.\n\nInput fields:\n  input.run_id: string, required, ID \u2014 Run ID.\n  input.expected_version: integer, required, integer range 1..unbounded \u2014 Expected current Run version.\n  input.observation_id: string, required, ID \u2014 Trusted executor Observation ID.\n  input.expected_repository: object, required \u2014 Preconditions compared with fid's repository observation.\n  input.expected_repository.head_oid: string, required, oid \u2014 Full output of git rev-parse HEAD.\n  input.expected_repository.dirty: boolean, required \u2014 True when git status --porcelain lists any path outside .fid/.\n\nTemplate: fid run close --example\n\nUsage:\n  fid run close [flags]\n\nFlags:\n      --actor string             Finalized activation actor ID\n      --example                  Print an editable JSON input template\n  -h, --help                     help for close\n      --idempotency-key string   Idempotency key\n      --input string             Close one Run from trusted observations and Evidence JSON input file (or - for stdin)\n\nGlobal Flags:\n      --json             emit fid-cli.v1 JSON\n      --project string   fid project root\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "run",
+        "close",
+        "--example"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "exit_code": 0,
+      "stdout": "{\n  \"run_id\": \"<run_id>\",\n  \"expected_version\": 1,\n  \"observation_id\": \"<observation_id>\",\n  \"expected_repository\": {\n    \"head_oid\": \"<head-oid>\",\n    \"dirty\": false\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "issue",
+        "list"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "exit_code": 0,
+      "stdout": "P22-898e4c | todo | Phase 22 conformance\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "resume",
+        "P22-898e4c"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "exit_code": 0,
+      "stdout": "Issue P22-898e4c\n  Status: todo\n  Revision: 1\n  Next states: cancelled (cancelled), in_progress (started)\n  Completion: incomplete\n  Envelope: ENV-4eab00 (revision 1, active)\n\nCurrent Run: RUN-bf7f6a\n  Status: active\n  Actor ID: actor-recovery\n  Executor ID: executor-corpus-prior\n\nClaim CLM-735df5\n  Lease status now: active\n  Recorded status: active\n  Expires: 2026-10-30T04:13:05.753607477Z\n  An active lease alone does not authorize an operation; its authority and repository checks still apply.\n\nRepository\n  Current repository: HEAD 465910d42cd5; clean\n  Recorded repository: HEAD 465910d42cd5; clean\n  Worktree comparison: same worktree\n\nNext steps\n  Candidate operations below are not an execution sequence.\n  Ready means the recorded prerequisites permit a request; supplied inputs and authority are checked when it runs.\n  Action run.inspect run:RUN-bf7f6a: ready\n    Purpose: Compare this repository with the Run's recorded start or checkpoint; inspect changed paths without recording a checkpoint.\n  Action run.observe run:RUN-bf7f6a: ready\n    Purpose: Have the activated harness record a fresh observation of whether this Run's executor is live, terminated or unknown.\n    Requires: run.observe\n  Action gate.run run:RUN-bf7f6a: blocked\n    Purpose: Execute the configured check to produce Evidence for the current work.\n    Requires: gate.run\n  budget-data-unavailable for envelope:ENV-4eab00: tokens\n  Action claim.renew claim:CLM-735df5: blocked\n    Purpose: Extend an eligible work lease after checking authority.\n    Requires: claim.renew\n  authority-unavailable for actor:actor-recovery: claim.renew\n  Action claim.release claim:CLM-735df5: ready\n    Purpose: Give up an eligible work lease after checking authority; this does not prove the work complete.\n    Requires: claim.release\n  Action concern.record issue:P22-898e4c: ready\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: concern.record\n  Action deviation.record issue:P22-898e4c: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: deviation.record\n  authority-unavailable for issue:P22-898e4c: deviation.record\n  Action decision.record-reference issue:P22-898e4c: ready\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: decision.record-reference\n  Action human-outcome.record issue:P22-898e4c: ready\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: human-outcome.record\n\nCompletion requirements\n  These describe what is needed to finish the Issue, separately from recovery checks above.\n  Obligation OBL-p22-corpus: unsatisfied\n    Evidence validity: invalid; freshness: stale; Artifacts: missing\n  obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent\n  Overall completion: incomplete\n  obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent\n  issue-not-terminal-success for issue:P22-898e4c: completed workflow category\n  Open Findings: 0\n\nReview and judgment\nReviews\n  None.\nOpen Findings\n  None.\nConcerns\n  None.\nDeviations\n  None.\nDecision References\n  None.\nHuman Outcomes\n  None.\nProtected Decisions\n  None.\n\nBudgets\nBudget attempts: remaining 3 attempts; consumed 0; maximum 3; state available\nBudget tokens: remaining unknown input-tokens; consumed unknown; maximum 10; state unknown\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-run-close",
+      "exit_code": 0,
+      "stdout": "?? .fid/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "exit_code": 0,
+      "stdout": "?? .fid/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "decision",
+        "record-reference",
+        "--help"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "exit_code": 0,
+      "stdout": "Record a Decision Reference to a checked project file.\n\nInput fields:\n  input.id: string, required, ID \u2014 Decision Reference ID.\n  input.class: string, required, text \u2014 Decision class.\n  input.source: object, required \u2014 SourceInput checked against a project file or recorded as an external reference.\n  input.source.source_type: string, required, allowed: project-file|external-reference \u2014 Project file or external reference.\n  input.source.display_label: string, required, text, length 1..128 \u2014 Human-readable label for this source.\n  input.source.path: string, nullable, text \u2014 Relative project-file path under the project root.\n  input.source.section: string, nullable, text \u2014 Section within the referenced material, if any.\n  input.source.external_id: string, nullable, text \u2014 External reference ID, if any.\n  input.source.digest: string, optional, digest \u2014 SHA-256 digest; required for external references and optional for project files.\n  input.authority: object, required \u2014 Actor and capabilities authorizing this decision.\n  input.authority.actor_id: string, required, ID \u2014 Actor ID.\n  input.authority.required_capabilities: array<string>, required, element format: ID, length 1..10000 \u2014 Sorted required capabilities.\n  input.outcome: string, required, text, allowed: approved|rejected|deferred \u2014 Decision outcome.\n  input.scope: object, required \u2014 Issue in scope.\n  input.scope.issue_id: string, required, ID \u2014 Issue ID.\n\nTemplate: fid decision record-reference --example\n\nUsage:\n  fid decision record-reference [flags]\n\nFlags:\n      --actor string             Finalized activation actor ID\n      --example                  Print an editable JSON input template\n  -h, --help                     help for record-reference\n      --idempotency-key string   Idempotency key\n      --input string             Record a Decision Reference JSON input file (or - for stdin)\n\nGlobal Flags:\n      --json             emit fid-cli.v1 JSON\n      --project string   fid project root\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "decision",
+        "record-reference",
+        "--example"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "exit_code": 0,
+      "stdout": "{\n  \"id\": \"<id>\",\n  \"class\": \"<class>\",\n  \"source\": {\n    \"source_type\": \"project-file\",\n    \"display_label\": \"<display_label>\",\n    \"path\": null,\n    \"section\": null,\n    \"external_id\": null\n  },\n  \"authority\": {\n    \"actor_id\": \"<actor_id>\",\n    \"required_capabilities\": [\"<required_capabilities>\"]\n  },\n  \"outcome\": \"approved\",\n  \"scope\": {\n    \"issue_id\": \"<issue_id>\"\n  }\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "issue",
+        "list"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "exit_code": 0,
+      "stdout": "P22-f34b31 | todo | Phase 22 conformance\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "resume",
+        "P22-f34b31"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "exit_code": 0,
+      "stdout": "Issue P22-f34b31\n  Status: todo\n  Revision: 1\n  Next states: cancelled (cancelled), in_progress (started)\n  Completion: incomplete\n  Envelope: ENV-85fc73 (revision 1, active)\n\nCurrent Run: RUN-ae2030\n  Status: active\n  Actor ID: actor-recovery\n  Executor ID: executor-corpus-prior\n\nClaim CLM-21b9c4\n  Lease status now: active\n  Recorded status: active\n  Expires: 2026-10-30T04:13:11.526744869Z\n  An active lease alone does not authorize an operation; its authority and repository checks still apply.\n\nRepository\n  Current repository: HEAD ebf65cdf9b20; clean\n  Recorded repository: HEAD ebf65cdf9b20; clean\n  Worktree comparison: same worktree\n\nNext steps\n  Candidate operations below are not an execution sequence.\n  Ready means the recorded prerequisites permit a request; supplied inputs and authority are checked when it runs.\n  Action run.inspect run:RUN-ae2030: ready\n    Purpose: Compare this repository with the Run's recorded start or checkpoint; inspect changed paths without recording a checkpoint.\n  Action run.observe run:RUN-ae2030: ready\n    Purpose: Have the activated harness record a fresh observation of whether this Run's executor is live, terminated or unknown.\n    Requires: run.observe\n  Action gate.run run:RUN-ae2030: blocked\n    Purpose: Execute the configured check to produce Evidence for the current work.\n    Requires: gate.run\n  budget-data-unavailable for envelope:ENV-85fc73: tokens\n  Action claim.renew claim:CLM-21b9c4: blocked\n    Purpose: Extend an eligible work lease after checking authority.\n    Requires: claim.renew\n  authority-unavailable for actor:actor-recovery: claim.renew\n  Action claim.release claim:CLM-21b9c4: ready\n    Purpose: Give up an eligible work lease after checking authority; this does not prove the work complete.\n    Requires: claim.release\n  Action concern.record issue:P22-f34b31: ready\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: concern.record\n  Action deviation.record issue:P22-f34b31: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: deviation.record\n  authority-unavailable for issue:P22-f34b31: deviation.record\n  Action decision.record-reference issue:P22-f34b31: ready\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: decision.record-reference\n  Action human-outcome.record issue:P22-f34b31: ready\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: human-outcome.record\n\nCompletion requirements\n  These describe what is needed to finish the Issue, separately from recovery checks above.\n  Obligation OBL-p22-corpus: unsatisfied\n    Evidence validity: invalid; freshness: stale; Artifacts: missing\n  obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent\n  Overall completion: incomplete\n  obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent\n  issue-not-terminal-success for issue:P22-f34b31: completed workflow category\n  Open Findings: 0\n\nReview and judgment\nReviews\n  None.\nOpen Findings\n  None.\nConcerns\n  None.\nDeviations\n  None.\nDecision References\n  None.\nHuman Outcomes\n  None.\nProtected Decisions\n  None.\n\nBudgets\nBudget attempts: remaining 3 attempts; consumed 0; maximum 3; state available\nBudget tokens: remaining unknown input-tokens; consumed unknown; maximum 10; state unknown\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-decision-reference",
+      "exit_code": 0,
+      "stdout": "?? .fid/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "exit_code": 0,
+      "stdout": "?? .fid/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "concern",
+        "record",
+        "--help"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "exit_code": 0,
+      "stdout": "Record a Concern with checked references.\n\nInput fields:\n  input.id: string, required, ID \u2014 Concern ID.\n  input.subject: object, required \u2014 Subject of this judgment.\n  input.subject.type: string, required, text, allowed: issue|envelope|run|review|finding|requirement \u2014 Subject kind.\n  input.subject.id: string, required, ID \u2014 Subject ID.\n  input.scope: object, required \u2014 Paths in scope.\n  input.scope.paths: array<string>, required, sorted-unique, element format: text, length 0..10000 \u2014 Sorted paths in scope.\n  input.severity: string, required, text, allowed: blocker|major|minor|nit \u2014 Concern severity.\n  input.summary: string, required, text \u2014 Concern summary.\n  input.reasoning: string, required, text \u2014 Recorded reasoning.\n  input.references: array<object>, required, length 0..32 \u2014 Sources supporting this judgment.\n  input.references[i].source_type: string, required, allowed: project-file|external-reference \u2014 Project file or external reference.\n  input.references[i].display_label: string, required, text, length 1..128 \u2014 Human-readable label for this source.\n  input.references[i].path: string, nullable, text \u2014 Relative project-file path under the project root.\n  input.references[i].section: string, nullable, text \u2014 Section within the referenced material, if any.\n  input.references[i].external_id: string, nullable, text \u2014 External reference ID, if any.\n  input.references[i].digest: string, optional, digest \u2014 SHA-256 digest; required for external references and optional for project files.\n\nTemplate: fid concern record --example\n\nUsage:\n  fid concern record [flags]\n\nFlags:\n      --actor string             Finalized activation actor ID\n      --example                  Print an editable JSON input template\n  -h, --help                     help for record\n      --idempotency-key string   Idempotency key\n      --input string             Record or dispose a Concern JSON input file (or - for stdin)\n\nGlobal Flags:\n      --json             emit fid-cli.v1 JSON\n      --project string   fid project root\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "concern",
+        "record",
+        "--example"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "exit_code": 0,
+      "stdout": "{\n  \"id\": \"<id>\",\n  \"subject\": {\n    \"type\": \"issue\",\n    \"id\": \"<id>\"\n  },\n  \"scope\": {\n    \"paths\": []\n  },\n  \"severity\": \"blocker\",\n  \"summary\": \"<summary>\",\n  \"reasoning\": \"<reasoning>\",\n  \"references\": []\n}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "issue",
+        "list"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "exit_code": 0,
+      "stdout": "P22-fee0f6 | todo | Phase 22 conformance\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid",
+        "resume",
+        "P22-fee0f6"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "exit_code": 0,
+      "stdout": "Issue P22-fee0f6\n  Status: todo\n  Revision: 1\n  Next states: cancelled (cancelled), in_progress (started)\n  Completion: incomplete\n  Envelope: ENV-757f02 (revision 1, active)\n\nCurrent Run: RUN-1820de\n  Status: active\n  Actor ID: actor-recovery\n  Executor ID: executor-corpus-prior\n\nClaim CLM-ea36f2\n  Lease status now: active\n  Recorded status: active\n  Expires: 2026-10-30T04:13:17.05361114Z\n  An active lease alone does not authorize an operation; its authority and repository checks still apply.\n\nRepository\n  Current repository: HEAD 84858440e9db; clean\n  Recorded repository: HEAD 84858440e9db; clean\n  Worktree comparison: same worktree\n\nNext steps\n  Candidate operations below are not an execution sequence.\n  Ready means the recorded prerequisites permit a request; supplied inputs and authority are checked when it runs.\n  Action run.inspect run:RUN-1820de: ready\n    Purpose: Compare this repository with the Run's recorded start or checkpoint; inspect changed paths without recording a checkpoint.\n  Action run.observe run:RUN-1820de: ready\n    Purpose: Have the activated harness record a fresh observation of whether this Run's executor is live, terminated or unknown.\n    Requires: run.observe\n  Action gate.run run:RUN-1820de: blocked\n    Purpose: Execute the configured check to produce Evidence for the current work.\n    Requires: gate.run\n  budget-data-unavailable for envelope:ENV-757f02: tokens\n  Action claim.renew claim:CLM-ea36f2: blocked\n    Purpose: Extend an eligible work lease after checking authority.\n    Requires: claim.renew\n  authority-unavailable for actor:actor-recovery: claim.renew\n  Action claim.release claim:CLM-ea36f2: ready\n    Purpose: Give up an eligible work lease after checking authority; this does not prove the work complete.\n    Requires: claim.release\n  Action concern.record issue:P22-fee0f6: ready\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: concern.record\n  Action deviation.record issue:P22-fee0f6: blocked\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: deviation.record\n  authority-unavailable for issue:P22-fee0f6: deviation.record\n  Action decision.record-reference issue:P22-fee0f6: ready\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: decision.record-reference\n  Action human-outcome.record issue:P22-fee0f6: ready\n    Purpose: Inspect the operation's requirements before submitting a request.\n    Requires: human-outcome.record\n\nCompletion requirements\n  These describe what is needed to finish the Issue, separately from recovery checks above.\n  Obligation OBL-p22-corpus: unsatisfied\n    Evidence validity: invalid; freshness: stale; Artifacts: missing\n  obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent\n  Overall completion: incomplete\n  obligation-evidence-absent for obligation:OBL-p22-corpus: qualifying Evidence is absent\n  issue-not-terminal-success for issue:P22-fee0f6: completed workflow category\n  Open Findings: 0\n\nReview and judgment\nReviews\n  None.\nOpen Findings\n  None.\nConcerns\n  None.\nDeviations\n  None.\nDecision References\n  None.\nHuman Outcomes\n  None.\nProtected Decisions\n  None.\n\nBudgets\nBudget attempts: remaining 3 attempts; consumed 0; maximum 3; state available\nBudget tokens: remaining unknown input-tokens; consumed unknown; maximum 10; state unknown\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/authoring-third-leaf",
+      "exit_code": 0,
+      "stdout": "?? .fid/\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "bash",
+        "--noprofile",
+        "--norc"
+      ],
+      "cwd": "/home/mark/projects/fid",
+      "exit_code": 0,
+      "stdout": "fid is aliased to `/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364/fid'\ncomplete -o default -F __start_fid fid\n",
+      "stderr": "",
+      "stdin": "shopt -s expand_aliases\nfid_fixture=/home/mark/projects/fid/.cache/phase-24-human/fixtures-3243711364\ncd \"$fid_fixture/authoring-run-close\"\nalias fid=\"$fid_fixture/fid\"\nsource <(fid completion bash)\ntype fid\ncomplete -p fid\n"
+    }
+  ],
+  "scope": "Refresh HUMAN-05 setup only; preserve Human answers and earlier fixture sets; no product edits",
+  "receipt_usage": "Administrative QA evidence, excluded from Human authoring sources; do not use the generator manifest or completed inputs for Human answers."
+}

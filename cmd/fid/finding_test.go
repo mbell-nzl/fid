@@ -1,16 +1,36 @@
 package main
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/review"
 )
 
 func TestDecodeClosedReviewInputRejectsMalformedInapplicability(t *testing.T) {
 	t.Parallel()
+	descriptor := inputDescriptorRegistry["review record"]
+	example, err := cli.InputExample(descriptor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var baseline map[string]any
+	if err := json.Unmarshal(example, &baseline); err != nil {
+		t.Fatal(err)
+	}
+	p24ExpandDescriptorObjects(t, baseline, descriptor.Fields)
+	delete(baseline, "inapplicable_findings")
+	encoded, err := json.Marshal(baseline)
+	if err != nil {
+		t.Fatal(err)
+	}
+	qualify := func(payload string) string {
+		return strings.TrimSuffix(string(encoded), "}") + "," + strings.TrimPrefix(payload, "{")
+	}
 	for _, payload := range []string{
 		`{"inapplicable_findings":null}`,
 		`{"inapplicable_findings":[],"inapplicable_findings":[]}`,
@@ -18,12 +38,12 @@ func TestDecodeClosedReviewInputRejectsMalformedInapplicability(t *testing.T) {
 		`{"inapplicable_findings":[{"finding_id":"FND-1","reason":"one","unknown":true}]}`,
 	} {
 		var request review.RecordRequest
-		if err := decodeClosedReviewInput(strings.NewReader(payload), "-", &request); err == nil {
+		if err := readDescriptorInput(strings.NewReader(qualify(payload)), "-", descriptor, &request); err == nil {
 			t.Fatalf("decodeClosedReviewInput(%s) accepted malformed input", payload)
 		}
 	}
 	var request review.RecordRequest
-	if err := decodeClosedReviewInput(strings.NewReader(`{"inapplicable_findings":[]}`), "-", &request); err != nil {
+	if err := readDescriptorInput(strings.NewReader(qualify(`{"inapplicable_findings":[]}`)), "-", descriptor, &request); err != nil {
 		t.Fatalf("decodeClosedReviewInput(empty optional collection) error = %v", err)
 	}
 }

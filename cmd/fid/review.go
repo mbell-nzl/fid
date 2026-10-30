@@ -1,13 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io"
-	"os"
-	"strings"
-	"unicode/utf8"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -69,7 +63,7 @@ func renderReviewListError(cmd *cobra.Command, cause error) error {
 	if errors.As(cause, &limit) {
 		return writeClaimFailure(cmd, jsonMode, "review.list", cause, cli.CodeResultLimitExceeded, "review result limit exceeded", nil, map[string]any{"collection": "items", "limit": limit.Limit, "observed": limit.Observed})
 	}
-	return writeClaimFailure(cmd, jsonMode, "review.list", cause, cli.CodeInvalidArgument, "invalid review list request", nil, map[string]any{"argument": "filter", "value": nil, "allowed": []string{"accepted review.list filters"}})
+	return writeGenericFailure(cmd, jsonMode, "review.list", cause, cli.CodeInvalidArgument, "invalid review list request", nil, map[string]any{"argument": "filter", "value": nil, "allowed": []string{"accepted review.list filters"}})
 }
 
 func newReviewGetCommand() *cobra.Command {
@@ -97,14 +91,14 @@ func newReviewGetCommand() *cobra.Command {
 
 func newReviewRecordCommand() *cobra.Command {
 	var inputPath, actor, key string
-	cmd := &cobra.Command{Use: "record", Args: canonicalNoArgs("review.record"), RunE: func(cmd *cobra.Command, _ []string) error {
+	cmd := &cobra.Command{Use: "record", Short: "Record a Review.", Args: canonicalNoArgs("review.record"), RunE: func(cmd *cobra.Command, _ []string) error {
 		for _, flag := range []string{"input", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, "review.record", flag); err != nil {
 				return err
 			}
 		}
 		var request review.RecordRequest
-		if err := decodeClosedReviewInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["review record"], &request); err != nil {
 			return renderReviewError(cmd, err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -128,85 +122,8 @@ func newReviewRecordCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("review.record"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["review record"])
 	return cmd
-}
-
-func decodeClosedReviewInput(stdin io.Reader, path string, target any) error {
-	payload, err := os.ReadFile(path)
-	if path == "-" {
-		payload, err = io.ReadAll(io.LimitReader(stdin, 1_048_577))
-	}
-	if err != nil {
-		return fmt.Errorf("read review input: %w", err)
-	}
-	if !utf8.Valid(payload) {
-		return fmt.Errorf("decode review input: input is not valid UTF-8")
-	}
-	if err := rejectDuplicateJSONKeys(payload); err != nil {
-		return fmt.Errorf("decode review input: %w", err)
-	}
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal(payload, &fields); err == nil {
-		if raw, found := fields["inapplicable_findings"]; found && string(raw) == "null" {
-			return fmt.Errorf("decode review input: inapplicable_findings must be an array")
-		}
-	}
-	decoder := json.NewDecoder(strings.NewReader(string(payload)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		return fmt.Errorf("decode review input: %w", err)
-	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		return fmt.Errorf("review input must contain one object")
-	}
-	return nil
-}
-
-func rejectDuplicateJSONKeys(payload []byte) error {
-	decoder := json.NewDecoder(strings.NewReader(string(payload)))
-	var walk func() error
-	walk = func() error {
-		token, err := decoder.Token()
-		if err != nil {
-			return err
-		}
-		delimiter, ok := token.(json.Delim)
-		if !ok {
-			return nil
-		}
-		switch delimiter {
-		case '{':
-			seen := map[string]bool{}
-			for decoder.More() {
-				keyToken, err := decoder.Token()
-				if err != nil {
-					return err
-				}
-				key := keyToken.(string)
-				if seen[key] {
-					return fmt.Errorf("duplicate key %q", key)
-				}
-				seen[key] = true
-				if err := walk(); err != nil {
-					return err
-				}
-			}
-			_, err = decoder.Token()
-			return err
-		case '[':
-			for decoder.More() {
-				if err := walk(); err != nil {
-					return err
-				}
-			}
-			_, err = decoder.Token()
-			return err
-		default:
-			return fmt.Errorf("unexpected JSON delimiter %q", delimiter)
-		}
-	}
-	return walk()
 }
 
 func renderReviewError(cmd *cobra.Command, cause error) error {
@@ -224,7 +141,10 @@ func renderReviewError(cmd *cobra.Command, cause error) error {
 	}
 	var mismatch *review.RepositoryMismatchError
 	if errors.As(cause, &mismatch) {
-		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeRepositoryMismatch, "repository identity does not match", nil, map[string]any{"expected": repositoryDetails(mismatch.Expected), "observed": repositoryDetails(mismatch.Observed)})
+		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeRepositoryMismatch, "repository identity does not match", nil, map[string]any{"expected": map[string]any{"head_oid": mismatch.Expected.HeadOID, "dirty": mismatch.Expected.Dirty}, "observed": repositoryDetails(mismatch.Observed)})
+	}
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, "review.record", cause); ok {
+		return rendered
 	}
 	var reviewConflict *review.ReviewConflictError
 	if errors.As(cause, &reviewConflict) {
@@ -248,9 +168,9 @@ func renderReviewError(cmd *cobra.Command, cause error) error {
 	}
 	var conflict *journal.IdempotencyConflictError
 	if errors.As(cause, &conflict) {
-		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
+		return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(conflict))
 	}
-	return writeClaimFailure(cmd, jsonMode, "review.record", cause, cli.CodeInvalidArgument, "invalid review request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted review.record input"}})
+	return writeGenericFailure(cmd, jsonMode, "review.record", cause, cli.CodeInvalidArgument, "invalid review request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted review.record input"}})
 }
 
 func repositoryDetails(repository review.Repository) map[string]any {

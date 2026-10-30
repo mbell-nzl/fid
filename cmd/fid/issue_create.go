@@ -32,6 +32,11 @@ func newIssueCreateCommand() *cobra.Command {
 			if err := requireCanonicalFlag(cmd, "issue.create", "idempotency-key"); err != nil {
 				return err
 			}
+			for _, name := range []string{"kind", "title"} {
+				if err := requireCanonicalFlag(cmd, "issue.create", name); err != nil {
+					return err
+				}
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.create", "", err)

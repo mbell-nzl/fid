@@ -53,7 +53,7 @@ func TestP23ReviewEvidenceRealProcessJourney(t *testing.T) {
 	conflict := p23RunInput(t, a, "evidence", "link", "actor-recovery", "evidence-pass", map[string]any{
 		"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil,
 		"review_id": passReview["id"], "human_outcome_id": nil,
-		"target_repository": a.repository, "required_artifact_ids": []string{"ART-conflicting"},
+		"required_artifact_ids": []string{"ART-conflicting"},
 	})
 	assertP22ProcessFailure(t, "evidence.link", "idempotency-conflict", 4, conflict)
 	if after := p21JournalEventCount(t, a.workspace); after != before {
@@ -135,7 +135,7 @@ func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
 
 	beforeDenials := p21JournalEventCount(t, a.workspace)
 	beforeClaims, beforeRuns := p23EntityCounts(t, a)
-	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "worktree_id": a.repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
+	claimInput := map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": "mutation", "ttl_seconds": 60}
 	deniedClaim := p23RunInput(t, a, "claim", "acquire", a.actor, "cycles-denied-claim", claimInput)
 	assertP22ProcessFailure(t, "claim.acquire", "review-rework-exhausted", 4, deniedClaim)
 	if !p23HasJSON(deniedClaim.Stderr, `"event":null`) || !p23HasJSON(deniedClaim.Stderr, `"replayed":false`) || p21JournalEventCount(t, a.workspace) != beforeDenials {
@@ -144,7 +144,7 @@ func TestP23ReviewCyclesRealProcessJourney(t *testing.T) {
 	p23AssertNoncommittingDenialRetry(t, a, deniedClaim, func() p22ConformanceResponse {
 		return p23RunInput(t, a, "claim", "acquire", a.actor, "cycles-denied-claim", claimInput)
 	})
-	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "claim_id": "CLM-would-be-rework", "claim_version": 1, "executor": map[string]any{"id": "executor-would-be-rework", "source": "activated-harness"}, "obligation_id": nil, "repository": a.repository}
+	runInput := map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "claim_id": "CLM-would-be-rework", "claim_version": 1, "executor": map[string]any{"id": "executor-would-be-rework", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": p24ExpectedRepository(a.repository)}
 	deniedRun := p23RunInput(t, a, "run", "start", a.actor, "cycles-denied-run", runInput)
 	assertP22ProcessFailure(t, "run.start", "review-rework-exhausted", 4, deniedRun)
 	p23AssertNoncommittingDenialRetry(t, a, deniedRun, func() p22ConformanceResponse {
@@ -303,12 +303,12 @@ func p23AssertReviewCyclesUnchanged(t *testing.T, stage string, want, got []p23R
 
 func p23EvidenceLink(t *testing.T, a *p22FIDRecoveryAdapter, key, reviewID string) p22ConformanceResponse {
 	t.Helper()
-	return p23RunInput(t, a, "evidence", "link", "actor-recovery", key, map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil, "review_id": reviewID, "human_outcome_id": nil, "target_repository": a.repository, "required_artifact_ids": []string{}})
+	return p23RunInput(t, a, "evidence", "link", "actor-recovery", key, map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "review", "receipt_id": nil, "review_id": reviewID, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 }
 
 func p23EvidenceEvaluate(t *testing.T, a *p22FIDRecoveryAdapter) p22ConformanceResponse {
 	t.Helper()
-	response := a.p22Run(t, "evidence", "evaluate", "--input", p21Input(t, a.workspace, "p23-evaluate", map[string]any{"obligation_id": nil, "target_repository": a.repository}))
+	response := a.p22Run(t, "evidence", "evaluate", "--input", p21Input(t, a.workspace, "p23-evaluate", map[string]any{"obligation_id": nil}))
 	p23AssertReviewSuccess(t, "evidence evaluate", response)
 	return response
 }

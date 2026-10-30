@@ -1,9 +1,7 @@
 package evidence
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -13,6 +11,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -43,18 +42,16 @@ type Evaluation struct {
 }
 
 type EvidenceLinkRequest struct {
-	ObligationID        string     `json:"obligation_id"`
-	EvidenceType        string     `json:"evidence_type"`
-	ReceiptID           *string    `json:"receipt_id"`
-	ReviewID            *string    `json:"review_id"`
-	HumanOutcomeID      *string    `json:"human_outcome_id"`
-	TargetRepository    Repository `json:"target_repository"`
-	RequiredArtifactIDs []string   `json:"required_artifact_ids"`
+	ObligationID        string   `json:"obligation_id"`
+	EvidenceType        string   `json:"evidence_type"`
+	ReceiptID           *string  `json:"receipt_id"`
+	ReviewID            *string  `json:"review_id"`
+	HumanOutcomeID      *string  `json:"human_outcome_id"`
+	RequiredArtifactIDs []string `json:"required_artifact_ids"`
 }
 
 type EvidenceEvaluateRequest struct {
-	ObligationID     *string    `json:"obligation_id"`
-	TargetRepository Repository `json:"target_repository"`
+	ObligationID *string `json:"obligation_id"`
 }
 
 type EvidenceLinkOptions struct {
@@ -104,7 +101,21 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 		if err != nil {
 			return fmt.Errorf("link Evidence: read project config: %w", err)
 		}
-		binding, err := loadEvidenceBinding(conn, options.Request)
+		requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "project_id": project.ProjectID, "request": options.Request}, options.ActorID, nil)
+		if err != nil {
+			return err
+		}
+		idempotency := journal.IdempotencyRequest{OperationScope: "evidence.link:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
+			return err
+		} else if found {
+			if err := json.Unmarshal([]byte(outcome.ResultJSON), &result); err != nil {
+				return fmt.Errorf("link Evidence: decode replay: %w", err)
+			}
+			result.IdempotencyKey, result.Replayed, result.EventID = options.IdempotencyKey, true, outcome.EventID
+			return nil
+		}
+		binding, err := loadEvidenceBinding(conn, options.WorkspaceRoot, options.Request)
 		if err != nil {
 			return err
 		}
@@ -117,20 +128,6 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 		}
 		if !hasCapability(actor.Capabilities, "evidence.link") {
 			return &AuthorityDeniedError{ActorID: options.ActorID}
-		}
-		requestDigest, err := evidenceRequestDigest(project.ProjectID, options.ActorID, options.Request)
-		if err != nil {
-			return err
-		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "evidence.link:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
-		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
-			return err
-		} else if found {
-			if err := json.Unmarshal([]byte(outcome.ResultJSON), &result); err != nil {
-				return fmt.Errorf("link Evidence: decode replay: %w", err)
-			}
-			result.IdempotencyKey, result.Replayed, result.EventID = options.IdempotencyKey, true, outcome.EventID
-			return nil
 		}
 
 		evidenceID, err := nextEvidenceID(conn)
@@ -147,12 +144,12 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 			HumanOutcomeID:      binding.HumanOutcomeID,
 			Producer:            binding.Producer,
 			TrustSource:         binding.TrustSource,
-			TargetRepository:    options.Request.TargetRepository,
+			TargetRepository:    binding.Repository,
 			Validity:            "valid",
 			RequiredArtifactIDs: append([]string{}, options.Request.RequiredArtifactIDs...),
 			CreatedAt:           createdAt,
 		}
-		evaluation := evaluationFromBinding(evidence, binding, options.Request.TargetRepository)
+		evaluation := evaluationFromBinding(evidence, binding, binding.Repository)
 		result = EvidenceLinkResult{Evidence: evidence, Evaluation: evaluation, IdempotencyKey: options.IdempotencyKey}
 		resultJSON, err := journal.MarshalCanonicalJSON(result)
 		if err != nil {
@@ -166,7 +163,7 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 		for _, artifactID := range evidence.RequiredArtifactIDs {
 			effects = append(effects, journal.Effect{Op: "insert", Table: "evidence_artifact_links", PK: map[string]any{"evidence_id": evidence.ID, "artifact_id": artifactID}, Values: map[string]any{"required_material": true}})
 		}
-		readinessEffects, _, _, err := workflow.HumanOutcomeReadinessStopEffects(conn, binding.EnvelopeID, binding.Revision, actor.ActorID, workflowRepository(options.Request.TargetRepository), map[string]string{options.Request.ObligationID: evaluation.Status})
+		readinessEffects, _, _, err := workflow.HumanOutcomeReadinessStopEffects(conn, binding.EnvelopeID, binding.Revision, actor.ActorID, workflowRepository(binding.Repository), map[string]string{options.Request.ObligationID: evaluation.Status})
 		if err != nil {
 			return err
 		}
@@ -195,7 +192,7 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 
 // EvaluateEvidence reads durable Evidence dimensions without an Event or Effect.
 func EvaluateEvidence(workspaceRoot, migrationsDir string, request EvidenceEvaluateRequest) ([]Evaluation, error) {
-	if strings.TrimSpace(workspaceRoot) == "" || strings.TrimSpace(migrationsDir) == "" || (request.ObligationID != nil && strings.TrimSpace(*request.ObligationID) == "") || !validEvidenceRepository(request.TargetRepository) {
+	if strings.TrimSpace(workspaceRoot) == "" || strings.TrimSpace(migrationsDir) == "" || (request.ObligationID != nil && strings.TrimSpace(*request.ObligationID) == "") {
 		return nil, &EvidenceBindingError{Reason: "Evidence evaluation input is invalid"}
 	}
 	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
@@ -206,7 +203,15 @@ func EvaluateEvidence(workspaceRoot, migrationsDir string, request EvidenceEvalu
 		return nil, err
 	}
 	defer func() { _ = conn.Close() }()
-	return evaluateEvidence(conn, request)
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	if err != nil {
+		return nil, err
+	}
+	observed, err := project.ObserveRecordedRepository(workspaceRoot, projectConfig.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	return evaluateEvidence(conn, request, Repository(observed))
 }
 
 func GetEvidence(workspaceRoot, migrationsDir, id string) (Evidence, error) {
@@ -223,6 +228,24 @@ func GetEvidence(workspaceRoot, migrationsDir, id string) (Evidence, error) {
 		return Evidence{}, &EvidenceNotFoundError{ID: id}
 	}
 	return evidence, err
+}
+
+// EvaluateStoredEvidence evaluates the stored subject's target without Git
+// observation, preserving the evidence.get read contract.
+func EvaluateStoredEvidence(workspaceRoot, migrationsDir, id string) ([]Evaluation, error) {
+	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
+		return nil, err
+	}
+	conn, err := openEvidenceDB(workspaceRoot)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = conn.Close() }()
+	record, err := loadEvidence(conn, id)
+	if err != nil {
+		return nil, err
+	}
+	return evaluateEvidence(conn, EvidenceEvaluateRequest{ObligationID: &record.ObligationID}, record.TargetRepository)
 }
 
 type evidenceBinding struct {
@@ -250,7 +273,7 @@ func validateEvidenceLinkOptions(options EvidenceLinkOptions) error {
 	request := options.Request
 	subjectCount := nonNilCount(request.ReceiptID, request.ReviewID, request.HumanOutcomeID)
 	subjectMatchesType := (request.EvidenceType == "receipt" && nonBlankPointer(request.ReceiptID)) || (request.EvidenceType == "review" && nonBlankPointer(request.ReviewID)) || (request.EvidenceType == "human-outcome" && nonBlankPointer(request.HumanOutcomeID))
-	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" || strings.TrimSpace(options.ActorID) == "" || strings.TrimSpace(options.IdempotencyKey) == "" || strings.TrimSpace(request.ObligationID) == "" || subjectCount != 1 || !subjectMatchesType || !validEvidenceRepository(request.TargetRepository) || !sortedUnique(request.RequiredArtifactIDs) {
+	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" || strings.TrimSpace(options.ActorID) == "" || strings.TrimSpace(options.IdempotencyKey) == "" || strings.TrimSpace(request.ObligationID) == "" || subjectCount != 1 || !subjectMatchesType || !sortedUnique(request.RequiredArtifactIDs) {
 		return &EvidenceBindingError{Reason: "Evidence link input is invalid"}
 	}
 	return nil
@@ -270,7 +293,7 @@ func nonBlankPointer(value *string) bool {
 	return value != nil && strings.TrimSpace(*value) != ""
 }
 
-func loadEvidenceBinding(conn *sql.DB, request EvidenceLinkRequest) (evidenceBinding, error) {
+func loadEvidenceBinding(conn *sql.DB, workspaceRoot string, request EvidenceLinkRequest) (evidenceBinding, error) {
 	binding, err := loadObligationBinding(conn, request.ObligationID)
 	if err != nil {
 		return evidenceBinding{}, err
@@ -282,6 +305,9 @@ func loadEvidenceBinding(conn *sql.DB, request EvidenceLinkRequest) (evidenceBin
 		err = loadReviewEvidenceBinding(conn, request, &binding)
 	case "human-outcome":
 		err = loadHumanOutcomeEvidenceBinding(conn, request, &binding)
+		if err == nil {
+			err = loadHumanOutcomeRepository(conn, workspaceRoot, *request.HumanOutcomeID, &binding)
+		}
 	default:
 		return evidenceBinding{}, &EvidenceBindingError{Reason: "Evidence link input is invalid"}
 	}
@@ -322,7 +348,7 @@ func loadReceiptEvidenceBinding(conn *sql.DB, request EvidenceLinkRequest, bindi
 		return fmt.Errorf("decode Receipt repository: %w", err)
 	}
 	obligation := binding.Obligation
-	if trustSource != "fid-executed" || producer != "fid" || binding.EnvelopeID != runEnvelopeID || binding.Revision != runRevision || binding.IssueID != issueID || !sameEvidenceRepository(binding.Repository, request.TargetRepository) {
+	if trustSource != "fid-executed" || producer != "fid" || binding.EnvelopeID != runEnvelopeID || binding.Revision != runRevision || binding.IssueID != issueID {
 		return &EvidenceBindingError{Reason: "Receipt and Obligation binding is not exact"}
 	}
 	binding.EvidenceType, binding.ReceiptID = "receipt", request.ReceiptID
@@ -370,7 +396,7 @@ func loadReviewEvidenceBinding(conn *sql.DB, request EvidenceLinkRequest, bindin
 	if err := json.Unmarshal([]byte(repositoryJSON), &binding.Repository); err != nil {
 		return fmt.Errorf("decode Review repository: %w", err)
 	}
-	if issueID != binding.IssueID || envelopeID != binding.EnvelopeID || revision != binding.Revision || !sameEvidenceRepository(binding.Repository, request.TargetRepository) {
+	if issueID != binding.IssueID || envelopeID != binding.EnvelopeID || revision != binding.Revision {
 		return &EvidenceBindingError{Reason: "Review and Obligation binding is not exact"}
 	}
 	blocking, err := blockingFindingIDs(conn, `f.review_id=?`, *request.ReviewID)
@@ -419,8 +445,27 @@ func loadHumanOutcomeEvidenceBinding(conn *sql.DB, request EvidenceLinkRequest, 
 	}
 	binding.EvidenceType, binding.HumanOutcomeID = "human-outcome", request.HumanOutcomeID
 	binding.Producer, binding.TrustSource = "human", "activated-human"
-	binding.Repository, binding.Artifacts, binding.HumanOutcomeClass = request.TargetRepository, map[string]string{}, class
+	binding.Artifacts, binding.HumanOutcomeClass = map[string]string{}, class
 	return classifyBindingAdmission(request, binding)
+}
+
+func loadHumanOutcomeRepository(conn *sql.DB, workspaceRoot, outcomeID string, binding *evidenceBinding) error {
+	var eventID string
+	if err := conn.QueryRow(`SELECT created_event_id FROM human_outcomes WHERE id=?`, outcomeID).Scan(&eventID); err != nil {
+		return fmt.Errorf("load Human Outcome Event: %w", err)
+	}
+	found, err := journal.FindEvent(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.JournalDirName), eventID)
+	if err != nil {
+		return fmt.Errorf("load Human Outcome repository: %w", err)
+	}
+	if found.Event.Repository == nil {
+		return &EvidenceBindingError{Reason: "Human Outcome repository is unavailable"}
+	}
+	data, err := json.Marshal(found.Event.Repository)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, &binding.Repository)
 }
 
 func classifyBindingAdmission(request EvidenceLinkRequest, binding *evidenceBinding) error {
@@ -462,14 +507,14 @@ func pointerValue(value *string) string {
 	return *value
 }
 
-func evaluateEvidence(conn *sql.DB, request EvidenceEvaluateRequest) ([]Evaluation, error) {
+func evaluateEvidence(conn *sql.DB, request EvidenceEvaluateRequest, observed Repository) ([]Evaluation, error) {
 	obligations, err := loadEvaluationObligations(conn, request.ObligationID)
 	if err != nil {
 		return nil, err
 	}
 	statesByObligation := make(map[string][]workflow.ObligationEvidenceState, len(obligations))
 	for _, obligation := range obligations {
-		states, err := loadEvaluationStates(conn, obligation, request.TargetRepository)
+		states, err := loadEvaluationStates(conn, obligation, observed)
 		if err != nil {
 			return nil, err
 		}
@@ -667,23 +712,6 @@ func nextEvidenceID(conn *sql.DB) (string, error) {
 	})
 }
 
-func evidenceRequestDigest(projectID, actorID string, request EvidenceLinkRequest) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"actor_id": actorID, "project_id": projectID, "request": request})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
-}
-
-func validEvidenceRepository(repository Repository) bool {
-	return repository.CaptureSource == "git" && strings.TrimSpace(repository.ProjectID) != "" && strings.TrimSpace(repository.WorktreeID) != "" && validOID(repository.HeadOID) && validOID(repository.TreeOID) && (repository.BaseOID == nil || validOID(*repository.BaseOID)) && (!repository.Dirty || repository.DirtyDigest != nil) && (repository.Dirty || repository.DirtyDigest == nil)
-}
-
-func sameEvidenceRepository(left, right Repository) bool {
-	return left.CaptureSource == right.CaptureSource && left.Dirty == right.Dirty && sameString(left.BaseOID, right.BaseOID) && sameString(left.DirtyDigest, right.DirtyDigest) && left.HeadOID == right.HeadOID && left.ProjectID == right.ProjectID && left.TreeOID == right.TreeOID && left.WorktreeID == right.WorktreeID
-}
-
 func sameString(left, right *string) bool {
 	if left == nil || right == nil {
 		return left == right
@@ -692,7 +720,7 @@ func sameString(left, right *string) bool {
 }
 
 func freshnessForRepository(receipt, target Repository) string {
-	if receipt.ProjectID == target.ProjectID && receipt.WorktreeID == target.WorktreeID && receipt.TreeOID == target.TreeOID {
+	if receipt.ProjectID == target.ProjectID && receipt.WorktreeID == target.WorktreeID && receipt.TreeOID == target.TreeOID && receipt.Dirty == target.Dirty && sameString(receipt.DirtyDigest, target.DirtyDigest) {
 		return "fresh"
 	}
 	return "stale"

@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/cli"
+
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -126,7 +128,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 		journalPath := mustJournalPath(t, workspace)
 		before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "link", "add", issueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
-		if err == nil || stdout != "" || !strings.Contains(stderr, `to-type must be issue`) {
+		if err == nil || stdout != "" || (!strings.Contains(stderr, "error: invalid link endpoint type\nreason: invalid-argument; argument=to-type, allowed=issue\n") || !strings.Contains(err.Error(), `to-type must be issue`)) {
 			t.Fatalf("removed endpoint result = (%q, %q, %v)", stdout, stderr, err)
 		}
 
@@ -158,7 +160,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					return []string{firstIssueID, secondIssueID}
 				},
 				command:       []string{"link", "add", "", "blocks", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-				wantSubstring: "error: link add: link already exists:",
+				wantSubstring: "error: entity already exists\nreason: duplicate-entity; entity_type=link",
 			},
 			{
 				name: "unknown relation",
@@ -166,7 +168,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					return []string{createCommandIssue(t, workspace, "First issue"), createCommandIssue(t, workspace, "Second issue")}
 				},
 				command:       []string{"link", "add", "", "parent_of", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-				wantSubstring: `error: link add: unknown relation "parent_of"`,
+				wantSubstring: "error: link relation is unsupported\n" + p24ExpectedReason("reason: unsupported-relation; allowed=blocks,blocked_by,relates_to,duplicates,duplicated_by,supersedes,superseded_by,caused_by,causes,discovered_from,discovered, argument=relation, value=parent_of"),
 			},
 			{
 				name: "self link",
@@ -175,7 +177,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					return []string{issueID, issueID}
 				},
 				command:       []string{"link", "add", "", "relates_to", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-				wantSubstring: "error: link add: self link is not allowed:",
+				wantSubstring: "error: self link is not permitted\nreason: invalid-argument; argument=link, allowed=distinct endpoint ids",
 			},
 			{
 				name: "implements issue to issue",
@@ -183,7 +185,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					return []string{createCommandIssue(t, workspace, "First issue"), createCommandIssue(t, workspace, "Second issue")}
 				},
 				command:       []string{"link", "add", "", "implements", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-				wantSubstring: `error: link add: unknown relation "implements"`,
+				wantSubstring: "error: link relation is unsupported\n" + p24ExpectedReason("reason: unsupported-relation; allowed=blocks,blocked_by,relates_to,duplicates,duplicated_by,supersedes,superseded_by,caused_by,causes,discovered_from,discovered, argument=relation, value=implements"),
 			},
 			{
 				name: "blocks issue to requirement",
@@ -192,7 +194,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					return []string{issueID, "PRD-LINK-002"}
 				},
 				command:       []string{"link", "add", "", "blocks", "", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},
-				wantSubstring: `error: link add: to-type must be issue`,
+				wantSubstring: "error: invalid link endpoint type\nreason: invalid-argument; argument=to-type, allowed=issue",
 			},
 			{
 				name: "missing requirement endpoint",
@@ -200,7 +202,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 					return []string{createCommandIssue(t, workspace, "Issue"), "PRD-LINK-002"}
 				},
 				command:       []string{"link", "add", "", "implements", "", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},
-				wantSubstring: `error: link add: to-type must be issue`,
+				wantSubstring: "error: invalid link endpoint type\nreason: invalid-argument; argument=to-type, allowed=issue",
 			},
 		}
 
@@ -349,7 +351,7 @@ func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
 				return []string{createCommandIssue(t, workspace, "First issue"), createCommandIssue(t, workspace, "Second issue")}
 			},
 			command:       []string{"link", "remove", "", "blocks", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
-			wantSubstring: "error: link remove: link does not exist:",
+			wantSubstring: "error: link was not found\nreason: link-not-found;",
 		},
 		{
 			name: "project-local actor",
@@ -575,28 +577,34 @@ func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
 	}{
 		{
 			name: "add omitted from type", operation: "link.add",
-			args:   []string{"--json", "link", "add", firstID, "blocks", secondID, "--to-type", "issue", "--by", "developer"},
-			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.add") },
+			args: []string{"--json", "link", "add", firstID, "blocks", secondID, "--to-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) {
+				assertLinkInvalidRequestEnvelope(t, output, "link.add", "from-type")
+			},
 		},
 		{
 			name: "add omitted to type", operation: "link.add",
 			args:   []string{"--json", "link", "add", firstID, "blocks", secondID, "--from-type", "issue", "--by", "developer"},
-			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.add") },
+			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.add", "to-type") },
 		},
 		{
 			name: "remove omitted from type", operation: "link.remove",
-			args:   []string{"--json", "link", "remove", firstID, "blocks", secondID, "--to-type", "issue", "--by", "developer"},
-			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.remove") },
+			args: []string{"--json", "link", "remove", firstID, "blocks", secondID, "--to-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) {
+				assertLinkInvalidRequestEnvelope(t, output, "link.remove", "from-type")
+			},
 		},
 		{
 			name: "remove omitted to type", operation: "link.remove",
-			args:   []string{"--json", "link", "remove", firstID, "blocks", secondID, "--from-type", "issue", "--by", "developer"},
-			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.remove") },
+			args: []string{"--json", "link", "remove", firstID, "blocks", secondID, "--from-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) {
+				assertLinkInvalidRequestEnvelope(t, output, "link.remove", "to-type")
+			},
 		},
 		{
 			name: "list omitted type", operation: "link.list",
 			args:   []string{"--json", "link", "list", firstID},
-			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.list") },
+			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.list", "type") },
 		},
 		{
 			name: "self link", operation: "link.add",
@@ -637,6 +645,9 @@ func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
 			result := executeCommandForTest(workspace, test.args...)
 			if result.err == nil || result.stdout != "" {
 				t.Fatalf("%s result = %#v, want stderr-only rejection", test.operation, result)
+			}
+			if cli.ExitCode(result.err) != 2 && strings.Contains(test.name, "omitted") {
+				t.Fatalf("missing flag exit=%d", cli.ExitCode(result.err))
 			}
 			test.assert(t, result.stderr)
 			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
@@ -724,10 +735,14 @@ func assertLinkMutationEnvelope(t *testing.T, result commandExecutionResult, jou
 	}
 }
 
-func assertLinkInvalidRequestEnvelope(t *testing.T, output, operation string) {
+func assertLinkInvalidRequestEnvelope(t *testing.T, output, operation, flag string) {
 	t.Helper()
+	envelope := decodeCommandJSONStructure(t, output).(map[string]any)
+	if failure := envelope["error"].(map[string]any); failure["message"] != "--"+flag+" is required" || failure["category"] != "invalid-input" {
+		t.Fatalf("required flag failure = %#v", failure)
+	}
 	assertLinkFailure(t, output, operation, "invalid-argument", nil, map[string]any{
-		"argument": "request", "value": nil, "allowed": []any{"accepted " + operation + " input"},
+		"argument": "--" + flag, "value": nil, "allowed": []any{"--" + flag},
 	})
 }
 

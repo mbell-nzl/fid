@@ -114,7 +114,9 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 		},
 		{
 			name: "mismatched repository", actor: "actor-builder",
-			mutate: func(input map[string]any) { input["repository"].(map[string]any)["tree_oid"] = "tree-mismatched" },
+			mutate: func(input map[string]any) {
+				input["expected_repository"].(map[string]any)["head_oid"] = strings.Repeat("f", 40)
+			},
 		},
 		{
 			name: "immutable budgets", actor: "actor-builder",
@@ -149,7 +151,22 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 				"--project", workspace, "--json", "run", "start", "--actor", testCase.actor,
 				"--input", path, "--idempotency-key", "run-binding-"+strings.ReplaceAll(testCase.name, " ", "-"),
 			)
-			assertRunStartInvalidArgument(t, result)
+			switch testCase.name {
+			case "mismatched repository":
+				if result.err == nil || !strings.Contains(result.stderr, `"code":"repository-mismatch"`) {
+					t.Fatalf("mismatch: %#v", result)
+				}
+			case "immutable budgets":
+				if result.err == nil || !strings.Contains(result.stderr, `"argument":"input.budgets"`) {
+					t.Fatalf("immutable budgets: %#v", result)
+				}
+			default:
+				message := "run claim binding is invalid"
+				if testCase.name == "mismatched Envelope revision" {
+					message = "run start input is invalid"
+				}
+				assertRunStartInvalidArgument(t, result, message)
+			}
 			assertRunStateUnchanged(t, workspace, before)
 		})
 	}
@@ -289,20 +306,11 @@ func runEnvelopeForTest(t *testing.T) (string, string, string) {
 
 func runEnvelopeForTestWithDefinition(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
 	t.Helper()
-	definitions := gateDefinitionsForTest(modifyDefinition)
-	key := reusableWorkspaceFixtureKey(t, "run-envelope", definitions)
-	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, envelopeID, registration := buildRunEnvelopeForTest(t, definitions)
-		return workspace, []string{issueID, envelopeID, registration.ID, strconv.Itoa(registration.Version)}
-	})
-	registrationVersion, err := strconv.Atoi(values[3])
-	if err != nil {
-		t.Fatalf("decode cached registration version: %v", err)
-	}
+	workspace, issueID, envelopeID, registration := buildRunEnvelopeForTest(t, gateDefinitionsForTest(modifyDefinition))
 	rememberEnvelopeBindingForTest(t, workspace, envelopeBindingForTest{
-		registrationID: values[2], registrationVersion: registrationVersion, obligationID: testEvidenceObligationID,
+		registrationID: registration.ID, registrationVersion: registration.Version, obligationID: testEvidenceObligationID,
 	})
-	return workspace, values[0], values[1]
+	return workspace, issueID, envelopeID
 }
 
 func buildRunEnvelopeForTest(t *testing.T, definitions []any) (string, string, string, gateRegistrationView) {
@@ -337,6 +345,9 @@ func buildRunEnvelopeForTest(t *testing.T, definitions []any) (string, string, s
 
 func runRepositoryForTest(t *testing.T, workspace string) map[string]any {
 	t.Helper()
+	if repository, ok := retainedRepositoryInputs.Load(workspace); ok {
+		return cloneJSONMap(t, repository.(map[string]any))
+	}
 	return cloneJSONMap(t, testEnvelopeRepository(t, workspace))
 }
 
@@ -348,7 +359,7 @@ func runFromResponse(t *testing.T, output string) map[string]any {
 func runStartInput(issueID, envelopeID, claimID any, repository map[string]any) map[string]any {
 	return map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
-		"claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-builder", "source": "activated-harness"}, "obligation_id": nil, "repository": repository,
+		"claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-builder", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": map[string]any{"head_oid": repository["head_oid"], "dirty": repository["dirty"]},
 	}
 }
 
@@ -375,7 +386,7 @@ func closeRunForTest(t *testing.T, workspace, runID string, repository map[strin
 	observation := response["observation"].(map[string]any)
 	run := response["run"].(map[string]any)
 	closePath := filepath.Join(workspace, key+"-close.json")
-	writeActivationInput(t, closePath, map[string]any{"run_id": runID, "expected_version": run["version"], "observation_id": observation["id"], "repository": repository})
+	writeActivationInput(t, closePath, map[string]any{"run_id": runID, "expected_version": run["version"], "observation_id": observation["id"], "expected_repository": map[string]any{"head_oid": testEnvelopeRepository(t, workspace)["head_oid"], "dirty": testEnvelopeRepository(t, workspace)["dirty"]}})
 	closed := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "close", "--actor", "actor-builder", "--input", closePath, "--idempotency-key", key+"-close")
 	if closed.err != nil {
 		t.Fatalf("close Run: %#v", closed)
@@ -390,7 +401,7 @@ func assertRunStateUnchanged(t *testing.T, workspace string, want workspacePersi
 	}
 }
 
-func assertRunStartInvalidArgument(t *testing.T, result commandExecutionResult) {
+func assertRunStartInvalidArgument(t *testing.T, result commandExecutionResult, message string) {
 	t.Helper()
 	if result.err == nil || result.stdout != "" {
 		t.Fatalf("run start = %#v, want stderr-only rejection", result)
@@ -401,7 +412,7 @@ func assertRunStartInvalidArgument(t *testing.T, result commandExecutionResult) 
 	assertNestedEnvelopeKeySet(t, []byte(result.stderr), "error.details", []string{"allowed", "argument", "value"})
 	errorValue := failure["error"].(map[string]any)
 	if failure["contract_version"] != "fid-cli.v1" || failure["ok"] != false || failure["operation"] != "run.start" ||
-		errorValue["category"] != "invalid-input" || errorValue["code"] != "invalid-argument" || errorValue["message"] != "invalid Run request" ||
+		errorValue["category"] != "invalid-input" || errorValue["code"] != "invalid-argument" || errorValue["message"] != message ||
 		errorValue["retryable"] != false || errorValue["subject"] != nil {
 		t.Fatalf("run start failure = %#v, want canonical invalid-argument envelope", failure)
 	}

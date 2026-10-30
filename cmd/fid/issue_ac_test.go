@@ -263,7 +263,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 				issueID := parseCreatedIssueID(t, createStderr)
 				return []string{"issue", "ac", "add", issueID, "--text", "Bad ordinal", "--ordinal", "0", "--by", "developer"}
 			},
-			wantErr: "error: add acceptance criterion: ordinal must be a positive integer",
+			wantErr: `error: invalid argument "0" for "--ordinal" flag`,
 		},
 		{
 			name: "invalid actor",
@@ -272,14 +272,14 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 				issueID := parseCreatedIssueID(t, createStderr)
 				return []string{"issue", "ac", "add", issueID, "--text", "Invalid actor", "--ordinal", "1", "--actor", "intern"}
 			},
-			wantErr: `error: Issue actor must match <agent|human|service>:<id>`,
+			wantErr: `error: invalid argument "intern" for "--actor" flag`,
 		},
 		{
 			name: "missing issue",
 			args: func(t *testing.T, workspace string) []string {
 				return []string{"issue", "ac", "add", "FID-missing", "--text", "Missing issue", "--ordinal", "1", "--by", "developer"}
 			},
-			wantErr: `error: issue "FID-missing" not found`,
+			wantErr: "error: issue was not found\nreason: issue-not-found; id=FID-missing",
 		},
 		{
 			name: "epic rejection before append",
@@ -498,7 +498,7 @@ func TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues(t
 			if stdout != "" {
 				t.Fatalf("stdout = %q, want empty", stdout)
 			}
-			if stderr != "error: unknown flag: --format\n" {
+			if stderr != "error: unknown flag: --format\nreason: invalid-argument; argument=--format, allowed=\n" {
 				t.Fatalf("stderr = %q, want concise removed-flag error", stderr)
 			}
 			if !strings.Contains(err.Error(), "unknown flag: --format") {

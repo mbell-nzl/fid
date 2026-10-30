@@ -1,11 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/claims"
@@ -117,6 +114,7 @@ func claimMutationFlags(cmd *cobra.Command, inputPath, actor, key *string) {
 	cmd.Flags().StringVar(actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError(strings.ReplaceAll(rootCommandKey(cmd), " ", ".")))
+	installInputDescriptor(cmd, inputDescriptorRegistry["claim "+cmd.Name()])
 }
 
 func claimRequest(cmd *cobra.Command, operation, inputPath, actor, key string, target any) error {
@@ -125,7 +123,7 @@ func claimRequest(cmd *cobra.Command, operation, inputPath, actor, key string, t
 			return err
 		}
 	}
-	if err := decodeClosedClaimInput(cmd.InOrStdin(), inputPath, target); err != nil {
+	if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry[strings.ReplaceAll(operation, ".", " ")], target); err != nil {
 		return renderClaimError(cmd, operation, err)
 	}
 	return nil
@@ -163,32 +161,6 @@ func newClaimListCommand() *cobra.Command {
 	return cmd
 }
 
-func decodeClosedClaimInput(stdin io.Reader, path string, target any) error {
-	var payload []byte
-	var err error
-	if path == "-" {
-		payload, err = io.ReadAll(io.LimitReader(stdin, 1_048_577))
-	} else {
-		payload, err = os.ReadFile(path)
-	}
-	if err != nil {
-		return fmt.Errorf("read claim input: %w", err)
-	}
-	if len(payload) > 1_048_576 {
-		return fmt.Errorf("claim input exceeds 1048576 bytes")
-	}
-	decoder := json.NewDecoder(strings.NewReader(string(payload)))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(target); err != nil {
-		return fmt.Errorf("decode claim input: %w", err)
-	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		return fmt.Errorf("claim input must contain one object")
-	}
-	return nil
-}
-
 func writeClaimSuccess(cmd *cobra.Command, operation string, result claims.MutationResult) error {
 	if jsonMode, err := readJSONMode(cmd); err != nil {
 		return err
@@ -208,9 +180,12 @@ func renderClaimError(cmd *cobra.Command, operation string, cause error) error {
 	if err != nil {
 		return err
 	}
+	if failure, handled := renderJudgmentObservationError(cmd, jsonMode, operation, cause); handled {
+		return failure
+	}
 	var idempotency *journal.IdempotencyConflictError
 	if errors.As(cause, &idempotency) {
-		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": idempotency.OperationScope, "idempotency_key": idempotency.IdempotencyKey, "stored_request_digest": idempotency.StoredRequestDigest, "supplied_request_digest": idempotency.SuppliedRequestDigest})
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(idempotency))
 	}
 	var notFound *claims.ClaimNotFoundError
 	if errors.As(cause, &notFound) {
@@ -231,7 +206,7 @@ func renderClaimError(cmd *cobra.Command, operation string, cause error) error {
 	if errors.As(cause, &denied) {
 		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor_id": denied.ActorID, "required_actions": []string{denied.Action}, "required_capabilities": []string{denied.Capability}})
 	}
-	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid claim request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid claim request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
 func writeClaimConflict(cmd *cobra.Command, jsonMode bool, operation string, original error, code cli.Code, cause *claims.ClaimConflictError) error {
@@ -265,8 +240,7 @@ func writeClaimFailure(cmd *cobra.Command, jsonMode bool, operation string, caus
 		return err
 	}
 	if !jsonMode {
-		_ = renderIssueError(cmd.ErrOrStderr(), cause)
-		return cli.NewFailureError(failure, cause)
+		return writeHumanFailure(cmd, operation, failure, cause)
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 }

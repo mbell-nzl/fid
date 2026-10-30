@@ -1,9 +1,7 @@
 package claims
 
 import (
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
@@ -13,6 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -31,9 +30,9 @@ type AcquireRequest struct {
 	IssueID          string `json:"issue_id"`
 	EnvelopeID       string `json:"envelope_id"`
 	EnvelopeRevision int    `json:"envelope_revision"`
-	WorktreeID       string `json:"worktree_id"`
+	WorktreeID       string `json:"-"`
 	Scope            Scope  `json:"scope"`
-	Mode             string `json:"mode"`
+	Mode             string `json:"mode,omitempty"`
 	TTLSeconds       int    `json:"ttl_seconds"`
 }
 
@@ -138,7 +137,16 @@ func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationRe
 		return MutationResult{}, invalidGenericClaim("claim acquire input is invalid")
 	}
 	return mutateGenericClaim(options, claimAcquireAction, request, func(conn *sql.DB, _ string, now time.Time) (journal.Event, GenericClaim, error) {
-		envelope, err := validateAcquireAuthority(options, request)
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		if err != nil {
+			return journal.Event{}, GenericClaim{}, err
+		}
+		observation, err := project.ObserveRecordedRepository(options.WorkspaceRoot, projectConfig.ProjectID)
+		if err != nil {
+			return journal.Event{}, GenericClaim{}, err
+		}
+		repository := workflow.Repository(observation)
+		envelope, err := validateAcquireAuthority(options, request, repository)
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
 		}
@@ -178,7 +186,7 @@ func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationRe
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
 		}
-		claim := GenericClaim{ID: claimID, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, EnvelopeRevision: request.EnvelopeRevision, ActorID: options.ActorID, WorktreeID: request.WorktreeID, Scope: request.Scope, Mode: request.Mode, Version: 1, Status: "active", AcquiredAt: now.Format(time.RFC3339Nano), ExpiresAt: now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)}
+		claim := GenericClaim{ID: claimID, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, EnvelopeRevision: request.EnvelopeRevision, ActorID: options.ActorID, WorktreeID: observation.WorktreeID, Scope: request.Scope, Mode: request.Mode, Version: 1, Status: "active", AcquiredAt: now.Format(time.RFC3339Nano), ExpiresAt: now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)}
 		event, err := genericClaimEvent(options.WorkspaceRoot, actor, envelope.RepositoryScope, claimID, 1, "claim.acquired", claimAcquireAction, []journal.Effect{{
 			Op: "insert", Table: "claims", PK: map[string]any{"id": claimID}, Values: claimValues(claim),
 		}})
@@ -317,19 +325,21 @@ func mutateGenericClaim(options MutationOptions, operation string, request any, 
 		if err != nil {
 			return fmt.Errorf("claim mutation: read project config: %w", err)
 		}
-		digest, err := genericClaimDigest(operation, project.ProjectID, options.ActorID, request)
+		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "operation": operation, "project_id": project.ProjectID, "request": request}, options.ActorID, nil)
 		if err != nil {
 			return err
 		}
-		idempotency := journal.IdempotencyRequest{OperationScope: operation + ":" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		idempotency := journal.IdempotencyRequest{OperationScope: operation + ":" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
-			claim, err := loadGenericClaim(conn, replay.EntityID)
-			if err != nil {
-				return err
+			var stored struct {
+				Claim GenericClaim `json:"claim"`
 			}
-			result = MutationResult{Claim: claim, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
+			if err := json.Unmarshal([]byte(replay.ResultJSON), &stored); err != nil {
+				return fmt.Errorf("decode Claim replay: %w", err)
+			}
+			result = MutationResult{Claim: stored.Claim, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
 			return nil
 		}
 		event, claim, err := build(conn, project.ProjectID, genericClaimNow(options.Now))
@@ -353,12 +363,12 @@ func mutateGenericClaim(options MutationOptions, operation string, request any, 
 	return result, err
 }
 
-func validateAcquireAuthority(options MutationOptions, request AcquireRequest) (workflow.Envelope, error) {
+func validateAcquireAuthority(options MutationOptions, request AcquireRequest, observed workflow.Repository) (workflow.Envelope, error) {
 	envelope, err := workflow.GetEnvelope(options.WorkspaceRoot, options.MigrationsDir, request.EnvelopeID)
 	if err != nil {
 		return workflow.Envelope{}, err
 	}
-	if envelope.PrimaryIssueID != request.IssueID || envelope.CurrentRevision != request.EnvelopeRevision || envelope.RepositoryScope.WorktreeID != request.WorktreeID {
+	if envelope.PrimaryIssueID != request.IssueID || envelope.CurrentRevision != request.EnvelopeRevision || !workflow.SameWorktree(options.WorkspaceRoot, envelope.RepositoryScope, observed) {
 		return workflow.Envelope{}, invalidGenericClaim("claim acquire binding is invalid")
 	}
 	if err := workflow.AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, workflow.EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: claimAcquireAction, Capability: claimAcquireAction, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, Revision: request.EnvelopeRevision}); err != nil {
@@ -372,7 +382,7 @@ func validateStoredClaimAuthority(options MutationOptions, claim GenericClaim, a
 	if err != nil {
 		return err
 	}
-	if envelope.RepositoryScope.WorktreeID != claim.WorktreeID {
+	if !workflow.SameWorktree(options.WorkspaceRoot, envelope.RepositoryScope, workflow.Repository{ProjectID: envelope.RepositoryScope.ProjectID, WorktreeID: claim.WorktreeID}) {
 		return invalidGenericClaim("claim worktree binding is invalid")
 	}
 	return workflow.AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, workflow.EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: action, Capability: action, IssueID: claim.IssueID, EnvelopeID: claim.EnvelopeID, Revision: claim.EnvelopeRevision})
@@ -392,7 +402,11 @@ func genericClaimEvent(workspaceRoot string, actor workflow.ActorProfile, reposi
 		return journal.Event{}, err
 	}
 	_ = sequence // Claim version and aggregate history diverge after atomic recovery creates the Claim under a Run Event.
-	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: eventType, ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: claimID, Sequence: next, Type: "claim"}, CommandName: command, Repository: &journal.Repository{CaptureSource: repository.CaptureSource, Dirty: repository.Dirty, DirtyDigest: repository.DirtyDigest, HeadOID: repository.HeadOID, ProjectID: repository.ProjectID, TreeOID: repository.TreeOID}, Effects: effects}, nil
+	base := ""
+	if repository.BaseOID != nil {
+		base = *repository.BaseOID
+	}
+	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: eventType, ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: claimID, Sequence: next, Type: "claim"}, CommandName: command, Repository: &journal.Repository{BaseOID: base, CaptureSource: repository.CaptureSource, Dirty: repository.Dirty, DirtyDigest: repository.DirtyDigest, HeadOID: repository.HeadOID, ProjectID: repository.ProjectID, TreeOID: repository.TreeOID, WorktreeID: repository.WorktreeID}, Effects: effects}, nil
 }
 
 func loadGenericClaim(conn *sql.DB, id string) (GenericClaim, error) {
@@ -480,7 +494,7 @@ func validateMutationOptions(options MutationOptions) error {
 }
 
 func validAcquireRequest(request AcquireRequest) bool {
-	if strings.TrimSpace(request.IssueID) == "" || strings.TrimSpace(request.EnvelopeID) == "" || request.EnvelopeRevision != 1 || strings.TrimSpace(request.WorktreeID) == "" || (request.Mode != "mutation" && request.Mode != "review") || request.TTLSeconds < 1 || request.TTLSeconds > 86400 || len(request.Scope.Paths) == 0 {
+	if strings.TrimSpace(request.IssueID) == "" || strings.TrimSpace(request.EnvelopeID) == "" || request.EnvelopeRevision != 1 || (request.Mode != "mutation" && request.Mode != "review") || request.TTLSeconds < 1 || request.TTLSeconds > 86400 || len(request.Scope.Paths) == 0 {
 		return false
 	}
 	previous := ""
@@ -503,15 +517,6 @@ func validExpireRequest(request ExpireRequest) bool {
 
 func validReleaseRequest(request ReleaseRequest) bool {
 	return strings.TrimSpace(request.ClaimID) != "" && request.ExpectedVersion > 0 && (request.Reason == "completed" || request.Reason == "failed" || request.Reason == "operator-released")
-}
-
-func genericClaimDigest(operation, projectID, actorID string, request any) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"actor_id": actorID, "operation": operation, "project_id": projectID, "request": request})
-	if err != nil {
-		return "", err
-	}
-	sum := sha256.Sum256(payload)
-	return "sha256:" + hex.EncodeToString(sum[:]), nil
 }
 
 func genericClaimNow(now time.Time) time.Time {

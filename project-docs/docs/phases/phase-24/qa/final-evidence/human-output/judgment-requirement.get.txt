@@ -1,0 +1,9 @@
+Purpose: Inspect Requirement References and Issue links.
+
+Requirement References
+  Requirement REQ-leaf
+    Reference ID: RREF-cfc88a; Status: active
+    Reference: Judgment source; path project-docs/p24-judgment-sentinel.json; digest sha256:963c5bd5d3319ebbc4de1d055751870ff152900573ec2ffc6251062971fd03b9
+
+Issue links
+  REQ-leaf implements P22-ee4576

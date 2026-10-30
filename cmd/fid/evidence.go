@@ -8,6 +8,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/evidence"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 func init() {
@@ -31,7 +32,7 @@ func newEvidenceLinkCommand() *cobra.Command {
 			}
 		}
 		var request evidence.EvidenceLinkRequest
-		if err := decodeClosedGateInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["evidence link"], &request); err != nil {
 			return renderEvidenceError(cmd, "evidence.link", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -54,6 +55,7 @@ func newEvidenceLinkCommand() *cobra.Command {
 	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("evidence.link"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["evidence link"])
 	return cmd
 }
 
@@ -67,7 +69,7 @@ func newEvidenceGetCommand() *cobra.Command {
 		if err != nil {
 			return renderEvidenceError(cmd, "evidence.get", err)
 		}
-		evaluations, err := evidence.EvaluateEvidence(workspace, issueMigrationsDir(), evidence.EvidenceEvaluateRequest{ObligationID: &record.ObligationID, TargetRepository: record.TargetRepository})
+		evaluations, err := evidence.EvaluateStoredEvidence(workspace, issueMigrationsDir(), record.ID)
 		if err != nil {
 			return renderEvidenceError(cmd, "evidence.get", err)
 		}
@@ -94,7 +96,7 @@ func newEvidenceEvaluateCommand() *cobra.Command {
 			return err
 		}
 		var request evidence.EvidenceEvaluateRequest
-		if err := decodeClosedGateInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["evidence evaluate"], &request); err != nil {
 			return renderEvidenceError(cmd, "evidence.evaluate", err)
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
@@ -122,7 +124,60 @@ func newEvidenceEvaluateCommand() *cobra.Command {
 	}}
 	cmd.Flags().StringVar(&inputPath, "input", "", "Evidence evaluation JSON input")
 	cmd.SetFlagErrorFunc(canonicalFlagError("evidence.evaluate"))
+	installInputDescriptor(cmd, inputDescriptorRegistry["evidence evaluate"])
+	installEvidenceEvaluateExampleParsing(cmd)
 	return cmd
+}
+
+// Evaluation has no Actor or key flags. Parse those spellings only in an
+// example request so the exclusive template contract can name its conflict.
+func installEvidenceEvaluateExampleParsing(cmd *cobra.Command) {
+	originalRun := cmd.RunE
+	cmd.DisableFlagParsing, cmd.Args = true, nil
+	cmd.RunE = func(cmd *cobra.Command, raw []string) error {
+		example := false
+		for _, arg := range raw {
+			if arg == "--" {
+				break
+			}
+			example = example || arg == "--example" || arg == "--example=true"
+		}
+		if example {
+			flags := pflag.NewFlagSet("evidence.evaluate example", pflag.ContinueOnError)
+			flags.AddFlagSet(cmd.Flags())
+			flags.AddFlagSet(cmd.InheritedFlags())
+			flags.String("actor", "", "")
+			flags.String("idempotency-key", "", "")
+			if err := flags.Parse(raw); err != nil {
+				return canonicalFlagError("evidence.evaluate")(cmd, err)
+			}
+			for _, spelling := range []string{"json", "project", "input", "actor", "idempotency-key"} {
+				flag := flags.Lookup(spelling)
+				if flag != nil && flag.Changed {
+					var value any = flag.Value.String()
+					if spelling == "json" {
+						value = nil
+					}
+					return writeExampleConflict(cmd, "evidence.evaluate", "--"+spelling, value)
+				}
+			}
+			return originalRun(cmd, flags.Args())
+		}
+		cmd.DisableFlagParsing = false
+		parseErr := cmd.ParseFlags(raw)
+		cmd.DisableFlagParsing = true
+		if parseErr != nil {
+			return canonicalFlagError("evidence.evaluate")(cmd, parseErr)
+		}
+		if help, _ := cmd.Flags().GetBool("help"); help {
+			return cmd.Help()
+		}
+		args := cmd.Flags().Args()
+		if err := canonicalNoArgs("evidence.evaluate")(cmd, args); err != nil {
+			return err
+		}
+		return originalRun(cmd, args)
+	}
 }
 
 func renderEvidenceError(cmd *cobra.Command, operation string, cause error) error {
@@ -130,9 +185,12 @@ func renderEvidenceError(cmd *cobra.Command, operation string, cause error) erro
 	if err != nil {
 		return err
 	}
+	if rendered, ok := renderJudgmentObservationError(cmd, jsonMode, operation, cause); ok {
+		return rendered
+	}
 	var conflict *journal.IdempotencyConflictError
 	if errors.As(cause, &conflict) {
-		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, map[string]any{"operation_scope": conflict.OperationScope, "idempotency_key": conflict.IdempotencyKey, "stored_request_digest": conflict.StoredRequestDigest, "supplied_request_digest": conflict.SuppliedRequestDigest})
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key conflicts with a different request", nil, idempotencyConflictDetails(conflict))
 	}
 	var notFound *evidence.EvidenceNotFoundError
 	if errors.As(cause, &notFound) {
@@ -162,5 +220,5 @@ func renderEvidenceError(cmd *cobra.Command, operation string, cause error) erro
 	if errors.As(cause, &outcomeNotFound) {
 		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeOutcomeNotFound, "Human Outcome was not found", &cli.Subject{Type: cli.SubjectHumanOutcome, ID: outcomeNotFound.ID}, map[string]any{"id": outcomeNotFound.ID})
 	}
-	return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Evidence request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Evidence request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }

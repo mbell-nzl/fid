@@ -23,6 +23,19 @@ const maxRepositoryOutputBytes = 10 << 20
 
 var ErrUnsafeRepository = errors.New("repository observation is unsafe")
 
+// RepositoryUnavailableError classifies a failed capture without relying on
+// Git's platform-specific message text.
+type RepositoryUnavailableError struct {
+	Reason string
+	Detail string
+}
+
+func (err *RepositoryUnavailableError) Error() string {
+	return fmt.Sprintf("%s: %s: %s", ErrUnsafeRepository, err.Reason, err.Detail)
+}
+
+func (err *RepositoryUnavailableError) Is(target error) bool { return target == ErrUnsafeRepository }
+
 type Image struct {
 	Mode   string `json:"mode"`
 	Digest string `json:"digest"`
@@ -49,11 +62,15 @@ type Observation struct {
 
 // ObserveRepository reads a complete Git worktree snapshot without modifying it.
 func ObserveRepository(root string) (Observation, error) {
-	first, err := observeRepository(root)
+	return captureRepository(func() (Observation, error) { return observeRepository(root) })
+}
+
+func captureRepository(read func() (Observation, error)) (Observation, error) {
+	first, err := read()
 	if err != nil {
 		return Observation{}, err
 	}
-	second, err := observeRepository(root)
+	second, err := read()
 	if err != nil {
 		return Observation{}, err
 	}
@@ -70,27 +87,27 @@ func observeRepository(root string) (Observation, error) {
 	}
 	root, err = gitText(root, "rev-parse", "--show-toplevel")
 	if err != nil {
-		return Observation{}, unsafeRepository("repository root: %v", err)
+		return Observation{}, unsafeRepositoryReason("not-a-repository", "repository root: %v", err)
 	}
 	head, err := gitText(root, "rev-parse", "HEAD")
 	if err != nil {
-		return Observation{}, unsafeRepository("missing base: %v", err)
+		return Observation{}, unsafeRepositoryReason("not-a-repository", "missing base: %v", err)
 	}
 	tree, err := gitText(root, "rev-parse", "HEAD^{tree}")
 	if err != nil {
-		return Observation{}, unsafeRepository("missing tree: %v", err)
+		return Observation{}, unsafeRepositoryReason("not-a-repository", "missing tree: %v", err)
 	}
 	if unsafe, err := trackedFlags(root); err != nil {
 		return Observation{}, err
 	} else if unsafe {
-		return Observation{}, unsafeRepository("tracked assume-unchanged or skip-worktree entry")
+		return Observation{}, unsafeRepositoryReason("tracked-flags", "tracked assume-unchanged or skip-worktree entry")
 	}
 	unmerged, err := unmergedPaths(root)
 	if err != nil {
 		return Observation{}, err
 	}
 	if len(unmerged) != 0 {
-		return Observation{}, unsafeRepository("repository has unmerged paths")
+		return Observation{}, unsafeRepositoryReason("unmerged-paths", "repository has unmerged paths")
 	}
 	operation, err := operationMarker(root)
 	if err != nil {
@@ -158,7 +175,7 @@ func changedPaths(root string) ([]string, error) {
 		}
 	}
 	if len(paths) > maxRepositoryPaths {
-		return nil, unsafeRepository("path count exceeds %d", maxRepositoryPaths)
+		return nil, unsafeRepositoryReason("unsafe-path", "path count exceeds %d", maxRepositoryPaths)
 	}
 	result := make([]string, 0, len(paths))
 	for changed := range paths {
@@ -196,19 +213,19 @@ func gitImage(root string, arguments ...string) (*Image, error) {
 	parts := strings.SplitN(record, "\t", 2)
 	fields := strings.Fields(parts[0])
 	if len(parts) != 2 || len(fields) != 3 {
-		return nil, unsafeRepository("unsupported Git image for %q", arguments[len(arguments)-1])
+		return nil, unsafeRepositoryReason("unsafe-path", "unsupported Git image for %q", arguments[len(arguments)-1])
 	}
 	mode, objectID := fields[0], fields[1]
 	if arguments[0] == "ls-tree" {
 		if fields[1] != "blob" {
-			return nil, unsafeRepository("unsupported Git object type for %q", arguments[len(arguments)-1])
+			return nil, unsafeRepositoryReason("unsafe-path", "unsupported Git object type for %q", arguments[len(arguments)-1])
 		}
 		objectID = fields[2]
 	} else if fields[2] != "0" {
-		return nil, unsafeRepository("unmerged Git image for %q", arguments[len(arguments)-1])
+		return nil, unsafeRepositoryReason("unmerged-paths", "unmerged Git image for %q", arguments[len(arguments)-1])
 	}
 	if mode != "100644" && mode != "100755" && mode != "120000" {
-		return nil, unsafeRepository("unsupported Git mode %q", mode)
+		return nil, unsafeRepositoryReason("unsafe-path", "unsupported Git mode %q", mode)
 	}
 	contents, err := gitOutput(root, "cat-file", "blob", objectID)
 	if err != nil {
@@ -245,7 +262,7 @@ func worktreeImage(root, changed string) (*Image, error) {
 			return nil, unsafeRepository("read worktree file %q: %v", changed, err)
 		}
 	default:
-		return nil, unsafeRepository("unsupported worktree file type %q", changed)
+		return nil, unsafeRepositoryReason("unsafe-path", "unsupported worktree file type %q", changed)
 	}
 	return &Image{Mode: mode, Digest: sha256Digest(contents)}, nil
 }
@@ -255,11 +272,15 @@ func unmergedPaths(root string) ([]string, error) {
 	if err != nil {
 		return nil, unsafeRepository("list unmerged entries: %v", err)
 	}
+	return parseUnmergedPaths(records)
+}
+
+func parseUnmergedPaths(records []string) ([]string, error) {
 	paths := map[string]bool{}
 	for _, record := range records {
 		parts := strings.SplitN(record, "\t", 2)
 		if len(parts) != 2 || validPath(parts[1]) != nil {
-			return nil, unsafeRepository("invalid unmerged path")
+			return nil, unsafeRepositoryReason("unmerged-paths", "invalid unmerged path")
 		}
 		paths[parts[1]] = true
 	}
@@ -315,12 +336,12 @@ func gitNUL(root string, arguments ...string) ([]string, error) {
 	}
 	parts := bytes.Split(output[:len(output)-1], []byte{0})
 	if len(parts) > maxRepositoryPaths {
-		return nil, unsafeRepository("path count exceeds %d", maxRepositoryPaths)
+		return nil, unsafeRepositoryReason("unsafe-path", "path count exceeds %d", maxRepositoryPaths)
 	}
 	result := make([]string, 0, len(parts))
 	for _, part := range parts {
 		if !utf8.Valid(part) {
-			return nil, unsafeRepository("Git path is not valid UTF-8")
+			return nil, unsafeRepositoryReason("unsafe-path", "Git path is not valid UTF-8")
 		}
 		result = append(result, string(part))
 	}
@@ -341,15 +362,22 @@ func gitOutput(root string, arguments ...string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(output) > maxRepositoryOutputBytes {
-		return nil, unsafeRepository("Git output exceeds %d bytes", maxRepositoryOutputBytes)
+	if err := checkRepositoryOutputSize(len(output)); err != nil {
+		return nil, err
 	}
 	return output, nil
 }
 
+func checkRepositoryOutputSize(size int) error {
+	if size > maxRepositoryOutputBytes {
+		return unsafeRepositoryReason("unsafe-path", "Git output exceeds %d bytes", maxRepositoryOutputBytes)
+	}
+	return nil
+}
+
 func validPath(value string) error {
 	if value == "" || !utf8.ValidString(value) || strings.ContainsRune(value, 0) || strings.HasPrefix(value, "/") || path.Clean(value) != value || value == "." || strings.HasPrefix(value, "../") {
-		return unsafeRepository("invalid repository path")
+		return unsafeRepositoryReason("unsafe-path", "invalid repository path")
 	}
 	return nil
 }
@@ -360,5 +388,18 @@ func sha256Digest(contents []byte) string {
 }
 
 func unsafeRepository(format string, arguments ...any) error {
-	return fmt.Errorf("%w: %s", ErrUnsafeRepository, fmt.Sprintf(format, arguments...))
+	reason := "changed-during-capture"
+	for _, argument := range arguments {
+		if err, ok := argument.(error); ok {
+			var unavailable *RepositoryUnavailableError
+			if errors.As(err, &unavailable) {
+				reason = unavailable.Reason
+			}
+		}
+	}
+	return unsafeRepositoryReason(reason, format, arguments...)
+}
+
+func unsafeRepositoryReason(reason, format string, arguments ...any) error {
+	return &RepositoryUnavailableError{Reason: reason, Detail: fmt.Sprintf(format, arguments...)}
 }
