@@ -28,27 +28,3 @@ multi_agent = true
 [agents]
 max_depth = 3
 max_threads = 4
-
-[agents.tech_lead]
-description = "Plans an implementation phase and wraps it up at phase end. Writes task specs, records decisions, and never writes product code."
-config_file = "agents/tech_lead.toml"
-
-[agents.phase_runner]
-description = "Mechanical orchestrator for one phase. Spawns qa_lead, developer, qa_reviewer, and tl_lite as needed; stops on hard blockers."
-config_file = "agents/phase_runner.toml"
-
-[agents.developer]
-description = "Implements exactly one task per session using strict red/green TDD, updates docs, runs the quality gate, commits, and writes a completion report."
-config_file = "agents/developer.toml"
-
-[agents.qa_lead]
-description = "Creates phase QA plans, runs phase-end quality review, and generates human verification checklists. Does not write product code."
-config_file = "agents/qa_lead.toml"
-
-[agents.qa_reviewer]
-description = "Focused mid-phase QA reviewer for three-task windows. Writes review-M.md and escalates cross-cutting concerns."
-config_file = "agents/qa_reviewer.toml"
-
-[agents.tl_lite]
-description = "Single-use tactical Tech Lead for mid-phase questions and soft-blocker triage. Escalates anything cross-cutting."
-config_file = "agents/tl_lite.toml"

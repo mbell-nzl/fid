@@ -37,12 +37,12 @@ criteria below.
 | # | Task | Lane | Done when |
 |---|---|---|---|
 | **0.1** | Accept ADR-0013; approve this plan | Mark | Signed off (done 31 October 2026) |
-| **0.2** | Write a one-page AGENTS.md; slim CLAUDE.md; archive the V1 role agents and phase skills | Routine | A fresh session learns the working method from AGENTS.md alone |
+| **0.2** | Write a one-page AGENTS.md; slim CLAUDE.md; archive the V1 role agents and phase skills | Routine | A fresh session learns the working method from AGENTS.md alone (done 31 October 2026) |
 | **0.3** | Add a `push: main` CI trigger; turn on branch protection (required CI, up-to-date branches, no bypass) | Assured | A merge to `main` runs CI; a red PR can't merge |
 | **0.4** | Move the CI scripts and conformance fixtures out of `project-docs/` | Assured | CI passes with `project-docs/` deleted locally |
 | **0.5** | Archive fid's V1 docs: tag `v1-workflow-final`, copy them to the archive repo, keep the reset documents in `docs/reset/` | Routine | `project-docs/` is gone from `main`; CI passes |
 | **0.6** | Kit repo with the reviewer agent (code and test-adequacy profiles) | kit | It reviews this reset's first PR |
-| **1.1** | Move the ledger to the git common directory | Standard | V3 |
+| **1.1** | Move the ledger to the git common directory | Standard | Two worktrees share one ledger (V3's claim and `next` parts belong to 1.4) |
 | **1.2** | `fid backup` (export, commit, push), restore test, backup-age status line | Standard | V8 |
 | **1.3** | Display package; `fid status`, `fid show` | Standard | whet-style output; golden tests for text and JSON |
 | **1.4** | `fid next --claim`: atomic, respects dependencies, ordered, typed skip reasons, `--explain` | Standard | V3 |

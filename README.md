@@ -9,17 +9,14 @@ workshop-drawer set.
 
 ## Status
 
-Pre-dogfood convergence. The journal/SQLite foundation, Issue tracker, and
-Issue workflow authoring are implemented through historical Phase 19. ADR-0011
-defines the sharper fid/V2 target, and ADR-0012 orders six vertical scenario
-slices. The Human-approved Phase 20 standalone Issue implementation pack is
-active under the binding V1 delivery workflow; QA planning is the next gate
-before Developer Task 1. No Phase 20 product code, production workspace, or
-compatibility promise exists yet.
+Being reset to a local-first work ledger with receipts for agent-written code.
+[ADR-0013](docs/adr/0013-reset-fid-to-a-ledger-with-receipts.md) records the
+decision and [RESET.md](RESET.md) is the plan. No compatibility promise exists
+until the reset's migration baseline.
 
-## Playbook
+## Working on fid
 
-See `project-docs/docs/playbook.md` for the operator runbook.
+See [AGENTS.md](AGENTS.md).
 
 ## License
 
