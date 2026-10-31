@@ -5,6 +5,11 @@ date: 2026-08-08
 
 # fid owns operational work state; the kit owns engineering workflow policy
 
+> **Superseded on 2026-10-31 by ADR-0013.** fid is no longer the kit's
+> operational backend. fid owns work state, evidence and the evaluation of
+> project lane policy; the kit owns technique. There is no backend contract
+> and no Gate C qualification. The text below is historical reasoning.
+
 fid remains a local-first, agent-first issue tracker and becomes the durable
 operational work-state and evidence backend for kit-driven agentic engineering.
 fid owns issues and their lifecycle, work relationships, claims and runs,

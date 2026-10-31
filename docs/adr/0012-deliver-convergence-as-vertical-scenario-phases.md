@@ -5,6 +5,10 @@ date: 2026-08-09
 
 # Deliver convergence as vertical scenario phases
 
+> **Superseded on 2026-10-31 by ADR-0013.** No phases and no convergence
+> with the V2 kit. `RESET.md` tasks ship in small PRs. The text below is
+> historical reasoning.
+
 The first convergence proposal grouped work mainly by technical dependency:
 machine contracts, execution state, evidence, review, and portability. That
 order made architectural dependencies visible, but it delayed proof that the

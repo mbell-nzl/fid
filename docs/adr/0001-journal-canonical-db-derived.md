@@ -1,5 +1,11 @@
 # Journal-canonical; DB derived; no daemon
 
+> **Superseded in part on 2026-10-31 by ADR-0013.** The ledger moves to the
+> git common directory and is never committed, so the clauses on a committed
+> `.fid/journal`, JSONL line-merges by `git merge` and a committed
+> `.fid/config.toml` no longer hold. Project policy lives in `.fid.toml`.
+> Journal-canonical, SQLite-derived and no daemon stand.
+
 ## Decision
 
 `.fid/journal/YYYY-MM-DD.jsonl` is committed to git and is the source of truth for all fid entity state. `.fid/config.toml` and `.fid/pricing.toml` are committed canonical configuration files, not journal-derived state. `.fid/fid.sqlite` is gitignored and materialized synchronously from the journal plus the current schema. The journal append is the write commit point; applying the event to SQLite is a synchronous projection step that can be replayed if interrupted. There is no background daemon and no sync window.

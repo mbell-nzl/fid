@@ -5,6 +5,12 @@ date: 2026-08-09
 
 # Realign fid around the durable operational kernel
 
+> **Amended on 2026-10-31 by ADR-0013.** fid evaluates project lane policy
+> from `.fid.toml` on `origin/<default branch>`. Activation survives only as
+> "the policy fid trusts, from `origin/main` at commit X". The convergence
+> target with the V2 kit is withdrawn. The record criteria and retirement list
+> stand.
+
 fid has not been adopted by a real project. No user workspace, journal history,
 or external integration depends on its pre-dogfood commands, schemas, output
 formats, or event contracts. Its first intended production use will follow the

@@ -6,6 +6,9 @@
 > longer planned fid product aggregates. Their behavioral invariants move to
 > Work Envelope Obligations, Review Records, Evidence, and Human Outcomes.
 
+> **Ended on 2026-10-31 by ADR-0013.** The V1 three-tier QA procedure no
+> longer governs fid's development. `RESET.md` sets the working method.
+
 ## Decision
 
 fid ships the full three-tier quality model: validation contracts, QA plans, and QA reviews. Plans + reviews land in v0.3; contracts + assertions + required-validator rows + outcomes + the AC↔assertion linkage + coverage reports land in v0.4. All three layers are schema-optional — a project can use any subset — but they are not optional *from fid*: they ship together as the supported quality model.
