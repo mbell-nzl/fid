@@ -191,7 +191,10 @@ for confirmation".
   `.fid.toml`. Changing it is an Assured change, so it needs Mark. When on, the
   loop script (never an agent) merges with
   `gh pr merge --squash --match-head-commit <sha>`. Branch protection on
-  `main`: required CI, up-to-date branches, no bypass.
+  `main` (required CI, up-to-date branches, no bypass) is a precondition for
+  turning on `auto_merge` in any lane. GitHub Free doesn't offer protection
+  on private repos, so it waits until then, when Mark chooses GitHub Pro or a
+  public repo (decided 31 October 2026).
 - **One reviewer session per round** runs every required profile (code, test
   adequacy, security). Assured work adds a separate review on the other model.
 - **Digest:** `fid brief --merged-since …`, one line per merged task, holds on
@@ -326,6 +329,8 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 - A kit skill that helps build a project-specific loop, after two or three
   real loops exist.
 - Bot identity for agents with required review from Mark on Assured paths.
+- Branch protection on `main` for fid and kauri, before any lane gets
+  `auto_merge` (needs GitHub Pro or a public repo).
 - Cloud-session support for the ledger (read-only, then single-writer).
 - Declared paths per task, if shared-file conflicts become a regular cost.
 - Collapse candidates after the trial: Activation, plus any concept the leak

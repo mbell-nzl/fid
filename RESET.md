@@ -38,7 +38,7 @@ criteria below.
 |---|---|---|---|
 | **0.1** | Accept ADR-0013; approve this plan | Mark | Signed off (done 31 October 2026) |
 | **0.2** | Write a one-page AGENTS.md; slim CLAUDE.md; archive the V1 role agents and phase skills | Routine | A fresh session learns the working method from AGENTS.md alone (done 31 October 2026) |
-| **0.3** | Add a `push: main` CI trigger; turn on branch protection (required CI, up-to-date branches, no bypass) | Assured | A merge to `main` runs CI; a red PR can't merge |
+| **0.3** | Add a `push: main` CI trigger. Branch protection is deferred: GitHub Free doesn't offer it on private repos | Assured | A merge to `main` runs CI (done 31 October 2026) |
 | **0.4** | Move the CI scripts and conformance fixtures out of `project-docs/` | Assured | CI passes with `project-docs/` deleted locally |
 | **0.5** | Archive fid's V1 docs: tag `v1-workflow-final`, copy them to the archive repo, keep the reset documents in `docs/reset/` | Routine | `project-docs/` is gone from `main`; CI passes |
 | **0.6** | Kit repo with the reviewer agent (code and test-adequacy profiles) | kit | It reviews this reset's first PR |
@@ -114,3 +114,5 @@ stop building fid as a product.
 
 | Date | Task | Friction | Fix or later |
 |---|---|---|---|
+| 31 Oct | 0.2, 0.3 | The agent's shell has no SSH key loaded, so pushes go through `gh` over HTTPS, and `gh`'s token lacks the `workflow` scope needed to push CI changes | Mark grants the scope (`gh auth refresh -s workflow`) or loads the SSH key for agent shells |
+| 31 Oct | 0.3 | GitHub Free has no branch protection on private repos | Deferred until `auto_merge` (decisions record, later list) |
