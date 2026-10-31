@@ -18,7 +18,8 @@ list. Read RESET.md before starting work.
    make it pass. Test observable behaviour, not internals. Never delete or
    weaken a test to get green.
 5. **Run the checks**: `make fmt-check lint test build`. For CLI journeys, also
-   run `go test -tags integration -race ./cmd/fid/integration/...`.
+   run `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0
+   ./cmd/fid/integration/...`.
 6. **Open the PR.** Its description is the completion report:
    - what changed and why;
    - the lane;
@@ -27,7 +28,8 @@ list. Read RESET.md before starting work.
    - anything left over.
 
    In the same PR, mark the task done in RESET.md by appending `(done <date>)`
-   to its "Done when" cell. It counts as done once merged.
+   to its "Done when" cell. It counts as done once merged into `main` with CI
+   green on that commit.
 7. **Review.** A fresh session on the other model reviews the PR (Codex
    reviews Claude's work, Claude reviews Codex's), covering code and test
    adequacy in one pass. Findings go in a PR comment. Fix each one, or answer
