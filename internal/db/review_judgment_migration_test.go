@@ -212,12 +212,7 @@ func assertMigration0017MatchesAcceptedDDL(t *testing.T) {
 
 func acceptedDDLSection(t *testing.T, heading, nextHeading string) string {
 	t.Helper()
-	_, currentFile, _, ok := runtime.Caller(0)
-	if !ok {
-		t.Fatal("runtime.Caller(0) failed")
-	}
-	schemaPath := filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "project-docs", "docs", "phases", "phase-23", "schema.md"))
-	source, err := os.ReadFile(schemaPath)
+	source, err := os.ReadFile(filepath.Join("testdata", "p23_schema.md"))
 	if err != nil {
 		t.Fatalf("read accepted schema: %v", err)
 	}

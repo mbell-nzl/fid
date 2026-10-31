@@ -56,4 +56,4 @@ project-docs/docs/current/tl_handoff.md
 /.tmp/
 
 # Python bytecode from CI controller regression tests
-/project-docs/tools/__pycache__/
+__pycache__/

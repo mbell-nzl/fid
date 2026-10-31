@@ -1,7 +1,7 @@
 package journal
 
-// These are the accepted current value shapes (Phase 21 public-interface §2,
-// amended by Phase 22 §2). Required nullable fields use ?, arrays use [].
+// These are the accepted current value shapes (Phase 21 public interface §2,
+// amended by Phase 22 §2; both in cmd/fid/integration/testdata/). Required nullable fields use ?, arrays use [].
 // This catalog applies only to the finite current Event families.
 var currentValueShapes = map[string]string{
 	"Repository":         "project_id:ID worktree_id:ID capture_source:=git head_oid:?OID tree_oid:?OID base_oid:?OID dirty:Bool dirty_digest:?Digest",
