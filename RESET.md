@@ -1,0 +1,116 @@
+# fid reset
+
+Approved by Mark · 31 October 2026 · [ADR-0013](docs/adr/0013-reset-fid-to-a-ledger-with-receipts.md) ·
+[decisions](project-docs/docs/reviews/2026-10-31-reset-decisions.md)
+
+**Goal:** highly automated agentic engineering that keeps quality high: a
+software factory, not a slop factory. The reset succeeds if fid with the kit
+is a markedly better, more robust workflow than V1, judged by the kill
+criteria below.
+
+## Rules
+
+- **Scope.** Nothing joins unless a golden-path step or a kill criterion needs
+  it. Everything else goes on the later list in the decisions record.
+- **Budgets.**
+  - Product Go code grows by at most 10% net before the trial (46.6k lines
+    today, so at most about 51k).
+  - The loop stays under 150 lines.
+  - The kit install script stays under 80 lines.
+- **One task = one PR = one session.** Use TDD; `make test` must pass. The PR
+  description is the completion report, and small decisions go there too.
+- **Review.** A fresh session on the other model reviews each PR: Codex
+  reviews Claude's work and Claude reviews Codex's. One pass covers code and
+  test adequacy. Findings go in PR comments until `fid review` works.
+- **Lanes, by hand until fid computes them.**
+  - Routine: no production code changed.
+  - Standard: any code change.
+  - Assured: the trust boundary, journal format, migrations, `go.mod`,
+    releases, `.fid.toml`, CI workflows and the Makefile.
+- **Merging.** Mark merges every PR during the reset. He reads Assured diffs
+  in full and skims the rest.
+- **Refuse only on missing evidence.** Numbers are signals, not gates.
+- **History stays out of context.** Agents don't read the V1 phase archives.
+
+## Tasks
+
+| # | Task | Lane | Done when |
+|---|---|---|---|
+| **0.1** | Accept ADR-0013; approve this plan | Mark | Signed off (done 31 October 2026) |
+| **0.2** | Write a one-page AGENTS.md; slim CLAUDE.md; archive the V1 role agents and phase skills | Routine | A fresh session learns the working method from AGENTS.md alone |
+| **0.3** | Add a `push: main` CI trigger; turn on branch protection (required CI, up-to-date branches, no bypass) | Assured | A merge to `main` runs CI; a red PR can't merge |
+| **0.4** | Move the CI scripts and conformance fixtures out of `project-docs/` | Assured | CI passes with `project-docs/` deleted locally |
+| **0.5** | Archive fid's V1 docs: tag `v1-workflow-final`, copy them to the archive repo, keep the reset documents in `docs/reset/` | Routine | `project-docs/` is gone from `main`; CI passes |
+| **0.6** | Kit repo with the reviewer agent (code and test-adequacy profiles) | kit | It reviews this reset's first PR |
+| **1.1** | Move the ledger to the git common directory | Standard | V3 |
+| **1.2** | `fid backup` (export, commit, push), restore test, backup-age status line | Standard | V8 |
+| **1.3** | Display package; `fid status`, `fid show` | Standard | whet-style output; golden tests for text and JSON |
+| **1.4** | `fid next --claim`: atomic, respects dependencies, ordered, typed skip reasons, `--explain` | Standard | V3 |
+| **1.5** | `start`, `check`, `park`; claim heartbeat | Standard | An agent works a task without touching kernel commands |
+| **1.6** | Merge-aware `done` with the single done evaluator; reconciles PRs Mark merged in GitHub | Assured | V5 |
+| **1.7** | Leak test for kernel words in human output | Routine | V2 |
+| **1.8** | Move the remaining reset tasks into fid | Mark | fid tracks its own work (a disposable ledger until 3.2) |
+| **2.1** | Review and finding surface; one session records every required profile; `done` refuses open major findings | Standard | V5 |
+| **2.2** | Policy from `origin/<default>` with built-in defaults; lane floor; hard floors | Assured | V7 |
+| **2.3** | `approve` bound to the change fingerprint; stale approvals shown | Assured | V6 |
+| **2.4** | Loop contract (fields, exit codes, version) with golden tests; scenario tests for rework, budget, rework cap, interruption and parallel claims | Standard | V4, V9 |
+| **2.5** | First loop, as fid's own copy: contract check, loud failures, heartbeat, park on interrupt, backup after each task, merge judge in shadow (Mark records his call first) | Standard | It runs a reset task end to end |
+| **2.6** | Usage capture: tokens per task from `claude` and `codex` JSON output | Standard | Every reset task has a token count |
+| **3.1** | Validations, `epic approve` (binds the validations), `brief`, merged digest | Standard | V1's fixture recipe runs from `fid brief` |
+| **3.2** | Squash the 38 migrations into a baseline; release v0.2.0; create the permanent ledger; run a restore drill | Assured | A fresh clone restores the ledger from backup |
+| **3.3** | Kit: plain-copy install, `plan`, `tdd`, builder habit; the default loop promoted from 2.5 | kit | Installed in kauri; the loop self-test passes |
+| **3.4** | kauri: archive its V1 docs, one-page AGENTS.md, `.fid.toml`, install the kit, pre-register and randomly assign 10 trial tasks | Mark | Ready for the trial |
+
+Weeks 4–6 run the trial; it may slip to week 7.
+
+## Validations
+
+| ID | Claim | Verifier |
+|---|---|---|
+| V1 | Mark takes control of a stuck task in two commands, in under five minutes, unaided | human, fixture recipe |
+| V2 | No kernel nouns or IDs appear in human output | `check:leak-test` |
+| V3 | Two worktrees share one ledger and never claim the same task; `next` respects dependencies | `check:two-worktree` |
+| V4 | An interrupted task resumes in the same worktree from fid alone | `check:interrupt-scenario` |
+| V5 | `done` refuses on a missing receipt, an open major finding or a stale approval, and accepts only merged work with CI green | `check:done-refusals` |
+| V6 | An approval survives a clean rebase and goes stale when the change is edited | `check:approval-binding` |
+| V7 | Working-tree edits to `.fid.toml` change nothing until merged | `check:policy-from-main` |
+| V8 | Back up, wipe and restore yields identical state | `check:restore` |
+| V9 | The loop refuses to start on a contract mismatch and stops loudly on an unknown `next.kind` | `check:loop-selftest` |
+| V10 | Review catches the seeded defects | `review:test-adequacy`, seeded defects |
+
+## Trial (kauri)
+
+- **Tasks:** ten, pre-registered and randomly assigned, about five per arm.
+- **Arm 1:** fid, the kit and the loop.
+- **Arm 2:** the kit only, with the same skills and reviewer, run as
+  interactive sessions with PRs and a short task note.
+- **What it measures:** the whole system against the manual path.
+- **Per task, record:**
+  - Mark's active minutes;
+  - tokens;
+  - rework cycles;
+  - workflow words;
+  - defects found later;
+  - "would you choose this again?"
+- **Seeded defects:** about three per arm.
+
+## Kill criteria
+
+1. Workflow words per task are at least 70% below V1's (Phase 24: about 17k
+   per task).
+2. fid catches at least two false, stale or inadequate claims that kit-only
+   misses.
+3. The seeded-defect catch rate is at least equal to kit-only, and no Assured
+   defect escapes.
+4. Mark's minutes and tokens are no worse than kit-only.
+5. A fresh agent resumes an interrupted task from fid alone, and Mark takes
+   control of a stuck task in under five minutes, unaided.
+6. Mark would choose fid again.
+
+If these fail: keep the receipts core as a small library or hook pack, and
+stop building fid as a product.
+
+## Friction log
+
+| Date | Task | Friction | Fix or later |
+|---|---|---|---|

@@ -229,7 +229,7 @@ pre.code .cm { color: var(--muted); }
 <div class="frame">
 <nav class="toc" aria-label="Contents">
   <div class="brand">fid and Kit Reset</div>
-  <div class="brand-sub">Proposal · revised 29 October 2026</div>
+  <div class="brand-sub">Proposal · superseded 31 October 2026</div>
   <ol>
     <li><a href="#summary">Summary</a></li>
     <li class="group">Context</li>
@@ -265,10 +265,11 @@ pre.code .cm { color: var(--muted); }
   <div class="eyebrow">fid · Agentic Engineering Kit · whet</div>
   <h1>fid and Kit Reset</h1>
   <div class="meta">
-    <span class="chip green">Revised after independent review and research</span>
+    <span class="chip" style="background:var(--warn-soft);color:var(--warn)">Superseded 31 October 2026</span>
     <span>29 October 2026, during Phase 24 Human QA</span>
     <span>Sources: the fid, kit, whet, kauri and atlas repositories, the <a href="https://claude.ai/artifact/1npbFXTrdS8eLrwMz8W3YL">Codex landscape report</a>, and our conversation</span>
   </div>
+  <div class="note" style="margin-top:18px"><p><strong>Superseded on 31 October 2026.</strong> Kept as background reading. A decisions session and a second fresh-context review changed this proposal in many places. Where they differ, these win: the decisions record (<code>project-docs/docs/reviews/2026-10-31-reset-decisions.md</code>), the plan (<code>RESET.md</code>) and ADR-0013 (<code>docs/adr/0013-reset-fid-to-a-ledger-with-receipts.md</code>), all in the fid repository.</p></div>
   <p class="lede">After five months, fid and the kit both hold real engineering, but neither is in daily use. They have been blocking each other, and the workflow built to make them has turned into agent waterfall. This proposal narrows fid to a ledger that proves agent work, with a human interface as good as whet's. It reduces the kit to a small skills plugin. It starts with a thin facade over fid's existing kernel and settles five foundations before any code changes. Rigour moves out of prose and into tests, receipts and records that fid enforces.</p>
   <div class="motto" role="list">
     <div role="listitem"><div class="m-line">Agents write the code.</div><div class="m-own">The kit: technique, as skills and one reviewer agent.</div></div>

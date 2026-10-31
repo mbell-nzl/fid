@@ -5,6 +5,10 @@ date: 2026-08-08
 
 # Isolate parallel Builder mutations by Issue and worktree
 
+> **Amended on 2026-10-31 by ADR-0013.** Distinct Issues in separate
+> worktrees may proceed without scope proofs; conflicts are resolved at merge.
+> Declared, provably disjoint scopes wait for real need.
+
 One fid Issue may have at most one active mutating Builder Claim. A Work
 Envelope is not itself claimed: each Claim binds one selected Issue, the
 Envelope revision, the Builder, and the repository worktree identity. Parallel
