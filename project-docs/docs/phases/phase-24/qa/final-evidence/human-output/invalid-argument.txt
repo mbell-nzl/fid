@@ -1,3 +1,0 @@
-error: invalid input.expected_repository.dirty
-reason: invalid-argument; argument=input.expected_repository.dirty, allowed=boolean
-next: see fid gate run --help; template: fid gate run --example

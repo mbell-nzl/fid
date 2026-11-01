@@ -1,1 +1,0 @@
-{"id":"setup-budget-testcache","cmd":"go clean -testcache","cwd":"/home/mark/projects/fid","started_at":"2026-10-01T00:52:33.033Z","results":[{"chunk_id":"d6cb8f","wall_time_seconds":0.000011262,"exit_code":0,"original_token_count":0,"output":""}]}

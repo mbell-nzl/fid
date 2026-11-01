@@ -1,1 +1,0 @@
-{"id":"identity-go","cmd":"go version","results":[{"chunk_id":"8cd889","wall_time_seconds":0.05458633,"exit_code":0,"original_token_count":8,"output":"go version go1.26.2 linux/amd64\n"}]}

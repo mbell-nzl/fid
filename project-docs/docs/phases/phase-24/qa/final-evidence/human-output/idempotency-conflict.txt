@@ -1,3 +1,0 @@
-error: idempotency key conflicts with a different request
-reason: idempotency-conflict; differing fields: expected_version,observed_at,previous_sample_id,sample_kind,value
-next: resend the original input, or use a new --idempotency-key

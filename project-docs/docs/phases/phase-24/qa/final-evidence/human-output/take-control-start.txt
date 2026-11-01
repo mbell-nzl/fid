@@ -1,4 +1,0 @@
-error: protected Decision requires an approved reference and Human Outcome
-reason: protected-decision-required; affected_actions=envelope.complete,issue.transition-terminal-success, attention_ids=ATT-7150ec, decision_class=security, envelope_id=ENV-5ac2ff, event=null, replay…
-blocked by: STP-b1ccf4,ATT-7150ec
-next: record the security Decision Reference and an approving Human Outcome: fid decision record-reference, fid human-outcome record (templates: --example)

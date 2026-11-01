@@ -2387,8 +2387,8 @@ and the value compounds:
    to be explicit.
 
 > Historical note: open questions are now tracked in the formal spec suite —
-> product/scope in `project-docs/specs/01_PRD.md` §7, technical in
-> `project-docs/specs/02_TRD.md` §11. New questions go there, not here. This
+> product/scope in `docs/specs/01_PRD.md` §7, technical in
+> `docs/specs/02_TRD.md` §11. New questions go there, not here. This
 > section is retained as the origin record.
 
 ### 15.2 Resolved questions

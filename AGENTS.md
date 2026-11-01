@@ -81,11 +81,12 @@ branch and PR; it's still one task and one PR.
 - `RESET.md`: plan, rules, tasks, validations and kill criteria.
 - `docs/adr/`: decisions. ADR-0013 overrides parts of older ADRs; each
   affected ADR carries a banner saying which parts.
-- `project-docs/docs/reviews/2026-10-31-reset-decisions.md`: decision detail
-  and the later list.
-- `project-docs/specs/`: specs, with `GLOSSARY.md` for terms. Where they
-  conflict with ADR-0013 or RESET.md, those win.
-- **Don't read the V1 workflow material**: `project-docs/docs/phases/`,
-  `project-docs/docs/current/`, `project-docs/agents/`,
-  `project-docs/skills/`, `project-docs/templates/`, `09_AI_WORKFLOW.md` and
-  `10_IMPLEMENTATION_ROADMAP.md`. Task 0.5 moves it out of the repo.
+- `docs/reset/2026-10-31-reset-decisions.md`: decision detail and the later
+  list. The rest of `docs/reset/` is the superseded reset proposal and its
+  research, kept as background.
+- `docs/specs/`: specs, with `GLOSSARY.md` for terms. Where they conflict with
+  ADR-0013 or RESET.md, those win.
+- **The V1 workflow material is no longer in the repo.** Task 0.5 archived it.
+  The specs still cite V1 phase documents (`docs/phases/...`),
+  `09_AI_WORKFLOW.md` and `10_IMPLEMENTATION_ROADMAP.md`; don't go looking
+  for them. If a task depends on one, stop and ask Mark.

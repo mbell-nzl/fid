@@ -1,1 +1,0 @@
-{"id":"absence-v1-tables","cmd":"rg -n --glob '!*_test.go' \"task_completions|ac_verifications\" cmd internal","results":[{"chunk_id":"3cd59e","wall_time_seconds":0.00001058,"exit_code":1,"original_token_count":0,"output":""}]}
