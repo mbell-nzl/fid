@@ -26,10 +26,10 @@ formatting. Most review findings were weak tests rather than product bugs. fid
 and the kit spent two months waiting on each other's contracts, although
 neither had a user.
 
-The reset proposal (`project-docs/docs/reviews/2026-10-29-fid-kit-reset-proposal.html`,
+The reset proposal (`docs/reset/2026-10-29-fid-kit-reset-proposal.html`,
 now superseded), its independent review, a decisions session and a second
 fresh-context review produced the decisions in
-`project-docs/docs/reviews/2026-10-31-reset-decisions.md`. This ADR records
+`docs/reset/2026-10-31-reset-decisions.md`. This ADR records
 what those decisions reverse. The decisions record holds the detail.
 
 ## Decision

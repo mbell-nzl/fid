@@ -1,1 +1,0 @@
-{"id":"identity-env","cmd":"go env GOOS GOARCH","results":[{"chunk_id":"497c54","wall_time_seconds":0.096843889,"exit_code":0,"original_token_count":3,"output":"linux\namd64\n"}]}

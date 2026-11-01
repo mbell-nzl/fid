@@ -1,1 +1,0 @@
-{"id":"identity-cpu-model","cmd":"grep -m1 '^model name' /proc/cpuinfo","results":[{"chunk_id":"9d1c9d","wall_time_seconds":0.000012654,"exit_code":0,"original_token_count":13,"output":"model name\t: AMD Ryzen 7 5700G with Radeon Graphics\n"}]}

@@ -1,7 +1,7 @@
 # fid reset
 
 Approved by Mark · 31 October 2026 · [ADR-0013](docs/adr/0013-reset-fid-to-a-ledger-with-receipts.md) ·
-[decisions](project-docs/docs/reviews/2026-10-31-reset-decisions.md)
+[decisions](docs/reset/2026-10-31-reset-decisions.md)
 
 **Goal:** highly automated agentic engineering that keeps quality high: a
 software factory, not a slop factory. The reset succeeds if fid with the kit
@@ -40,7 +40,7 @@ criteria below.
 | **0.2** | Write a one-page AGENTS.md; slim CLAUDE.md; archive the V1 role agents and phase skills | Routine | A fresh session learns the working method from AGENTS.md alone (done 31 October 2026) |
 | **0.3** | Add a `push: main` CI trigger. Branch protection is deferred: GitHub Free doesn't offer it on private repos | Assured | A merge to `main` runs CI (done 31 October 2026) |
 | **0.4** | Move the CI scripts and conformance fixtures out of `project-docs/` | Assured | CI passes with `project-docs/` deleted locally (done 31 October 2026) |
-| **0.5** | Archive fid's V1 docs: tag `v1-workflow-final`, copy them to the archive repo, keep the reset documents in `docs/reset/` | Routine | `project-docs/` is gone from `main`; CI passes |
+| **0.5** | Archive fid's V1 docs: tag `v1-workflow-final`, copy them to the archive repo, keep the reset documents in `docs/reset/` | Routine | `project-docs/` is gone from `main`; CI passes (done 1 November 2026) |
 | **0.6** | Kit repo with the reviewer agent (code and test-adequacy profiles) | kit | It reviews this reset's first PR |
 | **1.1** | Move the ledger to the git common directory | Standard | Two worktrees share one ledger (V3's claim and `next` parts belong to 1.4) |
 | **1.2** | `fid backup` (export, commit, push), restore test, backup-age status line | Standard | V8 |

@@ -1,1 +1,0 @@
-{"id":"identity-kernel","cmd":"uname -srm","results":[{"chunk_id":"552d78","wall_time_seconds":0.081048943,"exit_code":0,"original_token_count":12,"output":"Linux 6.6.114.1-microsoft-standard-WSL2 x86_64\n"}]}

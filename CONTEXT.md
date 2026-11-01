@@ -2,7 +2,7 @@
 
 Canonical project language lives in:
 
-- `project-docs/specs/GLOSSARY.md`
+- `docs/specs/GLOSSARY.md`
 
 Pre-scaffold design decisions live in:
 

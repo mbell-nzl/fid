@@ -44,9 +44,6 @@ out/
 tmp/
 /.fid/
 
-# Temporary agent output
-project-docs/docs/current/tl_handoff.md
-
 # Agent working dirs (sandbox-writable caches, see .codex/config.toml)
 /.cache/
 /.gocache/

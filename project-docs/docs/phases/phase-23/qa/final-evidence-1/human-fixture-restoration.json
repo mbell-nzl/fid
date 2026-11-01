@@ -1,9 +1,0 @@
-{
-  "backup": "/tmp/fid-p23-review1-fixture-observation-qxoos42r",
-  "restored": {
-    "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/leaf-contract": true,
-    "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/mixed-findings": true,
-    "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/protected-decision": true,
-    "/home/mark/projects/fid/.cache/phase-23-human/checkpoints-935473561/review-exhaustion": true
-  }
-}

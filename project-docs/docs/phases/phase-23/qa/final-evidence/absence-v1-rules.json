@@ -1,1 +1,0 @@
-{"id":"absence-v1-rules","cmd":"rg -n --glob '!*_test.go' \"has_completion_report|concerns_addressed\" cmd internal","results":[{"chunk_id":"cc1949","wall_time_seconds":0.000015831,"exit_code":1,"original_token_count":0,"output":""}]}
