@@ -20,7 +20,7 @@ func TestP22FinalActivatedActionSetAcceptsProfilesAndGrants(t *testing.T) {
 	if len(p22FinalActions) != 23 {
 		t.Fatalf("independent action count = %d, want 23", len(p22FinalActions))
 	}
-	doc, err := os.ReadFile(filepath.Join(integrationRepositoryRoot(), "project-docs/docs/phases/phase-22/public-interface.md"))
+	doc, err := os.ReadFile(filepath.Join("testdata", "p22_public_interface.md"))
 	if err != nil {
 		t.Fatal(err)
 	}

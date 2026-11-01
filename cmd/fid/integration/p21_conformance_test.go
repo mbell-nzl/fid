@@ -27,8 +27,7 @@ var (
 
 func TestPhase21ConformanceCorpusIsCompleteAndByteExact(t *testing.T) {
 	t.Parallel()
-	repoRoot := integrationRepositoryRoot()
-	publicInterface := string(readP21File(t, filepath.Join(repoRoot, "project-docs/docs/phases/phase-21/public-interface.md")))
+	publicInterface := string(readP21File(t, filepath.Join("testdata", "p21_public_interface.md")))
 	expected := p21ExpectedCorpus(t, publicInterface)
 	if os.Getenv("P21_WRITE_CONFORMANCE_FIXTURES") == "1" {
 		p21WriteCorpus(t, expected)

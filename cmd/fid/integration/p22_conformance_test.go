@@ -55,7 +55,7 @@ func TestP22ConformanceCorpusHasEveryAcceptedOperationAndFailure(t *testing.T) {
 			t.Fatalf("amended operation %s has no conformance fixture", operation)
 		}
 	}
-	doc, err := os.ReadFile(filepath.Join(integrationRepositoryRoot(), "project-docs/docs/phases/phase-22/public-interface.md"))
+	doc, err := os.ReadFile(filepath.Join("testdata", "p22_public_interface.md"))
 	if err != nil {
 		t.Fatal(err)
 	}

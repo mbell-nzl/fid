@@ -31,7 +31,7 @@ jobs:
         run: make lint
 
       - name: Verify shard selection and coverage reconciliation
-        run: python3 -m unittest discover -s project-docs/tools -p test_ci_tests.py -v
+        run: python3 -m unittest discover -s .github/scripts -p test_ci_tests.py -v
 
       - name: Build
         run: make build
@@ -56,7 +56,7 @@ jobs:
           cache: true
 
       - name: Tests (race and coverage, exhaustive shard)
-        run: python3 project-docs/tools/ci_tests.py run --count 4 --index ${{ matrix.shard }} --out "$RUNNER_TEMP/shard-${{ matrix.shard }}"
+        run: python3 .github/scripts/ci_tests.py run --count 4 --index ${{ matrix.shard }} --out "$RUNNER_TEMP/shard-${{ matrix.shard }}"
 
       - name: Retain coverage and execution evidence
         if: always()
@@ -96,7 +96,7 @@ jobs:
           path: ${{ runner.temp }}/ci-results
 
       - name: Verify complete execution and combine coverage
-        run: python3 project-docs/tools/ci_tests.py merge --count 4 --root "$RUNNER_TEMP/ci-results" --out coverage.out
+        run: python3 .github/scripts/ci_tests.py merge --count 4 --root "$RUNNER_TEMP/ci-results" --out coverage.out
 
       - name: Coverage report
         run: go tool cover -func=coverage.out
