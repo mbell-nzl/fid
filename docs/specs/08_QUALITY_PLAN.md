@@ -225,8 +225,8 @@ required `quality` job. Format, lint, build and controller regressions remain
 required. Standalone make test/make coverage targets remain available unchanged.
 Package timeouts, product thresholds and assertions are unchanged. Setup reuse
 requires distinct writable copies; migration, rebuild and import tests still
-execute their actual operations. See `.github/scripts/ci_tests.py --help` for
-local usage.
+execute their actual operations. See `python3 .github/scripts/ci_tests.py
+--help` for local usage.
 
 Under Phase22 DEC-217, the full-size archive byte/count matrices are an explicit
 phase-end and archive-limiter-change gate, run locally on the qualification
