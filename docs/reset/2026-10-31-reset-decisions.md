@@ -121,6 +121,20 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
   up, wipe, restore, compare), plus one manual drill before dogfooding. The
   backup target is in user-level fid config. `fid init` asks for it;
   `fid status` warns until it is configured; not a hard block.
+- **Details** (decided 2 November 2026, for task 1.1):
+  - fid needs a git repository. Outside one, `fid init` and every other
+    command refuse. There is no `.fid/` fallback.
+  - Output names ledger files by absolute path, in text and in JSON
+    (`journal_path`, `journal_file`, `lock_path`), because a linked
+    worktree's ledger sits outside that worktree.
+  - No migration. fid ignores a `.fid/` directory left in a worktree; moving
+    it to `.git/fid/` by hand keeps it.
+  - Test workspaces are git repos. Test helpers check that git reports the
+    temp directory itself as the repository, and set
+    `GIT_CEILING_DIRECTORIES`, so a test can't reach a real repository's
+    ledger.
+  - Task 1.1 is split: 1.1a routes every ledger path through one function
+    with no change in behaviour; 1.1b moves the ledger.
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a

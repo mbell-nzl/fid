@@ -42,7 +42,8 @@ criteria below.
 | **0.4** | Move the CI scripts and conformance fixtures out of `project-docs/` | Assured | CI passes with `project-docs/` deleted locally (done 31 October 2026) |
 | **0.5** | Archive fid's V1 docs: tag `v1-workflow-final`, copy them to the archive repo, keep the reset documents in `docs/reset/` | Routine | `project-docs/` is gone from `main`; CI passes (done 1 November 2026) |
 | **0.6** | Kit repo with the reviewer agent (code and test-adequacy profiles) | kit | It reviews this reset's first PR |
-| **1.1** | Move the ledger to the git common directory | Standard | Two worktrees share one ledger (V3's claim and `next` parts belong to 1.4) |
+| **1.1a** | Route every ledger path through one function, with no change in behaviour | Standard | Only `config.LedgerDir` joins the ledger onto a project root, and the existing tests pass unchanged (done 2 November 2026) |
+| **1.1b** | Move the ledger to the git common directory | Standard | Two worktrees share one ledger (V3's claim and `next` parts belong to 1.4) |
 | **1.2** | `fid backup` (export, commit, push), restore test, backup-age status line | Standard | V8 |
 | **1.3** | Display package; `fid status`, `fid show` | Standard | whet-style output; golden tests for text and JSON |
 | **1.4** | `fid next --claim`: atomic, respects dependencies, ordered, typed skip reasons, `--explain` | Standard | V3 |
