@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func AppendEvent(lock *WriteLock, event Event) (Event, error) {
@@ -36,7 +38,7 @@ func appendEventWithClock(lock *WriteLock, event Event, now func() time.Time) (E
 	}
 	payload = append(payload, '\n')
 
-	journalPath := filepath.Join(lock.workspaceRoot, ".fid", "journal", prepared.OccurredAt.UTC().Format("2006-01-02")+".jsonl")
+	journalPath := filepath.Join(config.LedgerDir(lock.workspaceRoot), "journal", prepared.OccurredAt.UTC().Format("2006-01-02")+".jsonl")
 	file, err := os.OpenFile(journalPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		return Event{}, fmt.Errorf("open journal file %q: %w", journalPath, err)
@@ -76,7 +78,7 @@ func prepareEventWithClockOptions(lock *WriteLock, event Event, now func() time.
 	if !event.OccurredAt.IsZero() {
 		occurredAt = event.OccurredAt.UTC()
 	}
-	journalDir := filepath.Join(lock.workspaceRoot, ".fid", "journal")
+	journalDir := filepath.Join(config.LedgerDir(lock.workspaceRoot), "journal")
 	latestDate, hasLatest, err := greatestJournalDate(journalDir)
 	if err != nil {
 		return Event{}, err

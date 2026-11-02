@@ -141,7 +141,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
 		return TransitionResult{}, err
 	}
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 	if err != nil {
 		return TransitionResult{}, err
 	}
@@ -159,7 +159,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
-		dbPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName)
+		dbPath := filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName)
 		conn, err := fiddb.Open(dbPath)
 		if err != nil {
 			return err
@@ -224,7 +224,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		if err != nil {
 			return err
 		}
-		aggregateSequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "journal"), journal.Aggregate{ID: current.ID, Type: "issue"})
+		aggregateSequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "journal"), journal.Aggregate{ID: current.ID, Type: "issue"})
 		if err != nil {
 			return err
 		}

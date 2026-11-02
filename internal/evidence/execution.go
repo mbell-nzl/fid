@@ -191,7 +191,7 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return fmt.Errorf("run gate: read project config: %w", err)
 		}
@@ -305,7 +305,7 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 }
 
 func gateEventOccurredAt(workspaceRoot, eventID string) (string, error) {
-	found, err := journal.FindEvent(filepath.Join(workspaceRoot, config.WorkspaceDirName, "journal"), eventID)
+	found, err := journal.FindEvent(filepath.Join(config.LedgerDir(workspaceRoot), "journal"), eventID)
 	if err != nil {
 		return "", fmt.Errorf("run gate: read terminal Event %q: %w", eventID, err)
 	}
@@ -324,7 +324,7 @@ func validateGateRunOptions(options GateRunOptions) error {
 }
 
 func loadGateRunBinding(conn *sql.DB, options GateRunOptions, observed Repository) (gateRunBinding, string, map[string]string, error) {
-	project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+	project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 	if err != nil {
 		return gateRunBinding{}, "", nil, fmt.Errorf("run gate: read project config: %w", err)
 	}
@@ -608,7 +608,7 @@ func appendExecutionBlocked(lock *journal.WriteLock, conn *sql.DB, binding gateR
 		return BudgetDenial{}, err
 	}
 	effects = append(effects, journal.Effect{Op: "update", Table: "run_runtime", PK: map[string]any{"run_id": options.Request.RunID}, Values: map[string]any{"version": chains[0].RuntimeVersion + 1}, Preconditions: map[string]any{"version": chains[0].RuntimeVersion}})
-	sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: options.Request.RunID, Type: "run"})
+	sequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: options.Request.RunID, Type: "run"})
 	if err != nil {
 		return BudgetDenial{}, err
 	}

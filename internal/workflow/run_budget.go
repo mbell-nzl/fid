@@ -51,7 +51,7 @@ func ObserveRunBudget(options RunOptions, request RunBudgetObserveRequest) (RunB
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 		if err != nil {
 			return err
 		}

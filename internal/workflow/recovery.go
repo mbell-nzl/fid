@@ -127,7 +127,7 @@ func RecoverRun(options RunOptions, request RunRecoveryRequest) (RunRecoveryResu
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 		if err != nil {
 			return fmt.Errorf("run recovery: read project config: %w", err)
 		}
@@ -244,7 +244,7 @@ func RecoverRun(options RunOptions, request RunRecoveryRequest) (RunRecoveryResu
 			return err
 		}
 		effects := append(recoveryEffects(prior, priorClaim, successor, successorClaim, recovery, now), budgetEffects...)
-		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: prior.ID, Type: "run"})
+		sequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: prior.ID, Type: "run"})
 		if err != nil {
 			return err
 		}

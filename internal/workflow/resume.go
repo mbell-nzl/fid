@@ -101,7 +101,7 @@ func ResumeIssueState(workspaceRoot, migrationsDir, issueID, repositoryRoot stri
 }
 
 func resumeObservedRepository(workspaceRoot, repositoryRoot string) (Repository, error) {
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspaceRoot), config.ConfigFileName))
 	if err != nil {
 		return Repository{}, err
 	}

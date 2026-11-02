@@ -16,7 +16,7 @@ import (
 )
 
 func journalArchiveEntries(workspaceRoot, scratch string) ([]archiveEntry, int, string, error) {
-	journalDir := filepath.Join(workspaceRoot, config.WorkspaceDirName, config.JournalDirName)
+	journalDir := filepath.Join(config.LedgerDir(workspaceRoot), config.JournalDirName)
 	files, err := os.ReadDir(journalDir)
 	if err != nil {
 		return nil, 0, "", fmt.Errorf("create export: read journal: %w", err)

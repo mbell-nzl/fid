@@ -84,12 +84,12 @@ func Address(options AddressOptions, request AddressRequest) (AddressResult, err
 		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 			return err
 		}
-		conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+		conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
 		if err != nil {
 			return fmt.Errorf("open Finding projection: %w", err)
 		}
 		defer func() { _ = conn.Close() }()
-		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return fmt.Errorf("finding address: read project config: %w", err)
 		}
@@ -138,7 +138,7 @@ func Address(options AddressOptions, request AddressRequest) (AddressResult, err
 		if err != nil {
 			return err
 		}
-		next, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: request.FindingID, Type: "finding"})
+		next, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: request.FindingID, Type: "finding"})
 		if err != nil {
 			return err
 		}
@@ -189,7 +189,7 @@ func List(options ListOptions) ([]map[string]any, error) {
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
 		return nil, err
 	}
-	conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
 	if err != nil {
 		return nil, fmt.Errorf("open Finding projection: %w", err)
 	}

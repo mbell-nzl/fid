@@ -211,7 +211,7 @@ func Get(workspaceRoot, migrationsDir, reviewID string) (map[string]any, error) 
 	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
 		return nil, err
 	}
-	conn, err := fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspaceRoot), config.DatabaseFileName))
 	if err != nil {
 		return nil, fmt.Errorf("open review projection: %w", err)
 	}
@@ -230,7 +230,7 @@ func ListReviews(options ReviewListOptions) ([]map[string]any, error) {
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
 		return nil, err
 	}
-	conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
 	if err != nil {
 		return nil, fmt.Errorf("open review projection: %w", err)
 	}
@@ -272,12 +272,12 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 			return err
 		}
-		conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+		conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
 		if err != nil {
 			return fmt.Errorf("open review projection: %w", err)
 		}
 		defer func() { _ = conn.Close() }()
-		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return fmt.Errorf("review record: read project config: %w", err)
 		}
@@ -359,7 +359,7 @@ func Record(options RecordOptions, request RecordRequest) (RecordResult, error) 
 		if err != nil {
 			return err
 		}
-		next, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: reviewID, Type: "review"})
+		next, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: reviewID, Type: "review"})
 		if err != nil {
 			return err
 		}

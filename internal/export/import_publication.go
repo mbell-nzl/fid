@@ -82,7 +82,7 @@ func snapshotImportInput(target, archivePath, digest string) (string, error) {
 }
 
 func ensureEmptyImportTarget(target string) error {
-	info, err := os.Lstat(filepath.Join(target, config.WorkspaceDirName))
+	info, err := os.Lstat(config.LedgerDir(target))
 	if os.IsNotExist(err) {
 		return nil
 	}

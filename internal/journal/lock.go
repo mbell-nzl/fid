@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 const (
@@ -102,7 +104,7 @@ func acquireLock(workspaceRoot string, owner LockOwner, options lockOptions) (*W
 		options.sleep = time.Sleep
 	}
 
-	lockPath := filepath.Join(workspaceRoot, ".fid", lockDirectoryName)
+	lockPath := filepath.Join(config.LedgerDir(workspaceRoot), lockDirectoryName)
 	deadline := options.now().Add(options.waitTimeout)
 	for {
 		if err := os.Mkdir(lockPath, 0o755); err == nil {

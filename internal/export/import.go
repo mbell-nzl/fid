@@ -131,19 +131,19 @@ func Import(options ImportOptions) (ImportResult, error) {
 				binding.JournalEntries = append(binding.JournalEntries, config.ImportJournalEntry{Name: strings.TrimPrefix(entry.Path, "journal/"), Digest: entry.Digest, SizeBytes: entry.SizeBytes})
 			}
 		}
-		if err := writeImportMarker(filepath.Join(stage, config.WorkspaceDirName, importMarkerName), importMarker{ImportBinding: binding, Result: result}); err != nil {
+		if err := writeImportMarker(filepath.Join(config.LedgerDir(stage), importMarkerName), importMarker{ImportBinding: binding, Result: result}); err != nil {
 			return err
 		}
 		if err := callImportFault(options.Fault, ImportBeforeDurability); err != nil {
 			return err
 		}
-		if err := syncTree(filepath.Join(stage, config.WorkspaceDirName)); err != nil {
+		if err := syncTree(config.LedgerDir(stage)); err != nil {
 			return err
 		}
 		if err := callImportFault(options.Fault, ImportBeforePublication); err != nil {
 			return err
 		}
-		if err := publishImport(filepath.Join(stage, config.WorkspaceDirName), filepath.Join(target, config.WorkspaceDirName)); err != nil {
+		if err := publishImport(config.LedgerDir(stage), config.LedgerDir(target)); err != nil {
 			return err
 		}
 		if err := callImportFault(options.Fault, ImportAfterRename); err != nil {
@@ -158,7 +158,7 @@ func Import(options ImportOptions) (ImportResult, error) {
 }
 
 func installedImport(target string, expected ImportResult, key string) (ImportResult, bool, error) {
-	data, err := os.ReadFile(filepath.Join(target, config.WorkspaceDirName, config.ImportBindingFileName))
+	data, err := os.ReadFile(filepath.Join(config.LedgerDir(target), config.ImportBindingFileName))
 	if os.IsNotExist(err) {
 		return ImportResult{}, false, nil
 	}
@@ -286,10 +286,10 @@ func stageArchive(stage string, project config.ProjectConfig, manifest manifest,
 
 func stagedArchivePath(stage string, project config.ProjectConfig, entryPath string) (string, error) {
 	if strings.HasPrefix(entryPath, "journal/") {
-		return filepath.Join(stage, config.WorkspaceDirName, config.JournalDirName, strings.TrimPrefix(entryPath, "journal/")), nil
+		return filepath.Join(config.LedgerDir(stage), config.JournalDirName, strings.TrimPrefix(entryPath, "journal/")), nil
 	}
 	if strings.HasPrefix(entryPath, "artifacts/") {
-		return filepath.Join(stage, config.WorkspaceDirName, project.ArtifactRoot, strings.TrimPrefix(entryPath, "artifacts/")), nil
+		return filepath.Join(config.LedgerDir(stage), project.ArtifactRoot, strings.TrimPrefix(entryPath, "artifacts/")), nil
 	}
 	return "", fmt.Errorf("import: unsupported archive entry %q", entryPath)
 }

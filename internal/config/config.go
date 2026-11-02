@@ -81,8 +81,16 @@ func DefaultPricingConfig() PricingConfig {
 	}
 }
 
+// LedgerDir returns the directory that holds the ledger of the project at
+// root: its journal, projection, config, artifacts and write lock. It is the
+// only place that decides where the ledger lives; every ledger path starts
+// from it.
+func LedgerDir(root string) string {
+	return filepath.Join(root, WorkspaceDirName)
+}
+
 func WorkspacePathsForRoot(workspaceRoot string) WorkspacePaths {
-	workspaceDir := filepath.Join(workspaceRoot, WorkspaceDirName)
+	workspaceDir := LedgerDir(workspaceRoot)
 	return WorkspacePaths{
 		WorkspaceDir: workspaceDir,
 		JournalDir:   filepath.Join(workspaceDir, JournalDirName),

@@ -70,7 +70,7 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 		return AddAcceptanceCriterionResult{}, err
 	}
 
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 	if err != nil {
 		return AddAcceptanceCriterionResult{}, err
 	}
@@ -83,7 +83,7 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
-		dbPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName)
+		dbPath := filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName)
 		conn, err := fiddb.Open(dbPath)
 		if err != nil {
 			return err
@@ -128,7 +128,7 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 			return err
 		}
 
-		aggregateSequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: issueID, Type: "issue"})
+		aggregateSequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: issueID, Type: "issue"})
 		if err != nil {
 			return err
 		}

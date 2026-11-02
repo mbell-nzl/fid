@@ -31,7 +31,7 @@ func ReadImportBinding(workspaceRoot string) (ImportBinding, error) {
 	if err != nil {
 		return ImportBinding{}, fmt.Errorf("read import binding: resolve workspace: %w", err)
 	}
-	workspace := filepath.Join(root, WorkspaceDirName)
+	workspace := LedgerDir(root)
 	info, err := os.Lstat(workspace)
 	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
 		return ImportBinding{}, fmt.Errorf("read import binding: workspace is unsafe")

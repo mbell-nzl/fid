@@ -106,7 +106,7 @@ func Create(options CreateOptions) (Summary, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.ArchivePath) == "" {
 		return Summary{}, fmt.Errorf("create export: workspace root and archive path are required")
 	}
-	project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 	if err != nil {
 		return Summary{}, fmt.Errorf("create export: read project config: %w", err)
 	}

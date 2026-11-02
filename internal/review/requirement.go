@@ -250,7 +250,7 @@ func openRequirementRead(options RequirementListOptions) (*sql.DB, error) {
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
 		return nil, err
 	}
-	return fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	return fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
 }
 
 func loadRequirementRef(conn *sql.DB, id string) (map[string]any, error) {

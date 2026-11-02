@@ -45,7 +45,7 @@ func newJournalInspectCommand() *cobra.Command {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
 
-			found, err := journal.FindEvent(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.JournalDirName), args[0])
+			found, err := journal.FindEvent(filepath.Join(config.LedgerDir(workspaceRoot), config.JournalDirName), args[0])
 			if err != nil {
 				if renderErr := renderJournalInspectError(cmd.ErrOrStderr(), err); renderErr != nil {
 					return renderErr

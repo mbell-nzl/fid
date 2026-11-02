@@ -168,7 +168,7 @@ func DisposeConcern(options JudgmentOptions, request ConcernDisposeRequest) (Con
 		if err != nil {
 			return err
 		}
-		next, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: request.ConcernID, Type: "concern"})
+		next, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: request.ConcernID, Type: "concern"})
 		if err != nil {
 			return err
 		}

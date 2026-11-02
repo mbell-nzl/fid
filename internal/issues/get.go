@@ -28,7 +28,7 @@ func Get(options GetOptions) (Issue, error) {
 		return Issue{}, err
 	}
 
-	conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
 	if err != nil {
 		return Issue{}, err
 	}

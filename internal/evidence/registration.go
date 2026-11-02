@@ -123,7 +123,7 @@ func Register(options RegisterOptions) (RegisterResult, error) {
 		}
 		defer func() { _ = conn.Close() }()
 
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return fmt.Errorf("register gate: read project config: %w", err)
 		}
@@ -228,7 +228,7 @@ func Resolve(workspaceRoot, migrationsDir, id string, version int) (Registration
 }
 
 func openEvidenceDB(workspaceRoot string) (*sql.DB, error) {
-	return fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	return fiddb.Open(filepath.Join(config.LedgerDir(workspaceRoot), config.DatabaseFileName))
 }
 
 type storedActor struct {

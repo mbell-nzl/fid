@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -25,8 +26,8 @@ func EnsureProjectionFreshWithLock(lock *WriteLock, migrationsDir string) (Ensur
 }
 
 func ensureProjectionFresh(workspaceRoot, migrationsDir string, heldLock *WriteLock) (EnsureProjectionResult, error) {
-	dbPath := filepath.Join(workspaceRoot, ".fid", "fid.sqlite")
-	journalDir := filepath.Join(workspaceRoot, ".fid", "journal")
+	dbPath := filepath.Join(config.LedgerDir(workspaceRoot), "fid.sqlite")
+	journalDir := filepath.Join(config.LedgerDir(workspaceRoot), "journal")
 
 	if _, err := os.Stat(dbPath); err != nil {
 		if os.IsNotExist(err) {
@@ -145,7 +146,7 @@ func catchUpWorkspaceWithOptionalLock(workspaceRoot, migrationsDir string, meta 
 }
 
 func rebuildWorkspaceLocked(lock *WriteLock, migrationsDir string) (ReplayStats, error) {
-	dbPath := filepath.Join(lock.workspaceRoot, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(lock.workspaceRoot), "fid.sqlite")
 	temporary, err := os.CreateTemp(filepath.Dir(dbPath), ".fid-rebuild-*.sqlite")
 	if err != nil {
 		return ReplayStats{}, fmt.Errorf("create rebuild projection: %w", err)
@@ -167,7 +168,7 @@ func rebuildWorkspaceLocked(lock *WriteLock, migrationsDir string) (ReplayStats,
 		return ReplayStats{}, err
 	}
 
-	replayed, err := replayRebuild(conn, filepath.Join(lock.workspaceRoot, ".fid", "journal"))
+	replayed, err := replayRebuild(conn, filepath.Join(config.LedgerDir(lock.workspaceRoot), "journal"))
 	closeReplayDB(conn)
 	if err != nil {
 		return ReplayStats{}, err
@@ -180,7 +181,7 @@ func rebuildWorkspaceLocked(lock *WriteLock, migrationsDir string) (ReplayStats,
 }
 
 func catchUpWorkspaceLocked(lock *WriteLock, migrationsDir string, meta fiddb.ProjectionMeta) (ReplayStats, error) {
-	dbPath := filepath.Join(lock.workspaceRoot, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(lock.workspaceRoot), "fid.sqlite")
 	if err := fiddb.MigrateUp(dbPath, migrationsDir); err != nil {
 		return ReplayStats{}, err
 	}
@@ -191,7 +192,7 @@ func catchUpWorkspaceLocked(lock *WriteLock, migrationsDir string, meta fiddb.Pr
 	}
 	defer closeReplayDB(conn)
 
-	replayed, err := ReplayJournal(conn, filepath.Join(lock.workspaceRoot, ".fid", "journal"), &ReplayOptions{
+	replayed, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(lock.workspaceRoot), "journal"), &ReplayOptions{
 		StartFile:   meta.JournalFile,
 		StartOffset: meta.JournalOffset,
 	})

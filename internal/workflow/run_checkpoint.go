@@ -53,7 +53,7 @@ func RunCheckpoint(options RunOptions, request RunCheckpointRequest) (RunCheckpo
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 		if err != nil {
 			return fmt.Errorf("run checkpoint: read project config: %w", err)
 		}

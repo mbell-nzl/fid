@@ -90,7 +90,7 @@ func Run(options Options) (Result, error) {
 		return Result{}, err
 	}
 
-	conn, err := openReadOnly(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := openReadOnly(filepath.Join(config.LedgerDir(workspaceRoot), config.DatabaseFileName))
 	if err != nil {
 		return Result{}, err
 	}

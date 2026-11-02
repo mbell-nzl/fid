@@ -50,7 +50,7 @@ func ListAcceptanceCriteria(options ListAcceptanceCriteriaOptions) (AcceptanceCr
 		return AcceptanceCriteriaList{}, err
 	}
 
-	conn, err := openIssueReadOnlyDB(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := openIssueReadOnlyDB(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
 	if err != nil {
 		return AcceptanceCriteriaList{}, err
 	}
