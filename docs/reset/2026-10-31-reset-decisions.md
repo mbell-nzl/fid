@@ -135,6 +135,29 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     ledger.
   - Task 1.1 is split: 1.1a routes every ledger path through one function
     with no change in behaviour; 1.1b moves the ledger.
+- **Details** (decided 3 November 2026, for task 1.1b):
+  - 1.1b is split again, because its test changes alone would bury the
+    behaviour change: about 400 hand-built ledger paths in 127 test files,
+    and every test workspace becoming a git repo.
+    - 1.1b: tests reach ledger files only through `config.LedgerDir`, with
+      no change in behaviour.
+    - 1.1c: fid needs a git repository. Discovery goes through git, every
+      command refuses outside a repository, and test workspaces become
+      guarded git repos. The ledger stays at `<root>/.fid`.
+    - 1.1d: the ledger moves to the git common directory.
+  - `LedgerDir` reads the worktree's `.git` entry in Go: a directory, or a
+    `gitdir:` file plus `commondir`. It stays cheap and returns no error.
+    Discovery runs `git rev-parse` once and refuses if git and `LedgerDir`
+    disagree, so fid never writes outside `--git-common-dir`/fid.
+  - `fid init` and `export import` stage in `<common>/fid-staging-*` and
+    rename into `<common>/fid`. The journal and config packages gain entry
+    points that take a ledger directory, since a staging directory has no
+    `.git`.
+  - The V1 closure journey asserts that the journal is committed to git.
+    ADR-0013 reverses that, so 1.1d changes the assertion to "never
+    tracked" rather than deleting it.
+  - The ledger keeps its `.gitignore` (`fid.sqlite`) for now, though it means
+    nothing under `.git/`. Dropping it would change the ledger's contents.
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a
