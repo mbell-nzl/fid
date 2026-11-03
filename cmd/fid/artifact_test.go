@@ -222,7 +222,7 @@ func TestArtifactMutationHelperProcess(t *testing.T) {
 		}
 		deadline := time.Now().Add(artifactMutationWait)
 		for {
-			staging, err := filepath.Glob(filepath.Join(".fid", "artifacts", ".artifact-*"))
+			staging, err := filepath.Glob(filepath.Join(config.LedgerDir("."), "artifacts", ".artifact-*"))
 			if err != nil {
 				t.Fatalf("inspect Artifact staging files: %v", err)
 			}

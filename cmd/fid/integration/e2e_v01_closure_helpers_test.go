@@ -170,7 +170,19 @@ func assertClosureGitLayout(t *testing.T, workspace string) {
 	if len(entries) != 1 || entries[0] != "fid.sqlite" {
 		t.Fatalf(".fid/.gitignore = %q, want only fid.sqlite", payload)
 	}
-	_, _ = closureRun(t, workspace, "git", "check-ignore", "-q", ".fid/fid.sqlite")
+	_, _ = closureRun(t, workspace, "git", "check-ignore", "-q", workspaceRelative(t, workspace, filepath.Join(config.LedgerDir(workspace), "fid.sqlite")))
+}
+
+// workspaceRelative names path relative to workspace, slash-separated, for Git
+// pathspecs and shell commands that run in the workspace.
+func workspaceRelative(t *testing.T, workspace, path string) string {
+	t.Helper()
+
+	relative, err := filepath.Rel(workspace, path)
+	if err != nil {
+		t.Fatalf("relative path of %q: %v", path, err)
+	}
+	return filepath.ToSlash(relative)
 }
 
 func closureJournalPath(t *testing.T, workspace string) string {

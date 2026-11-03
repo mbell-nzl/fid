@@ -21,7 +21,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	assertClosureGitLayout(t, workspace)
 
 	journalPath := closureJournalPath(t, workspace)
-	closureRun(t, workspace, "git", "add", filepath.ToSlash(filepath.Join(".fid", "journal")))
+	closureRun(t, workspace, "git", "add", workspaceRelative(t, workspace, filepath.Join(config.LedgerDir(workspace), "journal")))
 	assertClosureJournalTracked(t, workspace)
 
 	closureRunFID(t, binary, workspace, "label", "add", "release", "--description", "Closure journey label", "--by", "developer")

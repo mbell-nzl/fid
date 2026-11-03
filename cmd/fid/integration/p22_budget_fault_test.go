@@ -155,8 +155,9 @@ func p22BudgetFaultFixture(t *testing.T, kind string) *p22FIDRecoveryAdapter {
 		exit = "1"
 		cfg.ExtraBudgets = []any{map[string]any{"name": "failures", "scope": "envelope", "unit": "failures", "maximum": 1, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}}
 	}
-	cfg.Argv = []string{"/bin/sh", "-c", "printf x >> .fid/fq5-spawn; exit " + exit}
-	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{}, p22FinalActions, cfg)
+	workspace := t.TempDir()
+	cfg.Argv = []string{"/bin/sh", "-c", "printf x >> " + workspaceRelative(t, workspace, filepath.Join(config.LedgerDir(workspace), "fq5-spawn")) + "; exit " + exit}
+	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), workspace, "agent", 3600, []string{}, p22FinalActions, cfg)
 	p22AcceptedCall(t, a, "budget-initial", "run.observe-budget", map[string]any{"value": 0})
 	if kind == "external" {
 		p22AcceptedCall(t, a, "budget-below", "run.observe-budget", map[string]any{"value": 5})
