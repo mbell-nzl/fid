@@ -212,10 +212,12 @@ func TestP24ReviewReplayUnavailableAndRestoredControls(t *testing.T) {
 			a, claim, run := p24ReviewAdapter(t)
 			input := p24ReviewProjectInput(t, a, run)
 			// This project-owned file is ignored by Git. Its absence isolates
-			// Source observation from the repository expectation check.
-			p22Write(t, a.workspace, ".fid/coverage.md", "review source\n")
+			// Source observation from the repository expectation check. It is a
+			// worktree path, not a ledger file.
+			const ignoredSource = ".fid/coverage.md"
+			p22Write(t, a.workspace, ignoredSource, "review source\n")
 			for _, position := range []int{0, 2} {
-				p24ReviewSources(input)[position]["path"] = ".fid/coverage.md"
+				p24ReviewSources(input)[position]["path"] = ignoredSource
 			}
 			observation := p24JudgmentExpectedRepository(t, a)
 			original := p23ReviewRecord(t, a, "actor-denied", "before-unavailable", input)
@@ -240,7 +242,7 @@ func TestP24ReviewReplayUnavailableAndRestoredControls(t *testing.T) {
 			case "unmerged-paths":
 				p24MakeUnmerged(t, a.workspace)
 			case "deleted-source":
-				if err := os.Remove(filepath.Join(config.LedgerDir(a.workspace), "coverage.md")); err != nil {
+				if err := os.Remove(filepath.Join(a.workspace, filepath.FromSlash(ignoredSource))); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -281,7 +283,7 @@ func TestP24ReviewReplayUnavailableAndRestoredControls(t *testing.T) {
 				p22Git(t, a.workspace, "merge", "--abort")
 				p22Git(t, a.workspace, "reset", "--hard", observation["head_oid"].(string))
 			case "deleted-source":
-				p22Write(t, a.workspace, ".fid/coverage.md", "review source\n")
+				p22Write(t, a.workspace, ignoredSource, "review source\n")
 			}
 			// Exact same fresh Run, key and request now succeeds. No stale
 			// expectation or duplicate Review can masquerade as a control.
