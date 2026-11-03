@@ -66,9 +66,10 @@ what those decisions reverse. The decisions record holds the detail.
 ## Consequences
 
 - fid computes risk lanes, which Gate B1 forbade.
-- fid makes network calls in two places: `fid done` confirms merges and CI
-  through `gh`, and `fid backup` pushes to the backup repo. Nothing else uses
-  the network.
+- fid makes network calls in three places: `fid done` confirms merges and CI
+  through `gh`, `fid backup` pushes to the backup repo, and recording a review
+  round posts it to the PR through `gh` (added 3 November 2026; decisions
+  record, work model). Nothing else uses the network.
 - Compatibility obligations still start at the first supported baseline, which
   is now the reset's migration squash in week 3, not the end of Gate D
   convergence.
@@ -96,7 +97,7 @@ what those decisions reverse. The decisions record holds the detail.
 | Charter §6 | Out of scope: owning risk policy; validation contract and assertion aggregates | **Amended.** Lanes and epic-level Validations are in scope. Hosting agents or the loop, roles, a daemon and the rest stay out of scope. |
 | Charter §7 | First supported baseline follows Gate D convergence | **Amended.** The baseline is the reset's migration squash. |
 | Charter §8 | Success criteria: contract qualification, V2 adoption | **Superseded** by the kill criteria in `RESET.md`. |
-| Charter §9 | No network by default | **Amended.** Network only for `fid done` confirmation and `fid backup`. |
+| Charter §9 | No network by default | **Amended.** Network only for `fid done` confirmation, `fid backup` and posting review rounds to the PR (the last added 3 November 2026). |
 | `10_IMPLEMENTATION_ROADMAP.md` | The whole roadmap, including §6 removal rules and Phases 25–26 | **Superseded** by `RESET.md` and the later list. |
 | `09_AI_WORKFLOW.md` | The V1 workflow, including light, normal and heavy operating modes | **Superseded for fid.** Per-task lanes and the working method in `RESET.md`. |
 

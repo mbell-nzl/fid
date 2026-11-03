@@ -218,6 +218,7 @@ for confirmation".
   separately, so the PR and fid can't disagree. fid posts it through `gh` when
   the round is recorded, one comment per round. The posting is part of fid,
   not the loop, so interactive sessions and the loop post the same comment.
+  It is fid's third use of the network (ADR-0013, Consequences).
 - **Digest:** `fid brief --merged-since …`, one line per merged task, holds on
   top.
 - **Sensors now:** escaped defects via `caused_by` links. Seeded defects run in
