@@ -21,7 +21,8 @@ criteria below.
   description is the completion report, and small decisions go there too.
 - **Review.** A fresh session on the other model reviews each PR: Codex
   reviews Claude's work and Claude reviews Codex's. One pass covers code and
-  test adequacy. Findings go in PR comments until `fid review` works.
+  test adequacy. Findings go in a PR comment. Once `fid review` works, fid
+  records them and posts that comment itself.
 - **Lanes, by hand until fid computes them.**
   - Routine: no production code changed.
   - Standard: any code change.
@@ -51,7 +52,7 @@ criteria below.
 | **1.6** | Merge-aware `done` with the single done evaluator; reconciles PRs Mark merged in GitHub | Assured | V5 |
 | **1.7** | Leak test for kernel words in human output | Routine | V2 |
 | **1.8** | Move the remaining reset tasks into fid | Mark | fid tracks its own work (a disposable ledger until 3.2) |
-| **2.1** | Review and finding surface; one session records every required profile; `done` refuses open major findings | Standard | V5 |
+| **2.1** | Review and finding surface; one session records every required profile; each round is posted to the PR; `done` refuses open major findings | Standard | V5 |
 | **2.2** | Policy from `origin/<default>` with built-in defaults; lane floor; hard floors | Assured | V7 |
 | **2.3** | `approve` bound to the change fingerprint; stale approvals shown | Assured | V6 |
 | **2.4** | Loop contract (fields, exit codes, version) with golden tests; scenario tests for rework, budget, rework cap, interruption and parallel claims | Standard | V4, V9 |
