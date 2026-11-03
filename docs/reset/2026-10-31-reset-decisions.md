@@ -211,6 +211,13 @@ for confirmation".
   public repo (decided 31 October 2026).
 - **One reviewer session per round** runs every required profile (code, test
   adequacy, security). Assured work adds a separate review on the other model.
+- **Each review round is also a PR comment** (decided 3 November 2026, for
+  tasks 2.1 and 2.5). Mark reads reviews where he merges, next to the
+  completion report. fid's record of the review is canonical, because `done`
+  checks findings there. The comment is built from that record, never written
+  separately, so the PR and fid can't disagree. fid posts it through `gh` when
+  the round is recorded, one comment per round. The posting is part of fid,
+  not the loop, so interactive sessions and the loop post the same comment.
 - **Digest:** `fid brief --merged-since …`, one line per merged task, holds on
   top.
 - **Sensors now:** escaped defects via `caused_by` links. Seeded defects run in
