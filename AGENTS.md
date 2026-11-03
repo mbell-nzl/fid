@@ -19,7 +19,9 @@ list. Read RESET.md before starting work.
    weaken a test to get green.
 5. **Run the checks**: `make fmt-check lint test build`. For CLI journeys, also
    run `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0
-   ./cmd/fid/integration/...`.
+   ./cmd/fid/integration/...`. Run them one at a time: `cmd/fid` takes five
+   to seven minutes under `-race`, and running two suites at once can push it
+   past Go's ten-minute test timeout.
 6. **Open the PR.** Its description is the completion report:
    - what changed and why;
    - the lane;
