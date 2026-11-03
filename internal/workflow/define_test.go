@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -77,7 +78,7 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 		t.Fatalf("event effects = %#v, want workflow effects plus idempotency result", event.Effects)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open projection: %v", err)
 	}
@@ -120,7 +121,7 @@ func initializedWorkflowWorkspace(t *testing.T) (string, string) {
 
 func workflowJournalPath(t *testing.T, workspace string) string {
 	t.Helper()
-	paths, err := filepath.Glob(filepath.Join(workspace, ".fid", "journal", "*.jsonl"))
+	paths, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
 	if err != nil || len(paths) != 1 {
 		t.Fatalf("journal paths = %#v, error = %v, want exactly one", paths, err)
 	}

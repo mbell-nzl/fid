@@ -357,7 +357,7 @@ func task18RunAndClaim(t *testing.T, workspace, issueID string) (string, string)
 	if binding.runID != "" && binding.claimID != "" {
 		return binding.runID, binding.claimID
 	}
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open task 18 projection: %v", err)
 	}
@@ -371,7 +371,7 @@ func task18RunAndClaim(t *testing.T, workspace, issueID string) (string, string)
 
 func task18TableCounts(t *testing.T, workspace string) (int, int) {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open task 18 count projection: %v", err)
 	}
@@ -411,7 +411,7 @@ func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence boo
 	obligationID := testEvidenceObligationID
 	artifactID := ""
 	if withArtifact {
-		conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+		conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 		if err != nil {
 			t.Fatalf("open terminal Artifact projection: %v", err)
 		}
@@ -466,7 +466,7 @@ func task18AdvanceToTerminalGuard(t *testing.T, workspace, issueID string) {
 
 func task18MutateEvidenceFixture(t *testing.T, workspace, statement string, args ...any) {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open terminal Evidence projection: %v", err)
 	}
@@ -481,7 +481,7 @@ func task18MutateEvidenceFixture(t *testing.T, workspace, statement string, args
 
 func task18EvidenceRepository(t *testing.T, workspace, evidenceID string) string {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open Evidence repository projection: %v", err)
 	}

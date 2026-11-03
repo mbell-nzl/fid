@@ -8,6 +8,7 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	migratesqlite "github.com/golang-migrate/migrate/v4/database/sqlite"
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -220,7 +221,7 @@ func TestEnsureProjectionFreshRebuildsStoredPriorProjectionSchemaVersion(t *test
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
 
-	conn := openReplayDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openReplayDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if _, err := conn.Exec(`UPDATE projection_meta SET projection_schema_version = ? WHERE key = 'default'`, 1); err != nil {
 		t.Fatalf("downgrade projection_meta schema version: %v", err)
 	}
@@ -238,7 +239,7 @@ func TestEnsureProjectionFreshRebuildsStoredPriorProjectionSchemaVersion(t *test
 		t.Fatalf("rebuilt events = %d, want %d", result.ReplayStats.EventsReplayed, 2)
 	}
 
-	rebuiltConn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	rebuiltConn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() rebuilt error = %v", err)
 	}

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -35,10 +36,10 @@ func TestV01ParityFixtureRebuildPreservesEveryProjectionTable(t *testing.T) {
 
 	// A read materializes the live projection from the regenerated fixture journal.
 	closureRunFID(t, binary, workspace, "--json", "issue", "get", "FID-a10001")
-	before := parityProjectionDump(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	before := parityProjectionDump(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 
 	closureRunFID(t, binary, workspace, "rebuild")
-	after := parityProjectionDump(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	after := parityProjectionDump(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if before != after {
 		t.Fatalf("fixture projection after rebuild differs:\n%s", parityDiff([]byte(before), []byte(after)))
 	}

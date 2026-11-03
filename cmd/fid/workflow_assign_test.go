@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
@@ -131,7 +132,7 @@ func defineWorkflowForTest(t *testing.T, workspace, name, appliesTo string) {
 
 func openWorkflowCommandDB(t *testing.T, workspace string) *sql.DB {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open workflow command database: %v", err)
 	}

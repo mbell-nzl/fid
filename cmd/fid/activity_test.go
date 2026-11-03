@@ -9,6 +9,7 @@ import (
 	"time"
 
 	internalactivity "github.com/mbell-nzl/fid/internal/activity"
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -167,7 +168,7 @@ func createActivityCommandIssue(t *testing.T, workspace, title string) string {
 		t.Fatalf("Create() error = %v", err)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -199,7 +200,7 @@ func newActivityCommandSeedIdentity(t *testing.T, workspace string, sequence int
 func latestActivityCommandJournalDate(t *testing.T, workspace string) time.Time {
 	t.Helper()
 
-	entries, err := os.ReadDir(filepath.Join(workspace, ".fid", "journal"))
+	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(workspace), "journal"))
 	if err != nil {
 		t.Fatalf("ReadDir(journal) error = %v", err)
 	}

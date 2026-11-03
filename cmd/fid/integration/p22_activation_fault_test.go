@@ -16,6 +16,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"modernc.org/sqlite"
 )
@@ -57,7 +58,7 @@ func p22ActivationFaultCase(t *testing.T, direction, operation, mode string) {
 	}
 	before, history := p22FaultProjection(t, workspace), p21JournalBytes(t, workspace)
 	files := p22CompleteRepositorySnapshot(t, workspace)
-	configBefore := readP21File(t, filepath.Join(workspace, ".fid", "config.toml"))
+	configBefore := readP21File(t, filepath.Join(config.LedgerDir(workspace), "config.toml"))
 	p22InterruptActivation(t, input)
 	if !reflect.DeepEqual(before, p22FaultProjection(t, workspace)) {
 		t.Fatal("interruption partially projected activation transaction")
@@ -113,7 +114,7 @@ func p22ActivationFaultCase(t *testing.T, direction, operation, mode string) {
 	}
 	p22AssertActivationFaultFacts(t, workspace, prior, original, operation, direction, before, result)
 	p22RejectActivationFaultConflicts(t, binary, input, request)
-	if !reflect.DeepEqual(files, p22CompleteRepositorySnapshot(t, workspace)) || string(configBefore) != string(readP21File(t, filepath.Join(workspace, ".fid", "config.toml"))) {
+	if !reflect.DeepEqual(files, p22CompleteRepositorySnapshot(t, workspace)) || string(configBefore) != string(readP21File(t, filepath.Join(config.LedgerDir(workspace), "config.toml"))) {
 		t.Fatal("activation recovery edited provider/project files")
 	}
 	// Replay from the durable journal must reconstruct the same full projection.

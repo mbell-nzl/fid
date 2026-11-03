@@ -200,7 +200,7 @@ func recordDeviationChain(t *testing.T, a *p22FIDRecoveryAdapter) []map[string]a
 
 func p23AssertConcernHasNoCompletionColumn(t *testing.T, workspace string) {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatal(err)
 	}

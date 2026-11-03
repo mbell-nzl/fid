@@ -16,6 +16,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/evidence"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"modernc.org/sqlite"
@@ -254,7 +255,7 @@ func TestP22BudgetCrashProcess(t *testing.T) {
 
 func p22BudgetSpawnCount(t *testing.T, a *p22FIDRecoveryAdapter) int {
 	t.Helper()
-	data, err := os.ReadFile(filepath.Join(a.workspace, ".fid", "fq5-spawn"))
+	data, err := os.ReadFile(filepath.Join(config.LedgerDir(a.workspace), "fq5-spawn"))
 	if errors.Is(err, os.ErrNotExist) {
 		return 0
 	}

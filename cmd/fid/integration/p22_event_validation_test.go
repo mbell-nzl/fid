@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -58,9 +59,9 @@ const p22CurrentFamilies = "activation.prepared activation.component-staged acti
 func p22ValidateActualJournal(t *testing.T, source string, seen map[string]bool) {
 	t.Helper()
 	workspace := t.TempDir()
-	p22FaultOK(t, os.MkdirAll(filepath.Join(workspace, ".fid"), 0o700))
-	p22FaultOK(t, fiddb.MigrateUp(filepath.Join(workspace, ".fid", "fid.sqlite"), filepath.Join(integrationRepositoryRoot(), "migrations")))
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	p22FaultOK(t, os.MkdirAll(config.LedgerDir(workspace), 0o700))
+	p22FaultOK(t, fiddb.MigrateUp(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"), filepath.Join(integrationRepositoryRoot(), "migrations")))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	p22FaultOK(t, err)
 	defer conn.Close()
 	// Observe committed state through an independent connection throughout this
@@ -70,10 +71,10 @@ func p22ValidateActualJournal(t *testing.T, source string, seen map[string]bool)
 	dir := t.TempDir()
 	path := filepath.Join(dir, "2026-09-09.jsonl")
 	var prefix []byte
-	entries, err := os.ReadDir(filepath.Join(source, ".fid", "journal"))
+	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(source), "journal"))
 	p22FaultOK(t, err)
 	for _, entry := range entries {
-		raw, err := os.ReadFile(filepath.Join(source, ".fid", "journal", entry.Name()))
+		raw, err := os.ReadFile(filepath.Join(config.LedgerDir(source), "journal", entry.Name()))
 		p22FaultOK(t, err)
 		for _, line := range bytes.Split(bytes.TrimSpace(raw), []byte{'\n'}) {
 			var event journal.Event
@@ -90,8 +91,8 @@ func p22ValidateActualJournal(t *testing.T, source string, seen map[string]bool)
 	}
 	// Fresh replay of all original bytes must equal the incremental live apply.
 	replay := t.TempDir()
-	p22FaultOK(t, os.MkdirAll(filepath.Join(replay, ".fid"), 0o700))
-	dbPath := filepath.Join(replay, ".fid", "fid.sqlite")
+	p22FaultOK(t, os.MkdirAll(config.LedgerDir(replay), 0o700))
+	dbPath := filepath.Join(config.LedgerDir(replay), "fid.sqlite")
 	p22FaultOK(t, fiddb.MigrateUp(dbPath, filepath.Join(integrationRepositoryRoot(), "migrations")))
 	replayDB, err := fiddb.Open(dbPath)
 	p22FaultOK(t, err)

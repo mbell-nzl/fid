@@ -8,12 +8,14 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestAppendEventRejectsV2AggregateSequenceGap(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(workspace, ".fid", "journal"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(config.LedgerDir(workspace), "journal"), 0o755); err != nil {
 		t.Fatalf("MkdirAll(journal) error = %v", err)
 	}
 
@@ -32,7 +34,7 @@ func TestAppendEventRejectsV2AggregateSequenceGap(t *testing.T) {
 func TestReplayJournalRejectsOutOfOrderV2AggregateSequence(t *testing.T) {
 	t.Parallel()
 	workspace := newReplayWorkspace(t)
-	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-22.jsonl")
+	journalPath := filepath.Join(config.LedgerDir(workspace), "journal", "2026-08-22.jsonl")
 	first := eventV2ForSequence(1)
 	first.EventID = "EVT-20260822-000001"
 	first.OccurredAt = time.Date(2026, time.August, 22, 0, 0, 0, 0, time.UTC)
@@ -43,7 +45,7 @@ func TestReplayJournalRejectsOutOfOrderV2AggregateSequence(t *testing.T) {
 
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
 	defer closeProjectDB(t, conn)
-	_, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	_, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 	var corrupt *CorruptJournalError
 	if !errors.As(err, &corrupt) {
 		t.Fatalf("ReplayJournal() error = %T %v, want *CorruptJournalError", err, err)

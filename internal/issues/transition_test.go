@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
@@ -134,7 +135,7 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 		t.Fatalf("activity details to = %#v, want in_progress", got)
 	}
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	var (
@@ -160,7 +161,7 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 	}
 
 	beforeRebuild := issue
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
@@ -191,7 +192,7 @@ func TestTransitionRejectsEdgeMissingFromDBRegistry(t *testing.T) {
 		t.Fatalf("Create() error = %v", err)
 	}
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if _, err := conn.Exec(`
 		DELETE FROM workflow_transitions
 		WHERE workflow_id = ? AND from_state = ? AND to_state = ?
@@ -219,7 +220,7 @@ func TestTransitionRejectsEdgeMissingFromDBRegistry(t *testing.T) {
 func TestTransitionRegistryMatchesFrozenV01OrderedStateMatrix(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	registry, err := workflow.Load(conn)
@@ -267,7 +268,7 @@ func TestTransitionUsesDBRuleReferences(t *testing.T) {
 		t.Fatalf("Transition(todo->in_progress) error = %v", err)
 	}
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if _, err := conn.Exec(`
 		DELETE FROM workflow_transition_requires
 		WHERE workflow_id = ? AND from_state = ? AND to_state = ?
@@ -303,7 +304,7 @@ func TestTransitionUsesDBCategoriesForClaimGating(t *testing.T) {
 		t.Fatalf("Create() error = %v", err)
 	}
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if _, err := conn.Exec(`
 		UPDATE workflow_states
 		SET category = ?
@@ -340,7 +341,7 @@ func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
 		t.Fatalf("Create() error = %v", err)
 	}
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if _, err := conn.Exec(`
 		DELETE FROM workflow_transitions
 		WHERE workflow_id = ? AND from_state = ? AND to_state = ?
@@ -379,7 +380,7 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 		t.Fatalf("Create() error = %v", err)
 	}
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if _, err := conn.Exec(`
 		INSERT INTO workflow_transition_requires (workflow_id, from_state, to_state, rule, params_json)
 		VALUES (?, ?, ?, ?, ?)

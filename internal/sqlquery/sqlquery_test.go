@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestClassifyAllowsReadStatements(t *testing.T) {
@@ -104,7 +105,7 @@ func TestReadOnlyConnectionRejectsMutationWhenClassifierIsBypassed(t *testing.T)
 
 	workspace := newSQLQueryWorkspace(t)
 
-	conn, err := openReadOnly(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := openReadOnly(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("openReadOnly() error = %v", err)
 	}

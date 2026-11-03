@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -67,7 +68,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	assertClosureMaintenanceAndReadCommands(t, binary, workspace, mainIssueID, journalBeforeNonJournal)
 	maintenanceNow := closureAgedMaintenanceTime(t, workspace)
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := fiddb.MigrateDown(dbPath, filepath.Join("..", "..", "..", "migrations")); err != nil {
 		t.Fatalf("migrate down for journal immutability boundary: %v", err)
 	}

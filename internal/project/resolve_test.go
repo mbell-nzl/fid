@@ -4,12 +4,14 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestResolveStopsAtContainingGitRoot(t *testing.T) {
 	t.Parallel()
 	outside := t.TempDir()
-	if err := os.Mkdir(filepath.Join(outside, ".fid"), 0o755); err != nil {
+	if err := os.Mkdir(config.LedgerDir(outside), 0o755); err != nil {
 		t.Fatalf("Mkdir(.fid) error = %v", err)
 	}
 	repository := filepath.Join(outside, "repository")
@@ -30,11 +32,11 @@ func TestResolveStopsAtContainingGitRoot(t *testing.T) {
 func TestResolveFindsNearestRootAndRequiresExplicitRootToContainFID(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
-	if err := os.Mkdir(filepath.Join(root, ".fid"), 0o755); err != nil {
+	if err := os.Mkdir(config.LedgerDir(root), 0o755); err != nil {
 		t.Fatalf("Mkdir(root .fid) error = %v", err)
 	}
 	nestedRoot := filepath.Join(root, "nested")
-	if err := os.MkdirAll(filepath.Join(nestedRoot, ".fid"), 0o755); err != nil {
+	if err := os.MkdirAll(config.LedgerDir(nestedRoot), 0o755); err != nil {
 		t.Fatalf("MkdirAll(nested .fid) error = %v", err)
 	}
 	start := filepath.Join(nestedRoot, "child")
@@ -58,10 +60,10 @@ func TestResolveRejectsSymlinkedFIDDirectory(t *testing.T) {
 	t.Parallel()
 	root := t.TempDir()
 	outside := t.TempDir()
-	if err := os.Mkdir(filepath.Join(outside, ".fid"), 0o755); err != nil {
+	if err := os.Mkdir(config.LedgerDir(outside), 0o755); err != nil {
 		t.Fatalf("Mkdir(outside .fid) error = %v", err)
 	}
-	if err := os.Symlink(filepath.Join(outside, ".fid"), filepath.Join(root, ".fid")); err != nil {
+	if err := os.Symlink(config.LedgerDir(outside), config.LedgerDir(root)); err != nil {
 		t.Fatalf("Symlink() error = %v", err)
 	}
 

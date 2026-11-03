@@ -136,7 +136,7 @@ func p24RunDirtyRepository(t *testing.T, workspace, path string) map[string]any 
 	if err != nil {
 		t.Fatal(err)
 	}
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspace), "config.toml"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +178,7 @@ func p24RunDirtyRepository(t *testing.T, workspace, path string) map[string]any 
 
 func p24AssertRunEventRepository(t *testing.T, a *p22FIDRecoveryAdapter, want map[string]any) {
 	t.Helper()
-	entries, err := os.ReadDir(filepath.Join(a.workspace, ".fid", "journal"))
+	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(a.workspace), "journal"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +187,7 @@ func p24AssertRunEventRepository(t *testing.T, a *p22FIDRecoveryAdapter, want ma
 		if !strings.HasSuffix(entry.Name(), ".jsonl") {
 			continue
 		}
-		data, err := os.ReadFile(filepath.Join(a.workspace, ".fid", "journal", entry.Name()))
+		data, err := os.ReadFile(filepath.Join(config.LedgerDir(a.workspace), "journal", entry.Name()))
 		if err != nil {
 			t.Fatal(err)
 		}

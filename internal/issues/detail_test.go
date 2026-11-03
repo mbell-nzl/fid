@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"path/filepath"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestGetReturnsCentralizedDetailShape(t *testing.T) {
@@ -64,7 +66,7 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 		t.Parallel()
 
 		workspace := newIssueWorkspace(t)
-		conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+		conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 		defer closeIssueTestDB(t, conn)
 
 		seedIssueDetailFixture(t, conn)
@@ -119,7 +121,7 @@ func TestIssueParentTitle(t *testing.T) {
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	if got, err := issueParentTitle(conn, nil); err != nil {

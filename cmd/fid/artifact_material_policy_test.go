@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestArtifactLossHonorsRequiredMaterialAndPreservesProofIdentity(t *testing.T) {
@@ -78,7 +80,7 @@ func TestArtifactLossHonorsRequiredMaterialAndPreservesProofIdentity(t *testing.
 			if !reflect.DeepEqual(afterArtifact, artifact) {
 				t.Fatalf("loss changed Artifact metadata beyond availability: before=%#v after=%#v", artifact, afterArtifact)
 			}
-			if _, err := os.Stat(filepath.Join(workspace, ".fid", "artifacts", strings.TrimPrefix(fixture.digest, "sha256:"))); !os.IsNotExist(err) {
+			if _, err := os.Stat(filepath.Join(config.LedgerDir(workspace), "artifacts", strings.TrimPrefix(fixture.digest, "sha256:"))); !os.IsNotExist(err) {
 				t.Fatalf("missing Artifact was recreated: %v", err)
 			}
 		})

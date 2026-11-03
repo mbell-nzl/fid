@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -53,7 +54,7 @@ func TestStopAttentionExternalBoundaryKeepsRoutineStatusAndWarningsEffectFree(t 
 
 func setStartedIssueOldEnoughForWarning(t *testing.T, workspace string) {
 	t.Helper()
-	database, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	database, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open projection for warning fixture: %v", err)
 	}
@@ -82,7 +83,7 @@ func readStopAttentionJournal(t *testing.T, path string) []byte {
 
 func assertStopAttentionCount(t *testing.T, workspace string, want int) {
 	t.Helper()
-	database, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	database, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open projection for Attention count: %v", err)
 	}

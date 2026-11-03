@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -58,7 +59,7 @@ func newMaintenanceFixture(t *testing.T) structuralFixture {
 		}
 	})
 
-	journalDir := filepath.Join(root, ".fid", "journal")
+	journalDir := filepath.Join(config.LedgerDir(root), "journal")
 	if err := os.MkdirAll(journalDir, 0o755); err != nil {
 		t.Fatalf("MkdirAll(%q) error = %v", journalDir, err)
 	}

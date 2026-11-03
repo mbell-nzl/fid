@@ -257,7 +257,7 @@ func TestRemovedLeavesRejectWithoutSideEffectsAndDeferredRowsStayUnavailable(t *
 
 func openCapabilitiesDB(t *testing.T, workspace string) *sql.DB {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open capability projection = %v", err)
 	}

@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestCurrentIdempotencyFieldDigestsReplayFailClosed(t *testing.T) {
@@ -36,8 +38,8 @@ func TestCurrentIdempotencyFieldDigestsReplayFailClosed(t *testing.T) {
 			seedCheckpointProjectionRun(t, conn)
 			before := currentProjectionSnapshot(t, conn)
 			workspace := newReplayWorkspace(t)
-			writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
-			_, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+			writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-06.jsonl"), event)
+			_, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 			if tc.valid {
 				if err != nil {
 					t.Fatal(err)
@@ -109,8 +111,8 @@ func TestCurrentEventFamiliesRejectMalformedEffectsLiveAndReplay(t *testing.T) {
 						err = ProjectEvent(conn, ProjectionInput{Event: event, EventHash: hash, File: "2026-09-06.jsonl", Line: 1, Offset: 1})
 					} else {
 						workspace := newReplayWorkspace(t)
-						writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
-						_, err = ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+						writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-06.jsonl"), event)
+						_, err = ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 					}
 					if err == nil {
 						t.Fatal("malformed current-family Event accepted")
@@ -262,8 +264,8 @@ func TestCurrentEventRejectsConditionalBindingCorruption(t *testing.T) {
 						err = ProjectEvent(c, ProjectionInput{Event: original, EventHash: hash})
 					} else {
 						workspace := newReplayWorkspace(t)
-						writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), original)
-						_, err = ReplayJournal(c, filepath.Join(workspace, ".fid", "journal"), nil)
+						writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-06.jsonl"), original)
+						_, err = ReplayJournal(c, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 					}
 					if err == nil {
 						t.Fatal("accepted corrupt conditional binding")
@@ -415,8 +417,8 @@ func TestCurrentRecoveryAdmitsTerminalPredecessorAndOptionalClaimDisposal(t *tes
 						}
 					} else {
 						workspace := newReplayWorkspace(t)
-						writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
-						if _, err := ReplayJournal(c, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+						writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-06.jsonl"), event)
+						if _, err := ReplayJournal(c, filepath.Join(config.LedgerDir(workspace), "journal"), nil); err != nil {
 							t.Fatal(err)
 						}
 					}

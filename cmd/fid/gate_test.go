@@ -157,7 +157,7 @@ func TestGateRegisterRejectsUnsupportedPolicyWithoutPersistence(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+			conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -328,7 +328,7 @@ func buildFinalizedGateWorkspace(t *testing.T, definitions []any) string {
 
 func registrationCount(t *testing.T, workspace string) int {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open registration database: %v", err)
 	}

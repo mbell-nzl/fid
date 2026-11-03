@@ -129,7 +129,7 @@ func p24RunDirtyRepository(t *testing.T, workspace, path string) map[string]any 
 	if err != nil {
 		t.Fatal(err)
 	}
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspace), "config.toml"))
 	if err != nil {
 		t.Fatal(err)
 	}

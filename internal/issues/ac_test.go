@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -124,7 +125,7 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 		t.Fatalf("activity event = %#v, want ac-added", got)
 	}
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	var issueID string
@@ -180,7 +181,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 			wantErr: `add acceptance criterion: issue "`,
 			verify: func(t *testing.T, workspace, issueID string) {
 				t.Helper()
-				conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+				conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 				defer closeIssueTestDB(t, conn)
 				assertAcceptanceCriterionCount(t, conn, issueID, 0)
 			},
@@ -214,7 +215,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 			wantErr: "Issue actor must match <agent|human|service>:<id>",
 			verify: func(t *testing.T, workspace, issueID string) {
 				t.Helper()
-				conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+				conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 				defer closeIssueTestDB(t, conn)
 				assertAcceptanceCriterionCount(t, conn, issueID, 0)
 			},
@@ -248,7 +249,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 			wantErr: "add acceptance criterion: ordinal must be a positive integer",
 			verify: func(t *testing.T, workspace, issueID string) {
 				t.Helper()
-				conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+				conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 				defer closeIssueTestDB(t, conn)
 				assertAcceptanceCriterionCount(t, conn, issueID, 0)
 			},
@@ -435,7 +436,7 @@ func TestAcceptanceCriterionNestedLimitRejectsMutationAndReadWithoutAppend(t *te
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	tx, err := conn.Begin()
 	if err != nil {
 		t.Fatalf("Begin() error = %v", err)
@@ -465,7 +466,7 @@ func TestAcceptanceCriterionNestedLimitRejectsMutationAndReadWithoutAppend(t *te
 		t.Fatalf("ListAcceptanceCriteria(at limit) = (%d, %v), want (1000, nil)", len(atLimit.Criteria), err)
 	}
 
-	conn = openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn = openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if _, err := conn.Exec(`INSERT INTO acceptance_criteria (id, issue_id, ordinal, text) VALUES (?, ?, ?, ?)`, "AC-limit-1001", created.ID, 1001, "legacy over-limit row"); err != nil {
 		t.Fatalf("insert over-limit acceptance criterion: %v", err)
 	}
@@ -480,7 +481,7 @@ func TestAddAcceptanceCriterionTieBreaksByID(t *testing.T) {
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	if _, err := conn.Exec(`
@@ -639,7 +640,7 @@ func TestAcceptanceCriteriaRemainOrderedWithoutRoleVerifications(t *testing.T) {
 	if strings.Contains(string(encoded), "latest_verifications") {
 		t.Fatalf("Issue detail retained V1 verification projection: %s", encoded)
 	}
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 	var count int
 	if err := conn.QueryRow("SELECT COUNT(*) FROM acceptance_criteria WHERE issue_id=?", created.ID).Scan(&count); err != nil || count != 2 {

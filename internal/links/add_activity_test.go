@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -40,7 +41,7 @@ func TestAddProjectsLinkAddedActivityForIssueAndRequirementLinks(t *testing.T) {
 			t.Fatalf("journal events after Add(blocks) = %d, want %d", got, beforeEvents+1)
 		}
 
-		stored := readLinkStoredEvents(t, filepath.Join(workspace, ".fid", "journal"))
+		stored := readLinkStoredEvents(t, filepath.Join(config.LedgerDir(workspace), "journal"))
 		last := stored[len(stored)-1]
 		if last.EventType != "link.added" {
 			t.Fatalf("last event type = %q, want link.added", last.EventType)

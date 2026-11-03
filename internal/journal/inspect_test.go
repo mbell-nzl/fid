@@ -6,11 +6,13 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestFindEventReturnsStoredEventLocationAndHash(t *testing.T) {
 	t.Parallel()
-	journalDir := filepath.Join(t.TempDir(), ".fid", "journal")
+	journalDir := filepath.Join(config.LedgerDir(t.TempDir()), "journal")
 	mustMkdirAll(t, journalDir)
 
 	first := writerRoleEvent("EVT-20260605-000001")
@@ -76,7 +78,7 @@ func TestFindEventReturnsStoredEventLocationAndHash(t *testing.T) {
 
 func TestFindEventReturnsTypedNotFoundError(t *testing.T) {
 	t.Parallel()
-	journalDir := filepath.Join(t.TempDir(), ".fid", "journal")
+	journalDir := filepath.Join(config.LedgerDir(t.TempDir()), "journal")
 	mustMkdirAll(t, journalDir)
 	writeWriterEvents(t, filepath.Join(journalDir, "2026-06-05.jsonl"), writerRoleEvent("EVT-20260605-000001"))
 

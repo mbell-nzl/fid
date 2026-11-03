@@ -4,6 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestLatestProjectionRejectsRetiredEscalationEffects(t *testing.T) {
@@ -18,7 +20,7 @@ func TestLatestProjectionRejectsRetiredEscalationEffects(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			workspace := newReplayWorkspace(t)
-			conn := openReplayDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+			conn := openReplayDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 			defer closeProjectDB(t, conn)
 			event := phaseTwoFullSchemaEvent()
 			event.Effects = []Effect{{Op: "insert", Table: "labels", PK: map[string]any{"name": "must-rollback"}}, test.effect}
@@ -33,7 +35,7 @@ func TestLatestProjectionRejectsRetiredEscalationEffects(t *testing.T) {
 			if err := conn.QueryRow(`SELECT COUNT(*) FROM labels WHERE name = 'must-rollback'`).Scan(&count); err != nil || count != 0 {
 				t.Fatalf("rejected Event leaked preceding Effect: count%d err%v", count, err)
 			}
-			journalDir := filepath.Join(workspace, ".fid", "journal")
+			journalDir := filepath.Join(config.LedgerDir(workspace), "journal")
 			writeReplayEvents(t, filepath.Join(journalDir, "2026-06-07.jsonl"), event)
 			if _, err := ReplayJournal(conn, journalDir, nil); err == nil || !strings.Contains(err.Error(), "no such") {
 				t.Fatalf("latest replay admitted retired Effect or wrong rejection: %v", err)

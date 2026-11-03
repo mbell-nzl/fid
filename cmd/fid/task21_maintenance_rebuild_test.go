@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestFinalSchemaNamedReadsAndExportMatchAfterRebuild(t *testing.T) {
@@ -13,7 +15,7 @@ func TestFinalSchemaNamedReadsAndExportMatchAfterRebuild(t *testing.T) {
 	archivePath := filepath.Join(t.TempDir(), "task21-export.zip")
 	before := task21SnapshotReads(t, workspace, issueID, envelopeID, evaluatePath, archivePath)
 
-	if err := os.Remove(filepath.Join(workspace, ".fid", "fid.sqlite")); err != nil {
+	if err := os.Remove(filepath.Join(config.LedgerDir(workspace), "fid.sqlite")); err != nil {
 		t.Fatalf("delete projection: %v", err)
 	}
 	rebuilt := executeCommandForTest(workspace, "--project", workspace, "--json", "rebuild")

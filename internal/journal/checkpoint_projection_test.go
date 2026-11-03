@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestCheckpointedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
@@ -26,11 +28,11 @@ func TestCheckpointedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
 	liveState := checkpointProjectionState(t, live)
 
 	workspace := newReplayWorkspace(t)
-	writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
+	writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-06.jsonl"), event)
 	replayed := openReplayDB(t, filepath.Join(t.TempDir(), "replay.sqlite"))
 	defer closeProjectDB(t, replayed)
 	seedCheckpointProjectionRun(t, replayed)
-	if _, err := ReplayJournal(replayed, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+	if _, err := ReplayJournal(replayed, filepath.Join(config.LedgerDir(workspace), "journal"), nil); err != nil {
 		t.Fatalf("ReplayJournal() error = %v", err)
 	}
 	if replayState := checkpointProjectionState(t, replayed); replayState != liveState {
@@ -55,11 +57,11 @@ func TestRecoveredEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
 	liveState := recoveredProjectionState(t, live)
 
 	workspace := newReplayWorkspace(t)
-	writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
+	writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-06.jsonl"), event)
 	replayed := openReplayDB(t, filepath.Join(t.TempDir(), "replay-recovered.sqlite"))
 	defer closeProjectDB(t, replayed)
 	seedRecoveredProjection(t, replayed)
-	if _, err := ReplayJournal(replayed, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+	if _, err := ReplayJournal(replayed, filepath.Join(config.LedgerDir(workspace), "journal"), nil); err != nil {
 		t.Fatalf("ReplayJournal() error = %v", err)
 	}
 	if replayState := recoveredProjectionState(t, replayed); replayState != liveState {
@@ -84,11 +86,11 @@ func TestBudgetObservedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
 	liveState := budgetProjectionState(t, live)
 
 	workspace := newReplayWorkspace(t)
-	writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
+	writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-06.jsonl"), event)
 	replayed := openReplayDB(t, filepath.Join(t.TempDir(), "replay-budget.sqlite"))
 	defer closeProjectDB(t, replayed)
 	seedBudgetProjection(t, replayed)
-	if _, err := ReplayJournal(replayed, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+	if _, err := ReplayJournal(replayed, filepath.Join(config.LedgerDir(workspace), "journal"), nil); err != nil {
 		t.Fatalf("ReplayJournal() error = %v", err)
 	}
 	if replayState := budgetProjectionState(t, replayed); replayState != liveState {
@@ -113,11 +115,11 @@ func TestExecutionBlockedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
 	liveState := executionBlockedProjectionState(t, live)
 
 	workspace := newReplayWorkspace(t)
-	writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
+	writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-06.jsonl"), event)
 	replayed := openReplayDB(t, filepath.Join(t.TempDir(), "replay-blocked.sqlite"))
 	defer closeProjectDB(t, replayed)
 	seedExecutionBlockedProjection(t, replayed)
-	if _, err := ReplayJournal(replayed, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+	if _, err := ReplayJournal(replayed, filepath.Join(config.LedgerDir(workspace), "journal"), nil); err != nil {
 		t.Fatalf("ReplayJournal() error = %v", err)
 	}
 	if replayState := executionBlockedProjectionState(t, replayed); replayState != liveState {
@@ -151,11 +153,11 @@ func TestRunClosureEventsProjectIdenticallyLiveAndReplay(t *testing.T) {
 			liveState := runClosureProjectionState(t, live)
 
 			workspace := newReplayWorkspace(t)
-			writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
+			writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-06.jsonl"), event)
 			replayed := openReplayDB(t, filepath.Join(t.TempDir(), "replay-closure.sqlite"))
 			defer closeProjectDB(t, replayed)
 			seedRunClosureProjection(t, replayed)
-			if _, err := ReplayJournal(replayed, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+			if _, err := ReplayJournal(replayed, filepath.Join(config.LedgerDir(workspace), "journal"), nil); err != nil {
 				t.Fatalf("ReplayJournal() error = %v", err)
 			}
 			if replayState := runClosureProjectionState(t, replayed); replayState != liveState {
@@ -186,11 +188,11 @@ func TestActivationRecoveryEventsProjectIdenticallyLiveAndReplay(t *testing.T) {
 			}
 			liveState := activationRecoveryProjectionState(t, live)
 			workspace := newReplayWorkspace(t)
-			writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
+			writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-06.jsonl"), event)
 			replayed := openReplayDB(t, filepath.Join(t.TempDir(), "replay-activation.sqlite"))
 			defer closeProjectDB(t, replayed)
 			seedActivationRecoveryProjection(t, replayed, eventType)
-			if _, err := ReplayJournal(replayed, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+			if _, err := ReplayJournal(replayed, filepath.Join(config.LedgerDir(workspace), "journal"), nil); err != nil {
 				t.Fatalf("ReplayJournal() error = %v", err)
 			}
 			if replayState := activationRecoveryProjectionState(t, replayed); replayState != liveState {

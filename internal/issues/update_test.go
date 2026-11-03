@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -362,7 +363,7 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 		t.Fatalf("activity journal_event_id = %#v, want %q", activityEffect.Values["journal_event_id"], last.EventID)
 	}
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 	var liveRevision int
 	if err := conn.QueryRow(`SELECT revision FROM issues WHERE id = ?`, created.ID).Scan(&liveRevision); err != nil {
@@ -402,7 +403,7 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	}
 
 	beforeRebuild := after
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}

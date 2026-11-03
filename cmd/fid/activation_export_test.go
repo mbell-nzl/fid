@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -19,7 +20,7 @@ func TestMalformedConfigRejectsActivationMutationButNotHelpOrExportValidation(t 
 		t.Fatalf("create archive before malformed config: %#v", created)
 	}
 
-	configPath := filepath.Join(workspace, ".fid", "config.toml")
+	configPath := filepath.Join(config.LedgerDir(workspace), "config.toml")
 	contents, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatal(err)

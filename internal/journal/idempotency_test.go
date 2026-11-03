@@ -9,6 +9,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -36,13 +37,13 @@ func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
 	}
 
 	closeIdempotencyDB(t, conn)
-	if err := os.Remove(filepath.Join(workspace, ".fid", "fid.sqlite")); err != nil {
+	if err := os.Remove(filepath.Join(config.LedgerDir(workspace), "fid.sqlite")); err != nil {
 		t.Fatalf("Remove(projection) error = %v", err)
 	}
 	if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
-	conn = openIdempotencyDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn = openIdempotencyDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIdempotencyDB(t, conn)
 	var rebuiltFields string
 	if err := conn.QueryRow(`SELECT request_field_digests_json FROM idempotency_results WHERE operation_scope=? AND idempotency_key=?`, request.OperationScope, request.IdempotencyKey).Scan(&rebuiltFields); err != nil {
@@ -109,7 +110,7 @@ func TestCommitIdempotentSerializesConcurrentSameKeyCalls(t *testing.T) {
 		go func() {
 			defer wait.Done()
 			<-start
-			connection := openIdempotencyDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+			connection := openIdempotencyDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 			defer closeIdempotencyDB(t, connection)
 			result, err := commitTestIdempotentActivation(workspace, connection, testIdempotencyRequest())
 			if err == nil {
@@ -209,10 +210,10 @@ func testIdempotentActivationEvent() Event {
 func newIdempotencyWorkspace(t *testing.T) (string, *sql.DB) {
 	t.Helper()
 	workspace := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(workspace, ".fid", "journal"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(config.LedgerDir(workspace), "journal"), 0o755); err != nil {
 		t.Fatalf("MkdirAll(journal) error = %v", err)
 	}
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)
 	}
@@ -237,13 +238,13 @@ func closeIdempotencyDB(t *testing.T, conn *sql.DB) {
 
 func idempotencyJournalEventCount(t *testing.T, workspace string) int {
 	t.Helper()
-	entries, err := os.ReadDir(filepath.Join(workspace, ".fid", "journal"))
+	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(workspace), "journal"))
 	if err != nil {
 		t.Fatalf("ReadDir(journal) error = %v", err)
 	}
 	count := 0
 	for _, entry := range entries {
-		payload, err := os.ReadFile(filepath.Join(workspace, ".fid", "journal", entry.Name()))
+		payload, err := os.ReadFile(filepath.Join(config.LedgerDir(workspace), "journal", entry.Name()))
 		if err != nil {
 			t.Fatalf("ReadFile(%q) error = %v", entry.Name(), err)
 		}

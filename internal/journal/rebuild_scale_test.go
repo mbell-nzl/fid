@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -21,10 +22,10 @@ func TestRebuildWorkspaceIsDeterministicAtSingleProjectScale(t *testing.T) {
 	workspace := newReplayWorkspace(t)
 	seed := seedScaleReplayWorkspace(t, workspace, targetEvents)
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	conn := openReplayDB(t, dbPath)
 
-	stats, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	stats, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 	if err != nil {
 		t.Fatalf("ReplayJournal() error = %v", err)
 	}
@@ -112,7 +113,7 @@ func seedScaleReplayWorkspace(tb testing.TB, workspace string, targetEvents int)
 		tb.Fatalf("target events = %d, want positive", targetEvents)
 	}
 
-	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-06-07.jsonl")
+	journalPath := filepath.Join(config.LedgerDir(workspace), "journal", "2026-06-07.jsonl")
 	eventCount := writeScaleReplayWorkspace(tb, journalPath, targetEvents)
 
 	return scaleReplaySeed{EventCount: eventCount}

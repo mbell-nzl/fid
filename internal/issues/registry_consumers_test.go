@@ -3,6 +3,8 @@ package issues
 import (
 	"path/filepath"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestGetListAndReadyUseProjectedWorkflowCategories(t *testing.T) {
@@ -19,7 +21,7 @@ func TestGetListAndReadyUseProjectedWorkflowCategories(t *testing.T) {
 		t.Fatalf("Create() error = %v", err)
 	}
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if _, err := conn.Exec(`
 		UPDATE workflow_states
 		SET category = ?

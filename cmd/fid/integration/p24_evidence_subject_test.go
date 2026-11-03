@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestP24ReviewAndHumanEvidenceSubjectRepositories(t *testing.T) {
@@ -73,7 +75,7 @@ func TestP24ReviewAndHumanEvidenceSubjectRepositories(t *testing.T) {
 
 func p24SubjectEventRepository(t *testing.T, root, eventID string) map[string]any {
 	t.Helper()
-	paths, err := filepath.Glob(filepath.Join(root, ".fid", "journal", "*.jsonl"))
+	paths, err := filepath.Glob(filepath.Join(config.LedgerDir(root), "journal", "*.jsonl"))
 	p22FaultOK(t, err)
 	for _, path := range paths {
 		data, err := os.ReadFile(path)

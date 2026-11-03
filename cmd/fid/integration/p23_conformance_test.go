@@ -358,7 +358,7 @@ func p24ModelSource(t *testing.T, pair p23HumanLeafPair, raw any) map[string]any
 		sum := sha256.Sum256(contents)
 		stored["digest"] = "sha256:" + hex.EncodeToString(sum[:])
 	}
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(pair.CWD, config.WorkspaceDirName, config.ConfigFileName))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(pair.CWD), config.ConfigFileName))
 	if err != nil {
 		t.Fatal(err)
 	}

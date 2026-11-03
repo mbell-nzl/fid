@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -24,7 +25,7 @@ func TestRebuildJSONSucceedsWithoutActorAuthority(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
 	}
-	if err := os.Remove(filepath.Join(workspace, ".fid", "fid.sqlite")); err != nil {
+	if err := os.Remove(filepath.Join(config.LedgerDir(workspace), "fid.sqlite")); err != nil {
 		t.Fatalf("Remove(projection) error = %v", err)
 	}
 
@@ -67,7 +68,7 @@ func TestRebuildRejectsRemovedByFlagWithoutMutation(t *testing.T) {
 	runInitCommand(t, workspace, "init")
 
 	journalPath := mustJournalPath(t, workspace)
-	databasePath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	databasePath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	beforeJournal, err := os.ReadFile(journalPath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
@@ -421,7 +422,7 @@ func TestRebuildCommandReplaysJournalAndReportsCounts(t *testing.T) {
 		t.Fatalf("stdout = %q, want active schema version %d", got, fiddb.ActiveMigrationVersion)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -497,7 +498,7 @@ func newRebuildWorkspace(t *testing.T) string {
 	t.Helper()
 
 	workspace := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(workspace, ".fid", "journal"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(config.LedgerDir(workspace), "journal"), 0o755); err != nil {
 		t.Fatalf("MkdirAll() error = %v", err)
 	}
 	return workspace
@@ -522,7 +523,7 @@ func writeCommandFixture(t *testing.T, workspaceRoot, fixtureName, journalFileNa
 		t.Fatalf("ReadFile(%q) error = %v", fixtureName, err)
 	}
 
-	journalPath := filepath.Join(workspaceRoot, ".fid", "journal", journalFileName)
+	journalPath := filepath.Join(config.LedgerDir(workspaceRoot), "journal", journalFileName)
 	if err := os.WriteFile(journalPath, payload, 0o644); err != nil {
 		t.Fatalf("WriteFile(%q) error = %v", journalPath, err)
 	}

@@ -14,6 +14,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -183,7 +184,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	beforeExport := p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "create", beforeArchive)
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "validate", beforeArchive)
 
-	if err := os.Remove(filepath.Join(workspace, ".fid", "fid.sqlite")); err != nil {
+	if err := os.Remove(filepath.Join(config.LedgerDir(workspace), "fid.sqlite")); err != nil {
 		t.Fatalf("delete derived projection: %v", err)
 	}
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "rebuild")
@@ -448,13 +449,13 @@ func p21AssertJournalTypes(t *testing.T, workspace string, want []string) {
 
 func p21JournalEventTypes(t *testing.T, workspace string) []string {
 	t.Helper()
-	entries, err := os.ReadDir(filepath.Join(workspace, ".fid", "journal"))
+	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(workspace), "journal"))
 	if err != nil {
 		t.Fatalf("read journal: %v", err)
 	}
 	var types []string
 	for _, entry := range entries {
-		contents := readP21File(t, filepath.Join(workspace, ".fid", "journal", entry.Name()))
+		contents := readP21File(t, filepath.Join(config.LedgerDir(workspace), "journal", entry.Name()))
 		for _, line := range bytes.FieldsFunc(contents, func(r rune) bool { return r == '\n' }) {
 			var event struct {
 				Type string `json:"event_type"`
@@ -473,13 +474,13 @@ func p21JournalEventTypes(t *testing.T, workspace string) []string {
 
 func p21JournalBytes(t *testing.T, workspace string) []byte {
 	t.Helper()
-	entries, err := os.ReadDir(filepath.Join(workspace, ".fid", "journal"))
+	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(workspace), "journal"))
 	if err != nil {
 		t.Fatalf("read journal: %v", err)
 	}
 	var journal []byte
 	for _, entry := range entries {
-		journal = append(journal, readP21File(t, filepath.Join(workspace, ".fid", "journal", entry.Name()))...)
+		journal = append(journal, readP21File(t, filepath.Join(config.LedgerDir(workspace), "journal", entry.Name()))...)
 	}
 	return journal
 }

@@ -11,6 +11,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestP22DualAdapterActivationConformance(t *testing.T) {
@@ -100,7 +102,7 @@ func p22ActivationSnapshot(t *testing.T, adapter p22RecoveryAdapter) (map[string
 	}
 	fid := adapter.(*p22FIDRecoveryAdapter)
 	status := p21Run(t, fid.binary, fid.workspace, "--json", "activation", "status", fid.activation["id"].(string))
-	entries, err := os.ReadDir(filepath.Join(fid.workspace, ".fid", "journal"))
+	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(fid.workspace), "journal"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +111,7 @@ func p22ActivationSnapshot(t *testing.T, adapter p22RecoveryAdapter) (map[string
 		if !strings.HasSuffix(entry.Name(), ".jsonl") {
 			continue
 		}
-		contents, err := os.ReadFile(filepath.Join(fid.workspace, ".fid", "journal", entry.Name()))
+		contents, err := os.ReadFile(filepath.Join(config.LedgerDir(fid.workspace), "journal", entry.Name()))
 		if err != nil {
 			t.Fatal(err)
 		}

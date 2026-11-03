@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestRemoveDeletesDeclaredAndInverseRowsAndProjectsActivity(t *testing.T) {
@@ -55,7 +57,7 @@ func TestRemoveDeletesDeclaredAndInverseRowsAndProjectsActivity(t *testing.T) {
 		t.Fatalf("links rows after Remove() = %#v, want none", rows)
 	}
 
-	stored := readLinkStoredEvents(t, filepath.Join(workspace, ".fid", "journal"))
+	stored := readLinkStoredEvents(t, filepath.Join(config.LedgerDir(workspace), "journal"))
 	last := stored[len(stored)-1]
 	eventName, actor, details := loadSingleActivityByEvent(t, conn, last.EventID)
 	if eventName != "link-removed" {

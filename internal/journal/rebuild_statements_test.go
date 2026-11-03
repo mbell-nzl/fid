@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -28,8 +29,8 @@ func TestRebuildReplayRollsBackFailedEventAndReleasesConnection(t *testing.T) {
 			"kind": "task", "title": "invalid FK", "workflow_id": "missing", "status": "todo",
 		}},
 	}
-	writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-06-05.jsonl"), first, second)
-	_, err := replayRebuild(conn, filepath.Join(workspace, ".fid", "journal"))
+	writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-06-05.jsonl"), first, second)
+	_, err := replayRebuild(conn, filepath.Join(config.LedgerDir(workspace), "journal"))
 	var corrupt *CorruptJournalError
 	if !errors.As(err, &corrupt) || corrupt.Line != 2 {
 		t.Fatalf("replay error = %v, want second-Event constraint failure", err)
@@ -52,7 +53,7 @@ func TestRebuildReplayRollsBackFailedEventAndReleasesConnection(t *testing.T) {
 func TestRebuildFailurePreservesInstalledProjectionAndJournal(t *testing.T) {
 	t.Parallel()
 	workspace := newReplayWorkspace(t)
-	path := filepath.Join(workspace, ".fid", "fid.sqlite")
+	path := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	conn := openReplayDB(t, path)
 	closeProjectDB(t, conn)
 	before, err := os.ReadFile(path)
@@ -60,7 +61,7 @@ func TestRebuildFailurePreservesInstalledProjectionAndJournal(t *testing.T) {
 		t.Fatal(err)
 	}
 	writeReplayFixture(t, workspace, "conflicting-precondition.jsonl", "2026-06-05.jsonl")
-	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-06-05.jsonl")
+	journalPath := filepath.Join(config.LedgerDir(workspace), "journal", "2026-06-05.jsonl")
 	journalBefore, err := os.ReadFile(journalPath)
 	if err != nil {
 		t.Fatal(err)
@@ -76,7 +77,7 @@ func TestRebuildFailurePreservesInstalledProjectionAndJournal(t *testing.T) {
 			t.Fatalf("failed rebuild changed %s: %v", name, err)
 		}
 	}
-	temporary, err := filepath.Glob(filepath.Join(workspace, ".fid", ".fid-rebuild-*"))
+	temporary, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), ".fid-rebuild-*"))
 	if err != nil || len(temporary) != 0 {
 		t.Fatalf("temporary projections after failure = %v, error %v", temporary, err)
 	}

@@ -134,7 +134,7 @@ func p24GateDirtyRepository(t *testing.T, workspace, path string) map[string]any
 	if err != nil {
 		t.Fatal(err)
 	}
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(root, ".fid", "config.toml"))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(root), "config.toml"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +176,7 @@ func p24GateDirtyRepository(t *testing.T, workspace, path string) map[string]any
 
 func p24AssertGatePersistedRepositories(t *testing.T, root string, terminal gateTerminalFrame, repository map[string]any) {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(root, ".fid", config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(root), config.DatabaseFileName))
 	if err != nil {
 		t.Fatal(err)
 	}

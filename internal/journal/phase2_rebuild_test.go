@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -18,12 +19,12 @@ func TestRebuildWorkspacePreservesFullPhaseTwoProjectionWithRefTriggersActive(t 
 	workspace := newReplayWorkspace(t)
 	writeReplayEvents(
 		t,
-		filepath.Join(workspace, ".fid", "journal", "2026-06-07.jsonl"),
+		filepath.Join(config.LedgerDir(workspace), "journal", "2026-06-07.jsonl"),
 		replayRoleEvent("EVT-20260607-000901", "developer"),
 		phaseTwoFullSchemaEvent(),
 	)
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	// This full Phase 2 fixture deliberately includes historical escalation
 	// rows. Pin both projections to that migration boundary; latest-schema
 	// rejection of these Effects is independently covered below.
@@ -36,7 +37,7 @@ func TestRebuildWorkspacePreservesFullPhaseTwoProjectionWithRefTriggersActive(t 
 		t.Fatal(err)
 	}
 
-	stats, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	stats, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 	if err != nil {
 		t.Fatalf("ReplayJournal() error = %v", err)
 	}

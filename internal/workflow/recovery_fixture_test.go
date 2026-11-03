@@ -6,12 +6,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/project"
 )
 
 func TestRecoveryFixturesKeepRepositoryAndProjectionIsolation(t *testing.T) {
 	t.Parallel()
-	templatePath := filepath.Join(workflowPristineWorkspace, ".fid", "fid.sqlite")
+	templatePath := filepath.Join(config.LedgerDir(workflowPristineWorkspace), "fid.sqlite")
 	before, err := os.ReadFile(templatePath)
 	mustRecoveryTest(t, err)
 	first, _ := recoveryFixture(t)

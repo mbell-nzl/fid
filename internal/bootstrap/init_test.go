@@ -67,7 +67,7 @@ func TestInitializeFailureBeforeActivationLeavesNoWorkspace(t *testing.T) {
 
 func assertNoActivationResidue(t *testing.T, workspaceRoot string) {
 	t.Helper()
-	if _, err := os.Stat(filepath.Join(workspaceRoot, config.WorkspaceDirName)); !os.IsNotExist(err) {
+	if _, err := os.Stat(config.LedgerDir(workspaceRoot)); !os.IsNotExist(err) {
 		t.Fatalf("activated workspace state = %v, want absent", err)
 	}
 

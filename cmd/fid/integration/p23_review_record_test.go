@@ -189,7 +189,7 @@ func p24ReviewDirtyRepository(t *testing.T, a *p22FIDRecoveryAdapter, path strin
 	if err != nil {
 		t.Fatal(err)
 	}
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(a.workspace, ".fid", "config.toml"))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(a.workspace), "config.toml"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,7 +240,7 @@ func TestP24ReviewReplayUnavailableAndRestoredControls(t *testing.T) {
 			case "unmerged-paths":
 				p24MakeUnmerged(t, a.workspace)
 			case "deleted-source":
-				if err := os.Remove(filepath.Join(a.workspace, ".fid", "coverage.md")); err != nil {
+				if err := os.Remove(filepath.Join(config.LedgerDir(a.workspace), "coverage.md")); err != nil {
 					t.Fatal(err)
 				}
 			}

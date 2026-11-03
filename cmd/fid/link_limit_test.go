@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -15,7 +16,7 @@ func TestLinkListJSONHonorsAtAndOverLimitWithoutTruncation(t *testing.T) {
 	clonePristineWorkspaceInto(t, workspace)
 	primaryID := createCommandIssue(t, workspace, "Link list limit primary")
 	journalPath := mustJournalPath(t, workspace)
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}

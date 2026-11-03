@@ -15,7 +15,7 @@ import (
 func TestListFiltersCountsAssignmentsAndOrdering(t *testing.T) {
 	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open workflow database: %v", err)
 	}
@@ -63,7 +63,7 @@ func TestListReturnsEmptySliceForNoMatch(t *testing.T) {
 func TestListOrdersWorkflowsByNameThenID(t *testing.T) {
 	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open workflow database: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestListOrdersWorkflowsByNameThenID(t *testing.T) {
 func TestListRejectsCollectionAboveLimit(t *testing.T) {
 	t.Parallel()
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open workflow database: %v", err)
 	}

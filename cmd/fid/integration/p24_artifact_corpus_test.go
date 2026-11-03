@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 var p24ArtifactFields = map[string]string{"artifact.verify": "artifact_id"}
@@ -28,7 +30,7 @@ func TestP24ArtifactVerifyKeyedLeafCorpus(t *testing.T) {
 	}
 	artifact := artifacts[0].(map[string]any)
 	digest := artifact["digest"].(string)
-	if err := os.Remove(filepath.Join(a.workspace, ".fid", "artifacts", digest[len("sha256:"):])); err != nil {
+	if err := os.Remove(filepath.Join(config.LedgerDir(a.workspace), "artifacts", digest[len("sha256:"):])); err != nil {
 		t.Fatal(err)
 	}
 	p24StartKeyedCapture(a.workspace)

@@ -10,12 +10,14 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestAppendEventWritesOneJSONLLineWithFirstSequence(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
-	mustMkdirAll(t, filepath.Join(workspace, ".fid", "journal"))
+	mustMkdirAll(t, filepath.Join(config.LedgerDir(workspace), "journal"))
 
 	fixedNow := time.Date(2026, time.June, 5, 14, 23, 11, 0, time.UTC)
 	event := Event{
@@ -69,7 +71,7 @@ func TestAppendEventWritesOneJSONLLineWithFirstSequence(t *testing.T) {
 		t.Fatalf("appended occurred_at = %s, want %s", appended.OccurredAt, fixedNow)
 	}
 
-	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-06-05.jsonl")
+	journalPath := filepath.Join(config.LedgerDir(workspace), "journal", "2026-06-05.jsonl")
 	raw, err := os.ReadFile(journalPath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
@@ -96,7 +98,7 @@ func TestAppendEventWritesOneJSONLLineWithFirstSequence(t *testing.T) {
 func TestAppendEventWrapperUsesRealClockPath(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
-	mustMkdirAll(t, filepath.Join(workspace, ".fid", "journal"))
+	mustMkdirAll(t, filepath.Join(config.LedgerDir(workspace), "journal"))
 
 	var appended Event
 	err := withLockOptions(workspace, LockOwner{
@@ -120,7 +122,7 @@ func TestAppendEventWrapperUsesRealClockPath(t *testing.T) {
 func TestPrepareEventAssignsNextIDWithoutAppendingJournalBytes(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
-	journalDir := filepath.Join(workspace, ".fid", "journal")
+	journalDir := filepath.Join(config.LedgerDir(workspace), "journal")
 	mustMkdirAll(t, journalDir)
 
 	journalPath := filepath.Join(journalDir, "2026-06-05.jsonl")
@@ -168,7 +170,7 @@ func TestPrepareEventAssignsNextIDWithoutAppendingJournalBytes(t *testing.T) {
 func TestAppendEventIncrementsSequenceWithinUTCJournalFile(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
-	mustMkdirAll(t, filepath.Join(workspace, ".fid", "journal"))
+	mustMkdirAll(t, filepath.Join(config.LedgerDir(workspace), "journal"))
 
 	fixedNow := time.Date(2026, time.June, 5, 14, 23, 11, 0, time.UTC)
 	first, err := appendTestEvent(workspace, fixedNow, "Implement append writer")
@@ -191,7 +193,7 @@ func TestAppendEventIncrementsSequenceWithinUTCJournalFile(t *testing.T) {
 func TestAppendEventRejectsClockSkewWithoutAppending(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
-	journalDir := filepath.Join(workspace, ".fid", "journal")
+	journalDir := filepath.Join(config.LedgerDir(workspace), "journal")
 	mustMkdirAll(t, journalDir)
 
 	laterPath := filepath.Join(journalDir, "2026-06-06.jsonl")
@@ -234,7 +236,7 @@ func TestAppendEventRejectsClockSkewWithoutAppending(t *testing.T) {
 func TestConcurrentWritesAppendDistinctEventsWithMonotonicSequences(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
-	mustMkdirAll(t, filepath.Join(workspace, ".fid", "journal"))
+	mustMkdirAll(t, filepath.Join(config.LedgerDir(workspace), "journal"))
 
 	fixedNow := time.Date(2026, time.June, 5, 14, 23, 11, 0, time.UTC)
 	start := make(chan struct{})
@@ -285,7 +287,7 @@ func TestConcurrentWritesAppendDistinctEventsWithMonotonicSequences(t *testing.T
 		t.Fatalf("event ids = %v, want distinct ids", eventIDs)
 	}
 
-	stored, err := readStoredEvents(filepath.Join(workspace, ".fid", "journal", "2026-06-05.jsonl"))
+	stored, err := readStoredEvents(filepath.Join(config.LedgerDir(workspace), "journal", "2026-06-05.jsonl"))
 	if err != nil {
 		t.Fatalf("readStoredEvents() error = %v", err)
 	}
@@ -341,7 +343,7 @@ func TestWriterHelpersParseEventIDsAndDates(t *testing.T) {
 
 func TestWriterHelpersDetermineLatestDateAndNextSequence(t *testing.T) {
 	t.Parallel()
-	journalDir := filepath.Join(t.TempDir(), ".fid", "journal")
+	journalDir := filepath.Join(config.LedgerDir(t.TempDir()), "journal")
 	mustMkdirAll(t, journalDir)
 
 	for _, name := range []string{"2026-06-04.jsonl", "2026-06-05.jsonl", "notes.txt", "invalid.jsonl"} {

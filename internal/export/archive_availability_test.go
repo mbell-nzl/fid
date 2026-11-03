@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/evidence"
 )
@@ -20,7 +21,7 @@ func TestCreateAndValidatePreserveUnavailableReceiptArtifactWithoutBody(t *testi
 	artifactEntry := addJournalBackedExportFixtureFacts(t, workspace)
 	artifactDigest := "sha256:" + strings.TrimPrefix(filepath.Base(artifactEntry), "sha256:")
 	artifactID := exportFixtureArtifactID(t, workspace, artifactDigest)
-	if err := os.Remove(filepath.Join(workspace, ".fid", artifactEntry)); err != nil {
+	if err := os.Remove(filepath.Join(config.LedgerDir(workspace), artifactEntry)); err != nil {
 		t.Fatalf("remove retained Artifact body: %v", err)
 	}
 	verified, err := evidence.VerifyArtifact(evidence.ArtifactVerifyOptions{
@@ -69,7 +70,7 @@ func TestCreateAndValidatePreserveUnavailableReceiptArtifactWithoutBody(t *testi
 
 func exportFixtureArtifactID(t *testing.T, workspace, digest string) string {
 	t.Helper()
-	database, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	database, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open fixture projection: %v", err)
 	}

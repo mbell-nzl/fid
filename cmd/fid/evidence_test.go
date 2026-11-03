@@ -153,7 +153,7 @@ func buildLinkedEvidenceFixture(t *testing.T, key string) linkedEvidenceFixture 
 		t.Fatalf("gate run = %#v, terminal=%#v, want successful Receipt", gateRun, terminal)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open projection: %v", err)
 	}
@@ -210,7 +210,7 @@ func (fixture linkedEvidenceFixture) updateValidity(t *testing.T, validity strin
 
 func (fixture linkedEvidenceFixture) updateProjection(t *testing.T, query string, arguments ...any) {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(fixture.workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(fixture.workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open projection: %v", err)
 	}
@@ -222,7 +222,7 @@ func (fixture linkedEvidenceFixture) updateProjection(t *testing.T, query string
 
 func (fixture linkedEvidenceFixture) observeArtifactMissing(t *testing.T) {
 	t.Helper()
-	path := filepath.Join(fixture.workspace, config.WorkspaceDirName, "artifacts", strings.TrimPrefix(fixture.digest, "sha256:"))
+	path := filepath.Join(config.LedgerDir(fixture.workspace), "artifacts", strings.TrimPrefix(fixture.digest, "sha256:"))
 	if err := os.Remove(path); err != nil {
 		t.Fatalf("remove stored Artifact: %v", err)
 	}
@@ -320,7 +320,7 @@ func TestEvidenceLinkRejectsPersistedReceiptBindingMismatches(t *testing.T) {
 				t.Fatalf("gate run = %#v, terminal=%#v, want successful Receipt", gateRun, terminal)
 			}
 
-			conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+			conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 			if err != nil {
 				t.Fatalf("open projection: %v", err)
 			}

@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func p24InputPair(t *testing.T, root, operation, actor string, input map[string]any) p24CodePair {
@@ -32,7 +34,7 @@ func p24JournalPair(t *testing.T, _ string) p24CodePair {
 	t.Helper()
 	root := t.TempDir()
 	p21Run(t, integrationFIDBinary(t), root, "init", "--prefix", "P24", "--json")
-	if err := os.WriteFile(filepath.Join(root, ".fid/journal/9999-12-01.jsonl"), []byte("invalid JSON\n"), 0600); err != nil {
+	if err := os.WriteFile(filepath.Join(config.LedgerDir(root), "journal", "9999-12-01.jsonl"), []byte("invalid JSON\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	return p24CodePair{root, "project.rebuild", []string{"rebuild"}}
@@ -42,7 +44,7 @@ func p24LockPair(t *testing.T, _ string) p24CodePair {
 	t.Helper()
 	root := t.TempDir()
 	p21Run(t, integrationFIDBinary(t), root, "init", "--prefix", "P24", "--json")
-	if err := os.Mkdir(filepath.Join(root, ".fid/write.lock"), 0700); err != nil {
+	if err := os.Mkdir(filepath.Join(config.LedgerDir(root), "write.lock"), 0700); err != nil {
 		t.Fatal(err)
 	}
 	return p24CodePair{root, "issue.create", []string{"issue", "create", "--kind", "task", "--title", "locked", "--actor", "agent:a", "--idempotency-key", "locked"}}

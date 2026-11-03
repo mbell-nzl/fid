@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -100,7 +101,7 @@ func TestAddLabelAddsOneRowWithoutReplacingOthersAndProjectsActivity(t *testing.
 	}
 	assertIssueLabelRevisionEffect(t, revisionEffect, created.ID, 1, 2)
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	assertIssueLabelActivity(t, conn, last.EventID, "issue-label-added", "developer", `"label":"api"`, `"direction":"added"`)
@@ -246,7 +247,7 @@ func TestRemoveLabelRemovesOneRowPreservesLabelTableAndProjectsActivity(t *testi
 	}
 	assertIssueLabelRevisionEffect(t, revisionEffect, created.ID, 1, 2)
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	var labelCount int
@@ -376,7 +377,7 @@ func TestIssueLabelAddRejectsNestedLimitWithoutAppend(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	tx, err := conn.Begin()
 	if err != nil {
 		t.Fatalf("Begin() error = %v", err)

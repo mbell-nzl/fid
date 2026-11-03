@@ -14,13 +14,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 func TestReplayJournalRejectsNilConnection(t *testing.T) {
 	t.Parallel()
 
-	_, err := ReplayJournal(nil, filepath.Join(t.TempDir(), ".fid", "journal"), nil)
+	_, err := ReplayJournal(nil, filepath.Join(config.LedgerDir(t.TempDir()), "journal"), nil)
 	if err == nil {
 		t.Fatal("ReplayJournal() error = nil, want nil connection rejection")
 	}
@@ -32,7 +33,7 @@ func TestReplayJournalRejectsNilConnection(t *testing.T) {
 func TestReplayJournalClassifiesRetiredIssueEffectKeyAsStopped(t *testing.T) {
 	t.Parallel()
 	workspace := newReplayWorkspace(t)
-	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-11.jsonl")
+	journalPath := filepath.Join(config.LedgerDir(workspace), "journal", "2026-08-11.jsonl")
 	writeReplayEvents(t, journalPath, Event{
 		EventID:     "EVT-retired-effect-key",
 		EventSchema: EventSchemaV1,
@@ -57,7 +58,7 @@ func TestReplayJournalClassifiesRetiredIssueEffectKeyAsStopped(t *testing.T) {
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
 	defer closeProjectDB(t, conn)
 
-	_, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	_, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 	var corruptErr *CorruptJournalError
 	if !errors.As(err, &corruptErr) {
 		t.Fatalf("ReplayJournal() error = %T %v, want *CorruptJournalError", err, err)
@@ -76,7 +77,7 @@ func TestReplayJournalAppliesGoldenV1JournalInFileOrder(t *testing.T) {
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
 	defer closeProjectDB(t, conn)
 
-	stats, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	stats, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 	if err != nil {
 		t.Fatalf("ReplayJournal() error = %v", err)
 	}
@@ -125,7 +126,7 @@ func TestReplayJournalAppliesPhase20IssueRevisionGolden(t *testing.T) {
 	t.Parallel()
 	workspace := newReplayWorkspace(t)
 	writeReplayFixture(t, workspace, "p20-issue-revision-effects.golden.jsonl", "2026-08-11.jsonl")
-	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-11.jsonl")
+	journalPath := filepath.Join(config.LedgerDir(workspace), "journal", "2026-08-11.jsonl")
 
 	payload, err := os.ReadFile(journalPath)
 	if err != nil {
@@ -182,7 +183,7 @@ func TestReplayJournalAppliesPhase20IssueRevisionGolden(t *testing.T) {
 
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
 	defer closeProjectDB(t, conn)
-	if _, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+	if _, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil); err != nil {
 		t.Fatalf("ReplayJournal() error = %v", err)
 	}
 	var revision int
@@ -210,10 +211,10 @@ func TestRebuildWorkspaceRecreatesIdenticalStateAfterDeletingDatabase(t *testing
 	workspace := newReplayWorkspace(t)
 	writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	conn := openReplayDB(t, dbPath)
 
-	stats, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	stats, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 	if err != nil {
 		t.Fatalf("ReplayJournal() error = %v", err)
 	}
@@ -257,7 +258,7 @@ func TestReplayJournalReportsMalformedTrailingLine(t *testing.T) {
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
 	defer closeProjectDB(t, conn)
 
-	_, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	_, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 	if err == nil {
 		t.Fatal("ReplayJournal() error = nil, want corruption error")
 	}
@@ -289,7 +290,7 @@ func TestReplayJournalStopsOnPreconditionConflict(t *testing.T) {
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
 	defer closeProjectDB(t, conn)
 
-	_, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	_, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 	if err == nil {
 		t.Fatal("ReplayJournal() error = nil, want precondition conflict")
 	}
@@ -312,7 +313,7 @@ func TestReplayJournalStopsOnPreconditionConflict(t *testing.T) {
 func TestReplayJournalRejectsStaleIssueRevisionBeforeApplyingEffect(t *testing.T) {
 	t.Parallel()
 	workspace := newReplayWorkspace(t)
-	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-11.jsonl")
+	journalPath := filepath.Join(config.LedgerDir(workspace), "journal", "2026-08-11.jsonl")
 	issueID := "FID-stale-revision"
 	writeReplayEvents(t, journalPath,
 		Event{
@@ -342,7 +343,7 @@ func TestReplayJournalRejectsStaleIssueRevisionBeforeApplyingEffect(t *testing.T
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
 	defer closeProjectDB(t, conn)
 
-	_, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	_, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 	var conflictErr *PreconditionConflictError
 	if !errors.As(err, &conflictErr) {
 		t.Fatalf("ReplayJournal() error = %T %v, want *PreconditionConflictError", err, err)
@@ -426,7 +427,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
-		conn := openReplayDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+		conn := openReplayDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 		if _, err := conn.Exec(`DELETE FROM projection_meta`); err != nil {
 			t.Fatalf("delete projection_meta: %v", err)
 		}
@@ -474,7 +475,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
-		conn := openReplayDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+		conn := openReplayDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 		if _, err := conn.Exec(`UPDATE projection_meta SET projection_schema_version = ? WHERE key = 'default'`, 999); err != nil {
 			t.Fatalf("update projection_meta schema version: %v", err)
 		}
@@ -500,7 +501,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
-		conn := openReplayDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+		conn := openReplayDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 		if _, err := conn.Exec(`UPDATE projection_meta SET journal_offset = ? WHERE key = 'default'`, 99999); err != nil {
 			t.Fatalf("update projection_meta journal_offset: %v", err)
 		}
@@ -526,7 +527,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
-		conn := openReplayDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+		conn := openReplayDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 		if _, err := conn.Exec(`UPDATE projection_meta SET last_event_hash = ? WHERE key = 'default'`, "sha256:bad"); err != nil {
 			t.Fatalf("update projection_meta last_event_hash: %v", err)
 		}
@@ -573,7 +574,7 @@ func TestEnsureProjectionFreshWithLockRebuildsMissingSQLiteProjection(t *testing
 	workspace := newReplayWorkspace(t)
 	writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-06-05.jsonl")
+	journalPath := filepath.Join(config.LedgerDir(workspace), "journal", "2026-06-05.jsonl")
 	before, err := os.ReadFile(journalPath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) before rebuild error = %v", journalPath, err)
@@ -581,7 +582,7 @@ func TestEnsureProjectionFreshWithLockRebuildsMissingSQLiteProjection(t *testing
 
 	var result EnsureProjectionResult
 	err = WithLock(workspace, LockOwner{Command: "fid catch-up"}, func(lock *WriteLock) error {
-		if _, statErr := os.Stat(filepath.Join(workspace, ".fid", lockDirectoryName)); statErr != nil {
+		if _, statErr := os.Stat(filepath.Join(config.LedgerDir(workspace), lockDirectoryName)); statErr != nil {
 			return fmt.Errorf("caller-held lock missing before catch-up: %w", statErr)
 		}
 
@@ -600,7 +601,7 @@ func TestEnsureProjectionFreshWithLockRebuildsMissingSQLiteProjection(t *testing
 		t.Fatalf("replayed events = %d, want %d", result.ReplayStats.EventsReplayed, 2)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() rebuilt projection error = %v", err)
 	}
@@ -626,7 +627,7 @@ func TestEnsureProjectionFreshWithLockRebuildsMissingSQLiteProjection(t *testing
 func TestOrderedJournalFilesSkipsNonJournalEntries(t *testing.T) {
 	t.Parallel()
 
-	journalDir := filepath.Join(t.TempDir(), ".fid", "journal")
+	journalDir := filepath.Join(config.LedgerDir(t.TempDir()), "journal")
 	mustMkdirAll(t, journalDir)
 
 	files := []string{
@@ -660,7 +661,7 @@ func TestReplayJournalHonorsStartOffset(t *testing.T) {
 	t.Parallel()
 
 	workspace := newReplayWorkspace(t)
-	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-06-05.jsonl")
+	journalPath := filepath.Join(config.LedgerDir(workspace), "journal", "2026-06-05.jsonl")
 	first := replayRoleEvent("EVT-20260605-000001", "developer")
 	second := replayRoleEvent("EVT-20260605-000002", "qa_lead")
 	writeReplayEvents(t, journalPath, first, second)
@@ -673,7 +674,7 @@ func TestReplayJournalHonorsStartOffset(t *testing.T) {
 	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
 	defer closeProjectDB(t, conn)
 
-	stats, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), &ReplayOptions{
+	stats, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), &ReplayOptions{
 		StartFile:   "2026-06-05.jsonl",
 		StartOffset: int64(len(firstLine) + 1),
 	})
@@ -698,7 +699,7 @@ func newReplayWorkspace(t *testing.T) string {
 	t.Helper()
 
 	workspace := t.TempDir()
-	mustMkdirAll(t, filepath.Join(workspace, ".fid", "journal"))
+	mustMkdirAll(t, filepath.Join(config.LedgerDir(workspace), "journal"))
 	return workspace
 }
 
@@ -736,7 +737,7 @@ func writeReplayFixture(t *testing.T, workspaceRoot, fixtureName, journalFileNam
 		t.Fatalf("ReadFile(%q) error = %v", fixtureName, err)
 	}
 
-	journalPath := filepath.Join(workspaceRoot, ".fid", "journal", journalFileName)
+	journalPath := filepath.Join(config.LedgerDir(workspaceRoot), "journal", journalFileName)
 	if err := os.WriteFile(journalPath, payload, 0o644); err != nil {
 		t.Fatalf("WriteFile(%q) error = %v", journalPath, err)
 	}
@@ -750,7 +751,7 @@ func appendReplayFixtureLine(t *testing.T, workspaceRoot, fixtureName, journalFi
 		t.Fatalf("ReadFile(%q) error = %v", fixtureName, err)
 	}
 
-	journalPath := filepath.Join(workspaceRoot, ".fid", "journal", journalFileName)
+	journalPath := filepath.Join(config.LedgerDir(workspaceRoot), "journal", journalFileName)
 	file, err := os.OpenFile(journalPath, os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		t.Fatalf("OpenFile(%q) error = %v", journalPath, err)

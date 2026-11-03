@@ -4,13 +4,15 @@ import (
 	"database/sql"
 	"path/filepath"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestReadySelectsLowestSequenceActionableTaskForSequentialEpic(t *testing.T) {
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	seedReadyRows(t, conn, []readyRow{
@@ -107,7 +109,7 @@ func TestReadyReturnsStructuredBlockerWhenSequentialCurrentTaskIsStarted(t *test
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	seedReadyRows(t, conn, []readyRow{
@@ -198,7 +200,7 @@ func TestReadySelectsHighestPriorityActionableTaskForPrioritisedEpic(t *testing.
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	seedReadyRows(t, conn, []readyRow{
@@ -274,7 +276,7 @@ func TestReadyProjectWideIncludesOnlyActionableUnattachedTasks(t *testing.T) {
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	seedReadyRows(t, conn, []readyRow{
@@ -349,7 +351,7 @@ func TestReadyProjectWideSelectsDeterministicTopTaskAcrossMixedSources(t *testin
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	seedReadyRows(t, conn, []readyRow{
@@ -494,7 +496,7 @@ func TestReadyProjectWideUsesIDAsFinalTieBreak(t *testing.T) {
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	seedReadyRows(t, conn, []readyRow{
@@ -541,7 +543,7 @@ func TestReadyProjectWideReturnsStructuredEmptyExplanationWhenNothingIsReady(t *
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	seedReadyRows(t, conn, []readyRow{
