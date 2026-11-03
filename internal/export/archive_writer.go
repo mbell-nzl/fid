@@ -83,7 +83,7 @@ func loadAvailableArtifacts(conn *sql.DB, workspaceRoot, artifactRoot string) ([
 		if err != nil {
 			return nil, err
 		}
-		path := filepath.Join(workspaceRoot, config.WorkspaceDirName, artifactRoot, name)
+		path := filepath.Join(config.LedgerDir(workspaceRoot), artifactRoot, name)
 		info, err := os.Lstat(path)
 		if err != nil || !info.Mode().IsRegular() {
 			return nil, fmt.Errorf("create export: available Artifact %q is unavailable", expected.Digest)

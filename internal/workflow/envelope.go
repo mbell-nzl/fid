@@ -285,7 +285,7 @@ func CreateEnvelope(options EnvelopeOptions, request EnvelopeCreateRequest) (Env
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return fmt.Errorf("create envelope: read project config: %w", err)
 		}
@@ -381,7 +381,7 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return err
 		}
@@ -472,7 +472,7 @@ func CompleteEnvelope(options EnvelopeOptions, request EnvelopeCompleteRequest) 
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return fmt.Errorf("complete envelope: read project config: %w", err)
 		}
@@ -526,7 +526,7 @@ func CompleteEnvelope(options EnvelopeOptions, request EnvelopeCompleteRequest) 
 			return err
 		}
 		completedAt := time.Now().UTC().Format(time.RFC3339Nano)
-		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "journal"), journal.Aggregate{ID: envelope.ID, Type: "envelope"})
+		sequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "journal"), journal.Aggregate{ID: envelope.ID, Type: "envelope"})
 		if err != nil {
 			return err
 		}

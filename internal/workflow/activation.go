@@ -241,7 +241,7 @@ func PrepareActivation(options ActivationPrepareOptions) (ActivationPrepareResul
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return fmt.Errorf("prepare activation: read project config: %w", err)
 		}
@@ -381,7 +381,7 @@ func StageActivationComponent(options ActivationComponentOptions) (ActivationCom
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return fmt.Errorf("stage activation component: read project config: %w", err)
 		}
@@ -593,7 +593,7 @@ func transitionActivation(options ActivationTransitionOptions, activationID, ope
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return err
 		}

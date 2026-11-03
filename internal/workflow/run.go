@@ -171,7 +171,7 @@ func mutateRun(options RunOptions, operation string, request any, build func(*sq
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return fmt.Errorf("%s: read project config: %w", operation, err)
 		}
@@ -290,7 +290,7 @@ func runStartEffects(run Run) []journal.Effect {
 }
 
 func runEvent(workspaceRoot string, actor ActorProfile, run Run, eventType, command string, effects []journal.Effect) (journal.Event, error) {
-	next, err := journal.NextAggregateSequence(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: run.ID, Type: "run"})
+	next, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(workspaceRoot), config.JournalDirName), journal.Aggregate{ID: run.ID, Type: "run"})
 	if err != nil {
 		return journal.Event{}, err
 	}

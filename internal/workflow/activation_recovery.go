@@ -250,7 +250,7 @@ func activationMutation(options ActivationTransitionOptions, operation string, r
 	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" {
 		return journal.IdempotencyOutcome{}, fmt.Errorf("%s: workspace root and migrations directory are required", operation)
 	}
-	project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+	project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 	if err != nil {
 		return journal.IdempotencyOutcome{}, err
 	}

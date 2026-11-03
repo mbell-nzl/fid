@@ -137,7 +137,7 @@ func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationRe
 		return MutationResult{}, invalidGenericClaim("claim acquire input is invalid")
 	}
 	return mutateGenericClaim(options, claimAcquireAction, request, func(conn *sql.DB, _ string, now time.Time) (journal.Event, GenericClaim, error) {
-		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
 		}
@@ -321,7 +321,7 @@ func mutateGenericClaim(options MutationOptions, operation string, request any, 
 			return err
 		}
 		defer closeClaimsConn(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return fmt.Errorf("claim mutation: read project config: %w", err)
 		}
@@ -397,7 +397,7 @@ func mustClaimEnvelope(options MutationOptions, claim GenericClaim) workflow.Rep
 }
 
 func genericClaimEvent(workspaceRoot string, actor workflow.ActorProfile, repository workflow.Repository, claimID string, sequence int, eventType, command string, effects []journal.Effect) (journal.Event, error) {
-	next, err := journal.NextAggregateSequence(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: claimID, Type: "claim"})
+	next, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(workspaceRoot), config.JournalDirName), journal.Aggregate{ID: claimID, Type: "claim"})
 	if err != nil {
 		return journal.Event{}, err
 	}
@@ -529,7 +529,7 @@ func genericClaimNow(now time.Time) time.Time {
 func invalidGenericClaim(reason string) error { return &GenericClaimInvalidError{Reason: reason} }
 
 func openGenericClaimsDB(workspaceRoot string) (*sql.DB, error) {
-	return fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	return fiddb.Open(filepath.Join(config.LedgerDir(workspaceRoot), config.DatabaseFileName))
 }
 
 func ListGeneric(options GenericListOptions) ([]GenericClaim, error) {

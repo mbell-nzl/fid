@@ -142,7 +142,7 @@ func ListDeviations(options DeviationListOptions) ([]map[string]any, error) {
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
 		return nil, err
 	}
-	conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func GetDeviation(workspaceRoot, migrationsDir, id string) (map[string]any, erro
 	if _, err := journal.EnsureProjectionFresh(workspaceRoot, migrationsDir); err != nil {
 		return nil, err
 	}
-	conn, err := fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspaceRoot), config.DatabaseFileName))
 	if err != nil {
 		return nil, fmt.Errorf("open deviation projection: %w", err)
 	}

@@ -63,7 +63,7 @@ func Tokens(options TokensOptions) ([]TokensRow, error) {
 		return nil, err
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspaceRoot), config.DatabaseFileName))
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func Cost(options CostOptions) ([]CostRow, error) {
 		return nil, err
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspaceRoot), config.DatabaseFileName))
 	if err != nil {
 		return nil, err
 	}

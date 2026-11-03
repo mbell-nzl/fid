@@ -18,11 +18,11 @@ func openJudgmentMutation(lock *journal.WriteLock, options JudgmentOptions) (*sq
 	if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 		return nil, "", workflow.ActorProfile{}, err
 	}
-	conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
 	if err != nil {
 		return nil, "", workflow.ActorProfile{}, err
 	}
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 	if err != nil {
 		_ = conn.Close()
 		return nil, "", workflow.ActorProfile{}, err

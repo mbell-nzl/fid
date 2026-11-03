@@ -64,7 +64,7 @@ func absoluteDirectory(path string) (string, error) {
 }
 
 func isProjectRoot(root string) bool {
-	info, err := os.Lstat(filepath.Join(root, config.WorkspaceDirName))
+	info, err := os.Lstat(config.LedgerDir(root))
 	return err == nil && info.IsDir() && info.Mode()&fs.ModeSymlink == 0
 }
 

@@ -210,7 +210,7 @@ func RaiseStop(options StopOptions, request StopRaiseRequest) (StopRaiseResult, 
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return err
 		}
@@ -314,7 +314,7 @@ func ResolveStop(options StopOptions, request StopResolveRequest) (StopResolveRe
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return err
 		}
@@ -341,7 +341,7 @@ func ResolveStop(options StopOptions, request StopResolveRequest) (StopResolveRe
 		if err := qualifyingFact(options.WorkspaceRoot, conn, stop, request.FactEventID); err != nil {
 			return &ResolutionInvalidError{Subject: stop.Subject, FactEventIDs: []string{request.FactEventID}, Reasons: []EvaluationReason{evaluationReason("resolution-invalid", err.Error(), stop.ID, "stop")}}
 		}
-		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: stop.ID, Type: "stop"})
+		sequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: stop.ID, Type: "stop"})
 		if err != nil {
 			return err
 		}
@@ -379,7 +379,7 @@ func ResolveAttention(options StopOptions, request AttentionResolveRequest) (Att
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), "config.toml"))
 		if err != nil {
 			return err
 		}
@@ -603,7 +603,7 @@ func qualifyingDispositions(workspace string, conn *sql.DB, attention Attention,
 }
 
 func qualifyingFact(workspace string, conn *sql.DB, stop Stop, factEventID string) error {
-	found, err := journal.FindEvent(filepath.Join(workspace, config.WorkspaceDirName, "journal"), factEventID)
+	found, err := journal.FindEvent(filepath.Join(config.LedgerDir(workspace), "journal"), factEventID)
 	if err != nil {
 		return fmt.Errorf("resolve Stop %q: qualifying fact: %w", stop.ID, err)
 	}

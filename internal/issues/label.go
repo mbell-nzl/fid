@@ -213,7 +213,7 @@ func issueLabelWriteLocked(lock *journal.WriteLock, request issueLabelWriteReque
 		return err
 	}
 	defer closeIssueDB(conn)
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(request.workspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(request.workspaceRoot), config.ConfigFileName))
 	if err != nil {
 		return err
 	}
@@ -247,7 +247,7 @@ func issueLabelWriteLocked(lock *journal.WriteLock, request issueLabelWriteReque
 	if err != nil {
 		return err
 	}
-	sequence, err := journal.NextAggregateSequence(filepath.Join(request.workspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: request.issueID, Type: "issue"})
+	sequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(request.workspaceRoot), config.JournalDirName), journal.Aggregate{ID: request.issueID, Type: "issue"})
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func issueLabelWriteLocked(lock *journal.WriteLock, request issueLabelWriteReque
 }
 
 func openIssueLabelDB(workspaceRoot string) (*sql.DB, error) {
-	return fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	return fiddb.Open(filepath.Join(config.LedgerDir(workspaceRoot), config.DatabaseFileName))
 }
 
 func issueLabelEffects(request issueLabelWriteRequest, activityID, eventID, timestamp string, revision int) ([]journal.Effect, error) {

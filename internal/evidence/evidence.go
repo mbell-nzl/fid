@@ -97,7 +97,7 @@ func LinkEvidence(options EvidenceLinkOptions) (EvidenceLinkResult, error) {
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 		if err != nil {
 			return fmt.Errorf("link Evidence: read project config: %w", err)
 		}
@@ -203,7 +203,7 @@ func EvaluateEvidence(workspaceRoot, migrationsDir string, request EvidenceEvalu
 		return nil, err
 	}
 	defer func() { _ = conn.Close() }()
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspaceRoot), config.ConfigFileName))
 	if err != nil {
 		return nil, err
 	}
@@ -454,7 +454,7 @@ func loadHumanOutcomeRepository(conn *sql.DB, workspaceRoot, outcomeID string, b
 	if err := conn.QueryRow(`SELECT created_event_id FROM human_outcomes WHERE id=?`, outcomeID).Scan(&eventID); err != nil {
 		return fmt.Errorf("load Human Outcome Event: %w", err)
 	}
-	found, err := journal.FindEvent(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.JournalDirName), eventID)
+	found, err := journal.FindEvent(filepath.Join(config.LedgerDir(workspaceRoot), config.JournalDirName), eventID)
 	if err != nil {
 		return fmt.Errorf("load Human Outcome repository: %w", err)
 	}

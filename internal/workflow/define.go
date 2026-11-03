@@ -76,7 +76,7 @@ func defineWorkflowLocked(lock *journal.WriteLock, options DefineOptions, actor 
 		return err
 	}
 	defer closeWorkflowDB(conn)
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func defineWorkflowLocked(lock *journal.WriteLock, options DefineOptions, actor 
 	if err != nil {
 		return err
 	}
-	sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: options.Request.Name, Type: "workflow"})
+	sequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: options.Request.Name, Type: "workflow"})
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func defineResultFromJSON(raw, eventID string, replayed bool) (DefineResult, err
 }
 
 func openWorkflowDB(workspaceRoot string) (*sql.DB, error) {
-	return fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	return fiddb.Open(filepath.Join(config.LedgerDir(workspaceRoot), config.DatabaseFileName))
 }
 
 func closeWorkflowDB(conn *sql.DB) {

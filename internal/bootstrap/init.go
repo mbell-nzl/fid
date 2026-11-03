@@ -302,7 +302,7 @@ func initializeJournaledState(workspaceRoot, dbPath, projectID, prefix string) (
 		}
 
 		journalFile := appended.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
-		journalPath := filepath.Join(workspaceRoot, config.WorkspaceDirName, config.JournalDirName, journalFile)
+		journalPath := filepath.Join(config.LedgerDir(workspaceRoot), config.JournalDirName, journalFile)
 		info, err := os.Stat(journalPath)
 		if err != nil {
 			return fmt.Errorf("stat bootstrap journal %q: %w", journalPath, err)

@@ -50,7 +50,7 @@ func List(options ListOptions) ([]ListItem, error) {
 		return nil, err
 	}
 
-	conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
 	if err != nil {
 		return nil, err
 	}

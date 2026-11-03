@@ -49,7 +49,7 @@ func ensureIssueProjection(options CreateOptions) (config.ProjectConfig, error) 
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
 		return config.ProjectConfig{}, err
 	}
-	return config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	return config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 }
 
 func commitCreate(options CreateOptions, request createRequest) (CreateResult, error) {
@@ -60,7 +60,7 @@ func commitCreate(options CreateOptions, request createRequest) (CreateResult, e
 	argv := issueCreateArgv(request.kind, options.Title, options.Actor, options.IdempotencyKey, request.parentID, options.Priority, options.Sequence, request.specMDPath, request.labels, request.scheduling)
 	var result CreateResult
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: strings.Join(argv, " ")}, func(lock *journal.WriteLock) error {
-		conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+		conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
 		if err != nil {
 			return err
 		}

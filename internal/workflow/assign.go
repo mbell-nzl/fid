@@ -73,7 +73,7 @@ func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions, actor 
 		return err
 	}
 	defer closeWorkflowDB(conn)
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions, actor 
 	if !options.Request.Project {
 		aggregateID = options.Request.Name + ":kind:" + options.Request.Kind
 	}
-	sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: aggregateID, Type: "workflow-assignment"})
+	sequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: aggregateID, Type: "workflow-assignment"})
 	if err != nil {
 		return err
 	}

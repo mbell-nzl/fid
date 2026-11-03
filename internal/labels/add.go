@@ -31,7 +31,7 @@ func Add(options AddOptions) (AddResult, error) {
 	if err != nil {
 		return AddResult{}, err
 	}
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 	if err != nil {
 		return AddResult{}, err
 	}
@@ -101,7 +101,7 @@ func addLabelLocked(lock *journal.WriteLock, options AddOptions, actor standalon
 	}
 	defer closeLabelsConn(conn)
 
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func addLabelLocked(lock *journal.WriteLock, options AddOptions, actor standalon
 	if err := requireMissingLabel(conn, name); err != nil {
 		return err
 	}
-	sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: name, Type: "label"})
+	sequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: name, Type: "label"})
 	if err != nil {
 		return err
 	}
@@ -145,7 +145,7 @@ func addLabelLocked(lock *journal.WriteLock, options AddOptions, actor standalon
 }
 
 func openLabelsProjectDB(workspaceRoot string) (*sql.DB, error) {
-	return fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+	return fiddb.Open(filepath.Join(config.LedgerDir(workspaceRoot), config.DatabaseFileName))
 }
 
 func labelAddEffectValues(colour, description *string) map[string]any {

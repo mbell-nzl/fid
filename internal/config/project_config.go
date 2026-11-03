@@ -296,5 +296,5 @@ func validateArtifactRoot(value, fidRoot string) error {
 }
 
 func pathsForConfigRoot(workspaceRoot string) string {
-	return filepath.Join(workspaceRoot, WorkspaceDirName)
+	return LedgerDir(workspaceRoot)
 }

@@ -30,7 +30,7 @@ type ImportedHistoryContext struct {
 func ReadRecoveryContext(workspaceRoot, runID string) (RecoveryReadContext, error) {
 	var context RecoveryReadContext
 	var binding config.ImportBinding
-	_, err := os.Lstat(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.ImportBindingFileName))
+	_, err := os.Lstat(filepath.Join(config.LedgerDir(workspaceRoot), config.ImportBindingFileName))
 	if err == nil {
 		binding, err = config.ReadImportBinding(workspaceRoot)
 		if err != nil {

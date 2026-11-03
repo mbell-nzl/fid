@@ -59,12 +59,12 @@ func Add(options AddOptions) (AddResult, error) {
 			return err
 		}
 
-		conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
+		conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
 		if err != nil {
 			return err
 		}
 		defer closeLinksConn(conn)
-		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 		if err != nil {
 			return err
 		}
@@ -104,7 +104,7 @@ func Add(options AddOptions) (AddResult, error) {
 		if err != nil {
 			return err
 		}
-		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: declared.FromID + ":" + declared.Relation + ":" + declared.ToID, Type: "link"})
+		sequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: declared.FromID + ":" + declared.Relation + ":" + declared.ToID, Type: "link"})
 		if err != nil {
 			return err
 		}

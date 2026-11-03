@@ -61,7 +61,7 @@ type retainedArtifact struct {
 }
 
 func retainArtifacts(workspaceRoot string, definition GateDefinition) ([]retainedArtifact, []ArtifactRejection, error) {
-	project, err := config.ReadProjectConfig(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspaceRoot), config.ConfigFileName))
 	if err != nil {
 		return nil, nil, fmt.Errorf("retain Artifacts: read project config: %w", err)
 	}
@@ -99,7 +99,7 @@ func retainArtifacts(workspaceRoot string, definition GateDefinition) ([]retaine
 }
 
 func artifactStoreRoot(workspaceRoot, root string) (string, error) {
-	fidRoot, err := filepath.EvalSymlinks(filepath.Join(workspaceRoot, config.WorkspaceDirName))
+	fidRoot, err := filepath.EvalSymlinks(config.LedgerDir(workspaceRoot))
 	if err != nil {
 		return "", fmt.Errorf("retain Artifacts: resolve fid root: %w", err)
 	}
@@ -387,7 +387,7 @@ func VerifyArtifact(options ArtifactVerifyOptions) (ArtifactVerifyResult, error)
 			return err
 		}
 		defer func() { _ = conn.Close() }()
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
 		if err != nil {
 			return fmt.Errorf("verify Artifact: read project config: %w", err)
 		}
@@ -434,7 +434,7 @@ func VerifyArtifact(options ArtifactVerifyOptions) (ArtifactVerifyResult, error)
 		priorAvailability := artifact.Availability
 		changed := priorAvailability != observed
 		artifact.Availability = observed
-		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: artifact.ID, Type: "artifact"})
+		sequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: artifact.ID, Type: "artifact"})
 		if err != nil {
 			return err
 		}
