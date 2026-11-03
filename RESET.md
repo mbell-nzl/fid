@@ -44,7 +44,7 @@ criteria below.
 | **0.5** | Archive fid's V1 docs: tag `v1-workflow-final`, copy them to the archive repo, keep the reset documents in `docs/reset/` | Routine | `project-docs/` is gone from `main`; CI passes (done 1 November 2026) |
 | **0.6** | Kit repo with the reviewer agent (code and test-adequacy profiles) | kit | It reviews this reset's first PR (done 2 November 2026) |
 | **1.1a** | Route every ledger path through one function, with no change in behaviour | Standard | Only `config.LedgerDir` joins the ledger onto a project root, and the existing tests pass unchanged (done 2 November 2026) |
-| **1.1b** | Tests reach ledger files only through `config.LedgerDir`, with no change in behaviour | Routine | The 1.1a audit also covers test files and passes, and no expected value changed |
+| **1.1b** | Tests reach ledger files only through `config.LedgerDir`, with no change in behaviour | Routine | The 1.1a audit also covers test files and passes, and no expected value changed (done 3 November 2026) |
 | **1.1c** | fid needs a git repository: discovery goes through git, and test workspaces are guarded git repos | Standard | Outside a git repository every command, `fid init` included, refuses; the ledger is still at `<root>/.fid` |
 | **1.1d** | Move the ledger to the git common directory, with staging beside it, absolute paths in output and the two specs updated | Standard | Two worktrees share one ledger (V3's claim and `next` parts belong to 1.4) |
 | **1.2** | `fid backup` (export, commit, push), restore test, backup-age status line | Standard | V8 |
