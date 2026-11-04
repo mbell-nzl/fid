@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 // TestEveryProjectCommandRefusesOutsideAGitRepository runs every command that
@@ -332,10 +333,10 @@ func TestInitFromASubdirectoryInitializesTheTopLevel(t *testing.T) {
 		if project["root"] != workspace || project["issue_prefix"] != "TOPLEVEL" {
 			t.Fatalf("init from a subdirectory (--project %t) project = %#v, want root %q and prefix TOPLEVEL", viaProject, project, workspace)
 		}
-		if _, err := os.Stat(filepath.Join(workspace, ".fid", "config.toml")); err != nil {
+		if _, err := os.Stat(filepath.Join(config.LedgerDir(workspace), "config.toml")); err != nil {
 			t.Fatalf("top-level ledger: %v", err)
 		}
-		if _, err := os.Stat(filepath.Join(nested, ".fid")); !os.IsNotExist(err) {
+		if _, err := os.Stat(config.LedgerDir(nested)); !os.IsNotExist(err) {
 			t.Fatalf("subdirectory ledger = %v, want none", err)
 		}
 	}
@@ -380,7 +381,7 @@ func TestInitAndImportReportTheRealPathOfASymlinkedRepository(t *testing.T) {
 		if root := decodeCanonicalResult(t, imported.stdout)["import"].(map[string]any)["target_root"]; root != target {
 			t.Fatalf("import through a %s target_root = %v, want top level %q", through, root, target)
 		}
-		if _, err := os.Stat(filepath.Join(target, ".fid", "config.toml")); err != nil {
+		if _, err := os.Stat(filepath.Join(config.LedgerDir(target), "config.toml")); err != nil {
 			t.Fatalf("imported ledger through a %s: %v", through, err)
 		}
 	}
