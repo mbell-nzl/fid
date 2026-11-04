@@ -21,7 +21,7 @@ import (
 
 func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -119,7 +119,7 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 
 func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	cmd := newRootCommandAt(workspace)
@@ -262,13 +262,13 @@ func assertJSONKeys(t *testing.T, value map[string]json.RawMessage, want []strin
 
 func TestInitCommandEnforcesExplicitPrefixGrammarBeforeStaging(t *testing.T) {
 	t.Parallel()
-	validWorkspace := t.TempDir()
+	validWorkspace := newGitWorkspace(t)
 	runInitCommand(t, validWorkspace, "init", "--prefix", "A123456789012345")
 	if _, err := os.Stat(config.LedgerDir(validWorkspace)); err != nil {
 		t.Fatalf("valid-prefix workspace error = %v, want activated workspace", err)
 	}
 
-	invalidWorkspace := t.TempDir()
+	invalidWorkspace := newGitWorkspace(t)
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	cmd := newRootCommandAt(invalidWorkspace)
@@ -316,10 +316,7 @@ func TestInitCommandPrefixBoundaryMatrix(t *testing.T) {
 	} {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			workspace := filepath.Join(t.TempDir(), test.workspaceName)
-			if err := os.Mkdir(workspace, 0o755); err != nil {
-				t.Fatalf("Mkdir() error = %v", err)
-			}
+			workspace := newNamedGitWorkspace(t, test.workspaceName)
 			args := []string{"--project", workspace, "--json", "init"}
 			if test.prefix != "" {
 				args = append(args, "--prefix", test.prefix)
@@ -354,7 +351,7 @@ func TestInitCommandPrefixBoundaryMatrix(t *testing.T) {
 
 func TestInitCommandPreservesDanglingWorkspaceSymlinkCollision(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	danglingTarget := filepath.Join(workspace, "missing-fid-target")
 	workspacePath := config.LedgerDir(workspace)
 	if err := os.Symlink(danglingTarget, workspacePath); err != nil {
@@ -380,7 +377,7 @@ func TestInitCommandPreservesDanglingWorkspaceSymlinkCollision(t *testing.T) {
 
 func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 	t.Parallel()
-	defaultWorkspace := t.TempDir()
+	defaultWorkspace := newGitWorkspace(t)
 	runInitCommand(t, defaultWorkspace, "init", "--prefix", "FID")
 
 	defaultConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(defaultWorkspace), "config.toml"))
@@ -391,7 +388,7 @@ func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 		t.Fatalf("default issue prefix = %q, want %q", defaultConfig.IssuePrefix, "FID")
 	}
 
-	customWorkspace := t.TempDir()
+	customWorkspace := newGitWorkspace(t)
 	runInitCommand(t, customWorkspace, "init", "--prefix", "ABC")
 
 	customConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(customWorkspace), "config.toml"))
@@ -405,10 +402,7 @@ func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 
 func TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename(t *testing.T) {
 	t.Parallel()
-	workspace := filepath.Join(t.TempDir(), "invalid_prefix")
-	if err := os.Mkdir(workspace, 0o755); err != nil {
-		t.Fatalf("Mkdir() error = %v", err)
-	}
+	workspace := newNamedGitWorkspace(t, "invalid_prefix")
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	cmd := newRootCommandAt(workspace)
@@ -434,7 +428,7 @@ func TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename(t *testing
 
 func TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init", "--prefix", "FID")
 
 	journalPath := mustJournalPath(t, workspace)
@@ -479,7 +473,7 @@ func TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent(t *testing.T) {
 
 func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	before := snapshotWorkspaceState(t, config.LedgerDir(workspace))
@@ -511,7 +505,7 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 
 func TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
@@ -578,7 +572,7 @@ func executeInitCommand(t *testing.T, args ...string) (string, string, error) {
 	t.Helper()
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
-	cmd := newRootCommandAt(commandRepositoryRoot())
+	cmd := newRootCommandAt(t.TempDir())
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs(args)

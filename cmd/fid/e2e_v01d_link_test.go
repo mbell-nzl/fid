@@ -14,7 +14,7 @@ import (
 
 func TestV01DLinkFlowAndRebuildParity(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	primaryIssueID := createCommandIssue(t, workspace, "Primary issue")

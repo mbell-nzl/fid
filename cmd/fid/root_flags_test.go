@@ -112,12 +112,8 @@ func TestRootCommandCapturesCurrentWorkingDirectory(t *testing.T) {
 
 func TestRootCommandResolvesRelativeProjectFromInjectedWorkingDirectory(t *testing.T) {
 	t.Parallel()
-	base := t.TempDir()
-	workspace := filepath.Join(base, "relative-project")
-	if err := os.Mkdir(workspace, 0o755); err != nil {
-		t.Fatalf("Mkdir() error = %v", err)
-	}
-	cmd := newRootCommandAt(base)
+	workspace := newNamedGitWorkspace(t, "relative-project")
+	cmd := newRootCommandAt(filepath.Dir(workspace))
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
 	cmd.SetArgs([]string{"--project", "relative-project", "init", "--prefix", "FID"})
@@ -131,7 +127,7 @@ func TestRootCommandResolvesRelativeProjectFromInjectedWorkingDirectory(t *testi
 
 func TestRootFlagsAllowRebuildForAnExplicitProject(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	stdout := &bytes.Buffer{}

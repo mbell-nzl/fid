@@ -2584,7 +2584,7 @@ func TestP24ActivationPrepareIdentityScalarBoundaries(t *testing.T) {
 			for _, mode := range []string{"Human", "JSON"} {
 				t.Run(field+"/"+boundary.name+"/"+mode, func(t *testing.T) {
 					t.Parallel()
-					root := t.TempDir()
+					root := newGitWorkspace(t)
 					out, failure, exit := runAdoptedFID(t, binary, root, "init", "--prefix", "QA")
 					if exit != 0 || failure != "" {
 						t.Fatalf("init: exit=%d stdout=%q stderr=%q", exit, out, failure)
