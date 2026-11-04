@@ -184,6 +184,7 @@ func TestImportBindingRejectsAlteredHistoryIdentity(t *testing.T) {
 func TestImportBindingReadsFromEveryWorktreeThatSharesTheLedger(t *testing.T) {
 	t.Parallel()
 	archive, target := boundaryImportFixture(t)
+	target = gittest.ResolvedPath(t, target)
 	if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "binding"}); err != nil {
 		t.Fatal(err)
 	}
