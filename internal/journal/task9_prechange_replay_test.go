@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 const (
@@ -49,7 +50,7 @@ func TestTask9PrechangeBudgetObservedJournalFailsClosedWithoutMutation(t *testin
 		t.Fatalf("source journal digest = %s, want %s", got, task9PrechangeJournalDigest)
 	}
 
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	journalDir := filepath.Join(config.LedgerDir(workspace), "journal")
 	if err := os.MkdirAll(journalDir, 0o755); err != nil {
 		t.Fatal(err)

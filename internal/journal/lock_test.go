@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestWithLockWritesOwnerMetadata(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	mustMkdirAll(t, config.LedgerDir(workspace))
 
 	owner := LockOwner{
@@ -59,7 +60,7 @@ func TestWithLockWritesOwnerMetadata(t *testing.T) {
 
 func TestWithLockTimesOutWithTypedUnavailableError(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	mustMkdirAll(t, config.LedgerDir(workspace))
 
 	heldLock, err := acquireLock(workspace, LockOwner{
@@ -101,7 +102,7 @@ func TestWithLockTimesOutWithTypedUnavailableError(t *testing.T) {
 
 func TestWithLockReturnsTypedUnavailableErrorForHeldLock(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	mustMkdirAll(t, config.LedgerDir(workspace))
 
 	heldLock, err := acquireLock(workspace, LockOwner{Command: "fid rebuild --by workflow_runner"}, defaultLockOptions())
@@ -132,7 +133,7 @@ func TestWithLockReturnsTypedUnavailableErrorForHeldLock(t *testing.T) {
 
 func TestWithLockDefaultWaitsForShortHeldLock(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	mustMkdirAll(t, config.LedgerDir(workspace))
 
 	heldLock, err := acquireLock(workspace, LockOwner{

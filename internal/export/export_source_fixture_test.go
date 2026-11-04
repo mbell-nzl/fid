@@ -10,6 +10,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 // A source fixture is built through real journal writers. Copies are used only
@@ -22,7 +23,7 @@ type exportSourceFixture struct {
 
 func newExportSourceFixture(t *testing.T, populate func(*testing.T, string) string) exportSourceFixture {
 	t.Helper()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
@@ -66,6 +67,9 @@ func (fixture exportSourceFixture) clone(t *testing.T) (string, string) {
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if err := gittest.CheckRepository(workspace); err != nil {
+		t.Fatalf("clone export source fixture: %v", err)
 	}
 	archive := filepath.Join(t.TempDir(), "copy.zip")
 	data, err := os.ReadFile(fixture.archive)

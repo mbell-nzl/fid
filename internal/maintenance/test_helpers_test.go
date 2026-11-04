@@ -13,6 +13,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -43,7 +44,7 @@ func newValidStructuralFixture(t *testing.T) structuralFixture {
 func newMaintenanceFixture(t *testing.T) structuralFixture {
 	t.Helper()
 
-	root := t.TempDir()
+	root := gittest.NewWorkspace(t)
 	dbPath := filepath.Join(root, "fid.sqlite")
 	if err := fiddb.MigrateUp(dbPath, maintenanceMigrationsDir(t)); err != nil {
 		t.Fatalf("MigrateUp() error = %v", err)

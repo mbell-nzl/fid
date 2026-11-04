@@ -11,6 +11,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
@@ -209,7 +210,7 @@ func testIdempotentActivationEvent() Event {
 
 func newIdempotencyWorkspace(t *testing.T) (string, *sql.DB) {
 	t.Helper()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	if err := os.MkdirAll(filepath.Join(config.LedgerDir(workspace), "journal"), 0o755); err != nil {
 		t.Fatalf("MkdirAll(journal) error = %v", err)
 	}

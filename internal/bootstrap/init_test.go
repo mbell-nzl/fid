@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -43,7 +44,7 @@ func TestInitializeFailureBeforeActivationLeavesNoWorkspace(t *testing.T) {
 	} {
 		step := step
 		t.Run(string(step), func(t *testing.T) {
-			workspaceRoot := t.TempDir()
+			workspaceRoot := gittest.NewWorkspace(t)
 			failure := errors.New("injected " + string(step) + " failure")
 
 			_, err := initializeWorkspaceWithHooks(InitOptions{

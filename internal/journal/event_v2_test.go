@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestAppendEventRejectsV2AggregateSequenceGap(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	if err := os.MkdirAll(filepath.Join(config.LedgerDir(workspace), "journal"), 0o755); err != nil {
 		t.Fatalf("MkdirAll(journal) error = %v", err)
 	}

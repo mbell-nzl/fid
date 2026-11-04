@@ -11,12 +11,13 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestArchiveWithValidHashesButInvalidRecoveryReferenceRejects(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testMigrationsDir(t),

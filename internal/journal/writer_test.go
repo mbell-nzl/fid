@@ -12,11 +12,12 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestAppendEventWritesOneJSONLLineWithFirstSequence(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	mustMkdirAll(t, filepath.Join(config.LedgerDir(workspace), "journal"))
 
 	fixedNow := time.Date(2026, time.June, 5, 14, 23, 11, 0, time.UTC)
@@ -97,7 +98,7 @@ func TestAppendEventWritesOneJSONLLineWithFirstSequence(t *testing.T) {
 
 func TestAppendEventWrapperUsesRealClockPath(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	mustMkdirAll(t, filepath.Join(config.LedgerDir(workspace), "journal"))
 
 	var appended Event
@@ -121,7 +122,7 @@ func TestAppendEventWrapperUsesRealClockPath(t *testing.T) {
 
 func TestPrepareEventAssignsNextIDWithoutAppendingJournalBytes(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	journalDir := filepath.Join(config.LedgerDir(workspace), "journal")
 	mustMkdirAll(t, journalDir)
 
@@ -169,7 +170,7 @@ func TestPrepareEventAssignsNextIDWithoutAppendingJournalBytes(t *testing.T) {
 
 func TestAppendEventIncrementsSequenceWithinUTCJournalFile(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	mustMkdirAll(t, filepath.Join(config.LedgerDir(workspace), "journal"))
 
 	fixedNow := time.Date(2026, time.June, 5, 14, 23, 11, 0, time.UTC)
@@ -192,7 +193,7 @@ func TestAppendEventIncrementsSequenceWithinUTCJournalFile(t *testing.T) {
 
 func TestAppendEventRejectsClockSkewWithoutAppending(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	journalDir := filepath.Join(config.LedgerDir(workspace), "journal")
 	mustMkdirAll(t, journalDir)
 
@@ -235,7 +236,7 @@ func TestAppendEventRejectsClockSkewWithoutAppending(t *testing.T) {
 
 func TestConcurrentWritesAppendDistinctEventsWithMonotonicSequences(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	mustMkdirAll(t, filepath.Join(config.LedgerDir(workspace), "journal"))
 
 	fixedNow := time.Date(2026, time.June, 5, 14, 23, 11, 0, time.UTC)
@@ -343,7 +344,7 @@ func TestWriterHelpersParseEventIDsAndDates(t *testing.T) {
 
 func TestWriterHelpersDetermineLatestDateAndNextSequence(t *testing.T) {
 	t.Parallel()
-	journalDir := filepath.Join(config.LedgerDir(t.TempDir()), "journal")
+	journalDir := filepath.Join(config.LedgerDir(gittest.NewWorkspace(t)), "journal")
 	mustMkdirAll(t, journalDir)
 
 	for _, name := range []string{"2026-06-04.jsonl", "2026-06-05.jsonl", "notes.txt", "invalid.jsonl"} {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -107,7 +108,7 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 
 func initializedWorkflowWorkspace(t *testing.T) (string, string) {
 	t.Helper()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	_, sourceFile, _, ok := runtime.Caller(0)
 	if !ok {
 		t.Fatal("runtime.Caller() failed")

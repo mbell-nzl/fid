@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestDiscoverReturnsTheWorktreeTopLevelFromAnyDirectory(t *testing.T) {
@@ -145,16 +146,11 @@ func TestResolveRejectsSymlinkedFIDDirectory(t *testing.T) {
 	}
 }
 
-// newDiscoveryRepository returns a fresh git repository, as the real path git
-// reports for its top level.
+// newDiscoveryRepository returns a fresh guarded git repository, as the real
+// path git reports for its top level.
 func newDiscoveryRepository(t *testing.T) string {
 	t.Helper()
-	repository, err := filepath.EvalSymlinks(t.TempDir())
-	if err != nil {
-		t.Fatalf("EvalSymlinks(temp) error = %v", err)
-	}
-	discoveryGit(t, repository, "init", "-q", "--template=")
-	return repository
+	return gittest.ResolvedPath(t, gittest.NewWorkspace(t))
 }
 
 func discoveryGit(t *testing.T, repository string, arguments ...string) {

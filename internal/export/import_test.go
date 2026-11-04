@@ -17,13 +17,14 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/evidence"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func TestImportPublishesIdentityAndReplaysLostResponse(t *testing.T) {
 	t.Parallel()
-	source := t.TempDir()
+	source := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
@@ -32,8 +33,7 @@ func TestImportPublishesIdentityAndReplaysLostResponse(t *testing.T) {
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archive}); err != nil {
 		t.Fatalf("create archive: %v", err)
 	}
-	target := t.TempDir()
-	fixtureGit(t, target, "init", "-q")
+	target := gittest.NewWorkspace(t)
 	keep := filepath.Join(target, "source.txt")
 	if err := os.WriteFile(keep, []byte("preserve this source file\n"), 0o644); err != nil {
 		t.Fatalf("write target source file: %v", err)
@@ -70,7 +70,7 @@ func TestImportPublishesIdentityAndReplaysLostResponse(t *testing.T) {
 
 func TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem(t *testing.T) {
 	t.Parallel()
-	source := t.TempDir()
+	source := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
@@ -79,7 +79,7 @@ func TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem(t *testing.T) 
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archive}); err != nil {
 		t.Fatalf("create archive: %v", err)
 	}
-	populated := t.TempDir()
+	populated := gittest.NewWorkspace(t)
 	if err := os.Mkdir(config.LedgerDir(populated), 0o755); err != nil {
 		t.Fatalf("create populated target: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem(t *testing.T) 
 	if data, err := os.ReadFile(marker); err != nil || string(data) != "unchanged" {
 		t.Fatalf("populated target changed: %q, %v", data, err)
 	}
-	root := t.TempDir()
+	root := gittest.NewWorkspace(t)
 	unsafe := filepath.Join(t.TempDir(), "target-link")
 	if err := os.Symlink(root, unsafe); err != nil {
 		t.Fatalf("create target symlink: %v", err)
@@ -108,7 +108,7 @@ func TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem(t *testing.T) 
 
 func TestImportAfterPublicationFaultReplaysInstalledResult(t *testing.T) {
 	t.Parallel()
-	source := t.TempDir()
+	source := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
@@ -117,7 +117,7 @@ func TestImportAfterPublicationFaultReplaysInstalledResult(t *testing.T) {
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archive}); err != nil {
 		t.Fatalf("create archive: %v", err)
 	}
-	target := t.TempDir()
+	target := gittest.NewWorkspace(t)
 	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "lost-response", Fault: func(stage ImportStage) error {
 		if stage == ImportAfterPublication {
 			return ErrImportFault
@@ -135,7 +135,7 @@ func TestImportAfterPublicationFaultReplaysInstalledResult(t *testing.T) {
 
 func TestImportSnapshotsInputPreservesExistingFilesAndRejectsTamperedMarker(t *testing.T) {
 	t.Parallel()
-	source := t.TempDir()
+	source := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +148,7 @@ func TestImportSnapshotsInputPreservesExistingFilesAndRejectsTamperedMarker(t *t
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := t.TempDir()
+	target := gittest.NewWorkspace(t)
 	if err := os.WriteFile(filepath.Join(target, ".fid-import.lock"), []byte("stale after process exit"), 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -183,7 +183,7 @@ func TestImportSnapshotsInputPreservesExistingFilesAndRejectsTamperedMarker(t *t
 
 func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
 	t.Parallel()
-	source := t.TempDir()
+	source := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}

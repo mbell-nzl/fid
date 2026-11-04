@@ -18,12 +18,13 @@ import (
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testMigrationsDir(t),
@@ -77,7 +78,7 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 
 func TestSchema19ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
 	t.Parallel()
-	source := t.TempDir()
+	source := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +93,7 @@ func TestSchema19ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
 	if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)}); err != nil {
 		t.Fatalf("validate schema-19 archive: %#v", err)
 	}
-	if _, err := Import(ImportOptions{ArchivePath: archivePath, RepositoryRoot: t.TempDir(), MigrationsDir: testMigrationsDir(t), IdempotencyKey: "schema19"}); err != nil {
+	if _, err := Import(ImportOptions{ArchivePath: archivePath, RepositoryRoot: gittest.NewWorkspace(t), MigrationsDir: testMigrationsDir(t), IdempotencyKey: "schema19"}); err != nil {
 		t.Fatal(err)
 	}
 	entries := archiveContents(t, archivePath)
@@ -125,7 +126,7 @@ func TestSchema19ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
 
 func TestGateReceiptFieldDigestGuardAndMalformedInsertFailClosedThroughCLI(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +247,7 @@ func mutateGateIdempotencyEffect(t *testing.T, original map[string][]byte, event
 
 func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {
 	t.Parallel()
-	source := t.TempDir()
+	source := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
@@ -255,7 +256,7 @@ func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archive}); err != nil {
 		t.Fatalf("create source archive: %v", err)
 	}
-	target := t.TempDir()
+	target := gittest.NewWorkspace(t)
 	_, err := Import(ImportOptions{
 		ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "import-crash",
 		Fault: func(stage ImportStage) error {
@@ -275,7 +276,7 @@ func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {
 
 func TestValidateRejectsJournalAggregateSequenceCollisionWithoutMutation(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize workspace: %v", err)
 	}
@@ -305,7 +306,7 @@ func TestValidateRejectsJournalAggregateSequenceCollisionWithoutMutation(t *test
 // Event-reference regression is separate.
 func TestArchiveRejectsUnresolvedSourceMetadata(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}

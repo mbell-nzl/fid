@@ -10,10 +10,11 @@ import (
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func BenchmarkList10kIssuesWithRegistry(b *testing.B) {
-	workspace := b.TempDir()
+	workspace := gittest.NewWorkspace(b)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: benchmarkIssueMigrationsDir(b),
