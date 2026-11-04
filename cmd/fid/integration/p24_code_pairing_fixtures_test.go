@@ -32,7 +32,7 @@ func p24InternalPair(t *testing.T, _ string) p24CodePair {
 
 func p24JournalPair(t *testing.T, _ string) p24CodePair {
 	t.Helper()
-	root := t.TempDir()
+	root := newGitWorkspace(t)
 	p21Run(t, integrationFIDBinary(t), root, "init", "--prefix", "P24", "--json")
 	if err := os.WriteFile(filepath.Join(config.LedgerDir(root), "journal", "9999-12-01.jsonl"), []byte("invalid JSON\n"), 0600); err != nil {
 		t.Fatal(err)
@@ -42,7 +42,7 @@ func p24JournalPair(t *testing.T, _ string) p24CodePair {
 
 func p24LockPair(t *testing.T, _ string) p24CodePair {
 	t.Helper()
-	root := t.TempDir()
+	root := newGitWorkspace(t)
 	p21Run(t, integrationFIDBinary(t), root, "init", "--prefix", "P24", "--json")
 	if err := os.Mkdir(filepath.Join(config.LedgerDir(root), "write.lock"), 0700); err != nil {
 		t.Fatal(err)
@@ -153,7 +153,7 @@ func p24GateCodePair(t *testing.T, code string) p24CodePair {
 	case "authority-unknown-actor":
 		actor = "actor-unknown"
 	case "authority-unavailable":
-		root := t.TempDir()
+		root := newGitWorkspace(t)
 		p21Run(t, a.binary, root, "init", "--prefix", "P24", "--json")
 		return p24InputPair(t, root, operation, actor, input)
 	case "repository-unavailable":

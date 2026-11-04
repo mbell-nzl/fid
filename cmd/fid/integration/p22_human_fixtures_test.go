@@ -194,6 +194,9 @@ func p22HumanDirectory(t *testing.T, root, name string) string {
 	if err := os.Mkdir(path, 0o700); err != nil {
 		t.Fatal(err)
 	}
+	if err := initGuardedGitRepository(path); err != nil {
+		t.Fatal(err)
+	}
 	return path
 }
 

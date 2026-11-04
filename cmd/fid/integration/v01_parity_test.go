@@ -18,7 +18,7 @@ import (
 func TestV01ParityGoldenOutputs(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	copyParityFixture(t, filepath.Join("..", "testdata", "v01_parity", "fixture"), workspace)
 	for _, args := range [][]string{{"--json", "issue", "get", "FID-a10001"}, {"--json", "issue", "get", "FID-b20002"}, {"--json", "issue", "get", "FID-c30003"}, {"--json", "issue", "list", "--kind", "epic"}, {"--json", "issue", "list", "--kind", "task"}, {"--json", "issue", "list", "--kind", "subtask"}} {
 		got, _ := closureRunFID(t, binary, workspace, args...)
@@ -31,7 +31,7 @@ func TestV01ParityGoldenOutputs(t *testing.T) {
 func TestV01ParityFixtureRebuildPreservesEveryProjectionTable(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	copyParityFixture(t, filepath.Join("..", "testdata", "v01_parity", "fixture"), workspace)
 
 	// A read materializes the live projection from the regenerated fixture journal.

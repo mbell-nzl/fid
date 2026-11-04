@@ -14,7 +14,7 @@ import (
 func TestActivationPrepareResponseLossReplaysDurableResult(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "init", "--prefix", "P22L")
 	input := p21Input(t, workspace, "p22-lost-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "p22-lost", "phase": 21, "expected_prior_activation_id": nil, "expected_prior_version": nil, "resources": p21ActivationResources()})
 	arguments := []string{"--project", workspace, "--json", "activation", "prepare", "--input", input, "--idempotency-key", "p22-lost-prepare"}
@@ -119,7 +119,7 @@ func p22AssertUnchangedSentinel(t *testing.T, path string, want []byte) {
 
 func p22ActivationBoundaryFixture(t *testing.T, binary, boundary string) (string, string) {
 	t.Helper()
-	return p22ActivationBoundaryFixtureAt(t, binary, t.TempDir(), boundary)
+	return p22ActivationBoundaryFixtureAt(t, binary, newGitWorkspace(t), boundary)
 }
 
 func p22ActivationBoundaryFixtureAt(t *testing.T, binary, workspace, boundary string) (string, string) {

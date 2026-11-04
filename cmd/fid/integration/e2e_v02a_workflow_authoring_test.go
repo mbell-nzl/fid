@@ -14,7 +14,7 @@ import (
 func TestV02aWorkflowAuthoringExitScenarioAndRebuildParity(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")
 	journalPath := closureJournalPath(t, workspace)
 
@@ -44,7 +44,7 @@ func TestV02aWorkflowAuthoringExitScenarioAndRebuildParity(t *testing.T) {
 func TestMaintenanceCheckReportsIncompatibleWorkflowAssignment(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")
 
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))

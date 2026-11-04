@@ -15,7 +15,7 @@ import (
 
 func TestFinalBinaryInitAndRebuildRemainRoleFree(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	binary := integrationFIDBinary(t)
 
 	closureRun(t, workspace, binary, "--json", "init", "--prefix", "P21")

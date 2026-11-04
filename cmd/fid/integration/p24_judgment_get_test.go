@@ -66,7 +66,7 @@ func TestP24JudgmentGetRecords(t *testing.T) {
 func TestP24JudgmentGetRejections(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	p21Run(t, binary, workspace, "--json", "init", "--prefix", "GET")
 	before := p23PortableJournalEvents(t, workspace)
 	for _, row := range []struct{ family, code, idLabel string }{

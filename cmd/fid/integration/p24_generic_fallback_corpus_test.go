@@ -117,7 +117,7 @@ func TestP24GenericFallbackDomainPairs(t *testing.T) {
 	for _, row := range p24FallbackRows {
 		t.Run(row.site, func(t *testing.T) {
 			t.Parallel()
-			binary, root := integrationFIDBinary(t), t.TempDir()
+			binary, root := integrationFIDBinary(t), newGitWorkspace(t)
 			if row.project {
 				p21Run(t, binary, root, "init", "--prefix", "P24", "--json")
 			}
