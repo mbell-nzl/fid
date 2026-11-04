@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -176,7 +177,7 @@ func TestIssueACAddCommandAddsAcceptanceCriterionAndPrintsConfirmation(t *testin
 		t.Fatalf("acceptance criterion = %#v, want id prefix/text/ordinal", got[0])
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -290,7 +291,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 			},
 			wantErr: `error: add acceptance criterion: issue "`,
 			verify: func(t *testing.T, workspace string) {
-				conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+				conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 				if err != nil {
 					t.Fatalf("Open() error = %v", err)
 				}
@@ -406,7 +407,7 @@ func assertIssueACVerifyUnavailable(t *testing.T, workspace, issueID, criterionI
 	if after := mustReadCommandFile(t, journalPath); !bytes.Equal(after, before) {
 		t.Fatalf("issue ac verify actor %s changed journal bytes", actor)
 	}
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open AC verification projection: %v", err)
 	}
@@ -540,7 +541,7 @@ func TestIssueACListJSONReportsOverLimitWithoutOutput(t *testing.T) {
 	clonePristineWorkspaceInto(t, workspace)
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "AC list limit", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}

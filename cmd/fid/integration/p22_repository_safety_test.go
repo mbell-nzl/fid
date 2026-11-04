@@ -12,6 +12,8 @@ import (
 	"strings"
 	"syscall"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestP22RecoveryPreservesRepositoryOnSuccessAndUnsafeRejection(t *testing.T) {
@@ -173,7 +175,7 @@ func p22CompleteRepositorySnapshot(t *testing.T, root string) map[string]string 
 		if err != nil {
 			return err
 		}
-		if relative == ".fid" {
+		if name == config.LedgerDir(root) {
 			return filepath.SkipDir
 		}
 		info, err := entry.Info()

@@ -6,13 +6,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 func TestReadyHumanSuccessUsesStdout(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -29,7 +30,7 @@ func TestReadyEpicScopesSelectionAndBlockerStates(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -222,7 +223,7 @@ func TestReadyProjectWideUsesMixedSourceSelectionOrder(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}

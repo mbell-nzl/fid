@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -19,12 +20,12 @@ import (
 func TestMigration0008PreservesIssueGetAndListRenderedBytes(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(workspace, ".fid", "journal"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(config.LedgerDir(workspace), "journal"), 0o755); err != nil {
 		t.Fatalf("MkdirAll workspace journal: %v", err)
 	}
 
 	v7Migrations := migration0007Directory(t)
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := fiddb.MigrateUp(dbPath, v7Migrations); err != nil {
 		t.Fatalf("MigrateUp(version 7) error = %v", err)
 	}
@@ -113,7 +114,7 @@ func writeMigrationReadCheckpoint(t *testing.T, conn *sql.DB, workspace string) 
 	if err != nil {
 		t.Fatalf("hash checkpoint event: %v", err)
 	}
-	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-07-19.jsonl")
+	journalPath := filepath.Join(config.LedgerDir(workspace), "journal", "2026-07-19.jsonl")
 	contents := append(encoded, '\n')
 	if err := os.WriteFile(journalPath, contents, 0o644); err != nil {
 		t.Fatalf("write checkpoint journal: %v", err)

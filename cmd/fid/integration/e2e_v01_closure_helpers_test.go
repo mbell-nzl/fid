@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/maintenance"
 )
@@ -164,18 +165,30 @@ func intPointer(value int) *int {
 func assertClosureGitLayout(t *testing.T, workspace string) {
 	t.Helper()
 
-	payload := closureReadFile(t, filepath.Join(workspace, ".fid", ".gitignore"))
+	payload := closureReadFile(t, filepath.Join(config.LedgerDir(workspace), ".gitignore"))
 	entries := strings.Fields(string(payload))
 	if len(entries) != 1 || entries[0] != "fid.sqlite" {
 		t.Fatalf(".fid/.gitignore = %q, want only fid.sqlite", payload)
 	}
-	_, _ = closureRun(t, workspace, "git", "check-ignore", "-q", ".fid/fid.sqlite")
+	_, _ = closureRun(t, workspace, "git", "check-ignore", "-q", workspaceRelative(t, workspace, filepath.Join(config.LedgerDir(workspace), "fid.sqlite")))
+}
+
+// workspaceRelative names path relative to workspace, slash-separated, for Git
+// pathspecs and shell commands that run in the workspace.
+func workspaceRelative(t *testing.T, workspace, path string) string {
+	t.Helper()
+
+	relative, err := filepath.Rel(workspace, path)
+	if err != nil {
+		t.Fatalf("relative path of %q: %v", path, err)
+	}
+	return filepath.ToSlash(relative)
 }
 
 func closureJournalPath(t *testing.T, workspace string) string {
 	t.Helper()
 
-	matches, err := filepath.Glob(filepath.Join(workspace, ".fid", "journal", "*.jsonl"))
+	matches, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
 	if err != nil {
 		t.Fatalf("find journal: %v", err)
 	}
@@ -407,7 +420,7 @@ func closureAgedMaintenanceTime(t *testing.T, workspace string) time.Time {
 func closureMaintenanceResultAt(t *testing.T, workspace string, now time.Time) maintenance.Result {
 	t.Helper()
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open projection for maintenance check: %v", err)
 	}
@@ -415,7 +428,7 @@ func closureMaintenanceResultAt(t *testing.T, workspace string, now time.Time) m
 
 	result, err := maintenance.Check(maintenance.CheckOptions{
 		DB:                              conn,
-		JournalDir:                      filepath.Join(workspace, ".fid", "journal"),
+		JournalDir:                      filepath.Join(config.LedgerDir(workspace), "journal"),
 		Now:                             now,
 		StartedWithoutClaimGraceSeconds: 300,
 	})
@@ -573,7 +586,7 @@ func assertClosureJournalBytesEqual(t *testing.T, journalPath string, want []byt
 
 func closureJournalFileBytes(t *testing.T, workspace string) map[string][]byte {
 	t.Helper()
-	paths, err := filepath.Glob(filepath.Join(workspace, ".fid", "journal", "*.jsonl"))
+	paths, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
 	if err != nil {
 		t.Fatalf("find journal files: %v", err)
 	}

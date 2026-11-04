@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -20,7 +21,7 @@ func TestMaintenanceCheckRefreshesProjectionWithoutChangingJournal(t *testing.T)
 			name: "missing projection rebuilds",
 			setup: func(t *testing.T, workspace string) {
 				t.Helper()
-				if err := os.Remove(filepath.Join(workspace, ".fid", "fid.sqlite")); err != nil {
+				if err := os.Remove(filepath.Join(config.LedgerDir(workspace), "fid.sqlite")); err != nil {
 					t.Fatalf("remove projection: %v", err)
 				}
 			},
@@ -69,7 +70,7 @@ func TestMaintenanceCheckRefreshesProjectionWithoutChangingJournal(t *testing.T)
 				t.Fatal("maintenance check changed journal bytes")
 			}
 
-			conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+			conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 			if err != nil {
 				t.Fatalf("open refreshed projection: %v", err)
 			}

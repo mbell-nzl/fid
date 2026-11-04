@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -61,7 +62,7 @@ func TestV01DLinkFlowAndRebuildParity(t *testing.T) {
 	beforeLinks := mustSnapshotE2ELinks(t, workspace)
 	beforeRequirements := mustSnapshotE2ERequirements(t, workspace)
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
@@ -129,7 +130,7 @@ func assertCommandLinkListRow(t *testing.T, value any, direction, relation, enti
 func mustSnapshotE2ELinks(t *testing.T, workspace string) []e2eLinkRow {
 	t.Helper()
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -162,7 +163,7 @@ func mustSnapshotE2ELinks(t *testing.T, workspace string) []e2eLinkRow {
 func mustSnapshotE2ERequirements(t *testing.T, workspace string) []e2eRequirementRow {
 	t.Helper()
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}

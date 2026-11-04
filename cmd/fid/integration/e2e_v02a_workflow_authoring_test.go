@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -46,7 +47,7 @@ func TestMaintenanceCheckReportsIncompatibleWorkflowAssignment(t *testing.T) {
 	workspace := t.TempDir()
 	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open projection: %v", err)
 	}

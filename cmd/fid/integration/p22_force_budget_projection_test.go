@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -39,8 +40,8 @@ func p22ForceEventChecker(t *testing.T, binary, source string, prefix []byte) fu
 			return
 		}
 		workspace := t.TempDir()
-		p22FaultOK(t, os.MkdirAll(filepath.Join(workspace, ".fid"), 0700))
-		path := filepath.Join(workspace, ".fid", "fid.sqlite")
+		p22FaultOK(t, os.MkdirAll(config.LedgerDir(workspace), 0700))
+		path := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 		p22FaultOK(t, os.WriteFile(path, pristine, 0600))
 		conn, err := fiddb.Open(path)
 		p22FaultOK(t, err)

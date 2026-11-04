@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
 )
@@ -279,7 +280,7 @@ type statsRunFixture struct {
 func recordStatsRun(t *testing.T, workspace, issueID, runRole, model string, tokensIn, tokensOut int) statsRunFixture {
 	t.Helper()
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open frozen telemetry fixture: %v", err)
 	}

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -278,7 +279,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"project_ready": projectReadyStdout,
 	}
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
@@ -447,7 +448,7 @@ func assertIssueReadBack(t *testing.T, workspace, issueID string, want issueRead
 
 func mustIssueOwnerRole(t *testing.T, workspace, issueID string) string {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}

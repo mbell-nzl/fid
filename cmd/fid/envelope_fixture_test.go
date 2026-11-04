@@ -29,7 +29,7 @@ func TestObservedEnvelopeFixtureClonesCaptureDistinctRepositories(t *testing.T) 
 					t.Fatalf("clone history rebuild: %#v", result)
 				}
 			}
-			db, err := fiddb.Open(filepath.Join(root, config.WorkspaceDirName, config.DatabaseFileName))
+			db, err := fiddb.Open(filepath.Join(config.LedgerDir(root), config.DatabaseFileName))
 			if err != nil {
 				t.Fatal(err)
 			}

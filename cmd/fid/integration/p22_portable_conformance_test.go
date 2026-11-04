@@ -10,6 +10,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 type p22PortableCase struct {
@@ -117,7 +119,7 @@ func p22PortableSource(t *testing.T, state string) (*p22FIDRecoveryAdapter, []st
 			t.Fatalf("portable artifact fixture = %#v", artifacts)
 		}
 		artifact := artifacts[0].(map[string]any)
-		if err := os.Remove(filepath.Join(a.workspace, ".fid", "artifacts", strings.TrimPrefix(artifact["digest"].(string), "sha256:"))); err != nil {
+		if err := os.Remove(filepath.Join(config.LedgerDir(a.workspace), "artifacts", strings.TrimPrefix(artifact["digest"].(string), "sha256:"))); err != nil {
 			t.Fatal(err)
 		}
 		verified := p21Run(t, a.binary, a.workspace, "--json", "artifact", "verify", "--actor", a.actor, "--input", p21Input(t, a.workspace, "portable-missing", map[string]any{"artifact_id": artifact["id"]}), "--idempotency-key", "portable-missing")

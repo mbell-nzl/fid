@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -18,13 +19,13 @@ func TestFinalBinaryInitAndRebuildRemainRoleFree(t *testing.T) {
 	binary := integrationFIDBinary(t)
 
 	closureRun(t, workspace, binary, "--json", "init", "--prefix", "P21")
-	journalPath := filepath.Join(workspace, ".fid", "journal")
+	journalPath := filepath.Join(config.LedgerDir(workspace), "journal")
 	bootstrap := onlyJournalEvent(t, journalPath)
 	assertRoleFreeBootstrap(t, bootstrap)
-	assertRolesTableAbsent(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	assertRolesTableAbsent(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 
 	capabilitiesBefore, _ := closureRun(t, workspace, binary, "--json", "capabilities")
-	if err := os.Remove(filepath.Join(workspace, ".fid", "fid.sqlite")); err != nil {
+	if err := os.Remove(filepath.Join(config.LedgerDir(workspace), "fid.sqlite")); err != nil {
 		t.Fatalf("delete projection: %v", err)
 	}
 	closureRun(t, workspace, binary, "--json", "rebuild")
@@ -34,7 +35,7 @@ func TestFinalBinaryInitAndRebuildRemainRoleFree(t *testing.T) {
 		t.Fatalf("capabilities after rebuild = %s, want %s", capabilitiesAfter, capabilitiesBefore)
 	}
 	assertRoleFreeBootstrap(t, onlyJournalEvent(t, journalPath))
-	assertRolesTableAbsent(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	assertRolesTableAbsent(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 }
 
 func onlyJournalEvent(t *testing.T, journalDir string) map[string]any {

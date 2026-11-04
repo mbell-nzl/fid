@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -17,7 +18,7 @@ func TestRecoverySchemaFreshBinaryInitAndRebuild(t *testing.T) {
 	binary := integrationFIDBinary(t)
 	closureRun(t, workspace, binary, "--json", "init", "--prefix", "P22")
 
-	database, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	database, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open recovery projection: %v", err)
 	}

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -91,7 +92,7 @@ func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
 			if _, err := journal.RebuildWorkspace(workspace, migrationsDir); err != nil {
 				t.Fatalf("RebuildWorkspace() error = %v", err)
 			}
-			rebuilt, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+			rebuilt, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 			if err != nil {
 				t.Fatalf("open rebuilt projection: %v", err)
 			}

@@ -44,7 +44,7 @@ func p24JudgmentExpectedRepository(t *testing.T, a *p22FIDRecoveryAdapter) map[s
 	if err != nil {
 		t.Fatal(err)
 	}
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(a.workspace, ".fid", "config.toml"))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(a.workspace), "config.toml"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,12 +91,12 @@ func p24JSONMap(t *testing.T, value any) map[string]any {
 
 func p24EventByID(t *testing.T, root, id string) journal.Event {
 	t.Helper()
-	entries, err := os.ReadDir(filepath.Join(root, ".fid", "journal"))
+	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(root), "journal"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, entry := range entries {
-		contents, err := os.ReadFile(filepath.Join(root, ".fid", "journal", entry.Name()))
+		contents, err := os.ReadFile(filepath.Join(config.LedgerDir(root), "journal", entry.Name()))
 		if err != nil {
 			t.Fatal(err)
 		}

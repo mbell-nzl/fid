@@ -292,7 +292,7 @@ func recoveryFixture(t *testing.T) (RunOptions, RunRecoveryRequest) {
 	if err != nil {
 		t.Fatalf("ObserveRepository() error = %v", err)
 	}
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspace), "config.toml"))
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() error = %v", err)
 	}

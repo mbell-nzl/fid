@@ -8,12 +8,14 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestWithLockWritesOwnerMetadata(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
-	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
+	mustMkdirAll(t, config.LedgerDir(workspace))
 
 	owner := LockOwner{
 		Command: "fid issue create --actor agent:developer",
@@ -50,7 +52,7 @@ func TestWithLockWritesOwnerMetadata(t *testing.T) {
 		t.Fatalf("withLockOptions() error = %v", err)
 	}
 
-	if _, err := os.Stat(filepath.Join(workspace, ".fid", lockDirectoryName)); !errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(filepath.Join(config.LedgerDir(workspace), lockDirectoryName)); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("lock directory exists after release: stat error = %v, want %v", err, os.ErrNotExist)
 	}
 }
@@ -58,7 +60,7 @@ func TestWithLockWritesOwnerMetadata(t *testing.T) {
 func TestWithLockTimesOutWithTypedUnavailableError(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
-	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
+	mustMkdirAll(t, config.LedgerDir(workspace))
 
 	heldLock, err := acquireLock(workspace, LockOwner{
 		Command: "fid issue create --by developer",
@@ -87,7 +89,7 @@ func TestWithLockTimesOutWithTypedUnavailableError(t *testing.T) {
 		t.Fatal("withLockOptions() error = nil, want timeout error")
 	}
 
-	lockPath := filepath.Join(workspace, ".fid", lockDirectoryName)
+	lockPath := filepath.Join(config.LedgerDir(workspace), lockDirectoryName)
 	if !strings.Contains(err.Error(), lockPath) {
 		t.Fatalf("timeout error = %q, want lock path %q", err, lockPath)
 	}
@@ -100,7 +102,7 @@ func TestWithLockTimesOutWithTypedUnavailableError(t *testing.T) {
 func TestWithLockReturnsTypedUnavailableErrorForHeldLock(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
-	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
+	mustMkdirAll(t, config.LedgerDir(workspace))
 
 	heldLock, err := acquireLock(workspace, LockOwner{Command: "fid rebuild --by workflow_runner"}, defaultLockOptions())
 	if err != nil {
@@ -123,7 +125,7 @@ func TestWithLockReturnsTypedUnavailableErrorForHeldLock(t *testing.T) {
 	if !errors.As(err, &unavailableErr) {
 		t.Fatalf("withLockOptions() error = %T, want *LockUnavailableError", err)
 	}
-	if unavailableErr.LockPath != filepath.Join(workspace, ".fid", lockDirectoryName) {
+	if unavailableErr.LockPath != filepath.Join(config.LedgerDir(workspace), lockDirectoryName) {
 		t.Fatalf("LockUnavailableError.LockPath = %q, want project lock path", unavailableErr.LockPath)
 	}
 }
@@ -131,7 +133,7 @@ func TestWithLockReturnsTypedUnavailableErrorForHeldLock(t *testing.T) {
 func TestWithLockDefaultWaitsForShortHeldLock(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
-	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
+	mustMkdirAll(t, config.LedgerDir(workspace))
 
 	heldLock, err := acquireLock(workspace, LockOwner{
 		Command: "fid issue claim FID-123 --by developer",

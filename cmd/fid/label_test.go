@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -20,7 +21,7 @@ func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -230,7 +231,7 @@ func TestLabelListJSONReportsOverLimitWithoutOutput(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}

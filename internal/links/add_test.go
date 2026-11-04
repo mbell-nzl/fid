@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
 )
@@ -297,7 +298,7 @@ func createLinksIssue(t *testing.T, workspace, title string) string {
 func countLinksJournalEvents(t *testing.T, workspace string) int {
 	t.Helper()
 
-	entries, err := os.ReadDir(filepath.Join(workspace, ".fid", "journal"))
+	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(workspace), "journal"))
 	if err != nil {
 		t.Fatalf("ReadDir(journal) error = %v", err)
 	}
@@ -306,7 +307,7 @@ func countLinksJournalEvents(t *testing.T, workspace string) int {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".jsonl") {
 			continue
 		}
-		payload, err := os.ReadFile(filepath.Join(workspace, ".fid", "journal", entry.Name()))
+		payload, err := os.ReadFile(filepath.Join(config.LedgerDir(workspace), "journal", entry.Name()))
 		if err != nil {
 			t.Fatalf("ReadFile(%q) error = %v", entry.Name(), err)
 		}
@@ -322,7 +323,7 @@ func countLinksJournalEvents(t *testing.T, workspace string) int {
 func openLinksDB(t *testing.T, workspace string) *sql.DB {
 	t.Helper()
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}

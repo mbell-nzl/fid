@@ -147,7 +147,7 @@ func p22GenerateHumanFixtures(t *testing.T, root string) {
 		if !strings.Contains(human, fixture.direction) {
 			t.Fatalf("activation Human view lacks selected direction: %q", human)
 		}
-		project, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspace), "config.toml"))
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -11,10 +11,12 @@ import (
 	"testing"
 )
 
-// The ledger is moving to the Git common directory (RESET task 1.1b), so the
-// only code that may join the ledger directory onto a root is LedgerDir. A
-// path that starts with ".fid" is a display string, not a location, and is
-// left alone.
+// The ledger is moving to the Git common directory (RESET task 1.1d), so the
+// only code that may join the ledger directory onto a root is LedgerDir. That
+// holds for tests too, so they follow the ledger when it moves. The config
+// package's own tests are exempt: they pin where LedgerDir points. A path that
+// starts with ".fid" is a display string, not a location, and is left alone;
+// one joined onto a root is a location.
 func TestLedgerPathsComeOnlyFromLedgerDir(t *testing.T) {
 	t.Parallel()
 	var strays []string
@@ -26,7 +28,7 @@ func TestLedgerPathsComeOnlyFromLedgerDir(t *testing.T) {
 			if entry.IsDir() && entry.Name() == "testdata" {
 				return filepath.SkipDir
 			}
-			if entry.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+			if entry.IsDir() || !strings.HasSuffix(path, ".go") {
 				return nil
 			}
 			found, err := strayLedgerJoins(path)
@@ -47,6 +49,9 @@ func strayLedgerJoins(path string) ([]string, error) {
 	file, err := parser.ParseFile(files, path, nil, 0)
 	if err != nil {
 		return nil, err
+	}
+	if file.Name.Name == "config" && strings.HasSuffix(path, "_test.go") {
+		return nil, nil
 	}
 	var strays []string
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -80,7 +85,7 @@ func namesLedgerDirectory(expression ast.Expr) bool {
 	switch value := expression.(type) {
 	case *ast.BasicLit:
 		text, err := strconv.Unquote(value.Value)
-		return value.Kind == token.STRING && err == nil && text == ".fid"
+		return value.Kind == token.STRING && err == nil && (text == ".fid" || strings.HasPrefix(text, ".fid/"))
 	case *ast.SelectorExpr:
 		return value.Sel.Name == "WorkspaceDirName"
 	case *ast.Ident:

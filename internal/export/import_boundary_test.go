@@ -27,7 +27,7 @@ func TestImportProcessExitAtPublicationBoundaries(t *testing.T) {
 				t.Fatalf("crash helper: %v / %s", err, output)
 			}
 			published := stage == ImportAfterRename || stage == ImportAfterPublication
-			_, statErr := os.Stat(filepath.Join(target, ".fid"))
+			_, statErr := os.Stat(config.LedgerDir(target))
 			if published && statErr != nil || !published && !os.IsNotExist(statErr) {
 				t.Fatalf("published=%v, destination stat=%v", published, statErr)
 			}
@@ -68,7 +68,7 @@ func TestImportRejectsChangedDigestAndInstalledHistory(t *testing.T) {
 			if _, err := Import(options); err != nil {
 				t.Fatal(err)
 			}
-			markerPath := filepath.Join(target, ".fid", config.ImportBindingFileName)
+			markerPath := filepath.Join(config.LedgerDir(target), config.ImportBindingFileName)
 			data, err := os.ReadFile(markerPath)
 			if err != nil {
 				t.Fatal(err)
@@ -77,7 +77,7 @@ func TestImportRejectsChangedDigestAndInstalledHistory(t *testing.T) {
 			if err := json.Unmarshal(data, &marker); err != nil {
 				t.Fatal(err)
 			}
-			journalPath := filepath.Join(target, ".fid", "journal", "00000001.jsonl")
+			journalPath := filepath.Join(config.LedgerDir(target), "journal", "00000001.jsonl")
 			switch corruption {
 			case "changed-digest":
 				options.ArchivePath, _ = boundaryImportFixture(t)
@@ -105,10 +105,10 @@ func TestImportRejectsChangedDigestAndInstalledHistory(t *testing.T) {
 				}
 			case "symlink-workspace":
 				moved := filepath.Join(t.TempDir(), "installed")
-				if err := os.Rename(filepath.Join(target, ".fid"), moved); err != nil {
+				if err := os.Rename(config.LedgerDir(target), moved); err != nil {
 					t.Fatal(err)
 				}
-				if err := os.Symlink(moved, filepath.Join(target, ".fid")); err != nil {
+				if err := os.Symlink(moved, config.LedgerDir(target)); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -152,7 +152,7 @@ func TestImportBindingRejectsAlteredHistoryIdentity(t *testing.T) {
 	if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "binding"}); err != nil {
 		t.Fatal(err)
 	}
-	path := filepath.Join(target, ".fid", config.ImportBindingFileName)
+	path := filepath.Join(config.LedgerDir(target), config.ImportBindingFileName)
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

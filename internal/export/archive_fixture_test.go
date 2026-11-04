@@ -27,7 +27,7 @@ import (
 func addJournalBackedExportFixtureFacts(t *testing.T, workspace string) string {
 	t.Helper()
 	migrationsDir := testMigrationsDir(t)
-	project, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspace), "config.toml"))
 	if err != nil {
 		t.Fatalf("read project config: %v", err)
 	}
@@ -144,7 +144,7 @@ func addRecoveredExportFixtureFacts(t *testing.T, workspace string) string {
 
 func fixtureClaimVersion(t *testing.T, workspace, claimID string) int {
 	t.Helper()
-	database, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	database, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open fixture projection for Claim: %v", err)
 	}

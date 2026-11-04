@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 const (
@@ -48,7 +50,7 @@ func TestTask9PrechangeBudgetObservedJournalFailsClosedWithoutMutation(t *testin
 	}
 
 	workspace := t.TempDir()
-	journalDir := filepath.Join(workspace, ".fid", "journal")
+	journalDir := filepath.Join(config.LedgerDir(workspace), "journal")
 	if err := os.MkdirAll(journalDir, 0o755); err != nil {
 		t.Fatal(err)
 	}

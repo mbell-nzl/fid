@@ -3,13 +3,15 @@ package issues
 import (
 	"path/filepath"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 // The removed judgment writers have no projection target in schema 18.
 func TestV1JudgmentProjectionIsAbsentAfterReplacement(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 	for _, name := range []string{"task_completions", "ac_verifications", "judgment_concerns"} {
 		var count int

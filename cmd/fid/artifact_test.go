@@ -42,7 +42,7 @@ func TestGateRunPublishesSanitizedArtifactByDigest(t *testing.T) {
 
 	want := []byte("safe [REDACTED] content\n")
 	digest := sha256.Sum256(want)
-	path := filepath.Join(workspace, ".fid", "artifacts", hex.EncodeToString(digest[:]))
+	path := filepath.Join(config.LedgerDir(workspace), "artifacts", hex.EncodeToString(digest[:]))
 	stored, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read content-addressed Artifact %q: %v", path, err)
@@ -50,7 +50,7 @@ func TestGateRunPublishesSanitizedArtifactByDigest(t *testing.T) {
 	if string(stored) != string(want) {
 		t.Fatalf("stored Artifact = %q, want sanitized %q", stored, want)
 	}
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open database: %v", err)
 	}
@@ -63,7 +63,7 @@ func TestGateRunPublishesSanitizedArtifactByDigest(t *testing.T) {
 	if recordedDigest != "sha256:"+hex.EncodeToString(digest[:]) || mediaType != "text/plain; charset=utf-8" || sizeBytes != int64(len(want)) || retentionClass != "evidence" || availability != "available" || locationPolicy != "content-addressed" || declaredPath != "artifact.txt" {
 		t.Fatalf("recorded Artifact metadata = digest=%q media=%q size=%d retention=%q availability=%q location=%q path=%q", recordedDigest, mediaType, sizeBytes, retentionClass, availability, locationPolicy, declaredPath)
 	}
-	entries, err := os.ReadDir(filepath.Join(workspace, ".fid", "artifacts"))
+	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(workspace), "artifacts"))
 	if err != nil {
 		t.Fatalf("read Artifact store: %v", err)
 	}
@@ -222,7 +222,7 @@ func TestArtifactMutationHelperProcess(t *testing.T) {
 		}
 		deadline := time.Now().Add(artifactMutationWait)
 		for {
-			staging, err := filepath.Glob(filepath.Join(".fid", "artifacts", ".artifact-*"))
+			staging, err := filepath.Glob(filepath.Join(config.LedgerDir("."), "artifacts", ".artifact-*"))
 			if err != nil {
 				t.Fatalf("inspect Artifact staging files: %v", err)
 			}
@@ -286,7 +286,7 @@ func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *test
 		t.Fatalf("gate run = %#v, terminal=%#v, want successful Receipt", result, terminal)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open database: %v", err)
 	}
@@ -313,7 +313,7 @@ func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *test
 	if before.EvidenceID != evidenceID || before.EvidenceReceiptID != receiptID {
 		t.Fatalf("initial Artifact/Receipt/Evidence snapshot = %#v, want Evidence %q bound to Receipt %q", before, evidenceID, receiptID)
 	}
-	path := filepath.Join(workspace, ".fid", "artifacts", digest[len("sha256:"):])
+	path := filepath.Join(config.LedgerDir(workspace), "artifacts", digest[len("sha256:"):])
 	if err := os.Remove(path); err != nil {
 		t.Fatalf("remove stored Artifact: %v", err)
 	}
@@ -366,7 +366,7 @@ func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *test
 	if err := json.Unmarshal([]byte(unchanged.stdout), &unchangedEnvelope); err != nil {
 		t.Fatalf("decode unchanged Artifact Event: %v", err)
 	}
-	event, err := journal.FindEvent(filepath.Join(workspace, ".fid", "journal"), unchangedEnvelope.Event.ID)
+	event, err := journal.FindEvent(filepath.Join(config.LedgerDir(workspace), "journal"), unchangedEnvelope.Event.ID)
 	if err != nil {
 		t.Fatalf("read unchanged Artifact Event: %v", err)
 	}
@@ -452,7 +452,7 @@ func assertArtifactRejectedControl(t *testing.T, output, path, reason string) {
 
 func assertReceiptHasNoArtifacts(t *testing.T, workspace, receiptID string) {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open projection: %v", err)
 	}

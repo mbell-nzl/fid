@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -17,7 +18,7 @@ func TestMaintenanceVacuumCommandIsUnavailableAndPreservesState(t *testing.T) {
 	journalPath := mustJournalPath(t, workspace)
 	journalBefore := mustReadCommandFile(t, journalPath)
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open projection: %v", err)
 	}

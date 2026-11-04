@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -171,11 +172,11 @@ func p22SetEventValue(table, column string, value any) func(*journal.Event) {
 }
 func p22CurrentEventPrefix(t *testing.T, source, family string) ([]byte, journal.Event) {
 	t.Helper()
-	entries, err := os.ReadDir(filepath.Join(source, ".fid", "journal"))
+	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(source), "journal"))
 	p22FaultOK(t, err)
 	var prefix []byte
 	for _, entry := range entries {
-		raw, err := os.ReadFile(filepath.Join(source, ".fid", "journal", entry.Name()))
+		raw, err := os.ReadFile(filepath.Join(config.LedgerDir(source), "journal", entry.Name()))
 		p22FaultOK(t, err)
 		for _, line := range bytes.Split(bytes.TrimSpace(raw), []byte{'\n'}) {
 			var event journal.Event
@@ -197,8 +198,8 @@ func p22CheckCurrentEventCase(t *testing.T, binary, source string, prefix []byte
 		return
 	}
 	workspace := t.TempDir()
-	p22FaultOK(t, os.MkdirAll(filepath.Join(workspace, ".fid"), 0700))
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	p22FaultOK(t, os.MkdirAll(config.LedgerDir(workspace), 0700))
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	p22FaultOK(t, fiddb.MigrateUp(dbPath, filepath.Join(integrationRepositoryRoot(), "migrations")))
 	conn, err := fiddb.Open(dbPath)
 	p22FaultOK(t, err)
@@ -235,7 +236,7 @@ func p22CheckCurrentRebuild(t *testing.T, binary, source string, prefix []byte, 
 	t.Helper()
 	workspace := t.TempDir()
 	copyParityFixture(t, source, workspace)
-	dir := filepath.Join(workspace, ".fid", "journal")
+	dir := filepath.Join(config.LedgerDir(workspace), "journal")
 	entries, err := os.ReadDir(dir)
 	p22FaultOK(t, err)
 	for _, entry := range entries {
@@ -245,7 +246,7 @@ func p22CheckCurrentRebuild(t *testing.T, binary, source string, prefix []byte, 
 	p22FaultOK(t, err)
 	body := append(append(append([]byte{}, prefix...), raw...), '\n')
 	p22FaultOK(t, os.WriteFile(filepath.Join(dir, "2026-09-09.jsonl"), body, 0600))
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	before, err := os.ReadFile(dbPath)
 	p22FaultOK(t, err)
 	command := exec.Command(binary, "--project", workspace, "--json", "rebuild")
@@ -277,7 +278,7 @@ func TestP22CurrentProducerEmitsRequiredClosedFields(t *testing.T) {
 func p22CheckProducerRequiredFields(t *testing.T, workspaces []string) {
 	checkedCondition, checkedClaim, checkedStop, checkedAttention := false, false, false, false
 	for _, workspace := range workspaces {
-		files, err := os.ReadDir(filepath.Join(workspace, ".fid", "journal"))
+		files, err := os.ReadDir(filepath.Join(config.LedgerDir(workspace), "journal"))
 		p22FaultOK(t, err)
 		require := func(label string, value map[string]any, keys ...string) {
 			for _, key := range keys {
@@ -287,7 +288,7 @@ func p22CheckProducerRequiredFields(t *testing.T, workspaces []string) {
 			}
 		}
 		for _, file := range files {
-			raw, err := os.ReadFile(filepath.Join(workspace, ".fid", "journal", file.Name()))
+			raw, err := os.ReadFile(filepath.Join(config.LedgerDir(workspace), "journal", file.Name()))
 			p22FaultOK(t, err)
 			for _, line := range bytes.Split(bytes.TrimSpace(raw), []byte{'\n'}) {
 				var event journal.Event

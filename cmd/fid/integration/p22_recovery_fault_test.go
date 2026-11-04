@@ -189,7 +189,7 @@ func p22RejectSecondRecovery(t *testing.T, a *p22FIDRecoveryAdapter, original wo
 
 func p22FaultDB(t *testing.T, root string) *sql.DB {
 	t.Helper()
-	conn, err := sql.Open("sqlite", filepath.Join(root, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := sql.Open("sqlite", filepath.Join(config.LedgerDir(root), config.DatabaseFileName))
 	p22FaultOK(t, err)
 	return conn
 }

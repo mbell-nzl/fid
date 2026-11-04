@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -129,7 +130,7 @@ func TestGateReceiptFieldDigestGuardAndMalformedInsertFailClosedThroughCLI(t *te
 		t.Fatal(err)
 	}
 	addJournalBackedExportFixtureFacts(t, workspace)
-	journalFiles, err := filepath.Glob(filepath.Join(workspace, ".fid", "journal", "*.jsonl"))
+	journalFiles, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
 	if err != nil || len(journalFiles) == 0 {
 		t.Fatalf("journal files = %v, error %v", journalFiles, err)
 	}
@@ -267,7 +268,7 @@ func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {
 	if !errors.Is(err, ErrImportFault) {
 		t.Fatalf("Import() error = %v, want injected publication fault", err)
 	}
-	if _, err := os.Lstat(filepath.Join(target, ".fid")); !os.IsNotExist(err) {
+	if _, err := os.Lstat(config.LedgerDir(target)); !os.IsNotExist(err) {
 		t.Fatalf("target contains a partial project after pre-publication fault: %v", err)
 	}
 }

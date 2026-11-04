@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -171,7 +172,7 @@ func TestCreateRejectsUnsupportedKind(t *testing.T) {
 func TestIssueCreateUsesAssignedWorkflowAndItsInitialState(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	for _, fixture := range []struct {
@@ -263,7 +264,7 @@ func TestIssueCreateUsesAssignedWorkflowAndItsInitialState(t *testing.T) {
 func TestIssueCreateResolvesKindAssignmentBeforeProjectAssignment(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 	for _, fixture := range []struct {
 		id        string
@@ -450,7 +451,7 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 		t.Fatalf("Get(subtask) owner_role = %#v, want developer", subtask.OwnerRole)
 	}
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	var scheduling string
@@ -669,7 +670,7 @@ func TestCreateRejectsProjectionFailingWriteBeforeAppend(t *testing.T) {
 		t.Fatalf("Get(valid task after rejected create) id = %q, want %q", got.ID, validTask.ID)
 	}
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
@@ -734,7 +735,7 @@ func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 		t.Fatalf("Get(before rebuild) error = %v", err)
 	}
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
@@ -754,7 +755,7 @@ func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 
 	assertIssuesEqual(t, after, before)
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	var issueID, scheduling string
@@ -817,7 +818,7 @@ func TestCreateAndGetRoundTrip(t *testing.T) {
 		t.Fatalf("Get() triage_status = %#v, want nil", got.TriageStatus)
 	}
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	exists, err := issueIDExists(conn, created.ID)
@@ -927,7 +928,7 @@ func TestCreateAppendsIssueCreatedActivityInSameEvent(t *testing.T) {
 		t.Fatalf("activity event = %#v, want issue-created", got)
 	}
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	var (
@@ -1057,7 +1058,7 @@ func TestGetConcernsOrderSameSecondRowsByAppendOrder(t *testing.T) {
 	workspace := newIssueWorkspace(t)
 	issueID := seedConcernIssue(t, workspace)
 
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	const createdAt = "2026-06-20T12:00:00Z"
@@ -1105,7 +1106,7 @@ func seedConcernIssue(t *testing.T, workspace string) string {
 
 func seedGenericIssueConcern(t *testing.T, workspace, concernID, issueID, status, summary, createdAt string) {
 	t.Helper()
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 	if status == "disposed" {
 		_, err := conn.Exec(`INSERT INTO concerns
@@ -1251,7 +1252,7 @@ func TestGetMapsPopulatedNullableFields(t *testing.T) {
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
 	_, err := conn.Exec(`
@@ -1458,7 +1459,7 @@ func closeIssueTestDB(t *testing.T, conn interface{ Close() error }) {
 func journalPathForWorkspace(t *testing.T, workspace string) string {
 	t.Helper()
 
-	journalDir := filepath.Join(workspace, ".fid", "journal")
+	journalDir := filepath.Join(config.LedgerDir(workspace), "journal")
 	entries, err := os.ReadDir(journalDir)
 	if err != nil {
 		t.Fatalf("ReadDir(%q) error = %v", journalDir, err)

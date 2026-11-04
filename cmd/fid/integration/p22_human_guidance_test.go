@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestP22HumanGuidance(t *testing.T) {
@@ -35,7 +37,7 @@ func TestP22HumanGuidance(t *testing.T) {
 		if err != nil || strings.Contains(human, "Historical liveness") || strings.Contains(human, "establish fresh destination liveness") {
 			t.Errorf("fresh observation mislabeled historical: %v %s", err, human)
 		}
-		marker := filepath.Join(target, ".fid", "import.marker.json")
+		marker := filepath.Join(config.LedgerDir(target), "import.marker.json")
 		if err := os.WriteFile(marker, []byte("{}"), 0o600); err != nil {
 			t.Fatal(err)
 		}

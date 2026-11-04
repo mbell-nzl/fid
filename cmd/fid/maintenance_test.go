@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -35,7 +36,7 @@ func TestMaintenanceCheckJSONMatchesContract(t *testing.T) {
 		t.Fatalf("healthy maintenance.check result = %#v, want status pass", healthyResult)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open projection: %v", err)
 	}
@@ -73,7 +74,7 @@ func TestMaintenanceCheckWarningPromotionPreservesFindingsAndInfo(t *testing.T) 
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open projection: %v", err)
 	}
@@ -112,7 +113,7 @@ func TestMaintenanceCheckWarningPromotionPreservesFindingsAndInfo(t *testing.T) 
 func TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat(t *testing.T) { //nolint:paralleltest // wall-clock boundary fixture, see above.
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	configPath := filepath.Join(workspace, ".fid", "config.toml")
+	configPath := filepath.Join(config.LedgerDir(workspace), "config.toml")
 	configBytes, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("ReadFile(config) error = %v", err)
@@ -122,7 +123,7 @@ func TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat(t *testing.T) {
 		t.Fatalf("WriteFile(config) error = %v", err)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open projection: %v", err)
 	}
@@ -207,7 +208,7 @@ func TestMaintenanceCheckRejectsFindingLimitWithoutTruncation(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open projection: %v", err)
 	}

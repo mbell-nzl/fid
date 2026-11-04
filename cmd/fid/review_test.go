@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -261,7 +262,7 @@ func assertAtomicReviewResolutionEvent(t *testing.T, workspace, reviewID, eventI
 	if dispositionEffects != len(findingIDs) {
 		t.Fatalf("resolution disposition Effects = %d, want %d in one Event", dispositionEffects, len(findingIDs))
 	}
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open Review projection: %v", err)
 	}

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -86,7 +87,7 @@ func TestIssueCreateEpicAcceptsSchedulingAndReturnsDefaultReadShape(t *testing.T
 		t.Fatalf("labels = %#v, want empty array", got.Labels)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -105,7 +106,7 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -290,7 +291,7 @@ func TestIssueCreateRejectsInvalidFlagsAndConstraintViolations(t *testing.T) {
 		{
 			name: "task under epic without metadata is rejected",
 			args: func(t *testing.T, workspace string) []string {
-				conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+				conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 				if err != nil {
 					t.Fatalf("Open() error = %v", err)
 				}
@@ -322,7 +323,7 @@ func TestIssueCreateRejectsInvalidFlagsAndConstraintViolations(t *testing.T) {
 			},
 			wantErr: `create issue: label "missing" does not exist`,
 			verify: func(t *testing.T, workspace string) {
-				conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+				conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 				if err != nil {
 					t.Fatalf("Open() error = %v", err)
 				}
@@ -373,7 +374,7 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -436,7 +437,7 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 		subtaskID: mustGetIssueJSON(t, workspace, subtaskID),
 	}
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
@@ -544,7 +545,7 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 		t.Fatalf("before triage_status = %#v, want blocked", got)
 	}
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
@@ -613,7 +614,7 @@ func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 		t.Fatalf("event envelope = %+v, want populated v2 standalone Issue Event", event)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -670,7 +671,7 @@ func TestIssueCreateAndRebuildRoundTripReturnsIdenticalJSON(t *testing.T) {
 
 	beforeStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID)
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
@@ -912,7 +913,7 @@ func mustGetConcernListJSONForIssue(t *testing.T, workspace, issueID string) []i
 func mustIssueTriageStatus(t *testing.T, workspace, issueID string) *string {
 	t.Helper()
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}

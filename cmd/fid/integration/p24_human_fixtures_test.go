@@ -11,6 +11,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 type p24HumanFixture struct {
@@ -682,13 +684,13 @@ func p24RehearseAuthoring(t *testing.T, binary string, row p24HumanFixture) (str
 		}
 	}()
 	snapshot := filepath.Join(scratch, "before")
-	copyParityFixture(t, filepath.Join(row.Workspace, ".fid"), snapshot)
+	copyParityFixture(t, config.LedgerDir(row.Workspace), snapshot)
 	humanOut, humanErr := p24FixtureRun(t, binary, row, false)
 	jsonOut, jsonErr := p24FixtureRun(t, binary, row, true)
-	if err := os.Rename(filepath.Join(row.Workspace, ".fid"), filepath.Join(scratch, "after")); err != nil {
+	if err := os.Rename(config.LedgerDir(row.Workspace), filepath.Join(scratch, "after")); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Rename(snapshot, filepath.Join(row.Workspace, ".fid")); err != nil {
+	if err := os.Rename(snapshot, config.LedgerDir(row.Workspace)); err != nil {
 		t.Fatal(err)
 	}
 	return humanOut, humanErr, jsonOut, jsonErr

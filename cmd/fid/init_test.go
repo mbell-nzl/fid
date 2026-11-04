@@ -44,12 +44,12 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	}
 
 	requiredPaths := []string{
-		filepath.Join(workspace, ".fid", "journal"),
-		filepath.Join(workspace, ".fid", "artifacts"),
-		filepath.Join(workspace, ".fid", "config.toml"),
-		filepath.Join(workspace, ".fid", "pricing.toml"),
-		filepath.Join(workspace, ".fid", "fid.sqlite"),
-		filepath.Join(workspace, ".fid", ".gitignore"),
+		filepath.Join(config.LedgerDir(workspace), "journal"),
+		filepath.Join(config.LedgerDir(workspace), "artifacts"),
+		filepath.Join(config.LedgerDir(workspace), "config.toml"),
+		filepath.Join(config.LedgerDir(workspace), "pricing.toml"),
+		filepath.Join(config.LedgerDir(workspace), "fid.sqlite"),
+		filepath.Join(config.LedgerDir(workspace), ".gitignore"),
 	}
 	for _, path := range requiredPaths {
 		if _, err := os.Stat(path); err != nil {
@@ -65,7 +65,7 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 			t.Fatalf("successful init left staging residue %q", entry.Name())
 		}
 	}
-	configPath := filepath.Join(workspace, ".fid", "config.toml")
+	configPath := filepath.Join(config.LedgerDir(workspace), "config.toml")
 	configPayload, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", configPath, err)
@@ -85,7 +85,7 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 		t.Fatalf("config.toml = %q, contains retired key", configPayload)
 	}
 
-	gitignorePath := filepath.Join(workspace, ".fid", ".gitignore")
+	gitignorePath := filepath.Join(config.LedgerDir(workspace), ".gitignore")
 	payload, err := os.ReadFile(gitignorePath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", gitignorePath, err)
@@ -94,7 +94,7 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 		t.Fatalf(".gitignore = %q, want fid.sqlite entry", got)
 	}
 
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspace), "config.toml"))
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() error = %v", err)
 	}
@@ -108,7 +108,7 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 		t.Fatalf("abandoned-attempt grace = %d, want %d", projectConfig.AbandonedAttemptGraceSeconds, config.DefaultAbandonedAttemptGraceSeconds)
 	}
 
-	pricingConfig, err := config.ReadPricingConfig(filepath.Join(workspace, ".fid", "pricing.toml"))
+	pricingConfig, err := config.ReadPricingConfig(filepath.Join(config.LedgerDir(workspace), "pricing.toml"))
 	if err != nil {
 		t.Fatalf("ReadPricingConfig() error = %v", err)
 	}
@@ -264,7 +264,7 @@ func TestInitCommandEnforcesExplicitPrefixGrammarBeforeStaging(t *testing.T) {
 	t.Parallel()
 	validWorkspace := t.TempDir()
 	runInitCommand(t, validWorkspace, "init", "--prefix", "A123456789012345")
-	if _, err := os.Stat(filepath.Join(validWorkspace, ".fid")); err != nil {
+	if _, err := os.Stat(config.LedgerDir(validWorkspace)); err != nil {
 		t.Fatalf("valid-prefix workspace error = %v, want activated workspace", err)
 	}
 
@@ -292,7 +292,7 @@ func TestInitCommandEnforcesExplicitPrefixGrammarBeforeStaging(t *testing.T) {
 	if envelope.Error.Code != "invalid-argument" {
 		t.Fatalf("error code = %q, want invalid-argument", envelope.Error.Code)
 	}
-	if _, err := os.Stat(filepath.Join(invalidWorkspace, ".fid")); !os.IsNotExist(err) {
+	if _, err := os.Stat(config.LedgerDir(invalidWorkspace)); !os.IsNotExist(err) {
 		t.Fatalf("invalid-prefix workspace state = %v, want no .fid", err)
 	}
 }
@@ -344,7 +344,7 @@ func TestInitCommandPrefixBoundaryMatrix(t *testing.T) {
 				t.Fatalf("stdout = %q, want empty", stdout)
 			}
 			assertProjectInitFailureCode(t, stderr, "invalid-argument")
-			if _, statErr := os.Lstat(filepath.Join(workspace, ".fid")); !os.IsNotExist(statErr) {
+			if _, statErr := os.Lstat(config.LedgerDir(workspace)); !os.IsNotExist(statErr) {
 				t.Fatalf(".fid state = %v, want absent", statErr)
 			}
 			assertNoInitStagingResidue(t, workspace)
@@ -356,7 +356,7 @@ func TestInitCommandPreservesDanglingWorkspaceSymlinkCollision(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	danglingTarget := filepath.Join(workspace, "missing-fid-target")
-	workspacePath := filepath.Join(workspace, ".fid")
+	workspacePath := config.LedgerDir(workspace)
 	if err := os.Symlink(danglingTarget, workspacePath); err != nil {
 		t.Fatalf("Symlink() error = %v", err)
 	}
@@ -383,7 +383,7 @@ func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 	defaultWorkspace := t.TempDir()
 	runInitCommand(t, defaultWorkspace, "init", "--prefix", "FID")
 
-	defaultConfig, err := config.ReadProjectConfig(filepath.Join(defaultWorkspace, ".fid", "config.toml"))
+	defaultConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(defaultWorkspace), "config.toml"))
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() default error = %v", err)
 	}
@@ -394,7 +394,7 @@ func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 	customWorkspace := t.TempDir()
 	runInitCommand(t, customWorkspace, "init", "--prefix", "ABC")
 
-	customConfig, err := config.ReadProjectConfig(filepath.Join(customWorkspace, ".fid", "config.toml"))
+	customConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(customWorkspace), "config.toml"))
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() custom error = %v", err)
 	}
@@ -427,7 +427,7 @@ func TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename(t *testing
 	if got, want := stderr.String(), "error: invalid project initialization argument\nreason: invalid-argument; argument=prefix, allowed=valid project.init input\n"; got != want {
 		t.Fatalf("stderr = %q, want %q", got, want)
 	}
-	if _, statErr := os.Stat(filepath.Join(workspace, ".fid")); !os.IsNotExist(statErr) {
+	if _, statErr := os.Stat(config.LedgerDir(workspace)); !os.IsNotExist(statErr) {
 		t.Fatalf(".fid state = %v, want no workspace", statErr)
 	}
 }
@@ -455,7 +455,7 @@ func TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent(t *testing.T) {
 	if event.EventType != "project.initialized" {
 		t.Fatalf("event_type = %q, want %q", event.EventType, "project.initialized")
 	}
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspace), "config.toml"))
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() error = %v", err)
 	}
@@ -468,7 +468,7 @@ func TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent(t *testing.T) {
 		t.Fatalf("bootstrap Event = %#v, want exact role-free Event-v2 genesis", event)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -482,7 +482,7 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	before := snapshotWorkspaceState(t, filepath.Join(workspace, ".fid"))
+	before := snapshotWorkspaceState(t, config.LedgerDir(workspace))
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -503,7 +503,7 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 		t.Fatalf("stdout = %q, want empty", stdout.String())
 	}
 
-	after := snapshotWorkspaceState(t, filepath.Join(workspace, ".fid"))
+	after := snapshotWorkspaceState(t, config.LedgerDir(workspace))
 	if !reflect.DeepEqual(after, before) {
 		t.Fatalf("workspace changed on re-init\nbefore=%v\nafter=%v", before, after)
 	}
@@ -514,7 +514,7 @@ func TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta(
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	journalPath := mustJournalPath(t, workspace)
 
 	conn, err := fiddb.Open(dbPath)
@@ -619,7 +619,7 @@ func assertProjectInitFailureCode(t *testing.T, payload, wantCode string) {
 
 func assertActivatedConfigRoundTrip(t *testing.T, workspace, wantPrefix string) {
 	t.Helper()
-	path := filepath.Join(workspace, ".fid", "config.toml")
+	path := filepath.Join(config.LedgerDir(workspace), "config.toml")
 	project, err := config.ReadProjectConfig(path)
 	if err != nil {
 		t.Fatalf("ReadProjectConfig(%q) error = %v", path, err)
@@ -698,7 +698,7 @@ func containsArgument(args []string, value string) bool {
 func mustJournalPath(t *testing.T, workspace string) string {
 	t.Helper()
 
-	matches, err := filepath.Glob(filepath.Join(workspace, ".fid", "journal", "*.jsonl"))
+	matches, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
 	if err != nil {
 		t.Fatalf("Glob() error = %v", err)
 	}

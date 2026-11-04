@@ -100,7 +100,7 @@ func activationAgreementFixture(t *testing.T, operation string) activationLifecy
 
 func setActivationResourceDefect(t *testing.T, fixture activationLifecycleFixture, component, defect string) {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(fixture.workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(fixture.workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatal(err)
 	}

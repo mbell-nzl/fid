@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -158,7 +159,7 @@ func seedConcernListIssueAndConcern(t *testing.T, workspace, summary string, dis
 		"--kind", "task", "--title", summary, "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 	concernID := fmt.Sprintf("CON-%s", strings.ToUpper(strings.ReplaceAll(summary, " ", "")))
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open concern projection: %v", err)
 	}

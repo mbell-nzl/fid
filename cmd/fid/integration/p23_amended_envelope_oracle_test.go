@@ -76,7 +76,7 @@ func p23EnvelopeCreateModel(t *testing.T, pair p23HumanLeafPair) map[string]map[
 
 func p24ModelBindingRepository(t *testing.T, workspace string) map[string]any {
 	t.Helper()
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspace), "config.toml"))
 	if err != nil {
 		t.Fatal(err)
 	}

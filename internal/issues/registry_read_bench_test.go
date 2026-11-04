@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -20,7 +21,7 @@ func BenchmarkList10kIssuesWithRegistry(b *testing.B) {
 		b.Fatalf("InitializeWorkspace() error = %v", err)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		b.Fatalf("open projection: %v", err)
 	}

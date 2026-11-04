@@ -153,7 +153,7 @@ func assertStopOperationResult(t *testing.T, workspace, surface string, result c
 
 func stopOperationCounts(t *testing.T, workspace string) (int, int) {
 	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open Stop operation projection: %v", err)
 	}

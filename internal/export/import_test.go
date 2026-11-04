@@ -80,10 +80,10 @@ func TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem(t *testing.T) 
 		t.Fatalf("create archive: %v", err)
 	}
 	populated := t.TempDir()
-	if err := os.Mkdir(filepath.Join(populated, ".fid"), 0o755); err != nil {
+	if err := os.Mkdir(config.LedgerDir(populated), 0o755); err != nil {
 		t.Fatalf("create populated target: %v", err)
 	}
-	marker := filepath.Join(populated, ".fid", "keep")
+	marker := filepath.Join(config.LedgerDir(populated), "keep")
 	if err := os.WriteFile(marker, []byte("unchanged"), 0o600); err != nil {
 		t.Fatalf("write populated target marker: %v", err)
 	}
@@ -168,7 +168,7 @@ func TestImportSnapshotsInputPreservesExistingFilesAndRejectsTamperedMarker(t *t
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(target, ".fid", config.ImportBindingFileName), tampered, 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(config.LedgerDir(target), config.ImportBindingFileName), tampered, 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(archive, archiveBytes, 0o600); err != nil {
@@ -192,7 +192,7 @@ func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
 	if err != nil || len(sourceRuns) != 1 {
 		t.Fatalf("source active Run = %#v, %v", sourceRuns, err)
 	}
-	sourceDB, err := fiddb.Open(filepath.Join(source, ".fid", "fid.sqlite"))
+	sourceDB, err := fiddb.Open(filepath.Join(config.LedgerDir(source), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open source projection: %v", err)
 	}
@@ -244,7 +244,7 @@ func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
 	if inspection.Reconciliation.Repository.WorktreeID == run.StartRepository.WorktreeID {
 		t.Fatal("imported inspection retained the historical Worktree ID")
 	}
-	database, err := fiddb.Open(filepath.Join(target, ".fid", "fid.sqlite"))
+	database, err := fiddb.Open(filepath.Join(config.LedgerDir(target), "fid.sqlite"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -342,11 +342,11 @@ func assertRemovedHistoricalGateRequest(t *testing.T, target, registrationID str
 
 func assertImportedJournalEquals(t *testing.T, source, target string) {
 	t.Helper()
-	sourceEntries, err := os.ReadDir(filepath.Join(source, ".fid", "journal"))
+	sourceEntries, err := os.ReadDir(filepath.Join(config.LedgerDir(source), "journal"))
 	if err != nil {
 		t.Fatalf("read source journal: %v", err)
 	}
-	targetEntries, err := os.ReadDir(filepath.Join(target, ".fid", "journal"))
+	targetEntries, err := os.ReadDir(filepath.Join(config.LedgerDir(target), "journal"))
 	if err != nil {
 		t.Fatalf("read target journal: %v", err)
 	}
@@ -359,7 +359,7 @@ func journalBytes(t *testing.T, root string, entries []os.DirEntry) []byte {
 	t.Helper()
 	var all []byte
 	for _, entry := range entries {
-		data, err := os.ReadFile(filepath.Join(root, ".fid", "journal", entry.Name()))
+		data, err := os.ReadFile(filepath.Join(config.LedgerDir(root), "journal", entry.Name()))
 		if err != nil {
 			t.Fatalf("read journal %q: %v", entry.Name(), err)
 		}

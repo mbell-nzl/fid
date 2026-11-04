@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
@@ -312,7 +314,7 @@ func p20AssertStaleRevisionFailure(t *testing.T, workspace, issueID string, expe
 
 func p20AssertJournalEventAttribution(t *testing.T, workspace, eventID, actorID string) {
 	t.Helper()
-	paths, err := filepath.Glob(filepath.Join(workspace, ".fid", "journal", "*.jsonl"))
+	paths, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
 	if err != nil || len(paths) != 1 {
 		t.Fatalf("journal files = %v, %v; want one journal", paths, err)
 	}

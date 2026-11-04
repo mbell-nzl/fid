@@ -6,6 +6,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
 )
@@ -135,7 +136,7 @@ func TestIssueGetJSONMatchesClosedSchema(t *testing.T) {
 func TestIssueListJSONMatchesClosedSchemaAndRetainedFilters(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -218,7 +219,7 @@ func TestReadCollectionLimitRejectsOnlyOverLimit(t *testing.T) {
 func TestReadyJSONSequentialBlockerUsesClosedExplanation(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}

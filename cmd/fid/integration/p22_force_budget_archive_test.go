@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -74,7 +75,7 @@ func TestP22ForceRecoveryBudgetRejectsIntegrityValidMissingChargeArchive(t *test
 			}
 			response := p22ConformanceResponse{Stdout: stdout, Stderr: stderr, ExitCode: processExitCode(t, err)}
 			assertP22ConformanceResponse(t, p22ConformanceCase{Operation: "export." + operation, Kind: "invalid", ExitCode: 6, FailureCode: "archive-invalid"}, response)
-			if _, err := os.Stat(filepath.Join(target, ".fid")); !os.IsNotExist(err) {
+			if _, err := os.Stat(config.LedgerDir(target)); !os.IsNotExist(err) {
 				t.Fatalf("rejected archive installed target state: %v", err)
 			}
 		})

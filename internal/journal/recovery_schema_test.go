@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -37,7 +38,7 @@ func TestRecoverySchemaFreshInitAndReplay(t *testing.T) {
 	assertInvalidStopCodeRejectsLiveAndReplay(t, conn)
 
 	workspace := newReplayWorkspace(t)
-	writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-05.jsonl"), event)
+	writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-05.jsonl"), event)
 	replayDBPath := filepath.Join(t.TempDir(), "replay.sqlite")
 	if err := fiddb.MigrateUp(replayDBPath, testProjectMigrationsDir(t)); err != nil {
 		t.Fatalf("MigrateUp(replay) error = %v", err)
@@ -47,7 +48,7 @@ func TestRecoverySchemaFreshInitAndReplay(t *testing.T) {
 		t.Fatalf("Open(replay) error = %v", err)
 	}
 	defer func() { _ = replayConn.Close() }()
-	_, err = ReplayJournal(replayConn, filepath.Join(workspace, ".fid", "journal"), nil)
+	_, err = ReplayJournal(replayConn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 	assertUnknownRecoveryEvent(t, err)
 }
 
@@ -64,7 +65,7 @@ func assertInvalidStopCodeRejectsLiveAndReplay(t *testing.T, conn *sql.DB) {
 	}
 
 	workspace := newReplayWorkspace(t)
-	writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-05.jsonl"), event)
+	writeReplayEvents(t, filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-05.jsonl"), event)
 	replayDBPath := filepath.Join(t.TempDir(), "invalid-stop-replay.sqlite")
 	if err := fiddb.MigrateUp(replayDBPath, testProjectMigrationsDir(t)); err != nil {
 		t.Fatalf("MigrateUp(invalid stop replay) error = %v", err)
@@ -74,7 +75,7 @@ func assertInvalidStopCodeRejectsLiveAndReplay(t *testing.T, conn *sql.DB) {
 		t.Fatalf("Open(invalid stop replay) error = %v", err)
 	}
 	defer func() { _ = replayConn.Close() }()
-	_, err = ReplayJournal(replayConn, filepath.Join(workspace, ".fid", "journal"), nil)
+	_, err = ReplayJournal(replayConn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 	var corrupt *CorruptJournalError
 	if !errors.As(err, &corrupt) || !strings.Contains(corrupt.Error(), "CHECK constraint failed") {
 		t.Fatalf("ReplayJournal(invalid stop) error = %v, want corrupt Stop code CHECK rejection", err)

@@ -9,6 +9,8 @@ import (
 	"sort"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 const (
@@ -237,7 +239,7 @@ func obligationReasonSubjects(reasons []EvaluationReason) []string {
 func journalSnapshot(t *testing.T, workspace string) map[string]int64 {
 	t.Helper()
 	snapshot := map[string]int64{}
-	root := filepath.Join(workspace, ".fid", "journal")
+	root := filepath.Join(config.LedgerDir(workspace), "journal")
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err

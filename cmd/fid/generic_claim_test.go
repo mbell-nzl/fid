@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -280,7 +281,7 @@ func TestClaimConflictsExpiryAndWrongHolderFailWithoutMutation(t *testing.T) {
 		t.Fatalf("wrong holder = %#v, want closed authority rejection", wrongHolder)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("open claim database: %v", err)
 	}

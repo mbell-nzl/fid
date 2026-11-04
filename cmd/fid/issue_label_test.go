@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -37,7 +38,7 @@ func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -194,7 +195,7 @@ func TestIssueLabelAddJSONReportsNestedLimitWithoutAppend(t *testing.T) {
 	clonePristineWorkspaceInto(t, workspace)
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label JSON limit", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -365,7 +366,7 @@ func TestIssueLabelRemovePreservesRemainingLabelsAndProjectsActivity(t *testing.
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}

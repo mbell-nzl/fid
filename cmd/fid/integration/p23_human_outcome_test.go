@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/evidence"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
@@ -940,7 +941,7 @@ func TestP23HumanOutcomeRequiredRaisedByArtifactAvailability(t *testing.T) {
 		t.Fatalf("gate Receipt Artifacts = %#v, want one", gate.Receipt.Artifacts)
 	}
 	artifact := gate.Receipt.Artifacts[0]
-	path := filepath.Join(a.workspace, ".fid", "artifacts", artifact.Digest[len("sha256:"):])
+	path := filepath.Join(config.LedgerDir(a.workspace), "artifacts", artifact.Digest[len("sha256:"):])
 	if err := os.Remove(path); err != nil {
 		t.Fatal(err)
 	}
@@ -956,7 +957,7 @@ func TestP23HumanOutcomeRequiredRaisedByArtifactAvailability(t *testing.T) {
 			t.Fatalf("artifact.verify changed = %v, want true", changed)
 		}
 		eventID := p21PathString(t, envelope, "event", "id")
-		event, err := journal.FindEvent(filepath.Join(a.workspace, ".fid", "journal"), eventID)
+		event, err := journal.FindEvent(filepath.Join(config.LedgerDir(a.workspace), "journal"), eventID)
 		p22FaultOK(t, err)
 		if event.Event.EventType != "artifact.availability-observed" {
 			t.Fatalf("artifact.verify Event type = %q", event.Event.EventType)

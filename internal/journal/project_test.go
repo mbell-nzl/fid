@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -580,7 +581,7 @@ func TestRebuildWorkspaceReplaysActivityLogDeterministically(t *testing.T) {
 	t.Parallel()
 
 	workspace := newReplayWorkspace(t)
-	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-06-13.jsonl")
+	journalPath := filepath.Join(config.LedgerDir(workspace), "journal", "2026-06-13.jsonl")
 	writeReplayEvents(
 		t,
 		journalPath,
@@ -600,10 +601,10 @@ func TestRebuildWorkspaceReplaysActivityLogDeterministically(t *testing.T) {
 		),
 	)
 
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	conn := openReplayDB(t, dbPath)
 
-	stats, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	stats, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(workspace), "journal"), nil)
 	if err != nil {
 		t.Fatalf("ReplayJournal() error = %v", err)
 	}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -46,7 +47,7 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 		t.Fatalf("journal lines after link add = %d, want %d", linesAfter, linesBefore+1)
 	}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -132,7 +133,7 @@ func TestLinkAddRejectsRequirementEndpointsAndInvalidInputBeforeAppend(t *testin
 			t.Fatalf("removed endpoint result = (%q, %q, %v)", stdout, stderr, err)
 		}
 
-		conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+		conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 		if err != nil {
 			t.Fatalf("Open() error = %v", err)
 		}
@@ -251,7 +252,7 @@ func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) 
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
@@ -512,7 +513,7 @@ func TestLinkAddUsesSuppliedTypeForAmbiguousSameIDEndpoints(t *testing.T) {
 	clonePristineWorkspaceInto(t, workspace)
 
 	issueID := createCommandIssue(t, workspace, "Issue and requirement share an opaque ID")
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}

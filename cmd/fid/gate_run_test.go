@@ -77,7 +77,7 @@ func TestGateRunPersistsAttemptAndSuccessfulReceiptBeforeTerminalFrame(t *testin
 	if strings.Index(journal, `"event_type":"gate.execution-started"`) >= strings.Index(journal, `"event_type":"gate.receipt-recorded"`) {
 		t.Fatalf("gate Event order = %q, want Attempt before Receipt", journal)
 	}
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open gate database: %v", err)
 	}
@@ -145,7 +145,7 @@ func TestGateRunAttemptAppendFailureDoesNotSpawn(t *testing.T) {
 		definition["argv"] = []string{"/bin/touch", "attempt-append-spawned"}
 	})
 	inputPath, key := gateRunInputForTest(t, workspace, issueID, envelopeID, "gate-run-append-failure")
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open append-failure database: %v", err)
 	}
@@ -205,7 +205,7 @@ func TestBudgetDenialReportsCommittedStopWithoutStartFrame(t *testing.T) {
 	if !ok || details["event"] == nil || len(details["stop_ids"].([]any)) == 0 || len(details["attention_ids"].([]any)) == 0 {
 		t.Fatalf("budget denial details = %#v, want committed Event, Stop, and Attention IDs", details)
 	}
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open budget-denial database: %v", err)
 	}
@@ -225,7 +225,7 @@ func TestGateRunReceiptAppendFailureEmitsFrameOnlyFidError(t *testing.T) {
 		definition["argv"] = []string{"/bin/echo", "started"}
 	})
 	inputPath, key := gateRunInputForTest(t, workspace, issueID, envelopeID, "gate-run-receipt-failure")
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open receipt-failure database: %v", err)
 	}
@@ -269,7 +269,7 @@ func TestKilledFidLeavesAttemptWithoutReceiptAndCannotReplaySpawn(t *testing.T) 
 		definition["argv"] = []string{"/bin/echo", "started"}
 	})
 	inputPath, key := gateRunInputForTest(t, workspace, issueID, envelopeID, "killed-fid")
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open killed-fid database: %v", err)
 	}
@@ -353,7 +353,7 @@ func TestGateRunRecordsExactNonSuccessTerminalOutcomes(t *testing.T) {
 			if replayTerminal.Stream != "terminal" || !replayTerminal.Data.Replayed || replayTerminal.Data.ReceiptID != terminal.Data.ReceiptID || replayTerminal.Data.Outcome != testCase.wantOutcome || replayTerminal.Data.ExitCode != testCase.wantExitCode || (replayTerminal.Data.Signal != nil) != testCase.wantSignal || replayTerminal.Data.TimedOut != testCase.wantTimedOut || !reflect.DeepEqual(replayTerminal.Data.Response, terminal.Data.Response) {
 				t.Fatalf("replayed %s terminal = %#v, want original Receipt and exact replayed terminal", testCase.name, replayTerminal)
 			}
-			conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+			conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
 			if err != nil {
 				t.Fatalf("open replay database: %v", err)
 			}
@@ -452,7 +452,7 @@ func assertReceiptMutationRejectedAndImmutable(t *testing.T, conn *sql.DB, works
 	if !ok {
 		t.Fatalf("successful terminal response Event ID = %#v, want string", event["id"])
 	}
-	source, err := journal.FindEvent(filepath.Join(workspace, ".fid", "journal"), eventID)
+	source, err := journal.FindEvent(filepath.Join(config.LedgerDir(workspace), "journal"), eventID)
 	if err != nil {
 		t.Fatalf("read Receipt Event: %v", err)
 	}

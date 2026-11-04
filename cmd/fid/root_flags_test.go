@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/config"
 )
 
 const p24UnavailableProjectJSON = `{"contract_version":"fid-cli.v1","error":{"category":"invalid-input","code":"invalid-argument","details":{"allowed":["--idempotency-key","--repository"],"argument":"--project","value":"--project"},"message":"--project is not available for export import","retryable":false,"subject":null},"ok":false,"operation":"export.import"}` + "\n"
@@ -123,7 +124,7 @@ func TestRootCommandResolvesRelativeProjectFromInjectedWorkingDirectory(t *testi
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(workspace, ".fid")); err != nil {
+	if _, err := os.Stat(config.LedgerDir(workspace)); err != nil {
 		t.Fatalf("relative project workspace not initialized: %v", err)
 	}
 }

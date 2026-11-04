@@ -16,6 +16,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -177,7 +178,7 @@ func p23PortableAssertCorruptEventsRejected(t *testing.T, workspace string, even
 			}
 			t.Run(eventType+"/"+corruption, func(t *testing.T) {
 				clone := t.TempDir()
-				copyParityFixture(t, filepath.Join(workspace, ".fid"), filepath.Join(clone, ".fid"))
+				copyParityFixture(t, config.LedgerDir(workspace), config.LedgerDir(clone))
 				if seenWorkspaces[clone] {
 					t.Fatal("corruption probe reused a workspace")
 				}
@@ -272,7 +273,7 @@ func p23PortableAssertPriorSchemaRejected(t *testing.T, binary, workspace string
 	if err == nil || stdout != "" || !strings.Contains(stderr, `"code":"archive-invalid"`) || !strings.Contains(stderr, `"code":"schema-unsupported"`) {
 		t.Fatalf("prior schema import = err:%v stdout:%q stderr:%q", err, stdout, stderr)
 	}
-	if _, err := os.Stat(filepath.Join(target, ".fid")); !os.IsNotExist(err) {
+	if _, err := os.Stat(config.LedgerDir(target)); !os.IsNotExist(err) {
 		t.Fatalf("rejected import published .fid: %v", err)
 	}
 }
@@ -303,9 +304,9 @@ func p23PortableRoundTrip(t *testing.T, binary, workspace string) map[string][]s
 	live := p23PortableRows(t, workspace)
 	archive := filepath.Join(t.TempDir(), "portable.zip")
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "create", archive)
-	before := p23PortableTreeDigest(t, filepath.Join(workspace, ".fid"))
+	before := p23PortableTreeDigest(t, config.LedgerDir(workspace))
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "validate", archive)
-	if after := p23PortableTreeDigest(t, filepath.Join(workspace, ".fid")); after != before {
+	if after := p23PortableTreeDigest(t, config.LedgerDir(workspace)); after != before {
 		t.Fatal("export validate mutated source workspace")
 	}
 	liveEntries := p22ArchiveEntries(t, archive)

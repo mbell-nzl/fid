@@ -533,7 +533,7 @@ func p24IndependentBindingRepository(t *testing.T, workspace string) map[string]
 	if status := git("status", "--porcelain", "--untracked-files=all"); status != "" {
 		t.Fatalf("independent fixture must be clean: %s", status)
 	}
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspace), "config.toml"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -546,11 +546,11 @@ func p24IndependentBindingRepository(t *testing.T, workspace string) map[string]
 
 func p24BindingPersistenceSnapshot(t *testing.T, workspace string) workspacePersistenceSnapshot {
 	t.Helper()
-	paths, err := filepath.Glob(filepath.Join(workspace, ".fid/journal/*.jsonl"))
+	paths, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
 	if err != nil || len(paths) == 0 {
 		t.Fatalf("journal inventory: %v / %v", paths, err)
 	}
-	snapshot := workspacePersistenceSnapshot{database: mustReadCommandFile(t, filepath.Join(workspace, ".fid/fid.sqlite"))}
+	snapshot := workspacePersistenceSnapshot{database: mustReadCommandFile(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))}
 	for _, path := range paths {
 		snapshot.journal = append(snapshot.journal, mustReadCommandFile(t, path)...)
 	}
@@ -559,7 +559,7 @@ func p24BindingPersistenceSnapshot(t *testing.T, workspace string) workspacePers
 
 func p24AssertBindingEventRepository(t *testing.T, workspace string, repository map[string]any) {
 	t.Helper()
-	paths, err := filepath.Glob(filepath.Join(workspace, ".fid/journal/*.jsonl"))
+	paths, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
 	if err != nil || len(paths) == 0 {
 		t.Fatalf("journal inventory: %v / %v", paths, err)
 	}
@@ -1190,7 +1190,7 @@ func commandProtectedDecisionMap(ordinal int, decisionClass, action string) map[
 
 func testEnvelopeRepository(t *testing.T, workspace string) map[string]any {
 	t.Helper()
-	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspace), "config.toml"))
 	if err != nil {
 		t.Fatalf("read project config: %v", err)
 	}
