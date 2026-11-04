@@ -198,10 +198,11 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
   - 1.1d is split into four parts. The builder split it overnight, under
     Mark's advance approval for a necessary or beneficial split; Mark has
     yet to review it.
-    - 1.1d1: test workspaces in the `internal/` packages become guarded git
-      repos, with no change in behaviour. The guard helpers move into one
-      test-only package, `internal/gittest`, which `cmd/fid` and the
-      integration tests share.
+    - 1.1d1: every test workspace that reaches the ledger becomes a guarded
+      git repo, with no change in behaviour. That's the `internal/`
+      packages' workspaces, plus a few integration fixtures that build a
+      ledger in-process. The guard helpers move into one test-only package,
+      `internal/gittest`, which every such test process uses.
     - 1.1d2: output names ledger files by absolute path, and the CLI spec
       follows, while the ledger is still at `<root>/.fid`. Doing this before
       the move keeps every part's output true.
