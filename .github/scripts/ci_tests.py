@@ -9,6 +9,10 @@ import subprocess
 NAME = re.compile(r"(?:Test|Example|Fuzz)\w*")
 # DEC-259: race without checkptr in modernc SQLite; checkptr stays on for fid code.
 RACE = ["-race", "-gcflags=modernc.org/...=-d=checkptr=0"]
+# A shard's cmd/fid tests run as one process under race and coverage, and can
+# pass Go's ten-minute default. Balancing shards by measured time is on the
+# later list in docs/reset/2026-10-31-reset-decisions.md.
+TIMEOUT = ["-timeout", "20m"]
 
 
 def partitions(inventory, count):
@@ -95,7 +99,7 @@ def run_shard(index, count, output):
     selected = partitions(inventory, count)[index]
     pattern = "^(" + "|".join(re.escape(t) for t in sorted({t for _, t in selected})) + ")$"
     print(f"Shard {index + 1}/{count}: {len(selected)} tests, examples and fuzz seed targets", flush=True)
-    events = run_go([*RACE, "-count=1", "-coverprofile=" + str(output / "coverage.out"), "-json", "-run", pattern, "./..."], output / "tests.jsonl")
+    events = run_go([*RACE, *TIMEOUT, "-count=1", "-coverprofile=" + str(output / "coverage.out"), "-json", "-run", pattern, "./..."], output / "tests.jsonl")
     verify_execution(inventory, selected, events)
     ran, done, packages = execution_sets(events)
     source = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
