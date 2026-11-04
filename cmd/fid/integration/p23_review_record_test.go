@@ -230,15 +230,13 @@ func TestP24ReviewReplayUnavailableAndRestoredControls(t *testing.T) {
 			controlRun := p23StartRun(t, a, "actor-denied", controlClaim, "fresh-control")
 			control := p23Clone(input)
 			control["run_id"], control["expected_run_version"] = controlRun["id"], controlRun["version"]
-			gitBackup := filepath.Join(t.TempDir(), "git-backup")
+			restoreHead := func() {}
 			switch state {
 			case "head-advanced":
 				p22Write(t, a.workspace, "base.txt", "advanced control HEAD\n")
 				p22Git(t, a.workspace, "commit", "-qam", "advance control HEAD")
 			case "not-a-repository":
-				if err := os.Rename(filepath.Join(a.workspace, ".git"), gitBackup); err != nil {
-					t.Fatal(err)
-				}
+				restoreHead = unbornGitHead(t, a.workspace)
 			case "unmerged-paths":
 				p24MakeUnmerged(t, a.workspace)
 			case "deleted-source":
@@ -264,7 +262,7 @@ func TestP24ReviewReplayUnavailableAndRestoredControls(t *testing.T) {
 			} else {
 				detail := "repository has unmerged paths"
 				if state == "not-a-repository" {
-					detail = "repository root: exit status 128"
+					detail = "missing base: exit status 128"
 				}
 				p24ReviewAssertFailure(t, a, refused, "repository-unavailable", map[string]any{"reason": state, "detail": detail}, before)
 				failure := p23Envelope(t, refused.Stderr)["error"].(map[string]any)
@@ -276,9 +274,7 @@ func TestP24ReviewReplayUnavailableAndRestoredControls(t *testing.T) {
 			case "head-advanced":
 				p22Git(t, a.workspace, "reset", "--hard", observation["head_oid"].(string))
 			case "not-a-repository":
-				if err := os.Rename(gitBackup, filepath.Join(a.workspace, ".git")); err != nil {
-					t.Fatal(err)
-				}
+				restoreHead()
 			case "unmerged-paths":
 				p22Git(t, a.workspace, "merge", "--abort")
 				p22Git(t, a.workspace, "reset", "--hard", observation["head_oid"].(string))
@@ -416,10 +412,7 @@ func TestP24ReviewRecordResolvesSourcesAndReplaysWithoutObservation(t *testing.T
 	}
 	newKey := p23ReviewRecord(t, a, "actor-denied", "review-head-control", input)
 	assertP22ProcessFailure(t, "review.record", "repository-mismatch", 4, newKey)
-	gitBackup := filepath.Join(t.TempDir(), "git-backup")
-	if err := os.Rename(filepath.Join(a.workspace, ".git"), gitBackup); err != nil {
-		t.Fatal(err)
-	}
+	restoreHead := unbornGitHead(t, a.workspace)
 	replay = p23ReviewRecord(t, a, "actor-denied", "review-source-record", input)
 	p23AssertReviewSuccess(t, "unobservable replay", replay)
 	if !p24ReviewReplayMatches(p23Envelope(t, response.Stdout), p23Envelope(t, replay.Stdout)) || p21JournalEventCount(t, a.workspace) != before {
@@ -427,9 +420,7 @@ func TestP24ReviewRecordResolvesSourcesAndReplaysWithoutObservation(t *testing.T
 	}
 	unavailable := p23ReviewRecord(t, a, "actor-denied", "review-unobservable-control", input)
 	assertP22ProcessFailure(t, "review.record", "repository-unavailable", 4, unavailable)
-	if err := os.Rename(gitBackup, filepath.Join(a.workspace, ".git")); err != nil {
-		t.Fatal(err)
-	}
+	restoreHead()
 	if err := os.Remove(filepath.Join(a.workspace, basePath)); err != nil {
 		t.Fatal(err)
 	}

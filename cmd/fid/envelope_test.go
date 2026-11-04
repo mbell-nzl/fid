@@ -95,7 +95,7 @@ func TestP24EnvelopeReplayAfterSourceChangeOrDeletion(t *testing.T) {
 func TestP24BindingReplayBeforeObservation(t *testing.T) {
 	t.Parallel()
 	for _, leaf := range []string{"gate register", "envelope create", "claim acquire", "envelope complete"} {
-		for _, state := range []string{"head-change", "non-git", "unmerged"} {
+		for _, state := range []string{"head-change", "unborn-head", "unmerged"} {
 			t.Run(leaf+"/"+state, func(t *testing.T) {
 				t.Parallel()
 				workspace, input, control := p24BindingReplayFixture(t, leaf)
@@ -122,15 +122,8 @@ func TestP24BindingReplayBeforeObservation(t *testing.T) {
 				switch state {
 				case "head-change":
 					git("commit", "--allow-empty", "-qm", "new HEAD")
-				case "non-git":
-					if err := os.Rename(filepath.Join(workspace, ".git"), filepath.Join(workspace, ".git-hidden")); err != nil {
-						t.Fatal(err)
-					}
-					restore = func() {
-						if err := os.Rename(filepath.Join(workspace, ".git-hidden"), filepath.Join(workspace, ".git")); err != nil {
-							t.Fatal(err)
-						}
-					}
+				case "unborn-head":
+					restore = unbornGitHead(t, workspace)
 				case "unmerged":
 					blob, err := exec.Command("git", "-C", workspace, "rev-parse", "HEAD:.gitignore").Output()
 					if err != nil {

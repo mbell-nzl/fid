@@ -134,6 +134,9 @@ func newRequirementListCommand() *cobra.Command {
 }
 
 func renderRequirementError(cmd *cobra.Command, operation string, cause error) error {
+	if refused := renderRepositoryRefusal(cmd, cause); refused != nil {
+		return refused
+	}
 	var notFound *review.RequirementNotFoundError
 	if errors.As(cause, &notFound) {
 		jsonMode, err := readJSONMode(cmd)

@@ -40,7 +40,7 @@ func p24TerminalInput(t *testing.T, a *p22FIDRecoveryAdapter, leaf string) map[s
 func TestP24RunTerminalExpectationObservationAndUnsafe(t *testing.T) {
 	t.Parallel()
 	for _, leaf := range []string{"close", "abandon"} {
-		for _, kind := range []string{"match", "HEAD", "dirty", "unmerged", "non-Git"} {
+		for _, kind := range []string{"match", "HEAD", "dirty", "unmerged", "unborn-HEAD"} {
 			t.Run(leaf+"/"+kind, func(t *testing.T) {
 				t.Parallel()
 				a := p24RunAdapter(t)
@@ -61,10 +61,8 @@ func TestP24RunTerminalExpectationObservationAndUnsafe(t *testing.T) {
 					p22Git(t, a.workspace, "checkout", "--", "base.txt")
 					p24MakeUnmerged(t, a.workspace)
 				}
-				if kind == "non-Git" {
-					if err := os.Rename(filepath.Join(a.workspace, ".git"), filepath.Join(t.TempDir(), "git")); err != nil {
-						t.Fatal(err)
-					}
+				if kind == "unborn-HEAD" {
+					unbornGitHead(t, a.workspace)
 				}
 				before, events := p22FaultProjection(t, a.workspace), p21JournalEventCount(t, a.workspace)
 				response := p24RunInput(t, a, leaf, "terminal", input)
@@ -90,7 +88,7 @@ func TestP24RunTerminalExpectationObservationAndUnsafe(t *testing.T) {
 					return
 				}
 				code := "repository-mismatch"
-				if kind == "unmerged" || kind == "non-Git" {
+				if kind == "unmerged" || kind == "unborn-HEAD" {
 					code = "recovery-state-conflict"
 				}
 				assertP22ProcessFailure(t, "run."+leaf, code, 4, response)
@@ -208,7 +206,7 @@ func p24BudgetInput(a *p22FIDRecoveryAdapter) map[string]any {
 
 func TestP24RunBudgetSourceInputMatrix(t *testing.T) {
 	t.Parallel()
-	for _, kind := range []string{"matching", "mismatching", "omitted", "missing", "null-non-Git", "null-unmerged", "unmerged", "non-Git"} {
+	for _, kind := range []string{"matching", "mismatching", "omitted", "missing", "null-unborn-HEAD", "null-unmerged", "unmerged", "unborn-HEAD"} {
 		t.Run(kind, func(t *testing.T) {
 			t.Parallel()
 			a := p24RunAdapter(t)
@@ -224,26 +222,24 @@ func TestP24RunBudgetSourceInputMatrix(t *testing.T) {
 			if kind == "missing" {
 				source["path"] = "missing.md"
 			}
-			if kind == "null-non-Git" || kind == "null-unmerged" {
+			if kind == "null-unborn-HEAD" || kind == "null-unmerged" {
 				input["measurement_ref"] = nil
 			}
 			if kind == "unmerged" || kind == "null-unmerged" {
 				p24MakeUnmerged(t, a.workspace)
 			}
-			if kind == "non-Git" || kind == "null-non-Git" {
-				if err := os.Rename(filepath.Join(a.workspace, ".git"), filepath.Join(t.TempDir(), "git")); err != nil {
-					t.Fatal(err)
-				}
+			if kind == "unborn-HEAD" || kind == "null-unborn-HEAD" {
+				unbornGitHead(t, a.workspace)
 			}
 			before, events := p22FaultProjection(t, a.workspace), p21JournalEventCount(t, a.workspace)
 			response := p24RunInput(t, a, "observe-budget", "budget", input)
 			switch kind {
-			case "matching", "omitted", "null-non-Git", "null-unmerged":
+			case "matching", "omitted", "null-unborn-HEAD", "null-unmerged":
 				if response.ExitCode != 0 {
 					t.Fatalf("budget: %#v", response)
 				}
 				sample := p21Path(t, p23Envelope(t, response.Stdout), "result", "sample").(map[string]any)
-				if kind == "null-non-Git" || kind == "null-unmerged" {
+				if kind == "null-unborn-HEAD" || kind == "null-unmerged" {
 					if sample["measurement_ref"] != nil {
 						t.Fatal("null measurement changed")
 					}
@@ -257,7 +253,7 @@ func TestP24RunBudgetSourceInputMatrix(t *testing.T) {
 				p24AssertRunEventRepository(t, a, want)
 			default:
 				code := "source-digest-mismatch"
-				if kind == "unmerged" || kind == "non-Git" {
+				if kind == "unmerged" || kind == "unborn-HEAD" {
 					code = "repository-unavailable"
 				}
 				assertP22ProcessFailure(t, "run.observe-budget", code, 4, response)
@@ -290,7 +286,7 @@ func TestP24RunBudgetSourceInputMatrix(t *testing.T) {
 func TestP24RunReplayBeforeObservationAndSourceReads(t *testing.T) {
 	t.Parallel()
 	for _, leaf := range []string{"start", "close", "abandon", "observe-budget"} {
-		states := []string{"HEAD-and-file", "unmerged", "non-Git"}
+		states := []string{"HEAD-and-file", "unmerged", "unborn-HEAD"}
 		if leaf == "observe-budget" {
 			states = append(states, "deleted-source")
 		}
@@ -365,10 +361,8 @@ func TestP24RunReplayBeforeObservationAndSourceReads(t *testing.T) {
 					p22Write(t, a.workspace, "project-docs/p22-corpus.md", "changed source\n")
 				case "unmerged":
 					p24MakeUnmerged(t, a.workspace)
-				case "non-Git":
-					if err := os.Rename(filepath.Join(a.workspace, ".git"), filepath.Join(t.TempDir(), "git")); err != nil {
-						t.Fatal(err)
-					}
+				case "unborn-HEAD":
+					unbornGitHead(t, a.workspace)
 				case "deleted-source":
 					if err := os.Remove(filepath.Join(a.workspace, "project-docs/p22-corpus.md")); err != nil {
 						t.Fatal(err)

@@ -73,6 +73,9 @@ func renderCapabilitiesInvalidRequest(cmd *cobra.Command, argument, value string
 }
 
 func renderCapabilitiesError(cmd *cobra.Command, cause error) error {
+	if refused := renderRepositoryRefusal(cmd, cause); refused != nil {
+		return refused
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err

@@ -96,6 +96,9 @@ func readJSONMode(cmd *cobra.Command) (bool, error) {
 }
 
 func renderIssueReadError(cmd *cobra.Command, jsonMode bool, operation string, readErr error) error {
+	if refused := renderRepositoryRefusal(cmd, readErr); refused != nil {
+		return refused
+	}
 	failure, err := issueReadFailure(operation, readErr)
 	if err != nil {
 		return err

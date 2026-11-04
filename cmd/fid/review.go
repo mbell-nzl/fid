@@ -55,6 +55,9 @@ func newReviewListCommand() *cobra.Command {
 }
 
 func renderReviewListError(cmd *cobra.Command, cause error) error {
+	if refused := renderRepositoryRefusal(cmd, cause); refused != nil {
+		return refused
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
@@ -127,6 +130,9 @@ func newReviewRecordCommand() *cobra.Command {
 }
 
 func renderReviewError(cmd *cobra.Command, cause error) error {
+	if refused := renderRepositoryRefusal(cmd, cause); refused != nil {
+		return refused
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err

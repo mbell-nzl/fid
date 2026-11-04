@@ -113,7 +113,7 @@ func rebuildWorkspaceRoot(cmd *cobra.Command) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return project.Resolve(workingDirectory, projectPath)
+	return project.Resolve(projectPath)
 }
 
 func rebuildProjectCandidate(cmd *cobra.Command, workingDirectory string) (string, error) {
@@ -135,6 +135,9 @@ func rebuildProjectCandidate(cmd *cobra.Command, workingDirectory string) (strin
 }
 
 func renderRebuildProjectError(cmd *cobra.Command, jsonMode bool, rebuildErr error) error {
+	if refused := renderRepositoryRefusal(cmd, rebuildErr); refused != nil {
+		return refused
+	}
 	if !errors.Is(rebuildErr, project.ErrNotFound) {
 		return renderRebuildOperationError(cmd, jsonMode, rebuildErr)
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/export"
+	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/spf13/cobra"
 )
 
@@ -32,7 +33,13 @@ func newExportImportCommand() *cobra.Command {
 				return err
 			}
 		}
-		result, err := export.Import(export.ImportOptions{ArchivePath: args[0], RepositoryRoot: repository, MigrationsDir: issueMigrationsDir(), IdempotencyKey: key})
+		target, err := project.Discover(repository)
+		if errors.Is(err, project.ErrNotARepository) {
+			return renderExportError(cmd, "export.import", args[0], err)
+		} else if err != nil {
+			target = repository // Import reports an unusable target itself.
+		}
+		result, err := export.Import(export.ImportOptions{ArchivePath: args[0], RepositoryRoot: target, MigrationsDir: issueMigrationsDir(), IdempotencyKey: key})
 		if err != nil {
 			return renderExportError(cmd, "export.import", args[0], err)
 		}
@@ -94,6 +101,9 @@ func newExportValidateCommand() *cobra.Command {
 }
 
 func renderExportError(cmd *cobra.Command, operation, archivePath string, cause error) error {
+	if refused := renderRepositoryRefusal(cmd, cause); refused != nil {
+		return refused
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err

@@ -48,8 +48,7 @@ func TestP24ReviewAndHumanEvidenceSubjectRepositories(t *testing.T) {
 			if reflect.DeepEqual(current, expected) {
 				t.Fatal("subject and current repository must differ")
 			}
-			saved := filepath.Join(t.TempDir(), "saved-git")
-			p22FaultOK(t, os.Rename(filepath.Join(a.workspace, ".git"), saved))
+			restoreHead := unbornGitHead(t, a.workspace)
 			linked := p23RunInput(t, a, "evidence", "link", a.actor, "subject-link", input)
 			p23AssertReviewSuccess(t, "subject link without Git", linked)
 			envelope := p23Envelope(t, linked.Stdout)
@@ -59,7 +58,7 @@ func TestP24ReviewAndHumanEvidenceSubjectRepositories(t *testing.T) {
 			if event := p24SubjectEventRepository(t, a.workspace, p21PathString(t, envelope, "event", "id")); !reflect.DeepEqual(event, expected) {
 				t.Fatalf("%s linked Event = %#v, want %#v", kind, event, expected)
 			}
-			p22FaultOK(t, os.Rename(saved, filepath.Join(a.workspace, ".git")))
+			restoreHead()
 			evaluated := a.p22Run(t, "evidence", "evaluate", "--input", p21Input(t, a.workspace, "subject-evaluate", map[string]any{"obligation_id": input["obligation_id"]}))
 			p23AssertReviewSuccess(t, "subject evaluation", evaluated)
 			want := "stale"

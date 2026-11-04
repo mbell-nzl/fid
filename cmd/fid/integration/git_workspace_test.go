@@ -74,6 +74,54 @@ func newGitWorkspace(t *testing.T) string {
 	return workspace
 }
 
+// unbornGitHead points HEAD at a branch with no commits, so git still finds
+// the repository but fid cannot observe it, and returns a function that puts
+// HEAD back. Tests use it for a repository fid can discover but not inspect.
+func unbornGitHead(t *testing.T, repository string) (restore func()) {
+	t.Helper()
+	git := func(args ...string) string {
+		t.Helper()
+		output, err := exec.Command("git", append([]string{"-C", repository}, args...)...).Output()
+		if err != nil {
+			t.Fatalf("git %v in %q: %v", args, repository, err)
+		}
+		return strings.TrimSpace(string(output))
+	}
+	head := git("symbolic-ref", "HEAD")
+	git("symbolic-ref", "HEAD", "refs/heads/fid-test-unborn")
+	return func() {
+		t.Helper()
+		git("symbolic-ref", "HEAD", head)
+	}
+}
+
+func TestUnbornGitHeadIsDiscoverableButNotObservable(t *testing.T) {
+	t.Parallel()
+	workspace := newGitWorkspace(t)
+	git := func(args ...string) (string, error) {
+		output, err := exec.Command("git", append([]string{"-C", workspace}, args...)...).Output()
+		return strings.TrimSpace(string(output)), err
+	}
+	if _, err := git("-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-q", "--allow-empty", "-m", "base"); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	base, err := git("rev-parse", "HEAD")
+	if err != nil {
+		t.Fatalf("rev-parse HEAD: %v", err)
+	}
+	restore := unbornGitHead(t, workspace)
+	if err := checkGuardedGitRepository(workspace); err != nil {
+		t.Fatalf("unborn HEAD hid the repository: %v", err)
+	}
+	if head, err := git("rev-parse", "--verify", "-q", "HEAD"); err == nil {
+		t.Fatalf("unborn HEAD resolves to %q, want no commit", head)
+	}
+	restore()
+	if head, err := git("rev-parse", "HEAD"); err != nil || head != base {
+		t.Fatalf("restored HEAD = %q, %v; want %q", head, err, base)
+	}
+}
+
 func TestGuardedGitWorkspaceIsItsOwnRepository(t *testing.T) {
 	t.Parallel()
 	workspace := newGitWorkspace(t)
