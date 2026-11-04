@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestP24HumanProtectedDecisionFailure(t *testing.T) {
@@ -115,7 +117,7 @@ func p24StopFailureText(t *testing.T, payload map[string]any, operation string) 
 
 func TestP24GenericFallbackSensitiveProcess(t *testing.T) {
 	t.Parallel()
-	binary, workspace := integrationFIDBinary(t), newGitWorkspace(t)
+	binary, workspace := integrationFIDBinary(t), gittest.NewWorkspace(t)
 	p21Run(t, binary, workspace, "init", "--prefix", "P24", "--json")
 	activationID := p21Activation(t, binary, workspace, "prepare", "p24-sensitive-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "p24", "phase": 21})
 	const sentinel = "P24-GENERIC-SECRET-SENTINEL"

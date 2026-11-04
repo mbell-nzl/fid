@@ -9,11 +9,12 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	_, seqEpicStderr := runFIDCommand(
@@ -339,7 +340,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 
 func TestV01BReadyReturnsEmptyAfterAllTasksFinishedEndToEnd(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	_, createStderr := runFIDCommand(

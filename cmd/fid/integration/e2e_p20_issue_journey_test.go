@@ -12,11 +12,12 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	eventIDs := map[string]bool{}
 
 	_, initEvent := p20JourneyMutation(t, workspace, "init", "--prefix", "P20")

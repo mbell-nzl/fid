@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestP24ReviewAndHumanEvidenceSubjectRepositories(t *testing.T) {
@@ -48,7 +49,7 @@ func TestP24ReviewAndHumanEvidenceSubjectRepositories(t *testing.T) {
 			if reflect.DeepEqual(current, expected) {
 				t.Fatal("subject and current repository must differ")
 			}
-			restoreHead := unbornGitHead(t, a.workspace)
+			restoreHead := gittest.UnbornHead(t, a.workspace)
 			linked := p23RunInput(t, a, "evidence", "link", a.actor, "subject-link", input)
 			p23AssertReviewSuccess(t, "subject link without Git", linked)
 			envelope := p23Envelope(t, linked.Stdout)

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func p24RunInput(t *testing.T, a *p22FIDRecoveryAdapter, leaf, key string, input map[string]any) p22ConformanceResponse {
@@ -62,7 +63,7 @@ func TestP24RunTerminalExpectationObservationAndUnsafe(t *testing.T) {
 					p24MakeUnmerged(t, a.workspace)
 				}
 				if kind == "unborn-HEAD" {
-					unbornGitHead(t, a.workspace)
+					gittest.UnbornHead(t, a.workspace)
 				}
 				before, events := p22FaultProjection(t, a.workspace), p21JournalEventCount(t, a.workspace)
 				response := p24RunInput(t, a, leaf, "terminal", input)
@@ -229,7 +230,7 @@ func TestP24RunBudgetSourceInputMatrix(t *testing.T) {
 				p24MakeUnmerged(t, a.workspace)
 			}
 			if kind == "unborn-HEAD" || kind == "null-unborn-HEAD" {
-				unbornGitHead(t, a.workspace)
+				gittest.UnbornHead(t, a.workspace)
 			}
 			before, events := p22FaultProjection(t, a.workspace), p21JournalEventCount(t, a.workspace)
 			response := p24RunInput(t, a, "observe-budget", "budget", input)
@@ -362,7 +363,7 @@ func TestP24RunReplayBeforeObservationAndSourceReads(t *testing.T) {
 				case "unmerged":
 					p24MakeUnmerged(t, a.workspace)
 				case "unborn-HEAD":
-					unbornGitHead(t, a.workspace)
+					gittest.UnbornHead(t, a.workspace)
 				case "deleted-source":
 					if err := os.Remove(filepath.Join(a.workspace, "project-docs/p22-corpus.md")); err != nil {
 						t.Fatal(err)

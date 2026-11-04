@@ -14,6 +14,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -263,7 +264,7 @@ func TestP24ReceiptEvidenceUsesSubjectAndCurrentObservation(t *testing.T) {
 		t.Fatal(err)
 	}
 	writeActivationInput(t, path, map[string]any{"obligation_id": input["obligation_id"], "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
-	restoreHead := unbornGitHead(t, root)
+	restoreHead := gittest.UnbornHead(t, root)
 	linked := executeCommandForTest(root, "--project", root, "--json", "evidence", "link", "--actor", "actor-builder", "--input", path, "--idempotency-key", "p24-derived-link")
 	if linked.err != nil {
 		t.Fatalf("link: %#v", linked)
@@ -296,7 +297,7 @@ func TestP24ReceiptEvidenceUsesSubjectAndCurrentObservation(t *testing.T) {
 		assertRunStateUnchanged(t, root, before)
 	}
 	// evidence.get remains a stored-record read; only evaluate observes Git.
-	unbornGitHead(t, root)
+	gittest.UnbornHead(t, root)
 	evidenceID := decodeCanonicalResult(t, linked.stdout)["evidence"].(map[string]any)["id"].(string)
 	before := snapshotWorkspacePersistence(t, root)
 	got := executeCommandForTest(root, "--project", root, "--json", "evidence", "get", evidenceID)

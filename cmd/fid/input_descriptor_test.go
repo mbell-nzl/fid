@@ -15,6 +15,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -1589,7 +1590,7 @@ func p24ReviewRecursiveStructuralDetails(t *testing.T, leaf string, descriptor c
 			} else if invalid, ok := validation.(*cli.InputError); !ok || !p24JudgmentDetailsMatch(invalid, want) {
 				t.Fatalf("details = %#v, want %#v", validation, want)
 			}
-			workspace := newGitWorkspace(t)
+			workspace := gittest.NewWorkspace(t)
 			input := filepath.Join(t.TempDir(), "request.json")
 			if err := os.WriteFile(input, payload, 0o600); err != nil {
 				t.Fatal(err)
@@ -1818,7 +1819,7 @@ func p24JudgmentRecursiveStructuralDetails(t *testing.T, leaf string, descriptor
 			} else if invalid, ok := validation.(*cli.InputError); !ok || !p24JudgmentDetailsMatch(invalid, want) {
 				t.Fatalf("details = %#v, want %#v", validation, want)
 			}
-			workspace := newGitWorkspace(t)
+			workspace := gittest.NewWorkspace(t)
 			input := filepath.Join(t.TempDir(), "request.json")
 			if err := os.WriteFile(input, payload, 0o600); err != nil {
 				t.Fatal(err)
@@ -2456,7 +2457,7 @@ func TestAdoptedStructuralProcessDetails(t *testing.T) {
 			if err := cli.ValidateInput([]byte(payload), inputDescriptorRegistry[leaf]); err != nil {
 				t.Fatalf("qualifying structure: %v", err)
 			}
-			workspace := newGitWorkspace(t)
+			workspace := gittest.NewWorkspace(t)
 			input := filepath.Join(t.TempDir(), "valid.json")
 			if err := os.WriteFile(input, []byte(payload), 0o600); err != nil {
 				t.Fatal(err)
@@ -2584,7 +2585,7 @@ func TestP24ActivationPrepareIdentityScalarBoundaries(t *testing.T) {
 			for _, mode := range []string{"Human", "JSON"} {
 				t.Run(field+"/"+boundary.name+"/"+mode, func(t *testing.T) {
 					t.Parallel()
-					root := newGitWorkspace(t)
+					root := gittest.NewWorkspace(t)
 					out, failure, exit := runAdoptedFID(t, binary, root, "init", "--prefix", "QA")
 					if exit != 0 || failure != "" {
 						t.Fatalf("init: exit=%d stdout=%q stderr=%q", exit, out, failure)

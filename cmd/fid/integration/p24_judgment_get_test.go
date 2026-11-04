@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestP24JudgmentGetRecords(t *testing.T) {
@@ -66,7 +68,7 @@ func TestP24JudgmentGetRecords(t *testing.T) {
 func TestP24JudgmentGetRejections(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	p21Run(t, binary, workspace, "--json", "init", "--prefix", "GET")
 	before := p23PortableJournalEvents(t, workspace)
 	for _, row := range []struct{ family, code, idLabel string }{

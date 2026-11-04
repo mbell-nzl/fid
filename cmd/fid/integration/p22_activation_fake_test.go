@@ -10,11 +10,13 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func p22NewFIDActivationAdapter(t *testing.T, status string) p22RecoveryAdapter {
 	t.Helper()
-	binary, workspace := integrationFIDBinary(t), newGitWorkspace(t)
+	binary, workspace := integrationFIDBinary(t), gittest.NewWorkspace(t)
 	p21Run(t, binary, workspace, "--json", "init", "--prefix", "ACT")
 	id := p21Activation(t, binary, workspace, "prepare", "activation-corpus-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "p22-activation", "phase": 21})
 	if status == "committed" {

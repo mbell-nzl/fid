@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -349,7 +350,7 @@ func TestP24JudgmentLeavesRepositoryUnavailable(t *testing.T) {
 				originals[row.operation] = envelope
 			}
 			if state == "not-a-repository" {
-				unbornGitHead(t, a.workspace)
+				gittest.UnbornHead(t, a.workspace)
 			} else {
 				p24MakeUnmerged(t, a.workspace)
 			}

@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func p24ObservedGateInput(t *testing.T, a *p22FIDRecoveryAdapter) map[string]any {
@@ -35,7 +37,7 @@ func TestP24GateAndEvaluateUnsafeAndReplay(t *testing.T) {
 			case "unmerged":
 				p24MakeUnmerged(t, a.workspace)
 			case "unborn-HEAD":
-				unbornGitHead(t, a.workspace)
+				gittest.UnbornHead(t, a.workspace)
 			}
 			before, events := p22FaultProjection(t, a.workspace), p21JournalEventCount(t, a.workspace)
 			replayed := p23RunInput(t, a, "gate", "run", a.actor, "original", input)

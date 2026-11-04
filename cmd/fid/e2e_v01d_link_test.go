@@ -10,11 +10,12 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestV01DLinkFlowAndRebuildParity(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	primaryIssueID := createCommandIssue(t, workspace, "Primary issue")

@@ -16,12 +16,13 @@ import (
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -119,7 +120,7 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 
 func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	cmd := newRootCommandAt(workspace)
@@ -161,7 +162,7 @@ func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != "project.init" {
 		t.Fatalf("envelope header = %+v, want fid-cli.v1 successful project.init", envelope)
 	}
-	root := resolvedPath(t, workspace)
+	root := gittest.ResolvedPath(t, workspace)
 	if envelope.Result.Project.ID == "" || envelope.Result.Project.IssuePrefix != "FID" || envelope.Result.Project.Root != root {
 		t.Fatalf("project result = %+v, want generated ID, FID, and root %q", envelope.Result.Project, root)
 	}
@@ -263,13 +264,13 @@ func assertJSONKeys(t *testing.T, value map[string]json.RawMessage, want []strin
 
 func TestInitCommandEnforcesExplicitPrefixGrammarBeforeStaging(t *testing.T) {
 	t.Parallel()
-	validWorkspace := newGitWorkspace(t)
+	validWorkspace := gittest.NewWorkspace(t)
 	runInitCommand(t, validWorkspace, "init", "--prefix", "A123456789012345")
 	if _, err := os.Stat(config.LedgerDir(validWorkspace)); err != nil {
 		t.Fatalf("valid-prefix workspace error = %v, want activated workspace", err)
 	}
 
-	invalidWorkspace := newGitWorkspace(t)
+	invalidWorkspace := gittest.NewWorkspace(t)
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	cmd := newRootCommandAt(invalidWorkspace)
@@ -317,7 +318,7 @@ func TestInitCommandPrefixBoundaryMatrix(t *testing.T) {
 	} {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			workspace := newNamedGitWorkspace(t, test.workspaceName)
+			workspace := gittest.NewNamedWorkspace(t, test.workspaceName)
 			args := []string{"--project", workspace, "--json", "init"}
 			if test.prefix != "" {
 				args = append(args, "--prefix", test.prefix)
@@ -352,7 +353,7 @@ func TestInitCommandPrefixBoundaryMatrix(t *testing.T) {
 
 func TestInitCommandPreservesDanglingWorkspaceSymlinkCollision(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	danglingTarget := filepath.Join(workspace, "missing-fid-target")
 	workspacePath := config.LedgerDir(workspace)
 	if err := os.Symlink(danglingTarget, workspacePath); err != nil {
@@ -378,7 +379,7 @@ func TestInitCommandPreservesDanglingWorkspaceSymlinkCollision(t *testing.T) {
 
 func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 	t.Parallel()
-	defaultWorkspace := newGitWorkspace(t)
+	defaultWorkspace := gittest.NewWorkspace(t)
 	runInitCommand(t, defaultWorkspace, "init", "--prefix", "FID")
 
 	defaultConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(defaultWorkspace), "config.toml"))
@@ -389,7 +390,7 @@ func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 		t.Fatalf("default issue prefix = %q, want %q", defaultConfig.IssuePrefix, "FID")
 	}
 
-	customWorkspace := newGitWorkspace(t)
+	customWorkspace := gittest.NewWorkspace(t)
 	runInitCommand(t, customWorkspace, "init", "--prefix", "ABC")
 
 	customConfig, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(customWorkspace), "config.toml"))
@@ -403,7 +404,7 @@ func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 
 func TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename(t *testing.T) {
 	t.Parallel()
-	workspace := newNamedGitWorkspace(t, "invalid_prefix")
+	workspace := gittest.NewNamedWorkspace(t, "invalid_prefix")
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	cmd := newRootCommandAt(workspace)
@@ -429,7 +430,7 @@ func TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename(t *testing
 
 func TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init", "--prefix", "FID")
 
 	journalPath := mustJournalPath(t, workspace)
@@ -474,7 +475,7 @@ func TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent(t *testing.T) {
 
 func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	before := snapshotWorkspaceState(t, config.LedgerDir(workspace))
@@ -491,7 +492,7 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 	if err == nil {
 		t.Fatal("Execute() error = nil, want re-init rejection")
 	}
-	if got, want := stderr.String(), "error: project is already initialized\n"+p24ExpectedReason("reason: project-already-initialized; path="+resolvedPath(t, workspace))+"\n"; got != want {
+	if got, want := stderr.String(), "error: project is already initialized\n"+p24ExpectedReason("reason: project-already-initialized; path="+gittest.ResolvedPath(t, workspace))+"\n"; got != want {
 		t.Fatalf("stderr = %q, want %q", got, want)
 	}
 	if stdout.Len() != 0 {
@@ -506,7 +507,7 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 
 func TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")

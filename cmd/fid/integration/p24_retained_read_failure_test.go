@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestP24RetainedReadFailurePairs(t *testing.T) {
@@ -30,7 +32,7 @@ func TestP24RetainedReadFailurePairs(t *testing.T) {
 	for _, row := range rows {
 		t.Run(row.name, func(t *testing.T) {
 			t.Parallel()
-			binary, workspace := integrationFIDBinary(t), newGitWorkspace(t)
+			binary, workspace := integrationFIDBinary(t), gittest.NewWorkspace(t)
 			if row.project {
 				p21Run(t, binary, workspace, "init", "--prefix", "P24", "--json")
 			}
