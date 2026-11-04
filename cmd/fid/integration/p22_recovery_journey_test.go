@@ -227,7 +227,11 @@ func p22Git(t *testing.T, workspace string, arguments ...string) {
 
 func p22Write(t *testing.T, workspace, name, contents string) {
 	t.Helper()
-	if err := os.WriteFile(filepath.Join(workspace, name), []byte(contents), 0o644); err != nil {
+	path := filepath.Join(workspace, name)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatalf("create the directory for %s: %v", name, err)
+	}
+	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
 		t.Fatalf("write %s: %v", name, err)
 	}
 }

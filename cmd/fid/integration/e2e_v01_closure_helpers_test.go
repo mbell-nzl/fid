@@ -168,7 +168,7 @@ func assertClosureGitLayout(t *testing.T, workspace string) {
 	payload := closureReadFile(t, filepath.Join(config.LedgerDir(workspace), ".gitignore"))
 	entries := strings.Fields(string(payload))
 	if len(entries) != 1 || entries[0] != "fid.sqlite" {
-		t.Fatalf(".fid/.gitignore = %q, want only fid.sqlite", payload)
+		t.Fatalf("ledger .gitignore = %q, want only fid.sqlite", payload)
 	}
 	_, _ = closureRun(t, workspace, "git", "check-ignore", "-q", workspaceRelative(t, workspace, filepath.Join(config.LedgerDir(workspace), "fid.sqlite")))
 }
@@ -198,17 +198,23 @@ func closureJournalPath(t *testing.T, workspace string) string {
 	return matches[0]
 }
 
-func assertClosureJournalTracked(t *testing.T, workspace string) {
+// assertClosureJournalNeverTracked checks that git never tracks the journal.
+// The ledger is in the git common directory (ADR-0013), so adding the
+// journal, or everything, stages nothing, and status never lists the ledger.
+func assertClosureJournalNeverTracked(t *testing.T, workspace string) {
 	t.Helper()
 
-	journalPath := closureJournalPath(t, workspace)
-	relative, err := filepath.Rel(workspace, journalPath)
-	if err != nil {
-		t.Fatalf("relative journal path: %v", err)
+	relative := workspaceRelative(t, workspace, closureJournalPath(t, workspace))
+	closureRun(t, workspace, "git", "add", "--", relative)
+	closureRun(t, workspace, "git", "add", "--all")
+	if stdout, _, err := closureRunCommand(workspace, "git", "ls-files", "--error-unmatch", "--", relative); err == nil {
+		t.Fatalf("journal %q is tracked: %q", relative, stdout)
 	}
-	stdout, _ := closureRun(t, workspace, "git", "ls-files", "--error-unmatch", "--", filepath.ToSlash(relative))
-	if strings.TrimSpace(stdout) != filepath.ToSlash(relative) {
-		t.Fatalf("tracked journal = %q, want %q", stdout, filepath.ToSlash(relative))
+	ledger := workspaceRelative(t, workspace, config.LedgerDir(workspace))
+	tracked, _ := closureRun(t, workspace, "git", "ls-files", "--cached")
+	status, _ := closureRun(t, workspace, "git", "status", "--porcelain", "--ignored", "--untracked-files=all")
+	if strings.Contains(tracked, ledger) || strings.Contains(status, ledger) {
+		t.Fatalf("git lists the ledger %q: tracked %q, status %q", ledger, tracked, status)
 	}
 }
 

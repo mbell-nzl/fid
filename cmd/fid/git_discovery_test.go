@@ -19,8 +19,20 @@ import (
 func TestEveryProjectCommandRefusesOutsideAGitRepository(t *testing.T) {
 	t.Parallel()
 	outside := clonePristineWorkspace(t)
+	ledger := filepath.Join(t.TempDir(), "ledger")
+	if err := os.Rename(config.LedgerDir(outside), ledger); err != nil {
+		t.Fatalf("move the ledger aside: %v", err)
+	}
 	if err := os.RemoveAll(filepath.Join(outside, ".git")); err != nil {
 		t.Fatalf("remove .git: %v", err)
+	}
+	// Put the ledger back where LedgerDir looks. A .git directory that holds
+	// only the ledger is not a repository, so git finds none here.
+	if err := os.MkdirAll(filepath.Dir(config.LedgerDir(outside)), 0o755); err != nil {
+		t.Fatalf("create the ledger's parent: %v", err)
+	}
+	if err := os.Rename(ledger, config.LedgerDir(outside)); err != nil {
+		t.Fatalf("put the ledger back: %v", err)
 	}
 	inputs := t.TempDir()
 	cases := projectCommandRefusalCases(t, outside, inputs)
@@ -302,9 +314,13 @@ func TestALedgerBelowTheTopLevelIsNotAProject(t *testing.T) {
 	if err := os.Mkdir(nested, 0o755); err != nil {
 		t.Fatalf("Mkdir(nested) error = %v", err)
 	}
-	clonePristineWorkspaceInto(t, nested)
-	if err := os.RemoveAll(filepath.Join(nested, ".git")); err != nil {
-		t.Fatalf("remove nested .git: %v", err)
+	// nested is not a repository, so this is where its ledger would be if it
+	// were one: below the top level, where fid never looks.
+	if err := os.MkdirAll(config.LedgerDir(nested), 0o755); err != nil {
+		t.Fatalf("create nested ledger: %v", err)
+	}
+	if err := copyWorkspaceTree(config.LedgerDir(pristineWorkspaceRoot), config.LedgerDir(nested)); err != nil {
+		t.Fatalf("copy the pristine ledger below the top level: %v", err)
 	}
 	for _, directory := range []string{workspace, nested} {
 		result := executeCommandForTest(directory, "--json", "issue", "list")
@@ -337,8 +353,8 @@ func TestInitFromASubdirectoryInitializesTheTopLevel(t *testing.T) {
 		if _, err := os.Stat(filepath.Join(config.LedgerDir(workspace), "config.toml")); err != nil {
 			t.Fatalf("top-level ledger: %v", err)
 		}
-		if _, err := os.Stat(config.LedgerDir(nested)); !os.IsNotExist(err) {
-			t.Fatalf("subdirectory ledger = %v, want none", err)
+		if entries, err := os.ReadDir(nested); err != nil || len(entries) != 0 {
+			t.Fatalf("subdirectory holds %v (%v), want nothing from init", entries, err)
 		}
 	}
 }

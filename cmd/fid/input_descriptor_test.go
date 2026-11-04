@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/cli"
-	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
@@ -439,8 +438,8 @@ func TestAttentionResolveIntegerBoundWritesJSONFailure(t *testing.T) {
 		!reflect.DeepEqual(envelope.Error.Details.Allowed, []string{"integer range 1..unbounded"}) {
 		t.Fatalf("unexpected structural failure: %s", result.stderr)
 	}
-	if _, err := os.Stat(config.LedgerDir(workspace)); !os.IsNotExist(err) {
-		t.Fatalf("structural failure touched workspace: %v", err)
+	if entries, err := os.ReadDir(workspace); err != nil || len(entries) != 1 || entries[0].Name() != "request.json" {
+		t.Fatalf("structural failure touched workspace: %v, %v; want only request.json", entries, err)
 	}
 }
 
@@ -1258,8 +1257,8 @@ func TestP24ReviewAndFindingDescriptorHelpAndStructure(t *testing.T) {
 						t.Fatalf("structural failure = %#v", result)
 					}
 					assertAdoptedJSONFailure(t, result.stderr, descriptor.Operation, test.path, invalid.Value, invalid.Allowed)
-					if _, err := os.Stat(config.LedgerDir(workspace)); !os.IsNotExist(err) {
-						t.Fatalf("structural failure changed workspace: %v", err)
+					if entries, err := os.ReadDir(workspace); err != nil || len(entries) != 1 || entries[0].Name() != "input.json" {
+						t.Fatalf("structural failure changed workspace: %v, %v; want only input.json", entries, err)
 					}
 				})
 			}
@@ -1287,8 +1286,8 @@ func TestP24ReviewAndFindingDescriptorHelpAndStructure(t *testing.T) {
 						t.Fatalf("duplicate failure = %#v", result)
 					}
 					assertAdoptedJSONFailure(t, result.stderr, descriptor.Operation, test.path, invalid.Value, invalid.Allowed)
-					if _, err := os.Stat(config.LedgerDir(workspace)); !os.IsNotExist(err) {
-						t.Fatalf("duplicate failure changed workspace: %v", err)
+					if entries, err := os.ReadDir(workspace); err != nil || len(entries) != 1 || entries[0].Name() != "input.json" {
+						t.Fatalf("duplicate failure changed workspace: %v, %v; want only input.json", entries, err)
 					}
 				})
 			}

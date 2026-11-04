@@ -358,7 +358,7 @@ func TestWriteBootstrapFilesRoundTripsDefaultConfig(t *testing.T) {
 		t.Fatalf("gpt-5.4-mini pricing = %+v, want {InPerMTok:0.375 OutPerMTok:2.25}", got)
 	}
 
-	if paths.DatabasePath != filepath.Join(workspace, WorkspaceDirName, DatabaseFileName) {
-		t.Fatalf("database path = %q, want %q", paths.DatabasePath, filepath.Join(workspace, WorkspaceDirName, DatabaseFileName))
+	if paths.DatabasePath != filepath.Join(workspace, ".git", LedgerDirName, DatabaseFileName) {
+		t.Fatalf("database path = %q, want %q", paths.DatabasePath, filepath.Join(workspace, ".git", LedgerDirName, DatabaseFileName))
 	}
 }

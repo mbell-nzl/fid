@@ -178,6 +178,32 @@ func TestImportBindingRejectsAlteredHistoryIdentity(t *testing.T) {
 	}
 }
 
+// Every worktree of a repository shares its ledger, so an imported ledger's
+// binding reads from each of them, still naming the worktree it was imported
+// into. A ledger moved into another repository is still refused.
+func TestImportBindingReadsFromEveryWorktreeThatSharesTheLedger(t *testing.T) {
+	t.Parallel()
+	archive, target := boundaryImportFixture(t)
+	if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "binding"}); err != nil {
+		t.Fatal(err)
+	}
+	linked := gittest.AddWorktree(t, target)
+	binding, err := config.ReadImportBinding(linked)
+	if err != nil {
+		t.Fatalf("read the binding from a linked worktree: %v", err)
+	}
+	if binding.TargetRoot != target {
+		t.Fatalf("binding target root = %q, want the import's target %q", binding.TargetRoot, target)
+	}
+	other := gittest.NewWorkspace(t)
+	if err := os.Rename(config.LedgerDir(target), config.LedgerDir(other)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := config.ReadImportBinding(other); err == nil {
+		t.Error("a ledger moved into another repository still qualifies its binding")
+	}
+}
+
 func boundaryImportFixture(t *testing.T) (string, string) {
 	t.Helper()
 	source := gittest.NewWorkspace(t)

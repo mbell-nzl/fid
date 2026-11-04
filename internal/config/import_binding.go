@@ -49,7 +49,9 @@ func ReadImportBinding(workspaceRoot string) (ImportBinding, error) {
 	if err := json.Unmarshal(data, &binding); err != nil || binding.ProjectID == "" || binding.TargetRoot == "" || binding.ArchiveDigest == "" || binding.IdempotencyKey == "" || len(binding.ImportedEventIDs) == 0 {
 		return ImportBinding{}, fmt.Errorf("read import binding: invalid delivery metadata")
 	}
-	if binding.TargetRoot != root {
+	// Every worktree of a repository shares its ledger, so the binding belongs
+	// to any root whose ledger is the one the import installed.
+	if binding.TargetRoot != root && LedgerDir(binding.TargetRoot) != workspace {
 		return ImportBinding{}, fmt.Errorf("read import binding: target root does not match workspace")
 	}
 	project, err := ReadProjectConfig(filepath.Join(workspace, ConfigFileName))

@@ -4,9 +4,11 @@ package integration
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -20,7 +22,7 @@ func TestV01ParityGoldenOutputs(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := gittest.NewWorkspace(t)
-	copyParityFixture(t, filepath.Join("..", "testdata", "v01_parity", "fixture"), workspace)
+	migrateParityFixture(t, workspace)
 	for _, args := range [][]string{{"--json", "issue", "get", "FID-a10001"}, {"--json", "issue", "get", "FID-b20002"}, {"--json", "issue", "get", "FID-c30003"}, {"--json", "issue", "list", "--kind", "epic"}, {"--json", "issue", "list", "--kind", "task"}, {"--json", "issue", "list", "--kind", "subtask"}} {
 		got, _ := closureRunFID(t, binary, workspace, args...)
 		if !strings.Contains(got, `"contract_version":"fid-cli.v1"`) || !strings.Contains(got, `"event":null`) {
@@ -33,7 +35,7 @@ func TestV01ParityFixtureRebuildPreservesEveryProjectionTable(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := gittest.NewWorkspace(t)
-	copyParityFixture(t, filepath.Join("..", "testdata", "v01_parity", "fixture"), workspace)
+	migrateParityFixture(t, workspace)
 
 	// A read materializes the live projection from the regenerated fixture journal.
 	closureRunFID(t, binary, workspace, "--json", "issue", "get", "FID-a10001")
@@ -44,6 +46,35 @@ func TestV01ParityFixtureRebuildPreservesEveryProjectionTable(t *testing.T) {
 	if before != after {
 		t.Fatalf("fixture projection after rebuild differs:\n%s", parityDiff([]byte(before), []byte(after)))
 	}
+}
+
+// TestALedgerLeftInTheWorktreeIsIgnoredUntilMovedByHand covers the
+// no-migration decision (D4 / F1): fid ignores a ledger left in .fid, where V1
+// kept it, and moving it into the git common directory by hand, as the config
+// spec says, keeps it.
+func TestALedgerLeftInTheWorktreeIsIgnoredUntilMovedByHand(t *testing.T) {
+	t.Parallel()
+	binary := integrationFIDBinary(t)
+	workspace := gittest.NewWorkspace(t)
+	copyParityFixture(t, filepath.Join("..", "testdata", "v01_parity", "fixture"), workspace)
+	_, stderr, err := closureRunFIDExpectError(t, binary, workspace, "--json", "issue", "get", "FID-a10001")
+	var exited *exec.ExitError
+	if !errors.As(err, &exited) || exited.ExitCode() != 3 || !strings.Contains(stderr, `"code":"project-not-found"`) {
+		t.Fatalf("issue get with the ledger left in .fid = %v, %q; want project-not-found", err, stderr)
+	}
+	closureRun(t, workspace, "mv", ".fid", ".git/fid")
+	if got, _ := closureRunFID(t, binary, workspace, "--json", "issue", "get", "FID-a10001"); !strings.Contains(got, `"id":"FID-a10001"`) {
+		t.Fatalf("issue get after moving the ledger = %q", got)
+	}
+}
+
+// migrateParityFixture installs the V1 parity fixture, a V1 workspace with
+// its ledger in .fid, in workspace, and moves the ledger into the git common
+// directory by hand, as the config spec says.
+func migrateParityFixture(t *testing.T, workspace string) {
+	t.Helper()
+	copyParityFixture(t, filepath.Join("..", "testdata", "v01_parity", "fixture"), workspace)
+	closureRun(t, workspace, "mv", ".fid", ".git/fid")
 }
 
 func parityProjectionDump(t *testing.T, dbPath string) string {

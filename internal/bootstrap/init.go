@@ -80,9 +80,9 @@ func initializeWorkspaceWithHooks(options InitOptions, hooks initHooks) (InitRes
 		return InitResult{}, err
 	}
 
-	stagingRoot, err := os.MkdirTemp(plan.workspaceRoot, ".fid-staging-")
+	stagingRoot, stagedLedger, err := config.NewLedgerStaging(plan.targetPaths.WorkspaceDir)
 	if err != nil {
-		return InitResult{}, fmt.Errorf("create staging directory: %w", err)
+		return InitResult{}, err
 	}
 	activated := false
 	defer func() {
@@ -91,15 +91,15 @@ func initializeWorkspaceWithHooks(options InitOptions, hooks initHooks) (InitRes
 		}
 	}()
 
-	stagePaths, err := stageWorkspace(stagingRoot, plan.projectConfig, hooks)
+	stagePaths, err := stageWorkspace(stagedLedger, plan.projectConfig, hooks)
 	if err != nil {
 		return InitResult{}, err
 	}
-	result, err := initializeStagedWorkspace(stagingRoot, stagePaths.DatabasePath, plan, hooks)
+	result, err := initializeStagedWorkspace(stagedLedger, stagePaths.DatabasePath, plan, hooks)
 	if err != nil {
 		return InitResult{}, err
 	}
-	if err := verifyStagedRebuild(stagingRoot, stagePaths.DatabasePath, plan.migrationsDir, hooks); err != nil {
+	if err := verifyStagedRebuild(stagedLedger, stagePaths.DatabasePath, plan.migrationsDir, hooks); err != nil {
 		return InitResult{}, err
 	}
 	if err := syncStagedWorkspace(stagePaths.WorkspaceDir); err != nil {
@@ -115,7 +115,7 @@ func initializeWorkspaceWithHooks(options InitOptions, hooks initHooks) (InitRes
 		return InitResult{}, err
 	}
 	activated = true
-	if err := finishActivation(stagingRoot, plan.workspaceRoot); err != nil {
+	if err := finishActivation(stagingRoot, filepath.Dir(plan.targetPaths.WorkspaceDir)); err != nil {
 		return InitResult{}, err
 	}
 	result.ProjectID = plan.projectConfig.ProjectID
@@ -157,8 +157,8 @@ func prepareInitialization(options InitOptions) (initPlan, error) {
 	return initPlan{workspaceRoot, targetPaths, projectConfig, prefix, explicit, options.MigrationsDir}, nil
 }
 
-func stageWorkspace(stagingRoot string, projectConfig config.ProjectConfig, hooks initHooks) (config.WorkspacePaths, error) {
-	stagePaths, err := config.WriteBootstrapFiles(stagingRoot, projectConfig, config.DefaultPricingConfig())
+func stageWorkspace(stagedLedger string, projectConfig config.ProjectConfig, hooks initHooks) (config.WorkspacePaths, error) {
+	stagePaths, err := config.WriteLedgerFiles(stagedLedger, projectConfig, config.DefaultPricingConfig())
 	if err != nil {
 		return config.WorkspacePaths{}, err
 	}
@@ -171,14 +171,14 @@ func stageWorkspace(stagingRoot string, projectConfig config.ProjectConfig, hook
 	return stagePaths, nil
 }
 
-func initializeStagedWorkspace(stagingRoot, databasePath string, plan initPlan, hooks initHooks) (InitResult, error) {
+func initializeStagedWorkspace(stagedLedger, databasePath string, plan initPlan, hooks initHooks) (InitResult, error) {
 	if err := fiddb.MigrateUp(databasePath, plan.migrationsDir); err != nil {
 		return InitResult{}, err
 	}
 	if err := runInitHook(hooks, initStageSchemaInitialized); err != nil {
 		return InitResult{}, err
 	}
-	result, err := initializeJournaledState(stagingRoot, databasePath, plan.targetPaths.JournalDir, plan.projectConfig.ProjectID, plan.prefix)
+	result, err := initializeJournaledState(stagedLedger, databasePath, plan.targetPaths.JournalDir, plan.projectConfig.ProjectID, plan.prefix)
 	if err != nil {
 		return InitResult{}, err
 	}
@@ -188,12 +188,12 @@ func initializeStagedWorkspace(stagingRoot, databasePath string, plan initPlan, 
 	return result, nil
 }
 
-func verifyStagedRebuild(stagingRoot, databasePath, migrationsDir string, hooks initHooks) error {
+func verifyStagedRebuild(stagedLedger, databasePath, migrationsDir string, hooks initHooks) error {
 	beforeRebuild, err := os.ReadFile(databasePath)
 	if err != nil {
 		return fmt.Errorf("read staged projection before rebuild: %w", err)
 	}
-	if _, err := journal.RebuildWorkspace(stagingRoot, migrationsDir); err != nil {
+	if _, err := journal.RebuildLedger(stagedLedger, migrationsDir); err != nil {
 		return fmt.Errorf("rebuild staged projection: %w", err)
 	}
 	if err := runInitHook(hooks, initStageRebuilt); err != nil {
@@ -209,12 +209,12 @@ func verifyStagedRebuild(stagingRoot, databasePath, migrationsDir string, hooks 
 	return runInitHook(hooks, initStageCompared)
 }
 
-func finishActivation(stagingRoot, workspaceRoot string) error {
+func finishActivation(stagingRoot, commonDir string) error {
 	if err := os.Remove(stagingRoot); err != nil {
 		return fmt.Errorf("remove empty staging directory: %w", err)
 	}
-	if err := syncPath(workspaceRoot); err != nil {
-		return fmt.Errorf("sync workspace root: %w", err)
+	if err := syncPath(commonDir); err != nil {
+		return fmt.Errorf("sync git common directory: %w", err)
 	}
 	return nil
 }
@@ -227,10 +227,6 @@ func runInitHook(hooks initHooks, stage initStage) error {
 		return fmt.Errorf("initialize stage %s: %w", stage, err)
 	}
 	return nil
-}
-
-func isStagingDirectoryName(name string) bool {
-	return strings.HasPrefix(name, ".fid-staging-")
 }
 
 func activateStagedWorkspace(stagedWorkspace, target string) error {
@@ -288,11 +284,11 @@ func DefaultPrefix(workspaceRoot string) string {
 }
 
 // initializeJournaledState appends and projects the genesis Event in the
-// staged ledger at workspaceRoot. The result names the journal file by its
+// staged ledger at stagedLedger. The result names the journal file by its
 // absolute path under targetJournalDir, where it lives once activated.
-func initializeJournaledState(workspaceRoot, dbPath, targetJournalDir, projectID, prefix string) (InitResult, error) {
+func initializeJournaledState(stagedLedger, dbPath, targetJournalDir, projectID, prefix string) (InitResult, error) {
 	var result InitResult
-	err := journal.WithLock(workspaceRoot, journal.LockOwner{Command: "fid init"}, func(lock *journal.WriteLock) error {
+	err := journal.WithLedgerLock(stagedLedger, journal.LockOwner{Command: "fid init"}, func(lock *journal.WriteLock) error {
 		event := BuildProjectInitializedEvent(projectID)
 		appended, err := journal.AppendEvent(lock, event)
 		if err != nil {
@@ -305,7 +301,7 @@ func initializeJournaledState(workspaceRoot, dbPath, targetJournalDir, projectID
 		}
 
 		journalFile := appended.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
-		journalPath := filepath.Join(config.LedgerDir(workspaceRoot), config.JournalDirName, journalFile)
+		journalPath := filepath.Join(stagedLedger, config.JournalDirName, journalFile)
 		info, err := os.Stat(journalPath)
 		if err != nil {
 			return fmt.Errorf("stat bootstrap journal %q: %w", journalPath, err)

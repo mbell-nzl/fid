@@ -10,12 +10,21 @@ import (
 )
 
 const (
-	WorkspaceDirName = ".fid"
 	JournalDirName   = "journal"
 	ConfigFileName   = "config.toml"
 	PricingFileName  = "pricing.toml"
 	DatabaseFileName = "fid.sqlite"
 	GitIgnoreName    = ".gitignore"
+)
+
+const (
+	// LedgerDirName is the ledger's name in the git common directory. Before
+	// ADR-0013 the ledger was .fid in the worktree; fid ignores a directory of
+	// that name left there.
+	LedgerDirName = "fid"
+	// LedgerStagingPrefix starts the name of a directory, beside the ledger,
+	// that init and import fill before they rename it into place.
+	LedgerStagingPrefix = "fid-staging-"
 )
 
 type ModelPricing struct {
@@ -81,23 +90,72 @@ func DefaultPricingConfig() PricingConfig {
 	}
 }
 
-// LedgerDir returns the directory that holds the ledger of the project at
-// root: its journal, projection, config, artifacts and write lock. It is the
-// only place that decides where the ledger lives; every ledger path starts
-// from it.
+// LedgerDir returns the directory that holds the ledger of the project whose
+// worktree top level is root: its journal, projection, config, artifacts and
+// write lock. It is the only place that decides where the ledger lives; every
+// ledger path starts from it.
+//
+// The ledger is the fid directory in the git common directory, so every
+// worktree of a repository shares it and git never tracks it (ADR-0013).
+// LedgerDir finds the common directory by reading root's .git entry as git
+// does, without running git: a directory, or a file naming the git
+// directory, plus that directory's commondir file. It returns no error: where
+// root has no .git entry it can read, it names root/.git/fid, where a main
+// worktree keeps the ledger.
 func LedgerDir(root string) string {
-	return filepath.Join(root, WorkspaceDirName)
+	return filepath.Join(gitCommonDir(root), LedgerDirName)
+}
+
+func gitCommonDir(root string) string {
+	gitDir := filepath.Join(root, ".git")
+	if info, err := os.Stat(gitDir); err == nil && info.Mode().IsRegular() {
+		data, err := os.ReadFile(gitDir)
+		named, ok := strings.CutPrefix(strings.TrimRight(string(data), "\r\n"), "gitdir: ")
+		if err != nil || !ok || named == "" {
+			return gitDir
+		}
+		if !filepath.IsAbs(named) {
+			named = filepath.Join(root, named)
+		}
+		gitDir = filepath.Clean(named)
+	}
+	data, err := os.ReadFile(filepath.Join(gitDir, "commondir"))
+	common := strings.TrimRight(string(data), "\r\n")
+	if err != nil || common == "" {
+		return gitDir
+	}
+	if !filepath.IsAbs(common) {
+		common = filepath.Join(gitDir, common)
+	}
+	return filepath.Clean(common)
+}
+
+// NewLedgerStaging creates a staging directory beside ledgerDir, in the git
+// common directory, so a ledger staged in it renames into place on the same
+// filesystem. It returns the staging directory, which the caller removes, and
+// the path inside it to stage the ledger at.
+func NewLedgerStaging(ledgerDir string) (staging, stagedLedger string, err error) {
+	staging, err = os.MkdirTemp(filepath.Dir(ledgerDir), LedgerStagingPrefix)
+	if err != nil {
+		return "", "", fmt.Errorf("create staging directory: %w", err)
+	}
+	return staging, filepath.Join(staging, LedgerDirName), nil
 }
 
 func WorkspacePathsForRoot(workspaceRoot string) WorkspacePaths {
-	workspaceDir := LedgerDir(workspaceRoot)
+	return LedgerPaths(LedgerDir(workspaceRoot))
+}
+
+// LedgerPaths names the files of the ledger at ledgerDir. A staging directory
+// has no .git, so code that fills one names its files from here.
+func LedgerPaths(ledgerDir string) WorkspacePaths {
 	return WorkspacePaths{
-		WorkspaceDir: workspaceDir,
-		JournalDir:   filepath.Join(workspaceDir, JournalDirName),
-		ConfigPath:   filepath.Join(workspaceDir, ConfigFileName),
-		PricingPath:  filepath.Join(workspaceDir, PricingFileName),
-		DatabasePath: filepath.Join(workspaceDir, DatabaseFileName),
-		GitIgnore:    filepath.Join(workspaceDir, GitIgnoreName),
+		WorkspaceDir: ledgerDir,
+		JournalDir:   filepath.Join(ledgerDir, JournalDirName),
+		ConfigPath:   filepath.Join(ledgerDir, ConfigFileName),
+		PricingPath:  filepath.Join(ledgerDir, PricingFileName),
+		DatabasePath: filepath.Join(ledgerDir, DatabaseFileName),
+		GitIgnore:    filepath.Join(ledgerDir, GitIgnoreName),
 	}
 }
 
@@ -105,11 +163,20 @@ func WriteBootstrapFiles(workspaceRoot string, project ProjectConfig, pricing Pr
 	if strings.TrimSpace(workspaceRoot) == "" {
 		return WorkspacePaths{}, fmt.Errorf("write bootstrap files: workspace root is required")
 	}
-	if err := validateProjectConfig(project, pathsForConfigRoot(workspaceRoot)); err != nil {
+	return WriteLedgerFiles(LedgerDir(workspaceRoot), project, pricing)
+}
+
+// WriteLedgerFiles writes a new ledger's config, pricing and .gitignore into
+// ledgerDir, and creates its journal directory.
+func WriteLedgerFiles(ledgerDir string, project ProjectConfig, pricing PricingConfig) (WorkspacePaths, error) {
+	if strings.TrimSpace(ledgerDir) == "" {
+		return WorkspacePaths{}, fmt.Errorf("write bootstrap files: ledger directory is required")
+	}
+	if err := validateProjectConfig(project, ledgerDir); err != nil {
 		return WorkspacePaths{}, fmt.Errorf("write bootstrap files: %w", err)
 	}
 
-	paths := WorkspacePathsForRoot(workspaceRoot)
+	paths := LedgerPaths(ledgerDir)
 	if err := os.MkdirAll(paths.JournalDir, 0o755); err != nil {
 		return WorkspacePaths{}, fmt.Errorf("create journal directory %q: %w", paths.JournalDir, err)
 	}

@@ -110,7 +110,7 @@ func TestResolveIgnoresALedgerBelowTheTopLevel(t *testing.T) {
 	repository := newDiscoveryRepository(t)
 	nested := filepath.Join(repository, "nested")
 	if err := os.MkdirAll(config.LedgerDir(nested), 0o755); err != nil {
-		t.Fatalf("MkdirAll(nested .fid) error = %v", err)
+		t.Fatalf("MkdirAll(nested ledger) error = %v", err)
 	}
 	for _, start := range []string{repository, nested} {
 		if _, err := Resolve(start); !errors.Is(err, ErrNotFound) {
@@ -122,8 +122,8 @@ func TestResolveIgnoresALedgerBelowTheTopLevel(t *testing.T) {
 func TestResolveRefusesOutsideAGitRepositoryEvenWithALedger(t *testing.T) {
 	t.Parallel()
 	start := t.TempDir()
-	if err := os.Mkdir(config.LedgerDir(start), 0o755); err != nil {
-		t.Fatalf("Mkdir(.fid) error = %v", err)
+	if err := os.MkdirAll(config.LedgerDir(start), 0o755); err != nil {
+		t.Fatalf("MkdirAll(ledger) error = %v", err)
 	}
 	if _, err := Resolve(start); !errors.Is(err, ErrNotARepository) {
 		t.Fatalf("Resolve(outside) error = %v, want ErrNotARepository", err)
@@ -134,8 +134,8 @@ func TestResolveRejectsSymlinkedFIDDirectory(t *testing.T) {
 	t.Parallel()
 	repository := newDiscoveryRepository(t)
 	outside := t.TempDir()
-	if err := os.Mkdir(config.LedgerDir(outside), 0o755); err != nil {
-		t.Fatalf("Mkdir(outside .fid) error = %v", err)
+	if err := os.MkdirAll(config.LedgerDir(outside), 0o755); err != nil {
+		t.Fatalf("MkdirAll(outside ledger) error = %v", err)
 	}
 	if err := os.Symlink(config.LedgerDir(outside), config.LedgerDir(repository)); err != nil {
 		t.Fatalf("Symlink() error = %v", err)

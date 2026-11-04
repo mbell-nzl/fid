@@ -26,7 +26,9 @@ func TestRecoveryUsesImmutableClaimScopeForOrdinaryAndForceAdoption(t *testing.T
 			if kind == "force-protected" {
 				name = ".fid/recovery-protected"
 			}
-			mustRecoveryTest(t, os.WriteFile(filepath.Join(options.WorkspaceRoot, name), []byte("precise adopted bytes"), 0o644))
+			path := filepath.Join(options.WorkspaceRoot, name)
+			mustRecoveryTest(t, os.MkdirAll(filepath.Dir(path), 0o755))
+			mustRecoveryTest(t, os.WriteFile(path, []byte("precise adopted bytes"), 0o644))
 			current, err := project.ObserveRepository(options.WorkspaceRoot)
 			mustRecoveryTest(t, err)
 			prior, err := GetRun(options.WorkspaceRoot, options.MigrationsDir, request.PriorRunID)

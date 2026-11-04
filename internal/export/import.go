@@ -111,18 +111,18 @@ func Import(options ImportOptions) (ImportResult, error) {
 		if err := ensureEmptyImportTarget(target); err != nil {
 			return err
 		}
-		stage, err := os.MkdirTemp(target, ".fid-import-stage-")
+		staging, stage, err := config.NewLedgerStaging(config.LedgerDir(target))
 		if err != nil {
 			return fmt.Errorf("import: create stage: %w", err)
 		}
-		defer func() { _ = os.RemoveAll(stage) }()
-		if _, err := config.WriteBootstrapFiles(stage, projectConfig, config.DefaultPricingConfig()); err != nil {
+		defer func() { _ = os.RemoveAll(staging) }()
+		if _, err := config.WriteLedgerFiles(stage, projectConfig, config.DefaultPricingConfig()); err != nil {
 			return fmt.Errorf("import: create staged configuration: %w", err)
 		}
 		if err := stageArchive(stage, projectConfig, manifest, snapshot); err != nil {
 			return err
 		}
-		if _, err := journal.RebuildWorkspace(stage, options.MigrationsDir); err != nil {
+		if _, err := journal.RebuildLedger(stage, options.MigrationsDir); err != nil {
 			return fmt.Errorf("import: rebuild staged projection: %w", err)
 		}
 		binding := config.ImportBinding{ArchiveDigest: digestBefore, IdempotencyKey: options.IdempotencyKey, ProjectID: result.ProjectID, TargetRoot: target, ImportedEventIDs: importedEventIDs}
@@ -131,25 +131,25 @@ func Import(options ImportOptions) (ImportResult, error) {
 				binding.JournalEntries = append(binding.JournalEntries, config.ImportJournalEntry{Name: strings.TrimPrefix(entry.Path, "journal/"), Digest: entry.Digest, SizeBytes: entry.SizeBytes})
 			}
 		}
-		if err := writeImportMarker(filepath.Join(config.LedgerDir(stage), importMarkerName), importMarker{ImportBinding: binding, Result: result}); err != nil {
+		if err := writeImportMarker(filepath.Join(stage, importMarkerName), importMarker{ImportBinding: binding, Result: result}); err != nil {
 			return err
 		}
 		if err := callImportFault(options.Fault, ImportBeforeDurability); err != nil {
 			return err
 		}
-		if err := syncTree(config.LedgerDir(stage)); err != nil {
+		if err := syncTree(stage); err != nil {
 			return err
 		}
 		if err := callImportFault(options.Fault, ImportBeforePublication); err != nil {
 			return err
 		}
-		if err := publishImport(config.LedgerDir(stage), config.LedgerDir(target)); err != nil {
+		if err := publishImport(stage, target); err != nil {
 			return err
 		}
 		if err := callImportFault(options.Fault, ImportAfterRename); err != nil {
 			return err
 		}
-		if err := syncPath(target); err != nil {
+		if err := syncPath(filepath.Dir(config.LedgerDir(target))); err != nil {
 			return err
 		}
 		return callImportFault(options.Fault, ImportAfterPublication)
@@ -234,6 +234,8 @@ func importArchive(path string) (manifest, []string, error) {
 	return decoded, ids, nil
 }
 
+// stageArchive writes the archive's journal and artifacts into the staged
+// ledger at stage.
 func stageArchive(stage string, project config.ProjectConfig, manifest manifest, archivePath string) error {
 	input, err := os.Open(archivePath)
 	if err != nil {
@@ -286,10 +288,10 @@ func stageArchive(stage string, project config.ProjectConfig, manifest manifest,
 
 func stagedArchivePath(stage string, project config.ProjectConfig, entryPath string) (string, error) {
 	if strings.HasPrefix(entryPath, "journal/") {
-		return filepath.Join(config.LedgerDir(stage), config.JournalDirName, strings.TrimPrefix(entryPath, "journal/")), nil
+		return filepath.Join(stage, config.JournalDirName, strings.TrimPrefix(entryPath, "journal/")), nil
 	}
 	if strings.HasPrefix(entryPath, "artifacts/") {
-		return filepath.Join(config.LedgerDir(stage), project.ArtifactRoot, strings.TrimPrefix(entryPath, "artifacts/")), nil
+		return filepath.Join(stage, project.ArtifactRoot, strings.TrimPrefix(entryPath, "artifacts/")), nil
 	}
 	return "", fmt.Errorf("import: unsupported archive entry %q", entryPath)
 }
