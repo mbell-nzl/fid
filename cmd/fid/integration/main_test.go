@@ -22,6 +22,10 @@ func TestMain(m *testing.M) {
 }
 
 func runIntegrationSuite(m interface{ Run() int }) int {
+	if err := guardGitDiscovery(integrationRepositoryRoot()); err != nil {
+		fmt.Fprintf(os.Stderr, "guard git discovery: %v\n", err)
+		return 1
+	}
 	if binary := os.Getenv(integrationBinaryEnv); binary != "" {
 		if info, err := os.Stat(binary); err == nil && !info.IsDir() {
 			integrationBinary = binary

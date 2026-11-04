@@ -65,7 +65,7 @@ var p24CodeRows = map[string]p24CodeFactory{
 	"invalid-argument":      p24SimplePair("stop.raise", "stop", "raise", "--bogus"),
 	"operation-unavailable": p24SimplePair("fid", "isue"),
 	"project-not-found": func(t *testing.T, _ string) p24CodePair {
-		return p24CodePair{t.TempDir(), "activity.list", []string{"activity", "list"}}
+		return p24CodePair{newGitWorkspace(t), "activity.list", []string{"activity", "list"}}
 	},
 	"project-already-initialized": p24SimplePair("project.init", "init", "--prefix", "P24"),
 	"issue-not-found":             p24SimplePair("issue.get", "issue", "get", "FID-missing"),
@@ -200,7 +200,7 @@ func TestP24RegisteredCodePairs(t *testing.T) {
 func p24SimplePair(operation string, args ...string) p24CodeFactory {
 	return func(t *testing.T, _ string) p24CodePair {
 		t.Helper()
-		root := t.TempDir()
+		root := newGitWorkspace(t)
 		p21Run(t, integrationFIDBinary(t), root, "init", "--prefix", "P24", "--json")
 		return p24CodePair{root, operation, args}
 	}
@@ -208,7 +208,7 @@ func p24SimplePair(operation string, args ...string) p24CodeFactory {
 
 func p24IssueCodePair(t *testing.T, code string) p24CodePair {
 	t.Helper()
-	root, binary := t.TempDir(), integrationFIDBinary(t)
+	root, binary := newGitWorkspace(t), integrationFIDBinary(t)
 	p21Run(t, binary, root, "init", "--prefix", "P24", "--json")
 	create := func(title string) string {
 		t.Helper()

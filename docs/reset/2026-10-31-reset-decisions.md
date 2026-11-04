@@ -158,6 +158,42 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     tracked" rather than deleting it.
   - The ledger keeps its `.gitignore` (`fid.sqlite`) for now, though it means
     nothing under `.git/`. Dropping it would change the ledger's contents.
+- **Details** (decided 4 November 2026, for task 1.1c):
+  - 1.1c is split, for the same reason as 1.1b: the test changes would bury
+    the behaviour change.
+    - 1.1c1 (Routine, raised to Assured): test workspaces become guarded
+      git repos, with no change in behaviour. Mark also agreed to raise the
+      CI `go test` limit in the same PR, which makes it Assured (see the
+      later list).
+    - 1.1c2 (Standard): discovery goes through git, and fid refuses outside
+      a repository.
+  - Today the CLI never walks up. Every command passes the working
+    directory to `project.Resolve` as if it were `--project`, so the
+    directory must directly contain `.fid`.
+  - The project root is the worktree's top level, from one
+    `git rev-parse --show-toplevel` run from the start directory. The ledger
+    is `<toplevel>/.fid` and nowhere else, and fid works from any
+    subdirectory of the worktree. A `.fid` in a subdirectory is no longer
+    found.
+  - `--project <path>` works like `git -C <path>`: discovery starts at
+    `<path>`, and the root is that path's top level. `export import
+    --repository` follows the same rule.
+  - `fid init` from a subdirectory initializes `<toplevel>/.fid`. The default
+    prefix comes from the top level's name.
+  - Outside a repository fid refuses with `repository-unavailable`
+    (precondition, exit 4), with details `reason: not-a-repository` and
+    `detail`. In a repository without a ledger it stays `project-not-found`
+    (exit 3).
+  - Every command that opens or creates a project refuses outside a
+    repository: those that resolve one today, the three that skip
+    resolution (`concern list`, `journal inspect`, `sql`), `init` and
+    `export import`. Commands that touch no project (`--help`, `completion`,
+    `export validate`) still work there.
+  - `project.root` in `init --json` and import's `target_root` resolve
+    symlinks, because git reports the real path.
+  - `GIT_CEILING_DIRECTORIES` stops git climbing above a directory, but git
+    still inspects the directory it starts in. So no test runs fid with a
+    real repository's root as its working directory.
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a
@@ -382,6 +418,15 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   test keeps catching.
 - Generic retry-exhausted, the Envelope revision-1 limit, dead-code cleanup.
 - yoyu migration (after the trial).
+- CI test time (from 1.1c1, 4 November 2026). `ci_tests.py` assigns tests
+  to shards by their position in a sorted list of names, so adding one test
+  reshuffles every shard. Each shard runs its `cmd/fid` tests as one
+  `go test` process under race and coverage, taking up to about 10 minutes.
+  1.1c1 raised the limit to 20 minutes as a stopgap. Two things to do:
+  balance shards by measured time, and review whether every test earns its
+  run time. By CI elapsed time (inflated by parallel contention), the
+  biggest are the descriptor and judgment corpora at 400-540 s each, and
+  the grammar corpora at 150-250 s each.
 
 ## Next steps
 

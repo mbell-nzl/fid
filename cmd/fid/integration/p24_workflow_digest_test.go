@@ -14,7 +14,7 @@ var p24WorkflowFields = map[string]string{"workflow.define": "--name", "workflow
 func TestP24WorkflowInputAsWrittenAndTwoFieldConflict(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "init", "--prefix", "P24")
 	define := []string{"--project", workspace, "--json", "workflow", "define", "--name", "task-p24", "--applies-to", "task", "--states", "todo,in_progress,done,cancelled", "--categories", "unstarted,started,completed,cancelled", "--transitions", "todo->in_progress,in_progress->done", "--actor", "agent:developer", "--idempotency-key", "p24-workflow-define"}
 	first := p24WorkflowCall(t, workspace, binary, define)

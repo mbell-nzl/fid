@@ -16,7 +16,7 @@ import (
 
 func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	eventIDs := map[string]bool{}
 
 	_, initEvent := p20JourneyMutation(t, workspace, "init", "--prefix", "P20")

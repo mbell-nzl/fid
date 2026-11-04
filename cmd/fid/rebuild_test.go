@@ -18,7 +18,7 @@ import (
 
 func TestRebuildJSONSucceedsWithoutActorAuthority(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 	journalPath := mustJournalPath(t, workspace)
 	beforeJournal, err := os.ReadFile(journalPath)
@@ -64,7 +64,7 @@ func TestRebuildJSONSucceedsWithoutActorAuthority(t *testing.T) {
 
 func TestRebuildRejectsRemovedByFlagWithoutMutation(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	journalPath := mustJournalPath(t, workspace)
@@ -105,7 +105,7 @@ func TestRebuildRejectsRemovedByFlagWithoutMutation(t *testing.T) {
 
 func TestRebuildRejectsEveryFormerByValueWithoutMutation(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 	journalPath := mustJournalPath(t, workspace)
 	beforeJournal, err := os.ReadFile(journalPath)
@@ -146,7 +146,7 @@ func TestRebuildRejectsEveryFormerByValueWithoutMutation(t *testing.T) {
 
 func TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 	journalPath := mustJournalPath(t, workspace)
 	beforeJournal, err := os.ReadFile(journalPath)
@@ -216,10 +216,7 @@ func TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork(t *testing.T) {
 func TestRebuildJSONMapsExplicitMissingProjectToSelectedPath(t *testing.T) {
 	t.Parallel()
 	workingDirectory := t.TempDir()
-	missingProject := filepath.Join(t.TempDir(), "missing-project")
-	if err := os.Mkdir(missingProject, 0o755); err != nil {
-		t.Fatalf("Mkdir(%q) error = %v", missingProject, err)
-	}
+	missingProject := newNamedGitWorkspace(t, "missing-project")
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -259,7 +256,7 @@ func TestRebuildJSONMapsExplicitMissingProjectToSelectedPath(t *testing.T) {
 
 func TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 	journalPath := mustJournalPath(t, workspace)
 	beforeJournal, err := os.ReadFile(journalPath)
@@ -348,7 +345,7 @@ func TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease(t *testing.T
 
 func TestRebuildJSONMapsReplayStopWithClosedDetails(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 	writeCommandFixture(t, workspace, "corrupt-tail.jsonl", "2026-06-05.jsonl")
 
@@ -461,7 +458,7 @@ func TestRebuildCommandReportsCorruptJournal(t *testing.T) {
 
 func TestRebuildCommandReportsPreconditionConflict(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 	writeCommandFixture(t, workspace, "conflicting-precondition.jsonl", "2026-06-05.jsonl")
 
@@ -497,7 +494,7 @@ func TestRebuildCommandReportsPreconditionConflict(t *testing.T) {
 func newRebuildWorkspace(t *testing.T) string {
 	t.Helper()
 
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	if err := os.MkdirAll(filepath.Join(config.LedgerDir(workspace), "journal"), 0o755); err != nil {
 		t.Fatalf("MkdirAll() error = %v", err)
 	}

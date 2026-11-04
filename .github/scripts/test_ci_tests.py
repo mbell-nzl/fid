@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 spec = importlib.util.spec_from_file_location("ci_tests", Path(__file__).with_name("ci_tests.py"))
 ci = importlib.util.module_from_spec(spec)
@@ -92,6 +93,26 @@ class ShardTests(unittest.TestCase):
                     mpath.write_text(json.dumps(m))
                 with self.assertRaises(ValueError):
                     ci.merge(root, 4, root / "combined.out")
+
+
+class ShardTimeoutTests(unittest.TestCase):
+    def test_shard_run_gives_go_test_more_than_the_default_ten_minutes(self):
+        calls = []
+
+        def fake_run_go(arguments, log):
+            calls.append(arguments)
+            return [{"Package": "example/a", "Test": "TestA", "Action": "run"},
+                    {"Package": "example/a", "Test": "TestA", "Action": "pass"},
+                    {"Package": "example/a", "Action": "pass"}]
+
+        with tempfile.TemporaryDirectory(prefix="fid-ci-timeout-") as directory, \
+                mock.patch.object(ci, "discover", return_value={"example/a": ["TestA"]}), \
+                mock.patch.object(ci, "run_go", side_effect=fake_run_go), \
+                mock.patch.object(ci.subprocess, "check_output", return_value="source\n"):
+            ci.run_shard(0, 1, Path(directory) / "shard-0")
+        (arguments,) = calls
+        self.assertIn("-timeout", arguments)
+        self.assertEqual(arguments[arguments.index("-timeout") + 1], "20m")
 
 
 class RealGoShardTests(unittest.TestCase):

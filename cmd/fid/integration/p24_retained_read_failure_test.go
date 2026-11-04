@@ -30,7 +30,7 @@ func TestP24RetainedReadFailurePairs(t *testing.T) {
 	for _, row := range rows {
 		t.Run(row.name, func(t *testing.T) {
 			t.Parallel()
-			binary, workspace := integrationFIDBinary(t), t.TempDir()
+			binary, workspace := integrationFIDBinary(t), newGitWorkspace(t)
 			if row.project {
 				p21Run(t, binary, workspace, "init", "--prefix", "P24", "--json")
 			}

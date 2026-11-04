@@ -12,7 +12,7 @@ import (
 
 func TestJournalInspectCommandUsesDirectLegacyJSONWithoutRevert(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	_, createStderr := runFIDCommand(
@@ -64,7 +64,7 @@ func TestJournalInspectCommandUsesDirectLegacyJSONWithoutRevert(t *testing.T) {
 
 func TestJournalInspectCommandDoesNotExposeRevertOrResponseEnvelope(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	_, createStderr := runFIDCommand(
@@ -101,7 +101,7 @@ func TestJournalInspectCommandDoesNotExposeRevertOrResponseEnvelope(t *testing.T
 
 func TestJournalInspectCommandRejectsMissingEventIDs(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "journal", "inspect", "EVT-20260606-999999")

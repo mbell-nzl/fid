@@ -13,7 +13,7 @@ import (
 
 func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	_, seqEpicStderr := runFIDCommand(
@@ -339,7 +339,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 
 func TestV01BReadyReturnsEmptyAfterAllTasksFinishedEndToEnd(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := newGitWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	_, createStderr := runFIDCommand(
