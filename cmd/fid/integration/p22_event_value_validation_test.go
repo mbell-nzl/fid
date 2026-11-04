@@ -14,6 +14,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -197,7 +198,7 @@ func p22CheckCurrentEventCase(t *testing.T, binary, source string, prefix []byte
 		p22CheckCurrentRebuild(t, binary, source, prefix, event, accepted)
 		return
 	}
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	p22FaultOK(t, os.MkdirAll(config.LedgerDir(workspace), 0700))
 	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	p22FaultOK(t, fiddb.MigrateUp(dbPath, filepath.Join(integrationRepositoryRoot(), "migrations")))

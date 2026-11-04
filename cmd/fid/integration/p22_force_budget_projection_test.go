@@ -11,6 +11,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -39,7 +40,7 @@ func p22ForceEventChecker(t *testing.T, binary, source string, prefix []byte) fu
 			p22CheckCurrentEventCase(t, binary, source, prefix, event, mode, accepted)
 			return
 		}
-		workspace := t.TempDir()
+		workspace := gittest.NewWorkspace(t)
 		p22FaultOK(t, os.MkdirAll(config.LedgerDir(workspace), 0700))
 		path := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 		p22FaultOK(t, os.WriteFile(path, pristine, 0600))

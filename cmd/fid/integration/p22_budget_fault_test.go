@@ -18,6 +18,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/evidence"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"modernc.org/sqlite"
 )
@@ -155,7 +156,7 @@ func p22BudgetFaultFixture(t *testing.T, kind string) *p22FIDRecoveryAdapter {
 		exit = "1"
 		cfg.ExtraBudgets = []any{map[string]any{"name": "failures", "scope": "envelope", "unit": "failures", "maximum": 1, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}}
 	}
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	cfg.Argv = []string{"/bin/sh", "-c", "printf x >> " + workspaceRelative(t, workspace, filepath.Join(config.LedgerDir(workspace), "fq5-spawn")) + "; exit " + exit}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), workspace, "agent", 3600, []string{}, p22FinalActions, cfg)
 	p22AcceptedCall(t, a, "budget-initial", "run.observe-budget", map[string]any{"value": 0})
