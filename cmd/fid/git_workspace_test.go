@@ -72,6 +72,17 @@ func newGitWorkspace(t *testing.T) string {
 	return workspace
 }
 
+// resolvedPath returns path with symlinks resolved: the form git, and so
+// fid, reports a repository's top level in, even when TMPDIR is a symlink.
+func resolvedPath(t *testing.T, path string) string {
+	t.Helper()
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		t.Fatalf("resolve %q: %v", path, err)
+	}
+	return resolved
+}
+
 // newNamedGitWorkspace returns a guarded git repository called name inside a
 // fresh temp directory, for tests where the directory's name matters.
 func newNamedGitWorkspace(t *testing.T, name string) string {

@@ -330,8 +330,8 @@ func TestInitFromASubdirectoryInitializesTheTopLevel(t *testing.T) {
 			t.Fatalf("init from a subdirectory (--project %t) = %#v", viaProject, result)
 		}
 		project := decodeCanonicalResult(t, result.stdout)["project"].(map[string]any)
-		if project["root"] != workspace || project["issue_prefix"] != "TOPLEVEL" {
-			t.Fatalf("init from a subdirectory (--project %t) project = %#v, want root %q and prefix TOPLEVEL", viaProject, project, workspace)
+		if want := resolvedPath(t, workspace); project["root"] != want || project["issue_prefix"] != "TOPLEVEL" {
+			t.Fatalf("init from a subdirectory (--project %t) project = %#v, want root %q and prefix TOPLEVEL", viaProject, project, want)
 		}
 		if _, err := os.Stat(filepath.Join(config.LedgerDir(workspace), "config.toml")); err != nil {
 			t.Fatalf("top-level ledger: %v", err)
@@ -354,8 +354,8 @@ func TestInitAndImportReportTheRealPathOfASymlinkedRepository(t *testing.T) {
 	if initialized.err != nil {
 		t.Fatalf("init through a symlink = %#v", initialized)
 	}
-	if root := decodeCanonicalResult(t, initialized.stdout)["project"].(map[string]any)["root"]; root != workspace {
-		t.Fatalf("init project.root = %v, want real path %q", root, workspace)
+	if root, want := decodeCanonicalResult(t, initialized.stdout)["project"].(map[string]any)["root"], resolvedPath(t, workspace); root != want {
+		t.Fatalf("init project.root = %v, want real path %q", root, want)
 	}
 
 	archive := filepath.Join(t.TempDir(), "fid-export.zip")
@@ -364,11 +364,12 @@ func TestInitAndImportReportTheRealPathOfASymlinkedRepository(t *testing.T) {
 	}
 	for _, through := range []string{"symlink", "subdirectory"} {
 		target := newGitWorkspace(t)
-		repository := filepath.Join(links, "target-"+through)
-		if err := os.Symlink(target, repository); err != nil {
-			t.Fatalf("Symlink(target) error = %v", err)
-		}
-		if through == "subdirectory" {
+		repository := filepath.Join(links, "target")
+		if through == "symlink" {
+			if err := os.Symlink(target, repository); err != nil {
+				t.Fatalf("Symlink(target) error = %v", err)
+			}
+		} else {
 			repository = filepath.Join(target, "nested")
 			if err := os.Mkdir(repository, 0o755); err != nil {
 				t.Fatalf("Mkdir(nested) error = %v", err)
@@ -378,8 +379,8 @@ func TestInitAndImportReportTheRealPathOfASymlinkedRepository(t *testing.T) {
 		if imported.err != nil {
 			t.Fatalf("export import through a %s = %#v", through, imported)
 		}
-		if root := decodeCanonicalResult(t, imported.stdout)["import"].(map[string]any)["target_root"]; root != target {
-			t.Fatalf("import through a %s target_root = %v, want top level %q", through, root, target)
+		if root, want := decodeCanonicalResult(t, imported.stdout)["import"].(map[string]any)["target_root"], resolvedPath(t, target); root != want {
+			t.Fatalf("import through a %s target_root = %v, want top level %q", through, root, want)
 		}
 		if _, err := os.Stat(filepath.Join(config.LedgerDir(target), "config.toml")); err != nil {
 			t.Fatalf("imported ledger through a %s: %v", through, err)

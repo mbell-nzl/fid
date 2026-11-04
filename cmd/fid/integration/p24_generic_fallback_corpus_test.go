@@ -129,7 +129,7 @@ func TestP24GenericFallbackDomainPairs(t *testing.T) {
 			}
 			payload := p23Envelope(t, stderr)
 			f := payload["error"].(map[string]any)
-			message := strings.ReplaceAll(row.message, "$ROOT", root)
+			message := strings.ReplaceAll(row.message, "$ROOT", resolvedPath(t, root))
 			var value any
 			if row.site == "issue_get_list.go:issueReadFailure" {
 				value = ""

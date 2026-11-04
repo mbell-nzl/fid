@@ -74,6 +74,17 @@ func newGitWorkspace(t *testing.T) string {
 	return workspace
 }
 
+// resolvedPath returns path with symlinks resolved: the form git, and so
+// fid, reports a repository's top level in, even when TMPDIR is a symlink.
+func resolvedPath(t *testing.T, path string) string {
+	t.Helper()
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		t.Fatalf("resolve %q: %v", path, err)
+	}
+	return resolved
+}
+
 // unbornGitHead points HEAD at a branch with no commits, so git still finds
 // the repository but fid cannot observe it, and returns a function that puts
 // HEAD back. Tests use it for a repository fid can discover but not inspect.
