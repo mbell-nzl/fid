@@ -47,7 +47,7 @@ func TestCurrentIdempotencyFieldDigestsReplayFailClosed(t *testing.T) {
 				return
 			}
 			var corrupt *CorruptJournalError
-			if !errors.As(err, &corrupt) || corrupt.Line != 1 || corrupt.File != ".fid/journal/2026-09-06.jsonl" {
+			if !errors.As(err, &corrupt) || corrupt.Line != 1 || corrupt.File != filepath.ToSlash(filepath.Join(config.LedgerDir(workspace), "journal", "2026-09-06.jsonl")) {
 				t.Fatalf("replay = %v, want line-1 journal corruption with file evidence", err)
 			}
 			if !reflect.DeepEqual(before, currentProjectionSnapshot(t, conn)) {

@@ -105,7 +105,7 @@ func findEventInFile(journalDir, fileName, eventID string) (FoundEvent, bool, er
 			return FoundEvent{}, false, nil
 		}
 
-		found, ok, err := inspectJournalLine(fileName, lineNumber, lineBytes, eventID)
+		found, ok, err := inspectJournalLine(path, lineNumber, lineBytes, eventID)
 		if err != nil {
 			return FoundEvent{}, false, err
 		}
@@ -139,7 +139,7 @@ func inspectJournalFile(journalDir, fileName, checkpointFile string, checkpointO
 		}
 
 		offset += int64(len(lineBytes))
-		checkpoint, hasEvent, err := inspectCheckpointLine(fileName, lineNumber, offset, lineBytes)
+		checkpoint, hasEvent, err := inspectCheckpointLine(path, lineNumber, offset, lineBytes)
 		if err != nil {
 			return err
 		}
@@ -166,7 +166,7 @@ func (line checkpointLine) FileMatches(fileName, checkpointFile string, offset, 
 	return fileName == checkpointFile && offset == checkpointOffset
 }
 
-func inspectCheckpointLine(fileName string, lineNumber int, offset int64, lineBytes []byte) (checkpointLine, bool, error) {
+func inspectCheckpointLine(path string, lineNumber int, offset int64, lineBytes []byte) (checkpointLine, bool, error) {
 	trimmed := bytesTrimSpace(lineBytes)
 	if len(trimmed) == 0 {
 		return checkpointLine{}, false, nil
@@ -175,7 +175,7 @@ func inspectCheckpointLine(fileName string, lineNumber int, offset int64, lineBy
 	var stored Event
 	if err := json.Unmarshal(trimmed, &stored); err != nil {
 		return checkpointLine{}, false, &CorruptJournalError{
-			File: filepath.ToSlash(filepath.Join(".fid", "journal", fileName)),
+			File: filepath.ToSlash(path),
 			Line: lineNumber,
 			Err:  err,
 		}
@@ -183,13 +183,13 @@ func inspectCheckpointLine(fileName string, lineNumber int, offset int64, lineBy
 
 	eventHash, err := HashEvent(stored)
 	if err != nil {
-		return checkpointLine{}, false, fmt.Errorf("hash event %q from %s:%d: %w", stored.EventID, fileName, lineNumber, err)
+		return checkpointLine{}, false, fmt.Errorf("hash event %q from %s:%d: %w", stored.EventID, filepath.Base(path), lineNumber, err)
 	}
 	_ = offset
 	return checkpointLine{EventID: stored.EventID, EventHash: eventHash}, true, nil
 }
 
-func inspectJournalLine(fileName string, lineNumber int, lineBytes []byte, eventID string) (FoundEvent, bool, error) {
+func inspectJournalLine(path string, lineNumber int, lineBytes []byte, eventID string) (FoundEvent, bool, error) {
 	trimmed := bytesTrimSpace(lineBytes)
 	if len(trimmed) == 0 {
 		return FoundEvent{}, false, nil
@@ -198,7 +198,7 @@ func inspectJournalLine(fileName string, lineNumber int, lineBytes []byte, event
 	var stored Event
 	if err := json.Unmarshal(trimmed, &stored); err != nil {
 		return FoundEvent{}, false, &CorruptJournalError{
-			File: filepath.ToSlash(filepath.Join(".fid", "journal", fileName)),
+			File: filepath.ToSlash(path),
 			Line: lineNumber,
 			Err:  err,
 		}
@@ -209,12 +209,12 @@ func inspectJournalLine(fileName string, lineNumber int, lineBytes []byte, event
 
 	eventHash, err := HashEvent(stored)
 	if err != nil {
-		return FoundEvent{}, false, fmt.Errorf("hash event %q from %s:%d: %w", stored.EventID, fileName, lineNumber, err)
+		return FoundEvent{}, false, fmt.Errorf("hash event %q from %s:%d: %w", stored.EventID, filepath.Base(path), lineNumber, err)
 	}
 
 	return FoundEvent{
 		Event:       stored,
-		JournalFile: filepath.ToSlash(filepath.Join(".fid", "journal", fileName)),
+		JournalFile: filepath.ToSlash(path),
 		Line:        lineNumber,
 		Hash:        eventHash,
 	}, true, nil

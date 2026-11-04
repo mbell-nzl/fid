@@ -123,7 +123,7 @@ func renderInitSuccess(cmd *cobra.Command, workspaceRoot string, result bootstra
 			"journal_path": result.JournalPath,
 		}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt.UTC().Format(time.RFC3339Nano)})
 	}
-	return writeInitLine(cmd.OutOrStdout(), "initialized fid project in .fid/\n")
+	return writeInitLine(cmd.OutOrStdout(), "initialized fid project in %s/\n", filepath.ToSlash(config.LedgerDir(workspaceRoot)))
 }
 
 func renderInitFailure(cmd *cobra.Command, workspaceRoot string, initErr error) error {

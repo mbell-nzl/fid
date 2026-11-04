@@ -14,7 +14,7 @@ func lockUnavailableFailure(err error) (cli.Failure, bool, error) {
 		return cli.Failure{}, false, nil
 	}
 	failure, failureErr := cli.NewFailure(cli.CodeLockUnavailable, "project write lock is unavailable", nil, map[string]any{
-		"lock_path": filepath.ToSlash(filepath.Join(".fid", filepath.Base(unavailableErr.LockPath))),
+		"lock_path": filepath.ToSlash(unavailableErr.LockPath),
 	})
 	return failure, true, failureErr
 }
@@ -23,7 +23,7 @@ func journalReplayStoppedFailure(err error) (cli.Failure, bool, error) {
 	var corruptErr *journal.CorruptJournalError
 	if errors.As(err, &corruptErr) {
 		failure, failureErr := cli.NewFailure(cli.CodeJournalReplayStopped, "journal replay stopped", nil, map[string]any{
-			"journal_file": journalErrorPath(corruptErr.File),
+			"journal_file": corruptErr.File,
 			"line":         corruptErr.Line,
 			"event_id":     nil,
 		})
@@ -33,7 +33,7 @@ func journalReplayStoppedFailure(err error) (cli.Failure, bool, error) {
 	var conflictErr *journal.PreconditionConflictError
 	if errors.As(err, &conflictErr) {
 		failure, failureErr := cli.NewFailure(cli.CodeJournalReplayStopped, "journal replay stopped", nil, map[string]any{
-			"journal_file": journalErrorPath(conflictErr.File),
+			"journal_file": conflictErr.File,
 			"line":         conflictErr.Line,
 			"event_id":     conflictErr.EventID,
 		})

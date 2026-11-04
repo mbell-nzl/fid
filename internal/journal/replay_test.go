@@ -64,8 +64,8 @@ func TestReplayJournalClassifiesRetiredIssueEffectKeyAsStopped(t *testing.T) {
 	if !errors.As(err, &corruptErr) {
 		t.Fatalf("ReplayJournal() error = %T %v, want *CorruptJournalError", err, err)
 	}
-	if corruptErr.File != ".fid/journal/2026-08-11.jsonl" || corruptErr.Line != 1 {
-		t.Fatalf("replay stop location = %s:%d, want .fid/journal/2026-08-11.jsonl:1", corruptErr.File, corruptErr.Line)
+	if want := filepath.ToSlash(filepath.Join(config.LedgerDir(workspace), "journal", "2026-08-11.jsonl")); corruptErr.File != want || corruptErr.Line != 1 {
+		t.Fatalf("replay stop location = %s:%d, want %s:1", corruptErr.File, corruptErr.Line, want)
 	}
 }
 
@@ -268,13 +268,14 @@ func TestReplayJournalReportsMalformedTrailingLine(t *testing.T) {
 	if !errors.As(err, &corruptErr) {
 		t.Fatalf("ReplayJournal() error = %T, want *CorruptJournalError", err)
 	}
-	if corruptErr.File != filepath.ToSlash(filepath.Join(".fid", "journal", "2026-06-05.jsonl")) {
-		t.Fatalf("corrupt file = %q, want %q", corruptErr.File, filepath.ToSlash(filepath.Join(".fid", "journal", "2026-06-05.jsonl")))
+	journalFile := filepath.ToSlash(filepath.Join(config.LedgerDir(workspace), "journal", "2026-06-05.jsonl"))
+	if corruptErr.File != journalFile {
+		t.Fatalf("corrupt file = %q, want %q", corruptErr.File, journalFile)
 	}
 	if corruptErr.Line != 2 {
 		t.Fatalf("corrupt line = %d, want %d", corruptErr.Line, 2)
 	}
-	if !strings.Contains(corruptErr.Error(), ".fid/journal/2026-06-05.jsonl:2") {
+	if !strings.Contains(corruptErr.Error(), journalFile+":2") {
 		t.Fatalf("CorruptJournalError.Error() = %q, want file:line context", corruptErr.Error())
 	}
 	if corruptErr.Unwrap() == nil {
@@ -308,6 +309,9 @@ func TestReplayJournalStopsOnPreconditionConflict(t *testing.T) {
 	}
 	if conflictErr.Line != 2 {
 		t.Fatalf("conflict line = %d, want %d", conflictErr.Line, 2)
+	}
+	if want := filepath.ToSlash(filepath.Join(config.LedgerDir(workspace), "journal", "2026-06-05.jsonl")); conflictErr.File != want {
+		t.Fatalf("conflict file = %q, want %q", conflictErr.File, want)
 	}
 }
 

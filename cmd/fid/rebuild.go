@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/project"
@@ -60,7 +61,8 @@ func newRebuildCommand() *cobra.Command {
 				}, nil)
 			}
 
-			if err := writeRebuildLine(cmd.OutOrStdout(), "rebuilding .fid/fid.sqlite from journal...\n"); err != nil {
+			database := filepath.Join(config.LedgerDir(workspaceRoot), config.DatabaseFileName)
+			if err := writeRebuildLine(cmd.OutOrStdout(), "rebuilding %s from journal...\n", filepath.ToSlash(database)); err != nil {
 				return err
 			}
 			if err := writeRebuildLine(cmd.OutOrStdout(), "  replayed %d events from %d journal files\n", stats.EventsReplayed, stats.FilesReplayed); err != nil {

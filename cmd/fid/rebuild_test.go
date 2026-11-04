@@ -306,8 +306,8 @@ func TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease(t *testing.T
 	if lockedFailure.OK || lockedFailure.Operation != "project.rebuild" ||
 		lockedFailure.Error.Code != "lock-unavailable" || lockedFailure.Error.Category != "conflict" ||
 		!lockedFailure.Error.Retryable || lockedFailure.Error.Subject != nil ||
-		lockedFailure.Error.Details.LockPath != ".fid/write.lock" {
-		t.Fatalf("held-lock failure = %+v, want retryable typed lock-unavailable", lockedFailure)
+		lockedFailure.Error.Details.LockPath != filepath.ToSlash(filepath.Join(config.LedgerDir(gittest.ResolvedPath(t, workspace)), "write.lock")) {
+		t.Fatalf("held-lock failure = %+v, want retryable typed lock-unavailable at the absolute lock path", lockedFailure)
 	}
 	afterHeldJournal, err := os.ReadFile(journalPath)
 	if err != nil {
@@ -341,6 +341,37 @@ func TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease(t *testing.T
 	}
 	if !success.OK || success.Operation != "project.rebuild" || success.Event != nil {
 		t.Fatalf("retry success = %+v, want project.rebuild with event null", success)
+	}
+}
+
+func TestRebuildHumanNamesAHeldLockByAbsolutePath(t *testing.T) {
+	t.Parallel()
+	workspace := gittest.NewWorkspace(t)
+	runInitCommand(t, workspace, "init")
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	var rebuildErr error
+	err := journal.WithLock(workspace, journal.LockOwner{Command: "test held lock"}, func(_ *journal.WriteLock) error {
+		cmd := newRootCommandAt(workspace)
+		cmd.SetOut(stdout)
+		cmd.SetErr(stderr)
+		cmd.SetArgs([]string{"rebuild"})
+		rebuildErr = cmd.Execute()
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("WithLock() error = %v", err)
+	}
+	if rebuildErr == nil {
+		t.Fatal("Execute() under held lock error = nil, want lock rejection")
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("held-lock stdout = %q, want empty", stdout.String())
+	}
+	lockPath := filepath.ToSlash(filepath.Join(config.LedgerDir(gittest.ResolvedPath(t, workspace)), "write.lock"))
+	if got, want := stderr.String(), "error: project write lock is unavailable\n"+p24ExpectedReason("reason: lock-unavailable; lock_path="+lockPath)+"\n"; got != want {
+		t.Fatalf("held-lock stderr = %q, want %q", got, want)
 	}
 }
 
@@ -384,7 +415,7 @@ func TestRebuildJSONMapsReplayStopWithClosedDetails(t *testing.T) {
 	}
 	if failure.OK || failure.Operation != "project.rebuild" || failure.Error.Code != "journal-replay-stopped" ||
 		failure.Error.Category != "integrity" || failure.Error.Retryable || failure.Error.Subject != nil ||
-		failure.Error.Details.JournalFile != ".fid/journal/2026-06-05.jsonl" || failure.Error.Details.Line == nil ||
+		failure.Error.Details.JournalFile != rebuildJournalFile(t, workspace, "2026-06-05.jsonl") || failure.Error.Details.Line == nil ||
 		*failure.Error.Details.Line != 2 || failure.Error.Details.EventID != nil {
 		t.Fatalf("replay failure = %+v, want closed journal-replay-stopped details", failure)
 	}
@@ -409,6 +440,10 @@ func TestRebuildCommandReplaysJournalAndReportsCounts(t *testing.T) {
 
 	if !strings.Contains(stdout.String(), "rebuild complete") {
 		t.Fatalf("stdout = %q, want rebuild completion", stdout.String())
+	}
+	database := filepath.ToSlash(filepath.Join(config.LedgerDir(gittest.ResolvedPath(t, workspace)), config.DatabaseFileName))
+	if got, want := strings.SplitAfter(stdout.String(), "\n")[0], "rebuilding "+database+" from journal...\n"; got != want {
+		t.Fatalf("stdout first line = %q, want %q", got, want)
 	}
 	if stderr.Len() != 0 {
 		t.Fatalf("stderr = %q, want empty", stderr.String())
@@ -452,8 +487,8 @@ func TestRebuildCommandReportsCorruptJournal(t *testing.T) {
 	if err == nil {
 		t.Fatal("Execute() error = nil, want corrupt journal error")
 	}
-	if got := stderr.String(); got != "error: journal replay stopped\nreason: journal-replay-stopped; event_id=null, journal_file=.fid/journal/2026-06-05.jsonl, line=2\n" {
-		t.Fatalf("stderr = %q, want corrupt journal line", got)
+	if got, want := stderr.String(), "error: journal replay stopped\n"+p24ExpectedReason("reason: journal-replay-stopped; event_id=null, journal_file="+rebuildJournalFile(t, workspace, "2026-06-05.jsonl")+", line=2")+"\n"; got != want {
+		t.Fatalf("stderr = %q, want %q", got, want)
 	}
 }
 
@@ -480,16 +515,23 @@ func TestRebuildCommandReportsPreconditionConflict(t *testing.T) {
 		t.Fatalf("stdout = %q, want empty", stdout.String())
 	}
 
-	got := stderr.String()
-	if got != "error: journal replay stopped\nreason: journal-replay-stopped; event_id=EVT-20260605-000002, journal_file=.fid/journal/2026-06-05.jsonl, line=2\n" {
-		t.Fatalf("stderr = %q", got)
+	journalFile := rebuildJournalFile(t, workspace, "2026-06-05.jsonl")
+	if got, want := stderr.String(), "error: journal replay stopped\n"+p24ExpectedReason("reason: journal-replay-stopped; event_id=EVT-20260605-000002, journal_file="+journalFile+", line=2")+"\n"; got != want {
+		t.Fatalf("stderr = %q, want %q", got, want)
 	}
-	for _, want := range []string{"replay precondition conflict at 2026-06-05.jsonl:2", "event EVT-20260605-000002 (issue.transitioned)", "on issues pk=map[id:FID-a1b2c3]", "expected=map[status:in_progress]", "actual=map[status:todo]"} {
+	for _, want := range []string{"replay precondition conflict at " + journalFile + ":2", "event EVT-20260605-000002 (issue.transitioned)", "on issues pk=map[id:FID-a1b2c3]", "expected=map[status:in_progress]", "actual=map[status:todo]"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("replay conflict cause = %q, want %q", err.Error(), want)
 		}
 	}
 
+}
+
+// rebuildJournalFile is the absolute path fid reports for a journal file in
+// workspace: under the root git reports, so with symlinks resolved.
+func rebuildJournalFile(t *testing.T, workspace, name string) string {
+	t.Helper()
+	return filepath.ToSlash(filepath.Join(config.LedgerDir(gittest.ResolvedPath(t, workspace)), config.JournalDirName, name))
 }
 
 func newRebuildWorkspace(t *testing.T) string {

@@ -2,6 +2,7 @@ package journal
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -61,8 +62,8 @@ func TestFindEventReturnsStoredEventLocationAndHash(t *testing.T) {
 	if !reflect.DeepEqual(got.Event, target) {
 		t.Fatalf("FindEvent().Event = %#v, want %#v", got.Event, target)
 	}
-	if got.JournalFile != ".fid/journal/2026-06-06.jsonl" {
-		t.Fatalf("FindEvent().JournalFile = %q, want %q", got.JournalFile, ".fid/journal/2026-06-06.jsonl")
+	if want := filepath.ToSlash(filepath.Join(journalDir, "2026-06-06.jsonl")); got.JournalFile != want {
+		t.Fatalf("FindEvent().JournalFile = %q, want %q", got.JournalFile, want)
 	}
 	if got.Line != 1 {
 		t.Fatalf("FindEvent().Line = %d, want %d", got.Line, 1)
@@ -74,6 +75,44 @@ func TestFindEventReturnsStoredEventLocationAndHash(t *testing.T) {
 	}
 	if got.Hash != wantHash {
 		t.Fatalf("FindEvent().Hash = %q, want %q", got.Hash, wantHash)
+	}
+}
+
+func TestJournalInspectionNamesACorruptFileByItsPath(t *testing.T) {
+	t.Parallel()
+	inspections := map[string]func(journalDir string) error{
+		"find event": func(journalDir string) error {
+			_, err := FindEvent(journalDir, "EVT-20260605-999999")
+			return err
+		},
+		"freshness check": func(journalDir string) error {
+			_, err := inspectJournal(journalDir, "", 0)
+			return err
+		},
+	}
+	for name, inspect := range inspections {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			journalDir := filepath.Join(config.LedgerDir(gittest.NewWorkspace(t)), "journal")
+			mustMkdirAll(t, journalDir)
+			path := filepath.Join(journalDir, "2026-06-05.jsonl")
+			writeWriterEvents(t, path, writerRoleEvent("EVT-20260605-000001"))
+			payload, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, append(payload, "{\"event_id\":\n"...), 0o644); err != nil {
+				t.Fatal(err)
+			}
+
+			var corrupt *CorruptJournalError
+			if err := inspect(journalDir); !errors.As(err, &corrupt) {
+				t.Fatalf("inspection error = %T %v, want *CorruptJournalError", err, err)
+			}
+			if want := filepath.ToSlash(path); corrupt.File != want || corrupt.Line != 2 {
+				t.Fatalf("corrupt location = %s:%d, want %s:2", corrupt.File, corrupt.Line, want)
+			}
+		})
 	}
 }
 
