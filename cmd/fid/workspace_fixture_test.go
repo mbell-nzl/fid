@@ -112,11 +112,12 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 	return exitCode
 }
 
-// commandTestHelperChild reports whether this process is a gate or Artifact
-// helper started by a test. Helpers run under a gate's environment allowlist,
-// which has no PATH for git, and never use the pristine workspace.
+// commandTestHelperChild reports whether this process is a helper started by
+// a test: a gate or Artifact helper, which runs under a gate's environment
+// allowlist with no PATH for git, or the git guard's child. None of them use
+// the pristine workspace.
 func commandTestHelperChild() bool {
-	return os.Getenv("FID_GATE_HELPER") != "" || os.Getenv("FID_ARTIFACT_HELPER") != ""
+	return os.Getenv("FID_GATE_HELPER") != "" || os.Getenv("FID_ARTIFACT_HELPER") != "" || os.Getenv(gitGuardChildEnv) != ""
 }
 
 func commandRepositoryRoot() string {

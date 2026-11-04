@@ -14,20 +14,23 @@ import (
 
 const gitCeilingDirectoriesEnv = "GIT_CEILING_DIRECTORIES"
 
+// gitGuardChildEnv marks the child process that TestGitDiscoveryStopsAtTheTempDirectory starts.
+const gitGuardChildEnv = "FID_GIT_GUARD_CHILD"
+
 // guardGitDiscovery stops git, for this process and every child it starts,
 // from climbing out of the temp directory or out of a package directory into
 // a real repository. Git still inspects the directory it starts in, so tests
 // never run fid with a real repository's root as the working directory.
 func guardGitDiscovery(moduleRoot string) error {
-	existing := filepath.SplitList(os.Getenv(gitCeilingDirectoriesEnv))
-	var ceilings []string
-	for _, ceiling := range []string{os.TempDir(), moduleRoot} {
-		if !slices.Contains(existing, ceiling) {
-			ceilings = append(ceilings, ceiling)
+	// Ours always go first, even if inherited later in the list: git does not
+	// resolve symlinks in entries after an empty one.
+	required := []string{os.TempDir(), moduleRoot}
+	ceilings := append([]string(nil), required...)
+	for _, inherited := range filepath.SplitList(os.Getenv(gitCeilingDirectoriesEnv)) {
+		if !slices.Contains(required, inherited) {
+			ceilings = append(ceilings, inherited)
 		}
 	}
-	// Ours go first: git does not resolve symlinks in entries after an empty one.
-	ceilings = append(ceilings, existing...)
 	if err := os.Setenv(gitCeilingDirectoriesEnv, strings.Join(ceilings, string(os.PathListSeparator))); err != nil {
 		return fmt.Errorf("set %s: %w", gitCeilingDirectoriesEnv, err)
 	}
@@ -86,12 +89,62 @@ func TestGuardedGitWorkspaceIsItsOwnRepository(t *testing.T) {
 	}
 }
 
+// TestGitDiscoveryStopsAtTheTempDirectory runs this test binary again with its
+// temp directory inside another repository, so the guard TestMain installs is
+// what stops git. It covers a plain temp directory and a symlinked one that
+// is also inherited after an empty ceiling entry.
 func TestGitDiscoveryStopsAtTheTempDirectory(t *testing.T) {
 	t.Parallel()
-	plain := t.TempDir()
-	if err := checkGuardedGitRepository(plain); err == nil {
-		t.Fatal("check of a plain temp directory = nil, want no repository")
+	if os.Getenv(gitGuardChildEnv) != "" {
+		directory := t.TempDir()
+		if output, err := exec.Command("git", "-C", directory, "rev-parse", "--show-toplevel").Output(); err == nil {
+			t.Fatalf("git found repository %q from temp directory %q, want ceiling refusal", strings.TrimSpace(string(output)), directory)
+		}
+		return
 	}
+	ancestor := newGitWorkspace(t)
+	temp := filepath.Join(ancestor, "tmp")
+	if err := os.Mkdir(temp, 0o755); err != nil {
+		t.Fatalf("Mkdir(temp) error = %v", err)
+	}
+	alias := filepath.Join(t.TempDir(), "tmp-alias")
+	if err := os.Symlink(temp, alias); err != nil {
+		t.Fatalf("Symlink(temp) error = %v", err)
+	}
+	control := exec.Command("git", "-C", temp, "rev-parse", "--show-toplevel")
+	control.Env = environmentWithout(os.Environ(), gitCeilingDirectoriesEnv)
+	wantAncestor, err := filepath.EvalSymlinks(ancestor)
+	if err != nil {
+		t.Fatalf("EvalSymlinks(ancestor) error = %v", err)
+	}
+	if output, err := control.Output(); err != nil || strings.TrimSpace(string(output)) != wantAncestor {
+		t.Fatalf("control without a ceiling = %q, %v; want git to find %q", output, err, wantAncestor)
+	}
+	for _, child := range []struct{ name, tempDir, inherited string }{
+		{name: "plain temp directory", tempDir: temp},
+		{name: "symlinked temp directory after an inherited empty entry", tempDir: alias, inherited: string(os.PathListSeparator) + alias},
+	} {
+		command := exec.Command(os.Args[0], "-test.run=^TestGitDiscoveryStopsAtTheTempDirectory$", "-test.v")
+		command.Env = append(environmentWithout(os.Environ(), gitCeilingDirectoriesEnv, "TMPDIR"), "TMPDIR="+child.tempDir, gitGuardChildEnv+"=1")
+		if child.inherited != "" {
+			command.Env = append(command.Env, gitCeilingDirectoriesEnv+"="+child.inherited)
+		}
+		output, err := command.CombinedOutput()
+		if err != nil || !strings.Contains(string(output), "--- PASS: TestGitDiscoveryStopsAtTheTempDirectory") {
+			t.Fatalf("%s: child = %v, want git stopped at the temp directory\n%s", child.name, err, output)
+		}
+	}
+}
+
+func environmentWithout(environment []string, names ...string) []string {
+	result := make([]string, 0, len(environment))
+	for _, entry := range environment {
+		name, _, _ := strings.Cut(entry, "=")
+		if !slices.Contains(names, name) {
+			result = append(result, entry)
+		}
+	}
+	return result
 }
 
 func TestGitDiscoveryStopsAtTheModuleRoot(t *testing.T) {
