@@ -3,12 +3,18 @@
 > **Phase 20 accepted amendment:** the required `config_version = 1` field and
 > temporary `pricing.toml` expiry are accepted with the Phase 20 slice pack.
 
-## 1. `.fid/` Layout
+## 1. Ledger Layout
 
-The supported baseline uses:
+The ledger lives in the git common directory, at
+`$(git rev-parse --git-common-dir)/fid/`, so every worktree of a repository
+shares one ledger and git never tracks it (ADR-0013; decisions record D4 /
+F1). fid finds it from the project root, the worktree's top level, by reading
+the worktree's `.git` entry as git does, without running git: a `.git`
+directory is the common directory, and a `.git` file names the worktree's git
+directory, whose `commondir` file names the common directory.
 
 ```text
-.fid/
+<git-common-dir>/fid/
 ├── journal/
 │   └── YYYY-MM-DD.jsonl
 ├── artifacts/
@@ -18,18 +24,29 @@ The supported baseline uses:
 └── .gitignore
 ```
 
-| Path | Purpose | Git |
-|---|---|---|
-| `journal/*.jsonl` | Canonical append-only Events | committed |
-| `config.toml` | Minimal fid-local project/storage/operator configuration | committed |
-| `fid.sqlite` | Derived query projection | ignored |
-| `artifacts/` | Retention-limited content-addressed execution material | ignored |
-| `write.lock` | Cross-process mutation lock | ignored |
-| `.gitignore` | Ignores projection, artifacts, lock, and temporary files | committed |
+| Path | Purpose |
+|---|---|
+| `journal/*.jsonl` | Canonical append-only Events |
+| `config.toml` | Minimal fid-local project/storage/operator configuration |
+| `fid.sqlite` | Derived query projection |
+| `artifacts/` | Retention-limited content-addressed execution material |
+| `write.lock` | Cross-process mutation lock |
+| `.gitignore` | Names `fid.sqlite`. Kept for now, though git never looks inside its common directory |
 
-Temporary append, migration, export, and artifact files use unique names inside
-the owning directory, are fsynced before atomic replacement where applicable,
-and are never treated as durable success state.
+Nothing in the ledger is committed. D4 / F1 makes a backup, not git, its copy
+off the machine (RESET task 1.2).
+
+There is no migration from the earlier layout, which kept the ledger in
+`.fid/` at the project root. fid neither reads nor writes a `.fid/` directory
+left in a worktree. Moving it into place by hand keeps it: in the main
+worktree, `mv .fid .git/fid`.
+
+`fid init` and `export import` stage a new ledger in
+`<git-common-dir>/fid-staging-*`, beside the ledger and so on the same
+filesystem, and rename it to `<git-common-dir>/fid/`. Temporary append,
+migration, export, and artifact files use unique names inside the owning
+directory, are fsynced before atomic replacement where applicable, and are
+never treated as durable success state.
 
 ## 2. `config.toml`
 
@@ -61,14 +78,15 @@ Rules:
   opaque, non-empty ASCII, and at most 128 bytes.
 - Issue prefix is presentation only; IDs remain opaque to consumers. Its exact
   grammar is ASCII `^[A-Z][A-Z0-9]{0,15}$`.
-- Paths are project-relative, normalized, and cannot escape `.fid/` unless an
-  explicit later security decision authorizes an external artifact store.
+- Paths are relative to the ledger directory, normalized, and cannot escape
+  it unless an explicit later security decision authorizes an external
+  artifact store.
 - Executor limits are absolute backend safety ceilings. Gate-specific timeout,
   environment, sandbox, network, write, credential, success, and retention
   policy comes only from the immutable Gate Definition Registration.
 - `artifact_root` is valid UTF-8 of `1..4096` bytes, relative, not `.`, and has
   no lexical `..` escape. An existing symlink component must resolve within
-  `.fid/` when the path is used.
+  the ledger directory when the path is used.
 - Phase 21 accepts Gate values only within `timeout_ms:1..600000`,
   `output_bytes:1..10485760`, `excerpt_bytes:0..min(output_bytes,16384)`, and
   `artifact_bytes:1..1073741824`. Configured executor ceilings are base-10
@@ -102,10 +120,11 @@ non-consuming behavior. No new config key is proposed.
 | Gate Definitions | Project-owned machine values under kit schema; transferred through Kit Activation into immutable fid registrations |
 | Provider projections and tools | Kit package and project overlay |
 | Repository roots/worktrees and allowed/protected paths | Approved Envelope and registration binding |
-| fid storage safety ceilings | `.fid/config.toml` |
+| fid storage safety ceilings | The ledger's `config.toml` |
 
-There is no live `.fid/gates.toml` registry. fid never reads a mutable authored
-gate file at execution time. Standalone clients use the same registration API.
+There is no live `gates.toml` registry in the ledger. fid never reads a
+mutable authored gate file at execution time. Standalone clients use the same
+registration API.
 
 ## 4. Artifact Storage
 
@@ -125,10 +144,13 @@ gate file at execution time. Standalone clients use the same registration API.
 
 ## 5. Initialization And Reset
 
-`fid init` validates the target, writes into a staging directory, initializes
-the supported schema, appends the project-initialized Event, verifies rebuild,
-and atomically activates `.fid/`. Failure leaves no partially initialized
-workspace.
+`fid init` validates the target, writes into a staging directory beside the
+ledger (`<git-common-dir>/fid-staging-*`), initializes the supported schema,
+appends the project-initialized Event, verifies rebuild, and atomically
+renames the staging directory's ledger to `<git-common-dir>/fid/`. Failure
+leaves no partially initialized ledger. Init from any worktree of a
+repository creates the one ledger they share; once it exists, init from any
+of them refuses with `project-already-initialized`.
 
 For the final Phase 21 schema, that Event is the exact role-free Event-v2
 fixture in the slice contract: service Actor, project sequence 1, null
@@ -139,7 +161,7 @@ Before first dogfood, existing development workspaces may be deleted and
 reinitialized. No automatic migration from pre-ADR-0011 schema or journal
 events is a product requirement.
 
-Phase 20 convergence may also write `.fid/pricing.toml` solely for the legacy
+Phase 20 convergence may also write the ledger's `pricing.toml` solely for the legacy
 stats commands owned for deletion in Phase 26 (renumbered by DEC-272). It is not part of `config.toml`,
 is not accepted by the strict config parser, and is absent from the first
 supported baseline.
@@ -157,4 +179,5 @@ entries whose source is `literal`, approved `inherit`, or `credential` name.
 The ambient environment is not inherited wholesale. Credential values exist
 only in process memory long enough to execute and redact output.
 
-*Last updated: 2026-08-22 (Phase 21 DEC-157 interface/bootstrap amendment)*
+*Last updated: 2026-11-05 (RESET 1.1d3: the ledger moves to the git common
+directory)*

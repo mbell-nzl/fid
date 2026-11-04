@@ -553,8 +553,9 @@ set, so one term denoted two closed sets and an identifier was filed in the
 wrong one (Phase 23 DEC-226). Name the set explicitly.
 
 **Project root**
-Definition: The directory that directly contains `.fid/` and identifies one fid
-project.
+Definition: The top level of the git worktree fid runs in, as
+`git rev-parse --show-toplevel` reports it. Its project's ledger is in the
+repository's git common directory, which every worktree shares.
 Use when: describing discovery, explicit selection, or path normalization.
 Avoid: "workspace," which historically named the same directory and now invites
 confusion with a Git worktree.
