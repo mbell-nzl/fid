@@ -42,7 +42,7 @@ func TestP22RecoveryPreservesRepositoryOnSuccessAndUnsafeRejection(t *testing.T)
 				}
 				a.p22Advance(t, "run.inspect", inspection.Stdout)
 			} else if kind == "protected-adoption" {
-				adopted = []string{".fid/config.toml"}
+				adopted = []string{".git/fid/config.toml"}
 			} else {
 				p22MakeRepositoryUnsafe(t, a, kind)
 			}

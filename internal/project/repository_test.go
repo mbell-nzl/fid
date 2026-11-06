@@ -70,6 +70,7 @@ func TestObserveRepositoryPinsCanonicalDirtyVectorsAndExclusions(t *testing.T) {
 	}
 	writeFixtureFile(t, repository, "untracked.txt", "untracked\n")
 	writeFixtureFile(t, repository, "ignored.txt", "ignored\n")
+	// Until 1.1d5 fid excluded .fid/ paths; now this one counts like any other.
 	writeFixtureFile(t, repository, ".fid/operational", "excluded\n")
 
 	observation, err := ObserveRepository(repository)
@@ -80,19 +81,61 @@ func TestObserveRepositoryPinsCanonicalDirtyVectorsAndExclusions(t *testing.T) {
 	for _, entry := range observation.Entries {
 		gotPaths = append(gotPaths, entry.Path)
 	}
-	wantPaths := []string{"deleted.txt", "link", "mode.txt", "old-name.txt", "renamed.txt", "staged.txt", "unstaged.txt", "untracked.txt"}
+	wantPaths := []string{".fid/operational", "deleted.txt", "link", "mode.txt", "old-name.txt", "renamed.txt", "staged.txt", "unstaged.txt", "untracked.txt"}
 	if fmt.Sprint(gotPaths) != fmt.Sprint(wantPaths) {
 		t.Fatalf("ObserveRepository() paths = %#v, want %#v", gotPaths, wantPaths)
 	}
 	if !observation.Dirty || observation.DirtyDigest == nil {
 		t.Fatalf("ObserveRepository() = %#v, want a dirty canonical observation", observation)
 	}
-	const wantDigest = "sha256:78a4fa6c735d4f68e102172a4a0af0885638aec00891c2f6d79929b0d9af3cec"
+	const wantDigest = "sha256:1e6bbb5515d90e67323d890073e4338633671a9f09df0ae6e61ef964db206068"
 	if *observation.DirtyDigest != wantDigest {
 		t.Fatalf("ObserveRepository() dirty digest = %q, want %q", *observation.DirtyDigest, wantDigest)
 	}
 	if repeat, err := ObserveRepository(repository); err != nil || repeat.DirtyDigest == nil || *repeat.DirtyDigest != wantDigest {
 		t.Fatalf("repeated ObserveRepository() = %#v, %v; want stable pinned digest %q", repeat, err, wantDigest)
+	}
+}
+
+// The ledger is no longer in the worktree, so a .fid/ there is an ordinary
+// path (D4 / F1, decided 6 November 2026): its untracked and edited files make
+// the worktree dirty, and ignore rules apply to it as to any other path.
+func TestObserveRepositoryCountsALeftoverFidDirectoryAsDirty(t *testing.T) {
+	t.Parallel()
+	repository := initRepositoryFixture(t)
+	writeFixtureFile(t, repository, ".fid/config.toml", "leftover config\n")
+	writeFixtureFile(t, repository, ".fid/journal/2026-10-01.jsonl", "leftover journal\n")
+	writeFixtureFile(t, repository, ".fid/.gitignore", "fid.sqlite\n")
+	writeFixtureFile(t, repository, ".fid/fid.sqlite", "ignored projection\n")
+
+	observation, err := ObserveRepository(repository)
+	if err != nil {
+		t.Fatalf("ObserveRepository() error = %v", err)
+	}
+	gotPaths := make([]string, 0, len(observation.Entries))
+	for _, entry := range observation.Entries {
+		gotPaths = append(gotPaths, entry.Path)
+	}
+	wantPaths := []string{".fid/.gitignore", ".fid/config.toml", ".fid/journal/2026-10-01.jsonl"}
+	if fmt.Sprint(gotPaths) != fmt.Sprint(wantPaths) {
+		t.Fatalf("ObserveRepository() paths = %#v, want %#v", gotPaths, wantPaths)
+	}
+	if !observation.Dirty || observation.DirtyDigest == nil {
+		t.Fatalf("ObserveRepository() = %#v, want a dirty observation", observation)
+	}
+
+	runGit(t, repository, "add", "--", ".fid")
+	runGit(t, repository, "commit", "-qm", "track the leftover .fid")
+	if clean, err := ObserveRepository(repository); err != nil || clean.Dirty || len(clean.Entries) != 0 {
+		t.Fatalf("ObserveRepository() after commit = %#v, %v; want clean, with .fid/fid.sqlite still ignored", clean, err)
+	}
+	writeFixtureFile(t, repository, ".fid/config.toml", "edited config\n")
+	edited, err := ObserveRepository(repository)
+	if err != nil {
+		t.Fatalf("ObserveRepository() after edit error = %v", err)
+	}
+	if len(edited.Entries) != 1 || edited.Entries[0].Path != ".fid/config.toml" || edited.Entries[0].Head == nil || edited.Entries[0].Worktree == nil || !edited.Dirty {
+		t.Fatalf("ObserveRepository() entries = %#v, want the tracked .fid/config.toml edit", edited.Entries)
 	}
 }
 

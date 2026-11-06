@@ -1208,7 +1208,7 @@ func initializeObservedRepositoryForTest(t *testing.T, workspace string) {
 			t.Fatalf("initialize observed repository %v: %v (%s)", arguments, err, output)
 		}
 	}
-	if err := os.WriteFile(filepath.Join(workspace, ".gitignore"), []byte(".fid/\n*.json\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(workspace, ".gitignore"), []byte("*.json\n"), 0o600); err != nil {
 		t.Fatalf("write observed repository ignore: %v", err)
 	}
 	for _, arguments := range [][]string{{"add", ".gitignore"}, {"commit", "-qm", "fixture"}} {

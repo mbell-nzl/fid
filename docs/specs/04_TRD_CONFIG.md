@@ -45,8 +45,9 @@ Nothing in the ledger is committed. D4 / F1 makes a backup, not git, its copy
 off the machine (RESET task 1.2).
 
 There is no migration from the earlier layout, which kept the ledger in
-`.fid/` at the project root. fid neither reads nor writes a `.fid/` directory
-left in a worktree. Moving it into place by hand keeps it: in the main
+`.fid/` at the project root. fid doesn't treat a `.fid/` directory left in a
+worktree as a ledger: it's an ordinary path, so its files make the worktree
+dirty like any other. Moving it into place by hand keeps it: in the main
 worktree, `mv .fid .git/fid`.
 
 `fid init` and `export import` stage a new ledger in

@@ -15,8 +15,7 @@ fid [--project <path>] [--json] <command> ...
   git common directory (`--git-common-dir`). The project root is that top
   level, with symlinks resolved, so fid works from any subdirectory. The
   ledger is `$(git rev-parse --git-common-dir)/fid`, which every worktree of
-  the repository shares; fid never looks for a ledger anywhere else, and
-  ignores a `.fid` directory left in a worktree by the earlier layout
+  the repository shares; fid never looks for a ledger anywhere else
   (`04_TRD_CONFIG.md` section 1).
 - `--project <path>` works like `git -C <path>`: discovery starts at `<path>`
   instead of the working directory, and the root is that path's top level.
@@ -336,9 +335,9 @@ inputs.
 
 `run start`, `run close` and `run abandon` require
 `expected_repository:{head_oid,dirty}` instead of `repository`. Use
-`git rev-parse HEAD` and `git status --porcelain` (excluding `.fid/`) for the
-expectation. fid observes under the write lock after replay lookup, compares
-these two preconditions, and records the full observation. A mismatch returns
+`git rev-parse HEAD` and `git status --porcelain` for the expectation. fid
+observes under the write lock after replay lookup, compares these two
+preconditions, and records the full observation. A mismatch returns
 `repository-mismatch` with `{expected:{head_oid,dirty},observed:Repository}`
 and no Event. Start checks the Claim and Envelope as the same project and
 worktree, including a matching import destination binding; edits and commits
@@ -496,7 +495,7 @@ bounds, rejection codes and existing Finding disposition readback.
 Phase 24 Task 5 makes `review record` take required
 `expected_repository:{head_oid,dirty}` in place of a caller-supplied
 `repository`. Use the full output of `git rev-parse HEAD` for `head_oid` and
-set `dirty` from `git status --porcelain`, ignoring `.fid/` paths. The
+set `dirty` from `git status --porcelain`. The
 coverage item and exclusion Sources, and `evidence_refs`, take `SourceInput`
 without `repository`; project-file digests may be omitted for fid to compute.
 The stored Review and its Sources carry fid's single observed Repository.

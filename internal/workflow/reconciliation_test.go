@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -56,6 +57,66 @@ func TestReconcileRepositoryRequiresExactDirtyAdoption(t *testing.T) {
 	}
 	if err := ValidateReconciliationAdoption(reconciliation, []string{"owned.txt"}, "sha256:stale"); err == nil {
 		t.Fatal("ValidateReconciliationAdoption() stale digest error = nil, want recovery-state-conflict")
+	}
+}
+
+// A .fid/ in a worktree is an ordinary path (D4 / F1, decided 6 November
+// 2026), so its changes are in scope or outside it like any other. Paths in
+// .git stay protected.
+func TestReconcileRepositoryTreatsALeftoverFidDirectoryLikeAnyPath(t *testing.T) {
+	t.Parallel()
+	repository := reconciliationRepositoryFixture(t)
+	start, err := project.ObserveRepository(repository)
+	if err != nil {
+		t.Fatalf("observe clean repository: %v", err)
+	}
+	baseline := repositoryFromObservation(start)
+	for _, name := range []string{".fid/config.toml", ".fid/fid.sqlite"} {
+		path := filepath.Join(repository, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatalf("make parent of %s: %v", name, err)
+		}
+		if err := os.WriteFile(path, []byte("leftover\n"), 0o644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+	current, err := project.ObserveRepository(repository)
+	if err != nil {
+		t.Fatalf("observe dirty repository: %v", err)
+	}
+
+	scoped, err := ReconcileRepository(baseline, current, nil, []string{".fid/config.toml"})
+	if err != nil {
+		t.Fatalf("ReconcileRepository() error = %v", err)
+	}
+	got := map[string]string{}
+	for _, change := range scoped.Paths {
+		got[change.Path] = change.Classification
+	}
+	want := map[string]string{".fid/config.toml": "in-scope", ".fid/fid.sqlite": "outside-scope"}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("classifications = %v, want %v", got, want)
+	}
+
+	adoptable, err := ReconcileRepository(baseline, current, nil, []string{".fid/config.toml", ".fid/fid.sqlite"})
+	if err != nil {
+		t.Fatalf("ReconcileRepository() with both in scope error = %v", err)
+	}
+	if err := ValidateReconciliationAdoption(adoptable, []string{".fid/config.toml", ".fid/fid.sqlite"}, adoptable.Digest); err != nil {
+		t.Fatalf("ValidateReconciliationAdoption() of the leftover .fid paths error = %v", err)
+	}
+
+	// Git never lists a path in .git, so this entry is made by hand.
+	withGit := current
+	withGit.Entries = append(append([]project.Entry(nil), current.Entries...), project.Entry{Path: ".git/fid/config.toml"})
+	guarded, err := ReconcileRepository(baseline, withGit, nil, []string{".fid/config.toml", ".fid/fid.sqlite", ".git/fid/config.toml"})
+	if err != nil {
+		t.Fatalf("ReconcileRepository() with a .git entry error = %v", err)
+	}
+	for _, change := range guarded.Paths {
+		if wantProtected := change.Path == ".git/fid/config.toml"; (change.Classification == "protected") != wantProtected {
+			t.Fatalf("%s classified %q, want protected only for the .git path", change.Path, change.Classification)
+		}
 	}
 }
 

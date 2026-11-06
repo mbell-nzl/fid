@@ -109,7 +109,7 @@ func p22ClosedEventCorruptions() []p22EventCorruption {
 		{"recovery-unknown-authority-field", "run.recovered", p22MutateEventJSON("run_recoveries", "authority_json", func(v map[string]any) { v["qa_unknown"] = true })},
 		recovery("recovery-malformed-reconciliation", "reconciliation_json", "{}"),
 		recovery("recovery-adopted-paths-wrong-type", "adopted_paths_json", "\""+"not-an-array"+"\""),
-		recovery("recovery-protected-adoption", "adopted_paths_json", "[\".fid/fid.sqlite\"]"),
+		recovery("recovery-protected-adoption", "adopted_paths_json", "[\".git/fid/fid.sqlite\"]"),
 		{"stop-unknown-detail-field", "activation.recovery-selected", p22MutateEventJSON("stops", "details_json", func(v map[string]any) { v["qa_unknown"] = true })},
 		{"stop-invalid-condition-type", "activation.recovery-selected", p22MutateEventJSON("stops", "resolution_condition_json", func(v map[string]any) { v["type"] = "invented-condition" })},
 		stop("stop-invalid-blocked-action", "blocked_actions_json", "[\"invented.action\"]"),

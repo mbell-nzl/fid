@@ -115,6 +115,33 @@ func TestCurrentClosedValuesRejectIncompleteAndInvalidFacts(t *testing.T) {
 	}
 }
 
+// A .fid/ in a worktree is an ordinary path (D4 / F1, decided 6 November
+// 2026), so recovery may adopt it. Paths in .git stay protected.
+func TestCurrentAdoptedPathsAcceptALeftoverFidDirectory(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name, raw string
+		accepted  bool
+	}{
+		{"fid-directory", `[".fid"]`, true},
+		{"fid-files", `[".fid/config.toml",".fid/fid.sqlite"]`, true},
+		{"fid-and-other-files", `[".fid/journal/2026-10-01.jsonl","base.txt"]`, true},
+		{"git-directory", `[".git"]`, false},
+		{"git-ledger-file", `[".git/fid/fid.sqlite"]`, false},
+		{"fid-and-git-files", `[".fid/config.toml",".git/fid/config.toml"]`, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateCurrentJSON(Event{EventType: "run.recovered"}, Effect{Table: "run_recoveries", Op: "insert", PK: map[string]any{"id": "REC-test"}}, "adopted_paths_json", tc.raw)
+			if tc.accepted && err != nil {
+				t.Fatalf("adopted paths %s rejected: %v", tc.raw, err)
+			}
+			if !tc.accepted && (err == nil || !strings.Contains(err.Error(), "protected adopted path")) {
+				t.Fatalf("adopted paths %s error = %v, want protected adopted path", tc.raw, err)
+			}
+		})
+	}
+}
+
 const task9ConditionReference = "74c83b7033729785eb99403ecec9dcde30ac4280"
 
 func TestTask9ConditionDispatchRetainsPinnedPhase22Bytes(t *testing.T) {
