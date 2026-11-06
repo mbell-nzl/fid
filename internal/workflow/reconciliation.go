@@ -77,7 +77,7 @@ func reconcileRepository(start Repository, current project.Observation, checkpoi
 	paths := make([]PathChange, 0, len(current.Entries))
 	for _, entry := range current.Entries {
 		classification := "outside-scope"
-		if entry.Path == ".fid" || strings.HasPrefix(entry.Path, ".fid/") || entry.Path == ".git" || strings.HasPrefix(entry.Path, ".git/") {
+		if entry.Path == ".git" || strings.HasPrefix(entry.Path, ".git/") {
 			classification = "protected"
 		} else if approved[entry.Path] {
 			classification = "in-scope"

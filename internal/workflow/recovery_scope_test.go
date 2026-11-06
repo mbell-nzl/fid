@@ -12,7 +12,7 @@ import (
 
 func TestRecoveryUsesImmutableClaimScopeForOrdinaryAndForceAdoption(t *testing.T) {
 	t.Parallel()
-	for _, kind := range []string{"ordinary-in-scope", "ordinary-outside", "ordinary-forged-scope", "force-outside", "force-protected", "force-stale-digest", "force-omitted-path"} {
+	for _, kind := range []string{"ordinary-in-scope", "ordinary-outside", "ordinary-forged-scope", "force-outside", "force-leftover-fid", "force-stale-digest", "force-omitted-path"} {
 		t.Run(kind, func(t *testing.T) {
 			options, request := recoveryFixture(t)
 			force := kind[:5] == "force"
@@ -23,8 +23,9 @@ func TestRecoveryUsesImmutableClaimScopeForOrdinaryAndForceAdoption(t *testing.T
 			if kind == "ordinary-in-scope" {
 				name = "base.txt"
 			}
-			if kind == "force-protected" {
-				name = ".fid/recovery-protected"
+			if kind == "force-leftover-fid" {
+				// An ordinary path since 1.1d5; it used to be protected.
+				name = ".fid/recovery-leftover"
 			}
 			path := filepath.Join(options.WorkspaceRoot, name)
 			mustRecoveryTest(t, os.MkdirAll(filepath.Dir(path), 0o755))
@@ -50,7 +51,7 @@ func TestRecoveryUsesImmutableClaimScopeForOrdinaryAndForceAdoption(t *testing.T
 			beforeEnvelope, err := GetEnvelope(options.WorkspaceRoot, options.MigrationsDir, prior.EnvelopeID)
 			mustRecoveryTest(t, err)
 			result, err := RecoverRun(options, request)
-			wantSuccess := kind == "ordinary-in-scope" || kind == "force-outside"
+			wantSuccess := kind == "ordinary-in-scope" || kind == "force-outside" || kind == "force-leftover-fid"
 			if !wantSuccess {
 				var conflict *RecoveryStateConflictError
 				if !errors.As(err, &conflict) {
