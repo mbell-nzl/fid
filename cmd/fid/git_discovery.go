@@ -22,15 +22,17 @@ func discoverWorkspaceRoot(cmd *cobra.Command) (string, error) {
 	return project.Discover(start)
 }
 
-// renderRepositoryRefusal writes the refusal for a project command run outside
-// every git repository and returns its error. It returns nil for any other
-// cause, so each command's renderer handles those as before.
+// renderRepositoryRefusal writes the refusal for a project command whose
+// discovery refused, and returns its error: outside every git repository, or
+// where the ledger's location is unsafe. It returns nil for any other cause,
+// so each command's renderer handles those as before.
 func renderRepositoryRefusal(cmd *cobra.Command, cause error) error {
+	message := repositoryRefusalMessage(cause)
 	var unavailable *project.RepositoryUnavailableError
-	if !errors.Is(cause, project.ErrNotARepository) || !errors.As(cause, &unavailable) {
+	if message == "" || !errors.As(cause, &unavailable) {
 		return nil
 	}
-	failure, err := cli.NewFailure(cli.CodeRepositoryUnavailable, "fid needs a git repository", nil,
+	failure, err := cli.NewFailure(cli.CodeRepositoryUnavailable, message, nil,
 		map[string]any{"reason": unavailable.Reason, "detail": unavailable.Detail})
 	if err != nil {
 		return err
@@ -43,4 +45,16 @@ func renderRepositoryRefusal(cmd *cobra.Command, cause error) error {
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), leafOperation(cmd), failure, cause)
 	}
 	return writeHumanFailure(cmd, leafOperation(cmd), failure, cause)
+}
+
+// repositoryRefusalMessage returns the message for a discovery refusal, or ""
+// when cause is not one.
+func repositoryRefusalMessage(cause error) string {
+	switch {
+	case errors.Is(cause, project.ErrNotARepository):
+		return "fid needs a git repository"
+	case errors.Is(cause, project.ErrUnsafeLedger):
+		return "the ledger location is unsafe"
+	}
+	return ""
 }

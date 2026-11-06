@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"testing"
@@ -34,12 +35,38 @@ func TestEveryProjectCommandRefusesOutsideAGitRepository(t *testing.T) {
 	if err := os.Rename(ledger, config.LedgerDir(outside)); err != nil {
 		t.Fatalf("put the ledger back: %v", err)
 	}
+	before := snapshotWorkspacePersistence(t, outside)
+	assertEveryProjectCommandRefuses(t, outside, repositoryRefusal{
+		message: "fid needs a git repository", reason: "not-a-repository", names: []string{outside},
+	}, outside)
+	if !before.equal(snapshotWorkspacePersistence(t, outside)) {
+		t.Fatal("a refused command changed the ledger")
+	}
+}
+
+// repositoryRefusal is the repository-unavailable failure a command gives
+// when discovery refuses: its message, its reason, and the locations its
+// detail names.
+type repositoryRefusal struct {
+	message, reason string
+	names           []string
+}
+
+// assertEveryProjectCommandRefuses runs every command that opens or creates
+// a project from start, with export import's --repository at start too. Each
+// must refuse with want and exit 4, and leave every file under watched as it
+// was.
+func assertEveryProjectCommandRefuses(t *testing.T, start string, want repositoryRefusal, watched ...string) {
+	t.Helper()
 	inputs := t.TempDir()
-	cases := projectCommandRefusalCases(t, outside, inputs)
+	cases := projectCommandRefusalCases(t, start, inputs)
 	if len(cases) != 93 {
 		t.Fatalf("project commands = %d, want every live leaf except export validate and maintenance vacuum (93)", len(cases))
 	}
-	before := snapshotWorkspacePersistence(t, outside)
+	before := make([]map[string]workspaceSnapshotEntry, len(watched))
+	for index, directory := range watched {
+		before[index] = snapshotWorkspace(t, directory)
+	}
 	for _, item := range cases {
 		modes := []bool{false}
 		if item.json {
@@ -50,22 +77,24 @@ func TestEveryProjectCommandRefusesOutsideAGitRepository(t *testing.T) {
 			if jsonMode {
 				args = append([]string{"--json"}, args...)
 			}
-			result := grammarExecute(outside, args...)
+			result := grammarExecute(start, args...)
 			if cli.ExitCode(result.err) != 4 || result.stdout != "" {
 				t.Errorf("%s (json %t): exit %d, result %#v; want refusal with exit 4", item.leaf, jsonMode, cli.ExitCode(result.err), result)
 				continue
 			}
 			if !jsonMode {
-				if !strings.HasPrefix(result.stderr, "error: fid needs a git repository\nreason: repository-unavailable; detail=") {
+				if !strings.HasPrefix(result.stderr, "error: "+want.message+"\nreason: repository-unavailable; detail=") {
 					t.Errorf("%s Human refusal = %q", item.leaf, result.stderr)
 				}
 				continue
 			}
-			assertNotARepositoryFailure(t, item.operation, outside, result.stderr)
+			assertRepositoryRefusal(t, item.operation, want, result.stderr)
 		}
 	}
-	if !before.equal(snapshotWorkspacePersistence(t, outside)) {
-		t.Fatal("a refused command changed the ledger")
+	for index, directory := range watched {
+		if !reflect.DeepEqual(before[index], snapshotWorkspace(t, directory)) {
+			t.Errorf("a refused command changed %s", directory)
+		}
 	}
 }
 
@@ -202,7 +231,7 @@ func projectCommandInput(t *testing.T, key string) map[string]any {
 	return fix(input).(map[string]any)
 }
 
-func assertNotARepositoryFailure(t *testing.T, operation, start, stderr string) {
+func assertRepositoryRefusal(t *testing.T, operation string, want repositoryRefusal, stderr string) {
 	t.Helper()
 	var envelope struct {
 		OK        bool   `json:"ok"`
@@ -223,9 +252,14 @@ func assertNotARepositoryFailure(t *testing.T, operation, start, stderr string) 
 	failure := envelope.Error
 	detail, _ := failure.Details["detail"].(string)
 	if envelope.OK || envelope.Operation != operation || failure.Code != "repository-unavailable" || failure.Category != "precondition" ||
-		failure.Message != "fid needs a git repository" || !failure.Retryable || failure.Subject != nil || len(failure.Details) != 2 ||
-		failure.Details["reason"] != "not-a-repository" || !strings.Contains(detail, start) {
-		t.Errorf("%s refusal = %s, want repository-unavailable not-a-repository naming %q", operation, stderr, start)
+		failure.Message != want.message || !failure.Retryable || failure.Subject != nil || len(failure.Details) != 2 ||
+		failure.Details["reason"] != want.reason {
+		t.Errorf("%s refusal = %s, want repository-unavailable %s with message %q", operation, stderr, want.reason, want.message)
+	}
+	for _, name := range want.names {
+		if !strings.Contains(detail, name) {
+			t.Errorf("%s refusal detail %q does not name %q", operation, detail, name)
+		}
 	}
 }
 
