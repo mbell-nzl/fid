@@ -222,7 +222,7 @@ func fixtureRepository(t *testing.T, workspace, projectID string) workflow.Repos
 	if err := os.MkdirAll(filepath.Join(workspace, "project-docs", "gates"), 0o755); err != nil {
 		t.Fatalf("create fixture Source directory: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(workspace, ".gitignore"), []byte(".fid/\nfixture-artifact.txt\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(workspace, ".gitignore"), []byte("fixture-artifact.txt\n"), 0o644); err != nil {
 		t.Fatalf("write fixture gitignore: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(workspace, "project-docs", "gates", "fixture.json"), []byte("{\"fixture\":true}\n"), 0o644); err != nil {
