@@ -21,8 +21,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	assertClosureGitLayout(t, workspace)
 
 	journalPath := closureJournalPath(t, workspace)
-	closureRun(t, workspace, "git", "add", workspaceRelative(t, workspace, filepath.Join(config.LedgerDir(workspace), "journal")))
-	assertClosureJournalTracked(t, workspace)
+	assertClosureJournalNeverTracked(t, workspace)
 
 	closureRunFID(t, binary, workspace, "label", "add", "release", "--description", "Closure journey label", "--by", "developer")
 	closureWriteRequirementFixture(t, workspace)
@@ -109,7 +108,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	afterMaintenance := closureMaintenanceResultAt(t, workspace, maintenanceNow)
 	assertClosureMaintenanceStateEqual(t, afterMaintenance, beforeMaintenance)
 	assertClosureWorkflowsAfterRebuild(t, binary, workspace)
-	assertClosureJournalTracked(t, workspace)
+	assertClosureJournalNeverTracked(t, workspace)
 
 	closureRunFID(t, binary, workspace, "rebuild")
 	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), journalFilesBefore, "second rebuild")

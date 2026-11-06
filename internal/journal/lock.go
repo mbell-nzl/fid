@@ -33,9 +33,9 @@ func (err *LockUnavailableError) Error() string {
 }
 
 type WriteLock struct {
-	workspaceRoot string
-	path          string
-	released      bool
+	ledgerDir string
+	path      string
+	released  bool
 }
 
 type lockMetadata struct {
@@ -56,18 +56,45 @@ func WithLock(workspaceRoot string, owner LockOwner, fn func(*WriteLock) error) 
 	return withLockOptions(workspaceRoot, owner, defaultLockOptions(), fn)
 }
 
+// WithLedgerLock is WithLock for the ledger at ledgerDir, rather than the
+// project at a root: a ledger being staged has no .git to find it by.
+func WithLedgerLock(ledgerDir string, owner LockOwner, fn func(*WriteLock) error) error {
+	return withLedgerLockOptions(ledgerDir, owner, defaultLockOptions(), fn)
+}
+
 func TryWithLock(workspaceRoot string, owner LockOwner, fn func(*WriteLock) error) error {
+	return withLockOptions(workspaceRoot, owner, tryLockOptions(), fn)
+}
+
+func tryWithLedgerLock(ledgerDir string, owner LockOwner, fn func(*WriteLock) error) error {
+	return withLedgerLockOptions(ledgerDir, owner, tryLockOptions(), fn)
+}
+
+func tryLockOptions() lockOptions {
 	options := defaultLockOptions()
 	options.waitTimeout = 0
-	return withLockOptions(workspaceRoot, owner, options, fn)
+	return options
+}
+
+// workspaceLedgerDir returns the ledger of the project at workspaceRoot, or
+// "" for an empty root, which acquiring the lock refuses.
+func workspaceLedgerDir(workspaceRoot string) string {
+	if workspaceRoot == "" {
+		return ""
+	}
+	return config.LedgerDir(workspaceRoot)
 }
 
 func withLockOptions(workspaceRoot string, owner LockOwner, options lockOptions, fn func(*WriteLock) error) error {
+	return withLedgerLockOptions(workspaceLedgerDir(workspaceRoot), owner, options, fn)
+}
+
+func withLedgerLockOptions(ledgerDir string, owner LockOwner, options lockOptions, fn func(*WriteLock) error) error {
 	if fn == nil {
 		return fmt.Errorf("with lock: callback is required")
 	}
 
-	lock, err := acquireLock(workspaceRoot, owner, options)
+	lock, err := acquireLedgerLock(ledgerDir, owner, options)
 	if err != nil {
 		return err
 	}
@@ -94,7 +121,11 @@ func defaultLockOptions() lockOptions {
 }
 
 func acquireLock(workspaceRoot string, owner LockOwner, options lockOptions) (*WriteLock, error) {
-	if workspaceRoot == "" {
+	return acquireLedgerLock(workspaceLedgerDir(workspaceRoot), owner, options)
+}
+
+func acquireLedgerLock(ledgerDir string, owner LockOwner, options lockOptions) (*WriteLock, error) {
+	if ledgerDir == "" {
 		return nil, fmt.Errorf("acquire lock: workspace root is required")
 	}
 	if options.now == nil {
@@ -104,7 +135,7 @@ func acquireLock(workspaceRoot string, owner LockOwner, options lockOptions) (*W
 		options.sleep = time.Sleep
 	}
 
-	lockPath := filepath.Join(config.LedgerDir(workspaceRoot), lockDirectoryName)
+	lockPath := filepath.Join(ledgerDir, lockDirectoryName)
 	deadline := options.now().Add(options.waitTimeout)
 	for {
 		if err := os.Mkdir(lockPath, 0o755); err == nil {
@@ -119,8 +150,8 @@ func acquireLock(workspaceRoot string, owner LockOwner, options lockOptions) (*W
 			}
 
 			return &WriteLock{
-				workspaceRoot: workspaceRoot,
-				path:          lockPath,
+				ledgerDir: ledgerDir,
+				path:      lockPath,
 			}, nil
 		} else if !os.IsExist(err) {
 			return nil, fmt.Errorf("acquire lock %q: %w", lockPath, err)

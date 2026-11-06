@@ -102,7 +102,7 @@ func TestSchema19ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
 	entries["manifest.json"] = encodeManifestMap(t, manifest)
 	invalidArchive := filepath.Join(t.TempDir(), "schema18.zip")
 	writeTestArchive(t, invalidArchive, entries)
-	target := t.TempDir()
+	target := gittest.NewWorkspace(t)
 	before := workspaceTreeDigest(t, target)
 	_, err := Import(ImportOptions{ArchivePath: invalidArchive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "schema18"})
 	assertArchiveCheck(t, err, "schema-unsupported")
@@ -569,6 +569,36 @@ func workspaceTreeDigest(t *testing.T, root string) string {
 		snapshot.WriteByte(0)
 	}
 	return digest(snapshot.Bytes())
+}
+
+// treeListing names every entry under root, directories included, with each
+// regular file's contents, so a comparison also catches an empty directory
+// left behind.
+func treeListing(t *testing.T, root string) string {
+	t.Helper()
+	var listing strings.Builder
+	if err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		relative, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		listing.WriteString(entry.Type().String() + " " + relative)
+		if entry.Type().IsRegular() {
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			listing.WriteString(" " + digest(data))
+		}
+		listing.WriteByte('\n')
+		return nil
+	}); err != nil {
+		t.Fatalf("walk %q: %v", root, err)
+	}
+	return listing.String()
 }
 
 func assertArchiveCheck(t *testing.T, err error, want string) {

@@ -49,9 +49,13 @@ func ReadImportBinding(workspaceRoot string) (ImportBinding, error) {
 	if err := json.Unmarshal(data, &binding); err != nil || binding.ProjectID == "" || binding.TargetRoot == "" || binding.ArchiveDigest == "" || binding.IdempotencyKey == "" || len(binding.ImportedEventIDs) == 0 {
 		return ImportBinding{}, fmt.Errorf("read import binding: invalid delivery metadata")
 	}
-	if binding.TargetRoot != root {
-		return ImportBinding{}, fmt.Errorf("read import binding: target root does not match workspace")
-	}
+	// The binding is qualified against the ledger it was read from: its project
+	// and imported history must match this ledger's config and journal.
+	// TargetRoot only records the worktree the archive was imported into. Every
+	// worktree of the repository shares the ledger, which outlives that
+	// worktree, so a reader in another worktree still gets the provenance.
+	// Callers that let the import's root stand in for a recorded worktree
+	// compare TargetRoot with their own root.
 	project, err := ReadProjectConfig(filepath.Join(workspace, ConfigFileName))
 	if err != nil || project.ProjectID != binding.ProjectID {
 		return ImportBinding{}, fmt.Errorf("read import binding: project binding is invalid")

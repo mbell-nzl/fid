@@ -57,15 +57,7 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 			t.Fatalf("Stat(%q) error = %v", path, err)
 		}
 	}
-	entries, err := os.ReadDir(workspace)
-	if err != nil {
-		t.Fatalf("ReadDir(%q) error = %v", workspace, err)
-	}
-	for _, entry := range entries {
-		if entry.IsDir() && strings.HasPrefix(entry.Name(), ".fid-staging-") {
-			t.Fatalf("successful init left staging residue %q", entry.Name())
-		}
-	}
+	assertNoInitStagingResidue(t, workspace)
 	configPath := filepath.Join(config.LedgerDir(workspace), "config.toml")
 	configPayload, err := os.ReadFile(configPath)
 	if err != nil {
@@ -652,15 +644,28 @@ abandoned_attempt_grace_seconds = %d
 	}
 }
 
+// assertNoInitStagingResidue checks that init left nothing behind: no staging
+// directory beside the ledger in the git common directory, and nothing in the
+// fresh worktree but .git.
 func assertNoInitStagingResidue(t *testing.T, workspace string) {
 	t.Helper()
-	entries, err := os.ReadDir(workspace)
+	commonDir := filepath.Dir(config.LedgerDir(workspace))
+	entries, err := os.ReadDir(commonDir)
+	if err != nil {
+		t.Fatalf("ReadDir(%q) error = %v", commonDir, err)
+	}
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), "fid-staging-") {
+			t.Fatalf("staging residue %q remains", entry.Name())
+		}
+	}
+	entries, err = os.ReadDir(workspace)
 	if err != nil {
 		t.Fatalf("ReadDir(%q) error = %v", workspace, err)
 	}
 	for _, entry := range entries {
-		if entry.IsDir() && strings.HasPrefix(entry.Name(), ".fid-staging-") {
-			t.Fatalf("staging residue %q remains", entry.Name())
+		if entry.Name() != ".git" {
+			t.Fatalf("init left %q in the worktree, want only .git", entry.Name())
 		}
 	}
 }

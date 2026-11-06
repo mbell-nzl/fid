@@ -6,11 +6,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func TestImportProcessExitAtPublicationBoundaries(t *testing.T) {
@@ -175,6 +177,174 @@ func TestImportBindingRejectsAlteredHistoryIdentity(t *testing.T) {
 	}
 	if _, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "binding"}); err == nil {
 		t.Error("altered imported Event identity still replays installation")
+	}
+}
+
+// Every worktree of a repository shares its ledger, so an imported ledger's
+// binding reads from each of them, still naming the worktree it was imported
+// into. The binding travels with the ledger: moved into another repository,
+// it still reads there, but that repository's root never stands in for the
+// import's.
+func TestImportBindingReadsFromEveryWorktreeThatSharesTheLedger(t *testing.T) {
+	t.Parallel()
+	archive, target := boundaryImportFixture(t)
+	target = gittest.ResolvedPath(t, target)
+	result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "binding"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	linked := gittest.AddWorktree(t, target)
+	binding, err := config.ReadImportBinding(linked)
+	if err != nil {
+		t.Fatalf("read the binding from a linked worktree: %v", err)
+	}
+	if binding.TargetRoot != target {
+		t.Fatalf("binding target root = %q, want the import's target %q", binding.TargetRoot, target)
+	}
+	other := gittest.ResolvedPath(t, gittest.NewWorkspace(t))
+	if err := os.Rename(config.LedgerDir(target), config.LedgerDir(other)); err != nil {
+		t.Fatal(err)
+	}
+	if moved, err := config.ReadImportBinding(other); err != nil || moved.TargetRoot != target {
+		t.Fatalf("binding of the moved ledger = %#v, %v; want the import's target %q", moved, err, target)
+	}
+	recorded := workflow.Repository{ProjectID: result.ProjectID, WorktreeID: "sha256:recorded"}
+	observed := workflow.Repository{ProjectID: result.ProjectID, WorktreeID: "sha256:observed"}
+	if workflow.SameWorktree(other, recorded, observed) {
+		t.Error("another repository's root stands in for the import's worktree")
+	}
+}
+
+// The ledger outlives the worktree an archive was imported into, and so does
+// its provenance: after that worktree is removed, the main worktree still
+// reads the binding and labels the imported history. Admission stays exact:
+// only the import's own root may stand in for another worktree.
+func TestImportProvenanceSurvivesRemovingTheImportWorktree(t *testing.T) {
+	t.Parallel()
+	archive, mainWorktree := boundaryImportFixture(t)
+	mainWorktree = gittest.ResolvedPath(t, mainWorktree)
+	linked := gittest.ResolvedPath(t, gittest.AddWorktree(t, mainWorktree))
+	result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: linked, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "provenance"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	recorded := workflow.Repository{ProjectID: result.ProjectID, WorktreeID: "sha256:recorded"}
+	observed := workflow.Repository{ProjectID: result.ProjectID, WorktreeID: "sha256:observed"}
+	if !workflow.SameWorktree(linked, recorded, observed) {
+		t.Fatal("the import's own root does not stand in for the recorded worktree")
+	}
+	if output, err := exec.Command("git", "-C", mainWorktree, "worktree", "remove", linked).CombinedOutput(); err != nil {
+		t.Fatalf("git worktree remove: %v: %s", err, output)
+	}
+	if _, err := os.Stat(config.LedgerDir(mainWorktree)); err != nil {
+		t.Fatalf("shared ledger after removing the import worktree: %v", err)
+	}
+	context, err := workflow.ReadRecoveryContext(mainWorktree, "")
+	if err != nil {
+		t.Fatalf("read recovery provenance from the main worktree: %v", err)
+	}
+	if context.Import == nil || context.Import.Destination != linked || context.Import.ProjectID != result.ProjectID || context.Import.EventCount == 0 {
+		t.Fatalf("recovery provenance = %#v, want the import into %q", context.Import, linked)
+	}
+	if workflow.SameWorktree(mainWorktree, recorded, observed) {
+		t.Error("another worktree of the ledger stands in for the recorded worktree")
+	}
+}
+
+// Import stages beside the ledger, in the git common directory: its snapshot
+// of the archive, then the staged ledger it renames into place. It writes
+// nothing in any worktree. The test looks while both exist, importing into a
+// linked worktree, whose common directory is the main worktree's .git.
+func TestImportStagesInTheGitCommonDirectory(t *testing.T) {
+	t.Parallel()
+	archive, mainWorktree := boundaryImportFixture(t)
+	mainWorktree = gittest.ResolvedPath(t, mainWorktree)
+	linked := gittest.ResolvedPath(t, gittest.AddWorktree(t, mainWorktree))
+	commonDir := filepath.Join(mainWorktree, ".git")
+	inspected := map[ImportStage]bool{}
+	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: linked, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "staging", Fault: func(stage ImportStage) error {
+		switch stage {
+		case ImportAfterValidation:
+			assertImportStaging(t, commonDir, []string{mainWorktree, linked}, false)
+		case ImportBeforePublication:
+			assertImportStaging(t, commonDir, []string{mainWorktree, linked}, true)
+		default:
+			return nil
+		}
+		inspected[stage] = true
+		return nil
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !inspected[ImportAfterValidation] || !inspected[ImportBeforePublication] {
+		t.Fatalf("inspected stages = %v, want after-validation and before-publication", inspected)
+	}
+	if _, err := os.Stat(filepath.Join(commonDir, "fid", config.ImportBindingFileName)); err != nil {
+		t.Fatalf("imported ledger: %v", err)
+	}
+	entries, err := os.ReadDir(commonDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), "fid-staging-") {
+			t.Fatalf("import left staging %q", entry.Name())
+		}
+	}
+	for _, worktree := range []string{mainWorktree, linked} {
+		assertOnlyGitIn(t, worktree)
+	}
+}
+
+// assertImportStaging checks that commonDir holds import's archive snapshot,
+// one fid-staging-* file, and, once staged, one fid-staging-* directory with
+// the staged ledger and its binding; that the ledger is not there yet; and
+// that every worktree holds nothing but .git.
+func assertImportStaging(t *testing.T, commonDir string, worktrees []string, staged bool) {
+	t.Helper()
+	entries, err := os.ReadDir(commonDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var snapshots, stages []string
+	for _, entry := range entries {
+		switch {
+		case entry.Name() == "fid":
+			t.Fatalf("ledger exists in %q before import publishes it", commonDir)
+		case strings.HasPrefix(entry.Name(), "fid-staging-") && entry.Type().IsRegular():
+			snapshots = append(snapshots, entry.Name())
+		case strings.HasPrefix(entry.Name(), "fid-staging-") && entry.IsDir():
+			stages = append(stages, entry.Name())
+		}
+	}
+	wantStages := 0
+	if staged {
+		wantStages = 1
+	}
+	if len(snapshots) != 1 || len(stages) != wantStages {
+		t.Fatalf("staging in %q: snapshots %v, stages %v; want one snapshot and %d stage", commonDir, snapshots, stages, wantStages)
+	}
+	if staged {
+		if _, err := os.Stat(filepath.Join(commonDir, stages[0], "fid", config.ImportBindingFileName)); err != nil {
+			t.Fatalf("staged ledger in %q: %v", stages[0], err)
+		}
+	}
+	for _, worktree := range worktrees {
+		assertOnlyGitIn(t, worktree)
+	}
+}
+
+func assertOnlyGitIn(t *testing.T, worktree string) {
+	t.Helper()
+	entries, err := os.ReadDir(worktree)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if entry.Name() != ".git" {
+			t.Fatalf("worktree %q holds %q, want only .git", worktree, entry.Name())
+		}
 	}
 }
 

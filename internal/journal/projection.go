@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
@@ -15,23 +14,23 @@ type EnsureProjectionResult struct {
 }
 
 func EnsureProjectionFresh(workspaceRoot, migrationsDir string) (EnsureProjectionResult, error) {
-	return ensureProjectionFresh(workspaceRoot, migrationsDir, nil)
+	return ensureProjectionFresh(workspaceLedgerDir(workspaceRoot), migrationsDir, nil)
 }
 
 func EnsureProjectionFreshWithLock(lock *WriteLock, migrationsDir string) (EnsureProjectionResult, error) {
 	if lock == nil {
 		return EnsureProjectionResult{}, fmt.Errorf("ensure projection fresh with lock: lock is nil")
 	}
-	return ensureProjectionFresh(lock.workspaceRoot, migrationsDir, lock)
+	return ensureProjectionFresh(lock.ledgerDir, migrationsDir, lock)
 }
 
-func ensureProjectionFresh(workspaceRoot, migrationsDir string, heldLock *WriteLock) (EnsureProjectionResult, error) {
-	dbPath := filepath.Join(config.LedgerDir(workspaceRoot), "fid.sqlite")
-	journalDir := filepath.Join(config.LedgerDir(workspaceRoot), "journal")
+func ensureProjectionFresh(ledgerDir, migrationsDir string, heldLock *WriteLock) (EnsureProjectionResult, error) {
+	dbPath := filepath.Join(ledgerDir, "fid.sqlite")
+	journalDir := filepath.Join(ledgerDir, "journal")
 
 	if _, err := os.Stat(dbPath); err != nil {
 		if os.IsNotExist(err) {
-			stats, rebuildErr := rebuildWorkspaceWithOptionalLock(workspaceRoot, migrationsDir, heldLock, LockOwner{
+			stats, rebuildErr := rebuildWorkspaceWithOptionalLock(ledgerDir, migrationsDir, heldLock, LockOwner{
 				Command: "fid catch-up",
 			})
 			if rebuildErr != nil {
@@ -81,13 +80,13 @@ func ensureProjectionFresh(workspaceRoot, migrationsDir string, heldLock *WriteL
 	case fiddb.ProjectionFresh:
 		return EnsureProjectionResult{Decision: decision}, nil
 	case fiddb.ProjectionCatchUp:
-		stats, err := catchUpWorkspaceWithOptionalLock(workspaceRoot, migrationsDir, meta, heldLock)
+		stats, err := catchUpWorkspaceWithOptionalLock(ledgerDir, migrationsDir, meta, heldLock)
 		if err != nil {
 			return EnsureProjectionResult{}, err
 		}
 		return EnsureProjectionResult{Decision: decision, ReplayStats: stats}, nil
 	case fiddb.ProjectionRebuild:
-		stats, err := rebuildWorkspaceWithOptionalLock(workspaceRoot, migrationsDir, heldLock, LockOwner{
+		stats, err := rebuildWorkspaceWithOptionalLock(ledgerDir, migrationsDir, heldLock, LockOwner{
 			Command: "fid catch-up",
 		})
 		if err != nil {
@@ -100,23 +99,30 @@ func ensureProjectionFresh(workspaceRoot, migrationsDir string, heldLock *WriteL
 }
 
 func RebuildWorkspace(workspaceRoot, migrationsDir string) (ReplayStats, error) {
-	return rebuildWorkspaceWithOwner(workspaceRoot, migrationsDir, LockOwner{
+	return RebuildLedger(workspaceLedgerDir(workspaceRoot), migrationsDir)
+}
+
+// RebuildLedger is RebuildWorkspace for the ledger at ledgerDir rather than
+// the project at a root, for a ledger being staged, which has no .git to find
+// it by.
+func RebuildLedger(ledgerDir, migrationsDir string) (ReplayStats, error) {
+	return rebuildWorkspaceWithOwner(ledgerDir, migrationsDir, LockOwner{
 		Command: "fid rebuild",
 	})
 }
 
-func rebuildWorkspaceWithOwner(workspaceRoot, migrationsDir string, owner LockOwner) (ReplayStats, error) {
-	return rebuildWorkspaceWithOptionalLock(workspaceRoot, migrationsDir, nil, owner)
+func rebuildWorkspaceWithOwner(ledgerDir, migrationsDir string, owner LockOwner) (ReplayStats, error) {
+	return rebuildWorkspaceWithOptionalLock(ledgerDir, migrationsDir, nil, owner)
 }
 
-func rebuildWorkspaceWithOptionalLock(workspaceRoot, migrationsDir string, heldLock *WriteLock, owner LockOwner) (ReplayStats, error) {
+func rebuildWorkspaceWithOptionalLock(ledgerDir, migrationsDir string, heldLock *WriteLock, owner LockOwner) (ReplayStats, error) {
 	if heldLock != nil {
 		return rebuildWorkspaceLocked(heldLock, migrationsDir)
 	}
 
 	var stats ReplayStats
-	err := TryWithLock(workspaceRoot, owner, func(_ *WriteLock) error {
-		replayed, err := rebuildWorkspaceLocked(&WriteLock{workspaceRoot: workspaceRoot}, migrationsDir)
+	err := tryWithLedgerLock(ledgerDir, owner, func(_ *WriteLock) error {
+		replayed, err := rebuildWorkspaceLocked(&WriteLock{ledgerDir: ledgerDir}, migrationsDir)
 		stats = replayed
 		return err
 	})
@@ -127,14 +133,14 @@ func rebuildWorkspaceWithOptionalLock(workspaceRoot, migrationsDir string, heldL
 	return stats, nil
 }
 
-func catchUpWorkspaceWithOptionalLock(workspaceRoot, migrationsDir string, meta fiddb.ProjectionMeta, heldLock *WriteLock) (ReplayStats, error) {
+func catchUpWorkspaceWithOptionalLock(ledgerDir, migrationsDir string, meta fiddb.ProjectionMeta, heldLock *WriteLock) (ReplayStats, error) {
 	if heldLock != nil {
 		return catchUpWorkspaceLocked(heldLock, migrationsDir, meta)
 	}
 
 	var stats ReplayStats
-	err := WithLock(workspaceRoot, LockOwner{Command: "fid catch-up"}, func(_ *WriteLock) error {
-		replayed, err := catchUpWorkspaceLocked(&WriteLock{workspaceRoot: workspaceRoot}, migrationsDir, meta)
+	err := WithLedgerLock(ledgerDir, LockOwner{Command: "fid catch-up"}, func(_ *WriteLock) error {
+		replayed, err := catchUpWorkspaceLocked(&WriteLock{ledgerDir: ledgerDir}, migrationsDir, meta)
 		stats = replayed
 		return err
 	})
@@ -146,7 +152,7 @@ func catchUpWorkspaceWithOptionalLock(workspaceRoot, migrationsDir string, meta 
 }
 
 func rebuildWorkspaceLocked(lock *WriteLock, migrationsDir string) (ReplayStats, error) {
-	dbPath := filepath.Join(config.LedgerDir(lock.workspaceRoot), "fid.sqlite")
+	dbPath := filepath.Join(lock.ledgerDir, "fid.sqlite")
 	temporary, err := os.CreateTemp(filepath.Dir(dbPath), ".fid-rebuild-*.sqlite")
 	if err != nil {
 		return ReplayStats{}, fmt.Errorf("create rebuild projection: %w", err)
@@ -168,7 +174,7 @@ func rebuildWorkspaceLocked(lock *WriteLock, migrationsDir string) (ReplayStats,
 		return ReplayStats{}, err
 	}
 
-	replayed, err := replayRebuild(conn, filepath.Join(config.LedgerDir(lock.workspaceRoot), "journal"))
+	replayed, err := replayRebuild(conn, filepath.Join(lock.ledgerDir, "journal"))
 	closeReplayDB(conn)
 	if err != nil {
 		return ReplayStats{}, err
@@ -181,7 +187,7 @@ func rebuildWorkspaceLocked(lock *WriteLock, migrationsDir string) (ReplayStats,
 }
 
 func catchUpWorkspaceLocked(lock *WriteLock, migrationsDir string, meta fiddb.ProjectionMeta) (ReplayStats, error) {
-	dbPath := filepath.Join(config.LedgerDir(lock.workspaceRoot), "fid.sqlite")
+	dbPath := filepath.Join(lock.ledgerDir, "fid.sqlite")
 	if err := fiddb.MigrateUp(dbPath, migrationsDir); err != nil {
 		return ReplayStats{}, err
 	}
@@ -192,7 +198,7 @@ func catchUpWorkspaceLocked(lock *WriteLock, migrationsDir string, meta fiddb.Pr
 	}
 	defer closeReplayDB(conn)
 
-	replayed, err := ReplayJournal(conn, filepath.Join(config.LedgerDir(lock.workspaceRoot), "journal"), &ReplayOptions{
+	replayed, err := ReplayJournal(conn, filepath.Join(lock.ledgerDir, "journal"), &ReplayOptions{
 		StartFile:   meta.JournalFile,
 		StartOffset: meta.JournalOffset,
 	})

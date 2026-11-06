@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -72,13 +73,23 @@ func assertNoActivationResidue(t *testing.T, workspaceRoot string) {
 		t.Fatalf("activated workspace state = %v, want absent", err)
 	}
 
-	entries, err := os.ReadDir(workspaceRoot)
+	commonDir := filepath.Dir(config.LedgerDir(workspaceRoot))
+	entries, err := os.ReadDir(commonDir)
+	if err != nil {
+		t.Fatalf("ReadDir(%q) error = %v", commonDir, err)
+	}
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), "fid-staging-") {
+			t.Fatalf("staging residue %q remains", entry.Name())
+		}
+	}
+	entries, err = os.ReadDir(workspaceRoot)
 	if err != nil {
 		t.Fatalf("ReadDir(%q) error = %v", workspaceRoot, err)
 	}
 	for _, entry := range entries {
-		if entry.IsDir() && isStagingDirectoryName(entry.Name()) {
-			t.Fatalf("staging residue %q remains", entry.Name())
+		if entry.Name() != ".git" {
+			t.Fatalf("init left %q in the worktree, want only .git", entry.Name())
 		}
 	}
 }

@@ -267,7 +267,7 @@ func validateArtifactRoot(value, fidRoot string) error {
 	}
 	for _, part := range strings.Split(value, string(filepath.Separator)) {
 		if part == ".." {
-			return fmt.Errorf("storage.artifact_root must not escape .fid")
+			return fmt.Errorf("storage.artifact_root must not escape the ledger directory")
 		}
 	}
 	path := fidRoot
@@ -289,12 +289,8 @@ func validateArtifactRoot(value, fidRoot string) error {
 		}
 		relative, err := filepath.Rel(fidRoot, resolved)
 		if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
-			return fmt.Errorf("storage.artifact_root symlink escapes .fid")
+			return fmt.Errorf("storage.artifact_root symlink escapes the ledger directory")
 		}
 	}
 	return nil
-}
-
-func pathsForConfigRoot(workspaceRoot string) string {
-	return LedgerDir(workspaceRoot)
 }

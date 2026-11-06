@@ -12,8 +12,11 @@ fid [--project <path>] [--json] <command> ...
 
 - fid needs a git repository. Discovery runs `git rev-parse --show-toplevel`
   once, from the working directory. The project root is that worktree's top
-  level, with symlinks resolved, so fid works from any subdirectory and never
-  looks for a ledger anywhere else. The ledger is `<root>/.fid`.
+  level, with symlinks resolved, so fid works from any subdirectory. The
+  ledger is `$(git rev-parse --git-common-dir)/fid`, which every worktree of
+  the repository shares; fid never looks for a ledger anywhere else, and
+  ignores a `.fid` directory left in a worktree by the earlier layout
+  (`04_TRD_CONFIG.md` section 1).
 - `--project <path>` works like `git -C <path>`: discovery starts at `<path>`
   instead of the working directory, and the root is that path's top level.
   `export import --repository` follows the same rule.
@@ -22,8 +25,8 @@ fid [--project <path>] [--json] <command> ...
   4; details `reason: not-a-repository` and `detail`). In a repository with no
   ledger, the failure is `project-not-found` (exit 3).
 - Output names ledger files by absolute path, in Human text and in JSON, never
-  relative to the project root: ADR-0013 moves the ledger to the git common
-  directory, outside a linked worktree. That covers `init`'s `journal_path`
+  relative to the project root, because a linked worktree's ledger is outside
+  that worktree. That covers `init`'s `journal_path`
   and Human message (`initialized fid project in <ledger>/`), `journal
   inspect`'s `journal_file`, the `journal_file` and `lock_path` failure
   details, and Human lines that name a journal file or the projection. A

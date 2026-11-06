@@ -28,7 +28,7 @@ var p24FallbackRows = []p24FallbackRow{
 	{"link_response.go:linkFailure", "link.list", "request", "accepted link.list input", "link list: entity id is required", []string{"link", "list", " ", "--type", "issue"}, true},
 	{"activation.go:activationFailure", "activation.status", "input", "accepted activation input", "project not found: $ROOT", []string{"activation", "status", "ACT-missing"}, false},
 	{"claim.go:renderClaimError", "claim.list", "input", "accepted claim.list input", "project not found: $ROOT", []string{"claim", "list"}, false},
-	{"concern.go:renderConcernError", "concern.list", "input", "accepted concern.list input", "acquire lock \"$ROOT/.fid/write.lock\": mkdir $ROOT/.fid/write.lock: no such file or directory", []string{"concern", "list"}, false},
+	{"concern.go:renderConcernError", "concern.list", "input", "accepted concern.list input", "acquire lock \"$ROOT/.git/fid/write.lock\": mkdir $ROOT/.git/fid/write.lock: no such file or directory", []string{"concern", "list"}, false},
 	{"decision.go:renderDecisionError", "decision.list", "input", "accepted decision.list input", "project not found: $ROOT", []string{"decision", "list"}, false},
 	{"deviation.go:renderDeviationError", "deviation.list", "input", "accepted deviation.list input", "project not found: $ROOT", []string{"deviation", "list"}, false},
 	{"envelope.go:renderEnvelopeError", "envelope.get", "input", "accepted envelope.get input", "project not found: $ROOT", []string{"envelope", "get", "ENV-missing"}, false},

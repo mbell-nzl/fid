@@ -49,6 +49,29 @@ func TestUnbornHeadIsDiscoverableButNotObservable(t *testing.T) {
 	}
 }
 
+func TestAddWorktreeSharesTheRepositorysCommonDirectory(t *testing.T) {
+	t.Parallel()
+	repository := gittest.NewWorkspace(t)
+	worktree := gittest.AddWorktree(t, repository)
+	commonDir := func(directory string) string {
+		t.Helper()
+		output, err := exec.Command("git", "-C", directory, "rev-parse", "--path-format=absolute", "--git-common-dir").Output()
+		if err != nil {
+			t.Fatalf("git rev-parse --git-common-dir in %q: %v", directory, err)
+		}
+		return strings.TrimSpace(string(output))
+	}
+	if got, want := commonDir(worktree), commonDir(repository); got != want {
+		t.Fatalf("linked worktree's common directory = %q, want the repository's %q", got, want)
+	}
+	if want := filepath.Join(gittest.ResolvedPath(t, repository), ".git"); commonDir(repository) != want {
+		t.Fatalf("common directory = %q, want %q", commonDir(repository), want)
+	}
+	if gittest.ResolvedPath(t, worktree) == gittest.ResolvedPath(t, repository) {
+		t.Fatalf("linked worktree %q is the repository itself", worktree)
+	}
+}
+
 func TestGuardedGitWorkspaceIsItsOwnRepository(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)

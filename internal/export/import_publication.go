@@ -51,7 +51,7 @@ func snapshotImportInput(target, archivePath, digest string) (string, error) {
 		return "", fmt.Errorf("import: open archive: %w", err)
 	}
 	defer func() { _ = input.Close() }()
-	output, err := os.CreateTemp(target, ".fid-import-input-")
+	output, err := os.CreateTemp(filepath.Dir(config.LedgerDir(target)), config.LedgerStagingPrefix)
 	if err != nil {
 		return "", fmt.Errorf("import: create archive snapshot: %w", err)
 	}
@@ -92,10 +92,11 @@ func ensureEmptyImportTarget(target string) error {
 	return &ImportTargetConflictError{TargetRoot: target, Reason: "populated"}
 }
 
-func publishImport(stage, destination string) error {
-	if err := unix.Renameat2(unix.AT_FDCWD, stage, unix.AT_FDCWD, destination, unix.RENAME_NOREPLACE); err != nil {
+// publishImport renames the staged ledger into place as target's ledger.
+func publishImport(stage, target string) error {
+	if err := unix.Renameat2(unix.AT_FDCWD, stage, unix.AT_FDCWD, config.LedgerDir(target), unix.RENAME_NOREPLACE); err != nil {
 		if errors.Is(err, unix.EEXIST) {
-			return &ImportTargetConflictError{TargetRoot: filepath.Dir(destination), Reason: "populated"}
+			return &ImportTargetConflictError{TargetRoot: target, Reason: "populated"}
 		}
 		return fmt.Errorf("import: atomically publish staged project: %w", err)
 	}

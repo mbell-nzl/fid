@@ -130,6 +130,33 @@ func NewNamedWorkspace(t testing.TB, name string) string {
 	return workspace
 }
 
+// AddWorktree adds a linked worktree of repository in a fresh temp directory
+// and returns its path. A repository with no commit gets an empty one first,
+// because git needs a commit to check out. The linked worktree shares the
+// repository's git common directory, so fid finds one ledger from both.
+func AddWorktree(t testing.TB, repository string) string {
+	t.Helper()
+	if err := checkGuard(); err != nil {
+		t.Fatalf("add worktree: %v", err)
+	}
+	git := func(args ...string) {
+		t.Helper()
+		if output, err := exec.Command("git", append([]string{"-C", repository}, args...)...).CombinedOutput(); err != nil {
+			t.Fatalf("git %v in %q: %v: %s", args, repository, err, output)
+		}
+	}
+	if err := exec.Command("git", "-C", repository, "rev-parse", "--verify", "-q", "HEAD").Run(); err != nil {
+		git("-c", "user.name=fid test", "-c", "user.email=fid@example.test", "-c", "commit.gpgsign=false",
+			"commit", "-q", "--no-verify", "--allow-empty", "-m", "base")
+	}
+	worktree := filepath.Join(t.TempDir(), "linked")
+	git("worktree", "add", "-q", "--detach", worktree)
+	if err := CheckRepository(worktree); err != nil {
+		t.Fatalf("add worktree: %v", err)
+	}
+	return worktree
+}
+
 // ResolvedPath returns path with symlinks resolved: the form git, and so
 // fid, reports a repository's top level in, even when TMPDIR is a symlink.
 func ResolvedPath(t testing.TB, path string) string {

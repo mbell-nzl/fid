@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/mbell-nzl/fid/internal/config"
 )
 
 type IdempotencyRequest struct {
@@ -71,7 +69,7 @@ func CommitEvent(lock *WriteLock, conn *sql.DB, event Event) (Event, error) {
 		return Event{}, fmt.Errorf("commit Event: hash Event %q: %w", appended.EventID, err)
 	}
 	journalFile := appended.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
-	journalPath := filepath.Join(config.LedgerDir(lock.workspaceRoot), "journal", journalFile)
+	journalPath := filepath.Join(lock.ledgerDir, "journal", journalFile)
 	info, err := os.Stat(journalPath)
 	if err != nil {
 		return Event{}, fmt.Errorf("commit Event: stat journal %q: %w", journalPath, err)
@@ -151,7 +149,7 @@ func CommitIdempotent(lock *WriteLock, conn *sql.DB, request IdempotencyRequest,
 		return IdempotencyOutcome{}, fmt.Errorf("commit idempotent: hash Event %q: %w", appended.EventID, err)
 	}
 	journalFile := appended.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
-	journalPath := filepath.Join(config.LedgerDir(lock.workspaceRoot), "journal", journalFile)
+	journalPath := filepath.Join(lock.ledgerDir, "journal", journalFile)
 	info, err := os.Stat(journalPath)
 	if err != nil {
 		return IdempotencyOutcome{}, fmt.Errorf("commit idempotent: stat journal %q: %w", journalPath, err)
