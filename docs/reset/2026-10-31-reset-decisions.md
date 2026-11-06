@@ -452,9 +452,9 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 - Declared paths per task, if shared-file conflicts become a regular cost.
 - Collapse candidates after the trial: Activation, plus any concept the leak
   test keeps catching.
-- Generic retry-exhausted, the Envelope revision-1 limit, dead-code cleanup,
-  and replay reporting `line: 0` for a current-event prior conflict (found
-  in 1.1d2, #39).
+- Generic retry-exhausted, the Envelope revision-1 limit, dead-code cleanup.
+- Replay reports `line: 0` for a current-event prior conflict (found in
+  1.1d2, #39). Fix it after the trial.
 - yoyu migration (after the trial).
 - CI test time (from 1.1c1, 4 November 2026). `ci_tests.py` assigns tests
   to shards by their position in a sorted list of names, so adding one test
@@ -469,6 +469,8 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   `cmd/fid`, 10 in integration), which fail on `main` too. They compare
   paths without resolving symlinks; P24 observation tests, for example,
   hash an unresolved worktree path. Found in 1.1c2; no PR since added one.
+  Do this work when any shard's `cmd/fid` run passes 15 minutes, and
+  before the trial at the latest.
 - Stale ledger staging (from 1.1d3, 6 November 2026). A crash during
   `init` or `export import` can leave `<common>/fid-staging-*` behind.
   `git status` doesn't show it, and nothing removes it. Add cleanup once
