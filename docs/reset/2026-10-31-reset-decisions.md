@@ -336,7 +336,9 @@ for confirmation".
   - **G:** CI runs the race detector only in packages whose non-test
     product code starts goroutines (today `internal/evidence`), and runs
     without it everywhere else. CI finds those packages by parsing the
-    source on every run, so a new goroutine can't escape race coverage.
+    source on every run, so a new goroutine can't escape race coverage. It
+    refuses a package that doesn't build in its mode, and tests that build
+    only in the other mode, because those would never run.
   - **H:** a push to `main` may reuse a passed CI run when the merge
     commit's tree is identical to the tree that run tested. Done (merged
     into `main` with CI green on that commit) accepts that reuse. This
@@ -348,9 +350,13 @@ for confirmation".
     not on drafts; a new push cancels a pull request's superseded run (never
     a run on `main`); shards are balanced by measured time, and there are
     fewer of them.
-  - Not decided by Mark: 0.7 also applies G to `make test` and to the
-    integration command in AGENTS.md, so local checks match CI. The 0.7 PR
-    flags it for him to keep or veto.
+  - G applies to local checks too: `make test` and the integration command
+    in AGENTS.md, so local runs match CI.
+  - One test shard. Minutes are scarce and CI now runs about once per pull
+    request, so a couple of extra minutes of wall time don't matter. The
+    balancing by measured time stays, for when more shards are worth it.
+  - `make fmt-check` fails when gofmt lists a file, so CI's format check
+    blocks. Before, `gofmt -l` listed files and still exited 0.
 
 ## Work model
 
@@ -527,8 +533,8 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   1.1d2, #39). Fix it after the trial.
 - yoyu migration (after the trial).
 - CI test time (from 1.1c1, 4 November 2026; partly done in 0.7). 0.7
-  dropped the race detector outside goroutine packages (G), cut the shards
-  from four to two, and balanced them by measured time from
+  dropped the race detector outside goroutine packages (G) and cut the
+  shards from four to one. Shards are still balanced by measured time from
   `.github/scripts/durations.json`; `ci_tests.py durations` rewrites that
   file from a run's shard logs. Two things remain. First, review whether
   every test earns its run time. Measured without race on 2 CPUs,

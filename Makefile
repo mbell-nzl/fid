@@ -1,7 +1,12 @@
 .PHONY: fmt-check lint test coverage build
 
+FMT_DIRS = cmd internal .github/scripts
+
+# gofmt -l exits 0 even when it lists files, so any listed file fails the check.
 fmt-check:
-	gofmt -l cmd internal .github/scripts
+	@files="$$(gofmt -l $(FMT_DIRS))" || exit 1; \
+	if [ -n "$$files" ]; then printf 'gofmt would reformat:\n%s\n' "$$files"; exit 1; fi; \
+	echo "gofmt: $(FMT_DIRS) formatted"
 
 lint:
 	golangci-lint run ./...
