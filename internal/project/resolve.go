@@ -41,23 +41,24 @@ func Resolve(start string) (string, error) {
 // git reports it, so symlinks are resolved. Discovery starts at start, as
 // `git -C start` would.
 //
-// One `git rev-parse` reports the top level and the git common directory.
-// Discover refuses with ErrUnsafeLedger where fid could write outside
-// <common>/fid or where git could track the ledger: where LedgerDir names a
-// different ledger from git's, or where the common directory is inside the
-// worktree but not within a .git directory.
+// Discover runs `git rev-parse` twice, once for the top level and once for the
+// git common directory, so each output is one path, whatever it holds. It
+// refuses with ErrUnsafeLedger where fid could write outside <common>/fid or
+// where git could track the ledger: where LedgerDir names a different ledger
+// from git's, or where the common directory is inside the worktree but not
+// within a .git directory.
 func Discover(start string) (string, error) {
 	directory, err := absoluteDirectory(start)
 	if err != nil {
 		return "", err
 	}
-	output, err := gitText(directory, "rev-parse", "--show-toplevel", "--path-format=absolute", "--git-common-dir")
+	root, err := gitPath(directory, "--show-toplevel")
 	if err != nil {
-		return "", fmt.Errorf("%w: %w", ErrNotARepository, unsafeRepositoryReason("not-a-repository", "%s is not in a git repository (%v)", directory, err))
+		return "", notARepository(directory, err)
 	}
-	root, common, err := readGitReport(output, directory)
+	common, err := gitPath(directory, "--path-format=absolute", "--git-common-dir")
 	if err != nil {
-		return "", err
+		return "", notARepository(directory, err)
 	}
 	if err := checkLedgerLocation(root, common); err != nil {
 		return "", err
@@ -65,55 +66,19 @@ func Discover(start string) (string, error) {
 	return root, nil
 }
 
-// readGitReport splits git's report of the top level and the common
-// directory, which git prints one per line. A newline in either path leaves
-// more than one way to read it. The right reading then is the one whose top
-// level holds the start directory, as it does wherever git found the
-// repository from there, and only one reading can. Failing that, where
-// GIT_WORK_TREE or core.worktree names a worktree elsewhere, it is the
-// reading whose ledger LedgerDir agrees with. If no reading agrees, git and
-// LedgerDir disagree however the report is read; if several do, fid can't
-// tell which ledger git names. Both refuse.
-func readGitReport(output, directory string) (root, common string, err error) {
-	var readings [][2]string
-	for index := 1; index < len(output)-1; index++ {
-		if output[index] == '\n' {
-			readings = append(readings, [2]string{output[:index], output[index+1:]})
-		}
+// gitPath returns the one path `git rev-parse` reports for arguments. Git
+// ends its output with a newline, and a path may end in one too, so exactly
+// one is stripped.
+func gitPath(directory string, arguments ...string) (string, error) {
+	output, err := gitOutput(directory, append([]string{"rev-parse"}, arguments...)...)
+	if err != nil {
+		return "", err
 	}
-	if len(readings) == 0 {
-		return "", "", unsafeLedger("git rev-parse in %s reported %s, want a top level and a common directory", directory, output)
-	}
-	if len(readings) == 1 {
-		return readings[0][0], readings[0][1], nil
-	}
-	if start, err := filepath.EvalSymlinks(directory); err == nil {
-		holding := filterReadings(readings, func(reading [2]string) bool { return within(reading[0], start) })
-		if len(holding) == 1 {
-			return holding[0][0], holding[0][1], nil
-		}
-	}
-	agreeing := filterReadings(readings, func(reading [2]string) bool {
-		_, agree := agreedLedger(reading[0], reading[1])
-		return agree
-	})
-	switch len(agreeing) {
-	case 0:
-		return "", "", unsafeLedger("git and the worktree name different ledgers, however git's report of the top level and common directory, %s, is read; check GIT_DIR, GIT_COMMON_DIR, GIT_WORK_TREE and core.worktree", output)
-	case 1:
-		return agreeing[0][0], agreeing[0][1], nil
-	}
-	return "", "", unsafeLedger("git's report of the top level and common directory, %s, reads more than one way, each naming a ledger the worktree agrees with, so fid can't tell which ledger git names", output)
+	return strings.TrimSuffix(string(output), "\n"), nil
 }
 
-func filterReadings(readings [][2]string, keep func([2]string) bool) [][2]string {
-	var kept [][2]string
-	for _, reading := range readings {
-		if keep(reading) {
-			kept = append(kept, reading)
-		}
-	}
-	return kept
+func notARepository(directory string, err error) error {
+	return fmt.Errorf("%w: %w", ErrNotARepository, unsafeRepositoryReason("not-a-repository", "%s is not in a git repository (%v)", directory, err))
 }
 
 // checkLedgerLocation refuses unless git and LedgerDir name the same ledger
