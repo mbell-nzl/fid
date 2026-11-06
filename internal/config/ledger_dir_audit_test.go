@@ -11,12 +11,14 @@ import (
 	"testing"
 )
 
-// The ledger is moving to the Git common directory (RESET task 1.1d), so the
-// only code that may join the ledger directory onto a root is LedgerDir. That
-// holds for tests too, so they follow the ledger when it moves. The config
-// package's own tests are exempt: they pin where LedgerDir points. A path that
-// starts with ".fid" is a display string, not a location, and is left alone;
-// one joined onto a root is a location.
+// The ledger is in the Git common directory (RESET task 1.1d3), so the only
+// code that may join the ledger directory onto a root is LedgerDir. That
+// holds for tests too, so they follow the ledger wherever LedgerDir puts it.
+// The config package's own tests are exempt: they pin where LedgerDir points.
+// A ".fid" literal joined onto a root is where the ledger used to be, and is
+// flagged. Any other path that starts with ".fid" is left alone: a display
+// string, or a relative worktree path, since a .fid in a worktree is an
+// ordinary path (task 1.1d5).
 func TestLedgerPathsComeOnlyFromLedgerDir(t *testing.T) {
 	t.Parallel()
 	var strays []string
