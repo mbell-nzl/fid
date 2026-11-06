@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func BenchmarkInitializeWorkspace(b *testing.B) {
@@ -29,6 +30,9 @@ func BenchmarkInitializeWorkspace(b *testing.B) {
 		b.StopTimer()
 		workspaceRoot, err := os.MkdirTemp("", "fid-init-benchmark-")
 		if err != nil {
+			b.Fatal(err)
+		}
+		if err := gittest.InitRepository(workspaceRoot); err != nil {
 			b.Fatal(err)
 		}
 

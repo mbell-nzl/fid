@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 type p24FallbackRow struct {
@@ -117,7 +119,7 @@ func TestP24GenericFallbackDomainPairs(t *testing.T) {
 	for _, row := range p24FallbackRows {
 		t.Run(row.site, func(t *testing.T) {
 			t.Parallel()
-			binary, root := integrationFIDBinary(t), newGitWorkspace(t)
+			binary, root := integrationFIDBinary(t), gittest.NewWorkspace(t)
 			if row.project {
 				p21Run(t, binary, root, "init", "--prefix", "P24", "--json")
 			}
@@ -129,7 +131,7 @@ func TestP24GenericFallbackDomainPairs(t *testing.T) {
 			}
 			payload := p23Envelope(t, stderr)
 			f := payload["error"].(map[string]any)
-			message := strings.ReplaceAll(row.message, "$ROOT", resolvedPath(t, root))
+			message := strings.ReplaceAll(row.message, "$ROOT", gittest.ResolvedPath(t, root))
 			var value any
 			if row.site == "issue_get_list.go:issueReadFailure" {
 				value = ""

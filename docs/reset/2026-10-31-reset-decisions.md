@@ -194,6 +194,23 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
   - `GIT_CEILING_DIRECTORIES` stops git climbing above a directory, but git
     still inspects the directory it starts in. So no test runs fid with a
     real repository's root as its working directory.
+- **Details** (4 November 2026, overnight, for task 1.1d):
+  - 1.1d is split into four parts. The builder split it overnight, under
+    Mark's advance approval for a necessary or beneficial split; Mark has
+    yet to review it.
+    - 1.1d1: every test workspace that reaches the ledger becomes a guarded
+      git repo, with no change in behaviour. That's the `internal/`
+      packages' workspaces, plus a few integration fixtures that build a
+      ledger in-process. The guard helpers move into one test-only package,
+      `internal/gittest`, which every such test process uses.
+    - 1.1d2: output names ledger files by absolute path, and the CLI spec
+      follows, while the ledger is still at `<root>/.fid`. Doing this before
+      the move keeps every part's output true.
+    - 1.1d3: the ledger moves to the git common directory, with staging
+      beside it, and the config spec follows.
+    - 1.1d4: discovery refuses when git and `LedgerDir` disagree. No code
+      or reason is recorded for that refusal, so Mark picks one before it
+      starts. Keeping it apart stops that decision holding up the move.
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a

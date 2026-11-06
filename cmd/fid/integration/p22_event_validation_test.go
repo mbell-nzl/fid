@@ -15,6 +15,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -58,7 +59,7 @@ const p22CurrentFamilies = "activation.prepared activation.component-staged acti
 
 func p22ValidateActualJournal(t *testing.T, source string, seen map[string]bool) {
 	t.Helper()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	p22FaultOK(t, os.MkdirAll(config.LedgerDir(workspace), 0o700))
 	p22FaultOK(t, fiddb.MigrateUp(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"), filepath.Join(integrationRepositoryRoot(), "migrations")))
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
@@ -90,7 +91,7 @@ func p22ValidateActualJournal(t *testing.T, source string, seen map[string]bool)
 		}
 	}
 	// Fresh replay of all original bytes must equal the incremental live apply.
-	replay := t.TempDir()
+	replay := gittest.NewWorkspace(t)
 	p22FaultOK(t, os.MkdirAll(config.LedgerDir(replay), 0o700))
 	dbPath := filepath.Join(config.LedgerDir(replay), "fid.sqlite")
 	p22FaultOK(t, fiddb.MigrateUp(dbPath, filepath.Join(integrationRepositoryRoot(), "migrations")))

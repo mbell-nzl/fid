@@ -16,12 +16,13 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestReplayJournalRejectsNilConnection(t *testing.T) {
 	t.Parallel()
 
-	_, err := ReplayJournal(nil, filepath.Join(config.LedgerDir(t.TempDir()), "journal"), nil)
+	_, err := ReplayJournal(nil, filepath.Join(config.LedgerDir(gittest.NewWorkspace(t)), "journal"), nil)
 	if err == nil {
 		t.Fatal("ReplayJournal() error = nil, want nil connection rejection")
 	}
@@ -627,7 +628,7 @@ func TestEnsureProjectionFreshWithLockRebuildsMissingSQLiteProjection(t *testing
 func TestOrderedJournalFilesSkipsNonJournalEntries(t *testing.T) {
 	t.Parallel()
 
-	journalDir := filepath.Join(config.LedgerDir(t.TempDir()), "journal")
+	journalDir := filepath.Join(config.LedgerDir(gittest.NewWorkspace(t)), "journal")
 	mustMkdirAll(t, journalDir)
 
 	files := []string{
@@ -698,7 +699,7 @@ func TestReplayJournalHonorsStartOffset(t *testing.T) {
 func newReplayWorkspace(t *testing.T) string {
 	t.Helper()
 
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	mustMkdirAll(t, filepath.Join(config.LedgerDir(workspace), "journal"))
 	return workspace
 }

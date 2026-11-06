@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 // The completeness guard binds the real-process rows to the Source positions
@@ -236,7 +237,7 @@ func TestP24ReviewReplayUnavailableAndRestoredControls(t *testing.T) {
 				p22Write(t, a.workspace, "base.txt", "advanced control HEAD\n")
 				p22Git(t, a.workspace, "commit", "-qam", "advance control HEAD")
 			case "not-a-repository":
-				restoreHead = unbornGitHead(t, a.workspace)
+				restoreHead = gittest.UnbornHead(t, a.workspace)
 			case "unmerged-paths":
 				p24MakeUnmerged(t, a.workspace)
 			case "deleted-source":
@@ -412,7 +413,7 @@ func TestP24ReviewRecordResolvesSourcesAndReplaysWithoutObservation(t *testing.T
 	}
 	newKey := p23ReviewRecord(t, a, "actor-denied", "review-head-control", input)
 	assertP22ProcessFailure(t, "review.record", "repository-mismatch", 4, newKey)
-	restoreHead := unbornGitHead(t, a.workspace)
+	restoreHead := gittest.UnbornHead(t, a.workspace)
 	replay = p23ReviewRecord(t, a, "actor-denied", "review-source-record", input)
 	p23AssertReviewSuccess(t, "unobservable replay", replay)
 	if !p24ReviewReplayMatches(p23Envelope(t, response.Stdout), p23Envelope(t, replay.Stdout)) || p21JournalEventCount(t, a.workspace) != before {

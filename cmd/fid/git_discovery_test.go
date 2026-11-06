@@ -10,6 +10,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 // TestEveryProjectCommandRefusesOutsideAGitRepository runs every command that
@@ -296,7 +297,7 @@ func TestProjectCommandsUseTheWorktreeTopLevel(t *testing.T) {
 
 func TestALedgerBelowTheTopLevelIsNotAProject(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	nested := filepath.Join(workspace, "nested")
 	if err := os.Mkdir(nested, 0o755); err != nil {
 		t.Fatalf("Mkdir(nested) error = %v", err)
@@ -316,7 +317,7 @@ func TestALedgerBelowTheTopLevelIsNotAProject(t *testing.T) {
 func TestInitFromASubdirectoryInitializesTheTopLevel(t *testing.T) {
 	t.Parallel()
 	for _, viaProject := range []bool{false, true} {
-		workspace := newNamedGitWorkspace(t, "toplevel")
+		workspace := gittest.NewNamedWorkspace(t, "toplevel")
 		nested := filepath.Join(workspace, "nested")
 		if err := os.Mkdir(nested, 0o755); err != nil {
 			t.Fatalf("Mkdir(nested) error = %v", err)
@@ -330,7 +331,7 @@ func TestInitFromASubdirectoryInitializesTheTopLevel(t *testing.T) {
 			t.Fatalf("init from a subdirectory (--project %t) = %#v", viaProject, result)
 		}
 		project := decodeCanonicalResult(t, result.stdout)["project"].(map[string]any)
-		if want := resolvedPath(t, workspace); project["root"] != want || project["issue_prefix"] != "TOPLEVEL" {
+		if want := gittest.ResolvedPath(t, workspace); project["root"] != want || project["issue_prefix"] != "TOPLEVEL" {
 			t.Fatalf("init from a subdirectory (--project %t) project = %#v, want root %q and prefix TOPLEVEL", viaProject, project, want)
 		}
 		if _, err := os.Stat(filepath.Join(config.LedgerDir(workspace), "config.toml")); err != nil {
@@ -345,7 +346,7 @@ func TestInitFromASubdirectoryInitializesTheTopLevel(t *testing.T) {
 func TestInitAndImportReportTheRealPathOfASymlinkedRepository(t *testing.T) {
 	t.Parallel()
 	links := t.TempDir()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	alias := filepath.Join(links, "workspace")
 	if err := os.Symlink(workspace, alias); err != nil {
 		t.Fatalf("Symlink(workspace) error = %v", err)
@@ -354,7 +355,7 @@ func TestInitAndImportReportTheRealPathOfASymlinkedRepository(t *testing.T) {
 	if initialized.err != nil {
 		t.Fatalf("init through a symlink = %#v", initialized)
 	}
-	if root, want := decodeCanonicalResult(t, initialized.stdout)["project"].(map[string]any)["root"], resolvedPath(t, workspace); root != want {
+	if root, want := decodeCanonicalResult(t, initialized.stdout)["project"].(map[string]any)["root"], gittest.ResolvedPath(t, workspace); root != want {
 		t.Fatalf("init project.root = %v, want real path %q", root, want)
 	}
 
@@ -363,7 +364,7 @@ func TestInitAndImportReportTheRealPathOfASymlinkedRepository(t *testing.T) {
 		t.Fatalf("export create = %#v", created)
 	}
 	for _, through := range []string{"symlink", "subdirectory"} {
-		target := newGitWorkspace(t)
+		target := gittest.NewWorkspace(t)
 		repository := filepath.Join(links, "target")
 		if through == "symlink" {
 			if err := os.Symlink(target, repository); err != nil {
@@ -379,7 +380,7 @@ func TestInitAndImportReportTheRealPathOfASymlinkedRepository(t *testing.T) {
 		if imported.err != nil {
 			t.Fatalf("export import through a %s = %#v", through, imported)
 		}
-		if root, want := decodeCanonicalResult(t, imported.stdout)["import"].(map[string]any)["target_root"], resolvedPath(t, target); root != want {
+		if root, want := decodeCanonicalResult(t, imported.stdout)["import"].(map[string]any)["target_root"], gittest.ResolvedPath(t, target); root != want {
 			t.Fatalf("import through a %s target_root = %v, want top level %q", through, root, want)
 		}
 		if _, err := os.Stat(filepath.Join(config.LedgerDir(target), "config.toml")); err != nil {

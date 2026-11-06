@@ -15,6 +15,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/project"
 )
@@ -123,7 +124,7 @@ func TestP24BindingReplayBeforeObservation(t *testing.T) {
 				case "head-change":
 					git("commit", "--allow-empty", "-qm", "new HEAD")
 				case "unborn-head":
-					restore = unbornGitHead(t, workspace)
+					restore = gittest.UnbornHead(t, workspace)
 				case "unmerged":
 					blob, err := exec.Command("git", "-C", workspace, "rev-parse", "HEAD:.gitignore").Output()
 					if err != nil {

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func BenchmarkRebuildWorkspace1kEvents(b *testing.B) {
@@ -23,7 +24,7 @@ func BenchmarkRebuildWorkspace100kEvents(b *testing.B) {
 }
 
 func benchmarkRebuildWorkspace(b *testing.B, targetEvents int) {
-	workspace := b.TempDir()
+	workspace := gittest.NewWorkspace(b)
 	journalDir := filepath.Join(config.LedgerDir(workspace), "journal")
 	if err := os.MkdirAll(journalDir, 0o755); err != nil {
 		b.Fatalf("osMkdirAll(%q) error = %v", journalDir, err)

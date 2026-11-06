@@ -13,6 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestAddStoresOptionalFieldsAndRejectsDuplicateBeforeAppend(t *testing.T) {
@@ -323,7 +324,7 @@ func TestAddAndListValidateRequiredInputs(t *testing.T) {
 func newLabelsWorkspace(t *testing.T) string {
 	t.Helper()
 
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testLabelsMigrationsDir(t),

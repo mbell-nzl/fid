@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -177,7 +178,7 @@ func p23PortableAssertCorruptEventsRejected(t *testing.T, workspace string, even
 				continue
 			}
 			t.Run(eventType+"/"+corruption, func(t *testing.T) {
-				clone := t.TempDir()
+				clone := gittest.NewWorkspace(t)
 				copyParityFixture(t, config.LedgerDir(workspace), config.LedgerDir(clone))
 				if seenWorkspaces[clone] {
 					t.Fatal("corruption probe reused a workspace")

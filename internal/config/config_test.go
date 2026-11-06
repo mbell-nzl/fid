@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestProjectConfigRoundTripsStrictTargetSchema(t *testing.T) {
@@ -324,7 +326,7 @@ func TestWriteBootstrapFilesRoundTripsDefaultConfig(t *testing.T) {
 	t.Parallel()
 
 	defaultPricing := DefaultPricingConfig()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	project, err := NewDefaultProjectConfig("FID")
 	if err != nil {
 		t.Fatalf("NewDefaultProjectConfig() error = %v", err)

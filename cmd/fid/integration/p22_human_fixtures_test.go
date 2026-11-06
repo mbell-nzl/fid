@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 type p22HumanInspection struct {
@@ -194,7 +195,7 @@ func p22HumanDirectory(t *testing.T, root, name string) string {
 	if err := os.Mkdir(path, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := initGuardedGitRepository(path); err != nil {
+	if err := gittest.InitRepository(path); err != nil {
 		t.Fatal(err)
 	}
 	return path

@@ -10,11 +10,12 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestRecoverySchemaFreshBinaryInitAndRebuild(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	binary := integrationFIDBinary(t)
 	closureRun(t, workspace, binary, "--json", "init", "--prefix", "P22")
 

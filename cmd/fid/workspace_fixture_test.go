@@ -17,6 +17,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -66,7 +67,7 @@ func TestMain(m *testing.M) {
 }
 
 func runCommandTestSuite(m interface{ Run() int }) int {
-	if err := guardGitDiscovery(commandRepositoryRoot()); err != nil {
+	if err := gittest.Guard(); err != nil {
 		fmt.Fprintf(os.Stderr, "guard git discovery: %v\n", err)
 		return 1
 	}
@@ -80,7 +81,7 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 		return 1
 	}
 	pristineWorkspaceRoot = templateRoot
-	if err := initGuardedGitRepository(templateRoot); err != nil {
+	if err := gittest.InitRepository(templateRoot); err != nil {
 		fmt.Fprintf(os.Stderr, "make pristine workspace a git repository: %v\n", err)
 		_ = os.RemoveAll(templateRoot)
 		return 1
@@ -114,10 +115,9 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 
 // commandTestHelperChild reports whether this process is a helper started by
 // a test: a gate or Artifact helper, which runs under a gate's environment
-// allowlist with no PATH for git, or the git guard's child. None of them use
-// the pristine workspace.
+// allowlist with no PATH for git. Neither uses the pristine workspace.
 func commandTestHelperChild() bool {
-	return os.Getenv("FID_GATE_HELPER") != "" || os.Getenv("FID_ARTIFACT_HELPER") != "" || os.Getenv(gitGuardChildEnv) != ""
+	return os.Getenv("FID_GATE_HELPER") != "" || os.Getenv("FID_ARTIFACT_HELPER") != ""
 }
 
 func commandRepositoryRoot() string {
@@ -143,7 +143,7 @@ func clonePristineWorkspaceInto(t *testing.T, destination string) {
 	if err := copyWorkspaceTree(pristineWorkspaceRoot, destination); err != nil {
 		t.Fatalf("clone pristine workspace: %v", err)
 	}
-	if err := checkGuardedGitRepository(destination); err != nil {
+	if err := gittest.CheckRepository(destination); err != nil {
 		t.Fatalf("clone pristine workspace: %v", err)
 	}
 }
@@ -155,7 +155,7 @@ func cloneReusableWorkspaceFixture(t *testing.T, key string, build func() (strin
 	defer fixture.Unlock()
 	if fixture.root == "" {
 		workspace, values := build()
-		if err := checkGuardedGitRepository(workspace); err != nil {
+		if err := gittest.CheckRepository(workspace); err != nil {
 			t.Fatalf("build reusable workspace fixture: %v", err)
 		}
 		templateRoot, err := os.MkdirTemp("", "fid-reusable-workspace-")
@@ -173,7 +173,7 @@ func cloneReusableWorkspaceFixture(t *testing.T, key string, build func() (strin
 
 	workspace := t.TempDir()
 	cloneWorkspaceTreeInto(t, fixture.root, workspace)
-	if err := checkGuardedGitRepository(workspace); err != nil {
+	if err := gittest.CheckRepository(workspace); err != nil {
 		t.Fatalf("clone reusable workspace fixture: %v", err)
 	}
 	return workspace, append([]string(nil), fixture.values...)

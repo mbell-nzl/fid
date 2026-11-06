@@ -10,11 +10,13 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestProcessExitContract(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	binary := integrationFIDBinary(t)
 	closureRun(t, workspace, binary, "init", "--prefix", "FID")
 

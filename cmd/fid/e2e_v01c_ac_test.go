@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
 	assertRemovedV1CommandLeavesJournalUnchanged(t, workspace, "issue", "claim", "FID-legacy")
 }

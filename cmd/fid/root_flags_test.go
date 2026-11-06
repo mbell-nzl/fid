@@ -10,6 +10,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 const p24UnavailableProjectJSON = `{"contract_version":"fid-cli.v1","error":{"category":"invalid-input","code":"invalid-argument","details":{"allowed":["--idempotency-key","--repository"],"argument":"--project","value":"--project"},"message":"--project is not available for export import","retryable":false,"subject":null},"ok":false,"operation":"export.import"}` + "\n"
@@ -112,7 +113,7 @@ func TestRootCommandCapturesCurrentWorkingDirectory(t *testing.T) {
 
 func TestRootCommandResolvesRelativeProjectFromInjectedWorkingDirectory(t *testing.T) {
 	t.Parallel()
-	workspace := newNamedGitWorkspace(t, "relative-project")
+	workspace := gittest.NewNamedWorkspace(t, "relative-project")
 	cmd := newRootCommandAt(filepath.Dir(workspace))
 	cmd.SetOut(&bytes.Buffer{})
 	cmd.SetErr(&bytes.Buffer{})
@@ -127,7 +128,7 @@ func TestRootCommandResolvesRelativeProjectFromInjectedWorkingDirectory(t *testi
 
 func TestRootFlagsAllowRebuildForAnExplicitProject(t *testing.T) {
 	t.Parallel()
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
 	stdout := &bytes.Buffer{}

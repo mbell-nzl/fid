@@ -13,13 +13,14 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestMigration0008PreservesIssueGetAndListRenderedBytes(t *testing.T) {
 	t.Parallel()
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	if err := os.MkdirAll(filepath.Join(config.LedgerDir(workspace), "journal"), 0o755); err != nil {
 		t.Fatalf("MkdirAll workspace journal: %v", err)
 	}

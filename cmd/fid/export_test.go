@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestExportCreateValidateAndImportUsesClosedTargetConflict(t *testing.T) {
@@ -24,7 +26,7 @@ func TestExportCreateValidateAndImportUsesClosedTargetConflict(t *testing.T) {
 	if validated.err != nil || !strings.Contains(validated.stdout, `"operation":"export.validate"`) {
 		t.Fatalf("export validate = %#v, want JSON success", validated)
 	}
-	target := newGitWorkspace(t)
+	target := gittest.NewWorkspace(t)
 	imported := executeCommandForTest(target, "export", "import", archivePath, "--repository", target, "--idempotency-key", "export-test", "--json")
 	if imported.err != nil || !strings.Contains(imported.stdout, `"operation":"export.import"`) || !strings.Contains(imported.stdout, `"event":null`) {
 		t.Fatalf("export import = %#v, want JSON success with null Event", imported)

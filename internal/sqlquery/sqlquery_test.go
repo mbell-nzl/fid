@@ -9,6 +9,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestClassifyAllowsReadStatements(t *testing.T) {
@@ -121,7 +122,7 @@ func TestReadOnlyConnectionRejectsMutationWhenClassifierIsBypassed(t *testing.T)
 func newSQLQueryWorkspace(t *testing.T) string {
 	t.Helper()
 
-	workspace := t.TempDir()
+	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testSQLQueryMigrationsDir(t),

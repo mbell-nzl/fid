@@ -10,6 +10,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestImportProcessExitAtPublicationBoundaries(t *testing.T) {
@@ -18,7 +19,7 @@ func TestImportProcessExitAtPublicationBoundaries(t *testing.T) {
 	for _, stage := range []ImportStage{ImportAfterValidation, ImportBeforeDurability, ImportBeforePublication, ImportAfterRename, ImportAfterPublication} {
 		t.Run(string(stage), func(t *testing.T) {
 			_, archive := fixture.clone(t)
-			target := t.TempDir()
+			target := gittest.NewWorkspace(t)
 			cmd := exec.Command(os.Args[0], "-test.run=^TestImportAbruptExitHelper$")
 			cmd.Env = append(os.Environ(), "FID_IMPORT_CRASH_ARCHIVE="+archive, "FID_IMPORT_CRASH_TARGET="+target, "FID_IMPORT_CRASH_STAGE="+string(stage), "FID_IMPORT_CRASH_MIGRATIONS="+testMigrationsDir(t))
 			output, err := cmd.CombinedOutput()
@@ -63,7 +64,7 @@ func TestImportRejectsChangedDigestAndInstalledHistory(t *testing.T) {
 	for _, corruption := range []string{"changed-digest", "journal-bytes", "journal-missing", "result-count", "symlink-workspace"} {
 		t.Run(corruption, func(t *testing.T) {
 			_, archive := fixture.clone(t)
-			target := t.TempDir()
+			target := gittest.NewWorkspace(t)
 			options := ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "history"}
 			if _, err := Import(options); err != nil {
 				t.Fatal(err)
@@ -179,7 +180,7 @@ func TestImportBindingRejectsAlteredHistoryIdentity(t *testing.T) {
 
 func boundaryImportFixture(t *testing.T) (string, string) {
 	t.Helper()
-	source := t.TempDir()
+	source := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
@@ -187,5 +188,5 @@ func boundaryImportFixture(t *testing.T) (string, string) {
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archive}); err != nil {
 		t.Fatal(err)
 	}
-	return archive, t.TempDir()
+	return archive, gittest.NewWorkspace(t)
 }

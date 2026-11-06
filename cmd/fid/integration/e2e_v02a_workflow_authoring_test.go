@@ -9,12 +9,13 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestV02aWorkflowAuthoringExitScenarioAndRebuildParity(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")
 	journalPath := closureJournalPath(t, workspace)
 
@@ -44,7 +45,7 @@ func TestV02aWorkflowAuthoringExitScenarioAndRebuildParity(t *testing.T) {
 func TestMaintenanceCheckReportsIncompatibleWorkflowAssignment(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
-	workspace := newGitWorkspace(t)
+	workspace := gittest.NewWorkspace(t)
 	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")
 
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
