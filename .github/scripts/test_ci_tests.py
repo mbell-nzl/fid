@@ -1,7 +1,10 @@
 """Behavioral checks for complete CI selection and coverage reconciliation."""
 import importlib.util
 import json
+import os
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -9,6 +12,7 @@ from unittest import mock
 spec = importlib.util.spec_from_file_location("ci_tests", Path(__file__).with_name("ci_tests.py"))
 ci = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ci)
+SCRIPT = str(Path(__file__).with_name("ci_tests.py").resolve())
 
 
 class ShardTests(unittest.TestCase):
@@ -162,6 +166,7 @@ class ShardTimeoutTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory(prefix="fid-ci-timeout-") as directory, \
                 mock.patch.object(ci, "discover", return_value={"example/a": ["TestA"]}), \
+                mock.patch.object(ci, "list_packages", return_value=["example/a"]), \
                 mock.patch.object(ci, "race_packages", return_value=[]), \
                 mock.patch.object(ci, "run_go", side_effect=fake_run_go), \
                 mock.patch.object(ci.subprocess, "check_output", return_value="source\n"):
@@ -183,6 +188,7 @@ class ShardTimeoutTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory(prefix="fid-ci-groups-") as directory, \
                 mock.patch.object(ci, "discover", return_value=inventory), \
+                mock.patch.object(ci, "list_packages", return_value=sorted(inventory)), \
                 mock.patch.object(ci, "race_packages", return_value=["example/r"]), \
                 mock.patch.object(ci, "run_go", side_effect=fake_run_go), \
                 mock.patch.object(ci.subprocess, "check_output", return_value="source\n"):
@@ -265,8 +271,25 @@ class ReuseTests(unittest.TestCase):
         self.assertIn(self.TREE, decision["message"])
 
 
+RUN_URL = "https://github.com/o/r/actions/runs/7"
+TREE = "0123456789abcdef0123456789abcdef01234567"
+# (event, reuse result, reused run, checks result, tests result) that quality must refuse.
+REFUSED = [
+    ("pull_request", "skipped", "", "failure", "success"),
+    ("pull_request", "skipped", "", "success", "cancelled"),
+    ("pull_request", "skipped", "", "skipped", "skipped"),
+    ("pull_request", "skipped", RUN_URL, "skipped", "skipped"),
+    ("push", "success", "", "skipped", "skipped"),
+    ("push", "failure", "", "skipped", "skipped"),
+    ("push", "failure", RUN_URL, "skipped", "skipped"),
+    ("push", "success", RUN_URL, "success", "skipped"),
+    ("push", "success", RUN_URL, "skipped", "failure"),
+    ("push", "cancelled", "", "skipped", "skipped"),
+]
+
+
 class GateTests(unittest.TestCase):
-    URL = "https://github.com/o/r/actions/runs/7"
+    URL = RUN_URL
 
     def test_a_full_run_passes_only_when_checks_and_tests_succeeded(self):
         self.assertEqual(ci.gate("pull_request", "skipped", "", "success", "success"), "full")
@@ -276,21 +299,73 @@ class GateTests(unittest.TestCase):
         self.assertEqual(ci.gate("push", "success", self.URL, "skipped", "skipped"), "reuse")
 
     def test_anything_else_fails(self):
-        cases = [
-            ("pull_request", "skipped", "", "failure", "success"),
-            ("pull_request", "skipped", "", "success", "cancelled"),
-            ("pull_request", "skipped", "", "skipped", "skipped"),
-            ("pull_request", "skipped", self.URL, "skipped", "skipped"),
-            ("push", "success", "", "skipped", "skipped"),
-            ("push", "failure", "", "skipped", "skipped"),
-            ("push", "failure", self.URL, "skipped", "skipped"),
-            ("push", "success", self.URL, "success", "skipped"),
-            ("push", "success", self.URL, "skipped", "failure"),
-            ("push", "cancelled", "", "skipped", "skipped"),
-        ]
-        for case in cases:
+        for case in REFUSED:
             with self.subTest(case=case), self.assertRaises(ValueError):
                 ci.gate(*case)
+
+
+class GateCommandTests(unittest.TestCase):
+    """The gate command exactly as the quality job runs it."""
+
+    def gate_command(self, event, reuse, run, checks, tests):
+        with tempfile.TemporaryDirectory(prefix="fid-ci-gate-") as directory:
+            output, summary = Path(directory) / "output", Path(directory) / "summary"
+            env = {**os.environ, "GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": str(summary)}
+            result = subprocess.run([sys.executable, SCRIPT, "gate", "--event", event, "--reuse", reuse, "--reused-run", run, "--tree", TREE if run else "",
+                                     "--checks", checks, "--tests", tests], env=env, capture_output=True, text=True)
+            return result, output.read_text() if output.exists() else "", summary.read_text() if summary.exists() else ""
+
+    def test_a_full_run_exits_zero_and_outputs_mode_full(self):
+        result, output, _ = self.gate_command("pull_request", "skipped", "", "success", "success")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(output, "mode=full\n")
+
+    def test_a_verified_reuse_exits_zero_outputs_mode_reuse_and_names_the_run(self):
+        result, output, summary = self.gate_command("push", "success", RUN_URL, "skipped", "skipped")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(output, "mode=reuse\n")
+        for text in (result.stdout, summary):
+            self.assertIn(RUN_URL, text)
+            self.assertIn(TREE, text)
+
+    def test_every_refused_combination_exits_nonzero_and_outputs_no_mode(self):
+        for case in REFUSED:
+            with self.subTest(case=case):
+                result, output, summary = self.gate_command(*case)
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertIn("FAIL: CI did not pass", result.stderr)
+                self.assertNotIn("mode=", output)
+                self.assertNotIn("PASS", summary)
+
+
+class ReuseCommandTests(unittest.TestCase):
+    """The reuse command's outputs, which decide whether checks and tests run."""
+
+    def reuse_command(self, get):
+        with tempfile.TemporaryDirectory(prefix="fid-ci-reuse-") as directory:
+            output, summary = Path(directory) / "output", Path(directory) / "summary"
+            with mock.patch.dict(os.environ, {"GITHUB_OUTPUT": str(output), "GITHUB_STEP_SUMMARY": str(summary)}), \
+                    mock.patch.object(ci, "github_get", side_effect=get), \
+                    mock.patch.object(sys, "argv", ["ci_tests.py", "reuse", "--tree", TREE]), \
+                    mock.patch("builtins.print"):
+                ci.main()
+            return output.read_text(), summary.read_text()
+
+    def test_a_found_run_is_output_for_the_test_jobs_to_skip(self):
+        run = {"id": 7, "event": "pull_request", "status": "completed", "conclusion": "success", "path": ci.WORKFLOW, "html_url": RUN_URL}
+        get = lambda path: {"artifacts": [{"name": f"ci-tree-{TREE}", "expired": False, "workflow_run": {"id": 7}}]} if path.startswith("actions/artifacts?") else run
+        output, summary = self.reuse_command(get)
+        self.assertEqual(output, f"run={RUN_URL}\ntree={TREE}\n")
+        self.assertIn(RUN_URL, summary)
+
+    def test_no_run_or_a_failed_lookup_outputs_an_empty_run_so_everything_runs(self):
+        def unreachable(path):
+            raise OSError("network down")
+        for get in (lambda path: {"artifacts": []}, unreachable):
+            with self.subTest(get=get):
+                output, summary = self.reuse_command(get)
+                self.assertEqual(output, f"run=\ntree={TREE}\n")
+                self.assertIn("Full run", summary)
 
 
 def write_files(root, files):
@@ -330,10 +405,28 @@ class RacePackagesTests(unittest.TestCase):
         self.assertIn("github.com/mbell-nzl/fid/internal/evidence", ci.race_packages(repository))
 
 
+def commit_module(root):
+    for args in [["git", "init", "-q"], ["git", "add", "."], ["git", "-c", "user.name=CI test", "-c", "user.email=ci@example.test", "commit", "-qm", "fixture"]]:
+        subprocess.run(args, cwd=root, check=True, capture_output=True, text=True)
+
+
 class RealGoShardTests(unittest.TestCase):
+    def test_a_failing_test_built_only_under_race_fails_the_shard(self):
+        with tempfile.TemporaryDirectory(prefix="fid-ci-race-only-") as directory:
+            root = Path(directory)
+            write_files(root, {
+                "go.mod": "module fixture\n\ngo 1.26.2\n",
+                "spawn/spawn.go": "package spawn\nfunc Twice(x int) int { done := make(chan int); go func() { done <- 2 * x }(); return <-done }\n",
+                "spawn/spawn_test.go": "package spawn\nimport \"testing\"\nfunc TestPlain(t *testing.T) { if Twice(2) != 4 { t.Fatal(\"twice\") } }\n",
+                "spawn/race_only_test.go": "//go:build race\npackage spawn\nimport \"testing\"\nfunc TestRaceOnlyFails(t *testing.T) { t.Fatal(\"race-only test ran and failed\") }\n",
+            })
+            commit_module(root)
+            result = subprocess.run([sys.executable, SCRIPT, "run", "--count", "1", "--index", "0", "--out", str(root / "shard-0")], cwd=root, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("race-only test ran and failed", result.stdout + result.stderr)
+            self.assertFalse((root / "shard-0" / "manifest.json").exists())
+
     def test_real_go_tests_examples_fuzz_seeds_and_empty_package_are_reconciled(self):
-        import subprocess
-        import sys
         with tempfile.TemporaryDirectory(prefix="fid-ci-smoke-") as directory:
             root = Path(directory)
             (root / "go.mod").write_text("module fixture\n\ngo 1.26.2\n")
@@ -358,15 +451,21 @@ func FuzzValue(f *testing.F) { f.Add(true); f.Fuzz(func(t *testing.T, b bool) { 
                 "spawn/race_off_test.go": mode.format(tag="!race", package="spawn", body='t.Fatal("spawn starts goroutines but ran without the race detector")'),
                 "race_on_test.go": mode.format(tag="race", package="fixture", body='t.Fatal("fixture starts no goroutines but ran under the race detector")'),
                 "race_off_test.go": mode.format(tag="!race", package="fixture", body=""),
+                # Distinct names that exist only in the build mode each package runs in.
+                "spawn/race_only_test.go": "//go:build race\npackage spawn\nimport \"testing\"\nfunc TestOnlyUnderRace(t *testing.T) {}\n",
+                "plain_only_test.go": "//go:build !race\npackage fixture\nimport \"testing\"\nfunc TestOnlyWithoutRace(t *testing.T) {}\n",
             })
-            for args in [["git", "init", "-q"], ["git", "add", "."], ["git", "-c", "user.name=CI test", "-c", "user.email=ci@example.test", "commit", "-qm", "fixture"]]:
-                subprocess.run(args, cwd=root, check=True, capture_output=True, text=True)
-            script = str(Path(__file__).with_name("ci_tests.py").resolve())
+            commit_module(root)
             for i in range(4):
-                result = subprocess.run([sys.executable, script, "run", "--count", "4", "--index", str(i), "--out", str(root / f"shard-{i}")], cwd=root, capture_output=True, text=True)
+                result = subprocess.run([sys.executable, SCRIPT, "run", "--count", "4", "--index", str(i), "--out", str(root / f"shard-{i}")], cwd=root, capture_output=True, text=True)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             ci.merge(root, 4, root / "combined.out")
-            self.assertEqual(json.loads((root / "shard-0" / "manifest.json").read_text())["race"], ["fixture/spawn"])
+            manifests = [json.loads((root / f"shard-{i}" / "manifest.json").read_text()) for i in range(4)]
+            self.assertEqual(manifests[0]["race"], ["fixture/spawn"])
+            completed = [tuple(item) for manifest in manifests for item in manifest["completed"]]
+            self.assertIn(("fixture/spawn", "TestOnlyUnderRace"), completed)
+            self.assertIn(("fixture", "TestOnlyWithoutRace"), completed)
+            self.assertEqual(completed.count(("fixture/spawn", "TestOnlyUnderRace")), 1)
             blocks = ci.coverage_blocks(root / "combined.out")
             self.assertTrue(any(key.startswith("fixture/spawn/") and hits > 0 for key, (_, hits) in blocks.items()))
             self.assertTrue(any(key.startswith("fixture/empty/") and hits == 0 for key, (_, hits) in blocks.items()))
