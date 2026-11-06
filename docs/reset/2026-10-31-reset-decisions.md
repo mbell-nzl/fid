@@ -211,6 +211,25 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     - 1.1d4: discovery refuses when git and `LedgerDir` disagree. No code
       or reason is recorded for that refusal, so Mark picks one before it
       starts. Keeping it apart stops that decision holding up the move.
+- **Details** (decided 6 November 2026, for tasks 1.1d4 and 1.1d5):
+  - Mark accepted the 1.1d split above when he merged its PRs (#38, #39
+    and #40).
+  - fid also refuses when git's common directory sits inside the worktree,
+    other than within a `.git` directory. In that layout (for example
+    `git init --separate-git-dir=<worktree>/metadata`), `git add --all`
+    would track the ledger, along with git's own `HEAD`, `config` and
+    hooks. Ignore rules don't make it safe, because `git add -f` still adds
+    an ignored file. Codex found this in #40's second review round. 1.1d4
+    adds it.
+  - Both 1.1d4 refusals are `repository-unavailable` (precondition, exit 4)
+    with the existing reason `unsafe-path`, and details naming the
+    locations involved. No new code or reason. #40's "Left over" section
+    has implementation notes for 1.1d4.
+  - A `.fid/` in a worktree becomes an ordinary path, because no V1 ledgers
+    remain in worktrees. Dirty status, reconciliation and current-event
+    path validation stop treating `.fid/` paths specially, and the `dirty`
+    help and the CLI spec stop mentioning them. That's task 1.1d5, which
+    also updates the 1.1a audit test's comment that the ledger "is moving".
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a
@@ -433,7 +452,9 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 - Declared paths per task, if shared-file conflicts become a regular cost.
 - Collapse candidates after the trial: Activation, plus any concept the leak
   test keeps catching.
-- Generic retry-exhausted, the Envelope revision-1 limit, dead-code cleanup.
+- Generic retry-exhausted, the Envelope revision-1 limit, dead-code cleanup,
+  and replay reporting `line: 0` for a current-event prior conflict (found
+  in 1.1d2, #39).
 - yoyu migration (after the trial).
 - CI test time (from 1.1c1, 4 November 2026). `ci_tests.py` assigns tests
   to shards by their position in a sorted list of names, so adding one test
@@ -443,7 +464,17 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   balance shards by measured time, and review whether every test earns its
   run time. By CI elapsed time (inflated by parallel contention), the
   biggest are the descriptor and judgment corpora at 400-540 s each, and
-  the grammar corpora at 150-250 s each.
+  the grammar corpora at 150-250 s each. Fold in the tests that fail when
+  `TMPDIR` is behind a symlink: about 33 (12 in `internal/`, 11 in
+  `cmd/fid`, 10 in integration), which fail on `main` too. They compare
+  paths without resolving symlinks; P24 observation tests, for example,
+  hash an unresolved worktree path. Found in 1.1c2; no PR since added one.
+- Stale ledger staging (from 1.1d3, 6 November 2026). A crash during
+  `init` or `export import` can leave `<common>/fid-staging-*` behind.
+  `git status` doesn't show it, and nothing removes it. Add cleanup once
+  one turns up; it needs a rule for when staging is safe to delete.
+- CHANGELOG: it hasn't been kept up during the reset. Catch it up in 3.2,
+  with the v0.2.0 release.
 
 ## Next steps
 
