@@ -236,17 +236,20 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     `fid status`, which doesn't exist before then.
   - 1.2 creates `.fid.toml` holding only the project ID that keys the
     backup folder. A restore onto a fresh clone has no ledger, so the ID
-    has to be committed. 2.2 adds the policy to the same file.
+    has to be committed. 2.2 adds the policy to the same file. Because it
+    introduces `.fid.toml`, 1.2 is Assured.
   - The backup target is in user-level config,
     `$XDG_CONFIG_HOME/fid/config.toml` (`~/.config/fid/config.toml` by
     default). `fid init` asks for it only when run in an interactive
     terminal. Otherwise it doesn't ask, and `fid status` warns until a
     target is set.
-  - Restore needs no new command: a backup is an export, so restoring is
-    cloning the backup repository and running `fid export import`. The
-    restore test does exactly that.
   - Tests push to local bare repositories. Mark creates the real
     `fid-ledgers` repository before the manual restore drill.
+- **Proposed, not yet decided** (6 November 2026, for task 1.2): restore
+  needs no new command. A backup is an export, so restoring would be
+  cloning the backup repository and running `fid export import`, and the
+  restore test would do exactly that. This is Claude's reading; Mark hasn't
+  confirmed it. 1.2 doesn't build restore until he does.
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a
