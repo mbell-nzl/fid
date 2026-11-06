@@ -10,13 +10,14 @@ vertical slice before implementation.
 fid [--project <path>] [--json] <command> ...
 ```
 
-- fid needs a git repository. Discovery runs `git rev-parse` once, from the
-  working directory, for the worktree's top level (`--show-toplevel`) and the
-  git common directory (`--git-common-dir`). The project root is that top
-  level, with symlinks resolved, so fid works from any subdirectory. The
-  ledger is `$(git rev-parse --git-common-dir)/fid`, which every worktree of
-  the repository shares; fid never looks for a ledger anywhere else
-  (`04_TRD_CONFIG.md` section 1).
+- fid needs a git repository, and git 2.31 or later. Discovery runs
+  `git rev-parse` twice from the working directory: once for the worktree's
+  top level (`--show-toplevel`) and once for the git common directory
+  (`--path-format=absolute --git-common-dir`, which needs git 2.31). The
+  project root is that top level, with symlinks resolved, so fid works from
+  any subdirectory. The ledger is `$(git rev-parse --git-common-dir)/fid`,
+  which every worktree of the repository shares; fid never looks for a
+  ledger anywhere else (`04_TRD_CONFIG.md` section 1).
 - `--project <path>` works like `git -C <path>`: discovery starts at `<path>`
   instead of the working directory, and the root is that path's top level.
   `export import --repository` follows the same rule.
@@ -40,13 +41,11 @@ fid [--project <path>] [--json] <command> ...
     worktree's or a submodule's common directory is outside its worktree or
     within a `.git` directory, so they work.
 
-  A newline in a path doesn't stop discovery. Git prints the top level and
-  the common directory one per line, so fid takes the one reading whose top
-  level holds the start directory or, failing that, whose ledger the
-  worktree's `.git` agrees with. If several readings agree, fid can't tell
-  which ledger git names, and refuses the same way. That takes paths built
-  with a newline before a slash, and `GIT_WORK_TREE` or `core.worktree`
-  naming a worktree elsewhere.
+  A newline in a path doesn't stop discovery. Each run reports one path,
+  ended by a newline, and fid strips exactly that newline, because a path
+  may itself end in one. An older git echoes `--path-format=absolute` back
+  in its report, which then names no ledger the worktree agrees with, so fid
+  refuses with `unsafe-path`.
 - Output names ledger files by absolute path, in Human text and in JSON, never
   relative to the project root, because a linked worktree's ledger is outside
   that worktree. That covers `init`'s `journal_path`
