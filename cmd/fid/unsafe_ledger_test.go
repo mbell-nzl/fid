@@ -176,6 +176,53 @@ func TestWorktreesInsideTheMainWorktreeAndSubmodulesStillWork(t *testing.T) {
 	})
 }
 
+// A repository whose path holds a newline works: discovery reads git's
+// report the one way whose top level holds the start directory. Where git
+// could track the ledger, init still refuses, and git tracks nothing of
+// fid's.
+func TestARepositoryWhosePathHoldsANewlineWorks(t *testing.T) {
+	t.Parallel()
+	base := gittest.ResolvedPath(t, t.TempDir())
+	worktree := filepath.Join(base, "line\n", "repository\nname")
+	nested := filepath.Join(worktree, "sub\n", "directory")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatalf("MkdirAll(nested) error = %v", err)
+	}
+	if err := gittest.InitRepository(worktree); err != nil {
+		t.Fatalf("make the worktree a repository: %v", err)
+	}
+	initialized := grammarExecute(nested, "--json", "init", "--prefix", "FID")
+	if initialized.err != nil {
+		t.Fatalf("init where the path holds a newline = %#v", initialized)
+	}
+	if root := decodeCanonicalResult(t, initialized.stdout)["project"].(map[string]any)["root"]; root != worktree {
+		t.Fatalf("init project.root = %v, want %q", root, worktree)
+	}
+	if listed := executeCommandForTest(nested, "--json", "issue", "list"); listed.err != nil || !strings.Contains(listed.stdout, `"operation":"issue.list"`) {
+		t.Fatalf("issue list where the path holds a newline = %#v", listed)
+	}
+
+	tracked := filepath.Join(base, "line\n", "tracked")
+	common := filepath.Join(tracked, "meta\ndata")
+	if err := os.MkdirAll(tracked, 0o755); err != nil {
+		t.Fatalf("MkdirAll(tracked) error = %v", err)
+	}
+	if output, err := exec.Command("git", "init", "-q", "--template=", "--separate-git-dir="+common, tracked).CombinedOutput(); err != nil {
+		t.Fatalf("git init --separate-git-dir: %v: %s", err, output)
+	}
+	assertRefusedBeforeStaging(t, tracked, unsafeLedgerCommand("init", tracked, ""), common, tracked)
+	unsafeLedgerGit(t, tracked, "add", "--all")
+	trackedPaths := strings.Split(unsafeLedgerGit(t, tracked, "ls-files", "-z"), "\x00")
+	if !slices.Contains(trackedPaths, "meta\ndata/HEAD") {
+		t.Fatalf("git ls-files = %q, want git's own meta\\ndata/HEAD tracked, as this layout allows", trackedPaths)
+	}
+	for _, path := range trackedPaths {
+		if strings.HasPrefix(path, "meta\ndata/"+config.LedgerDirName) {
+			t.Errorf("git tracked fid's %q", path)
+		}
+	}
+}
+
 // unsafeLedgerCommand returns the arguments for init, or for an import of
 // archive into start.
 func unsafeLedgerCommand(command, start, archive string) []string {

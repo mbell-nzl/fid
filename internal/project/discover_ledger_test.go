@@ -57,6 +57,9 @@ func TestDiscoverAcceptsLayoutsWhereGitCannotTrackTheLedger(t *testing.T) {
 			separateGitDir(t, worktree, filepath.Join(worktree, "vendor", ".git", "metadata"))
 			return worktree, worktree
 		}},
+		{"core.worktree naming a worktree whose .git leads back", func(t *testing.T) (string, string) {
+			return coreWorktreeLeadingBack(t, newDiscoveryRepository(t), gittest.ResolvedPath(t, t.TempDir()))
+		}},
 		{".git is a symlink", func(t *testing.T) (string, string) {
 			worktree := gittest.ResolvedPath(t, t.TempDir())
 			gitDir := filepath.Join(t.TempDir(), "repository.git")
@@ -153,22 +156,6 @@ func TestDiscoverRefusesWhereGitCouldTrackTheLedger(t *testing.T) {
 			assertUnsafeLedger(t, err, filepath.Join(common, config.LedgerDirName), worktree, common)
 		})
 	}
-}
-
-// Git prints the top level and the common directory one per line, so a
-// newline in either makes its report ambiguous. Discovery refuses rather than
-// guess where the ledger is.
-func TestDiscoverRefusesAnAmbiguousGitReport(t *testing.T) {
-	t.Parallel()
-	worktree := filepath.Join(gittest.ResolvedPath(t, t.TempDir()), "line\nbreak")
-	if err := os.Mkdir(worktree, 0o755); err != nil {
-		t.Fatalf("Mkdir(worktree) error = %v", err)
-	}
-	if err := gittest.InitRepository(worktree); err != nil {
-		t.Fatalf("make the worktree a repository: %v", err)
-	}
-	_, err := Discover(worktree)
-	assertUnsafeLedger(t, err, worktree)
 }
 
 // assertUnsafeLedger checks that err is the unsafe-ledger refusal: reason
