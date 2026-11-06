@@ -18,10 +18,13 @@ list. Read RESET.md before starting work.
    make it pass. Test observable behaviour, not internals. Never delete or
    weaken a test to get green.
 5. **Run the checks**: `make fmt-check lint test build`. For CLI journeys, also
-   run `go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0
-   ./cmd/fid/integration/...`. Run them one at a time: `cmd/fid` takes five
-   to seven minutes under `-race`, and running two suites at once can push it
-   past Go's ten-minute test timeout.
+   run `go test -tags integration ./cmd/fid/integration/...`. As in CI, the
+   race detector runs only in packages whose non-test code starts goroutines
+   (decision G, task 0.7). `make test` finds them by parsing the source; the
+   integration tests have none, and run fid as a binary built without race.
+   Run the checks one at a time: `make test` takes about three minutes and
+   the integration suite about five, and two suites at once slow each other
+   enough to have pushed `cmd/fid` past Go's ten-minute test timeout.
 6. **Open the PR.** Its description is the completion report:
    - what changed and why;
    - the lane;
