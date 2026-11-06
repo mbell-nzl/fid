@@ -40,6 +40,14 @@ fid [--project <path>] [--json] <command> ...
     help, because `git add -f` still adds an ignored file. A linked
     worktree's or a submodule's common directory is outside its worktree or
     within a `.git` directory, so they work.
+
+  A newline in a path doesn't stop discovery. Git prints the top level and
+  the common directory one per line, so fid takes the one reading whose top
+  level holds the start directory or, failing that, whose ledger the
+  worktree's `.git` agrees with. If several readings agree, fid can't tell
+  which ledger git names, and refuses the same way. That takes paths built
+  with a newline before a slash, and `GIT_WORK_TREE` or `core.worktree`
+  naming a worktree elsewhere.
 - Output names ledger files by absolute path, in Human text and in JSON, never
   relative to the project root, because a linked worktree's ledger is outside
   that worktree. That covers `init`'s `journal_path`
