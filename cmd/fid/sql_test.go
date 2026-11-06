@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/gittest"
 	internalsqlquery "github.com/mbell-nzl/fid/internal/sqlquery"
 )
 
@@ -45,6 +46,39 @@ func TestSQLCommandAcceptsReadStatementsAsDirectLegacyJSON(t *testing.T) {
 			rows := decodeCommandJSONStructure(t, stdout).([]any)
 			if len(rows) == 0 {
 				t.Fatalf("stdout rows = %d, want at least one row", len(rows))
+			}
+		})
+	}
+}
+
+func TestSQLCommandNamesAStoppedJournalByAbsolutePath(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		fixture   string
+		firstLine string
+	}{
+		{"corrupt-tail.jsonl", "error: malformed journal entry at %s:2\n"},
+		{"conflicting-precondition.jsonl", "error: replay precondition conflict at %s:2\n"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.fixture, func(t *testing.T) {
+			t.Parallel()
+			workspace := gittest.NewWorkspace(t)
+			runInitCommand(t, workspace, "init")
+			// A later date than init's journal, so the projection catches up
+			// through it.
+			writeCommandFixture(t, workspace, tc.fixture, "9999-12-01.jsonl")
+
+			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "sql", "SELECT id FROM issues")
+			if err == nil {
+				t.Fatal("Execute() error = nil, want stopped journal")
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+			want := fmt.Sprintf(tc.firstLine, rebuildJournalFile(t, workspace, "9999-12-01.jsonl"))
+			if got := strings.SplitAfter(stderr, "\n")[0]; got != want {
+				t.Fatalf("stderr first line = %q, want %q\nstderr=%q", got, want, stderr)
 			}
 		})
 	}

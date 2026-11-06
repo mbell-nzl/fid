@@ -37,7 +37,7 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 		t.Fatalf("Execute() error = %v", err)
 	}
 
-	if got, want := stdout.String(), "initialized fid project in .fid/\n"; got != want {
+	if got, want := stdout.String(), "initialized fid project in "+filepath.ToSlash(config.LedgerDir(gittest.ResolvedPath(t, workspace)))+"/\n"; got != want {
 		t.Fatalf("stdout = %q, want %q", got, want)
 	}
 	if stderr.Len() != 0 {
@@ -166,8 +166,12 @@ func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 	if envelope.Result.Project.ID == "" || envelope.Result.Project.IssuePrefix != "FID" || envelope.Result.Project.Root != root {
 		t.Fatalf("project result = %+v, want generated ID, FID, and root %q", envelope.Result.Project, root)
 	}
-	if envelope.Result.JournalPath == "" || envelope.Event == nil || envelope.Event.ID == "" || envelope.Event.OccurredAt == "" {
-		t.Fatalf("mutation result = %+v event=%+v, want journal path and event identity", envelope.Result, envelope.Event)
+	if envelope.Event == nil || envelope.Event.ID == "" || envelope.Event.OccurredAt == "" {
+		t.Fatalf("mutation event = %+v, want event identity", envelope.Event)
+	}
+	journalPath := filepath.ToSlash(filepath.Join(config.LedgerDir(root), config.JournalDirName, filepath.Base(mustJournalPath(t, workspace))))
+	if envelope.Result.JournalPath != journalPath {
+		t.Fatalf("journal_path = %q, want absolute path %q", envelope.Result.JournalPath, journalPath)
 	}
 	journalPayload, err := os.ReadFile(mustJournalPath(t, workspace))
 	if err != nil {

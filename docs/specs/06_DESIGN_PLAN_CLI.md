@@ -10,8 +10,25 @@ vertical slice before implementation.
 fid [--project <path>] [--json] <command> ...
 ```
 
-- `--project` selects the project root explicitly; default discovery walks
-  upward from the working directory and stops at filesystem/Git boundaries.
+- fid needs a git repository. Discovery runs `git rev-parse --show-toplevel`
+  once, from the working directory. The project root is that worktree's top
+  level, with symlinks resolved, so fid works from any subdirectory and never
+  looks for a ledger anywhere else. The ledger is `<root>/.fid`.
+- `--project <path>` works like `git -C <path>`: discovery starts at `<path>`
+  instead of the working directory, and the root is that path's top level.
+  `export import --repository` follows the same rule.
+- Outside a git repository, every command that opens or creates a project,
+  `init` included, refuses with `repository-unavailable` (precondition, exit
+  4; details `reason: not-a-repository` and `detail`). In a repository with no
+  ledger, the failure is `project-not-found` (exit 3).
+- Output names ledger files by absolute path, in Human text and in JSON, never
+  relative to the project root: ADR-0013 moves the ledger to the git common
+  directory, outside a linked worktree. That covers `init`'s `journal_path`
+  and Human message (`initialized fid project in <ledger>/`), `journal
+  inspect`'s `journal_file`, the `journal_file` and `lock_path` failure
+  details, and Human lines that name a journal file or the projection. A
+  Human `reason:` line keeps its 200-scalar bound, so a long path there may
+  end in `…`; JSON carries it whole.
 - `--json` selects the canonical machine representation for operator commands.
 - JSON-only backend-port commands never expose another format selector.
 - There is no `--format`, `--toon`, `--yaml`, or universal Markdown output.
@@ -119,7 +136,8 @@ fid workflow define|assign|list
 
 `workflow assign` selects assignment scope with exactly one of `--kind <kind>`
 or `--project-wide`. The latter spelling avoids collision with global
-`--project <path>`, which always selects the fid project root.
+`--project <path>`, which always selects where project discovery starts
+(section 1).
 
 Standalone inventory mutations record Actor attribution without claiming
 protected Human authority. Execution-bound transitions additionally require

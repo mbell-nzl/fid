@@ -47,9 +47,10 @@ func newJournalInspectCommand() *cobra.Command {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
 
-			found, err := journal.FindEvent(filepath.Join(config.LedgerDir(workspaceRoot), config.JournalDirName), args[0])
+			journalDir := filepath.Join(config.LedgerDir(workspaceRoot), config.JournalDirName)
+			found, err := journal.FindEvent(journalDir, args[0])
 			if err != nil {
-				if renderErr := renderJournalInspectError(cmd.ErrOrStderr(), err); renderErr != nil {
+				if renderErr := renderJournalInspectError(cmd.ErrOrStderr(), journalDir, err); renderErr != nil {
 					return renderErr
 				}
 				return err
@@ -81,13 +82,13 @@ func newJournalInspectCommand() *cobra.Command {
 	return cmd
 }
 
-func renderJournalInspectError(writer io.Writer, err error) error {
+func renderJournalInspectError(writer io.Writer, journalDir string, err error) error {
 	var notFoundErr *journal.EventNotFoundError
 	if errors.As(err, &notFoundErr) {
 		if writeErr := writeIssueLine(writer, "error: %s\n", notFoundErr.Error()); writeErr != nil {
 			return writeErr
 		}
-		return writeIssueLine(writer, "  check the event id and confirm it exists under .fid/journal/\n")
+		return writeIssueLine(writer, "  check the event id and confirm it exists under %s/\n", filepath.ToSlash(journalDir))
 	}
 	return renderIssueError(writer, err)
 }

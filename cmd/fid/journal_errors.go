@@ -12,7 +12,7 @@ import (
 func renderJournalReplayError(writeLine func(string, ...any) error, err error, stopMessage string) (bool, error) {
 	var corruptErr *journal.CorruptJournalError
 	if errors.As(err, &corruptErr) {
-		if writeErr := writeLine("error: malformed journal entry at %s:%d\n", journalErrorPath(corruptErr.File), corruptErr.Line); writeErr != nil {
+		if writeErr := writeLine("error: malformed journal entry at %s:%d\n", corruptErr.File, corruptErr.Line); writeErr != nil {
 			return true, writeErr
 		}
 		if writeErr := writeLine("  parse error: %v\n", corruptErr.Err); writeErr != nil {
@@ -23,7 +23,7 @@ func renderJournalReplayError(writeLine func(string, ...any) error, err error, s
 
 	var conflictErr *journal.PreconditionConflictError
 	if errors.As(err, &conflictErr) {
-		if writeErr := writeLine("error: replay precondition conflict at %s:%d\n", journalErrorPath(conflictErr.File), conflictErr.Line); writeErr != nil {
+		if writeErr := writeLine("error: replay precondition conflict at %s:%d\n", conflictErr.File, conflictErr.Line); writeErr != nil {
 			return true, writeErr
 		}
 		if writeErr := writeLine("  event: %s (%s)\n", conflictErr.EventID, conflictErr.EventType); writeErr != nil {
@@ -42,13 +42,6 @@ func renderJournalReplayError(writeLine func(string, ...any) error, err error, s
 	}
 
 	return false, nil
-}
-
-func journalErrorPath(file string) string {
-	if strings.HasPrefix(file, ".fid/") || strings.HasPrefix(file, "/") {
-		return file
-	}
-	return ".fid/journal/" + file
 }
 
 func formatJournalMap(values map[string]any) string {

@@ -178,7 +178,7 @@ func initializeStagedWorkspace(stagingRoot, databasePath string, plan initPlan, 
 	if err := runInitHook(hooks, initStageSchemaInitialized); err != nil {
 		return InitResult{}, err
 	}
-	result, err := initializeJournaledState(stagingRoot, databasePath, plan.projectConfig.ProjectID, plan.prefix)
+	result, err := initializeJournaledState(stagingRoot, databasePath, plan.targetPaths.JournalDir, plan.projectConfig.ProjectID, plan.prefix)
 	if err != nil {
 		return InitResult{}, err
 	}
@@ -287,7 +287,10 @@ func DefaultPrefix(workspaceRoot string) string {
 	return strings.ToUpper(filepath.Base(workspaceRoot))
 }
 
-func initializeJournaledState(workspaceRoot, dbPath, projectID, prefix string) (InitResult, error) {
+// initializeJournaledState appends and projects the genesis Event in the
+// staged ledger at workspaceRoot. The result names the journal file by its
+// absolute path under targetJournalDir, where it lives once activated.
+func initializeJournaledState(workspaceRoot, dbPath, targetJournalDir, projectID, prefix string) (InitResult, error) {
 	var result InitResult
 	err := journal.WithLock(workspaceRoot, journal.LockOwner{Command: "fid init"}, func(lock *journal.WriteLock) error {
 		event := BuildProjectInitializedEvent(projectID)
@@ -326,7 +329,7 @@ func initializeJournaledState(workspaceRoot, dbPath, projectID, prefix string) (
 
 		result = InitResult{
 			Prefix:      prefix,
-			JournalPath: filepath.ToSlash(filepath.Join(config.WorkspaceDirName, config.JournalDirName, journalFile)),
+			JournalPath: filepath.ToSlash(filepath.Join(targetJournalDir, journalFile)),
 			EventID:     appended.EventID,
 			OccurredAt:  appended.OccurredAt.UTC(),
 		}

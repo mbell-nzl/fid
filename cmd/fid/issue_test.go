@@ -14,6 +14,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -744,6 +745,7 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 		if !strings.Contains(stderr, `"code":"journal-replay-stopped"`) {
 			t.Fatalf("stderr = %q, want journal-replay-stopped envelope", stderr)
 		}
+		assertStoppedJournalFile(t, stderr, workspace)
 	})
 
 	t.Run("precondition conflict", func(t *testing.T) {
@@ -795,6 +797,7 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 		if !strings.Contains(stderr, `"code":"journal-replay-stopped"`) {
 			t.Fatalf("stderr = %q, want journal-replay-stopped envelope", stderr)
 		}
+		assertStoppedJournalFile(t, stderr, workspace)
 	})
 }
 
@@ -807,6 +810,27 @@ func TestIssueGetRejectsAllFormatValues(t *testing.T) {
 		if result := executeCommandForTest(workspace, "issue", "get", issueID, "--format", value); result.err == nil {
 			t.Fatalf("--format %s was accepted", value)
 		}
+	}
+}
+
+// assertStoppedJournalFile checks that a journal-replay-stopped failure names
+// the workspace's one journal file by the absolute path fid reports: under the
+// root git reports, so with symlinks resolved.
+func assertStoppedJournalFile(t *testing.T, stderr, workspace string) {
+	t.Helper()
+	var failure struct {
+		Error struct {
+			Details struct {
+				JournalFile string `json:"journal_file"`
+			} `json:"details"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(stderr), &failure); err != nil {
+		t.Fatalf("Unmarshal(stderr) error = %v\nstderr=%q", err, stderr)
+	}
+	want := filepath.ToSlash(filepath.Join(config.LedgerDir(gittest.ResolvedPath(t, workspace)), config.JournalDirName, filepath.Base(mustJournalPath(t, workspace))))
+	if got := failure.Error.Details.JournalFile; got != want {
+		t.Fatalf("journal_file = %q, want %q", got, want)
 	}
 }
 

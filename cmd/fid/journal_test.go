@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -38,7 +39,7 @@ func TestJournalInspectCommandUsesDirectLegacyJSONWithoutRevert(t *testing.T) {
 
 	journalPath := mustJournalPath(t, workspace)
 	event := mustReadLastJournalEvent(t, journalPath)
-	journalFile := ".fid/journal/" + filepath.Base(journalPath)
+	journalFile := filepath.ToSlash(filepath.Join(config.LedgerDir(gittest.ResolvedPath(t, workspace)), config.JournalDirName, filepath.Base(journalPath)))
 	want := expectedCommandStructure(t, journalInspectOutput{
 		EventID:     event.EventID,
 		EventSchema: event.EventSchema,
@@ -113,13 +114,11 @@ func TestJournalInspectCommandRejectsMissingEventIDs(t *testing.T) {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
 
-	for _, wantSubstring := range []string{
-		`error: journal event "EVT-20260606-999999" not found`,
-		"check the event id",
-	} {
-		if !strings.Contains(stderr, wantSubstring) {
-			t.Fatalf("stderr = %q, want substring %q", stderr, wantSubstring)
-		}
+	journalDir := filepath.ToSlash(filepath.Join(config.LedgerDir(gittest.ResolvedPath(t, workspace)), config.JournalDirName))
+	want := `error: journal event "EVT-20260606-999999" not found` + "\n" +
+		"  check the event id and confirm it exists under " + journalDir + "/\n"
+	if stderr != want {
+		t.Fatalf("stderr = %q, want %q", stderr, want)
 	}
 }
 

@@ -124,14 +124,14 @@ func replayJournalFile(project func(ProjectionInput) error, journalDir, fileName
 		var stored Event
 		if err := json.Unmarshal(trimmed, &stored); err != nil {
 			return false, &CorruptJournalError{
-				File: filepath.ToSlash(filepath.Join(".fid", "journal", fileName)),
+				File: filepath.ToSlash(path),
 				Line: lineNumber,
 				Err:  err,
 			}
 		}
 		if err := tracker.add(stored); err != nil {
 			return false, &CorruptJournalError{
-				File: filepath.ToSlash(filepath.Join(".fid", "journal", fileName)),
+				File: filepath.ToSlash(path),
 				Line: lineNumber,
 				Err:  err,
 			}
@@ -166,10 +166,11 @@ func replayJournalFile(project func(ProjectionInput) error, journalDir, fileName
 		}); err != nil {
 			var conflictErr *PreconditionConflictError
 			if errors.As(err, &conflictErr) {
+				conflictErr.File = filepath.ToSlash(path)
 				return false, err
 			}
 			return false, &CorruptJournalError{
-				File: filepath.ToSlash(filepath.Join(".fid", "journal", fileName)),
+				File: filepath.ToSlash(path),
 				Line: lineNumber,
 				Err:  fmt.Errorf("project event %q: %w", upgraded.EventID, err),
 			}

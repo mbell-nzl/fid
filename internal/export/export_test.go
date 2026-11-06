@@ -237,7 +237,9 @@ func mutateGateIdempotencyEffect(t *testing.T, original map[string][]byte, event
 				if err := os.WriteFile(path, append(bytes.Join(lines, []byte{'\n'}), '\n'), 0o600); err != nil {
 					t.Fatal(err)
 				}
-				return filepath.ToSlash(filepath.Join(".fid", "journal", filepath.Base(path))), index + 1
+				// fid names the file by absolute path, under the root git
+				// reports, so with symlinks resolved.
+				return filepath.ToSlash(gittest.ResolvedPath(t, path)), index + 1
 			}
 		}
 	}
