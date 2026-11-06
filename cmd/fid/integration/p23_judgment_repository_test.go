@@ -38,7 +38,7 @@ func p24JudgmentExpectedRepository(t *testing.T, a *p22FIDRecoveryAdapter) map[s
 	// These normal-state fixtures are clean, so the full dirty contract is
 	// independently known: false with a null digest. Refuse to assume that
 	// when Git reports a change; unavailable-state fixtures never call here.
-	if status := git("status", "--porcelain", "--untracked-files=all", "--", ".", ":!.fid"); status != "" {
+	if status := git("status", "--porcelain", "--untracked-files=all", "--", "."); status != "" {
 		t.Fatalf("repository parity fixture must be clean: %s", status)
 	}
 	root, err := filepath.Abs(a.workspace)

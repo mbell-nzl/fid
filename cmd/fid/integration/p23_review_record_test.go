@@ -183,7 +183,7 @@ func p24ReviewAssertRepositories(t *testing.T, a *p22FIDRecoveryAdapter, respons
 // the test hashes its known image and the canonical dirty entries independently.
 func p24ReviewDirtyRepository(t *testing.T, a *p22FIDRecoveryAdapter, path string, content []byte) map[string]any {
 	t.Helper()
-	if status := p22GitOutput(t, a.workspace, "status", "--porcelain", "--untracked-files=all", "--", ".", ":!.fid"); status != "?? "+path {
+	if status := p22GitOutput(t, a.workspace, "status", "--porcelain", "--untracked-files=all", "--", "."); status != "?? "+path {
 		t.Fatalf("dirty fixture status = %q, want one untracked %s", status, path)
 	}
 	root, err := filepath.Abs(a.workspace)
@@ -212,10 +212,11 @@ func TestP24ReviewReplayUnavailableAndRestoredControls(t *testing.T) {
 			t.Parallel()
 			a, claim, run := p24ReviewAdapter(t)
 			input := p24ReviewProjectInput(t, a, run)
-			// This project-owned file is ignored by Git. Its absence isolates
-			// Source observation from the repository expectation check. It is a
-			// worktree path, not a ledger file.
-			const ignoredSource = ".fid/coverage.md"
+			// This project-owned file is ignored by Git, through the
+			// repository's exclude file. Its absence isolates Source
+			// observation from the repository expectation check.
+			const ignoredSource = "review/coverage.md"
+			p22Write(t, a.workspace, ".git/info/exclude", "/review/\n")
 			p22Write(t, a.workspace, ignoredSource, "review source\n")
 			for _, position := range []int{0, 2} {
 				p24ReviewSources(input)[position]["path"] = ignoredSource
