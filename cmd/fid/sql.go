@@ -16,8 +16,10 @@ func newSQLCommand() *cobra.Command {
 		Short: "Run a read-only SQL query against the projected database.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := commandWorkingDirectory(cmd)
-			if err != nil {
+			workspaceRoot, err := discoverWorkspaceRoot(cmd)
+			if refused := renderRepositoryRefusal(cmd, err); refused != nil {
+				return refused
+			} else if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
 

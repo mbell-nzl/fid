@@ -349,9 +349,7 @@ func TestP24JudgmentLeavesRepositoryUnavailable(t *testing.T) {
 				originals[row.operation] = envelope
 			}
 			if state == "not-a-repository" {
-				if err := os.Rename(filepath.Join(a.workspace, ".git"), filepath.Join(t.TempDir(), "git-backup")); err != nil {
-					t.Fatal(err)
-				}
+				unbornGitHead(t, a.workspace)
 			} else {
 				p24MakeUnmerged(t, a.workspace)
 			}

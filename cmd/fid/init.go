@@ -13,6 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
+	fidproject "github.com/mbell-nzl/fid/internal/project"
 	"github.com/spf13/cobra"
 )
 
@@ -95,7 +96,7 @@ func initWorkspaceRoot(cmd *cobra.Command) (string, error) {
 		}
 		return root, &initArgumentError{argument: "project", value: project, err: err}
 	}
-	return root, nil
+	return fidproject.Discover(root)
 }
 
 func initMigrationsDir() string {
@@ -126,6 +127,9 @@ func renderInitSuccess(cmd *cobra.Command, workspaceRoot string, result bootstra
 }
 
 func renderInitFailure(cmd *cobra.Command, workspaceRoot string, initErr error) error {
+	if refused := renderRepositoryRefusal(cmd, initErr); refused != nil {
+		return refused
+	}
 	jsonMode, err := cmd.Root().PersistentFlags().GetBool("json")
 	if err != nil {
 		return fmt.Errorf("read json flag: %w", err)

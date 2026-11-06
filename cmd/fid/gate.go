@@ -284,6 +284,9 @@ func newGateResolveCommand() *cobra.Command {
 }
 
 func renderGateError(cmd *cobra.Command, operation string, cause error) error {
+	if refused := renderRepositoryRefusal(cmd, cause); refused != nil {
+		return refused
+	}
 	var stopped *workflow.StopBlockedError
 	if errors.As(cause, &stopped) {
 		return renderStopError(cmd, operation, cause)

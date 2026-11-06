@@ -18,7 +18,7 @@ func p24ObservedGateInput(t *testing.T, a *p22FIDRecoveryAdapter) map[string]any
 
 func TestP24GateAndEvaluateUnsafeAndReplay(t *testing.T) {
 	t.Parallel()
-	for _, state := range []string{"advanced-HEAD", "unmerged", "non-Git"} {
+	for _, state := range []string{"advanced-HEAD", "unmerged", "unborn-HEAD"} {
 		t.Run(state, func(t *testing.T) {
 			t.Parallel()
 			a := p24RunAdapter(t)
@@ -34,10 +34,8 @@ func TestP24GateAndEvaluateUnsafeAndReplay(t *testing.T) {
 				p22Git(t, a.workspace, "commit", "-qam", "advance")
 			case "unmerged":
 				p24MakeUnmerged(t, a.workspace)
-			case "non-Git":
-				if err := os.Rename(filepath.Join(a.workspace, ".git"), filepath.Join(t.TempDir(), "git")); err != nil {
-					t.Fatal(err)
-				}
+			case "unborn-HEAD":
+				unbornGitHead(t, a.workspace)
 			}
 			before, events := p22FaultProjection(t, a.workspace), p21JournalEventCount(t, a.workspace)
 			replayed := p23RunInput(t, a, "gate", "run", a.actor, "original", input)

@@ -157,9 +157,7 @@ func p24GateCodePair(t *testing.T, code string) p24CodePair {
 		p21Run(t, a.binary, root, "init", "--prefix", "P24", "--json")
 		return p24InputPair(t, root, operation, actor, input)
 	case "repository-unavailable":
-		if err := os.Rename(filepath.Join(a.workspace, ".git"), filepath.Join(t.TempDir(), "git")); err != nil {
-			t.Fatal(err)
-		}
+		unbornGitHead(t, a.workspace)
 		operation = "gate.run"
 		input = p24ObservedGateInputWithoutObservation(a)
 	case "executor-policy-unsupported":

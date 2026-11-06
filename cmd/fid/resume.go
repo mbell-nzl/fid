@@ -51,6 +51,9 @@ func newResumeCommand() *cobra.Command {
 }
 
 func renderResumeError(cmd *cobra.Command, cause error) error {
+	if refused := renderRepositoryRefusal(cmd, cause); refused != nil {
+		return refused
+	}
 	var limit *workflow.ResultLimitExceededError
 	if errors.As(cause, &limit) {
 		jsonMode, err := readJSONMode(cmd)

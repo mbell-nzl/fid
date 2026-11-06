@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -101,6 +100,9 @@ func newConcernMutationCommand(name string, decode concernDecoder) *cobra.Comman
 }
 
 func renderConcernError(cmd *cobra.Command, operation string, cause error) error {
+	if refused := renderRepositoryRefusal(cmd, cause); refused != nil {
+		return refused
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
@@ -150,9 +152,9 @@ func newConcernListCommand() *cobra.Command {
 		Short: "List concerns.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := commandWorkingDirectory(cmd)
+			workspaceRoot, err := discoverWorkspaceRoot(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return renderConcernError(cmd, "concern.list", err)
 			}
 
 			items, err := review.ListConcerns(review.ConcernListOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), Subject: subject, Status: status, Severity: severity, Limit: limit})

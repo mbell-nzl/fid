@@ -118,6 +118,9 @@ func newDecisionListCommand() *cobra.Command {
 }
 
 func renderDecisionError(cmd *cobra.Command, operation string, cause error) error {
+	if refused := renderRepositoryRefusal(cmd, cause); refused != nil {
+		return refused
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err

@@ -1,4 +1,4 @@
-// Package project resolves fid project roots without crossing repository boundaries.
+// Package project resolves fid project roots through git.
 package project
 
 import (
@@ -7,45 +7,43 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/mbell-nzl/fid/internal/config"
 )
 
 var ErrNotFound = errors.New("project not found")
 
-// Resolve returns the selected fid project root. An explicit path must directly
-// contain .fid; discovery otherwise walks from start up to its Git boundary.
-func Resolve(start, explicit string) (string, error) {
-	if strings.TrimSpace(explicit) != "" {
-		root, err := absoluteDirectory(explicit)
-		if err != nil {
-			return "", err
-		}
-		if isProjectRoot(root) {
-			return root, nil
-		}
+// ErrNotARepository marks a discovery refusal: git found no worktree at or
+// above the start directory. The error also carries a
+// RepositoryUnavailableError with reason not-a-repository.
+var ErrNotARepository = errors.New("not a git repository")
+
+// Resolve returns the fid project root for start: the top level of its git
+// worktree, which must directly contain the ledger.
+func Resolve(start string) (string, error) {
+	root, err := Discover(start)
+	if err != nil {
+		return "", err
+	}
+	if !isProjectRoot(root) {
 		return "", fmt.Errorf("%w: %s", ErrNotFound, root)
 	}
+	return root, nil
+}
 
+// Discover returns the top level of the git worktree containing start, as
+// one `git rev-parse --show-toplevel` reports it, so symlinks are resolved.
+// Discovery starts at start, as `git -C start` would.
+func Discover(start string) (string, error) {
 	directory, err := absoluteDirectory(start)
 	if err != nil {
 		return "", err
 	}
-	for {
-		if isProjectRoot(directory) {
-			return directory, nil
-		}
-		if containsGitBoundary(directory) {
-			break
-		}
-		parent := filepath.Dir(directory)
-		if parent == directory {
-			break
-		}
-		directory = parent
+	root, err := gitText(directory, "rev-parse", "--show-toplevel")
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", ErrNotARepository, unsafeRepositoryReason("not-a-repository", "%s is not in a git repository (%v)", directory, err))
 	}
-	return "", fmt.Errorf("%w: %s", ErrNotFound, start)
+	return root, nil
 }
 
 func absoluteDirectory(path string) (string, error) {
@@ -66,9 +64,4 @@ func absoluteDirectory(path string) (string, error) {
 func isProjectRoot(root string) bool {
 	info, err := os.Lstat(config.LedgerDir(root))
 	return err == nil && info.IsDir() && info.Mode()&fs.ModeSymlink == 0
-}
-
-func containsGitBoundary(root string) bool {
-	_, err := os.Lstat(filepath.Join(root, ".git"))
-	return err == nil
 }

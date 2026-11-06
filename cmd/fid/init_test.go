@@ -161,8 +161,9 @@ func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != "project.init" {
 		t.Fatalf("envelope header = %+v, want fid-cli.v1 successful project.init", envelope)
 	}
-	if envelope.Result.Project.ID == "" || envelope.Result.Project.IssuePrefix != "FID" || envelope.Result.Project.Root != workspace {
-		t.Fatalf("project result = %+v, want generated ID, FID, and root %q", envelope.Result.Project, workspace)
+	root := resolvedPath(t, workspace)
+	if envelope.Result.Project.ID == "" || envelope.Result.Project.IssuePrefix != "FID" || envelope.Result.Project.Root != root {
+		t.Fatalf("project result = %+v, want generated ID, FID, and root %q", envelope.Result.Project, root)
 	}
 	if envelope.Result.JournalPath == "" || envelope.Event == nil || envelope.Event.ID == "" || envelope.Event.OccurredAt == "" {
 		t.Fatalf("mutation result = %+v event=%+v, want journal path and event identity", envelope.Result, envelope.Event)
@@ -211,8 +212,8 @@ func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error.details", []string{"path"})
 	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error.subject", []string{"id", "type"})
 	if failure.ContractVersion != "fid-cli.v1" || failure.OK || failure.Operation != "project.init" ||
-		failure.Error.Code != "project-already-initialized" || failure.Error.Category != "conflict" || failure.Error.Details.Path != workspace {
-		t.Fatalf("failure = %+v, want typed project-already-initialized envelope for %q", failure, workspace)
+		failure.Error.Code != "project-already-initialized" || failure.Error.Category != "conflict" || failure.Error.Details.Path != root {
+		t.Fatalf("failure = %+v, want typed project-already-initialized envelope for %q", failure, root)
 	}
 }
 
@@ -490,7 +491,7 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 	if err == nil {
 		t.Fatal("Execute() error = nil, want re-init rejection")
 	}
-	if got, want := stderr.String(), "error: project is already initialized\n"+p24ExpectedReason("reason: project-already-initialized; path="+workspace)+"\n"; got != want {
+	if got, want := stderr.String(), "error: project is already initialized\n"+p24ExpectedReason("reason: project-already-initialized; path="+resolvedPath(t, workspace))+"\n"; got != want {
 		t.Fatalf("stderr = %q, want %q", got, want)
 	}
 	if stdout.Len() != 0 {

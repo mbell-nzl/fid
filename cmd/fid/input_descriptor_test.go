@@ -1575,7 +1575,7 @@ func p24ReviewRecursiveStructuralDetails(t *testing.T, leaf string, descriptor c
 	if leaf == "review record" {
 		baseline["expected_repository"].(map[string]any)["head_oid"] = "a0ca854133ae98b77e36cf51ad596ff0e8c6e096"
 	}
-	// Valid controls go through the same CLI, from a non-project directory.
+	// Valid controls go through the same CLI, from a repository with no ledger.
 	// Reaching the family fallback proves structural decoding was accepted.
 	exercise := func(name string, payload []byte, want *cli.InputError) {
 		t.Helper()
@@ -1589,7 +1589,7 @@ func p24ReviewRecursiveStructuralDetails(t *testing.T, leaf string, descriptor c
 			} else if invalid, ok := validation.(*cli.InputError); !ok || !p24JudgmentDetailsMatch(invalid, want) {
 				t.Fatalf("details = %#v, want %#v", validation, want)
 			}
-			workspace := t.TempDir()
+			workspace := newGitWorkspace(t)
 			input := filepath.Join(t.TempDir(), "request.json")
 			if err := os.WriteFile(input, payload, 0o600); err != nil {
 				t.Fatal(err)
@@ -1623,8 +1623,8 @@ func p24ReviewRecursiveStructuralDetails(t *testing.T, leaf string, descriptor c
 				t.Fatalf("wrong failure metadata: %s", result.stderr)
 			}
 			entries, err := os.ReadDir(workspace)
-			if err != nil || len(entries) != 0 {
-				t.Fatalf("CLI changed non-project directory: %v / %v", entries, err)
+			if err != nil || len(entries) != 1 || entries[0].Name() != ".git" {
+				t.Fatalf("CLI changed the repository with no ledger: %v / %v", entries, err)
 			}
 		})
 	}
@@ -1804,7 +1804,7 @@ func p24JudgmentRecursiveStructuralDetails(t *testing.T, leaf string, descriptor
 		t.Fatal(err)
 	}
 	p24ExpandDescriptorObjects(t, baseline, descriptor.Fields)
-	// Valid controls go through the same CLI, from a non-project directory.
+	// Valid controls go through the same CLI, from a repository with no ledger.
 	// Reaching the family fallback proves structural decoding was accepted.
 	exercise := func(name string, payload []byte, want *cli.InputError) {
 		t.Helper()
@@ -1818,7 +1818,7 @@ func p24JudgmentRecursiveStructuralDetails(t *testing.T, leaf string, descriptor
 			} else if invalid, ok := validation.(*cli.InputError); !ok || !p24JudgmentDetailsMatch(invalid, want) {
 				t.Fatalf("details = %#v, want %#v", validation, want)
 			}
-			workspace := t.TempDir()
+			workspace := newGitWorkspace(t)
 			input := filepath.Join(t.TempDir(), "request.json")
 			if err := os.WriteFile(input, payload, 0o600); err != nil {
 				t.Fatal(err)
@@ -1852,8 +1852,8 @@ func p24JudgmentRecursiveStructuralDetails(t *testing.T, leaf string, descriptor
 				t.Fatalf("wrong failure metadata: %s", result.stderr)
 			}
 			entries, err := os.ReadDir(workspace)
-			if err != nil || len(entries) != 0 {
-				t.Fatalf("CLI changed non-project directory: %v / %v", entries, err)
+			if err != nil || len(entries) != 1 || entries[0].Name() != ".git" {
+				t.Fatalf("CLI changed the repository with no ledger: %v / %v", entries, err)
 			}
 		})
 	}
@@ -2456,7 +2456,7 @@ func TestAdoptedStructuralProcessDetails(t *testing.T) {
 			if err := cli.ValidateInput([]byte(payload), inputDescriptorRegistry[leaf]); err != nil {
 				t.Fatalf("qualifying structure: %v", err)
 			}
-			workspace := t.TempDir()
+			workspace := newGitWorkspace(t)
 			input := filepath.Join(t.TempDir(), "valid.json")
 			if err := os.WriteFile(input, []byte(payload), 0o600); err != nil {
 				t.Fatal(err)

@@ -115,7 +115,7 @@ func maintenanceCheckWorkspaceRoot(cmd *cobra.Command) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return project.Resolve(workingDirectory, projectPath)
+	return project.Resolve(projectPath)
 }
 
 func maintenanceCheckResponse(result maintenance.Result, warnAsError bool) maintenanceCheckResult {
@@ -163,6 +163,9 @@ func renderMaintenanceDivergence(cmd *cobra.Command, result maintenanceCheckResu
 }
 
 func renderMaintenanceCheckError(cmd *cobra.Command, cause error) error {
+	if refused := renderRepositoryRefusal(cmd, cause); refused != nil {
+		return refused
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err

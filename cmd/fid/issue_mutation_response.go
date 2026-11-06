@@ -23,7 +23,7 @@ func issueMutationWorkspaceRoot(cmd *cobra.Command) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return project.Resolve(workingDirectory, projectPath)
+	return project.Resolve(projectPath)
 }
 
 func issueExpectedRevision(cmd *cobra.Command, raw string) (*int, error) {
@@ -97,6 +97,9 @@ func renderIssueTransitionSuccess(cmd *cobra.Command, result issues.TransitionRe
 }
 
 func renderIssueMutationError(cmd *cobra.Command, operation, issueID string, mutationErr error) error {
+	if refused := renderRepositoryRefusal(cmd, mutationErr); refused != nil {
+		return refused
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err
