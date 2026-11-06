@@ -166,8 +166,7 @@ class ShardTimeoutTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory(prefix="fid-ci-timeout-") as directory, \
                 mock.patch.object(ci, "discover", return_value={"example/a": ["TestA"]}), \
-                mock.patch.object(ci, "list_packages", return_value=["example/a"]), \
-                mock.patch.object(ci, "race_packages", return_value=[]), \
+                mock.patch.object(ci, "classify", return_value=(["example/a"], [])), \
                 mock.patch.object(ci, "run_go", side_effect=fake_run_go), \
                 mock.patch.object(ci.subprocess, "check_output", return_value="source\n"):
             ci.run_shard(0, 1, Path(directory) / "shard-0")
@@ -188,8 +187,7 @@ class ShardTimeoutTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory(prefix="fid-ci-groups-") as directory, \
                 mock.patch.object(ci, "discover", return_value=inventory), \
-                mock.patch.object(ci, "list_packages", return_value=sorted(inventory)), \
-                mock.patch.object(ci, "race_packages", return_value=["example/r"]), \
+                mock.patch.object(ci, "classify", return_value=(sorted(inventory), ["example/r"])), \
                 mock.patch.object(ci, "run_go", side_effect=fake_run_go), \
                 mock.patch.object(ci.subprocess, "check_output", return_value="source\n"):
             output = Path(directory) / "shard-0"
@@ -375,6 +373,26 @@ def write_files(root, files):
         path.write_text(text)
 
 
+GO_MOD = "module fixture\n\ngo 1.26.2\n"
+
+
+def spawning(package, tag=None):
+    """Product code that starts a goroutine, optionally behind a build constraint."""
+    return (f"//go:build {tag}\n" if tag else "") + f"package {package}\nfunc Twice(x int) int {{ done := make(chan int); go func() {{ done <- 2 * x }}(); return <-done }}\n"
+
+
+def quiet(package, tag=None):
+    return (f"//go:build {tag}\n" if tag else "") + f"package {package}\nfunc One() int {{ return 1 }}\n"
+
+
+def go_test(package, name, body="", tag=None):
+    return (f"//go:build {tag}\n" if tag else "") + f"package {package}\nimport \"testing\"\nfunc {name}(t *testing.T) {{ {body} }}\n"
+
+
+def run_helper(root):
+    return subprocess.run(["go", "run", str(ci.RACE_HELPER), "./..."], cwd=root, capture_output=True, text=True)
+
+
 class RacePackagesTests(unittest.TestCase):
     def test_packages_whose_non_test_go_files_start_goroutines_are_found_by_parsing(self):
         with tempfile.TemporaryDirectory(prefix="fid-ci-race-") as directory:
@@ -393,6 +411,42 @@ class RacePackagesTests(unittest.TestCase):
             })
             self.assertEqual(ci.race_packages(root), ["fixture/method", "fixture/nested", "fixture/platform", "fixture/spawn"])
 
+    def test_packages_that_build_in_only_one_mode_are_found_and_run_in_that_mode(self):
+        with tempfile.TemporaryDirectory(prefix="fid-ci-modes-") as directory:
+            root = Path(directory)
+            write_files(root, {
+                "go.mod": GO_MOD,
+                "plain/plain.go": quiet("plain"),
+                "raceonly/raceonly.go": spawning("raceonly", tag="race"),
+                "norace/norace.go": quiet("norace", tag="!race"),
+            })
+            self.assertEqual(ci.race_packages(root), ["fixture/raceonly"])
+            self.assertEqual(ci.classify(root), (["fixture/norace", "fixture/plain", "fixture/raceonly"], ["fixture/raceonly"]))
+
+    def test_packages_and_tests_that_could_never_run_in_their_mode_are_refused(self):
+        cases = {
+            "a race-only test in a package that runs without race": ({"p/p.go": quiet("p"), "p/p_test.go": go_test("p", "TestOnlyUnderRace", tag="race")}, "TestOnlyUnderRace"),
+            "a non-race test in a package that runs under race": ({"s/s.go": spawning("s"), "s/s_test.go": go_test("s", "TestOnlyWithoutRace", tag="!race")}, "TestOnlyWithoutRace"),
+            "an external race-only test": ({"x/x.go": quiet("x"), "x/x_test.go": go_test("x_test", "TestExternalUnderRace", tag="race")}, "TestExternalUnderRace"),
+            "a race-only package that starts no goroutines": ({"r/r.go": quiet("r", tag="race")}, "fixture/r"),
+            "a non-race package that starts goroutines": ({"n/n.go": spawning("n", tag="!race")}, "fixture/n"),
+        }
+        for label, (files, named) in cases.items():
+            with self.subTest(label), tempfile.TemporaryDirectory(prefix="fid-ci-refuse-") as directory:
+                root = Path(directory)
+                write_files(root, {"go.mod": GO_MOD, **files})
+                result = run_helper(root)
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertIn(named, result.stderr)
+
+    def test_a_test_name_in_both_modes_is_accepted(self):
+        with tempfile.TemporaryDirectory(prefix="fid-ci-paired-") as directory:
+            root = Path(directory)
+            write_files(root, {"go.mod": GO_MOD, "s/s.go": spawning("s"), "s/on_test.go": go_test("s", "TestBuildMode", tag="race"),
+                               "s/off_test.go": go_test("s", "TestBuildMode", 't.Fatal("built without race")', tag="!race")})
+            result = run_helper(root)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_unparseable_go_fails_closed(self):
         with tempfile.TemporaryDirectory(prefix="fid-ci-race-bad-") as directory:
             root = Path(directory)
@@ -403,6 +457,41 @@ class RacePackagesTests(unittest.TestCase):
     def test_fids_race_set_is_derived_from_its_own_source(self):
         repository = Path(__file__).resolve().parents[2]
         self.assertIn("github.com/mbell-nzl/fid/internal/evidence", ci.race_packages(repository))
+
+
+class LocalTestCommandTests(unittest.TestCase):
+    """`make test` runs `ci_tests.py test`; its exit status is the local check's verdict."""
+
+    def local_test(self, failing=None):
+        def body(package):
+            return f't.Fatal("{package} failed")' if package == failing else ""
+        with tempfile.TemporaryDirectory(prefix="fid-ci-local-") as directory:
+            root = Path(directory)
+            write_files(root, {
+                "go.mod": GO_MOD,
+                "plain/plain.go": quiet("plain"), "plain/plain_test.go": go_test("plain", "TestPlain", body("plain")),
+                "plain/on_test.go": go_test("plain", "TestBuildMode", 't.Fatal("plain ran under race")', tag="race"),
+                "plain/off_test.go": go_test("plain", "TestBuildMode", tag="!race"),
+                "spawn/spawn.go": spawning("spawn"), "spawn/spawn_test.go": go_test("spawn", "TestSpawn", body("spawn")),
+                "spawn/on_test.go": go_test("spawn", "TestBuildMode", tag="race"),
+                "spawn/off_test.go": go_test("spawn", "TestBuildMode", 't.Fatal("spawn ran without race")', tag="!race"),
+                "raceonly/raceonly.go": spawning("raceonly", tag="race"),
+                "raceonly/raceonly_test.go": go_test("raceonly", "TestRaceOnly", body("raceonly"), tag="race"),
+            })
+            return subprocess.run([sys.executable, SCRIPT, "test"], cwd=root, capture_output=True, text=True)
+
+    def test_it_passes_when_every_package_passes_in_its_mode(self):
+        result = self.local_test()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for package in ("plain", "spawn", "raceonly"):
+            self.assertRegex(result.stdout, rf"ok\s+fixture/{package}\b")
+
+    def test_a_failure_in_either_group_fails_it(self):
+        for package in ("plain", "spawn", "raceonly"):
+            with self.subTest(failing=package):
+                result = self.local_test(failing=package)
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn(f"{package} failed", result.stdout)
 
 
 def commit_module(root):
@@ -425,6 +514,42 @@ class RealGoShardTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn("race-only test ran and failed", result.stdout + result.stderr)
             self.assertFalse((root / "shard-0" / "manifest.json").exists())
+
+    def test_a_failing_package_built_only_under_race_fails_the_shard(self):
+        with tempfile.TemporaryDirectory(prefix="fid-ci-race-package-") as directory:
+            root = Path(directory)
+            write_files(root, {"go.mod": GO_MOD, "plain/plain.go": quiet("plain"), "plain/plain_test.go": go_test("plain", "TestPlain"),
+                               "raceonly/raceonly.go": spawning("raceonly", tag="race"),
+                               "raceonly/raceonly_test.go": go_test("raceonly", "TestRacePackageFails", 't.Fatal("race-only package ran and failed")', tag="race")})
+            commit_module(root)
+            result = subprocess.run([sys.executable, SCRIPT, "run", "--count", "1", "--index", "0", "--out", str(root / "shard-0")], cwd=root, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("race-only package ran and failed", result.stdout + result.stderr)
+            self.assertFalse((root / "shard-0" / "manifest.json").exists())
+
+    def test_one_shard_runs_and_merges_every_package_including_single_mode_ones(self):
+        with tempfile.TemporaryDirectory(prefix="fid-ci-one-shard-") as directory:
+            root = Path(directory)
+            write_files(root, {"go.mod": GO_MOD, "plain/plain.go": quiet("plain"), "plain/plain_test.go": go_test("plain", "TestPlain", "if One() != 1 { t.Fatal(1) }"),
+                               "raceonly/raceonly.go": spawning("raceonly", tag="race"),
+                               "raceonly/raceonly_test.go": go_test("raceonly", "TestRaceOnlyPackage", "if Twice(2) != 4 { t.Fatal(4) }", tag="race"),
+                               "norace/norace.go": quiet("norace", tag="!race"),
+                               "norace/norace_test.go": go_test("norace", "TestNoRacePackage", "if One() != 1 { t.Fatal(1) }", tag="!race")})
+            commit_module(root)
+            result = subprocess.run([sys.executable, SCRIPT, "run", "--count", "1", "--index", "0", "--out", str(root / "results" / "shard-0")], cwd=root, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            manifest = json.loads((root / "results" / "shard-0" / "manifest.json").read_text())
+            self.assertEqual(manifest["race"], ["fixture/raceonly"])
+            self.assertEqual(sorted(map(tuple, manifest["completed"])), [("fixture/norace", "TestNoRacePackage"), ("fixture/plain", "TestPlain"), ("fixture/raceonly", "TestRaceOnlyPackage")])
+            merged = subprocess.run([sys.executable, SCRIPT, "merge", "--count", "1", "--root", str(root / "results"), "--out", str(root / "combined.out")], cwd=root, capture_output=True, text=True)
+            self.assertEqual(merged.returncode, 0, merged.stdout + merged.stderr)
+            self.assertIn("PASS coverage union: 1 shards, 3 targets", merged.stdout)
+            blocks = ci.coverage_blocks(root / "combined.out")
+            for package in ("plain", "raceonly", "norace"):
+                self.assertTrue(any(key.startswith(f"fixture/{package}/") and hits > 0 for key, (_, hits) in blocks.items()), package)
+            wrong = subprocess.run([sys.executable, SCRIPT, "merge", "--count", "2", "--root", str(root / "results"), "--out", str(root / "wrong.out")], cwd=root, capture_output=True, text=True)
+            self.assertNotEqual(wrong.returncode, 0)
+            self.assertFalse((root / "wrong.out").exists())
 
     def test_real_go_tests_examples_fuzz_seeds_and_empty_package_are_reconciled(self):
         with tempfile.TemporaryDirectory(prefix="fid-ci-smoke-") as directory:

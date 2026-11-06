@@ -133,12 +133,17 @@ def discover(groups, output):
     return inventory
 
 
-def list_packages():
-    return subprocess.check_output(["go", "list", "./..."], text=True).split()
+def classify(cwd=None):
+    """(every package, the race packages), listed with and without -race by race_packages.go."""
+    found = json.loads(subprocess.check_output(["go", "run", str(RACE_HELPER), "./..."], cwd=cwd, text=True))
+    packages, race = sorted(found["packages"]), sorted(found["race"])
+    if not packages or len(set(packages)) != len(packages) or not set(race) <= set(packages):
+        raise ValueError(f"race_packages.go listed no packages or an inconsistent race set: {found}")
+    return packages, race
 
 
 def race_packages(cwd=None):
-    return sorted(set(subprocess.check_output(["go", "run", str(RACE_HELPER), "./..."], cwd=cwd, text=True).split()))
+    return classify(cwd)[1]
 
 
 def package_groups(packages, race):
@@ -156,17 +161,17 @@ def run_shard(index, count, output):
     if not 0 <= index < count:
         raise ValueError("shard index outside declared count")
     output.mkdir(parents=True, exist_ok=False)
-    race = race_packages()
-    groups = package_groups(list_packages(), race)
+    packages, race = classify()
+    groups = package_groups(packages, race)
     inventory = discover(groups, output)
     selected = partitions(inventory, count, load_durations())[index]
     pattern = "^(" + "|".join(re.escape(t) for t in sorted({t for _, t in selected})) + ")$"
     print(f"Shard {index + 1}/{count}: {len(selected)} tests, examples and fuzz seed targets", flush=True)
     print(f"Race detector on {', '.join(race) or 'no packages'}: their non-test code starts goroutines", flush=True)
     events, profile = [], ["mode: atomic"]
-    for flags, packages in groups:
+    for flags, group in groups:
         coverage = output / f"coverage-{label(flags)}.out"
-        events += run_go([*flags, *COVER, *TIMEOUT, "-count=1", "-coverprofile=" + str(coverage), "-json", "-run", pattern, *packages], output / f"tests-{label(flags)}.jsonl")
+        events += run_go([*flags, *COVER, *TIMEOUT, "-count=1", "-coverprofile=" + str(coverage), "-json", "-run", pattern, *group], output / f"tests-{label(flags)}.jsonl")
         lines = coverage.read_text().splitlines()
         if not lines or lines[0] != "mode: atomic":
             raise ValueError("coverage must use atomic mode")
@@ -277,8 +282,7 @@ def write_github(variable, text):
 
 
 def local_test():
-    race = race_packages()
-    packages = list_packages()
+    packages, race = classify()
     print(f"Race detector on {', '.join(race) or 'no packages'}: their non-test code starts goroutines", flush=True)
     codes = [subprocess.run(["go", "test", *flags, *group]).returncode for flags, group in package_groups(packages, race)]
     return 1 if any(codes) else 0
@@ -336,7 +340,7 @@ def main():
     else:
         import tempfile
         with tempfile.TemporaryDirectory(prefix="fid-ci-plan-") as scratch:
-            inventory = discover(package_groups(list_packages(), race_packages()), Path(scratch))
+            inventory = discover(package_groups(*classify()), Path(scratch))
         measured = load_durations()
         for i, part in enumerate(partitions(inventory, args.count, measured)):
             seconds = sum(max(measured.get(p, {}).get(t, UNMEASURED_SECONDS), MIN_SECONDS) for p, t in part)
