@@ -230,6 +230,23 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     path validation stop treating `.fid/` paths specially, and the `dirty`
     help and the CLI spec stop mentioning them. That's task 1.1d5, which
     also updates the 1.1a audit test's comment that the ledger "is moving".
+- **Details** (decided 6 November 2026, for task 1.2):
+  - 1.2 records each backup's time and outcome. The backup-age line, with
+    its 24-hour warning and 3-day NEEDS YOU item, moves to 1.3's
+    `fid status`, which doesn't exist before then.
+  - 1.2 creates `.fid.toml` holding only the project ID that keys the
+    backup folder. A restore onto a fresh clone has no ledger, so the ID
+    has to be committed. 2.2 adds the policy to the same file.
+  - The backup target is in user-level config,
+    `$XDG_CONFIG_HOME/fid/config.toml` (`~/.config/fid/config.toml` by
+    default). `fid init` asks for it only when run in an interactive
+    terminal. Otherwise it doesn't ask, and `fid status` warns until a
+    target is set.
+  - Restore needs no new command: a backup is an export, so restoring is
+    cloning the backup repository and running `fid export import`. The
+    restore test does exactly that.
+  - Tests push to local bare repositories. Mark creates the real
+    `fid-ledgers` repository before the manual restore drill.
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a

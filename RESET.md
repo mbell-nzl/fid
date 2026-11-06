@@ -52,8 +52,8 @@ criteria below.
 | **1.1d3** | Move the ledger to the git common directory, with staging beside it; the config spec updated | Standard | Two worktrees share one ledger (V3's claim and `next` parts belong to 1.4) (done 5 November 2026) |
 | **1.1d4** | Discovery refuses when git and `LedgerDir` disagree, or when git could track the ledger | Standard | fid never writes outside `--git-common-dir`/fid, nor where git could track it: where git and `LedgerDir` name different ledgers, or git's common directory is inside the worktree but not within a `.git` directory, every command that opens or creates a project refuses with `repository-unavailable` / `unsafe-path` |
 | **1.1d5** | A `.fid/` in a worktree is an ordinary path | Standard | A leftover `.fid/` makes the worktree dirty and can be adopted like any other path; the `dirty` help and the CLI spec no longer single it out |
-| **1.2** | `fid backup` (export, commit, push), restore test, backup-age status line | Standard | V8 |
-| **1.3** | Display package; `fid status`, `fid show` | Standard | whet-style output; golden tests for text and JSON |
+| **1.2** | `fid backup` (export, commit, push), restore test; `.fid.toml` with the project ID; the backup target in user-level config, asked for by `fid init` in a terminal; each backup's time and outcome recorded | Standard | V8 |
+| **1.3** | Display package; `fid status`, `fid show`; the backup-age line | Standard | whet-style output; golden tests for text and JSON; `fid status` warns after 24 hours without a backup, after a failed push, or with no target set, and makes it a NEEDS YOU item after 3 days |
 | **1.4** | `fid next --claim`: atomic, respects dependencies, ordered, typed skip reasons, `--explain` | Standard | V3 |
 | **1.5** | `start`, `check`, `park`; claim heartbeat | Standard | An agent works a task without touching kernel commands |
 | **1.6** | Merge-aware `done` with the single done evaluator; reconciles PRs Mark merged in GitHub | Assured | V5 |
