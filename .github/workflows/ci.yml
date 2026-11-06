@@ -1,12 +1,48 @@
 name: ci
 
+# Pull requests run CI once they're ready for review; drafts skip every job.
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
 
+# The reuse lookup lists artifacts and runs; checkout reads the repository.
+permissions:
+  actions: read
+  contents: read
+
+# A new push to a pull request cancels its superseded run. Each push to main
+# gets a group of its own, so no main run is cancelled or left pending.
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  # Decision H (task 0.7): a push to main whose tree a passed pull_request run
+  # already tested reuses that run. Any doubt means a full run.
+  reuse:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.find.outputs.run }}
+      tree: ${{ steps.find.outputs.tree }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Find a passed pull_request run of this tree
+        id: find
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/ci_tests.py reuse --tree "$(git rev-parse "$GITHUB_SHA^{tree}")"
+
   checks:
+    needs: reuse
+    if: >-
+      ${{ !cancelled() &&
+      ((github.event_name == 'pull_request' && !github.event.pull_request.draft) ||
+      (github.event_name == 'push' && needs.reuse.result == 'success' && needs.reuse.outputs.run == '')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,18 +66,23 @@ jobs:
       - name: Lint
         run: make lint
 
-      - name: Verify shard selection and coverage reconciliation
+      - name: Verify race packages, shard selection, coverage reconciliation and reuse
         run: python3 -m unittest discover -s .github/scripts -p test_ci_tests.py -v
 
       - name: Build
         run: make build
 
   tests:
+    needs: reuse
+    if: >-
+      ${{ !cancelled() &&
+      ((github.event_name == 'pull_request' && !github.event.pull_request.draft) ||
+      (github.event_name == 'push' && needs.reuse.result == 'success' && needs.reuse.outputs.run == '')) }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -55,8 +96,8 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Tests (race and coverage, exhaustive shard)
-        run: python3 .github/scripts/ci_tests.py run --count 4 --index ${{ matrix.shard }} --out "$RUNNER_TEMP/shard-${{ matrix.shard }}"
+      - name: Tests (race where goroutines start, coverage, exhaustive shard)
+        run: python3 .github/scripts/ci_tests.py run --count 2 --index ${{ matrix.shard }} --out "$RUNNER_TEMP/shard-${{ matrix.shard }}"
 
       - name: Retain coverage and execution evidence
         if: always()
@@ -67,44 +108,81 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  # Preserve the required "quality" check, and fail it if any dependency fails
-  # or is cancelled. A skipped merge job must never look like successful CI.
+  # The required "quality" check. It passes only when checks and every test
+  # shard succeeded, or when a push to main verified a reuse. A skipped or
+  # cancelled job must never look like successful CI, so it runs always(),
+  # in superseded runs too, and fails there. Drafts skip it like every job.
   quality:
-    if: always()
-    needs: [checks, tests]
+    if: ${{ always() && !(github.event_name == 'pull_request' && github.event.pull_request.draft) }}
+    needs: [reuse, checks, tests]
     runs-on: ubuntu-latest
     steps:
-      - name: Require successful checks and every test shard
-        env:
-          CHECKS_RESULT: ${{ needs.checks.result }}
-          TESTS_RESULT: ${{ needs.tests.result }}
-        run: test "$CHECKS_RESULT" = success && test "$TESTS_RESULT" = success
-
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Require successful checks and every test shard, or a verified reuse
+        id: gate
+        env:
+          REUSE_RESULT: ${{ needs.reuse.result }}
+          REUSED_RUN: ${{ needs.reuse.outputs.run }}
+          REUSED_TREE: ${{ needs.reuse.outputs.tree }}
+          CHECKS_RESULT: ${{ needs.checks.result }}
+          TESTS_RESULT: ${{ needs.tests.result }}
+        run: >-
+          python3 .github/scripts/ci_tests.py gate --event "$GITHUB_EVENT_NAME"
+          --reuse "$REUSE_RESULT" --reused-run "$REUSED_RUN" --tree "$REUSED_TREE"
+          --checks "$CHECKS_RESULT" --tests "$TESTS_RESULT"
+
       - name: Set up Go
+        if: steps.gate.outputs.mode == 'full'
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
 
       - name: Download shard evidence
+        if: steps.gate.outputs.mode == 'full'
         uses: actions/download-artifact@v8.0.1
         with:
           pattern: shard-*
           path: ${{ runner.temp }}/ci-results
 
       - name: Verify complete execution and combine coverage
-        run: python3 .github/scripts/ci_tests.py merge --count 4 --root "$RUNNER_TEMP/ci-results" --out coverage.out
+        if: steps.gate.outputs.mode == 'full'
+        run: python3 .github/scripts/ci_tests.py merge --count 2 --root "$RUNNER_TEMP/ci-results" --out coverage.out
 
       - name: Coverage report
+        if: steps.gate.outputs.mode == 'full'
         run: go tool cover -func=coverage.out
 
       - name: Retain combined coverage
+        if: steps.gate.outputs.mode == 'full'
         uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage
           path: coverage.out
           if-no-files-found: error
           retention-days: 7
+
+      # Last, so it exists only when every job passed. GITHUB_SHA is GitHub's
+      # merge of the pull request into its base: the commit every job tested.
+      - name: Record the tested tree
+        id: tree
+        if: steps.gate.outputs.mode == 'full' && github.event_name == 'pull_request'
+        run: |
+          tree=$(git rev-parse "$GITHUB_SHA^{tree}")
+          mkdir -p "$RUNNER_TEMP/ci-tree"
+          printf '{"tree": "%s", "commit": "%s", "run": "%s/%s/actions/runs/%s"}\n' \
+            "$tree" "$GITHUB_SHA" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" > "$RUNNER_TEMP/ci-tree/ci-tree.json"
+          echo "tree=$tree" >> "$GITHUB_OUTPUT"
+          echo "Recorded tree $tree (merge commit $GITHUB_SHA) for reuse on main." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Retain the tested tree for reuse on main
+        if: steps.tree.outcome == 'success'
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: ci-tree-${{ steps.tree.outputs.tree }}
+          path: ${{ runner.temp }}/ci-tree
+          if-no-files-found: error
+          retention-days: 90
+          overwrite: true
