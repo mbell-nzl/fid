@@ -13,6 +13,14 @@ the worktree's `.git` entry as git does, without running git: a `.git`
 directory is the common directory, and a `.git` file names the worktree's git
 directory, whose `commondir` file names the common directory.
 
+Discovery checks that git agrees: its one `git rev-parse` also reports the
+common directory. fid refuses, before it writes anything, where the two name
+different ledgers once symlinks are resolved (usually `GIT_DIR` or
+`GIT_COMMON_DIR` naming another repository), and where the common directory is
+inside the worktree but not within a `.git` directory, because git could track
+the ledger there. Both refusals are `repository-unavailable` with reason
+`unsafe-path` (`06_DESIGN_PLAN_CLI.md` section 1).
+
 ```text
 <git-common-dir>/fid/
 ├── journal/
