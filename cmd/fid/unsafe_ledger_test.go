@@ -20,7 +20,7 @@ const unsafeLedgerMessage = "the ledger location is unsafe"
 // command where git and LedgerDir name different ledgers. With core.worktree,
 // git reports another repository's worktree as the top level but keeps its
 // own common directory, while LedgerDir reads that worktree's .git. Each
-// command refuses, and neither ledger changes.
+// command refuses, and no file in either repository changes.
 func TestEveryProjectCommandRefusesWhereGitNamesAnotherLedger(t *testing.T) {
 	t.Parallel()
 	worktree := clonePristineWorkspace(t)
@@ -35,7 +35,7 @@ func TestEveryProjectCommandRefusesWhereGitNamesAnotherLedger(t *testing.T) {
 // TestEveryProjectCommandRefusesWhereGitCouldTrackTheLedger runs every
 // project command in a worktree whose git directory, and so the ledger, is an
 // ordinary directory inside it, as `git init --separate-git-dir` makes it.
-// Each command refuses, and the ledger doesn't change.
+// Each command refuses, and no file in the worktree changes.
 func TestEveryProjectCommandRefusesWhereGitCouldTrackTheLedger(t *testing.T) {
 	t.Parallel()
 	worktree := clonePristineWorkspace(t)
