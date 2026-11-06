@@ -163,7 +163,7 @@ func validateCurrentAdoptedPaths(value any) error {
 	}
 	for _, v := range value.([]any) {
 		p := v.(string)
-		if p == ".fid" || p == ".git" || strings.HasPrefix(p, ".fid/") || strings.HasPrefix(p, ".git/") {
+		if p == ".git" || strings.HasPrefix(p, ".git/") {
 			return fmt.Errorf("protected adopted path")
 		}
 	}

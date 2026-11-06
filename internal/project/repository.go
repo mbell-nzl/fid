@@ -170,9 +170,7 @@ func changedPaths(root string) ([]string, error) {
 		if err := validPath(raw); err != nil {
 			return nil, err
 		}
-		if raw != ".fid" && !strings.HasPrefix(raw, ".fid/") {
-			paths[raw] = true
-		}
+		paths[raw] = true
 	}
 	if len(paths) > maxRepositoryPaths {
 		return nil, unsafeRepositoryReason("unsafe-path", "path count exceeds %d", maxRepositoryPaths)

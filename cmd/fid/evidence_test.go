@@ -140,7 +140,7 @@ func buildLinkedEvidenceFixture(t *testing.T, key string) linkedEvidenceFixture 
 	if err := os.WriteFile(filepath.Join(workspace, "evidence.txt"), []byte("trusted evidence\n"), 0o600); err != nil {
 		t.Fatalf("write declared Artifact: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(workspace, ".gitignore"), []byte(".fid/\n*.json\nevidence.txt\n"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(workspace, ".gitignore"), []byte("*.json\nevidence.txt\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(workspace, "tracked-proof.txt"), []byte("original"), 0o600); err != nil {

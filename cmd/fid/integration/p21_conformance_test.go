@@ -81,7 +81,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	p22Git(t, workspace, "init", "-q")
 	p22Git(t, workspace, "config", "user.email", "p21-corpus@example.test")
 	p22Git(t, workspace, "config", "user.name", "Phase 21 corpus")
-	p22Write(t, workspace, ".gitignore", ".fid/\n*.json\n*.zip\n")
+	p22Write(t, workspace, ".gitignore", "*.json\n*.zip\n")
 	p22Git(t, workspace, "add", ".gitignore")
 	p22Git(t, workspace, "commit", "-qm", "fixture")
 	init := p21Run(t, binary, workspace, "--json", "init", "--prefix", "P21")

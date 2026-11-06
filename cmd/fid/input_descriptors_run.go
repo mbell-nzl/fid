@@ -10,7 +10,7 @@ import (
 func runExpectedRepository() cli.InputField {
 	return inputObject("expected_repository", "Preconditions compared with fid's repository observation.",
 		inputString("head_oid", "required", "Full output of git rev-parse HEAD.", "oid", "<head-oid>"),
-		cli.InputField{Name: "dirty", Type: "boolean", Requirement: "required", Meaning: "True when git status --porcelain lists any path outside .fid/."})
+		cli.InputField{Name: "dirty", Type: "boolean", Requirement: "required", Meaning: "True when git status --porcelain lists any path."})
 }
 
 func runExecutor() cli.InputField {

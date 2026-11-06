@@ -128,7 +128,7 @@ func p24GateDirtyRepository(t *testing.T, workspace, path string) map[string]any
 		t.Helper()
 		return strings.TrimSuffix(string(gitBytes(args...)), "\n")
 	}
-	if status := git("status", "--porcelain", "--untracked-files=all", "--", ".", ":!.fid"); status != " M "+path {
+	if status := git("status", "--porcelain", "--untracked-files=all", "--", "."); status != " M "+path {
 		t.Fatalf("dirty fixture status = %q, want one tracked edit %s", status, path)
 	}
 	root, err := filepath.Abs(git("rev-parse", "--show-toplevel"))

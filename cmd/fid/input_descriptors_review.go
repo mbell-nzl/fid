@@ -22,7 +22,7 @@ func reviewDescriptors() map[string]cli.InputDescriptor {
 	}
 	expected := inputObject("expected_repository", "Repository preconditions checked against one fid observation.",
 		inputString("head_oid", "required", "Full output of git rev-parse HEAD.", "oid", "<head-oid>"),
-		boolField("dirty", "True when git status --porcelain lists any path outside .fid/."))
+		boolField("dirty", "True when git status --porcelain lists any path."))
 	item := inputObject("item", "Covered Source and assessment.", judgmentSource("source"), boolField("assessed", "Whether the Source was assessed."))
 	exclusion := inputObject("exclusion", "Excluded Source and reason.", judgmentSource("source"), judgmentText("reason", "Reason for exclusion."))
 	coverage := inputObject("coverage", "Declared Review coverage.", reviewArray("items", "Covered Sources, unique by resolved digest.", item, 1), reviewArray("exclusions", "Sources excluded from coverage.", exclusion, 0))

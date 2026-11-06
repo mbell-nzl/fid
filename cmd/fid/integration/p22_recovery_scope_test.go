@@ -13,7 +13,7 @@ import (
 
 func TestP22RecoveryUsesClaimScopeAndExactHumanOutsideAdoption(t *testing.T) {
 	t.Parallel()
-	for _, mode := range []string{"ordinary-forged-scope", "force-outside", "force-protected"} {
+	for _, mode := range []string{"ordinary-forged-scope", "force-outside", "force-leftover-fid"} {
 		t.Run(mode, func(t *testing.T) {
 			a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, p22FinalActions)
 			state := "live"
@@ -25,8 +25,9 @@ func TestP22RecoveryUsesClaimScopeAndExactHumanOutsideAdoption(t *testing.T) {
 				a.p22Expire(t)
 			}
 			name := "outside.txt"
-			if mode == "force-protected" {
-				name = ".fid/protected-adoption"
+			if mode == "force-leftover-fid" {
+				// An ordinary path since 1.1d5; it used to be protected.
+				name = ".fid/leftover-adoption"
 			}
 			p22Write(t, a.workspace, name, "precise outside work")
 			inspection := a.p22Run(t, "run", "inspect", a.runID)
@@ -52,7 +53,7 @@ func TestP22RecoveryUsesClaimScopeAndExactHumanOutsideAdoption(t *testing.T) {
 			before := p22FaultProjection(t, a.workspace)
 			events := p21JournalEventCount(t, a.workspace)
 			response := a.Execute(t, p22ConformanceCase{Name: "exact-scope", Operation: "run.recover", Input: input})
-			if mode != "force-outside" {
+			if mode == "ordinary-forged-scope" {
 				p22AssertWireFailure(t, "run.recover", "recovery-state-conflict", response)
 				if p21JournalEventCount(t, a.workspace) != events || !reflect.DeepEqual(before, p22FaultProjection(t, a.workspace)) {
 					t.Fatal("rejected scope changed facts")
