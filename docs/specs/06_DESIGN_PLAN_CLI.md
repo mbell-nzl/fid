@@ -10,12 +10,14 @@ vertical slice before implementation.
 fid [--project <path>] [--json] <command> ...
 ```
 
-- fid needs a git repository. Discovery runs `git rev-parse --show-toplevel`
-  once, from the working directory. The project root is that worktree's top
-  level, with symlinks resolved, so fid works from any subdirectory. The
-  ledger is `$(git rev-parse --git-common-dir)/fid`, which every worktree of
-  the repository shares; fid never looks for a ledger anywhere else
-  (`04_TRD_CONFIG.md` section 1).
+- fid needs a git repository, and git 2.31 or later. Discovery runs
+  `git rev-parse` twice from the working directory: once for the worktree's
+  top level (`--show-toplevel`) and once for the git common directory
+  (`--path-format=absolute --git-common-dir`, which needs git 2.31). The
+  project root is that top level, with symlinks resolved, so fid works from
+  any subdirectory. The ledger is `$(git rev-parse --git-common-dir)/fid`,
+  which every worktree of the repository shares; fid never looks for a
+  ledger anywhere else (`04_TRD_CONFIG.md` section 1).
 - `--project <path>` works like `git -C <path>`: discovery starts at `<path>`
   instead of the working directory, and the root is that path's top level.
   `export import --repository` follows the same rule.
@@ -23,6 +25,27 @@ fid [--project <path>] [--json] <command> ...
   `init` included, refuses with `repository-unavailable` (precondition, exit
   4; details `reason: not-a-repository` and `detail`). In a repository with no
   ledger, the failure is `project-not-found` (exit 3).
+- fid never writes outside `$(git rev-parse --git-common-dir)/fid`, nor where
+  git could track it. Every command that opens or creates a project, `init`
+  and `export import` included, refuses with `repository-unavailable`
+  (precondition, exit 4; details `reason: unsafe-path` and a `detail` naming
+  the locations involved) before it writes anything, where:
+  - git and the worktree's `.git` entry name different ledgers, compared with
+    symlinks resolved. The usual cause is `GIT_DIR` or `GIT_COMMON_DIR`
+    naming another repository. Naming the worktree's own git directory, as
+    git does for hooks, is fine, and so is a `.git` that is a symlink.
+  - the git common directory is inside the worktree but not within a `.git`
+    directory, as `git init --separate-git-dir=<worktree>/metadata` makes it.
+    There `git add --all` would track the ledger, and ignore rules wouldn't
+    help, because `git add -f` still adds an ignored file. A linked
+    worktree's or a submodule's common directory is outside its worktree or
+    within a `.git` directory, so they work.
+
+  A newline in a path doesn't stop discovery. Each run reports one path,
+  ended by a newline, and fid strips exactly that newline, because a path
+  may itself end in one. An older git echoes `--path-format=absolute` back
+  in its report, which then names no ledger the worktree agrees with, so fid
+  refuses with `unsafe-path`.
 - Output names ledger files by absolute path, in Human text and in JSON, never
   relative to the project root, because a linked worktree's ledger is outside
   that worktree. That covers `init`'s `journal_path`

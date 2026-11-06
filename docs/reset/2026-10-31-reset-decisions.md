@@ -147,8 +147,10 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     - 1.1d: the ledger moves to the git common directory.
   - `LedgerDir` reads the worktree's `.git` entry in Go: a directory, or a
     `gitdir:` file plus `commondir`. It stays cheap and returns no error.
-    Discovery runs `git rev-parse` once and refuses if git and `LedgerDir`
-    disagree, so fid never writes outside `--git-common-dir`/fid.
+    Discovery runs `git rev-parse` and refuses if git and `LedgerDir`
+    disagree, so fid never writes outside `--git-common-dir`/fid. (This
+    first said discovery runs it once; the 7 November details make it two
+    runs.)
   - `fid init` and `export import` stage in `<common>/fid-staging-*` and
     rename into `<common>/fid`. The journal and config packages gain entry
     points that take a ledger directory, since a staging directory has no
@@ -250,6 +252,26 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
   cloning the backup repository and running `fid export import`, and the
   restore test would do exactly that. This is Claude's reading; Mark hasn't
   confirmed it. 1.2 doesn't build restore until he does.
+- **Details** (decided 7 November 2026, for task 1.1d4):
+  - Discovery runs git twice, one value per run: `git rev-parse
+    --show-toplevel` for the top level and `git rev-parse
+    --path-format=absolute --git-common-dir` for the common directory. fid
+    strips exactly one trailing newline from each output and nothing else,
+    because a path may itself end in a newline. This amends the 3 November
+    detail that discovery runs `git rev-parse` once. Its point still holds:
+    `LedgerDir` never runs git.
+  - Why: one run printed both paths one per line, so a newline in either
+    path made the output read more than one way. In #42's second review
+    round, Codex showed that choosing a reading could be fooled into
+    writing outside git's common directory, and that the remaining refusal
+    for an output that read two agreeing ways turned away a safe layout.
+  - The only refusals are the two recorded on 6 November: git and
+    `LedgerDir` name different ledgers, or the common directory is inside
+    the worktree but not within a `.git` directory. With one value per run
+    there's no ambiguous output to refuse.
+  - Both refusals have the message "the ledger location is unsafe".
+  - The locations go in the free-text `detail`, not in new detail keys.
+  - fid needs git 2.31 or later, for `--path-format=absolute`.
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a

@@ -34,7 +34,7 @@ func newExportImportCommand() *cobra.Command {
 			}
 		}
 		target, err := project.Discover(repository)
-		if errors.Is(err, project.ErrNotARepository) {
+		if repositoryRefusalMessage(err) != "" {
 			return renderExportError(cmd, "export.import", args[0], err)
 		} else if err != nil {
 			target = repository // Import reports an unusable target itself.
