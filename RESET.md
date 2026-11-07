@@ -22,7 +22,9 @@ criteria below.
 - **Review.** A fresh session on the other model reviews each PR: Codex
   reviews Claude's work and Claude reviews Codex's. One pass covers code and
   test adequacy. Findings go in a PR comment. Once `fid review` works, fid
-  records them and posts that comment itself.
+  records them and posts that comment itself. Mark may waive "the other
+  model" for one PR when usage limits would otherwise stop progress; a fresh
+  session of the same model then reviews, and the comment says so.
 - **Lanes, by hand until fid computes them.**
   - Routine: no production code changed.
   - Standard: any code change.

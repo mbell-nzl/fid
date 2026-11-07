@@ -404,6 +404,10 @@ for confirmation".
   public repo (decided 31 October 2026).
 - **One reviewer session per round** runs every required profile (code, test
   adequacy, security). Assured work adds a separate review on the other model.
+- **Same-model review by waiver** (decided 7 November 2026). The other model
+  reviews by default. When usage limits would otherwise stop progress, Mark
+  may waive that for one PR. The reviewer is then a fresh session of the same
+  model with clean context, and the review comment states the waiver and why.
 - **Each review round is also a PR comment** (decided 3 November 2026, for
   tasks 2.1 and 2.5). Mark reads reviews where he merges, next to the
   completion report. fid's record of the review is canonical, because `done`
