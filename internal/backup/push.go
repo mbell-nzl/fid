@@ -79,7 +79,7 @@ func (run *attempt) push() error {
 	if err != nil {
 		return err
 	}
-	if _, err := repository.run(nil, "push", "--porcelain", "--no-verify", run.target, commit+":"+remoteRef); err != nil {
+	if _, err := repository.run(nil, "push", "--porcelain", run.target, commit+":"+remoteRef); err != nil {
 		if rejected := rejectedPush(err); rejected != "" {
 			return &Error{Kind: KindPushRejected, Message: "the backup repository rejected the push", Detail: rejected, Err: err}
 		}
@@ -158,12 +158,13 @@ func (run *attempt) tree(repository clone, parent string, summary export.Summary
 	if err != nil {
 		return "", failure(KindInternal, err, "encode the folder manifest")
 	}
-	// --no-filters: attributes in the user's git config never touch the archive.
+	// --no-filters: attributes in the user's git config never touch the
+	// archive. Content on stdin has no path, so git applies no filters to it.
 	archiveBlob, err := repository.text("hash-object", "-w", "--no-filters", archive)
 	if err != nil {
 		return "", failure(KindInternal, err, "store the export")
 	}
-	manifestBlob, err := repository.output(strings.NewReader(string(encoded)+"\n"), "hash-object", "-w", "--no-filters", "--stdin")
+	manifestBlob, err := repository.output(strings.NewReader(string(encoded)+"\n"), "hash-object", "-w", "--stdin")
 	if err != nil {
 		return "", failure(KindInternal, err, "store the folder manifest")
 	}

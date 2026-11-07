@@ -229,9 +229,10 @@ credential helpers, SSH keys, `url.<base>.insteadOf` rules and proxies
 apply. fid never embeds, stores or asks for credentials: it sets
 `GIT_TERMINAL_PROMPT=0`, so a backup run by the loop or cron fails rather than
 waiting for a password. It overrides what could stop a backup or run code:
-hooks (`core.hooksPath=/dev/null` and `--no-verify`), commit signing,
-attribute filters (`--no-filters`), init templates, detached garbage
-collection, an inherited commit identity, and inherited variables that name
+hooks (`core.hooksPath=/dev/null`), commit signing (`--no-gpg-sign`),
+attribute filters on the archive (`--no-filters`), init templates
+(`--template=`), detached garbage collection, an inherited commit identity
+or `GIT_TERMINAL_PROMPT`, and inherited variables that name
 another repository (`GIT_DIR`, `GIT_INDEX_FILE` and the rest of `git
 rev-parse --local-env-vars`, plus `GIT_QUARANTINE_PATH` and
 `GIT_NAMESPACE`). A local-path target should be absolute: git resolves a

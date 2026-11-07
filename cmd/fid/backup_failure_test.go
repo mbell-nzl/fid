@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -370,6 +371,83 @@ func TestBackupRepairsATornRecordBeforeAppending(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Attempts that fail before fid's clone, such as one with no target, record
+// without holding the clone lock. When several meet a torn tail at once,
+// the record's own lock must let one repair it while the others wait, so no
+// attempt's line is cut off or glued to another's.
+func TestConcurrentAttemptsRepairATornRecordOnce(t *testing.T) {
+	t.Parallel()
+	const failing, seededPairs = 8, 5000
+	fixture := newBackupFixture(t)
+	workspace, _ := fixture.project()
+	fixture.setTarget(fixture.target)
+	decodeBackupSuccess(t, fixture.backup(workspace, "--json"))
+	decodeBackupSuccess(t, fixture.backup(workspace, "--json"))
+	path := filepath.Join(config.LedgerDir(workspace), "backups.jsonl")
+	pair, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Years of backups make a long record. Reading it all widens the window
+	// in which repairs without the record lock would overlap.
+	seeded := bytes.Repeat(pair, seededPairs)
+	writeBackupTestFile(t, path, string(seeded))
+	appendBackupTestBytes(t, path, pair[:48])
+	withoutTarget := backupTestEnvironment(fixture.home, filepath.Join(fixture.base, "config-without-target"), fixture.cacheHome)
+
+	start := make(chan struct{})
+	exits := make(chan int, failing+1)
+	for index := range failing + 1 {
+		environ := withoutTarget
+		if index == failing {
+			environ = fixture.env // this one records while it holds fid's clone
+		}
+		go func() {
+			<-start
+			exits <- backupExitCode(runBackupWith(environ, workspace, time.Minute, "--json").err)
+		}()
+	}
+	close(start)
+	codes := []int{}
+	for range failing + 1 {
+		codes = append(codes, <-exits)
+	}
+	sort.Ints(codes)
+	if want := "[0 2 2 2 2 2 2 2 2]"; fmt.Sprint(codes) != want {
+		t.Fatalf("exit codes = %v, want %s", codes, want)
+	}
+
+	after, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.HasPrefix(after, seeded) {
+		t.Fatalf("record = %q, want the complete lines %q kept", after, seeded)
+	}
+	records := backupRecords(t, workspace)
+	if len(records) < 2*seededPairs {
+		t.Fatalf("records = %d, want the %d seeded and one per attempt", len(records), 2*seededPairs)
+	}
+	outcomes := backupOutcomes(records[2*seededPairs:])
+	sort.Strings(outcomes)
+	if len(records) != 2*seededPairs+failing+1 || strings.Join(outcomes, ",") != "failed,failed,failed,failed,failed,failed,failed,failed,unchanged" {
+		t.Fatalf("records = %d with new outcomes %v, want the %d seeded and one per attempt", len(records), outcomes, 2*seededPairs)
+	}
+	for _, record := range records[2*seededPairs:] {
+		if record.Outcome == "failed" && record.Failure.Kind != "no-target" {
+			t.Fatalf("record = %+v, want a no-target failure", record)
+		}
+	}
+}
+
+// backupExitCode is the exit status fid would end with for err.
+func backupExitCode(err error) int {
+	if err == nil {
+		return 0
+	}
+	return cli.ExitCode(err)
 }
 
 func appendBackupTestBytes(t *testing.T, path string, payload []byte) {

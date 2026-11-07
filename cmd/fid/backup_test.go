@@ -113,8 +113,13 @@ func (fixture *backupFixture) backup(workspace string, args ...string) commandEx
 }
 
 func (fixture *backupFixture) backupWaiting(workspace string, wait time.Duration, args ...string) commandExecutionResult {
+	return runBackupWith(fixture.env, workspace, wait, args...)
+}
+
+// runBackupWith runs fid backup in-process with environ as its environment.
+func runBackupWith(environ []string, workspace string, wait time.Duration, args ...string) commandExecutionResult {
 	root := newRootCommandAt(workspace)
-	root.SetContext(context.WithValue(root.Context(), backupEnvironmentKey{}, backupEnvironment{environ: fixture.env, lockWait: wait}))
+	root.SetContext(context.WithValue(root.Context(), backupEnvironmentKey{}, backupEnvironment{environ: environ, lockWait: wait}))
 	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
 	root.SetOut(stdout)
 	root.SetErr(stderr)
@@ -288,6 +293,21 @@ func TestBackupPushesTheExportIntoTheProjectFolder(t *testing.T) {
 	if leftovers, err := filepath.Glob(filepath.Join(fixture.cacheHome, "fid", "backup", "*", "export")); err != nil || len(leftovers) != 0 {
 		t.Fatalf("backup left its export in the cache: %v, %v", leftovers, err)
 	}
+	// fid's clone tracks what it pushed, so the next backup needs no fetch
+	// and git never prunes the pushed objects.
+	if tracked := fixture.git("--git-dir="+fixture.clone(), "rev-parse", "refs/remotes/origin/main"); tracked != main {
+		t.Fatalf("fid's clone tracks %s, want the pushed %s", tracked, main)
+	}
+}
+
+// clone returns fid's one clone of the target in the fixture's cache.
+func (fixture *backupFixture) clone() string {
+	fixture.t.Helper()
+	clones, err := filepath.Glob(filepath.Join(fixture.cacheHome, "fid", "backup", "*", "repo.git"))
+	if err != nil || len(clones) != 1 {
+		fixture.t.Fatalf("fid's clones = %v, %v; want one", clones, err)
+	}
+	return clones[0]
 }
 
 func TestBackupTextOutputNamesFolderAndCommit(t *testing.T) {
@@ -355,6 +375,9 @@ func TestBackupKeepsOtherFoldersInTheTarget(t *testing.T) {
 	fixture.git("-C", human, "add", "README.md")
 	fixture.git("-C", human, "-c", "user.name=human", "-c", "user.email=human@example.test", "commit", "-q", "-m", "readme")
 	fixture.git("-C", human, "push", "-q", "origin", "HEAD:main")
+	// A branch whose name ends like main's. git ls-remote's pattern matches
+	// it too, and it names the commit fid's clone already tracks.
+	fixture.git("-C", human, "push", "-q", "origin", "HEAD~1:refs/heads/x/refs/heads/main")
 
 	decodeBackupSuccess(t, fixture.backup(second, "--json"))
 	runFIDCommand(t, first, "issue", "create", "--kind", "task", "--title", "Changed again", "--actor", "agent:developer")
@@ -381,4 +404,24 @@ func TestBackupJSONFailureIsTypedAndExitsNonZero(t *testing.T) {
 		t.Fatalf("backup without target = %#v, want exit 2", result)
 	}
 	assertJSONFailureCode(t, result.stderr, "project.backup", "invalid-argument")
+}
+
+// A backup killed mid-export leaves its export behind in fid's cache. The
+// next backup clears it and carries on.
+func TestBackupClearsAnExportLeftByACrashedBackup(t *testing.T) {
+	t.Parallel()
+	fixture := newBackupFixture(t)
+	workspace, _ := fixture.project()
+	fixture.setTarget(fixture.target)
+	first, _ := decodeBackupSuccess(t, fixture.backup(workspace, "--json"))
+	stale := filepath.Join(filepath.Dir(fixture.clone()), "export", "export.zip")
+	writeBackupTestFile(t, stale, "half an archive")
+
+	record, _ := decodeBackupSuccess(t, fixture.backup(workspace, "--json"))
+	if record.Outcome != "unchanged" || *record.ArchiveDigest != *first.ArchiveDigest {
+		t.Fatalf("backup = %+v, want the same export as before the crash", record)
+	}
+	if _, err := os.Lstat(filepath.Dir(stale)); !os.IsNotExist(err) {
+		t.Fatalf("the crashed backup's export is still in the cache: %v", err)
+	}
 }

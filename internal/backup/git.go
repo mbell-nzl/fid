@@ -29,15 +29,15 @@ var repositoryVariables = map[string]bool{
 // gitEnvironment is the process environment less repository variables,
 // with fid's commit identity and no terminal prompts: a backup run by the
 // loop or cron fails rather than waiting for a password. Credential helpers,
-// SSH and URL rewriting from the user's git config still apply.
+// SSH and URL rewriting from the user's git config still apply. fid's values
+// come last, and os/exec uses the last of duplicate keys, so they win over
+// inherited ones.
 func gitEnvironment(environment []string) []string {
 	result := make([]string, 0, len(environment)+5)
 	for _, entry := range environment {
-		name, _, _ := strings.Cut(entry, "=")
-		if repositoryVariables[name] || strings.HasPrefix(name, "GIT_AUTHOR_") || strings.HasPrefix(name, "GIT_COMMITTER_") || name == "GIT_TERMINAL_PROMPT" {
-			continue
+		if name, _, _ := strings.Cut(entry, "="); !repositoryVariables[name] {
+			result = append(result, entry)
 		}
-		result = append(result, entry)
 	}
 	return append(result, "GIT_TERMINAL_PROMPT=0",
 		"GIT_AUTHOR_NAME="+commitName, "GIT_AUTHOR_EMAIL="+commitEmail,

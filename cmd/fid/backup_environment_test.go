@@ -5,8 +5,10 @@ import (
 	"encoding/hex"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
@@ -32,6 +34,8 @@ func TestBackupIgnoresHostileGlobalGitConfig(t *testing.T) {
 			}
 		}
 	}
+	// A template can carry any file into a new repository, not just hooks.
+	writeBackupTestFile(t, filepath.Join(fixture.home, "template", "fid-template-marker"), "from the user's template\n")
 	writeBackupTestFile(t, filepath.Join(fixture.home, "attributes"), "* filter=broken\n")
 	writeBackupTestFile(t, filepath.Join(fixture.home, ".gitconfig"), strings.Join([]string{
 		"[user]", "\tuseConfigOnly = true",
@@ -50,6 +54,9 @@ func TestBackupIgnoresHostileGlobalGitConfig(t *testing.T) {
 	if _, err := os.Lstat(marker); !os.IsNotExist(err) {
 		t.Fatalf("a hook from the user's git config ran: %v", err)
 	}
+	if copied, err := filepath.Glob(filepath.Join(fixture.cacheHome, "fid", "backup", "*", "repo.git", "fid-template-marker")); err != nil || len(copied) != 0 {
+		t.Fatalf("fid's clone was made from the user's init template: %v, %v", copied, err)
+	}
 	if got := fixture.targetGit("log", "-1", "--format=%an <%ae> %G?", "main"); got != "fid backup <backup@fid.invalid> N" {
 		t.Fatalf("backup commit = %q, want fid's identity, unsigned", got)
 	}
@@ -64,32 +71,81 @@ func TestBackupIgnoresHostileGlobalGitConfig(t *testing.T) {
 }
 
 // fid may run inside a git hook or a git alias, where git exports variables
-// naming the caller's repository. Backup's git commands must ignore them.
+// naming the caller's repository, or where the user's shell sets a commit
+// identity. Backup's git commands must ignore each of them.
 func TestBackupIgnoresInheritedGitRepositoryVariables(t *testing.T) {
 	t.Parallel()
-	fixture := newBackupFixture(t)
-	workspace, _ := fixture.project()
-	fixture.setTarget(fixture.target)
-	objects := filepath.Join(fixture.base, "foreign-objects")
-	before := fixture.git("-C", workspace, "count-objects")
-	fixture.env = append(fixture.env,
-		"GIT_DIR="+filepath.Join(workspace, ".git"), "GIT_WORK_TREE="+workspace,
-		"GIT_INDEX_FILE="+filepath.Join(fixture.base, "foreign-index"), "GIT_OBJECT_DIRECTORY="+objects,
-		"GIT_CONFIG_PARAMETERS='core.hookspath'='"+filepath.Join(fixture.base, "nowhere")+"'")
+	for _, test := range []struct {
+		name string
+		env  func(fixture *backupFixture, workspace string) []string
+	}{
+		{"GIT_DIR", func(_ *backupFixture, workspace string) []string {
+			return []string{"GIT_DIR=" + filepath.Join(workspace, ".git")}
+		}},
+		{"GIT_WORK_TREE", func(_ *backupFixture, workspace string) []string { return []string{"GIT_WORK_TREE=" + workspace} }},
+		{"GIT_COMMON_DIR", func(_ *backupFixture, workspace string) []string {
+			return []string{"GIT_COMMON_DIR=" + filepath.Join(workspace, ".git")}
+		}},
+		{"GIT_OBJECT_DIRECTORY", func(fixture *backupFixture, _ string) []string {
+			return []string{"GIT_OBJECT_DIRECTORY=" + filepath.Join(fixture.base, "foreign-objects")}
+		}},
+		{"GIT_NAMESPACE", func(*backupFixture, string) []string { return []string{"GIT_NAMESPACE=intruder"} }},
+		{"GIT_QUARANTINE_PATH", func(fixture *backupFixture, _ string) []string {
+			return []string{"GIT_QUARANTINE_PATH=" + filepath.Join(fixture.base, "quarantine")}
+		}},
+		{"GIT_CONFIG_PARAMETERS", func(fixture *backupFixture, _ string) []string {
+			return []string{"GIT_CONFIG_PARAMETERS='url." + filepath.Join(fixture.base, "missing.git") + ".insteadof'='" + fixture.target + "'"}
+		}},
+		{"GIT_CONFIG_COUNT", func(fixture *backupFixture, _ string) []string {
+			return []string{"GIT_CONFIG_COUNT=1", "GIT_CONFIG_KEY_0=url." + filepath.Join(fixture.base, "missing.git") + ".insteadOf", "GIT_CONFIG_VALUE_0=" + fixture.target}
+		}},
+		{"commit identity", func(*backupFixture, string) []string {
+			return []string{"GIT_AUTHOR_NAME=intruder", "GIT_AUTHOR_EMAIL=intruder@example.test", "GIT_COMMITTER_NAME=intruder", "GIT_COMMITTER_EMAIL=intruder@example.test"}
+		}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			fixture := newBackupFixture(t)
+			workspace, _ := fixture.project()
+			fixture.setTarget(fixture.target)
+			before := backupRepositoryState(fixture, workspace)
 
-	record, _ := decodeBackupSuccess(t, fixture.backup(workspace, "--json"))
-	fixture.env = backupTestEnvironment(fixture.home, fixture.configHome, fixture.cacheHome)
-	if record.Outcome != "pushed" || *record.Commit != fixture.targetMain() {
-		t.Fatalf("backup = %+v, want a push to the target", record)
+			result := runBackupWith(append(append([]string{}, fixture.env...), test.env(fixture, workspace)...), workspace, time.Minute, "--json")
+			record, _ := decodeBackupSuccess(t, result)
+			main := fixture.targetMain()
+			if record.Outcome != "pushed" || main == "" || *record.Commit != main {
+				t.Fatalf("backup = %+v, want a push to the target's main %q", record, main)
+			}
+			if refs := fixture.targetGit("for-each-ref", "--format=%(refname)"); refs != "refs/heads/main" {
+				t.Fatalf("target refs = %q, want only refs/heads/main", refs)
+			}
+			if tracked := fixture.git("--git-dir="+fixture.clone(), "rev-parse", "refs/remotes/origin/main"); tracked != main {
+				t.Fatalf("fid's clone tracks %s, want %s", tracked, main)
+			}
+			if got := fixture.targetGit("log", "-1", "--format=%an <%ae>|%cn <%ce>", "main"); got != "fid backup <backup@fid.invalid>|fid backup <backup@fid.invalid>" {
+				t.Fatalf("backup commit identity = %q", got)
+			}
+			if after := backupRepositoryState(fixture, workspace); after != before {
+				t.Fatalf("backup changed the project's repository:\n%s\nthen\n%s", before, after)
+			}
+			for _, path := range []string{filepath.Join(fixture.base, "foreign-objects"), filepath.Join(fixture.base, "quarantine")} {
+				if _, err := os.Lstat(path); !os.IsNotExist(err) {
+					t.Fatalf("backup used the inherited %s: %v", path, err)
+				}
+			}
+		})
 	}
-	if after := fixture.git("-C", workspace, "count-objects"); after != before {
-		t.Fatalf("backup wrote into the project's repository: %q, then %q", before, after)
+}
+
+// backupRepositoryState describes the project's own repository: its refs,
+// object counts and config.
+func backupRepositoryState(fixture *backupFixture, workspace string) string {
+	fixture.t.Helper()
+	config, err := os.ReadFile(filepath.Join(workspace, ".git", "config"))
+	if err != nil {
+		fixture.t.Fatal(err)
 	}
-	for _, path := range []string{objects, filepath.Join(fixture.base, "foreign-index")} {
-		if _, err := os.Lstat(path); !os.IsNotExist(err) {
-			t.Fatalf("backup used the inherited %s: %v", path, err)
-		}
-	}
+	return fixture.git("-C", workspace, "for-each-ref") + "\n" + fixture.git("-C", workspace, "count-objects", "-v") + "\n" + string(config)
 }
 
 // Without the test seam, fid backup reads the real process environment:
@@ -127,5 +183,42 @@ func TestBackupFindsConfigAndCacheThroughXDGDirectories(t *testing.T) { //nolint
 	}
 	if _, err := os.Stat(filepath.Join(cacheHome, "fid", "backup", key, "repo.git", "HEAD")); err != nil {
 		t.Fatalf("XDG_CACHE_HOME clone: %v", err)
+	}
+}
+
+// Pushes use the user's own credential setup, so the variables that carry it
+// reach git and the transports it starts. But git must never prompt for a
+// password, even where the user's environment allows prompts: the loop and
+// cron would hang. A remote helper on PATH records the environment git gives
+// it, then fails like an unreachable target.
+func TestBackupPassesTheUsersCredentialSetupButNeverPrompts(t *testing.T) {
+	t.Parallel()
+	fixture := newBackupFixture(t)
+	workspace, _ := fixture.project()
+	bin, seen := filepath.Join(fixture.base, "bin"), filepath.Join(fixture.base, "helper-environment")
+	writeBackupTestFile(t, filepath.Join(bin, "git-remote-fidprobe"), "#!/bin/sh\nenv > '"+seen+"'\nexit 1\n")
+	if err := os.Chmod(filepath.Join(bin, "git-remote-fidprobe"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	fixture.setTarget("fidprobe::ledgers")
+	credentials := []string{"GIT_ASKPASS=/fid-test/askpass", "SSH_AUTH_SOCK=/fid-test/agent.sock", "GIT_SSH_COMMAND=ssh -o fid-test=yes"}
+	environ := append(append(append([]string{}, fixture.env...), "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"), "GIT_TERMINAL_PROMPT=1"), credentials...)
+
+	failure := decodeBackupFailure(t, runBackupWith(environ, workspace, time.Minute, "--json"), 4)
+	if failure.Code != "repository-unavailable" || failure.Details["reason"] != "not-a-repository" {
+		t.Fatalf("failure = %+v, want the helper's failure as an unreachable target", failure)
+	}
+	payload, err := os.ReadFile(seen)
+	if err != nil {
+		t.Fatalf("git never ran the remote helper: %v", err)
+	}
+	lines := strings.Split(string(payload), "\n")
+	for _, want := range append(credentials, "GIT_TERMINAL_PROMPT=0") {
+		if !slices.Contains(lines, want) {
+			t.Errorf("git's environment lacks %q:\n%s", want, payload)
+		}
+	}
+	if slices.Contains(lines, "GIT_TERMINAL_PROMPT=1") {
+		t.Error("git's environment still allows terminal prompts")
 	}
 }
