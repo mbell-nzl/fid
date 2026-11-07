@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/spf13/cobra"
 )
@@ -59,4 +60,15 @@ func promptInitBackupTarget(cmd *cobra.Command, path string) error {
 		return err
 	}
 	return writeInitLine(cmd.OutOrStdout(), "Backup target saved in %s\n", path)
+}
+
+// Only Human init can ask for a target. The success lines have already
+// reported the identity, so this error describes the failed setup alone.
+func renderInitBackupFailure(cmd *cobra.Command, cause error) error {
+	failure, err := cli.NewFailure(cli.CodeInternalError,
+		cli.BoundedMessage(fmt.Sprintf("ledger initialized, but backup target setup failed: %v", cause)), nil, map[string]any{})
+	if err != nil {
+		return err
+	}
+	return writeHumanFailure(cmd, "project.init", failure, cause)
 }

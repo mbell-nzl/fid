@@ -67,6 +67,52 @@ func TestInitializeFailureBeforeActivationLeavesNoWorkspace(t *testing.T) {
 	}
 }
 
+func TestInitializeRefusesIdentityChangedWhileStaging(t *testing.T) {
+	t.Parallel()
+	for _, initialID := range []string{"", "project-11111111111111111111111111111111"} {
+		name := "appears"
+		if initialID != "" {
+			name = "replaced"
+		}
+		t.Run(name, func(t *testing.T) {
+			root := gittest.NewWorkspace(t)
+			path := filepath.Join(root, config.ProjectIdentityFileName)
+			if initialID != "" {
+				if err := os.WriteFile(path, []byte("[project]\nid = \""+initialID+"\"\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			other := []byte("# written while init stages\n[project]\nid = \"project-22222222222222222222222222222222\"\n")
+			_, err := initializeWorkspaceWithHooks(InitOptions{
+				WorkspaceRoot: root, MigrationsDir: migrationFixtureDir(t), Prefix: "FID",
+			}, initHooks{before: func(stage initStage) error {
+				if stage == initStageActivated {
+					return os.WriteFile(path, other, 0o644)
+				}
+				return nil
+			}})
+			if err == nil || !strings.Contains(err.Error(), "changed during initialization") {
+				t.Errorf("init error = %v, want changed-identity refusal", err)
+			}
+			if got, err := os.ReadFile(path); err != nil || !bytes.Equal(got, other) {
+				t.Errorf("identity = %q, %v, want unchanged %q", got, err, other)
+			}
+			if _, err := os.Lstat(config.LedgerDir(root)); !os.IsNotExist(err) {
+				t.Errorf("ledger state = %v, want absent", err)
+			}
+			entries, err := os.ReadDir(filepath.Dir(config.LedgerDir(root)))
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, entry := range entries {
+				if strings.HasPrefix(entry.Name(), config.LedgerStagingPrefix) {
+					t.Errorf("staging residue %q remains", entry.Name())
+				}
+			}
+		})
+	}
+}
+
 func assertNoActivationResidue(t *testing.T, workspaceRoot string) {
 	t.Helper()
 	if _, err := os.Stat(config.LedgerDir(workspaceRoot)); !os.IsNotExist(err) {

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -55,6 +56,33 @@ func TestUserConfigTargetRoundTrip(t *testing.T) {
 			entries, err := os.ReadDir(filepath.Dir(path))
 			if err != nil || len(entries) != 1 || entries[0].Name() != "config.toml" {
 				t.Fatalf("config directory = %v, %v, want only config.toml", entries, err)
+			}
+		})
+	}
+}
+
+func TestUserConfigTargetControlCharactersRoundTrip(t *testing.T) {
+	t.Parallel()
+	for character := byte(0); character <= 0x7f; character++ {
+		if character >= 0x20 && character != 0x7f {
+			continue
+		}
+		t.Run(fmt.Sprintf("U+%04X", character), func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "config.toml")
+			target := "a" + string(character) + "b"
+			if err := SetBackupTarget(path, target); err != nil {
+				t.Fatal(err)
+			}
+			got, err := ReadUserConfig(path)
+			if err != nil || got.BackupTarget != target {
+				t.Fatalf("round trip = %+v, %v, want %q", got, err, target)
+			}
+			payload, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if character == 0x7f && !strings.Contains(string(payload), `\u007f`) {
+				t.Fatalf("TOML must escape DEL: %q", payload)
 			}
 		})
 	}

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
@@ -19,8 +20,8 @@ func TestInitProjectIdentitySurvivesClone(t *testing.T) {
 	stdout, _ := runInitCommand(t, workspace, "--json", "init", "--prefix", "FID")
 	var envelope struct {
 		Result struct {
-			Project           struct{ ID string } `json:"project"`
-			ProjectConfigPath string              `json:"project_config_path"`
+			Project             struct{ ID string } `json:"project"`
+			ProjectIdentityPath string              `json:"project_identity_path"`
 		} `json:"result"`
 	}
 	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
@@ -38,8 +39,8 @@ func TestInitProjectIdentitySurvivesClone(t *testing.T) {
 	if want := "[project]\nid = \"" + id + "\"\n"; string(payload) != want {
 		t.Fatalf(".fid.toml = %q, want %q", payload, want)
 	}
-	if want := filepath.Join(gittest.ResolvedPath(t, workspace), ".fid.toml"); envelope.Result.ProjectConfigPath != want {
-		t.Fatalf("project_config_path = %q, want %q", envelope.Result.ProjectConfigPath, want)
+	if want := filepath.Join(gittest.ResolvedPath(t, workspace), ".fid.toml"); envelope.Result.ProjectIdentityPath != want {
+		t.Fatalf("project_identity_path = %q, want %q", envelope.Result.ProjectIdentityPath, want)
 	}
 	if tracked := identityGit(t, workspace, "ls-files"); tracked != "" {
 		t.Fatalf("init staged or committed files: %q", tracked)
@@ -122,6 +123,26 @@ func TestInitRefusesInvalidProjectIdentityWithoutWrites(t *testing.T) {
 			stdout, stderr, err := executeInitCommand(t, "--project", workspace, "--json", "init", "--prefix", "FID")
 			if err == nil || stdout != "" || !strings.Contains(stderr, ".fid.toml") {
 				t.Fatalf("init = %q, %q, %v; want clear .fid.toml refusal", stdout, stderr, err)
+			}
+			if cli.ExitCode(err) != 2 {
+				t.Errorf("exit = %d, want invalid-input exit 2", cli.ExitCode(err))
+			}
+			assertProjectInitFailureCode(t, stderr, "invalid-argument")
+			var failure struct {
+				Error struct {
+					Category string
+					Details  struct {
+						Argument string
+						Value    *string
+						Allowed  []string
+					}
+				}
+			}
+			if err := json.Unmarshal([]byte(stderr), &failure); err != nil {
+				t.Fatal(err)
+			}
+			if failure.Error.Category != "invalid-input" || failure.Error.Details.Argument != filepath.Join(gittest.ResolvedPath(t, workspace), ".fid.toml") || failure.Error.Details.Value != nil || len(failure.Error.Details.Allowed) == 0 {
+				t.Errorf("invalid config failure = %+v", failure.Error)
 			}
 			if _, err := os.Lstat(config.LedgerDir(workspace)); !os.IsNotExist(err) {
 				t.Fatalf("ledger state = %v, want absent", err)

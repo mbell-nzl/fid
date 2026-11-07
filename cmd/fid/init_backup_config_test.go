@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
@@ -122,7 +123,7 @@ func TestInitRefusesMalformedInteractiveUserConfig(t *testing.T) { //nolint:para
 	root.SetOut(output)
 	root.SetErr(stderr)
 	root.SetArgs([]string{"init", "--prefix", "FID"})
-	if err := root.Execute(); err == nil || !strings.Contains(stderr.String(), path) {
+	if err := root.Execute(); cli.ExitCode(err) != 2 || !strings.Contains(stderr.String(), path) || !strings.Contains(stderr.String(), "reason: invalid-argument;") {
 		t.Fatalf("init = %v, stderr=%q; want config refusal", err, stderr)
 	}
 	if output.Len() != 0 || input.Len() != len("must not read\n") {

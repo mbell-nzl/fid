@@ -163,21 +163,32 @@ commit <absolute-root>/.fid.toml to keep this identity in clones
 ```
 
 The `project.init` JSON result is
-`{project:{id,issue_prefix,root},journal_path,project_config_path}`.
-`project_config_path` names `.fid.toml` by absolute path; the existing
+`{project:{id,issue_prefix,root},journal_path,project_identity_path}`.
+`project_identity_path` names `.fid.toml` by absolute path; the existing
 `project.id` field names its ID. The response keeps its `project.initialized`
 event metadata.
 
-After creating the ledger, init asks
+After creating the ledger and printing the success lines above, init asks
 `Backup repository (git URL or local path; empty to skip): ` only when
 stdin and stdout are both terminals, `--json` is off, and no backup target
 is set. It stores a non-empty answer in `[backup] target` in
 `$XDG_CONFIG_HOME/fid/config.toml` (default `~/.config/fid/config.toml`) and
 prints the saved config path. Empty answers skip setup; runs that do not
 prompt consume no stdin. JSON output stays a single response envelope.
-User config is checked before ledger creation when prompting is eligible;
-if reading the answer or saving it fails afterward, the error explicitly
-says the ledger was initialized and backup-target setup failed.
+User config is checked before ledger creation when prompting is eligible.
+Invalid, unreadable or non-regular `.fid.toml`, and malformed or unreadable
+user config in a terminal, use the existing `invalid-argument` code and
+Human `reason: invalid-argument` (category `invalid-input`, not retryable,
+exit 2, subject null). The details are
+`{argument:<absolute config path>,value:null,allowed:["valid project.init configuration"]}`.
+The bounded message names the file and cause; neither file is overwritten
+and no ledger is created on these refusals. No new code or reason is added.
+
+If reading the answer or saving it fails after ledger creation, the ID and
+commit instruction have already been printed. The error begins
+`ledger initialized, but backup target setup failed:` and reports the cause,
+with the existing `internal-error` code (exit 7). Other internal init
+failures keep the fixed message `project initialization failed`.
 See `04_TRD_CONFIG.md` section 2 for file formats. Backup, restore and
 missing-target status warnings belong to tasks 1.2b, 1.2c and 1.3.
 

@@ -135,7 +135,7 @@ func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 		t.Fatalf("stderr = %q, want empty", stderr.String())
 	}
 	assertEnvelopeKeySet(t, stdout.Bytes(), []string{"contract_version", "event", "ok", "operation", "result"})
-	assertNestedEnvelopeKeySet(t, stdout.Bytes(), "result", []string{"journal_path", "project", "project_config_path"})
+	assertNestedEnvelopeKeySet(t, stdout.Bytes(), "result", []string{"journal_path", "project", "project_identity_path"})
 	assertNestedEnvelopeKeySet(t, stdout.Bytes(), "result.project", []string{"id", "issue_prefix", "root"})
 	assertNestedEnvelopeKeySet(t, stdout.Bytes(), "event", []string{"id", "occurred_at"})
 

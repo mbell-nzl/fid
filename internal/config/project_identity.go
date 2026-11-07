@@ -16,10 +16,13 @@ func ReadProjectIdentity(root string) (string, error) {
 	path := filepath.Join(root, ProjectIdentityFileName)
 	id, present, err := readStringConfig(path, "project", "id")
 	if err != nil {
-		return "", err
+		if errors.Is(err, os.ErrNotExist) {
+			return "", err
+		}
+		return "", &InvalidConfigError{Path: path, Err: err}
 	}
 	if !present || !validBackupProjectID(id) {
-		return "", fmt.Errorf("read config %q: project.id must be project- followed by 32 lowercase hexadecimal digits", path)
+		return "", &InvalidConfigError{Path: path, Err: fmt.Errorf("read config %q: project.id must be project- followed by 32 lowercase hexadecimal digits", path)}
 	}
 	return id, nil
 }

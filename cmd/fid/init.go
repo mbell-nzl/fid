@@ -58,11 +58,14 @@ func newInitCommandWithTerminalCheck(isTerminal func(uintptr) bool) *cobra.Comma
 			if err != nil {
 				return renderInitFailure(cmd, workspaceRoot, err)
 			}
+			if err := renderInitSuccess(cmd, workspaceRoot, result); err != nil {
+				return err
+			}
 			if err := promptInitBackupTarget(cmd, backupConfigPath); err != nil {
-				return renderInitFailure(cmd, workspaceRoot, fmt.Errorf("ledger initialized, but backup target setup failed: %w", err))
+				return renderInitBackupFailure(cmd, err)
 			}
 
-			return renderInitSuccess(cmd, workspaceRoot, result)
+			return nil
 		},
 	}
 
@@ -132,8 +135,8 @@ func renderInitSuccess(cmd *cobra.Command, workspaceRoot string, result bootstra
 				"issue_prefix": result.Prefix,
 				"root":         workspaceRoot,
 			},
-			"journal_path":        result.JournalPath,
-			"project_config_path": filepath.Join(workspaceRoot, config.ProjectIdentityFileName),
+			"journal_path":          result.JournalPath,
+			"project_identity_path": filepath.Join(workspaceRoot, config.ProjectIdentityFileName),
 		}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt.UTC().Format(time.RFC3339Nano)})
 	}
 	return writeInitLine(cmd.OutOrStdout(), "initialized fid project in %s/\nproject ID: %s\ncommit %s to keep this identity in clones\n",
@@ -174,7 +177,15 @@ func initFailure(workspaceRoot string, initErr error) (cli.Failure, error) {
 			"allowed":  []string{"valid project.init input"},
 		})
 	}
-	return cli.NewFailure(cli.CodeInternalError, cli.BoundedMessage(fmt.Sprintf("project initialization failed: %v", initErr)), nil, map[string]any{})
+	var configErr *config.InvalidConfigError
+	if errors.As(initErr, &configErr) {
+		return cli.NewFailure(cli.CodeInvalidArgument, cli.BoundedMessage(fmt.Sprintf("invalid initialization config: %v", configErr)), nil, map[string]any{
+			"argument": configErr.Path,
+			"value":    nil,
+			"allowed":  []string{"valid project.init configuration"},
+		})
+	}
+	return cli.NewFailure(cli.CodeInternalError, "project initialization failed", nil, map[string]any{})
 }
 
 func writeInitLine(writer io.Writer, format string, args ...any) error {

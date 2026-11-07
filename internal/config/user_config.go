@@ -34,7 +34,7 @@ func ReadUserConfig(path string) (UserConfig, error) {
 		return UserConfig{}, nil
 	}
 	if err != nil {
-		return UserConfig{}, err
+		return UserConfig{}, &InvalidConfigError{Path: path, Err: err}
 	}
 	return UserConfig{BackupTarget: target}, nil
 }

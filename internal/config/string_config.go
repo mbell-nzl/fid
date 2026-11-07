@@ -95,9 +95,10 @@ func parseTOMLString(raw string) (string, error) {
 }
 
 func stringConfigContents(section, key, value string) string {
-	// JSON's string escapes are valid in TOML basic strings.
+	// JSON's string escapes are valid in TOML basic strings, but JSON can
+	// emit DEL raw, which TOML forbids. Escape it as well as the C0 controls.
 	quoted, _ := json.Marshal(value)
-	return fmt.Sprintf("[%s]\n%s = %s\n", section, key, quoted)
+	return fmt.Sprintf("[%s]\n%s = %s\n", section, key, strings.ReplaceAll(string(quoted), "\x7f", `\u007f`))
 }
 
 // writeStringConfig publishes a complete file. A new project identity uses a

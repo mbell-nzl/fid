@@ -262,12 +262,14 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
   - fid keeps its own clone of the backup repository, for example under
     `$XDG_CACHE_HOME/fid/`. It never commits in a human's checkout of the
     backup repo. 1.2b picks and records the exact path.
-  - `.fid.toml` uses `[project] id = "project-<32 lowercase hex digits>"`:
+  - **Builder's choice, PR #45:** `.fid.toml` uses
+    `[project] id = "project-<32 lowercase hex digits>"`:
     128 random bits, the ledger's existing generated format. A new ledger's
     config and genesis event use that same ID; no journal format changes.
     Init keeps an existing valid file byte for byte and tells the user to
     commit it; fid never commits it itself.
-  - The user config setting is `[backup] target = "<git URL or local path>"`.
+  - **Builder's choice, PR #45:** the user config setting is
+    `[backup] target = "<git URL or local path>"`.
     Stdin and stdout must both be terminals to ask; `--json` and an already
     configured target suppress the prompt. An empty answer skips setup.
   - Left-over handling extends D6 below: deferred minor review findings

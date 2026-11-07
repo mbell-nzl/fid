@@ -95,13 +95,18 @@ target = "git@example.com:mark/fid-ledgers.git"
 ```
 
 The target accepts any git remote URL or local path, stored verbatim without
-expansion, existence checks or network access. Missing or empty targets are
+expansion, existence checks or network access. C0 controls and DEL are escaped
+in TOML so the target round-trips without raw forbidden characters.
+Missing or empty targets are
 unconfigured. `fid init` asks only if stdin and stdout are both terminals,
 `--json` is off, and no target is configured. An empty answer (including
 whitespace only) skips setup. Non-interactive and JSON runs do not open user
 config. Existing configured files are left untouched. New config directories
 are private (`0700`); a saved config is atomically replaced with mode `0600`.
-Malformed or unreadable config is refused when init needs to read it.
+Malformed or unreadable config is refused when init needs to read it, using
+`invalid-argument` / `invalid-input`, exit 2 (CLI spec section 3). Init prints
+the ID and commit instruction before asking, so a target-save failure cannot
+hide them; it reports that the ledger exists and target setup failed.
 Task 1.3 adds status warnings until a target is set; 1.2a performs no backup,
 push or restore.
 
