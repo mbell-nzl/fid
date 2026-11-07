@@ -541,12 +541,18 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   `cmd/fid` is the long pole at 231 s, and four corpora take 309 s of its
   523 s of test time: the grammar built-binary corpus 94 s, and the
   descriptor variant, judgment validation and review-and-finding corpora
-  66–80 s each. Second, fold in the tests that fail when `TMPDIR` is behind
-  a symlink: about 33 (12 in `internal/`, 11 in `cmd/fid`, 10 in
-  integration), which fail on `main` too. They compare paths without
+  66–80 s each. Second, fix the tests that depend on their environment.
+  About 33 fail when `TMPDIR` is behind a symlink (12 in `internal/`, 11 in
+  `cmd/fid`, 10 in integration), on `main` too. They compare paths without
   resolving symlinks; P24 observation tests, for example, hash an
-  unresolved worktree path. Found in 1.1c2; no PR since added one. Do this
-  work when a shard's test step passes 10 minutes, and before the trial at
+  unresolved worktree path. Found in 1.1c2; no PR since added one. And
+  `cmd/fid` tests fail when a run crosses UTC midnight (`journal files = 2,
+  want 1`, from `mustJournalPath` at `cmd/fid/init_test.go:710`): the
+  fixture creates the journal on one UTC date and the commands append to a
+  new one on the next. Found in 0.7's round-3 review; Mark accepted it for
+  0.7 on 7 November 2026. Fix it in test code (a fixed date in the
+  fixture), not product code, if it ever fails CI. Do the rest when a
+  shard's test step passes 10 minutes, and all of it before the trial at
   the latest.
 - Stale ledger staging (from 1.1d3, 6 November 2026). A crash during
   `init` or `export import` can leave `<common>/fid-staging-*` behind.
