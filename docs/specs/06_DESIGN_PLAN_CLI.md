@@ -238,9 +238,8 @@ The subject is null and `invalid-argument`'s `value` is null.
 `repository-unavailable` is retryable; the next backup retries cleanly,
 except that `different-ledger` persists until a person keeps one ledger for
 the project (`04_TRD_CONFIG.md` section 2.4). Task 1.2b adds two
-`repository-unavailable` reasons: `push-rejected`, which Mark approved on 7
-November 2026, and `different-ledger`, which awaits his approval (decisions
-record, 7 November 2026). Outside
+`repository-unavailable` reasons, `push-rejected` and `different-ledger`,
+which Mark approved on 7 and 8 November 2026 (decisions record). Outside
 a repository, at an unsafe ledger location, and in a repository without a
 ledger, `backup` refuses as every project command does (section 1) and
 records nothing, because there is no ledger to record in. If the record

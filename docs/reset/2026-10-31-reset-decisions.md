@@ -313,10 +313,11 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     names no genesis Event is refused too. There is no override flag: a
     person clears the refusal by restoring from the folder or removing it
     from the backup repository.
-  - **Awaiting Mark, PR #46 (1.2b):** that refusal is
+  - **Decided by Mark, 8 November 2026 (PR #46, 1.2b):** that refusal is
     `repository-unavailable` with a new reason, `different-ledger`,
-    following `push-rejected`, and is recorded as `different-ledger`. The
-    alternative is a new conflict code that isn't retryable.
+    following `push-rejected`, and is recorded as `different-ledger`. Mark
+    chose it over a new conflict code that isn't retryable; the CLI spec
+    notes that this reason persists until a person acts.
   - Left-over handling extends D6 below: deferred minor review findings
     become discovered issues in 2.1; a later PR "Left over" section is
     derived from `discovered_from` links. Task 1.8 brings this record's
