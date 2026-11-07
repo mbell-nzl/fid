@@ -97,14 +97,81 @@ class ShardTests(unittest.TestCase):
             with self.subTest(events=bad), self.assertRaises(ValueError):
                 ci.verify_execution(inv, selected, bad)
 
-    def write_shards(self, root):
-        parts = ci.partitions(self.inventory, 4)
+    def write_shards(self, root, count=4, flat=False, names=None):
+        """Shard evidence as download-artifact leaves it: one artifact flat in root, several in a directory each."""
+        parts = ci.partitions(self.inventory, count)
         for i, part in enumerate(parts):
-            path = root / f"shard-{i}"
-            path.mkdir()
-            manifest = {"index": i, "count": 4, "source": "same-source", "inventory": self.inventory, "race": ["example/b"], "selected": sorted(part), "executed": sorted(part), "completed": sorted(part), "packages": sorted(self.inventory)}
+            path = root if flat else root / (names[i] if names else f"shard-{i}")
+            path.mkdir(parents=True, exist_ok=True)
+            manifest = {"index": i, "count": count, "source": "same-source", "inventory": self.inventory, "race": ["example/b"], "selected": sorted(part), "executed": sorted(part), "completed": sorted(part), "packages": sorted(self.inventory)}
             (path / "manifest.json").write_text(json.dumps(manifest))
             (path / "coverage.out").write_text(f"mode: atomic\nexample/a/a.go:1.1,3.2 1 {int(i == 0)}\nexample/a/a.go:4.1,6.2 1 {int(i == 1)}\nexample/empty/e.go:1.1,3.2 1 0\n")
+            for log in ("discovery-plain.jsonl", "discovery-race.jsonl", "tests-plain.jsonl", "tests-race.jsonl", "coverage-plain.out", "coverage-race.out"):
+                (path / log).write_text("")
+
+    def test_one_artifact_downloaded_flat_into_the_root_merges(self):
+        # With one matching artifact, actions/download-artifact extracts it straight into path (run 42320491923).
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "ci-results"
+            self.write_shards(root, count=1, flat=True)
+            ci.merge(root, 1, Path(directory) / "combined.out")
+            self.assertEqual((Path(directory) / "combined.out").read_text(), "mode: atomic\nexample/a/a.go:1.1,3.2 1 1\nexample/a/a.go:4.1,6.2 1 0\nexample/empty/e.go:1.1,3.2 1 0\n")
+
+    def test_shards_are_identified_by_their_manifests_not_their_directory_names(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "ci-results"
+            self.write_shards(root, names=["zeta", "alpha", "shard-0", "mid"])
+            ci.merge(root, 4, Path(directory) / "combined.out")
+            self.assertEqual((Path(directory) / "combined.out").read_text(), "mode: atomic\nexample/a/a.go:1.1,3.2 1 1\nexample/a/a.go:4.1,6.2 1 1\nexample/empty/e.go:1.1,3.2 1 0\n")
+
+    def test_duplicate_stray_or_mismatched_manifests_fail_in_either_layout(self):
+        def same_index_flat_and_directory(root):
+            self.write_shards(root, count=2, names=["a", "b"])
+            (root / "a" / "manifest.json").rename(root / "manifest.json")
+            (root / "a" / "coverage.out").rename(root / "coverage.out")
+            changed = json.loads((root / "b" / "manifest.json").read_text())
+            changed["index"] = 0
+            (root / "b" / "manifest.json").write_text(json.dumps(changed))
+
+        def same_index_two_directories(root):
+            self.write_shards(root, count=2)
+            changed = json.loads((root / "shard-1" / "manifest.json").read_text())
+            changed["index"] = 0
+            (root / "shard-1" / "manifest.json").write_text(json.dumps(changed))
+
+        def stray_beside_flat(root):
+            self.write_shards(root, count=1, flat=True)
+            (root / "old").mkdir()
+            for name in ("manifest.json", "coverage.out"):
+                (root / "old" / name).write_text((root / name).read_text())
+
+        def stray_nested_in_a_shard(root):
+            self.write_shards(root, count=2)
+            (root / "shard-0" / "nested").mkdir()
+            for name in ("manifest.json", "coverage.out"):
+                (root / "shard-0" / "nested" / name).write_text((root / "shard-0" / name).read_text())
+
+        def flat_with_another_count(root):
+            self.write_shards(root, count=1, flat=True)
+            changed = json.loads((root / "manifest.json").read_text())
+            changed["count"] = 2
+            (root / "manifest.json").write_text(json.dumps(changed))
+
+        def flat_with_another_index(root):
+            self.write_shards(root, count=1, flat=True)
+            changed = json.loads((root / "manifest.json").read_text())
+            changed["index"] = 1
+            (root / "manifest.json").write_text(json.dumps(changed))
+
+        cases = [(same_index_flat_and_directory, 2), (same_index_two_directories, 2), (stray_beside_flat, 1), (stray_nested_in_a_shard, 2),
+                 (flat_with_another_count, 1), (flat_with_another_index, 1), (lambda root: root.mkdir(parents=True), 1)]
+        for layout, count in cases:
+            with self.subTest(layout=getattr(layout, "__name__", "empty")), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory) / "ci-results"
+                layout(root)
+                with self.assertRaises(ValueError):
+                    ci.merge(root, count, Path(directory) / "combined.out")
+                self.assertFalse((Path(directory) / "combined.out").exists())
 
     def test_coverage_union_retains_all_blocks_and_sums_counts(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -547,6 +614,9 @@ class RealGoShardTests(unittest.TestCase):
             blocks = ci.coverage_blocks(root / "combined.out")
             for package in ("plain", "raceonly", "norace"):
                 self.assertTrue(any(key.startswith(f"fixture/{package}/") and hits > 0 for key, (_, hits) in blocks.items()), package)
+            flat = subprocess.run([sys.executable, SCRIPT, "merge", "--count", "1", "--root", str(root / "results" / "shard-0"), "--out", str(root / "flat.out")], cwd=root, capture_output=True, text=True)
+            self.assertEqual(flat.returncode, 0, flat.stdout + flat.stderr)
+            self.assertEqual((root / "flat.out").read_text(), (root / "combined.out").read_text())
             wrong = subprocess.run([sys.executable, SCRIPT, "merge", "--count", "2", "--root", str(root / "results"), "--out", str(root / "wrong.out")], cwd=root, capture_output=True, text=True)
             self.assertNotEqual(wrong.returncode, 0)
             self.assertFalse((root / "wrong.out").exists())

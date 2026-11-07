@@ -204,9 +204,12 @@ def coverage_blocks(path):
 
 
 def merge(root, count, output):
-    paths = sorted(root.glob("shard-*/manifest.json"))
+    # download-artifact extracts one matching artifact straight into root and
+    # several into a directory each, so every manifest.json under root counts,
+    # and the index each records says which shard it is.
+    paths = sorted(root.rglob("manifest.json"))
     if count < 1 or len(paths) != count:
-        raise ValueError("missing or extra shard manifests")
+        raise ValueError(f"missing or extra shard manifests: found {len(paths)} under {root}, expected {count}")
     manifests = [json.loads(path.read_text()) for path in paths]
     inventory, source, race = manifests[0]["inventory"], manifests[0]["source"], manifests[0].get("race")
     if not source or {m["index"] for m in manifests} != set(range(count)):
