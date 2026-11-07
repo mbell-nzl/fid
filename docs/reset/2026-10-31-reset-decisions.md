@@ -295,10 +295,28 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     with `not-a-repository` for an unreachable target; `internal-error` for
     a failed export. Git runs with `GIT_TERMINAL_PROMPT=0`, so unattended
     backups fail rather than wait for a password.
-  - **Awaiting Mark, PR #46 (1.2b):** a rejected push (a server hook, or
-    another commit reaching the target first) is `repository-unavailable`
-    with a new reason, `push-rejected`, because no existing reason fits a
-    remote that refuses an update. Mark decides whether to keep it.
+  - **Decided by Mark, 7 November 2026 (PR #46, 1.2b):** a rejected push
+    (a server hook, or another commit reaching the target first) is
+    `repository-unavailable` with a new reason, `push-rejected`, because no
+    existing reason fits a remote that refuses an update.
+  - **Decided by Mark, 7 November 2026 (PR #46, 1.2b):** `fid backup`
+    refuses to replace a project's folder that another ledger of the project
+    wrote, in 1.2b rather than on the later list. Clones of one project each
+    make their own ledger with the project's ID, and so does `fid init` on a
+    new machine in place of a restore; without the refusal, the last backup
+    silently replaces the other ledger's, which may be its only copy.
+  - **Builder's choice, PR #46 (1.2b):** a ledger is named by the hash of
+    its genesis Event (`project.initialized`, the journal's first line),
+    recorded in `backup.json` as `genesis_event_hash`. Each `fid init` makes
+    its own, and an import keeps it, so a restored ledger goes on backing up
+    into its folder. A folder whose `backup.json` is missing, unreadable or
+    names no genesis Event is refused too. There is no override flag: a
+    person clears the refusal by restoring from the folder or removing it
+    from the backup repository.
+  - **Awaiting Mark, PR #46 (1.2b):** that refusal is
+    `repository-unavailable` with a new reason, `different-ledger`,
+    following `push-rejected`, and is recorded as `different-ledger`. The
+    alternative is a new conflict code that isn't retryable.
   - Left-over handling extends D6 below: deferred minor review findings
     become discovered issues in 2.1; a later PR "Left over" section is
     derived from `discovered_from` links. Task 1.8 brings this record's

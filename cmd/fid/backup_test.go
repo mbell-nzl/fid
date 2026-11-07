@@ -54,6 +54,7 @@ type backupFolderManifestForTest struct {
 	TerminalEventHash string `json:"terminal_event_hash"`
 	ProjectionSchema  int    `json:"projection_schema"`
 	EntryCount        int    `json:"entry_count"`
+	GenesisEventHash  string `json:"genesis_event_hash"`
 }
 
 func newBackupFixture(t *testing.T) *backupFixture {
@@ -270,8 +271,9 @@ func TestBackupPushesTheExportIntoTheProjectFolder(t *testing.T) {
 	digest := sha256.Sum256(archive)
 	archiveDigest := "sha256:" + hex.EncodeToString(digest[:])
 	if manifest.Schema != "fid.backup.v1" || manifest.ProjectID != id || manifest.Archive != "export.zip" ||
-		manifest.ArchiveDigest != archiveDigest || manifest.ManifestSchema != "fid.export-manifest.v2" || manifest.EventCount < 1 {
-		t.Fatalf("folder manifest = %+v, want export.zip with digest %s", manifest, archiveDigest)
+		manifest.ArchiveDigest != archiveDigest || manifest.ManifestSchema != "fid.export-manifest.v2" || manifest.EventCount < 1 ||
+		manifest.GenesisEventHash != ledgerGenesisHash(t, workspace) {
+		t.Fatalf("folder manifest = %+v, want export.zip with digest %s, written by this ledger", manifest, archiveDigest)
 	}
 	if *record.ArchiveDigest != archiveDigest || *record.EventCount != manifest.EventCount || *record.TerminalEventHash != manifest.TerminalEventHash {
 		t.Fatalf("record %+v disagrees with folder manifest %+v", record, manifest)

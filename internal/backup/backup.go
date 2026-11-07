@@ -45,6 +45,7 @@ const (
 	KindLockUnavailable   Kind = "lock-unavailable"
 	KindTargetUnreachable Kind = "target-unreachable"
 	KindPushRejected      Kind = "push-rejected"
+	KindDifferentLedger   Kind = "different-ledger"
 	KindExportFailed      Kind = "export-failed"
 	KindInternal          Kind = "internal"
 )
@@ -164,6 +165,7 @@ type attempt struct {
 	projectID string
 	target    string
 	directory string
+	genesis   string
 }
 
 // prepare checks the project's identity and the configured target, then

@@ -122,6 +122,8 @@ func backupFailure(cmd *cobra.Command, cause error) (cli.Failure, error) {
 		return unavailable("not-a-repository")
 	case backup.KindPushRejected:
 		return unavailable("push-rejected")
+	case backup.KindDifferentLedger:
+		return unavailable("different-ledger")
 	}
 	return cli.NewFailure(cli.CodeInternalError, cli.BoundedMessage(failed.Error()), nil, map[string]any{})
 }

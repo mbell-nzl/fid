@@ -199,8 +199,9 @@ missing-target status warnings belong to tasks 1.2c and 1.3.
 takes no arguments. It exports the ledger in `export create`'s format,
 validates the archive as `export validate` does, writes it into the project's
 folder in the backup repository, commits and pushes. The project ID in
-`.fid.toml` names the folder, and must match the ledger's; the target is
-`[backup] target` in user config. fid works in its own clone of the backup
+`.fid.toml` names the folder, and must match the ledger's; a backup never
+replaces a folder another ledger of the project wrote, such as another
+clone's. The target is `[backup] target` in user config. fid works in its own clone of the backup
 repository, never in a human's checkout, and uses the user's own git
 credentials. Backups run outside fid's write path: a backup takes no journal
 lock and appends no Event, and no other command pushes. The loop runs it after
@@ -229,13 +230,17 @@ every failure exits non-zero with a typed failure:
 | Another backup holds fid's clone for longer than the 2-minute wait | `lock-unavailable` / 4 | `lock_path` | `lock-unavailable` |
 | Target unreachable, or not a repository | `repository-unavailable` / 4 | `reason: not-a-repository`; `detail`: git's message | `target-unreachable` |
 | Target rejected the push | `repository-unavailable` / 4 | `reason: push-rejected`; `detail`: git's account of the rejection | `push-rejected` |
-| Export or its validation failed | `internal-error` / 7 | `{}` | `export-failed` |
+| The project's folder holds another ledger's backup, or names no ledger | `repository-unavailable` / 4 | `reason: different-ledger`; `detail`: the genesis Event hash the folder's `backup.json` names, if any, and this ledger's | `different-ledger` |
+| Export or its validation failed, or the journal's first Event can't be read | `internal-error` / 7 | `{}` | `export-failed` |
 | Anything else, such as git missing | `internal-error` / 7 | `{}` | `internal` |
 
 The subject is null and `invalid-argument`'s `value` is null.
-`repository-unavailable` is retryable; the next backup retries cleanly.
-`push-rejected` is a new `repository-unavailable` reason, proposed by task
-1.2b and awaiting Mark's approval (decisions record, 7 November 2026). Outside
+`repository-unavailable` is retryable; the next backup retries cleanly,
+except that `different-ledger` persists until a person keeps one ledger for
+the project (`04_TRD_CONFIG.md` section 2.4). Task 1.2b adds two
+`repository-unavailable` reasons: `push-rejected`, which Mark approved on 7
+November 2026, and `different-ledger`, which awaits his approval (decisions
+record, 7 November 2026). Outside
 a repository, at an unsafe ledger location, and in a repository without a
 ledger, `backup` refuses as every project command does (section 1) and
 records nothing, because there is no ledger to record in. If the record

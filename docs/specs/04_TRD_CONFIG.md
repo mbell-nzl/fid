@@ -190,11 +190,37 @@ named by the project ID in `.fid.toml`:
 `backup.json` is canonical JSON with a trailing newline: `schema`
 (`fid.backup.v1`), `project_id`, `archive` (`export.zip`), `archive_digest`
 (the `sha256:` digest of `export.zip`), and the export's `manifest_schema`,
-`event_count`, `terminal_event_hash`, `projection_schema` and `entry_count`.
-It holds nothing that changes unless the export does. fid validates the
-archive as `export validate` does before it commits, so a pushed backup is one
-that `fid restore` (task 1.2c) can import. fid owns the folder and replaces
-both files on every backup; it never changes another path in the repository.
+`event_count`, `terminal_event_hash`, `projection_schema` and `entry_count`,
+plus `genesis_event_hash`, which names the ledger that wrote the folder
+(below). It holds nothing that changes unless the export does. fid validates
+the archive as `export validate` does before it commits, so a pushed backup is
+one that `fid restore` (task 1.2c) can import. fid owns its ledger's folder
+and replaces both files on every backup; it never changes another path in the
+repository.
+
+**One ledger per folder.** Clones of one project each make their own ledger
+with the project's ID, and so does `fid init` on a new machine, so their
+backups name the same folder. fid replaces a folder only when its
+`backup.json` names this ledger: its `genesis_event_hash` must be the hash of
+this ledger's genesis Event, the `project.initialized` Event `fid init`
+appends first. Otherwise, including when the folder has no `backup.json` or
+one that names no genesis Event, the backup refuses with
+`repository-unavailable` / `different-ledger`, records the attempt and
+pushes nothing, because the folder may be another ledger's only copy. fid
+checks after reading the target's tip and before exporting; a folder that
+changes after that check rejects the push. To clear the refusal, keep one
+ledger for the project: restore this project from the folder (task 1.2c)
+instead of using this ledger, or, if the folder's backup is no longer
+needed, remove the folder from the backup repository's `main` by hand, and
+the next backup writes it afresh.
+
+Every `fid init` appends its own genesis Event, and two differ in their
+time, to the nanosecond, even for one project. The journal never appends
+before its latest date, so the genesis Event stays its first line. An
+import keeps the journal byte for byte, so a restored ledger keeps its
+genesis Event and goes on backing up into its folder. Copies of one ledger,
+such as a ledger directory copied by hand, share a genesis Event, and this
+check doesn't tell them apart.
 Each changed backup is one commit on the target's tip, unsigned, by
 `fid backup <backup@fid.invalid>`, with the message `fid backup
 <project-id>` followed by the event count, terminal event hash and archive
@@ -267,8 +293,9 @@ Each line is a JSON object with every key present:
 | `failure` | null, or `{kind, message}` |
 
 `kind` is one of `no-target`, `user-config`, `project-identity`,
-`lock-unavailable`, `target-unreachable`, `push-rejected`, `export-failed`
-and `internal`, matching the CLI failures in the CLI spec. `pushed` and
+`lock-unavailable`, `target-unreachable`, `push-rejected`,
+`different-ledger`, `export-failed` and `internal`, matching the CLI failures
+in the CLI spec. `pushed` and
 `unchanged` are both successful backups: the target holds the ledger as
 exported during that attempt. Task 1.3's `fid status` reads the record. The
 record is not part of the journal: export and rebuild ignore it, and a

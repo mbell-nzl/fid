@@ -37,6 +37,7 @@ type manifest struct {
 	TerminalEventHash string `json:"terminal_event_hash"`
 	ProjectionSchema  int    `json:"projection_schema"`
 	EntryCount        int    `json:"entry_count"`
+	GenesisEventHash  string `json:"genesis_event_hash"`
 }
 
 // push brings fid's clone up to date with the target, writes the project's
@@ -52,6 +53,12 @@ func (run *attempt) push() error {
 	}
 	parent, err := run.fetch(repository)
 	if err != nil {
+		return err
+	}
+	if run.genesis, err = genesisHash(run.options.WorkspaceRoot); err != nil {
+		return failure(KindExportFailed, err, "find the ledger's genesis Event")
+	}
+	if err := run.checkFolder(repository, parent); err != nil {
 		return err
 	}
 	scratch := filepath.Join(run.directory, "export")
@@ -154,7 +161,8 @@ func (run *attempt) export(scratch string) (export.Summary, string, error) {
 func (run *attempt) tree(repository clone, parent string, summary export.Summary, archive string) (string, error) {
 	encoded, err := journal.MarshalCanonicalJSON(manifest{Schema: ManifestSchema, ProjectID: run.projectID, Archive: ArchiveName,
 		ArchiveDigest: summary.ArchiveDigest, ManifestSchema: summary.ManifestSchema, EventCount: summary.EventCount,
-		TerminalEventHash: summary.TerminalEventHash, ProjectionSchema: summary.ProjectionSchema, EntryCount: summary.EntryCount})
+		TerminalEventHash: summary.TerminalEventHash, ProjectionSchema: summary.ProjectionSchema, EntryCount: summary.EntryCount,
+		GenesisEventHash: run.genesis})
 	if err != nil {
 		return "", failure(KindInternal, err, "encode the folder manifest")
 	}
