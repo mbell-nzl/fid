@@ -48,10 +48,11 @@ func gitEnvironment(environment []string) []string {
 		"GIT_COMMITTER_NAME="+commitName, "GIT_COMMITTER_EMAIL="+commitEmail)
 }
 
-// clone runs git in fid's bare clone. Every command names the clone
-// explicitly, so git never searches for a repository, and overrides the
-// settings in the user's git config that could run code or detach work:
-// hooks, and background garbage collection.
+// clone runs git in a bare repository fid owns: its clone of the backup
+// repository, or the temporary one a restore fetches into. Every command
+// names the repository explicitly, so git never searches for one, and
+// overrides the settings in the user's git config that could run code or
+// detach work: hooks, and background garbage collection.
 type clone struct {
 	gitDir      string
 	workingDir  string
@@ -80,20 +81,37 @@ func (repository clone) run(stdin io.Reader, arguments ...string) (string, error
 	return runGit(repository.workingDir, repository.environment, stdin, append([]string{"--git-dir=" + repository.gitDir}, arguments...)...)
 }
 
+// stream runs git and writes its output to stdout as it comes, for blobs
+// too large to hold in memory.
+func (repository clone) stream(stdout io.Writer, arguments ...string) error {
+	return streamGit(repository.workingDir, repository.environment, nil, stdout, append([]string{"--git-dir=" + repository.gitDir}, arguments...)...)
+}
+
 // runGit runs git with the overrides every backup command needs.
 func runGit(directory string, environment []string, stdin io.Reader, arguments ...string) (string, error) {
+	var stdout bytes.Buffer
+	err := streamGit(directory, environment, stdin, &stdout, arguments...)
+	var failed *gitError
+	if errors.As(err, &failed) {
+		failed.stdout = stdout.String()
+	}
+	return stdout.String(), err
+}
+
+// streamGit is runGit writing git's output to stdout.
+func streamGit(directory string, environment []string, stdin io.Reader, stdout io.Writer, arguments ...string) error {
 	arguments = append([]string{"-c", "core.hooksPath=/dev/null", "-c", "gc.autoDetach=false", "-c", "maintenance.autoDetach=false"}, arguments...)
 	command := exec.Command("git", arguments...)
 	command.Dir = directory
 	command.Env = environment
 	command.Stdin = stdin
-	var stdout, stderr bytes.Buffer
-	command.Stdout = &stdout
+	var stderr bytes.Buffer
+	command.Stdout = stdout
 	command.Stderr = &stderr
 	if err := command.Run(); err != nil {
-		return stdout.String(), &gitError{arguments: arguments, stdout: stdout.String(), stderr: stderr.String(), err: err}
+		return &gitError{arguments: arguments, stderr: stderr.String(), err: err}
 	}
-	return stdout.String(), nil
+	return nil
 }
 
 // text runs git and returns its output less one trailing newline.

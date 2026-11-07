@@ -102,23 +102,36 @@ func (run *attempt) push() error {
 // fetch returns the target branch's tip, fetching it into fid's clone when
 // the clone doesn't already track it, or "" when the branch doesn't exist.
 func (run *attempt) fetch(repository clone) (string, error) {
-	listed, err := repository.run(nil, "ls-remote", run.target, remoteRef)
-	if err != nil {
-		return "", failure(KindTargetUnreachable, err, "the backup repository is unreachable")
-	}
-	remote := ""
-	for _, line := range strings.Split(listed, "\n") {
-		if oid, ref, ok := strings.Cut(line, "\t"); ok && ref == remoteRef {
-			remote = oid
-		}
-	}
-	if remote == "" {
-		return "", nil
+	remote, err := remoteTip(repository, run.target)
+	if err != nil || remote == "" {
+		return "", err
 	}
 	if tracked, err := repository.text("rev-parse", "--verify", "-q", trackingRef); err == nil && tracked == remote {
 		return remote, nil
 	}
-	if _, err := repository.run(nil, "fetch", "-q", "--no-tags", run.target, "+"+remoteRef+":"+trackingRef); err != nil {
+	return fetchBranch(repository, run.target)
+}
+
+// remoteTip asks target for its branch and returns the tip, or "" when the
+// branch doesn't exist.
+func remoteTip(repository clone, target string) (string, error) {
+	listed, err := repository.run(nil, "ls-remote", target, remoteRef)
+	if err != nil {
+		return "", failure(KindTargetUnreachable, err, "the backup repository is unreachable")
+	}
+	for _, line := range strings.Split(listed, "\n") {
+		if oid, ref, ok := strings.Cut(line, "\t"); ok && ref == remoteRef {
+			return oid, nil
+		}
+	}
+	return "", nil
+}
+
+// fetchBranch fetches target's branch into the tracking ref, with any extra
+// fetch options, and returns the fetched tip.
+func fetchBranch(repository clone, target string, options ...string) (string, error) {
+	arguments := append(append([]string{"fetch", "-q", "--no-tags"}, options...), target, "+"+remoteRef+":"+trackingRef)
+	if _, err := repository.run(nil, arguments...); err != nil {
 		return "", failure(KindTargetUnreachable, err, "the backup repository is unreachable")
 	}
 	tip, err := repository.text("rev-parse", "--verify", trackingRef+"^{commit}")

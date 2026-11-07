@@ -110,15 +110,7 @@ func renderExportError(cmd *cobra.Command, operation, archivePath string, cause 
 	}
 	var invalid *export.InvalidArchiveError
 	if errors.As(cause, &invalid) {
-		checks := make([]map[string]any, 0, len(invalid.Checks))
-		for _, item := range invalid.Checks {
-			var entry any
-			if item.Entry != nil {
-				entry = *item.Entry
-			}
-			checks = append(checks, map[string]any{"code": item.Code, "entry": entry, "detail": item.Detail})
-		}
-		failure, err := cli.NewFailure(cli.CodeArchiveInvalid, "export archive is invalid", &cli.Subject{Type: cli.SubjectExport, ID: archivePath}, map[string]any{"archive_path": archivePath, "checks": checks})
+		failure, err := cli.NewFailure(cli.CodeArchiveInvalid, "export archive is invalid", &cli.Subject{Type: cli.SubjectExport, ID: archivePath}, map[string]any{"archive_path": archivePath, "checks": archiveChecks(invalid)})
 		if err != nil {
 			return err
 		}
@@ -146,4 +138,17 @@ func renderExportError(cmd *cobra.Command, operation, archivePath string, cause 
 		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
 	return writeHumanFailure(cmd, operation, failure, cause)
+}
+
+// archiveChecks is archive-invalid's checks detail.
+func archiveChecks(invalid *export.InvalidArchiveError) []map[string]any {
+	checks := make([]map[string]any, 0, len(invalid.Checks))
+	for _, item := range invalid.Checks {
+		var entry any
+		if item.Entry != nil {
+			entry = *item.Entry
+		}
+		checks = append(checks, map[string]any{"code": item.Code, "entry": entry, "detail": item.Detail})
+	}
+	return checks
 }

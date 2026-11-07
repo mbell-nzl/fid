@@ -35,7 +35,8 @@ const (
 	OutcomeFailed    Outcome = "failed"
 )
 
-// Kind names why a backup failed.
+// Kind names why a backup or a restore failed. A restore records nothing,
+// so the kinds only a restore returns never appear in the record.
 type Kind string
 
 const (
@@ -48,6 +49,11 @@ const (
 	KindDifferentLedger   Kind = "different-ledger"
 	KindExportFailed      Kind = "export-failed"
 	KindInternal          Kind = "internal"
+
+	// Only a restore returns these.
+	KindLedgerExists   Kind = "ledger-exists"
+	KindNoBackup       Kind = "no-backup"
+	KindArchiveInvalid Kind = "archive-invalid"
 )
 
 // Options identifies the project and the environment a backup runs in.
@@ -173,35 +179,23 @@ type attempt struct {
 // the clone is held.
 func (run *attempt) prepare() (func(), error) {
 	root := run.options.WorkspaceRoot
-	identityPath := filepath.Join(root, config.ProjectIdentityFileName)
-	id, err := config.ReadProjectIdentity(root)
-	if errors.Is(err, os.ErrNotExist) {
-		return nil, identityFailure(identityPath, nil, "%s does not exist; it holds the project ID that names the backup folder", identityPath)
-	} else if err != nil {
-		return nil, identityFailure(identityPath, err, "invalid project identity in %s", identityPath)
+	id, err := projectIdentity(root)
+	if err != nil {
+		return nil, err
 	}
 	ledger, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(root), config.ConfigFileName))
 	if err != nil {
 		return nil, failure(KindInternal, err, "read the ledger config")
 	}
 	if ledger.ProjectID != id {
+		identityPath := filepath.Join(root, config.ProjectIdentityFileName)
 		return nil, identityFailure(identityPath, nil, "the project ID in %s is %s, but the ledger's is %s", identityPath, id, ledger.ProjectID)
 	}
 	run.projectID = id
 	run.record.ProjectID = &id
-
-	configPath, err := config.UserConfigPathFrom(run.getenv)
-	if err != nil {
-		return nil, failure(KindInternal, err, "find the user config")
+	if run.target, err = configuredTarget(run.getenv); err != nil {
+		return nil, err
 	}
-	user, err := config.ReadUserConfig(configPath)
-	if err != nil {
-		return nil, &Error{Kind: KindUserConfig, Message: "invalid user config", Detail: err.Error(), Path: configPath, Err: err}
-	}
-	if strings.TrimSpace(user.BackupTarget) == "" {
-		return nil, &Error{Kind: KindNoTarget, Message: "no backup target is set: add [backup] target to " + configPath, Path: configPath}
-	}
-	run.target = user.BackupTarget
 
 	cache, err := config.UserCacheDirFrom(run.getenv)
 	if err != nil {
@@ -212,6 +206,35 @@ func (run *attempt) prepare() (func(), error) {
 		return nil, failure(KindInternal, err, "create fid's backup cache")
 	}
 	return lock(filepath.Join(run.directory, "lock"), run.options.LockWait, run.options.Now)
+}
+
+// projectIdentity reads the project ID that names the backup folder from
+// .fid.toml in the working tree.
+func projectIdentity(root string) (string, error) {
+	identityPath := filepath.Join(root, config.ProjectIdentityFileName)
+	id, err := config.ReadProjectIdentity(root)
+	if errors.Is(err, os.ErrNotExist) {
+		return "", identityFailure(identityPath, nil, "%s does not exist; it holds the project ID that names the backup folder", identityPath)
+	} else if err != nil {
+		return "", identityFailure(identityPath, err, "invalid project identity in %s", identityPath)
+	}
+	return id, nil
+}
+
+// configuredTarget reads the backup target from user config.
+func configuredTarget(getenv func(string) string) (string, error) {
+	configPath, err := config.UserConfigPathFrom(getenv)
+	if err != nil {
+		return "", failure(KindInternal, err, "find the user config")
+	}
+	user, err := config.ReadUserConfig(configPath)
+	if err != nil {
+		return "", &Error{Kind: KindUserConfig, Message: "invalid user config", Detail: err.Error(), Path: configPath, Err: err}
+	}
+	if strings.TrimSpace(user.BackupTarget) == "" {
+		return "", &Error{Kind: KindNoTarget, Message: "no backup target is set: add [backup] target to " + configPath, Path: configPath}
+	}
+	return user.BackupTarget, nil
 }
 
 func identityFailure(path string, cause error, format string, arguments ...any) *Error {

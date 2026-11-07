@@ -31,7 +31,7 @@
     "label", "label add", "label list", "link", "link add", "link list", "link remove",
     "maintenance", "maintenance check", "maintenance vacuum", "ready", "rebuild", "receipt",
     "receipt get", "receipt list", "requirement", "requirement get", "requirement link",
-    "requirement list", "requirement record-reference", "resume", "review", "review get",
+    "requirement list", "requirement record-reference", "restore", "resume", "review", "review get",
     "review list", "review record", "run", "run abandon", "run checkpoint", "run close", "run get",
     "run inspect", "run list", "run observe", "run observe-budget", "run recover", "run start",
     "sql", "stats", "stats cost", "stats tokens", "stop", "stop list", "stop raise",
