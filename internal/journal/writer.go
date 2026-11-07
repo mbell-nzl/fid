@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -114,6 +115,11 @@ func prepareEventWithClockOptions(lock *WriteLock, event Event, now func() time.
 	return event, nil
 }
 
+// greatestJournalDate returns the latest UTC date the journal holds: the
+// greatest dated file's name or, where later, the date of the last Event in
+// the numbered pieces an import installs, which have no date in their names.
+// Pieces hold their Events in order and sort in replay order, so only the
+// tail of the last piece that holds an Event is read.
 func greatestJournalDate(journalDir string) (string, bool, error) {
 	entries, err := os.ReadDir(journalDir)
 	if err != nil {
@@ -121,6 +127,7 @@ func greatestJournalDate(journalDir string) (string, bool, error) {
 	}
 
 	var latest string
+	pieces := []string{}
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -133,6 +140,9 @@ func greatestJournalDate(journalDir string) (string, bool, error) {
 
 		dateText := strings.TrimSuffix(name, ".jsonl")
 		if _, err := time.Parse("2006-01-02", dateText); err != nil {
+			if journalFileName(name) {
+				pieces = append(pieces, name)
+			}
 			continue
 		}
 		if latest == "" || dateText > latest {
@@ -140,7 +150,59 @@ func greatestJournalDate(journalDir string) (string, bool, error) {
 		}
 	}
 
+	sort.Sort(sort.Reverse(sort.StringSlice(pieces)))
+	for _, piece := range pieces {
+		date, found, err := lastEventDate(filepath.Join(journalDir, piece))
+		if err != nil {
+			return "", false, err
+		}
+		if found {
+			if date > latest {
+				latest = date
+			}
+			break
+		}
+	}
+
 	return latest, latest != "", nil
+}
+
+// lastEventDate returns the UTC date of the last Event in a journal file,
+// reading backwards from its end in blocks, so a large piece costs only its
+// tail. It reports false for a file that holds no Event.
+func lastEventDate(path string) (string, bool, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", false, fmt.Errorf("open journal file %q for its latest date: %w", path, err)
+	}
+	defer func() { _ = file.Close() }()
+	info, err := file.Stat()
+	if err != nil {
+		return "", false, fmt.Errorf("stat journal file %q for its latest date: %w", path, err)
+	}
+	const block int64 = 64 << 10
+	var tail []byte
+	for end := info.Size(); end > 0; {
+		start := end - min(end, block)
+		chunk := make([]byte, end-start)
+		if _, err := file.ReadAt(chunk, start); err != nil {
+			return "", false, fmt.Errorf("read journal file %q for its latest date: %w", path, err)
+		}
+		tail, end = append(chunk, tail...), start
+		trimmed := bytes.TrimSpace(tail)
+		newline := bytes.LastIndexByte(trimmed, '\n')
+		if len(trimmed) == 0 || newline < 0 && end > 0 {
+			continue
+		}
+		var event struct {
+			OccurredAt time.Time `json:"occurred_at"`
+		}
+		if err := json.Unmarshal(bytes.TrimSpace(trimmed[newline+1:]), &event); err != nil {
+			return "", false, fmt.Errorf("read the last Event of journal file %q: %w", path, err)
+		}
+		return event.OccurredAt.UTC().Format("2006-01-02"), true, nil
+	}
+	return "", false, nil
 }
 
 func nextSequence(journalPath string) (int, error) {
