@@ -143,6 +143,68 @@ func TestRestoreFetchesIntoAPrivateTemporaryRepository(t *testing.T) {
 	}
 }
 
+// Restore fetches only the tip of the target's main, so its time doesn't
+// grow with the backup history. A remote helper stands in for the target's
+// transport. Git closes the connection once the fetched pack and the shallow
+// boundary are in the temporary repository, and only then does the helper
+// record which commits the repository holds and where its history stops.
+func TestRestoreFetchesOnlyTheTipOfMain(t *testing.T) {
+	t.Parallel()
+	fixture := newBackupFixture(t)
+	original, id := fixture.project()
+	fixture.setTarget(fixture.target)
+	for backups := 1; backups <= 3; backups++ {
+		if backups > 1 {
+			runFIDCommand(t, original, "issue", "create", "--kind", "task", "--title", "Backed up again", "--actor", "agent:developer")
+		}
+		if pushed, _ := decodeBackupSuccess(t, fixture.backup(original, "--json")); pushed.Outcome != "pushed" {
+			t.Fatalf("backup %d = %+v, want a new commit on main", backups, pushed)
+		}
+	}
+	tip := fixture.targetMain()
+	if count := fixture.targetGit("rev-list", "--count", "main"); count != "3" {
+		t.Fatalf("target main has %s commits, want the 3 backups", count)
+	}
+	seen := filepath.Join(fixture.base, "fetched")
+	environ := withRemoteHelper(t, fixture, "fidtip", strings.Join([]string{
+		"#!/bin/sh",
+		"while read -r command; do",
+		"  case \"$command\" in",
+		"  capabilities) printf 'connect\\n\\n' ;;",
+		"  'connect git-upload-pack')",
+		"    printf '\\n'; git upload-pack \"$2\" || exit 1",
+		"    cat >/dev/null",
+		"    { echo \"SHALLOW=$(git --git-dir=\"$GIT_DIR\" rev-parse --is-shallow-repository)\"",
+		"      echo \"BOUNDARY=$(cat \"$GIT_DIR/shallow\" 2>/dev/null | tr '\\n' ' ')\"",
+		"      echo \"COMMITS=$(git --git-dir=\"$GIT_DIR\" cat-file --batch-all-objects --batch-check='%(objecttype) %(objectname)' | sed -n 's/^commit //p' | tr '\\n' ' ')\"",
+		"    } > '" + seen + "'",
+		"    exit 0 ;;",
+		"  *) exit 1 ;;",
+		"  esac",
+		"done",
+		"",
+	}, "\n"))
+	fixture.setTarget("fidtip::" + fixture.target)
+
+	restored, _ := decodeRestoreSuccess(t, restoreWith(t, environ, fixture.restoreWorkspace(id), "--json"))
+	if restored.Commit != tip {
+		t.Fatalf("restore = %+v, want the target's main %s", restored, tip)
+	}
+	payload, err := os.ReadFile(seen)
+	if err != nil {
+		t.Fatalf("git never fetched through the remote helper: %v", err)
+	}
+	fetched := map[string]string{}
+	for _, line := range strings.Split(strings.TrimSpace(string(payload)), "\n") {
+		if name, value, ok := strings.Cut(line, "="); ok {
+			fetched[name] = strings.TrimSpace(value)
+		}
+	}
+	if fetched["SHALLOW"] != "true" || fetched["BOUNDARY"] != tip || fetched["COMMITS"] != tip {
+		t.Fatalf("restore's temporary repository after the fetch:\n%s\nwant a shallow repository holding only main's tip %s, its history stopping there", payload, tip)
+	}
+}
+
 // Hooks and a missing identity in the user's git config must not stop or
 // change a restore.
 func TestRestoreIgnoresHostileGlobalGitConfig(t *testing.T) {

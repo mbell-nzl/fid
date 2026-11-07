@@ -374,6 +374,26 @@ func TestRestoreTextOutputNamesFolderCommitAndLedger(t *testing.T) {
 	}
 }
 
+// Restore imports the backup under the idempotency key
+// fid-restore:<commit>, which the restored ledger's import marker records.
+func TestRestoreImportsUnderTheBackupCommitsKey(t *testing.T) {
+	t.Parallel()
+	fixture := newBackupFixture(t)
+	original, id := fixture.project()
+	fixture.setTarget(fixture.target)
+	pushed, _ := decodeBackupSuccess(t, fixture.backup(original, "--json"))
+	workspace := fixture.restoreWorkspace(id)
+
+	restored, _ := decodeRestoreSuccess(t, fixture.restore(workspace, "--json"))
+	binding, err := config.ReadImportBinding(workspace)
+	if err != nil {
+		t.Fatalf("read the restored ledger's import marker: %v", err)
+	}
+	if want := "fid-restore:" + *pushed.Commit; restored.Commit != *pushed.Commit || binding.IdempotencyKey != want {
+		t.Fatalf("restore of %s imported with key %q, want %q", restored.Commit, binding.IdempotencyKey, want)
+	}
+}
+
 // restoreWorkspace is a fresh clone of the project with ID id: a git
 // repository holding only its .fid.toml, and no ledger.
 func (fixture *backupFixture) restoreWorkspace(id string) string {
