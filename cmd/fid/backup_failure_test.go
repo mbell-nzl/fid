@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -51,6 +52,7 @@ func TestBackupFailuresAreRecordedAndTyped(t *testing.T) {
 		exit    int
 		code    string
 		kind    string
+		message string // in the recorded message, where kinds share a cause
 		details func(*backupFixture, string) map[string]any
 	}{
 		{name: "no target", exit: 2, code: "invalid-argument", kind: "no-target",
@@ -81,7 +83,7 @@ func TestBackupFailuresAreRecordedAndTyped(t *testing.T) {
 				writeBackupTestFile(fixture.t, filepath.Join(workspace, config.ProjectIdentityFileName), "[project]\nid = \"project-"+strings.Repeat("a", 32)+"\"\n")
 			},
 			details: backupIdentityDetails},
-		{name: "export failure", exit: 7, code: "internal-error", kind: "export-failed",
+		{name: "export failure", exit: 7, code: "internal-error", kind: "export-failed", message: "export the ledger: ",
 			setup: func(fixture *backupFixture, workspace string) {
 				fixture.setTarget(fixture.target)
 				journal, err := os.OpenFile(mustJournalPath(fixture.t, workspace), os.O_APPEND|os.O_WRONLY, 0)
@@ -91,6 +93,25 @@ func TestBackupFailuresAreRecordedAndTyped(t *testing.T) {
 				defer func() { _ = journal.Close() }()
 				if _, err := journal.WriteString("not an event\n"); err != nil {
 					fixture.t.Fatal(err)
+				}
+			},
+			details: func(*backupFixture, string) map[string]any { return map[string]any{} }},
+		// The archive is created, but validation rejects it: the identity in
+		// .fid.toml and the ledger config agree, but differ from the journal's.
+		{name: "export rejected by validation", exit: 7, code: "internal-error", kind: "export-failed", message: "validate the ledger's export: ",
+			setup: func(fixture *backupFixture, workspace string) {
+				fixture.setTarget(fixture.target)
+				original, err := config.ReadProjectIdentity(workspace)
+				if err != nil {
+					fixture.t.Fatal(err)
+				}
+				replacement := "project-" + strings.Repeat("b", 32)
+				for _, path := range []string{filepath.Join(workspace, config.ProjectIdentityFileName), filepath.Join(config.LedgerDir(workspace), config.ConfigFileName)} {
+					payload, err := os.ReadFile(path)
+					if err != nil || !strings.Contains(string(payload), original) {
+						fixture.t.Fatalf("%s holds no %s: %v", path, original, err)
+					}
+					writeBackupTestFile(fixture.t, path, strings.ReplaceAll(string(payload), original, replacement))
 				}
 			},
 			details: func(*backupFixture, string) map[string]any { return map[string]any{} }},
@@ -131,8 +152,8 @@ func TestBackupFailuresAreRecordedAndTyped(t *testing.T) {
 					t.Fatalf("record project_id = %v for %s", record.ProjectID, test.kind)
 				}
 			}
-			if !strings.Contains(records[1].Failure.Message, failure.Message) {
-				t.Fatalf("recorded message %q does not carry the reported %q", records[1].Failure.Message, failure.Message)
+			if !strings.Contains(records[1].Failure.Message, failure.Message) || !strings.Contains(records[1].Failure.Message, test.message) {
+				t.Fatalf("recorded message %q does not carry the reported %q and %q", records[1].Failure.Message, failure.Message, test.message)
 			}
 		})
 	}
@@ -300,6 +321,66 @@ func TestBackupReportsARecordItCannotWrite(t *testing.T) {
 	failure = decodeBackupFailure(t, fixture.backup(workspace, "--json"), 7)
 	if failure.Code != "internal-error" || !strings.Contains(failure.Message, "backup pushed, but recording it failed") || fixture.targetMain() == "" {
 		t.Fatalf("failure = %+v, want a push reported with its unwritable record", failure)
+	}
+}
+
+// A write cut short, by a full disk or a killed process, leaves the record
+// without a final newline. The next backup must not append onto it: its own
+// line must parse, and every complete line before it must survive.
+func TestBackupRepairsATornRecordBeforeAppending(t *testing.T) {
+	t.Parallel()
+	for _, test := range []struct {
+		name string
+		tear func(t *testing.T, path string, payload []byte) []byte // returns the complete lines to keep
+		want string
+	}{
+		{name: "fragment of a record", want: "pushed,unchanged", tear: func(t *testing.T, path string, payload []byte) []byte {
+			appendBackupTestBytes(t, path, payload[:48])
+			return payload
+		}},
+		{name: "whole record without its newline", want: "pushed,pushed,unchanged", tear: func(t *testing.T, path string, payload []byte) []byte {
+			appendBackupTestBytes(t, path, bytes.TrimSuffix(payload, []byte("\n")))
+			return append(append([]byte{}, payload...), payload...)
+		}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			fixture := newBackupFixture(t)
+			workspace, _ := fixture.project()
+			fixture.setTarget(fixture.target)
+			decodeBackupSuccess(t, fixture.backup(workspace, "--json"))
+			path := filepath.Join(config.LedgerDir(workspace), "backups.jsonl")
+			payload, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			kept := test.tear(t, path, payload)
+
+			record, _ := decodeBackupSuccess(t, fixture.backup(workspace, "--json"))
+			after, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.HasPrefix(after, kept) {
+				t.Fatalf("record = %q, want the complete lines %q kept", after, kept)
+			}
+			records := backupRecords(t, workspace)
+			if got := backupOutcomes(records); strings.Join(got, ",") != test.want || mustJSON(t, records[len(records)-1]) != mustJSON(t, record) {
+				t.Fatalf("records = %v, want %s ending with the new attempt", got, test.want)
+			}
+		})
+	}
+}
+
+func appendBackupTestBytes(t *testing.T, path string, payload []byte) {
+	t.Helper()
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = file.Close() }()
+	if _, err := file.Write(payload); err != nil {
+		t.Fatal(err)
 	}
 }
 

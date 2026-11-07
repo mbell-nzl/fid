@@ -242,8 +242,16 @@ fid's writes. A write that lands while the export is read can make that
 export fail validation; the failure is recorded and the next backup retries.
 
 **The record.** `<ledger>/backups.jsonl` gets one line for every attempt that
-found the ledger, successful or not. fid appends and syncs it while the
-backup still holds its clone, so lines are in the order attempts finished.
+found the ledger, successful or not. fid appends and syncs each line while it
+holds an exclusive `flock` on the record, and, where the attempt reached
+fid's clone, while the backup still holds the clone, so lines are in the
+order attempts finished. A write cut short, by a full disk or a killed
+process, can leave the record without its final newline; the attempt that
+wrote it reports that recording failed. Before appending, fid repairs such a
+tail under the record's lock: a whole record missing only its newline gets
+the newline, and any other fragment is cut back to the last complete line,
+since no reader can use it. Every line before the new one is then a complete
+record, though a reader may still find a torn last line between attempts.
 Each line is a JSON object with every key present:
 
 | Key | Value |
