@@ -27,7 +27,9 @@ fid [--project <path>] [--json] <command> ...
   ledger, the failure is `project-not-found` (exit 3).
 - fid keeps ledger writes inside `$(git rev-parse --git-common-dir)/fid`,
   where git cannot track them. Init also writes the committed `.fid.toml`
-  and, when configured interactively, user config (below). Every command
+  and, when configured interactively, user config (below). `backup` also
+  writes fid's own clone in the user cache and pushes to the backup target
+  (`04_TRD_CONFIG.md` section 2.4). Every command
   that opens or creates a project, `init`
   and `export import` included, refuses with `repository-unavailable`
   (precondition, exit 4; details `reason: unsafe-path` and a `detail` naming
@@ -137,6 +139,7 @@ and tests.
 
 ```text
 fid init
+fid backup
 fid capabilities
 fid rebuild
 fid maintenance check
@@ -189,8 +192,60 @@ commit instruction have already been printed. The error begins
 `ledger initialized, but backup target setup failed:` and reports the cause,
 with the existing `internal-error` code (exit 7). Other internal init
 failures keep the fixed message `project initialization failed`.
-See `04_TRD_CONFIG.md` section 2 for file formats. Backup, restore and
-missing-target status warnings belong to tasks 1.2b, 1.2c and 1.3.
+See `04_TRD_CONFIG.md` section 2 for file formats. Restore and
+missing-target status warnings belong to tasks 1.2c and 1.3.
+
+`fid backup` copies the ledger off the machine (decisions record D4 / F1). It
+takes no arguments. It exports the ledger in `export create`'s format,
+validates the archive as `export validate` does, writes it into the project's
+folder in the backup repository, commits and pushes. The project ID in
+`.fid.toml` names the folder, and must match the ledger's; a backup never
+replaces a folder another ledger of the project wrote, such as another
+clone's. The target is `[backup] target` in user config. fid works in its own clone of the backup
+repository, never in a human's checkout, and uses the user's own git
+credentials. Backups run outside fid's write path: a backup takes no journal
+lock and appends no Event, and no other command pushes. The loop runs it after
+each task and a daily cron job runs it too; concurrent backups wait for each
+other. `04_TRD_CONFIG.md` section 2.4 has the folder, the clone and the
+record. Text success output is one line:
+
+```text
+backup pushed: <project-id>/ at commit <40 hex digits>
+backup unchanged: <project-id>/ is current at commit <40 hex digits>
+```
+
+`unchanged` means the target's tip already holds this exact export, so fid
+made no commit and pushed nothing. The `project.backup` JSON result is
+`{backup:<record line>,record_path}`: the attempt's line in the record, and
+the record file's absolute path. `event` is null.
+
+Every attempt that reaches the ledger is recorded, failed ones included, and
+every failure exits non-zero with a typed failure:
+
+| Failure | Code / exit | Details | Recorded kind |
+|---|---|---|---|
+| No target set | `invalid-argument` / 2 | `argument`: user config path; `allowed`: `["[backup] target: a git URL or local path"]` | `no-target` |
+| Malformed or unreadable user config | `invalid-argument` / 2 | `argument`: user config path; `allowed`: `["valid project.backup configuration"]` | `user-config` |
+| `.fid.toml` missing, invalid, or naming a project other than the ledger's | `invalid-argument` / 2 | `argument`: absolute `.fid.toml` path; `allowed`: `["[project] id matching the ledger's project ID"]` | `project-identity` |
+| Another backup holds fid's clone for longer than the 2-minute wait | `lock-unavailable` / 4 | `lock_path` | `lock-unavailable` |
+| Target unreachable, or not a repository | `repository-unavailable` / 4 | `reason: not-a-repository`; `detail`: git's message | `target-unreachable` |
+| Target rejected the push | `repository-unavailable` / 4 | `reason: push-rejected`; `detail`: git's account of the rejection | `push-rejected` |
+| The project's folder holds another ledger's backup, or names no ledger | `repository-unavailable` / 4 | `reason: different-ledger`; `detail`: the genesis Event hash the folder's `backup.json` names, if any, and this ledger's | `different-ledger` |
+| Export or its validation failed, or the journal's first Event can't be read | `internal-error` / 7 | `{}` | `export-failed` |
+| Anything else, such as git missing | `internal-error` / 7 | `{}` | `internal` |
+
+The subject is null and `invalid-argument`'s `value` is null.
+`repository-unavailable` is retryable; the next backup retries cleanly,
+except that `different-ledger` persists until a person keeps one ledger for
+the project (`04_TRD_CONFIG.md` section 2.4). Task 1.2b adds two
+`repository-unavailable` reasons, `push-rejected` and `different-ledger`,
+which Mark approved on 7 and 8 November 2026 (decisions record). Outside
+a repository, at an unsafe ledger location, and in a repository without a
+ledger, `backup` refuses as every project command does (section 1) and
+records nothing, because there is no ledger to record in. If the record
+can't be written, the failure says so; after a successful push that is
+`internal-error` with the message `backup pushed, but recording it failed:`
+and the cause.
 
 ### Issue tracker
 
@@ -979,4 +1034,4 @@ returns `source-digest-mismatch` with nullable `expected_digest` and
 `observed_digest`; an unobservable worktree returns `repository-unavailable`
 with a typed reason and detail. Both refuse without appending an Event.
 
-*Last updated: 2026-10-11 (Phase 24 DEC-290 `resume` Issue revision and next states)*
+*Last updated: 2026-11-07 (RESET 1.2b: `fid backup`)*

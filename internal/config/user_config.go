@@ -14,18 +14,45 @@ type UserConfig struct {
 }
 
 func UserConfigPath() (string, error) {
-	directory := os.Getenv("XDG_CONFIG_HOME")
-	if directory == "" {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return "", fmt.Errorf("locate user config: %w", err)
-		}
-		directory = filepath.Join(home, ".config")
-	}
-	if !filepath.IsAbs(directory) {
-		return "", fmt.Errorf("locate user config: config directory must be absolute")
+	return UserConfigPathFrom(os.Getenv)
+}
+
+// UserConfigPathFrom is UserConfigPath with getenv in place of the process
+// environment.
+func UserConfigPathFrom(getenv func(string) string) (string, error) {
+	directory, err := userDirectory(getenv, "XDG_CONFIG_HOME", ".config")
+	if err != nil {
+		return "", fmt.Errorf("locate user config: %w", err)
 	}
 	return filepath.Join(directory, "fid", ConfigFileName), nil
+}
+
+// UserCacheDirFrom returns fid's user cache directory, $XDG_CACHE_HOME/fid
+// (~/.cache/fid by default), looking variables up with getenv.
+func UserCacheDirFrom(getenv func(string) string) (string, error) {
+	directory, err := userDirectory(getenv, "XDG_CACHE_HOME", ".cache")
+	if err != nil {
+		return "", fmt.Errorf("locate user cache: %w", err)
+	}
+	return filepath.Join(directory, "fid"), nil
+}
+
+// userDirectory returns the XDG base directory named by variable, or
+// $HOME/fallback when it is unset or empty. It must be absolute.
+func userDirectory(getenv func(string) string, variable, fallback string) (string, error) {
+	directory := getenv(variable)
+	if directory == "" {
+		variable = "HOME"
+		home := getenv(variable)
+		if home == "" {
+			return "", fmt.Errorf("$HOME is not defined")
+		}
+		directory = filepath.Join(home, fallback)
+	}
+	if !filepath.IsAbs(directory) {
+		return "", fmt.Errorf("$%s must be an absolute path", variable)
+	}
+	return directory, nil
 }
 
 func ReadUserConfig(path string) (UserConfig, error) {

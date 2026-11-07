@@ -38,6 +38,23 @@ func runIntegrationSuite(m interface{ Run() int }) int {
 		fmt.Fprintf(os.Stderr, "isolate user config: %v\n", err)
 		return 1
 	}
+	// fid backup keeps its clone in the user cache, so no test may use ~/.cache.
+	// Go's build cache defaults to a directory there, so pin it first: tests
+	// that run go build keep the shared cache.
+	if err := pinGoBuildCache(); err != nil {
+		fmt.Fprintf(os.Stderr, "keep the Go build cache: %v\n", err)
+		return 1
+	}
+	cacheHome, err := os.MkdirTemp("", "fid-integration-cache-")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "create isolated user cache: %v\n", err)
+		return 1
+	}
+	defer func() { _ = os.RemoveAll(cacheHome) }()
+	if err := os.Setenv("XDG_CACHE_HOME", cacheHome); err != nil {
+		fmt.Fprintf(os.Stderr, "isolate user cache: %v\n", err)
+		return 1
+	}
 	if binary := os.Getenv(integrationBinaryEnv); binary != "" {
 		if info, err := os.Stat(binary); err == nil && !info.IsDir() {
 			integrationBinary = binary
@@ -113,4 +130,17 @@ func integrationFIDBinary(t *testing.T) string {
 		t.Fatalf("stat integration binary: %v", err)
 	}
 	return integrationBinary
+}
+
+// pinGoBuildCache sets GOCACHE to Go's default under the real user cache,
+// unless it is already set, before the suite isolates XDG_CACHE_HOME.
+func pinGoBuildCache() error {
+	if os.Getenv("GOCACHE") != "" {
+		return nil
+	}
+	userCache, err := os.UserCacheDir()
+	if err != nil {
+		return err
+	}
+	return os.Setenv("GOCACHE", filepath.Join(userCache, "go-build"))
 }
