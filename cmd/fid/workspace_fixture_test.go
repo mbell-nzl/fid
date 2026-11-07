@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -85,6 +86,23 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 		fmt.Fprintf(os.Stderr, "isolate user config: %v\n", err)
 		return 1
 	}
+	// fid backup keeps its clone in the user cache, so no test may use ~/.cache.
+	// Go's build cache defaults to a directory there, so pin it first: tests
+	// that run go build keep the shared cache.
+	if err := pinGoBuildCache(); err != nil {
+		fmt.Fprintf(os.Stderr, "keep the Go build cache: %v\n", err)
+		return 1
+	}
+	cacheHome, err := os.MkdirTemp("", "fid-test-cache-")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "create isolated user cache: %v\n", err)
+		return 1
+	}
+	defer func() { _ = os.RemoveAll(cacheHome) }()
+	if err := os.Setenv("XDG_CACHE_HOME", cacheHome); err != nil {
+		fmt.Fprintf(os.Stderr, "isolate user cache: %v\n", err)
+		return 1
+	}
 
 	templateRoot, err := os.MkdirTemp("", "fid-pristine-workspace-")
 	if err != nil {
@@ -122,6 +140,20 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 		}
 	}
 	return exitCode
+}
+
+// The suite isolates XDG_CACHE_HOME, and Go's build cache defaults to a
+// directory in it. Tests that run go build must keep the shared cache, or each
+// run rebuilds everything into the temp directory.
+func TestCommandTestsKeepTheSharedGoBuildCache(t *testing.T) {
+	t.Parallel()
+	output, err := exec.Command("go", "env", "GOCACHE").Output()
+	if err != nil {
+		t.Fatalf("go env GOCACHE: %v", err)
+	}
+	if cache := strings.TrimSpace(string(output)); strings.HasPrefix(cache, os.Getenv("XDG_CACHE_HOME")+string(filepath.Separator)) {
+		t.Fatalf("GOCACHE = %s, inside the isolated user cache %s", cache, os.Getenv("XDG_CACHE_HOME"))
+	}
 }
 
 // commandTestHelperChild reports whether this process is a helper started by
@@ -579,4 +611,17 @@ func readWorkspaceFixtureFile(t *testing.T, path string) []byte {
 		t.Fatalf("read fixture file %q: %v", path, err)
 	}
 	return contents
+}
+
+// pinGoBuildCache sets GOCACHE to Go's default under the real user cache,
+// unless it is already set, before the suite isolates XDG_CACHE_HOME.
+func pinGoBuildCache() error {
+	if os.Getenv("GOCACHE") != "" {
+		return nil
+	}
+	userCache, err := os.UserCacheDir()
+	if err != nil {
+		return err
+	}
+	return os.Setenv("GOCACHE", filepath.Join(userCache, "go-build"))
 }

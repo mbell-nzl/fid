@@ -272,6 +272,33 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     `[backup] target = "<git URL or local path>"`.
     Stdin and stdout must both be terminals to ask; `--json` and an already
     configured target suppress the prompt. An empty answer skips setup.
+  - **Builder's choice, PR #46 (1.2b):** fid's clone is a bare repository
+    at `$XDG_CACHE_HOME/fid/backup/<key>/repo.git`, `<key>` being the first
+    32 hex digits of the target's SHA-256, with a `flock` beside it that
+    serializes backups through it (2-minute wait). Each project's folder on
+    the target's `main` holds `export.zip`, the existing export archive,
+    validated before the push, and `backup.json`, a manifest of its digest
+    and counts for 1.2c. fid commits as `fid backup <backup@fid.invalid>`,
+    unsigned, without hooks or the user's identity.
+  - **Builder's choice, PR #46 (1.2b):** when nothing changed, fid makes
+    no commit and records a successful attempt with outcome `unchanged`.
+  - **Builder's choice, PR #46 (1.2b):** the record of each attempt is
+    `<ledger>/backups.jsonl`, one JSON line per attempt that found the
+    ledger (`pushed`, `unchanged` or `failed`, with a failure kind). It sits
+    in the ledger directory beside the journal and isn't part of it: no
+    Event, no journal or projection change. It travels with the ledger, and
+    clearing the cache doesn't lose it. `.fid.toml`'s ID must match the
+    ledger's, so a copied identity can't overwrite another project's folder.
+  - **Builder's choice, PR #46 (1.2b):** failures reuse existing codes:
+    `invalid-argument` for no target, malformed user config and a missing
+    or mismatched `.fid.toml`; `lock-unavailable`; `repository-unavailable`
+    with `not-a-repository` for an unreachable target; `internal-error` for
+    a failed export. Git runs with `GIT_TERMINAL_PROMPT=0`, so unattended
+    backups fail rather than wait for a password.
+  - **Awaiting Mark, PR #46 (1.2b):** a rejected push (a server hook, or
+    another commit reaching the target first) is `repository-unavailable`
+    with a new reason, `push-rejected`, because no existing reason fits a
+    remote that refuses an update. Mark decides whether to keep it.
   - Left-over handling extends D6 below: deferred minor review findings
     become discovered issues in 2.1; a later PR "Left over" section is
     derived from `discovered_from` links. Task 1.8 brings this record's

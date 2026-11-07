@@ -17,7 +17,7 @@
     "activation", "activation abort", "activation commit", "activation component", "activation finalize",
     "activation prepare", "activation recover", "activation recover-complete", "activation resource",
     "activation status", "activity", "activity list", "artifact", "artifact verify", "attention",
-    "attention list", "attention resolve", "capabilities", "claim", "claim acquire", "claim expire",
+    "attention list", "attention resolve", "backup", "capabilities", "claim", "claim acquire", "claim expire",
     "claim list", "claim release", "claim renew", "completion", "completion bash", "completion fish",
     "completion powershell", "completion zsh", "concern", "concern dispose", "concern get", "concern list",
     "concern record", "decision", "decision list", "decision record-reference", "deviation",
