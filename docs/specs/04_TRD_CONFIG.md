@@ -207,8 +207,10 @@ appends first. Otherwise, including when the folder has no `backup.json` or
 one that names no genesis Event, the backup refuses with
 `repository-unavailable` / `different-ledger`, records the attempt and
 pushes nothing, because the folder may be another ledger's only copy. fid
-checks after reading the target's tip and before exporting; a folder that
-changes after that check rejects the push. To clear the refusal, keep one
+checks after reading the target's tip and before exporting. It never forces
+the push, so if another backup changes the target after the check, git
+rejects the push, which is recorded as `push-rejected`, and the next backup
+checks the new tip. To clear the refusal, keep one
 ledger for the project: restore this project from the folder (task 1.2c)
 instead of using this ledger, or, if the folder's backup is no longer
 needed, remove the folder from the backup repository's `main` by hand, and

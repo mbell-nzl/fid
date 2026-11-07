@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
@@ -210,5 +211,66 @@ func assertDifferentLedgerRecords(t *testing.T, workspace, id string, count int)
 			record.ProjectID == nil || *record.ProjectID != id || record.Commit != nil || record.ArchiveDigest != nil {
 			t.Fatalf("record = %+v, want a different-ledger failure for %s", record, id)
 		}
+	}
+}
+
+// fid checks the folder against the target's tip as it read it, so another
+// ledger's backup can land between that check and the push. fid never forces
+// the push, so git must then reject it rather than replace that backup. A
+// remote helper stands in for the target's transport and publishes the
+// other ledger's backup, made earlier on another machine, as fid's push
+// connects.
+func TestBackupNeverReplacesAFolderPublishedAfterItsCheck(t *testing.T) {
+	t.Parallel()
+	fixture := newBackupFixture(t)
+	first, id := fixture.project()
+	second := fixture.projectClone(id)
+	other := newBackupFixture(t)
+	other.setTarget(other.target)
+	published, _ := decodeBackupSuccess(t, other.backup(second, "--json"))
+
+	bin, marker := filepath.Join(fixture.base, "bin"), filepath.Join(fixture.base, "published")
+	writeBackupTestFile(t, filepath.Join(bin, "git-remote-fidrace"), strings.Join([]string{
+		"#!/bin/sh",
+		"while read -r command; do",
+		"  case \"$command\" in",
+		"  capabilities) printf 'connect\\n\\n' ;;",
+		"  'connect git-receive-pack')",
+		"    if [ ! -e '" + marker + "' ]; then",
+		"      touch '" + marker + "'",
+		"      git --git-dir='" + other.target + "' push -q \"$2\" main:refs/heads/main >&2 || exit 1",
+		"    fi",
+		"    printf '\\n'; exec git receive-pack \"$2\" ;;",
+		"  'connect git-upload-pack') printf '\\n'; exec git upload-pack \"$2\" ;;",
+		"  *) exit 1 ;;",
+		"  esac",
+		"done",
+		"",
+	}, "\n"))
+	if err := os.Chmod(filepath.Join(bin, "git-remote-fidrace"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	fixture.setTarget("fidrace::" + fixture.target)
+	environ := append(append([]string{}, fixture.env...), "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	failure := decodeBackupFailure(t, runBackupWith(environ, first, time.Minute, "--json"), 4)
+	if failure.Code != "repository-unavailable" || failure.Details["reason"] != "push-rejected" {
+		t.Fatalf("failure = %+v, want the push rejected", failure)
+	}
+	if _, err := os.Lstat(marker); err != nil {
+		t.Fatalf("the other ledger's backup was never published: %v", err)
+	}
+	if main := fixture.targetMain(); main != *published.Commit {
+		t.Fatalf("target main = %s, want the other ledger's %s kept", main, *published.Commit)
+	}
+	if got := backupOutcomes(backupRecords(t, first)); strings.Join(got, ",") != "failed" || backupRecords(t, first)[0].Failure.Kind != "push-rejected" {
+		t.Fatalf("records = %v, want the rejected push", got)
+	}
+
+	// The next backup sees the other ledger's folder, and refuses it.
+	failure = decodeBackupFailure(t, runBackupWith(environ, first, time.Minute, "--json"), 4)
+	if failure.Details["reason"] != "different-ledger" || fixture.targetMain() != *published.Commit ||
+		targetFolderManifest(fixture, id).GenesisEventHash != ledgerGenesisHash(t, second) {
+		t.Fatalf("retry = %+v, want different-ledger with the other ledger's folder kept", failure)
 	}
 }
