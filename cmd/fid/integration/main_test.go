@@ -28,6 +28,16 @@ func runIntegrationSuite(m interface{ Run() int }) int {
 		fmt.Fprintf(os.Stderr, "guard git discovery: %v\n", err)
 		return 1
 	}
+	configHome, err := os.MkdirTemp("", "fid-integration-config-")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "create isolated user config: %v\n", err)
+		return 1
+	}
+	defer func() { _ = os.RemoveAll(configHome) }()
+	if err := os.Setenv("XDG_CONFIG_HOME", configHome); err != nil {
+		fmt.Fprintf(os.Stderr, "isolate user config: %v\n", err)
+		return 1
+	}
 	if binary := os.Getenv(integrationBinaryEnv); binary != "" {
 		if info, err := os.Stat(binary); err == nil && !info.IsDir() {
 			integrationBinary = binary

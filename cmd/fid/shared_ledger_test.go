@@ -34,8 +34,20 @@ func TestTwoWorktreesShareOneLedger(t *testing.T) {
 		if got := config.LedgerDir(gittest.ResolvedPath(t, root)); got != ledger {
 			t.Fatalf("LedgerDir(%q) = %q, want the shared ledger %q", root, got, ledger)
 		}
-		if entries, err := os.ReadDir(root); err != nil || len(entries) != 1 || entries[0].Name() != ".git" {
-			t.Fatalf("worktree %q holds %v (%v), want only .git", root, entries, err)
+		entries, err := os.ReadDir(root)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var names []string
+		for _, entry := range entries {
+			names = append(names, entry.Name())
+		}
+		want := ".git"
+		if root == linked {
+			want = ".fid.toml,.git"
+		}
+		if got := strings.Join(names, ","); got != want {
+			t.Fatalf("worktree %q holds %q, want %q", root, got, want)
 		}
 	}
 	again := executeCommandForTest(mainWorktree, "--json", "init", "--prefix", "FID")

@@ -111,6 +111,9 @@ func initializeWorkspaceWithHooks(options InitOptions, hooks initHooks) (InitRes
 	if err := runInitHook(hooks, initStageActivated); err != nil {
 		return InitResult{}, err
 	}
+	if err := config.EnsureProjectIdentity(plan.workspaceRoot, plan.projectConfig.ProjectID); err != nil {
+		return InitResult{}, err
+	}
 	if err := activateStagedWorkspace(stagePaths.WorkspaceDir, plan.targetPaths.WorkspaceDir); err != nil {
 		return InitResult{}, err
 	}
@@ -153,6 +156,13 @@ func prepareInitialization(options InitOptions) (initPlan, error) {
 	projectConfig, err := config.NewDefaultProjectConfig(prefix)
 	if err != nil {
 		return initPlan{}, err
+	}
+	id, err := config.ReadProjectIdentity(workspaceRoot)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return initPlan{}, err
+	}
+	if err == nil {
+		projectConfig.ProjectID = id
 	}
 	return initPlan{workspaceRoot, targetPaths, projectConfig, prefix, explicit, options.MigrationsDir}, nil
 }

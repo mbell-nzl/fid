@@ -25,8 +25,10 @@ fid [--project <path>] [--json] <command> ...
   `init` included, refuses with `repository-unavailable` (precondition, exit
   4; details `reason: not-a-repository` and `detail`). In a repository with no
   ledger, the failure is `project-not-found` (exit 3).
-- fid never writes outside `$(git rev-parse --git-common-dir)/fid`, nor where
-  git could track it. Every command that opens or creates a project, `init`
+- fid keeps ledger writes inside `$(git rev-parse --git-common-dir)/fid`,
+  where git cannot track them. Init also writes the committed `.fid.toml`
+  and, when configured interactively, user config (below). Every command
+  that opens or creates a project, `init`
   and `export import` included, refuses with `repository-unavailable`
   (precondition, exit 4; details `reason: unsafe-path` and a `detail` naming
   the locations involved) before it writes anything, where:
@@ -145,6 +147,39 @@ fid journal inspect <event-id>
 journal/projection divergence, invalid references/sequences, stale Claims,
 abandoned Attempts, registration conflicts, Artifact state, and activation
 disagreement.
+
+`fid init [--prefix <prefix>]` creates the ledger and a committed project
+identity file at `<root>/.fid.toml`. It uses an existing valid identity
+without rewriting the file; invalid or unreadable identity files are a clear
+refusal, and an existing ledger remains `project-already-initialized`.
+The project ID is `project-` plus 32 lowercase hex digits (128 random bits),
+shared with the new ledger's config and genesis event. fid never stages or
+commits the identity file. Text success output is:
+
+```text
+initialized fid project in <absolute-ledger-path>/
+project ID: project-<32 lowercase hex digits>
+commit <absolute-root>/.fid.toml to keep this identity in clones
+```
+
+The `project.init` JSON result is
+`{project:{id,issue_prefix,root},journal_path,project_config_path}`.
+`project_config_path` names `.fid.toml` by absolute path; the existing
+`project.id` field names its ID. The response keeps its `project.initialized`
+event metadata.
+
+After creating the ledger, init asks
+`Backup repository (git URL or local path; empty to skip): ` only when
+stdin and stdout are both terminals, `--json` is off, and no backup target
+is set. It stores a non-empty answer in `[backup] target` in
+`$XDG_CONFIG_HOME/fid/config.toml` (default `~/.config/fid/config.toml`) and
+prints the saved config path. Empty answers skip setup; runs that do not
+prompt consume no stdin. JSON output stays a single response envelope.
+User config is checked before ledger creation when prompting is eligible;
+if reading the answer or saving it fails afterward, the error explicitly
+says the ledger was initialized and backup-target setup failed.
+See `04_TRD_CONFIG.md` section 2 for file formats. Backup, restore and
+missing-target status warnings belong to tasks 1.2b, 1.2c and 1.3.
 
 ### Issue tracker
 

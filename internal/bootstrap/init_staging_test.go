@@ -6,13 +6,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 // Init stages the ledger beside its target, in the git common directory, so
-// the rename into place stays on one filesystem, and writes nothing in any
-// worktree. The test looks while the staged ledger exists, from a main
-// worktree and from a linked one.
+// the rename into place stays on one filesystem. The test looks while the
+// staged ledger exists, before init publishes .fid.toml, from a main worktree
+// and from a linked one.
 func TestInitStagesTheLedgerInTheGitCommonDirectory(t *testing.T) {
 	t.Parallel()
 	for _, fromLinked := range []bool{false, true} {
@@ -55,7 +56,18 @@ func TestInitStagesTheLedgerInTheGitCommonDirectory(t *testing.T) {
 			}
 		}
 		for _, worktree := range worktrees {
-			assertOnlyGitIn(t, worktree)
+			if worktree != start {
+				assertOnlyGitIn(t, worktree)
+				continue
+			}
+			id, err := config.ReadProjectIdentity(worktree)
+			if err != nil || id == "" {
+				t.Fatalf("initialized worktree identity = %q, %v", id, err)
+			}
+			entries, err := os.ReadDir(worktree)
+			if err != nil || len(entries) != 2 {
+				t.Fatalf("initialized worktree entries = %v, %v, want .git and .fid.toml", entries, err)
+			}
 		}
 	}
 }

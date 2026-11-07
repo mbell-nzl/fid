@@ -32,6 +32,8 @@ func p24NewTakeControlStart(t *testing.T, binary, root string) p24TakeControlSta
 	p22Git(t, workspace, "add", "decision.md")
 	p22Git(t, workspace, "commit", "-qm", "take-control start")
 	initialized := p21Run(t, binary, workspace, "--json", "init", "--prefix", "P24")
+	p22Git(t, workspace, "add", ".fid.toml")
+	p22Git(t, workspace, "commit", "-qm", "project identity")
 	issue := p21Run(t, binary, workspace, "--json", "issue", "create", "--kind", "task", "--title", "Human takes control", "--actor", "agent:builder", "--idempotency-key", "start-issue")
 	issueID := p21PathString(t, issue, "result", "issue", "id")
 	actions := []string{"claim.acquire", "claim.release", "concern.record", "decision.record-reference", "deviation.record", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.start"}

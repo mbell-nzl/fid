@@ -427,6 +427,8 @@ func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, ac
 	p22Git(t, workspace, "add", "base.txt", ".gitignore", "project-docs/p22-corpus.md")
 	p22Git(t, workspace, "commit", "-qm", "base")
 	init := p21Run(t, binary, workspace, "--project", workspace, "--json", "init", "--prefix", "P22")
+	p22Git(t, workspace, "add", ".fid.toml")
+	p22Git(t, workspace, "commit", "-qm", "project identity")
 	projectID := p21PathString(t, init, "result", "project", "id")
 	issue := p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Phase 22 conformance", "--actor", "agent:developer", "--idempotency-key", "p22-corpus-issue")
 	issueID := p21PathString(t, issue, "result", "issue", "id")
