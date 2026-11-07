@@ -38,7 +38,9 @@ list. Read RESET.md before starting work.
 7. **Review.** A fresh session on the other model reviews the PR (Codex
    reviews Claude's work, Claude reviews Codex's), covering code and test
    adequacy in one pass. Findings go in a PR comment. Fix each one, or answer
-   it with a reason.
+   it with a reason. When usage limits would otherwise stop progress, Mark may
+   waive "the other model" for one PR: a fresh session of the same model
+   reviews, and the review comment says so.
 8. **Mark merges.** Agents never merge, push to `main` or force-push.
 
 If you have to stop early, push the branch and open a draft PR that says

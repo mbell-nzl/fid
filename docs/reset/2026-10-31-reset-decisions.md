@@ -247,11 +247,35 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     target is set.
   - Tests push to local bare repositories. Mark creates the real
     `fid-ledgers` repository before the manual restore drill.
-- **Proposed, not yet decided** (6 November 2026, for task 1.2): restore
-  needs no new command. A backup is an export, so restoring would be
-  cloning the backup repository and running `fid export import`, and the
-  restore test would do exactly that. This is Claude's reading; Mark hasn't
-  confirmed it. 1.2 doesn't build restore until he does.
+- **Details** (decided 7 November 2026, for task 1.2):
+  - Mark approved splitting 1.2 into three Assured tasks: 1.2a writes the
+    project ID to `.fid.toml` and asks for the user-level backup target only
+    in a terminal; 1.2b exports into fid's own backup clone, commits and
+    pushes, and records each backup's time and outcome; 1.2c builds
+    `fid restore` and proves V8 (back up, wipe, restore, compare).
+  - `fid restore` is a dedicated command with no arguments. It reads the
+    backup repo from user config and the project ID from `.fid.toml`,
+    fetches the backup into a temp directory, imports that project's
+    folder, and refuses if a ledger already exists. V8 exercises this
+    command. This supersedes the 6 November proposal to restore manually
+    through `fid export import`.
+  - fid keeps its own clone of the backup repository, for example under
+    `$XDG_CACHE_HOME/fid/`. It never commits in a human's checkout of the
+    backup repo. 1.2b picks and records the exact path.
+  - **Builder's choice, PR #45:** `.fid.toml` uses
+    `[project] id = "project-<32 lowercase hex digits>"`:
+    128 random bits, the ledger's existing generated format. A new ledger's
+    config and genesis event use that same ID; no journal format changes.
+    Init keeps an existing valid file byte for byte and tells the user to
+    commit it; fid never commits it itself.
+  - **Builder's choice, PR #45:** the user config setting is
+    `[backup] target = "<git URL or local path>"`.
+    Stdin and stdout must both be terminals to ask; `--json` and an already
+    configured target suppress the prompt. An empty answer skips setup.
+  - Left-over handling extends D6 below: deferred minor review findings
+    become discovered issues in 2.1; a later PR "Left over" section is
+    derived from `discovered_from` links. Task 1.8 brings this record's
+    later list into fid along with the remaining reset tasks.
 - **Details** (decided 7 November 2026, for task 1.1d4):
   - Discovery runs git twice, one value per run: `git rev-parse
     --show-toplevel` for the top level and `git rev-parse
@@ -382,6 +406,10 @@ for confirmation".
   public repo (decided 31 October 2026).
 - **One reviewer session per round** runs every required profile (code, test
   adequacy, security). Assured work adds a separate review on the other model.
+- **Same-model review by waiver** (decided 7 November 2026). The other model
+  reviews by default. When usage limits would otherwise stop progress, Mark
+  may waive that for one PR. The reviewer is then a fresh session of the same
+  model with clean context, and the review comment states the waiver and why.
 - **Each review round is also a PR comment** (decided 3 November 2026, for
   tasks 2.1 and 2.5). Mark reads reviews where he merges, next to the
   completion report. fid's record of the review is canonical, because `done`
@@ -418,6 +446,11 @@ for confirmation".
   own lane. Other agent-created work is not served until Mark accepts it:
   `fid next` skips it with a typed reason, and `fid status` shows a NEEDS YOU
   line. Tasks Mark creates with `fid new` are ready immediately.
+  When an author defers a minor review finding, it is filed as a discovered
+  issue under the same rule (task 2.1; added 7 November 2026). fid later
+  builds the PR's "Left over" section from `discovered_from` links, just as
+  it builds the review comment from its record; that rendering is on the
+  later list, not needed for the trial.
 - `fid next` order: resume interrupted (same worktree); rework; tasks that
   unblock approved work; unstarted tasks by epic order and priority. It skips
   claimed, blocked, waiting-for-Mark, untriaged and unapproved-epic tasks,
@@ -514,6 +547,20 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
+- Task 1.8 brings this later list into fid along with the remaining reset
+  tasks (decided 7 November 2026).
+- Build the PR's "Left over" section from `discovered_from` links, the same
+  way the review comment is built from fid's record; not needed for the trial.
+- From #42 (1.1d4): a worktree at `<common>/fid`
+  (`git worktree add .git/fid`) isn't caught; fid run from a git hook with a
+  relative `GIT_DIR` and `--project <subdir>` is refused as not-a-repository;
+  with git older than 2.31, the refusal doesn't mention the git version.
+- From #43 (1.1d5): older specs and test comments still call the ledger `.fid/`.
+- Mark's idea: a kit skill for backlog triage and grooming. An agent proposes
+  close, keep or merge for stale or obsolete issues, and Mark accepts in a
+  batch; fid supplies signals such as age and whether the paths an issue
+  names still exist. Trigger: after the trial, or when untriaged items turn
+  the NEEDS YOU line into noise.
 - Automatic autonomy dial: per-lane agreement counters, trip rules, and the
   remaining slop sensors.
 - Kit install three-way merge (`git merge-file`) and `--check`, once a local

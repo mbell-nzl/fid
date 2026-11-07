@@ -231,7 +231,7 @@ func fixtureRepository(t *testing.T, workspace, projectID string) workflow.Repos
 	if err := os.WriteFile(filepath.Join(workspace, "fixture-work.txt"), []byte("original work\n"), 0o600); err != nil {
 		t.Fatalf("write fixture recovery work: %v", err)
 	}
-	fixtureGit(t, workspace, "add", ".gitignore", "project-docs/gates/fixture.json", "fixture-work.txt")
+	fixtureGit(t, workspace, "add", ".gitignore", config.ProjectIdentityFileName, "project-docs/gates/fixture.json", "fixture-work.txt")
 	fixtureGit(t, workspace, "commit", "-qm", "fixture source")
 	observed, err := fidproject.ObserveRepository(workspace)
 	if err != nil {

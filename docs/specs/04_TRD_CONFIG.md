@@ -57,7 +57,65 @@ migration, export, and artifact files use unique names inside the owning
 directory, are fsynced before atomic replacement where applicable, and are
 never treated as durable success state.
 
-## 2. `config.toml`
+## 2. Configuration files
+
+### 2.1. Committed project identity: `.fid.toml`
+
+At the repository root, separate from the ledger:
+
+```toml
+[project]
+id = "project-0123456789abcdef0123456789abcdef"
+```
+
+`fid init` generates `project-` plus 32 lowercase hexadecimal digits from
+128 cryptographically random bits, never from a path or hostname. This ID
+keys the project's backup folder and is also used in the new ledger's
+`config.toml` and `project.initialized` event. A clone with an existing valid
+`.fid.toml` keeps that ID and the file's exact bytes. Invalid, unreadable or
+non-regular identity files are refused before ledger creation, never
+overwritten. A project that already has a ledger still refuses re-init;
+there is no automatic migration or rewriting of its identity.
+
+Init publishes a complete identity file without overwriting an existing
+one, after staging and checking the ledger and before activating it. A
+failure after publication can leave the ID file for the next init to reuse.
+The user commits `.fid.toml`; fid does not stage or commit it. Restoring a
+fresh clone relies on this committed identity. The file holds only the ID
+until task 2.2 adds policy from `origin/<default branch>`; the working-tree
+identity is not policy authority.
+
+### 2.2. User config: backup target
+
+`$XDG_CONFIG_HOME/fid/config.toml`, default `~/.config/fid/config.toml`:
+
+```toml
+[backup]
+target = "git@example.com:mark/fid-ledgers.git"
+```
+
+The target accepts any git remote URL or local path, stored verbatim without
+expansion, existence checks or network access. C0 controls and DEL are escaped
+in TOML so the target round-trips without raw forbidden characters.
+Missing or empty targets are
+unconfigured. `fid init` asks only if stdin and stdout are both terminals,
+`--json` is off, and no target is configured. An empty answer (including
+whitespace only) skips setup. Non-interactive and JSON runs do not open user
+config. Existing configured files are left untouched. New config directories
+are private (`0700`); a saved config is atomically replaced with mode `0600`.
+Malformed or unreadable config is refused when init needs to read it, using
+`invalid-argument` / `invalid-input`, exit 2 (CLI spec section 3). Init prints
+the ID and commit instruction before asking, so a target-save failure cannot
+hide them; it reports that the ledger exists and target setup failed.
+Task 1.3 adds status warnings until a target is set; 1.2a performs no backup,
+push or restore.
+
+These two small files use a strict single-setting TOML subset: the named
+table and key, single-line basic (double-quoted, with TOML escapes) or literal
+(single-quoted) strings, blank lines and comments. Duplicate or unknown
+tables/keys and unquoted values are refused.
+
+### 2.3. Ledger-local `config.toml`
 
 fid-local configuration is intentionally small:
 
@@ -115,7 +173,7 @@ Rules:
 
 ## 3. Cross-Product Configuration
 
-Phase 22 adopts an explicit interpretation of the section 2
+Phase 22 adopts an explicit interpretation of the section 2.3
 rejection rule (CF-035, DEC-182): any operation that consumes project config
 validates the whole closed file before using a value or writing state.
 Config-independent help, archive validation, and diagnostics remain available.
@@ -188,5 +246,4 @@ entries whose source is `literal`, approved `inherit`, or `credential` name.
 The ambient environment is not inherited wholesale. Credential values exist
 only in process memory long enough to execute and redact output.
 
-*Last updated: 2026-11-05 (RESET 1.1d3: the ledger moves to the git common
-directory)*
+*Last updated: 2026-11-07 (RESET 1.2a: committed identity and user backup target)*

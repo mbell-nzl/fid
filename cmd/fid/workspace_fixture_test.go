@@ -72,7 +72,18 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 		return 1
 	}
 	if containsTestArgument(os.Args, "--live-golden-child") || commandTestHelperChild() {
+		// Children inherit the isolated config directory from their parent.
 		return m.Run()
+	}
+	configHome, err := os.MkdirTemp("", "fid-test-config-")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "create isolated user config: %v\n", err)
+		return 1
+	}
+	defer func() { _ = os.RemoveAll(configHome) }()
+	if err := os.Setenv("XDG_CONFIG_HOME", configHome); err != nil {
+		fmt.Fprintf(os.Stderr, "isolate user config: %v\n", err)
+		return 1
 	}
 
 	templateRoot, err := os.MkdirTemp("", "fid-pristine-workspace-")

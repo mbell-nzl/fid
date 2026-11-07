@@ -1211,7 +1211,8 @@ func initializeObservedRepositoryForTest(t *testing.T, workspace string) {
 	if err := os.WriteFile(filepath.Join(workspace, ".gitignore"), []byte("*.json\n"), 0o600); err != nil {
 		t.Fatalf("write observed repository ignore: %v", err)
 	}
-	for _, arguments := range [][]string{{"add", ".gitignore"}, {"commit", "-qm", "fixture"}} {
+	// A user commits the identity after init; keep observation fixtures clean.
+	for _, arguments := range [][]string{{"add", ".gitignore", config.ProjectIdentityFileName}, {"commit", "-qm", "fixture"}} {
 		if output, err := exec.Command("git", append([]string{"-C", workspace}, arguments...)...).CombinedOutput(); err != nil {
 			t.Fatalf("commit observed repository %v: %v (%s)", arguments, err, output)
 		}

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mattn/go-isatty"
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
@@ -22,6 +23,10 @@ func init() {
 }
 
 func newInitCommand() *cobra.Command {
+	return newInitCommandWithTerminalCheck(isatty.IsTerminal)
+}
+
+func newInitCommandWithTerminalCheck(isTerminal func(uintptr) bool) *cobra.Command {
 	var prefix string
 
 	cmd := &cobra.Command{
@@ -41,6 +46,10 @@ func newInitCommand() *cobra.Command {
 				return renderInitFailure(cmd, workspaceRoot, &initArgumentError{argument: "prefix", value: prefix, err: err})
 			}
 
+			backupConfigPath, err := initBackupConfigPath(cmd, isTerminal)
+			if err != nil {
+				return renderInitFailure(cmd, workspaceRoot, err)
+			}
 			result, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
 				WorkspaceRoot: workspaceRoot,
 				MigrationsDir: initMigrationsDir(),
@@ -49,8 +58,14 @@ func newInitCommand() *cobra.Command {
 			if err != nil {
 				return renderInitFailure(cmd, workspaceRoot, err)
 			}
+			if err := renderInitSuccess(cmd, workspaceRoot, result); err != nil {
+				return err
+			}
+			if err := promptInitBackupTarget(cmd, backupConfigPath); err != nil {
+				return renderInitBackupFailure(cmd, err)
+			}
 
-			return renderInitSuccess(cmd, workspaceRoot, result)
+			return nil
 		},
 	}
 
@@ -120,10 +135,12 @@ func renderInitSuccess(cmd *cobra.Command, workspaceRoot string, result bootstra
 				"issue_prefix": result.Prefix,
 				"root":         workspaceRoot,
 			},
-			"journal_path": result.JournalPath,
+			"journal_path":          result.JournalPath,
+			"project_identity_path": filepath.Join(workspaceRoot, config.ProjectIdentityFileName),
 		}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt.UTC().Format(time.RFC3339Nano)})
 	}
-	return writeInitLine(cmd.OutOrStdout(), "initialized fid project in %s/\n", filepath.ToSlash(config.LedgerDir(workspaceRoot)))
+	return writeInitLine(cmd.OutOrStdout(), "initialized fid project in %s/\nproject ID: %s\ncommit %s to keep this identity in clones\n",
+		filepath.ToSlash(config.LedgerDir(workspaceRoot)), result.ProjectID, filepath.Join(workspaceRoot, config.ProjectIdentityFileName))
 }
 
 func renderInitFailure(cmd *cobra.Command, workspaceRoot string, initErr error) error {
@@ -158,6 +175,14 @@ func initFailure(workspaceRoot string, initErr error) (cli.Failure, error) {
 			"argument": argumentErr.argument,
 			"value":    argumentErr.value,
 			"allowed":  []string{"valid project.init input"},
+		})
+	}
+	var configErr *config.InvalidConfigError
+	if errors.As(initErr, &configErr) {
+		return cli.NewFailure(cli.CodeInvalidArgument, cli.BoundedMessage(fmt.Sprintf("invalid initialization config: %v", configErr)), nil, map[string]any{
+			"argument": configErr.Path,
+			"value":    nil,
+			"allowed":  []string{"valid project.init configuration"},
 		})
 	}
 	return cli.NewFailure(cli.CodeInternalError, "project initialization failed", nil, map[string]any{})

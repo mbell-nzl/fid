@@ -37,7 +37,14 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 		t.Fatalf("Execute() error = %v", err)
 	}
 
-	if got, want := stdout.String(), "initialized fid project in "+filepath.ToSlash(config.LedgerDir(gittest.ResolvedPath(t, workspace)))+"/\n"; got != want {
+	identity, err := config.ReadProjectIdentity(workspace)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := gittest.ResolvedPath(t, workspace)
+	wantOutput := fmt.Sprintf("initialized fid project in %s/\nproject ID: %s\ncommit %s to keep this identity in clones\n",
+		filepath.ToSlash(config.LedgerDir(root)), identity, filepath.Join(root, config.ProjectIdentityFileName))
+	if got, want := stdout.String(), wantOutput; got != want {
 		t.Fatalf("stdout = %q, want %q", got, want)
 	}
 	if stderr.Len() != 0 {
@@ -45,6 +52,7 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	}
 
 	requiredPaths := []string{
+		filepath.Join(workspace, config.ProjectIdentityFileName),
 		filepath.Join(config.LedgerDir(workspace), "journal"),
 		filepath.Join(config.LedgerDir(workspace), "artifacts"),
 		filepath.Join(config.LedgerDir(workspace), "config.toml"),
@@ -127,7 +135,7 @@ func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 		t.Fatalf("stderr = %q, want empty", stderr.String())
 	}
 	assertEnvelopeKeySet(t, stdout.Bytes(), []string{"contract_version", "event", "ok", "operation", "result"})
-	assertNestedEnvelopeKeySet(t, stdout.Bytes(), "result", []string{"journal_path", "project"})
+	assertNestedEnvelopeKeySet(t, stdout.Bytes(), "result", []string{"journal_path", "project", "project_identity_path"})
 	assertNestedEnvelopeKeySet(t, stdout.Bytes(), "result.project", []string{"id", "issue_prefix", "root"})
 	assertNestedEnvelopeKeySet(t, stdout.Bytes(), "event", []string{"id", "occurred_at"})
 
@@ -474,7 +482,7 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
 
-	before := snapshotWorkspaceState(t, config.LedgerDir(workspace))
+	before := snapshotWorkspaceState(t, workspace)
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -495,7 +503,7 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 		t.Fatalf("stdout = %q, want empty", stdout.String())
 	}
 
-	after := snapshotWorkspaceState(t, config.LedgerDir(workspace))
+	after := snapshotWorkspaceState(t, workspace)
 	if !reflect.DeepEqual(after, before) {
 		t.Fatalf("workspace changed on re-init\nbefore=%v\nafter=%v", before, after)
 	}
@@ -646,7 +654,7 @@ abandoned_attempt_grace_seconds = %d
 
 // assertNoInitStagingResidue checks that init left nothing behind: no staging
 // directory beside the ledger in the git common directory, and nothing in the
-// fresh worktree but .git.
+// fresh worktree but .git and the project identity.
 func assertNoInitStagingResidue(t *testing.T, workspace string) {
 	t.Helper()
 	commonDir := filepath.Dir(config.LedgerDir(workspace))
@@ -664,8 +672,8 @@ func assertNoInitStagingResidue(t *testing.T, workspace string) {
 		t.Fatalf("ReadDir(%q) error = %v", workspace, err)
 	}
 	for _, entry := range entries {
-		if entry.Name() != ".git" {
-			t.Fatalf("init left %q in the worktree, want only .git", entry.Name())
+		if entry.Name() != ".git" && entry.Name() != config.ProjectIdentityFileName {
+			t.Fatalf("init left %q in the worktree, want only .git and .fid.toml", entry.Name())
 		}
 	}
 }
