@@ -26,16 +26,20 @@ var repositoryVariables = map[string]bool{
 	"GIT_SHALLOW_FILE": true, "GIT_COMMON_DIR": true, "GIT_QUARANTINE_PATH": true, "GIT_NAMESPACE": true,
 }
 
-// gitEnvironment is the process environment less repository variables,
-// with fid's commit identity and no terminal prompts: a backup run by the
-// loop or cron fails rather than waiting for a password. Credential helpers,
-// SSH and URL rewriting from the user's git config still apply. fid's values
-// come last, and os/exec uses the last of duplicate keys, so they win over
-// inherited ones.
+// gitEnvironment is the process environment less repository variables and
+// inherited commit details, with fid's commit identity and no terminal
+// prompts: a backup run by the loop or cron fails rather than waiting for a
+// password. Credential helpers, SSH and URL rewriting from the user's git
+// config still apply. Every inherited GIT_AUTHOR_ and GIT_COMMITTER_
+// variable goes, not just those fid sets: GIT_AUTHOR_DATE and
+// GIT_COMMITTER_DATE would otherwise date fid's commit, or stop it when they
+// aren't dates. fid's values come last, and os/exec uses the last of
+// duplicate keys, so they win over inherited ones.
 func gitEnvironment(environment []string) []string {
 	result := make([]string, 0, len(environment)+5)
 	for _, entry := range environment {
-		if name, _, _ := strings.Cut(entry, "="); !repositoryVariables[name] {
+		name, _, _ := strings.Cut(entry, "=")
+		if !repositoryVariables[name] && !strings.HasPrefix(name, "GIT_AUTHOR_") && !strings.HasPrefix(name, "GIT_COMMITTER_") {
 			result = append(result, entry)
 		}
 	}

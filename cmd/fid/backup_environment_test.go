@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -102,6 +103,10 @@ func TestBackupIgnoresInheritedGitRepositoryVariables(t *testing.T) {
 		{"commit identity", func(*backupFixture, string) []string {
 			return []string{"GIT_AUTHOR_NAME=intruder", "GIT_AUTHOR_EMAIL=intruder@example.test", "GIT_COMMITTER_NAME=intruder", "GIT_COMMITTER_EMAIL=intruder@example.test"}
 		}},
+		// A date left in the environment would date the backup's commit
+		// wrongly, or stop the backup when it isn't a date at all.
+		{"GIT_AUTHOR_DATE", func(*backupFixture, string) []string { return []string{"GIT_AUTHOR_DATE=@978307200 +0000"} }},
+		{"GIT_COMMITTER_DATE", func(*backupFixture, string) []string { return []string{"GIT_COMMITTER_DATE=@978307200 +0000"} }},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
@@ -109,6 +114,7 @@ func TestBackupIgnoresInheritedGitRepositoryVariables(t *testing.T) {
 			workspace, _ := fixture.project()
 			fixture.setTarget(fixture.target)
 			before := backupRepositoryState(fixture, workspace)
+			started := time.Now().Unix()
 
 			result := runBackupWith(append(append([]string{}, fixture.env...), test.env(fixture, workspace)...), workspace, time.Minute, "--json")
 			record, _ := decodeBackupSuccess(t, result)
@@ -124,6 +130,11 @@ func TestBackupIgnoresInheritedGitRepositoryVariables(t *testing.T) {
 			}
 			if got := fixture.targetGit("log", "-1", "--format=%an <%ae>|%cn <%ce>", "main"); got != "fid backup <backup@fid.invalid>|fid backup <backup@fid.invalid>" {
 				t.Fatalf("backup commit identity = %q", got)
+			}
+			for _, format := range []string{"%at", "%ct"} {
+				if dated, err := strconv.ParseInt(fixture.targetGit("log", "-1", "--format="+format, "main"), 10, 64); err != nil || dated < started {
+					t.Fatalf("backup commit %s = %d, want this run's time, from %d: %v", format, dated, started, err)
+				}
 			}
 			if after := backupRepositoryState(fixture, workspace); after != before {
 				t.Fatalf("backup changed the project's repository:\n%s\nthen\n%s", before, after)

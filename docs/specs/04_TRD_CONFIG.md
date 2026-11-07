@@ -232,7 +232,8 @@ waiting for a password. It overrides what could stop a backup or run code:
 hooks (`core.hooksPath=/dev/null`), commit signing (`--no-gpg-sign`),
 attribute filters on the archive (`--no-filters`), init templates
 (`--template=`), detached garbage collection, an inherited commit identity
-or `GIT_TERMINAL_PROMPT`, and inherited variables that name
+or date (every `GIT_AUTHOR_*` and `GIT_COMMITTER_*` variable) or
+`GIT_TERMINAL_PROMPT`, and inherited variables that name
 another repository (`GIT_DIR`, `GIT_INDEX_FILE` and the rest of `git
 rev-parse --local-env-vars`, plus `GIT_QUARANTINE_PATH` and
 `GIT_NAMESPACE`). A local-path target should be absolute: git resolves a
