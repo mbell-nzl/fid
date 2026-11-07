@@ -28,8 +28,9 @@ fid [--project <path>] [--json] <command> ...
 - fid keeps ledger writes inside `$(git rev-parse --git-common-dir)/fid`,
   where git cannot track them. Init also writes the committed `.fid.toml`
   and, when configured interactively, user config (below). `backup` also
-  writes fid's own clone in the user cache and pushes to the backup target
-  (`04_TRD_CONFIG.md` section 2.4). Every command
+  writes fid's own clone in the user cache and pushes to the backup target,
+  and `restore` fetches into a temporary repository that it deletes
+  afterwards (`04_TRD_CONFIG.md` section 2.4). Every command
   that opens or creates a project, `init`
   and `export import` included, refuses with `repository-unavailable`
   (precondition, exit 4; details `reason: unsafe-path` and a `detail` naming
@@ -140,6 +141,7 @@ and tests.
 ```text
 fid init
 fid backup
+fid restore
 fid capabilities
 fid rebuild
 fid maintenance check
@@ -192,8 +194,8 @@ commit instruction have already been printed. The error begins
 `ledger initialized, but backup target setup failed:` and reports the cause,
 with the existing `internal-error` code (exit 7). Other internal init
 failures keep the fixed message `project initialization failed`.
-See `04_TRD_CONFIG.md` section 2 for file formats. Restore and
-missing-target status warnings belong to tasks 1.2c and 1.3.
+See `04_TRD_CONFIG.md` section 2 for file formats. `fid restore` is
+below; missing-target status warnings belong to task 1.3.
 
 `fid backup` copies the ledger off the machine (decisions record D4 / F1). It
 takes no arguments. It exports the ledger in `export create`'s format,
@@ -246,6 +248,57 @@ records nothing, because there is no ledger to record in. If the record
 can't be written, the failure says so; after a successful push that is
 `internal-error` with the message `backup pushed, but recording it failed:`
 and the cause.
+
+`fid restore` rebuilds a lost ledger from its backup (decisions record
+D4 / F1). It takes no arguments. It reads the project ID from `.fid.toml` in
+the working tree and the target from `[backup] target` in user config,
+fetches only the tip of the target's `main`, checks the project's folder,
+and imports its archive as `export import` does, into the ledger every
+worktree of the repository shares, so it works from any worktree. It
+restores only into a repository with no ledger: it never replaces, merges
+or updates one, so a rerun once a ledger exists refuses. It takes no lock,
+appends no Event, never uses fid's backup clone, and writes no backup
+record: a restored ledger starts without one. `04_TRD_CONFIG.md` section 2.4
+has what it fetches and checks. Text success output is one line:
+
+```text
+restored <project-id>/ from commit <40 hex digits> into <absolute-ledger-path>/
+```
+
+The `project.restore` JSON result is
+`{restore:{project_id,commit,archive_digest,event_count,terminal_event_hash,genesis_event_hash},ledger_path}`:
+the commit restored from, the archive's `sha256:` digest, the restored
+journal's Event count, terminal Event hash and genesis Event hash, and the
+ledger's absolute path. `event` is null.
+
+Every failure exits non-zero with a typed failure, and a refused restore
+leaves no ledger where there was none:
+
+| Failure | Code / exit | Details |
+|---|---|---|
+| A ledger already exists, checked before config or the network; or one appeared while the restore fetched | `project-already-initialized` / 4 | subject the project root; `path`: the root |
+| `.fid.toml` missing or invalid | `invalid-argument` / 2 | `argument`: absolute `.fid.toml` path; `allowed`: `["[project] id naming the backup folder"]` |
+| No target set | `invalid-argument` / 2 | `argument`: user config path; `allowed`: `["[backup] target: a git URL or local path"]` |
+| Malformed or unreadable user config | `invalid-argument` / 2 | `argument`: user config path; `allowed`: `["valid project.restore configuration"]` |
+| Target unreachable, or not a repository | `repository-unavailable` / 4 | `reason: not-a-repository`; `detail`: git's message |
+| Target has no `main`, or its `main` has no folder for this project | `repository-unavailable` / 4 | `reason: no-backup`; `detail`: which is missing |
+| The project's folder is damaged | `archive-invalid` / 6 | subject export `<project-id>/export.zip`; `archive_path`: `<project-id>/export.zip`; `checks` |
+| Anything else, such as git missing | `internal-error` / 7 | `{}` |
+
+Other subjects are null, and `invalid-argument`'s `value` is null.
+`repository-unavailable` is retryable. The folder is damaged when its
+`backup.json` is missing, isn't a manifest, has a `schema` fid can't
+restore, or names another project (check `backup-manifest-invalid`); when
+its `export.zip` is missing (`archive-missing`) or its digest isn't
+`backup.json`'s `archive_digest` (`archive-digest-mismatch`); or when the
+archive fails `export validate`'s checks, which keep their own codes. fid's
+own three checks have a null `entry`. `archive-invalid` is an integrity
+failure and isn't retryable; `archive_path` names the folder's file, since
+the restore's copy is deleted. Task 1.2c adds the `repository-unavailable`
+reason `no-backup`, which Mark approved on 8 November 2026, and those three
+check codes; no other code or reason. Outside a repository and at an unsafe
+ledger location, `restore` refuses as every project command does
+(section 1).
 
 ### Issue tracker
 
@@ -1034,4 +1087,4 @@ returns `source-digest-mismatch` with nullable `expected_digest` and
 `observed_digest`; an unobservable worktree returns `repository-unavailable`
 with a typed reason and detail. Both refuse without appending an Event.
 
-*Last updated: 2026-11-07 (RESET 1.2b: `fid backup`)*
+*Last updated: 2026-11-08 (RESET 1.2c: `fid restore`)*

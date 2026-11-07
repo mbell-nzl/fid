@@ -92,9 +92,8 @@ func decodeRestoreSuccess(t *testing.T, result commandExecutionResult) (restored
 
 // v8IDs names what the V8 fixture's read commands take.
 type v8IDs struct {
-	issues             []string
-	envelope, receipt  string
-	issueCount, labels int
+	issues            []string
+	envelope, receipt string
 }
 
 // v8Ledger builds a ledger holding issues, a label, a link, and a gate run

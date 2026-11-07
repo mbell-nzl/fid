@@ -318,10 +318,111 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     following `push-rejected`, and is recorded as `different-ledger`. Mark
     chose it over a new conflict code that isn't retryable; the CLI spec
     notes that this reason persists until a person acts.
+  - **Decided by Mark, 8 November 2026 (for 1.2d): backup storage for the
+    long run.** Measured on a scratch ledger (1,000 issues, then 60 backups
+    of 5 issues each): `export.zip` is about 8% of the journal's size. Each
+    extra backup adds about 12 KiB to the packed backup repository, about
+    the same as committing the plain journal files (11 KiB). But fid's clone
+    in the cache never packs: fid uses plumbing commands that never trigger
+    git's automatic packing, and fetches only when another machine moved the
+    tip. So the clone keeps a whole archive per backup (10.4 MiB after 61
+    backups of a 0.2 MB archive). GitHub refuses files over 100 MB, which
+    `export.zip` reaches at roughly a 1.2 GB journal. Mark chose to store
+    the export's files unzipped in the folder: journal files of at most 64
+    MB, `manifest.json` and artifacts. No file then nears 100 MB, the backup
+    history is readable, and restore zips the files back up and imports them
+    through the existing path. 1.2d also packs fid's clone. No real backups
+    exist yet, so the format change needs no migration. Rejected: keeping
+    `export.zip` (the 100 MB ceiling), and storing the journal's daily files
+    (most new restore code, for a gain packing already gives).
   - Left-over handling extends D6 below: deferred minor review findings
     become discovered issues in 2.1; a later PR "Left over" section is
     derived from `discovered_from` links. Task 1.8 brings this record's
     later list into fid along with the remaining reset tasks.
+- **Details** (decided by Mark on 8 November 2026, for task 1.2c):
+  - V8's verifier, `check:restore`, is a named Go test in `cmd/fid`,
+    `TestV8BackupWipeRestoreYieldsIdenticalState`, which `make test` and CI
+    run; `make check-restore` runs only it, with `-count=1`.
+  - V8 is table-driven, with two wipes: a new machine (a fresh repository
+    holding only the committed `.fid.toml`, an empty cache, and the same
+    user config and target) and in place (`<git-common-dir>/fid` deleted,
+    everything else kept). The ledger holds issues, a label, a link and at
+    least one kept Artifact, and the target also holds another project's
+    folder, which restore leaves alone.
+  - V8 goes through `fid backup` and `fid restore` only, never reading the
+    target's folder, so it survives 1.2d's change to the folder's format.
+    "Identical state" means: `fid export create` on the original before the
+    wipe and on the restored ledger make byte-identical archives; the first
+    `fid backup` after the restore is `unchanged` at the same commit; the
+    journal's Events are byte-identical in order, compared as concatenated
+    content rather than file by file; the ledger's config, every Artifact
+    file and the read commands' JSON are identical; and `maintenance check`
+    passes. The event count and genesis Event are compared with the original
+    ledger's. The expected differences are asserted, not ignored: the
+    journal arrives as numbered pieces (`00000001.jsonl`, …), and the
+    restored ledger has `import.marker.json` and no `backups.jsonl`.
+    `fid.sqlite`'s bytes aren't compared.
+  - Failures add no codes or reasons beyond these. An existing ledger is
+    `project-already-initialized` (exit 4, subject the project, detail
+    `path`), checked first, before config or the network; an
+    `import-target-conflict` from import, a ledger that appeared
+    mid-restore, maps to the same code. A missing or invalid `.fid.toml`, no
+    target, and malformed or unreadable user config are `invalid-argument`
+    (exit 2). An unreachable target, or one that isn't a repository, is
+    `repository-unavailable` with `not-a-repository`. A target with no
+    `main`, or whose `main` has no folder for the project, is
+    `repository-unavailable` with a new reason, `no-backup`. A damaged
+    folder is the existing `archive-invalid` (exit 6, integrity, not
+    retryable), with subject and `archive_path` `<project-id>/export.zip`,
+    and new check codes as needed. Anything else is `internal-error` (exit
+    7). Restore writes no backup record. Outside a repository and at an
+    unsafe ledger location, it refuses as every project command does.
+  - Before importing, restore fails closed unless `backup.json`'s schema is
+    `fid.backup.v1`, its `project_id` is `.fid.toml`'s and the folder's, and
+    its `archive_digest` is `export.zip`'s `sha256:` digest. Event counts
+    and the genesis hash are asserted by tests, not checked at run time. The
+    idempotency key passed to import is `fid-restore:<backup commit>`. There
+    is no replay handling: a rerun with a ledger present refuses.
+  - Output is one text line, `restored <project-id>/ from commit <40 hex
+    digits> into <absolute-ledger-path>/`, or the JSON operation
+    `project.restore` with
+    `{restore:{project_id,commit,archive_digest,event_count,terminal_event_hash,genesis_event_hash},ledger_path}`
+    and a null `event`. `--project` and `--json` work as they do for `fid
+    backup`; there are no positional arguments and no other flags.
+  - Restore fetches into a private (0700) temporary bare repository that it
+    deletes afterwards, never fid's backup clone, and takes no lock. It
+    shallow-fetches `main` only (`--depth=1`), so its time doesn't grow with
+    the backup history, reads the folder's files with `cat-file`, writes the
+    archive to a private temporary file and imports that. Git runs through
+    the backup package's runner with the same sanitised environment, and
+    `--template=` on init. Restore reads `.fid.toml` from the working tree,
+    works from any worktree, and restores the ledger they share.
+  - Turning the fetched folder into the archive to import is one function,
+    chosen by `backup.json`'s `schema`; for `fid.backup.v1` it reads
+    `export.zip` and checks its digest, and an unknown schema is
+    `archive-invalid`. The checks that don't depend on the format,
+    `project_id` against `.fid.toml` and the folder name, stay outside it,
+    so 1.2d changes only that function.
+  - The journal's clock guard covers restored Events. It took the latest
+    date only from dated journal files, so just after a restore, when the
+    journal is all numbered pieces, an append dated before the last restored
+    Event went through. It now also covers the last Event of the last piece,
+    read from the piece's tail, so an append doesn't read a 64 MiB piece.
+    Order and Event IDs were already right and are unchanged.
+  - **Builder's choice, PR #48 (1.2c):** the new check codes are
+    `backup-manifest-invalid` (`backup.json` missing, not a manifest, of a
+    schema fid can't restore, or naming another project; a file where the
+    folder should be counts as a missing `backup.json`), `archive-missing`
+    and `archive-digest-mismatch`. Each has a null `entry`, since it names
+    no archive member; import's own validation failures keep their codes.
+  - **Builder's choice, PR #48 (1.2c):** restore is
+    `internal/backup/restore.go`, beside backup, sharing its git runner,
+    folder names and manifest type; `folderArchive` is the one format
+    function. The temporary directory is `$TMPDIR/fid-restore-*`, from the
+    environment fid runs with. `project-already-initialized`'s subject and
+    `path` are the project root, as for `fid init`. A ledger that another
+    restore of the same backup installed mid-restore, which import would
+    replay as a success, is refused like any other ledger that appeared.
 - **Details** (decided 7 November 2026, for task 1.1d4):
   - Discovery runs git twice, one value per run: `git rev-parse
     --show-toplevel` for the top level and `git rev-parse

@@ -182,7 +182,9 @@ func TestRestoreIgnoresInheritedGitRepositoryVariables(t *testing.T) {
 		name string
 		env  func(fixture *backupFixture, workspace string) []string
 	}{
-		{"GIT_DIR", func(_ *backupFixture, workspace string) []string { return []string{"GIT_DIR=" + filepath.Join(workspace, ".git")} }},
+		{"GIT_DIR", func(_ *backupFixture, workspace string) []string {
+			return []string{"GIT_DIR=" + filepath.Join(workspace, ".git")}
+		}},
 		{"GIT_OBJECT_DIRECTORY", func(fixture *backupFixture, _ string) []string {
 			return []string{"GIT_OBJECT_DIRECTORY=" + filepath.Join(fixture.base, "foreign-objects")}
 		}},
