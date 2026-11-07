@@ -324,6 +324,40 @@ records the merge commit against the task. It also reconciles PRs Mark merged
 in the GitHub UI. If GitHub can't be reached, the task shows "merged, waiting
 for confirmation".
 
+- **Details** (decided 7 November 2026, for task 0.7):
+  - Why: CI used about 1,650 billed minutes from 1 to 7 November, against
+    the 2,000 a month GitHub Free includes across Mark's private repos.
+    That's 40 runs at about 41 minutes each: six jobs per run, each rounded
+    up to a whole minute. The race detector was most of it. `cmd/fid` takes
+    320 s with `-race` and 86 s without, and the heavy `internal/` tests run
+    8–10× slower under race. Yet non-test product code starts goroutines in
+    one place, `internal/evidence/live.go`, and the race detector can't see
+    races between fid processes.
+  - **G:** CI runs the race detector only in packages whose non-test
+    product code starts goroutines (today `internal/evidence`), and runs
+    without it everywhere else. CI finds those packages by parsing the
+    source on every run, so a new goroutine can't escape race coverage. It
+    refuses a package that doesn't build in its mode, and tests that build
+    only in the other mode, because those would never run.
+  - **H:** a push to `main` may reuse a passed CI run when the merge
+    commit's tree is identical to the tree that run tested. Done (merged
+    into `main` with CI green on that commit) accepts that reuse. This
+    follows "checks bind to the tree". A pull request run that passes
+    records its tree; the run on `main` looks for that record and, if a
+    successful run left it, names that run instead of testing again. Without
+    one it runs everything.
+  - Also accepted: CI runs only on pull requests that are ready for review,
+    not on drafts; a new push cancels a pull request's superseded run (never
+    a run on `main`); shards are balanced by measured time, and there are
+    fewer of them.
+  - G applies to local checks too: `make test` and the integration command
+    in AGENTS.md, so local runs match CI.
+  - One test shard. Minutes are scarce and CI now runs about once per pull
+    request, so a couple of extra minutes of wall time don't matter. The
+    balancing by measured time stays, for when more shards are worth it.
+  - `make fmt-check` fails when gofmt lists a file, so CI's format check
+    blocks. Before, `gofmt -l` listed files and still exited 0.
+
 ## Work model
 
 **Merge authority: structured, earned autonomy** (amended).
@@ -498,21 +532,28 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 - Replay reports `line: 0` for a current-event prior conflict (found in
   1.1d2, #39). Fix it after the trial.
 - yoyu migration (after the trial).
-- CI test time (from 1.1c1, 4 November 2026). `ci_tests.py` assigns tests
-  to shards by their position in a sorted list of names, so adding one test
-  reshuffles every shard. Each shard runs its `cmd/fid` tests as one
-  `go test` process under race and coverage, taking up to about 10 minutes.
-  1.1c1 raised the limit to 20 minutes as a stopgap. Two things to do:
-  balance shards by measured time, and review whether every test earns its
-  run time. By CI elapsed time (inflated by parallel contention), the
-  biggest are the descriptor and judgment corpora at 400-540 s each, and
-  the grammar corpora at 150-250 s each. Fold in the tests that fail when
-  `TMPDIR` is behind a symlink: about 33 (12 in `internal/`, 11 in
-  `cmd/fid`, 10 in integration), which fail on `main` too. They compare
-  paths without resolving symlinks; P24 observation tests, for example,
-  hash an unresolved worktree path. Found in 1.1c2; no PR since added one.
-  Do this work when any shard's `cmd/fid` run passes 15 minutes, and
-  before the trial at the latest.
+- CI test time (from 1.1c1, 4 November 2026; partly done in 0.7). 0.7
+  dropped the race detector outside goroutine packages (G) and cut the
+  shards from four to one. Shards are still balanced by measured time from
+  `.github/scripts/durations.json`; `ci_tests.py durations` rewrites that
+  file from a run's shard logs. Two things remain. First, review whether
+  every test earns its run time. Measured without race on 2 CPUs,
+  `cmd/fid` is the long pole at 231 s, and four corpora take 309 s of its
+  523 s of test time: the grammar built-binary corpus 94 s, and the
+  descriptor variant, judgment validation and review-and-finding corpora
+  66–80 s each. Second, fix the tests that depend on their environment.
+  About 33 fail when `TMPDIR` is behind a symlink (12 in `internal/`, 11 in
+  `cmd/fid`, 10 in integration), on `main` too. They compare paths without
+  resolving symlinks; P24 observation tests, for example, hash an
+  unresolved worktree path. Found in 1.1c2; no PR since added one. And
+  `cmd/fid` tests fail when a run crosses UTC midnight (`journal files = 2,
+  want 1`, from `mustJournalPath` at `cmd/fid/init_test.go:710`): the
+  fixture creates the journal on one UTC date and the commands append to a
+  new one on the next. Found in 0.7's round-3 review; Mark accepted it for
+  0.7 on 7 November 2026. Fix it in test code (a fixed date in the
+  fixture), not product code, if it ever fails CI. Do the rest when a
+  shard's test step passes 10 minutes, and all of it before the trial at
+  the latest.
 - Stale ledger staging (from 1.1d3, 6 November 2026). A crash during
   `init` or `export import` can leave `<common>/fid-staging-*` behind.
   `git status` doesn't show it, and nothing removes it. Add cleanup once

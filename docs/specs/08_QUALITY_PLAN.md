@@ -1,7 +1,7 @@
 # QUALITY PLAN - fid
 
 **Status:** Binding repository quality gates and target product quality contract
-**Last updated:** 2026-08-09
+**Last updated:** 2026-11-07 (RESET 0.7: race only where goroutines start; one CI shard; reuse on `main`)
 **Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md)
 
 ## 1. Purpose
@@ -202,31 +202,57 @@ acceptance tests but are not machine compatibility surfaces.
 
 ## 7. Repository engineering gate
 
+> **Amended on 2026-11-07 by RESET task 0.7** (decisions G and H, in the
+> [decisions record](../reset/2026-10-31-reset-decisions.md), D7, details for
+> task 0.7). The race detector runs only in packages whose non-test code starts
+> goroutines, in CI and in `make test`; the integration suite runs without it.
+> CI runs one test shard, only on pull requests that are ready for review,
+> cancels superseded pull request runs, and reuses a passed run on `main` when
+> the merge commit's tree is identical. `make fmt-check` fails when gofmt lists
+> a file. AGENTS.md step 5 is the working method's gate.
+
 These commands remain the default implementation gate while fid is developed:
 
 ```bash
-gofmt -l cmd internal
-golangci-lint run ./...
-go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...
-go tool cover -func=coverage.out
-go test -tags integration -race -gcflags=modernc.org/...=-d=checkptr=0 ./cmd/fid/integration/...
+make fmt-check
+make lint
+make test
+go test -tags integration ./cmd/fid/integration/...
 go test -bench . -benchmem ./...
 go build -o /tmp/fid ./cmd/fid
 ```
 
-Under Phase22 DEC-221, PR CI executes the complete ordinary race-and-coverage
-suite once across four exhaustive test shards, rather than running both make
-test and make coverage. Each worker discovers runnable Tests, Examples and Fuzz
-seed targets through Go, and selection is disjoint and complete. The controller
-reconciles actual execution and package completion, then combines atomic coverage
-only when all four source/inventory-bound manifests and all statement blocks
-agree. A missing, failed, cancelled or inconsistent shard fails the retained
-required `quality` job. Format, lint, build and controller regressions remain
-required. Standalone make test/make coverage targets remain available unchanged.
-Package timeouts, product thresholds and assertions are unchanged. Setup reuse
-requires distinct writable copies; migration, rebuild and import tests still
-execute their actual operations. See `python3 .github/scripts/ci_tests.py
---help` for local usage.
+`make fmt-check` runs `gofmt -l cmd internal .github/scripts` and fails when it
+lists a file. `make lint` runs `golangci-lint` on `./...` and on
+`.github/scripts/race_packages.go`. `make test` runs `go test` with
+`-race -gcflags=modernc.org/...=-d=checkptr=0` in the packages whose non-test
+code starts goroutines (today `internal/evidence`) and without the race detector
+everywhere else. The integration tests have no such code and run fid as a binary
+built without race. `make coverage` remains available as a diagnostic and still
+runs the race detector everywhere.
+
+Under Phase22 DEC-221, as amended by RESET 0.7, PR CI executes the complete
+ordinary suite with coverage once, in one exhaustive test shard; the shard
+machinery supports more, balanced by measured test time. On every run,
+`.github/scripts/race_packages.go` lists packages with and without `-race` and
+finds by parsing the source those whose non-test code starts goroutines; those
+run under the race detector and the rest without it, all with atomic coverage.
+It refuses a package that doesn't build in its mode, and tests that build only
+in the other mode, because those would never run. Each shard discovers runnable
+Tests, Examples and Fuzz seed targets through Go, with the flags they run with,
+and selection is disjoint and complete. The controller reconciles actual
+execution and package completion, then combines atomic coverage only when every
+source/inventory-bound manifest, race set and statement block agrees. A missing,
+failed, cancelled or inconsistent shard fails the retained required `quality`
+job. Format, lint, build and controller regressions remain required.
+
+CI runs on pull requests that are ready for review, not on drafts, and a new
+push cancels a pull request's superseded run. A push to `main` reuses a passed
+pull request run whose merge commit had an identical tree, and `quality` names
+that run; without one, `main` runs everything. Package timeouts, product
+thresholds and assertions are unchanged. Setup reuse requires distinct writable
+copies; migration, rebuild and import tests still execute their actual
+operations. See `python3 .github/scripts/ci_tests.py --help` for local usage.
 
 Under Phase22 DEC-217, the full-size archive byte/count matrices are an explicit
 phase-end and archive-limiter-change gate, run locally on the qualification
