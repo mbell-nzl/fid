@@ -38,9 +38,12 @@ list. Read RESET.md before starting work.
 7. **Review.** A fresh session on the other model reviews the PR (Codex
    reviews Claude's work, Claude reviews Codex's), covering code and test
    adequacy in one pass. Findings go in a PR comment. Fix each one, or answer
-   it with a reason. When usage limits would otherwise stop progress, Mark may
-   waive "the other model" for one PR: a fresh session of the same model
-   reviews, and the review comment says so.
+   it with a reason. A fix round is a fresh session that picks up from the
+   PR, the review and the diff. It changes production code only as the
+   findings need; it may add tests for similar gaps, and anything else goes
+   in the PR as left over. When usage limits would otherwise stop progress,
+   Mark may waive "the other model" for one PR: a fresh session of the same
+   model reviews, and the review comment says so.
 8. **Mark merges.** Agents never merge, push to `main` or force-push.
 
 If you have to stop early, push the branch and open a draft PR that says
@@ -65,6 +68,9 @@ branch and PR; it's still one task and one PR.
 - passing a check would mean changing the check;
 - the work falls outside the task. Note discoveries in the PR; don't build
   them.
+
+Ask as early as you can: a question you can see coming goes to Mark before
+you build, not in the PR afterwards.
 
 ## Code
 

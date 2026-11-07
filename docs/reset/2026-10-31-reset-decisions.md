@@ -602,6 +602,25 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   relative `GIT_DIR` and `--project <subdir>` is refused as not-a-repository;
   with git older than 2.31, the refusal doesn't mention the git version.
 - From #43 (1.1d5): older specs and test comments still call the ledger `.fid/`.
+- From #46 (1.2b), `fid backup`:
+  - Copies of one ledger share a genesis Event, so the folder check doesn't
+    tell them apart. A ledger directory copied by hand, or a ledger restored
+    from an older backup while the original carries on, can still replace
+    each other's folder. An ancestry check would catch it: the folder's
+    terminal Event must be in this ledger's journal.
+  - Each changed backup adds a whole compressed `export.zip`, which git
+    can't delta well. Measure the backup repository after the trial, then
+    decide whether to store uncompressed members or prune history.
+  - git's network commands have no timeout, so a hung push holds fid's
+    clone. Later backups wait 2 minutes and record `lock-unavailable`; 1.3's
+    `fid status` should make a run of those visible.
+  - `fid export create` in a repository with no ledger reports
+    `internal-error` rather than `project-not-found`.
+- Review rounds, as data for refining the process after the reset: #41, #44
+  and #46 took 4, 4 and 5 Codex rounds. In #46, three of the four rounds
+  that asked for changes were about code the previous fix round had added
+  or removed. AGENTS.md step 7 now limits what a fix round changes (8
+  November 2026); see whether round counts drop.
 - Mark's idea: a kit skill for backlog triage and grooming. An agent proposes
   close, keep or merge for stale or obsolete issues, and Mark accepts in a
   batch; fid supplies signals such as age and whether the paths an issue
