@@ -477,6 +477,138 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
   - Both refusals have the message "the ledger location is unsafe".
   - The locations go in the free-text `detail`, not in new detail keys.
   - fid needs git 2.31 or later, for `--path-format=absolute`.
+- **Details** (decided 8 November 2026, for task 1.3):
+  - Mark approved splitting 1.3 in two. 1.3a builds the display package and
+    `fid status` with the backup-age line; 1.3b builds `fid show` and a
+    pager for long output.
+  - NEEDS YOU is where everything waiting on Mark appears: a list of
+    items, each with a kind, a summary and a next step. Each kind arrives
+    with its task. 1.3a has only the backup; approvals, epic plans awaiting
+    approval, untriaged work and tasks waiting for Mark come later.
+  - `fid status` shows epics and tasks, never subtasks. An epic whose own
+    state is completed or cancelled is hidden. An epic is in progress if
+    its own state's category is `started`, or any of its tasks is started
+    or completed; otherwise it's to do. Its progress is done over total:
+    its completed tasks over its tasks that aren't cancelled. IN PROGRESS
+    shows each in-progress epic with its bar and its started tasks, each
+    with its workflow state; started tasks with no epic follow. A started
+    task always appears, flat if its epic isn't listed.
+  - The second section is TO DO, not READY, until 1.4. It lists every
+    unstarted task under its epic, in-progress epics first, and names a
+    task's blockers that aren't completed or cancelled, but doesn't judge
+    readiness. 1.4 builds readiness, with `fid next`'s order and typed skip
+    reasons, and turns the section into READY. `fid ready`'s pick isn't
+    used, because it ignores dependencies. The text caps TO DO at 10 task
+    rows; epic lines don't count, and JSON is never capped.
+  - **Decided by Mark later on 8 November 2026:** `fid status --all`
+    removes the cap, and the capped text's last line says how to see the
+    rest: `+N more: fid status --all`. JSON is the same with or without it.
+    Mark chose `--all` and a git-style pager over a separate to-do command:
+    one flag rather than one more concept.
+  - **The pager (built in 1.3b, not 1.3a).** It pages only when stdout is a
+    terminal and the output is taller than the screen. It respects
+    `$PAGER`, and otherwise runs `less` with `LESS=FRX`: quit if the output
+    fits, keep colours, don't clear the screen. `--json` and piped output
+    never page. If `less` is missing, fid prints directly.
+  - The backup-age rules read the record, `<ledger>/backups.jsonl`, and user
+    config. Mark accepted them:
+    - a. The last backup is the latest line whose outcome is `pushed` or
+      `unchanged`, at its `finished_at`.
+    - b. Its age is now less the last backup. Over 24 hours is a warning;
+      over 72 hours is a NEEDS YOU item.
+    - c. A failed latest line, of any kind, is a warning however recent the
+      last good backup. It names the failure kind, and how many failed in a
+      row when that's more than one, so a run of `lock-unavailable` shows
+      (the #46 left-over below).
+    - d. No target set is a warning whose fix names the user config path.
+      After 72 hours rule b makes it NEEDS YOU, and its next step names the
+      config fix and then `fid backup`. Malformed or unreadable user config
+      is a warning naming the file. Neither makes `fid status` fail.
+    - e. A ledger never backed up counts its age from its genesis Event,
+      `project.initialized`. A new ledger shows a plain "not backed up yet"
+      line, with no warning, for its first 24 hours. A restored ledger's
+      genesis Event is old, so it shows NEEDS YOU until one `fid backup`
+      runs; Mark accepted this.
+    - A torn or unparseable line is skipped, since appends repair the tail;
+      a record that can't be read at all is a warning, not a failure.
+      Relative times read as minutes, hours or days ago, absolute times are
+      local, and a time in the future counts as now. Human text says "last
+      backup failed", never "attempt" or another kernel noun, so 1.7's leak
+      test passes.
+    - When the backup needs you, it appears only as the NEEDS YOU item;
+      otherwise it is the box's last line.
+  - JSON is the operation `project.status` with a null `event`, holding
+    everything the text shows, uncapped, in fid-cli.v1's conventions:
+    lowercase kebab-case enum values, and null rather than omitted fields.
+    The text is rendered from the same result. Colour is used only when
+    stdout is a terminal and `NO_COLOR` is unset or empty; symbols are
+    always Unicode, since fid has no display config.
+  - The display package is ported from whet's `internal/display`, which
+    Mark wrote. He authorised copying the parts fid needs into fid, under
+    fid's MIT licence, and adjusting them for fid.
+  - **"Ready for Mark to merge" is a NEEDS YOU item, in 2.1, not 1.6.**
+    `fid status` makes no network calls: ADR-0013 allows only `done`,
+    `backup` and posting review rounds. fid records reviews only from 2.1,
+    so until then it can't know that a review approved a PR. From 2.1,
+    fid's own record says that a task's latest review round approved it and
+    that the task isn't done; the item's next step is to mark the PR ready
+    and merge it. The item clears when 1.6's reconciliation runs `fid done`
+    after Mark merges. RESET.md's 2.1 row says so.
+  - The line budget. Mark, on 8 November 2026: "I think we set that as a
+    guide to ensure we actually get to a usable trial and I don't end up
+    generating lines of code and status prose to no avail. I don't want to
+    willy-nilly just extend the budget, but the budget set was fairly
+    arbitrary so I don't want to skimp and shortcut a worse implementation
+    solely to meet the budget."
+  - **Builder's choice, PR #50 (1.3a):** the rules live in domain packages:
+    `backup.ReadHealth` (`internal/backup/health.go`) judges the record and
+    user config, and `issues.ReadOverview` (`internal/issues/overview.go`)
+    sorts the epics and tasks. `internal/status` assembles the result and
+    writes the text; `cmd/fid/status.go` only adapts.
+  - **Builder's choice, PR #50 (1.3a):** the display package keeps the
+    renderer and its colour roles (header, ID, error, warning, success,
+    muted, label), the symbols (✓ ✗ ⚠ ● ○ ◆ →), the rounded borders, the
+    progress bar, padding that cuts with `…`, and visible width. It drops
+    whet's ASCII symbols, the birthday and scheduled symbols (◆ stays, for
+    epics), date formats, message helpers and multi-line truncation.
+  - **Builder's choice, PR #50 (1.3a):** the order is `issue list --order`'s
+    convention extended: sequence, then priority (lower first), then
+    creation and ID, a missing sequence or priority last. A task with no
+    listed epic, none or a hidden one, is ordered with the others the same
+    way, started or not.
+  - **Builder's choice, PR #50 (1.3a):** an in-progress epic with nothing
+    to do has no TO DO line, and a to-do epic with no tasks shows
+    `no tasks`. `+N more` counts the hidden task rows, and each hidden epic
+    with no tasks as one. The empty-project hint appears only when the
+    project has no epics or tasks in any state, and names
+    `fid issue create --kind task --title <title> --actor human:<name>
+    --idempotency-key <key>`.
+  - **Builder's choice, PR #50 (1.3a):** a blocker is read from either
+    link, the blocker's `blocks` or the task's `blocked_by`, and may be any
+    issue kind. The text shows the first by ID and `+N`; JSON's
+    `blocked_by` lists them all, on every task.
+  - **Builder's choice, PR #50 (1.3a):** the backup's states are
+    `current`, `not-backed-up-yet`, `warning` and `needs-you`, and its
+    reasons `no-recent-backup`, `last-backup-failed`, `no-target`,
+    `user-config-unreadable` and `record-unreadable`. Any line that isn't a
+    whole record is skipped, wherever it is: skipping can only make the
+    last backup look older. When the record can't be read, the age is
+    unknown, so it warns but never needs you. The summary leads with the
+    age once it's over a day, and otherwise with what's wrong; the text
+    leaves out when a failure happened, which JSON's `latest` has. The next
+    step is the first of: fix user config, set the target, fix the record,
+    `fid backup`. Hours read as hours below 48.
+  - **Builder's choice, PR #50 (1.3a):** a NEEDS YOU item is
+    `{kind, summary, next_action, subject}`, `subject` being null for the
+    backup and `{type, id}` for later kinds about an issue. The JSON field
+    names are in the CLI spec.
+  - **Builder's choice, PR #50 (1.3a):** the root command's context
+    carries a `statusEnvironment` (environment and clock; the clock's zone
+    is the one times are shown in), as `backupEnvironmentKey` does for
+    backups. `NO_COLOR` is read from that environment. The goldens backdate
+    the genesis Event and seed the projection directly, as `fid ready`'s
+    tests do, so IDs and times are fixed; `go test ./cmd/fid -run
+    TestStatusGolden -update` rewrites them.
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a
@@ -744,8 +876,9 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     each other's folder. An ancestry check would catch it: the folder's
     terminal Event must be in this ledger's journal.
   - git's network commands have no timeout, so a hung push holds fid's
-    clone. Later backups wait 2 minutes and record `lock-unavailable`; 1.3's
-    `fid status` should make a run of those visible.
+    clone. Later backups wait 2 minutes and record `lock-unavailable`.
+    1.3a's `fid status` makes a run of those visible (rule c of the 8
+    November details); the missing timeout remains.
   - `fid export create` in a repository with no ledger reports
     `internal-error` rather than `project-not-found`.
 - From #48 (1.2c), `fid restore`:
