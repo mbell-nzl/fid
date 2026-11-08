@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/backup"
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/issues"
 )
@@ -24,7 +25,10 @@ const (
 
 // WriteText writes the result as a box: what needs a person, the work in
 // progress and to do, and the backup's line, leaving out empty sections.
-// TO DO shows at most ten task rows unless all is set.
+// TO DO shows at most ten task rows unless all is set. The result's text,
+// which holds titles, paths and record values fid didn't write, has its
+// control characters escaped before it is fitted to a column or coloured;
+// JSON keeps it as it is.
 func WriteText(w io.Writer, result Result, renderer display.Renderer, all bool) error {
 	text := textWriter{renderer: renderer, idWidth: idWidth(result)}
 	blocks := [][]string{}
@@ -79,9 +83,9 @@ func (text textWriter) header(name string) string {
 }
 
 func (text textWriter) item(role display.Role, symbol display.Symbol, summary string, next *string) []string {
-	lines := []string{topIndent + text.renderer.Line(role, symbol, summary)}
+	lines := []string{topIndent + text.renderer.Line(role, symbol, cli.EscapeControlText(summary))}
 	if next != nil {
-		lines = append(lines, taskIndent+string(display.SymbolNext)+" "+*next)
+		lines = append(lines, taskIndent+string(display.SymbolNext)+" "+cli.EscapeControlText(*next))
 	}
 	return lines
 }
@@ -137,6 +141,7 @@ func (text textWriter) toDo(section issues.OverviewSection, all bool) []string {
 // row is a symbol, an ID and a title, with right set flush to the row's end.
 // A title too long for its column is cut to end in an ellipsis.
 func (text textWriter) row(indent string, symbol display.Symbol, id, title, right string, role display.Role) string {
+	id, title, right = cli.EscapeControlText(id), cli.EscapeControlText(title), cli.EscapeControlText(right)
 	line := indent + string(symbol) + " " + text.renderer.Colorize(display.RoleID, id) + strings.Repeat(" ", text.idWidth-len([]rune(id))) + "  "
 	width := rowWidth - display.VisibleWidth(line)
 	if right == "" {
@@ -146,17 +151,19 @@ func (text textWriter) row(indent string, symbol display.Symbol, id, title, righ
 	return line + display.PadRight(title, max(width, minTitle)) + "  " + text.renderer.Colorize(role, right)
 }
 
+// idWidth is how wide the longest ID shown is, once escaped.
 func idWidth(result Result) int {
 	width := 0
+	measure := func(id string) { width = max(width, len([]rune(cli.EscapeControlText(id)))) }
 	for _, section := range []issues.OverviewSection{result.InProgress, result.ToDo} {
 		for _, epic := range section.Epics {
-			width = max(width, len([]rune(epic.ID)))
+			measure(epic.ID)
 			for _, task := range epic.Tasks {
-				width = max(width, len([]rune(task.ID)))
+				measure(task.ID)
 			}
 		}
 		for _, task := range section.Tasks {
-			width = max(width, len([]rune(task.ID)))
+			measure(task.ID)
 		}
 	}
 	return width

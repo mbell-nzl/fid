@@ -374,6 +374,11 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
   --idempotency-key <key>`.
 - Rows run to column 70, the right-hand text flush right. A title too long
   for its column ends in `…`; backup lines and paths are never cut.
+- Text fid didn't write, such as titles, paths and the backup record's
+  failure kinds, has its controls escaped before it is fitted to a column,
+  as failure messages' are (section 8, Phase 24 amendment): LF, CR and TAB
+  as `\n`, `\r` and `\t`, other control characters as `\uXXXX`. JSON keeps
+  the values as they are.
 - Colour is used only when stdout is a terminal and `NO_COLOR` is unset or
   empty. The symbols are always Unicode.
 
@@ -434,8 +439,8 @@ capped, with or without `--all`. `event` is null.
   record's last whole line, or null. `target_set` is null when user config
   can't be read, and `user_config_path` null when it can't be located.
   `user_config_error` and `record_error` carry the cause, or null.
-- `summary` and `next_action` are the text's; `next_action` is null when
-  nothing needs doing.
+- `summary` and `next_action` are the text's, unescaped; `next_action` is
+  null when nothing needs doing.
 - A NEEDS YOU item is `{kind, summary, next_action, subject}`. `kind` is
   `backup` so far; `subject` is null for it, and `{type, id}` for later
   kinds about an issue.

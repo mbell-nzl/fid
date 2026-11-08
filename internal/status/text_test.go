@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"unicode"
 
 	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/issues"
@@ -123,4 +124,65 @@ func TestWriteTextFitsRowsInTheBox(t *testing.T) {
 	if !strings.Contains(text, "  ○ FID-long  A very long title A very long tit…  blocked by FID-b1 +2\n") {
 		t.Fatalf("long title isn't cut to fit its column:\n%s", text)
 	}
+}
+
+// controls is text fid didn't write, carrying characters a terminal acts on:
+// erase the screen, a line break, a carriage return, a tab, a bell and a C1
+// control sequence introducer.
+const controls = "\x1b[2J\nINJECTED\r\t\a\u009b"
+
+// escapedControls is controls as the text shows it.
+const escapedControls = `\u001b[2J\nINJECTED\r\t\u0007\u009b`
+
+// fidColors are the colour codes the renderer adds itself.
+var fidColors = strings.NewReplacer("\033[0m", "", "\033[1m", "", "\033[36m", "", "\033[31m", "", "\033[33m", "", "\033[32m", "", "\033[2m", "", "\033[35m", "")
+
+// assertNoRawControls fails if text holds a control character other than
+// the line breaks between its lines, or a line an injected break began.
+func assertNoRawControls(t *testing.T, text string) {
+	t.Helper()
+	for _, value := range text {
+		if value != '\n' && unicode.IsControl(value) {
+			t.Fatalf("text holds control %U:\n%q", value, text)
+		}
+	}
+	if strings.Contains(text, "\nINJECTED") {
+		t.Fatalf("an injected line break reached the text:\n%q", text)
+	}
+}
+
+func TestWriteTextEscapesControlsInWhatFidDidNotWrite(t *testing.T) {
+	t.Parallel()
+	needsNext := "fix /cfg" + controls + "/fid/config.toml, then fid backup"
+	backupNext := "fix or remove /led" + controls + "/backups.jsonl, then fid backup"
+	started := textTask("FID-t1", "in_progress", "started")
+	started.Title = "T" + controls
+	epic := textEpic("FID-e1", issues.EpicInProgress, 1, 3, started)
+	epic.Title = "E" + controls
+	blocked := textTask("FID-t2", "todo", "unstarted", "FID-b"+controls)
+	result := Result{GeneratedAt: testAt,
+		NeedsYou:   []NeedsYouItem{{Kind: NeedsYouBackup, Summary: "Can't read user config /cfg" + controls + "/fid/config.toml", NextAction: &needsNext}},
+		Backup:     Backup{State: "warning", Summary: "Last backup failed (" + controls + ")", NextAction: &backupNext},
+		InProgress: issues.OverviewSection{Epics: []issues.OverviewEpic{epic}, Tasks: []issues.OverviewTask{}},
+		ToDo:       issues.OverviewSection{Epics: []issues.OverviewEpic{}, Tasks: []issues.OverviewTask{blocked}}}
+	plain := writeText(t, result, display.Renderer{}, false)
+	for _, want := range []string{
+		"  ✗ Can't read user config /cfg" + escapedControls + "/fid/config.toml\n",
+		"      → fix /cfg" + escapedControls + "/fid/config.toml, then fid backup\n",
+		"  ⚠ Last backup failed (" + escapedControls + ")\n",
+		"      → fix or remove /led" + escapedControls + "/backups.jsonl, then fid backup\n",
+		"  ◆ FID-e1  E" + escapedControls + "  ",
+		"      ● FID-t1  T" + escapedControls + "  ",
+		"blocked by FID-b" + escapedControls + "\n",
+	} {
+		if !strings.Contains(plain, want) {
+			t.Fatalf("text doesn't show %q:\n%s", want, plain)
+		}
+	}
+	assertNoRawControls(t, plain)
+	colored := writeText(t, result, display.Renderer{Color: true}, false)
+	if fidColors.Replace(colored) != plain {
+		t.Fatalf("colored output differs from plain beyond its colours:\n%q\n%q", fidColors.Replace(colored), plain)
+	}
+	assertNoRawControls(t, fidColors.Replace(colored))
 }
