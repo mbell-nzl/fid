@@ -38,15 +38,7 @@ func cutHumanReason(text string) string {
 	if len(values) <= 200 {
 		return text
 	}
-	cut := 0
-	for cut < 200 {
-		width := messageEscapeWidth(values[cut:])
-		if cut+width > 200 {
-			break
-		}
-		cut += width
-	}
-	return string(values[:cut]) + "…"
+	return string(values[:escapedPrefix(values, 200)]) + "…"
 }
 
 func humanKeyDetail(failure Failure) string {

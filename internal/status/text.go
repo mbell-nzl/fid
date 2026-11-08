@@ -21,6 +21,11 @@ const (
 	progressBar = 10
 	topIndent   = "  "
 	taskIndent  = "      "
+	// summaryIndent and nextIndent are where an item's summary and next
+	// step begin, after their symbols; commandIndent is two more.
+	summaryIndent = "    "
+	nextIndent    = "        "
+	commandIndent = "          "
 )
 
 // WriteText writes the result as a box: what needs a person, the work in
@@ -82,10 +87,31 @@ func (text textWriter) header(name string) string {
 	return topIndent + text.renderer.Colorize(display.RoleHeader, name)
 }
 
+// item is a summary and its next step, each wrapped to the row's end. A
+// next step that is a fid command wraps with a shell continuation.
 func (text textWriter) item(role display.Role, symbol display.Symbol, summary string, next *string) []string {
-	lines := []string{topIndent + text.renderer.Line(role, symbol, cli.EscapeControlText(summary))}
-	if next != nil {
-		lines = append(lines, taskIndent+string(display.SymbolNext)+" "+cli.EscapeControlText(*next))
+	lines := []string{}
+	for index, line := range display.Wrap(cli.EscapeControlText(summary), rowWidth-len(summaryIndent), rowWidth-len(summaryIndent)) {
+		if index == 0 {
+			lines = append(lines, topIndent+text.renderer.Line(role, symbol, line))
+			continue
+		}
+		lines = append(lines, summaryIndent+text.renderer.Colorize(role, line))
+	}
+	if next == nil {
+		return lines
+	}
+	step, indent := cli.EscapeControlText(*next), nextIndent
+	steps := display.Wrap(step, rowWidth-len(nextIndent), rowWidth-len(nextIndent))
+	if strings.HasPrefix(step, "fid ") {
+		steps, indent = display.WrapCommand(step, rowWidth-len(nextIndent), rowWidth-len(commandIndent)), commandIndent
+	}
+	for index, line := range steps {
+		if index == 0 {
+			lines = append(lines, taskIndent+string(display.SymbolNext)+" "+line)
+			continue
+		}
+		lines = append(lines, indent+line)
 	}
 	return lines
 }
@@ -96,11 +122,11 @@ func (text textWriter) inProgress(section issues.OverviewSection) []string {
 		bar := display.ProgressBar(epic.Progress.Done, epic.Progress.Total, progressBar) + " done"
 		lines = append(lines, text.row(topIndent, display.SymbolEpic, epic.ID, epic.Title, bar, display.RoleNormal)...)
 		for _, task := range epic.Tasks {
-			lines = append(lines, text.row(taskIndent, display.SymbolStarted, task.ID, task.Title, stateText(task.Status), display.RoleMuted)...)
+			lines = append(lines, text.row(taskIndent, display.SymbolStarted, task.ID, task.Title, display.StateText(task.Status), display.RoleMuted)...)
 		}
 	}
 	for _, task := range section.Tasks {
-		lines = append(lines, text.row(topIndent, display.SymbolStarted, task.ID, task.Title, stateText(task.Status), display.RoleMuted)...)
+		lines = append(lines, text.row(topIndent, display.SymbolStarted, task.ID, task.Title, display.StateText(task.Status), display.RoleMuted)...)
 	}
 	return lines
 }
@@ -139,7 +165,8 @@ func (text textWriter) toDo(section issues.OverviewSection, all bool) []string {
 }
 
 // row is a symbol, an ID and a title, with right set flush to the row's end.
-// A title too long for its column is cut to end in an ellipsis. When right
+// A title too long for its column is cut to end in an ellipsis, dropping an
+// escape that crosses the cut whole. When right
 // would leave the title fewer than minTitle columns, as the longest IDs and
 // workflow states can, right takes a line of its own beneath, still flush
 // to the row's end.
@@ -150,11 +177,11 @@ func (text textWriter) row(indent string, symbol display.Symbol, id, title, righ
 	rightWidth := display.VisibleWidth(right)
 	switch {
 	case right == "":
-		return []string{line + strings.TrimRight(display.PadRight(title, width), " ")}
+		return []string{line + cli.CutEscapedText(title, width)}
 	case width-2-rightWidth >= minTitle:
-		return []string{line + display.PadRight(title, width-2-rightWidth) + "  " + text.renderer.Colorize(role, right)}
+		return []string{line + display.PadRight(cli.CutEscapedText(title, width-2-rightWidth), width-2-rightWidth) + "  " + text.renderer.Colorize(role, right)}
 	}
-	return []string{line + strings.TrimRight(display.PadRight(title, width), " "),
+	return []string{line + cli.CutEscapedText(title, width),
 		strings.Repeat(" ", max(rowWidth-rightWidth, 0)) + text.renderer.Colorize(role, right)}
 }
 
@@ -175,8 +202,6 @@ func idWidth(result Result) int {
 	}
 	return width
 }
-
-func stateText(status string) string { return strings.ReplaceAll(status, "_", " ") }
 
 func epicCount(epic issues.OverviewEpic) string {
 	count := len(epic.Tasks)

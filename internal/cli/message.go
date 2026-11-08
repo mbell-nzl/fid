@@ -36,15 +36,35 @@ func BoundedMessage(text string) string {
 	if len(values) <= 512 {
 		return string(values)
 	}
+	return string(values[:escapedPrefix(values, 511)]) + "…"
+}
+
+// CutEscapedText fits escaped text to width columns. Text that fits is
+// returned as it is; longer text is cut to end in an ellipsis, dropping
+// whole an escape that crosses the cut, as BoundedMessage does.
+func CutEscapedText(text string, width int) string {
+	values := []rune(text)
+	switch {
+	case len(values) <= width:
+		return text
+	case width <= 0:
+		return ""
+	}
+	return string(values[:escapedPrefix(values, width-1)]) + "…"
+}
+
+// escapedPrefix is how many of values' leading runes fit in limit without
+// cutting an escape. values must be longer than limit.
+func escapedPrefix(values []rune, limit int) int {
 	cut := 0
-	for cut < 511 {
+	for cut < limit {
 		width := messageEscapeWidth(values[cut:])
-		if cut+width > 511 {
+		if cut+width > limit {
 			break
 		}
 		cut += width
 	}
-	return string(values[:cut]) + "…"
+	return cut
 }
 
 func messageEscapeWidth(values []rune) int {

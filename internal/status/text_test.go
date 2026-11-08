@@ -205,10 +205,10 @@ func TestWriteTextEscapesControlsInWhatFidDidNotWrite(t *testing.T) {
 		ToDo:       issues.OverviewSection{Epics: []issues.OverviewEpic{}, Tasks: []issues.OverviewTask{blocked}}}
 	plain := writeText(t, result, display.Renderer{}, false)
 	for _, want := range []string{
-		"  ✗ Can't read user config /cfg" + escapedControls + "/fid/config.toml\n",
-		"      → fix /cfg" + escapedControls + "/fid/config.toml, then fid backup\n",
+		"  ✗ Can't read user config\n    /cfg" + escapedControls + "/fid/config.toml\n",
+		"      → fix /cfg" + escapedControls + "/fid/config.toml,\n        then fid backup\n",
 		"  ⚠ Last backup failed (" + escapedControls + ")\n",
-		"      → fix or remove /led" + escapedControls + "/backups.jsonl, then fid backup\n",
+		"      → fix or remove\n        /led" + escapedControls + "/backups.jsonl, then\n        fid backup\n",
 		"  ◆ FID-e1  E" + escapedControls + "  ",
 		"      ● FID-t1  T" + escapedControls + "  ",
 		"blocked by FID-b" + escapedControls + "\n",
@@ -223,4 +223,47 @@ func TestWriteTextEscapesControlsInWhatFidDidNotWrite(t *testing.T) {
 		t.Fatalf("colored output differs from plain beyond its colours:\n%q\n%q", fidColors.Replace(colored), plain)
 	}
 	assertNoRawControls(t, fidColors.Replace(colored))
+}
+
+// Prose wraps at spaces, its continuation lines indented to where it began;
+// a next step that is a fid command wraps with a shell continuation.
+func TestWriteTextWrapsLongLines(t *testing.T) {
+	t.Parallel()
+	path := "/home/mark/.config/fid/config.toml"
+	next := "add [backup] target to " + path + ", then fid backup"
+	result := Result{GeneratedAt: testAt, NeedsYou: []NeedsYouItem{},
+		Backup:     Backup{State: "warning", Summary: "Can't read user config " + path + "; last backed up 1 hour ago", NextAction: &next},
+		InProgress: issues.OverviewSection{Epics: []issues.OverviewEpic{}, Tasks: []issues.OverviewTask{}},
+		ToDo:       issues.OverviewSection{Epics: []issues.OverviewEpic{}, Tasks: []issues.OverviewTask{}},
+		Hint:       &Hint{Summary: "No tasks yet", NextAction: CreateTaskCommand}}
+	for _, renderer := range []display.Renderer{{}, {Color: true}} {
+		text := writeText(t, result, renderer, false)
+		assertRowsFitTheBox(t, text)
+		text = fidColors.Replace(text)
+		for _, want := range []string{
+			"  ○ No tasks yet\n" +
+				"      → fid issue create --kind task --title <title> \\\n" +
+				"          --actor human:<name> --idempotency-key <key>\n",
+			"  ⚠ Can't read user config " + path + "; last\n" +
+				"    backed up 1 hour ago\n" +
+				"      → add [backup] target to " + path + ",\n" +
+				"        then fid backup\n",
+		} {
+			if !strings.Contains(text, want) {
+				t.Fatalf("color=%v: text doesn't show %q:\n%s", renderer.Color, want, text)
+			}
+		}
+	}
+}
+
+// A title cut to its column drops an escape that crosses the cut whole.
+func TestWriteTextCutsATitleBeforeAnEscape(t *testing.T) {
+	t.Parallel()
+	task := textTask("FID-x", "todo", "unstarted")
+	task.Title = strings.Repeat("a", 55) + controls
+	result := textResult(issues.OverviewSection{Epics: []issues.OverviewEpic{}, Tasks: []issues.OverviewTask{task}})
+	text := writeText(t, result, display.Renderer{}, false)
+	if want := "  ○ FID-x   " + strings.Repeat("a", 55) + "…\n"; !strings.Contains(text, want) {
+		t.Fatalf("text doesn't show %q:\n%s", want, text)
+	}
 }

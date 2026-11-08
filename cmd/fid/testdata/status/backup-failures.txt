@@ -3,6 +3,7 @@
   TO DO
   ○ FID-77aa01  Tidy help text
 
-  ⚠ Last 3 backups failed (lock-unavailable); last backed up 8 hours ago
+  ⚠ Last 3 backups failed (lock-unavailable); last backed up 8 hours
+    ago
       → fid backup
 ╰──────────────────────────────────────────────────────────────────────╯
