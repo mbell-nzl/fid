@@ -61,9 +61,12 @@ func TestBackupIgnoresHostileGlobalGitConfig(t *testing.T) {
 	if got := fixture.targetGit("log", "-1", "--format=%an <%ae> %G?", "main"); got != "fid backup <backup@fid.invalid> N" {
 		t.Fatalf("backup commit = %q, want fid's identity, unsigned", got)
 	}
-	archive, err := fixture.gitBytes("--git-dir="+fixture.target, "cat-file", "blob", "main:"+id+"/export.zip")
-	if err != nil {
-		t.Fatal(err)
+	archive, _ := exportForTest(t, workspace)
+	for name, content := range exportMembersForBackup(t, archive) {
+		stored, err := fixture.gitBytes("--git-dir="+fixture.target, "cat-file", "blob", "main:"+id+"/"+name)
+		if err != nil || string(stored) != string(content) {
+			t.Fatalf("stored %s differs from the export: %v", name, err)
+		}
 	}
 	digest := sha256.Sum256(archive)
 	if "sha256:"+hex.EncodeToString(digest[:]) != *record.ArchiveDigest {

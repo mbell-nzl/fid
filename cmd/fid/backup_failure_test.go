@@ -296,7 +296,8 @@ func TestConcurrentBackupsShareFidsCloneSafely(t *testing.T) {
 		t.Fatalf("target commits = %s, want one per changed project", count)
 	}
 	for _, id := range []string{firstID, secondID} {
-		fixture.targetGit("cat-file", "-e", "main:"+id+"/export.zip")
+		fixture.targetGit("cat-file", "-e", "main:"+id+"/manifest.json")
+		fixture.targetGit("cat-file", "-e", "main:"+id+"/journal/00000001.jsonl")
 	}
 	if record, _ := decodeBackupSuccess(t, fixture.backup(first, "--json")); record.Outcome != "unchanged" {
 		t.Fatalf("backup after the race = %+v, want unchanged", record)

@@ -47,7 +47,6 @@ type backupRecordForTest struct {
 type backupFolderManifestForTest struct {
 	Schema            string `json:"schema"`
 	ProjectID         string `json:"project_id"`
-	Archive           string `json:"archive"`
 	ArchiveDigest     string `json:"archive_digest"`
 	ManifestSchema    string `json:"manifest_schema"`
 	EventCount        int    `json:"event_count"`
@@ -251,7 +250,7 @@ func TestBackupPushesTheExportIntoTheProjectFolder(t *testing.T) {
 	if want := filepath.Join(config.LedgerDir(workspace), "backups.jsonl"); recordPath != want {
 		t.Fatalf("record_path = %q, want %q", recordPath, want)
 	}
-	if got := fixture.targetGit("ls-tree", "-r", "--name-only", "main"); got != id+"/backup.json\n"+id+"/export.zip" {
+	if got := fixture.targetGit("ls-tree", "-r", "--name-only", "main"); got != id+"/backup.json\n"+id+"/journal/00000001.jsonl\n"+id+"/manifest.json" {
 		t.Fatalf("target tree = %q, want only the project's folder", got)
 	}
 	if got := fixture.targetGit("log", "-1", "--format=%an <%ae>|%cn <%ce>|%s", "main"); got != "fid backup <backup@fid.invalid>|fid backup <backup@fid.invalid>|fid backup "+id {
@@ -264,22 +263,19 @@ func TestBackupPushesTheExportIntoTheProjectFolder(t *testing.T) {
 	if err := decoder.Decode(&manifest); err != nil {
 		t.Fatal(err)
 	}
-	archive, err := fixture.gitBytes("--git-dir="+fixture.target, "cat-file", "blob", "main:"+id+"/export.zip")
-	if err != nil {
-		t.Fatal(err)
-	}
+	archive, _ := exportForTest(t, workspace)
 	digest := sha256.Sum256(archive)
 	archiveDigest := "sha256:" + hex.EncodeToString(digest[:])
-	if manifest.Schema != "fid.backup.v1" || manifest.ProjectID != id || manifest.Archive != "export.zip" ||
+	if manifest.Schema != "fid.backup.v2" || manifest.ProjectID != id ||
 		manifest.ArchiveDigest != archiveDigest || manifest.ManifestSchema != "fid.export-manifest.v2" || manifest.EventCount < 1 ||
 		manifest.GenesisEventHash != ledgerGenesisHash(t, workspace) {
-		t.Fatalf("folder manifest = %+v, want export.zip with digest %s, written by this ledger", manifest, archiveDigest)
+		t.Fatalf("folder manifest = %+v, want export members with archive digest %s, written by this ledger", manifest, archiveDigest)
 	}
 	if *record.ArchiveDigest != archiveDigest || *record.EventCount != manifest.EventCount || *record.TerminalEventHash != manifest.TerminalEventHash {
 		t.Fatalf("record %+v disagrees with folder manifest %+v", record, manifest)
 	}
 
-	// Restore (task 1.2c) imports this archive, so it must validate as an export.
+	// The digest still identifies the deterministic archive export creates.
 	archivePath := filepath.Join(t.TempDir(), "export.zip")
 	if err := os.WriteFile(archivePath, archive, 0o600); err != nil {
 		t.Fatal(err)
@@ -384,9 +380,11 @@ func TestBackupKeepsOtherFoldersInTheTarget(t *testing.T) {
 	decodeBackupSuccess(t, fixture.backup(second, "--json"))
 	runFIDCommand(t, first, "issue", "create", "--kind", "task", "--title", "Changed again", "--actor", "agent:developer")
 	decodeBackupSuccess(t, fixture.backup(first, "--json"))
-	want := strings.Join([]string{"README.md", firstID + "/backup.json", firstID + "/export.zip", secondID + "/backup.json", secondID + "/export.zip"}, "\n")
+	firstFiles := []string{firstID + "/backup.json", firstID + "/journal/00000001.jsonl", firstID + "/manifest.json"}
+	secondFiles := []string{secondID + "/backup.json", secondID + "/journal/00000001.jsonl", secondID + "/manifest.json"}
+	want := strings.Join(append(append([]string{"README.md"}, firstFiles...), secondFiles...), "\n")
 	if firstID > secondID {
-		want = strings.Join([]string{"README.md", secondID + "/backup.json", secondID + "/export.zip", firstID + "/backup.json", firstID + "/export.zip"}, "\n")
+		want = strings.Join(append(append([]string{"README.md"}, secondFiles...), firstFiles...), "\n")
 	}
 	if got := fixture.targetGit("ls-tree", "-r", "--name-only", "main"); got != want {
 		t.Fatalf("target tree = %q, want %q", got, want)

@@ -289,12 +289,15 @@ Other subjects are null, and `invalid-argument`'s `value` is null.
 `repository-unavailable` is retryable. The folder is damaged when its
 `backup.json` is missing, isn't a manifest, has a `schema` fid can't
 restore, or names another project (check `backup-manifest-invalid`); when
-its `export.zip` is missing (`archive-missing`) or its digest isn't
+the export's `manifest.json` is missing (`archive-missing`), malformed or
+names another project (`backup-manifest-invalid`); when a member isn't a
+regular file (`backup-manifest-invalid`); when the reconstructed ZIP's digest isn't
 `backup.json`'s `archive_digest` (`archive-digest-mismatch`); or when the
 archive fails `export validate`'s checks, which keep their own codes. fid's
 own three checks have a null `entry`. `archive-invalid` is an integrity
-failure and isn't retryable; `archive_path` names the folder's file, since
-the restore's copy is deleted. Task 1.2c adds the `repository-unavailable`
+failure and isn't retryable; `archive_path` names the reconstructed export
+logically as `<project-id>/export.zip`, since the temporary ZIP is deleted.
+Task 1.2c adds the `repository-unavailable`
 reason `no-backup`, which Mark approved on 8 November 2026, and those three
 check codes; no other code or reason. Outside a repository and at an unsafe
 ledger location, `restore` refuses as every project command does
