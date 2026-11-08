@@ -101,14 +101,8 @@ func backupFailure(cmd *cobra.Command, cause error) (cli.Failure, error) {
 	if !errors.As(cause, &failed) {
 		return cli.NewFailure(cli.CodeInternalError, cli.BoundedMessage("backup failed: "+cause.Error()), nil, map[string]any{})
 	}
-	invalid := func(allowed string) (cli.Failure, error) {
-		return cli.NewFailure(cli.CodeInvalidArgument, cli.BoundedMessage(failed.Error()), nil,
-			map[string]any{"argument": failed.Path, "value": nil, "allowed": []string{allowed}})
-	}
-	unavailable := func(reason string) (cli.Failure, error) {
-		return cli.NewFailure(cli.CodeRepositoryUnavailable, cli.BoundedMessage(failed.Message), nil,
-			map[string]any{"reason": reason, "detail": failed.Detail})
-	}
+	invalid := func(allowed string) (cli.Failure, error) { return backupInvalidArgument(failed, allowed) }
+	unavailable := func(reason string) (cli.Failure, error) { return backupRepositoryUnavailable(failed, reason) }
 	switch failed.Kind {
 	case backup.KindNoTarget:
 		return invalid("[backup] target: a git URL or local path")
@@ -126,4 +120,18 @@ func backupFailure(cmd *cobra.Command, cause error) (cli.Failure, error) {
 		return unavailable("different-ledger")
 	}
 	return cli.NewFailure(cli.CodeInternalError, cli.BoundedMessage(failed.Error()), nil, map[string]any{})
+}
+
+// backupInvalidArgument is the invalid-argument failure for the config file
+// at fault, which failed.Path names.
+func backupInvalidArgument(failed *backup.Error, allowed string) (cli.Failure, error) {
+	return cli.NewFailure(cli.CodeInvalidArgument, cli.BoundedMessage(failed.Error()), nil,
+		map[string]any{"argument": failed.Path, "value": nil, "allowed": []string{allowed}})
+}
+
+// backupRepositoryUnavailable is the repository-unavailable failure with
+// git's own account, or fid's, in its detail.
+func backupRepositoryUnavailable(failed *backup.Error, reason string) (cli.Failure, error) {
+	return cli.NewFailure(cli.CodeRepositoryUnavailable, cli.BoundedMessage(failed.Message), nil,
+		map[string]any{"reason": reason, "detail": failed.Detail})
 }

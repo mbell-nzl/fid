@@ -1,4 +1,4 @@
-.PHONY: fmt-check lint test coverage build
+.PHONY: fmt-check lint test coverage build check-restore
 
 FMT_DIRS = cmd internal .github/scripts
 
@@ -16,6 +16,11 @@ lint:
 # code starts goroutines, found from the source the same way CI finds them.
 test:
 	python3 .github/scripts/ci_tests.py test
+
+# V8 (RESET.md), check:restore: back up, wipe, restore and compare. make test
+# runs it too; this runs only it.
+check-restore:
+	go test -count=1 -run '^TestV8BackupWipeRestoreYieldsIdenticalState$$' ./cmd/fid
 
 coverage:
 	go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...

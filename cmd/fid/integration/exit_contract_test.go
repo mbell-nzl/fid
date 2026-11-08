@@ -82,7 +82,7 @@ func assertRemovedCommandFailure(t *testing.T, args []string, stdout, stderr str
 	switch group {
 	case "policy":
 		group, word = "fid", "policy"
-		allowed = []string{"activation", "activity", "artifact", "attention", "backup", "capabilities", "claim", "completion", "concern", "decision", "deviation", "envelope", "evidence", "export", "finding", "gate", "help", "human-outcome", "init", "issue", "journal", "label", "link", "maintenance", "ready", "rebuild", "receipt", "requirement", "resume", "review", "run", "sql", "stats", "stop", "workflow"}
+		allowed = []string{"activation", "activity", "artifact", "attention", "backup", "capabilities", "claim", "completion", "concern", "decision", "deviation", "envelope", "evidence", "export", "finding", "gate", "help", "human-outcome", "init", "issue", "journal", "label", "link", "maintenance", "ready", "rebuild", "receipt", "requirement", "restore", "resume", "review", "run", "sql", "stats", "stop", "workflow"}
 	case "issue":
 		group, word, allowed = "issue.ac", args[2], []string{"add", "list"}
 	case "concern":

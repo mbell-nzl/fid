@@ -39,6 +39,7 @@ with reason `unsafe-path` (`06_DESIGN_PLAN_CLI.md` section 1).
 | `config.toml` | Minimal fid-local project/storage/operator configuration |
 | `fid.sqlite` | Derived query projection |
 | `backups.jsonl` | Record of backup attempts (section 2.4); not part of the journal |
+| `import.marker.json` | Record of the import that made the ledger, by `export import` or `fid restore` (section 2.4); not part of the journal |
 | `artifacts/` | Retention-limited content-addressed execution material |
 | `write.lock` | Cross-process mutation lock |
 | `.gitignore` | Names `fid.sqlite`. Kept for now, though git never looks inside its common directory |
@@ -109,8 +110,8 @@ Malformed or unreadable config is refused when init needs to read it, using
 `invalid-argument` / `invalid-input`, exit 2 (CLI spec section 3). Init prints
 the ID and commit instruction before asking, so a target-save failure cannot
 hide them; it reports that the ledger exists and target setup failed.
-Task 1.3 adds status warnings until a target is set. `fid backup` reads the
-target (section 2.4); `fid restore` is task 1.2c.
+Task 1.3 adds status warnings until a target is set. `fid backup` and
+`fid restore` read the target (section 2.4).
 
 These two small files use a strict single-setting TOML subset: the named
 table and key, single-line basic (double-quoted, with TOML escapes) or literal
@@ -194,7 +195,7 @@ named by the project ID in `.fid.toml`:
 plus `genesis_event_hash`, which names the ledger that wrote the folder
 (below). It holds nothing that changes unless the export does. fid validates
 the archive as `export validate` does before it commits, so a pushed backup is
-one that `fid restore` (task 1.2c) can import. fid owns its ledger's folder
+one that `fid restore` can import. fid owns its ledger's folder
 and replaces both files on every backup; it never changes another path in the
 repository.
 
@@ -211,14 +212,15 @@ checks after reading the target's tip and before exporting. It never forces
 the push, so if another backup changes the target after the check, git
 rejects the push, which is recorded as `push-rejected`, and the next backup
 checks the new tip. To clear the refusal, keep one
-ledger for the project: restore this project from the folder (task 1.2c)
-instead of using this ledger, or, if the folder's backup is no longer
+ledger for the project: restore this project from the folder with
+`fid restore` in place of this ledger, or, if the folder's backup is no longer
 needed, remove the folder from the backup repository's `main` by hand, and
 the next backup writes it afresh.
 
 Every `fid init` appends its own genesis Event, and two differ in their
 time, to the nanosecond, even for one project. The journal never appends
-before its latest date, so the genesis Event stays its first line. An
+before its latest date, which after a restore is the date of the last
+restored Event, so the genesis Event stays its first line. An
 import keeps the journal byte for byte, so a restored ledger keeps its
 genesis Event and goes on backing up into its folder. Copies of one ledger,
 such as a ledger directory copied by hand, share a genesis Event, and this
@@ -303,6 +305,35 @@ exported during that attempt. Task 1.3's `fid status` reads the record. The
 record is not part of the journal: export and rebuild ignore it, and a
 restored ledger starts without one.
 
+**Restore.** `fid restore` (CLI spec section 3) reads what a backup wrote,
+into a repository that has no ledger. It checks that first, then reads
+`.fid.toml` from the working tree and the target from user config, as a
+backup does. It fetches into a private (`0700`) directory under `$TMPDIR`,
+holding a bare repository made with `--template=`, and deletes it
+afterwards, whatever the outcome; it never uses fid's clone and takes no
+lock. It asks the target for `main` with `git ls-remote` and fetches only
+its tip (`git fetch --depth=1`), so a restore's time doesn't grow with the
+backup history. Git runs as it does for a backup: with the user's
+credentials and transport, `GIT_TERMINAL_PROMPT=0`, hooks off and inherited
+repository variables dropped. From that tip, restore reads
+`<project-id>/backup.json` and checks that its `project_id` is this
+project's. It then turns the folder into the archive to import, by the
+format the manifest's `schema` names: for `fid.backup.v1`, it copies
+`export.zip` into the temporary directory and checks its `sha256:` digest
+against `archive_digest`. A schema it doesn't know is refused as damaged. It
+imports the archive as `fid export import` does, with the idempotency key
+`fid-restore:<commit>`, into `<git-common-dir>/fid`, the ledger every
+worktree shares. The event count and genesis Event aren't checked at run
+time; V8's test checks them.
+
+The restored journal is the export's numbered pieces (`00000001.jsonl`
+onwards, at most 64 MiB each), holding the backed-up Events byte for byte
+and in order; later Events go in dated files after them. The ledger gains
+`import.marker.json`, which records the import and the pieces it installed.
+A restore writes no backup record, so the ledger starts without
+`backups.jsonl`. It keeps the genesis Event, so its first backup finds its
+own folder and, if nothing changed, is `unchanged` at the restored commit.
+
 ## 3. Cross-Product Configuration
 
 Phase 22 adopts an explicit interpretation of the section 2.3
@@ -380,4 +411,4 @@ entries whose source is `literal`, approved `inherit`, or `credential` name.
 The ambient environment is not inherited wholesale. Credential values exist
 only in process memory long enough to execute and redact output.
 
-*Last updated: 2026-11-07 (RESET 1.2b: backups, fid's clone and the backup record)*
+*Last updated: 2026-11-08 (RESET 1.2c: restore)*
