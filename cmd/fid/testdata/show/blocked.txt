@@ -1,0 +1,16 @@
+╭ FID-c2d4e5 ──────────────────────────────────────────────────── task ╮
+
+  ○ Retry a rejected backup push                                 to do
+
+  Epic        ◆ FID-e3a1c0  Operating experience              2/7 done
+  Priority    P2
+  Blocked by  ● FID-71a0c2  Export validation              in progress
+  Labels      backup, reliability
+
+  ACCEPTANCE CRITERIA
+  1  A push the backup repo rejects is retried once, after fetching
+     and rebasing fid's clone, and the retry is recorded as its own
+     line
+  2  A second rejection is a warning in fid status, naming the failure
+     kind
+╰──────────────────────────────────────────────────────────────────────╯

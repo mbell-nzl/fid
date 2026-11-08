@@ -1,0 +1,55 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [],
+    "blocks": [],
+    "children": [],
+    "epic": null,
+    "issue": {
+      "id": "FID-5d2f77",
+      "kind": "task",
+      "title": "Wrap the heading of fid show when an issue's title is far too long for one line",
+      "status": "todo",
+      "status_category": "unstarted",
+      "workflow_id": "task-default",
+      "parent_id": null,
+      "priority": 3,
+      "sequence": null,
+      "spec_md_path": null,
+      "revision": 1,
+      "labels": [
+        "display",
+        "documentation",
+        "golden-tests",
+        "human-output",
+        "status",
+        "wrapping"
+      ],
+      "created_at": "2026-10-31T16:00:00Z",
+      "updated_at": "2026-10-31T16:00:00Z",
+      "acceptance_criteria": [
+        {
+          "id": "AC-FID-5d2f77-1",
+          "ordinal": 1,
+          "text": "A title too long for one line wraps at spaces, its continuation lines indented to where it began, and is never cut"
+        },
+        {
+          "id": "AC-FID-5d2f77-2",
+          "ordinal": 2,
+          "text": "A criterion wraps the same way"
+        },
+        {
+          "id": "AC-FID-5d2f77-3",
+          "ordinal": 3,
+          "text": "A path such as docs/specs/a-very-long-directory-name/another-long-directory/06_DESIGN_PLAN_CLI.md stands whole past the edge"
+        }
+      ]
+    },
+    "progress": null,
+    "state": null,
+    "task": null
+  }
+}

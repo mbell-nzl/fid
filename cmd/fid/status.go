@@ -2,9 +2,7 @@ package main
 
 import (
 	"errors"
-	"os"
-	"strings"
-	"time"
+	"io"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/display"
@@ -15,22 +13,6 @@ import (
 
 func init() {
 	rootFlagCapabilities["status"] = rootFlagCapability{Project: true, JSON: true}
-}
-
-// statusEnvironmentKey carries a statusEnvironment in the root command's
-// context, so tests fix the time, its zone, HOME and the XDG directories.
-type statusEnvironmentKey struct{}
-
-type statusEnvironment struct {
-	environ []string
-	now     func() time.Time
-}
-
-func commandStatusEnvironment(cmd *cobra.Command) statusEnvironment {
-	if environment, ok := cmd.Root().Context().Value(statusEnvironmentKey{}).(statusEnvironment); ok {
-		return environment
-	}
-	return statusEnvironment{environ: os.Environ(), now: time.Now}
 }
 
 func newStatusCommand() *cobra.Command {
@@ -45,7 +27,7 @@ func newStatusCommand() *cobra.Command {
 			if err != nil {
 				return renderStatusFailure(cmd, err)
 			}
-			environment := commandStatusEnvironment(cmd)
+			environment := commandDisplayEnvironment(cmd)
 			result, err := status.Build(status.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(),
 				Environment: environment.environ, Now: environment.now()})
 			if err != nil {
@@ -58,8 +40,9 @@ func newStatusCommand() *cobra.Command {
 			if jsonMode {
 				return cli.WriteSuccess(cmd.OutOrStdout(), "project.status", result.Fields(), nil)
 			}
-			renderer := display.NewRenderer(display.IsTerminal(cmd.OutOrStdout()), environmentValue(environment.environ, "NO_COLOR"))
-			return status.WriteText(cmd.OutOrStdout(), result, renderer, all)
+			return writeHuman(cmd, environment, func(w io.Writer, renderer display.Renderer) error {
+				return status.WriteText(w, result, renderer, all)
+			})
 		},
 	}
 	cmd.Flags().BoolVar(&all, "all", false, "Show every task to do")
@@ -92,15 +75,4 @@ func statusFailure(cmd *cobra.Command, cause error) (cli.Failure, error) {
 		return failure, err
 	}
 	return cli.NewFailure(cli.CodeInternalError, cli.BoundedMessage("status failed: "+cause.Error()), nil, map[string]any{})
-}
-
-// environmentValue is name's value in environ, or "" when it is unset.
-func environmentValue(environ []string, name string) string {
-	value := ""
-	for _, entry := range environ {
-		if key, found, ok := strings.Cut(entry, "="); ok && key == name {
-			value = found
-		}
-	}
-	return value
 }

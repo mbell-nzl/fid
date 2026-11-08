@@ -31,6 +31,8 @@ func TestHumanFailureLines(t *testing.T) {
 		{"decision", CodeProtectedDecisionRequired, map[string]any{"decision_class": "security"}, "issue.transition", "fid issue transition", "reason: protected-decision-required; decision_class=security\nnext: record the security Decision Reference and an approving Human Outcome: fid decision record-reference, fid human-outcome record (templates: --example)"},
 		{"outcome", CodeHumanOutcomeRequired, map[string]any{"outcome_class": "release"}, "envelope.complete", "fid envelope complete", "reason: human-outcome-required; outcome_class=release\nnext: an activated Human records a release Human Outcome, then link it: fid human-outcome record, fid evidence link (templates: --example)"},
 		{"controls", CodeIssueNotFound, map[string]any{"id": "ISS-\n\r\t\x1b"}, "issue.get", "fid issue get", `reason: issue-not-found; id=ISS-\n\r\t\u001b`},
+		{"show not found", CodeIssueNotFound, map[string]any{"id": "FID-nope"}, "issue.show", "fid show", "reason: issue-not-found; id=FID-nope\nnext: fid issue list"},
+		{"get not found", CodeIssueNotFound, map[string]any{"id": "FID-nope"}, "issue.get", "fid issue get", "reason: issue-not-found; id=FID-nope"},
 	}
 	for _, row := range rows {
 		t.Run(row.name, func(t *testing.T) {

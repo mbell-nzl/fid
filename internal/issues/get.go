@@ -14,37 +14,50 @@ import (
 )
 
 func Get(options GetOptions) (Issue, error) {
-	if strings.TrimSpace(options.WorkspaceRoot) == "" {
-		return Issue{}, fmt.Errorf("get issue: workspace root is required")
-	}
-	if strings.TrimSpace(options.MigrationsDir) == "" {
-		return Issue{}, fmt.Errorf("get issue: migrations dir is required")
-	}
-	if strings.TrimSpace(options.ID) == "" {
-		return Issue{}, fmt.Errorf("get issue: issue id is required")
-	}
-
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
-		return Issue{}, err
-	}
-
-	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
+	conn, registry, err := openIssueRead(options, "get issue")
 	if err != nil {
 		return Issue{}, err
 	}
 	defer closeIssueDB(conn)
+	return readIssue(conn, registry, options.ID)
+}
+
+// openIssueRead checks a read of one issue, refreshes the projection as
+// every read does, and opens it with its workflow registry. The caller
+// closes conn.
+func openIssueRead(options GetOptions, operation string) (*sql.DB, *workflow.Registry, error) {
+	switch {
+	case strings.TrimSpace(options.WorkspaceRoot) == "":
+		return nil, nil, fmt.Errorf("%s: workspace root is required", operation)
+	case strings.TrimSpace(options.MigrationsDir) == "":
+		return nil, nil, fmt.Errorf("%s: migrations dir is required", operation)
+	case strings.TrimSpace(options.ID) == "":
+		return nil, nil, fmt.Errorf("%s: issue id is required", operation)
+	}
+	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+		return nil, nil, err
+	}
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName))
+	if err != nil {
+		return nil, nil, err
+	}
 	registry, err := workflow.Load(conn)
 	if err != nil {
-		return Issue{}, fmt.Errorf("get issue: load workflow registry: %w", err)
+		closeIssueDB(conn)
+		return nil, nil, fmt.Errorf("%s: load workflow registry: %w", operation, err)
 	}
+	return conn, registry, nil
+}
 
+// readIssue reads the issue whose ID is exactly id.
+func readIssue(conn *sql.DB, registry *workflow.Registry, id string) (Issue, error) {
 	row := conn.QueryRow(`
 		SELECT id, kind, title, status, workflow_id, parent_id, priority, sequence,
 		       spec_md_path, revision, owner_role, owner_actor,
 		       concerns_raised, open_concerns_count, triage_status, created_at, updated_at
 		FROM issues_enriched
 		WHERE id = ?
-	`, options.ID)
+	`, id)
 
 	var (
 		record                                         Issue
@@ -72,11 +85,12 @@ func Get(options GetOptions) (Issue, error) {
 		&updatedAt,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return Issue{}, &NotFoundError{IssueID: options.ID}
+			return Issue{}, &NotFoundError{IssueID: id}
 		}
-		return Issue{}, fmt.Errorf("query issue %q: %w", options.ID, err)
+		return Issue{}, fmt.Errorf("query issue %q: %w", id, err)
 	}
 
+	var err error
 	record.StatusCategory, err = registryStatusCategory(registry, record.WorkflowID, record.Status)
 	if err != nil {
 		return Issue{}, err

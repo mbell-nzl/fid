@@ -1,6 +1,9 @@
 package display
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // Wrap breaks text at spaces into lines, the first at most first columns
 // wide and the rest at most rest. Text that fits is returned as it is. A
@@ -66,4 +69,16 @@ func StateText(state string) string {
 		return "to do"
 	}
 	return strings.ReplaceAll(state, "_", " ")
+}
+
+// BlockedText names an unstarted issue's first open blocker and how many
+// more there are, or is empty when nothing blocks it.
+func BlockedText(blockers []string) string {
+	switch len(blockers) {
+	case 0:
+		return ""
+	case 1:
+		return "blocked by " + blockers[0]
+	}
+	return fmt.Sprintf("blocked by %s +%d", blockers[0], len(blockers)-1)
 }

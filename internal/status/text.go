@@ -142,7 +142,7 @@ func (text textWriter) toDo(section issues.OverviewSection, all bool) []string {
 			hidden++
 			return
 		}
-		lines = append(lines, text.row(indent, display.SymbolUnstarted, task.ID, task.Title, blockedText(task.BlockedBy), display.RoleWarning)...)
+		lines = append(lines, text.row(indent, display.SymbolUnstarted, task.ID, task.Title, display.BlockedText(task.BlockedBy), display.RoleWarning)...)
 		shown++
 	}
 	for _, epic := range section.Epics {
@@ -214,14 +214,4 @@ func epicCount(epic issues.OverviewEpic) string {
 		return "1 task"
 	}
 	return fmt.Sprintf("%d tasks", count)
-}
-
-func blockedText(blockers []string) string {
-	switch len(blockers) {
-	case 0:
-		return ""
-	case 1:
-		return "blocked by " + blockers[0]
-	}
-	return fmt.Sprintf("blocked by %s +%d", blockers[0], len(blockers)-1)
 }

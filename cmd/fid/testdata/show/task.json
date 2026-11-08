@@ -1,0 +1,113 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [
+      {
+        "id": "FID-1a2b3c",
+        "kind": "task",
+        "title": "Escape controls in status",
+        "status": "done",
+        "status_category": "completed"
+      }
+    ],
+    "blocks": [
+      {
+        "id": "FID-c2d4e5",
+        "kind": "task",
+        "title": "Retry a rejected backup push",
+        "status": "todo",
+        "status_category": "unstarted"
+      },
+      {
+        "id": "FID-0d4e8b",
+        "kind": "task",
+        "title": "Document backup age",
+        "status": "todo",
+        "status_category": "unstarted"
+      }
+    ],
+    "children": [
+      {
+        "id": "FID-aa01b2",
+        "kind": "subtask",
+        "title": "Check the manifest schema",
+        "status": "done",
+        "status_category": "completed",
+        "sequence": null,
+        "priority": null,
+        "blocked_by": []
+      },
+      {
+        "id": "FID-aa02b3",
+        "kind": "subtask",
+        "title": "Validate member digests",
+        "status": "in_progress",
+        "status_category": "started",
+        "sequence": null,
+        "priority": null,
+        "blocked_by": []
+      },
+      {
+        "id": "FID-aa03b4",
+        "kind": "subtask",
+        "title": "Refuse a truncated archive",
+        "status": "todo",
+        "status_category": "unstarted",
+        "sequence": null,
+        "priority": null,
+        "blocked_by": []
+      }
+    ],
+    "epic": {
+      "id": "FID-e3a1c0",
+      "kind": "epic",
+      "title": "Operating experience",
+      "status": "in_progress",
+      "status_category": "started",
+      "progress": {
+        "done": 2,
+        "total": 7
+      }
+    },
+    "issue": {
+      "id": "FID-71a0c2",
+      "kind": "task",
+      "title": "Export validation",
+      "status": "in_progress",
+      "status_category": "started",
+      "workflow_id": "task-default",
+      "parent_id": "FID-e3a1c0",
+      "priority": 1,
+      "sequence": 3,
+      "spec_md_path": "docs/specs/02_TRD.md",
+      "revision": 1,
+      "labels": [
+        "backup",
+        "export"
+      ],
+      "created_at": "2026-10-31T04:00:00Z",
+      "updated_at": "2026-10-31T04:00:00Z",
+      "acceptance_criteria": [
+        {
+          "id": "AC-FID-71a0c2-1",
+          "ordinal": 1,
+          "text": "fid export validate refuses an archive whose member digests don't match its manifest, naming the first bad member"
+        },
+        {
+          "id": "AC-FID-71a0c2-2",
+          "ordinal": 2,
+          "text": "A truncated archive is refused, not read to its end"
+        }
+      ]
+    },
+    "progress": {
+      "done": 1,
+      "total": 3
+    },
+    "state": null,
+    "task": null
+  }
+}

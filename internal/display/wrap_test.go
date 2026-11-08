@@ -72,3 +72,19 @@ func TestStateTextReadsAWorkflowState(t *testing.T) {
 		}
 	}
 }
+
+func TestBlockedTextNamesTheFirstBlocker(t *testing.T) {
+	t.Parallel()
+	for _, test := range []struct {
+		blockers []string
+		want     string
+	}{
+		{nil, ""},
+		{[]string{"FID-a"}, "blocked by FID-a"},
+		{[]string{"FID-a", "FID-b", "FID-c"}, "blocked by FID-a +2"},
+	} {
+		if got := BlockedText(test.blockers); got != test.want {
+			t.Errorf("BlockedText(%q) = %q, want %q", test.blockers, got, test.want)
+		}
+	}
+}

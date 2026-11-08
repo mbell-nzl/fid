@@ -1,0 +1,10 @@
+╭ FID-c0c0c0 ──────────────────────────────────────────────────── task ╮
+
+  ○ Title\u001b[2J\nINJECTED                                     to do
+
+  Labels      label\u001b[2J\nINJECTED
+  Spec        docs/\u001b[2J\nINJECTED.md
+
+  ACCEPTANCE CRITERIA
+  1  Criterion\u001b[2J\nINJECTED
+╰──────────────────────────────────────────────────────────────────────╯

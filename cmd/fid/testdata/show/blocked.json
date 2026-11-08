@@ -1,0 +1,64 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [
+      {
+        "id": "FID-71a0c2",
+        "kind": "task",
+        "title": "Export validation",
+        "status": "in_progress",
+        "status_category": "started"
+      }
+    ],
+    "blocks": [],
+    "children": [],
+    "epic": {
+      "id": "FID-e3a1c0",
+      "kind": "epic",
+      "title": "Operating experience",
+      "status": "in_progress",
+      "status_category": "started",
+      "progress": {
+        "done": 2,
+        "total": 7
+      }
+    },
+    "issue": {
+      "id": "FID-c2d4e5",
+      "kind": "task",
+      "title": "Retry a rejected backup push",
+      "status": "todo",
+      "status_category": "unstarted",
+      "workflow_id": "task-default",
+      "parent_id": "FID-e3a1c0",
+      "priority": 2,
+      "sequence": 6,
+      "spec_md_path": null,
+      "revision": 1,
+      "labels": [
+        "backup",
+        "reliability"
+      ],
+      "created_at": "2026-10-31T07:00:00Z",
+      "updated_at": "2026-10-31T07:00:00Z",
+      "acceptance_criteria": [
+        {
+          "id": "AC-FID-c2d4e5-1",
+          "ordinal": 1,
+          "text": "A push the backup repo rejects is retried once, after fetching and rebasing fid's clone, and the retry is recorded as its own line"
+        },
+        {
+          "id": "AC-FID-c2d4e5-2",
+          "ordinal": 2,
+          "text": "A second rejection is a warning in fid status, naming the failure kind"
+        }
+      ]
+    },
+    "progress": null,
+    "state": null,
+    "task": null
+  }
+}

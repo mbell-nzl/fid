@@ -1,0 +1,10 @@
+╭ FID-8a1b2c ──────────────────────────────────────────────────── epic ╮
+
+  ◆ Loop contract                                          in progress
+
+  Progress    ░░░░░░░░░░  0/2 tasks done
+
+  TASKS
+  ● FID-1f2e3d  Contract fields and exit codes             in progress
+  ○ FID-2f2e3d  Golden tests for the contract …  blocked by FID-1f2e3d
+╰──────────────────────────────────────────────────────────────────────╯

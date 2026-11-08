@@ -17,7 +17,7 @@ func textTask(id, status, category string, blockers ...string) issues.OverviewTa
 
 func textEpic(id, state string, done, total int, tasks ...issues.OverviewTask) issues.OverviewEpic {
 	return issues.OverviewEpic{ID: id, Title: "Title of " + id, Status: "todo", StatusCategory: "unstarted", State: state,
-		Progress: issues.EpicProgress{Done: done, Total: total}, Tasks: tasks}
+		Progress: issues.Progress{Done: done, Total: total}, Tasks: tasks}
 }
 
 func todo(prefix string, count int) []issues.OverviewTask {

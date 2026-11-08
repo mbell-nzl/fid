@@ -1,0 +1,18 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "not-found",
+    "code": "issue-not-found",
+    "details": {
+      "id": "FID-nope"
+    },
+    "message": "issue was not found",
+    "retryable": false,
+    "subject": {
+      "id": "FID-nope",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "issue.show"
+}
