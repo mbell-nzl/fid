@@ -55,13 +55,6 @@ func PadRight(text string, width int) string {
 	return text + strings.Repeat(" ", max(width-VisibleWidth(text), 0))
 }
 
-// PadLeft fits plain text to width columns, padding it on the left, or
-// cutting it to end in an ellipsis.
-func PadLeft(text string, width int) string {
-	text = clip(text, width)
-	return strings.Repeat(" ", max(width-VisibleWidth(text), 0)) + text
-}
-
 func clip(text string, width int) string {
 	runes := []rune(text)
 	switch {

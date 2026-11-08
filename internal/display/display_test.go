@@ -171,28 +171,24 @@ func TestProgressBar(t *testing.T) {
 	}
 }
 
-func TestPadding(t *testing.T) {
+func TestPadRight(t *testing.T) {
 	t.Parallel()
 	for _, test := range []struct {
 		name, text string
 		width      int
-		right      string
-		left       string
+		want       string
 	}{
-		{"shorter", "ab", 4, "ab  ", "  ab"},
-		{"exact", "abcd", 4, "abcd", "abcd"},
-		{"longer ends in an ellipsis", "abcdef", 4, "abc…", "abc…"},
-		{"multibyte runes count once", "héllo", 6, "héllo ", " héllo"},
-		{"width one", "abc", 1, "…", "…"},
-		{"width zero", "abc", 0, "", ""},
+		{"shorter", "ab", 4, "ab  "},
+		{"exact", "abcd", 4, "abcd"},
+		{"longer ends in an ellipsis", "abcdef", 4, "abc…"},
+		{"multibyte runes count once", "héllo", 6, "héllo "},
+		{"width one", "abc", 1, "…"},
+		{"width zero", "abc", 0, ""},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			if got := PadRight(test.text, test.width); got != test.right {
-				t.Errorf("PadRight(%q, %d) = %q, want %q", test.text, test.width, got, test.right)
-			}
-			if got := PadLeft(test.text, test.width); got != test.left {
-				t.Errorf("PadLeft(%q, %d) = %q, want %q", test.text, test.width, got, test.left)
+			if got := PadRight(test.text, test.width); got != test.want {
+				t.Errorf("PadRight(%q, %d) = %q, want %q", test.text, test.width, got, test.want)
 			}
 		})
 	}
