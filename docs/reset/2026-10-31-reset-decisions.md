@@ -912,11 +912,33 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   permanent backups in 3.2. Exports accept up to 1 GiB per Artifact, stored
   as one raw blob in v2. Journal chunking does not cover Artifacts; no
   smaller Artifact ceiling or chunking design has been chosen.
+- From #50 (1.3a), `fid status`. The first three go to 1.3b, because `fid show`
+  needs the same display code:
+  - Long lines aren't wrapped. A backup line naming a path, the empty
+    project's hint (an 89-character `fid issue create` command) and a line
+    combining several backup problems run past the 72-column box (1.3b).
+  - Cutting a title to its column can cut an escape short (`\u00…`). No raw
+    control gets out, but it doesn't follow the failure messages' rule of
+    dropping an escape that crosses the cut whole (1.3b).
+  - The kernel-word check covers only `status`'s goldens. 1.3b runs it on
+    `show`'s; 1.7's leak test is the general one. `display.RoleLabel` is
+    unused until `show` (1.3b).
+  - Visible width counts runes, so wide characters (CJK, most emoji) in
+    titles misalign columns. Fixing it needs East Asian width tables
+    (`golang.org/x/text/width` or `go-runewidth`), a new dependency.
+  - `fid init`'s message prints a root path holding control characters raw,
+    and other commands' Human output that echoes a path may do the same.
+  - `cli.EscapeControlText` escapes control characters (Cc) only. Format
+    characters (Cf), such as U+202E RIGHT-TO-LEFT OVERRIDE, pass through, in
+    failure output as in `status`.
+  - `fid status` reads the whole backup record each time. It grows by one
+    short line per backup, so this is fine for the trial.
 - Review rounds, as data for refining the process after the reset: #41, #44
   and #46 took 4, 4 and 5 Codex rounds. In #46, three of the four rounds
   that asked for changes were about code the previous fix round had added
   or removed. AGENTS.md step 7 now limits what a fix round changes (8
-  November 2026); see whether round counts drop.
+  November 2026); see whether round counts drop. Since then, #48, #49 and
+  #50 have each taken 2 rounds.
 - Mark's idea: a kit skill for backlog triage and grooming. An agent proposes
   close, keep or merge for stale or obsolete issues, and Mark accepts in a
   batch; fid supplies signals such as age and whether the paths an issue
