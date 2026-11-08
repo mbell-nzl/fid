@@ -2,18 +2,36 @@ package display
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
 // Wrap breaks text at spaces into lines, the first at most first columns
 // wide and the rest at most rest. Text that fits is returned as it is. A
 // word wider than its line stands whole on a line of its own: fid never
-// breaks inside a word.
+// breaks inside a word, nor between a date and its time.
 func Wrap(text string, first, rest int) []string {
 	if VisibleWidth(text) <= first {
 		return []string{text}
 	}
-	return fill(strings.Split(text, " "), first, rest, "")
+	return fill(proseWords(text), first, rest, "")
+}
+
+// date and clock are a date and the time after it as fid writes them,
+// 2006-01-02 15:04, with any punctuation either side.
+var date, clock = regexp.MustCompile(`[0-9]{4}-[0-9]{2}-[0-9]{2}$`), regexp.MustCompile(`^[0-9]{2}:[0-9]{2}`)
+
+// proseWords splits text at spaces, a date and its time making one word.
+func proseWords(text string) []string {
+	words := []string{}
+	for _, word := range strings.Split(text, " ") {
+		if last := len(words) - 1; last >= 0 && date.MatchString(words[last]) && clock.MatchString(word) {
+			words[last] += " " + word
+			continue
+		}
+		words = append(words, word)
+	}
+	return words
 }
 
 // WrapCommand breaks a shell command between its arguments, never between a

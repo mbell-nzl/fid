@@ -721,6 +721,11 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     shows FID-0d4e8b blocked by FID-71a0c2, the task mock-up's link, where
     the epic mock-up shows it to do, and leaves out the mock-up's
     `Scheduling` row, as decided above.
+  - **Builder's choice, PR #51 (1.3b) review round 1:** prose never wraps
+    between a date and its time, such as `2026-11-05 14:00` in a backup
+    summary: `display.Wrap` treats a word ending in `YYYY-MM-DD` and the
+    word after it starting `HH:MM` as one word. The JSON summary keeps its
+    plain space.
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a

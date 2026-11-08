@@ -382,7 +382,8 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
 - Summaries, next steps and paths are never cut; they wrap. Prose wraps at
   spaces to column 70, its continuation lines indented to where it began,
   and never breaks inside a word: a word longer than the line, such as a
-  long path, stands whole past the edge. A next step that is a fid
+  long path, stands whole past the edge. Nor does it break between a date
+  and its time, such as `2026-11-05 14:00`. A next step that is a fid
   command (it starts with `fid `) wraps between its arguments, never
   between a flag and its value. Each broken line ends in ` \` and its
   continuation lines are indented two more than the command, so copying

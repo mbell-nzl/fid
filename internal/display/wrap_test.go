@@ -22,6 +22,11 @@ func TestWrapBreaksProseAtSpaces(t *testing.T) {
 		{"first line narrower", "one two three four", 7, 10, []string{"one two", "three four"}},
 		{"a word wider than the line stands whole", "fix " + path + " now", 10, 10, []string{"fix", path, "now"}},
 		{"a run of spaces at a break is dropped", "aaaa    bbbb", 6, 6, []string{"aaaa", "bbbb"}},
+		{"a date and its time stay together", "No backup for 3 days: none since the ledger began 2026-11-05 14:00; no backup target is set", 66, 66,
+			[]string{"No backup for 3 days: none since the ledger began", "2026-11-05 14:00; no backup target is set"}},
+		{"a time at the end stays with its date", "No backup for 40 days: none since the ledger began 2026-09-29 22:00", 66, 66,
+			[]string{"No backup for 40 days: none since the ledger began", "2026-09-29 22:00"}},
+		{"a date without a time is a word", "began 2026-09-29 and later", 16, 16, []string{"began 2026-09-29", "and later"}},
 		{"empty", "", 10, 10, []string{""}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
