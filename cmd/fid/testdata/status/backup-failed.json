@@ -1,0 +1,62 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "project.status",
+  "result": {
+    "backup": {
+      "state": "warning",
+      "reasons": [
+        "last-backup-failed"
+      ],
+      "summary": "Last backup failed (push-rejected); last backed up 2 hours ago",
+      "next_action": "fid backup",
+      "last_backup_at": "2026-11-08T07:00:00Z",
+      "ledger_started_at": "2026-11-04T05:00:00Z",
+      "age_seconds": 7200,
+      "latest": {
+        "schema": "fid.backup-record.v1",
+        "started_at": "2026-11-08T07:59:56Z",
+        "finished_at": "2026-11-08T08:00:00Z",
+        "outcome": "failed",
+        "project_id": "project-0123456789abcdef0123456789abcdef",
+        "commit": null,
+        "archive_digest": null,
+        "event_count": null,
+        "terminal_event_hash": null,
+        "failure": {
+          "kind": "push-rejected",
+          "message": "the backup failed"
+        }
+      },
+      "consecutive_failures": 1,
+      "target_set": true,
+      "user_config_path": "<CONFIG>/fid/config.toml",
+      "user_config_error": null,
+      "record_path": "<ROOT>/.git/fid/backups.jsonl",
+      "record_error": null
+    },
+    "generated_at": "2026-11-08T09:00:00Z",
+    "hint": null,
+    "in_progress": {
+      "epics": [],
+      "tasks": []
+    },
+    "needs_you": [],
+    "to_do": {
+      "epics": [],
+      "tasks": [
+        {
+          "id": "FID-77aa01",
+          "title": "Tidy help text",
+          "status": "todo",
+          "status_category": "unstarted",
+          "epic_id": null,
+          "sequence": null,
+          "priority": null,
+          "blocked_by": []
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "project.status",
+  "result": {
+    "backup": {
+      "state": "needs-you",
+      "reasons": [
+        "no-recent-backup"
+      ],
+      "summary": "No backup for 40 days: none since the ledger began 2026-09-29 22:00",
+      "next_action": "fid backup",
+      "last_backup_at": null,
+      "ledger_started_at": "2026-09-29T09:00:00Z",
+      "age_seconds": 3456000,
+      "latest": null,
+      "consecutive_failures": 0,
+      "target_set": true,
+      "user_config_path": "<CONFIG>/fid/config.toml",
+      "user_config_error": null,
+      "record_path": "<ROOT>/.git/fid/backups.jsonl",
+      "record_error": null
+    },
+    "generated_at": "2026-11-08T09:00:00Z",
+    "hint": null,
+    "in_progress": {
+      "epics": [],
+      "tasks": []
+    },
+    "needs_you": [
+      {
+        "kind": "backup",
+        "summary": "No backup for 40 days: none since the ledger began 2026-09-29 22:00",
+        "next_action": "fid backup",
+        "subject": null
+      }
+    ],
+    "to_do": {
+      "epics": [],
+      "tasks": [
+        {
+          "id": "FID-77aa01",
+          "title": "Tidy help text",
+          "status": "todo",
+          "status_category": "unstarted",
+          "epic_id": null,
+          "sequence": null,
+          "priority": null,
+          "blocked_by": []
+        }
+      ]
+    }
+  }
+}

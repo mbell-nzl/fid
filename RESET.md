@@ -59,13 +59,14 @@ criteria below.
 | **1.2b** | `fid backup`: export into fid's own clone of the backup repo, commit and push; each backup's time and outcome recorded | Assured | A backup to a local bare repo lands in the project's folder; a failure is recorded, not hidden (done 8 November 2026) |
 | **1.2c** | `fid restore` (no arguments) and the V8 restore test (back up, wipe, restore, compare) | Assured | V8 (done 8 November 2026) |
 | **1.2d** | Backup storage for the long run: fid's clone packs itself, and the backup folder holds the export's files unzipped | Assured | After 100 backups, fid's clone in the cache is packed, not a loose copy per backup; the folder holds the export's files unzipped (journal files of at most 64 MB, `manifest.json`, artifacts), the config spec describes it, `fid backup` writes it and `fid restore` zips it back up for import; V8 still passes (done 8 November 2026) |
-| **1.3** | Display package; `fid status`, `fid show`; the backup-age line | Standard | whet-style output; golden tests for text and JSON; `fid status` warns after 24 hours without a backup, after a failed push, or with no target set, and makes it a NEEDS YOU item after 3 days |
+| **1.3a** | Display package; `fid status` with the backup-age line | Standard | whet-style output; golden tests for text and JSON; `fid status` warns after 24 hours without a backup, after a failed push, or with no target set, and makes it a NEEDS YOU item after 3 days (done 8 November 2026) |
+| **1.3b** | `fid show`; a pager for long output | Standard | whet-style output; golden tests for text and JSON; on a terminal, `status` and `show` output taller than the screen pages through `less`, as git's does |
 | **1.4** | `fid next --claim`: atomic, respects dependencies, ordered, typed skip reasons, `--explain` | Standard | V3 |
 | **1.5** | `start`, `check`, `park`; claim heartbeat | Standard | An agent works a task without touching kernel commands |
 | **1.6** | Merge-aware `done` with the single done evaluator; reconciles PRs Mark merged in GitHub | Assured | V5 |
 | **1.7** | Leak test for kernel words in human output | Routine | V2 |
 | **1.8** | Move the remaining reset tasks into fid | Mark | fid tracks its own work (a disposable ledger until 3.2) |
-| **2.1** | Review and finding surface; one session records every required profile; each round is posted to the PR; `done` refuses open major findings | Standard | V5 |
+| **2.1** | Review and finding surface; one session records every required profile; each round is posted to the PR; `done` refuses open major findings; a task whose latest review round approved it and that isn't done is a NEEDS YOU item in `fid status` | Standard | V5; that NEEDS YOU item |
 | **2.2** | Policy from `origin/<default>` with built-in defaults; lane floor; hard floors | Assured | V7 |
 | **2.3** | `approve` bound to the change fingerprint; stale approvals shown | Assured | V6 |
 | **2.4** | Loop contract (fields, exit codes, version) with golden tests; scenario tests for rework, budget, rework cap, interruption and parallel claims | Standard | V4, V9 |

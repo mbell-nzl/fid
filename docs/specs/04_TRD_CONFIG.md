@@ -110,8 +110,8 @@ Malformed or unreadable config is refused when init needs to read it, using
 `invalid-argument` / `invalid-input`, exit 2 (CLI spec section 3). Init prints
 the ID and commit instruction before asking, so a target-save failure cannot
 hide them; it reports that the ledger exists and target setup failed.
-Task 1.3 adds status warnings until a target is set. `fid backup` and
-`fid restore` read the target (section 2.4).
+`fid status` warns until a target is set (CLI spec section 3). `fid backup`
+and `fid restore` read the target (section 2.4).
 
 These two small files use a strict single-setting TOML subset: the named
 table and key, single-line basic (double-quoted, with TOML escapes) or literal
@@ -329,7 +329,9 @@ Each line is a JSON object with every key present:
 `different-ledger`, `export-failed` and `internal`, matching the CLI failures
 in the CLI spec. `pushed` and
 `unchanged` are both successful backups: the target holds the ledger as
-exported during that attempt. Task 1.3's `fid status` reads the record. The
+exported during that attempt. `fid status` reads the record, without its
+lock, to judge how current the backup is (CLI spec section 3); it skips a
+line that isn't a whole record, such as a torn last line. The
 record is not part of the journal: export and rebuild ignore it, and a
 restored ledger starts without one.
 
@@ -452,4 +454,4 @@ entries whose source is `literal`, approved `inherit`, or `credential` name.
 The ambient environment is not inherited wholesale. Credential values exist
 only in process memory long enough to execute and redact output.
 
-*Last updated: 2026-11-08 (RESET 1.2c: restore)*
+*Last updated: 2026-11-08 (RESET 1.3a: `fid status` reads the record)*

@@ -142,6 +142,7 @@ and tests.
 fid init
 fid backup
 fid restore
+fid status [--all]
 fid capabilities
 fid rebuild
 fid maintenance check
@@ -195,7 +196,7 @@ commit instruction have already been printed. The error begins
 with the existing `internal-error` code (exit 7). Other internal init
 failures keep the fixed message `project initialization failed`.
 See `04_TRD_CONFIG.md` section 2 for file formats. `fid restore` is
-below; missing-target status warnings belong to task 1.3.
+below, and `fid status` warns until a target is set (below).
 
 `fid backup` copies the ledger off the machine (decisions record D4 / F1). It
 takes no arguments. It exports the ledger in `export create`'s format,
@@ -302,6 +303,164 @@ reason `no-backup`, which Mark approved on 8 November 2026, and those three
 check codes; no other code or reason. Outside a repository and at an unsafe
 ledger location, `restore` refuses as every project command does
 (section 1).
+
+`fid status` shows what needs you, the epics and tasks in progress and to
+do, and how current the ledger's backup is (decisions record D4 / F1, 8
+November 2026 details for task 1.3). It takes no arguments and one flag,
+`--all`. It reads the projection, the backup record and user config, and
+writes nothing. Text output is a rounded box 72 columns wide, headed
+`fid status` and today's local date:
+
+```text
+╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
+
+  NEEDS YOU
+  ✗ No backup for 4 days: last backed up 2026-11-04 19:00
+      → fid backup
+
+  IN PROGRESS
+  ◆ FID-e3a1c0  Operating experience              ██░░░░░░░░  2/7 done
+      ● FID-71a0c2  Export validation                      in progress
+      ● FID-3b9e01  Tidy resume output                       qa review
+  ● FID-5d2f77  Fix journal replay line                    in progress
+  ● FID-d1d1d1  Leftover started task                     dev complete
+
+  TO DO
+  ◆ FID-e3a1c0  Operating experience                           3 to do
+      ○ FID-9f13aa  Harden login rate limiting
+      ○ FID-c2d4e5  Retry a rejected backup pu…  blocked by FID-71a0c2
+      ○ FID-0d4e8b  Document backup age
+  ◆ FID-8a1b2c  Loop contract                                  6 tasks
+      ○ FID-1f2e3d  Contract fields and exit codes
+      ○ FID-2f2e3d  Golden tests for the co…  blocked by FID-1f2e3d +1
+      ○ FID-3f2e3d  Scenario test for rework
+      ○ FID-4f2e3d  Scenario test for interruption
+      ○ FID-5f2e3d  Scenario test for two worktrees
+      ○ FID-6f2e3d  Version the contract
+  ◆ FID-c0ffee  Kit install                                   no tasks
+  ○ FID-77aa01  Tidy help text
+  +2 more: fid status --all
+╰──────────────────────────────────────────────────────────────────────╯
+```
+
+- **NEEDS YOU** lists what waits on a person, each item a summary and its
+  next step. Only the backup adds an item so far; later tasks add their
+  own kinds.
+- **Epics and tasks** appear; subtasks never do. An epic whose own state is
+  completed or cancelled is hidden. An epic is in progress when its own
+  state's category is `started`, or any of its tasks is started or
+  completed; otherwise it is to do. Its progress is its completed tasks over
+  its tasks that aren't cancelled.
+- **IN PROGRESS** shows each in-progress epic, with its bar and count, and
+  its started tasks beneath it with their workflow state, underscores read
+  as spaces. Started tasks with no listed epic follow, none or a hidden one.
+- **TO DO** shows every unstarted task: under its in-progress epic (`N to
+  do`), then under its to-do epic (`N tasks`, or `no tasks`), then those
+  with no listed epic. An in-progress epic with nothing to do has no line
+  here. A task with a `blocks` or `blocked_by` link from an issue that
+  isn't completed or cancelled shows `blocked by <ID>`, the lowest such ID,
+  and `+N` for the rest. TO DO doesn't judge readiness: task 1.4 brings
+  `fid next`'s order and skip reasons, and turns it into READY.
+- The text shows at most 10 task rows in TO DO, then
+  `+N more: fid status --all`, where N counts the hidden task rows and any
+  hidden epic with no tasks. Epic lines don't count toward the 10. `--all`
+  shows every row.
+- **Order:** epics, and the tasks in each list, by sequence, then priority
+  (lower first), then creation time, then ID; a missing sequence or
+  priority comes last, as in `issue list --order`.
+- A section with nothing in it is left out. A project with no epics or
+  tasks at all shows `○ No tasks yet` and the command that creates a task,
+  `fid issue create --kind task --title <title> --actor human:<name>
+  --idempotency-key <key>`.
+- Rows run to column 70, the right-hand text flush right. A title too long
+  for its column ends in `…`; backup lines and paths are never cut. When
+  the right-hand text would leave a title fewer than 10 columns, as the
+  longest IDs and workflow states can, it takes a line of its own beneath
+  the row, still flush right.
+- Text fid didn't write, such as titles, paths and the backup record's
+  failure kinds, has its controls escaped before it is fitted to a column,
+  as failure messages' are (section 8, Phase 24 amendment): LF, CR and TAB
+  as `\n`, `\r` and `\t`, other control characters as `\uXXXX`. JSON keeps
+  the values as they are.
+- Colour is used only when stdout is a terminal and `NO_COLOR` is unset or
+  empty. The symbols are always Unicode.
+
+The backup's line is the box's last, except when it needs you: then it
+appears only as the NEEDS YOU item.
+
+| State | When | Line |
+|---|---|---|
+| `current` | The last backup is at most 24 hours old and nothing is wrong | `✓ Backed up 3 hours ago` |
+| `not-backed-up-yet` | No backup is recorded, the ledger began at most 24 hours ago, and nothing is wrong | `○ Not backed up yet` |
+| `warning` | Any reason below, while the age is at most 72 hours | `⚠` and the summary, with its next step |
+| `needs-you` | The age is over 72 hours | The NEEDS YOU item |
+
+The last backup is the record's latest `pushed` or `unchanged` line, at its
+`finished_at`. The age is now less the last backup or, when none is
+recorded, less the genesis Event's time. A restored ledger starts with no
+record and an old genesis Event, so it needs you until its first
+`fid backup`. A time in the future counts as now. The reasons, in this
+order:
+
+| Reason | When | Next step |
+|---|---|---|
+| `no-recent-backup` | The age is over 24 hours | `fid backup` |
+| `last-backup-failed` | The record's last line is `failed`, of any kind, however recent the last backup. The text names the kind, and how many failed in a row when it's more than one | `fid backup` |
+| `no-target` | User config has no `[backup] target` | `add [backup] target to <user config path>, then fid backup` |
+| `user-config-unreadable` | User config is malformed or unreadable, or `$HOME` and `$XDG_CONFIG_HOME` don't locate it | `fix <user config path>, then fid backup`, or `fid backup` when there's no path |
+| `record-unreadable` | The record exists but can't be read; the age is then unknown | `fix or remove <record path>, then fid backup` |
+
+The next step shown is the first that applies of: fixing user config, setting
+the target, fixing the record, and `fid backup`. A record
+line that isn't a whole record, such as a torn last line, is skipped;
+appends repair it later. None of these make `status` fail. Relative times
+read as minutes, hours or days ago (`just now` under a minute; hours below
+48); absolute times are local, as `YYYY-MM-DD HH:MM`. Human text names
+failure kinds, never kernel nouns or IDs.
+
+The `project.status` JSON result holds everything the text shows, never
+capped, with or without `--all`. `event` is null.
+
+```json
+{"generated_at": "2026-11-08T09:00:00Z",
+ "backup": {"state": "warning", "reasons": ["last-backup-failed"],
+            "summary": "Last backup failed (push-rejected); last backed up 2 hours ago",
+            "next_action": "fid backup", "last_backup_at": "2026-11-08T07:00:00Z",
+            "ledger_started_at": "2026-11-04T05:00:00Z", "age_seconds": 7200,
+            "latest": <record line>, "consecutive_failures": 1, "target_set": true,
+            "user_config_path": "/home/mark/.config/fid/config.toml", "user_config_error": null,
+            "record_path": "<ledger>/backups.jsonl", "record_error": null},
+ "needs_you": [{"kind": "backup", "summary": "...", "next_action": "fid backup", "subject": null}],
+ "in_progress": {"epics": [<epic>], "tasks": [<task>]},
+ "to_do": {"epics": [<epic>], "tasks": [<task>]},
+ "hint": null}
+```
+
+- `generated_at` is UTC. `last_backup_at` and `ledger_started_at` are UTC
+  RFC 3339 times; `last_backup_at` is null when no backup is recorded.
+- `age_seconds` is null when the record can't be read. `latest` is the
+  record's last whole line, or null. `target_set` is null when user config
+  can't be read, and `user_config_path` null when it can't be located.
+  `user_config_error` and `record_error` carry the cause, or null.
+- `summary` and `next_action` are the text's, unescaped; `next_action` is
+  null when nothing needs doing.
+- A NEEDS YOU item is `{kind, summary, next_action, subject}`. `kind` is
+  `backup` so far; `subject` is null for it, and `{type, id}` for later
+  kinds about an issue.
+- An epic is
+  `{id, title, status, status_category, state, sequence, priority, progress: {done, total}, tasks}`,
+  `state` being `in-progress` or `to-do` and `tasks` the section's tasks.
+- A task is
+  `{id, title, status, status_category, epic_id, sequence, priority, blocked_by}`,
+  `blocked_by` listing its open blockers' IDs in order.
+- `hint` is `{summary, next_action}` for a project with no epics or tasks,
+  and null otherwise.
+
+Outside a repository, at an unsafe ledger location, and in a repository
+without a ledger (`project-not-found`, exit 3), `status` refuses as every
+project command does (section 1). Journal replay failures keep their codes;
+any other failure, such as a journal whose first Event can't be read, is
+`internal-error` (exit 7). Task 1.3a adds no codes or reasons.
 
 ### Issue tracker
 
@@ -842,6 +1001,8 @@ Only a command that names a Human decision interface may offer a renderer. The
 renderer consumes the same typed projection returned as JSON, declares its own
 small set of outputs, and carries no round-trip/import promise. Initial allowed
 candidate: `projection human-brief` as terminal text, Markdown, or HTML.
+`fid status` (section 3) is one: its text and its JSON come from one result,
+and the text uses fid's display package, ported from whet (task 1.3a).
 
 ## 8. Accepted Slice Leaf Contracts
 
@@ -1090,4 +1251,4 @@ returns `source-digest-mismatch` with nullable `expected_digest` and
 `observed_digest`; an unobservable worktree returns `repository-unavailable`
 with a typed reason and detail. Both refuse without appending an Event.
 
-*Last updated: 2026-11-08 (RESET 1.2c: `fid restore`)*
+*Last updated: 2026-11-08 (RESET 1.3a: `fid status`)*

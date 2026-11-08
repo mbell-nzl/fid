@@ -1,0 +1,92 @@
+// Package status assembles fid status: what needs a person, the work in
+// progress and to do, and how current the ledger's backup is. Text and JSON
+// are both rendered from one Result.
+package status
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/mbell-nzl/fid/internal/backup"
+	"github.com/mbell-nzl/fid/internal/issues"
+)
+
+// NeedsYouBackup is the kind of item that says the backup needs a person.
+// Later tasks add kinds for approvals, epic plans, untriaged work and tasks
+// waiting for a person.
+const NeedsYouBackup = "backup"
+
+// CreateTaskCommand is the command the empty project's hint names.
+const CreateTaskCommand = "fid issue create --kind task --title <title> --actor human:<name> --idempotency-key <key>"
+
+type Options struct {
+	WorkspaceRoot string
+	MigrationsDir string
+	// Environment locates user config, as fid backup's does.
+	Environment []string
+	// Now is when status is judged, in the time zone it shows times in.
+	Now time.Time
+}
+
+// Result is everything fid status shows, uncapped.
+type Result struct {
+	GeneratedAt time.Time
+	Backup      Backup
+	NeedsYou    []NeedsYouItem
+	InProgress  issues.OverviewSection
+	ToDo        issues.OverviewSection
+	// Hint is set only when the project has no epics or tasks at all.
+	Hint *Hint
+}
+
+// NeedsYouItem is something waiting on a person, with what to do next.
+// Subject names the issue it's about, when it is about one.
+type NeedsYouItem struct {
+	Kind       string   `json:"kind"`
+	Summary    string   `json:"summary"`
+	NextAction *string  `json:"next_action"`
+	Subject    *Subject `json:"subject"`
+}
+
+type Subject struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type Hint struct {
+	Summary    string `json:"summary"`
+	NextAction string `json:"next_action"`
+}
+
+// Build reads the project's work and its backup health.
+func Build(options Options) (Result, error) {
+	overview, err := issues.ReadOverview(issues.OverviewOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir})
+	if err != nil {
+		return Result{}, fmt.Errorf("read status: %w", err)
+	}
+	health, err := backup.ReadHealth(backup.HealthOptions{WorkspaceRoot: options.WorkspaceRoot, Environment: options.Environment, Now: options.Now})
+	if err != nil {
+		return Result{}, fmt.Errorf("read status: %w", err)
+	}
+	result := Result{GeneratedAt: options.Now, Backup: describeBackup(health, options.Now), NeedsYou: []NeedsYouItem{},
+		InProgress: overview.InProgress, ToDo: overview.ToDo}
+	if health.State == backup.HealthNeedsYou {
+		result.NeedsYou = append(result.NeedsYou, NeedsYouItem{Kind: NeedsYouBackup, Summary: result.Backup.Summary, NextAction: result.Backup.NextAction})
+	}
+	if overview.Empty {
+		result.Hint = &Hint{Summary: "No tasks yet", NextAction: CreateTaskCommand}
+	}
+	return result, nil
+}
+
+// Fields is the result as the project.status JSON result.
+func (result Result) Fields() map[string]any {
+	return map[string]any{
+		"generated_at": result.GeneratedAt.UTC().Format(time.RFC3339),
+		"backup":       result.Backup,
+		"needs_you":    result.NeedsYou,
+		"in_progress":  result.InProgress,
+		"to_do":        result.ToDo,
+		"hint":         result.Hint,
+	}
+}

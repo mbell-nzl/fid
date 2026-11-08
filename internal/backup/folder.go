@@ -23,10 +23,21 @@ import (
 // project. An import keeps the journal byte for byte, so a restored ledger
 // keeps its genesis.
 func genesisHash(workspaceRoot string) (string, error) {
+	event, err := genesisEvent(workspaceRoot)
+	if err != nil {
+		return "", err
+	}
+	return journal.HashEvent(event)
+}
+
+// genesisEvent reads the journal's first Event: the first line of the first
+// journal file, in name order, so a restored journal's numbered pieces come
+// before its dated files.
+func genesisEvent(workspaceRoot string) (journal.Event, error) {
 	directory := filepath.Join(config.LedgerDir(workspaceRoot), config.JournalDirName)
 	files, err := os.ReadDir(directory)
 	if err != nil {
-		return "", fmt.Errorf("read the journal: %w", err)
+		return journal.Event{}, fmt.Errorf("read the journal: %w", err)
 	}
 	for _, file := range files {
 		if file.IsDir() || !strings.HasSuffix(file.Name(), ".jsonl") {
@@ -34,18 +45,18 @@ func genesisHash(workspaceRoot string) (string, error) {
 		}
 		line, err := firstLine(filepath.Join(directory, file.Name()))
 		if err != nil {
-			return "", err
+			return journal.Event{}, err
 		}
 		if len(line) == 0 {
 			continue
 		}
 		var event journal.Event
 		if err := event.UnmarshalJSON(line); err != nil {
-			return "", fmt.Errorf("read the journal's first Event: %w", err)
+			return journal.Event{}, fmt.Errorf("read the journal's first Event: %w", err)
 		}
-		return journal.HashEvent(event)
+		return event, nil
 	}
-	return "", errors.New("the journal has no Events")
+	return journal.Event{}, errors.New("the journal has no Events")
 }
 
 func firstLine(path string) ([]byte, error) {

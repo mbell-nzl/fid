@@ -1,0 +1,7 @@
+╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
+
+  ○ No tasks yet
+      → fid issue create --kind task --title <title> --actor human:<name> --idempotency-key <key>
+
+  ✓ Backed up 3 hours ago
+╰──────────────────────────────────────────────────────────────────────╯

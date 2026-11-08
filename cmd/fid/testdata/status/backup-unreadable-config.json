@@ -1,0 +1,59 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "project.status",
+  "result": {
+    "backup": {
+      "state": "warning",
+      "reasons": [
+        "user-config-unreadable"
+      ],
+      "summary": "Can't read user config <CONFIG>/fid/config.toml; last backed up 1 hour ago",
+      "next_action": "fix <CONFIG>/fid/config.toml, then fid backup",
+      "last_backup_at": "2026-11-08T08:00:00Z",
+      "ledger_started_at": "2026-11-04T05:00:00Z",
+      "age_seconds": 3600,
+      "latest": {
+        "schema": "fid.backup-record.v1",
+        "started_at": "2026-11-08T07:59:56Z",
+        "finished_at": "2026-11-08T08:00:00Z",
+        "outcome": "pushed",
+        "project_id": "project-0123456789abcdef0123456789abcdef",
+        "commit": "cccccccccccccccccccccccccccccccccccccccc",
+        "archive_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "event_count": 12,
+        "terminal_event_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "failure": null
+      },
+      "consecutive_failures": 0,
+      "target_set": null,
+      "user_config_path": "<CONFIG>/fid/config.toml",
+      "user_config_error": "parse config \"<CONFIG>/fid/config.toml\" backup.target: expected a single-line quoted string",
+      "record_path": "<ROOT>/.git/fid/backups.jsonl",
+      "record_error": null
+    },
+    "generated_at": "2026-11-08T09:00:00Z",
+    "hint": null,
+    "in_progress": {
+      "epics": [],
+      "tasks": []
+    },
+    "needs_you": [],
+    "to_do": {
+      "epics": [],
+      "tasks": [
+        {
+          "id": "FID-77aa01",
+          "title": "Tidy help text",
+          "status": "todo",
+          "status_category": "unstarted",
+          "epic_id": null,
+          "sequence": null,
+          "priority": null,
+          "blocked_by": []
+        }
+      ]
+    }
+  }
+}
