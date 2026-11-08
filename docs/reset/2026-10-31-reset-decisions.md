@@ -591,13 +591,15 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     `current`, `not-backed-up-yet`, `warning` and `needs-you`, and its
     reasons `no-recent-backup`, `last-backup-failed`, `no-target`,
     `user-config-unreadable` and `record-unreadable`. Any line that isn't a
-    whole record is skipped, wherever it is: skipping can only make the
-    last backup look older. When the record can't be read, the age is
-    unknown, so it warns but never needs you. The summary leads with the
-    age once it's over a day, and otherwise with what's wrong; the text
-    leaves out when a failure happened, which JSON's `latest` has. The next
-    step is the first of: fix user config, set the target, fix the record,
-    `fid backup`. Hours read as hours below 48.
+    whole record is skipped, wherever it is, not only the last. fid never
+    writes a damaged line before the last, so one there means the file was
+    damaged by hand; skipping it can make the last backup look older, or
+    hide a failure until the next backup. When the record can't be read,
+    the age is unknown, so it warns but never needs you. The summary leads
+    with the age once it's over a day, and otherwise with what's wrong; the
+    text leaves out when a failure happened, which JSON's `latest` has. The
+    next step is the first of: fix user config, set the target, fix the
+    record, `fid backup`. Hours read as hours below 48.
   - **Builder's choice, PR #50 (1.3a):** a NEEDS YOU item is
     `{kind, summary, next_action, subject}`, `subject` being null for the
     backup and `{type, id}` for later kinds about an issue. The JSON field
