@@ -10,8 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/export"
 )
 
 // checkExportIdentity checks the export's own identity as well as the
@@ -41,15 +42,16 @@ func checkExportIdentity(repository clone, commit, id string) error {
 // git; restoring them must reproduce the original export's archive digest.
 // Members stream directly from git and are never extracted to local paths.
 func zipFolder(repository clone, commit, id, expected, scratch string) (string, error) {
-	listed, err := repository.text("ls-tree", "-r", "-z", commit, "--", id+"/")
+	return zipFolderWithLimits(repository, commit, id, expected, scratch, export.ArchiveResourceLimits())
+}
+
+func zipFolderWithLimits(repository clone, commit, id, expected, scratch string, limits export.ResourceLimits) (string, error) {
+	entries, err := listFolderMembers(repository, commit, id, limits)
 	if err != nil {
-		return "", failure(KindInternal, err, "read the backup folder's members")
+		return "", err
 	}
-	entries := strings.Split(strings.TrimSuffix(listed, "\x00"), "\x00")
 	sort.Slice(entries, func(i, j int) bool {
-		_, left, _ := strings.Cut(entries[i], "\t")
-		_, right, _ := strings.Cut(entries[j], "\t")
-		return left < right
+		return entries[i].name < entries[j].name
 	})
 	path := filepath.Join(scratch, ArchiveName)
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
@@ -60,21 +62,13 @@ func zipFolder(repository clone, commit, id, expected, scratch string) (string, 
 	hash := sha256.New()
 	writer := zip.NewWriter(io.MultiWriter(file, hash))
 	for _, entry := range entries {
-		metadata, name, _ := strings.Cut(entry, "\t")
-		if name == id+"/"+ManifestName {
-			continue
-		}
-		fields := strings.Fields(metadata)
-		if len(fields) != 3 || fields[0] != "100644" || fields[1] != "blob" {
-			return "", damaged(id, folderCheck(CheckManifestInvalid, "%s is not a regular export member", name))
-		}
-		header := &zip.FileHeader{Name: strings.TrimPrefix(name, id+"/"), Method: zip.Deflate, Modified: time.Date(1980, 1, 1, 0, 0, 0, 0, time.UTC)}
+		header := &zip.FileHeader{Name: entry.name, Method: zip.Deflate, Modified: time.Date(1980, 1, 1, 0, 0, 0, 0, time.UTC)}
 		header.SetMode(0o644)
 		output, err := writer.CreateHeader(header)
 		if err != nil {
 			return "", failure(KindInternal, err, "add an export member to the restore's archive")
 		}
-		if err := repository.stream(output, "cat-file", "blob", fields[2]); err != nil {
+		if err := repository.stream(output, "cat-file", "blob", entry.oid); err != nil {
 			return "", failure(KindInternal, err, "read an export member from the backup repository")
 		}
 	}

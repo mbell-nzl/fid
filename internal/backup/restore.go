@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/config"
@@ -191,15 +192,25 @@ func folderArchive(repository clone, commit, id, schema string, payload []byte, 
 // folderBlob writes the file at path in commit to output and reports whether
 // it is there.
 func folderBlob(repository clone, commit, path string, output io.Writer) (bool, error) {
-	listed, err := repository.text("ls-tree", "-z", commit, "--", path)
+	listed, err := repository.text("ls-tree", "-l", "-z", commit, "--", path)
 	if err != nil {
 		return false, failure(KindInternal, err, "read the backup repository's tree")
 	}
 	fields := strings.Fields(strings.SplitN(listed, "\t", 2)[0])
-	if len(fields) != 3 || fields[1] != "blob" {
+	if len(fields) != 4 || fields[1] != "blob" {
 		return false, nil
 	}
-	if err := repository.stream(output, "cat-file", "blob", fields[2]); err != nil {
+	id, _, _ := strings.Cut(path, "/")
+	size, err := strconv.ParseInt(fields[3], 10, 64)
+	limit := export.ArchiveResourceLimits().NonArtifactBytes
+	if err != nil || size < 0 || size > limit {
+		return false, folderResourceLimit(id, path)
+	}
+	bounded := &folderBlobWriter{output: output, remaining: limit}
+	if err := repository.stream(bounded, "cat-file", "blob", fields[2]); err != nil {
+		if bounded.exceeded {
+			return false, folderResourceLimit(id, path)
+		}
 		return false, failure(KindInternal, err, "read %s from the backup repository", path)
 	}
 	return true, nil

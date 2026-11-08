@@ -207,6 +207,14 @@ every backup; it never changes another path in the repository. The older
 `fid.backup.v1` ZIP folder is unsupported; no real backups existed when the
 format changed in task 1.2d, so there is no migration.
 
+**Storage limitation (deferred before permanent backups in 3.2).** Each
+Artifact remains a single raw Git blob, and export accepts Artifacts up to
+1 GiB. An Artifact can therefore exceed a backup target's per-file limit
+even when its compressed contents would fit inside the former ZIP folder.
+The journal's 64 MiB pieces do not bound Artifact sizes. Mark accepted
+documenting this constraint in 1.2d; a smaller Artifact ceiling or a
+different storage design remains undecided.
+
 **One ledger per folder.** Clones of one project each make their own ledger
 with the project's ID, and so does `fid init` on a new machine, so their
 backups name the same folder. fid replaces a folder only when its
@@ -339,7 +347,13 @@ credentials and transport, `GIT_TERMINAL_PROMPT=0`, hooks off and inherited
 repository variables dropped. From that tip, restore reads
 `<project-id>/backup.json` and checks that its `project_id` is this
 project's. The export's own `manifest.json` must name the same project. It
-then turns a `fid.backup.v2` folder into the archive to import: it streams
+checks both manifest sizes before buffering them, using export's 64 MiB
+non-Artifact ceiling. Before creating the ZIP, streamed Git tree metadata
+must fit export's existing ceilings: 64 MiB per non-Artifact member, 1 GiB
+per Artifact, 8 GiB of members in total and one million entries. The backup
+wrapper is outside the export's member count and total. An excess is an
+`archive-invalid` refusal with a `resource-limit` check. Restore then turns
+a `fid.backup.v2` folder into the archive to import: it streams
 the export members directly from git into a `0600` ZIP file in that private
 directory, using export's sorted names, deflate, `0644` member modes and
 1980-01-01 UTC timestamps. The rebuilt archive's `sha256:` digest must

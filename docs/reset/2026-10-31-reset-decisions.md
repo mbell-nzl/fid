@@ -329,9 +329,11 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     backups of a 0.2 MB archive). GitHub refuses files over 100 MB, which
     `export.zip` reaches at roughly a 1.2 GB journal. Mark chose to store
     the export's files unzipped in the folder: journal files of at most 64
-    MB, `manifest.json` and artifacts. No file then nears 100 MB, the backup
-    history is readable, and restore zips the files back up and imports them
-    through the existing path. 1.2d also packs fid's clone. No real backups
+    MB, `manifest.json` and artifacts. The journal pieces and manifest stay
+    below 100 MB; Artifacts may exceed the target's per-file limit (the
+    review decision below records this constraint). The backup history is
+    readable, and restore zips the files back up and imports them through the
+    existing path. 1.2d also packs fid's clone. No real backups
     exist yet, so the format change needs no migration. Rejected: keeping
     `export.zip` (the 100 MB ceiling), and storing the journal's daily files
     (most new restore code, for a gain packing already gives).
@@ -353,6 +355,14 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     code-reading finding that a relative `TMPDIR` fell back to the same
     relative path through `os.TempDir`, failing if that directory was absent;
     restore scratch no longer uses `TMPDIR`.
+  - **Decided by Mark, 8 November 2026 (1.2d review):** document and defer
+    the large-Artifact storage constraint; resolve it before permanent
+    backups in 3.2. Export accepts an Artifact of up to 1 GiB, and v2 stores
+    each Artifact as a single raw Git blob. Journal chunking does
+    not protect those blobs from the backup target's per-file limit. A
+    compressible Artifact could previously fit inside `export.zip` but
+    exceed that limit unzipped. 1.2d changes neither Artifact limits nor
+    storage; this decision does not select chunking or a smaller ceiling.
   - 1.2d packs the cache under its existing clone lock before exporting:
     count loose objects exactly, and at 256 run foreground `git repack -A -d`
     and `git prune-packed`. User `gc.auto` settings cannot disable it.
@@ -754,6 +764,11 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   bytes; assess cross-toolchain compatibility before the supported baseline
   and permanent ledger in 3.2. Preserving the digest's meaning doesn't waive
   this compatibility concern.
+- From 1.2d review, accepted by Mark on 8 November 2026: resolve backup
+  storage for Artifacts larger than the target's per-file limit before
+  permanent backups in 3.2. Exports accept up to 1 GiB per Artifact, stored
+  as one raw blob in v2. Journal chunking does not cover Artifacts; no
+  smaller Artifact ceiling or chunking design has been chosen.
 - Review rounds, as data for refining the process after the reset: #41, #44
   and #46 took 4, 4 and 5 Codex rounds. In #46, three of the four rounds
   that asked for changes were about code the previous fix round had added
