@@ -1,0 +1,48 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "project.status",
+  "result": {
+    "backup": {
+      "state": "warning",
+      "reasons": [
+        "no-target"
+      ],
+      "summary": "No backup target is set; not backed up yet",
+      "next_action": "add [backup] target to <CONFIG>/fid/config.toml, then fid backup",
+      "last_backup_at": null,
+      "ledger_started_at": "2026-11-08T07:00:00Z",
+      "age_seconds": 7200,
+      "latest": null,
+      "consecutive_failures": 0,
+      "target_set": false,
+      "user_config_path": "<CONFIG>/fid/config.toml",
+      "user_config_error": null,
+      "record_path": "<ROOT>/.git/fid/backups.jsonl",
+      "record_error": null
+    },
+    "generated_at": "2026-11-08T09:00:00Z",
+    "hint": null,
+    "in_progress": {
+      "epics": [],
+      "tasks": []
+    },
+    "needs_you": [],
+    "to_do": {
+      "epics": [],
+      "tasks": [
+        {
+          "id": "FID-77aa01",
+          "title": "Tidy help text",
+          "status": "todo",
+          "status_category": "unstarted",
+          "epic_id": null,
+          "sequence": null,
+          "priority": null,
+          "blocked_by": []
+        }
+      ]
+    }
+  }
+}

@@ -160,6 +160,7 @@ var declaredBooleanFlags = map[string]string{
 	"issue list":        "has-concerns",
 	"maintenance check": "warn-as-error",
 	"rebuild":           "verbose",
+	"status":            "all",
 	"workflow assign":   "project-wide",
 	"workflow list":     "active",
 }

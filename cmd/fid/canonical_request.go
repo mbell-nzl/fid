@@ -164,6 +164,8 @@ func leafOperation(cmd *cobra.Command) string {
 		return "project.backup"
 	case "restore":
 		return "project.restore"
+	case "status":
+		return "project.status"
 	case "capabilities":
 		return "capabilities.get"
 	case "ready":

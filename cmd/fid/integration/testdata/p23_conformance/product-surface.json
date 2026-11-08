@@ -34,7 +34,7 @@
     "requirement list", "requirement record-reference", "restore", "resume", "review", "review get",
     "review list", "review record", "run", "run abandon", "run checkpoint", "run close", "run get",
     "run inspect", "run list", "run observe", "run observe-budget", "run recover", "run start",
-    "sql", "stats", "stats cost", "stats tokens", "stop", "stop list", "stop raise",
+    "sql", "stats", "stats cost", "stats tokens", "status", "stop", "stop list", "stop raise",
     "stop resolve", "workflow", "workflow assign", "workflow define", "workflow list"
   ]
 }

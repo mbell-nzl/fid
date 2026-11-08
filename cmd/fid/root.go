@@ -89,6 +89,7 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.AddCommand(newRunCommand())
 	cmd.AddCommand(newSQLCommand())
 	cmd.AddCommand(newStatsCommand())
+	cmd.AddCommand(newStatusCommand())
 	cmd.AddCommand(newStopCommand())
 	cmd.AddCommand(newWorkflowCommand())
 	installCommandGroups(cmd)

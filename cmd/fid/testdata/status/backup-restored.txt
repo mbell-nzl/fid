@@ -1,0 +1,9 @@
+╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
+
+  NEEDS YOU
+  ✗ No backup for 40 days: none since the ledger began 2026-09-29 22:00
+      → fid backup
+
+  TO DO
+  ○ FID-77aa01  Tidy help text
+╰──────────────────────────────────────────────────────────────────────╯
