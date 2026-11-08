@@ -143,6 +143,7 @@ fid init
 fid backup
 fid restore
 fid status [--all]
+fid show <id>
 fid capabilities
 fid rebuild
 fid maintenance check
@@ -373,10 +374,30 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
   `fid issue create --kind task --title <title> --actor human:<name>
   --idempotency-key <key>`.
 - Rows run to column 70, the right-hand text flush right. A title too long
-  for its column ends in `…`; backup lines and paths are never cut. When
-  the right-hand text would leave a title fewer than 10 columns, as the
-  longest IDs and workflow states can, it takes a line of its own beneath
-  the row, still flush right.
+  for its column ends in `…`, dropping whole an escape (below) that would
+  cross the cut, as failure messages do. When the right-hand text would
+  leave a title fewer than 10 columns, as the longest IDs and workflow
+  states can, it takes a line of its own beneath the row, still flush
+  right.
+- Summaries, next steps and paths are never cut; they wrap. Prose wraps at
+  spaces to column 70, its continuation lines indented to where it began,
+  and never breaks inside a word: a word longer than the line, such as a
+  long path, stands whole past the edge. A next step that is a fid
+  command (it starts with `fid `) wraps between its arguments, never
+  between a flag and its value. Each broken line ends in ` \` and its
+  continuation lines are indented two more than the command, so copying
+  both lines runs the whole command, and copying only the first leaves
+  the shell waiting rather than running half of it:
+
+  ```text
+    ○ No tasks yet
+        → fid issue create --kind task --title <title> \
+            --actor human:<name> --idempotency-key <key>
+    ⚠ Can't read user config /home/mark/.config/fid/config.toml; last
+      backed up 1 hour ago
+        → add [backup] target to /home/mark/.config/fid/config.toml,
+          then fid backup
+  ```
 - Text fid didn't write, such as titles, paths and the backup record's
   failure kinds, has its controls escaped before it is fitted to a column,
   as failure messages' are (section 8, Phase 24 amendment): LF, CR and TAB
@@ -384,6 +405,7 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
   the values as they are.
 - Colour is used only when stdout is a terminal and `NO_COLOR` is unset or
   empty. The symbols are always Unicode.
+- On a terminal, text taller than the screen pages (below).
 
 The backup's line is the box's last, except when it needs you: then it
 appears only as the NEEDS YOU item.
@@ -461,6 +483,150 @@ without a ledger (`project-not-found`, exit 3), `status` refuses as every
 project command does (section 1). Journal replay failures keep their codes;
 any other failure, such as a journal whose first Event can't be read, is
 `internal-error` (exit 7). Task 1.3a adds no codes or reasons.
+
+**The pager** (task 1.3b). `status` and `show` page long text, as git's
+commands do; no other command pages.
+
+- Text pages only when stdout is a terminal and the text is taller than
+  the screen. fid reads the terminal's size (`TIOCGWINSZ`) and counts rows
+  at its width, so a line the terminal wraps counts as more than one.
+  Text that fits, `--json` and piped output are printed directly.
+- The pager is `$PAGER` when it is set, and `less` otherwise; an empty
+  `PAGER` or `cat` means none. As git does, a pager with arguments or
+  shell syntax, such as `PAGER="less -S"`, runs through `sh -c`, and a
+  plain name is found on `PATH` and run directly.
+- fid sets `LESS=FRX` (quit if the text fits one screen, keep colours,
+  don't clear the screen) only when `LESS` is unset: the user's own `LESS`
+  wins.
+- Colour is decided by stdout being a terminal, before the text reaches
+  the pager.
+- When the pager can't start, such as when `less` is missing, fid prints
+  the text directly. Quitting the pager early isn't an error. fid waits
+  for the pager to exit, through an interrupt typed in it, and its exit
+  code is its own.
+- There is no `--no-pager`: `PAGER=cat` or a pipe turns paging off.
+
+`fid show <id>` shows one issue (decisions record, 8 November 2026 details
+for task 1.3). It takes the issue's ID, matched exactly, with no prefix or
+case matching, and no flags. It is a read: it refreshes the projection like
+every read, records no Event and makes no network calls. Text output is
+`status`'s 72-column box, its top border naming the issue's ID and kind:
+
+```text
+╭ FID-71a0c2 ──────────────────────────────────────────────────── task ╮
+
+  ● Export validation                                      in progress
+
+  Epic        ◆ FID-e3a1c0  Operating experience              2/7 done
+  Priority    P1
+  Blocks      ○ FID-c2d4e5  Retry a rejected backup push         to do
+              ○ FID-0d4e8b  Document backup age                  to do
+  Labels      backup, export
+  Spec        docs/specs/02_TRD.md
+
+  ACCEPTANCE CRITERIA
+  1  fid export validate refuses an archive whose member digests don't
+     match its manifest, naming the first bad member
+  2  A truncated archive is refused, not read to its end
+
+  SUBTASKS                                                    1/3 done
+  ✓ FID-aa01b2  Check the manifest schema                         done
+  ● FID-aa02b3  Validate member digests                    in progress
+  ○ FID-aa03b4  Refuse a truncated archive                       to do
+╰──────────────────────────────────────────────────────────────────────╯
+```
+
+- **Heading.** The issue's mark, its title, and its state flush right.
+  Workflow states read with underscores as spaces, and `todo` as `to do`.
+  The title wraps and is never cut, its state staying on the first line;
+  a state that would leave the title fewer than 10 columns takes a line
+  of its own beneath. An epic reads as `status` reads it: `in progress`
+  once its own state's category is `started` or any of its tasks has
+  started or completed, `to do` before then, and its own workflow state,
+  such as `closed`, once it is completed or cancelled.
+- **Marks.** `✓` completed, `●` started, `○` unstarted, `◆` an epic, and
+  `✗` cancelled, muted rather than red, since cancelled isn't an error.
+- **Rows**, each only when it has something to show, in this order:
+  - `Task`: a subtask's task, with its state;
+  - `Epic`: the issue's epic (a subtask's is its task's epic), with
+    `N/M done`;
+  - `Progress`: an epic's bar and `N/M tasks done`, when it has tasks;
+  - `Priority`: `P<n>`;
+  - `Blocked by` and `Blocks`, each issue on its own line under the value
+    column, with its state;
+  - `Labels`, comma-separated, and `Spec`, `spec_md_path` as stored.
+
+  Labels are 10 columns wide after the two-space indent, so values begin
+  at column 14. Later tasks add rows after `Spec` (lane, work in hand,
+  checks, reviews, approval, and next as the last), a NEEDS YOU block
+  under the heading, and an epic's plan and validations.
+- **Reference lines**, in rows and lists, follow `status`'s row rules: a
+  mark, the ID, two spaces, the title cut with `…`, and the right-hand
+  text flush to column 70, or on a line of its own beneath when it would
+  leave the title fewer than 10 columns.
+- **Blockers** are read from either link, the blocker's `blocks` or this
+  issue's `blocked_by`, any issue kind; `Blocks` is the reverse. The text
+  lists only issues that aren't completed or cancelled, so `Blocked by`
+  means waiting now. Both lists, and the children, are in `status`'s
+  order.
+- **ACCEPTANCE CRITERIA**, for tasks and subtasks: each criterion's
+  ordinal, then its text, wrapped under itself, in ordinal order.
+- **Children.** An epic's `TASKS` lists every task, completed and
+  cancelled included, uncapped. A task's `SUBTASKS`, headed `N/M done`,
+  lists every subtask. Each child shows its state on the right or, while
+  it is unstarted and has open blockers, `blocked by <ID>` and `+N` as
+  `status` does. A subtask has no children.
+- Sequence, revision, workflow ID and times appear only in the JSON's
+  `issue`. Neither text nor JSON shows open concerns, triage status, the
+  owner role or actor, an epic's scheduling, or links other than
+  `blocks` and `blocked_by`.
+- Text fid didn't write is escaped, fitted and wrapped as in `status`,
+  and long text pages as `status`'s does.
+
+The `issue.show` JSON result holds everything, with a null `event`:
+
+```json
+{"issue": <issue.get's issue>,
+ "state": null,
+ "epic": {"id": "FID-e3a1c0", "kind": "epic", "title": "Operating experience",
+          "status": "in_progress", "status_category": "started", "progress": {"done": 2, "total": 7}},
+ "task": null,
+ "blocked_by": [{"id": "FID-1a2b3c", "kind": "task", "title": "Escape controls in status",
+                 "status": "done", "status_category": "completed"}],
+ "blocks": [<reference>, <reference>],
+ "progress": {"done": 1, "total": 3},
+ "children": [{"id": "FID-aa01b2", "kind": "subtask", "title": "Check the manifest schema",
+               "status": "done", "status_category": "completed", "sequence": null,
+               "priority": null, "blocked_by": []}]}
+```
+
+- `issue` is exactly `issue get`'s. `state` is null except on an epic,
+  where it is `in-progress` or `to-do` as in `status`, or `completed` or
+  `cancelled` by its own state's category.
+- `epic` is the issue's epic and `task` a subtask's task, or null.
+- `blocked_by` and `blocks` list every link in both directions, whatever
+  the other end's state, each `{id, kind, title, status,
+  status_category}`.
+- `progress` counts the children, completed over not cancelled; it is
+  null for a subtask and for a task with no subtasks.
+- `children` is `[]` when there are none; a child's `blocked_by` lists
+  its open blockers' IDs, in order.
+
+An unknown ID, including an ID of another kind of record, such as an
+acceptance criterion's, is `issue-not-found` (exit 3), as for `issue get`.
+Its text names where to find IDs, a line only `show` adds:
+
+```text
+error: issue was not found
+reason: issue-not-found; id=FID-nope
+next: fid issue list
+```
+
+A missing ID is `invalid-argument` (exit 2). Outside a repository, at an
+unsafe ledger location, and in a repository without a ledger, `show`
+refuses as every project command does (section 1). Journal replay
+failures keep their codes; any other failure is `internal-error` (exit 7).
+Task 1.3b adds the operation `issue.show`, and no codes or reasons.
 
 ### Issue tracker
 
@@ -1001,8 +1167,9 @@ Only a command that names a Human decision interface may offer a renderer. The
 renderer consumes the same typed projection returned as JSON, declares its own
 small set of outputs, and carries no round-trip/import promise. Initial allowed
 candidate: `projection human-brief` as terminal text, Markdown, or HTML.
-`fid status` (section 3) is one: its text and its JSON come from one result,
-and the text uses fid's display package, ported from whet (task 1.3a).
+`fid status` and `fid show` (section 3) are two: each one's text and JSON
+come from one result, and the text uses fid's display package, ported from
+whet (tasks 1.3a and 1.3b).
 
 ## 8. Accepted Slice Leaf Contracts
 
@@ -1251,4 +1418,4 @@ returns `source-digest-mismatch` with nullable `expected_digest` and
 `observed_digest`; an unobservable worktree returns `repository-unavailable`
 with a typed reason and detail. Both refuse without appending an Event.
 
-*Last updated: 2026-11-08 (RESET 1.3a: `fid status`)*
+*Last updated: 2026-11-08 (RESET 1.3b: `fid show`, wrapping and the pager)*

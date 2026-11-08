@@ -619,6 +619,108 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     leaves no raw control. A right-hand text that would leave a title fewer
     than 10 columns takes a line of its own beneath the row, flush right,
     rather than cutting an ID.
+  - **Decided by Mark, 8 November 2026 (1.3b design):** `fid show <id>`
+    mirrors 1.3a. A read function in `internal/issues` gathers the data,
+    `internal/show` assembles one result and writes the text, and
+    `cmd/fid/show.go` only adapts. It is a read: it refreshes the
+    projection, records no Event and makes no network calls. The ID is
+    required and matched exactly.
+  - **Decided by Mark, 8 November 2026 (1.3b design):** the layout, from
+    four approved mock-ups (a task with subtasks, a blocked task, an epic,
+    a subtask). It is `status`'s 72-column box, with the ID, in the ID
+    colour, and the kind in its top border. The heading is the mark, the
+    title (wrapped, never cut) and the state flush right. The marks are
+    ✓ ● ○ ◆, with ✗ for cancelled in the muted role, since cancelled isn't
+    an error. An epic's state reads as `status` reads it. Labelled rows
+    (10 columns and two spaces, `display.RoleLabel`) appear only when they
+    have something, one value per line: `Task` before `Epic`, then
+    `Progress` (epics), `Priority`, `Blocked by`, `Blocks`, `Labels` and
+    `Spec`. Reference lines follow `status`'s row rules. ACCEPTANCE
+    CRITERIA come for tasks and subtasks; an epic's TASKS lists every task,
+    uncapped, and a task's SUBTASKS carries `N/M done`.
+  - **Decided by Mark, 8 November 2026 (1.3b design):** sequence, revision,
+    workflow ID and times are left out of the text, which JSON's `issue`
+    has. Open concerns, triage status, the owner, an epic's scheduling
+    (1.4) and the other link kinds are left out of both. Later rows (a
+    NEEDS YOU block under the heading; `Lane`, `Working`, never "claim",
+    `Checks`, `Reviews`, `Approval`, and `Next` last; an epic's `Plan` and
+    VALIDATIONS) go after `Spec` and before the long sections.
+  - **Decided by Mark, 8 November 2026 (1.3b design):** blockers both ways.
+    A blocker is read from either link, any kind, and `Blocks` is the
+    reverse. The text lists only open ones, so `Blocked by` means waiting
+    now; JSON lists every link with each end's state.
+  - **Decided by Mark, 8 November 2026 (1.3b design):** JSON is
+    `issue.show` with a null `event`:
+    `{issue, state, epic, task, blocked_by, blocks, progress, children}`,
+    `issue` being exactly `issue get`'s (CLI spec section 3). Later tasks
+    add `lane`, `working`, `checks`, `reviews`, `approval`, `needs_you` and
+    `next`.
+  - **Decided by Mark, 8 November 2026 (1.3b design):** refusals. An unknown
+    ID, an ID of another record included, is `issue-not-found` (exit 3),
+    whose text alone gains `next: fid issue list`; `issue get` and every
+    other command keep theirs. A missing ID is `invalid-argument`; other
+    refusals are every project command's, and anything else is
+    `internal-error`, as for `status`.
+  - **Decided by Mark, 8 November 2026 (1.3b design):** wrapping, for
+    `status` too. Prose wraps at spaces to column 70, its continuation
+    lines indented, and never breaks inside a word. A next step that is a
+    fid command wraps with a shell continuation: ` \` at the end of each
+    broken line, its continuation lines indented two more, so copying only
+    the first line leaves the shell waiting. A title cut drops an escape
+    that crosses the cut whole. The kernel-word check runs on `show`'s
+    goldens through one shared regexp.
+  - **Decided by Mark, 8 November 2026 (1.3b design):** the pager, as git's.
+    It pages only on a terminal, and only text taller than the screen,
+    measured with `TIOCGWINSZ` (`golang.org/x/sys/unix`, already a
+    dependency) and counted at the terminal's width. `$PAGER` runs through
+    `sh -c`; an empty `PAGER` or `cat` means none; otherwise `less`.
+    `LESS=FRX` is set only when `LESS` is unset. Colour is decided before
+    paging. A pager that can't start means fid prints directly; quitting
+    early isn't an error; fid waits and its exit code is its own. There's
+    no `--no-pager`, and only `status` and `show` page.
+  - **Builder's choice, PR #51 (1.3b):** `issues.ReadIssueView` reads on one
+    connection, sharing `Get`'s opening step. The overview and the view
+    read an epic through one rule and count progress one way;
+    `EpicProgress` became `Progress`, since it counts a task's subtasks too.
+  - **Builder's choice, PR #51 (1.3b):** `Blocked by` and `Blocks` are in
+    `status`'s order (sequence, priority, creation, ID), as the approved
+    task mock-up lists them; a child's `blocked_by` IDs stay in ID order,
+    as in `status`.
+  - **Builder's choice, PR #51 (1.3b):** the workflow state `todo` reads
+    `to do`, as the mock-ups show it; other states read with underscores
+    as spaces. `status` never shows an unstarted state, so it doesn't
+    change.
+  - **Builder's choice, PR #51 (1.3b):** the heading's state stays on the
+    title's first line, which wraps narrower to leave it room. When the
+    state would leave fewer than 10 columns, or the title's first word
+    doesn't fit beside it, the state takes a line of its own beneath,
+    flush right, as reference lines do. The title is in the header role
+    and the state muted. Marks are coloured by role (✓ success, ✗ muted,
+    others plain), and an epic's mark is ◆ in any state.
+  - **Builder's choice, PR #51 (1.3b):** IDs in reference lines are padded
+    to the widest one listed, as `status` pads its rows. Ordinals are
+    right-aligned to the widest, and `Labels` and `Spec` wrap under the
+    value column. The `Progress` row appears when an epic has tasks; JSON's
+    epic `progress` is always set, `{0, 0}` with none.
+  - **Builder's choice, PR #51 (1.3b):** a command keeps each flag with its
+    value when it wraps, as the brief's example breaks before `--actor
+    human:<name>`. The continuation must fit within column 70 too; the
+    last line needs none.
+  - **Builder's choice, PR #51 (1.3b):** as git does, a `$PAGER` with no
+    shell syntax or arguments, `less` included, is found on `PATH` and run
+    directly, so a missing one is seen as failing to start and the text is
+    printed quietly; any other runs through `/bin/sh -c`, where a missing
+    program is the shell's error. fid catches an interrupt while it waits,
+    since Ctrl-C typed in `less` reaches fid too. A screen whose size reads
+    as zero doesn't page, nor does text exactly as tall as the screen.
+  - **Builder's choice, PR #51 (1.3b):** the status environment became the
+    display environment, which also carries the terminal's size, so tests
+    set it. `display.BlockedText` and `display.StateText` serve both
+    commands, and `cli.CutEscapedText` shares one cut with the failure
+    messages. `show`'s goldens read one consistent project: the epic golden
+    shows FID-0d4e8b blocked by FID-71a0c2, the task mock-up's link, where
+    the epic mock-up shows it to do, and leaves out the mock-up's
+    `Scheduling` row, as decided above.
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a
@@ -912,17 +1014,9 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   permanent backups in 3.2. Exports accept up to 1 GiB per Artifact, stored
   as one raw blob in v2. Journal chunking does not cover Artifacts; no
   smaller Artifact ceiling or chunking design has been chosen.
-- From #50 (1.3a), `fid status`. The first three go to 1.3b, because `fid show`
-  needs the same display code:
-  - Long lines aren't wrapped. A backup line naming a path, the empty
-    project's hint (an 89-character `fid issue create` command) and a line
-    combining several backup problems run past the 72-column box (1.3b).
-  - Cutting a title to its column can cut an escape short (`\u00…`). No raw
-    control gets out, but it doesn't follow the failure messages' rule of
-    dropping an escape that crosses the cut whole (1.3b).
-  - The kernel-word check covers only `status`'s goldens. 1.3b runs it on
-    `show`'s; 1.7's leak test is the general one. `display.RoleLabel` is
-    unused until `show` (1.3b).
+- From #50 (1.3a), `fid status`. 1.3b took the first three: long lines
+  now wrap, title cuts drop an escape whole, and the kernel-word check
+  covers `show`'s goldens, which use `display.RoleLabel`. These remain:
   - Visible width counts runes, so wide characters (CJK, most emoji) in
     titles misalign columns. Fixing it needs East Asian width tables
     (`golang.org/x/text/width` or `go-runewidth`), a new dependency.
@@ -933,6 +1027,17 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     failure output as in `status`.
   - `fid status` reads the whole backup record each time. It grows by one
     short line per backup, so this is fine for the trial.
+- From #51 (1.3b), `fid show` and the pager:
+  - The pager counts a line's rows by its runes, so wide characters
+    undercount, as with column widths above.
+  - A `$PAGER` with arguments naming a missing program loses the text to
+    the shell's "not found", as git's does.
+  - `internal/status`'s unit tests keep their own copy of the kernel-word
+    regexp; `cmd/fid`'s goldens share one. 1.7's leak test is the general
+    check.
+  - `go.mod` marks `golang.org/x/sys` indirect, though `internal/backup`
+    and now `internal/display` import it. `go mod tidy` would fix it, an
+    Assured change.
 - Review rounds, as data for refining the process after the reset: #41, #44
   and #46 took 4, 4 and 5 Codex rounds. In #46, three of the four rounds
   that asked for changes were about code the previous fix round had added
