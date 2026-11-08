@@ -1043,12 +1043,19 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   - `go.mod` marks `golang.org/x/sys` indirect, though `internal/backup`
     and now `internal/display` import it. `go mod tidy` would fix it, an
     Assured change.
+  - `TestStatusAndShowPageOnARealTerminal` compares `status` output from
+    separate processes, including the date in the box's top border, so a
+    run that straddles local midnight fails (Codex, #51 round 2, minor;
+    answered, not fixed). The window is about half a second. Treat it like
+    the UTC-midnight test failure under "CI test time" below: if it ever
+    fails CI, fix it in test code by checking the header date separately
+    and normalising it before comparing.
 - Review rounds, as data for refining the process after the reset: #41, #44
   and #46 took 4, 4 and 5 Codex rounds. In #46, three of the four rounds
   that asked for changes were about code the previous fix round had added
   or removed. AGENTS.md step 7 now limits what a fix round changes (8
-  November 2026); see whether round counts drop. Since then, #48, #49 and
-  #50 have each taken 2 rounds.
+  November 2026); see whether round counts drop. Since then, #48, #49, #50
+  and #51 have each taken 2 rounds.
 - Mark's idea: a kit skill for backlog triage and grooming. An agent proposes
   close, keep or merge for stale or obsolete issues, and Mark accepts in a
   batch; fid supplies signals such as age and whether the paths an issue
