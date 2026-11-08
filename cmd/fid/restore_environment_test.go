@@ -101,10 +101,11 @@ func TestRestoreFetchesIntoAPrivateTemporaryRepository(t *testing.T) {
 	writeBackupTestFile(t, filepath.Join(fixture.home, "template", "hooks", "reference-transaction"), "#!/bin/sh\nexit 1\n")
 	writeBackupTestFile(t, filepath.Join(fixture.home, ".gitconfig"), "[init]\n\ttemplateDir = "+filepath.Join(fixture.home, "template")+"\n")
 	fixture.setTarget("fidprobe::ledgers")
-	temporary := t.TempDir()
+	temporary := filepath.Join(t.TempDir(), "does-not-exist")
 	environ = append(environ, "TMPDIR="+temporary, "GIT_TERMINAL_PROMPT=1", "SSH_AUTH_SOCK=/fid-test/agent.sock")
+	workspace := fixture.restoreWorkspace("project-" + strings.Repeat("e", 32))
 
-	failure := decodeRestoreFailure(t, runRestoreWith(environ, fixture.restoreWorkspace("project-"+strings.Repeat("e", 32)), "--json"), 4)
+	failure := decodeRestoreFailure(t, runRestoreWith(environ, workspace, "--json"), 4)
 	if failure.Code != "repository-unavailable" || failure.Details["reason"] != "not-a-repository" {
 		t.Fatalf("failure = %+v, want the helper's failure as an unreachable target", failure)
 	}
@@ -119,8 +120,9 @@ func TestRestoreFetchesIntoAPrivateTemporaryRepository(t *testing.T) {
 			gitDir = value
 		}
 	}
-	if parent := filepath.Dir(gitDir); filepath.Dir(parent) != temporary || !strings.HasPrefix(filepath.Base(parent), "fid-restore-") || filepath.Base(gitDir) != "repo.git" {
-		t.Fatalf("restore fetched into %q, want a fid-restore-* directory in %s", gitDir, temporary)
+	common := filepath.Dir(config.LedgerDir(workspace))
+	if parent := filepath.Dir(gitDir); filepath.Dir(parent) != common || !strings.HasPrefix(filepath.Base(parent), "fid-restore-") || filepath.Base(gitDir) != "repo.git" {
+		t.Fatalf("restore fetched into %q, want a fid-restore-* directory in %s", gitDir, common)
 	}
 	for _, want := range []string{"PARENT=drwx------", "GIT_TERMINAL_PROMPT=0", "SSH_AUTH_SOCK=/fid-test/agent.sock"} {
 		if !slices.Contains(lines, want) {
@@ -135,8 +137,11 @@ func TestRestoreFetchesIntoAPrivateTemporaryRepository(t *testing.T) {
 	if slices.Contains(lines, "GIT_TERMINAL_PROMPT=1") {
 		t.Error("git's environment still allows terminal prompts")
 	}
-	if left, err := os.ReadDir(temporary); err != nil || len(left) != 0 {
-		t.Fatalf("restore left %v in its temporary directory: %v", left, err)
+	if left, err := filepath.Glob(filepath.Join(common, "fid-restore-*")); err != nil || len(left) != 0 {
+		t.Fatalf("restore left scratch directories %v: %v", left, err)
+	}
+	if _, err := os.Lstat(temporary); !os.IsNotExist(err) {
+		t.Fatalf("restore used TMPDIR: %v", err)
 	}
 	if _, err := os.Lstat(filepath.Join(fixture.cacheHome, "fid")); !os.IsNotExist(err) {
 		t.Fatalf("restore used fid's cache: %v", err)

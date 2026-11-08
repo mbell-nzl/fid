@@ -14,11 +14,11 @@ import (
 const (
 	// Branch is the backup repository's branch that holds every folder.
 	Branch = "main"
-	// ArchiveName and ManifestName are the files in a project's folder.
+	// ArchiveName is the temporary export; ManifestName describes its members.
 	ArchiveName  = "export.zip"
 	ManifestName = "backup.json"
 	// ManifestSchema versions the folder's manifest.
-	ManifestSchema = "fid.backup.v1"
+	ManifestSchema = "fid.backup.v2"
 
 	remoteRef   = "refs/heads/" + Branch
 	trackingRef = "refs/remotes/origin/" + Branch
@@ -30,7 +30,6 @@ const (
 type manifest struct {
 	Schema            string `json:"schema"`
 	ProjectID         string `json:"project_id"`
-	Archive           string `json:"archive"`
 	ArchiveDigest     string `json:"archive_digest"`
 	ManifestSchema    string `json:"manifest_schema"`
 	EventCount        int    `json:"event_count"`
@@ -53,6 +52,9 @@ func (run *attempt) push() error {
 	}
 	parent, err := run.fetch(repository)
 	if err != nil {
+		return err
+	}
+	if err := packClone(repository); err != nil {
 		return err
 	}
 	if run.genesis, err = genesisHash(run.options.WorkspaceRoot); err != nil {
@@ -170,26 +172,20 @@ func (run *attempt) export(scratch string) (export.Summary, string, error) {
 }
 
 // tree returns the backup repository's tree with the project's folder
-// replaced by the new archive and manifest. Other folders are untouched.
+// replaced by the export's members and manifest. Other folders are untouched.
 func (run *attempt) tree(repository clone, parent string, summary export.Summary, archive string) (string, error) {
-	encoded, err := journal.MarshalCanonicalJSON(manifest{Schema: ManifestSchema, ProjectID: run.projectID, Archive: ArchiveName,
+	encoded, err := journal.MarshalCanonicalJSON(manifest{Schema: ManifestSchema, ProjectID: run.projectID,
 		ArchiveDigest: summary.ArchiveDigest, ManifestSchema: summary.ManifestSchema, EventCount: summary.EventCount,
 		TerminalEventHash: summary.TerminalEventHash, ProjectionSchema: summary.ProjectionSchema, EntryCount: summary.EntryCount,
 		GenesisEventHash: run.genesis})
 	if err != nil {
 		return "", failure(KindInternal, err, "encode the folder manifest")
 	}
-	// --no-filters: attributes in the user's git config never touch the
-	// archive. Content on stdin has no path, so git applies no filters to it.
-	archiveBlob, err := repository.text("hash-object", "-w", "--no-filters", archive)
-	if err != nil {
-		return "", failure(KindInternal, err, "store the export")
-	}
 	manifestBlob, err := repository.output(strings.NewReader(string(encoded)+"\n"), "hash-object", "-w", "--stdin")
 	if err != nil {
 		return "", failure(KindInternal, err, "store the folder manifest")
 	}
-	folder, err := repository.output(strings.NewReader(fmt.Sprintf("100644 blob %s\t%s\n100644 blob %s\t%s\n", archiveBlob, ArchiveName, manifestBlob, ManifestName)), "mktree")
+	folder, err := storeMembers(repository, archive, manifestBlob)
 	if err != nil {
 		return "", failure(KindInternal, err, "build the project's folder")
 	}

@@ -335,6 +335,30 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     exist yet, so the format change needs no migration. Rejected: keeping
     `export.zip` (the 100 MB ceiling), and storing the journal's daily files
     (most new restore code, for a gain packing already gives).
+  - **Decided by Mark, 8 November 2026 (1.2d implementation):** the
+    unzipped folder uses `backup.json` schema `fid.backup.v2`. Drop its
+    `archive` field; keep `archive_digest` as the digest of the deterministic
+    ZIP made by export and reconstructed on restore. Restore refuses v1;
+    there are no real backups to migrate. Its export `manifest.json` must
+    also name `.fid.toml`'s project ID before import, in addition to the
+    backup wrapper's check. This closes the identity-check handoff from
+    #48 (1.2c).
+  - **Decided by Mark, 8 November 2026 (1.2d restore scratch):** put the
+    whole private scratch directory, including fetched bare repository and
+    re-zipped archive, at `<git-common-dir>/fid-restore-*`, and remove it
+    afterwards. The directory is `0700` and archive `0600`. Import still
+    holds its own archive snapshot beside the ledger, so restore needs disk
+    for both archives plus fetched repository and staging. This avoids
+    `$TMPDIR` potentially being memory-backed. It also resolves #48's
+    code-reading finding that a relative `TMPDIR` fell back to the same
+    relative path through `os.TempDir`, failing if that directory was absent;
+    restore scratch no longer uses `TMPDIR`.
+  - 1.2d packs the cache under its existing clone lock before exporting:
+    count loose objects exactly, and at 256 run foreground `git repack -A -d`
+    and `git prune-packed`. User `gc.auto` settings cannot disable it.
+    Unreachable objects are retained; a maintenance error is recorded before
+    a new commit or push. The 100-backup test proves actual packing with
+    automatic maintenance disabled in the user's config.
   - Left-over handling extends D6 below: deferred minor review findings
     become discovered issues in 2.1; a later PR "Left over" section is
     derived from `discovered_from` links. Task 1.8 brings this record's
@@ -709,14 +733,27 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     from an older backup while the original carries on, can still replace
     each other's folder. An ancestry check would catch it: the folder's
     terminal Event must be in this ledger's journal.
-  - Each changed backup adds a whole compressed `export.zip`, which git
-    can't delta well. Measure the backup repository after the trial, then
-    decide whether to store uncompressed members or prune history.
   - git's network commands have no timeout, so a hung push holds fid's
     clone. Later backups wait 2 minutes and record `lock-unavailable`; 1.3's
     `fid status` should make a run of those visible.
   - `fid export create` in a repository with no ledger reports
     `internal-error` rather than `project-not-found`.
+- From #48 (1.2c), `fid restore`:
+  - Concurrent restores into the same repository may meet import's
+    nonblocking target lock. The loser gets `internal-error` (`import:
+    target lock unavailable`), rather than a typed refusal.
+  - If reading the genesis Event fails after successful import, the ledger
+    is installed but restore reports `internal-error`.
+  - The export-manifest project ID check, disk placement of scratch, private
+    archive permissions and relative-`TMPDIR` finding were handled in 1.2d
+    (decisions above). Unzipped backup storage and cache packing also resolve
+    #46's compressed-archive storage follow-up.
+- From 1.2d: the v2 folder retains the original export ZIP's digest but
+  reconstructs its bytes from members. V8 proves byte identity on the current
+  toolchain. Future export-header or Go compressor changes may change ZIP
+  bytes; assess cross-toolchain compatibility before the supported baseline
+  and permanent ledger in 3.2. Preserving the digest's meaning doesn't waive
+  this compatibility concern.
 - Review rounds, as data for refining the process after the reset: #41, #44
   and #46 took 4, 4 and 5 Codex rounds. In #46, three of the four rounds
   that asked for changes were about code the previous fix round had added
@@ -749,7 +786,9 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   dropped the race detector outside goroutine packages (G) and cut the
   shards from four to one. Shards are still balanced by measured time from
   `.github/scripts/durations.json`; `ci_tests.py durations` rewrites that
-  file from a run's shard logs. Two things remain. First, review whether
+  file from a run's shard logs. Restore tests from #48 (1.2c) are absent
+  from that file; harmless with one shard, include them when timings are
+  refreshed. Two things remain. First, review whether
   every test earns its run time. Measured without race on 2 CPUs,
   `cmd/fid` is the long pole at 231 s, and four corpora take 309 s of its
   523 s of test time: the grammar built-binary corpus 94 s, and the

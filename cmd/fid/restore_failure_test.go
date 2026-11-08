@@ -1,6 +1,8 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -10,6 +12,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
@@ -184,13 +187,9 @@ func TestRestoreRefusesADamagedFolder(t *testing.T) {
 	original, id := source.project()
 	source.setTarget(source.target)
 	decodeBackupSuccess(t, source.backup(original, "--json"))
-	archive, err := source.gitBytes("--git-dir="+source.target, "cat-file", "blob", "main:"+id+"/export.zip")
-	if err != nil {
-		t.Fatal(err)
-	}
+	archive, _ := exportForTest(t, original)
+	members := exportMembersForBackup(t, archive)
 	manifest := source.targetGit("cat-file", "blob", "main:"+id+"/backup.json") + "\n"
-	notAnArchive := "not a zip archive\n"
-	digest := sha256.Sum256([]byte(notAnArchive))
 	manifestFor := func(replace ...string) string { return strings.NewReplacer(replace...).Replace(manifest) }
 	var written struct {
 		ArchiveDigest string `json:"archive_digest"`
@@ -198,28 +197,42 @@ func TestRestoreRefusesADamagedFolder(t *testing.T) {
 	if err := json.Unmarshal([]byte(manifest), &written); err != nil {
 		t.Fatal(err)
 	}
-	folder := func(files ...string) map[string]string {
-		planted := map[string]string{}
-		for index := 0; index < len(files); index += 2 {
-			planted[id+"/"+files[index]] = files[index+1]
+	folder := func(name, content string) map[string]string {
+		files := map[string]string{id + "/backup.json": manifest}
+		for path, payload := range members {
+			files[id+"/"+path] = string(payload)
 		}
-		return planted
+		if content == "" {
+			delete(files, id+"/"+name)
+		} else {
+			files[id+"/"+name] = content
+		}
+		return files
 	}
+	otherProject := strings.ReplaceAll(string(members["manifest.json"]), id, "project-"+strings.Repeat("d", 32))
+	otherFolder := folder("manifest.json", otherProject)
+	otherFolder[id+"/backup.json"] = manifestFor(written.ArchiveDigest, folderArchiveDigestForTest(t, id, otherFolder))
+	invalidExport := folder("journal/00000001.jsonl", "not an Event\n")
+	invalidExport[id+"/backup.json"] = manifestFor(written.ArchiveDigest, folderArchiveDigestForTest(t, id, invalidExport))
 	for _, test := range []struct {
 		name  string
 		files map[string]string
 		code  string
 	}{
-		{"backup.json missing", folder("export.zip", string(archive)), "backup-manifest-invalid"},
-		{"backup.json not JSON", folder("export.zip", string(archive), "backup.json", "not json\n"), "backup-manifest-invalid"},
-		{"backup.json with an unknown schema", folder("export.zip", string(archive), "backup.json", manifestFor(`"fid.backup.v1"`, `"fid.backup.v9"`)), "backup-manifest-invalid"},
-		{"backup.json naming another project", folder("export.zip", string(archive), "backup.json", manifestFor(`"project_id":"`+id, `"project_id":"project-`+strings.Repeat("d", 32))), "backup-manifest-invalid"},
-		{"export.zip missing", folder("backup.json", manifest), "archive-missing"},
-		{"export.zip that doesn't match its digest", folder("export.zip", string(archive)+"x", "backup.json", manifest), "archive-digest-mismatch"},
+		{"backup.json missing", folder("backup.json", ""), "backup-manifest-invalid"},
+		{"backup.json not JSON", folder("backup.json", "not json\n"), "backup-manifest-invalid"},
+		{"backup.json with an unknown schema", folder("backup.json", manifestFor(`"fid.backup.v2"`, `"fid.backup.v9"`)), "backup-manifest-invalid"},
+		{"backup.json with the retired schema", folder("backup.json", manifestFor(`"fid.backup.v2"`, `"fid.backup.v1"`)), "backup-manifest-invalid"},
+		{"backup.json naming another project", folder("backup.json", manifestFor(`"project_id":"`+id, `"project_id":"project-`+strings.Repeat("d", 32))), "backup-manifest-invalid"},
+		{"export manifest missing", folder("manifest.json", ""), "archive-missing"},
+		{"export manifest malformed", folder("manifest.json", "not json\n"), "backup-manifest-invalid"},
+		{"export manifest naming another project with a matching archive digest", otherFolder, "backup-manifest-invalid"},
+		{"journal member missing", folder("journal/00000001.jsonl", ""), "archive-digest-mismatch"},
+		{"journal member changed", folder("journal/00000001.jsonl", string(members["journal/00000001.jsonl"])+"x"), "archive-digest-mismatch"},
+		{"unexpected member", folder("extra.txt", "unexpected\n"), "archive-digest-mismatch"},
 		{"a file where the folder should be", map[string]string{id: "not a folder\n"}, "backup-manifest-invalid"},
 		// The digest matches, so only import's own validation finds it.
-		{"export.zip that is not an export", folder("export.zip", notAnArchive, "backup.json",
-			manifestFor(written.ArchiveDigest, "sha256:"+hex.EncodeToString(digest[:]))), ""},
+		{"members that are not a valid export", invalidExport, ""},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
@@ -246,4 +259,35 @@ func TestRestoreRefusesADamagedFolder(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Rebuild the deterministic export for a planted folder, allowing checks
+// beyond the outer archive digest to be exercised independently.
+func folderArchiveDigestForTest(t *testing.T, id string, files map[string]string) string {
+	t.Helper()
+	names := []string{}
+	for name := range files {
+		if name != id+"/backup.json" {
+			names = append(names, name)
+		}
+	}
+	slices.Sort(names)
+	var archive bytes.Buffer
+	writer := zip.NewWriter(&archive)
+	for _, name := range names {
+		header := &zip.FileHeader{Name: strings.TrimPrefix(name, id+"/"), Method: zip.Deflate, Modified: time.Date(1980, 1, 1, 0, 0, 0, 0, time.UTC)}
+		header.SetMode(0o644)
+		output, err := writer.CreateHeader(header)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := output.Write([]byte(files[name])); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	digest := sha256.Sum256(archive.Bytes())
+	return "sha256:" + hex.EncodeToString(digest[:])
 }

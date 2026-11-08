@@ -184,20 +184,28 @@ named by the project ID in `.fid.toml`:
 
 ```text
 <project-id>/
-├── export.zip    # fid export create's archive
-└── backup.json   # manifest
+├── backup.json           # backup wrapper
+├── manifest.json         # fid export create's manifest
+├── journal/
+│   ├── 00000001.jsonl     # at most 64 MiB per piece
+│   └── …
+└── artifacts/            # available Artifacts, named by digest
 ```
 
 `backup.json` is canonical JSON with a trailing newline: `schema`
-(`fid.backup.v1`), `project_id`, `archive` (`export.zip`), `archive_digest`
-(the `sha256:` digest of `export.zip`), and the export's `manifest_schema`,
+(`fid.backup.v2`), `project_id`, `archive_digest`
+(the `sha256:` digest of the deterministic ZIP `fid export create` makes),
+and the export's `manifest_schema`,
 `event_count`, `terminal_event_hash`, `projection_schema` and `entry_count`,
 plus `genesis_event_hash`, which names the ledger that wrote the folder
 (below). It holds nothing that changes unless the export does. fid validates
 the archive as `export validate` does before it commits, so a pushed backup is
-one that `fid restore` can import. fid owns its ledger's folder
-and replaces both files on every backup; it never changes another path in the
-repository.
+one that `fid restore` can import. The folder holds the archive's members
+unzipped and byte for byte, including the export's journal pieces of at most
+64 MiB. fid owns its ledger's folder and replaces its complete contents on
+every backup; it never changes another path in the repository. The older
+`fid.backup.v1` ZIP folder is unsupported; no real backups existed when the
+format changed in task 1.2d, so there is no migration.
 
 **One ledger per folder.** Clones of one project each make their own ledger
 with the project's ID, and so does `fid init` on a new machine, so their
@@ -254,13 +262,25 @@ starts again from the target's tip; a push that another commit beat to the
 target is rejected the same way, and the next backup builds on that commit.
 Deleting the directory is safe: the next backup makes it again.
 
+Plumbing commands don't trigger git's automatic packing. After fetching and
+before exporting, fid counts the clone's loose objects. At 256 or more it
+runs `git repack -A -d` and `git prune-packed` in the foreground, under the
+clone lock. This packs reachable history and removes its loose duplicates;
+unreachable objects from failed pushes are kept. User settings such as
+`gc.auto=0` cannot disable this packing. A packing failure is recorded as an
+internal failure before fid makes or pushes a new backup commit. Thus a
+hundred successful changed backups keep their history in packs, leaving only
+the recent loose tail. Unreachable objects from failures can remain loose
+beyond the threshold; this maintenance doesn't discard them.
+
 fid runs git with the user's environment and git config, so the user's own
 credential helpers, SSH keys, `url.<base>.insteadOf` rules and proxies
 apply. fid never embeds, stores or asks for credentials: it sets
 `GIT_TERMINAL_PROMPT=0`, so a backup run by the loop or cron fails rather than
 waiting for a password. It overrides what could stop a backup or run code:
 hooks (`core.hooksPath=/dev/null`), commit signing (`--no-gpg-sign`),
-attribute filters on the archive (`--no-filters`), init templates
+attribute filters on export members (content on stdin has no path), init
+templates
 (`--template=`), detached garbage collection, an inherited commit identity
 or date (every `GIT_AUTHOR_*` and `GIT_COMMITTER_*` variable) or
 `GIT_TERMINAL_PROMPT`, and inherited variables that name
@@ -308,8 +328,9 @@ restored ledger starts without one.
 **Restore.** `fid restore` (CLI spec section 3) reads what a backup wrote,
 into a repository that has no ledger. It checks that first, then reads
 `.fid.toml` from the working tree and the target from user config, as a
-backup does. It fetches into a private (`0700`) directory under `$TMPDIR`,
-holding a bare repository made with `--template=`, and deletes it
+backup does. It fetches into a private (`0700`)
+`<git-common-dir>/fid-restore-*` directory, holding a bare repository made
+with `--template=`, and deletes it
 afterwards, whatever the outcome; it never uses fid's clone and takes no
 lock. It asks the target for `main` with `git ls-remote` and fetches only
 its tip (`git fetch --depth=1`), so a restore's time doesn't grow with the
@@ -317,10 +338,16 @@ backup history. Git runs as it does for a backup: with the user's
 credentials and transport, `GIT_TERMINAL_PROMPT=0`, hooks off and inherited
 repository variables dropped. From that tip, restore reads
 `<project-id>/backup.json` and checks that its `project_id` is this
-project's. It then turns the folder into the archive to import, by the
-format the manifest's `schema` names: for `fid.backup.v1`, it copies
-`export.zip` into the temporary directory and checks its `sha256:` digest
-against `archive_digest`. A schema it doesn't know is refused as damaged. It
+project's. The export's own `manifest.json` must name the same project. It
+then turns a `fid.backup.v2` folder into the archive to import: it streams
+the export members directly from git into a `0600` ZIP file in that private
+directory, using export's sorted names, deflate, `0644` member modes and
+1980-01-01 UTC timestamps. The rebuilt archive's `sha256:` digest must
+match `archive_digest`. Missing, malformed or mismatched manifests and
+unsupported folder schemas are refused as damaged. Scratch is beside the
+ledger rather than under `$TMPDIR`, which may be memory-backed; import
+also holds its own archive snapshot beside the ledger. Restore needs disk
+space for both archives, the fetched repository and staged ledger. It
 imports the archive as `fid export import` does, with the idempotency key
 `fid-restore:<commit>`, into `<git-common-dir>/fid`, the ledger every
 worktree shares. The event count and genesis Event aren't checked at run

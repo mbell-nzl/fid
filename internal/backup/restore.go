@@ -2,8 +2,6 @@ package backup
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,7 +29,7 @@ type RestoreOptions struct {
 	// it. The ledger is the one every worktree of the repository shares.
 	WorkspaceRoot string
 	// Environment is the process environment. It locates user config and the
-	// temporary directory, and git runs with it as it does for a backup.
+	// git credentials, and git runs with it as it does for a backup.
 	Environment   []string
 	MigrationsDir string
 }
@@ -74,11 +72,7 @@ func Restore(options RestoreOptions) (Restored, string, error) {
 	if err != nil {
 		return Restored{}, ledgerPath, err
 	}
-	parent := getenv("TMPDIR")
-	if !filepath.IsAbs(parent) {
-		parent = ""
-	}
-	directory, err := os.MkdirTemp(parent, "fid-restore-")
+	directory, err := os.MkdirTemp(filepath.Dir(ledgerPath), "fid-restore-")
 	if err != nil {
 		return Restored{}, ledgerPath, failure(KindInternal, err, "create the restore's temporary directory")
 	}
@@ -181,34 +175,17 @@ func readManifest(repository clone, commit, id string) (folderHeader, []byte, er
 // archive's path in scratch. It is the one place that knows how a folder
 // holds the export.
 func folderArchive(repository clone, commit, id, schema string, payload []byte, scratch string) (string, error) {
-	switch schema {
-	case ManifestSchema:
-		var written manifest
-		if err := json.Unmarshal(payload, &written); err != nil {
-			return "", damaged(id, folderCheck(CheckManifestInvalid, "%s/%s is not a %s manifest: %v", id, ManifestName, schema, err))
-		}
-		path := filepath.Join(scratch, ArchiveName)
-		file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
-		if err != nil {
-			return "", failure(KindInternal, err, "create the restore's copy of the archive")
-		}
-		hash := sha256.New()
-		found, err := folderBlob(repository, commit, id+"/"+ArchiveName, io.MultiWriter(file, hash))
-		if closeErr := file.Close(); err == nil && closeErr != nil {
-			err = failure(KindInternal, closeErr, "write the restore's copy of the archive")
-		}
-		if err != nil {
-			return "", err
-		}
-		if !found {
-			return "", damaged(id, folderCheck(CheckArchiveMissing, "%s/%s is missing", id, ArchiveName))
-		}
-		if digest := "sha256:" + hex.EncodeToString(hash.Sum(nil)); digest != written.ArchiveDigest {
-			return "", damaged(id, folderCheck(CheckArchiveDigest, "%s/%s has digest %s, but %s names %q", id, ArchiveName, digest, ManifestName, written.ArchiveDigest))
-		}
-		return path, nil
+	if schema != ManifestSchema {
+		return "", damaged(id, folderCheck(CheckManifestInvalid, "%s/%s has schema %q; fid restores %s", id, ManifestName, schema, ManifestSchema))
 	}
-	return "", damaged(id, folderCheck(CheckManifestInvalid, "%s/%s has schema %q; fid restores %s", id, ManifestName, schema, ManifestSchema))
+	var written manifest
+	if err := json.Unmarshal(payload, &written); err != nil {
+		return "", damaged(id, folderCheck(CheckManifestInvalid, "%s/%s is not a %s manifest: %v", id, ManifestName, schema, err))
+	}
+	if err := checkExportIdentity(repository, commit, id); err != nil {
+		return "", err
+	}
+	return zipFolder(repository, commit, id, written.ArchiveDigest, scratch)
 }
 
 // folderBlob writes the file at path in commit to output and reports whether

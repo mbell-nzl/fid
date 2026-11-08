@@ -101,10 +101,7 @@ func TestBackupFromARestoredLedgerUpdatesItsFolder(t *testing.T) {
 	original, id := fixture.project()
 	fixture.setTarget(fixture.target)
 	decodeBackupSuccess(t, fixture.backup(original, "--json"))
-	archive, err := fixture.gitBytes("--git-dir="+fixture.target, "cat-file", "blob", "main:"+id+"/export.zip")
-	if err != nil {
-		t.Fatal(err)
-	}
+	archive, _ := exportForTest(t, original)
 	archivePath := filepath.Join(t.TempDir(), "export.zip")
 	if err := os.WriteFile(archivePath, archive, 0o600); err != nil {
 		t.Fatal(err)
