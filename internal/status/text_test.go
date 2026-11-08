@@ -110,19 +110,57 @@ func TestWriteTextCapsToDoAtTenTaskRows(t *testing.T) {
 	}
 }
 
+func assertRowsFitTheBox(t *testing.T, text string) {
+	t.Helper()
+	for _, line := range strings.Split(strings.TrimSuffix(text, "\n"), "\n") {
+		if width := display.VisibleWidth(line); width > 72 || strings.HasSuffix(line, " ") {
+			t.Fatalf("line is %d wide or ends in a space: %q\n%s", width, line, text)
+		}
+	}
+}
+
 func TestWriteTextFitsRowsInTheBox(t *testing.T) {
 	t.Parallel()
 	long := textTask("FID-long", "todo", "unstarted", "FID-b1", "FID-b2", "FID-b3")
 	long.Title = strings.Repeat("A very long title ", 6)
 	result := textResult(issues.OverviewSection{Epics: []issues.OverviewEpic{}, Tasks: []issues.OverviewTask{long}})
 	text := writeText(t, result, display.Renderer{}, false)
-	for _, line := range strings.Split(strings.TrimSuffix(text, "\n"), "\n") {
-		if width := display.VisibleWidth(line); width > 72 || strings.HasSuffix(line, " ") {
-			t.Fatalf("line is %d wide or ends in a space: %q", width, line)
-		}
-	}
+	assertRowsFitTheBox(t, text)
 	if !strings.Contains(text, "  ○ FID-long  A very long title A very long tit…  blocked by FID-b1 +2\n") {
 		t.Fatalf("long title isn't cut to fit its column:\n%s", text)
+	}
+
+	// The longest IDs fid makes, a 16-letter prefix and six hex digits, and
+	// the longest workflow state leave a title too little room beside the
+	// right-hand text, which then takes a line of its own.
+	id := func(suffix string) string { return "ABCDEFGHIJKLMNOP-" + suffix }
+	state := strings.Repeat("waiting_", 7) + "reviewer"
+	started := textTask(id("a00001"), state, "started")
+	epicTask := textTask(id("a00002"), "todo", "unstarted", id("b00001"), id("b00002"))
+	standalone := textTask(id("a00003"), "todo", "unstarted", id("b00003"))
+	result = textResult(issues.OverviewSection{Epics: []issues.OverviewEpic{textEpic(id("e00002"), issues.EpicToDo, 0, 1, epicTask)},
+		Tasks: []issues.OverviewTask{standalone}})
+	result.InProgress = issues.OverviewSection{Epics: []issues.OverviewEpic{textEpic(id("e00001"), issues.EpicInProgress, 3, 8, started)},
+		Tasks: []issues.OverviewTask{}}
+	for _, renderer := range []display.Renderer{{}, {Color: true}} {
+		text = writeText(t, result, renderer, false)
+		assertRowsFitTheBox(t, text)
+		if renderer.Color {
+			text = fidColors.Replace(text)
+		}
+		for _, want := range []string{
+			"  ◆ ABCDEFGHIJKLMNOP-e00001  Title of ABCDEFGHI…  ███░░░░░░░  3/8 done\n",
+			"      ● ABCDEFGHIJKLMNOP-a00001  Title of ABCDEFGHIJKLMNOP-a00001\n" +
+				strings.Repeat(" ", 6) + "waiting waiting waiting waiting waiting waiting waiting reviewer\n",
+			"      ○ ABCDEFGHIJKLMNOP-a00002  Title of ABCDEFGHIJKLMNOP-a00002\n" +
+				strings.Repeat(" ", 33) + "blocked by ABCDEFGHIJKLMNOP-b00001 +1\n",
+			"  ○ ABCDEFGHIJKLMNOP-a00003  Title of ABCDEFGHIJKLMNOP-a00003\n" +
+				strings.Repeat(" ", 36) + "blocked by ABCDEFGHIJKLMNOP-b00003\n",
+		} {
+			if !strings.Contains(text, want) {
+				t.Fatalf("color=%v: text doesn't show %q:\n%s", renderer.Color, want, text)
+			}
+		}
 	}
 }
 

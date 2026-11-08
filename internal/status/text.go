@@ -94,13 +94,13 @@ func (text textWriter) inProgress(section issues.OverviewSection) []string {
 	lines := []string{text.header("IN PROGRESS")}
 	for _, epic := range section.Epics {
 		bar := display.ProgressBar(epic.Progress.Done, epic.Progress.Total, progressBar) + " done"
-		lines = append(lines, text.row(topIndent, display.SymbolEpic, epic.ID, epic.Title, bar, display.RoleNormal))
+		lines = append(lines, text.row(topIndent, display.SymbolEpic, epic.ID, epic.Title, bar, display.RoleNormal)...)
 		for _, task := range epic.Tasks {
-			lines = append(lines, text.row(taskIndent, display.SymbolStarted, task.ID, task.Title, stateText(task.Status), display.RoleMuted))
+			lines = append(lines, text.row(taskIndent, display.SymbolStarted, task.ID, task.Title, stateText(task.Status), display.RoleMuted)...)
 		}
 	}
 	for _, task := range section.Tasks {
-		lines = append(lines, text.row(topIndent, display.SymbolStarted, task.ID, task.Title, stateText(task.Status), display.RoleMuted))
+		lines = append(lines, text.row(topIndent, display.SymbolStarted, task.ID, task.Title, stateText(task.Status), display.RoleMuted)...)
 	}
 	return lines
 }
@@ -116,7 +116,7 @@ func (text textWriter) toDo(section issues.OverviewSection, all bool) []string {
 			hidden++
 			return
 		}
-		lines = append(lines, text.row(indent, display.SymbolUnstarted, task.ID, task.Title, blockedText(task.BlockedBy), display.RoleWarning))
+		lines = append(lines, text.row(indent, display.SymbolUnstarted, task.ID, task.Title, blockedText(task.BlockedBy), display.RoleWarning)...)
 		shown++
 	}
 	for _, epic := range section.Epics {
@@ -124,7 +124,7 @@ func (text textWriter) toDo(section issues.OverviewSection, all bool) []string {
 			hidden += max(len(epic.Tasks), 1)
 			continue
 		}
-		lines = append(lines, text.row(topIndent, display.SymbolEpic, epic.ID, epic.Title, epicCount(epic), display.RoleMuted))
+		lines = append(lines, text.row(topIndent, display.SymbolEpic, epic.ID, epic.Title, epicCount(epic), display.RoleMuted)...)
 		for _, listed := range epic.Tasks {
 			task(taskIndent, listed)
 		}
@@ -139,16 +139,23 @@ func (text textWriter) toDo(section issues.OverviewSection, all bool) []string {
 }
 
 // row is a symbol, an ID and a title, with right set flush to the row's end.
-// A title too long for its column is cut to end in an ellipsis.
-func (text textWriter) row(indent string, symbol display.Symbol, id, title, right string, role display.Role) string {
+// A title too long for its column is cut to end in an ellipsis. When right
+// would leave the title fewer than minTitle columns, as the longest IDs and
+// workflow states can, right takes a line of its own beneath, still flush
+// to the row's end.
+func (text textWriter) row(indent string, symbol display.Symbol, id, title, right string, role display.Role) []string {
 	id, title, right = cli.EscapeControlText(id), cli.EscapeControlText(title), cli.EscapeControlText(right)
 	line := indent + string(symbol) + " " + text.renderer.Colorize(display.RoleID, id) + strings.Repeat(" ", text.idWidth-len([]rune(id))) + "  "
 	width := rowWidth - display.VisibleWidth(line)
-	if right == "" {
-		return line + strings.TrimRight(display.PadRight(title, width), " ")
+	rightWidth := display.VisibleWidth(right)
+	switch {
+	case right == "":
+		return []string{line + strings.TrimRight(display.PadRight(title, width), " ")}
+	case width-2-rightWidth >= minTitle:
+		return []string{line + display.PadRight(title, width-2-rightWidth) + "  " + text.renderer.Colorize(role, right)}
 	}
-	width -= 2 + display.VisibleWidth(right)
-	return line + display.PadRight(title, max(width, minTitle)) + "  " + text.renderer.Colorize(role, right)
+	return []string{line + strings.TrimRight(display.PadRight(title, width), " "),
+		strings.Repeat(" ", max(rowWidth-rightWidth, 0)) + text.renderer.Colorize(role, right)}
 }
 
 // idWidth is how wide the longest ID shown is, once escaped.

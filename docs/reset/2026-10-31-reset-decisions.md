@@ -611,6 +611,14 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     the genesis Event and seed the projection directly, as `fid ready`'s
     tests do, so IDs and times are fixed; `go test ./cmd/fid -run
     TestStatusGolden -update` rewrites them.
+  - **Builder's choice, PR #50 (1.3a) review round 1:** the text escapes
+    every string it takes from the result (titles, IDs, workflow states,
+    summaries, next steps) with `internal/cli`'s `EscapeControlText`, the
+    failure renderer's helper, before fitting or colouring it; JSON keeps
+    the values. A title cut to its column may cut an escape short, which
+    leaves no raw control. A right-hand text that would leave a title fewer
+    than 10 columns takes a line of its own beneath the row, flush right,
+    rather than cutting an ID.
 
 **D8 / F2 Parallel worktrees: minimal.** Shared ledger, atomic
 `fid next --claim` on different issues, one loop per worktree, and a

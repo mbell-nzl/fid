@@ -373,7 +373,10 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
   `fid issue create --kind task --title <title> --actor human:<name>
   --idempotency-key <key>`.
 - Rows run to column 70, the right-hand text flush right. A title too long
-  for its column ends in `…`; backup lines and paths are never cut.
+  for its column ends in `…`; backup lines and paths are never cut. When
+  the right-hand text would leave a title fewer than 10 columns, as the
+  longest IDs and workflow states can, it takes a line of its own beneath
+  the row, still flush right.
 - Text fid didn't write, such as titles, paths and the backup record's
   failure kinds, has its controls escaped before it is fitted to a column,
   as failure messages' are (section 8, Phase 24 amendment): LF, CR and TAB
