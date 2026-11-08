@@ -72,6 +72,9 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 		fmt.Fprintf(os.Stderr, "guard git discovery: %v\n", err)
 		return 1
 	}
+	if os.Getenv(runAsFIDVariable) != "" {
+		return runAsFID()
+	}
 	if containsTestArgument(os.Args, "--live-golden-child") || commandTestHelperChild() {
 		// Children inherit the isolated config directory from their parent.
 		return m.Run()
@@ -154,6 +157,19 @@ func TestCommandTestsKeepTheSharedGoBuildCache(t *testing.T) {
 	if cache := strings.TrimSpace(string(output)); strings.HasPrefix(cache, os.Getenv("XDG_CACHE_HOME")+string(filepath.Separator)) {
 		t.Fatalf("GOCACHE = %s, inside the isolated user cache %s", cache, os.Getenv("XDG_CACHE_HOME"))
 	}
+}
+
+// runAsFIDVariable, when set, makes the test binary fid itself: a test
+// runs fid as a process of its own, with fid's normal environment, without
+// building it.
+const runAsFIDVariable = "FID_RUN_AS_FID"
+
+// runAsFID runs fid's main with the binary's arguments, before any test
+// runs, so nothing but fid writes to stdout.
+func runAsFID() int {
+	os.Args = append([]string{"fid"}, os.Args[1:]...)
+	main()
+	return 0
 }
 
 // commandTestHelperChild reports whether this process is a helper started by

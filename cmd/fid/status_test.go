@@ -105,9 +105,15 @@ type statusRecordLine struct {
 
 func (fixture *statusFixture) writeRecord(lines ...statusRecordLine) {
 	fixture.t.Helper()
+	fixture.writeRecordAt(statusNow, lines...)
+}
+
+// writeRecordAt writes lines finished ago before now, not statusNow.
+func (fixture *statusFixture) writeRecordAt(now time.Time, lines ...statusRecordLine) {
+	fixture.t.Helper()
 	var record strings.Builder
 	for _, line := range lines {
-		finished := statusNow.Add(-line.ago).UTC()
+		finished := now.Add(-line.ago).UTC()
 		entry := map[string]any{"schema": "fid.backup-record.v1", "started_at": finished.Add(-4 * time.Second).Format(time.RFC3339Nano),
 			"finished_at": finished.Format(time.RFC3339Nano), "outcome": line.outcome, "project_id": "project-0123456789abcdef0123456789abcdef",
 			"commit": nil, "archive_digest": nil, "event_count": nil, "terminal_event_hash": nil, "failure": nil}
