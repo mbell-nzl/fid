@@ -1,0 +1,58 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [],
+    "blocks": [],
+    "children": [
+      {
+        "id": "FID-1f2e3d",
+        "kind": "task",
+        "title": "Contract fields and exit codes",
+        "status": "in_progress",
+        "status_category": "started",
+        "sequence": null,
+        "priority": 1,
+        "blocked_by": []
+      },
+      {
+        "id": "FID-2f2e3d",
+        "kind": "task",
+        "title": "Golden tests for the contract and every exit code it names",
+        "status": "todo",
+        "status_category": "unstarted",
+        "sequence": null,
+        "priority": 2,
+        "blocked_by": [
+          "FID-1f2e3d"
+        ]
+      }
+    ],
+    "epic": null,
+    "issue": {
+      "id": "FID-8a1b2c",
+      "kind": "epic",
+      "title": "Loop contract",
+      "status": "todo",
+      "status_category": "unstarted",
+      "workflow_id": "epic-default",
+      "parent_id": null,
+      "priority": null,
+      "sequence": 2,
+      "spec_md_path": null,
+      "revision": 1,
+      "labels": [],
+      "created_at": "2026-10-31T13:00:00Z",
+      "updated_at": "2026-10-31T13:00:00Z",
+      "acceptance_criteria": []
+    },
+    "progress": {
+      "done": 0,
+      "total": 2
+    },
+    "state": "in-progress",
+    "task": null
+  }
+}

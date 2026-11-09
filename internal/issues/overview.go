@@ -48,15 +48,38 @@ type OverviewEpic struct {
 	State          string         `json:"state"`
 	Sequence       *int           `json:"sequence"`
 	Priority       *int           `json:"priority"`
-	Progress       EpicProgress   `json:"progress"`
+	Progress       Progress       `json:"progress"`
 	Tasks          []OverviewTask `json:"tasks"`
 }
 
-// EpicProgress counts an epic's completed tasks against those not
-// cancelled.
-type EpicProgress struct {
+// Progress counts an epic's or a task's completed children against those
+// not cancelled.
+type Progress struct {
 	Done  int `json:"done"`
 	Total int `json:"total"`
+}
+
+func (progress *Progress) count(category string) {
+	if category != "cancelled" {
+		progress.Total++
+	}
+	if category == "completed" {
+		progress.Done++
+	}
+}
+
+// epicState is how fid status reads an epic: completed or cancelled by its
+// own state's category; otherwise in progress once its own state has
+// started or any of its tasks has begun, started or completed, and to do
+// before then.
+func epicState(category string, begun bool) string {
+	switch {
+	case category == "completed" || category == "cancelled":
+		return category
+	case category == "started" || begun:
+		return EpicInProgress
+	}
+	return EpicToDo
 }
 
 type OverviewTask struct {
@@ -121,7 +144,7 @@ func sortOverview(epics []*overviewEpic, tasks []OverviewTask) Overview {
 			epic = listed[*task.EpicID]
 		}
 		if epic != nil {
-			epic.count(task)
+			epic.Progress.count(task.StatusCategory)
 		}
 		switch {
 		case task.StatusCategory == "started" && epic != nil:
@@ -139,7 +162,7 @@ func sortOverview(epics []*overviewEpic, tasks []OverviewTask) Overview {
 		if listed[epic.ID] == nil {
 			continue
 		}
-		if epic.StatusCategory == "started" || epic.Progress.Done > 0 || len(epic.started) > 0 {
+		if epicState(epic.StatusCategory, epic.Progress.Done > 0 || len(epic.started) > 0) == EpicInProgress {
 			epic.State = EpicInProgress
 			overview.InProgress.Epics = append(overview.InProgress.Epics, epic.with(epic.started))
 			if len(epic.unstarted) > 0 {
@@ -152,15 +175,6 @@ func sortOverview(epics []*overviewEpic, tasks []OverviewTask) Overview {
 	}
 	overview.ToDo.Epics = append(overview.ToDo.Epics, toDo...)
 	return overview
-}
-
-func (epic *overviewEpic) count(task OverviewTask) {
-	if task.StatusCategory != "cancelled" {
-		epic.Progress.Total++
-	}
-	if task.StatusCategory == "completed" {
-		epic.Progress.Done++
-	}
 }
 
 func (epic *overviewEpic) with(tasks []OverviewTask) OverviewEpic {

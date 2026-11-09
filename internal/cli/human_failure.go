@@ -24,7 +24,7 @@ func WriteHumanFailure(writer io.Writer, operation, leaf string, failure Failure
 	if len(ids) > 0 {
 		lines = append(lines, "blocked by: "+EscapeControlText(strings.Join(ids, ",")))
 	}
-	if next := humanNext(failure, leaf, hasInput); next != "" {
+	if next := humanNext(failure, operation, leaf, hasInput); next != "" {
 		lines = append(lines, "next: "+EscapeControlText(next))
 	}
 	if _, err := fmt.Fprintln(writer, strings.Join(lines, "\n")); err != nil {
@@ -38,15 +38,7 @@ func cutHumanReason(text string) string {
 	if len(values) <= 200 {
 		return text
 	}
-	cut := 0
-	for cut < 200 {
-		width := messageEscapeWidth(values[cut:])
-		if cut+width > 200 {
-			break
-		}
-		cut += width
-	}
-	return string(values[:cut]) + "…"
+	return string(values[:escapedPrefix(values, 200)]) + "…"
 }
 
 func humanKeyDetail(failure Failure) string {
@@ -163,8 +155,12 @@ func humanRepository(value any) string {
 	return head + " " + state
 }
 
-func humanNext(failure Failure, leaf string, hasInput bool) string {
+func humanNext(failure Failure, operation, leaf string, hasInput bool) string {
 	switch failure.Code {
+	case CodeIssueNotFound:
+		if operation == "issue.show" {
+			return "fid issue list"
+		}
 	case CodeInvalidArgument:
 		if hasInput {
 			return "see " + leaf + " --help; template: " + leaf + " --example"

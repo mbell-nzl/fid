@@ -134,7 +134,7 @@ func TestStatusShowsTheJournalsWork(t *testing.T) {
 			t.Parallel()
 			fixture := newJournalStatusFixture(t)
 			wantInProgress, wantToDo := test.work(fixture)
-			result := fixture.status("--json", "status")
+			result := fixture.run("--json", "status")
 			if result.err != nil || result.stderr != "" {
 				t.Fatalf("status --json = %v, stderr %q", result.err, result.stderr)
 			}
@@ -142,7 +142,7 @@ func TestStatusShowsTheJournalsWork(t *testing.T) {
 			if !slices.Equal(inProgress, wantInProgress) || !slices.Equal(toDo, wantToDo) {
 				t.Fatalf("status lists %v in progress and %v to do, want %v and %v:\n%s", inProgress, toDo, wantInProgress, wantToDo, result.stdout)
 			}
-			text := fixture.status("status")
+			text := fixture.run("status")
 			for _, want := range append(wantInProgress, wantToDo...) {
 				if text.err != nil || !strings.Contains(text.stdout, want) {
 					t.Fatalf("status = %v, text doesn't list %s:\n%s", text.err, want, text.stdout)
@@ -159,13 +159,13 @@ func TestStatusStopsOnACorruptJournalTail(t *testing.T) {
 	fixture := newJournalStatusFixture(t)
 	fixture.createTask("Task before the damage")
 	appendRawJournalLine(t, mustJournalPath(t, fixture.workspace), `{"event_id":"EVT-20261108-999999"`)
-	result := fixture.status("--json", "status")
+	result := fixture.run("--json", "status")
 	if cli.ExitCode(result.err) != 6 || result.stdout != "" {
 		t.Fatalf("status --json = %#v, want journal-replay-stopped", result)
 	}
 	assertJSONFailureCode(t, result.stderr, "project.status", "journal-replay-stopped")
 	assertStoppedJournalFile(t, result.stderr, fixture.workspace)
-	text := fixture.status("status")
+	text := fixture.run("status")
 	if cli.ExitCode(text.err) != 6 || text.stdout != "" || !strings.HasPrefix(text.stderr, "error: journal replay stopped\nreason: journal-replay-stopped; ") {
 		t.Fatalf("status = %#v, want journal-replay-stopped", text)
 	}

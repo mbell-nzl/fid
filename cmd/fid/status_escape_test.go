@@ -50,7 +50,7 @@ func TestStatusEscapesWhatFidDidNotWrite(t *testing.T) {
 			fixture.configHome = filepath.Join(t.TempDir(), "config"+statusControls)
 			return fixture, filepath.Join(fixture.configHome, "fid", "config.toml")
 		}, func(raw string) []string {
-			return []string{"  ⚠ No backup target is set; not backed up yet\n", "      → add [backup] target to " + escapedPath(raw) + ", then fid backup\n"}
+			return []string{"  ⚠ No backup target is set; not backed up yet\n", "      → add [backup] target to\n        " + escapedPath(raw) + ",\n        then fid backup\n"}
 		}, func(backup map[string]any) string { return backup["user_config_path"].(string) }},
 		{"backup record path", func(t *testing.T) (*statusFixture, string) {
 			workspace := gittest.NewNamedWorkspace(t, "work"+statusControls)
@@ -64,7 +64,7 @@ func TestStatusEscapesWhatFidDidNotWrite(t *testing.T) {
 			}
 			return fixture, record
 		}, func(raw string) []string {
-			return []string{"  ⚠ Can't read the backup record " + escapedPath(raw) + "\n", "      → fix or remove " + escapedPath(raw) + ", then fid backup\n"}
+			return []string{"  ⚠ Can't read the backup record\n    " + escapedPath(raw) + "\n", "      → fix or remove\n        " + escapedPath(raw) + ",\n        then fid backup\n"}
 		}, func(backup map[string]any) string { return backup["record_path"].(string) }},
 		{"failure kind and message", func(t *testing.T) (*statusFixture, string) {
 			fixture := newStatusFixture(t, 100*time.Hour)
@@ -85,7 +85,7 @@ func TestStatusEscapesWhatFidDidNotWrite(t *testing.T) {
 			}
 			return fixture, kind
 		}, func(raw string) []string {
-			return []string{"  ⚠ Last backup failed (push" + statusEscaped + "); last backed up 2 hours ago\n"}
+			return []string{"  ⚠ Last backup failed (push" + statusEscaped + "); last backed up 2\n    hours ago\n"}
 		}, func(backup map[string]any) string {
 			failure := backup["latest"].(map[string]any)["failure"].(map[string]any)
 			if message := failure["message"].(string); message != "fatal: MESSAGE"+statusControls {
@@ -97,7 +97,7 @@ func TestStatusEscapesWhatFidDidNotWrite(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			fixture, raw := test.setup(t)
-			text := fixture.status("status")
+			text := fixture.run("status")
 			if text.err != nil || text.stderr != "" {
 				t.Fatalf("status = %v, stderr %q", text.err, text.stderr)
 			}
@@ -114,7 +114,7 @@ func TestStatusEscapesWhatFidDidNotWrite(t *testing.T) {
 			if strings.Contains(text.stdout, "\nINJECTED") || strings.Contains(text.stdout, "MESSAGE") {
 				t.Fatalf("status text shows an injected line or the failure's message:\n%q", text.stdout)
 			}
-			result := fixture.status("--json", "status")
+			result := fixture.run("--json", "status")
 			if result.err != nil {
 				t.Fatalf("status --json = %v, stderr %q", result.err, result.stderr)
 			}

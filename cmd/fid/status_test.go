@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -14,6 +15,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
@@ -21,17 +23,17 @@ import (
 // ahead of UTC, so local times and UTC differ.
 var statusNow = time.Date(2026, 11, 8, 9, 0, 0, 0, time.UTC).In(time.FixedZone("NZDT", 13*60*60))
 
-// statusKernelWords are the kernel nouns and IDs human output never names
-// (RESET 1.7).
-var statusKernelWords = regexp.MustCompile(`(?i)\b(envelopes?|activations?|obligations?|attempts?|attention items?|runs?|claims?)\b|ENV-|STP-|ATT-`)
-
 // statusFixture is a project whose genesis Event is backdated to a fixed
-// time, with a home and user config of its own.
+// time, with a home and user config of its own. Its commands see stdout as
+// a terminal of screen's size when screen is set, and environ besides HOME
+// and XDG_CONFIG_HOME.
 type statusFixture struct {
 	t          *testing.T
 	workspace  string
 	configHome string
 	home       string
+	screen     *display.Screen
+	environ    []string
 }
 
 func newStatusFixture(t *testing.T, started time.Duration) *statusFixture {
@@ -103,9 +105,15 @@ type statusRecordLine struct {
 
 func (fixture *statusFixture) writeRecord(lines ...statusRecordLine) {
 	fixture.t.Helper()
+	fixture.writeRecordAt(statusNow, lines...)
+}
+
+// writeRecordAt writes lines finished ago before now, not statusNow.
+func (fixture *statusFixture) writeRecordAt(now time.Time, lines ...statusRecordLine) {
+	fixture.t.Helper()
 	var record strings.Builder
 	for _, line := range lines {
-		finished := statusNow.Add(-line.ago).UTC()
+		finished := now.Add(-line.ago).UTC()
 		entry := map[string]any{"schema": "fid.backup-record.v1", "started_at": finished.Add(-4 * time.Second).Format(time.RFC3339Nano),
 			"finished_at": finished.Format(time.RFC3339Nano), "outcome": line.outcome, "project_id": "project-0123456789abcdef0123456789abcdef",
 			"commit": nil, "archive_digest": nil, "event_count": nil, "terminal_event_hash": nil, "failure": nil}
@@ -159,11 +167,12 @@ func (fixture *statusFixture) seed(rows []readyCommandRow, links [][3]string) {
 	}
 }
 
-func (fixture *statusFixture) status(args ...string) commandExecutionResult {
+// run runs fid with args in the fixture's environment.
+func (fixture *statusFixture) run(args ...string) commandExecutionResult {
 	root := newRootCommandAt(fixture.workspace)
-	environment := statusEnvironment{environ: []string{"HOME=" + fixture.home, "XDG_CONFIG_HOME=" + fixture.configHome},
-		now: func() time.Time { return statusNow }}
-	root.SetContext(context.WithValue(root.Context(), statusEnvironmentKey{}, environment))
+	environment := displayEnvironment{environ: append([]string{"HOME=" + fixture.home, "XDG_CONFIG_HOME=" + fixture.configHome}, fixture.environ...),
+		now: func() time.Time { return statusNow }, screen: func(io.Writer) *display.Screen { return fixture.screen }}
+	root.SetContext(context.WithValue(root.Context(), displayEnvironmentKey{}, environment))
 	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
 	root.SetOut(stdout)
 	root.SetErr(stderr)
@@ -172,11 +181,11 @@ func (fixture *statusFixture) status(args ...string) commandExecutionResult {
 	return commandExecutionResult{stdout: stdout.String(), stderr: stderr.String(), err: err}
 }
 
-// golden runs status and compares its output, with the fixture's temp
-// paths named <ROOT> and <CONFIG>, to testdata/status/<name>.
+// golden runs fid and compares its output, with the fixture's temp paths
+// named <ROOT> and <CONFIG>, to testdata/<name>.
 func (fixture *statusFixture) golden(name string, args ...string) {
 	fixture.t.Helper()
-	result := fixture.status(args...)
+	result := fixture.run(args...)
 	if result.err != nil || result.stderr != "" {
 		fixture.t.Fatalf("status %v = %v, stderr %q", args, result.err, result.stderr)
 	}
@@ -189,15 +198,7 @@ func (fixture *statusFixture) golden(name string, args ...string) {
 		output = strings.ReplaceAll(output, gittest.ResolvedPath(fixture.t, filepath.Dir(path))+"/"+filepath.Base(path), placeholder)
 		output = strings.ReplaceAll(output, path, placeholder)
 	}
-	if filepath.Ext(name) == ".txt" {
-		if found := statusKernelWords.FindAllString(output, -1); len(found) > 0 {
-			fixture.t.Fatalf("status text names kernel words %q:\n%s", found, output)
-		}
-		if strings.Contains(output, "\033") {
-			fixture.t.Fatalf("status text to a buffer has colour codes:\n%q", output)
-		}
-	}
-	assertGolden(fixture.t, filepath.Join("status", name), output)
+	assertGolden(fixture.t, name, output)
 }
 
 func statusTask(id, title, status string, parent *string, sequence, priority *int) readyCommandRow {
@@ -269,7 +270,7 @@ func TestStatusGoldenWork(t *testing.T) {
 			if test.work {
 				fixture.seed(statusWork())
 			}
-			fixture.golden(test.name, test.args...)
+			fixture.golden(filepath.Join("status", test.name), test.args...)
 		})
 	}
 }
@@ -280,7 +281,7 @@ func TestStatusJSONIgnoresAll(t *testing.T) {
 	fixture := newStatusFixture(t, 100*time.Hour)
 	fixture.setTarget()
 	fixture.seed(statusWork())
-	capped, all := fixture.status("--json", "status"), fixture.status("--json", "status", "--all")
+	capped, all := fixture.run("--json", "status"), fixture.run("--json", "status", "--all")
 	if capped.err != nil || capped.stdout != all.stdout {
 		t.Fatalf("status --json = %v\n%s\nwith --all\n%s", capped.err, capped.stdout, all.stdout)
 	}
@@ -329,7 +330,7 @@ func TestStatusGoldenBackup(t *testing.T) {
 				if format == "json" {
 					args = []string{"--json", "status"}
 				}
-				fixture.golden("backup-"+test.name+"."+format, args...)
+				fixture.golden(filepath.Join("status", "backup-"+test.name+"."+format), args...)
 			})
 		}
 	}

@@ -1,0 +1,17 @@
+╭ FID-5d2f77 ──────────────────────────────────────────────────── task ╮
+
+  ○ Wrap the heading of fid show when an issue's title is far    to do
+    too long for one line
+
+  Priority    P3
+  Labels      display, documentation, golden-tests, human-output,
+              status, wrapping
+
+  ACCEPTANCE CRITERIA
+  1  A title too long for one line wraps at spaces, its continuation
+     lines indented to where it began, and is never cut
+  2  A criterion wraps the same way
+  3  A path such as
+     docs/specs/a-very-long-directory-name/another-long-directory/06_DESIGN_PLAN_CLI.md
+     stands whole past the edge
+╰──────────────────────────────────────────────────────────────────────╯

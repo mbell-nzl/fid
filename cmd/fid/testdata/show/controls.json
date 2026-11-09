@@ -1,0 +1,40 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [],
+    "blocks": [],
+    "children": [],
+    "epic": null,
+    "issue": {
+      "id": "FID-c0c0c0",
+      "kind": "task",
+      "title": "Title\u001b[2J\nINJECTED",
+      "status": "todo",
+      "status_category": "unstarted",
+      "workflow_id": "task-default",
+      "parent_id": null,
+      "priority": null,
+      "sequence": null,
+      "spec_md_path": "docs/\u001b[2J\nINJECTED.md",
+      "revision": 1,
+      "labels": [
+        "label\u001b[2J\nINJECTED"
+      ],
+      "created_at": "2026-10-31T17:00:00Z",
+      "updated_at": "2026-10-31T17:00:00Z",
+      "acceptance_criteria": [
+        {
+          "id": "AC-FID-c0c0c0-1",
+          "ordinal": 1,
+          "text": "Criterion\u001b[2J\nINJECTED"
+        }
+      ]
+    },
+    "progress": null,
+    "state": null,
+    "task": null
+  }
+}

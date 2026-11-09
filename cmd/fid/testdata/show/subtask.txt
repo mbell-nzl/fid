@@ -1,0 +1,11 @@
+╭ FID-aa02b3 ───────────────────────────────────────────────── subtask ╮
+
+  ● Validate member digests                                in progress
+
+  Task        ● FID-71a0c2  Export validation              in progress
+  Epic        ◆ FID-e3a1c0  Operating experience              2/7 done
+
+  ACCEPTANCE CRITERIA
+  1  Each member's SHA-256 is checked against the manifest before
+     import reads it
+╰──────────────────────────────────────────────────────────────────────╯

@@ -29,3 +29,31 @@ func TestBoundedMessage(t *testing.T) {
 		})
 	}
 }
+
+// Escaped text cut to a column drops an escape that crosses the cut whole,
+// as BoundedMessage does, so no escape is left half shown.
+func TestCutEscapedText(t *testing.T) {
+	t.Parallel()
+	for _, row := range []struct {
+		name, input string
+		width       int
+		want        string
+	}{
+		{"fits", "short", 10, "short"},
+		{"exactly fits", "abcde", 5, "abcde"},
+		{"cut", "abcdefgh", 5, "abcd…"},
+		{"scalars", "界界界界界界", 4, "界界界…"},
+		{"escape crosses the cut", `ab\u001bcd`, 5, "ab…"},
+		{"escape before the cut", `\nabcdef`, 5, `\nab…`},
+		{"escape ends at the cut", `ab\u001bcd`, 9, `ab\u001b…`},
+		{"one column", "abc", 1, "…"},
+		{"no columns", "abc", 0, ""},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			t.Parallel()
+			if got := CutEscapedText(row.input, row.width); got != row.want {
+				t.Fatalf("CutEscapedText(%q, %d) = %q, want %q", row.input, row.width, got, row.want)
+			}
+		})
+	}
+}

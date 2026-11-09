@@ -1,0 +1,21 @@
+╭ FID-71a0c2 ──────────────────────────────────────────────────── task ╮
+
+  ● Export validation                                      in progress
+
+  Epic        ◆ FID-e3a1c0  Operating experience              2/7 done
+  Priority    P1
+  Blocks      ○ FID-c2d4e5  Retry a rejected backup push         to do
+              ○ FID-0d4e8b  Document backup age                  to do
+  Labels      backup, export
+  Spec        docs/specs/02_TRD.md
+
+  ACCEPTANCE CRITERIA
+  1  fid export validate refuses an archive whose member digests don't
+     match its manifest, naming the first bad member
+  2  A truncated archive is refused, not read to its end
+
+  SUBTASKS                                                    1/3 done
+  ✓ FID-aa01b2  Check the manifest schema                         done
+  ● FID-aa02b3  Validate member digests                    in progress
+  ○ FID-aa03b4  Refuse a truncated archive                       to do
+╰──────────────────────────────────────────────────────────────────────╯

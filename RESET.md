@@ -60,7 +60,7 @@ criteria below.
 | **1.2c** | `fid restore` (no arguments) and the V8 restore test (back up, wipe, restore, compare) | Assured | V8 (done 8 November 2026) |
 | **1.2d** | Backup storage for the long run: fid's clone packs itself, and the backup folder holds the export's files unzipped | Assured | After 100 backups, fid's clone in the cache is packed, not a loose copy per backup; the folder holds the export's files unzipped (journal files of at most 64 MB, `manifest.json`, artifacts), the config spec describes it, `fid backup` writes it and `fid restore` zips it back up for import; V8 still passes (done 8 November 2026) |
 | **1.3a** | Display package; `fid status` with the backup-age line | Standard | whet-style output; golden tests for text and JSON; `fid status` warns after 24 hours without a backup, after a failed push, or with no target set, and makes it a NEEDS YOU item after 3 days (done 8 November 2026) |
-| **1.3b** | `fid show`; a pager for long output | Standard | whet-style output; golden tests for text and JSON; on a terminal, `status` and `show` output taller than the screen pages through `less`, as git's does |
+| **1.3b** | `fid show`; a pager for long output | Standard | whet-style output; golden tests for text and JSON; on a terminal, `status` and `show` output taller than the screen pages through `less`, as git's does (done 8 November 2026) |
 | **1.4** | `fid next --claim`: atomic, respects dependencies, ordered, typed skip reasons, `--explain` | Standard | V3 |
 | **1.5** | `start`, `check`, `park`; claim heartbeat | Standard | An agent works a task without touching kernel commands |
 | **1.6** | Merge-aware `done` with the single done evaluator; reconciles PRs Mark merged in GitHub | Assured | V5 |

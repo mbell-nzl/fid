@@ -1,8 +1,11 @@
 ╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
 
   NEEDS YOU
-  ✗ No backup for 3 days: none since the ledger began 2026-11-05 14:00; no backup target is set
-      → add [backup] target to <CONFIG>/fid/config.toml, then fid backup
+  ✗ No backup for 3 days: none since the ledger began
+    2026-11-05 14:00; no backup target is set
+      → add [backup] target to
+        <CONFIG>/fid/config.toml,
+        then fid backup
 
   TO DO
   ○ FID-77aa01  Tidy help text

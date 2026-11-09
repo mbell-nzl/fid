@@ -1,0 +1,54 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [],
+    "blocks": [],
+    "children": [],
+    "epic": {
+      "id": "FID-e3a1c0",
+      "kind": "epic",
+      "title": "Operating experience",
+      "status": "in_progress",
+      "status_category": "started",
+      "progress": {
+        "done": 2,
+        "total": 7
+      }
+    },
+    "issue": {
+      "id": "FID-aa02b3",
+      "kind": "subtask",
+      "title": "Validate member digests",
+      "status": "in_progress",
+      "status_category": "started",
+      "workflow_id": "subtask-default",
+      "parent_id": "FID-71a0c2",
+      "priority": null,
+      "sequence": null,
+      "spec_md_path": null,
+      "revision": 1,
+      "labels": [],
+      "created_at": "2026-10-31T11:00:00Z",
+      "updated_at": "2026-10-31T11:00:00Z",
+      "acceptance_criteria": [
+        {
+          "id": "AC-FID-aa02b3-1",
+          "ordinal": 1,
+          "text": "Each member's SHA-256 is checked against the manifest before import reads it"
+        }
+      ]
+    },
+    "progress": null,
+    "state": null,
+    "task": {
+      "id": "FID-71a0c2",
+      "kind": "task",
+      "title": "Export validation",
+      "status": "in_progress",
+      "status_category": "started"
+    }
+  }
+}

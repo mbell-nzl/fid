@@ -3,6 +3,10 @@
   TO DO
   ○ FID-77aa01  Tidy help text
 
-  ⚠ Can't read user config <CONFIG>/fid/config.toml; last backed up 1 hour ago
-      → fix <CONFIG>/fid/config.toml, then fid backup
+  ⚠ Can't read user config
+    <CONFIG>/fid/config.toml;
+    last backed up 1 hour ago
+      → fix
+        <CONFIG>/fid/config.toml,
+        then fid backup
 ╰──────────────────────────────────────────────────────────────────────╯

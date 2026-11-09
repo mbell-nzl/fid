@@ -1,0 +1,19 @@
+╭ FID-e3a1c0 ──────────────────────────────────────────────────── epic ╮
+
+  ◆ Operating experience                                   in progress
+
+  Progress    ██░░░░░░░░  2/7 tasks done
+  Priority    P1
+  Labels      ux
+  Spec        docs/specs/07_DESIGN_PLAN_FLOWS.md
+
+  TASKS
+  ✓ FID-1a2b3c  Escape controls in status                         done
+  ✓ FID-2b3c4d  Port the display package                       qa pass
+  ● FID-71a0c2  Export validation                          in progress
+  ● FID-3b9e01  Tidy resume output                           qa review
+  ○ FID-9f13aa  Harden login rate limiting                       to do
+  ○ FID-c2d4e5  Retry a rejected backup push     blocked by FID-71a0c2
+  ○ FID-0d4e8b  Document backup age              blocked by FID-71a0c2
+  ✗ FID-4c5d6e  Drop the V1 resume view                      cancelled
+╰──────────────────────────────────────────────────────────────────────╯
