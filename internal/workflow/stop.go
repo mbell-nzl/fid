@@ -289,11 +289,6 @@ func GetStop(workspaceRoot, migrationsDir, id string) (Stop, error) {
 	return loadStop(conn, id)
 }
 
-// GetStopFromProjection reads a Stop from an already locked projection.
-func GetStopFromProjection(conn *sql.DB, id string) (Stop, error) {
-	return loadStop(conn, id)
-}
-
 // AttentionForStopFromProjection reads the Attention linked to a Stop from an
 // already locked projection.
 func AttentionForStopFromProjection(conn *sql.DB, stopID string) (Attention, error) {

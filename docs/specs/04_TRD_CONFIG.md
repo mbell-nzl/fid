@@ -1,7 +1,7 @@
 # RUNTIME LAYOUT AND CONFIGURATION - fid
 
-> **Phase 20 accepted amendment:** the required `config_version = 1` field and
-> temporary `pricing.toml` expiry are accepted with the Phase 20 slice pack.
+> **Phase 20 accepted amendment:** the required `config_version = 1` field is
+> accepted with the Phase 20 slice pack.
 
 ## 1. Ledger Layout
 
@@ -434,11 +434,6 @@ Before first dogfood, existing development workspaces may be deleted and
 reinitialized. No automatic migration from pre-ADR-0011 schema or journal
 events is a product requirement.
 
-Phase 20 convergence may also write the ledger's `pricing.toml` solely for the legacy
-stats commands owned for deletion in Phase 26 (renumbered by DEC-272). It is not part of `config.toml`,
-is not accepted by the strict config parser, and is absent from the first
-supported baseline.
-
 ## 6. Secrets
 
 No secret belongs in committed fid configuration, journal Events, Receipts,
@@ -454,4 +449,4 @@ entries whose source is `literal`, approved `inherit`, or `credential` name.
 The ambient environment is not inherited wholesale. Credential values exist
 only in process memory long enough to execute and redact output.
 
-*Last updated: 2026-11-08 (RESET 1.3a: `fid status` reads the record)*
+*Last updated: 2026-11-09 (`pricing.toml` removed)*

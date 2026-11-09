@@ -25,7 +25,6 @@ func TestUpdateChangesTitleAndPriorityAndPreservesUntouchedFields(t *testing.T) 
 		Priority:   intPointer(2),
 		SpecMDPath: stringPointer("project-docs/specs/06_DESIGN_PLAN_CLI.md"),
 		Labels:     []string{"core"},
-		OwnerActor: stringPointer("agent:before"),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)

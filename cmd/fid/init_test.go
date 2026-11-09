@@ -56,7 +56,6 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 		filepath.Join(config.LedgerDir(workspace), "journal"),
 		filepath.Join(config.LedgerDir(workspace), "artifacts"),
 		filepath.Join(config.LedgerDir(workspace), "config.toml"),
-		filepath.Join(config.LedgerDir(workspace), "pricing.toml"),
 		filepath.Join(config.LedgerDir(workspace), "fid.sqlite"),
 		filepath.Join(config.LedgerDir(workspace), ".gitignore"),
 	}
@@ -107,14 +106,6 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	}
 	if projectConfig.AbandonedAttemptGraceSeconds != config.DefaultAbandonedAttemptGraceSeconds {
 		t.Fatalf("abandoned-attempt grace = %d, want %d", projectConfig.AbandonedAttemptGraceSeconds, config.DefaultAbandonedAttemptGraceSeconds)
-	}
-
-	pricingConfig, err := config.ReadPricingConfig(filepath.Join(config.LedgerDir(workspace), "pricing.toml"))
-	if err != nil {
-		t.Fatalf("ReadPricingConfig() error = %v", err)
-	}
-	if len(pricingConfig.Models) != len(config.DefaultPricingConfig().Models) {
-		t.Fatalf("pricing models = %d, want %d", len(pricingConfig.Models), len(config.DefaultPricingConfig().Models))
 	}
 }
 

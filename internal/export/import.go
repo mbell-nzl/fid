@@ -116,7 +116,7 @@ func Import(options ImportOptions) (ImportResult, error) {
 			return fmt.Errorf("import: create stage: %w", err)
 		}
 		defer func() { _ = os.RemoveAll(staging) }()
-		if _, err := config.WriteLedgerFiles(stage, projectConfig, config.DefaultPricingConfig()); err != nil {
+		if _, err := config.WriteLedgerFiles(stage, projectConfig); err != nil {
 			return fmt.Errorf("import: create staged configuration: %w", err)
 		}
 		if err := stageArchive(stage, projectConfig, manifest, snapshot); err != nil {

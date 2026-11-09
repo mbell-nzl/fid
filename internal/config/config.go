@@ -1,18 +1,15 @@
 package config
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
 const (
 	JournalDirName   = "journal"
 	ConfigFileName   = "config.toml"
-	PricingFileName  = "pricing.toml"
 	DatabaseFileName = "fid.sqlite"
 	GitIgnoreName    = ".gitignore"
 )
@@ -27,67 +24,12 @@ const (
 	LedgerStagingPrefix = "fid-staging-"
 )
 
-type ModelPricing struct {
-	InPerMTok  float64
-	OutPerMTok float64
-}
-
-type PricingConfig struct {
-	Models map[string]ModelPricing
-}
-
-var defaultPricingModelOrder = []string{
-	"claude-opus-4-7",
-	"claude-sonnet-4-6",
-	"claude-haiku-4-5",
-	"gpt-5.4-mini",
-	"gpt-5.4-nano",
-	"gemini-2.5-flash",
-	"gemini-2.5-flash-lite",
-}
-
 type WorkspacePaths struct {
 	WorkspaceDir string
 	JournalDir   string
 	ConfigPath   string
-	PricingPath  string
 	DatabasePath string
 	GitIgnore    string
-}
-
-func DefaultPricingConfig() PricingConfig {
-	return PricingConfig{
-		Models: map[string]ModelPricing{
-			"claude-opus-4-7": {
-				InPerMTok:  15.0,
-				OutPerMTok: 75.0,
-			},
-			"claude-sonnet-4-6": {
-				InPerMTok:  3.0,
-				OutPerMTok: 15.0,
-			},
-			"claude-haiku-4-5": {
-				InPerMTok:  0.80,
-				OutPerMTok: 4.0,
-			},
-			"gpt-5.4-mini": {
-				InPerMTok:  0.375,
-				OutPerMTok: 2.25,
-			},
-			"gpt-5.4-nano": {
-				InPerMTok:  0.10,
-				OutPerMTok: 0.625,
-			},
-			"gemini-2.5-flash": {
-				InPerMTok:  0.30,
-				OutPerMTok: 2.50,
-			},
-			"gemini-2.5-flash-lite": {
-				InPerMTok:  0.10,
-				OutPerMTok: 0.40,
-			},
-		},
-	}
 }
 
 // LedgerDir returns the directory that holds the ledger of the project whose
@@ -153,22 +95,14 @@ func LedgerPaths(ledgerDir string) WorkspacePaths {
 		WorkspaceDir: ledgerDir,
 		JournalDir:   filepath.Join(ledgerDir, JournalDirName),
 		ConfigPath:   filepath.Join(ledgerDir, ConfigFileName),
-		PricingPath:  filepath.Join(ledgerDir, PricingFileName),
 		DatabasePath: filepath.Join(ledgerDir, DatabaseFileName),
 		GitIgnore:    filepath.Join(ledgerDir, GitIgnoreName),
 	}
 }
 
-func WriteBootstrapFiles(workspaceRoot string, project ProjectConfig, pricing PricingConfig) (WorkspacePaths, error) {
-	if strings.TrimSpace(workspaceRoot) == "" {
-		return WorkspacePaths{}, fmt.Errorf("write bootstrap files: workspace root is required")
-	}
-	return WriteLedgerFiles(LedgerDir(workspaceRoot), project, pricing)
-}
-
-// WriteLedgerFiles writes a new ledger's config, pricing and .gitignore into
-// ledgerDir, and creates its journal directory.
-func WriteLedgerFiles(ledgerDir string, project ProjectConfig, pricing PricingConfig) (WorkspacePaths, error) {
+// WriteLedgerFiles writes a new ledger's config and .gitignore into ledgerDir,
+// and creates its journal directory.
+func WriteLedgerFiles(ledgerDir string, project ProjectConfig) (WorkspacePaths, error) {
 	if strings.TrimSpace(ledgerDir) == "" {
 		return WorkspacePaths{}, fmt.Errorf("write bootstrap files: ledger directory is required")
 	}
@@ -187,86 +121,8 @@ func WriteLedgerFiles(ledgerDir string, project ProjectConfig, pricing PricingCo
 	if err := os.WriteFile(paths.ConfigPath, []byte(projectConfigContents(project)), 0o644); err != nil {
 		return WorkspacePaths{}, fmt.Errorf("write config %q: %w", paths.ConfigPath, err)
 	}
-	if err := os.WriteFile(paths.PricingPath, []byte(pricingConfigContents(pricing)), 0o644); err != nil {
-		return WorkspacePaths{}, fmt.Errorf("write pricing %q: %w", paths.PricingPath, err)
-	}
 
 	return paths, nil
-}
-
-func ReadPricingConfig(path string) (PricingConfig, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return PricingConfig{}, fmt.Errorf("open pricing config %q: %w", path, err)
-	}
-	defer closeConfigFile(file)
-
-	pricing := PricingConfig{Models: make(map[string]ModelPricing)}
-	scanner := bufio.NewScanner(file)
-	currentModel := ""
-	for scanner.Scan() {
-		line := normalizeLine(scanner.Text())
-		if line == "" {
-			continue
-		}
-		if isSection(line) {
-			section := strings.Trim(line, "[]")
-			currentModel = ""
-			if strings.HasPrefix(section, "models.") {
-				currentModel = strings.TrimPrefix(section, "models.")
-			}
-			continue
-		}
-		if currentModel == "" {
-			continue
-		}
-		key, value, ok := splitAssignment(line)
-		if !ok {
-			continue
-		}
-		parsed, err := strconv.ParseFloat(value, 64)
-		if err != nil {
-			return PricingConfig{}, fmt.Errorf("parse pricing config %q model %q key %q: %w", path, currentModel, key, err)
-		}
-		model := pricing.Models[currentModel]
-		switch key {
-		case "in_per_mtok":
-			model.InPerMTok = parsed
-		case "out_per_mtok":
-			model.OutPerMTok = parsed
-		}
-		pricing.Models[currentModel] = model
-	}
-	if err := scanner.Err(); err != nil {
-		return PricingConfig{}, fmt.Errorf("scan pricing config %q: %w", path, err)
-	}
-	if len(pricing.Models) == 0 {
-		return PricingConfig{}, fmt.Errorf("parse pricing config %q: no models found", path)
-	}
-
-	return pricing, nil
-}
-
-func pricingConfigContents(pricing PricingConfig) string {
-	var builder strings.Builder
-	builder.WriteString("# Default model pricing in USD per million tokens.\n")
-	builder.WriteString("# cost_usd = (tokens_in * in_per_mtok + tokens_out * out_per_mtok) / 1e6\n\n")
-
-	for _, name := range defaultPricingModelOrder {
-		model, ok := pricing.Models[name]
-		if !ok {
-			continue
-		}
-		_, _ = fmt.Fprintf(&builder, "[models.%s]\n", name)
-		_, _ = fmt.Fprintf(&builder, "in_per_mtok = %s\n", formatPricingValue(model.InPerMTok))
-		_, _ = fmt.Fprintf(&builder, "out_per_mtok = %s\n\n", formatPricingValue(model.OutPerMTok))
-	}
-
-	return builder.String()
-}
-
-func formatPricingValue(value float64) string {
-	return strconv.FormatFloat(value, 'f', -1, 64)
 }
 
 func gitIgnoreContents() string {

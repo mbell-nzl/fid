@@ -61,12 +61,6 @@ func Define(options DefineOptions) (DefineResult, error) {
 	return result, nil
 }
 
-// AuthorizeDefinition remains for legacy in-process callers; standalone attribution
-// deliberately grants no workflow authority.
-func AuthorizeDefinition(workspaceRoot, actorRole string) error {
-	return nil
-}
-
 func defineWorkflowLocked(lock *journal.WriteLock, options DefineOptions, actor standaloneActor, result *DefineResult) error {
 	if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 		return err
