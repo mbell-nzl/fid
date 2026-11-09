@@ -4,7 +4,8 @@
 > git common directory and is never committed, so the clauses on a committed
 > `.fid/journal`, JSONL line-merges by `git merge` and a committed
 > `.fid/config.toml` no longer hold. Project policy lives in `.fid.toml`.
-> Journal-canonical, SQLite-derived and no daemon stand.
+> Journal-canonical, SQLite-derived and no daemon stand. `pricing.toml` was
+> removed on 9 November 2026, since nothing read it.
 
 ## Decision
 
