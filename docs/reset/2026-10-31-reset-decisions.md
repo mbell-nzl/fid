@@ -560,6 +560,13 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     willy-nilly just extend the budget, but the budget set was fairly
     arbitrary so I don't want to skimp and shortcut a worse implementation
     solely to meet the budget."
+  - **Decided by Mark, 9 November 2026 (after #51):** #51 took product Go
+    to 51,457 lines, about 200 over the budget of about 51.26k. Mark is
+    fine going over in principle, since the figure was somewhat arbitrary.
+    He asked for an assessment of genuine cuts only, "not cutting just for
+    the sake of fitting this arbitrary budget". A Sonnet session's
+    read-only assessment found about 210 lines of genuine cuts, listed on
+    the later list.
   - **Builder's choice, PR #50 (1.3a):** the rules live in domain packages:
     `backup.ReadHealth` (`internal/backup/health.go`) judges the record and
     user config, and `issues.ReadOverview` (`internal/issues/overview.go`)
@@ -1019,30 +1026,30 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   permanent backups in 3.2. Exports accept up to 1 GiB per Artifact, stored
   as one raw blob in v2. Journal chunking does not cover Artifacts; no
   smaller Artifact ceiling or chunking design has been chosen.
-- From #50 (1.3a), `fid status`. 1.3b took the first three: long lines
-  now wrap, title cuts drop an escape whole, and the kernel-word check
-  covers `show`'s goldens, which use `display.RoleLabel`. These remain:
-  - Visible width counts runes, so wide characters (CJK, most emoji) in
-    titles misalign columns. Fixing it needs East Asian width tables
-    (`golang.org/x/text/width` or `go-runewidth`), a new dependency.
-  - `fid init`'s message prints a root path holding control characters raw,
-    and other commands' Human output that echoes a path may do the same.
-  - `cli.EscapeControlText` escapes control characters (Cc) only. Format
-    characters (Cf), such as U+202E RIGHT-TO-LEFT OVERRIDE, pass through, in
-    failure output as in `status`.
+- From #50 and #51 (1.3), `fid status` and `fid show`. 1.3b took #50's
+  long lines, title cuts and kernel-word check. Mark placed two more on 9
+  November 2026: 1.7 replaces the kernel-word pattern that
+  `internal/status`'s unit tests copy, and 3.2 tidies `go.mod`, which marks
+  `golang.org/x/sys` indirect although `internal/backup` and
+  `internal/display` import it. A `$PAGER` with arguments that names a
+  missing program loses the text to the shell's "not found". git's does
+  too, so it stays. These remain:
+  - Wide characters (CJK, most emoji) count as one column. They misalign
+    the columns in `status` and `show`, and make the pager undercount a
+    line's rows. Fixing it needs East Asian width tables, a new
+    dependency: `go-runewidth` (MIT) or `golang.org/x/text/width` (BSD).
+    Do it when a real title has wide characters.
+  - Terminal safety of human output. `fid init`'s message prints a root
+    path holding control characters raw, and other commands' Human output
+    that echoes a path may do the same. `cli.EscapeControlText` escapes
+    control characters (Cc) only, so format characters (Cf), such as
+    U+202E RIGHT-TO-LEFT OVERRIDE, pass through, in failure output as in
+    `status` and `show`. Both need a deliberately odd path or title.
   - `fid status` reads the whole backup record each time. It grows by one
     short line per backup, so this is fine for the trial.
-- From #51 (1.3b), `fid show` and the pager:
-  - The pager counts a line's rows by its runes, so wide characters
-    undercount, as with column widths above.
-  - A `$PAGER` with arguments naming a missing program loses the text to
-    the shell's "not found", as git's does.
-  - `internal/status`'s unit tests keep their own copy of the kernel-word
-    regexp; `cmd/fid`'s goldens share one. 1.7's leak test is the general
-    check.
-  - `go.mod` marks `golang.org/x/sys` indirect, though `internal/backup`
-    and now `internal/display` import it. `go mod tidy` would fix it, an
-    Assured change.
+  - `internal/status`'s `row` and `internal/show`'s `reference` lay out the
+    same reference line, differing in how they colour the mark. Share them
+    when a third renderer needs one.
   - `TestStatusAndShowPageOnARealTerminal` compares `status` output from
     separate processes, including the date in the box's top border, so a
     run that straddles local midnight fails (Codex, #51 round 2, minor;
@@ -1050,6 +1057,34 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     the UTC-midnight test failure under "CI test time" below: if it ever
     fails CI, fix it in test code by checking the header date separately
     and normalising it before comparing.
+- Genuine cuts in product Go, from the read-only assessment of 9 November
+  2026 (the line budget, in the 1.3 details above). About 210 lines:
+  - The ledger's `pricing.toml` (about 135 lines, in
+    `internal/config/config.go`). `fid init` and `export import` still
+    write it, and nothing reads it: spec 04 §5 says it is written "solely
+    for the legacy stats commands owned for deletion". Removing it changes
+    the files a new ledger holds, so it needs Mark's yes, with spec 04 and
+    ADR-0001's mention of it updated in the same PR.
+  - Dead V1 leftovers (about 80 lines; Standard; one small PR):
+    - the vacuum functions `fid maintenance vacuum` never reaches, since
+      it reports the capability unavailable first;
+    - five functions with no callers at all:
+      `bootstrap.IsAlreadyInitialized`, `journal.TryWithLock`,
+      `workflow.AuthorizeAssignment`, `workflow.AuthorizeDefinition` and
+      `workflow.GetStopFromProjection`;
+    - the unused `OwnerRole` and `OwnerActor` fields on the issue create
+      and update options;
+    - `issues.statusCategory`, a hard-coded table of V1 state names that
+      only a test calls.
+  - Helpers that only tests call (about 120–150 lines, such as
+    `evidence.Execute` and `workflow.EvaluateObligations`) wait for the
+    dead-code cleanup further down this list, since removing them means
+    rewriting tests. Removing legacy manifest-v1 validation support (about
+    30 lines) is Assured and Mark's call, since it withdraws an
+    archive-format promise: `fid export validate` still accepts Phase 21
+    manifest-v1 archives, though `fid export import` already refuses them
+    as `schema-unsupported` (`TestValidateRetainsPinnedV1Profile` pins
+    both).
 - Review rounds, as data for refining the process after the reset: #41, #44
   and #46 took 4, 4 and 5 Codex rounds. In #46, three of the four rounds
   that asked for changes were about code the previous fix round had added
