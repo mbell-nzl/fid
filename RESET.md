@@ -64,7 +64,7 @@ criteria below.
 | **1.4** | `fid next --claim`: atomic, respects dependencies, ordered, typed skip reasons, `--explain` | Standard | V3 |
 | **1.5** | `start`, `check`, `park`; claim heartbeat | Standard | An agent works a task without touching kernel commands |
 | **1.6** | Merge-aware `done` with the single done evaluator; reconciles PRs Mark merged in GitHub | Assured | V5 |
-| **1.7** | Leak test for kernel words in human output | Routine | V2 |
+| **1.7** | Leak test for kernel words in human output; it replaces the copy of the kernel-word pattern in `internal/status`'s unit tests | Routine | V2; no test keeps its own copy of the pattern |
 | **1.8** | Move the remaining reset tasks into fid | Mark | fid tracks its own work (a disposable ledger until 3.2) |
 | **2.1** | Review and finding surface; one session records every required profile; each round is posted to the PR; `done` refuses open major findings; a task whose latest review round approved it and that isn't done is a NEEDS YOU item in `fid status` | Standard | V5; that NEEDS YOU item |
 | **2.2** | Policy from `origin/<default>` with built-in defaults; lane floor; hard floors | Assured | V7 |
@@ -73,7 +73,7 @@ criteria below.
 | **2.5** | First loop, as fid's own copy: contract check, loud failures, heartbeat, park on interrupt, backup after each task, merge judge in shadow (Mark records his call first) | Standard | It runs a reset task end to end |
 | **2.6** | Usage capture: tokens per task from `claude` and `codex` JSON output | Standard | Every reset task has a token count |
 | **3.1** | Validations, `epic approve` (binds the validations), `brief`, merged digest | Standard | V1's fixture recipe runs from `fid brief` |
-| **3.2** | Squash the 38 migrations into a baseline; release v0.2.0; create the permanent ledger; run a restore drill | Assured | A fresh clone restores the ledger from backup |
+| **3.2** | Squash the 38 migrations into a baseline; tidy `go.mod`, unless an earlier Assured task already has; release v0.2.0; create the permanent ledger; run a restore drill | Assured | A fresh clone restores the ledger from backup; `go mod tidy -diff` reports nothing |
 | **3.3** | Kit: plain-copy install, `plan`, `tdd`, builder habit; the default loop promoted from 2.5 | kit | Installed in kauri; the loop self-test passes |
 | **3.4** | kauri: archive its V1 docs, one-page AGENTS.md, `.fid.toml`, install the kit, pre-register and randomly assign 10 trial tasks | Mark | Ready for the trial |
 
