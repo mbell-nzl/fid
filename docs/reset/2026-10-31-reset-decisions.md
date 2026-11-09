@@ -1079,8 +1079,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   - Helpers that only tests call (about 120–150 lines, such as
     `evidence.Execute` and `workflow.EvaluateObligations`) wait for the
     dead-code cleanup further down this list, since removing them means
-    rewriting tests. Accepting Phase 21 export-manifest v1 archives (about 30 lines)
-    is an archive-format promise, so it is Assured and Mark's call.
+    rewriting tests. Removing legacy manifest-v1 validation support (about
+    30 lines) is Assured and Mark's call, since it withdraws an
+    archive-format promise: `fid export validate` still accepts Phase 21
+    manifest-v1 archives, though `fid export import` already refuses them
+    as `schema-unsupported` (`TestValidateRetainsPinnedV1Profile` pins
+    both).
 - Review rounds, as data for refining the process after the reset: #41, #44
   and #46 took 4, 4 and 5 Codex rounds. In #46, three of the four rounds
   that asked for changes were about code the previous fix round had added
