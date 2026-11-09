@@ -367,8 +367,3 @@ func BuildProjectInitializedEvent(projectID string) journal.Event {
 func closeBootstrapDB(conn *sql.DB) {
 	_ = conn.Close()
 }
-
-func IsAlreadyInitialized(err error) bool {
-	var target *AlreadyInitializedError
-	return errors.As(err, &target)
-}

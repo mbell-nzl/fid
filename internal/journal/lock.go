@@ -62,10 +62,6 @@ func WithLedgerLock(ledgerDir string, owner LockOwner, fn func(*WriteLock) error
 	return withLedgerLockOptions(ledgerDir, owner, defaultLockOptions(), fn)
 }
 
-func TryWithLock(workspaceRoot string, owner LockOwner, fn func(*WriteLock) error) error {
-	return withLockOptions(workspaceRoot, owner, tryLockOptions(), fn)
-}
-
 func tryWithLedgerLock(ledgerDir string, owner LockOwner, fn func(*WriteLock) error) error {
 	return withLedgerLockOptions(ledgerDir, owner, tryLockOptions(), fn)
 }

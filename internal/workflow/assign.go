@@ -58,12 +58,6 @@ func Assign(options AssignOptions) (AssignResult, error) {
 	return result, nil
 }
 
-// AuthorizeAssignment remains for legacy in-process callers; standalone
-// attribution deliberately grants no workflow authority.
-func AuthorizeAssignment(workspaceRoot, actorRole string) error {
-	return nil
-}
-
 func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions, actor standaloneActor, result *AssignResult) error {
 	if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 		return err

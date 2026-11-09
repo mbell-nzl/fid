@@ -25,12 +25,8 @@ type CreateOptions struct {
 	Sequence       *int
 	SpecMDPath     *string
 	Labels         []string
-	// OwnerRole and OwnerActor remain compatibility inputs for retained V1
-	// in-process callers. Canonical Issue commands never populate them.
-	OwnerRole  *string
-	OwnerActor *string
-	Scheduling string
-	now        func() time.Time
+	Scheduling     string
+	now            func() time.Time
 }
 
 type CreateResult struct {
@@ -197,21 +193,6 @@ func trimmedOptionalString(value *string) *string {
 		return nil
 	}
 	return &trimmed
-}
-
-func statusCategory(status string) string {
-	switch status {
-	case "todo":
-		return "unstarted"
-	case "in_progress", "dev_complete", "qa_review", "qa_block", "failed_gate", "wrapped":
-		return "started"
-	case "qa_pass", "done", "closed":
-		return "completed"
-	case "cancelled":
-		return "cancelled"
-	default:
-		return "unstarted"
-	}
 }
 
 func registryStatusCategory(registry *workflow.Registry, workflowID, status string) (string, error) {

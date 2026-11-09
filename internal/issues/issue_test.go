@@ -1344,36 +1344,8 @@ func TestGetMapsPopulatedNullableFields(t *testing.T) {
 	}
 }
 
-func TestIssueHelpersCoverStatusAndNullHandling(t *testing.T) {
+func TestIssueHelpersCoverNullHandlingAndJournalLines(t *testing.T) {
 	t.Parallel()
-
-	t.Run("status category mapping", func(t *testing.T) {
-		t.Parallel()
-
-		tests := []struct {
-			status string
-			want   string
-		}{
-			{status: "todo", want: "unstarted"},
-			{status: "in_progress", want: "started"},
-			{status: "dev_complete", want: "started"},
-			{status: "qa_review", want: "started"},
-			{status: "qa_block", want: "started"},
-			{status: "failed_gate", want: "started"},
-			{status: "wrapped", want: "started"},
-			{status: "qa_pass", want: "completed"},
-			{status: "done", want: "completed"},
-			{status: "closed", want: "completed"},
-			{status: "cancelled", want: "cancelled"},
-			{status: "unknown", want: "unstarted"},
-		}
-
-		for _, tt := range tests {
-			if got := statusCategory(tt.status); got != tt.want {
-				t.Fatalf("statusCategory(%q) = %q, want %q", tt.status, got, tt.want)
-			}
-		}
-	})
 
 	t.Run("null pointer helpers", func(t *testing.T) {
 		t.Parallel()
