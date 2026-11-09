@@ -168,7 +168,7 @@ func prepareInitialization(options InitOptions) (initPlan, error) {
 }
 
 func stageWorkspace(stagedLedger string, projectConfig config.ProjectConfig, hooks initHooks) (config.WorkspacePaths, error) {
-	stagePaths, err := config.WriteLedgerFiles(stagedLedger, projectConfig, config.DefaultPricingConfig())
+	stagePaths, err := config.WriteLedgerFiles(stagedLedger, projectConfig)
 	if err != nil {
 		return config.WorkspacePaths{}, err
 	}
