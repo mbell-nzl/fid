@@ -567,6 +567,14 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     the sake of fitting this arbitrary budget". A Sonnet session's
     read-only assessment found about 210 lines of genuine cuts, listed on
     the later list.
+  - **Decided by Mark, 9 November 2026 (PR #53):** remove `pricing.toml`
+    and the dead V1 leftovers before 1.4, in one Standard PR: "pricing can
+    go if we don't plan to use it anymore … And the dead leftovers too."
+    Before the cut, the orchestrator checked that fid doesn't need the
+    file. Nothing read it; `fid stats cost` sums the `cost_usd` stored with
+    each run; and the reset measures tokens, not dollars (2.6, kill
+    criterion 4). New ledgers no longer have the file, and old ledgers
+    keep theirs, unread. #53 took product Go from 51,457 lines to 51,222.
   - **Builder's choice, PR #50 (1.3a):** the rules live in domain packages:
     `backup.ReadHealth` (`internal/backup/health.go`) judges the record and
     user config, and `issues.ReadOverview` (`internal/issues/overview.go`)
@@ -1058,39 +1066,23 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     fails CI, fix it in test code by checking the header date separately
     and normalising it before comparing.
 - Genuine cuts in product Go, from the read-only assessment of 9 November
-  2026 (the line budget, in the 1.3 details above). About 210 lines:
-  - The ledger's `pricing.toml` (about 135 lines, in
-    `internal/config/config.go`). `fid init` and `export import` still
-    write it, and nothing reads it: spec 04 §5 says it is written "solely
-    for the legacy stats commands owned for deletion". Removing it changes
-    the files a new ledger holds, so it needs Mark's yes, with spec 04 and
-    ADR-0001's mention of it updated in the same PR.
-  - Dead V1 leftovers (about 80 lines; Standard; one small PR):
-    - the vacuum functions `fid maintenance vacuum` never reaches, since
-      it reports the capability unavailable first;
-    - five functions with no callers at all:
-      `bootstrap.IsAlreadyInitialized`, `journal.TryWithLock`,
-      `workflow.AuthorizeAssignment`, `workflow.AuthorizeDefinition` and
-      `workflow.GetStopFromProjection`;
-    - the unused `OwnerRole` and `OwnerActor` fields on the issue create
-      and update options;
-    - `issues.statusCategory`, a hard-coded table of V1 state names that
-      only a test calls.
+  2026 (the line budget, in the 1.3 details above). #53 removed
+  `pricing.toml` and the dead V1 leftovers, about 235 lines. These remain:
   - Helpers that only tests call (about 120–150 lines, such as
     `evidence.Execute` and `workflow.EvaluateObligations`) wait for the
     dead-code cleanup further down this list, since removing them means
-    rewriting tests. Removing legacy manifest-v1 validation support (about
-    30 lines) is Assured and Mark's call, since it withdraws an
-    archive-format promise: `fid export validate` still accepts Phase 21
-    manifest-v1 archives, though `fid export import` already refuses them
-    as `schema-unsupported` (`TestValidateRetainsPinnedV1Profile` pins
-    both).
+    rewriting tests.
+  - Removing legacy manifest-v1 validation support (about 30 lines) is
+    Assured and Mark's call, since it withdraws an archive-format promise:
+    `fid export validate` still accepts Phase 21 manifest-v1 archives,
+    though `fid export import` already refuses them as
+    `schema-unsupported` (`TestValidateRetainsPinnedV1Profile` pins both).
 - Review rounds, as data for refining the process after the reset: #41, #44
   and #46 took 4, 4 and 5 Codex rounds. In #46, three of the four rounds
   that asked for changes were about code the previous fix round had added
   or removed. AGENTS.md step 7 now limits what a fix round changes (8
-  November 2026); see whether round counts drop. Since then, #48, #49, #50
-  and #51 have each taken 2 rounds.
+  November 2026); see whether round counts drop. Since then, #48, #49, #50,
+  #51 and #52 have each taken 2 rounds, and #53 took 1.
 - Mark's idea: a kit skill for backlog triage and grooming. An agent proposes
   close, keep or merge for stale or obsolete issues, and Mark accepts in a
   batch; fid supplies signals such as age and whether the paths an issue
