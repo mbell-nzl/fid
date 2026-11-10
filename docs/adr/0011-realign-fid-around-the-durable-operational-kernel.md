@@ -11,6 +11,15 @@ date: 2026-08-09
 > target with the V2 kit is withdrawn. The record criteria and retirement list
 > stand.
 
+> **Amended on 2026-11-10 by ADR-0014.** The durable model's Work Envelopes,
+> Claims and Runs, Stops, Attention, Kit Activation state, Gate Definition
+> Registrations, Execution Attempts, Evidence Records, Obligation evaluation,
+> Deviations and Human Outcomes go with the kernel after task 1.5. Issues, the
+> journal, check results with Artifacts, review rounds and findings stay,
+> joined by holds, the policy snapshot and a person's decisions. The policy
+> snapshot replaces the surviving Activation. The ownership and durability
+> test stands.
+
 fid has not been adopted by a real project. No user workspace, journal history,
 or external integration depends on its pre-dogfood commands, schemas, output
 formats, or event contracts. Its first intended production use will follow the

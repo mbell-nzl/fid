@@ -5,6 +5,14 @@ date: 2026-10-31
 
 # Reset fid to a ledger with receipts and the kit to a skills kit
 
+> **Amended on 2026-11-10 by ADR-0014.** The golden path is built on a lean
+> core, not as a facade over the kernel, and the kernel chain is removed right
+> after task 1.5 rather than moved under `fid admin`. Interrupted work resumes
+> under a new hold linked to the old one, not a linked successor Run. No
+> Envelopes are used. A policy snapshot replaces the Activation that the
+> ADR-0011 row keeps. The `done` evaluator stays the single source of what
+> done needs, and the leak test stays.
+
 fid becomes a local-first work ledger with receipts for agent-written code. It
 tracks Issues with lanes and validations, records observed evidence,
 independent reviews and approvals bound to the change, and refuses "done"

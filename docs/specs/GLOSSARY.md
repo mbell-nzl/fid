@@ -1,5 +1,12 @@
 # GLOSSARY - fid
 
+> **Kernel terms superseded on 2026-11-10 by ADR-0014.** The kernel chain's
+> terms (Work Envelope, Envelope Revision, Obligation, Authority Grant, Claim,
+> Run, Execution Attempt, Evidence Record, Stop, Attention Item, Kit
+> Activation, Deviation, Human Outcome and their relatives) go with the
+> kernel after task 1.5. "Lean core terms" below names what replaces them.
+> Later tasks update the rest as they build.
+
 This document defines canonical product language. It contains no interface,
 storage, or implementation requirements.
 
@@ -577,6 +584,58 @@ Use when: authoring a judgment reference or other Source-bearing mutation.
 Avoid: sending a Repository inside the input or treating an omitted digest as
 an assertion about the file's bytes.
 
+## Lean Core Terms
+
+Added 10 November 2026 with ADR-0014.
+
+**Hold**
+Definition: A task handed out by `fid next --claim` to one actor in one
+worktree, with its own ID. Heartbeats renew it; it lapses after about an
+hour. A task has at most one active hold. A lapsed hold on a started task
+leaves the task interrupted and kept for its worktree, which resumes it under
+a new hold linked to the old one.
+Use when: saying who is working a task, and where.
+Avoid: "claim" in human output (the leak test flags it), though the
+`--claim` flag and JSON codes keep the word. Avoid treating a lapse as proof
+that work stopped.
+
+**Hand-off**
+Definition: The point where a builder passes a task to review (D7). Every
+check the lane requires needs a passing result on the head commit's tree,
+and fid records the policy in force at that point.
+Use when: saying which results and which policy a review and `done` rely on.
+Avoid: the retired V1 `handoff` document (Retired Product Terms).
+
+**Policy snapshot**
+Definition: fid's record of the policy it trusts: its source (`origin/<default
+branch>` at a commit, or the built-in defaults), the digest of the effective
+policy, the actor rules and the check definitions. fid writes a new one only
+when that digest changes.
+Use when: saying which policy a check, a hand-off or `done` used.
+Avoid: "Activation" or "Kit Activation", which it replaces.
+
+**Person's decision**
+Definition: One record of a decision only a person may make: approving a
+change, lowering a lane with `fid waive`, taking over a task, allowing more
+rework rounds, closing a finding, accepting discovered work or approving an
+epic. It holds the kind, the subject, the reason and what the decision binds
+to: the change's fingerprint, the task, the finding or the epic's validation
+list. fid refuses every kind from `agent:*` actors.
+Use when: recording or showing a person's call.
+Avoid: "Human Outcome", "Deviation" or "Attention Item", which it replaces,
+and confusing it with a Protected Decision, which is project prose.
+
+**Check result**
+Definition: The outcome of one check, from one of two sources. A local result
+comes from fid running the check itself: it records the check's start
+before it runs, binds to the tree and to the check's own definition, and
+counts only on a clean tree that didn't change during the check. A CI result
+is CI's run on the merge commit, which `fid done` records with the run's ID,
+the commit and the conclusion.
+Use when: saying what evidence a hand-off or `done` relies on.
+Avoid: "Execution Receipt", "Execution Attempt" or "Evidence Record", which
+it replaces; avoid counting a start without a result.
+
 ## Retired Product Terms
 
 `Work Item`, fid `Role`, `QA Plan`, `Validation Contract`, `Validation
@@ -585,4 +644,4 @@ forward fid entities. They may appear in historical phase records, the current
 V1 repository delivery process, or the external kit's temporary engineering
 memory. New fid product specifications must use the retained terms above.
 
-*Last updated: 2026-10-05 (Phase 24 Task 4 SourceInput terminology)*
+*Last updated: 2026-11-10 (lean core terms, ADR-0014)*

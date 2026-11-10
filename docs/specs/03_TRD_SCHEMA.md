@@ -1,5 +1,13 @@
 # TARGET LOGICAL SCHEMA AND INVARIANTS - fid
 
+> **Kernel chain superseded on 2026-11-10 by ADR-0014.** The golden path is
+> built on a lean core: Issues, the journal and check results, plus holds,
+> policy snapshots, review rounds and a person's decisions. The kernel chain
+> this spec describes (Kit Activation, Work Envelope, Obligation, Claim, Run,
+> Attempt, Evidence Record, Stop, Attention Item and their budgets and
+> recovery) is removed after task 1.5. Where they conflict, ADR-0014 and
+> `RESET.md` win. Later tasks update this spec as they build.
+
 This document replaces the speculative pre-ADR-0011 DDL. It is the accepted
 logical schema for roadmap planning and conformance. Physical SQLite DDL and
 canonical Event payloads are added here slice by slice before product code may
