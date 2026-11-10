@@ -53,15 +53,22 @@ decided each guarantee below, one at a time.
   4. 1.5b–1.5d: the kernel's removal (Assured).
   5. 1.6, 1.7, 1.8, then 2.1 onwards. 2.2b (lane floor, hard floors and
      `fid waive`) keeps 2.2's old place.
-- **The kernel goes; it doesn't move under `fid admin`.**
-  - 1.5b removes its commands, its domain code and their tests.
-  - 1.5c removes its journal and export catalog entries and its maintenance
-    checks, and rebuilds V8 and the export fixtures on lean check results.
-  - 1.5d drops its tables, unless 3.2's squash does.
+- **The kernel goes; it doesn't move under `fid admin`.** Each slice ends
+  with every remaining test passing, none weakened.
+  - 1.5b rebuilds V8, the export fixtures and every other test that outlives
+    the kernel on lean check results, with their helpers, before any kernel
+    code goes. They keep their assertions: V8 still compares the restored
+    ledger's Events, files, Artifacts and read-command answers with the
+    original's, and the export tests still check Artifacts, import and the
+    archive's refusals, now on lean events. Tests of the kernel itself keep
+    their kernel fixtures until 1.5c deletes them.
+  - 1.5c removes the kernel's commands, its domain code and their tests.
+  - 1.5d removes its journal and export catalog entries, its maintenance
+    checks and manifest-v1 validation, and drops its tables.
 - **Every new record is complete when it lands.** The PR that adds an event
   family registers it in the journal's and the export's catalogs and adds its
   state to V8's comparison. The removal rebuilds V8 and the export fixtures
-  without weakening them.
+  without weakening them, before it deletes anything they use.
 - **Plain words.** Human output never uses the kernel's words, and the leak
   test (V2, task 1.7) stays. The lean records are a hold, the hand-off, the
   policy snapshot, a check result and a person's decision. The `--claim` flag
@@ -219,11 +226,11 @@ decided each guarantee below, one at a time.
 
 ### Old records
 
-- **Clean cut.** 1.5c removes the kernel's event types from the journal and
+- **Clean cut.** 1.5d removes the kernel's event types from the journal and
   export catalogs. A journal or archive that holds them is refused with the
   existing `schema-unsupported`. There is no converter. Import already needs
   the archive's projection schema to match the running fid's.
-- 1.5c also stops `fid export validate` accepting manifest-v1 archives, and
+- 1.5d also stops `fid export validate` accepting manifest-v1 archives, and
   removes the test that pins it. That's a product change Mark approved, not a
   weakened test.
 - No ledger holds real data (checked in fid, kauri and yoyu; the backup repo
@@ -241,7 +248,7 @@ decided each guarantee below, one at a time.
 - The kit's four-step Activation commands go too. Their only outside user is
   the frozen kit V2 branch.
 - This ADR doesn't decide whether Concerns, requirement and decision
-  references, and `fid capabilities` go with the kernel. 1.5b's PR asks Mark.
+  references, and `fid capabilities` go with the kernel. 1.5c's PR asks Mark.
 
 ## Superseded and amended records
 

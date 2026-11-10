@@ -113,7 +113,7 @@ and validations.
   Attention Item) or kernel IDs (`ENV-`, `STP-`, `ATT-`). `--json`,
   `--verbose` and `fid admin` are exempt. A concept that keeps leaking is the
   evidence to collapse or rename it.
-- Kernel commands are deleted with the kernel in 1.5b (amended 10 November
+- Kernel commands are deleted with the kernel in 1.5c (amended 10 November
   2026). Originally they moved under `fid admin`, hidden from main help, and
   any the facade didn't use were deleted at trial end. The leak test above
   stays.
@@ -1151,7 +1151,7 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     though `fid export import` already refuses them as
     `schema-unsupported` (`TestValidateRetainsPinnedV1Profile` pins both).
     Decided 10 November 2026 (ADR-0014): removed with the kernel's catalogs
-    in 1.5c, together with that test.
+    in 1.5d, together with that test.
   - The kernel's removal (1.5b–1.5d) takes the test-only helpers that belong
     to the kernel.
 - Review rounds, as data for refining the process after the reset: #41, #44
