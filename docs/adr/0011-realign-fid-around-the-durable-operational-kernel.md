@@ -14,8 +14,8 @@ date: 2026-08-09
 > **Amended on 2026-11-10 by ADR-0014.** The durable model's Work Envelopes,
 > Claims and Runs, Stops, Attention, Kit Activation state, Gate Definition
 > Registrations, Execution Attempts, Evidence Records, Obligation evaluation,
-> Deviations and Human Outcomes go with the kernel after task 1.5. Issues, the
-> journal, check results with Artifacts, review rounds and findings stay,
+> Deviations and Human Outcomes go with the kernel after task 1.5a. Issues,
+> the journal, check results with Artifacts, review rounds and findings stay,
 > joined by holds, the policy snapshot and a person's decisions. The policy
 > snapshot replaces the surviving Activation. The ownership and durability
 > test stands.

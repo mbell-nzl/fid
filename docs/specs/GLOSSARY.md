@@ -4,7 +4,7 @@
 > terms (Work Envelope, Envelope Revision, Obligation, Authority Grant, Claim,
 > Run, Execution Attempt, Evidence Record, Stop, Attention Item, Kit
 > Activation, Deviation, Human Outcome and their relatives) go with the
-> kernel after task 1.5. "Lean core terms" below names what replaces them.
+> kernel after task 1.5a. "Lean core terms" below names what replaces them.
 > Later tasks update the rest as they build.
 
 This document defines canonical product language. It contains no interface,

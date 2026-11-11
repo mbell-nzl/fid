@@ -4,7 +4,7 @@ Decisions session, 30–31 October 2026, run as a grilling session against
 `2026-10-29-fid-kit-reset-proposal.html` (now superseded). Two Opus 5.5 second
 opinions informed D2, and a fresh-context review of the result led to the
 amendments marked below. These decisions feed ADR-0013 and `RESET.md`.
-Amendments dated 10 November 2026 record the lean core (ADR-0014).
+Amendments dated 10 and 11 November 2026 record the lean core (ADR-0014).
 
 ## Goal
 
@@ -44,7 +44,7 @@ recommendations:
 2. One rule engine: the facade's `done` evaluator decides what done needs; a
    net Go line budget; unused kernel commands deleted at trial end. (Amended
    10 November 2026: the golden path is built on a lean core, and the whole
-   kernel chain is removed right after task 1.5. See D9 and ADR-0014.)
+   kernel chain is removed right after task 1.5a. See D9 and ADR-0014.)
 3. Reviews and approvals bind to the change; checks bind to the tree. No delta
    re-approval view.
 4. Kit install is a plain copy. Three-way merge deferred.
@@ -105,8 +105,8 @@ and validations.
   decisions. They don't compose kernel commands. The kernel chain (Activation,
   Envelope, Obligation, Claim, Run, Attempt, Evidence Record, Stops,
   Attention Items, kernel budgets and Run recovery) is removed right after
-  task 1.5, in 1.5b–1.5d. Originally: "New golden-path commands are built from
-  existing kernel commands."
+  task 1.5a, in 1.5b–1.5d. Originally: "New golden-path commands are built
+  from existing kernel commands."
 - **One rule engine** (amended). The `done` evaluator (policy from
   `origin/main` plus the diff) is the single source of what done needs. It
   reads check results directly; there are no Obligations (amended 10 November
@@ -772,7 +772,7 @@ two-worktree test. Mark expects mostly one sequential loop.
   Mark are parked and hold no claim. (Amended 10 November 2026, ADR-0014:
   the claim is a hold, with its own ID sent with every heartbeat, check, park
   and `done`. fid refuses a stale session's heartbeat, so its loop stops
-  loudly. 1.5 designs parking while waiting for Mark.)
+  loudly. 1.5a designs parking while waiting for Mark.)
 - Interruptions (crash, usage limit): the loop parks the task as interrupted
   (`fid park`) and stops. `fid next` serves it first, to the same worktree,
   as kind `resume` with a new hold linked to the old one (amended 10 November
@@ -782,8 +782,9 @@ two-worktree test. Mark expects mostly one sequential loop.
   started task means the task is interrupted and kept for its worktree; other
   worktrees skip it (`interrupted-elsewhere`). A lapsed hold on an unstarted
   task frees it for anyone. Only a person takes over a task; the takeover ends
-  any hold and is recorded, and 1.5 names the command. fid never touches git
-  state. A task kept for a worktree that no longer exists is a NEEDS YOU item.
+  any hold and is recorded, and 1.5a names the command. fid never touches
+  git state. A task kept for a worktree that no longer exists is a NEEDS YOU
+  item.
 - Shared-file conflicts are resolved at merge, as human developers do; the
   second PR's builder rebases as rework. ADR-0006 disjoint-scope proofs wait
   for real need.
@@ -899,7 +900,7 @@ for confirmation".
 |---|---|---|
 | Routine | Local checks; test-adequacy review if tests changed | Mark, until `auto_merge` is enabled for the lane |
 | Standard | Plus a code review (other model) and the judge's call | Mark, until `auto_merge` is enabled for the lane |
-| Assured | Plus a second-model review, Mark's approval and a rollback note | Mark |
+| Assured | Plus a separate review on the other model by default (amended 11 November 2026), Mark's approval and a rollback note | Mark |
 
 - **Through the trial, Mark merges everything.** A merge judge (fresh
   frontier-model session, MERGE or HOLD, hold-only) runs in shadow and is
@@ -914,15 +915,23 @@ for confirmation".
   on private repos, so it waits until then, when Mark chooses GitHub Pro or a
   public repo (decided 31 October 2026).
 - **One reviewer session per round** runs every required profile (code, test
-  adequacy, security). Assured work adds a separate review on the other model.
+  adequacy, security). Assured work adds a separate review on the other model
+  (amended 11 November 2026: by default; the fallback below covers it too).
 - **Same-model review as a fallback** (decided 7 November 2026; amended 10
-  November 2026). The other model reviews by default. When it isn't
+  and 11 November 2026). The other model reviews by default. When it isn't
   available, because Mark has no subscription to it or its usage is limited,
   a fresh session of the same model with clean context reviews instead. This
   may happen often, so it's a standing fallback, not a waiver for one PR. The
   review comment names the model that reviewed. fid's independence rule
   compares actors, not models, so the reviewer needs a different actor ID
   from the builder (ADR-0014).
+  - On 11 November 2026, Mark extended the fallback to Assured work's
+    separate review. That review still runs, as another fresh session,
+    which is the same model when the other isn't available.
+  - fid records which model built the change and which model reviewed each
+    round (2.1). When no review of an Assured change came from a model other
+    than the builder's, the approval view (2.3) and `fid show` say "no
+    other-model review", so Mark's approval covers it knowingly.
 - **Findings and rounds** (amended 10 November 2026, ADR-0014). Findings are
   major (blocks merge), minor (fix or answer with a reason) or nit
   (optional), as in the kit's reviewer. fid refuses a review round from an

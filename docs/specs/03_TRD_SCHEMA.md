@@ -5,7 +5,7 @@
 > policy snapshots, review rounds and a person's decisions. The kernel chain
 > this spec describes (Kit Activation, Work Envelope, Obligation, Claim, Run,
 > Attempt, Evidence Record, Stop, Attention Item and their budgets and
-> recovery) is removed after task 1.5. Where they conflict, ADR-0014 and
+> recovery) is removed after task 1.5a. Where they conflict, ADR-0014 and
 > `RESET.md` win. Later tasks update this spec as they build.
 
 This document replaces the speculative pre-ADR-0011 DDL. It is the accepted

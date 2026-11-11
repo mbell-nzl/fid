@@ -23,9 +23,15 @@ criteria below.
 - **Review.** A fresh session on the other model reviews each PR by default:
   Codex reviews Claude's work and Claude reviews Codex's. When the other
   model isn't available (no subscription, or its usage is limited), a fresh
-  session of the same model reviews instead. One pass covers code and test
-  adequacy. Findings go in a PR comment, which names the model that reviewed.
-  Once `fid review` works, fid records them and posts that comment itself.
+  session of the same model reviews instead. The fallback also covers the
+  separate review the decisions record's work model adds for Assured work:
+  that review still runs, as another fresh session. One pass covers code and
+  test adequacy. Findings go in a PR comment, which names the model that
+  reviewed. Once `fid review` works, fid records them and posts that comment
+  itself. fid also records which model built the change and which model
+  reviewed each round (2.1). When no review of an Assured change came from a
+  model other than the builder's, the approval view (2.3) and `fid show` say
+  "no other-model review", so Mark's approval covers it knowingly.
 - **Lanes, by hand until fid computes them.**
   - Routine: no production code changed.
   - Standard: any code change.
@@ -62,28 +68,31 @@ criteria below.
 | **1.2d** | Backup storage for the long run: fid's clone packs itself, and the backup folder holds the export's files unzipped | Assured | After 100 backups, fid's clone in the cache is packed, not a loose copy per backup; the folder holds the export's files unzipped (journal files of at most 64 MB, `manifest.json`, artifacts), the config spec describes it, `fid backup` writes it and `fid restore` zips it back up for import; V8 still passes (done 8 November 2026) |
 | **1.3a** | Display package; `fid status` with the backup-age line | Standard | whet-style output; golden tests for text and JSON; `fid status` warns after 24 hours without a backup, after a failed push, or with no target set, and makes it a NEEDS YOU item after 3 days (done 8 November 2026) |
 | **1.3b** | `fid show`; a pager for long output | Standard | whet-style output; golden tests for text and JSON; on a terminal, `status` and `show` output taller than the screen pages through `less`, as git's does (done 8 November 2026) |
-| **1.4** | `fid next --claim` on the lean core: a hold record, no Envelope; atomic, respects dependencies, ordered, typed skip reasons, `--explain` | Assured | V3 |
+| **1.4a** | `fid next --claim` on the lean core: a hold record, no Envelope; atomic, respects dependencies, ordered, typed skip reasons, `--explain` | Assured | V3 |
+| **1.4b** | READY in `fid status`, with `next`'s verdict for each task, and the `Working` and `Scheduling` rows in `fid show` | Assured | Golden tests for text and JSON show READY's verdicts and both rows |
 | **2.2a** | Policy from `origin/<default>` with built-in defaults, never fetched by fid; the whole `.fid.toml` schema (checks, Assured paths, check-defining paths, `auto_merge` per lane, rework cap, token budget); trust by actor type; a policy snapshot recorded when the effective policy changes | Assured | V7 |
-| **1.5** | `start`, `check`, `park`; hold heartbeat; interrupted tasks kept for their worktree; takeover by a person | Assured | An agent works a task without touching kernel commands; a check records its start before running, looks at the tree again afterwards and keeps its Artifacts |
-| **1.5b** | Remove the kernel, part 1: before any kernel code goes, rebuild V8, the export fixtures and every other test that outlives the kernel on lean check results, with their helpers | Assured | V8 and the export tests pass on lean check results, none weakened; no test that outlives the kernel creates a kernel record |
-| **1.5c** | Remove the kernel, part 2: its commands, domain code and their tests | Assured | No kernel command or domain package remains; every remaining test passes, none weakened |
+| **1.5a** | `start`, `check`, `park`; hold heartbeat; interrupted tasks kept for their worktree; takeover by a person | Assured | An agent works a task without touching kernel commands; a check records its start before running, looks at the tree again afterwards and keeps its Artifacts |
+| **1.5b** | Remove the kernel, part 1: before any kernel code goes, rebuild V8, the export fixtures and every other test that outlives the kernel on lean check results, with their helpers; V8 compares `next` in place of `ready` among its read commands | Assured | V8 and the export tests pass on lean check results, none weakened; no test that outlives the kernel creates a kernel record |
+| **1.5c** | Remove the kernel, part 2: its commands, domain code and their tests, and `fid ready`, which `fid next` replaces | Assured | No kernel command or domain package remains; every remaining test passes, none weakened |
 | **1.5d** | Remove the kernel, part 3: its journal and export catalog entries, maintenance checks, manifest-v1 validation and tables | Assured | No kernel table remains; a journal or archive holding kernel events is refused as `schema-unsupported`; every remaining test passes, V8 and the export tests included, none weakened |
 | **1.6** | Merge-aware `done` with the single done evaluator; reconciles PRs Mark merged in GitHub; records CI's run on the merge commit as a check result; `fid issue transition` refuses to complete a task | Assured | V5 |
 | **1.7** | Leak test for kernel words in human output; it replaces the copy of the kernel-word pattern in `internal/status`'s unit tests | Routine | V2; no test keeps its own copy of the pattern |
 | **1.8** | Move the remaining reset tasks into fid | Mark | fid tracks its own work (a disposable ledger until 3.2) |
-| **2.1** | Review and finding surface; one session records every required profile; each round is posted to the PR; `done` refuses open major findings; a task whose latest review round approved it and that isn't done is a NEEDS YOU item in `fid status`; findings are major, minor or nit; a builder can't review its own task; only a later round or a person closes a major; the rework cap; accepting discovered work | Standard | V5; that NEEDS YOU item |
+| **2.1** | Review and finding surface; one session records every required profile; each round is posted to the PR; `done` refuses open major findings; a task whose latest review round approved it and that isn't done is a NEEDS YOU item in `fid status`; findings are major, minor or nit; a builder can't review its own task; only a later round or a person closes a major; the rework cap; accepting discovered work; fid records which model built the change and which model reviewed each round | Assured | V5; that NEEDS YOU item |
 | **2.2b** | Lane floor; hard floors; `fid waive` | Assured | fid computes a task's floor from its changed paths; only a person lowers a lane, with `fid waive`, never below a hard floor, and an edit to the change makes the waiver stale |
-| **2.3** | `approve` bound to the change fingerprint; stale approvals shown | Assured | V6 |
+| **2.3** | `approve` bound to the change fingerprint; stale approvals shown; when no review of an Assured change came from a model other than the builder's, the approval view and `fid show` say "no other-model review" | Assured | V6 |
 | **2.4** | Loop contract (fields, exit codes, version) with golden tests; scenario tests for rework, rework cap, interruption and parallel claims | Standard | V4, V9 |
 | **2.5** | First loop, as fid's own copy: contract check, loud failures, heartbeat, park on interrupt, backup after each task, merge judge in shadow (Mark records his call first) | Standard | It runs a reset task end to end |
-| **2.6** | Usage capture: tokens per task from `claude` and `codex` JSON output; `next` skips a task over its token budget, with the over-budget scenario test | Standard | Every reset task has a token count |
+| **2.6** | Usage capture: tokens per task from `claude` and `codex` JSON output; `next` skips a task over its token budget, with the over-budget scenario test | Assured | Every reset task has a token count |
 | **3.1** | Validations, `epic approve` (binds the validations), `brief`, merged digest | Standard | V1's fixture recipe runs from `fid brief` |
 | **3.2** | Squash the 38 migrations into a baseline; tidy `go.mod`, unless an earlier Assured task already has; release v0.2.0; create the permanent ledger; run a restore drill | Assured | A fresh clone restores the ledger from backup; `go mod tidy -diff` reports nothing |
 | **3.3** | Kit: plain-copy install, `plan`, `tdd`, builder habit; the default loop promoted from 2.5 | kit | Installed in kauri; the loop self-test passes |
 | **3.4** | kauri: archive its V1 docs, one-page AGENTS.md, `.fid.toml`, install the kit, pre-register and randomly assign 10 trial tasks | Mark | Ready for the trial |
 
 Rows are in run order. Since 10 November 2026 (ADR-0014), 2.2a runs between
-1.4 and 1.5, and the kernel's removal (1.5b–1.5d) runs right after 1.5.
+1.4b and 1.5a, and the kernel's removal (1.5b–1.5d) runs right after 1.5a.
+On 11 November 2026, 1.4 was split into 1.4a and 1.4b, and 1.5 was renamed
+1.5a.
 
 Weeks 4–6 run the trial; it may slip to week 7.
 
