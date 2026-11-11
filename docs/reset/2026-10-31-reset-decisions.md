@@ -4,9 +4,10 @@ Decisions session, 30–31 October 2026, run as a grilling session against
 `2026-10-29-fid-kit-reset-proposal.html` (now superseded). Two Opus 5.5 second
 opinions informed D2, and a fresh-context review of the result led to the
 amendments marked below. These decisions feed ADR-0013 and `RESET.md`.
-Amendments dated 10 and 11 November 2026 record the lean core (ADR-0014).
-"Decided 11 November 2026" below lists Mark's decisions of that day for
-tasks 1.4b to 3.2, each also marked where its topic lives.
+Amendments dated 10, 11 and 12 November 2026 record the lean core
+(ADR-0014). "Decided 11 November 2026" and "Decided 12 November 2026" below
+list Mark's decisions of those days for tasks 1.4b to 3.2, and the gaps
+settled from them, each also marked where its topic lives.
 
 ## Goal
 
@@ -138,6 +139,40 @@ is also marked in the section its topic belongs to, and the tasks' rows in
     `review`, to an actor that didn't build the task, so a crash between
     the hand-off and the review loses nothing. The 2.5 loop uses it.
 
+## Decided 12 November 2026
+
+Mark made two more decisions on 12 November 2026, numbered on from the day
+before. Each is also marked in its topic's section and its task's row in
+`RESET.md`.
+
+12. **A worktree whose task waits for Mark gets no other work** (1.5a).
+    While its task is parked waiting for Mark (item 5), that worktree's
+    `next` returns `none`, saying it's waiting on him for that task, until
+    he answers. Other worktrees carry on. This never mixes two tasks'
+    changes in one worktree, since fid never touches git.
+13. **Review work's place in `next`'s order** (2.1). `next` hands out
+    resume, then rework, then review, then work that unblocks other work,
+    then new work. Finishing open work beats starting new work, so PRs
+    don't pile up waiting for review. Review work comes as kind `review`
+    (item 11).
+
+The orchestrating session settled the gaps below the same day. They follow
+from Mark's decisions as transactional details, and aren't his own words:
+
+- **`fid workflow list`** goes in 1.5c with the rest of `fid workflow`,
+  following item 6: with the states fixed (item 3), no configurable
+  workflows remain to list.
+- **`fid artifact` stays**, following item 6. 1.5b and 1.5c move it onto
+  the lean check results, which keep their Artifacts.
+- **1.5d drops** the tables and the journal and export catalog entries of
+  Concerns, requirement references and decision references, as it does
+  the kernel's, following item 6.
+- **An `answer` decision** binds to the task and the question it answers,
+  following item 5.
+- **Closing an epic**, following item 9. `fid issue transition` refuses to
+  complete an epic, as it does a task. `fid done <epic>` records the close
+  as a person's decision, of a kind fid refuses from `agent:*`.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -206,6 +241,10 @@ and validations.
   stays. 1.5c also removes Concerns, requirement and decision references,
   `fid capabilities`, `fid stats` and `fid workflow define` and `assign`,
   and there's no `fid admin` (decided 11 November 2026, items 6 and 7).
+  (Settled 12 November 2026, following item 6: `fid workflow list` goes
+  too, so the whole of `fid workflow` goes; `fid artifact` stays, moved
+  onto the lean check results; and 1.5d drops the tables and catalog
+  entries of Concerns and of requirement and decision references.)
 - A net Go line budget applies (set in `RESET.md`).
 
 ## Foundations
@@ -861,6 +900,9 @@ two-worktree test. Mark expects mostly one sequential loop.
   loudly. 1.5a designs parking while waiting for Mark.) (Amended 11 November
   2026, item 5: the agent parks with `fid park --waiting "<question>"`, the
   task stays kept for its worktree, and a person answers with `fid answer`.)
+  (Decided 12 November 2026, item 12: while the task waits, that worktree's
+  `next` returns `none`, saying it's waiting on Mark for that task; other
+  worktrees carry on.)
 - Interruptions (crash, usage limit): the loop parks the task as interrupted
   (`fid park`) and stops. `fid next` serves it first, to the same worktree,
   as kind `resume` with a new hold linked to the old one (amended 10 November
@@ -924,8 +966,10 @@ atlas is out of scope for now.
 - **A person's decisions** (amended 10 November 2026, ADR-0014). fid refuses
   `agent:*` actors for every kind: approving, waiving a lane, taking over,
   allowing more rework rounds, closing a finding, accepting discovered work,
-  approving an epic, and answering a task parked while waiting for Mark (the
-  last added 11 November 2026, item 5). One record holds them all.
+  approving an epic, answering a task parked while waiting for Mark (added
+  11 November 2026, item 5) and closing an epic (settled 12 November 2026,
+  following item 9). One record holds them all. An answer binds to the task
+  and the question it answers (settled 12 November 2026, following item 5).
 
 **D10 Approvals go stale** (amended). Reviews and approvals bind to the
 change's fingerprint (`git patch-id` of the branch diff); checks bind to the
@@ -955,7 +999,9 @@ for confirmation".
   November 2026, items 8 and 9, for 1.6). With no CI run on the merge
   commit, `done` waits ("waiting for CI"). It asks `gh` and never runs
   `git fetch`. A person closes an epic with `fid done <epic>`, refused while
-  any of its tasks is open.
+  any of its tasks is open. (Settled 12 November 2026, following item 9:
+  `fid issue transition` refuses to complete an epic too, and
+  `fid done <epic>` records the close as a person's decision.)
 - **Details** (decided 7 November 2026, for task 0.7):
   - Why: CI used about 1,650 billed minutes from 1 to 7 November, against
     the 2,000 a month GitHub Free includes across Mark's private repos.
@@ -1087,7 +1133,10 @@ for confirmation".
   claimed, blocked, waiting-for-Mark, untriaged and unapproved-epic tasks,
   each with a typed reason for `--explain`. (Amended 11 November 2026: a
   task waiting for Mark is skipped as `waiting-for-you`, item 5, and `next`
-  also hands out review work, as kind `review`, item 11.)
+  also hands out review work, as kind `review`, item 11.) (Decided 12
+  November 2026: review work comes after rework and before tasks that
+  unblock approved work, item 13, and a worktree whose task waits for Mark
+  gets `none`, item 12.)
 
 ## Rollout
 

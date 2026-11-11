@@ -77,8 +77,15 @@ then decided each guarantee below, one at a time.
     reply carries; `fid stats`, which reads V1 run telemetry; and
     `fid workflow define` and `assign`, since the task states are fixed
     (Mark, 11 November 2026; the decisions record lists what stays).
+  - 1.5c removes `fid workflow list` too, so the whole of `fid workflow`
+    goes, since no configurable workflows remain to list. `fid artifact`
+    stays: 1.5b and 1.5c move it onto the lean check results, which keep
+    their Artifacts (settled 12 November 2026, following Mark's decision).
   - 1.5d removes its journal and export catalog entries, its maintenance
-    checks and manifest-v1 validation, and drops its tables.
+    checks and manifest-v1 validation, and drops its tables. It also drops
+    the tables and the journal and export catalog entries of Concerns and
+    of requirement and decision references (settled 12 November 2026,
+    following Mark's decision).
 - **Every new record is complete when it lands.** The PR that adds an event
   family registers it in the journal's and the export's catalogs and adds its
   state to V8's comparison. The removal rebuilds V8 and the export fixtures
@@ -153,6 +160,10 @@ then decided each guarantee below, one at a time.
   the question under NEEDS YOU, and a person answers with
   `fid answer <task> "<text>"`. That worktree's next `next --claim` resumes
   the task with the answer in the JSON.
+- **A worktree whose task waits for Mark gets no other work** (Mark, 12
+  November 2026). Until he answers, that worktree's `next` returns `none`,
+  saying it's waiting on him for that task. Other worktrees carry on. This
+  never mixes two tasks' changes in one worktree.
 
 ### Rework cap and token budget
 
@@ -179,6 +190,9 @@ then decided each guarantee below, one at a time.
 - Subtasks keep plain transitions. A person closes an epic with
   `fid done <epic>`, refused while any of its tasks is open, and an epic
   whose tasks are all finished is a NEEDS YOU item (Mark, 11 November 2026).
+  `fid issue transition` refuses to complete an epic, as it does a task, and
+  `fid done <epic>` records the close as a person's decision (settled 12
+  November 2026, following Mark's decision).
 - The refusal lands with `fid done` in 1.6.
 
 ### Reviews
@@ -221,6 +235,8 @@ then decided each guarantee below, one at a time.
   - Lowering a lane and approving a change bind to the change's fingerprint,
     so an edit makes them stale (D10).
   - A takeover and extra rework rounds bind to the task.
+  - An answer binds to the task and the question it answers (settled 12
+    November 2026, following Mark's decision).
   - Closing a finding binds to the finding.
   - Approving an epic binds to its validation list (3.1).
 - Each kind keeps its own command, such as `fid waive` and `fid approve`.
@@ -230,9 +246,10 @@ then decided each guarantee below, one at a time.
   If the change is edited after a waiver, the task returns to its floor, and
   `fid status` shows the waiver as stale.
 - Each other kind arrives with the task that adds its command: takeover and
-  answering a task waiting for Mark (Mark, 11 November 2026) in 1.5a; extra
-  rounds, closing findings and accepting discovered work (D6) in 2.1;
-  approval in 2.3; and epic approval in 3.1.
+  answering a task waiting for Mark (Mark, 11 November 2026) in 1.5a;
+  closing an epic (settled 12 November 2026) in 1.6; extra rounds, closing
+  findings and accepting discovered work (D6) in 2.1; approval in 2.3; and
+  epic approval in 3.1.
 - The record replaces the kernel's Deviations, Human Outcomes and Attention
   Items.
 
@@ -295,8 +312,9 @@ then decided each guarantee below, one at a time.
   the frozen kit V2 branch.
 - Concerns, requirement and decision references, and `fid capabilities` go
   with the kernel in 1.5c, and so do `fid stats` and `fid workflow define`
-  and `assign` (Mark, 11 November 2026). This ADR had left the first three
-  for 1.5c's PR to ask Mark.
+  and `assign` (Mark, 11 November 2026), and `fid workflow list` (settled 12
+  November 2026). This ADR had left the first three for 1.5c's PR to ask
+  Mark.
 
 ## Superseded and amended records
 
@@ -309,4 +327,4 @@ then decided each guarantee below, one at a time.
 | ADR-0008 | Review Records bound to the Envelope revision; Envelope budgets and revision triggers; Attention | **Amended.** Rework stays on the original Issue. Rounds bind to the fingerprint. The rework cap and the token budget come from `.fid.toml`, and NEEDS YOU replaces Attention. Only a later round or a person closes a major finding. |
 | ADR-0009 | Multi-Issue Envelope revision and partial progress | **Superseded.** Envelopes are removed. |
 | ADR-0011 | The durable model's Work Envelopes, Claims and Runs, Stops, Attention, Kit Activation state, Gate Definition Registrations, Execution Attempts, Evidence Records, Obligation evaluation, Deviations and Human Outcomes | **Amended.** These go with the kernel. Issues, the journal, check results with Artifacts, review rounds and findings stay, joined by holds, the policy snapshot and a person's decisions. Its ownership and durability test stands. |
-| Decisions record | D2, D5, D6, D7, D8, D9, F3, review outcome item 2, the work model's merge table, same-model review and Assured review, the later list | **Amended** on 10 and 11 November 2026, marked in place. Its "Decided 11 November 2026" section lists Mark's decisions of that day. |
+| Decisions record | D2, D5, D6, D7, D8, D9, F3, review outcome item 2, the work model's merge table, same-model review and Assured review, the later list | **Amended** on 10, 11 and 12 November 2026, marked in place. Its "Decided 11 November 2026" and "Decided 12 November 2026" sections list Mark's decisions of those days, and the gaps settled from them. |
