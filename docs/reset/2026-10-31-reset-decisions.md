@@ -78,9 +78,12 @@ and validations.
   that asked for changes, 3 by default; the token budget sums 2.6's usage and
   is off until 2.6 has data. Past either, `next` skips the task
   (`rework-cap-reached`, `over-budget`) and `fid status` shows a NEEDS YOU
-  item. 2.2a parses the settings, 2.1 and 2.6 enforce them. The kit ships
-  one default loop; variants only when a project needs one. The first loop is
-  written in fid's repo as fid's own copy, then promoted to the kit.
+  item. 2.2a parses the settings, 2.1 and 2.6 enforce them. 2.4's scenario
+  tests cover the rework cap; the over-budget scenario test lands in 2.6,
+  with the code it tests, since 2.4 runs first (Mark, 11 November 2026). The
+  kit ships one default loop; variants only when a project needs one. The
+  first loop is written in fid's repo as fid's own copy, then promoted to the
+  kit.
 - Loop guard-rails: check fid's contract version at startup (replaces a fid
   version pin); fail loudly on an unknown `next.kind`; never treat empty output
   as "no work"; `loops/selftest.sh` against stub agents; a line budget enforced

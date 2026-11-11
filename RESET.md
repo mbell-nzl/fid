@@ -74,9 +74,9 @@ criteria below.
 | **2.1** | Review and finding surface; one session records every required profile; each round is posted to the PR; `done` refuses open major findings; a task whose latest review round approved it and that isn't done is a NEEDS YOU item in `fid status`; findings are major, minor or nit; a builder can't review its own task; only a later round or a person closes a major; the rework cap; accepting discovered work | Standard | V5; that NEEDS YOU item |
 | **2.2b** | Lane floor; hard floors; `fid waive` | Assured | fid computes a task's floor from its changed paths; only a person lowers a lane, with `fid waive`, never below a hard floor, and an edit to the change makes the waiver stale |
 | **2.3** | `approve` bound to the change fingerprint; stale approvals shown | Assured | V6 |
-| **2.4** | Loop contract (fields, exit codes, version) with golden tests; scenario tests for rework, budget, rework cap, interruption and parallel claims | Standard | V4, V9 |
+| **2.4** | Loop contract (fields, exit codes, version) with golden tests; scenario tests for rework, rework cap, interruption and parallel claims | Standard | V4, V9 |
 | **2.5** | First loop, as fid's own copy: contract check, loud failures, heartbeat, park on interrupt, backup after each task, merge judge in shadow (Mark records his call first) | Standard | It runs a reset task end to end |
-| **2.6** | Usage capture: tokens per task from `claude` and `codex` JSON output; `next` skips a task over its token budget | Standard | Every reset task has a token count |
+| **2.6** | Usage capture: tokens per task from `claude` and `codex` JSON output; `next` skips a task over its token budget, with the over-budget scenario test | Standard | Every reset task has a token count |
 | **3.1** | Validations, `epic approve` (binds the validations), `brief`, merged digest | Standard | V1's fixture recipe runs from `fid brief` |
 | **3.2** | Squash the 38 migrations into a baseline; tidy `go.mod`, unless an earlier Assured task already has; release v0.2.0; create the permanent ledger; run a restore drill | Assured | A fresh clone restores the ledger from backup; `go mod tidy -diff` reports nothing |
 | **3.3** | Kit: plain-copy install, `plan`, `tdd`, builder habit; the default loop promoted from 2.5 | kit | Installed in kauri; the loop self-test passes |

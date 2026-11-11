@@ -143,8 +143,9 @@ decided each guarantee below, one at a time.
   by default until 2.6 has data. Once a task is over budget, `next` skips it
   (`over-budget`) and it appears under NEEDS YOU. The budget is checked
   between agent sessions, not during one.
-- 2.2a parses both settings, 2.1 enforces the rework cap, 2.6 enforces the
-  token budget, and 2.4 tests both.
+- 2.2a parses both settings. 2.1 enforces the rework cap, and 2.4's scenario
+  tests cover it. 2.6 enforces the token budget and adds the over-budget
+  scenario test with it, since 2.4 runs before 2.6.
 
 ### Only `fid done` completes a task
 
