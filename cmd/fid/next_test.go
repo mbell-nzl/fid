@@ -207,6 +207,37 @@ func TestNextServesAnEpicsBlockerFirstOnlyWhileTheEpicHasOpenTasks(t *testing.T)
 	}
 }
 
+// next's JSON names the served task's epic, with its progress as fid
+// status gives it, and each queue entry's epic blockers (Mark, 12 November
+// 2026). The goldens show a null epic for a task with none and for none.
+func TestNextJSONNamesTheEpic(t *testing.T) {
+	t.Parallel()
+	workspace := gittest.NewWorkspace(t)
+	runFIDCommand(t, workspace, "init", "--prefix", "FID")
+	create := func(args ...string) string {
+		_, created := runFIDCommand(t, workspace, append([]string{"issue", "create"}, append(args, "--actor", "human:mark")...)...)
+		return parseCreatedIssueID(t, created)
+	}
+	served, waiting := create("--kind", "epic", "--title", "Served epic", "--scheduling", "prioritised"), create("--kind", "epic", "--title", "Waiting epic", "--scheduling", "prioritised")
+	blocker := create("--kind", "task", "--title", "Blocks the waiting epic", "--epic", served)
+	waits := create("--kind", "task", "--title", "Waits through its epic", "--epic", waiting)
+	runFIDCommand(t, workspace, "link", "add", blocker, "blocks", waiting, "--from-type", "issue", "--to-type", "issue", "--actor", "human:mark")
+	result, _ := decodeNext(t, executeCommandForTest(workspace, "--json", "next"), "next.get")
+	epic, _ := json.Marshal(result["epic"])
+	if want := `{"id":"` + served + `","progress":{"done":0,"total":1},"title":"Served epic"}`; string(epic) != want {
+		t.Fatalf("next's epic = %s, want %s", epic, want)
+	}
+	got := map[string]string{}
+	for _, entry := range result["queue"].([]any) {
+		entry := entry.(map[string]any)
+		blockers, _ := json.Marshal(entry["epic_blocked_by"])
+		got[entry["id"].(string)] = fmt.Sprint(entry["reason"]) + " " + string(blockers)
+	}
+	if want := map[string]string{blocker: "<nil> []", waits: `epic-blocked ["` + blocker + `"]`}; fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("next's queue = %v, want %v", got, want)
+	}
+}
+
 // Re-running --claim in the same worktree returns the hold it already has,
 // with no Event; a read never writes one.
 func TestNextClaimTwiceKeepsTheHold(t *testing.T) {

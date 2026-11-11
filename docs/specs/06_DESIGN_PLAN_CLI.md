@@ -735,11 +735,13 @@ The JSON result, with exit 0 for every kind:
  "hold": {"id": "HLD-4c1e9a", "task_id": "FID-9f13aa", "actor": "agent:claude-builder",
           "since": "2026-11-10T09:02:11Z", "expires_at": "2026-11-10T10:02:11Z", "replaces": null},
  "task": <task>,
+ "epic": {"id": "FID-e3a1c0", "title": "Operating experience", "progress": {"done": 0, "total": 3}},
  "queue": [<task> + {"reason": "held-elsewhere", "after": null,
                      "working": {"hold_id": "HLD-77b2c0", "worktree": "/home/mark/projects/fid-wt2",
                                  "here": false, "actor": "agent:claude-builder",
                                  "since": "2026-11-10T08:40:12Z", "expires_at": "2026-11-10T09:40:12Z",
-                                 "lapsed": false}}]}
+                                 "lapsed": false},
+                     "epic_blocked_by": []}]}
 ```
 
 - `kind` is `new`, `resume` or `none`; task 2.1 adds `rework`, and `review`
@@ -747,7 +749,9 @@ The JSON result, with exit 0 for every kind:
   `.result.task.id` and `.result.hold.id`, and on failure the exit code and
   `.error.retryable`.
 - `worktree` is this worktree's root path. `task` is the served task in
-  `fid status`'s task shape (section 3), or null for `none`.
+  `fid status`'s task shape (section 3), or null for `none`. `epic` is the
+  served task's epic, with its progress as `fid status` gives it, or null
+  when the task has no epic and for `none` (Mark, 12 November 2026).
 - `hold` is the hold `--claim` took or kept; it is null for `next.get` and
   for `none`. Its times are UTC, to the second. `event` is the
   `hold.taken` Event, or null when no hold was taken.
@@ -755,9 +759,10 @@ The JSON result, with exit 0 for every kind:
   `fid status`'s task shape plus `reason` (null when nothing stops it),
   `after` (the task a sequence waits for, or null) and `working` (the
   task's open hold, or null; `here` says it is this worktree's, `lapsed`
-  that it had expired). After `--claim`, `working` shows the holds as the
-  Event left them. Task 1.4b reuses these fields for READY in
-  `fid status`.
+  that it had expired) and `epic_blocked_by` (the open blockers of the
+  task's epic, `[]` when there are none). After `--claim`, `working` shows
+  the holds as the Event left them. Task 1.4b reuses these fields, `epic`
+  included, for READY in `fid status`.
 
 Text output is `status`'s 72-column box, headed `fid next` and today's
 local date. It never names the kernel's words, `claim` and `--claim`

@@ -861,6 +861,11 @@ two-worktree test. Mark expects mostly one sequential loop.
     blocks an epic counts as unblocking work only when that epic has open
     tasks, which wait on it through their epic. A task blocking an epic
     with no open tasks isn't served early.
+  - **Decided by Mark, 12 November 2026 (PR #56 review):** `next`'s JSON
+    result gains `epic` (`{id, title, progress}`, progress as `fid status`
+    gives it; null when the served task has no epic, and for `none`), and
+    each queue entry gains `epic_blocked_by` (its epic's open blockers,
+    `[]` when there are none). Both are additive; 1.4b reuses them.
   - **Builder's choice, PR #56 (1.4a):** `next` doesn't page, as the CLI
     spec has only `status` and `show` page. Without `--claim`, a task
     handed out with nothing passed over gets `→ fid show <ID>`; with

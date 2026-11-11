@@ -215,12 +215,16 @@ func sortedKeys(set map[string]bool) []string {
 }
 
 // Fields is the result as the next.get or next.claim JSON result. hold is
-// set only by --claim.
+// set only by --claim; epic is the served task's, with its progress as fid
+// status gives it.
 func (result Result) Fields() map[string]any {
-	var hold any
+	var hold, epic any
 	if result.Hold != nil {
 		hold = map[string]any{"id": result.Hold.ID, "task_id": result.Hold.TaskID, "actor": result.Hold.Actor,
 			"since": holds.Timestamp(result.Hold.Since), "expires_at": holds.Timestamp(result.Hold.ExpiresAt), "replaces": result.Hold.Replaces}
 	}
-	return map[string]any{"kind": result.Kind, "worktree": result.Worktree, "hold": hold, "task": result.Task, "queue": result.Queue}
+	if result.Epic != nil {
+		epic = map[string]any{"id": result.Epic.ID, "title": result.Epic.Title, "progress": result.Epic.Progress}
+	}
+	return map[string]any{"kind": result.Kind, "worktree": result.Worktree, "hold": hold, "task": result.Task, "epic": epic, "queue": result.Queue}
 }

@@ -4,6 +4,7 @@
   "ok": true,
   "operation": "next.get",
   "result": {
+    "epic": null,
     "hold": null,
     "kind": "none",
     "queue": [
@@ -26,7 +27,8 @@
           "since": "2026-11-08T07:00:00Z",
           "expires_at": "2026-11-08T08:00:00Z",
           "lapsed": true
-        }
+        },
+        "epic_blocked_by": []
       },
       {
         "id": "FID-c2d4e5",
@@ -41,7 +43,8 @@
         ],
         "reason": "blocked",
         "after": null,
-        "working": null
+        "working": null,
+        "epic_blocked_by": []
       },
       {
         "id": "FID-9f13aa",
@@ -62,7 +65,8 @@
           "since": "2026-11-08T08:59:00Z",
           "expires_at": "2026-11-08T09:59:00Z",
           "lapsed": false
-        }
+        },
+        "epic_blocked_by": []
       },
       {
         "id": "FID-0d4e8b",
@@ -83,7 +87,8 @@
           "since": "2026-11-08T08:59:00Z",
           "expires_at": "2026-11-08T09:59:00Z",
           "lapsed": false
-        }
+        },
+        "epic_blocked_by": []
       },
       {
         "id": "FID-1f2e3d",
@@ -104,7 +109,8 @@
           "since": "2026-11-08T08:40:00Z",
           "expires_at": "2026-11-08T09:40:00Z",
           "lapsed": false
-        }
+        },
+        "epic_blocked_by": []
       },
       {
         "id": "FID-2f2e3d",
@@ -117,7 +123,8 @@
         "blocked_by": [],
         "reason": "not-next-in-sequence",
         "after": "FID-1f2e3d",
-        "working": null
+        "working": null,
+        "epic_blocked_by": []
       },
       {
         "id": "FID-3f2e3d",
@@ -130,7 +137,8 @@
         "blocked_by": [],
         "reason": "not-next-in-sequence",
         "after": "FID-1f2e3d",
-        "working": null
+        "working": null,
+        "epic_blocked_by": []
       },
       {
         "id": "FID-77aa01",
@@ -151,7 +159,8 @@
           "since": "2026-11-08T08:59:00Z",
           "expires_at": "2026-11-08T09:59:00Z",
           "lapsed": false
-        }
+        },
+        "epic_blocked_by": []
       }
     ],
     "task": null,

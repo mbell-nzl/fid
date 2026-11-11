@@ -28,12 +28,14 @@ const (
 
 // Entry is a task in the order, in fid status's task shape. Reason is why
 // fid next passes over it, nil when nothing does; After names the task it
-// waits for in its epic's sequence; Working is the open hold on it.
+// waits for in its epic's sequence; Working is the open hold on it;
+// EpicBlockedBy lists its epic's open blockers.
 type Entry struct {
 	issues.OverviewTask
-	Reason  *string  `json:"reason"`
-	After   *string  `json:"after"`
-	Working *Working `json:"working"`
+	Reason        *string  `json:"reason"`
+	After         *string  `json:"after"`
+	Working       *Working `json:"working"`
+	EpicBlockedBy []string `json:"epic_blocked_by"`
 }
 
 // Working is an open hold as the order shows it. Here says it is this
@@ -95,7 +97,7 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 	}
 	after := sequenceWaits(work, planned.held, now)
 	for _, task := range append(waiting, rest...) {
-		entry := Entry{OverviewTask: task.OverviewTask}
+		entry := Entry{OverviewTask: task.OverviewTask, EpicBlockedBy: append([]string{}, work.Epics[epicOf(task.OverviewTask)].BlockedBy...)}
 		if hold, held := planned.held[task.ID]; held {
 			entry.Working = working(hold, worktreeID, now)
 		}
