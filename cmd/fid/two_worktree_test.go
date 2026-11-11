@@ -65,8 +65,9 @@ type v3Issue struct {
 
 // assertV3Servable checks that nothing should have stopped task: it has no
 // open blocker, and in a sequential epic it is the next unfinished task in
-// sequence, or that task waits on it through blocks links in the epic.
-func assertV3Servable(t *testing.T, workspace, task string, sequential map[string]bool) {
+// sequence, or that task waits on it through blocks links in the epic. It
+// returns the task's epic when that epic is sequential, else "".
+func assertV3Servable(t *testing.T, workspace, task string, sequential map[string]bool) string {
 	t.Helper()
 	var shown struct {
 		Result struct {
@@ -89,7 +90,7 @@ func assertV3Servable(t *testing.T, workspace, task string, sequential map[strin
 		}
 	}
 	if shown.Result.Epic == nil || !sequential[shown.Result.Epic.ID] {
-		return
+		return ""
 	}
 	var epic struct {
 		Result struct {
@@ -122,6 +123,7 @@ func assertV3Servable(t *testing.T, workspace, task string, sequential map[strin
 	if !waitsOn[task] {
 		t.Fatalf("served %s out of its epic's sequence; %s is next and doesn't wait on it", task, next)
 	}
+	return shown.Result.Epic.ID
 }
 
 // assertV3JournalNeverDoubleHeld replays the journal's hold Effects and
@@ -197,8 +199,10 @@ func assertV3JournalNeverDoubleHeld(t *testing.T, workspace string, wantHolds in
 // repository take tasks at the same moment, as separate fid processes,
 // round after round, until nothing is left. No two take the same task,
 // none takes a blocked task or one out of its epic's sequence, and the
-// journal never holds two open holds on a task. The checks don't depend on
-// which worktree wins.
+// journal never holds two open holds on a task. A sequential epic serves
+// one task at a time, across worktrees, even when links branch: no round
+// leaves two open holds in one. The checks don't depend on which worktree
+// wins.
 func TestV3TwoWorktreesNeverHoldTheSameTask(t *testing.T) {
 	t.Parallel()
 	binary := buildAdoptedFID(t)
@@ -215,12 +219,13 @@ func TestV3TwoWorktreesNeverHoldTheSameTask(t *testing.T) {
 	prioritised := create("--kind", "epic", "--title", "Prioritised", "--scheduling", "prioritised")
 	sequential := create("--kind", "epic", "--title", "Sequential", "--scheduling", "sequential")
 	linked := create("--kind", "epic", "--title", "Links beat sequence", "--scheduling", "sequential")
+	branching := create("--kind", "epic", "--title", "Links that branch", "--scheduling", "sequential")
 	tasks := []string{}
 	for priority := 1; priority <= 3; priority++ {
 		tasks = append(tasks, create("--kind", "task", "--title", fmt.Sprintf("Prioritised %d", priority), "--epic", prioritised, "--priority", fmt.Sprint(priority)))
 	}
 	inSequence := map[string][]string{}
-	for _, epic := range []string{sequential, linked} {
+	for _, epic := range []string{sequential, linked, branching} {
 		for sequence := 1; sequence <= 3; sequence++ {
 			id := create("--kind", "task", "--title", fmt.Sprintf("In sequence %d", sequence), "--epic", epic, "--sequence", fmt.Sprint(sequence))
 			inSequence[epic] = append(inSequence[epic], id)
@@ -228,6 +233,9 @@ func TestV3TwoWorktreesNeverHoldTheSameTask(t *testing.T) {
 		}
 	}
 	link(inSequence[linked][0], "blocked_by", inSequence[linked][2])
+	// The first task waits on two others, which nothing else stops.
+	link(inSequence[branching][0], "blocked_by", inSequence[branching][1])
+	link(inSequence[branching][0], "blocked_by", inSequence[branching][2])
 	blocker, blocked := create("--kind", "task", "--title", "Blocker"), create("--kind", "task", "--title", "Blocked", "--priority", "0")
 	link(blocker, "blocks", blocked)
 	// A chain whose blocked middle comes first in fid status's order, so a
@@ -237,7 +245,7 @@ func TestV3TwoWorktreesNeverHoldTheSameTask(t *testing.T) {
 	link(middle, "blocked_by", head)
 	link(middle, "blocks", end)
 	tasks = append(tasks, blocker, blocked, head, middle, end, create("--kind", "task", "--title", "Standalone"))
-	isSequential := map[string]bool{sequential: true, linked: true}
+	isSequential := map[string]bool{sequential: true, linked: true, branching: true}
 
 	served := map[string]int{}
 	for round := 1; ; round++ {
@@ -254,7 +262,9 @@ func TestV3TwoWorktreesNeverHoldTheSameTask(t *testing.T) {
 		}
 		close(release)
 		wait.Wait()
-		took := map[string]int{}
+		// Each round's tasks are cancelled before the next, so the holds
+		// taken in a round are all the open holds.
+		took, epicHeld := map[string]int{}, map[string]string{}
 		for index, answer := range answers {
 			if answer.kind == "none" {
 				if answer.task != "" || answer.hold != "" || answer.event {
@@ -270,7 +280,12 @@ func TestV3TwoWorktreesNeverHoldTheSameTask(t *testing.T) {
 			}
 			took[answer.task] = index
 			served[answer.task]++
-			assertV3Servable(t, main, answer.task, isSequential)
+			if epic := assertV3Servable(t, main, answer.task, isSequential); epic != "" {
+				if other, held := epicHeld[epic]; held {
+					t.Fatalf("round %d: %s and %s of sequential epic %s are both held", round, other, answer.task, epic)
+				}
+				epicHeld[epic] = answer.task
+			}
 		}
 		if len(took) == 0 {
 			break

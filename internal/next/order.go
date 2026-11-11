@@ -93,7 +93,7 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 			rest = append(rest, task)
 		}
 	}
-	after := sequenceWaits(work)
+	after := sequenceWaits(work, planned.held, now)
 	for _, task := range append(waiting, rest...) {
 		entry := Entry{OverviewTask: task.OverviewTask}
 		if hold, held := planned.held[task.ID]; held {
@@ -145,40 +145,68 @@ func skip(work issues.Work, task issues.WorkTask, hold *Working, after map[strin
 }
 
 // sequenceWaits maps each task a sequential epic holds back to the task it
-// waits for: the epic's next unfinished task in sequence. That task, and
-// any task in the epic it waits on through blocks links, are served first:
-// links beat sequence.
-func sequenceWaits(work issues.Work) map[string]string {
+// waits for. A sequential epic serves one task at a time, across
+// worktrees. While one of its tasks is held (a live hold, or a lapsed one
+// on a started task), every other task waits for it. Otherwise the epic
+// serves its next unfinished task in sequence or, links beating sequence,
+// the first task in sequence that one waits on through blocks links in the
+// epic and that nothing blocks; the rest wait for it. A task on that chain
+// that is blocked isn't held back by the sequence, so it shows as blocked;
+// when the chain has nothing to serve, the rest wait for the next task.
+func sequenceWaits(work issues.Work, held map[string]holds.Hold, now time.Time) map[string]string {
 	byID := map[string]issues.WorkTask{}
-	first := map[string]string{}
+	inEpic := map[string][]issues.WorkTask{}
 	for _, task := range work.Tasks {
 		byID[task.ID] = task
-		if epic := epicOf(task.OverviewTask); work.Epics[epic].Sequential && first[epic] == "" {
-			first[epic] = task.ID
+		if epic := epicOf(task.OverviewTask); work.Epics[epic].Sequential {
+			inEpic[epic] = append(inEpic[epic], task)
 		}
 	}
 	waits := map[string]string{}
-	for epic, next := range first {
-		servable := map[string]bool{}
-		for pending := []string{next}; len(pending) > 0; pending = pending[1:] {
-			id := pending[0]
-			if servable[id] {
-				continue
+	for epic, tasks := range inEpic {
+		serving, chain := "", map[string]bool{}
+		for _, task := range tasks {
+			if hold, found := held[task.ID]; found && (!hold.Lapsed(now) || task.StatusCategory == "started") {
+				serving = task.ID
+				break
 			}
-			servable[id] = true
-			for _, blocker := range byID[id].BlockedBy {
-				if task, found := byID[blocker]; found && epicOf(task.OverviewTask) == epic {
-					pending = append(pending, blocker)
+		}
+		if serving == "" {
+			chain = blockerChain(tasks[0].ID, epic, byID)
+			serving = tasks[0].ID
+			for _, task := range tasks {
+				if chain[task.ID] && task.StatusCategory == "unstarted" && len(task.BlockedBy) == 0 {
+					serving = task.ID
+					break
 				}
 			}
 		}
-		for _, task := range work.Tasks {
-			if epicOf(task.OverviewTask) == epic && !servable[task.ID] {
-				waits[task.ID] = next
+		for _, task := range tasks {
+			if blocked := chain[task.ID] && len(task.BlockedBy) > 0; task.ID != serving && !blocked {
+				waits[task.ID] = serving
 			}
 		}
 	}
 	return waits
+}
+
+// blockerChain is next and every task in epic it waits on through blocks
+// links, directly or through others.
+func blockerChain(next, epic string, byID map[string]issues.WorkTask) map[string]bool {
+	chain := map[string]bool{}
+	for pending := []string{next}; len(pending) > 0; pending = pending[1:] {
+		id := pending[0]
+		if chain[id] {
+			continue
+		}
+		chain[id] = true
+		for _, blocker := range byID[id].BlockedBy {
+			if task, found := byID[blocker]; found && epicOf(task.OverviewTask) == epic {
+				pending = append(pending, blocker)
+			}
+		}
+	}
+	return chain
 }
 
 func working(hold holds.Hold, worktreeID string, now time.Time) *Working {

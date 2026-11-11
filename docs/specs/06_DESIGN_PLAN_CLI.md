@@ -680,8 +680,11 @@ nothing stops:
 
 The order holds every unstarted task and every task with an open hold; a
 started task with no hold is never handed out. A sequential epic serves one
-task at a time: its next unfinished task in sequence, and any task in the
-epic that task waits on through links (links beat sequence). Prioritised
+task at a time, across worktrees. While one of its tasks is held (a live
+hold, or a lapsed hold on a started task), it serves no other. Otherwise it
+serves its next unfinished task in sequence or, links beating sequence, the
+first task in sequence that the next task waits on through links in the
+epic (directly or through others) and that nothing blocks. Prioritised
 epics, and epics with no scheduling, go by priority. Every other task is
 passed over with a typed reason, the first that applies:
 
@@ -691,7 +694,7 @@ passed over with a typed reason, the first that applies:
 | `interrupted-elsewhere` | another worktree's lapsed hold on a started task |
 | `epic-closed` | the task's epic is completed or cancelled |
 | `epic-blocked` | the task's epic has a blocker that isn't completed or cancelled |
-| `not-next-in-sequence` | its sequential epic serves another task first; `after` names the epic's next task |
+| `not-next-in-sequence` | its sequential epic serves another task first; `after` names the task the epic holds or serves, or, when it can serve none, its next task |
 | `blocked` | a blocker, from either link, that isn't completed or cancelled; `blocked_by` names them |
 
 Reasons are informational, and later tasks add more: a loop never branches
