@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -156,9 +157,11 @@ func validCategoryList(value string) bool {
 	return true
 }
 
+// declaredBooleanFlags names each leaf's boolean flags, separated by spaces.
 var declaredBooleanFlags = map[string]string{
 	"issue list":        "has-concerns",
 	"maintenance check": "warn-as-error",
+	"next":              "claim explain",
 	"rebuild":           "verbose",
 	"status":            "all",
 	"workflow assign":   "project-wide",
@@ -187,7 +190,7 @@ func flagDomainFor(cmd *cobra.Command, flag *pflag.Flag) flagDomain {
 		}
 		return domain
 	}
-	if declaredBooleanFlags[key] == flag.Name {
+	if slices.Contains(strings.Fields(declaredBooleanFlags[key]), flag.Name) {
 		return flagDomain{[]string{"bool"}, "P21 §4.1 boolean leaf flag", func(string) bool { return true }}
 	}
 	if flag.Name == "example" {

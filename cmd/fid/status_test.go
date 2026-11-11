@@ -189,7 +189,13 @@ func (fixture *statusFixture) golden(name string, args ...string) {
 	if result.err != nil || result.stderr != "" {
 		fixture.t.Fatalf("status %v = %v, stderr %q", args, result.err, result.stderr)
 	}
-	output := result.stdout
+	assertGolden(fixture.t, name, fixture.placeholders(result.stdout))
+}
+
+// placeholders names the fixture's temp paths in output <ROOT> and
+// <CONFIG>.
+func (fixture *statusFixture) placeholders(output string) string {
+	fixture.t.Helper()
 	for _, path := range []string{fixture.workspace, fixture.configHome} {
 		placeholder := "<ROOT>"
 		if path == fixture.configHome {
@@ -198,7 +204,7 @@ func (fixture *statusFixture) golden(name string, args ...string) {
 		output = strings.ReplaceAll(output, gittest.ResolvedPath(fixture.t, filepath.Dir(path))+"/"+filepath.Base(path), placeholder)
 		output = strings.ReplaceAll(output, path, placeholder)
 	}
-	assertGolden(fixture.t, name, output)
+	return output
 }
 
 func statusTask(id, title, status string, parent *string, sequence, priority *int) readyCommandRow {

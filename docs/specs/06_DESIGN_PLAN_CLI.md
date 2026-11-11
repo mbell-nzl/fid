@@ -644,6 +644,7 @@ fid issue dependency add|remove|list
 fid label add|list
 fid issue label add|remove
 fid link add|remove|list
+fid next [--claim --actor <actor>] [--explain]
 fid ready
 fid workflow define|assign|list
 ```
@@ -656,6 +657,156 @@ or `--project-wide`. The latter spelling avoids collision with global
 Standalone inventory mutations record Actor attribution without claiming
 protected Human authority. Execution-bound transitions additionally require
 Envelope revision, expected Issue revision, Actor authority, and active Claim.
+An `issue transition` that moves a task into a completed or cancelled state
+ends the task's open hold (below) in the same `issue.transitioned` Event.
+
+**`fid next`** (task 1.4a; decisions record, D8's 1.4 details) hands a
+worktree its next task. It walks one order and serves the first task
+nothing stops:
+
+1. **This worktree's own hold.** A live hold is returned as it is (kind
+   `resume`); one worktree never holds two tasks. A lapsed hold on a
+   started task means the task was interrupted: it is kept for this
+   worktree, and `--claim` takes a new hold that replaces the old one
+   (kind `resume`). A lapsed hold on an unstarted task frees the task for
+   any worktree, this one included.
+2. **Unblocking work:** tasks that another open task or epic waits on, by a
+   `blocks` or `blocked_by` link. Until task 3.1, all work counts as
+   approved.
+3. **The other unstarted tasks**, in `fid status`'s order: an in-progress
+   epic's, then a to-do epic's, then those with no open epic; within each,
+   sequence, priority (lower first), creation and ID, a missing sequence or
+   priority last.
+
+The order holds every unstarted task and every task with an open hold; a
+started task with no hold is never handed out. A sequential epic serves one
+task at a time: its next unfinished task in sequence, and any task in the
+epic that task waits on through links (links beat sequence). Prioritised
+epics, and epics with no scheduling, go by priority. Every other task is
+passed over with a typed reason, the first that applies:
+
+| Reason | When |
+|---|---|
+| `held-elsewhere` | another worktree's live hold |
+| `interrupted-elsewhere` | another worktree's lapsed hold on a started task |
+| `epic-closed` | the task's epic is completed or cancelled |
+| `epic-blocked` | the task's epic has a blocker that isn't completed or cancelled |
+| `not-next-in-sequence` | its sequential epic serves another task first; `after` names the epic's next task |
+| `blocked` | a blocker, from either link, that isn't completed or cancelled; `blocked_by` names them |
+
+Reasons are informational, and later tasks add more: a loop never branches
+on them, only on `kind`.
+
+- `fid next` reads (operation `next.get`). It refreshes the projection like
+  every read and records no Event.
+- `fid next --claim --actor <actor>` takes the served task as a hold for
+  this worktree (operation `next.claim`), in one `hold.taken` Event under
+  the write lock. The Event ends this worktree's earlier hold and any
+  lapsed hold on the task. Re-run in the same worktree, it returns the hold
+  it already has, with a null `event`; there is no idempotency key. Two
+  worktrees asking at once aren't refused: the lock serialises them, and
+  the second passes over the first's task as `held-elsewhere`. The
+  database backs the lock up with at most one open hold per task and per
+  worktree; if that ever refuses, it is a bug, reported as
+  `internal-error`.
+- `--explain` lists the whole order with a verdict for each task, with or
+  without `--claim`. It changes only the text.
+
+A hold records its ID (`HLD-` and 6 hex digits), the task, the worktree
+(the SHA-256 of its root path, and the path), the actor, `since` and
+`expires_at`, an hour later (D8; heartbeats renew it from task 1.5a), and,
+for a resume, the hold it replaces. Whether a hold has lapsed is read from
+the clock, never stored. A hold ends when a new hold replaces it, or its
+task is completed or cancelled; park, `done` and takeover come with tasks
+1.5a and 1.6. A worktree is identified by its root path, so a moved
+worktree is another worktree.
+
+The JSON result, with exit 0 for every kind:
+
+```json
+{"kind": "new", "worktree": "/home/mark/projects/fid",
+ "hold": {"id": "HLD-4c1e9a", "task_id": "FID-9f13aa", "actor": "agent:claude-builder",
+          "since": "2026-11-10T09:02:11Z", "expires_at": "2026-11-10T10:02:11Z", "replaces": null},
+ "task": <task>,
+ "queue": [<task> + {"reason": "held-elsewhere", "after": null,
+                     "working": {"hold_id": "HLD-77b2c0", "worktree": "/home/mark/projects/fid-wt2",
+                                 "here": false, "actor": "agent:claude-builder",
+                                 "since": "2026-11-10T08:40:12Z", "expires_at": "2026-11-10T09:40:12Z",
+                                 "lapsed": false}}]}
+```
+
+- `kind` is `new`, `resume` or `none`; task 2.1 adds `rework`, and `review`
+  is decided with 2.1 and the loop. A loop reads `.result.kind`,
+  `.result.task.id` and `.result.hold.id`, and on failure the exit code and
+  `.error.retryable`.
+- `worktree` is this worktree's root path. `task` is the served task in
+  `fid status`'s task shape (section 3), or null for `none`.
+- `hold` is the hold `--claim` took or kept; it is null for `next.get` and
+  for `none`. Its times are UTC, to the second. `event` is the
+  `hold.taken` Event, or null when no hold was taken.
+- `queue` is always the whole order, served task included, each entry in
+  `fid status`'s task shape plus `reason` (null when nothing stops it),
+  `after` (the task a sequence waits for, or null) and `working` (the
+  task's open hold, or null; `here` says it is this worktree's, `lapsed`
+  that it had expired). After `--claim`, `working` shows the holds as the
+  Event left them. Task 1.4b reuses these fields for READY in
+  `fid status`.
+
+Text output is `status`'s 72-column box, headed `fid next` and today's
+local date. It never names the kernel's words, `claim` and `--claim`
+included, and doesn't page:
+
+```text
+╭ fid next ──────────────────────────────────────────────── 2026-11-10 ╮
+
+  ○ FID-9f13aa  Harden login rate limiting                       to do
+
+  Epic        ◆ FID-e3a1c0  Operating experience              0/3 done
+  Priority    P1
+
+  Passed over 1 task ahead of this one
+      → fid next --explain
+╰──────────────────────────────────────────────────────────────────────╯
+```
+
+- The served task's row has its mark, ID, title and state. `Epic` (with
+  `N/M done`) and `Priority` follow when the task has them, and `Working`
+  (`here, since 09:02, until 10:02`) while this worktree's hold on it is
+  live. Times are local `HH:MM`, with the date when it isn't today.
+- Without `--claim`, a task handed out after others were passed over adds
+  `Passed over N tasks ahead of this one` and `→ fid next --explain`;
+  otherwise the next step is `→ fid show <ID>`.
+- A live hold re-run adds `Already yours in this worktree: carry on with
+  it`. A resume after a lapse adds `⚠ Interrupted here: work stopped at
+  <HH:MM> without a park.` and `Carry on from what's in this worktree.`,
+  the time being when the lapsed hold expired.
+- When nothing is ready: `○ Nothing ready here:` and a count for each kind
+  of reason, in the order each first appears (`1 blocked`, `1 being worked
+  in fid-wt2`, `1 interrupted in fid-wt2`, `2 not next in their epic's
+  sequence`, `1 in a blocked epic`, `1 in a closed epic`), each count kept
+  whole when the line wraps, then `→ fid next --explain`. With no tasks at
+  all, `○ Nothing ready here: no tasks to do`.
+- `--explain` adds `IN ORDER`, every task in the queue with its verdict
+  (shared with task 1.4b's READY): `next`, `ready`, `blocked by <ID>` (and
+  `+N`), `after <ID>`, `working in <dir>`, `interrupted in <dir>`, `epic
+  blocked by <ID>` and `epic closed`, `<dir>` being the worktree's
+  directory name.
+
+Refusals; 1.4a adds the operations `next.get` and `next.claim` and no codes
+or reasons:
+
+| Case | Operation | Code / exit |
+|---|---|---|
+| `--actor` without `--claim` | `next.get` | `invalid-argument` / 2, `argument: request` |
+| `--claim` without `--actor` | `next.claim` | `invalid-argument` / 2, `argument: --actor` |
+| A malformed actor | `next.claim` | `invalid-argument` / 2, `argument: --actor` |
+| A `service:*` actor with `--claim` (trust by actor type, ADR-0014) | `next.claim` | `authority-denied` / 5 |
+| The write lock still busy after its 5-second wait | `next.claim` | `lock-unavailable` / 4, retryable |
+| Outside a repository, at an unsafe ledger location, or with no ledger | either | as every project command (section 1) |
+
+Grammar refusals from the parser, such as an unknown flag or an argument,
+name `next.get`. Journal replay failures keep their codes; anything else
+is `internal-error` (exit 7).
 
 ### Requirement references
 

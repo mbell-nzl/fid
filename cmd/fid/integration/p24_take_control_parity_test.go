@@ -36,7 +36,7 @@ func TestP24TakeControlRebuildExportImportParity(t *testing.T) {
 	if err := json.Unmarshal(entries["manifest.json"], &manifest); err != nil {
 		t.Fatal(err)
 	}
-	if manifest["projection_schema"] != float64(19) {
+	if manifest["projection_schema"] != float64(20) {
 		t.Fatalf("manifest schema = %v", manifest["projection_schema"])
 	}
 	p21Run(t, start.binary, start.workspace, "--json", "export", "validate", archive)
@@ -45,7 +45,7 @@ func TestP24TakeControlRebuildExportImportParity(t *testing.T) {
 	target := filepath.Join(t.TempDir(), "imported")
 	closureRun(t, filepath.Dir(target), "git", "clone", "-q", start.workspace, target)
 	imported := p21Run(t, start.binary, target, "--json", "export", "import", archive, "--repository", target, "--idempotency-key", "phase24-import")
-	if p21Path(t, imported, "result", "import", "projection_schema") != float64(19) {
+	if p21Path(t, imported, "result", "import", "projection_schema") != float64(20) {
 		t.Fatal("import schema differs")
 	}
 	p24AssertJourneyParity(t, "imported", start.binary, target, live, maps, reads)

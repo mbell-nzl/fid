@@ -788,6 +788,83 @@ two-worktree test. Mark expects mostly one sequential loop.
 - Shared-file conflicts are resolved at merge, as human developers do; the
   second PR's builder rebases as rework. ADR-0006 disjoint-scope proofs wait
   for real need.
+- **Details** (decided 10 and 11 November 2026, for task 1.4):
+  - **Decided by Mark, 10/11 November 2026 (1.4 design):** a worktree is
+    identified by the SHA-256 of its root path, so moving one makes a new
+    one, and every worktree shares one ledger and one write lock.
+    `fid next --claim` picks a task and records its hold in one Event under
+    the write lock. The database backs the lock up with at most one open
+    hold per task and per worktree; a lapse is read from the clock against
+    `expires_at`, never stored, so it can't be part of a unique index, and
+    the backstop firing is a bug (`internal-error`).
+  - **Decided by Mark, 10/11 November 2026 (1.4 design):** a hold records
+    its ID, the task, the worktree (ID and root path), the actor, `since`,
+    `expires_at` (about an hour, a constant for now) and, for a resume, the
+    hold it replaces. It ends when a new hold replaces it (a lapsed resume,
+    or another worktree taking a lapsed hold's unstarted task), or when its
+    task is completed or cancelled, in the same Event as that transition
+    (Mark, 11 November); park, `done` and takeover end one from 1.5a and
+    1.6. The record is lean: its own migration, Event family and catalog
+    entries, and V8 compares it. Tables and Events say "hold", never
+    "claim".
+  - **Decided by Mark, 10/11 November 2026 (1.4 design):** the order is
+    this worktree's own hold (a live one returned unchanged; a lapsed one
+    on a started task resumed with a new hold, other worktrees skipping it
+    as `interrupted-elsewhere`; a lapsed one on an unstarted task freeing
+    it for anyone), then tasks other open tasks depend on, then unstarted
+    tasks in `fid status`'s order. Skip reasons built now: `held-elsewhere`,
+    `interrupted-elsewhere`, `blocked` (either link; a completed or
+    cancelled blocker no longer blocks), `epic-blocked`, `epic-closed` and
+    `not-next-in-sequence` (`after` names the task waited for). Sequential
+    epics serve one task at a time; prioritised epics and epics with no
+    scheduling go by priority; links beat sequence. `fid ready`'s pick,
+    which ignores blockers, isn't reused.
+  - **Decided by Mark, 10/11 November 2026 (1.4 design):** `fid next`
+    reads (`next.get`, null `hold` and `event`); `--claim --actor` takes
+    the task (`next.claim`); `--explain` works with either and changes only
+    the text. No idempotency key: a re-run returns the hold it has. The
+    refusals are `invalid-argument` for `--claim` without `--actor`,
+    `--actor` without `--claim` or a malformed actor, `authority-denied`
+    for a `service:*` actor, and `lock-unavailable` (retryable) after the
+    existing 5-second wait; 1.4a adds no codes. JSON is `{kind, worktree,
+    hold, task, queue}`, kinds `new`, `resume` and `none` with exit 0 for
+    each, and `queue` the whole order in `fid status`'s task shape plus
+    `reason`, `after` and `working`. Loops never branch on `reason`. The
+    text follows the six approved mock-ups and never names a kernel word.
+  - **Decided by Mark, 10/11 November 2026 (1.4 design):** V3 is
+    `TestV3TwoWorktreesNeverHoldTheSameTask` in `cmd/fid`, so CI runs it:
+    three worktrees take tasks at once, as separate processes, round after
+    round, and the journal never holds two open holds on a task.
+  - **Builder's choice, PR #56 (1.4a):** the hold is `holds` (migration 20)
+    and its Event `hold.taken`, which ends earlier holds before recording
+    the new one. The journal checks the family's Effects in stage order;
+    the export catalog refuses it in archives before schema 20. An ended
+    hold records `ended_at` and `end_reason` (`replaced`, `task-completed`
+    or `task-cancelled`); `actor` keeps the whole `agent:<id>`.
+  - **Builder's choice, PR #56 (1.4a):** the order holds every unstarted
+    task and every task with an open hold; a started task with no hold
+    isn't handed out, so it isn't listed. Tasks an open epic waits on count
+    as unblocking, as tasks do. A sequence's waiting tasks are named after
+    the epic's next unfinished task even when links serve another first.
+    When reasons overlap the first applies: held or interrupted elsewhere,
+    epic closed, epic blocked, not next in sequence, blocked; the
+    `--explain` mock-up names `after` for a task that is also blocked.
+  - **Builder's choice, PR #56 (1.4a):** `next` doesn't page, as the CLI
+    spec has only `status` and `show` page. Without `--claim`, a task
+    handed out with nothing passed over gets `→ fid show <ID>`; with
+    `--explain`, the order replaces `Passed over`. "Work stopped at" shows
+    when the lapsed hold expired. Nothing to do at all reads `Nothing
+    ready here: no tasks to do`; the counts for `epic-blocked` and
+    `epic-closed` read `in a blocked epic` and `in a closed epic`, and work
+    held in different worktrees is counted per directory.
+  - **Builder's choice, PR #56 (1.4a):** `--actor` passes the parser and
+    `next` checks it, so a malformed actor with `--claim` is refused under
+    `next.claim`; `--actor` without `--claim` uses the request-level
+    refusal (`argument: request`), so its human text names no kernel word.
+    `make check-two-worktree` runs only V3, as `make check-restore` runs
+    V8. V8's ledger gains two holds, one a cancellation ended, and V8
+    compares the `holds` table read through `fid sql`, since `next`'s
+    answer depends on the worktree it runs in.
 
 **F3 Trust anchor: policy in `.fid.toml`, read from `origin/main`.** Checks,
 lanes and check-defining paths live in one committed file. fid reads it only

@@ -8,6 +8,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
@@ -264,6 +265,12 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 			return err
 		}
 		effects = append(effects, revisionEffects...)
+		// A task completed or cancelled ends its hold in the same Event.
+		ended, err := holds.EndForTask(conn, current.ID, toCategory, event.OccurredAt)
+		if err != nil {
+			return err
+		}
+		effects = append(effects, ended...)
 		event.Effects = effects
 		prepared, err := journal.PrepareEvent(lock, event)
 		if err != nil {

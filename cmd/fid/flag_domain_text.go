@@ -18,6 +18,7 @@ var declaredTextDomains = map[string]map[string]flagDomain{
 	"issue list":         {"status": opaqueFlagDomain("P21 §4.1 issue.list opaque state"), "epic": opaqueFlagDomain("P21 §4.1 issue.list / §2 ID"), "label": textDomain(255)},
 	"issue transition":   {"to": opaqueFlagDomain("P21 §4.1 issue.transition opaque state")},
 	"ready":              {"epic": opaqueFlagDomain("P21 §4.1 ready.get / §2 ID")},
+	"next":               {"actor": nextActorDomain},
 	"stats cost":         {"epic": opaqueFlagDomain("P21 §4.1 stats.cost / §2 ID")},
 	"stats tokens":       {"epic": opaqueFlagDomain("P21 §4.1 stats.tokens / §2 ID")},
 	"claim list":         {"issue": opaqueFlagDomain("P21 §4.2 claim.list / §2 ID"), "envelope": opaqueFlagDomain("P21 §4.2 claim.list / §2 ID")},
