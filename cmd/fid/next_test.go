@@ -202,6 +202,7 @@ func TestNextClaimTwiceKeepsTheHold(t *testing.T) {
 }
 
 // Every refusal named in the brief: a flag is never accepted and ignored.
+// Human text names no kernel word; JSON keeps each code's details.
 func TestNextRefusals(t *testing.T) {
 	t.Parallel()
 	fixture := newStatusFixture(t, 100*time.Hour)
@@ -226,14 +227,15 @@ func TestNextRefusals(t *testing.T) {
 				t.Fatalf("%v = %#v, want exit %d", test.args, result, test.exit)
 			}
 			assertJSONFailureCode(t, result.stderr, test.operation, test.code)
+			if test.code == "authority-denied" && !strings.Contains(result.stderr, `"details":{"actor_id":"service:ci","operation":"next.claim","required_actions":["next.claim"],"required_capabilities":["next.claim"]}`) {
+				t.Fatalf("%v = %s, want authority-denied's details", test.args, result.stderr)
+			}
 			human := fixture.run(test.args...)
 			if cli.ExitCode(human.err) != test.exit || !strings.HasPrefix(human.stderr, "error: ") {
 				t.Fatalf("%v = %#v, want a refusal", test.args, human)
 			}
-			if test.code == "invalid-argument" {
-				if found := kernelWords.FindAllString(human.stderr, -1); len(found) > 0 {
-					t.Fatalf("%v refusal names kernel words %q:\n%s", test.args, found, human.stderr)
-				}
+			if found := kernelWords.FindAllString(human.stderr, -1); len(found) > 0 {
+				t.Fatalf("%v refusal names kernel words %q:\n%s", test.args, found, human.stderr)
 			}
 		})
 	}

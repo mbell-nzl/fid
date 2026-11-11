@@ -870,6 +870,8 @@ two-worktree test. Mark expects mostly one sequential loop.
     `next` checks it, so a malformed actor with `--claim` is refused under
     `next.claim`; `--actor` without `--claim` uses the request-level
     refusal (`argument: request`), so its human text names no kernel word.
+    A `service:*` actor's human refusal names the actor alone, and its JSON
+    keeps `authority-denied`'s details (PR #56 review, round 1).
     `make check-two-worktree` runs only V3, as `make check-restore` runs
     V8. V8's ledger gains two holds, one a cancellation ended, and V8
     compares the `holds` table read through `fid sql`, since `next`'s

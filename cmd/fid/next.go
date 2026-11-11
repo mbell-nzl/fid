@@ -96,10 +96,35 @@ func refuseNextRequest(cmd *cobra.Command, claim bool, actor string) error {
 			map[string]any{"argument": "--actor", "value": actor, "allowed": []string{nextActorPattern}})
 	}
 	if err := next.CheckActor(actor); err != nil {
-		return writeGrammarFailure(cmd, "next.claim", cli.CodeAuthorityDenied, "service actors can't take tasks",
-			map[string]any{"actor_id": actor, "operation": "next.claim", "required_actions": []string{"next.claim"}, "required_capabilities": []string{"next.claim"}})
+		return refuseNextActor(cmd, actor)
 	}
 	return nil
+}
+
+// refuseNextActor refuses an actor whose type takes no tasks. JSON keeps
+// authority-denied's details; the human text names the actor alone, as the
+// operation's name holds a word fid's text never shows.
+func refuseNextActor(cmd *cobra.Command, actor string) error {
+	const message = "service actors can't take tasks"
+	failure, err := cli.NewFailure(cli.CodeAuthorityDenied, message, nil,
+		map[string]any{"actor_id": actor, "operation": "next.claim", "required_actions": []string{"next.claim"}, "required_capabilities": []string{"next.claim"}})
+	if err != nil {
+		return err
+	}
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	cause := errors.New(message)
+	if jsonMode {
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "next.claim", failure, cause)
+	}
+	human := failure
+	human.Details = map[string]any{"actor_id": actor}
+	if err := cli.WriteHumanFailure(cmd.ErrOrStderr(), "next.claim", cmd.CommandPath(), human, false); err != nil {
+		return err
+	}
+	return cli.NewFailureError(failure, cause)
 }
 
 func renderNextFailure(cmd *cobra.Command, operation string, cause error) error {

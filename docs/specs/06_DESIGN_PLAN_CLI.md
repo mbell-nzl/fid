@@ -811,7 +811,9 @@ or reasons:
 | Outside a repository, at an unsafe ledger location, or with no ledger | either | as every project command (section 1) |
 
 Grammar refusals from the parser, such as an unknown flag or an argument,
-name `next.get`. Journal replay failures keep their codes; anything else
+name `next.get`. A `service:*` actor's human refusal names the actor alone
+(`reason: authority-denied; actor_id=service:ci`); its JSON keeps
+`authority-denied`'s details, the operation names included. Journal replay failures keep their codes; anything else
 is `internal-error` (exit 7).
 
 ### Requirement references
