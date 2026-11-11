@@ -719,7 +719,10 @@ A hold records its ID (`HLD-` and 6 hex digits), the task, the worktree
 (the SHA-256 of its root path, and the path), the actor, `since` and
 `expires_at`, an hour later (D8; heartbeats renew it from task 1.5a), and,
 for a resume, the hold it replaces. Whether a hold has lapsed is read from
-the clock, never stored. A hold ends when a new hold replaces it, or its
+the clock, never stored. `fid next` reads the clock once, just before it
+walks the order: after refreshing the projection and, with `--claim`, under
+the write lock, so a hold that lapses while it waits for the lock counts as
+lapsed. A hold ends when a new hold replaces it, or its
 task is completed or cancelled; park, `done` and takeover come with tasks
 1.5a and 1.6. A worktree is identified by its root path, so a moved
 worktree is another worktree.

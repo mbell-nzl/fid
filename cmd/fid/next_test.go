@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -317,6 +318,44 @@ func TestNextHoldEndsInTheEventThatClosesItsTask(t *testing.T) {
 	}
 	if validated := executeCommandForTest(workspace, "--json", "export", "validate", archive); validated.err != nil {
 		t.Fatalf("export validate = %#v", validated)
+	}
+}
+
+// --claim reads the clock once it holds the write lock: a hold that lapses
+// while fid waits for the lock is read as lapsed, so its started task is
+// resumed under a new hold that replaces it.
+func TestNextClaimReadsTheClockUnderTheLock(t *testing.T) {
+	t.Parallel()
+	fixture := newStatusFixture(t, 100*time.Hour)
+	nextWork(fixture)
+	// This worktree's hold on the started FID-71a0c2 lapses a minute after
+	// statusNow.
+	fixture.hold("HLD-0b0b0b", "FID-71a0c2", "", holds.Lifetime-time.Minute)
+	var read, released atomic.Bool
+	fixture.clock = func() time.Time {
+		read.Store(true)
+		if released.Load() {
+			return statusNow.Add(2 * time.Minute)
+		}
+		return statusNow
+	}
+	done := make(chan commandExecutionResult)
+	if err := journal.WithLock(fixture.workspace, journal.LockOwner{Command: "test"}, func(*journal.WriteLock) error {
+		go func() { done <- fixture.run("--json", "next", "--claim", "--actor", "agent:one") }()
+		// fid is waiting for the lock once it has read the clock, or after
+		// a while if it reads the clock only once it holds the lock.
+		for deadline := time.Now().Add(500 * time.Millisecond); !read.Load() && time.Now().Before(deadline); {
+			time.Sleep(10 * time.Millisecond)
+		}
+		released.Store(true)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, event := decodeNext(t, <-done, "next.claim")
+	hold, _ := result["hold"].(map[string]any)
+	if result["kind"] != "resume" || event == nil || hold == nil || hold["replaces"] != "HLD-0b0b0b" {
+		t.Fatalf("next --claim after the hold lapsed = %v with event %v, want a resume under a new hold replacing HLD-0b0b0b", result, event)
 	}
 }
 

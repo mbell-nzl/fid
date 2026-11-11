@@ -49,7 +49,7 @@ func newNextCommand() *cobra.Command {
 				return renderNextFailure(cmd, operation, err)
 			}
 			environment := commandDisplayEnvironment(cmd)
-			options := next.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), Now: environment.now(), Actor: actor}
+			options := next.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), Clock: environment.now, Actor: actor}
 			read := next.Read
 			if claim {
 				read = next.Claim

@@ -23,8 +23,11 @@ import (
 type Options struct {
 	WorkspaceRoot string
 	MigrationsDir string
-	// Now is when the order is read, in the time zone the text shows.
-	Now time.Time
+	// Clock reads the time, in the zone the text shows. fid next reads it
+	// once, just before it walks the order: after refreshing the
+	// projection, and with --claim under the write lock, so a hold that
+	// lapses while fid waits for the lock is read as lapsed.
+	Clock func() time.Time
 	// Actor takes the task, as agent:<id> or human:<id>; fid next --claim.
 	Actor string
 }
@@ -85,7 +88,7 @@ func Read(options Options) (Result, error) {
 		return Result{}, err
 	}
 	defer func() { _ = conn.Close() }()
-	result, _, err := assemble(conn, options)
+	result, _, err := assemble(conn, options, options.Clock())
 	return result, err
 }
 
@@ -108,7 +111,7 @@ func Claim(options Options) (Result, error) {
 		}
 		defer func() { _ = conn.Close() }()
 		var planned order
-		if result, planned, err = assemble(conn, options); err != nil {
+		if result, planned, err = assemble(conn, options, options.Clock()); err != nil {
 			return err
 		}
 		result.Claimed = true
@@ -128,7 +131,8 @@ func openProjection(root string) (*sql.DB, error) {
 	return conn, nil
 }
 
-func assemble(conn *sql.DB, options Options) (Result, order, error) {
+// assemble walks the order at now.
+func assemble(conn *sql.DB, options Options, now time.Time) (Result, order, error) {
 	work, err := issues.ReadWork(conn)
 	if err != nil {
 		return Result{}, order{}, fmt.Errorf("read next: %w", err)
@@ -137,8 +141,8 @@ func assemble(conn *sql.DB, options Options) (Result, order, error) {
 	if err != nil {
 		return Result{}, order{}, fmt.Errorf("read next: %w", err)
 	}
-	planned := plan(work, open, project.WorktreeID(options.WorkspaceRoot), options.Now)
-	result := Result{Kind: planned.kind, Worktree: options.WorkspaceRoot, Queue: planned.queue, Now: options.Now,
+	planned := plan(work, open, project.WorktreeID(options.WorkspaceRoot), now)
+	result := Result{Kind: planned.kind, Worktree: options.WorkspaceRoot, Queue: planned.queue, Now: now,
 		Served: planned.served, epics: work.Epics}
 	if planned.served >= 0 {
 		task := planned.queue[planned.served].OverviewTask
@@ -147,19 +151,19 @@ func assemble(conn *sql.DB, options Options) (Result, order, error) {
 			result.Epic = &epic
 		}
 	}
-	if planned.kind == KindResume && planned.own.Lapsed(options.Now) {
-		result.Interrupted = working(*planned.own, planned.own.WorktreeID, options.Now)
+	if planned.kind == KindResume && planned.own.Lapsed(now) {
+		result.Interrupted = working(*planned.own, planned.own.WorktreeID, now)
 	}
 	return result, planned, nil
 }
 
-// take records the hold on the served task, unless there is none or this
-// worktree's live hold is it.
+// take records the hold on the served task at the time the order was
+// walked, unless there is none or this worktree's live hold is it.
 func take(lock *journal.WriteLock, conn *sql.DB, options Options, result *Result, planned order) error {
 	if planned.kind == KindNone {
 		return nil
 	}
-	if planned.kind == KindResume && !planned.own.Lapsed(options.Now) {
+	if planned.kind == KindResume && !planned.own.Lapsed(result.Now) {
 		result.Hold = planned.own
 		return nil
 	}
@@ -178,7 +182,7 @@ func take(lock *journal.WriteLock, conn *sql.DB, options Options, result *Result
 	if err != nil {
 		return err
 	}
-	hold := holds.New(id, result.Task.ID, project.WorktreeID(options.WorkspaceRoot), options.WorkspaceRoot, options.Actor, options.Now, replaces)
+	hold := holds.New(id, result.Task.ID, project.WorktreeID(options.WorkspaceRoot), options.WorkspaceRoot, options.Actor, result.Now, replaces)
 	effects := []journal.Effect{}
 	for _, previous := range sortedKeys(ended) {
 		effects = append(effects, holds.End(previous, holds.EndReplaced, hold.Since))
@@ -197,7 +201,7 @@ func take(lock *journal.WriteLock, conn *sql.DB, options Options, result *Result
 			result.Queue[index].Working = nil
 		}
 	}
-	result.Queue[result.Served].Working = working(hold, hold.WorktreeID, options.Now)
+	result.Queue[result.Served].Working = working(hold, hold.WorktreeID, result.Now)
 	return nil
 }
 

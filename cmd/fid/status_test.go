@@ -25,8 +25,8 @@ var statusNow = time.Date(2026, 11, 8, 9, 0, 0, 0, time.UTC).In(time.FixedZone("
 
 // statusFixture is a project whose genesis Event is backdated to a fixed
 // time, with a home and user config of its own. Its commands see stdout as
-// a terminal of screen's size when screen is set, and environ besides HOME
-// and XDG_CONFIG_HOME.
+// a terminal of screen's size when screen is set, environ besides HOME
+// and XDG_CONFIG_HOME, and the time clock gives, or statusNow.
 type statusFixture struct {
 	t          *testing.T
 	workspace  string
@@ -34,6 +34,7 @@ type statusFixture struct {
 	home       string
 	screen     *display.Screen
 	environ    []string
+	clock      func() time.Time
 }
 
 func newStatusFixture(t *testing.T, started time.Duration) *statusFixture {
@@ -170,8 +171,12 @@ func (fixture *statusFixture) seed(rows []readyCommandRow, links [][3]string) {
 // run runs fid with args in the fixture's environment.
 func (fixture *statusFixture) run(args ...string) commandExecutionResult {
 	root := newRootCommandAt(fixture.workspace)
+	now := fixture.clock
+	if now == nil {
+		now = func() time.Time { return statusNow }
+	}
 	environment := displayEnvironment{environ: append([]string{"HOME=" + fixture.home, "XDG_CONFIG_HOME=" + fixture.configHome}, fixture.environ...),
-		now: func() time.Time { return statusNow }, screen: func(io.Writer) *display.Screen { return fixture.screen }}
+		now: now, screen: func(io.Writer) *display.Screen { return fixture.screen }}
 	root.SetContext(context.WithValue(root.Context(), displayEnvironmentKey{}, environment))
 	stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
 	root.SetOut(stdout)

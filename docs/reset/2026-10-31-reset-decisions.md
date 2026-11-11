@@ -840,7 +840,10 @@ two-worktree test. Mark expects mostly one sequential loop.
     the new one. The journal checks the family's Effects in stage order;
     the export catalog refuses it in archives before schema 20. An ended
     hold records `ended_at` and `end_reason` (`replaced`, `task-completed`
-    or `task-cancelled`); `actor` keeps the whole `agent:<id>`.
+    or `task-cancelled`); `actor` keeps the whole `agent:<id>`. `next`
+    reads the clock once, after refreshing the projection and, with
+    `--claim`, under the write lock, so a hold that lapses while it waits
+    for the lock counts as lapsed (PR #56 review, round 1).
   - **Builder's choice, PR #56 (1.4a):** the order holds every unstarted
     task and every task with an open hold; a started task with no hold
     isn't handed out, so it isn't listed. Tasks an open epic waits on count
