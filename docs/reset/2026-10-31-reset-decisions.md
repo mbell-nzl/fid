@@ -870,7 +870,9 @@ two-worktree test. Mark expects mostly one sequential loop.
     spec has only `status` and `show` page. Without `--claim`, a task
     handed out with nothing passed over gets `→ fid show <ID>`; with
     `--explain`, the order replaces `Passed over`. "Work stopped at" shows
-    when the lapsed hold expired. Nothing to do at all reads `Nothing
+    the lapsed hold's last sign of life, its `since`, not its expiry
+    (settled in the PR #56 review); 1.5a switches it to the hold's last
+    heartbeat. Nothing to do at all reads `Nothing
     ready here: no tasks to do`; the counts for `epic-blocked` and
     `epic-closed` read `in a blocked epic` and `in a closed epic`, and work
     held in different worktrees is counted per directory.

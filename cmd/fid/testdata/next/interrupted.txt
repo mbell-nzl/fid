@@ -6,7 +6,7 @@
   Priority    P1
   Working     here, since 22:00, until 23:00
 
-  ⚠ Interrupted here: work stopped at 21:45 without a park.
+  ⚠ Interrupted here: work stopped at 20:45 without a park.
     Carry on from what's in this worktree.
       → fid show FID-71a0c2
 ╰──────────────────────────────────────────────────────────────────────╯

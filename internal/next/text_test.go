@@ -66,7 +66,10 @@ func TestWriteTextMatchesTheApprovedMockUps(t *testing.T) {
 	taken := mockHold("/home/mark/projects/fid", true, "2026-11-10T09:02:11Z", "2026-11-10T10:02:11Z", false)
 	live := mockHold("/home/mark/projects/fid", true, "2026-11-10T08:40:12Z", "2026-11-10T09:40:12Z", false)
 	resumed := mockHold("/home/mark/projects/fid", true, "2026-11-10T11:15:00Z", "2026-11-10T12:15:00Z", false)
-	interrupted := mockHold("/home/mark/projects/fid", true, "2026-11-10T09:58:00Z", "2026-11-10T10:58:00Z", true)
+	// Work stopped at the lapsed hold's last sign of life, its since (its
+	// last heartbeat from 1.5a), not its expiry. The times are the
+	// mock-up's, so they don't add up to an hour's hold.
+	interrupted := mockHold("/home/mark/projects/fid", true, "2026-11-10T10:58:00Z", "2026-11-10T11:58:00Z", true)
 	resume := func(held *Working) []Entry {
 		return []Entry{mockTask("FID-1f2e3d", "Contract fields and exit codes", "started", "FID-8a1b2c", 0, "", "", held)}
 	}

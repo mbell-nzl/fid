@@ -791,7 +791,8 @@ included, and doesn't page:
 - A live hold re-run adds `Already yours in this worktree: carry on with
   it`. A resume after a lapse adds `⚠ Interrupted here: work stopped at
   <HH:MM> without a park.` and `Carry on from what's in this worktree.`,
-  the time being when the lapsed hold expired.
+  the time being the lapsed hold's last sign of life: its `since`, and its
+  last heartbeat from task 1.5a.
 - When nothing is ready: `○ Nothing ready here:` and a count for each kind
   of reason, in the order each first appears (`1 blocked`, `1 being worked
   in fid-wt2`, `1 interrupted in fid-wt2`, `2 not next in their epic's

@@ -93,12 +93,14 @@ func (text textWriter) rows(result Result, served Entry) []string {
 }
 
 // message says what a resume carries on with, or how many tasks fid next
-// passed over before the one it would hand out. It is nil otherwise.
+// passed over before the one it would hand out. It is nil otherwise. Work
+// on an interrupted task stopped at its lapsed hold's last sign of life:
+// its since, and its last heartbeat from 1.5a.
 func (text textWriter) message(result Result, explain bool) []string {
 	id := result.Queue[result.Served].ID
 	switch {
 	case result.Kind == KindResume && result.Interrupted != nil:
-		lines := text.item(display.RoleWarning, display.SymbolWarning, "Interrupted here: work stopped at "+text.clock(result.Interrupted.ExpiresAt)+" without a park.")
+		lines := text.item(display.RoleWarning, display.SymbolWarning, "Interrupted here: work stopped at "+text.clock(result.Interrupted.Since)+" without a park.")
 		lines = append(lines, text.prose(proseIndent, "Carry on from what's in this worktree.")...)
 		return append(lines, text.step("fid show "+id)...)
 	case result.Kind == KindResume:
