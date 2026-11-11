@@ -3,10 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -395,28 +395,32 @@ func TestNextClaimReadsTheClockUnderTheLock(t *testing.T) {
 	// This worktree's hold on the started FID-71a0c2 lapses a minute after
 	// statusNow.
 	fixture.hold("HLD-0b0b0b", "FID-71a0c2", "", holds.Lifetime-time.Minute)
-	var read, released atomic.Bool
+	// The clock stands in for the wait for the lock, so nothing hangs on
+	// timing: it reads statusNow, while the hold is live, until fid next
+	// owns the write lock, and two minutes later once it does. Each read
+	// notes the lock's owner then, from the record the lock keeps.
+	const claimant = "fid next --claim --actor agent:one"
+	record := filepath.Join(config.LedgerDir(fixture.workspace), "write.lock", "owner.json")
+	var owners []string
 	fixture.clock = func() time.Time {
-		read.Store(true)
-		if released.Load() {
+		var owner struct {
+			Command string `json:"command"`
+		}
+		if payload, err := os.ReadFile(record); err == nil {
+			_ = json.Unmarshal(payload, &owner)
+		}
+		owners = append(owners, owner.Command)
+		if owner.Command == claimant {
 			return statusNow.Add(2 * time.Minute)
 		}
 		return statusNow
 	}
-	done := make(chan commandExecutionResult)
-	if err := journal.WithLock(fixture.workspace, journal.LockOwner{Command: "test"}, func(*journal.WriteLock) error {
-		go func() { done <- fixture.run("--json", "next", "--claim", "--actor", "agent:one") }()
-		// fid is waiting for the lock once it has read the clock, or after
-		// a while if it reads the clock only once it holds the lock.
-		for deadline := time.Now().Add(500 * time.Millisecond); !read.Load() && time.Now().Before(deadline); {
-			time.Sleep(10 * time.Millisecond)
+	result, event := decodeNext(t, fixture.run("--json", "next", "--claim", "--actor", "agent:one"), "next.claim")
+	for _, owner := range owners {
+		if owner != claimant {
+			t.Fatalf("write lock's owner at each clock read = %q, want %q only", owners, claimant)
 		}
-		released.Store(true)
-		return nil
-	}); err != nil {
-		t.Fatal(err)
 	}
-	result, event := decodeNext(t, <-done, "next.claim")
 	hold, _ := result["hold"].(map[string]any)
 	if result["kind"] != "resume" || event == nil || hold == nil || hold["replaces"] != "HLD-0b0b0b" {
 		t.Fatalf("next --claim after the hold lapsed = %v with event %v, want a resume under a new hold replacing HLD-0b0b0b", result, event)
