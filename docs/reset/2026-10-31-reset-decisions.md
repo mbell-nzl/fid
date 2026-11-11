@@ -4,6 +4,7 @@ Decisions session, 30–31 October 2026, run as a grilling session against
 `2026-10-29-fid-kit-reset-proposal.html` (now superseded). Two Opus 5.5 second
 opinions informed D2, and a fresh-context review of the result led to the
 amendments marked below. These decisions feed ADR-0013 and `RESET.md`.
+Amendments dated 10 and 11 November 2026 record the lean core (ADR-0014).
 
 ## Goal
 
@@ -41,7 +42,9 @@ recommendations:
    reading the judge's; a manual per-lane `auto_merge` key replaces counters
    and trip rules; only the `caused_by` sensor now.
 2. One rule engine: the facade's `done` evaluator decides what done needs; a
-   net Go line budget; unused kernel commands deleted at trial end.
+   net Go line budget; unused kernel commands deleted at trial end. (Amended
+   10 November 2026: the golden path is built on a lean core, and the whole
+   kernel chain is removed right after task 1.5a. See D9 and ADR-0014.)
 3. Reviews and approvals bind to the change; checks bind to the tree. No delta
    re-approval view.
 4. Kit install is a plain copy. Three-way merge deferred.
@@ -69,9 +72,18 @@ and validations.
   versions and golden-tests the fields and exit codes loops read
   (`next --claim` exit codes, `.result.task.id`, `next.kind` values, the
   required review profiles). Scenario tests (rework, budget exhausted, rework
-  cap, interruption, parallel claims) are fid integration tests. The kit ships
-  one default loop; variants only when a project needs one. The first loop is
-  written in fid's repo as fid's own copy, then promoted to the kit.
+  cap, interruption, parallel claims) are fid integration tests. The rework
+  cap and the token budget live in fid, set per lane in `.fid.toml` (amended
+  10 November 2026, ADR-0014). The rework cap counts a task's review rounds
+  that asked for changes, 3 by default; the token budget sums 2.6's usage and
+  is off until 2.6 has data. Past either, `next` skips the task
+  (`rework-cap-reached`, `over-budget`) and `fid status` shows a NEEDS YOU
+  item. 2.2a parses the settings, 2.1 and 2.6 enforce them. 2.4's scenario
+  tests cover the rework cap; the over-budget scenario test lands in 2.6,
+  with the code it tests, since 2.4 runs first (Mark, 11 November 2026). The
+  kit ships one default loop; variants only when a project needs one. The
+  first loop is written in fid's repo as fid's own copy, then promoted to the
+  kit.
 - Loop guard-rails: check fid's contract version at startup (replaces a fid
   version pin); fail loudly on an unknown `next.kind`; never treat empty output
   as "no work"; `loops/selftest.sh` against stub agents; a line budget enforced
@@ -85,20 +97,29 @@ and validations.
   User-level skills only for a few general non-dev skills whose names never
   clash with the kit's.
 
-**D9 Facade first.**
+**D9 Facade first** (amended 10 November 2026: lean core, ADR-0014).
 
-- New golden-path commands are built from existing kernel commands.
-- **One rule engine** (amended). The facade's `done` evaluator (policy from
-  `origin/main` plus the diff) is the single source of what done needs. Kernel
-  Obligations cover receipts only. This sidesteps the kernel's Envelope
-  revision-1 limit.
+- **Lean core** (amended 10 November 2026). New golden-path commands are
+  built on Issues, the journal and the check runner, plus a hold, a policy
+  snapshot, check results, review rounds and one record for a person's
+  decisions. They don't compose kernel commands. The kernel chain (Activation,
+  Envelope, Obligation, Claim, Run, Attempt, Evidence Record, Stops,
+  Attention Items, kernel budgets and Run recovery) is removed right after
+  task 1.5a, in 1.5b–1.5d. Originally: "New golden-path commands are built
+  from existing kernel commands."
+- **One rule engine** (amended). The `done` evaluator (policy from
+  `origin/main` plus the diff) is the single source of what done needs. It
+  reads check results directly; there are no Obligations (amended 10 November
+  2026).
 - A golden-output test fails if human-facing output (including refusals)
   mentions kernel-only nouns (Envelope, Activation, Obligation, Attempt,
   Attention Item) or kernel IDs (`ENV-`, `STP-`, `ATT-`). `--json`,
   `--verbose` and `fid admin` are exempt. A concept that keeps leaking is the
   evidence to collapse or rename it.
-- Kernel commands move under `fid admin`, hidden from main help. At trial end,
-  any the facade doesn't use are deleted.
+- Kernel commands are deleted with the kernel in 1.5c (amended 10 November
+  2026). Originally they moved under `fid admin`, hidden from main help, and
+  any the facade didn't use were deleted at trial end. The leak test above
+  stays.
 - A net Go line budget applies (set in `RESET.md`).
 
 ## Foundations
@@ -238,7 +259,7 @@ committed. ADR-0013 supersedes ADR-0001's "journal committed to git" and
     `fid status`, which doesn't exist before then.
   - 1.2 creates `.fid.toml` holding only the project ID that keys the
     backup folder. A restore onto a fresh clone has no ledger, so the ID
-    has to be committed. 2.2 adds the policy to the same file. Because it
+    has to be committed. 2.2a adds the policy to the same file. Because it
     introduces `.fid.toml`, 1.2 is Assured.
   - The backup target is in user-level config,
     `$XDG_CONFIG_HOME/fid/config.toml` (`~/.config/fid/config.toml` by
@@ -748,11 +769,22 @@ two-worktree test. Mark expects mostly one sequential loop.
 
 - Claims last about an hour. The loop sends a heartbeat during long agent
   sessions, since a builder may not touch fid for an hour. Tasks waiting on
-  Mark are parked and hold no claim.
+  Mark are parked and hold no claim. (Amended 10 November 2026, ADR-0014:
+  the claim is a hold, with its own ID sent with every heartbeat, check, park
+  and `done`. fid refuses a stale session's heartbeat, so its loop stops
+  loudly. 1.5a designs parking while waiting for Mark.)
 - Interruptions (crash, usage limit): the loop parks the task as interrupted
   (`fid park`) and stops. `fid next` serves it first, to the same worktree,
-  with a linked successor Run. A worktree holding an interrupted task gets no
-  other task.
+  as kind `resume` with a new hold linked to the old one (amended 10 November
+  2026; originally a linked successor Run). A worktree holding an interrupted
+  task gets no other task.
+- Lapsed holds (amended 10 November 2026, ADR-0014). A lapsed hold on a
+  started task means the task is interrupted and kept for its worktree; other
+  worktrees skip it (`interrupted-elsewhere`). A lapsed hold on an unstarted
+  task frees it for anyone. Only a person takes over a task; the takeover ends
+  any hold and is recorded, and 1.5a names the command. fid never touches
+  git state. A task kept for a worktree that no longer exists is a NEEDS YOU
+  item.
 - Shared-file conflicts are resolved at merge, as human developers do; the
   second PR's builder rebases as rework. ADR-0006 disjoint-scope proofs wait
   for real need.
@@ -769,6 +801,22 @@ trusts, from `origin/main` at commit X", visible only under `--verbose`, and
 is a collapse candidate after the trial. ADR-0013 amends Gate B3. The
 environment allowlist stays.
 
+- **Amended 10 November 2026** (ADR-0014):
+  - fid reads `.fid.toml` from the local `origin/<default branch>` ref and
+    never fetches the policy remote itself, so policy is as fresh as the last
+    fetch. Backup and restore still fetch their own target; 1.6 decides
+    whether `fid done` fetches. This replaces "after a fetch" above.
+  - An invalid `.fid.toml` on origin is refused, with no fallback to the
+    built-in defaults.
+  - A policy snapshot replaces the Activation: the source (commit X, or the
+    built-in defaults), the effective policy's digest, the actor rules and
+    the check definitions. fid writes a new one, as one Event under the
+    lock, only when that digest changes, including after a fid upgrade that
+    changes the built-in rules. Writing commands that need policy check it;
+    read-only commands never write.
+  - 2.2a defines the whole schema: checks, Assured paths, check-defining
+    paths, `auto_merge` per lane, the rework cap and the token budget.
+
 **D5 / F4 Threat model: honest but fallible agents** on a single-user
 machine. Not defending against deliberately adversarial agents. A deceptive
 agent could forge a local approval; that is accepted. Friction: a hook denies
@@ -776,6 +824,15 @@ agents `fid approve`, `waive` and `admin`, and `gh pr merge`; fid refuses
 approval without an interactive person and refuses `agent:*` actors; the
 approval prompt shows the diffstat, checks and review verdicts. atlas is out
 of scope for now.
+
+- **Trust by actor type** (amended 10 November 2026, ADR-0014). Any
+  well-formed actor is trusted by its type, built into fid; `.fid.toml` has
+  no actor list. `agent:*` gets the work set; `human:*` gets the work set
+  plus a person's decisions; `service:*` gets nothing for now.
+- **A person's decisions** (amended 10 November 2026, ADR-0014). fid refuses
+  `agent:*` actors for every kind: approving, waiving a lane, taking over,
+  allowing more rework rounds, closing a finding, accepting discovered work
+  and approving an epic. One record holds them all.
 
 **D10 Approvals go stale** (amended). Reviews and approvals bind to the
 change's fingerprint (`git patch-id` of the branch diff); checks bind to the
@@ -793,6 +850,14 @@ records the merge commit against the task. It also reconciles PRs Mark merged
 in the GitHub UI. If GitHub can't be reached, the task shows "merged, waiting
 for confirmation".
 
+- **What a check result binds to** (amended 10 November 2026, ADR-0014). A
+  local result binds to the tree it ran on and to its check's own definition,
+  and counts only on a clean tree that didn't change during the check. The
+  hand-off needs passing results on the head commit's tree and records the
+  policy in force. `done` needs passing local results on the merged PR head's
+  tree for every check the hand-off policy required, plus CI green on the
+  merge commit, recorded as a check result whose source is CI. Only `done`
+  completes a task: `fid issue transition` refuses to (1.6).
 - **Details** (decided 7 November 2026, for task 0.7):
   - Why: CI used about 1,650 billed minutes from 1 to 7 November, against
     the 2,000 a month GitHub Free includes across Mark's private repos.
@@ -835,7 +900,7 @@ for confirmation".
 |---|---|---|
 | Routine | Local checks; test-adequacy review if tests changed | Mark, until `auto_merge` is enabled for the lane |
 | Standard | Plus a code review (other model) and the judge's call | Mark, until `auto_merge` is enabled for the lane |
-| Assured | Plus a second-model review, Mark's approval and a rollback note | Mark |
+| Assured | Plus a separate review on the other model by default (amended 11 November 2026), Mark's approval and a rollback note | Mark |
 
 - **Through the trial, Mark merges everything.** A merge judge (fresh
   frontier-model session, MERGE or HOLD, hold-only) runs in shadow and is
@@ -850,11 +915,28 @@ for confirmation".
   on private repos, so it waits until then, when Mark chooses GitHub Pro or a
   public repo (decided 31 October 2026).
 - **One reviewer session per round** runs every required profile (code, test
-  adequacy, security). Assured work adds a separate review on the other model.
-- **Same-model review by waiver** (decided 7 November 2026). The other model
-  reviews by default. When usage limits would otherwise stop progress, Mark
-  may waive that for one PR. The reviewer is then a fresh session of the same
-  model with clean context, and the review comment states the waiver and why.
+  adequacy, security). Assured work adds a separate review on the other model
+  (amended 11 November 2026: by default; the fallback below covers it too).
+- **Same-model review as a fallback** (decided 7 November 2026; amended 10
+  and 11 November 2026). The other model reviews by default. When it isn't
+  available, because Mark has no subscription to it or its usage is limited,
+  a fresh session of the same model with clean context reviews instead. This
+  may happen often, so it's a standing fallback, not a waiver for one PR. The
+  review comment names the model that reviewed. fid's independence rule
+  compares actors, not models, so the reviewer needs a different actor ID
+  from the builder (ADR-0014).
+  - On 11 November 2026, Mark extended the fallback to Assured work's
+    separate review. That review still runs, as another fresh session,
+    which is the same model when the other isn't available.
+  - fid records which model built the change and which model reviewed each
+    round (2.1). When no review of an Assured change came from a model other
+    than the builder's, the approval view (2.3) and `fid show` say "no
+    other-model review", so Mark's approval covers it knowingly.
+- **Findings and rounds** (amended 10 November 2026, ADR-0014). Findings are
+  major (blocks merge), minor (fix or answer with a reason) or nit
+  (optional), as in the kit's reviewer. fid refuses a review round from an
+  actor that held the task to build it. Only a later round, or a person with
+  a reason, closes a major finding.
 - **Each review round is also a PR comment** (decided 3 November 2026, for
   tasks 2.1 and 2.5). Mark reads reviews where he merges, next to the
   completion report. fid's record of the review is canonical, because `done`
@@ -879,7 +961,10 @@ for confirmation".
 - A lane is set at planning (plan skill proposes; Mark sees it at epic
   approval) and raised at merge if the computed floor is higher. The reviewer
   and judge may raise it with a reason. Only Mark lowers it, through
-  `fid waive`.
+  `fid waive`. (Amended 10 November 2026, ADR-0014: 2.2b builds `fid waive`
+  with the lane floor. A waiver binds to the change's fingerprint, so an edit
+  returns the task to its floor. Hard floors, such as `.fid.toml` and CI
+  workflows, can't be waived.)
 - Up to 10 validations per epic (soft cap; more means split the epic). Each
   names a verifier (`check:`, `review:` or human); human ones need a fixture
   recipe.
@@ -1077,6 +1162,10 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     `fid export validate` still accepts Phase 21 manifest-v1 archives,
     though `fid export import` already refuses them as
     `schema-unsupported` (`TestValidateRetainsPinnedV1Profile` pins both).
+    Decided 10 November 2026 (ADR-0014): removed with the kernel's catalogs
+    in 1.5d, together with that test.
+  - The kernel's removal (1.5b–1.5d) takes the test-only helpers that belong
+    to the kernel.
 - Review rounds, as data for refining the process after the reset: #41, #44
   and #46 took 4, 4 and 5 Codex rounds. In #46, three of the four rounds
   that asked for changes were about code the previous fix round had added
@@ -1100,9 +1189,17 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   `auto_merge` (needs GitHub Pro or a public repo).
 - Cloud-session support for the ledger (read-only, then single-writer).
 - Declared paths per task, if shared-file conflicts become a regular cost.
-- Collapse candidates after the trial: Activation, plus any concept the leak
-  test keeps catching.
-- Generic retry-exhausted, the Envelope revision-1 limit, dead-code cleanup.
+- Collapse candidates after the trial: any concept the leak test keeps
+  catching. (Amended 10 November 2026: the Activation goes with the kernel
+  in 1.5b–1.5d, ADR-0014.)
+- Generic retry-exhausted, dead-code cleanup. (Amended 10 November 2026: the
+  Envelope revision-1 limit is moot, since Envelopes go with the kernel.)
+- Restoring across a fid upgrade (found 10 November 2026). Import and
+  restore need the archive's projection schema to equal the running fid's
+  (`internal/export/archive_validation.go`), so after an upgrade the newest
+  backup can't be restored by the new fid until the next backup runs. Raise
+  it with 3.2, before the permanent ledger; the restore drill should cover
+  it.
 - Replay reports `line: 0` for a current-event prior conflict (found in
   1.1d2, #39). Fix it after the trial.
 - yoyu migration (after the trial).

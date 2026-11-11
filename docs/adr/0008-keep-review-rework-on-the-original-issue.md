@@ -5,6 +5,15 @@ date: 2026-08-08
 
 # Keep review rework on the original Issue
 
+> **Amended on 2026-11-10 by ADR-0014.** Rework stays on the original Issue,
+> and a builder still can't resolve its own findings. Review rounds bind to
+> the change's fingerprint, not to an Envelope revision. Only a later review
+> round closes a major finding, or a person does, with a reason. Findings are
+> major, minor or nit. fid enforces a rework cap and a token budget set per
+> lane in `.fid.toml`, instead of Envelope budgets, and a capped task is a
+> NEEDS YOU item instead of Attention. Envelope revision triggers no longer
+> apply.
+
 A completed Review Run produces an immutable Review Record bound to the exact
 Work Envelope revision and repository identity reviewed. A `changes-required`
 record proves that review occurred but does not satisfy the governing review

@@ -41,9 +41,10 @@ list. Read RESET.md before starting work.
    it with a reason. A fix round is a fresh session that picks up from the
    PR, the review and the diff. It changes production code only as the
    findings need; it may add tests for similar gaps, and anything else goes
-   in the PR as left over. When usage limits would otherwise stop progress,
-   Mark may waive "the other model" for one PR: a fresh session of the same
-   model reviews, and the review comment says so.
+   in the PR as left over. When the other model isn't available (no
+   subscription, or its usage is limited), a fresh session of the same model
+   reviews instead. Either way, the review comment names the model that
+   reviewed.
 8. **Mark merges.** Agents never merge, push to `main` or force-push.
 
 If you have to stop early, push the branch and open a draft PR that says

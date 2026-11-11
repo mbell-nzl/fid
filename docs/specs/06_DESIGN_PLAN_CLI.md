@@ -1,5 +1,11 @@
 # CLI CONTRACT PLAN - fid
 
+> **Kernel commands superseded on 2026-11-10 by ADR-0014.** The golden-path
+> commands are built on a lean core, not composed from kernel commands, and
+> the kernel's commands are removed after task 1.5a rather than moved under
+> `fid admin`. Where they conflict, ADR-0014 and `RESET.md` win. Later tasks
+> update this spec as they build.
+
 This document defines the aligned command vocabulary and common transport
 contract. Exact leaf request/response schemas are accepted with their D3
 vertical slice before implementation.

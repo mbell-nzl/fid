@@ -85,7 +85,7 @@ one, after staging and checking the ledger and before activating it. A
 failure after publication can leave the ID file for the next init to reuse.
 The user commits `.fid.toml`; fid does not stage or commit it. Restoring a
 fresh clone relies on this committed identity. The file holds only the ID
-until task 2.2 adds policy from `origin/<default branch>`; the working-tree
+until task 2.2a adds policy from `origin/<default branch>`; the working-tree
 identity is not policy authority.
 
 ### 2.2. User config: backup target

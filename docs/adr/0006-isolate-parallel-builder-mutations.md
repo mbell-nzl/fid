@@ -9,6 +9,11 @@ date: 2026-08-08
 > worktrees may proceed without scope proofs; conflicts are resolved at merge.
 > Declared, provably disjoint scopes wait for real need.
 
+> **Amended on 2026-11-10 by ADR-0014.** At most one active hold per task
+> stands. A hold binds the task, the actor and the worktree, with no Envelope
+> revision. Reviewers record review rounds bound to the change's fingerprint
+> instead of read-only Reviewer Runs.
+
 One fid Issue may have at most one active mutating Builder Claim. A Work
 Envelope is not itself claimed: each Claim binds one selected Issue, the
 Envelope revision, the Builder, and the repository worktree identity. Parallel

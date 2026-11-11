@@ -5,6 +5,11 @@ date: 2026-08-08
 
 # Revise multi-Issue Envelopes without duplicating work state
 
+> **Superseded on 2026-11-10 by ADR-0014.** Envelopes are removed with the
+> kernel, so multi-Issue Envelope revision and partial progress no longer
+> apply. Issue state stays the only durable work lifecycle (ADR-0005). The
+> text below is historical reasoning.
+
 Progress across a Work Envelope's selected Issues is a derived projection of
 their fid Issue states; it is not a `partially-completed` Envelope state,
 membership lifecycle, or Work Item graph. Completion of one selected Issue is

@@ -5,6 +5,14 @@ date: 2026-08-08
 
 # Recover interruptions with a new linked Run
 
+> **Amended on 2026-11-10 by ADR-0014.** Holds replace Claims and Runs. A
+> lapsed hold on a started task means the task is interrupted. It stays kept
+> for its worktree, which resumes it under a new hold linked to the old one,
+> and other worktrees skip it. A lapse is still not proof that work stopped.
+> Only a person takes over, and the takeover is recorded. fid never resets,
+> cleans, stashes, checks out or commits. A check's start without a result
+> counts for nothing. The rework count and token use stay with the task.
+
 Continuation after agent-session or executor interruption always creates a new
 Run linked to the prior Run; Run identity is never reused. The prior Run
 becomes terminally `interrupted`, distinct from successful closure and

@@ -5,6 +5,13 @@ date: 2026-08-08
 
 # Issues are the only durable work graph
 
+> **Amended on 2026-11-10 by ADR-0014.** Issues stay the only durable work
+> graph. Envelopes, Obligations, Claims, Runs, Stops and Attention go with the
+> kernel, so `fid next` derives the next action from Issues, holds, review
+> rounds, check results and a person's decisions. Review is a review round
+> bound to the change's fingerprint, not a Review Run satisfying a review
+> Obligation.
+
 fid Issues and their parent/dependency relationships are the only durable work
 graph. A Work Envelope is a versioned execution contract over one primary
 Issue and, when explicitly selected, a bounded set of related Issues; it does
