@@ -31,7 +31,8 @@ type WorkEpic struct {
 }
 
 // WorkTask is a task in fid status's task shape. Unblocks says another open
-// task or epic waits on it.
+// task waits on it, or an open epic with open tasks, which wait on it
+// through their epic.
 type WorkTask struct {
 	OverviewTask
 	Unblocks bool
@@ -56,20 +57,18 @@ func ReadWork(conn *sql.DB) (Work, error) {
 		return Work{}, err
 	}
 	work := Work{Epics: map[string]WorkEpic{}, Tasks: []WorkTask{}}
-	waitedOn := map[string]bool{}
 	for _, epic := range epics {
 		work.Epics[epic.ID] = WorkEpic{ID: epic.ID, Title: epic.Title, Status: epic.Status, StatusCategory: epic.StatusCategory,
 			Sequential: sequential[epic.ID], BlockedBy: append([]string{}, blockers[epic.ID]...)}
-		if isOpen(epic.StatusCategory) {
-			for _, blocker := range blockers[epic.ID] {
-				waitedOn[blocker] = true
-			}
-		}
 	}
-	begun := map[string]bool{}
+	waitedOn, begun := map[string]bool{}, map[string]bool{}
 	for _, task := range tasks {
 		if isOpen(task.StatusCategory) {
-			for _, blocker := range task.BlockedBy {
+			waits := task.BlockedBy
+			if epic, found := work.Epics[epicOf(task)]; found && isOpen(epic.StatusCategory) {
+				waits = append(append([]string{}, waits...), epic.BlockedBy...)
+			}
+			for _, blocker := range waits {
 				waitedOn[blocker] = true
 			}
 		}

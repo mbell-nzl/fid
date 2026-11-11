@@ -670,9 +670,10 @@ nothing stops:
    worktree, and `--claim` takes a new hold that replaces the old one
    (kind `resume`). A lapsed hold on an unstarted task frees the task for
    any worktree, this one included.
-2. **Unblocking work:** tasks that another open task or epic waits on, by a
-   `blocks` or `blocked_by` link. Until task 3.1, all work counts as
-   approved.
+2. **Unblocking work:** tasks that another open task waits on, by a
+   `blocks` or `blocked_by` link, directly or through its open epic: a task
+   that blocks an epic counts only while the epic has open tasks. Until
+   task 3.1, all work counts as approved.
 3. **The other unstarted tasks**, in `fid status`'s order: an in-progress
    epic's, then a to-do epic's, then those with no open epic; within each,
    sequence, priority (lower first), creation and ID, a missing sequence or

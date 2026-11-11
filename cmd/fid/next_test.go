@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -174,6 +175,36 @@ func decodeNext(t *testing.T, result commandExecutionResult, operation string) (
 		t.Fatalf("next = %#v, want %s", result, operation)
 	}
 	return envelope.Result, envelope.Event
+}
+
+// A task that blocks an epic is unblocking work only while the epic has
+// open tasks, which wait on it through their epic (Mark, 12 November
+// 2026): blocking an empty epic doesn't put a P5 task ahead of a P0 one.
+func TestNextServesAnEpicsBlockerFirstOnlyWhileTheEpicHasOpenTasks(t *testing.T) {
+	t.Parallel()
+	workspace := gittest.NewWorkspace(t)
+	runFIDCommand(t, workspace, "init", "--prefix", "FID")
+	create := func(args ...string) string {
+		_, created := runFIDCommand(t, workspace, append([]string{"issue", "create"}, append(args, "--actor", "human:mark")...)...)
+		return parseCreatedIssueID(t, created)
+	}
+	epic := create("--kind", "epic", "--title", "Empty for now", "--scheduling", "prioritised")
+	blocker := create("--kind", "task", "--title", "Blocks the epic", "--priority", "5")
+	urgent := create("--kind", "task", "--title", "Urgent", "--priority", "0")
+	runFIDCommand(t, workspace, "link", "add", blocker, "blocks", epic, "--from-type", "issue", "--to-type", "issue", "--actor", "human:mark")
+	served := func() string {
+		t.Helper()
+		result, _ := decodeNext(t, executeCommandForTest(workspace, "--json", "next"), "next.get")
+		task, _ := result["task"].(map[string]any)
+		return fmt.Sprint(task["id"])
+	}
+	if got := served(); got != urgent {
+		t.Fatalf("next with an empty blocked epic = %s, want the P0 task %s", got, urgent)
+	}
+	create("--kind", "task", "--title", "Waits through its epic", "--epic", epic)
+	if got := served(); got != blocker {
+		t.Fatalf("next once the blocked epic has a task = %s, want its blocker %s", got, blocker)
+	}
 }
 
 // Re-running --claim in the same worktree returns the hold it already has,

@@ -846,18 +846,21 @@ two-worktree test. Mark expects mostly one sequential loop.
     for the lock counts as lapsed (PR #56 review, round 1).
   - **Builder's choice, PR #56 (1.4a):** the order holds every unstarted
     task and every task with an open hold; a started task with no hold
-    isn't handed out, so it isn't listed. Tasks an open epic waits on count
-    as unblocking, as tasks do. A sequential epic serves one task at a time
-    across worktrees: while one of its tasks is held (live, or lapsed on a
-    started task) it serves no other; otherwise it serves the first task in
-    sequence on its next task's chain of blockers in the epic that nothing
-    blocks, or the next task itself (PR #56 review, round 1). A sequence's
-    waiting tasks are named `after` the task the epic holds or serves, or
-    its next task when it can serve none; a task on the chain that is
-    itself blocked shows as `blocked`.
+    isn't handed out, so it isn't listed. A sequential epic serves one task
+    at a time across worktrees: while one of its tasks is held (live, or
+    lapsed on a started task) it serves no other; otherwise it serves the
+    first task in sequence on its next task's chain of blockers in the epic
+    that nothing blocks, or the next task itself (PR #56 review, round 1).
+    A sequence's waiting tasks are named `after` the task the epic holds or
+    serves, or its next task when it can serve none; a task on the chain
+    that is itself blocked shows as `blocked`.
     When reasons overlap the first applies: held or interrupted elsewhere,
     epic closed, epic blocked, not next in sequence, blocked; the
     `--explain` mock-up names `after` for a task that is also blocked.
+  - **Decided by Mark, 12 November 2026 (PR #56 review):** a task that
+    blocks an epic counts as unblocking work only when that epic has open
+    tasks, which wait on it through their epic. A task blocking an epic
+    with no open tasks isn't served early.
   - **Builder's choice, PR #56 (1.4a):** `next` doesn't page, as the CLI
     spec has only `status` and `show` page. Without `--claim`, a task
     handed out with nothing passed over gets `→ fid show <ID>`; with

@@ -23,7 +23,8 @@ func readWork(t *testing.T, workspace string) Work {
 
 // ReadWork lists the open tasks in fid status's order, started ones
 // included, with each epic's scheduling, progress and open blockers, and
-// which tasks other open work waits on.
+// which tasks other open work waits on: an open task, or an open epic
+// with open tasks, which wait on it through their epic.
 func TestReadWorkListsOpenTasksInStatusOrder(t *testing.T) {
 	t.Parallel()
 	n := intPointer
@@ -42,6 +43,9 @@ func TestReadWorkListsOpenTasksInStatusOrder(t *testing.T) {
 		{"T8", "task", "", "todo", nil, n(1), 12},
 		{"T9", "task", "", "in_progress", nil, nil, 13},
 		{"T10", "task", "", "todo", nil, n(3), 14},
+		{"E4", "epic", "", "todo", n(4), nil, 15},
+		{"T11", "task", "E4", "done", nil, nil, 16},
+		{"T12", "task", "", "todo", nil, n(5), 17},
 	}
 	links := [][3]string{
 		{"T8", "blocks", "T2"},     // T8 holds up open work
@@ -57,6 +61,7 @@ func TestReadWorkListsOpenTasksInStatusOrder(t *testing.T) {
 		{"T7", "blocked_by", "T4"}, // a task in a closed epic still waits
 		{"T2", "blocked_by", "T8"}, // the T8 pair from the other end
 		{"T1", "blocks", "T7"},     // T1 holds up T7
+		{"T12", "blocks", "E4"},    // an epic with no open tasks holds up nothing
 	}
 	work := readWork(t, seedOverview(t, rows, links))
 	describe := func(task WorkTask) string {
@@ -79,6 +84,7 @@ func TestReadWorkListsOpenTasksInStatusOrder(t *testing.T) {
 		"T2 unstarted E1 blocked:T8 unblocks:true",
 		"T8 unstarted - blocked: unblocks:true",
 		"T10 unstarted - blocked:X1 unblocks:false",
+		"T12 unstarted - blocked: unblocks:false",
 		"T7 unstarted E3 blocked:T1+T4 unblocks:false",
 		"T9 started - blocked: unblocks:false",
 	}
@@ -89,6 +95,7 @@ func TestReadWorkListsOpenTasksInStatusOrder(t *testing.T) {
 		"E1": "todo unstarted sequential 0/2 blocked:T3",
 		"E2": "todo unstarted prioritised 1/3 blocked:",
 		"E3": "closed completed prioritised 0/1 blocked:",
+		"E4": "todo unstarted prioritised 1/1 blocked:T12",
 	} {
 		epic := work.Epics[id]
 		scheduling := "prioritised"
