@@ -66,6 +66,14 @@ func DecodeProject(data []byte) (ProjectFile, error) {
 	if unknown := metadata.Undecoded(); len(unknown) != 0 {
 		return ProjectFile{}, fmt.Errorf("parse .fid.toml: unknown key %s", unknown[0])
 	}
+	// Struct decoding is case-insensitive, but TOML keys and IsDefined are
+	// case-sensitive. Check every original key, including inline/dotted keys,
+	// before using decoded values or presence checks.
+	for _, key := range metadata.Keys() {
+		if !projectKeyKnown(key) {
+			return ProjectFile{}, fmt.Errorf("parse .fid.toml: unknown key %s", key)
+		}
+	}
 	if metadata.IsDefined("project") && !validBackupProjectID(document.Project.ID) {
 		return ProjectFile{}, fmt.Errorf("project.id must be project- followed by 32 lowercase hexadecimal digits")
 	}
@@ -80,6 +88,42 @@ func DecodeProject(data []byte) (ProjectFile, error) {
 		return ProjectFile{}, err
 	}
 	return result, nil
+}
+
+func projectKeyKnown(key toml.Key) bool {
+	switch key[0] {
+	case "project":
+		return len(key) == 1 || len(key) == 2 && key[1] == "id"
+	case "checks":
+		if len(key) <= 2 { // Check names are project-defined and case-sensitive.
+			return true
+		}
+		if len(key) == 3 {
+			switch key[2] {
+			case "run", "timeout", "defined_by", "when_changed":
+				return true
+			}
+		}
+	case "lanes":
+		if len(key) == 1 {
+			return true
+		}
+		if key[1] != "routine" && key[1] != "standard" && key[1] != "assured" {
+			return false
+		}
+		if len(key) == 2 {
+			return true
+		}
+		if len(key) == 3 {
+			switch key[2] {
+			case "paths", "checks", "rework_cap", "token_budget", "auto_merge":
+				return true
+			}
+		}
+	case "review":
+		return len(key) == 1 || len(key) == 2 && key[1] == "test_adequacy"
+	}
+	return false
 }
 
 func decodeChecks(document projectDocument, result *ProjectFile) error {

@@ -116,3 +116,45 @@ func TestDecodeProjectPolicyRefusals(t *testing.T) {
 		})
 	}
 }
+
+func TestDecodeProjectPolicyKeySpelling(t *testing.T) {
+	t.Parallel()
+	for _, key := range []string{
+		"project", "id", "checks", "run", "timeout", "defined_by", "when_changed",
+		"lanes", "routine", "standard", "assured", "paths", "rework_cap", "token_budget", "auto_merge",
+		"review", "test_adequacy",
+	} {
+		t.Run(key, func(t *testing.T) {
+			contents := strings.ReplaceAll(policyExample, key, strings.ToUpper(key))
+			if _, err := DecodeProject([]byte(contents)); err == nil {
+				t.Fatalf("accepted schema key %q", strings.ToUpper(key))
+			}
+		})
+	}
+	for _, test := range []struct{ name, contents string }{
+		{"assured auto merge", "[lanes.assured]\nAUTO_MERGE = true"},
+		{"standard paths", "[lanes.standard]\nPATHS = ['src/**']"},
+		{"explicit checks", "[lanes.standard]\nCHECKS = []"},
+		{"case colliding keys", "[lanes.routine]\ntoken_budget = 1\nTOKEN_BUDGET = 2"},
+		{"case colliding tables", "[lanes.routine]\ntoken_budget = 1\n[LANES.routine]\ntoken_budget = 2"},
+		{"inline table", "lanes = { assured = { AUTO_MERGE = true } }"},
+		{"dotted key", "lanes.assured.AUTO_MERGE = true"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if _, err := DecodeProject([]byte(test.contents)); err == nil {
+				t.Fatalf("accepted non-schema spelling: %s", test.contents)
+			}
+		})
+	}
+}
+
+func TestDecodeProjectPreservesCheckNameCase(t *testing.T) {
+	t.Parallel()
+	file, err := DecodeProject([]byte("[checks.Unit]\nrun = ['upper']\ntimeout = '1m'\n[checks.unit]\nrun = ['lower']\ntimeout = '2m'\n[lanes.standard]\nchecks = ['Unit', 'unit']"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(file.Checks) != 2 || file.Checks["Unit"].Run[0] != "upper" || file.Checks["unit"].Run[0] != "lower" || !file.Lanes["standard"].ChecksSet {
+		t.Fatalf("case-sensitive check names = %#v", file)
+	}
+}
