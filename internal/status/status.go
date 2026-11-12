@@ -63,11 +63,11 @@ type Hint struct {
 
 // Build reads the project's work and its backup health.
 func Build(options Options) (Result, error) {
-	overview, err := issues.ReadOverview(issues.OverviewOptions{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir})
-	if err != nil {
-		return Result{}, fmt.Errorf("read status: %w", err)
-	}
-	planned, err := next.Read(next.Options{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, Clock: func() time.Time { return options.Now }})
+	return build(options, nil)
+}
+
+func build(options Options, afterOverview func()) (Result, error) {
+	overview, planned, err := readWork(options, afterOverview)
 	if err != nil {
 		return Result{}, fmt.Errorf("read status: %w", err)
 	}

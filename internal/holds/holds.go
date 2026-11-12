@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -52,7 +53,7 @@ func New(id, taskID, worktreeID, root, actor string, since time.Time, replaces *
 }
 
 // Open reads every hold that hasn't ended, by ID.
-func Open(conn *sql.DB) ([]Hold, error) {
+func Open(conn fiddb.Queryer) ([]Hold, error) {
 	rows, err := conn.Query(`SELECT id, task_id, worktree_id, worktree_root, actor, since, expires_at, replaces_hold_id
 		FROM holds WHERE ended_at IS NULL ORDER BY id`)
 	if err != nil {
