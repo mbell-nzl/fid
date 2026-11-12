@@ -81,6 +81,8 @@ func grammarOperation(cmd *cobra.Command) string {
 		return "capabilities.get"
 	case "fid ready":
 		return "ready.get"
+	case "fid next":
+		return "next.get"
 	case "fid resume":
 		return "projection.resume"
 	}
@@ -104,7 +106,7 @@ func grammarClassRows(t *testing.T) []grammarRow {
 	t.Helper()
 	root := newRootCommandAt(t.TempDir())
 	leaves, groups := grammarCommands(root)
-	if len(leaves) != 97 || len(groups) != 29 {
+	if len(leaves) != 98 || len(groups) != 29 {
 		t.Fatalf("live registry = %d leaves / %d groups", len(leaves), len(groups))
 	}
 	rows := []grammarRow{}
@@ -482,8 +484,8 @@ func grammarDomainRows(t *testing.T) []grammarRow {
 			}
 		})
 	}
-	if typed != 62 {
-		t.Fatalf("R18 corpus = %d want 62", typed)
+	if typed != 64 {
+		t.Fatalf("R18 corpus = %d want 64", typed)
 	}
 	return rows
 }

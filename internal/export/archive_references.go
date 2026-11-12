@@ -26,6 +26,9 @@ func (v *semanticValidator) validateReferences(event journal.Event) error {
 		if effect.Table == "run_recoveries" && effect.Values["prior_run_id"] != event.Aggregate.ID {
 			return fmt.Errorf("recovery predecessor differs from Event aggregate")
 		}
+		if event.EventType == "hold.taken" && effect.Table == "holds" && effect.Op == "insert" && effect.PK["id"] != event.Aggregate.ID {
+			return fmt.Errorf("hold identity differs from Event aggregate")
+		}
 		if event.EventType == "run.started" && effect.Table == "runs" && effect.PK["id"] != event.Aggregate.ID {
 			return fmt.Errorf("run identity differs from Event aggregate")
 		}

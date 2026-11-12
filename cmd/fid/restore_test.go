@@ -116,7 +116,18 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 		"--label", "restore", "--actor", "agent:developer")
 	second := parseCreatedIssueID(t, created)
 	runFIDCommand(t, workspace, "link", "add", second, "discovered_from", issueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
-	return workspace, v8IDs{issues: []string{issueID, second}, envelope: envelopeID, receipt: terminal.Data.ReceiptID}
+	// Two holds: one its task's cancellation ended, and one still open. The
+	// held tasks block the second task, so fid next takes them first.
+	ids := []string{issueID, second}
+	for _, priority := range []string{"0", "1"} {
+		_, created := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Held "+priority, "--priority", priority, "--actor", "human:mark")
+		ids = append(ids, parseCreatedIssueID(t, created))
+		runFIDCommand(t, workspace, "link", "add", ids[len(ids)-1], "blocks", second, "--from-type", "issue", "--to-type", "issue", "--actor", "human:mark")
+	}
+	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer")
+	runFIDCommand(t, workspace, "issue", "transition", ids[2], "--to", "cancelled", "--actor", "human:mark")
+	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer")
+	return workspace, v8IDs{issues: ids, envelope: envelopeID, receipt: terminal.Data.ReceiptID}
 }
 
 // v8State is everything V8 compares in a ledger, apart from its projection.
@@ -178,6 +189,14 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		}
 		state.reads[strings.Join(args, " ")] = result.stdout
 	}
+	// The holds, as the projection replayed from the journal has them. No
+	// read command lists them, and fid next's answer depends on the
+	// worktree it runs in.
+	holds := executeCommandForTest(workspace, "sql", "SELECT * FROM holds ORDER BY id")
+	if holds.err != nil || holds.stderr != "" {
+		t.Fatalf("fid sql holds = %#v", holds)
+	}
+	state.reads["holds"] = holds.stdout
 	return state
 }
 
@@ -342,6 +361,9 @@ func assertV8SameState(t *testing.T, before, after v8State) {
 		if after.reads[args] != output {
 			t.Errorf("fid --json %s after the restore:\n%s\nbefore:\n%s", args, after.reads[args], output)
 		}
+	}
+	if strings.Count(before.reads["holds"], `"end_reason":"task-cancelled"`) != 1 || strings.Count(before.reads["holds"], `"end_reason":null`) != 1 {
+		t.Fatalf("original holds = %s, want one its task's cancellation ended and one open", before.reads["holds"])
 	}
 	if !strings.Contains(after.reads["maintenance check"], `"status":"pass"`) || !strings.Contains(after.reads["maintenance check"], `"errors":[]`) {
 		t.Fatalf("maintenance check after the restore = %s, want a pass", after.reads["maintenance check"])

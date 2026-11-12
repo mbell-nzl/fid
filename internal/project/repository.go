@@ -125,7 +125,7 @@ func observeRepository(root string) (Observation, error) {
 		}
 		entries = append(entries, entry)
 	}
-	observation := Observation{Root: root, WorktreeID: sha256Digest([]byte(root)), HeadOID: head, TreeOID: tree, Entries: entries, Operation: operation, Unmerged: unmerged}
+	observation := Observation{Root: root, WorktreeID: WorktreeID(root), HeadOID: head, TreeOID: tree, Entries: entries, Operation: operation, Unmerged: unmerged}
 	if len(entries) == 0 {
 		return observation, nil
 	}
@@ -378,6 +378,12 @@ func validPath(value string) error {
 		return unsafeRepositoryReason("unsafe-path", "invalid repository path")
 	}
 	return nil
+}
+
+// WorktreeID identifies the worktree whose top level is root: sha256 of the
+// path, so a moved worktree is another worktree.
+func WorktreeID(root string) string {
+	return sha256Digest([]byte(root))
 }
 
 func sha256Digest(contents []byte) string {

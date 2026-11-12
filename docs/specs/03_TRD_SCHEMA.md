@@ -765,4 +765,43 @@ down drops only this column and restores schema 18 byte for byte. The active
 projection and export manifest schema are 19; projection meta format remains 5.
 Earlier journals that lack the field are unsupported and fail closed (DEC-270).
 
+### 8.6 Reset 1.4a - holds
+
+Migration 0020 adds the lean core's hold (ADR-0014; CLI spec, `fid next`):
+
+```sql
+CREATE TABLE holds (
+  id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL REFERENCES issues(id),
+  worktree_id TEXT NOT NULL,
+  worktree_root TEXT NOT NULL,
+  actor TEXT NOT NULL,
+  since TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  replaces_hold_id TEXT UNIQUE REFERENCES holds(id),
+  ended_at TEXT,
+  end_reason TEXT CHECK (end_reason IN ('replaced', 'task-completed', 'task-cancelled')),
+  CHECK ((ended_at IS NULL) = (end_reason IS NULL)),
+  CHECK (expires_at > since)
+);
+CREATE UNIQUE INDEX holds_one_open_per_task ON holds(task_id) WHERE ended_at IS NULL;
+CREATE UNIQUE INDEX holds_one_open_per_worktree ON holds(worktree_id) WHERE ended_at IS NULL;
+```
+
+A hold is open until it ends; whether it has lapsed is read from the clock
+against `expires_at`, so the partial indexes allow one open hold per task and
+per worktree, lapsed or not. Times are UTC RFC 3339, to the second; `actor`
+is the whole `agent:<id>` or `human:<id>`; `worktree_id` is the SHA-256 of
+`worktree_root`. One Event family writes holds:
+
+| Event | Aggregate | Effects, in order |
+|---|---|---|
+| `hold.taken` (command `next.claim`) | `hold`, the new hold | `holds` updates ending earlier holds (`ended_at`, `end_reason: replaced`, guarded by `ended_at` null), then the new hold's insert |
+| `issue.transitioned` | `issue` | gains an optional `holds` update, after the Issue's, ending its open hold as `task-completed` or `task-cancelled` |
+
+No other family may write a hold. The journal checks `hold.taken`'s Effects in
+stage order, and the export catalog refuses it in an archive of a schema
+before 20. The active projection and export manifest schema are 20.
+Migration 0020 down drops the table and its indexes.
+
 *Last updated: 2026-10-04 (Phase 24 task 1 storage baseline; DEC-275/278)*

@@ -1,0 +1,11 @@
+╭ fid next ──────────────────────────────────────────────── 2026-11-08 ╮
+
+  ● FID-71a0c2  Export validation                          in progress
+
+  Epic        ◆ FID-e3a1c0  Operating experience              0/4 done
+  Priority    P1
+
+  ⚠ Interrupted here: work stopped at 20:45 without a park.
+    Carry on from what's in this worktree.
+      → fid show FID-71a0c2
+╰──────────────────────────────────────────────────────────────────────╯

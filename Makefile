@@ -1,4 +1,4 @@
-.PHONY: fmt-check lint test coverage build check-restore
+.PHONY: fmt-check lint test coverage build check-restore check-two-worktree
 
 FMT_DIRS = cmd internal .github/scripts
 
@@ -21,6 +21,12 @@ test:
 # runs it too; this runs only it.
 check-restore:
 	go test -count=1 -run '^TestV8BackupWipeRestoreYieldsIdenticalState$$' ./cmd/fid
+
+# V3 (RESET.md), check:two-worktree: worktrees sharing one ledger never hold
+# the same task, and fid next respects dependencies. make test runs it too;
+# this runs only it.
+check-two-worktree:
+	go test -count=1 -run '^TestV3TwoWorktreesNeverHoldTheSameTask$$' ./cmd/fid
 
 coverage:
 	go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...

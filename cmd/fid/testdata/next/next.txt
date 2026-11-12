@@ -1,0 +1,10 @@
+╭ fid next ──────────────────────────────────────────────── 2026-11-08 ╮
+
+  ○ FID-9f13aa  Harden login rate limiting                       to do
+
+  Epic        ◆ FID-e3a1c0  Operating experience              0/4 done
+  Priority    P1
+
+  Passed over 1 task ahead of this one
+      → fid next --explain
+╰──────────────────────────────────────────────────────────────────────╯

@@ -60,8 +60,8 @@ func assertEveryProjectCommandRefuses(t *testing.T, start string, want repositor
 	t.Helper()
 	inputs := t.TempDir()
 	cases := projectCommandRefusalCases(t, start, inputs)
-	if len(cases) != 97 {
-		t.Fatalf("project commands = %d, want every live leaf except export validate and maintenance vacuum (97)", len(cases))
+	if len(cases) != 98 {
+		t.Fatalf("project commands = %d, want every live leaf except export validate and maintenance vacuum (98)", len(cases))
 	}
 	before := make([]map[string]workspaceSnapshotEntry, len(watched))
 	for index, directory := range watched {
@@ -135,7 +135,11 @@ func projectCommandRefusalCases(t *testing.T, outside, inputs string) []projectC
 			}
 		}
 		args = append(args, projectCommandFlags(key, outside)...)
-		cases = append(cases, projectCommandRefusalCase{leaf: key, operation: leafOperation(leaf), json: !diagnosticLeaf(leaf), args: args})
+		operation := leafOperation(leaf)
+		if key == "next" {
+			operation = "next.claim" // --actor needs --claim, which takes the task
+		}
+		cases = append(cases, projectCommandRefusalCase{leaf: key, operation: operation, json: !diagnosticLeaf(leaf), args: args})
 	}
 	sort.Slice(cases, func(i, j int) bool { return cases[i].leaf < cases[j].leaf })
 	return cases
@@ -170,6 +174,8 @@ func projectCommandFlags(key, outside string) []string {
 		return []string{"--from-type", "issue", "--to-type", "issue"}
 	case "link list":
 		return []string{"--type", "issue"}
+	case "next":
+		return []string{"--claim"}
 	case "gate resolve":
 		return []string{"--version", "1"}
 	case "export import":

@@ -1,0 +1,8 @@
+╭ fid next ──────────────────────────────────────────────── 2026-11-08 ╮
+
+  ○ Nothing ready here: 1 interrupted in fid-wt5, 1 blocked,
+    1 being worked in fid-wt3, 1 being worked in fid-wt3-tests,
+    1 being worked in fid-wt2, 2 not next in their epic's sequence,
+    1 being worked in fid-wt4
+      → fid next --explain
+╰──────────────────────────────────────────────────────────────────────╯
