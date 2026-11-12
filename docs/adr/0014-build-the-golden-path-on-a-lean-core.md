@@ -48,7 +48,8 @@ then decided each guarantee below, one at a time.
 - **Order.** This ADR's docs-only PR comes first, and Mark approves it. Then:
   1. 1.4a: `fid next --claim` on a hold record (Assured, V3).
   2. 1.4b: READY in `fid status`, with `next`'s verdict for each task, and
-     the `Working` and `Scheduling` rows in `fid show` (Assured).
+     the `Working` and `Scheduling` rows in `fid show` (Standard: Mark
+     lowered it on 11 November 2026, since it changes display only).
   3. 2.2a: policy from `origin/<default>`, the whole `.fid.toml` schema,
      trust by actor type and the policy snapshot (Assured, V7).
   4. 1.5a: `start`, `check`, `park` and the heartbeat (Assured).
@@ -56,7 +57,8 @@ then decided each guarantee below, one at a time.
   6. 1.6, 1.7, 1.8, then 2.1 onwards. 2.2b (lane floor, hard floors and
      `fid waive`) keeps 2.2's old place.
 - **The kernel goes; it doesn't move under `fid admin`.** Each slice ends
-  with every remaining test passing, none weakened.
+  with every remaining test passing, none weakened. There's no `fid admin`
+  at all, since nothing would be under it (Mark, 11 November 2026).
   - 1.5b rebuilds V8, the export fixtures and every other test that outlives
     the kernel on lean check results, with their helpers, before any kernel
     code goes. They keep their assertions: V8 still compares the restored
@@ -69,8 +71,21 @@ then decided each guarantee below, one at a time.
     also removes `fid ready`, which shows one task by sequence or priority
     and ignores blockers; `fid next` (1.4a) replaces it (Mark, 11 November
     2026).
+  - 1.5c also removes Concerns, which 2.1's findings and discovered issues
+    replace; requirement and decision references; `fid capabilities`, since
+    2.4 checks the loop contract through the `contract_version` every JSON
+    reply carries; `fid stats`, which reads V1 run telemetry; and
+    `fid workflow define` and `assign`, since the task states are fixed
+    (Mark, 11 November 2026; the decisions record lists what stays).
+  - 1.5c removes `fid workflow list` too, so the whole of `fid workflow`
+    goes, since no configurable workflows remain to list. `fid artifact`
+    stays: 1.5b and 1.5c move it onto the lean check results, which keep
+    their Artifacts (settled 12 November 2026, following Mark's decision).
   - 1.5d removes its journal and export catalog entries, its maintenance
-    checks and manifest-v1 validation, and drops its tables.
+    checks and manifest-v1 validation, and drops its tables. It also drops
+    the tables and the journal and export catalog entries of Concerns and
+    of requirement and decision references (settled 12 November 2026,
+    following Mark's decision).
 - **Every new record is complete when it lands.** The PR that adds an event
   family registers it in the journal's and the export's catalogs and adds its
   state to V8's comparison. The removal rebuilds V8 and the export fixtures
@@ -97,8 +112,9 @@ then decided each guarantee below, one at a time.
 
 - fid reads `.fid.toml` only from the local `origin/<default branch>` ref. It
   never fetches the policy remote, so policy is as fresh as the last fetch.
-  Backup and restore still fetch their own target. 1.6 decides whether
-  `fid done` fetches. ADR-0013's three network uses are unchanged.
+  Backup and restore still fetch their own target. `fid done` asks `gh` and
+  never runs `git fetch` (Mark, 11 November 2026). ADR-0013's three network
+  uses are unchanged.
 - Built-in defaults apply while the file doesn't exist on origin. An invalid
   `.fid.toml` there is refused, with no fallback to the defaults.
 - 2.2a defines the whole schema: checks, Assured paths, check-defining paths,
@@ -131,11 +147,23 @@ then decided each guarantee below, one at a time.
   - Parking a task as interrupted works the same way.
   - A lapse is never taken as proof that work stopped (ADR-0007).
 - **A lapsed hold on an unstarted task** frees the task for anyone.
-- **Takeover.** Only a person takes over a task. A takeover ends any hold and
-  is recorded. 1.5a names the command.
+- **Takeover.** Only a person takes over a task, with
+  `fid takeover <task> --actor human:<name> --reason "<why>"` (Mark, 11
+  November 2026). A takeover ends any hold, live or lapsed, is recorded,
+  and gives the person a hold in their current worktree. The old session's
+  next heartbeat is refused, so its loop stops.
 - fid never touches git state: no reset, clean, stash, checkout or commit.
 - A task kept for a worktree that no longer exists is a NEEDS YOU item.
-- Parking while waiting for Mark is designed in 1.5a.
+- **Waiting for Mark** (Mark, 11 November 2026). The agent parks the task
+  with `fid park --waiting "<question>"`. `next` skips it as
+  `waiting-for-you`, and it stays kept for its worktree. `fid status` shows
+  the question under NEEDS YOU, and a person answers with
+  `fid answer <task> "<text>"`. That worktree's next `next --claim` resumes
+  the task with the answer in the JSON.
+- **A worktree whose task waits for Mark gets no other work** (Mark, 12
+  November 2026). Until he answers, that worktree's `next` returns `none`,
+  saying it's waiting on him for that task. Other worktrees carry on. This
+  never mixes two tasks' changes in one worktree.
 
 ### Rework cap and token budget
 
@@ -159,7 +187,12 @@ then decided each guarantee below, one at a time.
   state of the completed category, and points at `fid done`.
 - There's no manual override. Work that won't be merged is cancelled, and
   only a person cancels.
-- Subtasks keep plain transitions. 1.6 decides how an epic closes.
+- Subtasks keep plain transitions. A person closes an epic with
+  `fid done <epic>`, refused while any of its tasks is open, and an epic
+  whose tasks are all finished is a NEEDS YOU item (Mark, 11 November 2026).
+  `fid issue transition` refuses to complete an epic, as it does a task, and
+  `fid done <epic>` records the close as a person's decision (settled 12
+  November 2026, following Mark's decision).
 - The refusal lands with `fid done` in 1.6.
 
 ### Reviews
@@ -185,7 +218,9 @@ then decided each guarantee below, one at a time.
 - The fallback also covers the separate review that the decisions record's
   work model adds for Assured work (Mark, 11 November 2026). That review
   still runs, as another fresh session, which is the same model when the
-  other isn't available.
+  other isn't available. Until 1.6's `done` enforces it on fid's own work,
+  the reset's own Assured PRs keep one review per PR, as AGENTS.md step 7
+  says (Mark, 11 November 2026).
 - fid records which model built the change and which model reviewed each
   round (2.1). When no review of an Assured change came from a model other
   than the builder's, the approval view (2.3) and `fid show` say "no
@@ -200,6 +235,8 @@ then decided each guarantee below, one at a time.
   - Lowering a lane and approving a change bind to the change's fingerprint,
     so an edit makes them stale (D10).
   - A takeover and extra rework rounds bind to the task.
+  - An answer binds to the task and the question it answers (settled 12
+    November 2026, following Mark's decision).
   - Closing a finding binds to the finding.
   - Approving an epic binds to its validation list (3.1).
 - Each kind keeps its own command, such as `fid waive` and `fid approve`.
@@ -208,9 +245,11 @@ then decided each guarantee below, one at a time.
   can't be waived: changes to `.fid.toml` and CI workflows are always Assured.
   If the change is edited after a waiver, the task returns to its floor, and
   `fid status` shows the waiver as stale.
-- Each other kind arrives with the task that adds its command: takeover in
-  1.5a; extra rounds, closing findings and accepting discovered work (D6) in
-  2.1; approval in 2.3; and epic approval in 3.1.
+- Each other kind arrives with the task that adds its command: takeover and
+  answering a task waiting for Mark (Mark, 11 November 2026) in 1.5a;
+  closing an epic (settled 12 November 2026) in 1.6; extra rounds, closing
+  findings and accepting discovered work (D6) in 2.1; approval in 2.3; and
+  epic approval in 3.1.
 - The record replaces the kernel's Deviations, Human Outcomes and Attention
   Items.
 
@@ -234,6 +273,9 @@ then decided each guarantee below, one at a time.
     the hand-off policy required;
   - CI green on the merge commit. `done` records CI's run as a check result
     whose source is CI: the run's ID, the commit and the conclusion.
+- What else `done` needs in each lane (reviews, Mark's approval, and an
+  Assured PR's `## Rollback` section) is in the decisions record. With no
+  CI run on the merge commit, `done` waits (Mark, 11 November 2026).
 - A push after the checks means running them again. CI skips the integration
   tests, so for those the local result is the only evidence.
 - A `.fid.toml` change merged after hand-off applies from the task's next
@@ -244,7 +286,9 @@ then decided each guarantee below, one at a time.
 - **Clean cut.** 1.5d removes the kernel's event types from the journal and
   export catalogs. A journal or archive that holds them is refused with the
   existing `schema-unsupported`. There is no converter. Import already needs
-  the archive's projection schema to match the running fid's.
+  the archive's projection schema to match the running fid's. From 3.2,
+  restore rebuilds the projection from the archive's journal instead, and
+  refuses an archive from a newer fid (Mark, 11 November 2026).
 - 1.5d also stops `fid export validate` accepting manifest-v1 archives, and
   removes the test that pins it. That's a product change Mark approved, not a
   weakened test.
@@ -258,15 +302,19 @@ then decided each guarantee below, one at a time.
 - 1.4a, 2.2a and 1.5a are Assured, since each adds a migration and event
   families. 2.1 and 2.6 are Assured too, since both will add a migration, for
   review rounds and usage records (Mark, 11 November 2026). 1.4b only changes
-  display, but keeps the Assured lane of the 1.4 it was split from, since
+  display, with no migration, so Mark lowered it to Standard (11 November
+  2026); it had kept the Assured lane of the 1.4 it was split from, since
   only Mark lowers a lane.
 - Tests of the kernel leave `make test` and the integration suite with the
   kernel, which saves scarce CI minutes.
 - 3.2's migration squash covers only lean tables.
 - The kit's four-step Activation commands go too. Their only outside user is
   the frozen kit V2 branch.
-- This ADR doesn't decide whether Concerns, requirement and decision
-  references, and `fid capabilities` go with the kernel. 1.5c's PR asks Mark.
+- Concerns, requirement and decision references, and `fid capabilities` go
+  with the kernel in 1.5c, and so do `fid stats` and `fid workflow define`
+  and `assign` (Mark, 11 November 2026), and `fid workflow list` (settled 12
+  November 2026). This ADR had left the first three for 1.5c's PR to ask
+  Mark.
 
 ## Superseded and amended records
 
@@ -279,4 +327,4 @@ then decided each guarantee below, one at a time.
 | ADR-0008 | Review Records bound to the Envelope revision; Envelope budgets and revision triggers; Attention | **Amended.** Rework stays on the original Issue. Rounds bind to the fingerprint. The rework cap and the token budget come from `.fid.toml`, and NEEDS YOU replaces Attention. Only a later round or a person closes a major finding. |
 | ADR-0009 | Multi-Issue Envelope revision and partial progress | **Superseded.** Envelopes are removed. |
 | ADR-0011 | The durable model's Work Envelopes, Claims and Runs, Stops, Attention, Kit Activation state, Gate Definition Registrations, Execution Attempts, Evidence Records, Obligation evaluation, Deviations and Human Outcomes | **Amended.** These go with the kernel. Issues, the journal, check results with Artifacts, review rounds and findings stay, joined by holds, the policy snapshot and a person's decisions. Its ownership and durability test stands. |
-| Decisions record | D2, D5, D6, D7, D8, D9, F3, review outcome item 2, the work model's same-model review and Assured review, the later list | **Amended** on 10 and 11 November 2026, marked in place. |
+| Decisions record | D2, D5, D6, D7, D8, D9, F3, review outcome item 2, the work model's merge table, same-model review and Assured review, the later list | **Amended** on 10, 11 and 12 November 2026, marked in place. Its "Decided 11 November 2026" and "Decided 12 November 2026" sections list Mark's decisions of those days, and the gaps settled from them. |

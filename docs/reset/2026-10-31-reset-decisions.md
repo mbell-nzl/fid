@@ -4,7 +4,10 @@ Decisions session, 30–31 October 2026, run as a grilling session against
 `2026-10-29-fid-kit-reset-proposal.html` (now superseded). Two Opus 5.5 second
 opinions informed D2, and a fresh-context review of the result led to the
 amendments marked below. These decisions feed ADR-0013 and `RESET.md`.
-Amendments dated 10 and 11 November 2026 record the lean core (ADR-0014).
+Amendments dated 10, 11 and 12 November 2026 record the lean core
+(ADR-0014). "Decided 11 November 2026" and "Decided 12 November 2026" below
+list Mark's decisions of those days for tasks 1.4b to 3.2, and the gaps
+settled from them, each also marked where its topic lives.
 
 ## Goal
 
@@ -54,6 +57,121 @@ recommendations:
 8. Kill criteria restored and given quality measures.
 9. The proposal is superseded, not revised; `RESET.md` is written from these
    decisions.
+
+## Decided 11 November 2026
+
+Mark made these decisions on 11 November 2026, for tasks 1.4b to 3.2. Each
+is also marked in the section its topic belongs to, and the tasks' rows in
+`RESET.md` point here.
+
+1. **1.4b's lane is Standard.** Mark lowered it: 1.4b changes display only,
+   with no migration. ADR-0014 had kept it Assured, the lane of the 1.4 it
+   was split from, since only Mark lowers a lane.
+2. **The reset's own Assured PRs keep one review per PR**, as AGENTS.md
+   step 7 says, unchanged, until 1.6's `done` enforces the work model's
+   separate Assured review on fid's own work.
+3. **Task workflow states** (built in 1.5a). A task's states are
+   `todo → in_progress → in_review → done`, plus `cancelled`. Rework goes
+   from `in_review` back to `in_progress`. fid's commands move tasks between
+   them: `start`, the hand-off, a review round asking for changes, and
+   `done`. `dev_complete`, `qa_review`, `qa_block`, `failed_gate` and
+   `qa_pass` are dropped. Epics become `todo`, `in_progress`, `done` and
+   `cancelled`: `wrapped` is dropped, and `done` takes the place of today's
+   `closed`. Subtasks are unchanged. Nothing needs to stay compatible, since
+   no real ledger exists before 3.2.
+4. **Takeover** (1.5a). `fid takeover <task> --actor human:<name> --reason
+   "<why>"` ends any hold on the task, live or lapsed, records the person's
+   decision (kind `takeover`) and gives the person a hold in their current
+   worktree. The old session's next heartbeat is refused, so its loop stops.
+   V1's two commands are `fid status`, then `fid takeover`. fid never touches
+   git state, so the old worktree's changes stay where they are.
+5. **Waiting for Mark** (1.5a). The agent runs `fid park --waiting
+   "<question>"`. `next` skips the task as `waiting-for-you`, and the task
+   stays kept for that worktree. `fid status` shows the question under
+   NEEDS YOU, with `fid answer <task> "<text>"`. The answer is a person's
+   decision of a new kind, `answer`, which fid refuses from `agent:*`. That
+   worktree's next `next --claim` resumes the task with the answer in the
+   JSON, so the loop passes it to the agent.
+6. **1.5c also removes:**
+   - Concerns, which 2.1's findings and discovered issues replace;
+   - requirement references and decision references;
+   - `fid capabilities`, since 2.4 checks the loop contract through
+     `contract_version`, which every JSON reply carries;
+   - `fid stats`, which reads V1 run telemetry; 2.6's usage capture
+     replaces it;
+   - `fid workflow define` and `fid workflow assign`, since item 3 fixes
+     the states.
+
+   These stay: `issue`, `label`, `link`, `show`, `status`, `next`, `init`,
+   `backup`, `restore`, `export`, `journal`, `rebuild`, `sql`,
+   `maintenance` and `activity`. This answers ADR-0014's open question of
+   whether Concerns, requirement and decision references and
+   `fid capabilities` go with the kernel.
+7. **No `fid admin`.** Nothing would be under it once the kernel is gone.
+   D5's agent hook still denies agents `fid approve`, `fid waive` and
+   `gh pr merge`, and only `--json` and `--verbose` stay exempt from D9's
+   leak test.
+8. **What `done` requires** (1.6). As in the work model's table, each lane
+   adds to the one before:
+   - Every lane: the PR is merged; CI is green on the merge commit; and
+     every check the hand-off policy required passed on the PR head's tree.
+   - Routine: plus a test-adequacy review when test paths changed.
+   - Standard: plus a review round with no open major finding.
+   - Assured: plus the separate review (or the "no other-model review"
+     flag), Mark's approval bound to the change's fingerprint, and a
+     `## Rollback` section in the PR description, which `done` checks for.
+   - The merge judge stays in shadow through the trial. It's never
+     required.
+   - With no CI run on the merge commit, `done` waits ("waiting for CI").
+     There's no key to opt out until a project needs one.
+   - `done` asks `gh`. It never runs `git fetch`, which settles whether
+     `fid done` fetches (ADR-0014; F3).
+9. **Epics close by a person** (1.6), with `fid done <epic>`, which is
+   refused while any of the epic's tasks is open. An epic whose tasks are
+   all finished shows under NEEDS YOU. 3.1 later adds the epic's
+   validations to that check.
+10. **Restoring across a fid upgrade** (3.2). Restore ignores the archive's
+    projection and rebuilds it from the archive's journal with the running
+    fid, so any older archive restores. An archive from a newer fid is
+    refused. This settles the later-list item. ADR-0014's clean cut still
+    refuses a journal that holds the kernel's events.
+11. **Review work in `next`** (2.1). `next` hands out review work as kind
+    `review`, to an actor that didn't build the task, so a crash between
+    the hand-off and the review loses nothing. The 2.5 loop uses it.
+
+## Decided 12 November 2026
+
+Mark made two more decisions on 12 November 2026, numbered on from the day
+before. Each is also marked in its topic's section and its task's row in
+`RESET.md`.
+
+12. **A worktree whose task waits for Mark gets no other work** (1.5a).
+    While its task is parked waiting for Mark (item 5), that worktree's
+    `next` returns `none`, saying it's waiting on him for that task, until
+    he answers. Other worktrees carry on. This never mixes two tasks'
+    changes in one worktree, since fid never touches git.
+13. **Review work's place in `next`'s order** (2.1). `next` hands out
+    resume, then rework, then review, then work that unblocks other work,
+    then new work. Finishing open work beats starting new work, so PRs
+    don't pile up waiting for review. Review work comes as kind `review`
+    (item 11).
+
+The orchestrating session settled the gaps below the same day. They follow
+from Mark's decisions as transactional details, and aren't his own words:
+
+- **`fid workflow list`** goes in 1.5c with the rest of `fid workflow`,
+  following item 6: with the states fixed (item 3), no configurable
+  workflows remain to list.
+- **`fid artifact` stays**, following item 6. 1.5b and 1.5c move it onto
+  the lean check results, which keep their Artifacts.
+- **1.5d drops** the tables and the journal and export catalog entries of
+  Concerns, requirement references and decision references, as it does
+  the kernel's, following item 6.
+- **An `answer` decision** binds to the task and the question it answers,
+  following item 5.
+- **Closing an epic**, following item 9. `fid issue transition` refuses to
+  complete an epic, as it does a task. `fid done <epic>` records the close
+  as a person's decision, of a kind fid refuses from `agent:*`.
 
 ## Products
 
@@ -113,13 +231,20 @@ and validations.
   2026).
 - A golden-output test fails if human-facing output (including refusals)
   mentions kernel-only nouns (Envelope, Activation, Obligation, Attempt,
-  Attention Item) or kernel IDs (`ENV-`, `STP-`, `ATT-`). `--json`,
-  `--verbose` and `fid admin` are exempt. A concept that keeps leaking is the
-  evidence to collapse or rename it.
+  Attention Item) or kernel IDs (`ENV-`, `STP-`, `ATT-`). `--json` and
+  `--verbose` are exempt. (Amended 11 November 2026, item 7: `fid admin` was
+  exempt too, and there's no `fid admin`.) A concept that keeps leaking is
+  the evidence to collapse or rename it.
 - Kernel commands are deleted with the kernel in 1.5c (amended 10 November
   2026). Originally they moved under `fid admin`, hidden from main help, and
   any the facade didn't use were deleted at trial end. The leak test above
-  stays.
+  stays. 1.5c also removes Concerns, requirement and decision references,
+  `fid capabilities`, `fid stats` and `fid workflow define` and `assign`,
+  and there's no `fid admin` (decided 11 November 2026, items 6 and 7).
+  (Settled 12 November 2026, following item 6: `fid workflow list` goes
+  too, so the whole of `fid workflow` goes; `fid artifact` stays, moved
+  onto the lean check results; and 1.5d drops the tables and catalog
+  entries of Concerns and of requirement and decision references.)
 - A net Go line budget applies (set in `RESET.md`).
 
 ## Foundations
@@ -772,7 +897,12 @@ two-worktree test. Mark expects mostly one sequential loop.
   Mark are parked and hold no claim. (Amended 10 November 2026, ADR-0014:
   the claim is a hold, with its own ID sent with every heartbeat, check, park
   and `done`. fid refuses a stale session's heartbeat, so its loop stops
-  loudly. 1.5a designs parking while waiting for Mark.)
+  loudly. 1.5a designs parking while waiting for Mark.) (Amended 11 November
+  2026, item 5: the agent parks with `fid park --waiting "<question>"`, the
+  task stays kept for its worktree, and a person answers with `fid answer`.)
+  (Decided 12 November 2026, item 12: while the task waits, that worktree's
+  `next` returns `none`, saying it's waiting on Mark for that task; other
+  worktrees carry on.)
 - Interruptions (crash, usage limit): the loop parks the task as interrupted
   (`fid park`) and stops. `fid next` serves it first, to the same worktree,
   as kind `resume` with a new hold linked to the old one (amended 10 November
@@ -784,7 +914,8 @@ two-worktree test. Mark expects mostly one sequential loop.
   task frees it for anyone. Only a person takes over a task; the takeover ends
   any hold and is recorded, and 1.5a names the command. fid never touches
   git state. A task kept for a worktree that no longer exists is a NEEDS YOU
-  item.
+  item. (Amended 11 November 2026, item 4: the command is `fid takeover`,
+  which gives the person a hold in their current worktree.)
 - Shared-file conflicts are resolved at merge, as human developers do; the
   second PR's builder rebases as rework. ADR-0006 disjoint-scope proofs wait
   for real need.
@@ -904,6 +1035,8 @@ environment allowlist stays.
     never fetches the policy remote itself, so policy is as fresh as the last
     fetch. Backup and restore still fetch their own target; 1.6 decides
     whether `fid done` fetches. This replaces "after a fetch" above.
+    (Decided 11 November 2026, item 8: `fid done` asks `gh` and never runs
+    `git fetch`.)
   - An invalid `.fid.toml` on origin is refused, with no fallback to the
     built-in defaults.
   - A policy snapshot replaces the Activation: the source (commit X, or the
@@ -918,10 +1051,11 @@ environment allowlist stays.
 **D5 / F4 Threat model: honest but fallible agents** on a single-user
 machine. Not defending against deliberately adversarial agents. A deceptive
 agent could forge a local approval; that is accepted. Friction: a hook denies
-agents `fid approve`, `waive` and `admin`, and `gh pr merge`; fid refuses
-approval without an interactive person and refuses `agent:*` actors; the
-approval prompt shows the diffstat, checks and review verdicts. atlas is out
-of scope for now.
+agents `fid approve`, `fid waive` and `gh pr merge` (amended 11 November
+2026, item 7: it named `fid admin` too, and there's no `fid admin`); fid
+refuses approval without an interactive person and refuses `agent:*`
+actors; the approval prompt shows the diffstat, checks and review verdicts.
+atlas is out of scope for now.
 
 - **Trust by actor type** (amended 10 November 2026, ADR-0014). Any
   well-formed actor is trusted by its type, built into fid; `.fid.toml` has
@@ -929,8 +1063,11 @@ of scope for now.
   plus a person's decisions; `service:*` gets nothing for now.
 - **A person's decisions** (amended 10 November 2026, ADR-0014). fid refuses
   `agent:*` actors for every kind: approving, waiving a lane, taking over,
-  allowing more rework rounds, closing a finding, accepting discovered work
-  and approving an epic. One record holds them all.
+  allowing more rework rounds, closing a finding, accepting discovered work,
+  approving an epic, answering a task parked while waiting for Mark (added
+  11 November 2026, item 5) and closing an epic (settled 12 November 2026,
+  following item 9). One record holds them all. An answer binds to the task
+  and the question it answers (settled 12 November 2026, following item 5).
 
 **D10 Approvals go stale** (amended). Reviews and approvals bind to the
 change's fingerprint (`git patch-id` of the branch diff); checks bind to the
@@ -956,6 +1093,13 @@ for confirmation".
   tree for every check the hand-off policy required, plus CI green on the
   merge commit, recorded as a check result whose source is CI. Only `done`
   completes a task: `fid issue transition` refuses to (1.6).
+- **What `done` requires in each lane, and how an epic closes** (decided 11
+  November 2026, items 8 and 9, for 1.6). With no CI run on the merge
+  commit, `done` waits ("waiting for CI"). It asks `gh` and never runs
+  `git fetch`. A person closes an epic with `fid done <epic>`, refused while
+  any of its tasks is open. (Settled 12 November 2026, following item 9:
+  `fid issue transition` refuses to complete an epic too, and
+  `fid done <epic>` records the close as a person's decision.)
 - **Details** (decided 7 November 2026, for task 0.7):
   - Why: CI used about 1,650 billed minutes from 1 to 7 November, against
     the 2,000 a month GitHub Free includes across Mark's private repos.
@@ -997,8 +1141,8 @@ for confirmation".
 | Lane | Needed before merge | Merged by |
 |---|---|---|
 | Routine | Local checks; test-adequacy review if tests changed | Mark, until `auto_merge` is enabled for the lane |
-| Standard | Plus a code review (other model) and the judge's call | Mark, until `auto_merge` is enabled for the lane |
-| Assured | Plus a separate review on the other model by default (amended 11 November 2026), Mark's approval and a rollback note | Mark |
+| Standard | Plus a code review (other model) with no open major finding; the judge's call is recorded in shadow, never required (amended 11 November 2026, item 8) | Mark, until `auto_merge` is enabled for the lane |
+| Assured | Plus a separate review on the other model by default (amended 11 November 2026), Mark's approval and a rollback note: a `## Rollback` section in the PR description, which `done` checks for (item 8) | Mark |
 
 - **Through the trial, Mark merges everything.** A merge judge (fresh
   frontier-model session, MERGE or HOLD, hold-only) runs in shadow and is
@@ -1026,6 +1170,9 @@ for confirmation".
   - On 11 November 2026, Mark extended the fallback to Assured work's
     separate review. That review still runs, as another fresh session,
     which is the same model when the other isn't available.
+  - The reset's own Assured PRs keep one review per PR, as AGENTS.md step 7
+    says, until 1.6's `done` enforces the separate Assured review on fid's
+    own work (decided 11 November 2026, item 2).
   - fid records which model built the change and which model reviewed each
     round (2.1). When no review of an Assured change came from a model other
     than the builder's, the approval view (2.3) and `fid show` say "no
@@ -1082,7 +1229,12 @@ for confirmation".
 - `fid next` order: resume interrupted (same worktree); rework; tasks that
   unblock approved work; unstarted tasks by epic order and priority. It skips
   claimed, blocked, waiting-for-Mark, untriaged and unapproved-epic tasks,
-  each with a typed reason for `--explain`.
+  each with a typed reason for `--explain`. (Amended 11 November 2026: a
+  task waiting for Mark is skipped as `waiting-for-you`, item 5, and `next`
+  also hands out review work, as kind `review`, item 11.) (Decided 12
+  November 2026: review work comes after rework and before tasks that
+  unblock approved work, item 13, and a worktree whose task waits for Mark
+  gets `none`, item 12.)
 
 ## Rollout
 
@@ -1292,12 +1444,18 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   in 1.5b–1.5d, ADR-0014.)
 - Generic retry-exhausted, dead-code cleanup. (Amended 10 November 2026: the
   Envelope revision-1 limit is moot, since Envelopes go with the kernel.)
-- Restoring across a fid upgrade (found 10 November 2026). Import and
-  restore need the archive's projection schema to equal the running fid's
+- Restoring across a fid upgrade (found 10 November 2026; decided 11
+  November 2026, item 10, for 3.2). Import and restore need the archive's
+  projection schema to equal the running fid's
   (`internal/export/archive_validation.go`), so after an upgrade the newest
   backup can't be restored by the new fid until the next backup runs. Raise
   it with 3.2, before the permanent ledger; the restore drill should cover
-  it.
+  it. Mark decided that restore ignores the archive's projection and
+  rebuilds it from the archive's journal with the running fid, so any older
+  archive restores, and refuses an archive from a newer fid.
+- A key to opt out of `done` waiting for CI on the merge commit, for a
+  project whose merge commits get no CI run. Not until a project needs one
+  (Mark, 11 November 2026, item 8).
 - Replay reports `line: 0` for a current-event prior conflict (found in
   1.1d2, #39). Fix it after the trial.
 - yoyu migration (after the trial).
