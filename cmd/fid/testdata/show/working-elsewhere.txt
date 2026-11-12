@@ -1,0 +1,9 @@
+╭ FID-0d4e8b ──────────────────────────────────────────────────── task ╮
+
+  ○ Document backup age                                          to do
+
+  Epic        ◆ FID-e3a1c0  Operating experience              0/4 done
+  Priority    P2
+  Working     in /home/mark/projects/fid-wt3 by agent:claude-builder,
+              since 21:40, until 22:40
+╰──────────────────────────────────────────────────────────────────────╯

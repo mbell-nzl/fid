@@ -1,0 +1,9 @@
+╭ FID-1f2e3d ──────────────────────────────────────────────────── task ╮
+
+  ● Contract fields and exit codes                         in progress
+
+  Epic        ◆ FID-8a1b2c  Loop contract                     0/3 done
+  Working     ⚠ interrupted in /home/mark/projects/fid-wt2 by
+              agent:claude-builder: work stopped at 20:00 without a
+              park
+╰──────────────────────────────────────────────────────────────────────╯

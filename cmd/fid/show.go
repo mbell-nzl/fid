@@ -28,7 +28,8 @@ func newShowCommand() *cobra.Command {
 			if err != nil {
 				return renderShowFailure(cmd, err)
 			}
-			result, err := show.Build(show.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), ID: args[0]})
+			environment := commandDisplayEnvironment(cmd)
+			result, err := show.Build(show.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), ID: args[0], Now: environment.now()})
 			if err != nil {
 				return renderShowFailure(cmd, err)
 			}
@@ -39,7 +40,7 @@ func newShowCommand() *cobra.Command {
 			if jsonMode {
 				return cli.WriteSuccess(cmd.OutOrStdout(), "issue.show", result.Fields(), nil)
 			}
-			return writeHuman(cmd, commandDisplayEnvironment(cmd), func(w io.Writer, renderer display.Renderer) error {
+			return writeHuman(cmd, environment, func(w io.Writer, renderer display.Renderer) error {
 				return show.WriteText(w, result, renderer)
 			})
 		},

@@ -107,7 +107,9 @@
       "done": 1,
       "total": 3
     },
+    "scheduling": null,
     "state": null,
-    "task": null
+    "task": null,
+    "working": null
   }
 }

@@ -1,0 +1,12 @@
+╭ FID-8a1b2c ──────────────────────────────────────────────────── epic ╮
+
+  ◆ Loop contract                                          in progress
+
+  Progress    ░░░░░░░░░░  0/3 tasks done
+  Scheduling  one at a time, in sequence
+
+  TASKS
+  ● FID-1f2e3d  Contract fields and exit codes             in progress
+  ○ FID-2f2e3d  Golden tests for the contract                    to do
+  ○ FID-3f2e3d  Scenario test for rework                         to do
+╰──────────────────────────────────────────────────────────────────────╯

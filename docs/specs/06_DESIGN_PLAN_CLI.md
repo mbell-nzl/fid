@@ -311,42 +311,32 @@ check codes; no other code or reason. Outside a repository and at an unsafe
 ledger location, `restore` refuses as every project command does
 (section 1).
 
-`fid status` shows what needs you, the epics and tasks in progress and to
-do, and how current the ledger's backup is (decisions record D4 / F1, 8
-November 2026 details for task 1.3). It takes no arguments and one flag,
+`fid status` shows what needs you, the epics and tasks in progress and
+ready, and how current the ledger's backup is (decisions record D4 / F1
+and D8, tasks 1.3 and 1.4b). It takes no arguments and one flag,
 `--all`. It reads the projection, the backup record and user config, and
 writes nothing. Text output is a rounded box 72 columns wide, headed
 `fid status` and today's local date:
 
 ```text
-╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
-
-  NEEDS YOU
-  ✗ No backup for 4 days: last backed up 2026-11-04 19:00
-      → fid backup
+╭ fid status ────────────────────────────────────────────── 2026-11-11 ╮
 
   IN PROGRESS
-  ◆ FID-e3a1c0  Operating experience              ██░░░░░░░░  2/7 done
+  ◆ FID-e3a1c0  Operating experience              ██░░░░░░░░  1/4 done
       ● FID-71a0c2  Export validation                      in progress
-      ● FID-3b9e01  Tidy resume output                       qa review
-  ● FID-5d2f77  Fix journal replay line                    in progress
-  ● FID-d1d1d1  Leftover started task                     dev complete
+  ◆ FID-8a1b2c  Loop contract                     ░░░░░░░░░░  0/4 done
+      ● FID-1f2e3d  Contract fields and exit …  interrupted in fid-wt2
 
-  TO DO
+  READY
   ◆ FID-e3a1c0  Operating experience                           3 to do
-      ○ FID-9f13aa  Harden login rate limiting
       ○ FID-c2d4e5  Retry a rejected backup pu…  blocked by FID-71a0c2
-      ○ FID-0d4e8b  Document backup age
-  ◆ FID-8a1b2c  Loop contract                                  6 tasks
-      ○ FID-1f2e3d  Contract fields and exit codes
-      ○ FID-2f2e3d  Golden tests for the co…  blocked by FID-1f2e3d +1
-      ○ FID-3f2e3d  Scenario test for rework
-      ○ FID-4f2e3d  Scenario test for interruption
-      ○ FID-5f2e3d  Scenario test for two worktrees
-      ○ FID-6f2e3d  Version the contract
-  ◆ FID-c0ffee  Kit install                                   no tasks
+      ○ FID-9f13aa  Harden login rate limiting                    next
+      ○ FID-0d4e8b  Document backup age             working in fid-wt3
+  ◆ FID-8a1b2c  Loop contract                                  3 to do
+      ○ FID-2f2e3d  Golden tests for the contract     after FID-1f2e3d
+      ○ FID-3f2e3d  Scenario test for rework          after FID-1f2e3d
+      ○ FID-4f2e3d  Version the contract              after FID-1f2e3d
   ○ FID-77aa01  Tidy help text
-  +2 more: fid status --all
 ╰──────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -360,15 +350,22 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
   its tasks that aren't cancelled.
 - **IN PROGRESS** shows each in-progress epic, with its bar and count, and
   its started tasks beneath it with their workflow state, underscores read
-  as spaces. Started tasks with no listed epic follow, none or a hidden one.
-- **TO DO** shows every unstarted task: under its in-progress epic (`N to
+  as spaces. An interrupted task (a lapsed hold on a started task) shows
+  `interrupted in <dir>` instead. Started tasks with no listed epic follow,
+  none or a hidden one.
+- **READY** shows every unstarted task: under its in-progress epic (`N to
   do`), then under its to-do epic (`N tasks`, or `no tasks`), then those
   with no listed epic. An in-progress epic with nothing to do has no line
-  here. A task with a `blocks` or `blocked_by` link from an issue that
-  isn't completed or cancelled shows `blocked by <ID>`, the lowest such ID,
-  and `+N` for the rest. TO DO doesn't judge readiness: task 1.4 brings
-  `fid next`'s order and skip reasons, and turns it into READY.
-- The text shows at most 10 task rows in TO DO, then
+  here. Each task's right-hand column is `fid next`'s verdict for this
+  worktree, read without taking work: `next`, `blocked by <ID>` (and `+N`
+  for more), `after <ID>`, `working in <dir>`, `working here`,
+  `epic blocked by <ID>` (and `+N`), or `epic closed`; otherwise it is
+  blank. `<dir>` is the worktree's directory name. The task marked `next`
+  is what `fid next` would hand out here, which can be below the first
+  row, since unblocking work comes first. While this worktree already
+  holds a task, that task shows `working here` and no task says `next`.
+  A lapsed hold on an unstarted task frees it for anyone.
+- The text shows at most 10 task rows in READY, then
   `+N more: fid status --all`, where N counts the hidden task rows and any
   hidden epic with no tasks. Epic lines don't count toward the 10. `--all`
   shows every row.
@@ -461,7 +458,7 @@ capped, with or without `--all`. `event` is null.
             "record_path": "<ledger>/backups.jsonl", "record_error": null},
  "needs_you": [{"kind": "backup", "summary": "...", "next_action": "fid backup", "subject": null}],
  "in_progress": {"epics": [<epic>], "tasks": [<task>]},
- "to_do": {"epics": [<epic>], "tasks": [<task>]},
+ "ready": {"next": "FID-9f13aa", "epics": [<epic>], "tasks": [<task>]},
  "hint": null}
 ```
 
@@ -481,7 +478,15 @@ capped, with or without `--all`. `event` is null.
   `state` being `in-progress` or `to-do` and `tasks` the section's tasks.
 - A task is
   `{id, title, status, status_category, epic_id, sequence, priority, blocked_by}`,
-  `blocked_by` listing its open blockers' IDs in order.
+  `blocked_by` listing its open blockers' IDs in order. IN PROGRESS tasks
+  also have `working`, null when they have no open hold. READY tasks add
+  exactly `next`'s queue entry fields: `reason`, `after`, `working` and
+  `epic_blocked_by` (below). `working` is
+  `{hold_id, worktree, here, actor, since, expires_at, lapsed}` or null;
+  times are UTC RFC 3339 and `lapsed` is true for interrupted work.
+- `ready.next` is the ID `fid next` would hand out here, or null when
+  nothing can be handed out or this worktree already holds a task. READY
+  keeps status's order, rather than `next`'s unblocking-first queue order.
 - `hint` is `{summary, next_action}` for a project with no epics or tasks,
   and null otherwise.
 
@@ -558,13 +563,22 @@ every read, records no Event and makes no network calls. Text output is
   - `Epic`: the issue's epic (a subtask's is its task's epic), with
     `N/M done`;
   - `Progress`: an epic's bar and `N/M tasks done`, when it has tasks;
+  - `Scheduling`: on an epic with scheduling, `one at a time, in sequence`
+    for `sequential`, or `by priority` for `prioritised`;
   - `Priority`: `P<n>`;
   - `Blocked by` and `Blocks`, each issue on its own line under the value
     column, with its state;
-  - `Labels`, comma-separated, and `Spec`, `spec_md_path` as stored.
+  - `Labels`, comma-separated, and `Spec`, `spec_md_path` as stored;
+  - `Working`: on a held task, `here, since 09:02, until 10:02`, or
+    `in <full path> by <actor>, since 08:40, until 09:40` elsewhere. An
+    interrupted task reads `⚠ interrupted in <full path> by <actor>: work
+    stopped at 07:15 without a park`, using the hold's `since` (1.5a
+    switches to the last heartbeat). Times are local `HH:MM`, adding the
+    date when it isn't today. A lapsed hold on an unstarted task frees it,
+    so it has no Working row.
 
   Labels are 10 columns wide after the two-space indent, so values begin
-  at column 14. Later tasks add rows after `Spec` (lane, work in hand,
+  at column 14. Later tasks add rows after `Spec` (lane,
   checks, reviews, approval, and next as the last), a NEEDS YOU block
   under the heading, and an epic's plan and validations.
 - **Reference lines**, in rows and lists, follow `status`'s row rules: a
@@ -585,7 +599,7 @@ every read, records no Event and makes no network calls. Text output is
   `status` does. A subtask has no children.
 - Sequence, revision, workflow ID and times appear only in the JSON's
   `issue`. Neither text nor JSON shows open concerns, triage status, the
-  owner role or actor, an epic's scheduling, or links other than
+  owner role or actor (apart from the actor in Working), or links other than
   `blocks` and `blocked_by`.
 - Text fid didn't write is escaped, fitted and wrapped as in `status`,
   and long text pages as `status`'s does.
@@ -598,6 +612,8 @@ The `issue.show` JSON result holds everything, with a null `event`:
  "epic": {"id": "FID-e3a1c0", "kind": "epic", "title": "Operating experience",
           "status": "in_progress", "status_category": "started", "progress": {"done": 2, "total": 7}},
  "task": null,
+ "working": null,
+ "scheduling": null,
  "blocked_by": [{"id": "FID-1a2b3c", "kind": "task", "title": "Escape controls in status",
                  "status": "done", "status_category": "completed"}],
  "blocks": [<reference>, <reference>],
@@ -611,6 +627,11 @@ The `issue.show` JSON result holds everything, with a null `event`:
   where it is `in-progress` or `to-do` as in `status`, or `completed` or
   `cancelled` by its own state's category.
 - `epic` is the issue's epic and `task` a subtask's task, or null.
+- `working` is the task's live or interrupted hold, in `next`'s
+  `{hold_id, worktree, here, actor, since, expires_at, lapsed}` shape,
+  or null when nobody holds it (including a lapsed unstarted task).
+- `scheduling` is `"sequential"` or `"prioritised"` on an epic with
+  scheduling, null otherwise.
 - `blocked_by` and `blocks` list every link in both directions, whatever
   the other end's state, each `{id, kind, title, status,
   status_category}`.

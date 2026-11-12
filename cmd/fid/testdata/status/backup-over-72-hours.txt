@@ -4,6 +4,6 @@
   ✗ No backup for 4 days: last backed up 2026-11-04 19:00
       → fid backup
 
-  TO DO
-  ○ FID-77aa01  Tidy help text
+  READY
+  ○ FID-77aa01  Tidy help text                                    next
 ╰──────────────────────────────────────────────────────────────────────╯

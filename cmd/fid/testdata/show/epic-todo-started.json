@@ -52,7 +52,9 @@
       "done": 0,
       "total": 2
     },
+    "scheduling": "prioritised",
     "state": "in-progress",
-    "task": null
+    "task": null,
+    "working": null
   }
 }

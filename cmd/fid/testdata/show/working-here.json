@@ -1,0 +1,52 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [],
+    "blocks": [],
+    "children": [],
+    "epic": {
+      "id": "FID-e3a1c0",
+      "kind": "epic",
+      "title": "Operating experience",
+      "status": "in_progress",
+      "status_category": "started",
+      "progress": {
+        "done": 0,
+        "total": 4
+      }
+    },
+    "issue": {
+      "id": "FID-9f13aa",
+      "kind": "task",
+      "title": "Harden login rate limiting",
+      "status": "todo",
+      "status_category": "unstarted",
+      "workflow_id": "task-default",
+      "parent_id": "FID-e3a1c0",
+      "priority": 1,
+      "sequence": null,
+      "spec_md_path": null,
+      "revision": 1,
+      "labels": [],
+      "created_at": "2026-10-31T04:00:00Z",
+      "updated_at": "2026-10-31T04:00:00Z",
+      "acceptance_criteria": []
+    },
+    "progress": null,
+    "scheduling": null,
+    "state": null,
+    "task": null,
+    "working": {
+      "hold_id": "HLD-0a0a0a",
+      "worktree": "<ROOT>",
+      "here": true,
+      "actor": "agent:claude-builder",
+      "since": "2026-11-08T08:59:00Z",
+      "expires_at": "2026-11-08T09:59:00Z",
+      "lapsed": false
+    }
+  }
+}

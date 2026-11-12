@@ -3,6 +3,7 @@
   ◆ Operating experience                                   in progress
 
   Progress    ██░░░░░░░░  2/7 tasks done
+  Scheduling  one at a time, in sequence
   Priority    P1
   Labels      ux
   Spec        docs/specs/07_DESIGN_PLAN_FLOWS.md

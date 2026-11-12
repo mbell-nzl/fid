@@ -1,7 +1,7 @@
 ╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
 
-  TO DO
-  ○ FID-77aa01  Tidy help text
+  READY
+  ○ FID-77aa01  Tidy help text                                    next
 
   ⚠ No backup for 26 hours: last backed up 2026-11-07 20:00
       → fid backup

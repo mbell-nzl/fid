@@ -196,16 +196,16 @@ func (text textWriter) inOrder(result Result) []string {
 	}
 	lines := []string{indent + text.renderer.Colorize(display.RoleHeader, "IN ORDER")}
 	for index, entry := range result.Queue {
-		verdict, role := text.verdict(result, entry, index == result.Served)
+		verdict, role := Verdict(entry, index == result.Served)
 		lines = append(lines, text.row(indent, entry.OverviewTask, width, verdict, role)...)
 	}
 	return lines
 }
 
-// verdict is what fid next makes of a task in the order: next for the one
+// Verdict is what fid next makes of a task in the order: next for the one
 // it hands out, ready for any other that nothing stops, and otherwise what
 // stops it. A held task names the worktree's directory.
-func (text textWriter) verdict(result Result, entry Entry, served bool) (string, display.Role) {
+func Verdict(entry Entry, served bool) (string, display.Role) {
 	switch {
 	case served:
 		return "next", display.RoleSuccess
@@ -220,7 +220,7 @@ func (text textWriter) verdict(result Result, entry Entry, served bool) (string,
 	case ReasonNotNextInSequence:
 		return "after " + *entry.After, display.RoleMuted
 	case ReasonEpicBlocked:
-		return "epic " + display.BlockedText(result.epics[epicOf(entry.OverviewTask)].BlockedBy), display.RoleWarning
+		return "epic " + display.BlockedText(entry.EpicBlockedBy), display.RoleWarning
 	case ReasonEpicClosed:
 		return "epic closed", display.RoleMuted
 	}
@@ -230,15 +230,7 @@ func (text textWriter) verdict(result Result, entry Entry, served bool) (string,
 // clock is a hold's time in the shown time zone: HH:MM today, with the date
 // on any other day.
 func (text textWriter) clock(stamp string) string {
-	at, err := time.Parse(time.RFC3339, stamp)
-	if err != nil {
-		return stamp
-	}
-	at = at.In(text.now.Location())
-	if at.Format("2006-01-02") != text.now.Format("2006-01-02") {
-		return at.Format("2006-01-02 15:04")
-	}
-	return at.Format("15:04")
+	return display.Clock(stamp, text.now)
 }
 
 func (text textWriter) label(name string) string {

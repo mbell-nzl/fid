@@ -6,9 +6,11 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 	"unicode"
 
 	"github.com/mbell-nzl/fid/internal/display"
+	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
 )
 
@@ -141,10 +143,13 @@ func TestWriteTextEscapesControlsInWhatFidDidNotWrite(t *testing.T) {
 	result.Issue.AcceptanceCriteria[0].Text = "C" + controls
 	result.Epic.Title = "E" + controls
 	result.Children[1].BlockedBy = []string{"FID-b" + controls}
+	result.Now = time.Date(2026, 11, 11, 9, 10, 0, 0, time.UTC)
+	result.Working = &holds.Working{Worktree: "/tmp/" + controls, Actor: "agent:test" + controls, Since: "2026-11-11T09:02:00Z", ExpiresAt: "2026-11-11T10:02:00Z"}
 	for _, renderer := range []display.Renderer{{}, {Color: true}} {
 		text := fidColors.Replace(writeText(t, result, renderer))
 		for _, want := range []string{"  ● T" + escapedControls + " ", "  Labels      L" + escapedControls + "\n", "  Spec        S" + escapedControls + "\n",
-			"  1  C" + escapedControls + "\n", "◆ FID-e1  E" + escapedControls + " ", "blocked by FID-b" + escapedControls + "\n"} {
+			"  1  C" + escapedControls + "\n", "◆ FID-e1  E" + escapedControls + " ", "blocked by FID-b" + escapedControls + "\n",
+			"/tmp/" + escapedControls, "agent:test" + escapedControls} {
 			if !strings.Contains(text, want) {
 				t.Fatalf("color=%v: text doesn't show %q:\n%s", renderer.Color, want, text)
 			}
@@ -154,6 +159,18 @@ func TestWriteTextEscapesControlsInWhatFidDidNotWrite(t *testing.T) {
 				t.Fatalf("color=%v: text holds control %U:\n%q", renderer.Color, value, text)
 			}
 		}
+	}
+}
+
+func TestWorkingUsesLocalDatesAndFollowsSpec(t *testing.T) {
+	t.Parallel()
+	result := textTask()
+	result.Now = time.Date(2026, 11, 12, 0, 10, 0, 0, time.FixedZone("NZDT", 13*60*60))
+	result.Working = &holds.Working{Here: true, Since: "2026-11-11T10:40:00Z", ExpiresAt: "2026-11-11T11:40:00Z"}
+	text := writeText(t, result, display.Renderer{})
+	want := "  Spec        docs/specs/02_TRD.md\n  Working     here, since 2026-11-11 23:40, until 00:40\n\n  ACCEPTANCE CRITERIA\n"
+	if !strings.Contains(text, want) {
+		t.Fatalf("working isn't local or isn't in its reserved slot:\n%s", text)
 	}
 }
 
@@ -175,10 +192,10 @@ func TestFieldsHoldsEveryField(t *testing.T) {
 		keys = append(keys, key)
 	}
 	slices.Sort(keys)
-	if want := []string{"blocked_by", "blocks", "children", "epic", "issue", "progress", "state", "task"}; !slices.Equal(keys, want) {
+	if want := []string{"blocked_by", "blocks", "children", "epic", "issue", "progress", "scheduling", "state", "task", "working"}; !slices.Equal(keys, want) {
 		t.Fatalf("fields = %v, want %v", keys, want)
 	}
-	for _, name := range []string{"epic", "progress", "state", "task"} {
+	for _, name := range []string{"epic", "progress", "scheduling", "state", "task", "working"} {
 		if fields[name] != nil {
 			t.Fatalf("%s = %v, want null", name, fields[name])
 		}

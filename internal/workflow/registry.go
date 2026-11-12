@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 // Registry resolves workflow definitions from the projected workflow tables.
@@ -46,7 +48,11 @@ func Load(conn *sql.DB) (*Registry, error) {
 	if conn == nil {
 		return nil, fmt.Errorf("load workflow registry: database connection is required")
 	}
+	return LoadFrom(conn)
+}
 
+// LoadFrom reads a registry using the caller's projection snapshot.
+func LoadFrom(conn fiddb.Queryer) (*Registry, error) {
 	rows, err := conn.Query(`SELECT id FROM workflows ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("load workflow registry: query workflows: %w", err)
@@ -123,7 +129,7 @@ func (registry *Registry) RulesForEdge(workflowID, fromState, toState string) ([
 	return cloneRuleReferences(rules), true
 }
 
-func loadDefinition(conn *sql.DB, registry *Registry, workflowID string) (Definition, error) {
+func loadDefinition(conn fiddb.Queryer, registry *Registry, workflowID string) (Definition, error) {
 	definition := Definition{
 		ID:          workflowID,
 		States:      make(map[string]string),
@@ -138,7 +144,7 @@ func loadDefinition(conn *sql.DB, registry *Registry, workflowID string) (Defini
 	return definition, loadTransitionRequirements(conn, registry, &definition)
 }
 
-func loadStates(conn *sql.DB, definition *Definition) error {
+func loadStates(conn fiddb.Queryer, definition *Definition) error {
 	rows, err := conn.Query(`
 		SELECT state, category
 		FROM workflow_states
@@ -163,7 +169,7 @@ func loadStates(conn *sql.DB, definition *Definition) error {
 	return nil
 }
 
-func loadTransitions(conn *sql.DB, registry *Registry, definition *Definition) error {
+func loadTransitions(conn fiddb.Queryer, registry *Registry, definition *Definition) error {
 	rows, err := conn.Query(`
 		SELECT from_state, to_state
 		FROM workflow_transitions
@@ -199,7 +205,7 @@ func loadTransitions(conn *sql.DB, registry *Registry, definition *Definition) e
 	return nil
 }
 
-func loadTransitionRequirements(conn *sql.DB, registry *Registry, definition *Definition) error {
+func loadTransitionRequirements(conn fiddb.Queryer, registry *Registry, definition *Definition) error {
 	rows, err := conn.Query(`
 		SELECT from_state, to_state, rule, params_json
 		FROM workflow_transition_requires

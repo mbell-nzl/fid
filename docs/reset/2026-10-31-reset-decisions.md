@@ -141,7 +141,7 @@ is also marked in the section its topic belongs to, and the tasks' rows in
 
 ## Decided 12 November 2026
 
-Mark made two more decisions on 12 November 2026, numbered on from the day
+Mark made three more decisions on 12 November 2026, numbered on from the day
 before. Each is also marked in its topic's section and its task's row in
 `RESET.md`.
 
@@ -155,6 +155,11 @@ before. Each is also marked in its topic's section and its task's row in
     then new work. Finishing open work beats starting new work, so PRs
     don't pile up waiting for review. Review work comes as kind `review`
     (item 11).
+
+14. **Epic fields in 1.4b.** `fid show` adds an epic's `Scheduling` row:
+    `sequential` reads `one at a time, in sequence`, and `prioritised` reads
+    `by priority`. Its JSON gains `scheduling` on epics, null otherwise.
+    READY reuses the `epic_blocked_by` field added to `next` in PR #56.
 
 The orchestrating session settled the gaps below the same day. They follow
 from Mark's decisions as transactional details, and aren't his own words:
@@ -920,6 +925,36 @@ two-worktree test. Mark expects mostly one sequential loop.
   second PR's builder rebases as rework. ADR-0006 disjoint-scope proofs wait
   for real need.
 - **Details** (decided 10 and 11 November 2026, for task 1.4):
+  - **Decided by Mark, 11 November 2026 (1.4 design, step 6):** READY
+    replaces TO DO in `fid status` ("A, as mocked"). It keeps status's
+    epic grouping, task order, ten-row cap and `+N more: fid status --all`.
+    Its right-hand column reuses `next`'s read-only order for the current
+    worktree: `next`, `blocked by <ID>` (and `+N`), `after <ID>`,
+    `working in <dir>`, `working here`, `epic blocked by <ID>` (and `+N`),
+    or `epic closed`; otherwise it is blank. `next` can be below the first
+    row, since unblocking work comes first in the order. While this
+    worktree already holds a task, its row says `working here` and no row
+    says `next`. IN PROGRESS replaces an interrupted task's workflow
+    state with `interrupted in <dir>`; other started tasks keep theirs.
+    `dir` is the worktree's directory name. Human text names no kernel word.
+    JSON replaces `to_do` with `ready: {next, epics, tasks}`; `next` is the
+    task ID or null, also null while this worktree already holds a task.
+    READY tasks reuse `next`'s queue entry fields `reason`, `after`,
+    `working` and `epic_blocked_by`; IN PROGRESS tasks gain `working`.
+  - **Decided by Mark, 11 November 2026 (1.4 design, step 6):** tasks in
+    `fid show` gain `Working`, after `Spec` and before the long sections.
+    A live hold here reads `here, since 09:02, until 10:02`; elsewhere,
+    `in <full path> by <actor>, since 08:40, until 09:40`. An interrupted
+    task reads `⚠ interrupted in <full path> by <actor>: work stopped at
+    07:15 without a park`. The stopped time is the hold's `since`, as
+    `next`'s is; 1.5a switches it to the last heartbeat. Times are local
+    `HH:MM`, with the date when it isn't today. `issue.show` gains
+    `working`, null when nobody holds the task. Both commands use the
+    queue's `{hold_id, worktree, here, actor, since, expires_at, lapsed}`
+    shape, with `lapsed` true on interrupted tasks. A lapsed hold on an
+    unstarted task frees it, so `show` has no Working row for it. Epics
+    gain `Scheduling` after `Progress` and before `Priority`, as item 14
+    records (12 November). There is no compatibility obligation before 3.2.
   - **Decided by Mark, 10/11 November 2026 (1.4 design):** a worktree is
     identified by the SHA-256 of its root path, so moving one makes a new
     one, and every worktree shares one ledger and one write lock.
