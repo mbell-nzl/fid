@@ -95,6 +95,7 @@ var currentEventCommands = map[string]string{
 // The lean core's families (ADR-0014) share this grammar, and their Effects
 // are checked against their stages in order too (leanEventFamilies).
 var retainedCurrentRules = map[string]currentEventRule{
+	"policy.snapshotted":             currentRule("policy", currentStage(1, currentEffectKey("policy_snapshots", "insert"))),
 	"hold.taken":                     currentRule("hold", currentStage(0, currentEffectKey("holds", "update")), currentStage(1, currentEffectKey("holds", "insert"))),
 	"issue.label.added":              currentRule("issue", currentStage(1, currentEffectKey("issue_labels", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.label.removed":            currentRule("issue", currentStage(1, currentEffectKey("issue_labels", "delete")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
@@ -124,4 +125,4 @@ var retainedCurrentRules = map[string]currentEventRule{
 // leanEventFamilies are the lean core's families. Every Effect they carry
 // is checked against their stages, in order, not only those on a domain
 // table another family owns.
-var leanEventFamilies = map[string]bool{"hold.taken": true}
+var leanEventFamilies = map[string]bool{"hold.taken": true, "policy.snapshotted": true}

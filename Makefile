@@ -1,4 +1,4 @@
-.PHONY: fmt-check lint test coverage build check-restore check-two-worktree
+.PHONY: fmt-check lint test coverage build check-restore check-two-worktree check-policy-from-main
 
 FMT_DIRS = cmd internal .github/scripts
 
@@ -27,6 +27,12 @@ check-restore:
 # this runs only it.
 check-two-worktree:
 	go test -count=1 -run '^TestV3TwoWorktreesNeverHoldTheSameTask$$' ./cmd/fid
+
+# V7 (RESET.md), check:policy-from-main: working-tree, index and local-branch
+# edits cannot change policy; only the caller refreshing origin/<default> can.
+# make test runs it too; this runs only it.
+check-policy-from-main:
+	go test -count=1 -run '^TestV7WorkingTreeEditsToPolicyChangeNothingUntilMerged$$' ./cmd/fid
 
 coverage:
 	go test -race -gcflags=modernc.org/...=-d=checkptr=0 -coverprofile=coverage.out ./...

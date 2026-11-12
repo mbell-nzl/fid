@@ -1,7 +1,7 @@
 {
   "contract_version": "fid-cli.v1",
   "event": {
-    "id": "EVT-20261108-000001",
+    "id": "EVT-20261108-000002",
     "occurred_at": "2026-11-08T09:00:00Z"
   },
   "ok": true,

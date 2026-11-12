@@ -47,7 +47,10 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 			return fmt.Errorf("current Event: retained aggregate mismatch")
 		}
 		if leanEventFamilies[event.EventType] {
-			return validateCurrentStages(event, retained)
+			if err := validateCurrentStages(event, retained); err != nil {
+				return err
+			}
+			return validatePolicySnapshot(tx, event)
 		}
 		// Retained historical writers are not assigned new generic semantics by
 		// Phase 22. They still cannot smuggle a current domain table under an
