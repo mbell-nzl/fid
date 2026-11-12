@@ -64,8 +64,8 @@ func validatePolicyPayload(raw string, digest any) error {
 	if err := decoder.Decode(&recorded); err != nil {
 		return fmt.Errorf("decode policy snapshot: %w", err)
 	}
-	if recorded.RulesVersion < 1 || recorded.HardAssured == nil || recorded.ActorRules == nil || recorded.ActionSets == nil || recorded.Checks == nil || len(recorded.Lanes) != 3 || recorded.TestAdequacy == nil {
-		return fmt.Errorf("policy snapshot effective policy is incomplete")
+	if err := recorded.ValidateRecorded(); err != nil {
+		return err
 	}
 	encoded, err := recorded.Canonical()
 	if err != nil || !bytes.Equal(encoded, []byte(raw)) {

@@ -1,6 +1,7 @@
 package export
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -32,6 +33,32 @@ func TestSemanticValidatorChecksPolicySnapshots(t *testing.T) {
 		{"other aggregate", 21, func(event *journal.Event) { event.Aggregate.Type = "issue" }, "effect-invalid"},
 		{"wrong digest", 21, func(event *journal.Event) { event.Effects[0].Values["digest"] = "sha256:" + strings.Repeat("0", 64) }, "reference-invalid"},
 		{"incomplete policy", 21, func(event *journal.Event) { event.Effects[0].Values["effective_json"] = "{}" }, "reference-invalid"},
+		{"unknown lane", 21, changeArchivePolicy(t, func(effective *policy.Effective) {
+			effective.Lanes["typo"] = effective.Lanes["assured"]
+			delete(effective.Lanes, "assured")
+		}), "reference-invalid"},
+		{"empty argv", 21, changeArchivePolicy(t, func(effective *policy.Effective) {
+			effective.Checks["test"] = config.Check{Run: []string{}, Timeout: time.Minute, DefinedBy: []string{}, WhenChanged: []string{}}
+		}), "reference-invalid"},
+		{"negative timeout", 21, changeArchivePolicy(t, func(effective *policy.Effective) {
+			effective.Checks["test"] = config.Check{Run: []string{"true"}, Timeout: -time.Minute, DefinedBy: []string{}, WhenChanged: []string{}}
+		}), "reference-invalid"},
+		{"undefined check", 21, changeArchivePolicy(t, func(effective *policy.Effective) {
+			effective.Lanes["standard"] = config.Lane{Paths: []string{}, Checks: []string{"missing"}, ChecksSet: true}
+		}), "reference-invalid"},
+		{"bad defining glob", 21, changeArchivePolicy(t, func(effective *policy.Effective) {
+			effective.Checks["test"] = config.Check{Run: []string{"true"}, Timeout: time.Minute, DefinedBy: []string{"../Makefile"}, WhenChanged: []string{}}
+		}), "reference-invalid"},
+		{"undefined action set", 21, changeArchivePolicy(t, func(effective *policy.Effective) {
+			effective.ActorRules["human"] = []policy.ActionSet{"missing"}
+		}), "reference-invalid"},
+		{"historical built-in values", 21, changeArchivePolicy(t, func(effective *policy.Effective) {
+			effective.RulesVersion++
+			effective.HardAssured = []string{"legacy-policy/**"}
+			effective.ActionSets[policy.WorkSet] = []string{"historical-action"}
+			effective.ActionSets[policy.PersonDecisions] = []string{"historical-decision"}
+			effective.ActorRules["human"] = []policy.ActionSet{policy.PersonDecisions}
+		}), ""},
 		{"unrelated effect", 21, func(event *journal.Event) {
 			event.Effects = append(event.Effects, journal.Effect{Op: "delete", Table: "labels", PK: map[string]any{"name": "x"}})
 		}, "effect-invalid"},
@@ -60,5 +87,23 @@ func TestSemanticValidatorChecksPolicySnapshots(t *testing.T) {
 				t.Fatalf("accept = %v, want check %q", err, test.check)
 			}
 		})
+	}
+}
+
+func changeArchivePolicy(t *testing.T, mutate func(*policy.Effective)) func(*journal.Event) {
+	t.Helper()
+	return func(event *journal.Event) {
+		t.Helper()
+		var effective policy.Effective
+		if err := json.Unmarshal([]byte(event.Effects[0].Values["effective_json"].(string)), &effective); err != nil {
+			t.Fatal(err)
+		}
+		mutate(&effective)
+		encoded, err := effective.Canonical()
+		if err != nil {
+			t.Fatal(err)
+		}
+		event.Effects[0].Values["effective_json"] = string(encoded)
+		event.Effects[0].Values["digest"] = effective.Digest()
 	}
 }

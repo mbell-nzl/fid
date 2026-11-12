@@ -1,6 +1,7 @@
 package journal
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -39,6 +40,76 @@ func TestPolicySnapshotEvent(t *testing.T) {
 		{"valid", func(*Event) {}, true},
 		{"wrong digest", func(event *Event) { event.Effects[0].Values["digest"] = "sha256:" + strings.Repeat("0", 64) }, false},
 		{"incomplete payload", func(event *Event) { event.Effects[0].Values["effective_json"] = "{}" }, false},
+		{"unknown lane", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Lanes["typo"] = effective.Lanes["assured"]
+			delete(effective.Lanes, "assured")
+		}), false},
+		{"empty argv", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Checks["test"] = config.Check{Run: []string{}, Timeout: time.Minute, DefinedBy: []string{}, WhenChanged: []string{}}
+		}), false},
+		{"empty executable", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Checks["test"] = config.Check{Run: []string{""}, Timeout: time.Minute, DefinedBy: []string{}, WhenChanged: []string{}}
+		}), false},
+		{"negative timeout", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Checks["test"] = config.Check{Run: []string{"true"}, Timeout: -time.Minute, DefinedBy: []string{}, WhenChanged: []string{}}
+		}), false},
+		{"zero timeout", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Checks["test"] = config.Check{Run: []string{"true"}, DefinedBy: []string{}, WhenChanged: []string{}}
+		}), false},
+		{"bad defining glob", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Checks["test"] = config.Check{Run: []string{"true"}, Timeout: time.Minute, DefinedBy: []string{"../Makefile"}, WhenChanged: []string{}}
+		}), false},
+		{"bad conditional glob", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Checks["test"] = config.Check{Run: []string{"true"}, Timeout: time.Minute, DefinedBy: []string{}, WhenChanged: []string{"/src/**"}}
+		}), false},
+		{"invalid lane values", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Lanes["routine"] = config.Lane{Paths: []string{}, Checks: []string{}, ReworkCap: -1, TokenBudget: -1}
+		}), false},
+		{"undefined check", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Lanes["routine"] = config.Lane{Paths: []string{}, Checks: []string{"missing"}, ChecksSet: true}
+		}), false},
+		{"unset nonempty checks", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Checks["test"] = config.Check{Run: []string{"true"}, Timeout: time.Minute, DefinedBy: []string{}, WhenChanged: []string{}}
+			effective.Lanes["routine"] = config.Lane{Paths: []string{}, Checks: []string{"test"}, ChecksSet: false}
+		}), false},
+		{"standard paths", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Lanes["standard"] = config.Lane{Paths: []string{"src/**"}, Checks: []string{}}
+		}), false},
+		{"assured auto merge", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Lanes["assured"] = config.Lane{Paths: []string{}, Checks: []string{}, AutoMerge: true}
+		}), false},
+		{"invalid lane glob", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.Lanes["routine"] = config.Lane{Paths: []string{"../src"}, Checks: []string{}}
+		}), false},
+		{"invalid review glob", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.TestAdequacy = []string{"[test]"}
+		}), false},
+		{"invalid hard floor glob", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.HardAssured = []string{"../policy"}
+		}), false},
+		{"missing actor type", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			delete(effective.ActorRules, "human")
+		}), false},
+		{"unknown actor type", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.ActorRules["robot"] = effective.ActorRules["human"]
+			delete(effective.ActorRules, "human")
+		}), false},
+		{"undefined action set", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.ActorRules["human"] = []policy.ActionSet{"missing"}
+		}), false},
+		{"missing action set", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			delete(effective.ActionSets, policy.PersonDecisions)
+		}), false},
+		{"empty action", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.ActionSets[policy.WorkSet] = []string{""}
+		}), false},
+		{"historical built-in values", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.RulesVersion++
+			effective.HardAssured = []string{"legacy-policy/**"}
+			effective.ActionSets[policy.WorkSet] = []string{"historical-action"}
+			effective.ActionSets[policy.PersonDecisions] = []string{"historical-decision"}
+			effective.ActorRules["human"] = []policy.ActionSet{policy.PersonDecisions}
+		}), true},
 		{"wrong source", func(event *Event) { event.Effects[0].Values["source_ref"] = "main" }, false},
 		{"missing origin commit", func(event *Event) { event.Effects[0].Values["source_ref"] = "origin/main" }, false},
 		{"origin", func(event *Event) {
@@ -65,5 +136,25 @@ func TestPolicySnapshotEvent(t *testing.T) {
 				t.Fatalf("snapshot validation = %v, valid = %v", err, test.valid)
 			}
 		})
+	}
+}
+
+// Recompute both fields so malformed-value cases exercise schema validation,
+// rather than merely detecting an obsolete digest.
+func changeSnapshotPolicy(t *testing.T, mutate func(*policy.Effective)) func(*Event) {
+	t.Helper()
+	return func(event *Event) {
+		t.Helper()
+		var effective policy.Effective
+		if err := json.Unmarshal([]byte(event.Effects[0].Values["effective_json"].(string)), &effective); err != nil {
+			t.Fatal(err)
+		}
+		mutate(&effective)
+		encoded, err := effective.Canonical()
+		if err != nil {
+			t.Fatal(err)
+		}
+		event.Effects[0].Values["effective_json"] = string(encoded)
+		event.Effects[0].Values["digest"] = effective.Digest()
 	}
 }
