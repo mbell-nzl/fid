@@ -43,7 +43,8 @@
       "tasks": []
     },
     "needs_you": [],
-    "to_do": {
+    "ready": {
+      "next": "FID-77aa01",
       "epics": [],
       "tasks": [
         {
@@ -54,7 +55,11 @@
           "epic_id": null,
           "sequence": null,
           "priority": null,
-          "blocked_by": []
+          "blocked_by": [],
+          "reason": null,
+          "after": null,
+          "working": null,
+          "epic_blocked_by": []
         }
       ]
     }

@@ -1,0 +1,80 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [],
+    "blocks": [],
+    "children": [
+      {
+        "id": "FID-71a0c2",
+        "kind": "task",
+        "title": "Export validation",
+        "status": "in_progress",
+        "status_category": "started",
+        "sequence": null,
+        "priority": 1,
+        "blocked_by": []
+      },
+      {
+        "id": "FID-c2d4e5",
+        "kind": "task",
+        "title": "Retry a rejected backup push",
+        "status": "todo",
+        "status_category": "unstarted",
+        "sequence": null,
+        "priority": 1,
+        "blocked_by": [
+          "FID-71a0c2"
+        ]
+      },
+      {
+        "id": "FID-9f13aa",
+        "kind": "task",
+        "title": "Harden login rate limiting",
+        "status": "todo",
+        "status_category": "unstarted",
+        "sequence": null,
+        "priority": 1,
+        "blocked_by": []
+      },
+      {
+        "id": "FID-0d4e8b",
+        "kind": "task",
+        "title": "Document backup age",
+        "status": "todo",
+        "status_category": "unstarted",
+        "sequence": null,
+        "priority": 2,
+        "blocked_by": []
+      }
+    ],
+    "epic": null,
+    "issue": {
+      "id": "FID-e3a1c0",
+      "kind": "epic",
+      "title": "Operating experience",
+      "status": "in_progress",
+      "status_category": "started",
+      "workflow_id": "epic-default",
+      "parent_id": null,
+      "priority": null,
+      "sequence": 1,
+      "spec_md_path": null,
+      "revision": 1,
+      "labels": [],
+      "created_at": "2026-10-31T01:00:00Z",
+      "updated_at": "2026-10-31T01:00:00Z",
+      "acceptance_criteria": []
+    },
+    "progress": {
+      "done": 0,
+      "total": 4
+    },
+    "scheduling": "prioritised",
+    "state": "in-progress",
+    "task": null,
+    "working": null
+  }
+}

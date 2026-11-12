@@ -15,8 +15,8 @@ const (
 	boxWidth = 72
 	// rowWidth is how far a row runs: to two columns inside the box.
 	rowWidth = boxWidth - 2
-	// toDoRows caps the text's task rows in TO DO, unless --all.
-	toDoRows    = 10
+	// readyRows caps the text's task rows in READY, unless --all.
+	readyRows   = 10
 	minTitle    = 10
 	progressBar = 10
 	topIndent   = "  "
@@ -30,7 +30,7 @@ const (
 
 // WriteText writes the result as a box: what needs a person, the work in
 // progress and to do, and the backup's line, leaving out empty sections.
-// TO DO shows at most ten task rows unless all is set. The result's text,
+// READY shows at most ten task rows unless all is set. The result's text,
 // which holds titles, paths and record values fid didn't write, has its
 // control characters escaped before it is fitted to a column or coloured;
 // JSON keeps it as it is.
@@ -48,10 +48,10 @@ func WriteText(w io.Writer, result Result, renderer display.Renderer, all bool) 
 		blocks = append(blocks, text.item(display.RoleNormal, display.SymbolUnstarted, result.Hint.Summary, &result.Hint.NextAction))
 	}
 	if len(result.InProgress.Epics)+len(result.InProgress.Tasks) > 0 {
-		blocks = append(blocks, text.inProgress(result.InProgress))
+		blocks = append(blocks, text.inProgress(result))
 	}
-	if len(result.ToDo.Epics)+len(result.ToDo.Tasks) > 0 {
-		blocks = append(blocks, text.toDo(result.ToDo, all))
+	if len(result.Ready.Epics)+len(result.Ready.Tasks) > 0 {
+		blocks = append(blocks, text.ready(result, all))
 	}
 	if result.Backup.State != string(backup.HealthNeedsYou) {
 		role, symbol := backupMark(result.Backup.State)
@@ -116,37 +116,40 @@ func (text textWriter) item(role display.Role, symbol display.Symbol, summary st
 	return lines
 }
 
-func (text textWriter) inProgress(section issues.OverviewSection) []string {
+func (text textWriter) inProgress(result Result) []string {
+	section := result.InProgress
 	lines := []string{text.header("IN PROGRESS")}
 	for _, epic := range section.Epics {
 		bar := display.ProgressBar(epic.Progress.Done, epic.Progress.Total, progressBar) + " done"
 		lines = append(lines, text.row(topIndent, display.SymbolEpic, epic.ID, epic.Title, bar, display.RoleNormal)...)
 		for _, task := range epic.Tasks {
-			lines = append(lines, text.row(taskIndent, display.SymbolStarted, task.ID, task.Title, display.StateText(task.Status), display.RoleMuted)...)
+			lines = append(lines, text.row(taskIndent, display.SymbolStarted, task.ID, task.Title, result.startedVerdict(task), display.RoleMuted)...)
 		}
 	}
 	for _, task := range section.Tasks {
-		lines = append(lines, text.row(topIndent, display.SymbolStarted, task.ID, task.Title, display.StateText(task.Status), display.RoleMuted)...)
+		lines = append(lines, text.row(topIndent, display.SymbolStarted, task.ID, task.Title, result.startedVerdict(task), display.RoleMuted)...)
 	}
 	return lines
 }
 
-// toDo lists every unstarted task under its epic. Without all, once ten task
+// ready lists every unstarted task under its epic. Without all, once ten task
 // rows are shown the rest are counted in one line; a hidden epic with no
 // tasks counts as one.
-func (text textWriter) toDo(section issues.OverviewSection, all bool) []string {
-	lines := []string{text.header("TO DO")}
+func (text textWriter) ready(result Result, all bool) []string {
+	section := result.Ready
+	lines := []string{text.header("READY")}
 	shown, hidden := 0, 0
 	task := func(indent string, task issues.OverviewTask) {
-		if !all && shown >= toDoRows {
+		if !all && shown >= readyRows {
 			hidden++
 			return
 		}
-		lines = append(lines, text.row(indent, display.SymbolUnstarted, task.ID, task.Title, display.BlockedText(task.BlockedBy), display.RoleWarning)...)
+		verdict, role := result.readyVerdict(task)
+		lines = append(lines, text.row(indent, display.SymbolUnstarted, task.ID, task.Title, verdict, role)...)
 		shown++
 	}
 	for _, epic := range section.Epics {
-		if !all && shown >= toDoRows {
+		if !all && shown >= readyRows {
 			hidden += max(len(epic.Tasks), 1)
 			continue
 		}
@@ -189,7 +192,7 @@ func (text textWriter) row(indent string, symbol display.Symbol, id, title, righ
 func idWidth(result Result) int {
 	width := 0
 	measure := func(id string) { width = max(width, len([]rune(cli.EscapeControlText(id)))) }
-	for _, section := range []issues.OverviewSection{result.InProgress, result.ToDo} {
+	for _, section := range []issues.OverviewSection{result.InProgress, result.Ready} {
 		for _, epic := range section.Epics {
 			measure(epic.ID)
 			for _, task := range epic.Tasks {

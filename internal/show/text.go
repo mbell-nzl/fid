@@ -110,6 +110,13 @@ func (text textWriter) rows(result Result) []string {
 	if issue.Kind == "epic" && len(result.Children) > 0 {
 		lines = append(lines, text.label("Progress")+display.ProgressBar(result.Progress.Done, result.Progress.Total, progressBar)+" tasks done")
 	}
+	if result.Scheduling != nil {
+		scheduling := "by priority"
+		if *result.Scheduling == "sequential" {
+			scheduling = "one at a time, in sequence"
+		}
+		lines = append(lines, text.value("Scheduling", scheduling)...)
+	}
 	if issue.Priority != nil {
 		lines = append(lines, text.label("Priority")+"P"+strconv.Itoa(*issue.Priority))
 	}
@@ -120,6 +127,17 @@ func (text textWriter) rows(result Result) []string {
 	}
 	if issue.SpecMDPath != nil {
 		lines = append(lines, text.value("Spec", *issue.SpecMDPath)...)
+	}
+	if hold := result.Working; hold != nil {
+		clock := func(stamp string) string { return display.Clock(stamp, result.Now) }
+		value := fmt.Sprintf("here, since %s, until %s", clock(hold.Since), clock(hold.ExpiresAt))
+		if !hold.Here {
+			value = fmt.Sprintf("in %s by %s, since %s, until %s", hold.Worktree, hold.Actor, clock(hold.Since), clock(hold.ExpiresAt))
+		}
+		if hold.Lapsed {
+			value = fmt.Sprintf("⚠ interrupted in %s by %s: work stopped at %s without a park", hold.Worktree, hold.Actor, clock(hold.Since))
+		}
+		lines = append(lines, text.value("Working", value)...)
 	}
 	return lines
 }

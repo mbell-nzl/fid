@@ -51,7 +51,6 @@ type Result struct {
 	// Interrupted is this worktree's lapsed hold that a resume carries on
 	// from.
 	Interrupted *Working
-	epics       map[string]issues.WorkEpic
 }
 
 // Event is the Event a hold was taken in.
@@ -143,7 +142,7 @@ func assemble(conn *sql.DB, options Options, now time.Time) (Result, order, erro
 	}
 	planned := plan(work, open, project.WorktreeID(options.WorkspaceRoot), now)
 	result := Result{Kind: planned.kind, Worktree: options.WorkspaceRoot, Queue: planned.queue, Now: now,
-		Served: planned.served, epics: work.Epics}
+		Served: planned.served}
 	if planned.served >= 0 {
 		task := planned.queue[planned.served].OverviewTask
 		result.Task = &task

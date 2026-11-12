@@ -1,0 +1,68 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [],
+    "blocks": [],
+    "children": [
+      {
+        "id": "FID-1f2e3d",
+        "kind": "task",
+        "title": "Contract fields and exit codes",
+        "status": "in_progress",
+        "status_category": "started",
+        "sequence": 1,
+        "priority": null,
+        "blocked_by": []
+      },
+      {
+        "id": "FID-2f2e3d",
+        "kind": "task",
+        "title": "Golden tests for the contract",
+        "status": "todo",
+        "status_category": "unstarted",
+        "sequence": 2,
+        "priority": null,
+        "blocked_by": []
+      },
+      {
+        "id": "FID-3f2e3d",
+        "kind": "task",
+        "title": "Scenario test for rework",
+        "status": "todo",
+        "status_category": "unstarted",
+        "sequence": 3,
+        "priority": null,
+        "blocked_by": []
+      }
+    ],
+    "epic": null,
+    "issue": {
+      "id": "FID-8a1b2c",
+      "kind": "epic",
+      "title": "Loop contract",
+      "status": "todo",
+      "status_category": "unstarted",
+      "workflow_id": "epic-default",
+      "parent_id": null,
+      "priority": null,
+      "sequence": 2,
+      "spec_md_path": null,
+      "revision": 1,
+      "labels": [],
+      "created_at": "2026-10-31T06:00:00Z",
+      "updated_at": "2026-10-31T06:00:00Z",
+      "acceptance_criteria": []
+    },
+    "progress": {
+      "done": 0,
+      "total": 3
+    },
+    "scheduling": "sequential",
+    "state": "in-progress",
+    "task": null,
+    "working": null
+  }
+}

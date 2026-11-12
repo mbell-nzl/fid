@@ -40,15 +40,7 @@ type Entry struct {
 
 // Working is an open hold as the order shows it. Here says it is this
 // worktree's; Lapsed says it had expired when the order was read.
-type Working struct {
-	HoldID    string `json:"hold_id"`
-	Worktree  string `json:"worktree"`
-	Here      bool   `json:"here"`
-	Actor     string `json:"actor"`
-	Since     string `json:"since"`
-	ExpiresAt string `json:"expires_at"`
-	Lapsed    bool   `json:"lapsed"`
-}
+type Working = holds.Working
 
 // order is what fid next would hand one worktree.
 type order struct {
@@ -212,8 +204,7 @@ func blockerChain(next, epic string, byID map[string]issues.WorkTask) map[string
 }
 
 func working(hold holds.Hold, worktreeID string, now time.Time) *Working {
-	return &Working{HoldID: hold.ID, Worktree: hold.Worktree, Here: hold.WorktreeID == worktreeID, Actor: hold.Actor,
-		Since: holds.Timestamp(hold.Since), ExpiresAt: holds.Timestamp(hold.ExpiresAt), Lapsed: hold.Lapsed(now)}
+	return holds.Describe(hold, worktreeID, now)
 }
 
 func epicOf(task issues.OverviewTask) string {

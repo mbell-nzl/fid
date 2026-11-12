@@ -19,9 +19,9 @@ func newStatusCommand() *cobra.Command {
 	var all bool
 	cmd := &cobra.Command{
 		Use:   "status",
-		Short: "Show what needs you, what's in progress and what's to do.",
-		Long: "Show what needs you, the epics and tasks in progress and to do, and how current the ledger's backup is.\n\n" +
-			"TO DO shows at most 10 tasks; --all shows every one. --json is always complete.",
+		Short: "Show what needs you, what's in progress and what's ready.",
+		Long: "Show what needs you, the epics and tasks in progress and ready, and how current the ledger's backup is.\n\n" +
+			"READY shows at most 10 tasks; --all shows every one. --json is always complete.",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			root, err := rebuildWorkspaceRoot(cmd)
 			if err != nil {

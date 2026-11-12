@@ -1,0 +1,24 @@
+╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
+
+  IN PROGRESS
+  ◆ FID-e3a1c0  Operating experience              ░░░░░░░░░░  0/4 done
+      ● FID-71a0c2  Export validation           interrupted in fid-wt4
+  ◆ FID-8a1b2c  Loop contract                     ░░░░░░░░░░  0/3 done
+      ● FID-1f2e3d  Contract fields and exit codes         in progress
+  ● FID-999999  Another blocker                            in progress
+
+  READY
+  ◆ FID-e3a1c0  Operating experience                           3 to do
+      ○ FID-c2d4e5  Retry a rejected backup…  blocked by FID-71a0c2 +1
+      ○ FID-9f13aa  Harden login rate limiting            working here
+      ○ FID-0d4e8b  Document backup age             working in fid-wt3
+  ◆ FID-8a1b2c  Loop contract                                  2 to do
+      ○ FID-2f2e3d  Golden tests for the contract     after FID-1f2e3d
+      ○ FID-3f2e3d  Scenario test for rework          after FID-1f2e3d
+  ◆ FID-eeeeee  Waiting epic                                    1 task
+      ○ FID-aaaaaa  Waiting on the epic  epic blocked by FID-71a0c2 +1
+  ○ FID-77aa01  Tidy help text
+  ○ FID-bbbbbb  Left in a closed epic                      epic closed
+
+  ○ Not backed up yet
+╰──────────────────────────────────────────────────────────────────────╯

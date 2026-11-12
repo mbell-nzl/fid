@@ -9,6 +9,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/backup"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/next"
 )
 
 // NeedsYouBackup is the kind of item that says the backup needs a person.
@@ -34,7 +35,9 @@ type Result struct {
 	Backup      Backup
 	NeedsYou    []NeedsYouItem
 	InProgress  issues.OverviewSection
-	ToDo        issues.OverviewSection
+	Ready       issues.OverviewSection
+	Next        *string
+	entries     map[string]next.Entry
 	// Hint is set only when the project has no epics or tasks at all.
 	Hint *Hint
 }
@@ -64,12 +67,22 @@ func Build(options Options) (Result, error) {
 	if err != nil {
 		return Result{}, fmt.Errorf("read status: %w", err)
 	}
+	planned, err := next.Read(next.Options{WorkspaceRoot: options.WorkspaceRoot, MigrationsDir: options.MigrationsDir, Clock: func() time.Time { return options.Now }})
+	if err != nil {
+		return Result{}, fmt.Errorf("read status: %w", err)
+	}
 	health, err := backup.ReadHealth(backup.HealthOptions{WorkspaceRoot: options.WorkspaceRoot, Environment: options.Environment, Now: options.Now})
 	if err != nil {
 		return Result{}, fmt.Errorf("read status: %w", err)
 	}
 	result := Result{GeneratedAt: options.Now, Backup: describeBackup(health, options.Now), NeedsYou: []NeedsYouItem{},
-		InProgress: overview.InProgress, ToDo: overview.ToDo}
+		InProgress: overview.InProgress, Ready: overview.ToDo, entries: map[string]next.Entry{}}
+	for _, entry := range planned.Queue {
+		result.entries[entry.ID] = entry
+	}
+	if planned.Kind == next.KindNew && planned.Task != nil {
+		result.Next = &planned.Task.ID
+	}
 	if health.State == backup.HealthNeedsYou {
 		result.NeedsYou = append(result.NeedsYou, NeedsYouItem{Kind: NeedsYouBackup, Summary: result.Backup.Summary, NextAction: result.Backup.NextAction})
 	}
@@ -85,8 +98,10 @@ func (result Result) Fields() map[string]any {
 		"generated_at": result.GeneratedAt.UTC().Format(time.RFC3339),
 		"backup":       result.Backup,
 		"needs_you":    result.NeedsYou,
-		"in_progress":  result.InProgress,
-		"to_do":        result.ToDo,
-		"hint":         result.Hint,
+		"in_progress": mapSection(result.InProgress, func(task issues.OverviewTask) workingTask {
+			return workingTask{OverviewTask: task, Working: result.entries[task.ID].Working}
+		}),
+		"ready": result.readyFields(),
+		"hint":  result.Hint,
 	}
 }
