@@ -84,9 +84,112 @@ Init publishes a complete identity file without overwriting an existing
 one, after staging and checking the ledger and before activating it. A
 failure after publication can leave the ID file for the next init to reuse.
 The user commits `.fid.toml`; fid does not stage or commit it. Restoring a
-fresh clone relies on this committed identity. The file holds only the ID
-until task 2.2a adds policy from `origin/<default branch>`; the working-tree
-identity is not policy authority.
+fresh clone relies on this committed identity. Init keeps writing only the
+ID. The same strict TOML reader accepts the policy tables below when init,
+backup or restore reads a working-tree identity. A present `[project]`
+table requires a valid ID; policy-only files may omit the table. The
+working-tree identity is not policy authority.
+
+#### Policy in `.fid.toml` (RESET 2.2a)
+
+Policy is read from the blob at the local `origin/<default branch>` commit,
+never from the working tree, index or a local branch. fid never fetches it;
+the caller's last fetch sets its freshness. Missing policy uses built-in
+defaults. Invalid policy on origin is refused with `invalid-argument`,
+naming its commit and the problem, with no fallback. Unknown keys and
+wrong types are refused, and there is no schema-version key. The parser is
+BurntSushi/toml v1.6.0 with `MetaData.Undecoded()` for strict keys.
+
+The default-branch and unset-key rules below implement the orchestrator's
+P1–P3 proposals, awaiting Mark's confirmation (decisions record F3).
+`refs/remotes/origin/HEAD` names the default. An origin with no known
+default refuses writing commands needing policy and points at
+`git remote set-head origin <branch>`. No origin uses built-in defaults.
+
+```toml
+[checks.test]
+run = ["go", "test", "./..."]
+timeout = "15m"
+defined_by = ["Makefile", ".github/scripts/**"]
+when_changed = ["**/*.go"]
+
+[lanes.routine]
+paths = ["docs/**", "**/*.md"]
+checks = []
+auto_merge = false
+
+[lanes.standard]
+checks = ["test"]
+rework_cap = 3
+
+[lanes.assured]
+paths = ["migrations/**", "go.mod", "go.sum"]
+checks = ["test"]
+token_budget = 2_000_000
+
+[review]
+test_adequacy = ["**/*_test.go", "**/testdata/**"]
+```
+
+| Table/key | Meaning and validation |
+|---|---|
+| `checks.<name>.run` | Required non-empty string argv list with a non-empty executable; no shell |
+| `checks.<name>.timeout` | Required positive Go-duration string, e.g. `"15m"` |
+| `checks.<name>.defined_by` | Optional glob list; changes to any check-defining path require Assured |
+| `checks.<name>.when_changed` | Optional glob list restricting when the check is required |
+| `lanes.<lane>.paths` | Optional glob list for `routine` and `assured`; refused even when empty under `standard` |
+| `lanes.<lane>.checks` | Defined check names; missing means not set up, explicit `[]` means no checks required |
+| `lanes.<lane>.rework_cap` | Non-negative integer; default 3 |
+| `lanes.<lane>.token_budget` | Non-negative integer token count; zero/default means off |
+| `lanes.<lane>.auto_merge` | Boolean, default false; the key is refused even when false under `assured` |
+| `review.test_adequacy` | Optional glob list requiring a test-adequacy review in every lane |
+
+Only `routine`, `standard` and `assured` are lanes. Unset paths and review
+lists are empty, and unset checks leave every lane not set up. Other paths
+are Standard; the highest floor among changed paths applies. `.fid.toml`
+and `.github/workflows/**` are always Assured, built into fid, and cannot
+be configured away or waived. Every `defined_by` path also needs Assured.
+2.2b computes the floor and adds waivers; 2.2a exposes these settings only.
+
+Globs are anchored at the repo root and use `/` separators. `*` matches
+within a folder, `**` crosses folders, and `**/` can match zero folders:
+`**/*.md` matches `README.md` and `docs/guide.md`. Every glob is validated
+when loaded. Empty or absolute patterns, empty/`.`/`..` components,
+backslashes, control characters, `***` and unsupported glob operators
+(`?`, character classes and braces) are refused. Spaces and Unicode in
+literal paths are accepted.
+
+A project with no checks can still use next, status and show. Check,
+hand-off and done refusals, and status's missing-checks warning, belong to
+1.5a/1.6. 2.1 enforces the rework cap and 2.6 the token budget.
+
+Actor trust is built into the policy package, with no actor list in the
+file. A well-formed `agent:*` gets the named `work` action set (take,
+start, check, park, finish, review). `human:*` gets work plus
+`person-decisions`; `service:*` gets no user actions. The latter set names
+approval, waiver, takeover, more rework rounds, closing a finding,
+accepting discovered work, epic approval, answering and epic close.
+The kernel's envelope authority remains until 1.5c/1.5d.
+
+`next --claim` loads policy and compares its digest with the latest
+snapshot under the ledger write lock. A change writes a
+`policy.snapshotted` Event first, then takes the hold with the same lock.
+It also checks when returning a live hold or no task. Read-only next,
+status and show never write a snapshot. The Event records the source ref
+and commit, or built-in defaults, the SHA-256 digest and the full effective
+policy, including actor rules, action sets and check definitions.
+
+The stable effective encoding is JSON with sorted map keys, sorted and
+deduplicated set lists, argv in order, durations in nanoseconds and an
+explicit built-in rules version. Project identity and source metadata do
+not change the effective digest. Formatting, comments and key order do
+not change it; semantic policy changes and built-in rule changes do.
+Snapshots are projected into `policy_snapshots` (migration 21), ordered by
+sequence; rebuild and export/import preserve them. Repeated digests at
+different source commits produce no new snapshot. An A→B→A change does
+produce three snapshots, because the latest effective digest changes at
+each step. The Event is attributed to fid's internal writer, independent
+of the user action sets.
 
 ### 2.2. User config: backup target
 
@@ -113,8 +216,8 @@ hide them; it reports that the ledger exists and target setup failed.
 `fid status` warns until a target is set (CLI spec section 3). `fid backup`
 and `fid restore` read the target (section 2.4).
 
-These two small files use a strict single-setting TOML subset: the named
-table and key, single-line basic (double-quoted, with TOML escapes) or literal
+The user config uses a strict single-setting TOML subset: the named table
+and key, single-line basic (double-quoted, with TOML escapes) or literal
 (single-quoted) strings, blank lines and comments. Duplicate or unknown
 tables/keys and unquoted values are refused.
 

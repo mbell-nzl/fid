@@ -1048,6 +1048,62 @@ environment allowlist stays.
   - 2.2a defines the whole schema: checks, Assured paths, check-defining
     paths, `auto_merge` per lane, the rework cap and the token budget.
 
+- **Decided by Mark, 11 November 2026 (2.2a):**
+  - **Shape.** `[checks.<name>]` holds `run` (a non-empty argv list, with
+    no shell), a required positive Go-duration `timeout`, `defined_by`
+    (paths whose changes require Assured) and optional `when_changed`
+    (the check is required only when those paths change).
+    `[lanes.routine]`, `[lanes.standard]` and `[lanes.assured]` hold
+    `checks`, `rework_cap` (default 3), `token_budget` (default off) and
+    `auto_merge` (default false). Each check must be defined. Only Routine
+    and Assured accept `paths`; all other paths are Standard. The highest
+    floor of any changed path is the change's floor. `auto_merge` is
+    refused under Assured, which Mark always merges. `.fid.toml` and
+    `.github/workflows/**` are built-in, unwaivable Assured paths.
+    `[review] test_adequacy` lists paths needing that review in every lane.
+    Globs are rooted at the repository: `*` stays within one folder and
+    `**` crosses folders. Unknown keys are refused. There is no schema
+    version until real data needs compatibility.
+  - **Parser.** BurntSushi/toml v1.6.0, with strict keys through
+    `MetaData.Undecoded()`. fid writes its own glob matcher; there is no
+    second dependency. One reader covers identity and policy. Init,
+    backup and restore still read the working-tree project ID, accepting
+    files that also contain policy.
+  - **No checks.** A project can track work with no checks. A missing
+    lane's `checks` key means not set up; explicit `checks = []` means no
+    checks required. 2.2a exposes the distinction. The refusals for check,
+    hand-off and done, and status's `⚠ No checks set for <lanes> in
+    .fid.toml` warning, arrive in 1.5a and 1.6. Init keeps writing only
+    `[project] id`.
+- **Orchestrator's proposals for 2.2a, implemented awaiting Mark's
+  confirmation (not Mark's decisions):**
+  - **P1.** Resolve the default through `refs/remotes/origin/HEAD`. With
+    origin but no known default, refuse and name
+    `git remote set-head origin <branch>` as the fix. With no origin,
+    use built-in defaults.
+  - **P2.** Unset keys give no checks (every lane not set up), no lane
+    paths, rework cap 3, token budget off, auto-merge false, and no
+    test-adequacy paths. Projects list their own test paths; fid cannot
+    infer tests for every language. The two hard Assured floors remain.
+  - **P3.** Reuse an existing refusal code if it fits. 2.2a uses
+    `invalid-argument` / `invalid-input` for missing or invalid policy;
+    it adds no failure code.
+- **Builder's implementation choices (2.2a):** migration 21 adds
+  `policy_snapshots`, ordered by a sequence primary key. `policy.snapshotted`
+  is one Event on the `policy` aggregate, written by fid's internal
+  `policy.snapshot` operation under the same lock as the following hold.
+  A snapshot can stand alone when there is no task or a live hold already
+  exists. It records the full effective policy as canonical JSON, its
+  SHA-256 digest, and `origin/<branch>` plus its commit (or `built-in
+  defaults`). Set-valued lists are sorted and deduplicated, durations are
+  encoded in nanoseconds and argv keeps its order. Project identity and
+  source commit are not part of the effective digest. Built-in rules
+  version 1, named action sets and actor rules are included. Consecutive
+  identical effective digests are never recorded again, even at a new
+  source commit. A snapshot followed by a failed hold remains a complete
+  fact; retry checks it again. Replay validates the recorded policy and
+  digest without replacing them with the running version's rules.
+
 **D5 / F4 Threat model: honest but fallible agents** on a single-user
 machine. Not defending against deliberately adversarial agents. A deceptive
 agent could forge a local approval; that is accepted. Friction: a hook denies

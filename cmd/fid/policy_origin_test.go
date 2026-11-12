@@ -7,11 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/gittest"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/policysnapshot"
 )
 
 func policyWorkspace(t *testing.T) (string, string) {
@@ -207,9 +210,17 @@ func TestPolicySourceDefaultsAndRefusals(t *testing.T) {
 			case "missing origin HEAD":
 				identityGit(t, root, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
 			case "invalid origin policy":
+				path := filepath.Join(root, ".fid.toml")
+				valid, err := os.ReadFile(path)
+				if err != nil {
+					t.Fatal(err)
+				}
 				appendPolicy(t, root, "\n[lanes.assured]\nauto_merge = true\n")
 				invalidCommit = policyCommit(t, root)
 				identityGit(t, root, "push", "-q", "origin", "trunk")
+				if err := os.WriteFile(path, valid, 0o600); err != nil {
+					t.Fatal(err)
+				}
 			}
 			before := readAllPolicyJournal(t, root)
 			result := executeCommandForTest(root, "--json", "next", "--claim", "--actor", "agent:builder")
@@ -232,5 +243,44 @@ func TestPolicySourceDefaultsAndRefusals(t *testing.T) {
 				t.Fatalf("defaults snapshot = %#v", got)
 			}
 		})
+	}
+}
+
+func TestPolicySnapshotRecordsBuiltInUpgradesAndReturnsToEarlierDigests(t *testing.T) {
+	t.Parallel()
+	root, _ := policyWorkspace(t)
+	loaded, err := policy.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldDigest := loaded.Effective.Digest()
+	// The boundary accepts an effective policy already resolved by fid. Use
+	// that seam to represent a built-in rule upgrade without altering globals.
+	err = journal.WithLock(root, journal.LockOwner{Command: "test policy upgrade"}, func(lock *journal.WriteLock) error {
+		conn, err := fiddb.Open(filepath.Join(config.LedgerDir(root), config.DatabaseFileName))
+		if err != nil {
+			return err
+		}
+		defer closeCommandDB(t, conn)
+		for _, version := range []int{1, 1, 2, 2, 1, 1} {
+			loaded.Effective.RulesVersion = version
+			if err := policysnapshot.Ensure(lock, conn, loaded, time.Now()); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	snapshots := policySnapshots(t, root)
+	if len(snapshots) != 3 || snapshots[0].Digest != oldDigest || snapshots[1].Digest == oldDigest || snapshots[2].Digest != oldDigest {
+		t.Fatalf("rule upgrade A→B→A snapshots = %#v", snapshots)
+	}
+	runFIDCommand(t, root, "rebuild")
+	for index, replayed := range policySnapshots(t, root) {
+		if replayed != snapshots[index] {
+			t.Fatalf("upgrade snapshot changed during replay: %#v, want %#v", replayed, snapshots[index])
+		}
 	}
 }
