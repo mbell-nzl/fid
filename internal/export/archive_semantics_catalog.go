@@ -79,7 +79,7 @@ var semanticEventRules = map[string]semanticEventRule{
 	"attention.resolved":             semanticRule("attention", semanticStage(1, semanticEffectKey("attention_items", "update")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
 	"issue.created":                  semanticRule("issue", semanticStage(1, semanticEffectKey("issues", "insert")), semanticStage(0, semanticEffectKey("issue_labels", "insert")), semanticStage(0, semanticEffectKey("epic_metadata", "insert")), semanticStage(1, semanticEffectKey("activity_log", "activity")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
 	"issue.updated":                  semanticRule("issue", semanticStage(1, semanticEffectKey("issues", "update")), semanticStage(0, semanticEffectKey("issue_labels", "insert"), semanticEffectKey("issue_labels", "delete")), semanticStage(1, semanticEffectKey("activity_log", "activity")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
-	"issue.transitioned":             semanticRule("issue", semanticStage(1, semanticEffectKey("issues", "update")), semanticStage(1, semanticEffectKey("activity_log", "activity")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
+	"issue.transitioned":             semanticRule("issue", semanticStage(1, semanticEffectKey("issues", "update")), semanticStage(0, semanticEffectKey("holds", "update")), semanticStage(1, semanticEffectKey("activity_log", "activity")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
 	"issue.ac-added":                 semanticRule("issue", semanticStage(1, semanticEffectKey("acceptance_criteria", "insert")), semanticStage(1, semanticEffectKey("issues", "update")), semanticStage(1, semanticEffectKey("activity_log", "activity")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
 	"issue.label-added":              semanticRule("issue", semanticStage(1, semanticEffectKey("issue_labels", "insert")), semanticStage(1, semanticEffectKey("issues", "update")), semanticStage(1, semanticEffectKey("activity_log", "activity")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
 	"issue.label-removed":            semanticRule("issue", semanticStage(1, semanticEffectKey("issue_labels", "delete")), semanticStage(1, semanticEffectKey("issues", "update")), semanticStage(1, semanticEffectKey("activity_log", "activity")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
@@ -88,7 +88,12 @@ var semanticEventRules = map[string]semanticEventRule{
 	"link.removed":                   semanticRule("link", semanticStage(1, semanticEffectKey("links", "delete")), semanticStage(0, semanticEffectKey("issues", "update")), semanticStage(1, semanticEffectKey("activity_log", "activity")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
 	"workflow.defined":               semanticRule("workflow", semanticStage(1, semanticEffectKey("workflows", "insert")), semanticStage(1, semanticEffectKey("workflow_states", "insert")), semanticStage(0, semanticEffectKey("workflow_transitions", "insert")), semanticStage(0, semanticEffectKey("idempotency_results", "insert"))),
 	"workflow.assigned":              semanticRule("workflow-assignment", semanticStage(0, semanticEffectKey("workflow_assignments", "delete")), semanticStage(1, semanticEffectKey("workflow_assignments", "insert")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
+	"hold.taken":                     semanticRule("hold", semanticStage(0, semanticEffectKey("holds", "update")), semanticStage(1, semanticEffectKey("holds", "insert"))),
 }
+
+// semanticFirstProfile is the first projection schema that holds each
+// family added since schema 19. An archive of an earlier schema holds none.
+var semanticFirstProfile = map[string]int{"hold.taken": 20}
 
 var semanticPost14Events = map[string]bool{
 	"activation.resource-observed": true, "activation.recovery-selected": true, "activation.recovery-completed": true,

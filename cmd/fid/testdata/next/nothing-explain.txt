@@ -1,0 +1,17 @@
+╭ fid next ──────────────────────────────────────────────── 2026-11-08 ╮
+
+  ○ Nothing ready here: 1 interrupted in fid-wt5, 1 blocked,
+    1 being worked in fid-wt3, 1 being worked in fid-wt3-tests,
+    1 being worked in fid-wt2, 2 not next in their epic's sequence,
+    1 being worked in fid-wt4
+
+  IN ORDER
+  ● FID-71a0c2  Export validation               interrupted in fid-wt5
+  ○ FID-c2d4e5  Retry a rejected backup push     blocked by FID-71a0c2
+  ○ FID-9f13aa  Harden login rate limiting          working in fid-wt3
+  ○ FID-0d4e8b  Document backup age           working in fid-wt3-tests
+  ● FID-1f2e3d  Contract fields and exit codes      working in fid-wt2
+  ○ FID-2f2e3d  Golden tests for the contract         after FID-1f2e3d
+  ○ FID-3f2e3d  Scenario test for rework              after FID-1f2e3d
+  ○ FID-77aa01  Tidy help text                      working in fid-wt4
+╰──────────────────────────────────────────────────────────────────────╯

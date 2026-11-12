@@ -92,7 +92,10 @@ var currentEventCommands = map[string]string{
 
 // Retained current Event-v2 families keep the accepted Phase 21 Effect
 // grammar. They cannot carry a Phase 22 Effect under an unrelated family.
+// The lean core's families (ADR-0014) share this grammar, and their Effects
+// are checked against their stages in order too (leanEventFamilies).
 var retainedCurrentRules = map[string]currentEventRule{
+	"hold.taken":                     currentRule("hold", currentStage(0, currentEffectKey("holds", "update")), currentStage(1, currentEffectKey("holds", "insert"))),
 	"issue.label.added":              currentRule("issue", currentStage(1, currentEffectKey("issue_labels", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.label.removed":            currentRule("issue", currentStage(1, currentEffectKey("issue_labels", "delete")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"project.initialized":            currentRule("project"),
@@ -107,7 +110,7 @@ var retainedCurrentRules = map[string]currentEventRule{
 	"artifact.availability-observed": currentRule("artifact", currentStage(0, currentEffectKey("referenced_artifacts", "update")), currentStage(0, currentEffectKey("stops", "insert"), currentEffectKey("attention_items", "insert"), currentEffectKey("attention_stop_links", "insert")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.created":                  currentRule("issue", currentStage(1, currentEffectKey("issues", "insert")), currentStage(0, currentEffectKey("issue_labels", "insert")), currentStage(0, currentEffectKey("epic_metadata", "insert")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.updated":                  currentRule("issue", currentStage(1, currentEffectKey("issues", "update")), currentStage(0, currentEffectKey("issue_labels", "insert"), currentEffectKey("issue_labels", "delete")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
-	"issue.transitioned":             currentRule("issue", currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
+	"issue.transitioned":             currentRule("issue", currentStage(1, currentEffectKey("issues", "update")), currentStage(0, currentEffectKey("holds", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.ac-added":                 currentRule("issue", currentStage(1, currentEffectKey("acceptance_criteria", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.label-added":              currentRule("issue", currentStage(1, currentEffectKey("issue_labels", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.label-removed":            currentRule("issue", currentStage(1, currentEffectKey("issue_labels", "delete")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
@@ -117,3 +120,8 @@ var retainedCurrentRules = map[string]currentEventRule{
 	"workflow.defined":               currentRule("workflow", currentStage(1, currentEffectKey("workflows", "insert")), currentStage(1, currentEffectKey("workflow_states", "insert")), currentStage(0, currentEffectKey("workflow_transitions", "insert")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"workflow.assigned":              currentRule("workflow-assignment", currentStage(0, currentEffectKey("workflow_assignments", "delete")), currentStage(1, currentEffectKey("workflow_assignments", "insert")), currentStage(1, currentEffectKey("idempotency_results", "insert"))),
 }
+
+// leanEventFamilies are the lean core's families. Every Effect they carry
+// is checked against their stages, in order, not only those on a domain
+// table another family owns.
+var leanEventFamilies = map[string]bool{"hold.taken": true}

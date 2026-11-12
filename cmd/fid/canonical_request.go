@@ -172,6 +172,13 @@ func leafOperation(cmd *cobra.Command) string {
 		return "capabilities.get"
 	case "ready":
 		return "ready.get"
+	case "next":
+		// Once the flags are parsed, --claim makes the request next.claim;
+		// the parser's own refusals answer for next.get.
+		if claim, err := cmd.Flags().GetBool("claim"); err == nil && claim {
+			return "next.claim"
+		}
+		return "next.get"
 	case "resume":
 		return "projection.resume"
 	}

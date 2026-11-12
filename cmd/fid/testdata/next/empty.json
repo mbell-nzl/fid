@@ -1,0 +1,14 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "next.claim",
+  "result": {
+    "epic": null,
+    "hold": null,
+    "kind": "none",
+    "queue": [],
+    "task": null,
+    "worktree": "<ROOT>"
+  }
+}

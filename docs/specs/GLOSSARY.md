@@ -593,7 +593,8 @@ Definition: A task handed out by `fid next --claim` to one actor in one
 worktree, with its own ID. Heartbeats renew it; it lapses after about an
 hour. A task has at most one active hold. A lapsed hold on a started task
 leaves the task interrupted and kept for its worktree, which resumes it under
-a new hold linked to the old one.
+a new hold linked to the old one. A hold ends when a new hold replaces it or
+its task is completed or cancelled; park, `done` and takeover end one too.
 Use when: saying who is working a task, and where.
 Avoid: "claim" in human output (the leak test flags it), though the
 `--claim` flag and JSON codes keep the word. Avoid treating a lapse as proof
