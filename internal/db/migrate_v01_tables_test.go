@@ -207,23 +207,25 @@ func TestMigration0006DownRemovesSequenceSchedulingBackstopOnly(t *testing.T) {
 	}
 }
 
-func TestDecideProjectionFreshnessRequiresPhase19SchemaVersion(t *testing.T) {
+func TestDecideProjectionFreshnessRequiresPolicySchemaVersion(t *testing.T) {
 	t.Parallel()
 
-	if ProjectionSchemaVersion != 5 {
-		t.Fatalf("ProjectionSchemaVersion = %d, want %d", ProjectionSchemaVersion, 5)
+	if ProjectionSchemaVersion != 6 {
+		t.Fatalf("ProjectionSchemaVersion = %d, want %d", ProjectionSchemaVersion, 6)
 	}
 
-	stale := DecideProjectionFreshness(ProjectionFreshnessInput{
-		MetaExists:                    true,
-		ReplayStatus:                  ReplayStatusClean,
-		StoredProjectionSchemaVersion: 4,
-		CurrentProjectionSchema:       ProjectionSchemaVersion,
-		CheckpointExists:              true,
-		CheckpointMatches:             true,
-	})
-	if stale != ProjectionRebuild {
-		t.Fatalf("stale freshness decision = %q, want %q", stale, ProjectionRebuild)
+	for _, previous := range []int{4, 5} {
+		stale := DecideProjectionFreshness(ProjectionFreshnessInput{
+			MetaExists:                    true,
+			ReplayStatus:                  ReplayStatusClean,
+			StoredProjectionSchemaVersion: previous,
+			CurrentProjectionSchema:       ProjectionSchemaVersion,
+			CheckpointExists:              true,
+			CheckpointMatches:             true,
+		})
+		if stale != ProjectionRebuild {
+			t.Fatalf("schema %d stale freshness decision = %q, want %q", previous, stale, ProjectionRebuild)
+		}
 	}
 
 	fresh := DecideProjectionFreshness(ProjectionFreshnessInput{

@@ -284,3 +284,44 @@ func TestPolicySnapshotRecordsBuiltInUpgradesAndReturnsToEarlierDigests(t *testi
 		}
 	}
 }
+
+func TestNextClaimUpgradesAFreshPrePolicyProjection(t *testing.T) {
+	t.Parallel()
+	root, task := policyWorkspace(t)
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(root), config.DatabaseFileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Reproduce a fully caught-up ledger left by the previous binary:
+	// migration 20, projection format 5, with no missing journal Events.
+	for _, statement := range []string{
+		"DROP TABLE policy_snapshots",
+		"UPDATE schema_migrations SET version = 20",
+		"UPDATE projection_meta SET projection_schema_version = 5",
+	} {
+		if _, err := conn.Exec(statement); err != nil {
+			closeCommandDB(t, conn)
+			t.Fatal(err)
+		}
+	}
+	closeCommandDB(t, conn)
+	result, _ := decodeNext(t, executeCommandForTest(root, "--json", "next", "--claim", "--actor", "agent:builder"), "next.claim")
+	if result["task"].(map[string]any)["id"] != task || len(policySnapshots(t, root)) != 1 {
+		t.Fatalf("upgraded next = %#v, want the original task and its policy snapshot", result)
+	}
+	conn, err = fiddb.Open(filepath.Join(config.LedgerDir(root), config.DatabaseFileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeCommandDB(t, conn)
+	var migration, projection int
+	if err := conn.QueryRow("SELECT version FROM schema_migrations").Scan(&migration); err != nil {
+		t.Fatal(err)
+	}
+	if err := conn.QueryRow("SELECT projection_schema_version FROM projection_meta WHERE key = 'default'").Scan(&projection); err != nil {
+		t.Fatal(err)
+	}
+	if migration != 21 || projection != fiddb.ProjectionSchemaVersion {
+		t.Fatalf("upgraded migration/projection = %d/%d", migration, projection)
+	}
+}

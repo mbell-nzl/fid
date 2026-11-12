@@ -7,7 +7,7 @@
     "envelope_protected_decisions", "envelope_revisions", "envelope_sources", "epic_metadata",
     "evidence_artifact_links", "evidence_records", "execution_attempts", "execution_receipts",
     "finding_dispositions", "gate_registrations", "holds", "human_outcomes", "idempotency_results", "issue_labels",
-    "issues", "kit_activations", "labels", "links", "projection_meta", "receipt_artifacts",
+    "issues", "kit_activations", "labels", "links", "policy_snapshots", "projection_meta", "receipt_artifacts",
     "referenced_artifacts", "requirement_issue_links", "requirement_refs", "review_findings", "review_records",
     "run_budget_bindings", "run_observations", "run_recoveries", "run_runtime", "runs", "schema_migrations",
     "stop_resolutions", "stops", "system_capabilities", "triage_events", "work_envelopes",

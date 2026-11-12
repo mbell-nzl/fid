@@ -185,7 +185,9 @@ explicit built-in rules version. Project identity and source metadata do
 not change the effective digest. Formatting, comments and key order do
 not change it; semantic policy changes and built-in rule changes do.
 Snapshots are projected into `policy_snapshots` (migration 21), ordered by
-sequence; rebuild and export/import preserve them. Repeated digests at
+sequence; projection format 6 triggers a rebuild of a caught-up older
+projection on upgrade. Rebuild and export/import preserve the snapshots.
+Repeated digests at
 different source commits produce no new snapshot. An A→B→A change does
 produce three snapshots, because the latest effective digest changes at
 each step. The Event is attributed to fid's internal writer, independent

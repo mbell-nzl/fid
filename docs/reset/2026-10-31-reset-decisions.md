@@ -1089,7 +1089,10 @@ environment allowlist stays.
     `invalid-argument` / `invalid-input` for missing or invalid policy;
     it adds no failure code.
 - **Builder's implementation choices (2.2a):** migration 21 adds
-  `policy_snapshots`, ordered by a sequence primary key. `policy.snapshotted`
+  `policy_snapshots`, ordered by a sequence primary key. Projection format
+  6 makes a caught-up format-5 ledger rebuild automatically, so an upgrade
+  installs the new table even when no journal Events are pending.
+  `policy.snapshotted`
   is one Event on the `policy` aggregate, written by fid's internal
   `policy.snapshot` operation under the same lock as the following hold.
   A snapshot can stand alone when there is no task or a live hold already
