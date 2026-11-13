@@ -4,10 +4,11 @@ Decisions session, 30–31 October 2026, run as a grilling session against
 `2026-10-29-fid-kit-reset-proposal.html` (now superseded). Two Opus 5.5 second
 opinions informed D2, and a fresh-context review of the result led to the
 amendments marked below. These decisions feed ADR-0013 and `RESET.md`.
-Amendments dated 10, 11 and 12 November 2026 record the lean core
+Amendments dated 10–14 November 2026 record the lean core
 (ADR-0014). "Decided 11 November 2026" and "Decided 12 November 2026" below
-list Mark's decisions of those days for tasks 1.4b to 3.2, and the gaps
-settled from them, each also marked where its topic lives.
+list Mark's decisions of those days for tasks 1.4b to 3.2; "Decided 14
+November 2026" records the policy answers and the 1.5a split. Decisions
+and gaps settled from them are also marked where their topics live.
 
 ## Goal
 
@@ -177,6 +178,38 @@ from Mark's decisions as transactional details, and aren't his own words:
 - **Closing an epic**, following item 9. `fid issue transition` refuses to
   complete an epic, as it does a task. `fid done <epic>` records the close
   as a person's decision, of a kind fid refuses from `agent:*`.
+
+## Decided 14 November 2026
+
+Mark approved the following for 1.5a1. The answers to 2.2a's P1–P3 are
+recorded under F3 as decisions, replacing the pending proposals.
+
+- **Split 1.5a into seven Assured PRs, in order:** 1.5a1 policy decisions
+  and status health; 1.5a2 heartbeat, interruption and takeover; 1.5a3
+  waiting, answers and missing worktrees; 1.5a4 fixed states, start and
+  task lanes; 1.5a5 named checks and Artifacts; 1.5a6 lane-required checks
+  and which result counts; 1.5a7 hand-off and the worktree during review.
+  `RESET.md` holds each task's scope and completion criteria.
+- **Status reads trusted policy, read-only.** It reads the same local
+  `origin/<default>` policy as writing commands, or built-in defaults
+  when there is no origin or file. It never writes a snapshot or any
+  other Event, including after the effective digest changes.
+- **Q16: A — status keeps working when policy is unavailable.** It shows
+  the whole board and one `Policy unavailable: <problem>` warning, with
+  the fix. It shows no checks or test-path warnings when it cannot read
+  policy. Otherwise, it warns about lanes whose `checks` key is missing,
+  in Routine, Standard, Assured order, and about a missing
+  `[review] test_adequacy` key. Explicit empty lists are set up and do not
+  warn. Each fix names the relevant tables, then merging `.fid.toml` and
+  `git fetch`. Warnings sit inside the box just above the backup line,
+  policy unavailable, checks, then test paths; they appear in empty
+  projects too, use display wrapping and indentation, and are never
+  NEEDS YOU items. JSON always carries `result.warnings` (`[]` when
+  healthy), each with `kind`, `summary` and `next_action`;
+  `policy-unavailable` adds `problem`, nullable `ref` and nullable
+  `commit`; `checks-not-configured` adds the lowercase `lanes` list;
+  `test-paths-not-configured` has no extra fields. The CLI spec records
+  the exact text and JSON shapes.
 
 ## Products
 
@@ -1110,19 +1143,31 @@ environment allowlist stays.
     hand-off and done, and status's `⚠ No checks set for <lanes> in
     .fid.toml` warning, arrive in 1.5a and 1.6. Init keeps writing only
     `[project] id`.
-- **Orchestrator's proposals for 2.2a, implemented awaiting Mark's
-  confirmation (not Mark's decisions):**
-  - **P1.** Resolve the default through `refs/remotes/origin/HEAD`. With
-    origin but no known default, refuse and name
-    `git remote set-head origin <branch>` as the fix. With no origin,
-    use built-in defaults.
-  - **P2.** Unset keys give no checks (every lane not set up), no lane
-    paths, rework cap 3, token budget off, auto-merge false, and no
-    test-adequacy paths. Projects list their own test paths; fid cannot
-    infer tests for every language. The two hard Assured floors remain.
-  - **P3.** Reuse an existing refusal code if it fits. 2.2a uses
-    `invalid-argument` / `invalid-input` for missing or invalid policy;
-    it adds no failure code.
+- **Decided by Mark, 14 November 2026 (2.2a's proposals):**
+  - **P1: A, as built.** Resolve the default through
+    `refs/remotes/origin/HEAD`. With origin but no known default, refuse
+    and name `git remote set-head origin <branch>` as the fix. With no
+    origin, use built-in defaults.
+  - **P2: C.** A missing `[review] test_adequacy` key means not set up,
+    like a lane's missing `checks` key. Explicit `test_adequacy = []`
+    means no test-adequacy reviews are needed. Hand-off (1.5a7) and `done`
+    (1.6) will refuse while it isn't set up, naming the fix; neither
+    refusal belongs to 1.5a1. Projects list their own test paths; fid
+    cannot infer tests for every language. The distinction is part of the
+    effective policy and its digest, recorded snapshots, replay,
+    export/import and V8. No compatibility with older snapshots is needed:
+    no ledger holds real data. Other defaults stay as built: rework cap 3,
+    token budget off, `auto_merge` false, no lane paths (so every path is
+    Standard except the hard floors), and missing `checks` = not set up.
+  - **P3: B.** `policy-unavailable` replaces `invalid-argument` for both
+    an origin with no known default branch and invalid or unreadable
+    `.fid.toml` on origin. Its category is `precondition` (exit 4), it is
+    not retryable, its subject is null, and its closed details are
+    `problem` (string), `ref` (string or null) and `commit` (string or
+    null). Text keeps the renderer's `error:` and `reason:` lines, then
+    adds `next:`: `git remote set-head origin <branch>` for an unknown
+    default; otherwise fix `.fid.toml` on the default branch, merge it
+    and `git fetch`. Status warns with the same problem and fix.
 - **Builder's implementation choices (2.2a):** migration 21 adds
   `policy_snapshots`, ordered by a sequence primary key. Projection format
   6 makes a caught-up format-5 ledger rebuild automatically, so an upgrade
