@@ -172,6 +172,12 @@ func leafOperation(cmd *cobra.Command) string {
 		return "capabilities.get"
 	case "ready":
 		return "ready.get"
+	case "heartbeat":
+		return "hold.heartbeat"
+	case "park":
+		return "hold.park"
+	case "takeover":
+		return "task.takeover"
 	case "next":
 		// Once the flags are parsed, --claim makes the request next.claim;
 		// the parser's own refusals answer for next.get.

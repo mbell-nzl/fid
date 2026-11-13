@@ -295,7 +295,7 @@ func TestV3TwoWorktreesNeverHoldTheSameTask(t *testing.T) {
 			if again.kind != "resume" || again.hold != answers[index].hold || again.event {
 				t.Fatalf("round %d: wt%d's re-run = %+v, want resume of %s with no Event", round, index+1, again, answers[index].hold)
 			}
-			runFIDCommand(t, main, "issue", "transition", task, "--to", "cancelled", "--actor", "human:mark")
+			runFIDCommand(t, main, "issue", "transition", task, "--to", "cancelled", "--actor", "human:mark", "--reason", "Test cancellation")
 		}
 		if round > len(tasks) {
 			t.Fatalf("still taking tasks after %d rounds", round)

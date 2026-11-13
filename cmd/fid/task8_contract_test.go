@@ -140,7 +140,7 @@ func TestTask8IssueTransitionUsesStandaloneActorAndReplaysOriginalMutation(t *te
 		"--project", workspace,
 		"--json",
 		"issue", "transition", issueID,
-		"--to", "cancelled",
+		"--to", "cancelled", "--reason", "Test cancellation",
 		"--expected-revision", "1",
 		"--actor", "human:task-8",
 		"--idempotency-key", "task-8-transition",

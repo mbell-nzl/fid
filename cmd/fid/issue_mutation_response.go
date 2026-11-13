@@ -88,10 +88,14 @@ func renderIssueTransitionSuccess(cmd *cobra.Command, result issues.TransitionRe
 		return cli.WriteSuccess(cmd.OutOrStdout(), "issue.transition", map[string]any{
 			"issue":           map[string]any{"id": result.ID, "revision": result.Revision},
 			"from_state":      result.FromState,
+			"decision_id":     result.DecisionID,
 			"to_state":        result.ToState,
 			"idempotency_key": result.IdempotencyKey,
 			"replayed":        result.Replayed,
 		}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
+	}
+	if result.DecisionID != nil {
+		return writeIssueLine(cmd.OutOrStdout(), "✓ Cancelled %s\n", result.ID)
 	}
 	return writeIssueLine(cmd.OutOrStdout(), "transitioned %s: %s → %s\n", result.ID, result.FromState, result.ToState)
 }
@@ -139,6 +143,13 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 		return cli.Failure{}, err
 	} else if handled {
 		return failure, nil
+	}
+	if failure, handled, err := personDecisionFailure(operation, mutationErr); handled || err != nil {
+		return failure, err
+	}
+	var requiredKey *issues.IdempotencyKeyRequiredError
+	if errors.As(mutationErr, &requiredKey) {
+		return cli.NewFailure(cli.CodeInvalidArgument, requiredKey.Error(), nil, map[string]any{"argument": "--idempotency-key", "value": nil, "allowed": []string{"string"}})
 	}
 	var idempotency *journal.IdempotencyConflictError
 	if errors.As(mutationErr, &idempotency) {

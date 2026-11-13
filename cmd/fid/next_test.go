@@ -350,7 +350,7 @@ func TestNextHoldEndsInTheEventThatClosesItsTask(t *testing.T) {
 	}
 	for _, to := range []string{"cancelled", "done"} {
 		task := take()
-		runFIDCommand(t, workspace, "issue", "transition", task, "--to", to, "--actor", "human:mark")
+		runFIDCommand(t, workspace, "issue", "transition", task, "--to", to, "--actor", "human:mark", "--reason", "Test transition")
 		event := lastJournalEvent(t, workspace)
 		ended := false
 		for _, effect := range event["effects"].([]any) {

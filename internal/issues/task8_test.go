@@ -39,7 +39,7 @@ func TestTask8IssueEventsUseFixedClockAndAggregateOrder(t *testing.T) {
 	if _, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            created.ID, ToState: "cancelled", Actor: "agent:task-8", IdempotencyKey: "fixed-transition", ExpectedRevision: intPointer(2),
+		ID:            created.ID, ToState: "cancelled", Reason: "Test cancellation", Actor: "human:task-8", IdempotencyKey: "fixed-transition", ExpectedRevision: intPointer(2),
 		now: clock,
 	}); err != nil {
 		t.Fatalf("Transition() error = %v", err)
@@ -92,8 +92,8 @@ func TestTask8LegacyInProcessIssueMutationsReceiveIdempotencyKeys(t *testing.T) 
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
-		ToState:       "cancelled",
-		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ToState:       "cancelled", Reason: "Test cancellation",
+		Actor: "human:developer", IdempotencyKey: testIdempotencyKey(),
 		ExpectedRevision: intPointer(2),
 	})
 	if err != nil {

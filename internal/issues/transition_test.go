@@ -355,8 +355,8 @@ func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
-		ToState:       "cancelled",
-		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
+		ToState:       "cancelled", Reason: "Test cancellation",
+		Actor: "human:mark", IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition() error = nil, want missing cancelled registry edge rejection")
@@ -846,8 +846,8 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            task.ID,
-		ToState:       "cancelled",
-		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		ToState:       "cancelled", Reason: "Test cancellation",
+		Actor: "human:mark", IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(task todo->cancelled) error = %v", err)
 	}

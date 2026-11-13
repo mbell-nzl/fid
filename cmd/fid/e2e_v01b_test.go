@@ -202,10 +202,10 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		t,
 		workspace,
 		"issue", "transition", seqCurrentID,
-		"--to", "cancelled",
-		"--actor", "agent:tl",
+		"--to", "cancelled", "--reason", "Test cancellation",
+		"--actor", "human:mark",
 	)
-	if !strings.Contains(transitionStderr, "transitioned "+seqCurrentID+": todo → cancelled") {
+	if !strings.Contains(transitionStderr, "✓ Cancelled "+seqCurrentID) {
 		t.Fatalf("transition stderr = %q, want cancellation confirmation", transitionStderr)
 	}
 	assertIssueReadBack(t, workspace, seqCurrentID, issueReadBack{
@@ -364,10 +364,10 @@ func TestV01BReadyReturnsEmptyAfterAllTasksFinishedEndToEnd(t *testing.T) {
 		t,
 		workspace,
 		"issue", "transition", issueID,
-		"--to", "cancelled",
-		"--actor", "agent:tl",
+		"--to", "cancelled", "--reason", "Test cancellation",
+		"--actor", "human:mark",
 	)
-	if !strings.Contains(transitionStderr, "transitioned "+issueID+": todo → cancelled") {
+	if !strings.Contains(transitionStderr, "✓ Cancelled "+issueID) {
 		t.Fatalf("transition stderr = %q, want cancellation confirmation", transitionStderr)
 	}
 

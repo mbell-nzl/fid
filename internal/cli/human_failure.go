@@ -159,6 +159,8 @@ func humanRepository(value any) string {
 
 func humanNext(failure Failure, operation, leaf string, hasInput bool) string {
 	switch failure.Code {
+	case CodeHoldNotCurrent:
+		return "fid next"
 	case CodePolicyUnavailable:
 		if failure.Details["ref"] == nil {
 			return policy.DefaultBranchFix

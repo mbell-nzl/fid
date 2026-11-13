@@ -135,9 +135,12 @@ func (text textWriter) rows(result Result) []string {
 			value = fmt.Sprintf("in %s by %s, since %s, until %s", hold.Worktree, hold.Actor, clock(hold.Since), clock(hold.ExpiresAt))
 		}
 		if hold.Lapsed {
-			value = fmt.Sprintf("⚠ interrupted in %s by %s: work stopped at %s without a park", hold.Worktree, hold.Actor, clock(hold.Since))
+			value = fmt.Sprintf("⚠ interrupted in %s by %s: work stopped at %s without a park", hold.Worktree, hold.Actor, clock(hold.LastHeartbeatAt))
 		}
 		lines = append(lines, text.value("Working", value)...)
+	}
+	if kept := result.Kept; kept != nil && kept.Reason != nil {
+		lines = append(lines, text.value("Working", fmt.Sprintf("⚠ interrupted in %s by %s: parked at %s: %s", kept.Worktree, kept.Actor, display.Clock(kept.Since, result.Now), *kept.Reason))...)
 	}
 	return lines
 }

@@ -1,0 +1,22 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "transition-not-permitted",
+    "details": {
+      "from_state": "done",
+      "to_state": "done",
+      "unsatisfied": [
+        "task-open"
+      ]
+    },
+    "message": "this task is closed",
+    "retryable": false,
+    "subject": {
+      "id": "FID-77aa03",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "task.takeover"
+}

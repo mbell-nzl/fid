@@ -1,0 +1,8 @@
+╭ fid next ──────────────────────────────────────────────── 2026-11-08 ╮
+
+  ● FID-aaaaaa  Interrupted work                           in progress
+
+  ⚠ Interrupted here: work stopped at 22:00 without a park.
+    Carry on from what's in this worktree.
+      → fid show FID-aaaaaa
+╰──────────────────────────────────────────────────────────────────────╯

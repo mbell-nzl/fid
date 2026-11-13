@@ -35,6 +35,7 @@
       "updated_at": "2026-10-31T04:00:00Z",
       "acceptance_criteria": []
     },
+    "kept": null,
     "progress": null,
     "scheduling": null,
     "state": null,
@@ -46,6 +47,7 @@
       "actor": "agent:claude-builder",
       "since": "2026-11-08T08:59:00Z",
       "expires_at": "2026-11-08T09:59:00Z",
+      "last_heartbeat_at": "2026-11-08T08:59:00Z",
       "lapsed": false
     }
   }

@@ -1,0 +1,22 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "authority",
+    "code": "authority-denied",
+    "details": {
+      "actor_id": "agent:builder",
+      "operation": "task.takeover",
+      "required_actions": [
+        "task.takeover"
+      ],
+      "required_capabilities": [
+        "task.takeover"
+      ]
+    },
+    "message": "only a person can make this decision",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "task.takeover"
+}

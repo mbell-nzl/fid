@@ -12,6 +12,7 @@ func init() {
 func newIssueTransitionCommand() *cobra.Command {
 	var (
 		toState          string
+		reason           string
 		actor            string
 		idempotencyKey   string
 		expectedRevision string
@@ -25,8 +26,10 @@ func newIssueTransitionCommand() *cobra.Command {
 			if err := requireCanonicalFlag(cmd, "issue.transition", "actor"); err != nil {
 				return err
 			}
-			if err := requireCanonicalFlag(cmd, "issue.transition", "idempotency-key"); err != nil {
-				return err
+			if toState != "cancelled" {
+				if err := requireCanonicalFlag(cmd, "issue.transition", "idempotency-key"); err != nil {
+					return err
+				}
 			}
 			if err := requireCanonicalFlag(cmd, "issue.transition", "to"); err != nil {
 				return err
@@ -45,6 +48,7 @@ func newIssueTransitionCommand() *cobra.Command {
 				MigrationsDir:    issueMigrationsDir(),
 				ID:               args[0],
 				ToState:          toState,
+				Reason:           reason,
 				Actor:            actor,
 				IdempotencyKey:   idempotencyKey,
 				ExpectedRevision: expected,
@@ -57,6 +61,7 @@ func newIssueTransitionCommand() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringVar(&reason, "reason", "", "Why a person cancels this task or epic")
 	cmd.Flags().StringVar(&toState, "to", "", "Target workflow state; fid resume <issue-id> lists the Issue's next states")
 	cmd.Flags().StringVar(&expectedRevision, "expected-revision", "", "Required current Issue revision; fid resume <issue-id> shows it")
 	cmd.Flags().StringVar(&actor, "actor", "", "Standalone actor attribution")

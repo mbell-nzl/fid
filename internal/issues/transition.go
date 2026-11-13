@@ -10,6 +10,8 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/persondecision"
+	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -18,6 +20,7 @@ type TransitionOptions struct {
 	MigrationsDir    string
 	ID               string
 	ToState          string
+	Reason           string
 	Actor            string
 	IdempotencyKey   string
 	ExpectedRevision *int
@@ -27,6 +30,7 @@ type TransitionOptions struct {
 type TransitionResult struct {
 	ID             string
 	Revision       int
+	DecisionID     *string
 	FromState      string
 	ToState        string
 	EventID        string
@@ -147,10 +151,13 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		return TransitionResult{}, err
 	}
 	request := map[string]any{"id": options.ID, "to": options.ToState}
+	if options.Reason != "" {
+		request["reason"] = options.Reason
+	}
 	if options.ExpectedRevision != nil {
 		request["expected_revision"] = *options.ExpectedRevision
 	}
-	requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "issue.transition", "project_id": projectConfig.ProjectID, "request": request}, options.Actor, map[string]string{"id": "id", "to": "--to", "expected_revision": "--expected-revision"})
+	requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "issue.transition", "project_id": projectConfig.ProjectID, "request": request}, options.Actor, map[string]string{"id": "id", "to": "--to", "reason": "--reason", "expected_revision": "--expected-revision"})
 	if err != nil {
 		return TransitionResult{}, err
 	}
@@ -160,6 +167,9 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
+			return err
+		}
 		dbPath := filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.DatabaseFileName)
 		conn, err := fiddb.Open(dbPath)
 		if err != nil {
@@ -167,13 +177,14 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		}
 		defer closeIssueDB(conn)
 		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "issue.transition:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest, RequestFieldDigests: fields}
-		if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
-			return err
-		} else if found {
-			result, err = transitionResultFromJSON(outcome.ResultJSON, outcome.EventID, true)
-			return err
+		if options.IdempotencyKey != "" {
+			if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
+				return err
+			} else if found {
+				result, err = transitionResultFromJSON(outcome.ResultJSON, outcome.EventID, true)
+				return err
+			}
 		}
-
 		current, err := loadIssueTransitionState(conn, options.ID)
 		if err != nil {
 			return err
@@ -183,12 +194,27 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 			return err
 		}
 		toCategory, known := registry.CategoryForState(current.WorkflowID, toState)
+		cancelling := toCategory == "cancelled" && (current.Kind == "task" || current.Kind == "epic")
+		if !cancelling && options.IdempotencyKey == "" {
+			return &IdempotencyKeyRequiredError{}
+		}
+		if cancelling {
+			if !policy.Allows(options.Actor, policy.PersonDecisions) {
+				return &persondecision.DeniedError{Actor: options.Actor}
+			}
+			if strings.TrimSpace(options.Reason) == "" {
+				return &persondecision.ReasonRequiredError{}
+			}
+		}
 		rules, allowed := registry.RulesForEdge(current.WorkflowID, current.Status, toState)
-		execution, err := workflow.EvaluateExecutionTransition(options.WorkspaceRoot, options.MigrationsDir, workflow.ExecutionTransitionRequest{
-			IssueID: current.ID, ActorID: actor.id, ExpectedIssueRevision: options.ExpectedRevision,
-			ActualIssueRevision: current.Revision, WorkflowEdgeValid: known && allowed,
-			TerminalSuccess: toCategory == "completed",
-		})
+		var execution workflow.ExecutionTransitionEvaluation
+		if !cancelling {
+			execution, err = workflow.EvaluateExecutionTransition(options.WorkspaceRoot, options.MigrationsDir, workflow.ExecutionTransitionRequest{
+				IssueID: current.ID, ActorID: actor.id, ExpectedIssueRevision: options.ExpectedRevision,
+				ActualIssueRevision: current.Revision, WorkflowEdgeValid: known && allowed,
+				TerminalSuccess: toCategory == "completed",
+			})
+		}
 		if err != nil {
 			return err
 		}
@@ -271,14 +297,31 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 			return err
 		}
 		effects = append(effects, ended...)
+		var decisionID *string
+		if cancelling {
+			id, decision, err := persondecision.Effect(conn, "cancel", options.Actor, current.Kind, current.ID, options.Reason, event.OccurredAt)
+			if err != nil {
+				return err
+			}
+			decisionID = &id
+			effects = append(effects, decision)
+		}
 		event.Effects = effects
 		prepared, err := journal.PrepareEvent(lock, event)
 		if err != nil {
 			return err
 		}
 		event.Effects = append(effects, issueActivityEffect(activityID, prepared.EventID, actor.id, timestamp, current.ID, "status-changed", map[string]any{"from": current.Status, "to": toState}))
-		resultJSON, err := transitionResultJSON(TransitionResult{ID: current.ID, Revision: current.Revision + 1, FromState: current.Status, ToState: toState, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), IdempotencyKey: options.IdempotencyKey})
+		resultJSON, err := transitionResultJSON(TransitionResult{DecisionID: decisionID, ID: current.ID, Revision: current.Revision + 1, FromState: current.Status, ToState: toState, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), IdempotencyKey: options.IdempotencyKey})
 		if err != nil {
+			return err
+		}
+		if options.IdempotencyKey == "" {
+			appended, err := journal.CommitEvent(lock, conn, event)
+			if err != nil {
+				return err
+			}
+			result, err = transitionResultFromJSON(resultJSON, appended.EventID, false)
 			return err
 		}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotencyRequest, event, func(journal.Event) (journal.IdempotencyMutation, error) {
@@ -296,3 +339,8 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 
 	return result, nil
 }
+
+// IdempotencyKeyRequiredError preserves the existing contract outside a person's cancellation.
+type IdempotencyKeyRequiredError struct{}
+
+func (*IdempotencyKeyRequiredError) Error() string { return "--idempotency-key is required" }

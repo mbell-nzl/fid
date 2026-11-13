@@ -325,7 +325,7 @@ func TestNextClaimUpgradesAFreshPrePolicyProjection(t *testing.T) {
 	if err := conn.QueryRow("SELECT projection_schema_version FROM projection_meta WHERE key = 'default'").Scan(&projection); err != nil {
 		t.Fatal(err)
 	}
-	if migration != 21 || projection != fiddb.ProjectionSchemaVersion {
+	if migration != 22 || projection != fiddb.ProjectionSchemaVersion {
 		t.Fatalf("upgraded migration/projection = %d/%d", migration, projection)
 	}
 }

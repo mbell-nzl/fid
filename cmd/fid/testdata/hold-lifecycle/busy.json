@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "conflict",
+    "code": "worktree-busy",
+    "details": {
+      "task_id": "FID-c2d4e5",
+      "worktree": "<ROOT>"
+    },
+    "message": "this worktree already has FID-c2d4e5",
+    "retryable": false,
+    "subject": {
+      "id": "FID-71a0c2",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "task.takeover"
+}

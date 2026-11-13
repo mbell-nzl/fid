@@ -11,12 +11,15 @@ import (
 // Retained text domains are inherited by P21 §4.1 from P20 §3.2.1.
 // Opaque IDs and states use the newer P21 §2 / §4.1 scalar domain.
 var declaredTextDomains = map[string]map[string]flagDomain{
+	"park":               {"hold": opaqueFlagDomain("RESET 1.5a2"), "reason": textDomain(4096)},
+	"heartbeat":          {"hold": opaqueFlagDomain("RESET 1.5a2")},
+	"takeover":           {"reason": textDomain(4096)},
 	"issue create":       {"title": textDomain(512), "epic": opaqueFlagDomain("P21 §4.1 issue.create / §2 ID"), "parent": opaqueFlagDomain("P21 §4.1 issue.create / §2 ID"), "label": labelListDomain(false)},
 	"issue update":       {"title": textDomain(512), "labels": labelListDomain(true)},
 	"issue ac add":       {"text": textDomain(4096)},
 	"label add":          {"colour": textDomain(64), "description": textDomain(4096)},
 	"issue list":         {"status": opaqueFlagDomain("P21 §4.1 issue.list opaque state"), "epic": opaqueFlagDomain("P21 §4.1 issue.list / §2 ID"), "label": textDomain(255)},
-	"issue transition":   {"to": opaqueFlagDomain("P21 §4.1 issue.transition opaque state")},
+	"issue transition":   {"to": opaqueFlagDomain("P21 §4.1 issue.transition opaque state"), "reason": textDomain(4096)},
 	"ready":              {"epic": opaqueFlagDomain("P21 §4.1 ready.get / §2 ID")},
 	"next":               {"actor": nextActorDomain},
 	"stats cost":         {"epic": opaqueFlagDomain("P21 §4.1 stats.cost / §2 ID")},

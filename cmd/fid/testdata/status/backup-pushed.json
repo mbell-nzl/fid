@@ -54,6 +54,7 @@
           "reason": null,
           "after": null,
           "working": null,
+          "kept": null,
           "epic_blocked_by": []
         }
       ]

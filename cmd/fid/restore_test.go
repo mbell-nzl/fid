@@ -125,8 +125,29 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 		runFIDCommand(t, workspace, "link", "add", ids[len(ids)-1], "blocks", second, "--from-type", "issue", "--to-type", "issue", "--actor", "human:mark")
 	}
 	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer")
-	runFIDCommand(t, workspace, "issue", "transition", ids[2], "--to", "cancelled", "--actor", "human:mark")
+	runFIDCommand(t, workspace, "issue", "transition", ids[2], "--to", "cancelled", "--actor", "human:mark", "--reason", "Test cancellation")
 	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer")
+	// Keep each lifecycle family and both kinds of person's decision in V8.
+	// A heartbeat, park and linked resume precede a person's live takeover.
+	answer, _ := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:developer"), "next.claim")
+	originalHold := answer["hold"].(map[string]any)["id"].(string)
+	runFIDCommand(t, workspace, "heartbeat", "--hold", originalHold, "--actor", "agent:developer")
+	runFIDCommand(t, workspace, "issue", "transition", ids[3], "--to", "in_progress", "--actor", "agent:developer")
+	runFIDCommand(t, workspace, "park", "--hold", originalHold, "--actor", "agent:developer", "--interrupted", "--reason", "Usage limit", "--idempotency-key", "v8-park-resume")
+	resumed, _ := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:developer"), "next.claim")
+	if resumed["hold"].(map[string]any)["replaces"] != originalHold {
+		t.Fatalf("V8 resume = %v", resumed)
+	}
+	runFIDCommand(t, workspace, "takeover", ids[3], "--actor", "human:mark", "--reason", "Agent stuck")
+	// Another worktree keeps a parked task, so a restore must preserve an
+	// ended hold's reservation and the worktree path it belongs to.
+	_, created = runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Kept during backup", "--actor", "human:mark")
+	keptTask := parseCreatedIssueID(t, created)
+	ids = append(ids, keptTask)
+	runFIDCommand(t, workspace, "issue", "transition", keptTask, "--to", "in_progress", "--actor", "agent:developer")
+	other := gittest.AddWorktree(t, workspace)
+	took, _ := decodeNext(t, executeCommandForTest(other, "--json", "takeover", keptTask, "--actor", "human:mark", "--reason", "Keep this worktree"), "task.takeover")
+	runFIDCommand(t, other, "park", "--hold", took["hold_id"].(string), "--actor", "human:mark", "--interrupted", "--reason", "Usage limit", "--idempotency-key", "v8-kept")
 	// Record missing and explicitly empty test paths, so backup, export,
 	// replay and restore must preserve their different digests and setup state.
 	appendPolicy(t, workspace, "\n[review]\ntest_adequacy = []\n")
@@ -202,6 +223,11 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql holds = %#v", holds)
 	}
 	state.reads["holds"] = holds.stdout
+	decisions := executeCommandForTest(workspace, "sql", "SELECT * FROM person_decisions ORDER BY id")
+	if decisions.err != nil || decisions.stderr != "" {
+		t.Fatalf("fid sql person decisions = %#v", decisions)
+	}
+	state.reads["person decisions"] = decisions.stdout
 	// Policy snapshots are journal-backed too. Compare all their projected
 	// fields, so a restore cannot silently lose the policy fid trusted.
 	snapshots := executeCommandForTest(workspace, "sql", "SELECT * FROM policy_snapshots ORDER BY sequence")
@@ -392,6 +418,9 @@ func assertV8SameState(t *testing.T, before, after v8State) {
 	}
 	if strings.Count(before.reads["holds"], `"end_reason":"task-cancelled"`) != 1 || strings.Count(before.reads["holds"], `"end_reason":null`) != 1 {
 		t.Fatalf("original holds = %s, want one its task's cancellation ended and one open", before.reads["holds"])
+	}
+	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 2 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 1 {
+		t.Fatalf("V8 lifecycle missing: holds=%s decisions=%s", before.reads["holds"], before.reads["person decisions"])
 	}
 	if strings.Count(before.reads["policy snapshots"], `"source_ref":"built-in defaults"`) != 1 {
 		t.Fatalf("original policy snapshots = %s, want one built-in policy", before.reads["policy snapshots"])

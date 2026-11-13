@@ -38,6 +38,9 @@ type failureCodeExpectation struct {
 func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 	t.Parallel()
 	expectations := []failureCodeExpectation{
+		{CodeHoldNotCurrent, CategoryConflict, false, []SubjectType{SubjectIssue}, []detailExpectation{stringDetail("hold_id"), stringDetail("reason")}},
+		{CodeWorktreeBusy, CategoryConflict, false, []SubjectType{SubjectIssue}, []detailExpectation{stringDetail("task_id"), stringDetail("worktree")}},
+		{CodeAlreadyHeld, CategoryConflict, false, []SubjectType{SubjectIssue}, stringDetails("hold_id")},
 		{CodeInvalidArgument, CategoryInvalidInput, false, nil, argumentDetails()},
 		{Code("policy-unavailable"), CategoryPrecondition, false, nil, []detailExpectation{stringDetail("problem"), nullableStringDetail("ref"), nullableStringDetail("commit")}},
 		{CodeOperationUnavailable, CategoryInvalidInput, false, nil, argumentDetails()},
@@ -207,6 +210,9 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			}
 
 			validDetails := detailValues(expectation.details)
+			if expectation.code == CodeHoldNotCurrent {
+				validDetails["reason"] = "expired"
+			}
 			if expectation.code == CodeImportTargetConflict {
 				validDetails["reason"] = "populated"
 			}

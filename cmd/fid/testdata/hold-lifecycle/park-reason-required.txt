@@ -1,0 +1,2 @@
+error: --reason is required
+reason: invalid-argument; argument=--reason, allowed=--reason

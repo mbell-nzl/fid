@@ -137,7 +137,7 @@ func TestP24TakeControlResumePair(t *testing.T) {
 	if strings.Join(labels, ", ") != want || !strings.Contains(human, "  Revision: 4\n  Next states: "+want+"\n") {
 		t.Fatalf("start Human/JSON pairing: %s / %#v", human, issue)
 	}
-	p21Run(t, start.binary, start.workspace, "--json", "issue", "transition", start.issueID, "--to", "cancelled", "--actor", "agent:builder", "--expected-revision", "4", "--idempotency-key", "pair-cancelled")
+	p21Run(t, start.binary, start.workspace, "--json", "issue", "transition", start.issueID, "--to", "cancelled", "--reason", "Test cancellation", "--actor", "human:mark", "--expected-revision", "4", "--idempotency-key", "pair-cancelled")
 	terminal := p21Run(t, start.binary, start.workspace, "--json", "resume", start.issueID, "--repository", start.workspace)
 	states, ok := p21Path(t, terminal, "result", "resume", "issue", "next_states").([]any)
 	if !ok || len(states) != 0 {

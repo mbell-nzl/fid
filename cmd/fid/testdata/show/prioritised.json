@@ -68,6 +68,7 @@
       "updated_at": "2026-10-31T01:00:00Z",
       "acceptance_criteria": []
     },
+    "kept": null,
     "progress": {
       "done": 0,
       "total": 4

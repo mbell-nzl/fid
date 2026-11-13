@@ -33,6 +33,7 @@ issue update	--title
 label add	--colour
 link add	relation
 link remove	relation
+park	--reason
 requirement link	relation
 requirement record-reference	id
 review record	verdict
@@ -45,5 +46,6 @@ run recover	ttl_seconds
 run start	claim_version
 stop raise	details
 stop resolve	stop_id
+takeover	--reason
 workflow assign	--name
 workflow define	--name

@@ -67,6 +67,7 @@ func transitionResultJSON(result TransitionResult) (string, error) {
 		"idempotency_key":   result.IdempotencyKey,
 		"issue":             map[string]any{"id": result.ID, "revision": result.Revision},
 		"from_state":        result.FromState,
+		"decision_id":       result.DecisionID,
 		"to_state":          result.ToState,
 		"replayed":          false,
 	})
@@ -74,10 +75,11 @@ func transitionResultJSON(result TransitionResult) (string, error) {
 
 func transitionResultFromJSON(raw, eventID string, replayed bool) (TransitionResult, error) {
 	var value struct {
-		EventOccurredAt string `json:"event_occurred_at"`
-		IdempotencyKey  string `json:"idempotency_key"`
-		FromState       string `json:"from_state"`
-		ToState         string `json:"to_state"`
+		EventOccurredAt string  `json:"event_occurred_at"`
+		IdempotencyKey  string  `json:"idempotency_key"`
+		DecisionID      *string `json:"decision_id"`
+		FromState       string  `json:"from_state"`
+		ToState         string  `json:"to_state"`
 		Issue           struct {
 			ID       string `json:"id"`
 			Revision int    `json:"revision"`
@@ -86,7 +88,7 @@ func transitionResultFromJSON(raw, eventID string, replayed bool) (TransitionRes
 	if err := json.Unmarshal([]byte(raw), &value); err != nil {
 		return TransitionResult{}, fmt.Errorf("decode stored Issue transition result: %w", err)
 	}
-	return TransitionResult{ID: value.Issue.ID, Revision: value.Issue.Revision, FromState: value.FromState, ToState: value.ToState, EventID: eventID, OccurredAt: value.EventOccurredAt, IdempotencyKey: value.IdempotencyKey, Replayed: replayed}, nil
+	return TransitionResult{DecisionID: value.DecisionID, ID: value.Issue.ID, Revision: value.Issue.Revision, FromState: value.FromState, ToState: value.ToState, EventID: eventID, OccurredAt: value.EventOccurredAt, IdempotencyKey: value.IdempotencyKey, Replayed: replayed}, nil
 }
 
 func acAddResultJSON(result AddAcceptanceCriterionResult) (string, error) {

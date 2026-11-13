@@ -32,10 +32,11 @@ const (
 // EpicBlockedBy lists its epic's open blockers.
 type Entry struct {
 	issues.OverviewTask
-	Reason        *string  `json:"reason"`
-	After         *string  `json:"after"`
-	Working       *Working `json:"working"`
-	EpicBlockedBy []string `json:"epic_blocked_by"`
+	Reason        *string     `json:"reason"`
+	After         *string     `json:"after"`
+	Working       *Working    `json:"working"`
+	Kept          *holds.Kept `json:"kept"`
+	EpicBlockedBy []string    `json:"epic_blocked_by"`
 }
 
 // Working is an open hold as the order shows it. Here says it is this
@@ -77,7 +78,7 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 	for _, task := range work.Tasks {
 		_, held := planned.held[task.ID]
 		switch {
-		case planned.own != nil && task.ID == planned.own.TaskID && (!planned.own.Lapsed(now) || task.StatusCategory == "started"):
+		case planned.own != nil && task.ID == planned.own.TaskID && (planned.own.Live(now) || task.StatusCategory == "started"):
 			resume = task.ID
 			waiting = append([]issues.WorkTask{task}, waiting...)
 		case task.StatusCategory != "unstarted" && !held:
@@ -92,9 +93,12 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 		entry := Entry{OverviewTask: task.OverviewTask, EpicBlockedBy: append([]string{}, work.Epics[epicOf(task.OverviewTask)].BlockedBy...)}
 		if hold, held := planned.held[task.ID]; held {
 			entry.Working = working(hold, worktreeID, now)
+			if task.StatusCategory == "started" {
+				entry.Kept = holds.DescribeKept(hold, worktreeID, now)
+			}
 		}
 		if task.ID != resume {
-			entry.Reason, entry.After = skip(work, task, entry.Working, after)
+			entry.Reason, entry.After = skip(work, task, entry.Working, entry.Kept, after)
 		}
 		if planned.served < 0 && entry.Reason == nil {
 			planned.served = len(planned.queue)
@@ -115,13 +119,13 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 // skip is why fid next passes over task, the most telling reason first, and
 // the task it waits for in its epic's sequence. A hold here never stops a
 // task: a live one is resumed, and a lapsed one frees an unstarted task.
-func skip(work issues.Work, task issues.WorkTask, hold *Working, after map[string]string) (*string, *string) {
+func skip(work issues.Work, task issues.WorkTask, hold *Working, kept *holds.Kept, after map[string]string) (*string, *string) {
 	epic, inEpic := work.Epics[epicOf(task.OverviewTask)]
 	reason := ""
 	switch {
 	case hold != nil && !hold.Here && !hold.Lapsed:
 		reason = ReasonHeldElsewhere
-	case hold != nil && !hold.Here && task.StatusCategory == "started":
+	case kept != nil && !kept.Here:
 		reason = ReasonInterruptedElsewhere
 	case inEpic && (epic.StatusCategory == "completed" || epic.StatusCategory == "cancelled"):
 		reason = ReasonEpicClosed
@@ -160,7 +164,7 @@ func sequenceWaits(work issues.Work, held map[string]holds.Hold, now time.Time) 
 	for epic, tasks := range inEpic {
 		serving, chain := "", map[string]bool{}
 		for _, task := range tasks {
-			if hold, found := held[task.ID]; found && (!hold.Lapsed(now) || task.StatusCategory == "started") {
+			if hold, found := held[task.ID]; found && (hold.Live(now) || task.StatusCategory == "started") {
 				serving = task.ID
 				break
 			}

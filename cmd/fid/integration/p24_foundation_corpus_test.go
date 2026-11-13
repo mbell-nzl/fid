@@ -66,8 +66,12 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 	if err != nil || stderr != "" {
 		t.Fatalf("%s canonical retry = %v stderr=%q", operation, err, stderr)
 	}
+	exactResponse := operation == "hold.park" || operation == "task.takeover"
 	byteWant := strings.Replace(entry.stdout, `"replayed":false`, `"replayed":true`, 1)
-	if byteWant == entry.stdout || stdout != byteWant {
+	if exactResponse {
+		byteWant = entry.stdout
+	}
+	if (!exactResponse && byteWant == entry.stdout) || stdout != byteWant {
 		at := 0
 		for at < len(stdout) && at < len(byteWant) && stdout[at] == byteWant[at] {
 			at++
@@ -86,7 +90,9 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 		t.Fatalf("%s canonical retry bytes first differ at %d: got %q want %q", operation, at, stdout[start:end], byteWant[start:wantEnd])
 	}
 	want := p23Envelope(t, entry.stdout)
-	want["result"].(map[string]any)["replayed"] = true
+	if !exactResponse {
+		want["result"].(map[string]any)["replayed"] = true
+	}
 	if got := p23Envelope(t, stdout); !reflect.DeepEqual(got, want) {
 		t.Fatalf("%s canonical retry = %#v, want %#v", operation, got, want)
 	}
@@ -192,7 +198,8 @@ func p24AssertStoredFieldNames(t *testing.T, workspace, operation string, entry 
 }
 
 var p24PositionalNames = map[string][]string{
-	"issue.update": {"id"}, "issue.transition": {"id"}, "issue.ac.add": {"issue-id"},
+	"task.takeover": {"task"},
+	"issue.update":  {"id"}, "issue.transition": {"id"}, "issue.ac.add": {"issue-id"},
 	"issue.label.add": {"issue-id", "label"}, "issue.label.remove": {"issue-id", "label"},
 	"label.add": {"name"}, "link.add": {"from-id", "relation", "to-id"}, "link.remove": {"from-id", "relation", "to-id"},
 }

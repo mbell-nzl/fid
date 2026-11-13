@@ -1,0 +1,2 @@
+error: FID-71a0c2 is already yours in this worktree
+reason: already-held; hold_id=HLD-<new>

@@ -52,7 +52,7 @@ type Result struct {
 	Epic *issues.WorkEpic
 	// Interrupted is this worktree's lapsed hold that a resume carries on
 	// from.
-	Interrupted *Working
+	Interrupted *holds.Kept
 }
 
 // Event is the Event a hold was taken in.
@@ -166,8 +166,8 @@ func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order
 			result.Epic = &epic
 		}
 	}
-	if planned.kind == KindResume && planned.own.Lapsed(now) {
-		result.Interrupted = working(*planned.own, planned.own.WorktreeID, now)
+	if planned.kind == KindResume && !planned.own.Live(now) {
+		result.Interrupted = holds.DescribeKept(*planned.own, planned.own.WorktreeID, now)
 	}
 	return result, planned, nil
 }
@@ -178,7 +178,7 @@ func take(lock *journal.WriteLock, conn *sql.DB, options Options, result *Result
 	if planned.kind == KindNone {
 		return nil
 	}
-	if planned.kind == KindResume && !planned.own.Lapsed(result.Now) {
+	if planned.kind == KindResume && planned.own.Live(result.Now) {
 		result.Hold = planned.own
 		return nil
 	}
@@ -200,7 +200,11 @@ func take(lock *journal.WriteLock, conn *sql.DB, options Options, result *Result
 	hold := holds.New(id, result.Task.ID, project.WorktreeID(options.WorkspaceRoot), options.WorkspaceRoot, options.Actor, result.Now, replaces)
 	effects := []journal.Effect{}
 	for _, previous := range sortedKeys(ended) {
-		effects = append(effects, holds.End(previous, holds.EndReplaced, hold.Since))
+		current, err := holds.CurrentByID(conn, previous)
+		if err != nil {
+			return err
+		}
+		effects = append(effects, current.Release(holds.EndReplaced, hold.Since))
 	}
 	actorType, actorID, _ := strings.Cut(options.Actor, ":")
 	appended, err := journal.CommitEvent(lock, conn, journal.Event{EventSchema: journal.EventSchemaV2, EventType: "hold.taken", OccurredAt: hold.Since,
@@ -216,6 +220,7 @@ func take(lock *journal.WriteLock, conn *sql.DB, options Options, result *Result
 			result.Queue[index].Working = nil
 		}
 	}
+	result.Queue[result.Served].Kept = nil
 	result.Queue[result.Served].Working = working(hold, hold.WorktreeID, result.Now)
 	return nil
 }
@@ -236,7 +241,7 @@ func (result Result) Fields() map[string]any {
 	var hold, epic any
 	if result.Hold != nil {
 		hold = map[string]any{"id": result.Hold.ID, "task_id": result.Hold.TaskID, "actor": result.Hold.Actor,
-			"since": holds.Timestamp(result.Hold.Since), "expires_at": holds.Timestamp(result.Hold.ExpiresAt), "replaces": result.Hold.Replaces}
+			"since": holds.Timestamp(result.Hold.Since), "last_heartbeat_at": holds.Timestamp(result.Hold.LastHeartbeat()), "expires_at": holds.Timestamp(result.Hold.ExpiresAt), "replaces": result.Hold.Replaces}
 	}
 	if result.Epic != nil {
 		epic = map[string]any{"id": result.Epic.ID, "title": result.Epic.Title, "progress": result.Epic.Progress}

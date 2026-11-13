@@ -50,7 +50,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	seqEpicID := closureCreateIssue(t, binary, workspace, "epic", "Sequential closure epic", stringPointer("sequential"), nil, nil)
 	seqCurrentID := closureCreateIssue(t, binary, workspace, "task", "Sequential current", nil, stringPointer(seqEpicID), intPointer(1))
 	seqNextID := closureCreateIssue(t, binary, workspace, "task", "Sequential next", nil, stringPointer(seqEpicID), intPointer(2))
-	closureRunFID(t, binary, workspace, "issue", "transition", seqCurrentID, "--to", "cancelled", "--actor", "agent:tl")
+	closureRunFID(t, binary, workspace, "issue", "transition", seqCurrentID, "--to", "cancelled", "--reason", "Test cancellation", "--actor", "human:mark")
 	assertClosureReadyTask(t, binary, workspace, seqEpicID, seqNextID)
 
 	priorityEpicID := closureCreateIssue(t, binary, workspace, "epic", "Prioritised closure epic", stringPointer("prioritised"), nil, nil)

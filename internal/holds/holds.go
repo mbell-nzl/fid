@@ -29,14 +29,18 @@ const (
 // sha256 of that path, so a moved worktree is another worktree. Replaces
 // names the lapsed hold a resume replaced.
 type Hold struct {
-	ID         string
-	TaskID     string
-	WorktreeID string
-	Worktree   string
-	Actor      string
-	Since      time.Time
-	ExpiresAt  time.Time
-	Replaces   *string
+	ID              string
+	TaskID          string
+	WorktreeID      string
+	Worktree        string
+	Actor           string
+	Since           time.Time
+	ExpiresAt       time.Time
+	LastHeartbeatAt time.Time
+	EndedAt         *string
+	ParkReason      *string
+	Kept            bool
+	Replaces        *string
 }
 
 // Lapsed reports whether the hold had expired at now.
@@ -49,13 +53,13 @@ func (hold Hold) Lapsed(now time.Time) bool {
 func New(id, taskID, worktreeID, root, actor string, since time.Time, replaces *string) Hold {
 	since = since.UTC().Truncate(time.Second)
 	return Hold{ID: id, TaskID: taskID, WorktreeID: worktreeID, Worktree: root, Actor: actor,
-		Since: since, ExpiresAt: since.Add(Lifetime), Replaces: replaces}
+		Since: since, LastHeartbeatAt: since, ExpiresAt: since.Add(Lifetime), Replaces: replaces}
 }
 
-// Open reads every hold that hasn't ended, by ID.
+// Open reads current holds and ended holds that keep interrupted work, by ID.
 func Open(conn fiddb.Queryer) ([]Hold, error) {
-	rows, err := conn.Query(`SELECT id, task_id, worktree_id, worktree_root, actor, since, expires_at, replaces_hold_id
-		FROM holds WHERE ended_at IS NULL ORDER BY id`)
+	rows, err := conn.Query(`SELECT id, task_id, worktree_id, worktree_root, actor, since, expires_at, replaces_hold_id, COALESCE(last_heartbeat_at, since), ended_at, park_reason, kept
+		FROM holds WHERE ended_at IS NULL OR kept = 1 ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("read open holds: %w", err)
 	}
@@ -63,11 +67,12 @@ func Open(conn fiddb.Queryer) ([]Hold, error) {
 	open := []Hold{}
 	for rows.Next() {
 		var (
-			hold             Hold
-			since, expiresAt string
-			replaces         sql.NullString
+			hold                    Hold
+			since, expiresAt        string
+			replaces, ended, reason sql.NullString
+			heartbeat               string
 		)
-		if err := rows.Scan(&hold.ID, &hold.TaskID, &hold.WorktreeID, &hold.Worktree, &hold.Actor, &since, &expiresAt, &replaces); err != nil {
+		if err := rows.Scan(&hold.ID, &hold.TaskID, &hold.WorktreeID, &hold.Worktree, &hold.Actor, &since, &expiresAt, &replaces, &heartbeat, &ended, &reason, &hold.Kept); err != nil {
 			return nil, fmt.Errorf("scan open hold: %w", err)
 		}
 		if hold.Since, err = time.Parse(time.RFC3339, since); err != nil {
@@ -75,6 +80,15 @@ func Open(conn fiddb.Queryer) ([]Hold, error) {
 		}
 		if hold.ExpiresAt, err = time.Parse(time.RFC3339, expiresAt); err != nil {
 			return nil, fmt.Errorf("read hold %s: expires_at: %w", hold.ID, err)
+		}
+		if hold.LastHeartbeatAt, err = time.Parse(time.RFC3339, heartbeat); err != nil {
+			return nil, fmt.Errorf("read heartbeat: %w", err)
+		}
+		if ended.Valid {
+			hold.EndedAt = &ended.String
+		}
+		if reason.Valid {
+			hold.ParkReason = &reason.String
 		}
 		if replaces.Valid {
 			hold.Replaces = &replaces.String
@@ -108,7 +122,7 @@ func (hold Hold) Insert() journal.Effect {
 	return journal.Effect{Op: "insert", Table: "holds", PK: map[string]any{"id": hold.ID}, Values: map[string]any{
 		"task_id": hold.TaskID, "worktree_id": hold.WorktreeID, "worktree_root": hold.Worktree, "actor": hold.Actor,
 		"since": Timestamp(hold.Since), "expires_at": Timestamp(hold.ExpiresAt), "replaces_hold_id": replaces,
-		"ended_at": nil, "end_reason": nil,
+		"ended_at": nil, "end_reason": nil, "last_heartbeat_at": Timestamp(hold.LastHeartbeatAt), "kept": false, "park_reason": nil,
 	}}
 }
 
@@ -128,14 +142,18 @@ func EndForTask(conn *sql.DB, taskID, category string, at time.Time) ([]journal.
 		return nil, nil
 	}
 	var id string
-	err := conn.QueryRow(`SELECT id FROM holds WHERE task_id = ? AND ended_at IS NULL`, taskID).Scan(&id)
+	err := conn.QueryRow(`SELECT id FROM holds WHERE task_id = ? AND (ended_at IS NULL OR kept = 1)`, taskID).Scan(&id)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("read the open hold on %s: %w", taskID, err)
 	}
-	return []journal.Effect{End(id, reason, at)}, nil
+	current, err := CurrentByID(conn, id)
+	if err != nil {
+		return nil, err
+	}
+	return []journal.Effect{current.Release(reason, at)}, nil
 }
 
 // Timestamp is how a hold's times are stored and shown in JSON: UTC, to
