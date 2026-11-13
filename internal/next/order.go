@@ -26,12 +26,12 @@ const (
 	ReasonBlocked              = "blocked"
 )
 
+const ReasonWaitingForYou = "waiting-for-you"
+
 // Entry is a task in the order, in fid status's task shape. Reason is why
 // fid next passes over it, nil when nothing does; After names the task it
 // waits for in its epic's sequence; Working is the open hold on it;
 // EpicBlockedBy lists its epic's open blockers.
-const ReasonWaitingForYou = "waiting-for-you"
-
 type Entry struct {
 	issues.OverviewTask
 	Reason        *string     `json:"reason"`

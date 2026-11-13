@@ -20,8 +20,8 @@ type ReasonRequiredError struct{}
 
 func (*ReasonRequiredError) Error() string { return "a reason is required" }
 
-// Effect creates the complete immutable record; both decisions here bind to
-// their subject. The command includes this Effect in its atomic write.
+// Effect creates an immutable decision initially bound to its subject. An
+// answer command sets its question binding before the atomic write.
 func Effect(conn *sql.DB, kind, actor, subjectType, subjectID, reason string, at time.Time) (string, journal.Effect, error) {
 	if !policy.Allows(actor, policy.PersonDecisions) {
 		return "", journal.Effect{}, &DeniedError{Actor: actor}

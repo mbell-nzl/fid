@@ -72,6 +72,12 @@ func TestWaitingAnswerResume(t *testing.T) {
 			if len(shown["questions"].([]any)) != 2 {
 				t.Fatalf("question history = %v", shown)
 			}
+			lifecycleResult(t, f.run("--json", "answer", "FID-aaaaaa", "Include them.", "--actor", "human:mark"), "task.answer")
+			latest, _ := lifecycleResult(t, f.run("--json", "next", "--claim", "--actor", "agent:claude-builder"), "next.claim")
+			if latest["answer"].(map[string]any)["text"] != "Include them." || latest["answer"].(map[string]any)["question_id"] == question {
+				t.Fatalf("second answer = %v", latest)
+			}
+
 		})
 	}
 }
@@ -194,6 +200,7 @@ func TestWaitingGolden(t *testing.T) {
 	lifecycleResult(t, answer, "task.answer")
 	waitingGolden(t, f, "answer.json", answer.stdout)
 	waitingGolden(t, f, "answer.txt", f.run(answerArgs...).stdout)
+	waitingGolden(t, f, "answered-show.json", f.run("--json", "show", "FID-71a0c2").stdout)
 	for _, jsonMode := range []bool{false, true} {
 		args := []string{"next"}
 		ext := ".txt"

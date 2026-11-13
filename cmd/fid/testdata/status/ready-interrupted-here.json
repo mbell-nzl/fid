@@ -149,7 +149,17 @@
         }
       ]
     },
-    "needs_you": [],
+    "needs_you": [
+      {
+        "kind": "worktree-missing",
+        "summary": "FID-71a0c2 is kept for a worktree that no longer exists: /home/mark/projects/fid-wt4",
+        "next_action": "fid takeover FID-71a0c2 --actor human:<name> --reason \"<why>\"",
+        "subject": {
+          "type": "task",
+          "id": "FID-71a0c2"
+        }
+      }
+    ],
     "ready": {
       "next": null,
       "epics": [

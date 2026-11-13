@@ -1,5 +1,10 @@
 ╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
 
+  NEEDS YOU
+  ✗ FID-71a0c2 is kept for a worktree that no longer exists:
+    /home/mark/projects/fid-wt4
+      → fid takeover FID-71a0c2 --actor human:<name> --reason "<why>"
+
   IN PROGRESS
   ◆ FID-e3a1c0  Operating experience              ░░░░░░░░░░  0/4 done
       ● FID-71a0c2  Export validation           interrupted in fid-wt4

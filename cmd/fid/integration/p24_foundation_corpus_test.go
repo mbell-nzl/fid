@@ -117,6 +117,9 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 			}
 		} else {
 			for i, arg := range changed {
+				if operation == "task.answer" && arg == "answer" && name == "text" {
+					changed[i+2] += "-changed"
+				}
 				if arg == "link" && i+3 < len(changed) && (changed[i+1] == "add" || changed[i+1] == "remove") && name == "relation" {
 					changed[i+3] = "relates_to"
 				}

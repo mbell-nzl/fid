@@ -24,7 +24,7 @@ func Describe(hold Hold, worktreeID string, now time.Time) *Working {
 		Since: Timestamp(hold.Since), ExpiresAt: Timestamp(hold.ExpiresAt), Lapsed: hold.Lapsed(now), LastHeartbeatAt: Timestamp(hold.LastHeartbeat())}
 }
 
-// Kept describes interrupted work reserved for a worktree with no live hold.
+// Kept describes interrupted or waiting work reserved for a worktree with no live hold.
 type Kept struct {
 	Worktree string  `json:"worktree"`
 	Here     bool    `json:"here"`

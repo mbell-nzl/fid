@@ -804,4 +804,51 @@ stage order, and the export catalog refuses it in an archive of a schema
 before 20. The active projection and export manifest schema are 20.
 Migration 0020 down drops the table and its indexes.
 
+### 8.7 Reset 1.5a2–1.5a3 - hold lifecycle and questions
+
+Migration 0022 extends holds with `last_heartbeat_at`, `park_reason` and
+`kept`, and adds immutable `person_decisions`. Migration 0023 extends the
+hold end reasons with `waiting`, and adds `questions`. The active projection
+and export manifest schema are now 23. The partial unique hold indexes
+cover `ended_at IS NULL OR kept = 1`: waiting work always keeps a
+reservation, including unstarted work. An answered reservation remains
+until a linked successor hold resumes it.
+
+Questions have `id` (`QST-`), `task_id` and `hold_id` foreign keys, `text`,
+`asker`, `asked_at`, nullable `resolved_at` and `resolution` (`answered` or
+`cancelled`), and a nullable unique `decision_id` foreign key. A partial
+unique index permits one unresolved question per task. Only resolution
+fields can be updated; the original question stays immutable. Insertion
+order follows the journal, including questions asked in the same second.
+
+A person's decision has `id` (`PDN-`), `kind` (`takeover`, `cancel`,
+`answer`), `actor`, `subject_type`, `subject_id`, `reason`, `binding_id`
+and `decided_at`. Answer binds to the question ID and has the task as its
+subject. Other kinds bind to the subject. All require a person and
+nonempty text. Replay validates the binding in the same transaction as the
+question resolution; it is no longer a foreign key only to issues.
+
+| Event / command | Aggregate | Effects, in order |
+|---|---|---|
+| `hold.heartbeat` / `hold.heartbeat` | hold | renew the exact current hold's heartbeat and expiry |
+| `hold.parked` / `hold.park` | hold | end the exact hold as interrupted, keeping started work; retry result |
+| `hold.waiting` / `hold.park` | hold | end the exact hold as waiting and keep it; insert question; retry result |
+| `task.answered` / `task.answer` | task | insert answer decision; resolve question; optional retry result |
+| `task.taken-over` / `task.takeover` | task | release previous holds or reservations; insert takeover decision; insert linked hold; optional retry result |
+| `issue.transitioned` / `issue.transition` (cancellation) | issue | update issue; release its hold/reservation; resolve open question if any; insert cancel decision; activity; optional retry result |
+
+Both catalogs register these families and stage order. Schema 23 is the
+first export profile admitting waiting and answers. The shared replay and
+import validator checks the current session, attribution, times, immutable
+question text, decision subject and question binding, and one resolution.
+No answer changes the task's workflow state or hold. Takeover preserves
+an open question; cancellation resolves it and keeps its history.
+
+Migration 0023 down removes the derived question/answer projection and
+maps waiting holds to interrupted holds with their question as the reason;
+it preserves earlier hold and decision history. The canonical journal
+still contains the new Events. To run a previous fid, restore the
+pre-upgrade backup with that version; a projection downgrade alone does
+not make its journal compatible.
+
 *Last updated: 2026-10-04 (Phase 24 task 1 storage baseline; DEC-275/278)*
