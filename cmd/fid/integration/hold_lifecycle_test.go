@@ -2,7 +2,10 @@
 
 package integration
 
-import "testing"
+import (
+	"github.com/mbell-nzl/fid/internal/gittest"
+	"testing"
+)
 
 var p24LifecycleFields = map[string]string{"hold.park": "--reason", "task.takeover": "--reason"}
 
@@ -43,4 +46,41 @@ func p24LifecycleCommands(t *testing.T, binary, workspace string) {
 	hold := p21PathString(t, taken, "result", "hold_id")
 	call("heartbeat", "--hold", hold, "--actor", "human:mark")
 	call("park", "--hold", hold, "--actor", "human:mark", "--interrupted", "--reason", "Usage limit", "--idempotency-key", "lifecycle-park")
+}
+
+func p24LifecycleCodePair(t *testing.T, code string) p24CodePair {
+	t.Helper()
+	root, binary := gittest.NewWorkspace(t), integrationFIDBinary(t)
+	p21Run(t, binary, root, "init", "--prefix", "FID", "--json")
+	call := func(args ...string) map[string]any {
+		t.Helper()
+		return p21Run(t, binary, root, append([]string{"--json"}, args...)...)
+	}
+	if code == "hold-not-current" {
+		return p24CodePair{root, "hold.heartbeat", []string{"heartbeat", "--hold", "HLD-missing", "--actor", "agent:builder"}}
+	}
+	kind := "task"
+	if code == "unsupported-kind" {
+		kind = "epic"
+	}
+	createArgs := []string{"issue", "create", "--kind", kind, "--title", "Held work", "--actor", "human:mark", "--idempotency-key", "create-first"}
+	if kind == "epic" {
+		createArgs = append(createArgs, "--scheduling", "prioritised")
+	}
+	created := call(createArgs...)
+	task := p21PathString(t, created, "result", "issue", "id")
+	takeover := func(id string) []string {
+		return []string{"takeover", id, "--actor", "human:mark", "--reason", "Agent stuck"}
+	}
+	if code == "unsupported-kind" {
+		return p24CodePair{root, "task.takeover", takeover(task)}
+	}
+	taken := call(takeover(task)...)
+	if code == "already-held" {
+		return p24CodePair{root, "task.takeover", takeover(task)}
+	}
+	call("issue", "transition", task, "--to", "in_progress", "--actor", "human:mark", "--idempotency-key", "start-first")
+	call("park", "--hold", p21PathString(t, taken, "result", "hold_id"), "--actor", "human:mark", "--interrupted", "--reason", "Usage limit", "--idempotency-key", "park-first")
+	second := call("issue", "create", "--kind", "task", "--title", "Other work", "--actor", "human:mark", "--idempotency-key", "create-second")
+	return p24CodePair{root, "task.takeover", takeover(p21PathString(t, second, "result", "issue", "id"))}
 }

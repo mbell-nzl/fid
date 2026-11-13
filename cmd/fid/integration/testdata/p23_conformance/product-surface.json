@@ -7,7 +7,7 @@
     "envelope_protected_decisions", "envelope_revisions", "envelope_sources", "epic_metadata",
     "evidence_artifact_links", "evidence_records", "execution_attempts", "execution_receipts",
     "finding_dispositions", "gate_registrations", "holds", "human_outcomes", "idempotency_results", "issue_labels",
-    "issues", "kit_activations", "labels", "links", "policy_snapshots", "projection_meta", "receipt_artifacts",
+    "issues", "kit_activations", "labels", "links", "person_decisions", "policy_snapshots", "projection_meta", "receipt_artifacts",
     "referenced_artifacts", "requirement_issue_links", "requirement_refs", "review_findings", "review_records",
     "run_budget_bindings", "run_observations", "run_recoveries", "run_runtime", "runs", "schema_migrations",
     "stop_resolutions", "stops", "system_capabilities", "triage_events", "work_envelopes",
@@ -24,17 +24,17 @@
     "deviation get", "deviation list", "deviation record", "envelope", "envelope activate", "envelope complete",
     "envelope create", "envelope get", "evidence", "evidence evaluate", "evidence get",
     "evidence link", "export", "export create", "export import", "export validate", "finding",
-    "finding address", "finding list", "gate", "gate register", "gate resolve", "gate run",
+    "finding address", "finding list", "gate", "gate register", "gate resolve", "gate run", "heartbeat",
     "human-outcome", "human-outcome get", "human-outcome list", "human-outcome record", "init", "issue", "issue ac",
     "issue ac add", "issue ac list", "issue create", "issue get", "issue label", "issue label add",
     "issue label remove", "issue list", "issue transition", "issue update", "journal", "journal inspect",
     "label", "label add", "label list", "link", "link add", "link list", "link remove",
-    "maintenance", "maintenance check", "maintenance vacuum", "next", "ready", "rebuild", "receipt",
+    "maintenance", "maintenance check", "maintenance vacuum", "next", "park", "ready", "rebuild", "receipt",
     "receipt get", "receipt list", "requirement", "requirement get", "requirement link",
     "requirement list", "requirement record-reference", "restore", "resume", "review", "review get",
     "review list", "review record", "run", "run abandon", "run checkpoint", "run close", "run get",
     "run inspect", "run list", "run observe", "run observe-budget", "run recover", "run start",
     "show", "sql", "stats", "stats cost", "stats tokens", "status", "stop", "stop list", "stop raise",
-    "stop resolve", "workflow", "workflow assign", "workflow define", "workflow list"
+    "stop resolve", "takeover", "workflow", "workflow assign", "workflow define", "workflow list"
   ]
 }
