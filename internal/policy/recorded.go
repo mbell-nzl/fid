@@ -19,6 +19,9 @@ func (effective Effective) ValidateRecorded() error {
 	if err := recordedGlobs("hard_assured", effective.HardAssured); err != nil {
 		return err
 	}
+	if !effective.TestAdequacySet && len(effective.TestAdequacy) != 0 {
+		return fmt.Errorf("policy snapshot has test_adequacy paths that are not set up")
+	}
 	if err := recordedGlobs("test_adequacy", effective.TestAdequacy); err != nil {
 		return err
 	}

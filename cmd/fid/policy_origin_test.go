@@ -135,11 +135,15 @@ func TestV7WorkingTreeEditsToPolicyChangeNothingUntilMerged(t *testing.T) {
 	}
 	identityGit(t, root, "fetch", "-q", "origin")
 	// Read-only commands do not snapshot even a newly authoritative policy.
+	beforeReads := readAllPolicyJournal(t, root)
 	for _, args := range [][]string{{"next"}, {"status"}, {"show", task}} {
 		result := executeCommandForTest(root, append([]string{"--json"}, args...)...)
 		if result.err != nil {
 			t.Fatalf("read %v: %#v", args, result)
 		}
+	}
+	if afterReads := readAllPolicyJournal(t, root); afterReads != beforeReads {
+		t.Fatal("read-only commands wrote an event after the effective digest changed")
 	}
 	if got := policySnapshots(t, root); len(got) != 1 {
 		t.Fatalf("read-only commands wrote a snapshot: %#v", got)
@@ -225,11 +229,11 @@ func TestPolicySourceDefaultsAndRefusals(t *testing.T) {
 			before := readAllPolicyJournal(t, root)
 			result := executeCommandForTest(root, "--json", "next", "--claim", "--actor", "agent:builder")
 			if name == "missing origin HEAD" || name == "invalid origin policy" {
-				want := "git remote set-head origin <branch>"
+				want := "origin's default branch is unknown"
 				if name == "invalid origin policy" {
 					want = invalidCommit
 				}
-				if result.err == nil || !strings.Contains(result.stderr, `"code":"invalid-argument"`) || !strings.Contains(result.stderr, want) {
+				if result.err == nil || !strings.Contains(result.stderr, `"code":"policy-unavailable"`) || !strings.Contains(result.stderr, want) {
 					t.Fatalf("refusal = %#v, want %q", result, want)
 				}
 				if after := readAllPolicyJournal(t, root); before != after {

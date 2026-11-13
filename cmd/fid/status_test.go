@@ -42,6 +42,8 @@ func newStatusFixture(t *testing.T, started time.Duration) *statusFixture {
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init", "--json")
 	backdateGenesis(t, workspace, statusNow.Add(-started))
+	appendPolicy(t, workspace, configuredStatusPolicy)
+	policyOrigin(t, workspace)
 	base := t.TempDir()
 	return &statusFixture{t: t, workspace: workspace, configHome: filepath.Join(base, "config"), home: filepath.Join(base, "home")}
 }

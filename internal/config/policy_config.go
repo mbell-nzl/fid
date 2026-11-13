@@ -11,10 +11,11 @@ import (
 // ProjectFile is the shared identity and policy schema of .fid.toml.
 // Identity consumers require ProjectID; policy consumers allow it to be absent.
 type ProjectFile struct {
-	ProjectID    string
-	Checks       map[string]Check
-	Lanes        map[string]Lane
-	TestAdequacy []string
+	ProjectID       string
+	Checks          map[string]Check
+	Lanes           map[string]Lane
+	TestAdequacy    []string
+	TestAdequacySet bool
 }
 
 type Check struct {
@@ -77,7 +78,7 @@ func DecodeProject(data []byte) (ProjectFile, error) {
 	if metadata.IsDefined("project") && !validBackupProjectID(document.Project.ID) {
 		return ProjectFile{}, fmt.Errorf("project.id must be project- followed by 32 lowercase hexadecimal digits")
 	}
-	result := ProjectFile{ProjectID: document.Project.ID, Checks: map[string]Check{}, Lanes: map[string]Lane{}, TestAdequacy: document.Review.TestAdequacy}
+	result := ProjectFile{ProjectID: document.Project.ID, Checks: map[string]Check{}, Lanes: map[string]Lane{}, TestAdequacy: document.Review.TestAdequacy, TestAdequacySet: metadata.IsDefined("review", "test_adequacy")}
 	if err := decodeChecks(document, &result); err != nil {
 		return ProjectFile{}, err
 	}

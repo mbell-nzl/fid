@@ -39,13 +39,14 @@ func Allows(actor string, set ActionSet) bool {
 }
 
 type Effective struct {
-	RulesVersion int                     `json:"rules_version"`
-	HardAssured  []string                `json:"hard_assured"`
-	ActorRules   map[string][]ActionSet  `json:"actor_rules"`
-	ActionSets   map[ActionSet][]string  `json:"action_sets"`
-	Checks       map[string]config.Check `json:"checks"`
-	Lanes        map[string]config.Lane  `json:"lanes"`
-	TestAdequacy []string                `json:"test_adequacy"`
+	RulesVersion    int                     `json:"rules_version"`
+	HardAssured     []string                `json:"hard_assured"`
+	ActorRules      map[string][]ActionSet  `json:"actor_rules"`
+	ActionSets      map[ActionSet][]string  `json:"action_sets"`
+	Checks          map[string]config.Check `json:"checks"`
+	Lanes           map[string]config.Lane  `json:"lanes"`
+	TestAdequacy    []string                `json:"test_adequacy"`
+	TestAdequacySet bool                    `json:"test_adequacy_set"`
 }
 
 // Resolve combines the validated file with the rules a project cannot waive.
@@ -55,7 +56,7 @@ func Resolve(file config.ProjectFile) Effective {
 		ActorRules: actorRules(), ActionSets: map[ActionSet][]string{
 			WorkSet:         {"take", "start", "check", "park", "finish", "review"},
 			PersonDecisions: {"approve", "waive", "takeover", "allow-rework", "close-finding", "accept-work", "approve-epic", "answer", "close-epic"},
-		}, Checks: map[string]config.Check{}, Lanes: map[string]config.Lane{}, TestAdequacy: canonicalSet(file.TestAdequacy)}
+		}, Checks: map[string]config.Check{}, Lanes: map[string]config.Lane{}, TestAdequacy: canonicalSet(file.TestAdequacy), TestAdequacySet: file.TestAdequacySet}
 	for name, check := range file.Checks {
 		check.Run = slices.Clone(check.Run)
 		check.DefinedBy, check.WhenChanged = canonicalSet(check.DefinedBy), canonicalSet(check.WhenChanged)

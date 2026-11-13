@@ -21,6 +21,7 @@ const (
 
 const (
 	CodeInvalidArgument             Code = "invalid-argument"
+	CodePolicyUnavailable           Code = "policy-unavailable"
 	CodeOperationUnavailable        Code = "operation-unavailable"
 	CodeUnsupportedKind             Code = "unsupported-kind"
 	CodeUnsupportedRelation         Code = "unsupported-relation"
@@ -232,6 +233,7 @@ func definition(category Category, retryable bool, subjects []SubjectType, detai
 }
 
 var failureCodeDefinitions = map[Code]reasonDefinition{
+	CodePolicyUnavailable: definition(CategoryPrecondition, false, nil, stringField("problem"), nullableStringField("ref"), nullableStringField("commit")),
 	CodeOperationUnavailable: definition(CategoryInvalidInput, false, nil,
 		stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeReviewNotIndependent: definition(CategoryPrecondition, false, nil,
@@ -366,7 +368,7 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 }
 
 var registeredCodes = []Code{
-	CodeInvalidArgument, CodeOperationUnavailable, CodeUnsupportedKind, CodeUnsupportedRelation, CodeProjectNotFound, CodeProjectAlreadyInit,
+	CodeInvalidArgument, CodePolicyUnavailable, CodeOperationUnavailable, CodeUnsupportedKind, CodeUnsupportedRelation, CodeProjectNotFound, CodeProjectAlreadyInit,
 	CodeIssueNotFound, CodeRequirementNotFound, CodeLabelNotFound, CodeLinkNotFound, CodeWorkflowNotFound,
 	CodeDuplicateEntity, CodeStateConflict, CodeLockUnavailable, CodeHierarchyInvalid, CodeDependencyCycle,
 	CodeTransitionNotPermitted, CodeAuthorityMissing, CodeAuthorityUnknownActor, CodeAuthorityDenied,

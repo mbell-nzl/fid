@@ -1,0 +1,3 @@
+error: origin's default branch is unknown
+reason: policy-unavailable; commit=null, problem=origin's default branch is unknown, ref=null
+next: git remote set-head origin <branch>

@@ -158,3 +158,26 @@ func TestDecodeProjectPreservesCheckNameCase(t *testing.T) {
 		t.Fatalf("case-sensitive check names = %#v", file)
 	}
 }
+
+func TestDecodeProjectTestAdequacyPresence(t *testing.T) {
+	t.Parallel()
+	for _, test := range []struct {
+		name, text string
+		set        bool
+		paths      int
+	}{
+		{"missing", "", false, 0}, {"empty table", "[review]", false, 0},
+		{"empty", "[review]\ntest_adequacy = []", true, 0},
+		{"paths", "[review]\ntest_adequacy = ['**/*_test.go']", true, 1},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			file, err := DecodeProject([]byte(test.text))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if file.TestAdequacySet != test.set || len(file.TestAdequacy) != test.paths {
+				t.Fatalf("review policy = %#v", file)
+			}
+		})
+	}
+}

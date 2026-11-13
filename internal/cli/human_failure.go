@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+
+	"github.com/mbell-nzl/fid/internal/policy"
 )
 
 // WriteHumanFailure renders the section 9 lines from the same failure as JSON.
@@ -157,6 +159,11 @@ func humanRepository(value any) string {
 
 func humanNext(failure Failure, operation, leaf string, hasInput bool) string {
 	switch failure.Code {
+	case CodePolicyUnavailable:
+		if failure.Details["ref"] == nil {
+			return policy.DefaultBranchFix
+		}
+		return policy.PolicyFileFix
 	case CodeIssueNotFound:
 		if operation == "issue.show" {
 			return "fid issue list"
