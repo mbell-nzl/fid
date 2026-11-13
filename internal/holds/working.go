@@ -33,6 +33,7 @@ type Kept struct {
 	Since    string  `json:"since"`
 	HoldID   string  `json:"hold_id"`
 	Actor    string  `json:"actor"`
+	Question *string `json:"question,omitempty"`
 }
 
 func DescribeKept(hold Hold, worktreeID string, now time.Time) *Kept {
@@ -43,5 +44,11 @@ func DescribeKept(hold Hold, worktreeID string, now time.Time) *Kept {
 	if hold.EndedAt != nil {
 		since = *hold.EndedAt
 	}
-	return &Kept{Worktree: hold.Worktree, Here: hold.WorktreeID == worktreeID, Mode: "interrupted", Reason: hold.ParkReason, Since: since, HoldID: hold.ID, Actor: hold.Actor}
+	kept := &Kept{Worktree: hold.Worktree, Here: hold.WorktreeID == worktreeID, Mode: "interrupted", Reason: hold.ParkReason, Since: since, HoldID: hold.ID, Actor: hold.Actor}
+	if hold.Question != nil && hold.Kept && hold.ParkReason == nil {
+		kept.Mode = "waiting"
+		kept.Question = &hold.Question.Text
+		kept.Reason = nil
+	}
+	return kept
 }

@@ -1,0 +1,261 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "project.status",
+  "result": {
+    "backup": {
+      "state": "needs-you",
+      "reasons": [
+        "no-recent-backup",
+        "no-target"
+      ],
+      "summary": "No backup for 4 days: none since the ledger began 2026-11-04 18:00; no backup target is set",
+      "next_action": "add [backup] target to <CONFIG>/fid/config.toml, then fid backup",
+      "last_backup_at": null,
+      "ledger_started_at": "2026-11-04T05:00:00Z",
+      "age_seconds": 360000,
+      "latest": null,
+      "consecutive_failures": 0,
+      "target_set": false,
+      "user_config_path": "<CONFIG>/fid/config.toml",
+      "user_config_error": null,
+      "record_path": "<ROOT>/.git/fid/backups.jsonl",
+      "record_error": null
+    },
+    "generated_at": "2026-11-08T09:00:00Z",
+    "hint": null,
+    "in_progress": {
+      "epics": [
+        {
+          "id": "FID-e3a1c0",
+          "title": "Operating experience",
+          "status": "in_progress",
+          "status_category": "started",
+          "state": "in-progress",
+          "sequence": 1,
+          "priority": null,
+          "progress": {
+            "done": 0,
+            "total": 4
+          },
+          "tasks": [
+            {
+              "id": "FID-71a0c2",
+              "title": "Export validation",
+              "status": "in_progress",
+              "status_category": "started",
+              "epic_id": "FID-e3a1c0",
+              "sequence": null,
+              "priority": 1,
+              "blocked_by": [],
+              "working": null,
+              "kept": {
+                "worktree": "/w/old",
+                "here": false,
+                "mode": "waiting",
+                "reason": null,
+                "since": "2026-11-08T09:00:00Z",
+                "hold_id": "HLD-aaaaaa",
+                "actor": "agent:claude-builder",
+                "question": "Should retries include authentication failures?"
+              }
+            }
+          ]
+        },
+        {
+          "id": "FID-8a1b2c",
+          "title": "Loop contract",
+          "status": "todo",
+          "status_category": "unstarted",
+          "state": "in-progress",
+          "sequence": 2,
+          "priority": null,
+          "progress": {
+            "done": 0,
+            "total": 3
+          },
+          "tasks": [
+            {
+              "id": "FID-1f2e3d",
+              "title": "Contract fields and exit codes",
+              "status": "in_progress",
+              "status_category": "started",
+              "epic_id": "FID-8a1b2c",
+              "sequence": 1,
+              "priority": null,
+              "blocked_by": [],
+              "working": {
+                "hold_id": "HLD-<new>",
+                "worktree": "/home/mark/projects/fid-wt2",
+                "here": false,
+                "actor": "agent:claude-builder",
+                "since": "2026-11-08T08:40:00Z",
+                "expires_at": "2026-11-08T09:40:00Z",
+                "last_heartbeat_at": "2026-11-08T08:40:00Z",
+                "lapsed": false
+              },
+              "kept": null
+            }
+          ]
+        }
+      ],
+      "tasks": []
+    },
+    "needs_you": [
+      {
+        "kind": "waiting-for-you",
+        "summary": "FID-71a0c2 is waiting for you: Should retries include authentication failures?",
+        "next_action": "fid answer FID-71a0c2 \"<answer>\" --actor human:<name>",
+        "subject": {
+          "type": "task",
+          "id": "FID-71a0c2"
+        }
+      },
+      {
+        "kind": "backup",
+        "summary": "No backup for 4 days: none since the ledger began 2026-11-04 18:00; no backup target is set",
+        "next_action": "add [backup] target to <CONFIG>/fid/config.toml, then fid backup",
+        "subject": null
+      }
+    ],
+    "ready": {
+      "next": "FID-9f13aa",
+      "epics": [
+        {
+          "id": "FID-e3a1c0",
+          "title": "Operating experience",
+          "status": "in_progress",
+          "status_category": "started",
+          "state": "in-progress",
+          "sequence": 1,
+          "priority": null,
+          "progress": {
+            "done": 0,
+            "total": 4
+          },
+          "tasks": [
+            {
+              "id": "FID-c2d4e5",
+              "title": "Retry a rejected backup push",
+              "status": "todo",
+              "status_category": "unstarted",
+              "epic_id": "FID-e3a1c0",
+              "sequence": null,
+              "priority": 1,
+              "blocked_by": [
+                "FID-71a0c2"
+              ],
+              "reason": "blocked",
+              "after": null,
+              "working": null,
+              "kept": null,
+              "epic_blocked_by": []
+            },
+            {
+              "id": "FID-9f13aa",
+              "title": "Harden login rate limiting",
+              "status": "todo",
+              "status_category": "unstarted",
+              "epic_id": "FID-e3a1c0",
+              "sequence": null,
+              "priority": 1,
+              "blocked_by": [],
+              "reason": null,
+              "after": null,
+              "working": null,
+              "kept": null,
+              "epic_blocked_by": []
+            },
+            {
+              "id": "FID-0d4e8b",
+              "title": "Document backup age",
+              "status": "todo",
+              "status_category": "unstarted",
+              "epic_id": "FID-e3a1c0",
+              "sequence": null,
+              "priority": 2,
+              "blocked_by": [],
+              "reason": null,
+              "after": null,
+              "working": null,
+              "kept": null,
+              "epic_blocked_by": []
+            }
+          ]
+        },
+        {
+          "id": "FID-8a1b2c",
+          "title": "Loop contract",
+          "status": "todo",
+          "status_category": "unstarted",
+          "state": "in-progress",
+          "sequence": 2,
+          "priority": null,
+          "progress": {
+            "done": 0,
+            "total": 3
+          },
+          "tasks": [
+            {
+              "id": "FID-2f2e3d",
+              "title": "Golden tests for the contract",
+              "status": "todo",
+              "status_category": "unstarted",
+              "epic_id": "FID-8a1b2c",
+              "sequence": 2,
+              "priority": null,
+              "blocked_by": [],
+              "reason": "not-next-in-sequence",
+              "after": "FID-1f2e3d",
+              "working": null,
+              "kept": null,
+              "epic_blocked_by": []
+            },
+            {
+              "id": "FID-3f2e3d",
+              "title": "Scenario test for rework",
+              "status": "todo",
+              "status_category": "unstarted",
+              "epic_id": "FID-8a1b2c",
+              "sequence": 3,
+              "priority": null,
+              "blocked_by": [],
+              "reason": "not-next-in-sequence",
+              "after": "FID-1f2e3d",
+              "working": null,
+              "kept": null,
+              "epic_blocked_by": []
+            }
+          ]
+        }
+      ],
+      "tasks": [
+        {
+          "id": "FID-77aa01",
+          "title": "Tidy help text",
+          "status": "todo",
+          "status_category": "unstarted",
+          "epic_id": null,
+          "sequence": null,
+          "priority": 2,
+          "blocked_by": [],
+          "reason": null,
+          "after": null,
+          "working": null,
+          "kept": null,
+          "epic_blocked_by": []
+        }
+      ]
+    },
+    "warnings": [
+      {
+        "kind": "worktree-unverified",
+        "next_action": "look at /w/old, then fid status",
+        "summary": "Couldn't check the worktree kept for FID-71a0c2: /w/old",
+        "task_id": "FID-71a0c2",
+        "worktree": "/w/old"
+      }
+    ]
+  }
+}

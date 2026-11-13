@@ -51,6 +51,9 @@ func Park(options Options) (Result, error) {
 		if err != nil {
 			return journal.Event{}, nil, err
 		}
+		if options.Question != "" {
+			return ctx.parkWaiting(hold)
+		}
 		category, err := taskCategory(ctx.conn, hold.TaskID)
 		if err != nil {
 			return journal.Event{}, nil, err

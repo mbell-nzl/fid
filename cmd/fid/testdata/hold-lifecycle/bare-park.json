@@ -5,12 +5,13 @@
     "code": "invalid-argument",
     "details": {
       "allowed": [
-        "--interrupted --reason <text>"
+        "--interrupted --reason <text>",
+        "--waiting <question>"
       ],
       "argument": "request",
       "value": null
     },
-    "message": "park requires --interrupted --reason <text>",
+    "message": "park requires either --interrupted --reason <text> or --waiting <question>",
     "retryable": false,
     "subject": null
   },

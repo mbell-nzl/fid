@@ -38,6 +38,7 @@ type failureCodeExpectation struct {
 func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 	t.Parallel()
 	expectations := []failureCodeExpectation{
+		{CodeNotWaiting, CategoryConflict, false, []SubjectType{SubjectIssue}, stringDetails("task_id")},
 		{CodeHoldNotCurrent, CategoryConflict, false, []SubjectType{SubjectIssue}, []detailExpectation{stringDetail("hold_id"), stringDetail("reason")}},
 		{CodeWorktreeBusy, CategoryConflict, false, []SubjectType{SubjectIssue}, []detailExpectation{stringDetail("task_id"), stringDetail("worktree")}},
 		{CodeAlreadyHeld, CategoryConflict, false, []SubjectType{SubjectIssue}, stringDetails("hold_id")},

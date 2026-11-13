@@ -26,6 +26,7 @@ type p24CodeFactory func(*testing.T, string) p24CodePair
 // The corpus is enumerated against RegisteredCodes below. A row invokes the
 // real fid binary, with no injected mapper errors or simulated responses.
 var p24CodeRows = map[string]p24CodeFactory{
+	"not-waiting":                   p24SimplePair("task.answer", "answer", "FID-missing", "Yes", "--actor", "human:mark"),
 	"hold-not-current":              p24LifecycleCodePair,
 	"worktree-busy":                 p24LifecycleCodePair,
 	"already-held":                  p24LifecycleCodePair,

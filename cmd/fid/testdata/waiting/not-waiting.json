@@ -1,0 +1,18 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "conflict",
+    "code": "not-waiting",
+    "details": {
+      "task_id": "FID-71a0c2"
+    },
+    "message": "FID-71a0c2 isn't waiting for an answer",
+    "retryable": false,
+    "subject": {
+      "id": "FID-71a0c2",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "task.answer"
+}

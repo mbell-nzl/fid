@@ -1,0 +1,6 @@
+╭ fid next ──────────────────────────────────────────────── 2026-11-08 ╮
+
+  ○ Nothing here until you answer FID-71a0c2: Should retries include
+    authentication failures?
+      → fid show FID-71a0c2
+╰──────────────────────────────────────────────────────────────────────╯

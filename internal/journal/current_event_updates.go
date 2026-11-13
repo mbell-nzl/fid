@@ -12,6 +12,8 @@ func validateCurrentUpdate(event Event, effect Effect) error {
 	}
 	values, guards := "", ""
 	switch effect.Table {
+	case "questions":
+		values, guards = "resolved_at resolution decision_id", "resolved_at"
 	case "run_runtime":
 		values, guards = "version", "version"
 	case "runs":

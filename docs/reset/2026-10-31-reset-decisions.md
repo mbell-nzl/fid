@@ -292,6 +292,66 @@ other Effects. No separate decision Event splits the transaction. The
 built-in policy records `cancel` in the person-decisions action set, with
 rules version 2, so snapshots retain the new authority rule.
 
+Mark approved these details for **1.5a3**, on 14 November 2026:
+
+1. **Parking to wait.** `fid park --hold <id> --actor <a> --waiting
+   "<question>" --idempotency-key <k>` ends the exact current hold and
+   always keeps its task for its worktree, started or not. Exactly one
+   mode is required: `--interrupted --reason "<text>"` or `--waiting
+   "<question>"`. Bare park names both forms in its refusal.
+2. **One open question per task.** Each question has its own `QST-` ID,
+   text, asker and time. Answered questions remain as history.
+3. **Answering.** `fid answer <task> "<text>" --actor human:<name>
+   [--idempotency-key <k>]` binds to the task's one open question, without
+   a `--question` flag. It records a person's decision of kind `answer`,
+   bound to the task and question, takes no hold and changes no workflow
+   state. Agents and services get `authority-denied`. A task without an
+   open question gets `not-waiting` (conflict, exit 4, not retryable,
+   subject the task, details `{task_id}`). Same-key repeats replay the
+   original answer and Event.
+4. **Scheduling and repeated answers.** The waiting worktree's `next`
+   returns kind `none`, with `waiting` naming the task and question, and
+   gives it no other task until answered. Other worktrees skip the task
+   as `waiting-for-you` and carry on. After answering, its next hand-out
+   is kind `resume`, with a new hold linked to the parked one and an
+   `answer` object. Repeated `next` calls keep that same answer, including
+   after the live hold resumes; only parking with the next question
+   replaces it. `waiting` and `answer` are null when absent. Review's
+   waiting kind belongs to 1.5a7.
+5. **Display.** Status has a `waiting-for-you` NEEDS YOU item, subject
+   the task, naming the question and `fid answer <task> "<answer>"
+   --actor human:<name>`. Next here says `Nothing here until you answer
+   <task>: <question>`, with `fid show <task>`. Kept work has mode
+   `waiting` with the question. Show's text displays the open question;
+   its JSON lists the task's question and answer history.
+6. **Takeover and cancellation.** A person taking over waiting work
+   gets a hold with the question still open, and may answer it.
+   Cancellation resolves waiting and retains the question's history.
+7. **Missing worktrees need certainty.** For interrupted or waiting
+   work kept for a worktree, status checks local git registration and
+   membership of this repository's common directory, never fetching.
+   Confirmed missing or replaced worktrees produce `worktree-missing`
+   under NEEDS YOU, subject the task, with `fid takeover <task> --actor
+   human:<name> --reason "<why>"`. A failed check produces a
+   `worktree-unverified` warning with `task_id` and `worktree`, saying
+   `Couldn't check the worktree kept for <task>: <worktree>` and `look
+   at <worktree>, then fid status`. Neither result releases kept work.
+
+Builder's storage choices for 1.5a3: migration 23 adds `questions`, with a
+unique open question per task and an answer decision link, and extends
+holds' end reasons with `waiting`. Questions are inserted with the ended
+hold in one `hold.waiting` Event (`hold.park`); an answer decision and
+question resolution share one `task.answered` Event (`task.answer`).
+Cancellation resolves its question in the existing `issue.transitioned`
+Event. Both catalogs register the families; replay and import validate
+question identity, attribution, times and decision bindings. Existing
+`PDN-` decision IDs stay; the examples' decision IDs are illustrative.
+The answer's binding ID is the question and its subject is the task.
+Question history uses journal insertion order, including multiple questions
+in the same second. The answer's original worktree is stored in its retry
+response metadata so a later retry retains its original human message.
+Status keeps its single projection snapshot and READY shares next's planner.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for

@@ -99,6 +99,8 @@ func (text textWriter) rows(result Result, served Entry) []string {
 func (text textWriter) message(result Result, explain bool) []string {
 	id := result.Queue[result.Served].ID
 	switch {
+	case result.Kind == KindResume && result.Answer != nil:
+		return append(text.prose(indent, "Answer: "+result.Answer.Text), text.step("fid show "+id)...)
 	case result.Kind == KindResume && result.Interrupted != nil:
 		detail := "work stopped at " + text.clock(result.Interrupted.Since) + " without a park"
 		if result.Interrupted.Reason != nil {
@@ -118,6 +120,9 @@ func (text textWriter) message(result Result, explain bool) []string {
 // nothing says nothing is ready, counting what stops each task by kind, in
 // the order each kind first appears.
 func (text textWriter) nothing(result Result, explain bool) []string {
+	if waiting := result.Waiting; waiting != nil {
+		return append(text.item(display.RoleNormal, display.SymbolUnstarted, "Nothing here until you answer "+waiting.TaskID+": "+waiting.Question), text.step("fid show "+waiting.TaskID)...)
+	}
 	if len(result.Queue) == 0 {
 		return text.item(display.RoleNormal, display.SymbolUnstarted, "Nothing ready here: no tasks to do")
 	}
@@ -174,6 +179,8 @@ func stoppedBy(entry Entry) string {
 func countText(kind string, count int) string {
 	reason, directory, _ := strings.Cut(kind, " ")
 	switch reason {
+	case ReasonWaitingForYou:
+		return plural(count, "waiting for you", "waiting for you")
 	case ReasonHeldElsewhere:
 		return fmt.Sprintf("%d being worked in %s", count, directory)
 	case ReasonInterruptedElsewhere:
@@ -220,6 +227,8 @@ func Verdict(entry Entry, served bool) (string, display.Role) {
 		return "ready", display.RoleMuted
 	}
 	switch *entry.Reason {
+	case ReasonWaitingForYou:
+		return "waiting for you", display.RoleWarning
 	case ReasonHeldElsewhere:
 		return "working in " + filepath.Base(entry.Working.Worktree), display.RoleMuted
 	case ReasonInterruptedElsewhere:

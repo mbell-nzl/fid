@@ -53,6 +53,7 @@
       "done": 0,
       "total": 2
     },
+    "questions": [],
     "scheduling": "prioritised",
     "state": "in-progress",
     "task": null,

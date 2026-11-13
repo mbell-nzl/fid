@@ -18,9 +18,12 @@ func validateHoldLifecycle(tx *sql.Tx, event Event) error {
 	if installed == 0 {
 		return nil
 	}
-	commands := map[string]string{"hold.heartbeat": "hold.heartbeat", "hold.parked": "hold.park", "task.taken-over": "task.takeover"}
+	commands := map[string]string{"hold.heartbeat": "hold.heartbeat", "hold.parked": "hold.park", "hold.waiting": "hold.park", "task.answered": "task.answer", "task.taken-over": "task.takeover"}
 	if command := commands[event.EventType]; command != "" && command != event.CommandName {
 		return fmt.Errorf("hold lifecycle command differs from family")
+	}
+	if err := validateQuestions(tx, event); err != nil {
+		return err
 	}
 	decisions, inserts, updates := 0, 0, 0
 	for _, effect := range event.Effects {
@@ -71,9 +74,13 @@ func validateHoldLifecycle(tx *sql.Tx, event Event) error {
 		if updates != 1 || len(event.Effects) != 1 || inserts != 0 || event.Idempotency != nil {
 			return fmt.Errorf("heartbeat requires exactly one hold update")
 		}
-	case "hold.parked":
+	case "hold.parked", "hold.waiting":
 		if updates != 1 || inserts != 0 || event.Idempotency == nil {
 			return fmt.Errorf("park requires one ended hold and retry key")
+		}
+	case "task.answered":
+		if decisions != 1 || inserts != 0 || updates != 0 {
+			return fmt.Errorf("answer requires one decision and no hold change")
 		}
 	case "task.taken-over":
 		if decisions != 1 || inserts != 1 {
@@ -95,13 +102,15 @@ func validatePersonDecision(tx *sql.Tx, event Event, effect Effect) error {
 	switch event.EventType {
 	case "task.taken-over":
 		kind = "takeover"
+	case "task.answered":
+		kind = "answer"
 	case "issue.transitioned":
 		kind = "cancel"
 	default:
 		return fmt.Errorf("unrelated person's decision Effect")
 	}
 	row := effect.Values
-	if event.ActorV2.ActorType != "human" || row["actor"] != "human:"+event.ActorV2.ActorID || row["kind"] != kind || row["subject_id"] != event.Aggregate.ID || row["binding_id"] != event.Aggregate.ID || row["decided_at"] != event.OccurredAt.UTC().Format(time.RFC3339) {
+	if event.ActorV2.ActorType != "human" || row["actor"] != "human:"+event.ActorV2.ActorID || row["kind"] != kind || row["subject_id"] != event.Aggregate.ID || (kind != "answer" && row["binding_id"] != event.Aggregate.ID) || row["decided_at"] != event.OccurredAt.UTC().Format(time.RFC3339) {
 		return fmt.Errorf("person's decision actor, subject or time differs from Event")
 	}
 	if reason, ok := row["reason"].(string); !ok || strings.TrimSpace(reason) == "" {
@@ -140,7 +149,7 @@ func validateHoldUpdate(tx *sql.Tx, event Event, effect Effect) error {
 	if err != nil {
 		return fmt.Errorf("read changed hold: %w", err)
 	}
-	if event.EventType == "hold.heartbeat" || event.EventType == "hold.parked" {
+	if event.EventType == "hold.heartbeat" || event.EventType == "hold.parked" || event.EventType == "hold.waiting" {
 		if effect.PK["id"] != event.Aggregate.ID || ended.Valid || actor != event.ActorV2.ActorType+":"+event.ActorV2.ActorID {
 			return fmt.Errorf("hold session is not current")
 		}
@@ -154,6 +163,12 @@ func validateHoldUpdate(tx *sql.Tx, event Event, effect Effect) error {
 		if event.EventType == "hold.heartbeat" {
 			if len(effect.Values) != 2 || effect.Values["last_heartbeat_at"] != event.OccurredAt.UTC().Format(time.RFC3339) || effect.Values["expires_at"] != event.OccurredAt.Add(time.Hour).UTC().Format(time.RFC3339) {
 				return fmt.Errorf("invalid heartbeat renewal")
+			}
+			return nil
+		}
+		if event.EventType == "hold.waiting" {
+			if len(effect.Values) != 3 || effect.Values["end_reason"] != "waiting" || !currentValuesEqual(effect.Values["kept"], true) || effect.Values["ended_at"] != event.OccurredAt.UTC().Format(time.RFC3339) {
+				return fmt.Errorf("invalid waiting park")
 			}
 			return nil
 		}

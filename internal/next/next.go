@@ -20,6 +20,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/policysnapshot"
 	"github.com/mbell-nzl/fid/internal/project"
+	"github.com/mbell-nzl/fid/internal/questions"
 )
 
 type Options struct {
@@ -37,13 +38,16 @@ type Options struct {
 // Result is what fid next shows. Hold and Event are set only when --claim
 // takes or keeps a hold; the rest serves the text.
 type Result struct {
-	Kind     string
-	Worktree string
-	Hold     *holds.Hold
-	Task     *issues.OverviewTask
-	Queue    []Entry
-	Event    *Event
-	Now      time.Time
+	Questions []questions.Question
+	Waiting   *Waiting
+	Answer    *questions.Answer
+	Kind      string
+	Worktree  string
+	Hold      *holds.Hold
+	Task      *issues.OverviewTask
+	Queue     []Entry
+	Event     *Event
+	Now       time.Time
 	// Served indexes the task handed out in Queue, or is -1.
 	Served int
 	// Claimed says the result is fid next --claim's.
@@ -53,6 +57,13 @@ type Result struct {
 	// Interrupted is this worktree's lapsed hold that a resume carries on
 	// from.
 	Interrupted *holds.Kept
+}
+
+type Waiting struct {
+	Kind       string `json:"kind"`
+	TaskID     string `json:"task_id"`
+	QuestionID string `json:"question_id"`
+	Question   string `json:"question"`
 }
 
 // Event is the Event a hold was taken in.
@@ -159,6 +170,11 @@ func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order
 	planned := plan(work, open, project.WorktreeID(options.WorkspaceRoot), now)
 	result := Result{Kind: planned.kind, Worktree: options.WorkspaceRoot, Queue: planned.queue, Now: now,
 		Served: planned.served}
+	for _, hold := range open {
+		if hold.Question != nil && hold.Question.ResolvedAt == nil {
+			result.Questions = append(result.Questions, *hold.Question)
+		}
+	}
 	if planned.served >= 0 {
 		task := planned.queue[planned.served].OverviewTask
 		result.Task = &task
@@ -166,7 +182,15 @@ func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order
 			result.Epic = &epic
 		}
 	}
-	if planned.kind == KindResume && !planned.own.Live(now) {
+	if planned.own != nil && planned.own.Question != nil {
+		q := planned.own.Question
+		if q.ResolvedAt == nil {
+			result.Waiting = &Waiting{ReasonWaitingForYou, q.TaskID, q.ID, q.Text}
+		} else if planned.kind == KindResume {
+			result.Answer = q.Answer
+		}
+	}
+	if planned.kind == KindResume && !planned.own.Live(now) && result.Answer == nil {
 		result.Interrupted = holds.DescribeKept(*planned.own, planned.own.WorktreeID, now)
 	}
 	return result, planned, nil
@@ -246,5 +270,5 @@ func (result Result) Fields() map[string]any {
 	if result.Epic != nil {
 		epic = map[string]any{"id": result.Epic.ID, "title": result.Epic.Title, "progress": result.Epic.Progress}
 	}
-	return map[string]any{"kind": result.Kind, "worktree": result.Worktree, "hold": hold, "task": result.Task, "epic": epic, "queue": result.Queue}
+	return map[string]any{"waiting": result.Waiting, "answer": result.Answer, "kind": result.Kind, "worktree": result.Worktree, "hold": hold, "task": result.Task, "epic": epic, "queue": result.Queue}
 }

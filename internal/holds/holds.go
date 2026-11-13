@@ -11,6 +11,7 @@ import (
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/questions"
 )
 
 // Lifetime is how long a hold lasts before it lapses (D8). Heartbeats renew
@@ -29,6 +30,7 @@ const (
 // sha256 of that path, so a moved worktree is another worktree. Replaces
 // names the lapsed hold a resume replaced.
 type Hold struct {
+	Question        *questions.Question
 	ID              string
 	TaskID          string
 	WorktreeID      string
@@ -98,6 +100,22 @@ func Open(conn fiddb.Queryer) ([]Hold, error) {
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate open holds: %w", err)
 	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	history, err := questions.Read(conn, "")
+	if err != nil {
+		return nil, err
+	}
+	latest := map[string]questions.Question{}
+	for _, q := range history {
+		latest[q.TaskID] = q
+	}
+	for i := range open {
+		if q, ok := latest[open[i].TaskID]; ok {
+			open[i].Question = &q
+		}
+	}
 	return open, nil
 }
 
@@ -153,7 +171,17 @@ func EndForTask(conn *sql.DB, taskID, category string, at time.Time) ([]journal.
 	if err != nil {
 		return nil, err
 	}
-	return []journal.Effect{current.Release(reason, at)}, nil
+	effects := []journal.Effect{current.Release(reason, at)}
+	history, err := questions.Read(conn, taskID)
+	if err != nil {
+		return nil, err
+	}
+	for _, q := range history {
+		if q.ResolvedAt == nil {
+			effects = append(effects, q.Resolve(Timestamp(at), "cancelled", nil))
+		}
+	}
+	return effects, nil
 }
 
 // Timestamp is how a hold's times are stored and shown in JSON: UTC, to

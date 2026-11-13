@@ -84,6 +84,8 @@ func build(options Options, afterOverview func()) (Result, error) {
 	if planned.Kind == next.KindNew && planned.Task != nil {
 		result.Next = &planned.Task.ID
 	}
+	result.addWaiting(planned)
+	result.checkWorktrees(options.WorkspaceRoot, planned)
 	if health.State == backup.HealthNeedsYou {
 		result.NeedsYou = append(result.NeedsYou, NeedsYouItem{Kind: NeedsYouBackup, Summary: result.Backup.Summary, NextAction: result.Backup.NextAction})
 	}

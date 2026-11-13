@@ -1,2 +1,2 @@
-error: park requires --interrupted --reason <text>
-reason: invalid-argument; argument=request, allowed=--interrupted --reason <text>
+error: park requires either --interrupted --reason <text> or --waiting <question>
+reason: invalid-argument; argument=request, allowed=--interrupted --reason <text>|--waiting <question>

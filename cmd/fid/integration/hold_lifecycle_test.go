@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var p24LifecycleFields = map[string]string{"hold.park": "--reason", "task.takeover": "--reason"}
+var p24LifecycleFields = map[string]string{"hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text"}
 
 func TestHoldLifecycleKeyedCorpus(t *testing.T) {
 	t.Parallel()
@@ -45,7 +45,8 @@ func p24LifecycleCommands(t *testing.T, binary, workspace string) {
 	taken := call("takeover", task, "--actor", "human:mark", "--reason", "Resume task", "--idempotency-key", "lifecycle-takeover")
 	hold := p21PathString(t, taken, "result", "hold_id")
 	call("heartbeat", "--hold", hold, "--actor", "human:mark")
-	call("park", "--hold", hold, "--actor", "human:mark", "--interrupted", "--reason", "Usage limit", "--idempotency-key", "lifecycle-park")
+	call("park", "--hold", hold, "--actor", "human:mark", "--waiting", "Include authentication failures?", "--idempotency-key", "lifecycle-park")
+	call("answer", task, "Exclude authentication failures.", "--actor", "human:mark", "--idempotency-key", "lifecycle-answer")
 }
 
 func p24LifecycleCodePair(t *testing.T, code string) p24CodePair {

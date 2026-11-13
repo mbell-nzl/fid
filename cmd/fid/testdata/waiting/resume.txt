@@ -1,0 +1,10 @@
+╭ fid next ──────────────────────────────────────────────── 2026-11-08 ╮
+
+  ● FID-71a0c2  Export validation                          in progress
+
+  Epic        ◆ FID-e3a1c0  Operating experience              0/4 done
+  Priority    P1
+
+  Answer: Exclude authentication failures.
+      → fid show FID-71a0c2
+╰──────────────────────────────────────────────────────────────────────╯

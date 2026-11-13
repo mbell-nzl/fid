@@ -19,12 +19,14 @@ import (
 
 type Options struct {
 	WorkspaceRoot, MigrationsDir, HoldID, TaskID, Actor, Reason, IdempotencyKey string
+	Question, Answer                                                            string
 	Clock                                                                       func() time.Time
 }
 
 type Result struct {
 	Fields              map[string]any
 	EventID, OccurredAt string
+	Worktree            string
 }
 
 type Refusal struct {
@@ -43,7 +45,7 @@ type writeContext struct {
 
 func write(options Options, operation string, build func(writeContext) (journal.Event, map[string]any, error)) (Result, error) {
 	set := policy.WorkSet
-	if operation == "task.takeover" {
+	if operation == "task.takeover" || operation == "task.answer" {
 		set = policy.PersonDecisions
 	}
 	if !policy.Allows(options.Actor, set) {
@@ -92,15 +94,21 @@ func write(options Options, operation string, build func(writeContext) (journal.
 		if err != nil {
 			return err
 		}
+		worktree := ""
+		if operation == "task.answer" {
+			if err := conn.QueryRow(`SELECT worktree_root FROM holds WHERE task_id=? AND (ended_at IS NULL OR kept=1)`, options.TaskID).Scan(&worktree); err != nil {
+				return fmt.Errorf("read answer worktree: %w", err)
+			}
+		}
 		if options.IdempotencyKey == "" {
 			appended, err := journal.CommitEvent(lock, conn, event)
 			if err != nil {
 				return err
 			}
-			result = Result{fields, appended.EventID, holdsTimestamp(now)}
+			result = Result{Fields: fields, EventID: appended.EventID, OccurredAt: holdsTimestamp(now), Worktree: worktree}
 			return nil
 		}
-		raw, err := journal.MarshalCanonicalJSON(map[string]any{"fields": fields, "occurred_at": holdsTimestamp(now), "replayed": false})
+		raw, err := journal.MarshalCanonicalJSON(map[string]any{"fields": fields, "occurred_at": holdsTimestamp(now), "replayed": false, "worktree": worktree})
 		if err != nil {
 			return err
 		}
@@ -125,11 +133,12 @@ func decodeResult(raw, eventID string) (Result, error) {
 	var stored struct {
 		Fields     map[string]any `json:"fields"`
 		OccurredAt string         `json:"occurred_at"`
+		Worktree   string         `json:"worktree"`
 	}
 	if err := json.Unmarshal([]byte(raw), &stored); err != nil {
 		return Result{}, fmt.Errorf("decode hold result: %w", err)
 	}
-	return Result{stored.Fields, eventID, stored.OccurredAt}, nil
+	return Result{Fields: stored.Fields, EventID: eventID, OccurredAt: stored.OccurredAt, Worktree: stored.Worktree}, nil
 }
 
 func idempotencyRequest(options Options, operation string) (journal.IdempotencyRequest, error) {
@@ -137,14 +146,26 @@ func idempotencyRequest(options Options, operation string) (journal.IdempotencyR
 	if err != nil {
 		return journal.IdempotencyRequest{}, err
 	}
-	request := map[string]any{"reason": options.Reason}
+	request := map[string]any{}
+	if options.Reason != "" {
+		request["reason"] = options.Reason
+	}
 	names := map[string]string{"reason": "--reason", "hold": "--hold", "task": "task"}
 	if operation == "hold.park" {
 		request["hold"] = options.HoldID
 		request["mode"] = "interrupted"
+		if options.Question != "" {
+			delete(request, "mode")
+			request["question"] = options.Question
+			names["question"] = "--waiting"
+		}
 		names["mode"] = "--interrupted"
 	} else {
 		request["task"] = options.TaskID
+	}
+	if operation == "task.answer" {
+		request["answer"] = options.Answer
+		names["answer"] = "text"
 	}
 	digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": options.Actor, "operation": operation, "project_id": cfg.ProjectID, "request": request}, options.Actor, names)
 	return journal.IdempotencyRequest{OperationScope: operation + ":" + cfg.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}, err

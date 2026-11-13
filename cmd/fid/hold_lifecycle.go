@@ -19,7 +19,7 @@ func init() {
 }
 
 func newHoldCommand(name string) *cobra.Command {
-	var hold, actor, reason, key string
+	var hold, actor, reason, key, waiting string
 	var interrupted bool
 	operation := "hold.heartbeat"
 	if name == "park" {
@@ -32,19 +32,22 @@ func newHoldCommand(name string) *cobra.Command {
 	if name == "takeover" {
 		use += " <task>"
 	}
-	cmd := &cobra.Command{Use: use, Short: map[string]string{"heartbeat": "Keep this session's hold alive.", "park": "Park interrupted work.", "takeover": "Take over a task as a person."}[name], RunE: func(cmd *cobra.Command, args []string) error {
-		if name == "park" && !interrupted {
-			return writeGrammarFailure(cmd, operation, cli.CodeInvalidArgument, "park requires --interrupted --reason <text>", map[string]any{"argument": "request", "value": nil, "allowed": []string{"--interrupted --reason <text>"}})
+	cmd := &cobra.Command{Use: use, Short: map[string]string{"heartbeat": "Keep this session's hold alive.", "park": "Park work as interrupted or waiting.", "takeover": "Take over a task as a person."}[name], RunE: func(cmd *cobra.Command, args []string) error {
+		if name == "park" && (interrupted == cmd.Flags().Changed("waiting") || (cmd.Flags().Changed("waiting") && cmd.Flags().Changed("reason"))) {
+			return writeGrammarFailure(cmd, operation, cli.CodeInvalidArgument, "park requires either --interrupted --reason <text> or --waiting <question>", map[string]any{"argument": "request", "value": nil, "allowed": []string{"--interrupted --reason <text>", "--waiting <question>"}})
 		}
 		required := []string{"actor"}
 		if name != "takeover" {
 			required = append(required, "hold")
 		}
-		if name != "heartbeat" {
+		if name != "heartbeat" && !cmd.Flags().Changed("waiting") {
 			required = append(required, "reason")
 		}
 		if name == "park" {
 			required = append(required, "idempotency-key")
+			if cmd.Flags().Changed("waiting") {
+				required = append(required, "waiting")
+			}
 		}
 		for _, flag := range required {
 			if err := requireCanonicalFlag(cmd, operation, flag); err != nil {
@@ -55,7 +58,7 @@ func newHoldCommand(name string) *cobra.Command {
 		if err != nil {
 			return renderHoldFailure(cmd, operation, err)
 		}
-		options := holdwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), HoldID: hold, Actor: actor, Reason: reason, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now}
+		options := holdwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), HoldID: hold, Actor: actor, Reason: reason, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now, Question: waiting}
 		action := holdwork.Heartbeat
 		if name == "park" {
 			action = holdwork.Park
@@ -84,6 +87,9 @@ func newHoldCommand(name string) *cobra.Command {
 			if result.Fields["kept_for_worktree"] == true {
 				place = "kept for this worktree"
 			}
+			if result.Fields["mode"] == "waiting" {
+				place = "waiting for a person's answer"
+			}
 			message = fmt.Sprintf("Parked %s · %s", result.Fields["task_id"], place)
 		case "takeover":
 			message = fmt.Sprintf("Took over %s · it's yours in this worktree", result.Fields["task_id"])
@@ -103,6 +109,7 @@ func newHoldCommand(name string) *cobra.Command {
 		cmd.Flags().StringVar(&key, "idempotency-key", "", "Retry key")
 	}
 	if name == "park" {
+		cmd.Flags().StringVar(&waiting, "waiting", "", "The question for a person")
 		cmd.Flags().BoolVar(&interrupted, "interrupted", false, "Park as interrupted")
 	}
 	return cmd
