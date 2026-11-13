@@ -7,6 +7,6 @@
         <CONFIG>/fid/config.toml,
         then fid backup
 
-  TO DO
-  ○ FID-77aa01  Tidy help text
+  READY
+  ○ FID-77aa01  Tidy help text                                    next
 ╰──────────────────────────────────────────────────────────────────────╯

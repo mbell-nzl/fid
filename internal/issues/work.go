@@ -1,9 +1,9 @@
 package issues
 
 import (
-	"database/sql"
 	"fmt"
 
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -39,8 +39,8 @@ type WorkTask struct {
 }
 
 // ReadWork reads the epics and open tasks from the projection on conn.
-func ReadWork(conn *sql.DB) (Work, error) {
-	registry, err := workflow.Load(conn)
+func ReadWork(conn fiddb.Queryer) (Work, error) {
+	registry, err := workflow.LoadFrom(conn)
 	if err != nil {
 		return Work{}, fmt.Errorf("read work: load workflow registry: %w", err)
 	}
@@ -117,7 +117,7 @@ func epicOf(task OverviewTask) string {
 
 // sequentialEpics names the epics whose scheduling is sequential. Other
 // epics, prioritised or with no scheduling, go by priority.
-func sequentialEpics(conn *sql.DB) (map[string]bool, error) {
+func sequentialEpics(conn fiddb.Queryer) (map[string]bool, error) {
 	rows, err := conn.Query(`SELECT issue_id FROM epic_metadata WHERE scheduling = 'sequential'`)
 	if err != nil {
 		return nil, fmt.Errorf("query epic scheduling: %w", err)

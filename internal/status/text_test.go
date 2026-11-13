@@ -9,6 +9,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/next"
 )
 
 func textTask(id, status, category string, blockers ...string) issues.OverviewTask {
@@ -35,11 +36,30 @@ func textResult(toDo issues.OverviewSection) Result {
 		InProgress: issues.OverviewSection{
 			Epics: []issues.OverviewEpic{textEpic("FID-e1", issues.EpicInProgress, 3, 8, textTask("FID-t1", "qa_review", "started"))},
 			Tasks: []issues.OverviewTask{textTask("FID-s1", "in_progress", "started")}},
-		ToDo: toDo}
+		Ready: toDo}
 }
 
 func writeText(t *testing.T, result Result, renderer display.Renderer, all bool) string {
 	t.Helper()
+	if result.entries == nil {
+		result.entries = map[string]next.Entry{}
+		collect := func(task issues.OverviewTask) {
+			entry := next.Entry{OverviewTask: task, EpicBlockedBy: []string{}}
+			if len(task.BlockedBy) > 0 {
+				reason := next.ReasonBlocked
+				entry.Reason = &reason
+			}
+			result.entries[task.ID] = entry
+		}
+		for _, epic := range result.Ready.Epics {
+			for _, task := range epic.Tasks {
+				collect(task)
+			}
+		}
+		for _, task := range result.Ready.Tasks {
+			collect(task)
+		}
+	}
 	var output bytes.Buffer
 	if err := WriteText(&output, result, renderer, all); err != nil {
 		t.Fatalf("WriteText() error = %v", err)
@@ -88,7 +108,7 @@ func TestWriteTextCapsToDoAtTenTaskRows(t *testing.T) {
 			t.Parallel()
 			for _, all := range []bool{false, true} {
 				text := writeText(t, textResult(test.toDo), display.Renderer{}, all)
-				toDo := text[strings.Index(text, "  TO DO\n"):]
+				toDo := text[strings.Index(text, "  READY\n"):]
 				rows := strings.Count(toDo, "○ FID-")
 				epics := strings.Count(toDo, "◆ FID-")
 				total := len(test.toDo.Tasks)
@@ -202,7 +222,7 @@ func TestWriteTextEscapesControlsInWhatFidDidNotWrite(t *testing.T) {
 		NeedsYou:   []NeedsYouItem{{Kind: NeedsYouBackup, Summary: "Can't read user config /cfg" + controls + "/fid/config.toml", NextAction: &needsNext}},
 		Backup:     Backup{State: "warning", Summary: "Last backup failed (" + controls + ")", NextAction: &backupNext},
 		InProgress: issues.OverviewSection{Epics: []issues.OverviewEpic{epic}, Tasks: []issues.OverviewTask{}},
-		ToDo:       issues.OverviewSection{Epics: []issues.OverviewEpic{}, Tasks: []issues.OverviewTask{blocked}}}
+		Ready:      issues.OverviewSection{Epics: []issues.OverviewEpic{}, Tasks: []issues.OverviewTask{blocked}}}
 	plain := writeText(t, result, display.Renderer{}, false)
 	for _, want := range []string{
 		"  ✗ Can't read user config\n    /cfg" + escapedControls + "/fid/config.toml\n",
@@ -234,7 +254,7 @@ func TestWriteTextWrapsLongLines(t *testing.T) {
 	result := Result{GeneratedAt: testAt, NeedsYou: []NeedsYouItem{},
 		Backup:     Backup{State: "warning", Summary: "Can't read user config " + path + "; last backed up 1 hour ago", NextAction: &next},
 		InProgress: issues.OverviewSection{Epics: []issues.OverviewEpic{}, Tasks: []issues.OverviewTask{}},
-		ToDo:       issues.OverviewSection{Epics: []issues.OverviewEpic{}, Tasks: []issues.OverviewTask{}},
+		Ready:      issues.OverviewSection{Epics: []issues.OverviewEpic{}, Tasks: []issues.OverviewTask{}},
 		Hint:       &Hint{Summary: "No tasks yet", NextAction: CreateTaskCommand}}
 	for _, renderer := range []display.Renderer{{}, {Color: true}} {
 		text := writeText(t, result, renderer, false)

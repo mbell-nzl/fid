@@ -1,0 +1,290 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "project.status",
+  "result": {
+    "backup": {
+      "state": "not-backed-up-yet",
+      "reasons": [],
+      "summary": "Not backed up yet",
+      "next_action": null,
+      "last_backup_at": null,
+      "ledger_started_at": "2026-11-08T08:00:00Z",
+      "age_seconds": 3600,
+      "latest": null,
+      "consecutive_failures": 0,
+      "target_set": true,
+      "user_config_path": "<CONFIG>/fid/config.toml",
+      "user_config_error": null,
+      "record_path": "<ROOT>/.git/fid/backups.jsonl",
+      "record_error": null
+    },
+    "generated_at": "2026-11-08T09:00:00Z",
+    "hint": null,
+    "in_progress": {
+      "epics": [
+        {
+          "id": "FID-e3a1c0",
+          "title": "Operating experience",
+          "status": "in_progress",
+          "status_category": "started",
+          "state": "in-progress",
+          "sequence": 1,
+          "priority": null,
+          "progress": {
+            "done": 0,
+            "total": 4
+          },
+          "tasks": [
+            {
+              "id": "FID-71a0c2",
+              "title": "Export validation",
+              "status": "in_progress",
+              "status_category": "started",
+              "epic_id": "FID-e3a1c0",
+              "sequence": null,
+              "priority": 1,
+              "blocked_by": [],
+              "working": {
+                "hold_id": "HLD-0b0b0b",
+                "worktree": "/home/mark/projects/fid-wt4",
+                "here": false,
+                "actor": "agent:claude-builder",
+                "since": "2026-11-08T07:00:00Z",
+                "expires_at": "2026-11-08T08:00:00Z",
+                "lapsed": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "FID-8a1b2c",
+          "title": "Loop contract",
+          "status": "todo",
+          "status_category": "unstarted",
+          "state": "in-progress",
+          "sequence": 2,
+          "priority": null,
+          "progress": {
+            "done": 0,
+            "total": 3
+          },
+          "tasks": [
+            {
+              "id": "FID-1f2e3d",
+              "title": "Contract fields and exit codes",
+              "status": "in_progress",
+              "status_category": "started",
+              "epic_id": "FID-8a1b2c",
+              "sequence": 1,
+              "priority": null,
+              "blocked_by": [],
+              "working": {
+                "hold_id": "HLD-77b2c0",
+                "worktree": "/home/mark/projects/fid-wt2",
+                "here": false,
+                "actor": "agent:claude-builder",
+                "since": "2026-11-08T08:40:00Z",
+                "expires_at": "2026-11-08T09:40:00Z",
+                "lapsed": false
+              }
+            }
+          ]
+        }
+      ],
+      "tasks": [
+        {
+          "id": "FID-999999",
+          "title": "Another blocker",
+          "status": "in_progress",
+          "status_category": "started",
+          "epic_id": null,
+          "sequence": null,
+          "priority": null,
+          "blocked_by": [],
+          "working": null
+        }
+      ]
+    },
+    "needs_you": [],
+    "ready": {
+      "next": "FID-9f13aa",
+      "epics": [
+        {
+          "id": "FID-e3a1c0",
+          "title": "Operating experience",
+          "status": "in_progress",
+          "status_category": "started",
+          "state": "in-progress",
+          "sequence": 1,
+          "priority": null,
+          "progress": {
+            "done": 0,
+            "total": 4
+          },
+          "tasks": [
+            {
+              "id": "FID-c2d4e5",
+              "title": "Retry a rejected backup push",
+              "status": "todo",
+              "status_category": "unstarted",
+              "epic_id": "FID-e3a1c0",
+              "sequence": null,
+              "priority": 1,
+              "blocked_by": [
+                "FID-71a0c2",
+                "FID-999999"
+              ],
+              "reason": "blocked",
+              "after": null,
+              "working": null,
+              "epic_blocked_by": []
+            },
+            {
+              "id": "FID-9f13aa",
+              "title": "Harden login rate limiting",
+              "status": "todo",
+              "status_category": "unstarted",
+              "epic_id": "FID-e3a1c0",
+              "sequence": null,
+              "priority": 1,
+              "blocked_by": [],
+              "reason": null,
+              "after": null,
+              "working": null,
+              "epic_blocked_by": []
+            },
+            {
+              "id": "FID-0d4e8b",
+              "title": "Document backup age",
+              "status": "todo",
+              "status_category": "unstarted",
+              "epic_id": "FID-e3a1c0",
+              "sequence": null,
+              "priority": 2,
+              "blocked_by": [],
+              "reason": "held-elsewhere",
+              "after": null,
+              "working": {
+                "hold_id": "HLD-0a0a0a",
+                "worktree": "/home/mark/projects/fid-wt3",
+                "here": false,
+                "actor": "agent:claude-builder",
+                "since": "2026-11-08T08:59:00Z",
+                "expires_at": "2026-11-08T09:59:00Z",
+                "lapsed": false
+              },
+              "epic_blocked_by": []
+            }
+          ]
+        },
+        {
+          "id": "FID-8a1b2c",
+          "title": "Loop contract",
+          "status": "todo",
+          "status_category": "unstarted",
+          "state": "in-progress",
+          "sequence": 2,
+          "priority": null,
+          "progress": {
+            "done": 0,
+            "total": 3
+          },
+          "tasks": [
+            {
+              "id": "FID-2f2e3d",
+              "title": "Golden tests for the contract",
+              "status": "todo",
+              "status_category": "unstarted",
+              "epic_id": "FID-8a1b2c",
+              "sequence": 2,
+              "priority": null,
+              "blocked_by": [],
+              "reason": "not-next-in-sequence",
+              "after": "FID-1f2e3d",
+              "working": null,
+              "epic_blocked_by": []
+            },
+            {
+              "id": "FID-3f2e3d",
+              "title": "Scenario test for rework",
+              "status": "todo",
+              "status_category": "unstarted",
+              "epic_id": "FID-8a1b2c",
+              "sequence": 3,
+              "priority": null,
+              "blocked_by": [],
+              "reason": "not-next-in-sequence",
+              "after": "FID-1f2e3d",
+              "working": null,
+              "epic_blocked_by": []
+            }
+          ]
+        },
+        {
+          "id": "FID-eeeeee",
+          "title": "Waiting epic",
+          "status": "todo",
+          "status_category": "unstarted",
+          "state": "to-do",
+          "sequence": 3,
+          "priority": null,
+          "progress": {
+            "done": 0,
+            "total": 1
+          },
+          "tasks": [
+            {
+              "id": "FID-aaaaaa",
+              "title": "Waiting on the epic",
+              "status": "todo",
+              "status_category": "unstarted",
+              "epic_id": "FID-eeeeee",
+              "sequence": null,
+              "priority": null,
+              "blocked_by": [],
+              "reason": "epic-blocked",
+              "after": null,
+              "working": null,
+              "epic_blocked_by": [
+                "FID-71a0c2",
+                "FID-c2d4e5"
+              ]
+            }
+          ]
+        }
+      ],
+      "tasks": [
+        {
+          "id": "FID-77aa01",
+          "title": "Tidy help text",
+          "status": "todo",
+          "status_category": "unstarted",
+          "epic_id": null,
+          "sequence": null,
+          "priority": 2,
+          "blocked_by": [],
+          "reason": null,
+          "after": null,
+          "working": null,
+          "epic_blocked_by": []
+        },
+        {
+          "id": "FID-bbbbbb",
+          "title": "Left in a closed epic",
+          "status": "todo",
+          "status_category": "unstarted",
+          "epic_id": "FID-ffffff",
+          "sequence": null,
+          "priority": null,
+          "blocked_by": [],
+          "reason": "epic-closed",
+          "after": null,
+          "working": null,
+          "epic_blocked_by": []
+        }
+      ]
+    }
+  }
+}

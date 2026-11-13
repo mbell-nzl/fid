@@ -41,7 +41,8 @@
       "tasks": []
     },
     "needs_you": [],
-    "to_do": {
+    "ready": {
+      "next": null,
       "epics": [],
       "tasks": []
     }

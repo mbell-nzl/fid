@@ -51,7 +51,6 @@ type Result struct {
 	// Interrupted is this worktree's lapsed hold that a resume carries on
 	// from.
 	Interrupted *Working
-	epics       map[string]issues.WorkEpic
 }
 
 // Event is the Event a hold was taken in.
@@ -131,8 +130,15 @@ func openProjection(root string) (*sql.DB, error) {
 	return conn, nil
 }
 
+// ReadFrom walks the existing planner using the caller's projection snapshot.
+// It neither refreshes the projection nor records anything.
+func ReadFrom(conn fiddb.Queryer, options Options) (Result, error) {
+	result, _, err := assemble(conn, options, options.Clock())
+	return result, err
+}
+
 // assemble walks the order at now.
-func assemble(conn *sql.DB, options Options, now time.Time) (Result, order, error) {
+func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order, error) {
 	work, err := issues.ReadWork(conn)
 	if err != nil {
 		return Result{}, order{}, fmt.Errorf("read next: %w", err)
@@ -143,7 +149,7 @@ func assemble(conn *sql.DB, options Options, now time.Time) (Result, order, erro
 	}
 	planned := plan(work, open, project.WorktreeID(options.WorkspaceRoot), now)
 	result := Result{Kind: planned.kind, Worktree: options.WorkspaceRoot, Queue: planned.queue, Now: now,
-		Served: planned.served, epics: work.Epics}
+		Served: planned.served}
 	if planned.served >= 0 {
 		task := planned.queue[planned.served].OverviewTask
 		result.Task = &task

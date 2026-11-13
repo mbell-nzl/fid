@@ -89,7 +89,7 @@ func statusTaskIDs(t *testing.T, stdout string) (inProgress, toDo []string) {
 	var envelope struct {
 		Result struct {
 			InProgress section `json:"in_progress"`
-			ToDo       section `json:"to_do"`
+			ToDo       section `json:"ready"`
 		} `json:"result"`
 	}
 	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {

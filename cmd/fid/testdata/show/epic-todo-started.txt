@@ -3,6 +3,7 @@
   ◆ Loop contract                                          in progress
 
   Progress    ░░░░░░░░░░  0/2 tasks done
+  Scheduling  by priority
 
   TASKS
   ● FID-1f2e3d  Contract fields and exit codes             in progress

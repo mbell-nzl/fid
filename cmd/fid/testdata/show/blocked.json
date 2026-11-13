@@ -58,7 +58,9 @@
       ]
     },
     "progress": null,
+    "scheduling": null,
     "state": null,
-    "task": null
+    "task": null,
+    "working": null
   }
 }

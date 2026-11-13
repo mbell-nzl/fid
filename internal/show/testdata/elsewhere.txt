@@ -1,0 +1,8 @@
+╭ FID-0d4e8b ──────────────────────────────────────────────────── task ╮
+
+  ○ Document backup age                                          to do
+
+  Epic        ◆ FID-e3a1c0  Operating experience              1/4 done
+  Working     in /home/mark/projects/fid-wt3 by agent:codex, since
+              08:40, until 09:40
+╰──────────────────────────────────────────────────────────────────────╯

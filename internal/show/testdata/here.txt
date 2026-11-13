@@ -1,0 +1,8 @@
+╭ FID-9f13aa ──────────────────────────────────────────────────── task ╮
+
+  ○ Harden login rate limiting                                   to do
+
+  Epic        ◆ FID-e3a1c0  Operating experience              1/4 done
+  Priority    P1
+  Working     here, since 09:02, until 10:02
+╰──────────────────────────────────────────────────────────────────────╯

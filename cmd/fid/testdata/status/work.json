@@ -56,7 +56,8 @@
               "epic_id": "FID-e3a1c0",
               "sequence": 1,
               "priority": null,
-              "blocked_by": []
+              "blocked_by": [],
+              "working": null
             },
             {
               "id": "FID-3b9e01",
@@ -66,7 +67,8 @@
               "epic_id": "FID-e3a1c0",
               "sequence": 2,
               "priority": null,
-              "blocked_by": []
+              "blocked_by": [],
+              "working": null
             }
           ]
         }
@@ -80,7 +82,8 @@
           "epic_id": null,
           "sequence": null,
           "priority": 1,
-          "blocked_by": []
+          "blocked_by": [],
+          "working": null
         },
         {
           "id": "FID-d1d1d1",
@@ -90,12 +93,14 @@
           "epic_id": "FID-d0d0d0",
           "sequence": null,
           "priority": null,
-          "blocked_by": []
+          "blocked_by": [],
+          "working": null
         }
       ]
     },
     "needs_you": [],
-    "to_do": {
+    "ready": {
+      "next": "FID-1f2e3d",
       "epics": [
         {
           "id": "FID-e3a1c0",
@@ -118,7 +123,11 @@
               "epic_id": "FID-e3a1c0",
               "sequence": 3,
               "priority": null,
-              "blocked_by": []
+              "blocked_by": [],
+              "reason": "not-next-in-sequence",
+              "after": "FID-71a0c2",
+              "working": null,
+              "epic_blocked_by": []
             },
             {
               "id": "FID-c2d4e5",
@@ -130,7 +139,11 @@
               "priority": null,
               "blocked_by": [
                 "FID-71a0c2"
-              ]
+              ],
+              "reason": "not-next-in-sequence",
+              "after": "FID-71a0c2",
+              "working": null,
+              "epic_blocked_by": []
             },
             {
               "id": "FID-0d4e8b",
@@ -140,7 +153,11 @@
               "epic_id": "FID-e3a1c0",
               "sequence": 5,
               "priority": null,
-              "blocked_by": []
+              "blocked_by": [],
+              "reason": "not-next-in-sequence",
+              "after": "FID-71a0c2",
+              "working": null,
+              "epic_blocked_by": []
             }
           ]
         },
@@ -165,7 +182,11 @@
               "epic_id": "FID-8a1b2c",
               "sequence": null,
               "priority": 1,
-              "blocked_by": []
+              "blocked_by": [],
+              "reason": null,
+              "after": null,
+              "working": null,
+              "epic_blocked_by": []
             },
             {
               "id": "FID-2f2e3d",
@@ -178,7 +199,11 @@
               "blocked_by": [
                 "FID-1f2e3d",
                 "FID-9f13aa"
-              ]
+              ],
+              "reason": "blocked",
+              "after": null,
+              "working": null,
+              "epic_blocked_by": []
             },
             {
               "id": "FID-3f2e3d",
@@ -188,7 +213,11 @@
               "epic_id": "FID-8a1b2c",
               "sequence": null,
               "priority": 2,
-              "blocked_by": []
+              "blocked_by": [],
+              "reason": null,
+              "after": null,
+              "working": null,
+              "epic_blocked_by": []
             },
             {
               "id": "FID-4f2e3d",
@@ -198,7 +227,11 @@
               "epic_id": "FID-8a1b2c",
               "sequence": null,
               "priority": 3,
-              "blocked_by": []
+              "blocked_by": [],
+              "reason": null,
+              "after": null,
+              "working": null,
+              "epic_blocked_by": []
             },
             {
               "id": "FID-5f2e3d",
@@ -208,7 +241,11 @@
               "epic_id": "FID-8a1b2c",
               "sequence": null,
               "priority": 3,
-              "blocked_by": []
+              "blocked_by": [],
+              "reason": null,
+              "after": null,
+              "working": null,
+              "epic_blocked_by": []
             },
             {
               "id": "FID-6f2e3d",
@@ -218,7 +255,11 @@
               "epic_id": "FID-8a1b2c",
               "sequence": null,
               "priority": null,
-              "blocked_by": []
+              "blocked_by": [],
+              "reason": null,
+              "after": null,
+              "working": null,
+              "epic_blocked_by": []
             }
           ]
         },
@@ -246,7 +287,11 @@
           "epic_id": null,
           "sequence": null,
           "priority": 2,
-          "blocked_by": []
+          "blocked_by": [],
+          "reason": null,
+          "after": null,
+          "working": null,
+          "epic_blocked_by": []
         },
         {
           "id": "FID-d2d2d2",
@@ -256,7 +301,11 @@
           "epic_id": "FID-d0d0d0",
           "sequence": null,
           "priority": null,
-          "blocked_by": []
+          "blocked_by": [],
+          "reason": "epic-closed",
+          "after": null,
+          "working": null,
+          "epic_blocked_by": []
         },
         {
           "id": "FID-77aa02",
@@ -266,7 +315,11 @@
           "epic_id": null,
           "sequence": null,
           "priority": null,
-          "blocked_by": []
+          "blocked_by": [],
+          "reason": null,
+          "after": null,
+          "working": null,
+          "epic_blocked_by": []
         }
       ]
     }

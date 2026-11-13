@@ -1,0 +1,13 @@
+╭ FID-e3a1c0 ──────────────────────────────────────────────────── epic ╮
+
+  ◆ Operating experience                                   in progress
+
+  Progress    ░░░░░░░░░░  0/4 tasks done
+  Scheduling  by priority
+
+  TASKS
+  ● FID-71a0c2  Export validation                          in progress
+  ○ FID-c2d4e5  Retry a rejected backup push     blocked by FID-71a0c2
+  ○ FID-9f13aa  Harden login rate limiting                       to do
+  ○ FID-0d4e8b  Document backup age                              to do
+╰──────────────────────────────────────────────────────────────────────╯
