@@ -266,7 +266,8 @@ func TestPolicySnapshotRecordsBuiltInUpgradesAndReturnsToEarlierDigests(t *testi
 			return err
 		}
 		defer closeCommandDB(t, conn)
-		for _, version := range []int{1, 1, 2, 2, 1, 1} {
+		baseVersion := loaded.Effective.RulesVersion
+		for _, version := range []int{baseVersion, baseVersion, baseVersion + 1, baseVersion + 1, baseVersion, baseVersion} {
 			loaded.Effective.RulesVersion = version
 			if err := policysnapshot.Ensure(lock, conn, loaded, time.Now()); err != nil {
 				return err

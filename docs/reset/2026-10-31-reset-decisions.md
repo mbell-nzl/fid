@@ -281,7 +281,9 @@ reservation keeps its ended hold as history. A lapse stays derived from
 the clock. `person_decisions` uses `PDN-` IDs. `hold.heartbeat`,
 `hold.parked` and `task.taken-over` join both Event catalogs; takeover and
 `issue.transitioned` carry the decision Effect in the same Event as their
-other Effects. No separate decision Event splits the transaction.
+other Effects. No separate decision Event splits the transaction. The
+built-in policy records `cancel` in the person-decisions action set, with
+rules version 2, so snapshots retain the new authority rule.
 
 ## Products
 
