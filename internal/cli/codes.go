@@ -164,6 +164,8 @@ type Failure struct {
 	Message   string         `json:"message"`
 	Subject   *Subject       `json:"subject"`
 	Details   map[string]any `json:"details"`
+	// NextAction carries producer-supplied human guidance outside the JSON contract.
+	NextAction string `json:"-"`
 }
 
 type detailType uint8
@@ -428,7 +430,8 @@ func NewFailure(code Code, message string, subject *Subject, details map[string]
 	if !ok {
 		return Failure{}, fmt.Errorf("new failure: unknown code %q", code)
 	}
-	failure := Failure{code, definition.spec.Category, definition.spec.Retryable, message, subject, details}
+	failure := Failure{Code: code, Category: definition.spec.Category, Retryable: definition.spec.Retryable,
+		Message: message, Subject: subject, Details: details}
 	if err := validateFailure(failure, definition); err != nil {
 		return Failure{}, fmt.Errorf("new failure: %w", err)
 	}

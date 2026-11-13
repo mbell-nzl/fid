@@ -149,15 +149,10 @@ func renderNextFailure(cmd *cobra.Command, operation string, cause error) error 
 func nextFailure(cmd *cobra.Command, operation string, cause error) (cli.Failure, error) {
 	var policyError *policy.SourceError
 	if errors.As(cause, &policyError) {
-		var ref, commit any
-		if policyError.Ref != "" {
-			ref = policyError.Ref
-		}
-		if policyError.Commit != "" {
-			commit = policyError.Commit
-		}
-		return cli.NewFailure(cli.CodePolicyUnavailable, cli.BoundedMessage(policyError.Error()), nil,
-			map[string]any{"problem": policyError.Problem, "ref": ref, "commit": commit})
+		failure, err := cli.NewFailure(cli.CodePolicyUnavailable, cli.BoundedMessage(policyError.Error()), nil,
+			policyError.Details())
+		failure.NextAction = policyError.NextAction()
+		return failure, err
 	}
 	if errors.Is(cause, project.ErrNotFound) {
 		return issueMutationFailure(cmd, operation, "", cause)

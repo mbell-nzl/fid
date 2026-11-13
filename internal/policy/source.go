@@ -22,21 +22,39 @@ type Loaded struct {
 
 // SourceError is a policy refusal, including the source ref/commit when known.
 type SourceError struct {
-	Problem string
-	Ref     string
-	Commit  string
+	Problem            string
+	Ref                string
+	Commit             string
+	remotesUnavailable bool
 }
 
 const (
 	DefaultBranchFix = "git remote set-head origin <branch>"
 	PolicyFileFix    = "fix .fid.toml on the default branch, merge it and git fetch"
+	RemotesFix       = "check the repository: git remote -v"
 )
 
 func (err *SourceError) NextAction() string {
-	if err.Ref == "" {
+	if err.remotesUnavailable {
+		return RemotesFix
+	}
+	if err.Commit == "" {
 		return DefaultBranchFix
 	}
 	return PolicyFileFix
+}
+
+// Details returns the closed policy-unavailable details, with nulls for an
+// unknown ref or commit.
+func (err *SourceError) Details() map[string]any {
+	var ref, commit any
+	if err.Ref != "" {
+		ref = err.Ref
+	}
+	if err.Commit != "" {
+		commit = err.Commit
+	}
+	return map[string]any{"problem": err.Problem, "ref": ref, "commit": commit}
 }
 
 func (err *SourceError) Error() string { return err.Problem }
@@ -46,7 +64,7 @@ func (err *SourceError) Error() string { return err.Problem }
 func Load(root string) (Loaded, error) {
 	remotes, err := gitPolicy(root, "remote")
 	if err != nil {
-		return Loaded{}, sourceError(Source{}, "read policy remotes: %v", err)
+		return Loaded{}, &SourceError{Problem: fmt.Sprintf("couldn't list git remotes: %v", err), remotesUnavailable: true}
 	}
 	if !slices.Contains(strings.Fields(string(remotes)), "origin") {
 		return builtInDefaults()
@@ -58,7 +76,8 @@ func Load(root string) (Loaded, error) {
 	}
 	commitBytes, err := gitPolicy(root, "rev-parse", "--verify", ref+"^{commit}")
 	if err != nil {
-		return Loaded{}, sourceError(Source{Ref: strings.TrimPrefix(ref, "refs/remotes/")}, "read policy: %v", err)
+		ref = strings.TrimPrefix(ref, "refs/remotes/")
+		return Loaded{}, sourceError(Source{Ref: ref}, "origin's default branch %s does not exist", ref)
 	}
 	commit := strings.TrimSpace(string(commitBytes))
 	source := Source{Ref: strings.TrimPrefix(ref, "refs/remotes/"), Commit: commit}

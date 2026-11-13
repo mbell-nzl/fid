@@ -425,7 +425,7 @@ the display package as backup warnings do.
 
 | Kind | Summary | Next action |
 |---|---|---|
-| `policy-unavailable` | `Policy unavailable: <problem>` | `git remote set-head origin <branch>` for an unknown default; otherwise `fix .fid.toml on the default branch, merge it and git fetch` |
+| `policy-unavailable` | `Policy unavailable: <problem>` | `check the repository: git remote -v` if listing remotes fails; `git remote set-head origin <branch>` for an unknown default; `fix .fid.toml on the default branch, merge it and git fetch` for an invalid or unreadable policy file |
 | `checks-not-configured` | `No checks set for Routine, Standard, Assured in .fid.toml` | `add checks to [lanes.routine], [lanes.standard] and [lanes.assured], then merge .fid.toml and git fetch` |
 | `test-paths-not-configured` | `No test paths set in .fid.toml` | `add [review] test_adequacy, then merge .fid.toml and git fetch` |
 
@@ -1413,6 +1413,13 @@ renderer’s `error:` and `reason:` lines, followed by `next:` with
 `fix .fid.toml on the default branch, merge it and git fetch` for an
 invalid or unreadable policy file. Status reports this as a warning
 instead of refusing.
+
+If running `git remote` itself fails, the same code has
+`problem: "couldn't list git remotes: <error>"`, null `ref` and `commit`,
+and the human `next:` action is `check the repository: git remote -v`.
+Status shows the same policy-unavailable warning and repair action. This
+case was decided by the orchestrator under Mark's delegation for the 1.5a
+series on 14 November 2026.
 
 Codes accepted with the Phase 20 standalone Issue slice: `invalid-argument`,
 `unsupported-kind`, `unsupported-relation`, `project-not-found`,
