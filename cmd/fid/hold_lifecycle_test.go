@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/mbell-nzl/fid/internal/gittest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func lifecycleResult(t *testing.T, result commandExecutionResult, operation string) (map[string]any, any) {

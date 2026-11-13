@@ -380,6 +380,8 @@ func p24ChangeActor(args []string) []string {
 		if arg == "--actor" && i+1 < len(args) {
 			if strings.HasPrefix(args[i+1], "agent:") {
 				args[i+1] = "agent:other"
+			} else if strings.HasPrefix(args[i+1], "human:") {
+				args[i+1] = "human:other"
 			} else if args[i+1] == "actor-denied" {
 				args[i+1] = "actor-reviewer-two"
 			} else {

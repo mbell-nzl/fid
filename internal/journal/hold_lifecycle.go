@@ -24,6 +24,11 @@ func validateHoldLifecycle(tx *sql.Tx, event Event) error {
 	}
 	decisions, inserts, updates := 0, 0, 0
 	for _, effect := range event.Effects {
+		if effect.Table == "idempotency_results" && commands[event.EventType] != "" {
+			if err := validateCurrentEffect(event, effect); err != nil {
+				return err
+			}
+		}
 		if effect.Table == "person_decisions" {
 			decisions++
 			if err := validatePersonDecision(tx, event, effect); err != nil {
@@ -56,9 +61,14 @@ func validateHoldLifecycle(tx *sql.Tx, event Event) error {
 			return fmt.Errorf("unsupported hold Effect")
 		}
 	}
+	if commands[event.EventType] != "" && event.Idempotency != nil {
+		if err := validateCurrentIdempotency(event); err != nil {
+			return err
+		}
+	}
 	switch event.EventType {
 	case "hold.heartbeat":
-		if updates != 1 || len(event.Effects) != 1 || inserts != 0 {
+		if updates != 1 || len(event.Effects) != 1 || inserts != 0 || event.Idempotency != nil {
 			return fmt.Errorf("heartbeat requires exactly one hold update")
 		}
 	case "hold.parked":
@@ -75,6 +85,9 @@ func validateHoldLifecycle(tx *sql.Tx, event Event) error {
 }
 
 func validatePersonDecision(tx *sql.Tx, event Event, effect Effect) error {
+	if err := validateCurrentEffect(event, effect); err != nil {
+		return err
+	}
 	if effect.Op != "insert" || len(effect.PK) != 1 || len(effect.Values) != 7 {
 		return fmt.Errorf("person's decision requires a complete immutable record")
 	}

@@ -1,6 +1,7 @@
 package export
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -27,10 +28,16 @@ func TestArchiveChecksTakeoverAndPersonDecisionBindings(t *testing.T) {
 		valid  bool
 	}{
 		{name: "complete transaction", valid: true},
+		{name: "keyed transaction", valid: true, mutate: func(e *journal.Event) { takeoverArchiveRetry(e) }},
+		{name: "retry result bound to another event", mutate: func(e *journal.Event) {
+			takeoverArchiveRetry(e)
+			e.Effects[3].Values["result_event_id"] = "EVT-20261110-000002"
+		}},
 		{name: "agent decision", mutate: func(e *journal.Event) { e.ActorV2.ActorType = "agent"; e.Effects[1].Values["actor"] = "agent:mark" }},
 		{name: "service decision", mutate: func(e *journal.Event) { e.ActorV2.ActorType = "service"; e.Effects[1].Values["actor"] = "service:mark" }},
 		{name: "unregistered decision kind", mutate: func(e *journal.Event) { e.Effects[1].Values["kind"] = "answer" }},
 		{name: "another binding", mutate: func(e *journal.Event) { e.Effects[1].Values["binding_id"] = "FID-b" }},
+		{name: "missing decision ID", mutate: func(e *journal.Event) { e.Effects[1].PK["id"] = nil }},
 		{name: "missing decision", mutate: func(e *journal.Event) { e.Effects = append(e.Effects[:1], e.Effects[2:]...) }},
 		{name: "new hold has another actor", mutate: func(e *journal.Event) { e.Effects[2].Values["actor"] = "agent:builder" }},
 		{name: "missing predecessor link", mutate: func(e *journal.Event) { e.Effects[2].Values["replaces_hold_id"] = nil }},
@@ -128,4 +135,10 @@ func TestArchiveChecksHeartbeatSessionAndExpiry(t *testing.T) {
 			}
 		})
 	}
+}
+
+func takeoverArchiveRetry(event *journal.Event) {
+	digest := "sha256:" + strings.Repeat("a", 64)
+	event.Idempotency = &journal.EventIdempotency{Key: "takeover-1", RequestDigest: digest, Scope: "task.takeover:project-test"}
+	event.Effects = append(event.Effects, journal.Effect{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": event.Idempotency.Scope, "idempotency_key": event.Idempotency.Key}, Values: map[string]any{"request_digest": digest, "request_field_digests_json": `{"--actor":"` + digest + `"}`, "result_entity_id": event.Aggregate.ID, "result_event_id": event.EventID, "aggregate_sequence": 1, "result_json": `{"fields":{},"occurred_at":"2026-11-10T09:05:00Z","replayed":false}`, "created_at": "2026-11-10T09:05:00Z"}})
 }
