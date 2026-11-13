@@ -1,0 +1,31 @@
+╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
+
+  IN PROGRESS
+  ◆ FID-e3a1c0  Operating experience              ██░░░░░░░░  2/7 done
+      ● FID-71a0c2  Export validation                      in progress
+      ● FID-3b9e01  Tidy resume output                       qa review
+  ● FID-5d2f77  Fix journal replay line                    in progress
+  ● FID-d1d1d1  Leftover started task                     dev complete
+
+  READY
+  ◆ FID-e3a1c0  Operating experience                           3 to do
+      ○ FID-9f13aa  Harden login rate limiting        after FID-71a0c2
+      ○ FID-c2d4e5  Retry a rejected backup push      after FID-71a0c2
+      ○ FID-0d4e8b  Document backup age               after FID-71a0c2
+  ◆ FID-8a1b2c  Loop contract                                  6 tasks
+      ○ FID-1f2e3d  Contract fields and exit codes                next
+      ○ FID-2f2e3d  Golden tests for the co…  blocked by FID-1f2e3d +1
+      ○ FID-3f2e3d  Scenario test for rework
+      ○ FID-4f2e3d  Scenario test for interruption
+      ○ FID-5f2e3d  Scenario test for two worktrees
+      ○ FID-6f2e3d  Version the contract
+  ◆ FID-c0ffee  Kit install                                   no tasks
+  ○ FID-77aa01  Tidy help text
+  +2 more: fid status --all
+
+  ⚠ Policy unavailable: couldn't list git remotes: git remote: exit
+    status 1: remotes unavailable for test
+      → check the repository: git remote -v
+
+  ✓ Backed up 3 hours ago
+╰──────────────────────────────────────────────────────────────────────╯

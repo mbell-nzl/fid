@@ -210,6 +210,13 @@ recorded under F3 as decisions, replacing the pending proposals.
   `commit`; `checks-not-configured` adds the lowercase `lanes` list;
   `test-paths-not-configured` has no extra fields. The CLI spec records
   the exact text and JSON shapes.
+- **Git remotes cannot be listed.** The orchestrator decided this under
+  Mark's delegation for the 1.5a series on 14 November 2026. If running
+  `git remote` itself fails, keep `policy-unavailable`, with `problem`
+  naming the git error (`couldn't list git remotes: <error>`), null `ref`
+  and `commit`, and `check the repository: git remote -v` as the repair
+  action. Status shows the same warning and fix. This is its own source
+  error case, distinct from an unknown default or an unreadable policy file.
 
 ## Products
 

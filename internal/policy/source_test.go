@@ -1,7 +1,10 @@
 package policy
 
 import (
+	"errors"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -22,6 +25,24 @@ func TestSourceErrorNextAction(t *testing.T) {
 				t.Fatalf("NextAction() = %q, want %q", got, test.want)
 			}
 		})
+	}
+}
+
+func TestSourceErrorNextActionWhenRemotesUnavailable(t *testing.T) {
+	t.Parallel()
+	_, err := Load(filepath.Join(t.TempDir(), "missing"))
+	var source *SourceError
+	if !errors.As(err, &source) {
+		t.Fatalf("Load() error = %v, want SourceError", err)
+	}
+	if got := source.NextAction(); got != "check the repository: git remote -v" {
+		t.Errorf("NextAction() = %q, want repository check", got)
+	}
+	if !strings.HasPrefix(source.Problem, "couldn't list git remotes: git remote:") {
+		t.Errorf("Problem = %q, want the git remotes error", source.Problem)
+	}
+	if source.Ref != "" || source.Commit != "" {
+		t.Errorf("remotes failure has source metadata: %#v", source)
 	}
 }
 

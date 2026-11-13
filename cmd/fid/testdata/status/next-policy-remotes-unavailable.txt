@@ -1,0 +1,3 @@
+error: couldn't list git remotes: git remote: exit status 1: remotes unavailable for test
+reason: policy-unavailable; commit=null, problem=couldn't list git remotes: git remote: exit status 1: remotes unavailable for test, ref=null
+next: check the repository: git remote -v

@@ -22,17 +22,22 @@ type Loaded struct {
 
 // SourceError is a policy refusal, including the source ref/commit when known.
 type SourceError struct {
-	Problem string
-	Ref     string
-	Commit  string
+	Problem            string
+	Ref                string
+	Commit             string
+	remotesUnavailable bool
 }
 
 const (
 	DefaultBranchFix = "git remote set-head origin <branch>"
 	PolicyFileFix    = "fix .fid.toml on the default branch, merge it and git fetch"
+	RemotesFix       = "check the repository: git remote -v"
 )
 
 func (err *SourceError) NextAction() string {
+	if err.remotesUnavailable {
+		return RemotesFix
+	}
 	if err.Commit == "" {
 		return DefaultBranchFix
 	}
@@ -59,7 +64,7 @@ func (err *SourceError) Error() string { return err.Problem }
 func Load(root string) (Loaded, error) {
 	remotes, err := gitPolicy(root, "remote")
 	if err != nil {
-		return Loaded{}, sourceError(Source{}, "read policy remotes: %v", err)
+		return Loaded{}, &SourceError{Problem: fmt.Sprintf("couldn't list git remotes: %v", err), remotesUnavailable: true}
 	}
 	if !slices.Contains(strings.Fields(string(remotes)), "origin") {
 		return builtInDefaults()
