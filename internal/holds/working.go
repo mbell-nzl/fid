@@ -45,7 +45,7 @@ func DescribeKept(hold Hold, worktreeID string, now time.Time) *Kept {
 		since = *hold.EndedAt
 	}
 	kept := &Kept{Worktree: hold.Worktree, Here: hold.WorktreeID == worktreeID, Mode: "interrupted", Reason: hold.ParkReason, Since: since, HoldID: hold.ID, Actor: hold.Actor}
-	if hold.Question != nil && hold.Kept && hold.ParkReason == nil {
+	if hold.Waiting() || (hold.Question != nil && hold.Kept && hold.ParkReason == nil) {
 		kept.Mode = "waiting"
 		kept.Question = &hold.Question.Text
 		kept.Reason = nil

@@ -51,7 +51,7 @@ func Takeover(options Options) (Result, error) {
 			if err != nil {
 				return journal.Event{}, nil, err
 			}
-			if hold.Live(ctx.now) || otherCategory == "started" || hold.Kept {
+			if hold.Live(ctx.now) || otherCategory == "started" || hold.Kept || hold.Waiting() {
 				return journal.Event{}, nil, &Refusal{Code: "worktree-busy", TaskID: options.TaskID, Message: "this worktree already has " + hold.TaskID, Details: map[string]any{"task_id": hold.TaskID, "worktree": options.WorkspaceRoot}}
 			}
 			effects = append(effects, hold.Release(holds.EndReplaced, ctx.now))

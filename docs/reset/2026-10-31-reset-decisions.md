@@ -351,6 +351,10 @@ Question history uses journal insertion order, including multiple questions
 in the same second. The answer's original worktree is stored in its retry
 response metadata so a later retry retains its original human message.
 Status keeps its single projection snapshot and READY shares next's planner.
+The open question also keeps unstarted work after a person's takeover if
+that session lapses or is parked as interrupted. That worktree stays busy;
+replay refuses another task releasing its unanswered reservation. This
+follows the always-kept rule, without another workflow state or flag.
 
 ## Products
 

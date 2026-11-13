@@ -35,9 +35,9 @@ func Build(options Options) (Result, error) {
 		return Result{}, fmt.Errorf("read show: %w", err)
 	}
 	result := Result{IssueView: view, Now: options.Now}
-	if hold := view.OpenHold; hold != nil && (hold.Kept || !hold.Lapsed(options.Now) || view.Issue.StatusCategory == "started") {
+	if hold := view.OpenHold; hold != nil && (hold.Kept || hold.Waiting() || !hold.Lapsed(options.Now) || view.Issue.StatusCategory == "started") {
 		result.Working = holds.Describe(*hold, project.WorktreeID(options.WorkspaceRoot), options.Now)
-		if hold.Kept || view.Issue.StatusCategory == "started" {
+		if hold.Kept || hold.Waiting() || view.Issue.StatusCategory == "started" {
 			result.Kept = holds.DescribeKept(*hold, project.WorktreeID(options.WorkspaceRoot), options.Now)
 		}
 	}

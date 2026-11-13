@@ -903,7 +903,8 @@ fid issue transition <task|epic> --to cancelled --actor human:<name> --reason "<
 - Heartbeat and park validate the exact hold under the write lock: it must
   exist, be open, be unexpired (at expiry is too late), belong to the given
   actor and belong to this worktree. They never substitute another hold.
-- Park (`hold.park`) requires `--interrupted --reason`; bare park gives
+- The interrupted form of park (`hold.park`) requires `--interrupted
+  --reason`; bare park gives
   `invalid-argument` naming both forms. The waiting form is described below.
   Text for started work: `✓ Parked FID-9f13aa · kept for this worktree`;
   unstarted: `✓ Parked FID-9f13aa · back in the queue`. JSON result:

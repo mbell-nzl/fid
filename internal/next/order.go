@@ -80,7 +80,7 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 	for _, task := range work.Tasks {
 		_, held := planned.held[task.ID]
 		switch {
-		case planned.own != nil && task.ID == planned.own.TaskID && (planned.own.Live(now) || planned.own.Kept || task.StatusCategory == "started"):
+		case planned.own != nil && task.ID == planned.own.TaskID && (planned.own.Live(now) || planned.own.Kept || planned.own.Waiting() || task.StatusCategory == "started"):
 			resume = task.ID
 			waiting = append([]issues.WorkTask{task}, waiting...)
 		case task.StatusCategory != "unstarted" && !held:
@@ -95,12 +95,12 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 		entry := Entry{OverviewTask: task.OverviewTask, EpicBlockedBy: append([]string{}, work.Epics[epicOf(task.OverviewTask)].BlockedBy...)}
 		if hold, held := planned.held[task.ID]; held {
 			entry.Working = working(hold, worktreeID, now)
-			if task.StatusCategory == "started" || hold.Kept {
+			if task.StatusCategory == "started" || hold.Kept || hold.Waiting() {
 				entry.Kept = holds.DescribeKept(hold, worktreeID, now)
 			}
 		}
-		if task.ID != resume || (planned.own != nil && planned.own.Question != nil && planned.own.Question.ResolvedAt == nil) {
-			if hold, ok := planned.held[task.ID]; ok && hold.Question != nil && hold.Question.ResolvedAt == nil {
+		if task.ID != resume || (planned.own != nil && planned.own.Waiting()) {
+			if hold, ok := planned.held[task.ID]; ok && hold.Waiting() {
 				entry.Reason = pointer(ReasonWaitingForYou)
 			} else {
 				entry.Reason, entry.After = skip(work, task, entry.Working, entry.Kept, after)
@@ -111,7 +111,7 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 		}
 		planned.queue = append(planned.queue, entry)
 	}
-	if planned.own != nil && planned.own.Question != nil && planned.own.Question.ResolvedAt == nil {
+	if planned.own != nil && planned.own.Waiting() {
 		planned.kind, planned.served = KindNone, -1
 		return planned
 	}
@@ -174,7 +174,7 @@ func sequenceWaits(work issues.Work, held map[string]holds.Hold, now time.Time) 
 	for epic, tasks := range inEpic {
 		serving, chain := "", map[string]bool{}
 		for _, task := range tasks {
-			if hold, found := held[task.ID]; found && (hold.Live(now) || hold.Kept || task.StatusCategory == "started") {
+			if hold, found := held[task.ID]; found && (hold.Live(now) || hold.Kept || hold.Waiting() || task.StatusCategory == "started") {
 				serving = task.ID
 				break
 			}

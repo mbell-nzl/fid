@@ -801,7 +801,8 @@ is the whole `agent:<id>` or `human:<id>`; `worktree_id` is the SHA-256 of
 
 No other family may write a hold. The journal checks `hold.taken`'s Effects in
 stage order, and the export catalog refuses it in an archive of a schema
-before 20. The active projection and export manifest schema are 20.
+before 20. At migration 0020, the projection and export manifest schema
+are 20; section 8.7 records the later lifecycle extensions.
 Migration 0020 down drops the table and its indexes.
 
 ### 8.7 Reset 1.5a2–1.5a3 - hold lifecycle and questions

@@ -125,3 +125,18 @@ func validateQuestionResolution(tx *sql.Tx, event Event, effect Effect) error {
 	}
 	return nil
 }
+
+func taskHasOpenQuestion(tx *sql.Tx, task string) (bool, error) {
+	var installed int
+	if err := tx.QueryRow(`SELECT count(*) FROM sqlite_master WHERE name='questions' AND type='table'`).Scan(&installed); err != nil {
+		return false, err
+	}
+	if installed == 0 {
+		return false, nil
+	}
+	var open int
+	if err := tx.QueryRow(`SELECT count(*) FROM questions WHERE task_id=? AND resolved_at IS NULL`, task).Scan(&open); err != nil {
+		return false, err
+	}
+	return open > 0, nil
+}

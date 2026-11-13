@@ -149,6 +149,13 @@ func validateHoldUpdate(tx *sql.Tx, event Event, effect Effect) error {
 	if err != nil {
 		return fmt.Errorf("read changed hold: %w", err)
 	}
+	waiting, err := taskHasOpenQuestion(tx, task)
+	if err != nil {
+		return err
+	}
+	if waiting && (event.EventType == "hold.taken" || (event.EventType == "task.taken-over" && task != event.Aggregate.ID)) {
+		return fmt.Errorf("an unanswered task must stay kept until a person answers or takes over")
+	}
 	if event.EventType == "hold.heartbeat" || event.EventType == "hold.parked" || event.EventType == "hold.waiting" {
 		if effect.PK["id"] != event.Aggregate.ID || ended.Valid || actor != event.ActorV2.ActorType+":"+event.ActorV2.ActorID {
 			return fmt.Errorf("hold session is not current")
@@ -176,7 +183,7 @@ func validateHoldUpdate(tx *sql.Tx, event Event, effect Effect) error {
 		if err := tx.QueryRow(`SELECT s.category FROM issues i JOIN workflow_states s ON s.workflow_id=i.workflow_id AND s.state=i.status WHERE i.id=?`, task).Scan(&category); err != nil {
 			return err
 		}
-		if len(effect.Values) != 4 || effect.Values["end_reason"] != "interrupted" || !currentValuesEqual(effect.Values["kept"], category == "started") {
+		if len(effect.Values) != 4 || effect.Values["end_reason"] != "interrupted" || !currentValuesEqual(effect.Values["kept"], category == "started" || waiting) {
 			return fmt.Errorf("invalid interrupted park")
 		}
 		if reason, ok := effect.Values["park_reason"].(string); !ok || strings.TrimSpace(reason) == "" {

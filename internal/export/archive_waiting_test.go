@@ -6,6 +6,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/project"
 )
 
 func waitingArchiveEvent() journal.Event {
@@ -98,5 +99,38 @@ func TestArchiveWaitingAndAnswerBindings(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestArchiveCannotReleaseUnansweredWaitingReservation(t *testing.T) {
+	t.Parallel()
+	validator, err := newSemanticValidator(testMigrationsDir(t), 23)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = validator.close() }()
+	for _, id := range []string{"FID-a", "FID-b"} {
+		if _, err := validator.conn.Exec(`INSERT INTO issues (id,kind,title,workflow_id,status,owner_role,created_at,updated_at) VALUES (?,'task','Work','task-default','todo','developer','2026-11-10T00:00:00Z','2026-11-10T00:00:00Z')`, id); err != nil {
+			t.Fatal(err)
+		}
+	}
+	accept := func(e journal.Event) error {
+		raw, err := journal.MarshalCanonicalJSON(e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return validator.accept(raw)
+	}
+	for _, event := range []journal.Event{archiveHoldEvent(func(*journal.Event) {}), waitingArchiveEvent()} {
+		if err := accept(event); err != nil {
+			t.Fatal(err)
+		}
+	}
+	now := time.Date(2026, 11, 10, 9, 6, 0, 0, time.UTC)
+	hold := holds.New("HLD-2", "FID-b", project.WorktreeID("/w/one"), "/w/one", "agent:builder", now, nil)
+	release := journal.Effect{Op: "update", Table: "holds", PK: map[string]any{"id": "HLD-1"}, Values: map[string]any{"kept": false}, Preconditions: map[string]any{"kept": true}}
+	event := journal.Event{EventSchema: journal.EventSchemaV2, EventID: "EVT-20261110-000004", EventType: "hold.taken", OccurredAt: now, ActorV2: journal.EventActor{ActorID: "builder", ActorType: "agent", Producer: "fid-standalone", ProvenanceRef: "project-local-attribution"}, Aggregate: journal.Aggregate{ID: "HLD-2", Type: "hold", Sequence: 1}, CommandName: "next.claim", Effects: []journal.Effect{release, hold.Insert()}}
+	if err := accept(event); err == nil {
+		t.Fatal("another task released an unanswered reservation")
 	}
 }
