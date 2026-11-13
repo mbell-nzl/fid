@@ -307,6 +307,9 @@ func TestV3TwoWorktreesNeverHoldTheSameTask(t *testing.T) {
 		}
 	}
 	assertV3JournalNeverDoubleHeld(t, main, len(tasks))
+	if snapshots := policySnapshots(t, main); len(snapshots) != 1 {
+		t.Fatalf("concurrent claims wrote %d policy snapshots, want one", len(snapshots))
+	}
 	if remaining := executeCommandForTest(main, "--json", "next"); !strings.Contains(remaining.stdout, `"kind":"none"`) || remaining.err != nil {
 		t.Fatalf("next with an empty backlog = %#v, want none", remaining)
 	}

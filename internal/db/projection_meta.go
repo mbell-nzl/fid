@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	ProjectionSchemaVersion = 5
-	ActiveMigrationVersion  = 20
+	ProjectionSchemaVersion = 6
+	ActiveMigrationVersion  = 21
 
 	ReplayStatusClean      = "clean"
 	ReplayStatusCatchingUp = "catching_up"

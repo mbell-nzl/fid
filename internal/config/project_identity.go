@@ -14,17 +14,28 @@ const ProjectIdentityFileName = ".fid.toml"
 // deliberately does not change the older ledger config's opaque-ID contract.
 func ReadProjectIdentity(root string) (string, error) {
 	path := filepath.Join(root, ProjectIdentityFileName)
-	id, present, err := readStringConfig(path, "project", "id")
+	info, err := os.Lstat(path)
+	if err == nil && !info.Mode().IsRegular() {
+		err = fmt.Errorf("expected a regular file")
+	}
+	var data []byte
+	if err == nil {
+		data, err = os.ReadFile(path)
+	}
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return "", err
 		}
 		return "", &InvalidConfigError{Path: path, Err: err}
 	}
-	if !present || !validBackupProjectID(id) {
+	document, err := DecodeProject(data)
+	if err != nil {
+		return "", &InvalidConfigError{Path: path, Err: err}
+	}
+	if !validBackupProjectID(document.ProjectID) {
 		return "", &InvalidConfigError{Path: path, Err: fmt.Errorf("read config %q: project.id must be project- followed by 32 lowercase hexadecimal digits", path)}
 	}
-	return id, nil
+	return document.ProjectID, nil
 }
 
 func validBackupProjectID(id string) bool {

@@ -9,6 +9,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/next"
+	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/spf13/cobra"
 )
@@ -19,7 +20,7 @@ func init() {
 
 // nextActorPattern is a well-formed actor, as every other --actor takes it.
 // fid next checks it itself, once it knows whether --claim was given.
-const nextActorPattern = `^(agent|human|service):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`
+const nextActorPattern = policy.ActorPattern
 
 var nextActor = regexp.MustCompile(nextActorPattern)
 
@@ -146,6 +147,11 @@ func renderNextFailure(cmd *cobra.Command, operation string, cause error) error 
 }
 
 func nextFailure(cmd *cobra.Command, operation string, cause error) (cli.Failure, error) {
+	var policyError *policy.SourceError
+	if errors.As(cause, &policyError) {
+		return cli.NewFailure(cli.CodeInvalidArgument, cli.BoundedMessage(policyError.Error()), nil,
+			map[string]any{"argument": ".fid.toml", "value": nil, "allowed": []string{"valid policy at origin/<default branch>, or built-in defaults when absent"}})
+	}
 	if errors.Is(cause, project.ErrNotFound) {
 		return issueMutationFailure(cmd, operation, "", cause)
 	}

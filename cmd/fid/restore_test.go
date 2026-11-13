@@ -197,6 +197,13 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql holds = %#v", holds)
 	}
 	state.reads["holds"] = holds.stdout
+	// Policy snapshots are journal-backed too. Compare all their projected
+	// fields, so a restore cannot silently lose the policy fid trusted.
+	snapshots := executeCommandForTest(workspace, "sql", "SELECT * FROM policy_snapshots ORDER BY sequence")
+	if snapshots.err != nil || snapshots.stderr != "" {
+		t.Fatalf("fid sql policy snapshots = %#v", snapshots)
+	}
+	state.reads["policy snapshots"] = snapshots.stdout
 	return state
 }
 
@@ -364,6 +371,9 @@ func assertV8SameState(t *testing.T, before, after v8State) {
 	}
 	if strings.Count(before.reads["holds"], `"end_reason":"task-cancelled"`) != 1 || strings.Count(before.reads["holds"], `"end_reason":null`) != 1 {
 		t.Fatalf("original holds = %s, want one its task's cancellation ended and one open", before.reads["holds"])
+	}
+	if strings.Count(before.reads["policy snapshots"], `"source_ref":"built-in defaults"`) != 1 {
+		t.Fatalf("original policy snapshots = %s, want one built-in policy", before.reads["policy snapshots"])
 	}
 	if !strings.Contains(after.reads["maintenance check"], `"status":"pass"`) || !strings.Contains(after.reads["maintenance check"], `"errors":[]`) {
 		t.Fatalf("maintenance check after the restore = %s, want a pass", after.reads["maintenance check"])

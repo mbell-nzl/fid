@@ -3,6 +3,7 @@ module github.com/mbell-nzl/fid
 go 1.26.2
 
 require (
+	github.com/BurntSushi/toml v1.6.0
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/mattn/go-isatty v0.0.20
 	github.com/spf13/cobra v1.10.2

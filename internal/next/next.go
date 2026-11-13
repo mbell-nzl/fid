@@ -17,6 +17,8 @@ import (
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/policysnapshot"
 	"github.com/mbell-nzl/fid/internal/project"
 )
 
@@ -70,7 +72,7 @@ func (err *DeniedActorError) Error() string {
 // CheckActor refuses an actor that may not take a task. Agents and humans
 // may.
 func CheckActor(actor string) error {
-	if strings.HasPrefix(actor, "agent:") || strings.HasPrefix(actor, "human:") {
+	if policy.Allows(actor, policy.WorkSet) {
 		return nil
 	}
 	return &DeniedActorError{Actor: actor}
@@ -109,11 +111,18 @@ func Claim(options Options) (Result, error) {
 			return err
 		}
 		defer func() { _ = conn.Close() }()
+		loaded, err := policy.Load(options.WorkspaceRoot)
+		if err != nil {
+			return err
+		}
 		var planned order
 		if result, planned, err = assemble(conn, options, options.Clock()); err != nil {
 			return err
 		}
 		result.Claimed = true
+		if err := policysnapshot.Ensure(lock, conn, loaded, result.Now); err != nil {
+			return err
+		}
 		return take(lock, conn, options, &result, planned)
 	})
 	if err != nil {
