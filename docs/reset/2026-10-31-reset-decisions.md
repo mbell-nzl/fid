@@ -194,7 +194,7 @@ recorded under F3 as decisions, replacing the pending proposals.
   `origin/<default>` policy as writing commands, or built-in defaults
   when there is no origin or file. It never writes a snapshot or any
   other Event, including after the effective digest changes.
-- **Q16: A — status keeps working when policy is unavailable.** It shows
+- **Status keeps working when policy is unavailable.** It shows
   the whole board and one `Policy unavailable: <problem>` warning, with
   the fix. It shows no checks or test-path warnings when it cannot read
   policy. Otherwise, it warns about lanes whose `checks` key is missing,

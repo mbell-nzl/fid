@@ -160,10 +160,9 @@ func humanRepository(value any) string {
 func humanNext(failure Failure, operation, leaf string, hasInput bool) string {
 	switch failure.Code {
 	case CodePolicyUnavailable:
-		if failure.Details["ref"] == nil {
-			return policy.DefaultBranchFix
-		}
-		return policy.PolicyFileFix
+		commit, _ := failure.Details["commit"].(string)
+		source := policy.SourceError{Commit: commit}
+		return source.NextAction()
 	case CodeIssueNotFound:
 		if operation == "issue.show" {
 			return "fid issue list"

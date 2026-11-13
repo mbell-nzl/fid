@@ -38,6 +38,7 @@ func TestStatusGoldenPolicy(t *testing.T) {
 		{"empty-lists", configuredStatusPolicy, []string{}},
 		{"test-paths", strings.Split(configuredStatusPolicy, "\n[review]")[0], []string{"test-paths-not-configured"}},
 		{"unknown-default", "", []string{"policy-unavailable"}},
+		{"deleted-default", "", []string{"policy-unavailable"}},
 		{"invalid-file", "\n[lanes.standard]\npaths = []\n", []string{"policy-unavailable"}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
@@ -72,10 +73,13 @@ func TestStatusGoldenPolicy(t *testing.T) {
 			if test.name == "unknown-default" {
 				identityGit(t, fixture.workspace, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
 			}
+			if test.name == "deleted-default" {
+				identityGit(t, fixture.workspace, "update-ref", "-d", "refs/remotes/origin/trunk")
+			}
 			if err := os.WriteFile(path, original, 0o600); err != nil {
 				t.Fatal(err)
 			} // worktree policy has no authority
-			if test.name == "unknown-default" || test.name == "invalid-file" {
+			if test.name == "unknown-default" || test.name == "deleted-default" || test.name == "invalid-file" {
 				fixture.seed(statusWork())
 			}
 			before := readAllPolicyJournal(t, fixture.workspace)
@@ -104,10 +108,18 @@ func TestStatusGoldenPolicy(t *testing.T) {
 					if reply.Result.Warnings == nil || !reflect.DeepEqual(kinds, test.kinds) {
 						t.Fatalf("warnings = %#v, want %v", reply.Result.Warnings, test.kinds)
 					}
+					if test.name == "deleted-default" {
+						want := map[string]any{"kind": "policy-unavailable", "problem": deletedPolicyDefaultProblem,
+							"ref": "origin/trunk", "commit": nil, "summary": "Policy unavailable: " + deletedPolicyDefaultProblem,
+							"next_action": "git remote set-head origin <branch>"}
+						if !reflect.DeepEqual(reply.Result.Warnings[0], want) {
+							t.Errorf("deleted default warning = %#v, want %#v", reply.Result.Warnings[0], want)
+						}
+					}
 				}
 				output := fixture.placeholders(result.stdout)
 				if test.name != "no-origin" {
-					output = strings.ReplaceAll(output, strings.TrimSpace(identityGit(t, fixture.workspace, "rev-parse", "origin/trunk")), "<COMMIT>")
+					output = strings.ReplaceAll(output, strings.TrimSpace(identityGit(t, fixture.workspace, "rev-parse", "HEAD")), "<COMMIT>")
 				}
 				assertGolden(t, filepath.Join("status", "policy-"+test.name+"."+format), output)
 			}
@@ -121,23 +133,24 @@ func TestStatusGoldenPolicy(t *testing.T) {
 	}
 }
 
+const deletedPolicyDefaultProblem = "origin's default branch origin/trunk does not exist"
+
 func TestNextPolicyUnavailable(t *testing.T) {
 	t.Parallel()
-	for _, invalid := range []bool{false, true} {
-		name := "unknown-default"
-		if invalid {
-			name = "invalid-file"
-		}
+	for _, name := range []string{"unknown-default", "invalid-file", "deleted-default"} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			root, _ := policyWorkspace(t)
 			policyOrigin(t, root)
-			if invalid {
+			switch name {
+			case "invalid-file":
 				appendPolicy(t, root, "\n[lanes.standard]\npaths = []\n")
 				policyCommit(t, root)
 				identityGit(t, root, "update-ref", "refs/remotes/origin/trunk", "HEAD")
-			} else {
+			case "unknown-default":
 				identityGit(t, root, "symbolic-ref", "--delete", "refs/remotes/origin/HEAD")
+			case "deleted-default":
+				identityGit(t, root, "update-ref", "-d", "refs/remotes/origin/trunk")
 			}
 			before := readAllPolicyJournal(t, root)
 			for _, format := range []string{"json", "txt"} {
@@ -149,7 +162,19 @@ func TestNextPolicyUnavailable(t *testing.T) {
 				if cli.ExitCode(result.err) != 4 || result.stdout != "" {
 					t.Fatalf("next policy refusal = %#v", result)
 				}
-				output := strings.ReplaceAll(result.stderr, strings.TrimSpace(identityGit(t, root, "rev-parse", "origin/trunk")), "<COMMIT>")
+				if name == "deleted-default" && format == "json" {
+					var reply struct {
+						Error cli.Failure `json:"error"`
+					}
+					if err := json.Unmarshal([]byte(result.stderr), &reply); err != nil {
+						t.Fatal(err)
+					}
+					want := map[string]any{"problem": deletedPolicyDefaultProblem, "ref": "origin/trunk", "commit": nil}
+					if reply.Error.Code != cli.CodePolicyUnavailable || !reflect.DeepEqual(reply.Error.Details, want) {
+						t.Errorf("deleted default failure = %#v, want details %#v", reply.Error, want)
+					}
+				}
+				output := strings.ReplaceAll(result.stderr, strings.TrimSpace(identityGit(t, root, "rev-parse", "HEAD")), "<COMMIT>")
 				assertGolden(t, filepath.Join("status", "next-policy-"+name+"."+format), output)
 			}
 			if readAllPolicyJournal(t, root) != before {

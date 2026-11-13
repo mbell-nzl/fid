@@ -33,10 +33,23 @@ const (
 )
 
 func (err *SourceError) NextAction() string {
-	if err.Ref == "" {
+	if err.Commit == "" {
 		return DefaultBranchFix
 	}
 	return PolicyFileFix
+}
+
+// Details returns the closed policy-unavailable details, with nulls for an
+// unknown ref or commit.
+func (err *SourceError) Details() map[string]any {
+	var ref, commit any
+	if err.Ref != "" {
+		ref = err.Ref
+	}
+	if err.Commit != "" {
+		commit = err.Commit
+	}
+	return map[string]any{"problem": err.Problem, "ref": ref, "commit": commit}
 }
 
 func (err *SourceError) Error() string { return err.Problem }
@@ -58,7 +71,8 @@ func Load(root string) (Loaded, error) {
 	}
 	commitBytes, err := gitPolicy(root, "rev-parse", "--verify", ref+"^{commit}")
 	if err != nil {
-		return Loaded{}, sourceError(Source{Ref: strings.TrimPrefix(ref, "refs/remotes/")}, "read policy: %v", err)
+		ref = strings.TrimPrefix(ref, "refs/remotes/")
+		return Loaded{}, sourceError(Source{Ref: ref}, "origin's default branch %s does not exist", ref)
 	}
 	commit := strings.TrimSpace(string(commitBytes))
 	source := Source{Ref: strings.TrimPrefix(ref, "refs/remotes/"), Commit: commit}

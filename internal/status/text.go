@@ -29,7 +29,8 @@ const (
 )
 
 // WriteText writes the result as a box: what needs a person, the work in
-// progress and to do, and the backup's line, leaving out empty sections.
+// progress and to do, policy warnings, and the backup's line, leaving out
+// empty sections.
 // READY shows at most ten task rows unless all is set. The result's text,
 // which holds titles, paths and record values fid didn't write, has its
 // control characters escaped before it is fitted to a column or coloured;
