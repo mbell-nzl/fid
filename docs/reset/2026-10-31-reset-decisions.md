@@ -194,7 +194,7 @@ recorded under F3 as decisions, replacing the pending proposals.
   `origin/<default>` policy as writing commands, or built-in defaults
   when there is no origin or file. It never writes a snapshot or any
   other Event, including after the effective digest changes.
-- **Q16: A — status keeps working when policy is unavailable.** It shows
+- **Status keeps working when policy is unavailable.** It shows
   the whole board and one `Policy unavailable: <problem>` warning, with
   the fix. It shows no checks or test-path warnings when it cannot read
   policy. Otherwise, it warns about lanes whose `checks` key is missing,
@@ -210,6 +210,13 @@ recorded under F3 as decisions, replacing the pending proposals.
   `commit`; `checks-not-configured` adds the lowercase `lanes` list;
   `test-paths-not-configured` has no extra fields. The CLI spec records
   the exact text and JSON shapes.
+- **Git remotes cannot be listed.** The orchestrator decided this under
+  Mark's delegation for the 1.5a series on 14 November 2026. If running
+  `git remote` itself fails, keep `policy-unavailable`, with `problem`
+  naming the git error (`couldn't list git remotes: <error>`), null `ref`
+  and `commit`, and `check the repository: git remote -v` as the repair
+  action. Status shows the same warning and fix. This is its own source
+  error case, distinct from an unknown default or an unreadable policy file.
 
 Mark also approved these details for **1.5a2**, the same day:
 

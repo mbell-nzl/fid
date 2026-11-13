@@ -1,0 +1,3 @@
+error: origin's default branch origin/trunk does not exist
+reason: policy-unavailable; commit=null, problem=origin's default branch origin/trunk does not exist, ref=origin/trunk
+next: git remote set-head origin <branch>

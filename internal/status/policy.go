@@ -33,15 +33,8 @@ func readPolicyWarnings(root string) []Warning {
 		if !errors.As(err, &source) {
 			source = &policy.SourceError{Problem: err.Error()}
 		}
-		var ref, commit any
-		if source.Ref != "" {
-			ref = source.Ref
-		}
-		if source.Commit != "" {
-			commit = source.Commit
-		}
 		return append(warnings, Warning{Kind: "policy-unavailable", Summary: "Policy unavailable: " + source.Problem,
-			NextAction: source.NextAction(), details: map[string]any{"problem": source.Problem, "ref": ref, "commit": commit}})
+			NextAction: source.NextAction(), details: source.Details()})
 	}
 	lanes, names, tables := []string{}, []string{}, []string{}
 	for _, lane := range []struct{ key, name string }{{"routine", "Routine"}, {"standard", "Standard"}, {"assured", "Assured"}} {

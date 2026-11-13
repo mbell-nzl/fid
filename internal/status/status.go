@@ -1,6 +1,6 @@
 // Package status assembles fid status: what needs a person, the work in
-// progress and to do, and how current the ledger's backup is. Text and JSON
-// are both rendered from one Result.
+// progress and to do, policy health, and how current the ledger's backup is.
+// Text and JSON are both rendered from one Result.
 package status
 
 import (

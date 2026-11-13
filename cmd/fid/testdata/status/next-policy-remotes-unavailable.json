@@ -1,0 +1,17 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "policy-unavailable",
+    "details": {
+      "commit": null,
+      "problem": "couldn't list git remotes: git remote: exit status 1: remotes unavailable for test",
+      "ref": null
+    },
+    "message": "couldn't list git remotes: git remote: exit status 1: remotes unavailable for test",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "next.claim"
+}
