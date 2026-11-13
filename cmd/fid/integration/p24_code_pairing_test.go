@@ -113,6 +113,7 @@ var p24CodeExclusions = map[string]string{
 }
 
 var p24SpecialCodePairs = map[string]func(*testing.T){
+	"policy-unavailable":          TestPolicyUnavailableHumanAndJSON,
 	"gate-unsuccessful":           TestP24HumanGateTerminalFailure,
 	"budget-data-unavailable":     p24BudgetTerminalPair,
 	"budget-exhausted":            p24BudgetTerminalPair,
