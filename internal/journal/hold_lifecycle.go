@@ -233,12 +233,45 @@ func validateTakeover(tx *sql.Tx, event Event) error {
 	if err != nil && err != sql.ErrNoRows {
 		return err
 	}
+	var destination string
 	for _, effect := range event.Effects {
 		if effect.Table == "holds" && effect.Op == "insert" {
+			destination, _ = effect.Values["worktree_id"].(string)
 			replaces := currentEventValue(effect.Values["replaces_hold_id"])
 			if previous == "" && replaces != nil || previous != "" && replaces != previous {
 				return fmt.Errorf("takeover must link to the task's previous hold")
 			}
+		}
+	}
+	return validateTakeoverReleases(tx, event, destination)
+}
+
+func validateTakeoverReleases(tx *sql.Tx, event Event, destination string) error {
+	for _, effect := range event.Effects {
+		if effect.Table != "holds" || effect.Op != "update" {
+			continue
+		}
+		var task, worktree, expiry, category string
+		var ended sql.NullString
+		var kept bool
+		err := tx.QueryRow(`SELECT h.task_id,h.worktree_id,h.expires_at,h.ended_at,h.kept,s.category
+			FROM holds h JOIN issues i ON i.id=h.task_id
+			JOIN workflow_states s ON s.workflow_id=i.workflow_id AND s.state=i.status WHERE h.id=?`,
+			effect.PK["id"]).Scan(&task, &worktree, &expiry, &ended, &kept, &category)
+		if err != nil {
+			return fmt.Errorf("read takeover release: %w", err)
+		}
+		if task == event.Aggregate.ID {
+			continue
+		}
+		expires, err := time.Parse(time.RFC3339, expiry)
+		if err != nil {
+			return err
+		}
+		// Takeover may clean up only an expired, unreserved hold in its
+		// destination worktree, exactly as the writing command does.
+		if worktree != destination || ended.Valid || kept || category == "started" || event.OccurredAt.Before(expires) {
+			return fmt.Errorf("takeover releases another task's busy or unrelated reservation")
 		}
 	}
 	return nil
