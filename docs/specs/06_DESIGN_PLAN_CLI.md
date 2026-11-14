@@ -1133,6 +1133,91 @@ These warnings follow policy warnings. Waiting and missing worktree items
 precede backup NEEDS YOU items, in hold/planner order respectively. Status
 reads the question, work and hold state from its one projection snapshot.
 
+**Hand-off and the worktree during review (RESET 1.5a7; Mark, 14 November 2026).**
+
+```text
+fid handoff --hold <id> --actor <actor> --pr <url> --idempotency-key <key>
+```
+
+All four flags are required. The PR must be a GitHub pull request URL,
+`https://github.com/<owner>/<repo>/pull/<n>`. It is recorded locally, without
+contacting GitHub or running checks. 1.6 verifies it with `gh`.
+The exact hold must be live, owned by this actor and this worktree, and
+its task must be `in_progress`. The task's lane must have a `checks` key,
+and `[review] test_adequacy` must be configured (an empty list is valid).
+The worktree must be clean, including untracked files and excluding ignored
+files. fid recomputes the committed comparison base with the local
+`origin/<default>` ref, without fetching. Every required check must have
+its latest finished result, for this task, HEAD's tree and the current
+check definition, passing and counting. A commit preserving the tree keeps
+the results valid. Hand-off never executes a check.
+
+One `task.handed-off` Event records the immutable hand-off receipt, moves
+the task to `in_review`, ends its builder's hold, and keeps the task for its
+worktree. The receipt records the PR, head commit, tree, base, lane,
+policy snapshot, required names, definition digests, counting result IDs
+and time. A same-key retry returns the original result and Event even
+after the hold ends; changed request fields cause `idempotency-conflict`.
+
+Text success (with no required checks, use `no checks required`):
+
+```text
+✓ Handed FID-9f13aa to review · 2 checks passed · PR #63
+```
+
+The `task.handoff` JSON result is:
+
+```json
+{"task_id":"FID-9f13aa","status":"in_review","handoff_id":"HOF-100001","pr":"https://github.com/mbell-nzl/fid/pull/63","head":"a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2","base":"9f8e7d6c5b4a9f8e7d6c5b4a9f8e7d6c5b4a9f8e","required_checks":["lint","test"],"result_ids":["CHK-100003","CHK-100004"]}
+```
+
+It has the original Event's ID and time in the ordinary success envelope.
+All refusals change nothing. Preconditions and hold conflicts exit 4;
+invalid flags and PR URLs use `invalid-argument`, exit 2.
+
+| Condition | Code | Details and repair |
+|---|---|---|
+| Lane's `checks` key absent | `checks-not-configured` | `{lane}`; add checks to `[lanes.<lane>]`, then merge `.fid.toml` and `git fetch` |
+| Test paths absent | `test-paths-not-configured` | `{}`; `add [review] test_adequacy, then merge .fid.toml and git fetch` |
+| Uncommitted changes | `tree-dirty` | `{worktree}`; commit them before hand-off |
+| Required checks without counting passes | `checks-unsatisfied` | `{checks, latest_result_ids}`; `fid check --hold <id> --actor <a> --idempotency-key <key>` |
+| Comparison base unavailable | `comparison-unavailable` | `{ref, problem}`, with nullable ref, as for check |
+| Task not `in_progress` | `transition-not-permitted` | `{from_state, to_state, unsatisfied}`; start the task first |
+| Hold not current | `hold-not-current` | Exact hold checks and repair as above |
+| Policy unreadable | `policy-unavailable` | Same policy source details and repair as other work commands |
+
+`test-paths-not-configured` and `tree-dirty` are precondition codes,
+not retryable, with the task as their issue subject. For example:
+
+```text
+error: FID-9f13aa has uncommitted changes; commit them before hand-off
+reason: tree-dirty; worktree=/w/fid-wt2
+```
+
+After hand-off, kept work has mode `review`. Until the task is done (1.6)
+or cancelled, this worktree's next answer is kind `none`, with null hold,
+task, epic and answer, and `waiting: {kind: "review", task_id: <id>}`.
+The queue retains its usual contents. Other worktrees carry on; a review
+reservation elsewhere uses the existing `held-elsewhere` queue reason.
+The text's message is:
+
+```text
+  ○ Nothing here: FID-9f13aa is in review
+      → fid show FID-9f13aa
+```
+
+Status labels it `in review`. Missing-worktree NEEDS YOU covers this
+reservation too. Cancellation releases it in the same transition Event.
+The loop opens a worktree per task (2.5); rework returns to this worktree
+as kind `rework` (2.1).
+
+Show gains a Hand-off row, for example
+`10:10 · PR #63 · lint, test passed on a1b2c3d`, after Checks. With no checks
+it says `no checks required`. Its JSON always has `handoff`, null before
+one, otherwise `{id, pr, head, base, required_checks, result_ids, at}` for
+the latest receipt. A new hand-off after rework may name a different PR;
+done uses the latest. Rework behavior and its shaped test belong to 2.1.
+
 ### Requirement references
 
 ```text
