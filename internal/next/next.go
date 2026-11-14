@@ -191,8 +191,7 @@ func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order
 	}
 	if planned.own != nil && planned.own.InReview() {
 		result.Waiting = &Waiting{Kind: "review", TaskID: planned.own.TaskID}
-	}
-	if planned.own != nil && planned.own.Question != nil {
+	} else if planned.own != nil && planned.own.Question != nil {
 		q := planned.own.Question
 		if q.ResolvedAt == nil {
 			result.Waiting = &Waiting{ReasonWaitingForYou, q.TaskID, q.ID, q.Text}

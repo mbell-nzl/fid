@@ -642,6 +642,8 @@ Mark approved these details for **1.5a7**, on 14 November 2026:
    cancelled. That worktree's `next` returns kind `none`, null hold, task,
    epic and answer, and `waiting: {kind: "review", task_id: <id>}`, saying
    `Nothing here: <id> is in review` and suggesting `fid show <id>`.
+   The review reservation takes precedence over an older unanswered
+   question; `fid show` still lists that question.
    The queue retains its usual contents. Other worktrees carry on. The
    loop opens a worktree per task (2.5); 2.1 returns rework here as kind
    `rework`. Cancellation frees it; missing-worktree NEEDS YOU applies.
