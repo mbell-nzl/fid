@@ -2099,6 +2099,17 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   `init` or `export import` can leave `<common>/fid-staging-*` behind.
   `git status` doesn't show it, and nothing removes it. Add cleanup once
   one turns up; it needs a rule for when staging is safe to delete.
+- From the read-replay fix (2026-11-14, after 1.5a5):
+  - Replay reports any error while projecting an Event as a malformed
+    journal entry (`journal-replay-stopped`, integrity, not retryable),
+    naming a line that may be fine. Only a line that doesn't parse should
+    get that label; a projection error needs its own.
+  - A read that inspects the journal without the write lock could still
+    meet a half-written last line: `AppendEvent` writes each Event with one
+    `Write` call, but Go may retry a short write, and the inspection parses
+    a non-empty fragment at the end of the file at once. Not seen in about
+    3,600 concurrent reads; telling a live append from a damaged tail needs
+    a design, not a one-line fix.
 - CHANGELOG: it hasn't been kept up during the reset. Catch it up in 3.2,
   with the v0.2.0 release.
 
