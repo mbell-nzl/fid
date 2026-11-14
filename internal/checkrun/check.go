@@ -303,11 +303,7 @@ func tree(observation project.Observation) checkrecord.Tree {
 }
 
 func (ex *execution) start(db store, name string) (checkrecord.Start, error) {
-	id, err := journal.GenerateID("CHK", func(candidate string) (bool, error) {
-		var n int
-		err := db.conn.QueryRow(`SELECT count(*) FROM (SELECT id FROM check_starts UNION SELECT id FROM check_requests) WHERE id=?`, candidate).Scan(&n)
-		return n > 0, err
-	})
+	id, err := db.newCheckID(journal.GenerateID)
 	if err != nil {
 		return checkrecord.Start{}, err
 	}

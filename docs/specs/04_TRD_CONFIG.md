@@ -176,6 +176,12 @@ as `comparison-unavailable` (precondition / exit 4), with the task subject
 and `{ref, problem}` details (`ref` nullable). Explicitly named checks do
 not need the comparison.
 
+Show keeps working when policy, lane checks or the comparison is unavailable,
+with warnings and nullable required/satisfied fields instead of a refusal.
+Its `checks_base` is null when no comparison is needed or the base is missing.
+An unavailable base leaves unconditional lane checks required and conditional
+ones unknown. A missing current definition makes satisfaction unknown.
+
 A project with no checks can still use next, status and show. Status warns
 about missing checks or test paths, but explicit empty lists do not warn
 (1.5a1). A missing lane's checks will refuse check (1.5a5), hand-off

@@ -7,6 +7,7 @@
     "blocked_by": [],
     "blocks": [],
     "checks": [],
+    "checks_base": null,
     "children": [
       {
         "id": "FID-1f2e3d",
@@ -59,6 +60,7 @@
     "scheduling": "prioritised",
     "state": "in-progress",
     "task": null,
+    "warnings": [],
     "working": null
   }
 }

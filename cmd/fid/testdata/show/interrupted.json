@@ -7,6 +7,7 @@
     "blocked_by": [],
     "blocks": [],
     "checks": [],
+    "checks_base": null,
     "children": [],
     "epic": {
       "id": "FID-8a1b2c",
@@ -51,6 +52,7 @@
     "scheduling": null,
     "state": null,
     "task": null,
+    "warnings": [],
     "working": {
       "hold_id": "HLD-77b2c0",
       "worktree": "/home/mark/projects/fid-wt2",

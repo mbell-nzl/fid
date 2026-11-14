@@ -1,0 +1,10 @@
+╭ FID-9f13aa ──────────────────────────────────────────────────── task ╮
+
+  ● Harden login rate limiting                             in progress
+
+  Epic        ◆ FID-e3a1c0  Planned epic                      0/1 done
+  Lane        Standard
+  Checks      ✓ always passed at 22:00 · counts on HEAD
+              ⚠ No checks set for Standard in .fid.toml
+  Working     here, since 21:59, until 22:59
+╰──────────────────────────────────────────────────────────────────────╯

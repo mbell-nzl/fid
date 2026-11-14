@@ -25,29 +25,43 @@ func (warning Warning) MarshalJSON() ([]byte, error) {
 	return json.Marshal(fields)
 }
 
+// NewWarning shares the closed warning shape with other read commands.
+func NewWarning(kind, summary, next string, details map[string]any) Warning {
+	return Warning{Kind: kind, Summary: summary, NextAction: next, details: details}
+}
+
+func PolicyUnavailableWarning(cause error) Warning {
+	var source *policy.SourceError
+	if !errors.As(cause, &source) {
+		source = &policy.SourceError{Problem: cause.Error()}
+	}
+	return NewWarning("policy-unavailable", "Policy unavailable: "+source.Problem, source.NextAction(), source.Details())
+}
+
+func ChecksNotConfiguredWarning(lanes []string) Warning {
+	names, tables := []string{}, []string{}
+	for _, lane := range lanes {
+		names = append(names, strings.ToUpper(lane[:1])+lane[1:])
+		tables = append(tables, "[lanes."+lane+"]")
+	}
+	return NewWarning("checks-not-configured", "No checks set for "+strings.Join(names, ", ")+" in .fid.toml",
+		"add checks to "+joinTables(tables)+", then merge .fid.toml and git fetch", map[string]any{"lanes": lanes})
+}
+
 func readPolicyWarnings(root string) []Warning {
 	warnings := []Warning{}
 	loaded, err := policy.Load(root)
 	if err != nil {
-		var source *policy.SourceError
-		if !errors.As(err, &source) {
-			source = &policy.SourceError{Problem: err.Error()}
-		}
-		return append(warnings, Warning{Kind: "policy-unavailable", Summary: "Policy unavailable: " + source.Problem,
-			NextAction: source.NextAction(), details: source.Details()})
+		return append(warnings, PolicyUnavailableWarning(err))
 	}
-	lanes, names, tables := []string{}, []string{}, []string{}
-	for _, lane := range []struct{ key, name string }{{"routine", "Routine"}, {"standard", "Standard"}, {"assured", "Assured"}} {
-		if !loaded.Effective.Lanes[lane.key].ChecksSet {
-			lanes = append(lanes, lane.key)
-			names = append(names, lane.name)
-			tables = append(tables, "[lanes."+lane.key+"]")
+	lanes := []string{}
+	for _, lane := range []string{"routine", "standard", "assured"} {
+		if !loaded.Effective.Lanes[lane].ChecksSet {
+			lanes = append(lanes, lane)
 		}
 	}
 	if len(lanes) > 0 {
-		warnings = append(warnings, Warning{Kind: "checks-not-configured",
-			Summary:    "No checks set for " + strings.Join(names, ", ") + " in .fid.toml",
-			NextAction: "add checks to " + joinTables(tables) + ", then merge .fid.toml and git fetch", details: map[string]any{"lanes": lanes}})
+		warnings = append(warnings, ChecksNotConfiguredWarning(lanes))
 	}
 	if !loaded.Effective.TestAdequacySet {
 		warnings = append(warnings, Warning{Kind: "test-paths-not-configured", Summary: "No test paths set in .fid.toml",

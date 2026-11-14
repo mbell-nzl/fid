@@ -553,6 +553,35 @@ Mark approved these details for **1.5a6**, on 14 November 2026:
    counting pass on HEAD's tree. JSON adds `required` and `satisfied` per
    check, plus the base commit used. Keep this display to those additions.
 
+The orchestrator (**Claude Opus 5.5**, acting on Mark's behalf under his
+delegation for the 1.5a series) decided these clarifications for **1.5a6**
+on 14 November 2026:
+
+1. **Show's check entries.** Each JSON `checks` entry is
+   `{name, start, process, result, required, satisfied}`, in name order.
+   A required check without a task record has null start, process and
+   result. Text marks required checks and whether each counts on HEAD's
+   tree; an unstarted required check reads, for example,
+   `○ test required · not checked yet`. Keep labels plain, without kernel
+   words.
+2. **Show keeps working (Q16 A).** The Checks row never refuses the read.
+   Unavailable policy makes required and satisfied null for every check.
+   Missing lane checks makes required null. An unavailable base makes
+   required null only for conditional lane checks; unconditional ones
+   remain required. Unknown never means not required. Satisfied is null
+   whenever the current definition is unknown, including a removed name.
+   `checks_base` is the comparison's base commit, null if unavailable or
+   unnecessary. JSON adds `warnings`, empty when healthy, using status's
+   warning shape: kind, summary, next_action and the kind's details.
+   Kinds are policy-unavailable, checks-not-configured and
+   comparison-unavailable; comparison details are nullable ref and problem.
+   Text adds one warning line under Checks explaining why fid cannot tell.
+   Reuse status's warning code where simple.
+3. **Allocator correction.** Empty-request IDs must be checked against
+   both existing starts and requests, with a regression test.
+4. **Empty completion accepted.** The `check.completed` family for a
+   successful empty request is accepted, with both catalogs and V8 coverage.
+
 Builder's transactional choices for 1.5a6: `policy.Compare` uses local git
 plumbing with lazy fetching disabled; `git diff --no-renames --name-only -z`
 includes both rename paths without git's quoting. `checkread.Read` returns
@@ -565,6 +594,11 @@ and its retry response, with no invented start or result. Both Event
 catalogs, replay/import validation and V8 cover it; it needs no migration.
 The `checks-unsatisfied` code has no CLI producer before hand-off in 1.5a7;
 the process-pair inventory records that audited exclusion until then.
+Show retains the full task check history until evaluating the current tree
+and definition, falling back to the latest historical result for display.
+It shares status's warning constructors and JSON shape. Named and empty
+requests use one allocator; a deterministic collision test includes a
+secondary start whose ID is absent from the request table.
 
 ## Products
 

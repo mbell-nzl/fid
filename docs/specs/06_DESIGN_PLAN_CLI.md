@@ -619,7 +619,7 @@ every read, records no Event and makes no network calls. Text output is
     so it has no Working row.
 
   Labels are 10 columns wide after the two-space indent, so values begin
-  at column 14. Later tasks add rows after `Lane` (checks, reviews,
+  at column 14. Checks follows `Lane`; later tasks add reviews,
   approval, and next as the last), a NEEDS YOU block
   under the heading, and an epic's plan and validations.
 - **Reference lines**, in rows and lists, follow `status`'s row rules: a
@@ -655,6 +655,9 @@ The `issue.show` JSON result holds everything, with a null `event`:
  "task": null,
  "working": null,
  "kept": null,
+ "checks": [],
+ "checks_base": null,
+ "warnings": [],
  "scheduling": null,
  "blocked_by": [{"id": "FID-1a2b3c", "kind": "task", "title": "Escape controls in status",
                  "status": "done", "status_category": "completed"}],
@@ -1565,9 +1568,12 @@ Ordinary unsuccessful checks do not stop later names. All passing and counting
 returns 0; any unsuccessful outcome returns 8; all passed but some do not count
 returns 4. Failure envelopes have no `result`, and name the relevant check IDs.
 
-`show` adds `result.checks` (an array, empty when absent), each `{start, process,
-result}`. Process and result are nullable. It selects each name's latest result
-and every unfinished start. Start contains ID, task, hold, actor, name, resolved
+`show` adds `result.checks` (an array, empty when absent), each
+`{name, start, process, result, required, satisfied}`, in name order. It selects
+each name's latest finished result on HEAD's tree with the current definition,
+or its latest historical result if none matches, plus every unfinished start.
+A required check without a task record has null start, process and result.
+Start contains ID, task, hold, actor, name, resolved
 definition/digest, environment-value digest, policy snapshot sequence, time,
 HEAD/tree/dirty observation and the owning fid process. Process identity has
 machine, PID and start identity. Result contains finish time, outcome (`passed`,
@@ -1581,9 +1587,27 @@ Reasons are `tree-dirty`, `tree-changed`, `ownership-lost`, `artifact-not-kept`.
 Show's text adds, for example:
 
 ```text
-  Checks      ✓ lint passed at 10:05
-              ⚠ test passed at 10:12, doesn't count: the tree changed
+  Checks      ✓ lint passed at 10:05 · required · counts on HEAD
+              ○ test required · not checked yet
 ```
+
+`satisfied` describes the check's counting pass on HEAD, independently of
+whether the lane requires it. A newer unfinished start does not erase a
+finished pass. It is null if policy or the current definition is unknown.
+`required` is null when policy is unavailable or the lane's `checks` key is
+missing. If the base cannot be found, only conditional lane checks have null
+required; unconditional lane checks remain true. Checks outside a configured
+lane's list are false. Unknown is never represented as false.
+
+`result.checks_base` is the base commit used, null when unavailable or not
+needed (no conditional lane checks). `result.warnings` is always an array,
+empty when healthy. Show never refuses because Checks cannot be evaluated:
+it uses status's warning shape (`kind`, `summary`, `next_action` and that
+kind's details). Policy-unavailable carries nullable ref and commit plus
+problem; checks-not-configured carries the lowercase lanes list;
+comparison-unavailable carries nullable ref and problem. Text adds one `⚠`
+line under Checks, wrapping as needed, explaining why fid cannot tell. Show
+never writes a policy snapshot.
 
 A same-key repeat returns the original response without spawning. A keyed
 request cut off before completion gives `check-incomplete` without a result.

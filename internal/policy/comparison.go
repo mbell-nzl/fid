@@ -1,7 +1,9 @@
 package policy
 
 import (
+	"errors"
 	"fmt"
+	"os/exec"
 	"slices"
 	"strings"
 
@@ -14,6 +16,13 @@ import (
 type Comparison struct {
 	Ref, Base, Head string
 	Paths           []string
+}
+
+// HeadTree reads only the committed tree, independently of worktree dirt or
+// merge state. A missing promisor object must not cause a lazy fetch.
+func HeadTree(root string) (string, error) {
+	tree, err := gitPolicy(root, "rev-parse", "--verify", "HEAD^{tree}")
+	return strings.TrimSpace(string(tree)), err
 }
 
 // Compare never fetches. Disabling rename detection includes both names as a
@@ -40,7 +49,11 @@ func Compare(root, task string) (Comparison, error) {
 	comparison.Head = strings.TrimSpace(string(head))
 	base, err := gitPolicy(root, "merge-base", comparison.Head, ref)
 	if err != nil {
-		return fail(err.Error())
+		var exit *exec.ExitError
+		if errors.As(err, &exit) && exit.ExitCode() == 1 {
+			return fail("HEAD and " + comparison.Ref + " have no common ancestor in the available history")
+		}
+		return fail(strings.TrimSpace(err.Error()))
 	}
 	comparison.Base = strings.TrimSpace(string(base))
 	paths, err := gitPolicy(root, "diff", "--no-ext-diff", "--no-renames", "--name-only", "-z", comparison.Base, comparison.Head, "--")

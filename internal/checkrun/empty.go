@@ -8,11 +8,7 @@ import (
 
 // An empty selection is a completed request, with no invented start or result.
 func (ex *execution) empty(db store) error {
-	id, err := journal.GenerateID("CHK", func(candidate string) (bool, error) {
-		var n int
-		err := db.conn.QueryRow(`SELECT count(*) FROM check_requests WHERE id=?`, candidate).Scan(&n)
-		return n > 0, err
-	})
+	id, err := db.newCheckID(journal.GenerateID)
 	if err != nil {
 		return err
 	}

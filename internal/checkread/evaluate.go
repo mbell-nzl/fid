@@ -71,9 +71,3 @@ func (result Evaluation) Satisfied(name string) bool {
 	latest, ok := result.Latest[name]
 	return ok && latest.Result.Counts && latest.Result.Outcome == "passed"
 }
-
-// RequiredName is used by renderers without another required-set evaluator.
-func (result Evaluation) RequiredName(name string) bool {
-	_, found := slices.BinarySearch(result.Required, name)
-	return found
-}
