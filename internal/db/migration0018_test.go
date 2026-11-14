@@ -167,21 +167,12 @@ func TestLatestSchemaHasNoV1JudgmentTables(t *testing.T) {
 	if err := migrator.Migrate(ActiveMigrationVersion); err != nil {
 		t.Fatalf("migrate latest: %v", err)
 	}
-	for _, name := range []string{"task_completions", "ac_verifications", "requirements", "decisions", "judgment_concerns"} {
+	for _, name := range []string{"task_completions", "ac_verifications", "requirements", "decisions", "judgment_concerns", "concerns", "requirement_refs", "decision_refs"} {
 		if _, exists := schemaObjectSQL(t, conn, "table", name); exists {
 			t.Errorf("removed V1 table %q survives latest schema", name)
 		}
 	}
-	if _, exists := schemaObjectSQL(t, conn, "table", "concerns"); !exists {
-		t.Error("renamed generic concerns table is missing")
-	}
 	var count int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('concerns') WHERE name IN ('subject_type','subject_id','status')`).Scan(&count); err != nil {
-		t.Fatal(err)
-	}
-	if count != 3 {
-		t.Errorf("generic concerns columns present = %d, want 3", count)
-	}
 	for _, object := range []struct{ kind, name string }{
 		{"index", "idx_concerns_issue_status"}, {"index", "judgment_concerns_by_subject"},
 		{"trigger", "decisions_epic_kind_guard_insert"}, {"trigger", "task_completions_issue_kind_guard_insert"},
@@ -205,7 +196,7 @@ func TestLatestSchemaHasNoV1JudgmentTables(t *testing.T) {
 			t.Errorf("removed transition rule %q has %d rows", rule, count)
 		}
 	}
-	for _, name := range []string{"issues_enriched", "concerns_by_subject_status", "links_endpoint_scope_guard_insert", "links_from_ref_integrity_guard_insert", "links_to_ref_integrity_guard_insert", "links_relation_compatibility_guard_insert", "activity_log_ref_integrity_guard_insert"} {
+	for _, name := range []string{"issues_enriched", "links_endpoint_scope_guard_insert", "links_from_ref_integrity_guard_insert", "links_to_ref_integrity_guard_insert", "links_relation_compatibility_guard_insert", "activity_log_ref_integrity_guard_insert"} {
 		kind := "trigger"
 		switch name {
 		case "issues_enriched":

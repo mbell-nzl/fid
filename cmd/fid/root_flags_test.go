@@ -199,9 +199,6 @@ func TestRootFlagsAcceptConvertedReadsAndRejectOnlyLegacyDiagnostics(t *testing.
 		command []string
 	}{
 		{"activity list", []string{"activity", "list"}},
-		{"concern list", []string{"concern", "list"}},
-		{"stats tokens", []string{"stats", "tokens"}},
-		{"stats cost", []string{"stats", "cost"}},
 	} {
 		for _, rootFlag := range []string{"--json", "--project"} {
 			t.Run(fixture.name+" "+rootFlag, func(t *testing.T) {

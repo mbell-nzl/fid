@@ -51,9 +51,6 @@ func linkFailure(cmd *cobra.Command, operation string, cause error) (cli.Failure
 	}
 	var endpoint *links.EndpointNotFoundError
 	if errors.As(cause, &endpoint) {
-		if endpoint.EndpointType == "requirement" {
-			return cli.NewFailure(cli.CodeRequirementNotFound, "requirement was not found", &cli.Subject{Type: cli.SubjectRequirement, ID: endpoint.EndpointID}, map[string]any{"id": endpoint.EndpointID})
-		}
 		return cli.NewFailure(cli.CodeIssueNotFound, "issue was not found", &cli.Subject{Type: cli.SubjectIssue, ID: endpoint.EndpointID}, map[string]any{"id": endpoint.EndpointID})
 	}
 	var duplicate *links.DuplicateLinkError

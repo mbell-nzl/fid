@@ -852,4 +852,62 @@ still contains the new Events. To run a previous fid, restore the
 pre-upgrade backup with that version; a projection downgrade alone does
 not make its journal compatible.
 
-*Last updated: 2026-10-04 (Phase 24 task 1 storage baseline; DEC-275/278)*
+### Reset 1.5d1 - closed lean Event and archive catalogs
+
+ADR-0014 and the delegated decisions Q2/Q5 supersede the kernel Event catalog
+above. All Activation, Envelope, Claim, Run, Attempt, Receipt, Evidence,
+Stop, Attention, old Review/Finding, Concern, Deviation, Human Outcome,
+requirement/decision-reference and configurable-workflow Events are unsupported.
+Effects on their tables are unsupported even when relabeled as a retained
+family. Their physical tables were dropped by 1.5d2; fixed seeded Issue states
+remain readable and their authoring Events are unsupported.
+
+Journal replay and freshness inspection refuse this history before changing
+any projection state. The failure is `journal-replay-stopped` (integrity,
+exit 6), with `journal_file`, `line`, `event_id`, `reason: "schema-unsupported"`
+and `event_type`. Other replay failures retain their existing three fields.
+Generic version-1 Issue history is not rejected solely for its wire version.
+
+Archives keep manifest v2 and require the active projection schema. Manifest
+v1 is refused by validation and import with `archive-invalid` and its
+`schema-unsupported` check. A removed Event or table Effect gets that same
+check, naming its family and archive journal member. Refusals publish nothing.
+The source inventory must be exactly `[]`, and the capability profile retains
+only `export.portable.v1`. Artifacts, file bodies, cached results, references,
+ordered Effects and all generic integrity checks keep their existing guards.
+`artifact.availability-observed` requires Event-v2, retains the nine-field
+Artifact metadata and only updates availability; no kernel side effects are
+admitted.
+
+### Reset 1.5d2 - physical kernel removal
+
+Migration 0027 drops 42 tables: the Activation, Envelope, Claim, Run,
+execution, Evidence, Stop, Attention, old review/judgment and requirement/
+decision-reference tables, plus `system_capabilities` and
+`workflow_assignments`. Table-owned indexes, triggers and foreign keys go
+with them. Historical migration pairs remain until the 3.2 baseline squash.
+The active migration/export schema is 27; projection meta version 9 forces
+older derived caches to rebuild from the supported journal.
+
+`issues_enriched` now selects the Issue columns and `triage_status`, with
+its indexed latest-triage lookup. Concern columns and joins are removed.
+The activity insert guard accepts only existing Issue references. Shared
+`referenced_artifacts` and `idempotency_results` stay, along with every
+lean table, the four fixed-state lookup tables and their Issue foreign keys.
+Frozen V1 `agent_runs` and `triage_events` stay under Q3.
+
+The down migration restores schema-26 definitions exactly, with empty
+retired tables; it cannot recover deleted rows. Restoring old data requires
+a pre-upgrade backup and its matching fid version. It does not make removed
+journal families supported by the current binary.
+
+Maintenance retains hierarchy, dependent-kind, sequence, Issue link/activity,
+foreign-key, fixed-state, Event sequence, retry binding, Artifact and frozen
+state checks. Kernel recovery/execution checks, configurable assignment
+checks and kernel warnings are removed. Info has only `issue_count` and
+`recent_activity_7d`; `claim_count_live` is removed. `warnings` stays an array,
+and generic `--warn-as-error` and collection limits stay. The dead
+`maintenance.abandoned_attempt_grace_seconds` and `executor_limits` config
+keys remain under Q4, without affecting these checks.
+
+*Last updated: 2026-11-15 (RESET 1.5d2 physical schema and maintenance cut)*

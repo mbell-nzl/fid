@@ -61,7 +61,7 @@ type archiveSemanticFacts struct {
 }
 
 func newSemanticValidator(migrationsDir string, projectionSchema int) (*semanticValidator, error) {
-	if projectionSchema != 14 && projectionSchema != 17 && projectionSchema != 18 && projectionSchema != 19 && projectionSchema != 20 && projectionSchema != 21 && projectionSchema != 22 && projectionSchema != 23 && projectionSchema != 24 && projectionSchema != 25 && projectionSchema != 26 {
+	if projectionSchema != 19 && projectionSchema != 20 && projectionSchema != 21 && projectionSchema != 22 && projectionSchema != 23 && projectionSchema != 24 && projectionSchema != 25 && projectionSchema != 26 && projectionSchema != 27 {
 		return nil, fmt.Errorf("semantic archive validation: unsupported projection schema %d", projectionSchema)
 	}
 	if strings.TrimSpace(migrationsDir) == "" {
@@ -198,6 +198,9 @@ func (validator *semanticValidator) accept(raw []byte) error {
 	if err := event.UnmarshalJSON(raw); err != nil {
 		return semanticFailure("effect-invalid", "decode Event", err)
 	}
+	if err := journal.ValidateEventSupport(event); err != nil {
+		return semanticFailure("schema-unsupported", "validate Event support", err)
+	}
 	if _, exists := validator.eventIDs[event.EventID]; exists {
 		return semanticFailure("effect-invalid", fmt.Sprintf("duplicate Event ID %q", event.EventID), nil)
 	}
@@ -230,9 +233,6 @@ func (validator *semanticValidator) accept(raw []byte) error {
 	}); err != nil {
 		return semanticFailure("reference-invalid", fmt.Sprintf("apply Event %q", event.EventID), err)
 	}
-	if err := validator.validateProjectedReferences(event); err != nil {
-		return semanticFailure("reference-invalid", "validate projected references", err)
-	}
 	validator.eventIDs[event.EventID] = struct{}{}
 	if event.Repository != nil && event.Repository.ProjectID != "" {
 		validator.projectIDs[event.Repository.ProjectID] = struct{}{}
@@ -255,17 +255,13 @@ func (validator *semanticValidator) finish() (archiveSemanticFacts, error) {
 	if validator == nil || validator.conn == nil {
 		return archiveSemanticFacts{}, fmt.Errorf("semantic archive validation: validator is closed")
 	}
-	sources, err := semanticSources(validator.conn)
-	if err != nil {
-		return archiveSemanticFacts{}, err
-	}
 	artifacts, err := semanticArtifacts(validator.conn)
 	if err != nil {
 		return archiveSemanticFacts{}, err
 	}
 	return archiveSemanticFacts{
 		ProjectIDs:        cloneSemanticIDs(validator.projectIDs),
-		Sources:           sources,
+		Sources:           []json.RawMessage{},
 		Artifacts:         artifacts,
 		EventCount:        validator.eventCount,
 		TerminalEventHash: validator.terminalHash,
@@ -278,26 +274,6 @@ func cloneSemanticIDs(ids map[string]struct{}) map[string]struct{} {
 		cloned[id] = struct{}{}
 	}
 	return cloned
-}
-
-func semanticSources(conn *sql.DB) ([]json.RawMessage, error) {
-	rows, err := conn.Query(`SELECT source_json FROM envelope_sources ORDER BY envelope_id, revision, ordinal`)
-	if err != nil {
-		return nil, fmt.Errorf("semantic archive validation: read Sources: %w", err)
-	}
-	defer func() { _ = rows.Close() }()
-	sources := []json.RawMessage{}
-	for rows.Next() {
-		var source string
-		if err := rows.Scan(&source); err != nil {
-			return nil, fmt.Errorf("semantic archive validation: scan Source: %w", err)
-		}
-		sources = append(sources, json.RawMessage(source))
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("semantic archive validation: iterate Sources: %w", err)
-	}
-	return sources, nil
 }
 
 func semanticArtifacts(conn *sql.DB) ([]semanticArtifact, error) {
@@ -321,11 +297,11 @@ func semanticArtifacts(conn *sql.DB) ([]semanticArtifact, error) {
 }
 
 func (validator *semanticValidator) validateEvent(event journal.Event) error {
-	if event.EventSchema != journal.EventSchemaV2 && (validator.profile != 14 || event.EventSchema != journal.EventSchemaV1) {
+	if event.EventSchema != journal.EventSchemaV2 {
 		return fmt.Errorf("semantic archive validation: Event %q has unsupported schema %d for projection schema %d", event.EventID, event.EventSchema, validator.profile)
 	}
 	rule, found := semanticEventRules[event.EventType]
-	if !found || (validator.profile == 14 && semanticPost14Events[event.EventType]) || validator.profile < semanticFirstProfile[event.EventType] {
+	if !found || validator.profile < semanticFirstProfile[event.EventType] {
 		return fmt.Errorf("semantic archive validation: Event %q has unsupported type %q", event.EventID, event.EventType)
 	}
 	if event.Aggregate.Type != rule.aggregate {

@@ -78,11 +78,24 @@ func Validate(options ValidateOptions) (Validation, error) {
 	checks = append(checks, manifestChecks...)
 	if len(manifestChecks) == 0 {
 		checks = append(checks, validateManifestEntries(manifest, entries)...)
-		checks = append(checks, validateManifestSources(manifest)...)
-		checks = append(checks, validateCapabilities(manifest)...)
+		profileChecks := append(validateManifestSources(manifest), validateCapabilities(manifest)...)
 		if len(checks) == 0 {
-			checks = append(checks, validateJournalEntries(manifest, entries, options.MigrationsDir)...)
+			journalChecks := validateJournalEntries(manifest, entries, options.MigrationsDir)
+			// An old profile cannot disguise removed history as a mere profile mismatch.
+			// Entry integrity still precedes semantic inspection of archive contents.
+			unsupported := false
+			for _, item := range journalChecks {
+				unsupported = unsupported || item.Code == "schema-unsupported"
+			}
+			if unsupported || len(profileChecks) == 0 {
+				checks = journalChecks
+			} else {
+				checks = profileChecks
+			}
+		} else {
+			checks = append(checks, profileChecks...)
 		}
+
 	}
 	if len(checks) > 0 {
 		return invalidValidation(archivePath, archiveDigest, checks)
@@ -122,17 +135,11 @@ func decodeManifest(data []byte) (manifest, []Check) {
 	if err != nil || !bytes.Equal(canonical, data) || (decoded.Schema != manifestSchema && decoded.Schema != legacyManifestSchema) || decoded.ProjectID == "" || decoded.EventCount < 1 || decoded.TerminalEventHash == "" {
 		return manifest{}, []Check{check("manifest-invalid", "manifest.json", "manifest fields are invalid or noncanonical")}
 	}
-	if decoded.Schema == legacyManifestSchema {
-		if decoded.ProjectionSchema != 14 || decoded.ProjectConfig != nil {
-			return manifest{}, []Check{check("schema-unsupported", "manifest.json", "unsupported legacy archive profile")}
-		}
-	} else {
-		if decoded.ProjectionSchema != fiddb.ActiveMigrationVersion {
-			return manifest{}, []Check{check("schema-unsupported", "manifest.json", "unsupported recovery archive projection")}
-		}
-		if _, err := decoded.ProjectConfig.projectConfig(decoded.ProjectID); err != nil {
-			return manifest{}, []Check{check("configuration-invalid", "manifest.json", err.Error())}
-		}
+	if decoded.Schema != manifestSchema || decoded.ProjectionSchema != fiddb.ActiveMigrationVersion {
+		return manifest{}, []Check{check("schema-unsupported", "manifest.json", "unsupported archive schema or projection")}
+	}
+	if _, err := decoded.ProjectConfig.projectConfig(decoded.ProjectID); err != nil {
+		return manifest{}, []Check{check("configuration-invalid", "manifest.json", err.Error())}
 	}
 	return decoded, nil
 }
@@ -186,24 +193,15 @@ func validateManifestEntries(manifest manifest, entries map[string]scannedEntry)
 }
 
 func validateManifestSources(manifest manifest) []Check {
-	for _, source := range manifest.Sources {
-		var decoded any
-		if err := json.Unmarshal(source, &decoded); err != nil {
-			return []Check{check("manifest-invalid", "manifest.json", "source metadata is invalid")}
-		}
-		canonical, err := journal.MarshalCanonicalJSON(decoded)
-		if err != nil || !bytes.Equal(canonical, source) {
-			return []Check{check("manifest-invalid", "manifest.json", "source metadata is noncanonical")}
-		}
+	if manifest.Sources == nil || len(manifest.Sources) != 0 {
+		return []Check{check("reference-invalid", "manifest.json", "Source inventory must be empty")}
 	}
+
 	return nil
 }
 
 func validateCapabilities(manifest manifest) []Check {
 	profile := capabilitySnapshot()
-	if manifest.Schema == legacyManifestSchema {
-		profile = legacyCapabilitySnapshot()
-	}
 	want, err := journal.MarshalCanonicalJSON(profile)
 	if err != nil {
 		return []Check{check("capability-snapshot-mismatch", "manifest.json", "current capability snapshot cannot be encoded")}

@@ -18,7 +18,7 @@ func TestFinalSchemaHasNoEscalationsOrEscalationReferences(t *testing.T) {
 	}
 	defer closeDB(t, conn)
 	assertTableDoesNotExist(t, conn, "escalations")
-	for _, table := range []string{"triage_events", "concerns", "activity_log", "runs", "stops", "attention_items"} {
+	for _, table := range []string{"triage_events", "activity_log"} {
 		assertTableExists(t, conn, table)
 	}
 	rows, err := conn.Query(`SELECT name, COALESCE(sql, '') FROM sqlite_schema ORDER BY name`)
@@ -56,8 +56,8 @@ func TestFinalSchemaHasNoEscalationsOrEscalationReferences(t *testing.T) {
 			t.Errorf("%s retains %d retired seed rows", table, count)
 		}
 	}
-	if ActiveMigrationVersion != 26 {
-		t.Fatalf("active migration = %d, want 26", ActiveMigrationVersion)
+	if ActiveMigrationVersion != 27 {
+		t.Fatalf("active migration = %d, want 27", ActiveMigrationVersion)
 	}
 	if _, err := conn.Exec(`INSERT INTO activity_log (id, journal_event_id, ref_type, ref_id, event, occurred_at) VALUES ('ACT-retired', 'EVT-retired', 'escalation', 'ESC-retired', 'raised', '2026-09-08T00:00:00Z')`); err == nil || !strings.Contains(err.Error(), "activity_log: ref_type/ref_id") {
 		t.Fatalf("latest activity accepts retired reference or wrong rejection: %v", err)
@@ -83,6 +83,6 @@ func TestFinalSchemaResetsThroughZeroWithoutRetiredAuthority(t *testing.T) {
 	defer closeDB(t, conn)
 	assertTableDoesNotExist(t, conn, "escalations")
 	assertTableExists(t, conn, "triage_events")
-	assertTableExists(t, conn, "concerns")
-	assertTableExists(t, conn, "stops")
+	assertTableDoesNotExist(t, conn, "concerns")
+	assertTableDoesNotExist(t, conn, "stops")
 }

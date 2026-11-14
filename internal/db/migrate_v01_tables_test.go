@@ -43,10 +43,6 @@ func TestMigrateUpCreatesRetainedAndGenericTables(t *testing.T) {
 			foreignKeyContains: []string{"issue_id->issues.id"},
 		},
 		{
-			table:   "concerns",
-			columns: []string{"id", "subject_type", "subject_id", "actor_id", "scope_json", "severity", "summary", "reasoning", "references_json", "status", "disposition_action", "created_event_id"},
-		},
-		{
 			table:              "agent_runs",
 			columns:            []string{"id", "issue_id", "role", "model", "token_breakdown_json", "provider_cost_usd"},
 			foreignKeyContains: []string{"issue_id->issues.id"},
@@ -63,11 +59,6 @@ func TestMigrateUpCreatesRetainedAndGenericTables(t *testing.T) {
 		{
 			table:   "links",
 			columns: []string{"from_type", "from_id", "relation", "to_type", "to_id", "created_at"},
-		},
-		{
-			table:              "claims",
-			columns:            []string{"id", "issue_id", "envelope_id", "envelope_revision", "actor_id", "worktree_id", "scope_json", "mode", "version", "status", "acquired_at", "expires_at", "released_at", "release_reason"},
-			foreignKeyContains: []string{"issue_id->issues.id", "envelope_id->envelope_revisions.envelope_id", "envelope_revision->envelope_revisions.revision"},
 		},
 		{
 			table:   "activity_log",
@@ -128,7 +119,7 @@ func TestMigration0002DownLeavesPhaseOneSchemaAndUpRestoresPhaseTwoTables(t *tes
 	}
 
 	assertTableExists(t, conn, "epic_metadata")
-	assertTableExists(t, conn, "concerns")
+	assertTableDoesNotExist(t, conn, "concerns")
 	assertTableExists(t, conn, "triage_events")
 }
 
@@ -210,11 +201,11 @@ func TestMigration0006DownRemovesSequenceSchedulingBackstopOnly(t *testing.T) {
 func TestDecideProjectionFreshnessRequiresPolicySchemaVersion(t *testing.T) {
 	t.Parallel()
 
-	if ProjectionSchemaVersion != 8 {
-		t.Fatalf("ProjectionSchemaVersion = %d, want %d", ProjectionSchemaVersion, 8)
+	if ProjectionSchemaVersion != 9 {
+		t.Fatalf("ProjectionSchemaVersion = %d, want %d", ProjectionSchemaVersion, 9)
 	}
 
-	for _, previous := range []int{4, 5, 6, 7} {
+	for _, previous := range []int{4, 5, 6, 7, 8} {
 		stale := DecideProjectionFreshness(ProjectionFreshnessInput{
 			MetaExists:                    true,
 			ReplayStatus:                  ReplayStatusClean,

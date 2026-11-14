@@ -411,7 +411,7 @@ func snapshotScaleProjectionState(t *testing.T, conn *sql.DB) string {
 		},
 		{
 			name:  "issues_enriched",
-			query: `SELECT id, concerns_raised, open_concerns_count, COALESCE(triage_status, 'NULL') FROM issues_enriched ORDER BY id`,
+			query: `SELECT id, COALESCE(triage_status, 'NULL') FROM issues_enriched ORDER BY id`,
 		},
 		{
 			name:  "projection_meta",
@@ -421,7 +421,7 @@ func snapshotScaleProjectionState(t *testing.T, conn *sql.DB) string {
 
 	parts := make([]string, 0, len(queries))
 	for _, spec := range queries {
-		parts = append(parts, dumpPhaseTwoQuery(t, conn, spec.name, spec.query))
+		parts = append(parts, dumpProjectionQuery(t, conn, spec.name, spec.query))
 	}
 
 	return strings.Join(parts, "\n")

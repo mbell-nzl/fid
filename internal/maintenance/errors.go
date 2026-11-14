@@ -231,7 +231,7 @@ func (link linkRow) entityID() string {
 func linkFindings(db *sql.DB, fromType, fromID, relation, toType, toID string) ([]Finding, error) {
 	entityID := linkEntityID(fromType, fromID, relation, toType, toID)
 	if !validLinkType(fromType) || !validLinkType(toType) {
-		return []Finding{{Check: "link_scope", EntityID: entityID, Message: fmt.Sprintf("link %s must use issue or requirement endpoints in v0.1", entityID)}}, nil
+		return []Finding{{Check: "link_scope", EntityID: entityID, Message: fmt.Sprintf("link %s must use issue endpoints", entityID)}}, nil
 	}
 	if !linkRelationAllowed(fromType, relation, toType) {
 		return []Finding{{Check: "link_relation_compatibility", EntityID: entityID, Message: fmt.Sprintf("link %s relation %s is not allowed for %s to %s", entityID, relation, fromType, toType)}}, nil
@@ -273,11 +273,7 @@ func referencedEntityExists(db *sql.DB, refType, refID string) (bool, error) {
 		return false, nil
 	}
 	var exists bool
-	column := "id"
-	if refType == "requirement" {
-		column = "requirement_id"
-	}
-	if err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM "+table+" WHERE "+column+" = ?)", refID).Scan(&exists); err != nil {
+	if err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM "+table+" WHERE id = ?)", refID).Scan(&exists); err != nil {
 		return false, err
 	}
 	return exists, nil
@@ -287,10 +283,6 @@ func referenceTable(refType string) (string, bool) {
 	switch refType {
 	case "issue":
 		return "issues", true
-	case "requirement":
-		return "requirement_refs", true
-	case "decision":
-		return "decision_refs", true
 	default:
 		return "", false
 	}

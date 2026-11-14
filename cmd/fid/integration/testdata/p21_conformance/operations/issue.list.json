@@ -1,5 +1,5 @@
 {
-  "operation": "issue.list",
   "command": "fid issue list",
-  "kind": "accepted"
+  "kind": "accepted",
+  "operation": "issue.list"
 }

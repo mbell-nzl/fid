@@ -681,6 +681,209 @@ Its git children disable lazy fetching and optional index writes, and it
 retains the guard against hidden tracked changes. The downgrade retains review reservations as
 interrupted reservations with the reason `In review`.
 
+**Settled by the orchestrator, 14 November 2026 (Mark's delegation for
+1.5b-1.5d).**
+
+Mark delegated the remaining decisions for the kernel's removal to Claude
+Opus. Seven stacked Assured PRs run in order: 1.5b1 extracts the Artifact
+verifier and rebuilds V8 and export fixtures; 1.5b2 rebuilds the other
+surviving fixtures; 1.5c1 moves fixed task states out of workflow; 1.5c2
+removes commands and switches `fid artifact`; 1.5c3 removes kernel domain
+packages; 1.5d1 closes journal and archive catalogs; 1.5d2 drops tables and
+kernel maintenance checks. `RESET.md` records each completion criterion.
+
+- **Q1:** The current `review` and `finding` commands use the kernel and
+  leave with its commands in 1.5c2. No interim stub; 2.1 brings lean ones.
+- **Q2:** A journal with a removed event family is refused with
+  `journal-replay-stopped`, with details naming `schema-unsupported` and
+  the family. An archive uses `archive-invalid` and its existing
+  `schema-unsupported` check. Either refusal changes nothing.
+- **Q3:** Frozen V1 `agent_runs`, `triage_events` and `triage_status` stay
+  for separately scoped cleanup; see the later list.
+- **Q4:** Maintenance drops `claim_count` and kernel-only warnings. The
+  dead `maintenance.abandoned_attempt_grace_seconds` and `executor_limits`
+  config keys stay for now; see the later list.
+- **Q5:** Archives keep manifest v2, `sources: []`, and only truthful
+  capability profile entries.
+- **Q6:** `fid artifact verify` keeps its input, all nine Artifact success
+  fields, Event and missing-ID failure. Its actor becomes typed: malformed
+  actors get `invalid-argument`, exit 2; agents and people may verify;
+  services get the existing actor-type refusal. Kernel readiness Stops go.
+- **Q7:** Check results stay immutable. Whether hand-off or `done` needs a
+  kept file still available later is 1.6's decision; never rewrite a result.
+
+- **1.5b2 Artifact command-test exception**, settled by the orchestrator
+  (Claude Opus 5.5, under Mark's delegation), 2026-11-14: `fid artifact`'s
+  own command tests that need its current Activation-based adapter stay
+  unchanged as an isolated compatibility group until 1.5c2 switches the
+  adapter and converts them. No other surviving test may depend on their
+  kernel fixture. All other surviving tests become kernel-free in 1.5b2;
+  none are weakened. This keeps 1.5b2 test-only and the command's public
+  actor-authority change with 1.5c2.
+
+Builder's choices for **1.5b1**: `internal/artifactverify` owns shared
+metadata, blob verification and retry/event handling. The command still uses
+its existing kernel adapter; compatibility hooks keep its authority and
+readiness effects until 1.5c2 switches it. Lean callers use typed actor
+rules and emit only Artifact availability and retry Effects. V8 reads `next`
+at a fixed clock; its new-machine wipe recreates a fresh repository with
+only committed identity at the same path, keeping worktree-dependent reads
+comparable without changing historical IDs. Lifecycle counts are unchanged.
+Generic export fixtures use real lean checks; kernel Source and recovery
+assertions keep explicitly private fixtures until their profiles leave.
+
+Builder's transactional choices for **1.5b2**: generic journal retry and
+sequence tests use `label.added`; strict retry-map and prior-state tests use
+`task.started` under a lean hold. Issue list and detail samples are
+journal-backed retained rows, with Concern assertions separated into
+kernel-only tests. The historical projection and trigger assertions stay
+in explicitly historical tests until their owning schema cut; new retained
+projection samples keep full-table parity, exact row values and foreign-key
+checks. The named-read/export journey now starts, checks and hands off a
+fixed-state task and compares the retained reads and tables. Integration
+helpers move to neutral command, projection and keyed-request files. The
+retained single-journal corpus exercises all 15 non-Artifact keyed leaves,
+including their exact retry responses and field maps; the old 55-leaf
+kernel corpus stays separately until 1.5c2. Shared failure codes now use
+retained producers without adding registry exclusions. Closure reads pin
+the person's cancellation actor, reason, task and binding. Neutral CLI git
+and JSON writers move out of their retiring host files as well. The Artifact
+exception above covers the two own-command tests in
+`cmd/fid/artifact_compatibility_test.go` and
+`TestP24ArtifactVerifyKeyedLeafCorpus`; their bodies are unchanged.
+
+Builder's transactional choices for **1.5c1**: `internal/issuestate` owns
+the retained task, epic and subtask state definitions, projection registry,
+`NextStates`, initial-state and creation lookup, and child-state rule types
+and evaluation. Staying Issue, hold and maintenance callers and seed-parity
+tests import it directly; next, status and show reach it through Issues.
+`internal/workflow/issue_states.go` keeps aliases and forwarding functions
+for kernel APIs until 1.5c3 removes that package. Only the kernel execution
+transition and linked-decision rule paths in Issues still import workflow.
+Creation retains subtask kind/project assignment precedence in this
+behaviour-preserving slice; configurable resolution leaves with authoring
+in 1.5c2. The graph, foreign keys, workflow IDs, category JSON and error text
+are unchanged. Existing state, registry, initial-state and child-rule tests
+move with their implementation, keeping their assertions.
+
+Builder's transactional choices for **1.5c2** (2026-11-15): the remaining
+command tree has 37 executable leaves (35 with the Response Envelope and
+two diagnostics; Cobra help/completion are additional), and 16 keyed leaves in 10 families, excluding export
+import under the existing inventory convention. Generic failure writing,
+JSON and fixture helpers move out of retiring adapters. Artifact
+verification calls `artifactverify.Verify` directly; its temporary Hooks and
+Evidence readiness wrapper are removed. Typed actors retain the established
+`authority-denied` details; malformed actors fail in flag validation. The
+missing-Artifact failure keeps its existing `invalid-argument` code and
+legacy `accepted gate registration input` allowed-text to preserve Q6's
+failure contract. No check result is rewritten by an availability change.
+The descriptor's seeded mismatch test copies its field slice before changing
+it, so the live registry remains immutable during parallel tests.
+
+Issue creation always selects its kind's fixed built-in workflow, including
+subtasks, and ignores retired assignments. Concern fields/filtering,
+linked-decision rules and execution-chain transition guards leave staying
+callers. Domain packages and their unit tests remain for 1.5c3; the
+kernel-only policy grant helper still serves those domains and leaves with
+them. Journal/archive catalogs, tables and maintenance checks remain for
+1.5d. The retained conformance fixtures use the exact remaining operation
+inventory and live failure registry; all 16 keyed leaves execute and rebuild
+in one lean journal. Historical Issue JSON captures are regenerated with the
+current CLI and their capture recipe uses the git-common-directory ledger.
+The export import/recovery domain test remains until the domain cut, with
+only its embedded historical Gate CLI assertion and helper retired here.
+The modern status/show/next/hold/start/check/handoff goldens stay unchanged;
+only retired workflow-assignment goldens leave.
+
+Builder's transactional choices for **1.5c3** (2026-11-15): delete the
+now-unreferenced `claims`, `workflow`, `evidence`, `review`, `stats` and
+`kerneltest` packages, their tests, and `policy/envelope_authority.go`.
+The fixed-state implementation and tests stay in `issuestate`; the lean
+Artifact verifier and store stay in their own packages. Both source import
+searches and `go list -deps -test` verify that retained code has no incoming
+edge to a retiring package before directory deletion.
+
+The export fixture that invokes kernel domain writers leaves with its
+Source/recovery/runtime acceptance tests. Handwritten archive recovery
+reference and Effect-family tests, and journal, schema and maintenance
+table-only tests stay until 1.5d. The mixed import boundary tests keep their
+shared-ledger, moved-ledger and removed-worktree binding checks through
+`config.ReadImportBinding`; only kernel recovery admission assertions go.
+Import replay after later local Events remains covered by the existing
+lean import test. No replacement helper, stub, dependency or public
+behavior is added. Event catalogs, archive profiles, tables and maintenance
+queries remain for 1.5d1/1.5d2.
+
+**RESET 1.5d1 implementation, 2026-11-15 (Assured).** Following Q2 and Q5:
+
+- The journal and archive catalogs accept only the retained lean families.
+  One shared classifier rejects all 41 removed families and Effects on their
+  removed tables, including fixed-workflow authoring and assignment. Generic
+  version-1 Issue history remains supported in the journal. Physical tables
+  and migration versions stay for 1.5d2.
+- Replay checks the complete journal for unsupported history before applying
+  any Event, including when a checkpoint would otherwise skip that history.
+  Projection freshness inspection makes the same check. A valid prefix before
+  an unsupported Event cannot partially update the projection.
+- `journal-replay-stopped` keeps its original three detail fields for ordinary
+  corruption and precondition conflicts. Its closed schema-refusal variant
+  adds `reason: "schema-unsupported"` and `event_type`, and fills `event_id`
+  with the refused Event's ID. The file and line still identify the source.
+  Human output describes unsupported history without the retired vocabulary.
+  Archives keep `archive-invalid` with a `schema-unsupported` check naming
+  the family and the archive journal member. Entry integrity is checked first;
+  an old capability/source profile cannot mask a removed family. Export
+  creation also refuses unsupported source history before publication.
+- Manifest v1 is refused by validation as well as import. Manifest v2 keeps
+  `sources: []`; a null or nonempty inventory is refused. Export and archive
+  validation no longer query `envelope_sources`. The only surviving entry of
+  the former capability profile is the truthful `export.portable.v1`; no
+  replacement capability IDs are introduced. Private semantic validators keep
+  migration boundaries 19–26 for lean integrity tests; public archive admission
+  still requires the active migration version.
+- The retained Artifact availability Event requires Event-v2 and admits only
+  its guarded availability update and one idempotency result, with strict
+  actor, command, prior, metadata
+  and cached-result bindings. Recorded check results remain immutable (Q7).
+  Kernel-only catalog acceptance tests leave with their subjects; the generic
+  malformed-Effect probes now use a fixed-state task under a lean hold. Two
+  transition-refusal fixtures corrupt the retained seeded state directly in
+  SQLite, rather than append unsupported workflow-authoring Events; their
+  assertions about missing edges and unknown requirements are preserved.
+
+
+**RESET 1.5d2 implementation, 2026-11-15 (Assured).** Following Q3/Q4 and
+ADR-0014, migration 27 drops 42 retired tables in foreign-key dependency
+order. It preserves the shared Artifact/retry tables, all lean records,
+the four fixed-state lookup tables and Issue foreign keys, and frozen V1
+`agent_runs` / `triage_events`. `issues_enriched` keeps its latest-triage
+lookup and removes Concern columns/joins. The activity insert trigger
+accepts only existing Issue references. Migration/export schema is 27;
+projection version 9 rebuilds older derived caches. Historical migration
+pairs remain until 3.2.
+
+Builder's transactional choices for 1.5d2: the down migration restores the
+schema-26 DDL, including table-owned indexes and triggers and the old view
+and activity guard, without recovering removed rows. Latest-schema tests
+pin the exact retained table inventory; round-trip tests compare the full
+schema and retained data. Kernel-only schema/maintenance acceptance tests
+leave with their subjects; retained triage, structural integrity, retry/
+Artifact checks and no-mutation assertions stay. The generic finding-limit
+fixture uses missing Artifacts instead of retired warnings. Generic warning
+promotion remains covered using an injected warning, since no current
+warning producer remains. No hold-warning semantics are introduced.
+Maintenance removes its kernel queries, grace option, warnings and
+`claim_count_live`; its Info contains only Issue and recent-activity counts.
+The generic warning array, promotion flag and collection limits stay.
+The dead configuration keys and frozen-state checks stay as Q3/Q4 require.
+V8 and the link/rebuild journey now assert retired-table absence instead
+of empty retired tables; the scale snapshot compares the retained view
+columns. Tests dedicated to ignoring now-removed workflow assignments
+retire with that table. The maintenance format-refusal test keeps its
+historical identifier registered by the unchanged format audit.
+This completes the physical removal for 1.5b-1.5d; old-family refusals still
+happen before any SQL projection or archive publication.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -1939,6 +2142,39 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
+- From #73 (1.5d1): audit the retained-table ownership and column guards for
+  SQLite case aliases. `validateCurrentEvent` still indexes
+  `currentEventTables` using the raw `Effect.Table`, while SQLite resolves
+  bare identifiers without regard to ASCII case. Round 1 fixes the retired
+  catalogs; changing retained-domain validation is outside its findings.
+
+- From #71 (1.5c2): `fid artifact verify`'s missing-Artifact failure still
+  says `allowed: ["accepted gate registration input"]`; 1.5c2 kept it so
+  the failure contract didn't change during removal. Reword it when that
+  failure is next touched.
+
+
+- From this PR (1.5c2): `cli.RegisteredCodes` still omits the existing,
+  reachable `idempotency-conflict` code. Its established supplemental process
+  pair remains; decide separately whether the public enumeration should
+  include it. This PR only removes codes whose producers have retired.
+
+- From this PR (1.5b1): investigate the full-suite lock failure in unchanged
+  `TestLeanCheckRenewsHoldAndStopsOnTakeover/takeover`. The first `make test`
+  failed at `check_ownership_test.go:117` with `task.takeover: write lock
+  unavailable`; the isolated test then passed in 1.343s. The cause is not
+  established; no ownership code or test was changed in this PR. A complete
+  rerun and the coverage/no-identity CI runner subsequently passed.
+
+- From this PR (1.5b1): Q3 keeps frozen V1 `agent_runs`, `triage_events`
+  and `triage_status`; remove them only in separately scoped cleanup.
+- From this PR (1.5b1): Q4 keeps dead config keys
+  `maintenance.abandoned_attempt_grace_seconds` and `executor_limits`;
+  withdraw them in separately scoped config/archive work.
+- From this PR (1.5b1): Q7 leaves Artifact availability after a passing
+  check for 1.6: decide whether hand-off and `done` require kept files still
+  available, while preserving immutable recorded check results.
+
 - Task 1.8 brings this later list into fid along with the remaining reset
   tasks (decided 7 November 2026).
 - Build the PR's "Left over" section from `discovered_from` links, the same
@@ -2025,7 +2261,9 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     though `fid export import` already refuses them as
     `schema-unsupported` (`TestValidateRetainsPinnedV1Profile` pins both).
     Decided 10 November 2026 (ADR-0014): removed with the kernel's catalogs
-    in 1.5d, together with that test.
+    in 1.5d, together with that test. Completed in RESET 1.5d1 on
+    2026-11-15: validation and import both refuse v1, and the acceptance test
+    is replaced with a refusal/nonmutation test.
   - The kernel's removal (1.5b–1.5d) takes the test-only helpers that belong
     to the kernel.
 - Review rounds, as data for refining the process after the reset: #41, #44
@@ -2110,6 +2348,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     a non-empty fragment at the end of the file at once. Not seen in about
     3,600 concurrent reads; telling a live append from a damaged tail needs
     a design, not a one-line fix.
+- From #72 (1.5c3): deleting the kernel's domains left these `internal/project`
+  helpers with no production caller, only their own tests:
+  `ObserveRecordedRepository` and `ResolveSourceInput` (`source.go`),
+  `ExpectedRepository` and `MatchesRecordedRepository`
+  (`expected_repository.go`) and `IsAncestor` (`repository.go`). Delete
+  them, with their tests, unless 1.6 or 2.1 turns out to need them.
 - CHANGELOG: it hasn't been kept up during the reset. Catch it up in 3.2,
   with the v0.2.0 release.
 

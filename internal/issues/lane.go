@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/persondecision"
 	"github.com/mbell-nzl/fid/internal/policy"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 // LaneError identifies a lane flag that cannot apply to this issue.
@@ -52,7 +52,7 @@ func validateLaneChange(current issueUpdateState, lane *string, actor string) er
 		return &persondecision.DeniedError{Actor: actor}
 	}
 	if current.Status != "todo" {
-		return &BlockedTransitionError{IssueID: current.ID, CurrentState: current.Status, RequestedState: current.Status, Unmet: []workflow.UnmetCondition{{Rule: "lane-lowering-requires-waiver"}}}
+		return &BlockedTransitionError{IssueID: current.ID, CurrentState: current.Status, RequestedState: current.Status, Unmet: []issuestate.UnmetCondition{{Rule: "lane-lowering-requires-waiver"}}}
 	}
 	return nil
 }

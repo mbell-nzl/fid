@@ -11,39 +11,17 @@ func checkInfo(db *sql.DB, now time.Time) (Info, error) {
 	if err != nil {
 		return Info{}, err
 	}
-	claims, err := loadClaims(db)
-	if err != nil {
-		return Info{}, err
-	}
-	liveClaims, err := countLiveClaims(claims, now)
-	if err != nil {
-		return Info{}, err
-	}
 	recentActivity, err := countRecentActivity(db, now)
 	if err != nil {
 		return Info{}, err
 	}
-	return Info{IssueCount: issueCount, ClaimCountLive: liveClaims, RecentActivity: recentActivity}, nil
+	return Info{IssueCount: issueCount, RecentActivity: recentActivity}, nil
 }
 
 func countIssues(db *sql.DB) (int, error) {
 	var count int
 	if err := db.QueryRow(`SELECT COUNT(*) FROM issues`).Scan(&count); err != nil {
 		return 0, fmt.Errorf("check info: count issues: %w", err)
-	}
-	return count, nil
-}
-
-func countLiveClaims(claims []claimRecord, now time.Time) (int, error) {
-	count := 0
-	for _, claim := range claims {
-		live, _, err := claim.liveAt(now)
-		if err != nil {
-			return 0, err
-		}
-		if live {
-			count++
-		}
 	}
 	return count, nil
 }

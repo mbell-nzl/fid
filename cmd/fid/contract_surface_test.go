@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -19,162 +18,14 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func TestPhase22AttentionReadBoundary(t *testing.T) {
-	t.Parallel()
-	workspace := clonePristineWorkspace(t)
-	discovery := executeCommandForTest(workspace, "--json", "capabilities")
-	if discovery.err != nil || discovery.stderr != "" {
-		t.Fatalf("capability discovery = %#v, want stdout-only success", discovery)
-	}
-
-	var envelope struct {
-		Result struct {
-			Items []struct {
-				Available    bool           `json:"available"`
-				CapabilityID string         `json:"capability_id"`
-				Limits       map[string]any `json:"limits"`
-				SchemaMax    int            `json:"schema_max"`
-				SchemaMin    int            `json:"schema_min"`
-				TrustSource  string         `json:"trust_source"`
-			} `json:"items"`
-		} `json:"result"`
-	}
-	if err := json.Unmarshal([]byte(discovery.stdout), &envelope); err != nil {
-		t.Fatalf("decode capability discovery = %v", err)
-	}
-
-	var matches []struct {
-		Available    bool           `json:"available"`
-		CapabilityID string         `json:"capability_id"`
-		Limits       map[string]any `json:"limits"`
-		SchemaMax    int            `json:"schema_max"`
-		SchemaMin    int            `json:"schema_min"`
-		TrustSource  string         `json:"trust_source"`
-	}
-	for _, item := range envelope.Result.Items {
-		if item.CapabilityID == "attention.v1" {
-			matches = append(matches, item)
-		}
-	}
-	if len(matches) != 1 {
-		t.Fatalf("attention capability rows = %#v, want one canonical row", matches)
-	}
-
-	journalPath := mustJournalPath(t, workspace)
-	journalBefore := mustReadCommandFile(t, journalPath)
-	projectionBefore := commandProjectionTableCounts(t, workspace)
-	probe := executeCommandForTest(workspace, "--json", "attention", "list")
-	if probe.err != nil || probe.stderr != "" || !strings.Contains(probe.stdout, `"operation":"attention.list"`) {
-		t.Fatalf("fid --json attention list = %#v, want read-only list success", probe)
-	}
-	if journalAfter := mustReadCommandFile(t, journalPath); !bytes.Equal(journalAfter, journalBefore) {
-		t.Fatal("fid --json attention list changed journal bytes")
-	}
-	if projectionAfter := commandProjectionTableCounts(t, workspace); !reflect.DeepEqual(projectionAfter, projectionBefore) {
-		t.Fatalf("fid --json attention list changed projection counts: got %#v, want %#v", projectionAfter, projectionBefore)
-	}
-
-	if got, want := phase21AttentionUnavailableSurfaceMatches(t), []string{
-		"cmd/fid/attention.go", "cmd/fid/decision.go", "cmd/fid/flag_domains.go", "cmd/fid/gate.go", "cmd/fid/human_outcome.go", "cmd/fid/input_descriptors.go", "cmd/fid/live_output.go", "cmd/fid/p23_human.go", "cmd/fid/resume_human.go", "cmd/fid/review.go", "cmd/fid/root.go", "cmd/fid/run.go", "cmd/fid/stop.go", "cmd/fid/stop_human.go",
-		"internal/workflow/activation.go", "internal/workflow/activation_recovery.go", "internal/workflow/budget.go", "internal/workflow/capabilities.go", "internal/workflow/envelope.go", "internal/workflow/human_outcome_readiness.go", "internal/workflow/resume.go", "internal/workflow/run_budget.go", "internal/workflow/stop.go", "internal/workflow/stop_errors.go", "internal/workflow/stop_read.go",
-	}; !reflect.DeepEqual(got, want) {
-		t.Fatalf("production Attention paths = %v, want exactly %v", got, want)
-	}
-}
-
-func phase21AttentionUnavailableSurfaceMatches(t *testing.T) []string {
-	t.Helper()
-	repoRoot := commandTestRepositoryRoot(t)
-	paths := make(map[string]bool)
-	for _, root := range []string{
-		filepath.Join(repoRoot, "cmd", "fid"),
-		filepath.Join(repoRoot, "internal", "workflow"),
-	} {
-		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if entry.IsDir() || (filepath.Ext(path) != ".go" && filepath.Ext(path) != ".sql") || strings.HasSuffix(path, "_test.go") {
-				return nil
-			}
-			content, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
-			relative, err := filepath.Rel(repoRoot, path)
-			if err != nil {
-				return err
-			}
-			for _, line := range strings.Split(string(content), "\n") {
-				lower := strings.ToLower(line)
-				if strings.Contains(lower, "attention") || strings.Contains(lower, "attention_items") {
-					paths[filepath.ToSlash(relative)] = true
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			t.Fatalf("inventory %q: %v", root, err)
-		}
-	}
-	matches := make([]string, 0, len(paths))
-	for path := range paths {
-		matches = append(matches, path)
-	}
-	sort.Strings(matches)
-	return matches
-}
-
 func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	t.Parallel()
 	retained := []string{
 		"answer",
-		"capabilities",
-		"activation prepare",
-		"activation component",
-		"activation commit",
-		"activation abort",
-		"activation finalize",
-		"activation resource",
-		"activation recover",
-		"activation recover-complete",
-		"activation status",
 		"artifact verify",
-		"gate register",
-		"gate resolve",
-		"gate run",
-		"envelope create",
-		"envelope get",
-		"envelope activate",
-		"envelope complete",
-		"evidence link",
-		"evidence get",
-		"evidence evaluate",
 		"export create",
 		"export import",
 		"export validate",
-		"claim acquire",
-		"claim expire",
-		"claim renew",
-		"claim release",
-		"claim list",
-		"run start",
-		"run close",
-		"run abandon",
-		"run observe",
-		"run observe-budget",
-		"run checkpoint",
-		"run inspect",
-		"run recover",
-		"run get",
-		"run list",
-		"stop raise",
-		"stop resolve",
-		"stop list",
-		"attention resolve",
-		"attention list",
-		"receipt get",
-		"receipt list",
 		"init",
 		"backup",
 		"restore",
@@ -182,7 +33,6 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"show",
 		"handoff", "check", "start", "next", "heartbeat", "park", "takeover",
 		"rebuild",
-		"resume",
 		"issue create",
 		"issue get",
 		"issue list",
@@ -197,41 +47,14 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"link add",
 		"link remove",
 		"link list",
-		"ready",
-		"workflow define",
-		"workflow assign",
-		"workflow list",
 		"maintenance check",
 		"maintenance vacuum",
 		"activity list",
-		"concern list",
-		"concern get",
-		"concern record",
-		"concern dispose",
-		"deviation record",
-		"deviation list",
-		"deviation get",
-		"decision list",
-		"decision record-reference",
-		"human-outcome record",
-		"human-outcome list",
-		"human-outcome get",
-		"review record",
-		"review get",
-		"review list",
-		"finding address",
-		"finding list",
-		"requirement record-reference",
-		"requirement link",
-		"requirement get",
-		"requirement list",
-		"stats tokens",
-		"stats cost",
 	}
 	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 105 || len(legacy) != 2 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 105 and 2", len(retained), len(legacy))
+	if len(retained) != 35 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 35 and 2", len(retained), len(legacy))
 	}
 	want := append([]string{}, retained...)
 	want = append(want, legacy...)
@@ -243,7 +66,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 
 	wantCapabilities := make(map[string]rootFlagCapability, len(retained))
 	for _, command := range retained {
-		if command == "issue" || command == "run" || command == "issue ac" || command == "concern" {
+		if command == "issue" || command == "issue ac" {
 			continue
 		}
 		wantCapabilities[command] = rootFlagCapability{Project: true, JSON: true}
@@ -260,21 +83,6 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 				assertLegacyLeafRejectsRootFlag(t, fixture, rootFlag)
 			})
 		}
-	}
-}
-
-func TestClaimAcquireHelpCoversBothClaimModes(t *testing.T) {
-	t.Parallel()
-	command := newRootCommandAt(t.TempDir())
-	var output bytes.Buffer
-	command.SetOut(&output)
-	command.SetErr(&output)
-	command.SetArgs([]string{"claim", "acquire", "--help"})
-	if err := command.Execute(); err != nil {
-		t.Fatalf("claim acquire help: %v", err)
-	}
-	if got := output.String(); !strings.Contains(got, "Acquire one Claim.") || strings.Contains(got, "mutation claim") {
-		t.Fatalf("claim acquire help = %q, want mode-neutral description", got)
 	}
 }
 
@@ -342,7 +150,7 @@ func TestLiveTestsContainNoUniversalFormatInvocation(t *testing.T) {
 		"TestIssueGetRejectsAllFormatValues":                                        true,
 		"TestIssueListRejectsRetiredFormatFlag":                                     true,
 		"TestLabelListRejectsLegacyFormatFlag":                                      true,
-		"TestReadyRejectsRetiredFormatFlag":                                         true,
+		"TestNextRejectsRetiredFormatFlag":                                          true,
 		"TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues": true,
 		"TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat":               true,
 		"TestV01ReadCommandsRejectRetiredFormats":                                   true,
@@ -419,21 +227,21 @@ func TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags(t *testing.T) {
 
 	t.Run("local flag", func(t *testing.T) {
 		root := newRootCommandAt(t.TempDir())
-		var ready *cobra.Command
+		var next *cobra.Command
 		for _, command := range root.Commands() {
-			if command.Name() == "ready" {
-				ready = command
+			if command.Name() == "next" {
+				next = command
 				break
 			}
 		}
-		if ready == nil {
-			t.Fatal("live Cobra tree has no ready command")
+		if next == nil {
+			t.Fatal("live Cobra tree has no next command")
 		}
-		ready.Flags().String("yaml", "", "injected test flag")
+		next.Flags().String("yaml", "", "injected test flag")
 
 		violations := liveUniversalFormatFlagViolations(root)
-		if !containsUniversalFormatViolation(violations, "fid ready --yaml") {
-			t.Fatalf("injected local yaml flag violations = %v, want fid ready --yaml", violations)
+		if !containsUniversalFormatViolation(violations, "fid next --yaml") {
+			t.Fatalf("injected local yaml flag violations = %v, want fid next --yaml", violations)
 		}
 	})
 }

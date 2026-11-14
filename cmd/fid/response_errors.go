@@ -22,11 +22,12 @@ func lockUnavailableFailure(err error) (cli.Failure, bool, error) {
 func journalReplayStoppedFailure(err error) (cli.Failure, bool, error) {
 	var corruptErr *journal.CorruptJournalError
 	if errors.As(err, &corruptErr) {
-		failure, failureErr := cli.NewFailure(cli.CodeJournalReplayStopped, "journal replay stopped", nil, map[string]any{
-			"journal_file": corruptErr.File,
-			"line":         corruptErr.Line,
-			"event_id":     nil,
-		})
+		details := map[string]any{"journal_file": corruptErr.File, "line": corruptErr.Line, "event_id": nil}
+		var unsupported *journal.SchemaUnsupportedError
+		if errors.As(err, &unsupported) {
+			details["reason"], details["event_type"], details["event_id"] = "schema-unsupported", unsupported.EventType, unsupported.EventID
+		}
+		failure, failureErr := cli.NewFailure(cli.CodeJournalReplayStopped, "journal replay stopped", nil, details)
 		return failure, true, failureErr
 	}
 

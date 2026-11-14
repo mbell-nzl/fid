@@ -25,8 +25,6 @@ func TestP24RetainedReadFailurePairs(t *testing.T) {
 		{"since", "activity.list", "activity list: --since must be YYYY-MM-DD or RFC3339", "invalid-argument; argument=request, allowed=accepted issue read input", []string{"activity", "list", "--since", "invalid"}, true, 2},
 		{"on", "activity.list", "activity list: --on must be <type>/<id>", "invalid-argument; argument=request, allowed=accepted issue read input", []string{"activity", "list", "--on", "invalid"}, true, 2},
 		{"activity-no-project", "activity.list", "fid project was not found", "project-not-found; path=", []string{"activity", "list"}, false, 3},
-		{"tokens-no-project", "stats.tokens", "fid project was not found", "project-not-found; path=", []string{"stats", "tokens"}, false, 3},
-		{"cost-no-project", "stats.cost", "fid project was not found", "project-not-found; path=", []string{"stats", "cost"}, false, 3},
 		{"ac-no-project", "issue.ac.list", "fid project was not found", "project-not-found; path=", []string{"issue", "ac", "list", "FID-missing"}, false, 3},
 	}
 	for _, row := range rows {

@@ -14,8 +14,6 @@ import (
 
 var errMaintenanceCheckFailed = errors.New("maintenance check found integrity divergence")
 
-const legacyStartedWithoutClaimGraceSeconds = 300
-
 type maintenanceCheckResult struct {
 	Status   string                `json:"status"`
 	Errors   []maintenance.Finding `json:"errors"`
@@ -82,9 +80,8 @@ func newMaintenanceCheckCommand() *cobra.Command {
 			defer func() { _ = conn.Close() }()
 
 			result, err := maintenance.Check(maintenance.CheckOptions{
-				DB:                              conn,
-				JournalDir:                      paths.JournalDir,
-				StartedWithoutClaimGraceSeconds: legacyStartedWithoutClaimGraceSeconds,
+				DB:         conn,
+				JournalDir: paths.JournalDir,
 			})
 			if err != nil {
 				return renderMaintenanceCheckError(cmd, err)
@@ -135,7 +132,7 @@ func maintenanceCheckResponse(result maintenance.Result, warnAsError bool) maint
 func maintenanceResultMap(result maintenanceCheckResult) map[string]any {
 	return map[string]any{
 		"status": result.Status, "errors": findingsMap(result.Errors), "warnings": findingsMap(result.Warnings),
-		"info": map[string]any{"issue_count": result.Info.IssueCount, "claim_count_live": result.Info.ClaimCountLive, "recent_activity_7d": result.Info.RecentActivity},
+		"info": map[string]any{"issue_count": result.Info.IssueCount, "recent_activity_7d": result.Info.RecentActivity},
 	}
 }
 

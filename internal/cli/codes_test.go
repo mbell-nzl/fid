@@ -60,13 +60,13 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeProjectNotFound, CategoryNotFound, false, []SubjectType{SubjectProject}, stringDetails("path")},
 		{CodeProjectAlreadyInit, CategoryConflict, false, []SubjectType{SubjectProject}, stringDetails("path")},
 		{CodeIssueNotFound, CategoryNotFound, false, []SubjectType{SubjectIssue}, stringDetails("id")},
-		{CodeRequirementNotFound, CategoryNotFound, false, []SubjectType{SubjectRequirement}, stringDetails("id")},
+
 		{CodeLabelNotFound, CategoryNotFound, false, []SubjectType{SubjectLabel}, stringDetails("id")},
 		{CodeLinkNotFound, CategoryNotFound, false, []SubjectType{SubjectLink}, []detailExpectation{
 			stringDetail("from_type"), stringDetail("from_id"), stringDetail("relation"), stringDetail("to_type"), stringDetail("to_id"),
 		}},
-		{CodeWorkflowNotFound, CategoryNotFound, false, []SubjectType{SubjectWorkflow}, stringDetails("id")},
-		{CodeDuplicateEntity, CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink, SubjectWorkflow, SubjectRun}, []detailExpectation{
+
+		{CodeDuplicateEntity, CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink}, []detailExpectation{
 			stringDetail("entity_type"),
 			{name: "identity", kind: detailObjectKind, children: []detailExpectation{
 				{name: "fields", kind: detailStringsKind, value: []string{"name", "colour"}},
@@ -82,8 +82,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeTransitionNotPermitted, CategoryPrecondition, false, []SubjectType{SubjectIssue}, []detailExpectation{
 			stringDetail("from_state"), stringDetail("to_state"), {name: "unsatisfied", kind: detailStringsKind},
 		}},
-		{CodeAuthorityMissing, CategoryAuthority, false, nil, authorityDetails()},
-		{CodeAuthorityUnknownActor, CategoryAuthority, false, nil, authorityDetails()},
+
 		{CodeAuthorityDenied, CategoryAuthority, false, nil, authorityDetails()},
 		{CodeJournalReplayStopped, CategoryIntegrity, false, nil, []detailExpectation{
 			stringDetail("journal_file"), nullableIntegerDetail("line"), nullableStringDetail("event_id"),
@@ -93,101 +92,24 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			{name: "errors", kind: detailObjectsKind, children: findingDetails()},
 			{name: "warnings", kind: detailObjectsKind, children: findingDetails()},
 			{name: "info", kind: detailObjectKind, children: []detailExpectation{
-				integerDetail("issue_count"), integerDetail("claim_count_live"), integerDetail("recent_activity_7d"),
+				integerDetail("issue_count"), integerDetail("recent_activity_7d"),
 			}},
 		}},
 		{CodeResultLimitExceeded, CategoryIntegrity, false, nil, []detailExpectation{stringDetail("collection"), integerDetail("limit"), integerDetail("observed")}},
 		{CodeInternalError, CategoryInternal, false, nil, nil},
-		{CodeActivationConflict, CategoryConflict, false, []SubjectType{SubjectActivation}, []detailExpectation{
-			nullableStringDetail("active_id"), nullableStringDetail("nonterminal_id"), stringDetail("requested_direction"),
-		}},
-		{CodeActivationNotFound, CategoryNotFound, false, []SubjectType{SubjectActivation}, stringDetails("id")},
-		{CodeActivationInvalid, CategoryPrecondition, false, []SubjectType{SubjectActivation}, []detailExpectation{
-			stringDetail("status"), {name: "expected_statuses", kind: detailStringsKind}, {name: "component_errors", kind: detailObjectsKind, children: []detailExpectation{stringDetail("component_id"), stringDetail("code")}},
-		}},
-		{CodeActivationVersionConflict, CategoryConflict, false, []SubjectType{SubjectActivation}, []detailExpectation{stringDetail("activation_id"), integerDetail("expected_version"), integerDetail("actual_version")}},
-		{CodeActivationDirectionConflict, CategoryPrecondition, false, []SubjectType{SubjectActivation}, []detailExpectation{stringDetail("activation_id"), {name: "point_of_no_return", kind: detailBooleanKind}, stringDetail("required_direction")}},
-		{CodeActivationIncomplete, CategoryPrecondition, false, []SubjectType{SubjectActivation}, []detailExpectation{
-			stringDetail("activation_id"), {name: "components", kind: detailStringsKind}, {name: "reasons", kind: detailObjectsKind, children: []detailExpectation{stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type")}},
-		}},
-		{CodeAuthorityUnavailable, CategoryAuthority, false, nil, []detailExpectation{
-			nullableStringDetail("actor_id"), stringDetail("operation"), {name: "required_actions", kind: detailStringsKind}, {name: "required_capabilities", kind: detailStringsKind},
-		}},
+
 		{CodeCapabilityUnavailable, CategoryAuthority, false, []SubjectType{SubjectCapability}, []detailExpectation{
 			stringDetail("capability_id"), {name: "available", kind: detailBooleanKind}, integerDetail("owner_phase"),
 		}},
-		{CodeExecutorPolicyUnsupported, CategoryInvalidInput, false, []SubjectType{SubjectGateDefinition}, []detailExpectation{
-			{name: "fields", kind: detailStringsKind}, {name: "supported", kind: detailObjectKind, children: []detailExpectation{
-				stringDetail("network"), {name: "shell", kind: detailBooleanKind}, stringDetail("sandbox"), stringDetail("write"),
-			}},
-		}},
-		{CodeRegistrationNotFound, CategoryNotFound, false, []SubjectType{SubjectGateDefinition, SubjectGateRegistration}, stringDetails("id")},
-		{CodeEnvelopeNotFound, CategoryNotFound, false, []SubjectType{SubjectEnvelope}, stringDetails("id")},
-		{CodeClaimNotFound, CategoryNotFound, false, []SubjectType{SubjectClaim}, stringDetails("id")},
-		{CodeClaimConflict, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
-		{CodeClaimExpired, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
-		{CodeClaimStale, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
-		{CodeClaimModeInvalid, CategoryPrecondition, false, []SubjectType{SubjectClaim}, []detailExpectation{stringDetail("claim_id"), stringDetail("mode"), stringDetail("required_mode")}},
-		{CodeRunNotFound, CategoryNotFound, false, []SubjectType{SubjectRun}, stringDetails("id")},
-		{CodeRunInactive, CategoryPrecondition, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("status")}},
-		{Code("run-version-conflict"), CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), integerDetail("expected_version"), integerDetail("actual_version")}},
-		{CodeExecutorLivenessUnknown, CategoryPrecondition, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("executor_id"), nullableStringDetail("observation_id")}},
-		{CodeExecutorStillLive, CategoryPrecondition, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("executor_id"), stringDetail("observation_id")}},
-		{CodeRecoveryStateConflict, CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), nullableStringDetail("observation_digest"), {name: "paths", kind: detailStringsKind}, {name: "reasons", kind: detailStringsKind}}},
-		{CodeObservationNotFound, CategoryNotFound, false, []SubjectType{SubjectRun}, stringDetails("id")},
-		{CodeRecoveryAlreadyLinked, CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("successor_run_id")}},
-		{CodeReceiptNotFound, CategoryNotFound, false, []SubjectType{SubjectReceipt}, stringDetails("id")},
-		{CodeEvidenceNotFound, CategoryNotFound, false, []SubjectType{SubjectEvidence}, stringDetails("id")},
-		{CodeReviewNotIndependent, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("review_actor_id"), {name: "conflicting_subject", kind: detailObjectKind, children: []detailExpectation{stringDetail("type"), stringDetail("id")}}, stringDetail("conflicting_actor_id")}},
-		{CodeReviewVerdictInvalid, CategoryInvalidInput, false, nil, []detailExpectation{stringDetail("verdict"), stringDetail("reason")}},
-		{CodeReviewChangesRequired, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("review_id"), stringDetail("obligation_id"), {name: "blocking_finding_ids", kind: detailStringsKind}}},
-		{CodeReviewReworkExhausted, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, budgetDenialDetails()},
-		{CodeEvidenceTypeNotAccepted, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("obligation_id"), stringDetail("evidence_type"), {name: "accepted_evidence_types", kind: detailStringsKind}}},
-		{CodeOutcomeNotPermitted, CategoryPrecondition, false, nil, []detailExpectation{stringDetail("obligation_id"), stringDetail("obligation_type"), stringDetail("outcome_id"), stringDetail("result")}},
-		{CodeRepositoryMismatch, CategoryConflict, false, nil, []detailExpectation{{name: "expected", kind: detailObjectKind, children: []detailExpectation{{name: "head_oid", kind: detailStringKind}, {name: "dirty", kind: detailBooleanKind}}}, {name: "observed", kind: detailObjectKind, children: repositoryExpectations()}}},
-		{CodeReviewNotFound, CategoryNotFound, false, []SubjectType{SubjectReview}, stringDetails("id")},
-		{CodeGateUnsuccessful, CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt}, []detailExpectation{
-			stringDetail("attempt_id"), stringDetail("receipt_id"), stringDetail("outcome"), nullableIntegerDetail("exit_code"), nullableStringDetail("signal"), {name: "timed_out", kind: detailBooleanKind},
-		}},
-		{CodeBudgetExhausted, CategoryPrecondition, false, []SubjectType{SubjectRun}, budgetDenialDetails()},
-		{CodeBudgetDataUnavailable, CategoryPrecondition, false, []SubjectType{SubjectRun}, budgetDenialDetails()},
-		{CodeBudgetSampleConflict, CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("budget_name"), stringDetail("source_sample_id"), nullableStringDetail("expected_previous_sample_id"), nullableStringDetail("actual_previous_sample_id")}},
-		{CodeStopNotFound, CategoryNotFound, false, []SubjectType{SubjectStop}, stringDetails("id")},
-		{CodeAttentionNotFound, CategoryNotFound, false, []SubjectType{SubjectAttention}, stringDetails("id")},
-		{CodeAttentionVersionConflict, CategoryConflict, false, []SubjectType{SubjectAttention}, []detailExpectation{stringDetail("attention_id"), integerDetail("expected_version"), integerDetail("actual_version")}},
-		{CodeStopUnresolved, CategoryPrecondition, false, []SubjectType{SubjectStop}, []detailExpectation{{name: "stop_ids", kind: detailStringsKind}, {name: "reasons", kind: detailObjectsKind, children: []detailExpectation{stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type")}}}},
-		{CodeResolutionInvalid, CategoryPrecondition, false, []SubjectType{SubjectStop, SubjectAttention}, []detailExpectation{{name: "subject", kind: detailObjectKind, children: []detailExpectation{stringDetail("type"), stringDetail("id")}}, {name: "fact_event_ids", kind: detailStringsKind}, {name: "reasons", kind: detailObjectsKind, children: []detailExpectation{stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type")}}}},
-		{CodeObligationUnsatisfied, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, []detailExpectation{
-			{name: "reasons", kind: detailObjectsKind, children: []detailExpectation{
-				stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type"),
-			}},
-		}},
+
 		{CodeArchiveInvalid, CategoryIntegrity, false, []SubjectType{SubjectExport}, []detailExpectation{
 			stringDetail("archive_path"), {name: "checks", kind: detailObjectsKind, children: []detailExpectation{
 				stringDetail("code"), nullableStringDetail("entry"), stringDetail("detail"),
 			}},
 		}},
 		{CodeImportTargetConflict, CategoryConflict, false, []SubjectType{SubjectExport}, []detailExpectation{stringDetail("target_root"), stringDetail("reason")}},
-		{CodeFindingNotFound, CategoryNotFound, false, []SubjectType{SubjectFinding}, stringDetails("id")},
-		{CodeFindingAlreadyDisposed, CategoryConflict, false, []SubjectType{SubjectFinding}, []detailExpectation{stringDetail("finding_id"), stringDetail("state")}},
-		{CodeConcernNotFound, CategoryNotFound, false, []SubjectType{SubjectConcern}, stringDetails("id")},
-		{CodeDeviationNotFound, CategoryNotFound, false, []SubjectType{SubjectDeviation}, stringDetails("id")},
-		{CodeConcernAlreadyDisposed, CategoryConflict, false, []SubjectType{SubjectConcern}, []detailExpectation{stringDetail("concern_id"), stringDetail("disposed_at")}},
-		{CodeProtectedDecisionRequired, CategoryAuthority, false, []SubjectType{SubjectEnvelope}, []detailExpectation{
-			stringDetail("envelope_id"), stringDetail("decision_class"), {name: "required_capabilities", kind: detailStringsKind}, {name: "affected_actions", kind: detailStringsKind},
-			{name: "stop_ids", kind: detailStringsKind}, {name: "attention_ids", kind: detailStringsKind},
-			{name: "event", kind: detailObjectKind, nullable: true, children: []detailExpectation{stringDetail("id"), stringDetail("occurred_at")}}, {name: "replayed", kind: detailBooleanKind},
-		}},
-		{CodeSourceDigestMismatch, CategoryPrecondition, false, nil, []detailExpectation{
-			stringDetail("display_label"), nullableStringDetail("path"), nullableStringDetail("expected_digest"), nullableStringDetail("observed_digest"),
-		}},
+
 		{CodeRepositoryUnavailable, CategoryPrecondition, true, nil, []detailExpectation{stringDetail("reason"), stringDetail("detail")}},
-		{CodeHumanOutcomeRequired, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, []detailExpectation{
-			stringDetail("envelope_id"), stringDetail("obligation_id"), stringDetail("outcome_class"),
-			{name: "stop_ids", kind: detailStringsKind}, {name: "attention_ids", kind: detailStringsKind},
-			{name: "event", kind: detailObjectKind, nullable: true, children: []detailExpectation{stringDetail("id"), stringDetail("occurred_at")}}, {name: "replayed", kind: detailBooleanKind},
-		}},
-		{CodeOutcomeNotFound, CategoryNotFound, false, []SubjectType{SubjectHumanOutcome}, stringDetails("id")},
 	}
 
 	registered := RegisteredCodes()
@@ -258,14 +180,6 @@ func TestImportTargetConflictAcceptsOnlyClosedReasons(t *testing.T) {
 	}
 }
 
-func budgetDenialDetails() []detailExpectation {
-	return []detailExpectation{
-		{name: "budget", kind: detailObjectKind, children: []detailExpectation{stringDetail("name"), stringDetail("scope"), stringDetail("unit"), integerDetail("maximum"), nullableIntegerDetail("warning_threshold"), stringDetail("exhaustion_action"), nullableIntegerDetail("consumed"), nullableIntegerDetail("remaining"), stringDetail("state")}},
-		{name: "stop_ids", kind: detailStringsKind}, {name: "attention_ids", kind: detailStringsKind},
-		{name: "event", kind: detailObjectKind, nullable: true, children: []detailExpectation{stringDetail("id"), stringDetail("occurred_at")}}, {name: "replayed", kind: detailBooleanKind},
-	}
-}
-
 func argumentDetails() []detailExpectation {
 	return []detailExpectation{stringDetail("argument"), nullableStringDetail("value"), {name: "allowed", kind: detailStringsKind}}
 }
@@ -275,23 +189,8 @@ func authorityDetails() []detailExpectation {
 		{name: "required_actions", kind: detailStringsKind}, {name: "required_capabilities", kind: detailStringsKind}}
 }
 
-func claimConflictDetails() []detailExpectation {
-	return []detailExpectation{
-		stringDetail("issue_id"), nullableStringDetail("claim_id"), nullableIntegerDetail("expected_version"),
-		nullableIntegerDetail("actual_version"), nullableStringDetail("expires_at"),
-	}
-}
-
 func findingDetails() []detailExpectation {
 	return []detailExpectation{stringDetail("check"), stringDetail("message"), stringDetail("entity_id")}
-}
-
-func repositoryExpectations() []detailExpectation {
-	return []detailExpectation{
-		nullableStringDetail("base_oid"), stringDetail("capture_source"), {name: "dirty", kind: detailBooleanKind},
-		nullableStringDetail("dirty_digest"), stringDetail("head_oid"), stringDetail("project_id"),
-		stringDetail("tree_oid"), stringDetail("worktree_id"),
-	}
 }
 
 func stringDetails(name string) []detailExpectation { return []detailExpectation{stringDetail(name)} }
@@ -393,7 +292,7 @@ func mustNewFailure(t *testing.T, code Code, subject *Subject, details map[strin
 
 func assertSubjectRules(t *testing.T, expectation failureCodeExpectation, details map[string]any) {
 	t.Helper()
-	allSubjectTypes := []SubjectType{SubjectProject, SubjectIssue, SubjectRequirement, SubjectLabel, SubjectLink, SubjectWorkflow}
+	allSubjectTypes := []SubjectType{SubjectProject, SubjectIssue, SubjectLabel, SubjectLink, SubjectCapability, SubjectExport, SubjectType("unknown")}
 	if len(expectation.subjects) == 0 {
 		assertNewFailureRejected(t, expectation.code, &Subject{Type: SubjectIssue, ID: "subject-id"}, details)
 		return

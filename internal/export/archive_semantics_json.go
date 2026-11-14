@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
+	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func rejectDuplicateJSONKeys(raw []byte) error {
@@ -67,6 +69,10 @@ func scanSemanticJSONValue(decoder *json.Decoder) error {
 }
 
 func semanticCheckCode(err error) string {
+	var unsupported *journal.SchemaUnsupportedError
+	if errors.As(err, &unsupported) {
+		return "schema-unsupported"
+	}
 	var semanticErr *semanticValidationError
 	if errors.As(err, &semanticErr) {
 		return semanticErr.Code
