@@ -73,3 +73,48 @@ func TestEffectiveDigest(t *testing.T) {
 		t.Fatal("project identity changed policy digest")
 	}
 }
+
+func TestTestAdequacyPresenceChangesEffectiveDigest(t *testing.T) {
+	t.Parallel()
+	policies := map[string]Effective{}
+	for _, test := range []struct {
+		name, text string
+		set        bool
+	}{
+		{"missing", "", false}, {"empty table", "[review]", false},
+		{"empty", "[review]\ntest_adequacy = []", true},
+		{"paths", "[review]\ntest_adequacy = ['**/*_test.go']", true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			file, err := config.DecodeProject([]byte(test.text))
+			if err != nil {
+				t.Fatal(err)
+			}
+			effective := Resolve(file)
+			encoded, err := effective.Canonical()
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []byte(`"test_adequacy_set":false`)
+			if test.set {
+				want = []byte(`"test_adequacy_set":true`)
+			}
+			if !bytes.Contains(encoded, want) {
+				t.Errorf("effective policy = %s, want %s", encoded, want)
+			}
+			if err := effective.ValidateRecorded(); err != nil {
+				t.Fatal(err)
+			}
+			policies[test.name] = effective
+		})
+	}
+	if policies["missing"].Digest() != policies["empty table"].Digest() {
+		t.Error("empty review table changes digest")
+	}
+	if policies["missing"].Digest() == policies["empty"].Digest() {
+		t.Error("missing and empty test paths share a digest")
+	}
+	if policies["empty"].Digest() == policies["paths"].Digest() {
+		t.Error("test paths do not change digest")
+	}
+}

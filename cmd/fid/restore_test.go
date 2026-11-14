@@ -127,6 +127,11 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer")
 	runFIDCommand(t, workspace, "issue", "transition", ids[2], "--to", "cancelled", "--actor", "human:mark")
 	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer")
+	// Record missing and explicitly empty test paths, so backup, export,
+	// replay and restore must preserve their different digests and setup state.
+	appendPolicy(t, workspace, "\n[review]\ntest_adequacy = []\n")
+	policyOrigin(t, workspace)
+	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer")
 	return workspace, v8IDs{issues: ids, envelope: envelopeID, receipt: terminal.Data.ReceiptID}
 }
 
@@ -204,6 +209,22 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql policy snapshots = %#v", snapshots)
 	}
 	state.reads["policy snapshots"] = snapshots.stdout
+	rows := policySnapshots(t, workspace)
+	if len(rows) != 2 || rows[0].Digest == rows[1].Digest {
+		t.Fatalf("V8 policy snapshots = %#v, want distinct missing/empty test paths", rows)
+	}
+	for index, row := range rows {
+		var effective struct {
+			TestAdequacy    []string `json:"test_adequacy"`
+			TestAdequacySet *bool    `json:"test_adequacy_set"`
+		}
+		if err := json.Unmarshal([]byte(row.Effective), &effective); err != nil {
+			t.Fatal(err)
+		}
+		if effective.TestAdequacySet == nil || *effective.TestAdequacySet != (index == 1) || effective.TestAdequacy == nil || len(effective.TestAdequacy) != 0 {
+			t.Fatalf("V8 review policy %d = %#v", index, effective)
+		}
+	}
 	return state
 }
 

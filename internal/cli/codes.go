@@ -21,6 +21,7 @@ const (
 
 const (
 	CodeInvalidArgument             Code = "invalid-argument"
+	CodePolicyUnavailable           Code = "policy-unavailable"
 	CodeOperationUnavailable        Code = "operation-unavailable"
 	CodeUnsupportedKind             Code = "unsupported-kind"
 	CodeUnsupportedRelation         Code = "unsupported-relation"
@@ -160,6 +161,8 @@ type Failure struct {
 	Message   string         `json:"message"`
 	Subject   *Subject       `json:"subject"`
 	Details   map[string]any `json:"details"`
+	// NextAction carries producer-supplied human guidance outside the JSON contract.
+	NextAction string `json:"-"`
 }
 
 type detailType uint8
@@ -232,6 +235,7 @@ func definition(category Category, retryable bool, subjects []SubjectType, detai
 }
 
 var failureCodeDefinitions = map[Code]reasonDefinition{
+	CodePolicyUnavailable: definition(CategoryPrecondition, false, nil, stringField("problem"), nullableStringField("ref"), nullableStringField("commit")),
 	CodeOperationUnavailable: definition(CategoryInvalidInput, false, nil,
 		stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeReviewNotIndependent: definition(CategoryPrecondition, false, nil,
@@ -366,7 +370,7 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 }
 
 var registeredCodes = []Code{
-	CodeInvalidArgument, CodeOperationUnavailable, CodeUnsupportedKind, CodeUnsupportedRelation, CodeProjectNotFound, CodeProjectAlreadyInit,
+	CodeInvalidArgument, CodePolicyUnavailable, CodeOperationUnavailable, CodeUnsupportedKind, CodeUnsupportedRelation, CodeProjectNotFound, CodeProjectAlreadyInit,
 	CodeIssueNotFound, CodeRequirementNotFound, CodeLabelNotFound, CodeLinkNotFound, CodeWorkflowNotFound,
 	CodeDuplicateEntity, CodeStateConflict, CodeLockUnavailable, CodeHierarchyInvalid, CodeDependencyCycle,
 	CodeTransitionNotPermitted, CodeAuthorityMissing, CodeAuthorityUnknownActor, CodeAuthorityDenied,
@@ -420,7 +424,8 @@ func NewFailure(code Code, message string, subject *Subject, details map[string]
 	if !ok {
 		return Failure{}, fmt.Errorf("new failure: unknown code %q", code)
 	}
-	failure := Failure{code, definition.spec.Category, definition.spec.Retryable, message, subject, details}
+	failure := Failure{Code: code, Category: definition.spec.Category, Retryable: definition.spec.Retryable,
+		Message: message, Subject: subject, Details: details}
 	if err := validateFailure(failure, definition); err != nil {
 		return Failure{}, fmt.Errorf("new failure: %w", err)
 	}

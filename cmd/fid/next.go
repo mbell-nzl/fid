@@ -149,8 +149,10 @@ func renderNextFailure(cmd *cobra.Command, operation string, cause error) error 
 func nextFailure(cmd *cobra.Command, operation string, cause error) (cli.Failure, error) {
 	var policyError *policy.SourceError
 	if errors.As(cause, &policyError) {
-		return cli.NewFailure(cli.CodeInvalidArgument, cli.BoundedMessage(policyError.Error()), nil,
-			map[string]any{"argument": ".fid.toml", "value": nil, "allowed": []string{"valid policy at origin/<default branch>, or built-in defaults when absent"}})
+		failure, err := cli.NewFailure(cli.CodePolicyUnavailable, cli.BoundedMessage(policyError.Error()), nil,
+			policyError.Details())
+		failure.NextAction = policyError.NextAction()
+		return failure, err
 	}
 	if errors.Is(cause, project.ErrNotFound) {
 		return issueMutationFailure(cmd, operation, "", cause)

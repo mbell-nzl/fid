@@ -1,6 +1,6 @@
 // Package status assembles fid status: what needs a person, the work in
-// progress and to do, and how current the ledger's backup is. Text and JSON
-// are both rendered from one Result.
+// progress and to do, policy health, and how current the ledger's backup is.
+// Text and JSON are both rendered from one Result.
 package status
 
 import (
@@ -34,6 +34,7 @@ type Result struct {
 	GeneratedAt time.Time
 	Backup      Backup
 	NeedsYou    []NeedsYouItem
+	Warnings    []Warning
 	InProgress  issues.OverviewSection
 	Ready       issues.OverviewSection
 	Next        *string
@@ -76,7 +77,7 @@ func build(options Options, afterOverview func()) (Result, error) {
 		return Result{}, fmt.Errorf("read status: %w", err)
 	}
 	result := Result{GeneratedAt: options.Now, Backup: describeBackup(health, options.Now), NeedsYou: []NeedsYouItem{},
-		InProgress: overview.InProgress, Ready: overview.ToDo, entries: map[string]next.Entry{}}
+		Warnings: readPolicyWarnings(options.WorkspaceRoot), InProgress: overview.InProgress, Ready: overview.ToDo, entries: map[string]next.Entry{}}
 	for _, entry := range planned.Queue {
 		result.entries[entry.ID] = entry
 	}
@@ -98,6 +99,7 @@ func (result Result) Fields() map[string]any {
 		"generated_at": result.GeneratedAt.UTC().Format(time.RFC3339),
 		"backup":       result.Backup,
 		"needs_you":    result.NeedsYou,
+		"warnings":     result.Warnings,
 		"in_progress": mapSection(result.InProgress, func(task issues.OverviewTask) workingTask {
 			return workingTask{OverviewTask: task, Working: result.entries[task.ID].Working}
 		}),

@@ -31,7 +31,7 @@ func TestInvalidOriginPolicyKeySpellingNeverWrites(t *testing.T) {
 			}
 			before := readAllPolicyJournal(t, root)
 			result := executeCommandForTest(root, "--json", "next", "--claim", "--actor", "agent:builder")
-			if result.err == nil || !strings.Contains(result.stderr, `"code":"invalid-argument"`) || !strings.Contains(result.stderr, commit) {
+			if result.err == nil || !strings.Contains(result.stderr, `"code":"policy-unavailable"`) || !strings.Contains(result.stderr, commit) {
 				t.Errorf("invalid origin policy refusal = %#v, want commit %s", result, commit)
 			}
 			if after := readAllPolicyJournal(t, root); before != after {

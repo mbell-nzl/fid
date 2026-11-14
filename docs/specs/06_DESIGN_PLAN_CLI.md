@@ -414,6 +414,30 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
 The backup's line is the box's last, except when it needs you: then it
 appears only as the NEEDS YOU item.
 
+**Policy health (RESET 1.5a1; Mark, 14 November 2026).** Status reads the
+trusted local `origin/<default>` policy, using built-in defaults when
+there is no origin or file. It never writes a policy snapshot or any
+other Event, including after the effective digest changes. Policy
+warnings appear inside the box, just above the backup line (or last when
+the backup is under NEEDS YOU), in the order below. They appear even in an
+empty project and are not NEEDS YOU items. They wrap and indent through
+the display package as backup warnings do.
+
+| Kind | Summary | Next action |
+|---|---|---|
+| `policy-unavailable` | `Policy unavailable: <problem>` | `check the repository: git remote -v` if listing remotes fails; `git remote set-head origin <branch>` for an unknown default; `fix .fid.toml on the default branch, merge it and git fetch` for an invalid or unreadable policy file |
+| `checks-not-configured` | `No checks set for Routine, Standard, Assured in .fid.toml` | `add checks to [lanes.routine], [lanes.standard] and [lanes.assured], then merge .fid.toml and git fetch` |
+| `test-paths-not-configured` | `No test paths set in .fid.toml` | `add [review] test_adequacy, then merge .fid.toml and git fetch` |
+
+Unavailable policy leaves the whole board visible, with only its one
+policy warning: status cannot know which setup keys are missing. When
+policy loads, the checks warning lists only lanes missing their `checks`
+key, in Routine, Standard, Assured order. For one lane it reads `Standard`
+and `[lanes.standard]`; for two, `Routine, Assured` and
+`[lanes.routine] and [lanes.assured]`. A missing `[review] test_adequacy`
+key gives the test-path warning. Explicit `checks = []` and
+`test_adequacy = []` count as set up and give no warning.
+
 | State | When | Line |
 |---|---|---|
 | `current` | The last backup is at most 24 hours old and nothing is wrong | `✓ Backed up 3 hours ago` |
@@ -456,6 +480,7 @@ capped, with or without `--all`. `event` is null.
             "latest": <record line>, "consecutive_failures": 1, "target_set": true,
             "user_config_path": "/home/mark/.config/fid/config.toml", "user_config_error": null,
             "record_path": "<ledger>/backups.jsonl", "record_error": null},
+ "warnings": [],
  "needs_you": [{"kind": "backup", "summary": "...", "next_action": "fid backup", "subject": null}],
  "in_progress": {"epics": [<epic>], "tasks": [<task>]},
  "ready": {"next": "FID-9f13aa", "epics": [<epic>], "tasks": [<task>]},
@@ -470,6 +495,23 @@ capped, with or without `--all`. `event` is null.
   `user_config_error` and `record_error` carry the cause, or null.
 - `summary` and `next_action` are the text's, unescaped; `next_action` is
   null when nothing needs doing.
+- `warnings` is always present, `[]` when there are none. Each warning
+  has `kind`, `summary` and `next_action` (strings), plus only its kind's
+  fields. Text and JSON share the same summary and next action. The
+  warning shapes are:
+
+  ```json
+  {"kind": "policy-unavailable", "problem": "origin's default branch is unknown", "ref": null, "commit": null,
+   "summary": "Policy unavailable: origin's default branch is unknown", "next_action": "git remote set-head origin <branch>"}
+  {"kind": "checks-not-configured", "lanes": ["routine", "standard", "assured"],
+   "summary": "No checks set for Routine, Standard, Assured in .fid.toml",
+   "next_action": "add checks to [lanes.routine], [lanes.standard] and [lanes.assured], then merge .fid.toml and git fetch"}
+  {"kind": "test-paths-not-configured", "summary": "No test paths set in .fid.toml",
+   "next_action": "add [review] test_adequacy, then merge .fid.toml and git fetch"}
+  ```
+
+  `ref` and `commit` are strings when known, null otherwise. `lanes` uses
+  lowercase names in the text's order.
 - A NEEDS YOU item is `{kind, summary, next_action, subject}`. `kind` is
   `backup` so far; `subject` is null for it, and `{type, id}` for later
   kinds about an issue.
@@ -1266,6 +1308,30 @@ retry-exhausted
 ```
 
 Owning slices may add closed codes through versioned contract changes.
+
+RESET 1.5a1 adds the following closed code (Mark, 14 November 2026):
+
+| Code | Category / exit | Subject | Exact detail keys |
+|---|---|---|---|
+| `policy-unavailable` | precondition / 4 | null | `problem` (string), `ref` (string or null), `commit` (string or null) |
+
+It is not retryable. It replaces the previous `invalid-argument` mapping
+for both an origin without a known default branch and invalid or
+unreadable `.fid.toml` on origin. `problem` describes what failed;
+`ref` and `commit` identify the source read when known (for example
+`origin/main` and its commit), otherwise null. Human failures use the
+renderer’s `error:` and `reason:` lines, followed by `next:` with
+`git remote set-head origin <branch>` for an unknown default, or
+`fix .fid.toml on the default branch, merge it and git fetch` for an
+invalid or unreadable policy file. Status reports this as a warning
+instead of refusing.
+
+If running `git remote` itself fails, the same code has
+`problem: "couldn't list git remotes: <error>"`, null `ref` and `commit`,
+and the human `next:` action is `check the repository: git remote -v`.
+Status shows the same policy-unavailable warning and repair action. This
+case was decided by the orchestrator under Mark's delegation for the 1.5a
+series on 14 November 2026.
 
 Codes accepted with the Phase 20 standalone Issue slice: `invalid-argument`,
 `unsupported-kind`, `unsupported-relation`, `project-not-found`,

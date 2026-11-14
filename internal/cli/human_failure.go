@@ -157,6 +157,8 @@ func humanRepository(value any) string {
 
 func humanNext(failure Failure, operation, leaf string, hasInput bool) string {
 	switch failure.Code {
+	case CodePolicyUnavailable:
+		return failure.NextAction
 	case CodeIssueNotFound:
 		if operation == "issue.show" {
 			return "fid issue list"

@@ -1,0 +1,17 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "policy-unavailable",
+    "details": {
+      "commit": null,
+      "problem": "origin's default branch is unknown",
+      "ref": null
+    },
+    "message": "origin's default branch is unknown",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "next.claim"
+}

@@ -1,7 +1,9 @@
 package journal
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -81,8 +83,25 @@ func TestPolicySnapshotEvent(t *testing.T) {
 		{"invalid lane glob", changeSnapshotPolicy(t, func(effective *policy.Effective) {
 			effective.Lanes["routine"] = config.Lane{Paths: []string{"../src"}, Checks: []string{}}
 		}), false},
+		{"missing test paths marker", func(event *Event) {
+			values := event.Effects[0].Values
+			raw := strings.Replace(values["effective_json"].(string), `,"test_adequacy_set":false`, "", 1)
+			values["effective_json"] = raw
+			values["digest"] = fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(raw)))
+		}, false},
+		{"configured test paths", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.TestAdequacy = []string{"**/*_test.go"}
+			effective.TestAdequacySet = true
+		}), true},
+		{"explicit empty test paths", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.TestAdequacySet = true
+		}), true},
+		{"unset nonempty test paths", changeSnapshotPolicy(t, func(effective *policy.Effective) {
+			effective.TestAdequacy = []string{"**/*_test.go"}
+		}), false},
 		{"invalid review glob", changeSnapshotPolicy(t, func(effective *policy.Effective) {
 			effective.TestAdequacy = []string{"[test]"}
+			effective.TestAdequacySet = true
 		}), false},
 		{"invalid hard floor glob", changeSnapshotPolicy(t, func(effective *policy.Effective) {
 			effective.HardAssured = []string{"../policy"}

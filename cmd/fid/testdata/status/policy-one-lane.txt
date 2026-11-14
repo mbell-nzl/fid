@@ -1,0 +1,12 @@
+╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
+
+  ○ No tasks yet
+      → fid issue create --kind task --title <title> \
+          --actor human:<name> --idempotency-key <key>
+
+  ⚠ No checks set for Standard in .fid.toml
+      → add checks to [lanes.standard], then merge .fid.toml and git
+        fetch
+
+  ✓ Backed up 3 hours ago
+╰──────────────────────────────────────────────────────────────────────╯

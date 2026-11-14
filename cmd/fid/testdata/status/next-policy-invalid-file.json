@@ -1,0 +1,17 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "policy-unavailable",
+    "details": {
+      "commit": "<COMMIT>",
+      "problem": "invalid .fid.toml: lanes.standard.paths is refused: other paths are Standard",
+      "ref": "origin/trunk"
+    },
+    "message": "invalid .fid.toml: lanes.standard.paths is refused: other paths are Standard",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "next.claim"
+}

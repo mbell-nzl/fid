@@ -33,6 +33,12 @@ func TestSemanticValidatorChecksPolicySnapshots(t *testing.T) {
 		{"other aggregate", 21, func(event *journal.Event) { event.Aggregate.Type = "issue" }, "effect-invalid"},
 		{"wrong digest", 21, func(event *journal.Event) { event.Effects[0].Values["digest"] = "sha256:" + strings.Repeat("0", 64) }, "reference-invalid"},
 		{"incomplete policy", 21, func(event *journal.Event) { event.Effects[0].Values["effective_json"] = "{}" }, "reference-invalid"},
+		{"unset nonempty test paths", 21, changeArchivePolicy(t, func(effective *policy.Effective) {
+			effective.TestAdequacy = []string{"**/*_test.go"}
+		}), "reference-invalid"},
+		{"explicit empty test paths", 21, changeArchivePolicy(t, func(effective *policy.Effective) {
+			effective.TestAdequacySet = true
+		}), ""},
 		{"unknown lane", 21, changeArchivePolicy(t, func(effective *policy.Effective) {
 			effective.Lanes["typo"] = effective.Lanes["assured"]
 			delete(effective.Lanes, "assured")

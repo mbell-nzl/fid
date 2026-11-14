@@ -1,0 +1,57 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "project.status",
+  "result": {
+    "backup": {
+      "state": "current",
+      "reasons": [],
+      "summary": "Backed up 3 hours ago",
+      "next_action": null,
+      "last_backup_at": "2026-11-08T06:00:00Z",
+      "ledger_started_at": "2026-11-04T05:00:00Z",
+      "age_seconds": 10800,
+      "latest": {
+        "schema": "fid.backup-record.v1",
+        "started_at": "2026-11-08T05:59:56Z",
+        "finished_at": "2026-11-08T06:00:00Z",
+        "outcome": "pushed",
+        "project_id": "project-0123456789abcdef0123456789abcdef",
+        "commit": "cccccccccccccccccccccccccccccccccccccccc",
+        "archive_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "event_count": 12,
+        "terminal_event_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "failure": null
+      },
+      "consecutive_failures": 0,
+      "target_set": true,
+      "user_config_path": "<CONFIG>/fid/config.toml",
+      "user_config_error": null,
+      "record_path": "<ROOT>/.git/fid/backups.jsonl",
+      "record_error": null
+    },
+    "generated_at": "2026-11-08T09:00:00Z",
+    "hint": {
+      "summary": "No tasks yet",
+      "next_action": "fid issue create --kind task --title <title> --actor human:<name> --idempotency-key <key>"
+    },
+    "in_progress": {
+      "epics": [],
+      "tasks": []
+    },
+    "needs_you": [],
+    "ready": {
+      "next": null,
+      "epics": [],
+      "tasks": []
+    },
+    "warnings": [
+      {
+        "kind": "test-paths-not-configured",
+        "next_action": "add [review] test_adequacy, then merge .fid.toml and git fetch",
+        "summary": "No test paths set in .fid.toml"
+      }
+    ]
+  }
+}

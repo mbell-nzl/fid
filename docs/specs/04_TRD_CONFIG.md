@@ -95,16 +95,17 @@ working-tree identity is not policy authority.
 Policy is read from the blob at the local `origin/<default branch>` commit,
 never from the working tree, index or a local branch. fid never fetches it;
 the caller's last fetch sets its freshness. Missing policy uses built-in
-defaults. Invalid policy on origin is refused with `invalid-argument`,
-naming its commit and the problem, with no fallback. Unknown keys and
-wrong types are refused, and there is no schema-version key. The parser is
+defaults. Invalid or unreadable policy on origin is refused with
+`policy-unavailable` (precondition, exit 4), naming its ref, commit and
+problem, with no fallback. Status keeps showing the board with a warning.
+Unknown keys and wrong types are refused, and there is no schema-version key. The parser is
 BurntSushi/toml v1.6.0 with `MetaData.Undecoded()` for strict keys.
 
-The default-branch and unset-key rules below implement the orchestrator's
-P1–P3 proposals, awaiting Mark's confirmation (decisions record F3).
+The default-branch and unset-key rules below are Mark's decisions of
+14 November 2026 (P1: A, P2: C, P3: B; decisions record F3).
 `refs/remotes/origin/HEAD` names the default. An origin with no known
-default refuses writing commands needing policy and points at
-`git remote set-head origin <branch>`. No origin uses built-in defaults.
+default refuses writing commands needing policy with `policy-unavailable`
+and points at `git remote set-head origin <branch>`. No origin uses built-in defaults.
 
 ```toml
 [checks.test]
@@ -142,11 +143,15 @@ test_adequacy = ["**/*_test.go", "**/testdata/**"]
 | `lanes.<lane>.rework_cap` | Non-negative integer; default 3 |
 | `lanes.<lane>.token_budget` | Non-negative integer token count; zero/default means off |
 | `lanes.<lane>.auto_merge` | Boolean, default false; the key is refused even when false under `assured` |
-| `review.test_adequacy` | Optional glob list requiring a test-adequacy review in every lane |
+| `review.test_adequacy` | Glob list requiring a test-adequacy review in every lane; missing means not set up, explicit `[]` means none needed |
 
-Only `routine`, `standard` and `assured` are lanes. Unset paths and review
-lists are empty, and unset checks leave every lane not set up. Other paths
-are Standard; the highest floor among changed paths applies. `.fid.toml`
+Only `routine`, `standard` and `assured` are lanes. Unset lane paths are
+empty. Unset checks leave each lane not set up; missing
+`[review] test_adequacy` likewise means test paths are not set up. The
+effective policy records `checks_set` per lane and `test_adequacy_set`
+alongside the path list, so its digest, snapshots, replay and
+export/import distinguish a missing key from an explicit empty list. Other
+paths are Standard; the highest floor among changed paths applies. `.fid.toml`
 and `.github/workflows/**` are always Assured, built into fid, and cannot
 be configured away or waived. Every `defined_by` path also needs Assured.
 2.2b computes the floor and adds waivers; 2.2a exposes these settings only.
@@ -159,9 +164,12 @@ backslashes, control characters, `***` and unsupported glob operators
 (`?`, character classes and braces) are refused. Spaces and Unicode in
 literal paths are accepted.
 
-A project with no checks can still use next, status and show. Check,
-hand-off and done refusals, and status's missing-checks warning, belong to
-1.5a/1.6. 2.1 enforces the rework cap and 2.6 the token budget.
+A project with no checks can still use next, status and show. Status warns
+about missing checks or test paths, but explicit empty lists do not warn
+(1.5a1). A missing lane's checks will refuse check (1.5a6), hand-off
+(1.5a7) and done (1.6), naming the fix; missing test paths will refuse
+hand-off and done too. Those refusals are not part of 1.5a1. 2.1 enforces
+the rework cap and 2.6 the token budget.
 
 Actor trust is built into the policy package, with no actor list in the
 file. A well-formed `agent:*` gets the named `work` action set (take,

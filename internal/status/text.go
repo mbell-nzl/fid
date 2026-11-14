@@ -29,7 +29,8 @@ const (
 )
 
 // WriteText writes the result as a box: what needs a person, the work in
-// progress and to do, and the backup's line, leaving out empty sections.
+// progress and to do, policy warnings, and the backup's line, leaving out
+// empty sections.
 // READY shows at most ten task rows unless all is set. The result's text,
 // which holds titles, paths and record values fid didn't write, has its
 // control characters escaped before it is fitted to a column or coloured;
@@ -52,6 +53,9 @@ func WriteText(w io.Writer, result Result, renderer display.Renderer, all bool) 
 	}
 	if len(result.Ready.Epics)+len(result.Ready.Tasks) > 0 {
 		blocks = append(blocks, text.ready(result, all))
+	}
+	for _, warning := range result.Warnings {
+		blocks = append(blocks, text.item(display.RoleWarning, display.SymbolWarning, warning.Summary, &warning.NextAction))
 	}
 	if result.Backup.State != string(backup.HealthNeedsYou) {
 		role, symbol := backupMark(result.Backup.State)
