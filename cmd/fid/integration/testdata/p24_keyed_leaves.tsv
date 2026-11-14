@@ -1,31 +1,6 @@
-activation abort	reason
-activation commit	expected_version
-activation component	content
-activation finalize	expected_version
-activation prepare	kit_identity
-activation recover	reason
-activation recover-complete	selected_event_id
-activation resource	evidence_ref
 answer	text
 artifact verify	artifact_id
-attention resolve	expected_version
 check	--hold
-claim acquire	ttl_seconds
-claim expire	expected_version
-claim release	expected_version
-claim renew	ttl_seconds
-concern dispose	reason
-concern record	id
-decision record-reference	id
-deviation record	id
-envelope activate	expected_revision
-envelope complete	expected_revision
-envelope create	outcome
-evidence link	obligation_id
-finding address	reason
-gate register	definition_version
-gate run	registration_version
-human-outcome record	id
 issue ac add	--text
 issue create	--title
 issue label add	label
@@ -36,20 +11,6 @@ label add	--colour
 link add	relation
 link remove	relation
 park	--waiting
-requirement link	relation
-requirement record-reference	id
-review record	verdict
-run abandon	expected_version
-run checkpoint	reconciliation_digest
-run close	expected_version
-run observe	expected_version
-run observe-budget	value
-run recover	ttl_seconds
-run start	claim_version
 start	--hold
-stop raise	details
-stop resolve	stop_id
 takeover	--reason
-workflow assign	--name
-workflow define	--name
 handoff	--pr

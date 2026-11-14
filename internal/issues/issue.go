@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mbell-nzl/fid/internal/workflow"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 )
 
 const fidVersion = "0.1.0"
@@ -125,14 +125,11 @@ type Issue struct {
 	OwnerRole          *string               `json:"owner_role"`
 	OwnerActor         *string               `json:"owner_actor"`
 	Labels             []string              `json:"labels"`
-	ConcernsRaised     bool                  `json:"concerns_raised"`
-	OpenConcernsCount  int                   `json:"open_concerns_count"`
 	TriageStatus       *string               `json:"triage_status"`
 	AcceptanceCriteria []AcceptanceCriterion `json:"acceptance_criteria"`
 	CreatedAt          *string               `json:"created_at"`
 	UpdatedAt          *string               `json:"updated_at"`
 	ParentTitle        *string               `json:"-"`
-	Concerns           []IssueConcern        `json:"-"`
 	Links              []IssueLink           `json:"-"`
 }
 
@@ -198,7 +195,7 @@ func trimmedOptionalString(value *string) *string {
 	return &trimmed
 }
 
-func registryStatusCategory(registry *workflow.Registry, workflowID, status string) (string, error) {
+func registryStatusCategory(registry *issuestate.Registry, workflowID, status string) (string, error) {
 	category, ok := registry.CategoryForState(workflowID, status)
 	if !ok {
 		return "", fmt.Errorf("workflow %q does not define state %q", workflowID, status)

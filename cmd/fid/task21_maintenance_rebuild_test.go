@@ -11,9 +11,9 @@ import (
 
 func TestFinalSchemaNamedReadsAndExportMatchAfterRebuild(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID, evaluatePath := task21CompletedWorkspace(t)
+	workspace, issueID := task21CompletedWorkspace(t)
 	archivePath := filepath.Join(t.TempDir(), "task21-export.zip")
-	before := task21SnapshotReads(t, workspace, issueID, envelopeID, evaluatePath, archivePath)
+	before := task21SnapshotReads(t, workspace, issueID, archivePath)
 
 	if err := os.Remove(filepath.Join(config.LedgerDir(workspace), "fid.sqlite")); err != nil {
 		t.Fatalf("delete projection: %v", err)
@@ -22,38 +22,50 @@ func TestFinalSchemaNamedReadsAndExportMatchAfterRebuild(t *testing.T) {
 	if rebuilt.err != nil || rebuilt.stderr != "" {
 		t.Fatalf("rebuild final-schema projection = %#v", rebuilt)
 	}
-	after := task21SnapshotReads(t, workspace, issueID, envelopeID, evaluatePath, archivePath)
+	after := task21SnapshotReads(t, workspace, issueID, archivePath)
 
 	if !bytes.Equal(before.exportBytes, after.exportBytes) {
 		t.Fatal("export bytes differ after final-schema rebuild")
 	}
-	if before.capabilities != after.capabilities || before.envelope != after.envelope || before.evaluation != after.evaluation || before.resume != after.resume || before.validation != after.validation {
+	if before.issue != after.issue || before.show != after.show || before.checks != after.checks || before.next != after.next || before.maintenance != after.maintenance || before.validation != after.validation {
 		t.Fatalf("named reads differ after rebuild: before=%#v after=%#v", before, after)
 	}
 }
 
 type task21ReadSnapshot struct {
-	capabilities string
-	envelope     string
-	evaluation   string
-	resume       string
-	validation   string
-	exportBytes  []byte
+	issue       string
+	show        string
+	checks      string
+	next        string
+	maintenance string
+	validation  string
+	exportBytes []byte
 }
 
-func task21SnapshotReads(t *testing.T, workspace, issueID, envelopeID, evaluatePath, archivePath string) task21ReadSnapshot {
+func task21SnapshotReads(t *testing.T, workspace, issueID, archivePath string) task21ReadSnapshot {
 	t.Helper()
-	capabilities := task21Read(t, workspace, "--project", workspace, "--json", "capabilities")
-	envelope := task21Read(t, workspace, "--project", workspace, "--json", "envelope", "get", envelopeID)
-	evaluation := task21Read(t, workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", evaluatePath)
-	resume := task21Read(t, workspace, "--project", workspace, "--json", "resume", issueID)
-	_ = task21Read(t, workspace, "--project", workspace, "--json", "export", "create", archivePath)
-	validation := task21Read(t, workspace, "--project", workspace, "--json", "export", "validate", archivePath)
+	read := func(args ...string) string {
+		if args[0] == "sql" {
+			return task21Read(t, workspace, args...)
+		}
+		return task21Read(t, workspace, append([]string{"--project", workspace, "--json"}, args...)...)
+	}
+	issue := read("issue", "get", issueID)
+	shown := read("show", issueID)
+	checks := ""
+	for _, table := range []string{"holds", "questions", "person_decisions", "policy_snapshots", "check_requests", "check_starts", "check_processes", "check_results", "check_files", "referenced_artifacts", "handoffs", "idempotency_results"} {
+		checks += read("sql", "SELECT * FROM "+table+" ORDER BY rowid")
+	}
+
+	next := read("next")
+	maintenance := read("maintenance", "check")
+	_ = read("export", "create", archivePath)
+	validation := read("export", "validate", archivePath)
 	exportBytes, err := os.ReadFile(archivePath)
 	if err != nil {
-		t.Fatalf("read export archive: %v", err)
+		t.Fatal(err)
 	}
-	return task21ReadSnapshot{capabilities, envelope, evaluation, resume, validation, exportBytes}
+	return task21ReadSnapshot{issue, shown, checks, next, maintenance, validation, exportBytes}
 }
 
 func task21Read(t *testing.T, workspace string, args ...string) string {
@@ -65,35 +77,27 @@ func task21Read(t *testing.T, workspace string, args ...string) string {
 	return result.stdout
 }
 
-func task21CompletedWorkspace(t *testing.T) (string, string, string, string) {
+func task21CompletedWorkspace(t *testing.T) (string, string) {
 	t.Helper()
-	workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
-		definition["argv"] = []string{"/bin/true"}
-	})
-	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task21-parity-gate")
-	if gateRun.err != nil || terminal.Data.ReceiptID == "" {
-		t.Fatalf("run qualifying Gate = %#v, terminal=%#v", gateRun, terminal)
+	workspace := clonePristineWorkspace(t)
+	appendPolicy(t, workspace, "\n[checks.parity]\nrun=['true']\ntimeout='1m'\nartifacts=['parity.txt']\n[lanes.standard]\nchecks=['parity']\n[review]\ntest_adequacy=[]\n")
+	if err := os.WriteFile(filepath.Join(workspace, "parity.txt"), []byte("retained parity Artifact\n"), 0o600); err != nil {
+		t.Fatal(err)
 	}
-	repository := runRepositoryForTest(t, workspace)
-	obligationID := testEvidenceObligationID
-	linkPath := filepath.Join(workspace, "task21-link-evidence.json")
-	writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": terminal.Data.ReceiptID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
-	task21Mutate(t, workspace, "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task21-link-evidence")
-	evaluatePath := filepath.Join(workspace, "task21-evaluate-evidence.json")
-	writeActivationInput(t, evaluatePath, map[string]any{"obligation_id": obligationID})
-
-	for _, step := range []struct{ state, revision string }{{"building", "1"}, {"dev_complete", "2"}, {"qa_review", "3"}, {"qa_pass", "4"}} {
-		task21Mutate(t, workspace, "issue", "transition", issueID, "--to", step.state, "--actor", "agent:actor-builder", "--expected-revision", step.revision, "--idempotency-key", "task21-"+step.state)
-	}
-	runID, claimID := task18RunAndClaim(t, workspace, issueID)
-	closeRunForTest(t, workspace, runID, repository, "task21-close-run")
-	releasePath := filepath.Join(workspace, "task21-release-claim.json")
-	writeActivationInput(t, releasePath, map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
-	task21Mutate(t, workspace, "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "task21-release-claim")
-	completePath := filepath.Join(workspace, "task21-complete-envelope.json")
-	writeActivationInput(t, completePath, map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
-	task21Mutate(t, workspace, "envelope", "complete", "--actor", "actor-builder", "--input", completePath, "--idempotency-key", "task21-complete-envelope")
-	return workspace, issueID, envelopeID, evaluatePath
+	runGitForTest(t, workspace, "add", ".")
+	runGitForTest(t, workspace, "commit", "-qm", "Parity fixture")
+	runGitForTest(t, workspace, "remote", "add", "origin", workspace)
+	runGitForTest(t, workspace, "update-ref", "refs/remotes/origin/trunk", "HEAD")
+	runGitForTest(t, workspace, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/trunk")
+	created := decodeCanonicalResult(t, task21Read(t, workspace, "--json", "issue", "create", "--kind", "task", "--title", "Retained parity", "--lane", "standard", "--actor", "human:mark", "--idempotency-key", "parity-create"))
+	task := created["issue"].(map[string]any)["id"].(string)
+	taken := decodeCanonicalResult(t, task21Read(t, workspace, "--json", "takeover", task, "--actor", "human:mark", "--reason", "Build parity fixture", "--idempotency-key", "parity-takeover"))
+	hold := taken["hold_id"].(string)
+	task21Mutate(t, workspace, "start", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "parity-start")
+	task21Mutate(t, workspace, "check", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "parity-check")
+	task21Mutate(t, workspace, "handoff", "--hold", hold, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "parity-handoff")
+	assertV8HasNoKernelRecords(t, workspace)
+	return workspace, task
 }
 
 func task21Mutate(t *testing.T, workspace string, args ...string) {

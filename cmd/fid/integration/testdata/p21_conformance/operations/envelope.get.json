@@ -1,5 +1,0 @@
-{
-  "operation": "envelope.get",
-  "command": "fid envelope get \u003cenvelope-id\u003e",
-  "kind": "accepted"
-}

@@ -32,7 +32,7 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("initialize workspace: %v", err)
 	}
-	artifactEntry := addJournalBackedExportFixtureFacts(t, workspace)
+	artifactEntry := addLeanArtifactExportFacts(t, workspace)
 
 	first := filepath.Join(t.TempDir(), "first.zip")
 	second := filepath.Join(t.TempDir(), "second.zip")
@@ -71,8 +71,8 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 	if schema, ok := manifest["projection_schema"].(float64); !ok || int(schema) != db.ActiveMigrationVersion {
 		t.Fatalf("manifest projection_schema = %#v, want active schema %d", manifest["projection_schema"], db.ActiveMigrationVersion)
 	}
-	if sources, ok := manifest["sources"].([]any); !ok || len(sources) != 1 {
-		t.Fatalf("manifest sources = %#v, want one canonical source", manifest["sources"])
+	if sources, ok := manifest["sources"].([]any); !ok || len(sources) != 0 {
+		t.Fatalf("manifest sources = %#v, want no kernel sources", manifest["sources"])
 	}
 }
 
@@ -82,7 +82,7 @@ func TestSchema26ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
-	addJournalBackedExportFixtureFacts(t, source)
+	addLeanArtifactExportFacts(t, source)
 	archivePath := filepath.Join(t.TempDir(), "schema26.zip")
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archivePath}); err != nil {
 		t.Fatal(err)
@@ -124,13 +124,18 @@ func TestSchema26ArchiveImportsAndSchema18ManifestFailsClosed(t *testing.T) {
 	}
 }
 
-func TestGateReceiptFieldDigestGuardAndMalformedInsertFailClosedThroughCLI(t *testing.T) {
+func TestCheckResultFieldDigestGuardAndMalformedInsertFailClosedThroughCLI(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
-	addJournalBackedExportFixtureFacts(t, workspace)
+	addLeanArtifactExportFacts(t, workspace)
+	archive := filepath.Join(t.TempDir(), "control.zip")
+	if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archive}); err != nil {
+		t.Fatal(err)
+	}
+	archiveMembers := archiveContents(t, archive)
 	journalFiles, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
 	if err != nil || len(journalFiles) == 0 {
 		t.Fatalf("journal files = %v, error %v", journalFiles, err)
@@ -153,11 +158,11 @@ func TestGateReceiptFieldDigestGuardAndMalformedInsertFailClosedThroughCLI(t *te
 		mutate          func(*journal.Effect)
 		wantExit        int
 	}{
-		{"valid-receipt", "", nil, 0},
-		{"missing-insert-map", "gate.execution-started", func(e *journal.Effect) { delete(e.Values, "request_field_digests_json") }, 6},
-		{"array-insert-map", "gate.execution-started", func(e *journal.Effect) { e.Values["request_field_digests_json"] = `[]` }, 6},
-		{"non-digest-insert-map", "gate.execution-started", func(e *journal.Effect) { e.Values["request_field_digests_json"] = `{"--actor":"plain"}` }, 6},
-		{"mismatched-receipt-guard", "gate.receipt-recorded", func(e *journal.Effect) {
+		{"valid-check-result", "", nil, 0},
+		{"missing-insert-map", "check.started", func(e *journal.Effect) { delete(e.Values, "request_field_digests_json") }, 6},
+		{"array-insert-map", "check.started", func(e *journal.Effect) { e.Values["request_field_digests_json"] = `[]` }, 6},
+		{"non-digest-insert-map", "check.started", func(e *journal.Effect) { e.Values["request_field_digests_json"] = `{"--actor":"plain"}` }, 6},
+		{"mismatched-result-guard", "check.result-recorded", func(e *journal.Effect) {
 			e.Preconditions["request_field_digests_json"] = `{"different-field":"sha256:` + strings.Repeat("a", 64) + `"}`
 		}, 6},
 	}
@@ -171,7 +176,7 @@ func TestGateReceiptFieldDigestGuardAndMalformedInsertFailClosedThroughCLI(t *te
 			var journalFile string
 			var line int
 			if tc.mutate != nil {
-				journalFile, line = mutateGateIdempotencyEffect(t, original, tc.eventType, tc.mutate)
+				journalFile, line = mutateIdempotencyEffect(t, original, tc.eventType, tc.mutate)
 			}
 			before := workspaceTreeDigest(t, workspace)
 			cmd := exec.Command(binary, "--project", workspace, "--json", "rebuild")
@@ -180,8 +185,9 @@ func TestGateReceiptFieldDigestGuardAndMalformedInsertFailClosedThroughCLI(t *te
 			err := cmd.Run()
 			if tc.wantExit == 0 {
 				if err != nil || stderr.Len() != 0 {
-					t.Fatalf("valid receipt rebuild = %v, stderr %q", err, stderr.String())
+					t.Fatalf("valid check result rebuild = %v, stderr %q", err, stderr.String())
 				}
+				assertIdempotencyArchiveAdmission(t, binary, archiveMembers, journalFiles, true)
 				return
 			}
 			var exit *exec.ExitError
@@ -208,11 +214,12 @@ func TestGateReceiptFieldDigestGuardAndMalformedInsertFailClosedThroughCLI(t *te
 			if after := workspaceTreeDigest(t, workspace); after != before {
 				t.Fatalf("rejected rebuild changed target tree: %s to %s", before, after)
 			}
+			assertIdempotencyArchiveAdmission(t, binary, archiveMembers, journalFiles, false)
 		})
 	}
 }
 
-func mutateGateIdempotencyEffect(t *testing.T, original map[string][]byte, eventType string, mutate func(*journal.Effect)) (string, int) {
+func mutateIdempotencyEffect(t *testing.T, original map[string][]byte, eventType string, mutate func(*journal.Effect)) (string, int) {
 	t.Helper()
 	for path, contents := range original {
 		lines := bytes.Split(bytes.TrimSuffix(contents, []byte{'\n'}), []byte{'\n'})
@@ -253,7 +260,7 @@ func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
-	addJournalBackedExportFixtureFacts(t, source)
+	addLeanArtifactExportFacts(t, source)
 	archive := filepath.Join(t.TempDir(), "recovery.zip")
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archive}); err != nil {
 		t.Fatalf("create source archive: %v", err)
@@ -304,31 +311,48 @@ func TestValidateRejectsJournalAggregateSequenceCollisionWithoutMutation(t *test
 	assertArchiveCheck(t, err, "journal-invalid")
 }
 
-// This retained negative covers malformed Source metadata; the real Recovery
-// Event-reference regression is separate.
-func TestArchiveRejectsUnresolvedSourceMetadata(t *testing.T) {
+func TestArchiveRequiresEmptySourceInventory(t *testing.T) {
 	t.Parallel()
-	workspace := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
-		t.Fatal(err)
+	fixture := newExportSourceFixture(t, nil)
+	original := archiveContents(t, fixture.archive)
+	for _, tc := range []struct {
+		name    string
+		sources any
+		valid   bool
+	}{
+		{"empty", []any{}, true}, {"null", nil, false},
+		{"legacy", []any{map[string]any{"recovery_id": "REC-missing"}}, false},
+		{"scalar", []any{"unsupported"}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			entries := make(map[string][]byte, len(original))
+			for path, data := range original {
+				entries[path] = data
+			}
+			manifest := decodeManifestMap(t, entries["manifest.json"])
+			manifest["sources"] = tc.sources
+			entries["manifest.json"] = encodeManifestMap(t, manifest)
+			archive := filepath.Join(t.TempDir(), "sources.zip")
+			writeTestArchive(t, archive, entries)
+			before := workspaceTreeDigest(t, fixture.workspace)
+			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+			if tc.valid {
+				if err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				assertArchiveCheck(t, err, "reference-invalid")
+			}
+			if workspaceTreeDigest(t, fixture.workspace) != before {
+				t.Fatal("validation mutated source")
+			}
+		})
 	}
-	archivePath := filepath.Join(t.TempDir(), "reference.zip")
-	if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archivePath}); err != nil {
-		t.Fatal(err)
-	}
-	entries := archiveContents(t, archivePath)
-	manifest := decodeManifestMap(t, entries["manifest.json"])
-	manifest["sources"] = []any{map[string]any{"recovery_id": "REC-missing"}}
-	entries["manifest.json"] = encodeManifestMap(t, manifest)
-	writeTestArchive(t, archivePath, entries)
-	// A Source inventory must match the journal-backed Source facts.
-	_, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)})
-	assertArchiveCheck(t, err, "reference-invalid")
 }
 
 func TestValidateRejectsEveryArchiveInvalidCheckWithoutMutation(t *testing.T) {
 	t.Parallel()
-	fixture := newExportSourceFixture(t, addJournalBackedExportFixtureFacts)
+	fixture := newExportSourceFixture(t, addLeanArtifactExportFacts)
 	for _, corruption := range []string{
 		"artifact-reference-invalid",
 		"capability-snapshot-mismatch",

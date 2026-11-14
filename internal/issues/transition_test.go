@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
@@ -223,15 +223,15 @@ func TestTransitionRegistryMatchesFrozenV01OrderedStateMatrix(t *testing.T) {
 	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
-	registry, err := workflow.Load(conn)
+	registry, err := issuestate.Load(conn)
 	if err != nil {
 		t.Fatalf("Load() error = %v", err)
 	}
 
-	for workflowID, definition := range workflow.FrozenDefinitions() {
+	for workflowID, definition := range issuestate.FrozenDefinitions() {
 		for fromState := range definition.States {
 			for toState := range definition.States {
-				wantRules, wantAllowed := workflow.RulesForEdge(workflowID, fromState, toState)
+				wantRules, wantAllowed := issuestate.RulesForEdge(workflowID, fromState, toState)
 				gotRules, gotAllowed := registry.RulesForEdge(workflowID, fromState, toState)
 				if gotAllowed != wantAllowed {
 					t.Fatalf("registry edge %s %s -> %s allowed = %t, want %t", workflowID, fromState, toState, gotAllowed, wantAllowed)
@@ -384,7 +384,7 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 	if _, err := conn.Exec(`
 		INSERT INTO workflow_transition_requires (workflow_id, from_state, to_state, rule, params_json)
 		VALUES (?, ?, ?, ?, ?)
-	`, "subtask-default", "todo", "in_progress", workflow.RuleRequiredGatesCurrent, nil); err != nil {
+	`, "subtask-default", "todo", "in_progress", issuestate.RuleRequiredGatesCurrent, nil); err != nil {
 		closeIssueTestDB(t, conn)
 		t.Fatalf("insert reserved workflow rule: %v", err)
 	}
@@ -409,8 +409,8 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 	if !errors.As(err, &blocked) {
 		t.Fatalf("Transition() error = %T, want *BlockedTransitionError", err)
 	}
-	if blocked.CurrentState != "todo" || blocked.RequestedState != "in_progress" || len(blocked.Unmet) != 1 || blocked.Unmet[0].Rule != workflow.RuleRequiredGatesCurrent {
-		t.Fatalf("BlockedTransitionError = %+v, want todo/in_progress/%q", blocked, workflow.RuleRequiredGatesCurrent)
+	if blocked.CurrentState != "todo" || blocked.RequestedState != "in_progress" || len(blocked.Unmet) != 1 || blocked.Unmet[0].Rule != issuestate.RuleRequiredGatesCurrent {
+		t.Fatalf("BlockedTransitionError = %+v, want todo/in_progress/%q", blocked, issuestate.RuleRequiredGatesCurrent)
 	}
 	after, readErr := os.ReadFile(journalPath)
 	if readErr != nil {

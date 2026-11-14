@@ -274,7 +274,7 @@ func TestCheckReportsFinalSchemaIntegrityClassesWithoutRepair(t *testing.T) {
 	fixture := newMaintenanceFixture(t)
 	seedIssue(t, fixture.db, "FID-final-schema", "task", nil, nil, "task-default", "todo")
 	seedTask21CorruptJournal(t, fixture.journalPath)
-	seedTask21CorruptProjection(t, fixture.db)
+	seedRetainedCorruptProjection(t, fixture.db)
 	beforeJournal := fixture.journalBytes(t)
 	beforeChanges := fixture.changeCount(t)
 
@@ -286,7 +286,6 @@ func TestCheckReportsFinalSchemaIntegrityClassesWithoutRepair(t *testing.T) {
 	want := []Finding{
 		{Check: "aggregate-sequence", EntityID: "label:LABEL-maintenance", Message: "aggregate sequence 3 follows 1, want 2"},
 		{Check: "artifact-integrity", EntityID: "ART-1", Message: "Artifact is unavailable"},
-		{Check: "attempt-receipt-integrity", EntityID: "ATT-1", Message: "Attempt has no terminal Receipt"},
 		{Check: "event-binding", EntityID: "task21:binding", Message: "idempotency result does not bind its journal Event"},
 		{Check: "event-sequence", EntityID: "EVT-20260822-000001", Message: "Event ID occurs more than once"},
 		{Check: "removed-state-residue", EntityID: "roles", Message: "removed table is present"},
@@ -371,4 +370,17 @@ func hasFinding(findings []Finding, check, entityID string) bool {
 		}
 	}
 	return false
+}
+
+func seedRetainedCorruptProjection(t *testing.T, db *sql.DB) {
+	t.Helper()
+	for _, statement := range []string{
+		`INSERT INTO idempotency_results (operation_scope, idempotency_key, request_digest, result_entity_id, result_event_id, aggregate_sequence, result_json, created_at, request_field_digests_json) VALUES ('task21', 'binding', 'sha256:test', 'LABEL-maintenance', 'EVT-missing', 9, '{}', '2026-08-22T00:00:00Z', '{}')`,
+		`INSERT INTO referenced_artifacts (id, digest, media_type, size_bytes, retention_class, availability, location_policy, created_at) VALUES ('ART-1', 'sha256:missing', 'text/plain', 0, 'evidence', 'missing', 'content-addressed', '2026-08-22T00:00:00Z')`,
+		`CREATE TABLE roles (name TEXT PRIMARY KEY)`,
+	} {
+		if _, err := db.Exec(statement); err != nil {
+			t.Fatal(err)
+		}
+	}
 }

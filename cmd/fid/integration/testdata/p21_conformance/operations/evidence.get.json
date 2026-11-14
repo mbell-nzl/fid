@@ -1,5 +1,0 @@
-{
-  "operation": "evidence.get",
-  "command": "fid evidence get \u003cevidence-id\u003e",
-  "kind": "accepted"
-}
