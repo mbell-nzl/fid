@@ -99,7 +99,7 @@ func leanJourneyFixture(t *testing.T, definition string) *statusFixture {
 		t.Fatal(err)
 	}
 	runGitForTest(t, f.workspace, "add", ".")
-	runGitForTest(t, f.workspace, "commit", "-m", "Check fixture")
+	runGitForTest(t, f.workspace, "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "-c", "commit.gpgsign=false", "commit", "-m", "Check fixture")
 	return f
 }
 
@@ -199,7 +199,7 @@ func TestLeanCheckRefusesUnsafeAndOversizedArtifacts(t *testing.T) {
 			f := leanJourneyFixture(t, leanHelperDefinition(t, "pass", "1m", []string{row.path}))
 			writeBackupTestFile(t, filepath.Join(f.workspace, ".gitignore"), "link\nlarge\n")
 			runGitForTest(t, f.workspace, "add", ".gitignore")
-			runGitForTest(t, f.workspace, "commit", "-m", "Ignore generated files")
+			runGitForTest(t, f.workspace, "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "-c", "commit.gpgsign=false", "commit", "-m", "Ignore generated files")
 			if row.path == "link" {
 				outside := filepath.Join(t.TempDir(), "outside")
 				writeBackupTestFile(t, outside, "outside bytes")
