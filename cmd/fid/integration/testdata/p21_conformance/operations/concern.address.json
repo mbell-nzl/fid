@@ -1,5 +1,0 @@
-{
-  "operation": "concern.address",
-  "command": "fid concern address",
-  "kind": "fail-closed"
-}

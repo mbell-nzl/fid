@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestP24ExecutedKeyedCorpusMatches51LeafInventory(t *testing.T) {
+func TestP24ExecutedKeyedCorpusMatchesRemainingLeafInventory(t *testing.T) {
 	t.Parallel()
 	rows := map[string]string{}
 	add := func(operation, field string) {
@@ -38,13 +38,10 @@ func TestP24ExecutedKeyedCorpusMatches51LeafInventory(t *testing.T) {
 		}
 		rows[name] = field
 	}
-	for _, group := range []map[string]string{p24LifecycleFields, p24FoundationFields, p24RecoveryFields, p24FlagFields, p24ActivationRecoveryFields, p24ActivationAbortFields, p24GateEvidenceFields, p24ArtifactFields, p24WorkflowFields} {
+	for _, group := range []map[string]string{p24LifecycleFields, p24FlagFields, {"issue.create": "--title"}, p24ArtifactFields} {
 		for operation, field := range group {
 			add(operation, field)
 		}
-	}
-	for operation, names := range p24JudgmentFields {
-		add(operation, names[0])
 	}
 	data, err := os.ReadFile("testdata/p24_keyed_leaves.tsv")
 	if err != nil {
@@ -58,7 +55,7 @@ func TestP24ExecutedKeyedCorpusMatches51LeafInventory(t *testing.T) {
 		}
 		planned[parts[0]] = parts[1]
 	}
-	if len(rows) != 55 || !reflect.DeepEqual(rows, planned) {
+	if len(rows) != 16 || !reflect.DeepEqual(rows, planned) {
 		t.Fatalf("executable rows = %v; planned inventory = %v", rows, planned)
 	}
 }

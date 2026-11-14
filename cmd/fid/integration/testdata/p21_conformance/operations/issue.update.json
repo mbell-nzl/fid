@@ -1,5 +1,5 @@
 {
-  "operation": "issue.update",
   "command": "fid issue update \u003cid\u003e",
-  "kind": "accepted"
+  "kind": "accepted",
+  "operation": "issue.update"
 }

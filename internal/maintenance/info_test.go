@@ -17,7 +17,7 @@ func TestCheckInfoCountsAndResultAreDeterministic(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
-	if want := (Info{IssueCount: 3, ClaimCountLive: 1, RecentActivity: 2}); got.Info != want {
+	if want := (Info{IssueCount: 3, ClaimCountLive: 0, RecentActivity: 2}); got.Info != want {
 		t.Fatalf("Check().Info = %#v, want %#v", got.Info, want)
 	}
 

@@ -1,5 +1,5 @@
 {
-  "operation": "issue.get",
   "command": "fid issue get \u003cid\u003e",
-  "kind": "accepted"
+  "kind": "accepted",
+  "operation": "issue.get"
 }

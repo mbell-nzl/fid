@@ -19,11 +19,9 @@ func TestIntegrationClassification(t *testing.T) {
 	dedicatedDir := classificationDirectory(t)
 	repositoryRoot := filepath.Dir(filepath.Dir(filepath.Dir(dedicatedDir)))
 	wantJourneys := []string{
-		"TestMaintenanceCheckReportsIncompatibleWorkflowAssignment",
 		"TestP20StandaloneIssueJourneyJSONAndRebuildParity",
 		"TestV01ClosureJourneyAndRebuildParity",
 		"TestV01ParityGoldenOutputs",
-		"TestV02aWorkflowAuthoringExitScenarioAndRebuildParity",
 	}
 
 	gotJourneys := topLevelTests(t, dedicatedDir,

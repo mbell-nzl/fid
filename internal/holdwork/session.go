@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/holds"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/questions"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func (ctx writeContext) current() (holds.Hold, error) {
@@ -85,7 +85,7 @@ func taskCategory(conn *sql.DB, taskID string) (string, error) {
 	if err := conn.QueryRow(`SELECT workflow_id,status FROM issues WHERE id=?`, taskID).Scan(&workflowID, &status); err != nil {
 		return "", fmt.Errorf("read held task: %w", err)
 	}
-	registry, err := workflow.Load(conn)
+	registry, err := issuestate.Load(conn)
 	if err != nil {
 		return "", err
 	}

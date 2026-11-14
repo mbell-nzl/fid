@@ -1,5 +1,0 @@
-{
-  "operation": "issue.ac.verify",
-  "command": "fid issue ac verify",
-  "kind": "fail-closed"
-}

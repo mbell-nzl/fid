@@ -18,7 +18,11 @@ func TestTask20V1CommandsAreAbsent(t *testing.T) {
 	} {
 		root.SetArgs(path)
 		err := root.Execute()
-		if err == nil || !strings.Contains(err.Error(), `unknown command "`+path[len(path)-1]+`"`) {
+		word := path[len(path)-1]
+		if path[0] == "run" {
+			word = "run"
+		}
+		if err == nil || !strings.Contains(err.Error(), `unknown command "`+word+`"`) {
 			t.Fatalf("fid %v Execute() error = %v, want unknown command", path, err)
 		}
 	}

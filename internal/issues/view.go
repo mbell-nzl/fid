@@ -10,8 +10,8 @@ import (
 	"github.com/mbell-nzl/fid/internal/checkrecord"
 	"github.com/mbell-nzl/fid/internal/handoffrecord"
 	"github.com/mbell-nzl/fid/internal/holds"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/questions"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 // IssueView is one issue as fid show shows it, with what surrounds it.
@@ -155,7 +155,7 @@ func ReadIssueView(options GetOptions) (IssueView, error) {
 
 // issueParents reads the epic and task above an issue whose parent is
 // parentID: a task's epic, or a subtask's task and that task's epic.
-func issueParents(conn *sql.DB, registry *workflow.Registry, parentID *string) (*EpicReference, *IssueReference, error) {
+func issueParents(conn *sql.DB, registry *issuestate.Registry, parentID *string) (*EpicReference, *IssueReference, error) {
 	parent, grandparentID, err := issueReference(conn, registry, parentID)
 	if err != nil || parent == nil {
 		return nil, nil, err
@@ -179,7 +179,7 @@ func issueParents(conn *sql.DB, registry *workflow.Registry, parentID *string) (
 }
 
 // issueReference reads the issue id names, if any, and its parent's ID.
-func issueReference(conn *sql.DB, registry *workflow.Registry, id *string) (*IssueReference, *string, error) {
+func issueReference(conn *sql.DB, registry *issuestate.Registry, id *string) (*IssueReference, *string, error) {
 	if id == nil {
 		return nil, nil, nil
 	}
@@ -205,7 +205,7 @@ func issueReference(conn *sql.DB, registry *workflow.Registry, id *string) (*Iss
 // blockLinks reads the issues that block id and those it blocks, each from
 // a blocks link on one end or a blocked_by link on the other, in fid
 // status's order.
-func blockLinks(conn *sql.DB, registry *workflow.Registry, id string) ([]IssueReference, []IssueReference, error) {
+func blockLinks(conn *sql.DB, registry *issuestate.Registry, id string) ([]IssueReference, []IssueReference, error) {
 	rows, err := conn.Query(`
 		SELECT pair.direction, other.id, other.kind, other.title, other.status, other.workflow_id
 		FROM (
@@ -251,7 +251,7 @@ func blockLinks(conn *sql.DB, registry *workflow.Registry, id string) ([]IssueRe
 // childIssues reads parentID's children of kind in fid status's order:
 // sequence, then priority, then creation and ID, a missing sequence or
 // priority last.
-func childIssues(conn *sql.DB, registry *workflow.Registry, parentID, kind string) ([]ChildIssue, error) {
+func childIssues(conn *sql.DB, registry *issuestate.Registry, parentID, kind string) ([]ChildIssue, error) {
 	rows, err := conn.Query(`
 		SELECT id, kind, title, status, workflow_id, sequence, priority
 		FROM issues

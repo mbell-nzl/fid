@@ -141,7 +141,7 @@ func TestIssueListJSONMatchesClosedSchemaAndRetainedFilters(t *testing.T) {
 		t.Fatalf("Open() error = %v", err)
 	}
 	defer closeCommandDB(t, conn)
-	seedIssueListCommandFixture(t, conn)
+	seedIssueListCommandFixture(t, workspace)
 
 	result := executeCommandForTest(workspace, "--json", "issue", "list", "--kind", "task", "--status-category", "started", "--order", "updated")
 	if result.err != nil || result.stderr != "" {
@@ -160,26 +160,6 @@ func TestIssueListJSONMatchesClosedSchemaAndRetainedFilters(t *testing.T) {
 	assertExactKeys(t, item, issueSummaryKeys)
 	if item["id"] != "FID-task02" {
 		t.Fatalf("issue list id = %#v, want FID-task02", item["id"])
-	}
-}
-
-func TestReadyJSONHasExclusiveClosedResultStates(t *testing.T) {
-	t.Parallel()
-	workspace := clonePristineWorkspace(t)
-	ready := executeCommandForTest(workspace, "--json", "ready")
-	if ready.err != nil || ready.stderr != "" {
-		t.Fatalf("ready result = %#v, want JSON success on stdout only", ready)
-	}
-	envelope := decodeReadEnvelope(t, ready.stdout, "ready.get")
-	assertExactKeys(t, envelope.Result, []string{"task", "explanation"})
-	assertNull(t, envelope.Result, "task")
-	explanation := requireObject(t, envelope.Result, "explanation")
-	assertExactKeys(t, explanation, []string{"code", "scope", "epic_id", "blocking_task_id", "blocking_task_title", "blocking_task_status"})
-	if explanation["code"] != "no_ready_tasks" || explanation["scope"] != "project" {
-		t.Fatalf("ready explanation = %#v, want project no_ready_tasks", explanation)
-	}
-	for _, key := range []string{"epic_id", "blocking_task_id", "blocking_task_title", "blocking_task_status"} {
-		assertNull(t, explanation, key)
 	}
 }
 
@@ -213,34 +193,5 @@ func TestReadCollectionLimitRejectsOnlyOverLimit(t *testing.T) {
 	}
 	if err := issues.EnforceReadCollectionLimit("issues", 10001); err == nil {
 		t.Fatal("over limit error = nil")
-	}
-}
-
-func TestReadyJSONSequentialBlockerUsesClosedExplanation(t *testing.T) {
-	t.Parallel()
-	workspace := clonePristineWorkspace(t)
-	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("Open() error = %v", err)
-	}
-	defer closeCommandDB(t, conn)
-	seedReadyCommandRows(t, conn, []readyCommandRow{
-		{id: "FID-seq-epic", kind: "epic", title: "Sequential", status: "todo", workflowID: "epic-default", ownerRole: "tl", createdAt: "2026-06-14T10:00:00Z", updatedAt: "2026-06-14T10:00:00Z", scheduling: stringPointer("sequential")},
-		{id: "FID-seq-current", kind: "task", parentID: stringPointer("FID-seq-epic"), title: "Current", status: "in_progress", workflowID: "task-default", ownerRole: "developer", sequence: intPointer(1), createdAt: "2026-06-14T10:01:00Z", updatedAt: "2026-06-14T10:01:00Z"},
-		{id: "FID-seq-later", kind: "task", parentID: stringPointer("FID-seq-epic"), title: "Later", status: "todo", workflowID: "task-default", ownerRole: "developer", sequence: intPointer(2), createdAt: "2026-06-14T10:02:00Z", updatedAt: "2026-06-14T10:02:00Z"},
-	})
-
-	result := executeCommandForTest(workspace, "--json", "ready", "--epic", "FID-seq-epic")
-	if result.err != nil || result.stderr != "" {
-		t.Fatalf("ready result = %#v, want JSON success on stdout only", result)
-	}
-	explanation := requireObject(t, decodeReadEnvelope(t, result.stdout, "ready.get").Result, "explanation")
-	if explanation["code"] != "sequential_current_not_actionable" || explanation["scope"] != "epic" {
-		t.Fatalf("explanation = %#v, want sequential epic blocker", explanation)
-	}
-	for key, want := range map[string]any{"epic_id": "FID-seq-epic", "blocking_task_id": "FID-seq-current", "blocking_task_title": "Current", "blocking_task_status": "in_progress"} {
-		if explanation[key] != want {
-			t.Fatalf("explanation[%q] = %#v, want %#v", key, explanation[key], want)
-		}
 	}
 }

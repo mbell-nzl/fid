@@ -58,23 +58,16 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.SetOut(os.Stdout)
 	cmd.SetErr(os.Stderr)
 	cmd.AddCommand(newActivityCommand())
-	cmd.AddCommand(newAttentionCommand())
+
 	cmd.AddCommand(newBackupCommand())
 	cmd.AddCommand(newRestoreCommand())
-	cmd.AddCommand(newCapabilitiesCommand())
-	cmd.AddCommand(newActivationCommand())
+
 	cmd.AddCommand(newArtifactCommand())
-	cmd.AddCommand(newEnvelopeCommand())
+
 	cmd.AddCommand(newExportCommand())
-	cmd.AddCommand(newEvidenceCommand())
-	cmd.AddCommand(newFindingCommand())
-	cmd.AddCommand(newGateCommand())
-	cmd.AddCommand(newClaimCommand())
+
 	cmd.AddCommand(newInitCommand())
-	cmd.AddCommand(newConcernCommand())
-	cmd.AddCommand(newDeviationCommand())
-	cmd.AddCommand(newDecisionCommand())
-	cmd.AddCommand(newHumanOutcomeCommand())
+
 	cmd.AddCommand(newIssueCommand())
 	cmd.AddCommand(newJournalCommand())
 	cmd.AddCommand(newLabelCommand())
@@ -85,22 +78,17 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	for _, name := range []string{"heartbeat", "park", "takeover"} {
 		cmd.AddCommand(newHoldCommand(name))
 	}
-	cmd.AddCommand(newReadyCommand())
-	cmd.AddCommand(newReceiptCommand())
-	cmd.AddCommand(newReviewCommand())
-	cmd.AddCommand(newResumeCommand())
-	cmd.AddCommand(newRequirementCommand())
+
 	cmd.AddCommand(newRebuildCommand())
-	cmd.AddCommand(newRunCommand())
+
 	cmd.AddCommand(newShowCommand())
 	cmd.AddCommand(newSQLCommand())
-	cmd.AddCommand(newStatsCommand())
+
 	cmd.AddCommand(newStatusCommand())
 	cmd.AddCommand(newStartCommand())
 	cmd.AddCommand(newHandoffCommand())
 	cmd.AddCommand(newCheckCommand())
-	cmd.AddCommand(newStopCommand())
-	cmd.AddCommand(newWorkflowCommand())
+
 	installCommandGroups(cmd)
 	installLeafGrammar(cmd)
 
