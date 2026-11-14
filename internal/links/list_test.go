@@ -112,7 +112,6 @@ func TestQueryLinkListHonorsAtAndOverResultLimitWithoutTruncation(t *testing.T) 
 	for _, statement := range []string{
 		`CREATE TABLE links (from_type TEXT, from_id TEXT, relation TEXT, to_type TEXT, to_id TEXT, created_at TEXT)`,
 		`CREATE TABLE issues (id TEXT, title TEXT)`,
-		`CREATE TABLE requirements (id TEXT, summary TEXT)`,
 	} {
 		if _, err := conn.Exec(statement); err != nil {
 			t.Fatalf("Exec(%q) error = %v", statement, err)

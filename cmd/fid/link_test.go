@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/cli"
-
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
@@ -507,23 +506,12 @@ func TestLinkListEmptyResult(t *testing.T) {
 	}
 }
 
-func TestLinkAddUsesSuppliedTypeForAmbiguousSameIDEndpoints(t *testing.T) {
+func TestLinkAddRejectsRequirementEndpointBeforeResolution(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	issueID := createCommandIssue(t, workspace, "Issue and requirement share an opaque ID")
-	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("Open() error = %v", err)
-	}
-	defer closeCommandDB(t, conn)
-	if _, err := conn.Exec(`
-		INSERT INTO requirement_refs (id, requirement_id, source_json, status, created_at, created_event_id)
-		VALUES ('RREF-same', ?, '{}', 'active', '2026-09-20T00:00:00Z', 'EVT-same')
-	`, issueID); err != nil {
-		t.Fatalf("insert same-ID generic requirement reference: %v", err)
-	}
+	issueID := createCommandIssue(t, workspace, "Opaque issue ID")
 	journalPath := mustJournalPath(t, workspace)
 	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 

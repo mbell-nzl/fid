@@ -155,15 +155,6 @@ func p22MakeRepositoryUnsafe(t *testing.T, a *p22FIDRecoveryAdapter, kind string
 	}
 }
 
-func p22GitOutput(t *testing.T, root string, args ...string) string {
-	t.Helper()
-	output, err := exec.Command("git", append([]string{"-C", root}, args...)...).CombinedOutput()
-	if err != nil {
-		t.Fatalf("git %v: %v %s", args, err, output)
-	}
-	return strings.TrimSpace(string(output))
-}
-
 func p22CompleteRepositorySnapshot(t *testing.T, root string) map[string]string {
 	t.Helper()
 	result := map[string]string{}

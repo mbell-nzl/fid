@@ -1,11 +1,11 @@
 package issues
 
 import (
-	"database/sql"
 	"path/filepath"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestGetReturnsCentralizedDetailShape(t *testing.T) {
@@ -69,7 +69,7 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 		conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 		defer closeIssueTestDB(t, conn)
 
-		seedIssueDetailFixture(t, conn)
+		seedIssueDetailFixture(t, workspace)
 
 		got, err := Get(GetOptions{
 			WorkspaceRoot: workspace,
@@ -96,17 +96,8 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 			got.AcceptanceCriteria[1].Text != "Partial write leaves journal intact" {
 			t.Fatalf("Get() acceptance criteria = %#v, want retained ordered text", got.AcceptanceCriteria)
 		}
-		if !got.ConcernsRaised {
-			t.Fatal("Get() concerns_raised = false, want true")
-		}
-		if got.OpenConcernsCount != 1 {
-			t.Fatalf("Get() open_concerns_count = %d, want 1", got.OpenConcernsCount)
-		}
 		if got.TriageStatus == nil || *got.TriageStatus != "blocked" {
 			t.Fatalf("Get() triage_status = %#v, want blocked", got.TriageStatus)
-		}
-		if len(got.Concerns) != 1 || got.Concerns[0].ID != "CON-000401" {
-			t.Fatalf("Get() concerns = %#v, want one open concern", got.Concerns)
 		}
 		if len(got.Links) != 2 || got.Links[0].Relation != "blocks" || got.Links[1].Relation != "relates_to" {
 			t.Fatalf("Get() links = %#v, want blocks + relates_to", got.Links)
@@ -209,32 +200,26 @@ func TestNormalizeDateOnlyPointer(t *testing.T) {
 	}
 }
 
-func seedIssueDetailFixture(t *testing.T, conn *sql.DB) {
+func seedIssueDetailFixture(t *testing.T, workspace string) {
 	t.Helper()
-	statements := []string{
-		`INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
-		 VALUES ('FID-e1f2g3','epic','Core persistence layer','todo','epic-default','developer','2026-05-25T08:00:00Z','2026-05-25T08:00:00Z')`,
-		`INSERT INTO epic_metadata (issue_id, scheduling) VALUES ('FID-e1f2g3', 'sequential')`,
-		`INSERT INTO issues (id, kind, parent_id, title, workflow_id, status, priority, sequence, owner_role, created_at, updated_at)
-		 VALUES ('FID-a1b2c3','task','FID-e1f2g3','Implement journal append with flush','task-default','in_progress',1,3,'developer','2026-05-25T09:00:00Z','2026-05-27T10:20:00Z')`,
-		`INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
-		 VALUES ('FID-7c3e9f','task','Schema migration runner','todo','task-default','developer','2026-05-25T09:05:00Z','2026-05-25T09:05:00Z')`,
-		`INSERT INTO labels (name) VALUES ('core'), ('journal')`,
-		`INSERT INTO issue_labels (issue_id, label) VALUES ('FID-a1b2c3','core'), ('FID-a1b2c3','journal')`,
-		`INSERT INTO acceptance_criteria (id, issue_id, ordinal, text)
-		 VALUES ('AC-d4e5f6','FID-a1b2c3',1,'Journal file is flushed to disk before returning success'),
-		        ('AC-e5f6g7','FID-a1b2c3',2,'Partial write leaves journal intact')`,
-		`INSERT INTO concerns (id,subject_type,subject_id,actor_id,scope_json,severity,summary,reasoning,references_json,status,created_at,created_event_id)
-		 VALUES ('CON-000401','issue','FID-a1b2c3','developer','{"paths":[]}','major','Need triage before closing','Needs review','[]','open','2026-05-27T10:18:00Z','EVT-concern-detail')`,
-		`INSERT INTO triage_events (id,epic_id,issue_id,triager_role,source,source_ref_id,verdict,reasoning_md,created_at)
-		 VALUES ('TRG-000401','FID-e1f2g3','FID-a1b2c3','qa_lead','manual','REV-000401','BLOCK','project-docs/triage/TRG-000401.md','2026-05-27T10:19:00Z')`,
-		`INSERT INTO links (from_type,from_id,relation,to_type,to_id,created_at)
-		 VALUES ('issue','FID-a1b2c3','blocks','issue','FID-7c3e9f','2026-05-27T10:18:00Z'),
-		        ('issue','FID-a1b2c3','relates_to','issue','FID-7c3e9f','2026-05-27T10:19:00Z')`,
-	}
-	for _, statement := range statements {
-		if _, err := conn.Exec(statement); err != nil {
-			t.Fatalf("seed Issue detail with %q: %v", statement, err)
-		}
+	appendIssueJournalEvent(t, workspace, journal.Event{EventSchema: journal.EventSchemaV1, EventType: "issue.detail-fixture", Actor: journal.Actor{Role: "developer"}, Command: journal.Command{Argv: []string{"fid", "test"}, CWD: ".", FIDVersion: "test"}, Effects: []journal.Effect{
+		{Op: "insert", Table: "issues", PK: map[string]any{"id": "FID-e1f2g3"}, Values: map[string]any{"kind": "epic", "title": "Core persistence layer", "status": "todo", "workflow_id": "epic-default", "owner_role": "developer", "created_at": "2026-05-25T08:00:00Z", "updated_at": "2026-05-25T08:00:00Z"}},
+		{Op: "insert", Table: "epic_metadata", PK: map[string]any{"issue_id": "FID-e1f2g3"}, Values: map[string]any{"scheduling": "sequential"}},
+		{Op: "insert", Table: "issues", PK: map[string]any{"id": "FID-a1b2c3"}, Values: map[string]any{"kind": "task", "parent_id": "FID-e1f2g3", "title": "Implement journal append with flush", "workflow_id": "task-default", "status": "in_progress", "priority": 1, "sequence": 3, "owner_role": "developer", "created_at": "2026-05-25T09:00:00Z", "updated_at": "2026-05-27T10:20:00Z"}},
+		{Op: "insert", Table: "issues", PK: map[string]any{"id": "FID-7c3e9f"}, Values: map[string]any{"kind": "task", "title": "Schema migration runner", "status": "todo", "workflow_id": "task-default", "owner_role": "developer", "created_at": "2026-05-25T09:05:00Z", "updated_at": "2026-05-25T09:05:00Z"}},
+		{Op: "insert", Table: "labels", PK: map[string]any{"name": "core"}, Values: map[string]any{}},
+		{Op: "insert", Table: "labels", PK: map[string]any{"name": "journal"}, Values: map[string]any{}},
+		{Op: "insert", Table: "issue_labels", PK: map[string]any{"issue_id": "FID-a1b2c3", "label": "core"}, Values: map[string]any{}},
+		{Op: "insert", Table: "issue_labels", PK: map[string]any{"issue_id": "FID-a1b2c3", "label": "journal"}, Values: map[string]any{}},
+		{Op: "insert", Table: "acceptance_criteria", PK: map[string]any{"id": "AC-d4e5f6"}, Values: map[string]any{"issue_id": "FID-a1b2c3", "ordinal": 1, "text": "Journal file is flushed to disk before returning success"}},
+		{Op: "insert", Table: "acceptance_criteria", PK: map[string]any{"id": "AC-e5f6g7"}, Values: map[string]any{"issue_id": "FID-a1b2c3", "ordinal": 2, "text": "Partial write leaves journal intact"}},
+		{Op: "insert", Table: "triage_events", PK: map[string]any{"id": "TRG-000401"}, Values: map[string]any{"epic_id": "FID-e1f2g3", "issue_id": "FID-a1b2c3", "triager_role": "qa_lead", "source": "manual", "source_ref_id": "REV-000401", "verdict": "BLOCK", "reasoning_md": "project-docs/triage/TRG-000401.md", "created_at": "2026-05-27T10:19:00Z"}},
+		{Op: "insert", Table: "links", PK: map[string]any{"from_type": "issue", "from_id": "FID-a1b2c3", "relation": "blocks", "to_type": "issue", "to_id": "FID-7c3e9f"}, Values: map[string]any{"created_at": "2026-05-27T10:18:00Z"}},
+		{Op: "insert", Table: "links", PK: map[string]any{"from_type": "issue", "from_id": "FID-a1b2c3", "relation": "relates_to", "to_type": "issue", "to_id": "FID-7c3e9f"}, Values: map[string]any{"created_at": "2026-05-27T10:19:00Z"}},
+	}})
+	if _, err := journal.EnsureProjectionFresh(workspace, testIssueMigrationsDir(t)); err != nil {
+		t.Fatal(err)
 	}
 }
+
+// Kernel-only detail assertions leave with Concerns in 1.5c2.

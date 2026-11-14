@@ -322,15 +322,7 @@ func TestIssueKindGuardTriggersRejectWrongKindsAndAllowValidRows(t *testing.T) {
 			args:    []any{"AC-invalid-epic", "FID-guard-epic", 1, "Epic AC"},
 			wantErr: "acceptance_criteria: issue_id must reference a task or subtask",
 		},
-		{
-			name: "rejects task completion on epic",
-			query: `
-				INSERT INTO task_completions (id, issue_id, attempt_number, status, completed_at)
-				VALUES (?, ?, ?, ?, ?)
-			`,
-			args:    []any{"TC-invalid-epic", "FID-guard-epic", 1, "dev_complete", "2026-06-07T14:00:00Z"},
-			wantErr: "task_completions: issue_id must reference a task or subtask",
-		},
+
 		{
 			name: "rejects epic metadata on task",
 			query: `
@@ -364,25 +356,6 @@ func TestIssueKindGuardTriggersRejectWrongKindsAndAllowValidRows(t *testing.T) {
 				VALUES (?, ?, ?, ?)
 			`, tt.id, tt.issueID, 1, "Valid acceptance criterion"); err != nil {
 				t.Fatalf("insert acceptance_criteria(%q) error = %v", tt.id, err)
-			}
-		})
-	}
-
-	taskCompletionCases := []struct {
-		name    string
-		id      string
-		issueID string
-	}{
-		{name: "task", id: "TC-valid-task", issueID: "FID-guard-task"},
-		{name: "subtask", id: "TC-valid-subtask", issueID: "FID-guard-subtask"},
-	}
-	for _, tt := range taskCompletionCases {
-		t.Run("accepts task completion on "+tt.name, func(t *testing.T) {
-			if _, err := conn.Exec(`
-				INSERT INTO task_completions (id, issue_id, attempt_number, status, completed_at)
-				VALUES (?, ?, ?, ?, ?)
-			`, tt.id, tt.issueID, 1, "dev_complete", "2026-06-07T14:05:00Z"); err != nil {
-				t.Fatalf("insert task_completions(%q) error = %v", tt.id, err)
 			}
 		})
 	}

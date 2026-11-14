@@ -342,19 +342,6 @@ func p21ObserveNewActivationResources(t *testing.T, binary, workspace string, ac
 	}
 }
 
-func p21Input(t *testing.T, workspace, name string, value map[string]any) string {
-	t.Helper()
-	contents, err := json.Marshal(value)
-	if err != nil {
-		t.Fatalf("marshal %s input: %v", name, err)
-	}
-	path := filepath.Join(workspace, name+".json")
-	if err := os.WriteFile(path, contents, 0o600); err != nil {
-		t.Fatalf("write %s input: %v", name, err)
-	}
-	return path
-}
-
 func p21ConcurrentClaim(t *testing.T, binary, workspace, firstInput, secondInput string) map[string]any {
 	t.Helper()
 	type process struct {
@@ -395,98 +382,6 @@ func p21ConcurrentClaim(t *testing.T, binary, workspace, firstInput, secondInput
 		t.Fatalf("two real Claim processes produced %d winners, want one", len(winners))
 	}
 	return winners[0]
-}
-
-func p21Run(t *testing.T, binary, workspace string, args ...string) map[string]any {
-	t.Helper()
-	stdout, stderr, err := closureRunCommand(workspace, binary, args...)
-	if err != nil || stderr != "" {
-		t.Fatalf("fid %s = err:%v stdout:%q stderr:%q", strings.Join(args, " "), err, stdout, stderr)
-	}
-	var envelope map[string]any
-	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
-		t.Fatalf("decode fid %s response: %v; stdout=%q", strings.Join(args, " "), err, stdout)
-	}
-	return envelope
-}
-
-func p21PathString(t *testing.T, value map[string]any, path ...string) string {
-	t.Helper()
-	item := p21Path(t, value, path...)
-	text, ok := item.(string)
-	if !ok || text == "" {
-		t.Fatalf("path %s = %#v, want non-empty string", strings.Join(path, "."), item)
-	}
-	return text
-}
-
-func p21Path(t *testing.T, value map[string]any, path ...string) any {
-	t.Helper()
-	var item any = value
-	for _, key := range path {
-		object, ok := item.(map[string]any)
-		if !ok {
-			t.Fatalf("path %s traverses %#v, want object", strings.Join(path, "."), item)
-		}
-		item = object[key]
-	}
-	return item
-}
-
-func p21JournalEventCount(t *testing.T, workspace string) int {
-	t.Helper()
-	return len(p21JournalEventTypes(t, workspace))
-}
-
-func p21AssertJournalTypes(t *testing.T, workspace string, want []string) {
-	t.Helper()
-	got := p21JournalEventTypes(t, workspace)
-	if len(got) != len(want) {
-		t.Fatalf("journal Event count = %d, want %d; types=%v", len(got), len(want), got)
-	}
-	for index, eventType := range want {
-		if got[index] != eventType {
-			t.Fatalf("journal Event %d = %q, want %q; types=%v", index+1, got[index], eventType, got)
-		}
-	}
-}
-
-func p21JournalEventTypes(t *testing.T, workspace string) []string {
-	t.Helper()
-	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(workspace), "journal"))
-	if err != nil {
-		t.Fatalf("read journal: %v", err)
-	}
-	var types []string
-	for _, entry := range entries {
-		contents := readP21File(t, filepath.Join(config.LedgerDir(workspace), "journal", entry.Name()))
-		for _, line := range bytes.FieldsFunc(contents, func(r rune) bool { return r == '\n' }) {
-			var event struct {
-				Type string `json:"event_type"`
-			}
-			if err := json.Unmarshal(line, &event); err != nil {
-				t.Fatalf("decode journal Event: %v", err)
-			}
-			if event.Type == "" {
-				t.Fatal("journal Event has empty type")
-			}
-			types = append(types, event.Type)
-		}
-	}
-	return types
-}
-
-func p21JournalBytes(t *testing.T, workspace string) []byte {
-	t.Helper()
-	entries, err := os.ReadDir(filepath.Join(config.LedgerDir(workspace), "journal"))
-	if err != nil {
-		t.Fatalf("read journal: %v", err)
-	}
-	var journal []byte
-	for _, entry := range entries {
-		journal = append(journal, readP21File(t, filepath.Join(config.LedgerDir(workspace), "journal", entry.Name()))...)
-	}
-	return journal
 }
 
 func p21ExpectedCorpus(t *testing.T, publicInterface string) map[string][]byte {
@@ -665,15 +560,6 @@ func p21Section(t *testing.T, source, start, end string) string {
 	return section[:endAt]
 }
 
-func p21JSON(t *testing.T, value any) []byte {
-	t.Helper()
-	encoded, err := json.MarshalIndent(value, "", "  ")
-	if err != nil {
-		t.Fatalf("marshal fixture: %v", err)
-	}
-	return append(encoded, '\n')
-}
-
 func p21CorpusEntries(root string) ([]string, error) {
 	var entries []string
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
@@ -717,46 +603,6 @@ func p21DecodeFixture(t *testing.T, path string) map[string]any {
 	return fixture
 }
 
-func p21StringSlice(t *testing.T, value any, label string) []string {
-	t.Helper()
-	items, ok := value.([]any)
-	if !ok {
-		t.Fatalf("%s = %#v, want array", label, value)
-	}
-	stringsOnly := make([]string, 0, len(items))
-	for _, item := range items {
-		stringValue, ok := item.(string)
-		if !ok {
-			t.Fatalf("%s contains %#v, want string", label, item)
-		}
-		stringsOnly = append(stringsOnly, stringValue)
-	}
-	return stringsOnly
-}
-
-func p21Missing(expected, observed []string) []string {
-	present := map[string]bool{}
-	for _, value := range observed {
-		present[value] = true
-	}
-	var missing []string
-	for _, value := range expected {
-		if !present[value] {
-			missing = append(missing, value)
-		}
-	}
-	return missing
-}
-
 func p21CorpusDiff(want, got []byte) string {
 	return fmt.Sprintf("want:\n%s\ngot:\n%s", want, got)
-}
-
-func readP21File(t *testing.T, path string) []byte {
-	t.Helper()
-	contents, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read %s: %v", path, err)
-	}
-	return contents
 }

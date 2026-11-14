@@ -488,20 +488,6 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 			},
 			{
 				Op:    "insert",
-				Table: "concerns",
-				PK: map[string]any{
-					"id": "CON-CMD-001",
-				},
-				Values: map[string]any{
-					"subject_type": "issue", "subject_id": issueID,
-					"actor_id": "developer", "scope_json": `{"paths":[]}`,
-					"severity": "major", "summary": "CLI concern", "reasoning": "Needs review",
-					"references_json": "[]", "status": "open",
-					"created_at": "2026-06-07T14:01:30Z", "created_event_id": "EVT-CON-CMD-001",
-				},
-			},
-			{
-				Op:    "insert",
 				Table: "triage_events",
 				PK: map[string]any{
 					"id": "TRG-CMD-001",
@@ -538,10 +524,7 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 	})
 
 	beforeStdout := mustGetIssueJSON(t, workspace, issueID)
-	beforeConcerns := mustGetConcernListJSONForIssue(t, workspace, issueID)
-	if len(beforeConcerns) != 1 || beforeConcerns[0].Status != "open" {
-		t.Fatalf("before concerns = %#v, want one open concern", beforeConcerns)
-	}
+
 	if got := mustIssueTriageStatus(t, workspace, issueID); got == nil || *got != "blocked" {
 		t.Fatalf("before triage_status = %#v, want blocked", got)
 	}
@@ -557,9 +540,7 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 	if beforeStdout != afterStdout {
 		t.Fatalf("issue JSON after rebuild = %q, want %q", afterStdout, beforeStdout)
 	}
-	if afterConcerns := mustGetConcernListJSONForIssue(t, workspace, issueID); !reflect.DeepEqual(afterConcerns, beforeConcerns) {
-		t.Fatalf("concerns after rebuild = %#v, want %#v", afterConcerns, beforeConcerns)
-	}
+
 	if got := mustIssueTriageStatus(t, workspace, issueID); got == nil || *got != "blocked" {
 		t.Fatalf("after triage_status = %#v, want blocked", got)
 	}

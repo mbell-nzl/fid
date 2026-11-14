@@ -19,7 +19,7 @@ func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
 	workspace, conn := newIdempotencyWorkspace(t)
 	request := testIdempotencyRequest()
 
-	first, err := commitTestIdempotentActivation(workspace, conn, request)
+	first, err := commitTestIdempotentLabel(workspace, conn, request)
 	if err != nil {
 		t.Fatalf("first CommitIdempotent() error = %v", err)
 	}
@@ -33,7 +33,7 @@ func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
 	if first.Replayed {
 		t.Fatal("first idempotency outcome replayed = true, want false")
 	}
-	if got, want := first.ResultJSON, testActivationResultJSON("key-1", false); got != want {
+	if got, want := first.ResultJSON, testLabelResultJSON("key-1", false); got != want {
 		t.Fatalf("first result JSON = %s, want %s", got, want)
 	}
 
@@ -54,7 +54,7 @@ func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
 		t.Fatalf("rebuilt field digests = %q, want %q", rebuiltFields, liveFields)
 	}
 
-	replayed, err := commitTestIdempotentActivation(workspace, conn, request)
+	replayed, err := commitTestIdempotentLabel(workspace, conn, request)
 	if err != nil {
 		t.Fatalf("replay CommitIdempotent() error = %v", err)
 	}
@@ -64,7 +64,7 @@ func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
 	if replayed.EventID != first.EventID || replayed.AggregateSequence != first.AggregateSequence {
 		t.Fatalf("replay identity = (%s, %d), want (%s, %d)", replayed.EventID, replayed.AggregateSequence, first.EventID, first.AggregateSequence)
 	}
-	if got, want := replayed.ResultJSON, testActivationResultJSON("key-1", true); got != want {
+	if got, want := replayed.ResultJSON, testLabelResultJSON("key-1", true); got != want {
 		t.Fatalf("replay result JSON = %s, want %s", got, want)
 	}
 	if got := idempotencyJournalEventCount(t, workspace); got != 1 {
@@ -77,13 +77,13 @@ func TestCommitIdempotentRejectsSameKeyWithDifferentDigest(t *testing.T) {
 	workspace, conn := newIdempotencyWorkspace(t)
 	defer closeIdempotencyDB(t, conn)
 
-	if _, err := commitTestIdempotentActivation(workspace, conn, testIdempotencyRequest()); err != nil {
+	if _, err := commitTestIdempotentLabel(workspace, conn, testIdempotencyRequest()); err != nil {
 		t.Fatalf("first CommitIdempotent() error = %v", err)
 	}
 
 	conflicting := testIdempotencyRequest()
 	conflicting.RequestDigest = "sha256:2222222222222222222222222222222222222222222222222222222222222222"
-	_, err := commitTestIdempotentActivation(workspace, conn, conflicting)
+	_, err := commitTestIdempotentLabel(workspace, conn, conflicting)
 	var conflict *IdempotencyConflictError
 	if !errors.As(err, &conflict) {
 		t.Fatalf("conflicting CommitIdempotent() error = %T %v, want *IdempotencyConflictError", err, err)
@@ -113,7 +113,7 @@ func TestCommitIdempotentSerializesConcurrentSameKeyCalls(t *testing.T) {
 			<-start
 			connection := openIdempotencyDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 			defer closeIdempotencyDB(t, connection)
-			result, err := commitTestIdempotentActivation(workspace, connection, testIdempotencyRequest())
+			result, err := commitTestIdempotentLabel(workspace, connection, testIdempotencyRequest())
 			if err == nil {
 				results <- result
 			}
@@ -149,14 +149,14 @@ func TestCommitIdempotentSerializesConcurrentSameKeyCalls(t *testing.T) {
 	}
 }
 
-func commitTestIdempotentActivation(workspace string, conn *sql.DB, request IdempotencyRequest) (IdempotencyOutcome, error) {
+func commitTestIdempotentLabel(workspace string, conn *sql.DB, request IdempotencyRequest) (IdempotencyOutcome, error) {
 	var outcome IdempotencyOutcome
-	err := WithLock(workspace, LockOwner{Command: "test idempotent activation"}, func(lock *WriteLock) error {
+	err := WithLock(workspace, LockOwner{Command: "test idempotent label"}, func(lock *WriteLock) error {
 		var commitErr error
-		outcome, commitErr = CommitIdempotent(lock, conn, request, testIdempotentActivationEvent(), func(Event) (IdempotencyMutation, error) {
+		outcome, commitErr = CommitIdempotent(lock, conn, request, testIdempotentLabelEvent(), func(Event) (IdempotencyMutation, error) {
 			return IdempotencyMutation{
-				EntityID:   "ACT-1",
-				ResultJSON: testActivationResultJSON("key-1", false),
+				EntityID:   "ledger",
+				ResultJSON: testLabelResultJSON("key-1", false),
 			}, nil
 		})
 		return commitErr
@@ -166,46 +166,22 @@ func commitTestIdempotentActivation(workspace string, conn *sql.DB, request Idem
 
 func testIdempotencyRequest() IdempotencyRequest {
 	return IdempotencyRequest{
-		OperationScope: "activation.prepare:project-1",
+		OperationScope: "label.add:project-1",
 		IdempotencyKey: "key-1",
 		RequestDigest:  "sha256:1111111111111111111111111111111111111111111111111111111111111111",
 	}
 }
 
-func testIdempotentActivationEvent() Event {
-	event := Event{
-		EventSchema: EventSchemaV2,
-		EventType:   "activation.prepared",
-		ActorV2: EventActor{
-			ActorID:       "actor-builder",
-			ActorType:     "agent",
-			Producer:      "kit",
-			ProvenanceRef: "activation:ACT-1/profile:builder",
-		},
-		Aggregate:   Aggregate{ID: "ACT-1", Sequence: 1, Type: "activation"},
-		CommandName: "activation.prepare",
-		Effects: []Effect{{
-			Op:    "insert",
-			Table: "kit_activations",
-			PK:    map[string]any{"id": "ACT-1"},
-			Values: map[string]any{
-				"version":             1,
-				"prior_activation_id": nil,
-				"kit_identity":        "kit-1",
-				"backend_identity":    "fid-1",
-				"phase":               1,
-				"status":              "prepared",
-				"point_of_no_return":  false,
-				"direction":           "activate",
-				"created_at":          "2026-08-22T00:00:00Z",
-				"updated_at":          "2026-08-22T00:00:00Z",
-			},
-		}},
-	}
-	for _, component := range []string{"backend", "kit", "overlay", "project", "provider"} {
-		event.Effects = append(event.Effects, Effect{Op: "insert", Table: "activation_resources", PK: map[string]any{"activation_id": "ACT-1", "component": component}, Values: map[string]any{"version": 1, "old_identity": nil, "new_identity": component + ":new", "observed_identity": nil, "state": "pending", "evidence_ref": nil, "error_code": nil}})
-	}
-	return event
+func testIdempotentLabelEvent() Event {
+	return Event{EventSchema: EventSchemaV2, EventType: "label.added",
+		ActorV2:   EventActor{ActorID: "builder", ActorType: "agent", Producer: "fid-standalone", ProvenanceRef: "project-local-attribution"},
+		Aggregate: Aggregate{ID: "ledger", Sequence: 1, Type: "label"}, CommandName: "label.add",
+		Effects: []Effect{{Op: "insert", Table: "labels", PK: map[string]any{"name": "ledger"}, Values: map[string]any{"colour": nil, "description": "Journal fixture"}}}}
+}
+
+func testLabelResultJSON(key string, replayed bool) string {
+	raw, _ := MarshalCanonicalJSON(map[string]any{"label": map[string]any{"name": "ledger", "colour": nil, "description": "Journal fixture"}, "idempotency_key": key, "replayed": replayed})
+	return string(raw)
 }
 
 func newIdempotencyWorkspace(t *testing.T) (string, *sql.DB) {

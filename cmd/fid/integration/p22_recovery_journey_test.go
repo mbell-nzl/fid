@@ -222,21 +222,5 @@ func p22Repository(t *testing.T, workspace, projectID string) map[string]any {
 	return map[string]any{"base_oid": observation.HeadOID, "capture_source": "git", "dirty": observation.Dirty, "dirty_digest": observation.DirtyDigest, "head_oid": observation.HeadOID, "project_id": projectID, "tree_oid": observation.TreeOID, "worktree_id": observation.WorktreeID}
 }
 
-func p22Git(t *testing.T, workspace string, arguments ...string) {
-	t.Helper()
-	closureRun(t, workspace, "git", arguments...)
-}
-
-func p22Write(t *testing.T, workspace, name, contents string) {
-	t.Helper()
-	path := filepath.Join(workspace, name)
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		t.Fatalf("create the directory for %s: %v", name, err)
-	}
-	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
-		t.Fatalf("write %s: %v", name, err)
-	}
-}
-
 func p22Zeros(count int) string { return strings.Repeat("0", count) }
 func p22Ones(count int) string  { return strings.Repeat("1", count) }

@@ -24,13 +24,13 @@ func TestPolymorphicRefTriggersRejectDanglingRefsAndAllowResolvableRows(t *testi
 		status:     "todo",
 		title:      "Reference task",
 	})
-	insertRefTriggerRequirement(t, conn, "REQ-ref-001")
+	insertRefTriggerIssue(t, conn, issueRow{id: "FID-ref-peer", kind: "task", workflowID: "task-default", status: "todo", title: "Reference peer"})
 
 	t.Run("links reject dangling from endpoint", func(t *testing.T) {
 		_, err := conn.Exec(`
 			INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at)
 			VALUES (?, ?, ?, ?, ?, ?)
-		`, "issue", "FID-missing-issue", "implements", "requirement", "REQ-ref-001", "2026-06-07T15:02:00Z")
+		`, "issue", "FID-missing-issue", "blocks", "issue", "FID-ref-peer", "2026-06-07T15:02:00Z")
 		assertRefSQLErrorContains(t, err, "links: from endpoint must resolve to an existing row")
 	})
 
@@ -38,7 +38,7 @@ func TestPolymorphicRefTriggersRejectDanglingRefsAndAllowResolvableRows(t *testi
 		_, err := conn.Exec(`
 			INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at)
 			VALUES (?, ?, ?, ?, ?, ?)
-		`, "issue", "FID-ref-task", "implements", "requirement", "REQ-missing", "2026-06-07T15:03:00Z")
+		`, "issue", "FID-ref-task", "blocks", "issue", "FID-missing-peer", "2026-06-07T15:03:00Z")
 		assertRefSQLErrorContains(t, err, "links: to endpoint must resolve to an existing row")
 	})
 
@@ -46,7 +46,7 @@ func TestPolymorphicRefTriggersRejectDanglingRefsAndAllowResolvableRows(t *testi
 		if _, err := conn.Exec(`
 			INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at)
 			VALUES (?, ?, ?, ?, ?, ?)
-		`, "issue", "FID-ref-task", "relates_to", "requirement", "REQ-ref-001", "2026-06-07T15:04:00Z"); err != nil {
+		`, "issue", "FID-ref-task", "relates_to", "issue", "FID-ref-peer", "2026-06-07T15:04:00Z"); err != nil {
 			t.Fatalf("insert links(valid) error = %v", err)
 		}
 	})
@@ -99,8 +99,6 @@ func TestLinkScopeAndRelationTriggersRejectInvalidCombosAndAllowValidRows(t *tes
 		status:     "todo",
 		title:      "Link task B",
 	})
-	insertRefTriggerRequirement(t, conn, "REQ-link-001")
-	insertRefTriggerDecision(t, conn, "DEC-link-001", "FID-link-epic")
 
 	t.Run("rejects decision endpoint", func(t *testing.T) {
 		_, err := conn.Exec(`
@@ -126,15 +124,6 @@ func TestLinkScopeAndRelationTriggersRejectInvalidCombosAndAllowValidRows(t *tes
 		assertRefSQLErrorContains(t, err, "links: relation/endpoint combination is not allowed in v0.1")
 	})
 
-	t.Run("accepts implements issue to requirement", func(t *testing.T) {
-		if _, err := conn.Exec(`
-			INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at)
-			VALUES (?, ?, ?, ?, ?, ?)
-		`, "issue", "FID-link-task-a", "implements", "requirement", "REQ-link-001", "2026-06-07T15:13:00Z"); err != nil {
-			t.Fatalf("insert links(implements) error = %v", err)
-		}
-	})
-
 	t.Run("accepts blocks issue to issue", func(t *testing.T) {
 		if _, err := conn.Exec(`
 			INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at)
@@ -144,14 +133,6 @@ func TestLinkScopeAndRelationTriggersRejectInvalidCombosAndAllowValidRows(t *tes
 		}
 	})
 
-	t.Run("accepts relates_to issue to requirement", func(t *testing.T) {
-		if _, err := conn.Exec(`
-			INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at)
-			VALUES (?, ?, ?, ?, ?, ?)
-		`, "issue", "FID-link-task-b", "relates_to", "requirement", "REQ-link-001", "2026-06-07T15:15:00Z"); err != nil {
-			t.Fatalf("insert links(relates_to) error = %v", err)
-		}
-	})
 }
 
 func TestValidJournalProjectedLinkAndActivityRowsStillApplyWithRefTriggersActive(t *testing.T) {
@@ -191,17 +172,11 @@ func TestValidJournalProjectedLinkAndActivityRowsStillApplyWithRefTriggersActive
 			},
 			{
 				Op:    "insert",
-				Table: "requirements",
+				Table: "issues",
 				PK: map[string]any{
-					"id": "REQ-journal-ref-001",
+					"id": "FID-journal-ref-peer",
 				},
-				Values: map[string]any{
-					"type":           "PRD",
-					"summary":        "Journal requirement",
-					"source_doc":     "01_PRD.md",
-					"source_section": "OPS",
-					"status":         "active",
-				},
+				Values: map[string]any{"kind": "task", "title": "Journal peer", "workflow_id": "task-default", "status": "todo", "created_at": "2026-06-07T15:30:00Z", "updated_at": "2026-06-07T15:30:00Z"},
 			},
 			{
 				Op:    "insert",
@@ -209,9 +184,9 @@ func TestValidJournalProjectedLinkAndActivityRowsStillApplyWithRefTriggersActive
 				PK: map[string]any{
 					"from_type": "issue",
 					"from_id":   "FID-journal-ref-task",
-					"relation":  "implements",
-					"to_type":   "requirement",
-					"to_id":     "REQ-journal-ref-001",
+					"relation":  "blocks",
+					"to_type":   "issue",
+					"to_id":     "FID-journal-ref-peer",
 				},
 				Values: map[string]any{
 					"created_at": "2026-06-07T15:32:00Z",
@@ -283,28 +258,6 @@ func insertRefTriggerIssue(t *testing.T, conn *sql.DB, row issueRow) {
 
 	if err := execInsertIssue(conn, row); err != nil {
 		t.Fatalf("execInsertIssue(%q) error = %v", row.id, err)
-	}
-}
-
-func insertRefTriggerRequirement(t *testing.T, conn *sql.DB, requirementID string) {
-	t.Helper()
-
-	if _, err := conn.Exec(`
-		INSERT INTO requirements (id, type, summary, source_doc, source_section, status)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`, requirementID, "PRD", "Requirement "+requirementID, "01_PRD.md", "OPS", "active"); err != nil {
-		t.Fatalf("insert requirements(%q) error = %v", requirementID, err)
-	}
-}
-
-func insertRefTriggerDecision(t *testing.T, conn *sql.DB, decisionID, epicID string) {
-	t.Helper()
-
-	if _, err := conn.Exec(`
-		INSERT INTO decisions (id, epic_id, author_role, summary, body_md_path, status, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-	`, decisionID, epicID, "tl", "Decision "+decisionID, "project-docs/decisions/"+decisionID+".md", "open", "2026-06-07T15:08:00Z"); err != nil {
-		t.Fatalf("insert decisions(%q) error = %v", decisionID, err)
 	}
 }
 

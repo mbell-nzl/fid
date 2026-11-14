@@ -3,12 +3,9 @@
 package integration
 
 import (
-	"archive/zip"
 	"encoding/json"
-	"io"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"testing"
 )
 
@@ -108,29 +105,4 @@ func p22NamedRecoveryProjection(t *testing.T, adapter *p22FIDRecoveryAdapter, wo
 		"stop.list":      p21Path(t, stops, "result"),
 		"attention.list": p21Path(t, attention, "result"),
 	}
-}
-
-func p22ArchiveEntries(t *testing.T, path string) map[string][]byte {
-	t.Helper()
-	reader, err := zip.OpenReader(path)
-	if err != nil {
-		t.Fatalf("open archive %s: %v", path, err)
-	}
-	defer func() { _ = reader.Close() }()
-	files := append([]*zip.File(nil), reader.File...)
-	sort.Slice(files, func(left, right int) bool { return files[left].Name < files[right].Name })
-	entries := make(map[string][]byte, len(files))
-	for _, file := range files {
-		input, err := file.Open()
-		if err != nil {
-			t.Fatalf("open archive entry %s: %v", file.Name, err)
-		}
-		data, readErr := io.ReadAll(input)
-		closeErr := input.Close()
-		if readErr != nil || closeErr != nil {
-			t.Fatalf("read archive entry %s: read=%v close=%v", file.Name, readErr, closeErr)
-		}
-		entries[file.Name] = data
-	}
-	return entries
 }

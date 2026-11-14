@@ -141,7 +141,7 @@ func TestIssueListJSONMatchesClosedSchemaAndRetainedFilters(t *testing.T) {
 		t.Fatalf("Open() error = %v", err)
 	}
 	defer closeCommandDB(t, conn)
-	seedIssueListCommandFixture(t, conn)
+	seedIssueListCommandFixture(t, workspace)
 
 	result := executeCommandForTest(workspace, "--json", "issue", "list", "--kind", "task", "--status-category", "started", "--order", "updated")
 	if result.err != nil || result.stderr != "" {

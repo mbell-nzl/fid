@@ -13,7 +13,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
-func TestRebuildWorkspacePreservesFullPhaseTwoProjectionWithRefTriggersActive(t *testing.T) {
+func TestHistoricalPhaseTwoProjectionWithRefTriggersActive(t *testing.T) {
 	t.Parallel()
 
 	workspace := newReplayWorkspace(t)

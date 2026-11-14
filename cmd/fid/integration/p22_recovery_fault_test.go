@@ -3,7 +3,6 @@
 package integration
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
@@ -12,12 +11,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"strings"
 	"sync/atomic"
 	"testing"
 
-	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"modernc.org/sqlite"
@@ -184,62 +181,5 @@ func p22RejectSecondRecovery(t *testing.T, a *p22FIDRecoveryAdapter, original wo
 		if p21JournalEventCount(t, a.workspace) != events || !reflect.DeepEqual(before, p22FaultProjection(t, a.workspace)) {
 			t.Fatal("competing replay changed recovery facts")
 		}
-	}
-}
-
-func p22FaultDB(t *testing.T, root string) *sql.DB {
-	t.Helper()
-	conn, err := sql.Open("sqlite", filepath.Join(config.LedgerDir(root), config.DatabaseFileName))
-	p22FaultOK(t, err)
-	return conn
-}
-
-func p22FaultProjection(t *testing.T, root string) map[string][]string {
-	t.Helper()
-	conn := p22FaultDB(t, root)
-	defer conn.Close()
-	return p22FaultProjectionFromDB(t, conn)
-}
-
-func p22FaultProjectionFromDB(t *testing.T, conn *sql.DB) map[string][]string {
-	t.Helper()
-	names, err := conn.Query(`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name`)
-	p22FaultOK(t, err)
-	var tables []string
-	for names.Next() {
-		var name string
-		p22FaultOK(t, names.Scan(&name))
-		tables = append(tables, name)
-	}
-	p22FaultOK(t, names.Err())
-	p22FaultOK(t, names.Close())
-	result := map[string][]string{}
-	for _, table := range tables {
-		rows, err := conn.Query(`SELECT * FROM "` + table + `"`)
-		p22FaultOK(t, err)
-		columns, err := rows.Columns()
-		p22FaultOK(t, err)
-		result[table] = []string{}
-		for rows.Next() {
-			values, pointers := make([]any, len(columns)), make([]any, len(columns))
-			for i := range values {
-				pointers[i] = &values[i]
-			}
-			p22FaultOK(t, rows.Scan(pointers...))
-			encoded, err := json.Marshal(values)
-			p22FaultOK(t, err)
-			result[table] = append(result[table], string(encoded))
-		}
-		p22FaultOK(t, rows.Err())
-		p22FaultOK(t, rows.Close())
-		sort.Strings(result[table])
-	}
-	return result
-}
-
-func p22FaultOK(t *testing.T, err error) {
-	t.Helper()
-	if err != nil {
-		t.Fatal(err)
 	}
 }
