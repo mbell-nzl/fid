@@ -101,6 +101,60 @@ func TestComputeRenamesSurviveCleanRebaseAndBindPaths(t *testing.T) {
 	}
 }
 
+func TestComputeRenameThresholdCleanRebaseNeedsReapproval(t *testing.T) {
+	t.Parallel()
+	root := gittest.NewWorkspace(t)
+	var original, edited, upstreamContent, rebasedContent strings.Builder
+	for i := range 100 {
+		line := fmt.Sprintf("line %03d\n", i)
+		change := line
+		if i >= 60 {
+			change = fmt.Sprintf("edit %03d\n", i)
+		}
+		original.WriteString(line)
+		edited.WriteString(change)
+		if i >= 50 {
+			upstreamContent.WriteString(line)
+			rebasedContent.WriteString(change)
+		}
+	}
+	write(t, root, "file", original.String())
+	base := commit(t, root)
+	git(t, root, "checkout", "-q", "-b", "task")
+	git(t, root, "mv", "file", "renamed")
+	write(t, root, "renamed", edited.String())
+	head := commit(t, root)
+	beforePatch := referenceFilePatch(t, root, base, head, ".")
+	assertContains(t, beforePatch, "similarity index 60%\nrename from file\nrename to renamed\n")
+	assertContains(t, beforePatch, " line 057\n line 058\n line 059\n-line 060\n")
+	before := compute(t, root, base, head)
+	git(t, root, "checkout", "-q", "--detach", base)
+	write(t, root, "file", upstreamContent.String())
+	upstream := commit(t, root)
+	git(t, root, "checkout", "-q", "task")
+	git(t, root, "rebase", upstream)
+	rebased := git(t, root, "rev-parse", "HEAD")
+	if content := git(t, root, "show", rebased+":renamed"); content != strings.TrimSpace(rebasedContent.String()) {
+		t.Fatalf("clean rebase changed task edits or their context: %q", content)
+	}
+	if status := git(t, root, "status", "--porcelain"); status != "" {
+		t.Fatalf("rebase left an unclean worktree: %s", status)
+	}
+	afterPatch := referenceFilePatch(t, root, upstream, rebased, ".")
+	assertContains(t, afterPatch, "diff --git a/file b/file\ndeleted file mode 100644\n")
+	assertContains(t, afterPatch, "diff --git a/renamed b/renamed\nnew file mode 100644\n")
+	after := compute(t, root, upstream, rebased)
+	// Upstream's distant deletion crosses the pinned 50% rename threshold.
+	// The resulting delete/add representation changes the fingerprint, so
+	// approval safely goes stale and needs re-approval despite a clean rebase.
+	if after.Fingerprint == before.Fingerprint {
+		t.Fatalf("rename threshold crossing kept fingerprint %s; want stale approval", after.Fingerprint)
+	}
+	if repeat := compute(t, root, upstream, rebased); repeat != after {
+		t.Fatalf("unstable threshold-crossing fingerprint: %+v != %+v", repeat, after)
+	}
+}
+
 func assertContains(t *testing.T, patch, line string) {
 	t.Helper()
 	if !strings.Contains(patch, line) {

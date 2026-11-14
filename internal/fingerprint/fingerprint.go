@@ -1,6 +1,13 @@
 // Package fingerprint binds reviews and approvals to an aggregate committed
 // change. It has no ledger or command adapter; callers supply the hand-off's
 // recorded base and head, never a newly computed merge-base.
+//
+// The algorithm hashes each file section with git patch-id --verbatim after
+// removing similarity percentages, then combines the sorted IDs and their count.
+// Rendering pins rename detection at 50%. Upstream edits that cross that
+// threshold can turn a rename into a deletion and an addition on a clean rebase.
+// The fingerprint then changes and approval needs re-approval. This fails safe
+// (stale, never falsely current), as with context edits adjacent to a hunk.
 package fingerprint
 
 import (

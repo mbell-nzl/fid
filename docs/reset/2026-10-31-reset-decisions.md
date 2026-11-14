@@ -1018,10 +1018,18 @@ caller. Local check storage, readers and evaluation are unchanged.
     size and add no change content beyond the paths and hunks. Keep rename
     paths, modes and all other lines (orchestrator, 2026-11-15, under the
     same delegation).
+    Limitation: when upstream changes to a renamed file move it across git's
+    50% rename-detection threshold, a clean rebase renders the rename as a
+    deletion and an addition, so the fingerprint changes and the change needs
+    re-approval. This fails safe (stale, never falsely current), like D10's
+    allowance for rebases that alter lines next to a hunk; turning rename
+    detection off would stale approvals on any upstream edit to a renamed
+    file. Narrowing of the clean-rebase guarantee, for Mark's review
+    (orchestrator, 2026-11-15, under the same delegation; #79 review round 3).
 14. **A hand-off comes first.** A review round or an approval needs the
     task's latest hand-off. A changed delivery needs a new hand-off; a clean
     rebase gives a new hand-off with the same fingerprint, so an approval
-    survives it (V6).
+    survives it (V6), subject to item 13's limitation.
 
 **1.6c's choices (2026-11-15).** `internal/fingerprint.Compute` accepts the
 recorded base and head as full lowercase 40-hex commit IDs and returns
@@ -1049,6 +1057,19 @@ change file size, while rename paths and hunks remain the same. Rename
 detection stays enabled; retain `rename from`/`rename to`, mode lines and
 everything else. The `patch-id-verbatim-per-file-v1` name includes this
 normalization; no fingerprint has been recorded yet.
+
+Limitation: when upstream changes to a renamed file move it across git's
+50% rename-detection threshold, a clean rebase renders the rename as a
+deletion and an addition, so the fingerprint changes and the change needs
+re-approval. This fails safe (stale, never falsely current), like D10's own
+allowance for rebases that alter lines next to a hunk; turning rename
+detection off would stale approvals on any upstream edit to a renamed
+file. Narrowing of the clean-rebase guarantee, for Mark's review
+(orchestrator, 2026-11-15, under Mark's delegation; #79 review round 3).
+The regression starts with a 60% edited rename and cleanly rebases over
+upstream deleting lines 000–049, retaining edits at 060–099 and their context
+at 057–059. It asserts the delete/add rendering and changed fingerprint;
+the 97%→99% rename regression still asserts an unchanged fingerprint.
 
 Per-file hashing avoids the Git 2.53 parser skipping the next file header
 after a binary patch, as reproduced in #79 review round 1; D10's patch-id
