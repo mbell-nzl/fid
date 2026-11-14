@@ -52,17 +52,18 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	seqCurrentID := closureCreateIssue(t, binary, workspace, "task", "Sequential current", nil, stringPointer(seqEpicID), intPointer(1))
 	seqNextID := closureCreateIssue(t, binary, workspace, "task", "Sequential next", nil, stringPointer(seqEpicID), intPointer(2))
 	closureRunFID(t, binary, workspace, "issue", "transition", seqCurrentID, "--to", "cancelled", "--reason", "Test cancellation", "--actor", "human:mark")
-	assertClosureReadyTask(t, binary, workspace, seqEpicID, seqNextID)
+	assertClosureNextTaskInEpic(t, binary, workspace, seqEpicID, seqNextID)
 
 	priorityEpicID := closureCreateIssue(t, binary, workspace, "epic", "Prioritised closure epic", stringPointer("prioritised"), nil, nil)
 	closureCreateIssue(t, binary, workspace, "task", "Lower priority", nil, stringPointer(priorityEpicID), nil, "--priority", "3")
 	priorityHighID := closureCreateIssue(t, binary, workspace, "task", "Higher priority", nil, stringPointer(priorityEpicID), nil, "--priority", "0")
-	assertClosureReadyTask(t, binary, workspace, priorityEpicID, priorityHighID)
+	assertClosureNextTaskInEpic(t, binary, workspace, priorityEpicID, priorityHighID)
 
 	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, journalPath,
 		[]string{"run", "record", "--issue", mainIssueID, "--completion", "TC-unavailable",
 			"--role", "developer", "--model", "claude-sonnet-4-6", "--tokens-in", "1200", "--tokens-out", "3400", "--by", "developer"})
 
+	assertLeanIntegrationJournal(t, workspace)
 	journalBeforeNonJournal := closureReadFile(t, journalPath)
 	journalFilesBefore := closureJournalFileBytes(t, workspace)
 	assertClosureMaintenanceAndReadCommands(t, binary, workspace, mainIssueID, journalBeforeNonJournal)

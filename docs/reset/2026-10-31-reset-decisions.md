@@ -712,6 +712,15 @@ kernel maintenance checks. `RESET.md` records each completion criterion.
 - **Q7:** Check results stay immutable. Whether hand-off or `done` needs a
   kept file still available later is 1.6's decision; never rewrite a result.
 
+- **1.5b2 Artifact command-test exception**, settled by the orchestrator
+  (Claude Opus 5.5, under Mark's delegation), 2026-11-14: `fid artifact`'s
+  own command tests that need its current Activation-based adapter stay
+  unchanged as an isolated compatibility group until 1.5c2 switches the
+  adapter and converts them. No other surviving test may depend on their
+  kernel fixture. All other surviving tests become kernel-free in 1.5b2;
+  none are weakened. This keeps 1.5b2 test-only and the command's public
+  actor-authority change with 1.5c2.
+
 Builder's choices for **1.5b1**: `internal/artifactverify` owns shared
 metadata, blob verification and retry/event handling. The command still uses
 its existing kernel adapter; compatibility hooks keep its authority and
@@ -722,6 +731,24 @@ only committed identity at the same path, keeping worktree-dependent reads
 comparable without changing historical IDs. Lifecycle counts are unchanged.
 Generic export fixtures use real lean checks; kernel Source and recovery
 assertions keep explicitly private fixtures until their profiles leave.
+
+Builder's transactional choices for **1.5b2**: generic journal retry and
+sequence tests use `label.added`; strict retry-map and prior-state tests use
+`task.started` under a lean hold. Issue list and detail samples are
+journal-backed retained rows, with Concern assertions separated into
+kernel-only tests. The historical projection and trigger assertions stay
+in explicitly historical tests until their owning schema cut; new retained
+projection samples keep full-table parity, exact row values and foreign-key
+checks. The named-read/export journey now starts, checks and hands off a
+fixed-state task and compares the retained reads and tables. Integration
+helpers move to neutral command, projection and keyed-request files. The
+retained single-journal corpus exercises all 15 non-Artifact keyed leaves,
+including their exact retry responses and field maps; the old 55-leaf
+kernel corpus stays separately until 1.5c2. Shared failure codes now use
+retained producers without adding registry exclusions. The Artifact
+exception above covers the two own-command tests in
+`cmd/fid/artifact_compatibility_test.go` and
+`TestP24ArtifactVerifyKeyedLeafCorpus`; their bodies are unchanged.
 
 ## Products
 

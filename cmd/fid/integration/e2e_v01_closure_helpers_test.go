@@ -353,23 +353,21 @@ func assertClosureLinkReadback(t *testing.T, binary, workspace, mainIssueID, pee
 	}
 }
 
-func assertClosureReadyTask(t *testing.T, binary, workspace, epicID, wantID string) {
+func assertClosureNextTaskInEpic(t *testing.T, binary, workspace, epicID, wantID string) {
 	t.Helper()
-
-	stdout, _ := closureRunFID(t, binary, workspace, "--json", "ready", "--epic", epicID)
-	var payload struct {
-		Result struct {
-			Task struct {
-				ID string `json:"id"`
-			} `json:"task"`
-		} `json:"result"`
+	stdout, _ := closureRunFID(t, binary, workspace, "--json", "next")
+	envelope := p23Envelope(t, stdout)
+	for _, value := range p21Path(t, envelope, "result", "queue").([]any) {
+		entry := value.(map[string]any)
+		if entry["epic_id"] != epicID || entry["reason"] != nil {
+			continue
+		}
+		if entry["id"] != wantID {
+			t.Fatalf("next task for %s = %v, want %s", epicID, entry["id"], wantID)
+		}
+		return
 	}
-	if err := json.Unmarshal([]byte(stdout), &payload); err != nil {
-		t.Fatalf("decode ready output: %v", err)
-	}
-	if payload.Result.Task.ID != wantID {
-		t.Fatalf("ready task for %s = %q, want %q", epicID, payload.Result.Task.ID, wantID)
-	}
+	t.Fatalf("next queue has no eligible task for epic %s: %s", epicID, stdout)
 }
 
 func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, issueID string, journalBefore []byte) {
@@ -385,17 +383,17 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 		t.Fatalf("maintenance vacuum = (%v, %q, %q), want fail-closed unavailable", err, stdout, stderr)
 	}
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "maintenance vacuum")
-	decision, _ := closureRunFID(t, binary, workspace, "--json", "decision", "list")
-	if !strings.Contains(decision, `"items":[]`) {
-		t.Fatalf("decision list = %q, want empty read result", decision)
+	decisions, _ := closureRunFID(t, binary, workspace, "sql", "SELECT * FROM person_decisions ORDER BY id")
+	if !strings.HasPrefix(decisions, "[") {
+		t.Fatalf("person decision read=%q", decisions)
 	}
-	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "decision list")
+	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "person decisions")
 	for _, args := range [][]string{
 		{"--json", "issue", "list"},
-		{"--json", "ready"},
+		{"--json", "next"},
 		{"--json", "link", "list", issueID, "--type", "issue"},
-		{"stats", "cost", "--group-by", "actor"},
-		{"stats", "tokens", "--group-by", "actor"},
+		{"--json", "show", issueID},
+		{"--json", "activity", "list"},
 	} {
 		closureRunFID(t, binary, workspace, args...)
 		assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, strings.Join(args, " "))
@@ -473,18 +471,6 @@ var closureProjectedTableQueries = []struct {
 		query: "SELECT * FROM agent_runs ORDER BY id",
 	},
 	{
-		name:  "claims",
-		query: "SELECT * FROM claims ORDER BY id",
-	},
-	{
-		name:  "concerns",
-		query: "SELECT * FROM concerns ORDER BY id",
-	},
-	{
-		name:  "decision_refs",
-		query: "SELECT * FROM decision_refs ORDER BY id",
-	},
-	{
 		name:  "epic_metadata",
 		query: "SELECT * FROM epic_metadata ORDER BY issue_id",
 	},
@@ -509,18 +495,6 @@ var closureProjectedTableQueries = []struct {
 		query: "SELECT * FROM projection_meta",
 	},
 	{
-		name:  "requirement_refs",
-		query: "SELECT * FROM requirement_refs ORDER BY id",
-	},
-	{
-		name:  "requirement_issue_links",
-		query: "SELECT * FROM requirement_issue_links ORDER BY requirement_id, issue_id, relation",
-	},
-	{
-		name:  "review_records",
-		query: "SELECT * FROM review_records ORDER BY id",
-	},
-	{
 		name:  "triage_events",
 		query: "SELECT * FROM triage_events ORDER BY id",
 	},
@@ -540,10 +514,18 @@ var closureProjectedTableQueries = []struct {
 		name:  "workflow_transition_requires",
 		query: "SELECT * FROM workflow_transition_requires ORDER BY workflow_id, from_state, to_state, rowid",
 	},
-	{
-		name:  "workflow_assignments",
-		query: "SELECT * FROM workflow_assignments ORDER BY scope, kind, workflow_id",
-	},
+	{name: "holds", query: "SELECT * FROM holds ORDER BY id"},
+	{name: "questions", query: "SELECT * FROM questions ORDER BY id"},
+	{name: "person_decisions", query: "SELECT * FROM person_decisions ORDER BY id"},
+	{name: "policy_snapshots", query: "SELECT * FROM policy_snapshots ORDER BY sequence"},
+	{name: "check_requests", query: "SELECT * FROM check_requests ORDER BY id"},
+	{name: "check_starts", query: "SELECT * FROM check_starts ORDER BY id"},
+	{name: "check_processes", query: "SELECT * FROM check_processes ORDER BY check_id"},
+	{name: "check_results", query: "SELECT * FROM check_results ORDER BY check_id"},
+	{name: "check_files", query: "SELECT * FROM check_files ORDER BY check_id,path"},
+	{name: "referenced_artifacts", query: "SELECT * FROM referenced_artifacts ORDER BY id"},
+	{name: "handoffs", query: "SELECT * FROM handoffs ORDER BY id"},
+	{name: "idempotency_results", query: "SELECT * FROM idempotency_results ORDER BY operation_scope,idempotency_key"},
 }
 
 func closureProjectedTableSnapshots(t *testing.T, binary, workspace string) map[string]string {

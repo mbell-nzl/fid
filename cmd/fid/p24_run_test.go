@@ -4,6 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/workflow"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,10 +14,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/mbell-nzl/fid/internal/cli"
-	"github.com/mbell-nzl/fid/internal/config"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func TestP24RunStartAfterCommitAndEdit(t *testing.T) {
@@ -62,16 +61,6 @@ func TestP24RunStartAfterCommitAndEdit(t *testing.T) {
 
 // runGitForTest runs git in workspace with a fixed test identity, because CI
 // has no git user and commits there otherwise fail.
-func runGitForTest(t *testing.T, workspace string, args ...string) {
-	t.Helper()
-	command := exec.Command("git", args...)
-	command.Dir = workspace
-	command.Env = append(os.Environ(), "GIT_AUTHOR_NAME=fid test", "GIT_AUTHOR_EMAIL=fid@example.test",
-		"GIT_COMMITTER_NAME=fid test", "GIT_COMMITTER_EMAIL=fid@example.test")
-	if output, err := command.CombinedOutput(); err != nil {
-		t.Fatalf("git %v: %v: %s", args, err, output)
-	}
-}
 
 func TestP24RunCloseAfterCommitAndEdit(t *testing.T) {
 	t.Parallel()

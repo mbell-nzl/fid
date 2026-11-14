@@ -7,12 +7,9 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"strings"
 	"testing"
 
@@ -119,7 +116,7 @@ func p23PortableCollectFieldDigestFamilies(t *testing.T, workspace string, famil
 	p22FaultOK(t, rows.Err())
 }
 
-func TestPortableAssertCorruptEventsRejected(t *testing.T) {
+func TestKernelPortableAssertCorruptEventsRejected(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
 	root := t.TempDir()
@@ -235,25 +232,6 @@ func p23PortableAssertCorruptEventsRejected(t *testing.T, workspace string, even
 	}
 }
 
-func p23PortableAllRows(t *testing.T, conn *sql.DB) map[string][]string {
-	t.Helper()
-	names, err := conn.Query(`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name`)
-	p22FaultOK(t, err)
-	var tables []string
-	for names.Next() {
-		var table string
-		p22FaultOK(t, names.Scan(&table))
-		tables = append(tables, table)
-	}
-	p22FaultOK(t, names.Err())
-	p22FaultOK(t, names.Close())
-	result := make(map[string][]string, len(tables))
-	for _, table := range tables {
-		result[table] = p23PortableTableRows(t, conn, table)
-	}
-	return result
-}
-
 func p23PortableAssertPriorSchemaRejected(t *testing.T, binary, workspace string) {
 	t.Helper()
 	archive := filepath.Join(t.TempDir(), "current.zip")
@@ -343,66 +321,6 @@ func p23PortableRows(t *testing.T, workspace string) map[string][]string {
 	delete(result, "projection_meta")
 	delete(result, "schema_migrations")
 	return result
-}
-
-func p23PortableTableRows(t *testing.T, conn *sql.DB, table string) []string {
-	t.Helper()
-	rows, err := conn.Query(`SELECT * FROM "` + table + `"`)
-	p22FaultOK(t, err)
-	defer func() { p22FaultOK(t, rows.Close()) }()
-	columns, err := rows.Columns()
-	p22FaultOK(t, err)
-	result := []string{}
-	for rows.Next() {
-		values := make([]any, len(columns))
-		pointers := make([]any, len(columns))
-		for i := range values {
-			pointers[i] = &values[i]
-		}
-		p22FaultOK(t, rows.Scan(pointers...))
-		encoded, err := json.Marshal(values)
-		p22FaultOK(t, err)
-		result = append(result, string(encoded))
-	}
-	p22FaultOK(t, rows.Err())
-	sort.Strings(result)
-	return result
-}
-
-func p23PortableAssertRows(t *testing.T, phase string, before, after map[string][]string) {
-	t.Helper()
-	if len(before) != len(after) {
-		t.Errorf("%s table inventory changed: live=%d current=%d", phase, len(before), len(after))
-	}
-	for table := range before {
-		if !reflect.DeepEqual(before[table], after[table]) {
-			t.Errorf("%s %s rows changed: live=%v current=%v", phase, table, before[table], after[table])
-		}
-	}
-}
-
-func p23PortableTreeDigest(t *testing.T, root string) string {
-	t.Helper()
-	hash := sha256.New()
-	err := filepath.WalkDir(root, func(path string, item fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		if item.IsDir() {
-			return nil
-		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		_, _ = hash.Write([]byte(strings.TrimPrefix(path, root)))
-		_, _ = hash.Write(data)
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	return fmt.Sprintf("%x", hash.Sum(nil))
 }
 
 func p23PortableJournalEvents(t *testing.T, workspace string) map[string]journal.Event {
