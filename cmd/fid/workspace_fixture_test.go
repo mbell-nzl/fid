@@ -45,6 +45,11 @@ func TestMain(m *testing.M) {
 		}
 		os.Exit(0)
 	}
+	// These disposable check processes exit inside TestLeanCheckChild, or
+	// are killed. They must never allocate the suite's shared fixtures.
+	if _, child := leanCheckChildMode(); child {
+		os.Exit(m.Run())
+	}
 	exitCode := runCommandTestSuite(m)
 	os.Exit(exitCode)
 }
@@ -65,6 +70,14 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 	defer func() { _ = os.RemoveAll(configHome) }()
 	if err := os.Setenv("XDG_CONFIG_HOME", configHome); err != nil {
 		fmt.Fprintf(os.Stderr, "isolate user config: %v\n", err)
+		return 1
+	}
+	// go env/build otherwise start a detached telemetry sidecar that can
+	// recreate configHome after cleanup. This documented command writes only
+	// the suite's isolated config; GOTELEMETRY is not a settable environment
+	// variable. The off command itself opens no counters or sidecar.
+	if output, err := exec.Command("go", "telemetry", "off").CombinedOutput(); err != nil {
+		fmt.Fprintf(os.Stderr, "disable Go telemetry in isolated config: %v\n%s", err, output)
 		return 1
 	}
 	// fid backup keeps its clone in the user cache, so no test may use ~/.cache.

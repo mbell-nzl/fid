@@ -38,6 +38,12 @@ func runIntegrationSuite(m interface{ Run() int }) int {
 		fmt.Fprintf(os.Stderr, "isolate user config: %v\n", err)
 		return 1
 	}
+	// Turn off both counter collection and the detached telemetry sidecar
+	// before go build. This changes only the suite's isolated config.
+	if output, err := exec.Command("go", "telemetry", "off").CombinedOutput(); err != nil {
+		fmt.Fprintf(os.Stderr, "disable Go telemetry in isolated config: %v\n%s", err, output)
+		return 1
+	}
 	// fid backup keeps its clone in the user cache, so no test may use ~/.cache.
 	// Go's build cache defaults to a directory there, so pin it first: tests
 	// that run go build keep the shared cache.

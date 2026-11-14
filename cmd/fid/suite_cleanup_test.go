@@ -33,15 +33,17 @@ func TestCommandSuiteRemovesTemporaryDirectories(t *testing.T) {
 	for _, row := range []struct {
 		name string
 		args []string
+		env  []string
 	}{
-		{"go-env", []string{"-test.run=^TestCommandTestsKeepTheSharedGoBuildCache$"}},
-		{"check-child", []string{"-test.run=^TestLeanCheckChild$", "--", "--check-child", "pass"}},
+		{"go-env", []string{"-test.run=^TestCommandTestsKeepTheSharedGoBuildCache$"}, nil},
+		{"as-fid", []string{"--help"}, []string{runAsFIDVariable + "=1"}},
 	} {
 		t.Run(row.name, func(t *testing.T) {
 			t.Parallel()
 			scratch := t.TempDir()
 			command := exec.CommandContext(t.Context(), binary, row.args...)
 			command.Env = append(os.Environ(), "TMPDIR="+scratch, "GOCOVERDIR="+t.TempDir())
+			command.Env = append(command.Env, row.env...)
 			if output, err := command.CombinedOutput(); err != nil {
 				t.Fatalf("child suite: %v\n%s", err, output)
 			}
