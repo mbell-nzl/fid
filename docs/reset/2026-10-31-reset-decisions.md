@@ -681,6 +681,48 @@ Its git children disable lazy fetching and optional index writes, and it
 retains the guard against hidden tracked changes. The downgrade retains review reservations as
 interrupted reservations with the reason `In review`.
 
+**Settled by the orchestrator, 14 November 2026 (Mark's delegation for
+1.5b-1.5d).**
+
+Mark delegated the remaining decisions for the kernel's removal to Claude
+Opus. Seven stacked Assured PRs run in order: 1.5b1 extracts the Artifact
+verifier and rebuilds V8 and export fixtures; 1.5b2 rebuilds the other
+surviving fixtures; 1.5c1 moves fixed task states out of workflow; 1.5c2
+removes commands and switches `fid artifact`; 1.5c3 removes kernel domain
+packages; 1.5d1 closes journal and archive catalogs; 1.5d2 drops tables and
+kernel maintenance checks. `RESET.md` records each completion criterion.
+
+- **Q1:** The current `review` and `finding` commands use the kernel and
+  leave with its commands in 1.5c2. No interim stub; 2.1 brings lean ones.
+- **Q2:** A journal with a removed event family is refused with
+  `journal-replay-stopped`, with details naming `schema-unsupported` and
+  the family. An archive uses `archive-invalid` and its existing
+  `schema-unsupported` check. Either refusal changes nothing.
+- **Q3:** Frozen V1 `agent_runs`, `triage_events` and `triage_status` stay
+  for separately scoped cleanup; see the later list.
+- **Q4:** Maintenance drops `claim_count` and kernel-only warnings. The
+  dead `maintenance.abandoned_attempt_grace_seconds` and `executor_limits`
+  config keys stay for now; see the later list.
+- **Q5:** Archives keep manifest v2, `sources: []`, and only truthful
+  capability profile entries.
+- **Q6:** `fid artifact verify` keeps its input, all nine Artifact success
+  fields, Event and missing-ID failure. Its actor becomes typed: malformed
+  actors get `invalid-argument`, exit 2; agents and people may verify;
+  services get the existing actor-type refusal. Kernel readiness Stops go.
+- **Q7:** Check results stay immutable. Whether hand-off or `done` needs a
+  kept file still available later is 1.6's decision; never rewrite a result.
+
+Builder's choices for **1.5b1**: `internal/artifactverify` owns shared
+metadata, blob verification and retry/event handling. The command still uses
+its existing kernel adapter; compatibility hooks keep its authority and
+readiness effects until 1.5c2 switches it. Lean callers use typed actor
+rules and emit only Artifact availability and retry Effects. V8 reads `next`
+at a fixed clock; its new-machine wipe recreates a fresh repository with
+only committed identity at the same path, keeping worktree-dependent reads
+comparable without changing historical IDs. Lifecycle counts are unchanged.
+Generic export fixtures use real lean checks; kernel Source and recovery
+assertions keep explicitly private fixtures until their profiles leave.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -1938,6 +1980,22 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   renderer.
 
 ## Later list
+
+- From this PR (1.5b1): investigate the full-suite lock failure in unchanged
+  `TestLeanCheckRenewsHoldAndStopsOnTakeover/takeover`. The first `make test`
+  failed at `check_ownership_test.go:117` with `task.takeover: write lock
+  unavailable`; the isolated test then passed in 1.343s. The cause is not
+  established; no ownership code or test was changed in this PR. A complete
+  rerun and the coverage/no-identity CI runner subsequently passed.
+
+- From this PR (1.5b1): Q3 keeps frozen V1 `agent_runs`, `triage_events`
+  and `triage_status`; remove them only in separately scoped cleanup.
+- From this PR (1.5b1): Q4 keeps dead config keys
+  `maintenance.abandoned_attempt_grace_seconds` and `executor_limits`;
+  withdraw them in separately scoped config/archive work.
+- From this PR (1.5b1): Q7 leaves Artifact availability after a passing
+  check for 1.6: decide whether hand-off and `done` require kept files still
+  available, while preserving immutable recorded check results.
 
 - Task 1.8 brings this later list into fid along with the remaining reset
   tasks (decided 7 November 2026).

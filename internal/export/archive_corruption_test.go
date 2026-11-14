@@ -6,125 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/mbell-nzl/fid/internal/bootstrap"
-	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
-
-func TestArchiveRejectsIntegrityValidSemanticCorruptions(t *testing.T) {
-	t.Parallel()
-	workspace := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
-		t.Fatal(err)
-	}
-	addRecoveredExportFixtureFacts(t, workspace)
-	archive := filepath.Join(t.TempDir(), "semantic.zip")
-	if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archive}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)}); err != nil {
-		t.Fatalf("valid control: %#v", err)
-	}
-	original := archiveContents(t, archive)
-	for _, tc := range []struct {
-		name, code, eventType string
-		mutate                func(*journal.Event)
-	}{
-		{"unknown Event", "effect-invalid", "run.recovered", func(e *journal.Event) { e.EventType = "run.invented" }},
-		{"incomplete nested recovery", "reference-invalid", "run.recovered", func(e *journal.Event) {
-			for i := range e.Effects {
-				if e.Effects[i].Table == "run_recoveries" {
-					e.Effects[i].Values["reconciliation_json"] = `{}`
-				}
-			}
-		}},
-		{"incomplete cached recovery", "reference-invalid", "run.recovered", func(e *journal.Event) {
-			for i := range e.Effects {
-				if e.Effects[i].Table == "idempotency_results" {
-					e.Effects[i].Values["result_json"] = `{"replayed":false}`
-				}
-			}
-		}},
-		{"unknown table", "effect-invalid", "run.recovered", func(e *journal.Event) { e.Effects[0].Table = "untrusted_table" }},
-		{"unknown column", "effect-invalid", "run.recovered", func(e *journal.Event) { e.Effects[0].Values["untrusted_column"] = 1 }},
-		{"wrong scalar type", "effect-invalid", "run.recovered", func(e *journal.Event) { e.Effects[0].Values["status"] = 1 }},
-		{"boolean used as version", "effect-invalid", "run.recovered", func(e *journal.Event) {
-			for i := range e.Effects {
-				if e.Effects[i].Table == "run_runtime" {
-					e.Effects[i].Values["version"] = true
-					break
-				}
-			}
-		}},
-		{"executor identity rewritten", "effect-invalid", "run.recovered", func(e *journal.Event) {
-			for i := range e.Effects {
-				if e.Effects[i].Table == "run_runtime" && e.Effects[i].Op == "update" {
-					e.Effects[i].Values["executor_id"] = "executor-forged"
-					break
-				}
-			}
-		}},
-		{"unresolved idempotency Event", "reference-invalid", "run.recovered", func(e *journal.Event) {
-			for i := range e.Effects {
-				if e.Effects[i].Table == "idempotency_results" {
-					e.Effects[i].Values["result_event_id"] = "EVT-absent"
-				}
-			}
-		}},
-		{"observation subject differs from its row", "reference-invalid", "run.observed", func(e *journal.Event) {
-			for i := range e.Effects {
-				if e.Effects[i].Table != "run_observations" {
-					continue
-				}
-				var observation map[string]any
-				if err := json.Unmarshal([]byte(e.Effects[i].Values["observation_json"].(string)), &observation); err != nil {
-					t.Fatal(err)
-				}
-				observation["run_id"] = "RUN-forged"
-				encoded, err := journal.MarshalCanonicalJSON(observation)
-				if err != nil {
-					t.Fatal(err)
-				}
-				e.Effects[i].Values["observation_json"] = string(encoded)
-				break
-			}
-		}},
-		{"foreign recovery aggregate", "reference-invalid", "run.recovered", func(e *journal.Event) { e.Aggregate.ID = "RUN-foreign"; e.Aggregate.Sequence = 1 }},
-		{"issue aggregate differs from immutable Effect", "reference-invalid", "issue.created", func(e *journal.Event) { e.Aggregate.ID = "ISS-forged" }},
-		{"immutable Artifact duplicate", "reference-invalid", "gate.receipt-recorded", func(e *journal.Event) { e.Effects = append([]journal.Effect{e.Effects[0]}, e.Effects...) }},
-		{"retired caller outcome", "effect-invalid", "run.recovered", func(e *journal.Event) {
-			e.EventType = "run.finished"
-			var effects []journal.Effect
-			for _, effect := range e.Effects {
-				if (effect.Table == "runs" && effect.Op == "update") || effect.Table == "idempotency_results" {
-					effects = append(effects, effect)
-				}
-			}
-			e.Effects = effects
-		}},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			contents := make(map[string][]byte, len(original))
-			for path, data := range original {
-				contents[path] = bytes.Clone(data)
-			}
-			path := archivePathWithPrefix(t, contents, "journal/")
-			data, hash := mutateArchiveEvent(t, contents[path], tc.eventType, tc.mutate)
-			contents[path] = data
-			m := decodeManifestMap(t, contents["manifest.json"])
-			m["terminal_event_hash"] = hash
-			updateManifestEntry(t, m, path, data)
-			contents["manifest.json"] = encodeManifestMap(t, m)
-			writeTestArchive(t, archive, contents)
-			before := workspaceTreeDigest(t, workspace)
-			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
-			assertArchiveCheck(t, err, tc.code)
-			if workspaceTreeDigest(t, workspace) != before {
-				t.Fatal("semantic rejection mutated project")
-			}
-		})
-	}
-}
 
 func mutateArchiveEvent(t *testing.T, data []byte, eventType string, mutate func(*journal.Event)) ([]byte, string) {
 	t.Helper()
@@ -155,4 +38,76 @@ func mutateArchiveEvent(t *testing.T, data []byte, eventType string, mutate func
 		t.Fatal(err)
 	}
 	return append(bytes.Join(lines, []byte{'\n'}), '\n'), hash
+}
+
+func TestArchiveRejectsIntegrityValidSemanticCorruptions(t *testing.T) {
+	t.Parallel()
+	fixture := newExportSourceFixture(t, addLeanArtifactExportFacts)
+	if _, err := Validate(ValidateOptions{ArchivePath: fixture.archive, MigrationsDir: testMigrationsDir(t)}); err != nil {
+		t.Fatalf("valid control: %v", err)
+	}
+	original := archiveContents(t, fixture.archive)
+	for _, row := range []struct {
+		name, code, family string
+		mutate             func(*journal.Event)
+	}{
+		{"unknown Event", "effect-invalid", "check.started", func(e *journal.Event) { e.EventType = "check.invented" }},
+		{"incomplete nested check", "reference-invalid", "check.started", func(e *journal.Event) { effectForTest(t, e, "check_starts").Values["start_json"] = `{}` }},
+		{"incomplete cached result", "reference-invalid", "check.result-recorded", func(e *journal.Event) {
+			effectForTest(t, e, "idempotency_results").Values["result_json"] = `{"replayed":false}`
+		}},
+		{"unknown table", "effect-invalid", "check.started", func(e *journal.Event) { e.Effects[0].Table = "untrusted_table" }},
+		{"unknown column", "effect-invalid", "check.started", func(e *journal.Event) { e.Effects[0].Values["untrusted_column"] = 1 }},
+		{"wrong scalar type", "effect-invalid", "check.started", func(e *journal.Event) { effectForTest(t, e, "check_requests").Values["actor"] = 1 }},
+		{"boolean used as number", "effect-invalid", "check.artifact-kept", func(e *journal.Event) { effectForTest(t, e, "referenced_artifacts").Values["size_bytes"] = true }},
+		{"unresolved idempotency Event", "reference-invalid", "check.started", func(e *journal.Event) {
+			effectForTest(t, e, "idempotency_results").Values["result_event_id"] = "EVT-absent"
+		}},
+		{"observation subject differs from its row", "reference-invalid", "check.started", func(e *journal.Event) {
+			effect := effectForTest(t, e, "check_starts")
+			var start map[string]any
+			if err := json.Unmarshal([]byte(effect.Values["start_json"].(string)), &start); err != nil {
+				t.Fatal(err)
+			}
+			start["task_id"] = "FID-forged"
+			effect.Values["start_json"] = encodedLean(start)
+		}},
+		{"foreign check aggregate", "reference-invalid", "check.result-recorded", func(e *journal.Event) { e.Aggregate.ID = "CHK-foreign"; e.Aggregate.Sequence = 1 }},
+		{"issue aggregate differs from immutable Effect", "reference-invalid", "issue.created", func(e *journal.Event) { e.Aggregate.ID = "FID-forged" }},
+		{"immutable Artifact duplicate", "reference-invalid", "check.artifact-kept", func(e *journal.Event) { e.Effects = append([]journal.Effect{e.Effects[0]}, e.Effects...) }},
+	} {
+		t.Run(row.name, func(t *testing.T) {
+			t.Parallel()
+			entries := make(map[string][]byte, len(original))
+			for path, data := range original {
+				entries[path] = bytes.Clone(data)
+			}
+			path := archivePathWithPrefix(t, entries, "journal/")
+			data, hash := mutateArchiveEvent(t, entries[path], row.family, row.mutate)
+			entries[path] = data
+			manifest := decodeManifestMap(t, entries["manifest.json"])
+			manifest["terminal_event_hash"] = hash
+			updateManifestEntry(t, manifest, path, data)
+			entries["manifest.json"] = encodeManifestMap(t, manifest)
+			archive := filepath.Join(t.TempDir(), "corrupt.zip")
+			writeTestArchive(t, archive, entries)
+			before := workspaceTreeDigest(t, fixture.workspace)
+			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+			assertArchiveCheck(t, err, row.code)
+			if workspaceTreeDigest(t, fixture.workspace) != before {
+				t.Fatal("semantic rejection mutated project")
+			}
+		})
+	}
+}
+
+func effectForTest(t *testing.T, event *journal.Event, table string) *journal.Effect {
+	t.Helper()
+	for i := range event.Effects {
+		if event.Effects[i].Table == table {
+			return &event.Effects[i]
+		}
+	}
+	t.Fatalf("missing %s Effect in %s", table, event.EventType)
+	return nil
 }

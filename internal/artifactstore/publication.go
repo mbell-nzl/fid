@@ -56,3 +56,20 @@ func Contained(root, candidate string) bool {
 	relative, err := filepath.Rel(root, candidate)
 	return err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator))
 }
+
+// Root resolves and contains the configured Artifact store inside the ledger.
+func Root(ledgerRoot, root string) (string, error) {
+	fidRoot, err := filepath.EvalSymlinks(ledgerRoot)
+	if err != nil {
+		return "", fmt.Errorf("retain Artifacts: resolve fid root: %w", err)
+	}
+	store := filepath.Join(fidRoot, root)
+	if err := os.MkdirAll(store, 0o700); err != nil {
+		return "", fmt.Errorf("retain Artifacts: create store: %w", err)
+	}
+	resolved, err := filepath.EvalSymlinks(store)
+	if err != nil || !Contained(fidRoot, resolved) {
+		return "", fmt.Errorf("retain Artifacts: configured store escapes fid root")
+	}
+	return resolved, nil
+}

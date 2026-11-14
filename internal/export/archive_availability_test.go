@@ -6,31 +6,37 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/artifactverify"
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
-	"github.com/mbell-nzl/fid/internal/evidence"
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
-func TestCreateAndValidatePreserveUnavailableReceiptArtifactWithoutBody(t *testing.T) {
+func TestCreateAndValidatePreserveUnavailableCheckArtifactWithoutBody(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize workspace: %v", err)
 	}
-	artifactEntry := addJournalBackedExportFixtureFacts(t, workspace)
+	artifactEntry := addLeanArtifactExportFacts(t, workspace)
 	artifactDigest := "sha256:" + strings.TrimPrefix(filepath.Base(artifactEntry), "sha256:")
 	artifactID := exportFixtureArtifactID(t, workspace, artifactDigest)
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = conn.Close() }()
+	retained := retainedArtifactMetadata(t, conn, artifactID)
 	if err := os.Remove(filepath.Join(config.LedgerDir(workspace), artifactEntry)); err != nil {
 		t.Fatalf("remove retained Artifact body: %v", err)
 	}
-	verified, err := evidence.VerifyArtifact(evidence.ArtifactVerifyOptions{
+	verified, err := artifactverify.Verify(artifactverify.Options{
 		WorkspaceRoot:  workspace,
 		MigrationsDir:  testMigrationsDir(t),
-		ActorID:        "actor-builder",
+		ActorID:        "agent:builder",
 		IdempotencyKey: "fixture-artifact-unavailable",
-		Request:        evidence.ArtifactVerifyRequest{ArtifactID: artifactID},
+		Request:        artifactverify.Request{ArtifactID: artifactID},
 	})
 	if err != nil {
 		t.Fatalf("observe missing Artifact availability: %v", err)
@@ -38,6 +44,7 @@ func TestCreateAndValidatePreserveUnavailableReceiptArtifactWithoutBody(t *testi
 	if !verified.Changed || verified.Artifact.Availability != "missing" {
 		t.Fatalf("artifact availability observation = %#v, want changed missing", verified)
 	}
+	assertArtifactMetadata(t, verified.Artifact, retained, "missing")
 
 	archivePath := filepath.Join(t.TempDir(), "unavailable-artifact.zip")
 	if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archivePath}); err != nil {
@@ -51,17 +58,9 @@ func TestCreateAndValidatePreserveUnavailableReceiptArtifactWithoutBody(t *testi
 	if _, found := entries[artifactEntry]; found {
 		t.Fatalf("archive retains unavailable Artifact body %q", artifactEntry)
 	}
-	if _, found := entries["project-docs/gates/fixture.json"]; found {
-		t.Fatal("archive includes Source file prose instead of source metadata only")
-	}
 	manifest := archiveManifest(t, archivePath)
-	sources, ok := manifest["sources"].([]any)
-	if !ok || len(sources) != 1 {
-		t.Fatalf("manifest Sources = %#v, want one source metadata object", manifest["sources"])
-	}
-	source, ok := sources[0].(map[string]any)
-	if !ok || source["path"] != "project-docs/gates/fixture.json" || source["source_type"] != "project-file" {
-		t.Fatalf("manifest Source = %#v, want canonical project-file metadata", sources[0])
+	if sources, ok := manifest["sources"].([]any); !ok || len(sources) != 0 {
+		t.Fatalf("lean manifest Sources=%#v, want []", manifest["sources"])
 	}
 	journal := strings.Join(journalArchiveContents(t, entries), "\n")
 	if !strings.Contains(journal, `"event_type":"artifact.availability-observed"`) || !strings.Contains(journal, artifactID) || !strings.Contains(journal, `"availability":"missing"`) {

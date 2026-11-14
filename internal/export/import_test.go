@@ -18,6 +18,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/evidence"
 	"github.com/mbell-nzl/fid/internal/gittest"
+	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
@@ -28,7 +29,7 @@ func TestImportPublishesIdentityAndReplaysLostResponse(t *testing.T) {
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
-	addJournalBackedExportFixtureFacts(t, source)
+	addLeanArtifactExportFacts(t, source)
 	archive := filepath.Join(t.TempDir(), "recovery.zip")
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archive}); err != nil {
 		t.Fatalf("create archive: %v", err)
@@ -53,6 +54,9 @@ func TestImportPublishesIdentityAndReplaysLostResponse(t *testing.T) {
 		t.Fatalf("target source file changed during import: %q, %v", data, err)
 	}
 	assertImportedJournalEquals(t, source, target)
+	if _, err := issues.Create(issues.CreateOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), Kind: "task", Title: "After import", Actor: "human:mark", IdempotencyKey: "post-import-task"}); err != nil {
+		t.Fatal(err)
+	}
 	before := workspaceTreeDigest(t, target)
 	replayed, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "same-install"})
 	if err != nil || !replayed.Replayed || replayed.ProjectID != result.ProjectID {
@@ -74,7 +78,7 @@ func TestImportRejectsExistingAndUnsafeTargetsWithoutChangingThem(t *testing.T) 
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
-	addJournalBackedExportFixtureFacts(t, source)
+	addLeanArtifactExportFacts(t, source)
 	archive := filepath.Join(t.TempDir(), "recovery.zip")
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archive}); err != nil {
 		t.Fatalf("create archive: %v", err)
@@ -112,7 +116,7 @@ func TestImportAfterPublicationFaultReplaysInstalledResult(t *testing.T) {
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatalf("initialize source workspace: %v", err)
 	}
-	addJournalBackedExportFixtureFacts(t, source)
+	addLeanArtifactExportFacts(t, source)
 	archive := filepath.Join(t.TempDir(), "recovery.zip")
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archive}); err != nil {
 		t.Fatalf("create archive: %v", err)
@@ -139,7 +143,7 @@ func TestImportSnapshotsInputPreservesExistingFilesAndRejectsTamperedMarker(t *t
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
-	addJournalBackedExportFixtureFacts(t, source)
+	addLeanArtifactExportFacts(t, source)
 	archive := filepath.Join(t.TempDir(), "recovery.zip")
 	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archive}); err != nil {
 		t.Fatal(err)
@@ -187,7 +191,7 @@ func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
 		t.Fatal(err)
 	}
-	addJournalBackedExportFixtureFacts(t, source)
+	addKernelExportFacts(t, source)
 	sourceRuns, err := workflow.ListRuns(workflow.RunListOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Status: "active", Limit: 1})
 	if err != nil || len(sourceRuns) != 1 {
 		t.Fatalf("source active Run = %#v, %v", sourceRuns, err)
