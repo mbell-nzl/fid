@@ -4,9 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/mbell-nzl/fid/internal/cli"
-	"github.com/mbell-nzl/fid/internal/config"
-	"github.com/mbell-nzl/fid/internal/workflow"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +11,10 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func TestP24RunStartAfterCommitAndEdit(t *testing.T) {

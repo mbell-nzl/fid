@@ -4,13 +4,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/workflow"
 	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func TestActivationPrepareCreatesPreparedActivation(t *testing.T) {
