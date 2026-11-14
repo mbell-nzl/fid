@@ -1012,6 +1012,40 @@ caller. Local check storage, readers and evaluation are unchanged.
     rebase gives a new hand-off with the same fingerprint, so an approval
     survives it (V6).
 
+**1.6c's choices (2026-11-15).** `internal/fingerprint.Compute` accepts the
+recorded base and head as full lowercase 40-hex commit IDs and returns
+`patch-id-verbatim-v1`, the patch ID and both covered commits. It has no
+consumer yet: review rounds (1.6d), approval (1.6g) and done (1.6h) call it
+in their own slices. No command, record, migration, Event or dependency is
+added here.
+
+The algorithm renders one aggregate diff with patch output, no color,
+external diff, textconv or relative paths; `a/` and `b/` prefixes; no line
+prefix; three context lines and zero inter-hunk context; Myers with the
+indent heuristic; 50% rename detection with no rename-search limit; full
+index and `--binary`; all submodule changes in short form; standard output
+indicators; quoted paths; no blank-context suppression or order file.
+`--binary` preserves binary identities and contents; real add/change/delete
+tests distinguish two binary contents. Context changes adjacent to a hunk
+may still change the ID, as D10 permits.
+
+A disposable private git view borrows only the repository's existing
+object store, including alternates, and materializes committed attribute
+files from the recorded head using its own index. This excludes repository
+diff-driver config (which can change binary classification despite
+`--no-ext-diff`), local `info/attributes`, and checkout/index attributes.
+It changes no source repository files. System/global config and attributes
+are disabled, ambient git overrides are removed, replace refs are disabled,
+and every git child sets `GIT_NO_LAZY_FETCH=1` and `GIT_OPTIONAL_LOCKS=0`.
+No remote is configured in the private view.
+
+The complete diff must fit within 10 MiB (10,485,760 bytes), and its producer
+must exit successfully before those bytes reach `patch-id --verbatim`.
+Exactly one patch-ID line with a zero source-commit field is required; the
+consumer's exit status is checked too. Typed failures distinguish missing
+base/head objects, empty changes, oversized diffs and git/output failures
+(including unavailable trees/blobs). There is no prefix or empty binding.
+
 **Reviews and findings** (moved from 2.1)
 
 15. **Models are recorded as `<family>/<model>`**, for example
