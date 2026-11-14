@@ -38,7 +38,7 @@ func newBackupCommand() *cobra.Command {
 		Short: "Push the ledger's export to the backup repository.",
 		Long: "Export the ledger into the project's folder in the backup repository, commit and push.\n\n" +
 			"The target is [backup] target in $XDG_CONFIG_HOME/fid/config.toml; the folder is the project ID in .fid.toml.\n" +
-			"fid works in its own clone under $XDG_CACHE_HOME/fid/backup and records every attempt in the ledger's backups.jsonl.",
+			"fid works in its own clone under $XDG_CACHE_HOME/fid/backup and records each backup's outcome in the ledger's backups.jsonl.",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			root, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {

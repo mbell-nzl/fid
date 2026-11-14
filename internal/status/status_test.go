@@ -2,12 +2,12 @@ package status
 
 import (
 	"errors"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/backup"
+	"github.com/mbell-nzl/fid/internal/leaktest"
 )
 
 // nzdt is 13 hours ahead of UTC, so local times differ from UTC dates too.
@@ -15,17 +15,6 @@ var (
 	nzdt   = time.FixedZone("NZDT", 13*60*60)
 	testAt = time.Date(2026, 11, 8, 9, 0, 0, 0, time.UTC).In(nzdt)
 )
-
-// kernelWords are the kernel nouns and IDs that human output never names
-// (RESET 1.7).
-var kernelWords = regexp.MustCompile(`(?i)\b(envelopes?|activations?|obligations?|attempts?|attention items?|runs?|claims?)\b|ENV-|STP-|ATT-`)
-
-func assertNoKernelWords(t *testing.T, text string) {
-	t.Helper()
-	if found := kernelWords.FindAllString(text, -1); len(found) > 0 {
-		t.Fatalf("human output names kernel words %q:\n%s", found, text)
-	}
-}
 
 func before(d time.Duration) *time.Time {
 	at := testAt.Add(-d).UTC()
@@ -126,7 +115,7 @@ func TestDescribeBackupWording(t *testing.T) {
 			if described.Summary != test.summary || next != test.next {
 				t.Fatalf("backup = %q, next %q\nwant      %q, next %q", described.Summary, next, test.summary, test.next)
 			}
-			assertNoKernelWords(t, described.Summary+"\n"+next)
+			leaktest.AssertNoKernelWords(t, described.Summary+"\n"+next)
 		})
 	}
 }

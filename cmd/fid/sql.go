@@ -13,7 +13,7 @@ import (
 func newSQLCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sql <query>",
-		Short: "Run a read-only SQL query against the projected database.",
+		Short: "Execute a read-only SQL query against the projected database.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			workspaceRoot, err := discoverWorkspaceRoot(cmd)
