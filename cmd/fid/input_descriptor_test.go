@@ -26,20 +26,22 @@ func TestAdoptedExampleProcessExclusivity(t *testing.T) {
 		args           func(string) []string
 	}{
 		{"json first", "--json", nil, func(dir string) []string {
-			return []string{"--json", "--project", filepath.Join(dir, "absent-project"), "--input", filepath.Join(dir, "absent-input"), "--actor", "ACT-1", "--idempotency-key", "key-1", "extra"}
+			return []string{"--json", "--project", filepath.Join(dir, "absent-project"), "--input", filepath.Join(dir, "absent-input"), "--actor", "agent:builder", "--idempotency-key", "key-1", "extra"}
 		}},
 		{"project first", "--project", "ABSENT", func(dir string) []string {
-			return []string{"--project", filepath.Join(dir, "absent-project"), "--input", filepath.Join(dir, "absent-input"), "--actor", "ACT-1", "--idempotency-key", "key-1", "extra"}
+			return []string{"--project", filepath.Join(dir, "absent-project"), "--input", filepath.Join(dir, "absent-input"), "--actor", "agent:builder", "--idempotency-key", "key-1", "extra"}
 		}},
 		{"input first", "--input", "ABSENT", func(dir string) []string {
-			return []string{"--input", filepath.Join(dir, "absent-input"), "--actor", "ACT-1", "--idempotency-key", "key-1", "extra"}
+			return []string{"--input", filepath.Join(dir, "absent-input"), "--actor", "agent:builder", "--idempotency-key", "key-1", "extra"}
 		}},
-		{"actor first", "--actor", "ACT-1", func(string) []string { return []string{"--actor", "ACT-1", "--idempotency-key", "key-1", "extra"} }},
+		{"actor first", "--actor", "agent:builder", func(string) []string {
+			return []string{"--actor", "agent:builder", "--idempotency-key", "key-1", "extra"}
+		}},
 		{"key first", "--idempotency-key", "key-1", func(string) []string { return []string{"--idempotency-key", "key-1", "extra"} }},
 		{"positional", "arguments", "extra", func(string) []string { return []string{"extra"} }},
 	}
-	if got := len(leaves) * len(conflicts); got != 234 {
-		t.Fatalf("exclusivity corpus has %d rows, want 234", got)
+	if got := len(leaves) * len(conflicts); got != 6 {
+		t.Fatalf("exclusivity corpus has %d rows, want 6", got)
 	}
 	binary := buildAdoptedFID(t)
 	for _, leaf := range leaves {
@@ -231,6 +233,7 @@ func TestInputDescriptorRegistryMatchesLiveTreeAndTypes(t *testing.T) {
 		}
 	}
 	mismatch := inputDescriptorRegistry["artifact verify"]
+	mismatch.Fields = append([]cli.InputField(nil), mismatch.Fields...)
 	mismatch.Fields[0].Name = "wrong_artifact_id"
 	if err := cli.CheckInputType(mismatch); err == nil {
 		t.Error("seeded descriptor/type mismatch passed")
@@ -409,7 +412,7 @@ func p24DescriptorProcessCorpus(t *testing.T, leaves map[string]cli.InputDescrip
 					args := append([]string{"--json"}, parts...)
 					args = append(args, "--input", input)
 					if leaf != "evidence evaluate" {
-						args = append(args, "--actor", "ACT-1", "--idempotency-key", "structure")
+						args = append(args, "--actor", "agent:builder", "--idempotency-key", "structure")
 					}
 					out, failure, exit := runAdoptedFID(t, binary, workspace, args...)
 					if exit != 2 || out != "" {
@@ -710,41 +713,8 @@ func TestEveryLiveLeafHasOneLineShort(t *testing.T) {
 
 func TestAdoptedInputHelpAndExamples(t *testing.T) {
 	t.Parallel()
-	templates := map[string]string{
-		"stop raise": `{
-  "subject": {
-    "type": "run",
-    "id": "<subject-id>"
-  },
-  "code": "executor-liveness-unknown",
-  "blocked_actions": ["claim.acquire"],
-  "details": {
-    "run_id": "<run-id>",
-    "executor_id": "<executor-id>",
-    "observation_id": null
-  },
-  "resolution_condition": {
-    "type": "executor-terminated",
-    "subject": {
-      "type": "run",
-      "id": "<subject-id>"
-    },
-    "budget_name": null,
-    "capability_id": null
-  },
-  "resolver_capability": "<capability-id>"
-}` + "\n",
-		"stop resolve": `{
-  "stop_id": "<stop-id>",
-  "fact_event_id": "<fact-event-id>"
-}` + "\n",
-		"attention resolve": `{
-  "attention_id": "<attention-id>",
-  "expected_version": 1,
-  "fact_event_ids": []
-}` + "\n",
-	}
-	for _, key := range []string{"stop raise", "stop resolve", "attention resolve"} {
+	templates := map[string]string{"artifact verify": "{\n  \"artifact_id\": \"<artifact-id>\"\n}\n"}
+	for _, key := range []string{"artifact verify"} {
 		descriptor := inputDescriptorRegistry[key]
 		t.Run(key, func(t *testing.T) {
 			t.Parallel()
@@ -754,10 +724,10 @@ func TestAdoptedInputHelpAndExamples(t *testing.T) {
 			if help.err != nil || !strings.Contains(help.stdout, descriptor.Purpose) || !strings.Contains(help.stdout, "fid "+key+" --example") {
 				t.Fatalf("help for %s = %#v", key, help)
 			}
-			if key == "stop raise" {
-				const fullHelpSHA256 = "b3a71078d99b3047a9ffdba35e599bd8298da2e6f6e9b06f709ba3283af5bf75"
+			if key == "artifact verify" {
+				const fullHelpSHA256 = "376533fe7cd72619fbeb82543252772c4ddbea326d7cd2cbfb19d7ccd338b0e9"
 				if got := fmt.Sprintf("%x", sha256.Sum256([]byte(help.stdout))); got != fullHelpSHA256 {
-					t.Fatalf("full stop raise help changed: SHA-256 %s, want %s; help=%s", got, fullHelpSHA256, help.stdout)
+					t.Fatalf("full artifact verify help changed: SHA-256 %s, want %s; help=%s", got, fullHelpSHA256, help.stdout)
 				}
 			}
 			for _, field := range descriptor.Fields {
@@ -798,11 +768,11 @@ func TestExampleRejectsOtherInputsInFixedOrder(t *testing.T) {
 		{[]string{"--json", "--project", "/missing", "--input", "/missing"}, "--json"},
 		{[]string{"--project", "/missing"}, "--project"},
 		{[]string{"--input", "/missing"}, "--input"},
-		{[]string{"--actor", "ACT-1"}, "--actor"},
+		{[]string{"--actor", "agent:builder"}, "--actor"},
 		{[]string{"--idempotency-key", "key-1"}, "--idempotency-key"},
 		{[]string{"extra"}, "arguments"},
 	} {
-		args := append([]string{"attention", "resolve", "--example"}, test.args...)
+		args := append([]string{"artifact", "verify", "--example"}, test.args...)
 		result := executeCommandForTest(t.TempDir(), args...)
 		if cli.ExitCode(result.err) != 2 {
 			t.Errorf("%v: exit = %d, stderr=%s", args, cli.ExitCode(result.err), result.stderr)

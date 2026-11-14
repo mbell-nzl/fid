@@ -53,8 +53,8 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	}
 	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 38 || len(legacy) != 2 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 38 and 2", len(retained), len(legacy))
+	if len(retained) != 35 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 35 and 2", len(retained), len(legacy))
 	}
 	want := append([]string{}, retained...)
 	want = append(want, legacy...)
@@ -66,7 +66,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 
 	wantCapabilities := make(map[string]rootFlagCapability, len(retained))
 	for _, command := range retained {
-		if command == "issue" || command == "run" || command == "issue ac" || command == "concern" {
+		if command == "issue" || command == "issue ac" {
 			continue
 		}
 		wantCapabilities[command] = rootFlagCapability{Project: true, JSON: true}
@@ -150,7 +150,7 @@ func TestLiveTestsContainNoUniversalFormatInvocation(t *testing.T) {
 		"TestIssueGetRejectsAllFormatValues":                                        true,
 		"TestIssueListRejectsRetiredFormatFlag":                                     true,
 		"TestLabelListRejectsLegacyFormatFlag":                                      true,
-		"TestReadyRejectsRetiredFormatFlag":                                         true,
+		"TestNextRejectsRetiredFormatFlag":                                          true,
 		"TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues": true,
 		"TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat":               true,
 		"TestV01ReadCommandsRejectRetiredFormats":                                   true,
@@ -227,21 +227,21 @@ func TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags(t *testing.T) {
 
 	t.Run("local flag", func(t *testing.T) {
 		root := newRootCommandAt(t.TempDir())
-		var ready *cobra.Command
+		var next *cobra.Command
 		for _, command := range root.Commands() {
-			if command.Name() == "ready" {
-				ready = command
+			if command.Name() == "next" {
+				next = command
 				break
 			}
 		}
-		if ready == nil {
-			t.Fatal("live Cobra tree has no ready command")
+		if next == nil {
+			t.Fatal("live Cobra tree has no next command")
 		}
-		ready.Flags().String("yaml", "", "injected test flag")
+		next.Flags().String("yaml", "", "injected test flag")
 
 		violations := liveUniversalFormatFlagViolations(root)
-		if !containsUniversalFormatViolation(violations, "fid ready --yaml") {
-			t.Fatalf("injected local yaml flag violations = %v, want fid ready --yaml", violations)
+		if !containsUniversalFormatViolation(violations, "fid next --yaml") {
+			t.Fatalf("injected local yaml flag violations = %v, want fid next --yaml", violations)
 		}
 	})
 }

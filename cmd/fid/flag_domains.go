@@ -60,14 +60,14 @@ var declaredStringDomains = map[string]map[string]flagDomain{
 	},
 
 	"link add": {
-		"from-type": enumDomain("P21 §4.1 link.add", "issue"),
-		"to-type":   enumDomain("P21 §4.1 link.add", "issue"),
+		"from-type": enumDomain("P21 §4.1 link.add", "issue", "requirement"),
+		"to-type":   enumDomain("P21 §4.1 link.add", "issue", "requirement"),
 	},
 	"link remove": {
-		"from-type": enumDomain("P21 §4.1 link.remove", "issue"),
-		"to-type":   enumDomain("P21 §4.1 link.remove", "issue"),
+		"from-type": enumDomain("P21 §4.1 link.remove", "issue", "requirement"),
+		"to-type":   enumDomain("P21 §4.1 link.remove", "issue", "requirement"),
 	},
-	"link list": {"type": enumDomain("P21 §4.1 link.list", "issue")},
+	"link list": {"type": enumDomain("P21 §4.1 link.list", "issue", "requirement")},
 
 	"activity list": {"event": enumDomain("P21 §3 ActivityEvent amended by P23 §2 ActivityEvent",
 		"ac-added", "comment-added", "issue-created", "issue-label-added", "issue-label-removed", "issue-updated", "link-added", "link-removed", "status-changed")},
@@ -100,7 +100,6 @@ func validPrioritySet(value string) bool {
 
 // declaredBooleanFlags names each leaf's boolean flags, separated by spaces.
 var declaredBooleanFlags = map[string]string{
-
 	"maintenance check": "warn-as-error",
 	"next":              "claim explain",
 	"park":              "interrupted",
@@ -118,9 +117,6 @@ func flagDomainFor(cmd *cobra.Command, flag *pflag.Flag) flagDomain {
 	}
 	if domain, ok := declaredIntegerDomains[key][flag.Name]; ok {
 		return domain
-	}
-	if flag.Name == "limit" {
-		return integerDomain("P21 §4.2; P22 §4; P23 §1,4 lists", 1, 10000)
 	}
 	if flag.Name == "expected-revision" {
 		domain := integerDomain("P21 §4.1; P20 §3.2.1", 1, 9223372036854775807)
@@ -140,9 +136,6 @@ func flagDomainFor(cmd *cobra.Command, flag *pflag.Flag) flagDomain {
 	}
 	if flag.Name == "idempotency-key" {
 		return flagDomain{[]string{"string"}, "P21 §2 idempotency key", validIdempotencyKey}
-	}
-	if flag.Name == "actor" && false {
-		return opaqueFlagDomain("P21 §2 activated Actor / §4.2 mutation row")
 	}
 	if flag.Name == "actor" {
 		return patternDomain("P21 §2 standalone Actor", `^(agent|human|service):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`)

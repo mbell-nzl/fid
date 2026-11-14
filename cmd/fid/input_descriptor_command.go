@@ -68,7 +68,7 @@ func writeExampleConflict(cmd *cobra.Command, operation, spelling string, value 
 	if err != nil {
 		return err
 	}
-	return writeStopFailure(cmd, jsonMode, operation, fmt.Errorf("%s", message), cli.CodeInvalidArgument, message, nil,
+	return writeFailure(cmd, jsonMode, operation, fmt.Errorf("%s", message), cli.CodeInvalidArgument, message, nil,
 		map[string]any{"argument": spelling, "value": value, "allowed": []string{"--example"}})
 }
 

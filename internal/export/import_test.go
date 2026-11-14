@@ -273,9 +273,6 @@ func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "imported history") {
 		t.Fatalf("abandon with imported observation error = %v, want imported-history rejection", err)
 	}
-	// The historical request still contains repository. Task 8 removes that
-	// member, so retain its refusal through the actual closed CLI boundary.
-	assertRemovedHistoricalGateRequest(t, target, registrationID, registrationVersion, run.ID, inspection.Reconciliation.Repository)
 	_, err = workflow.RecoverRun(workflow.RunOptions{WorkspaceRoot: target, MigrationsDir: testMigrationsDir(t), ActorID: "actor-builder", IdempotencyKey: "old-observation"}, workflow.RunRecoveryRequest{PriorRunID: run.ID, ExpectedRunVersion: run.Version, ExpectedClaimVersion: 1, ObservationID: importedObservationID, ReconciliationDigest: inspection.Reconciliation.Digest, AdoptedPaths: []string{}, Authority: workflow.RecoveryAuthority{Mode: "ordinary", ActorID: "actor-builder", Reason: "fresh local liveness required"}, Executor: workflow.Executor{ID: "executor-target", Source: "activated-harness"}, TTLSeconds: 60})
 	if err == nil {
 		t.Fatal("imported active Run recovered without a fresh destination observation")
@@ -312,35 +309,6 @@ func TestImportRequiresFreshDestinationObservationBeforeRecovery(t *testing.T) {
 	}
 	if workspaceTreeDigest(t, target) != beforeRetry {
 		t.Fatal("import replay changed successor history")
-	}
-}
-
-func assertRemovedHistoricalGateRequest(t *testing.T, target, registrationID string, registrationVersion int, runID string, repository workflow.Repository) {
-	t.Helper()
-	binary := filepath.Join(t.TempDir(), "fid")
-	build := exec.Command("go", "build", "-o", binary, "./cmd/fid")
-	build.Dir = filepath.Join("..", "..")
-	if output, err := build.CombinedOutput(); err != nil {
-		t.Fatalf("build fid: %v\n%s", err, output)
-	}
-	input, err := json.Marshal(map[string]any{"registration_id": registrationID, "registration_version": registrationVersion,
-		"obligation_id": "OBL-fixture", "run_id": runID, "repository": evidenceRepository(repository)})
-	if err != nil {
-		t.Fatal(err)
-	}
-	before := workspaceTreeDigest(t, target)
-	cmd := exec.Command(binary, "--project", target, "--json", "gate", "run", "--actor", "actor-builder", "--idempotency-key", "historical-gate", "--input", "-")
-	cmd.Dir, cmd.Stdin = target, bytes.NewReader(input)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout, cmd.Stderr = &stdout, &stderr
-	err = cmd.Run()
-	var exit *exec.ExitError
-	if !errors.As(err, &exit) || exit.ExitCode() != 2 || stdout.Len() != 0 {
-		t.Fatalf("historical Gate request = %v stdout=%q stderr=%q", err, stdout.String(), stderr.String())
-	}
-	want := `{"contract_version":"fid-cli.v1","error":{"category":"invalid-input","code":"invalid-argument","details":{"allowed":["expected_repository","obligation_id","registration_id","registration_version","run_id"],"argument":"input.repository","value":"repository"},"message":"invalid input.repository","retryable":false,"subject":null},"ok":false,"operation":"gate.run"}` + "\n"
-	if stderr.String() != want || workspaceTreeDigest(t, target) != before {
-		t.Fatalf("historical Gate refusal = %q, want %q with no state change", stderr.String(), want)
 	}
 }
 

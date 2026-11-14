@@ -60,8 +60,8 @@ func assertEveryProjectCommandRefuses(t *testing.T, start string, want repositor
 	t.Helper()
 	inputs := t.TempDir()
 	cases := projectCommandRefusalCases(t, start, inputs)
-	if len(cases) != 105 {
-		t.Fatalf("project commands = %d, want every live leaf except export validate and maintenance vacuum (105)", len(cases))
+	if len(cases) != 35 {
+		t.Fatalf("project commands = %d, want every live leaf except export validate and maintenance vacuum (35)", len(cases))
 	}
 	before := make([]map[string]workspaceSnapshotEntry, len(watched))
 	for index, directory := range watched {
@@ -190,14 +190,8 @@ func projectCommandFlags(key, outside string) []string {
 		return []string{"--type", "issue"}
 	case "next":
 		return []string{"--claim"}
-	case "gate resolve":
-		return []string{"--version", "1"}
 	case "export import":
 		return []string{"--repository", outside}
-	case "workflow define":
-		return []string{"--name", "refusal", "--applies-to", "task", "--states", "todo,done", "--categories", "unstarted,completed", "--transitions", "todo->done"}
-	case "workflow assign":
-		return []string{"--name", "refusal", "--kind", "task"}
 	}
 	return nil
 }
@@ -341,10 +335,6 @@ func TestProjectCommandsUseTheWorktreeTopLevel(t *testing.T) {
 		listed := executeCommandForTest(item.directory, append(item.args, "--json", "issue", "list")...)
 		if listed.err != nil || !strings.Contains(listed.stdout, `"id":"`+issueID+`"`) {
 			t.Fatalf("%s: issue list = %#v, want %s", item.name, listed, issueID)
-		}
-		concerns := executeCommandForTest(item.directory, append(item.args, "--json", "concern", "list")...)
-		if concerns.err != nil || !strings.Contains(concerns.stdout, `"operation":"concern.list"`) {
-			t.Fatalf("%s: concern list = %#v", item.name, concerns)
 		}
 	}
 	inspected := executeCommandForTest(nested, "journal", "inspect", envelope.Event.ID)

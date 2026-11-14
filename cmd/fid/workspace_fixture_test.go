@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -33,35 +32,10 @@ var reusableWorkspaceFixtures = struct {
 	items map[string]*reusableWorkspaceFixture
 }{items: make(map[string]*reusableWorkspaceFixture)}
 
-var envelopeBindingsForTest sync.Map
-
 type reusableWorkspaceFixture struct {
 	sync.Mutex
 	root   string
 	values []string
-}
-
-type envelopeBindingForTest struct {
-	registrationID      string
-	registrationVersion int
-	obligationID        string
-	claimID             string
-	runID               string
-}
-
-func rememberEnvelopeBindingForTest(t *testing.T, workspace string, binding envelopeBindingForTest) {
-	t.Helper()
-	envelopeBindingsForTest.Store(workspace, binding)
-	t.Cleanup(func() { envelopeBindingsForTest.Delete(workspace) })
-}
-
-func envelopeBindingForWorkspace(t *testing.T, workspace string) envelopeBindingForTest {
-	t.Helper()
-	value, ok := envelopeBindingsForTest.Load(workspace)
-	if !ok {
-		t.Fatalf("workspace %q has no cached Envelope binding", workspace)
-	}
-	return value.(envelopeBindingForTest)
 }
 
 func TestMain(m *testing.M) {
@@ -82,10 +56,6 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 	}
 	if os.Getenv(runAsFIDVariable) != "" {
 		return runAsFID()
-	}
-	if containsTestArgument(os.Args, "--live-golden-child") || commandTestHelperChild() {
-		// Children inherit the isolated config directory from their parent.
-		return m.Run()
 	}
 	configHome, err := os.MkdirTemp("", "fid-test-config-")
 	if err != nil {
@@ -180,13 +150,6 @@ func runAsFID() int {
 	return 0
 }
 
-// commandTestHelperChild reports whether this process is a helper started by
-// a test: a gate or Artifact helper, which runs under a gate's environment
-// allowlist with no PATH for git. Neither uses the pristine workspace.
-func commandTestHelperChild() bool {
-	return os.Getenv("FID_GATE_HELPER") != "" || os.Getenv("FID_ARTIFACT_HELPER") != ""
-}
-
 func commandRepositoryRoot() string {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
@@ -244,15 +207,6 @@ func cloneReusableWorkspaceFixture(t *testing.T, key string, build func() (strin
 		t.Fatalf("clone reusable workspace fixture: %v", err)
 	}
 	return workspace, append([]string(nil), fixture.values...)
-}
-
-func reusableWorkspaceFixtureKey(t *testing.T, prefix string, value any) string {
-	t.Helper()
-	payload, err := json.Marshal(value)
-	if err != nil {
-		t.Fatalf("encode reusable workspace fixture key: %v", err)
-	}
-	return prefix + ":" + string(payload)
 }
 
 func reusableWorkspaceFixtureFor(key string) *reusableWorkspaceFixture {
@@ -451,12 +405,6 @@ func isTask9RetainedMutation(args []string) bool {
 		if index+1 < len(args) && args[index] == "link" && (args[index+1] == "add" || args[index+1] == "remove") {
 			return true
 		}
-		if index+1 < len(args) && args[index] == "requirement" && args[index+1] == "sync" {
-			return true
-		}
-		if index+1 < len(args) && args[index] == "workflow" && (args[index+1] == "define" || args[index+1] == "assign") {
-			return true
-		}
 	}
 	return false
 }
@@ -486,7 +434,7 @@ func TestTask9RetainedMutationFixtureArgumentsUseActorAndIdempotency(t *testing.
 	}
 }
 
-func TestTask9FixtureAdapterLeavesJudgmentAndPolicyCommandsUntouched(t *testing.T) {
+func TestTask9FixtureAdapterLeavesUnknownPolicyCommandUntouched(t *testing.T) {
 	t.Parallel()
 	for _, args := range [][]string{
 		{"policy", "show"},

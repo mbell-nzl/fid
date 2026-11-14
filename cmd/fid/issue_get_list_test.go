@@ -163,26 +163,6 @@ func TestIssueListJSONMatchesClosedSchemaAndRetainedFilters(t *testing.T) {
 	}
 }
 
-func TestReadyJSONHasExclusiveClosedResultStates(t *testing.T) {
-	t.Parallel()
-	workspace := clonePristineWorkspace(t)
-	ready := executeCommandForTest(workspace, "--json", "ready")
-	if ready.err != nil || ready.stderr != "" {
-		t.Fatalf("ready result = %#v, want JSON success on stdout only", ready)
-	}
-	envelope := decodeReadEnvelope(t, ready.stdout, "ready.get")
-	assertExactKeys(t, envelope.Result, []string{"task", "explanation"})
-	assertNull(t, envelope.Result, "task")
-	explanation := requireObject(t, envelope.Result, "explanation")
-	assertExactKeys(t, explanation, []string{"code", "scope", "epic_id", "blocking_task_id", "blocking_task_title", "blocking_task_status"})
-	if explanation["code"] != "no_ready_tasks" || explanation["scope"] != "project" {
-		t.Fatalf("ready explanation = %#v, want project no_ready_tasks", explanation)
-	}
-	for _, key := range []string{"epic_id", "blocking_task_id", "blocking_task_title", "blocking_task_status"} {
-		assertNull(t, explanation, key)
-	}
-}
-
 func TestIssueReadRejectsRetiredAndMalformedInputs(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)

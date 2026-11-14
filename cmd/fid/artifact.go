@@ -6,6 +6,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/artifactverify"
 	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/spf13/cobra"
 )
 
@@ -64,7 +65,22 @@ func renderArtifactError(cmd *cobra.Command, operation string, cause error) erro
 		if err != nil {
 			return err
 		}
-		return writeStopFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, denied.Error(), nil, map[string]any{"actor_id": denied.Actor, "operation": operation, "required_actions": []string{operation}, "required_capabilities": []string{operation}})
+		return writeFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, denied.Error(), nil, map[string]any{"actor_id": denied.Actor, "operation": operation, "required_actions": []string{operation}, "required_capabilities": []string{operation}})
 	}
-	return renderIssueMutationError(cmd, operation, "", cause)
+	if refused := renderRepositoryRefusal(cmd, cause); refused != nil {
+		return refused
+	}
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	var structural *cli.InputError
+	if errors.As(cause, &structural) {
+		return writeFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, structural.Error(), nil, structural.Details())
+	}
+	var conflict *journal.IdempotencyConflictError
+	if errors.As(cause, &conflict) {
+		return writeFailure(cmd, jsonMode, operation, cause, cli.CodeIdempotencyConflict, "idempotency key is bound to another request", nil, idempotencyConflictDetails(conflict))
+	}
+	return writeGenericFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid gate request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted gate registration input"}})
 }

@@ -5,6 +5,7 @@ package integration
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/gittest"
@@ -38,6 +39,10 @@ func p24LifecycleCommands(t *testing.T, binary, workspace string) {
 	file := filepath.Join(workspace, ".fid.toml")
 	raw, err := os.ReadFile(file)
 	if err != nil {
+		t.Fatal(err)
+	}
+	raw = []byte(strings.Replace(string(raw), "[checks.pass]\nrun=['true']", "[checks.pass]\nartifacts=['lifecycle-artifact.txt']\nrun=['true']", 1))
+	if err := os.WriteFile(filepath.Join(workspace, "lifecycle-artifact.txt"), []byte("kept lifecycle file\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(file, append(raw, []byte("\n[review]\ntest_adequacy=[]\n")...), 0o600); err != nil {

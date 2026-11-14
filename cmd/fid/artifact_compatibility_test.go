@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
@@ -53,6 +54,10 @@ func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *test
 		result := decodeCanonicalResult(t, got.stdout)
 		metadata := result["artifact"].(map[string]any)
 		assertExactKeys(t, metadata, []string{"id", "digest", "media_type", "size_bytes", "retention_class", "availability", "location_policy", "created_at", "expires_at"})
+		wantMetadata := map[string]any{"id": artifact.ID, "digest": artifact.Digest, "size_bytes": json.Number(strconv.FormatInt(artifact.SizeBytes, 10)), "media_type": "application/octet-stream", "retention_class": "evidence", "availability": row.availability, "location_policy": "content-addressed", "created_at": before.Result.FinishedAt, "expires_at": nil}
+		if !reflect.DeepEqual(metadata, wantMetadata) {
+			t.Fatalf("Artifact metadata=%#v, want %#v", metadata, wantMetadata)
+		}
 		if metadata["availability"] != row.availability || result["changed"] != row.changed || result["replayed"] != false {
 			t.Fatalf("%s: %s", row.key, got.stdout)
 		}

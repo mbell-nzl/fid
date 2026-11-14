@@ -460,7 +460,3 @@ func issueListIDs(items []ListItem) []string {
 	}
 	return ids
 }
-
-func boolPointer(value bool) *bool {
-	return &value
-}

@@ -892,29 +892,6 @@ func mustGetIssueJSON(t *testing.T, workspace, issueID string) string {
 	return string(payload)
 }
 
-type issueConcernListItem struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
-}
-
-func mustGetConcernListJSONForIssue(t *testing.T, workspace, issueID string) []issueConcernListItem {
-	t.Helper()
-
-	stdout, stderr := runFIDCommand(t, workspace, "--json", "concern", "list", "--subject", "issue:"+issueID)
-	if stderr != "" {
-		t.Fatalf("concern list for %s stderr = %q, want empty", issueID, stderr)
-	}
-	var envelope struct {
-		Result struct {
-			Items []issueConcernListItem `json:"items"`
-		} `json:"result"`
-	}
-	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
-		t.Fatalf("Unmarshal(concern list for %s) error = %v", issueID, err)
-	}
-	return envelope.Result.Items
-}
-
 func mustIssueTriageStatus(t *testing.T, workspace, issueID string) *string {
 	t.Helper()
 

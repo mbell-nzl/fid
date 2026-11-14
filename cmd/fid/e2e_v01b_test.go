@@ -12,7 +12,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
-func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.T) {
+func TestV01BSmokeCreateListGetUpdateTransitionAndRebuildParity(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	runInitCommand(t, workspace, "init")
@@ -220,24 +220,6 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		Priority:       intPointer(1),
 	})
 
-	seqReadyStdout, seqReadyStderr := runFIDCommand(t, workspace, "--json", "ready", "--epic", seqEpicID)
-	if seqReadyStderr != "" {
-		t.Fatalf("sequential ready stderr = %q, want empty", seqReadyStderr)
-	}
-	assertReadyTaskID(t, seqReadyStdout, seqNextID)
-
-	priReadyStdout, priReadyStderr := runFIDCommand(t, workspace, "--json", "ready", "--epic", priEpicID)
-	if priReadyStderr != "" {
-		t.Fatalf("prioritised ready stderr = %q, want empty", priReadyStderr)
-	}
-	assertReadyTaskID(t, priReadyStdout, priHighID)
-
-	projectReadyStdout, projectReadyStderr := runFIDCommand(t, workspace, "--json", "ready")
-	if projectReadyStderr != "" {
-		t.Fatalf("project ready stderr = %q, want empty", projectReadyStderr)
-	}
-	assertReadyTaskID(t, projectReadyStdout, priHighID)
-
 	beforeIssueJSON := map[string]string{
 		seqEpicID:    mustGetIssueJSON(t, workspace, seqEpicID),
 		seqCurrentID: mustGetIssueJSON(t, workspace, seqCurrentID),
@@ -273,11 +255,8 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 	}
 
 	beforeCommandOutputs := map[string]string{
-		"seq_list":      finalSeqListStdout,
-		"pri_list":      finalPriListStdout,
-		"seq_ready":     seqReadyStdout,
-		"pri_ready":     priReadyStdout,
-		"project_ready": projectReadyStdout,
+		"seq_list": finalSeqListStdout,
+		"pri_list": finalPriListStdout,
 	}
 
 	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
@@ -323,11 +302,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		t.Fatalf("prioritised list after rebuild = %q, want %q", afterPriListStdout, beforeCommandOutputs["pri_list"])
 	}
 
-	for key, args := range map[string][]string{
-		"seq_ready":     {"--json", "ready", "--epic", seqEpicID},
-		"pri_ready":     {"--json", "ready", "--epic", priEpicID},
-		"project_ready": {"--json", "ready"},
-	} {
+	for key, args := range map[string][]string{} {
 		stdout, stderr := runFIDCommand(t, workspace, args...)
 		if stderr != "" {
 			t.Fatalf("%s stderr after rebuild = %q, want empty", key, stderr)
@@ -430,18 +405,5 @@ func assertOptionalInt(t *testing.T, issueID, field string, got, want *int) {
 	}
 	if got == nil || *got != *want {
 		t.Fatalf("issue %s %s = %#v, want %d", issueID, field, got, *want)
-	}
-}
-
-func assertReadyTaskID(t *testing.T, stdout, wantTaskID string) {
-	t.Helper()
-
-	payload := decodeCanonicalResult(t, stdout)
-	task, ok := payload["task"].(map[string]any)
-	if !ok {
-		t.Fatalf("ready payload = %#v, want task object", payload)
-	}
-	if gotTaskID, _ := task["id"].(string); gotTaskID != wantTaskID {
-		t.Fatalf("ready task id = %q, want %q", gotTaskID, wantTaskID)
 	}
 }

@@ -31,6 +31,12 @@ func TestP24RetainedKeyedLeavesRebuildInOneJournal(t *testing.T) {
 	call("link", "add", issue, "blocks", peerID, "--from-type", "issue", "--to-type", "issue", "--actor", "agent:developer", "--idempotency-key", "single-link-add")
 	call("link", "remove", issue, "blocks", peerID, "--from-type", "issue", "--to-type", "issue", "--actor", "agent:developer", "--idempotency-key", "single-link-remove")
 	p24LifecycleCommands(t, binary, workspace)
+	connArtifact := p22FaultDB(t, workspace)
+	var artifactID string
+	p22FaultOK(t, connArtifact.QueryRow("SELECT id FROM referenced_artifacts ORDER BY id LIMIT 1").Scan(&artifactID))
+	p22FaultOK(t, connArtifact.Close())
+	input := p21Input(t, workspace, "single-verify", map[string]any{"artifact_id": artifactID})
+	call("artifact", "verify", "--input", input, "--actor", "human:mark", "--idempotency-key", "single-verify")
 	captured := p24EndKeyedCapture(workspace)
 	want := retainedKeyedLeaves(t)
 	got := p24CapturedNames(captured)
@@ -42,6 +48,9 @@ func TestP24RetainedKeyedLeavesRebuildInOneJournal(t *testing.T) {
 		field := p24FlagFields[operation]
 		if field == "" {
 			field = p24LifecycleFields[operation]
+		}
+		if operation == "artifact.verify" {
+			field = "artifact_id"
 		}
 		if operation == "issue.create" {
 			field = "--title"
@@ -85,15 +94,6 @@ func retainedKeyedLeaves(t *testing.T) []string {
 		if !ok {
 			t.Fatalf("invalid keyed row %q", row)
 		}
-		family, _, _ := strings.Cut(name, " ")
-		if family == "artifact" {
-			continue
-		} // Own command corpus moves with its adapter in 1.5c2.
-		switch family {
-		case "issue", "label", "link", "park", "answer", "takeover", "start", "check", "handoff":
-		default:
-			continue
-		}
 		operation := strings.ReplaceAll(name, " ", ".")
 		if mapped := map[string]string{"check": "check.execute", "handoff": "task.handoff", "start": "task.start", "park": "hold.park", "answer": "task.answer", "takeover": "task.takeover"}[name]; mapped != "" {
 			operation = mapped
@@ -101,8 +101,8 @@ func retainedKeyedLeaves(t *testing.T) []string {
 		want = append(want, operation)
 	}
 	sort.Strings(want)
-	if len(want) != 15 {
-		t.Fatalf("retained keyed leaves=%v, want 15 plus separate Artifact compatibility corpus", want)
+	if len(want) != 16 {
+		t.Fatalf("retained keyed leaves=%v, want all 16 remaining keyed leaves", want)
 	}
 	return want
 }

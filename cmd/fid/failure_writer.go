@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func writeStopFailure(cmd *cobra.Command, jsonMode bool, operation string, cause error, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
+func writeFailure(cmd *cobra.Command, jsonMode bool, operation string, cause error, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
 	failure, err := cli.NewFailure(code, message, subject, details)
 	if err != nil {
 		return err

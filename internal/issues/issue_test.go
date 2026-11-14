@@ -170,7 +170,7 @@ func TestCreateRejectsUnsupportedKind(t *testing.T) {
 	}
 }
 
-func TestIssueCreateUsesAssignedWorkflowAndItsInitialState(t *testing.T) {
+func TestIssueCreateIgnoresRetiredWorkflowAssignments(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
@@ -252,9 +252,7 @@ func TestIssueCreateUsesAssignedWorkflowAndItsInitialState(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Get() error = %v", err)
 			}
-			if fixture.kind == "task" {
-				fixture.workflowID, fixture.wantStatus = "task-default", "todo"
-			}
+			fixture.workflowID, fixture.wantStatus = fixture.kind+"-default", "todo"
 			if got.WorkflowID != fixture.workflowID {
 				t.Fatalf("workflow_id = %q, want %q", got.WorkflowID, fixture.workflowID)
 			}
@@ -265,7 +263,7 @@ func TestIssueCreateUsesAssignedWorkflowAndItsInitialState(t *testing.T) {
 	}
 }
 
-func TestIssueCreateResolvesKindAssignmentBeforeProjectAssignment(t *testing.T) {
+func TestIssueCreateKeepsFixedStatesWithRetiredProjectAssignments(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
@@ -965,42 +963,6 @@ func TestCreateAppendsIssueCreatedActivityInSameEvent(t *testing.T) {
 	}
 }
 
-func seedConcernIssue(t *testing.T, workspace string) string {
-	t.Helper()
-	created, err := Create(CreateOptions{
-		WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t),
-		Kind: "task", Title: "Concern history task",
-		Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
-	})
-	if err != nil {
-		t.Fatalf("Create() error = %v", err)
-	}
-	return created.ID
-}
-
-func seedGenericIssueConcern(t *testing.T, workspace, concernID, issueID, status, summary, createdAt string) {
-	t.Helper()
-	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
-	defer closeIssueTestDB(t, conn)
-	if status == "disposed" {
-		_, err := conn.Exec(`INSERT INTO concerns
-			(id, subject_type, subject_id, actor_id, scope_json, severity, summary, reasoning, references_json, status,
-			 disposition_action, disposition_reason, disposed_actor_id, disposed_at, disposed_event_id, created_at, created_event_id)
-			VALUES (?, 'issue', ?, 'developer', '{"paths":[]}', 'major', ?, 'Needs review', '[]', 'disposed',
-			 'rejected', 'Resolved', 'qa_lead', ?, 'EVT-dispose', ?, 'EVT-create')`, concernID, issueID, summary, createdAt, createdAt)
-		if err != nil {
-			t.Fatalf("seed disposed concern: %v", err)
-		}
-		return
-	}
-	_, err := conn.Exec(`INSERT INTO concerns
-		(id, subject_type, subject_id, actor_id, scope_json, severity, summary, reasoning, references_json, status, created_at, created_event_id)
-		VALUES (?, 'issue', ?, 'developer', '{"paths":[]}', 'major', ?, 'Needs review', '[]', 'open', ?, 'EVT-create')`, concernID, issueID, summary, createdAt)
-	if err != nil {
-		t.Fatalf("seed open concern: %v", err)
-	}
-}
-
 func TestGetReturnsLatestTriageStatus(t *testing.T) {
 	t.Parallel()
 
@@ -1396,9 +1358,7 @@ func assertIssuesEqual(t *testing.T, got, want Issue) {
 		got.Title != want.Title ||
 		got.Status != want.Status ||
 		got.StatusCategory != want.StatusCategory ||
-		got.WorkflowID != want.WorkflowID ||
-
-		false {
+		got.WorkflowID != want.WorkflowID {
 		t.Fatalf("issue mismatch = %#v, want %#v", got, want)
 	}
 	if !equalStringPointers(got.ParentID, want.ParentID) ||

@@ -80,15 +80,11 @@ func assertRemovedCommandFailure(t *testing.T, args []string, stdout, stderr str
 	}
 	group, word, allowed := args[0], args[1], []string{}
 	switch group {
-	case "policy":
-		group, word = "fid", "policy"
-		allowed = []string{"activation", "activity", "answer", "artifact", "attention", "backup", "capabilities", "check", "claim", "completion", "concern", "decision", "deviation", "envelope", "evidence", "export", "finding", "gate", "handoff", "heartbeat", "help", "human-outcome", "init", "issue", "journal", "label", "link", "maintenance", "next", "park", "ready", "rebuild", "receipt", "requirement", "restore", "resume", "review", "run", "show", "sql", "start", "stats", "status", "stop", "takeover", "workflow"}
+	case "policy", "concern", "requirement", "run":
+		group, word = "fid", args[0]
+		allowed = []string{"activity", "answer", "artifact", "backup", "check", "completion", "export", "handoff", "heartbeat", "help", "init", "issue", "journal", "label", "link", "maintenance", "next", "park", "rebuild", "restore", "show", "sql", "start", "status", "takeover"}
 	case "issue":
 		group, word, allowed = "issue.ac", args[2], []string{"add", "list"}
-	case "concern":
-		allowed = []string{"dispose", "get", "list", "record"}
-	case "requirement":
-		allowed = []string{"get", "link", "list", "record-reference"}
 	}
 	code, argument, value := "operation-unavailable", "command", word
 	path := "fid " + strings.ReplaceAll(group, ".", " ")

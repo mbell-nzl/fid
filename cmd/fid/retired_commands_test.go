@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/cli"
 )
 
 func TestRetiredCommandsAreUnknown(t *testing.T) {
@@ -18,7 +20,7 @@ func TestRetiredCommandsAreUnknown(t *testing.T) {
 					args = append([]string{"--json"}, args...)
 				}
 				result := executeCommandForTest(t.TempDir(), args...)
-				if result.err == nil || result.stdout != "" {
+				if cli.ExitCode(result.err) != 2 || result.stdout != "" {
 					t.Fatalf("retired %s = %#v", name, result)
 				}
 				message := fmt.Sprintf("unknown command %q for %q", name, "fid")
@@ -64,11 +66,15 @@ func TestArtifactVerifyTypedActors(t *testing.T) {
 			writeActivationInput(t, input, map[string]any{"artifact_id": "ART-missing"})
 			before := startEventCount(t, workspace)
 			result := executeCommandForTest(workspace, "--json", "artifact", "verify", "--input", input, "--actor", row.actor, "--idempotency-key", "verify")
-			if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"`+row.code+`"`) {
+			wantExit := 2
+			if row.code == "authority-denied" {
+				wantExit = 5
+			}
+			if cli.ExitCode(result.err) != wantExit || result.stdout != "" || !strings.Contains(result.stderr, `"code":"`+row.code+`"`) || !strings.Contains(result.stderr, `"operation":"artifact.verify"`) {
 				t.Fatalf("%s: %#v", row.actor, result)
 			}
 			if strings.HasPrefix(row.actor, "agent:") || strings.HasPrefix(row.actor, "human:") {
-				if !strings.Contains(result.stderr, "was not found") {
+				if !strings.Contains(result.stderr, "was not found") || !strings.Contains(result.stderr, `"argument":"input"`) || !strings.Contains(result.stderr, `"allowed":["accepted gate registration input"]`) {
 					t.Fatalf("valid actor refused before lookup: %s", result.stderr)
 				}
 			}
