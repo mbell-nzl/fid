@@ -92,7 +92,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			{name: "errors", kind: detailObjectsKind, children: findingDetails()},
 			{name: "warnings", kind: detailObjectsKind, children: findingDetails()},
 			{name: "info", kind: detailObjectKind, children: []detailExpectation{
-				integerDetail("issue_count"), integerDetail("claim_count_live"), integerDetail("recent_activity_7d"),
+				integerDetail("issue_count"), integerDetail("recent_activity_7d"),
 			}},
 		}},
 		{CodeResultLimitExceeded, CategoryIntegrity, false, nil, []detailExpectation{stringDetail("collection"), integerDetail("limit"), integerDetail("observed")}},

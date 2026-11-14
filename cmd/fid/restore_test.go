@@ -624,8 +624,8 @@ func assertV8HasNoKernelRecords(t *testing.T, workspace string) {
 	defer func() { _ = conn.Close() }()
 	for _, table := range []string{"kit_activations", "work_envelopes", "claims", "runs", "gate_registrations", "execution_attempts", "execution_receipts", "evidence_records", "stops", "attention_items", "review_records", "concerns", "decision_refs", "requirement_refs"} {
 		var count int
-		if err := conn.QueryRow("SELECT count(*) FROM " + table).Scan(&count); err != nil || count != 0 {
-			t.Fatalf("V8 creates kernel records: %s=%d/%v", table, count, err)
+		if err := conn.QueryRow("SELECT count(*) FROM sqlite_schema WHERE type = 'table' AND name = ?", table).Scan(&count); err != nil || count != 0 {
+			t.Fatalf("V8 retains a kernel table: %s=%d/%v", table, count, err)
 		}
 	}
 }

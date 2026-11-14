@@ -22,15 +22,7 @@ func checkOperationalIntegrity(db *sql.DB, journalDir string) ([]Finding, error)
 	if err != nil {
 		return nil, err
 	}
-	attempts, err := attemptReceiptFindings(db)
-	if err != nil {
-		return nil, err
-	}
 	artifacts, err := artifactFindings(db)
-	if err != nil {
-		return nil, err
-	}
-	recovery, err := recoveryIntegrityFindings(db)
 	if err != nil {
 		return nil, err
 	}
@@ -43,9 +35,7 @@ func checkOperationalIntegrity(db *sql.DB, journalDir string) ([]Finding, error)
 		return nil, err
 	}
 	findings = append(findings, bindings...)
-	findings = append(findings, attempts...)
 	findings = append(findings, artifacts...)
-	findings = append(findings, recovery...)
 	findings = append(findings, frozen...)
 	return append(findings, residue...), nil
 }
@@ -146,15 +136,6 @@ func eventBindingFindings(db *sql.DB, events map[string]journal.Event) ([]Findin
 		return nil, fmt.Errorf("check Event bindings: iterate results: %w", err)
 	}
 	return findings, nil
-}
-
-func attemptReceiptFindings(db *sql.DB) ([]Finding, error) {
-	rows, err := db.Query(`SELECT attempt.id FROM execution_attempts AS attempt LEFT JOIN execution_receipts AS receipt ON receipt.attempt_id = attempt.id WHERE receipt.id IS NULL ORDER BY attempt.id`)
-	if err != nil {
-		return nil, fmt.Errorf("check Attempt/Receipt integrity: query attempts: %w", err)
-	}
-	defer func() { _ = rows.Close() }()
-	return simpleFindings(rows, "attempt-receipt-integrity", "Attempt has no terminal Receipt")
 }
 
 func artifactFindings(db *sql.DB) ([]Finding, error) {

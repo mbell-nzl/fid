@@ -851,6 +851,39 @@ queries remain for 1.5d1/1.5d2.
   SQLite, rather than append unsupported workflow-authoring Events; their
   assertions about missing edges and unknown requirements are preserved.
 
+
+**RESET 1.5d2 implementation, 2026-11-15 (Assured).** Following Q3/Q4 and
+ADR-0014, migration 27 drops 42 retired tables in foreign-key dependency
+order. It preserves the shared Artifact/retry tables, all lean records,
+the four fixed-state lookup tables and Issue foreign keys, and frozen V1
+`agent_runs` / `triage_events`. `issues_enriched` keeps its latest-triage
+lookup and removes Concern columns/joins. The activity insert trigger
+accepts only existing Issue references. Migration/export schema is 27;
+projection version 9 rebuilds older derived caches. Historical migration
+pairs remain until 3.2.
+
+Builder's transactional choices for 1.5d2: the down migration restores the
+schema-26 DDL, including table-owned indexes and triggers and the old view
+and activity guard, without recovering removed rows. Latest-schema tests
+pin the exact retained table inventory; round-trip tests compare the full
+schema and retained data. Kernel-only schema/maintenance acceptance tests
+leave with their subjects; retained triage, structural integrity, retry/
+Artifact checks and no-mutation assertions stay. The generic finding-limit
+fixture uses missing Artifacts instead of retired warnings. Generic warning
+promotion remains covered using an injected warning, since no current
+warning producer remains. No hold-warning semantics are introduced.
+Maintenance removes its kernel queries, grace option, warnings and
+`claim_count_live`; its Info contains only Issue and recent-activity counts.
+The generic warning array, promotion flag and collection limits stay.
+The dead configuration keys and frozen-state checks stay as Q3/Q4 require.
+V8 and the link/rebuild journey now assert retired-table absence instead
+of empty retired tables; the scale snapshot compares the retained view
+columns. Tests dedicated to ignoring now-removed workflow assignments
+retire with that table. The maintenance format-refusal test keeps its
+historical identifier registered by the unchanged format audit.
+This completes the physical removal for 1.5b-1.5d; old-family refusals still
+happen before any SQL projection or archive publication.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for

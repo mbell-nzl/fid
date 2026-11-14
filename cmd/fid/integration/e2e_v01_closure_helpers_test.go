@@ -443,10 +443,9 @@ func closureMaintenanceResultAt(t *testing.T, workspace string, now time.Time) m
 	defer func() { _ = conn.Close() }()
 
 	result, err := maintenance.Check(maintenance.CheckOptions{
-		DB:                              conn,
-		JournalDir:                      filepath.Join(config.LedgerDir(workspace), "journal"),
-		Now:                             now,
-		StartedWithoutClaimGraceSeconds: 300,
+		DB:         conn,
+		JournalDir: filepath.Join(config.LedgerDir(workspace), "journal"),
+		Now:        now,
 	})
 	if err != nil {
 		t.Fatalf("maintenance check at %s: %v", now, err)
