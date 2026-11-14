@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/cli"
-	"github.com/mbell-nzl/fid/internal/config"
 )
 
 func TestEpicCancellationRecordsPersonsDecision(t *testing.T) {
@@ -165,8 +164,5 @@ func assertEpicCancellationRetry(t *testing.T, f *statusFixture, args []string, 
 
 func snapshotEpicCancellationPersistence(t *testing.T, workspace string) workspacePersistenceSnapshot {
 	t.Helper()
-	return workspacePersistenceSnapshot{
-		database: mustReadCommandFile(t, config.WorkspacePathsForRoot(workspace).DatabasePath),
-		journal:  []byte(readAllPolicyJournal(t, workspace)),
-	}
+	return snapshotWorkspacePersistence(t, workspace)
 }

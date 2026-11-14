@@ -178,6 +178,13 @@ func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order
 	if planned.served >= 0 {
 		task := planned.queue[planned.served].OverviewTask
 		result.Task = &task
+		history, err := questions.Read(conn, task.ID)
+		if err != nil {
+			return Result{}, order{}, fmt.Errorf("read next: %w", err)
+		}
+		if len(history) > 0 {
+			result.Answer = history[len(history)-1].Answer
+		}
 		if epic, found := work.Epics[epicOf(task)]; found {
 			result.Epic = &epic
 		}
@@ -186,8 +193,6 @@ func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order
 		q := planned.own.Question
 		if q.ResolvedAt == nil {
 			result.Waiting = &Waiting{ReasonWaitingForYou, q.TaskID, q.ID, q.Text}
-		} else if planned.kind == KindResume {
-			result.Answer = q.Answer
 		}
 	}
 	if planned.kind == KindResume && !planned.own.Live(now) && result.Answer == nil {
