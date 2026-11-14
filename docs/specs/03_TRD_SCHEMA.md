@@ -911,3 +911,56 @@ and generic `--warn-as-error` and collection limits stay. The dead
 keys remain under Q4, without affecting these checks.
 
 *Last updated: 2026-11-15 (RESET 1.5d2 physical schema and maintenance cut)*
+
+### Reset 1.6b - merge observations and CI check results
+
+Migration 28 adds `merge_observations` and `ci_results`; projection cache
+version 10 rebuilds an existing caught-up projection. Both are immutable
+lean records, carried by Event-v2 in the journal and archive catalogs.
+They do not change local check tables or the local check evaluator.
+
+`merge.observed` (command `merge.observe`, aggregate `merge/<id>`)
+contains exactly one insert into `merge_observations`. Its columns are
+`id`, `task_id` (Issue FK), `handoff_id` (hand-off FK), `merge_commit`,
+and `record_json`. `(handoff_id, merge_commit)` is unique. The closed JSON
+object has string fields `id`, `task_id`, `handoff_id`, `pr`, `repository`,
+`base_branch`, `merge_commit`, `head_sha`, `head_tree`, `merged_at`, and
+`observed_at`, plus the positive integer PR `number`. Repository identity
+is normalized `owner/name`. The PR URL, number and repository must agree;
+the referenced hand-off must belong to the named task and name this PR,
+and its recorded tree must equal `head_tree`. The PR head SHA may change
+through a clean rebase preserving the tree. All commit/tree SHAs are full
+40-character lowercase hex; times are UTC RFC 3339. The caller supplies
+1.6a's confirmed merged PR and head-tree facts, checked against the
+project's origin/default branch by that adapter.
+
+`ci.result-recorded` (command `ci.record`, aggregate `merge/<merge_id>`)
+contains one or more inserts into `ci_results`, as one atomic batch.
+Its columns are `id`, `task_id` (Issue FK), `merge_id` (merge-observation
+FK), `repository`, positive integer `run_id` and `attempt`, and
+`record_json`. `(repository, run_id, attempt, merge_id)` is unique. The
+closed JSON object has string fields `id`, `task_id`, `merge_id`,
+`repository`, `name`, `path`, `event`, `head_sha`, `status`, `conclusion`,
+`url`, and `observed_at`, plus positive integers `run_id`, `attempt`, and
+`workflow_id`. The task/repository must match its merge observation, and
+`head_sha` must equal that observation's merge commit. The URL names the
+same repository and Actions execution ID. Only status `completed` is
+stored, with conclusion `success`, `failure`, `neutral`, `cancelled`,
+`skipped`, `timed_out`, `action_required`, `stale`, or `startup_failure`.
+All completed observations are retained; the later done evaluator selects
+which workflows, events and attempts count as green.
+
+Identical re-recording returns the original records and observation times
+without appending an Event. Changed facts under an existing key refuse.
+Pending CI attempts and failed network/authentication requests produce no
+record. A confirmed merge is recorded even without completed CI. These
+families carry no command retry-result row: natural keys provide their
+idempotence, and injected retry effects are refused. Replay/import validate
+all bindings without network access. Legacy events and other families
+cannot write these tables, including through SQLite case aliases.
+
+`internal/mergework` supplies writers accepting already-read typed GitHub
+facts, a latest-merge reader and a CI-history reader. Readers order by
+journal insertion. The lock covers refresh, validation and append; network
+requests belong to the caller outside it. No public command is added in
+1.6b; `fid done` in 1.6i is the first caller.

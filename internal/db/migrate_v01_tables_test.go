@@ -201,11 +201,11 @@ func TestMigration0006DownRemovesSequenceSchedulingBackstopOnly(t *testing.T) {
 func TestDecideProjectionFreshnessRequiresPolicySchemaVersion(t *testing.T) {
 	t.Parallel()
 
-	if ProjectionSchemaVersion != 9 {
-		t.Fatalf("ProjectionSchemaVersion = %d, want %d", ProjectionSchemaVersion, 9)
+	if ProjectionSchemaVersion != 10 {
+		t.Fatalf("ProjectionSchemaVersion = %d, want %d", ProjectionSchemaVersion, 10)
 	}
 
-	for _, previous := range []int{4, 5, 6, 7, 8} {
+	for _, previous := range []int{4, 5, 6, 7, 8, 9} {
 		stale := DecideProjectionFreshness(ProjectionFreshnessInput{
 			MetaExists:                    true,
 			ReplayStatus:                  ReplayStatusClean,
