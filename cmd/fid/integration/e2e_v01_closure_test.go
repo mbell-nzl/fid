@@ -66,7 +66,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	assertLeanIntegrationJournal(t, workspace)
 	journalBeforeNonJournal := closureReadFile(t, journalPath)
 	journalFilesBefore := closureJournalFileBytes(t, workspace)
-	assertClosureMaintenanceAndReadCommands(t, binary, workspace, mainIssueID, journalBeforeNonJournal)
+	assertClosureMaintenanceAndReadCommands(t, binary, workspace, mainIssueID, seqCurrentID, journalBeforeNonJournal)
 	maintenanceNow := closureAgedMaintenanceTime(t, workspace)
 
 	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")

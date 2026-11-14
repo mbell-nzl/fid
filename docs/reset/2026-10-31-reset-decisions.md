@@ -745,7 +745,9 @@ helpers move to neutral command, projection and keyed-request files. The
 retained single-journal corpus exercises all 15 non-Artifact keyed leaves,
 including their exact retry responses and field maps; the old 55-leaf
 kernel corpus stays separately until 1.5c2. Shared failure codes now use
-retained producers without adding registry exclusions. The Artifact
+retained producers without adding registry exclusions. Closure reads pin
+the person's cancellation actor, reason, task and binding. Neutral CLI git
+and JSON writers move out of their retiring host files as well. The Artifact
 exception above covers the two own-command tests in
 `cmd/fid/artifact_compatibility_test.go` and
 `TestP24ArtifactVerifyKeyedLeafCorpus`; their bodies are unchanged.

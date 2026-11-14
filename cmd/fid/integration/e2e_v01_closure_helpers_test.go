@@ -370,7 +370,7 @@ func assertClosureNextTaskInEpic(t *testing.T, binary, workspace, epicID, wantID
 	t.Fatalf("next queue has no eligible task for epic %s: %s", epicID, stdout)
 }
 
-func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, issueID string, journalBefore []byte) {
+func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, issueID, cancelledTaskID string, journalBefore []byte) {
 	t.Helper()
 
 	check, _ := closureRunFID(t, binary, workspace, "--json", "maintenance", "check")
@@ -384,9 +384,22 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 	}
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "maintenance vacuum")
 	decisions, _ := closureRunFID(t, binary, workspace, "sql", "SELECT * FROM person_decisions ORDER BY id")
-	if !strings.HasPrefix(decisions, "[") {
-		t.Fatalf("person decision read=%q", decisions)
+	var rows []struct {
+		ID          string `json:"id"`
+		Kind        string `json:"kind"`
+		Actor       string `json:"actor"`
+		SubjectType string `json:"subject_type"`
+		SubjectID   string `json:"subject_id"`
+		BindingID   string `json:"binding_id"`
+		Reason      string `json:"reason"`
 	}
+	if err := json.Unmarshal([]byte(decisions), &rows); err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 || !strings.HasPrefix(rows[0].ID, "PDN-") || rows[0].Kind != "cancel" || rows[0].Actor != "human:mark" || rows[0].SubjectType != "task" || rows[0].SubjectID != cancelledTaskID || rows[0].BindingID != cancelledTaskID || rows[0].Reason != "Test cancellation" {
+		t.Fatalf("person decision read=%s, want the person's task-bound cancellation", decisions)
+	}
+
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "person decisions")
 	for _, args := range [][]string{
 		{"--json", "issue", "list"},
