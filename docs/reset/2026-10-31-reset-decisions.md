@@ -886,10 +886,12 @@ happen before any SQL projection or archive publication.
 
 ## RESET 1.7 implementation (2026-11-15)
 
-Mark approved building 1.7 alongside 1.6 from `origin/main` at `4517e22d`,
-so it may merge before 1.6. This is a small deviation from table order;
-1.7 does not use or change 1.6's code. The approved Routine brief permits
-plain human-text repairs and raises the lane to Standard if any are needed.
+Mark asked on 2026-11-15 for 1.6 and 1.7 to be orchestrated while he was
+out. The orchestrator chose to build 1.7 alongside 1.6, from `origin/main`
+at `4517e22d`, so it may merge before 1.6. This is a small deviation from
+table order; 1.7 does not use or change 1.6's code. 1.7's brief, written
+by the orchestrator, permits plain human-text repairs and raises the lane
+to Standard if any are needed.
 V2 found three help leaks: backup's "attempt", next's "run again" and SQL's
 "Run". Their wording is repaired, so 1.7 is **Standard**. The Makefile's
 new verification target is within the brief's approved scope.
