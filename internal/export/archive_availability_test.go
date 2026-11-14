@@ -22,6 +22,12 @@ func TestCreateAndValidatePreserveUnavailableCheckArtifactWithoutBody(t *testing
 	artifactEntry := addLeanArtifactExportFacts(t, workspace)
 	artifactDigest := "sha256:" + strings.TrimPrefix(filepath.Base(artifactEntry), "sha256:")
 	artifactID := exportFixtureArtifactID(t, workspace, artifactDigest)
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = conn.Close() }()
+	retained := retainedArtifactMetadata(t, conn, artifactID)
 	if err := os.Remove(filepath.Join(config.LedgerDir(workspace), artifactEntry)); err != nil {
 		t.Fatalf("remove retained Artifact body: %v", err)
 	}
@@ -38,6 +44,7 @@ func TestCreateAndValidatePreserveUnavailableCheckArtifactWithoutBody(t *testing
 	if !verified.Changed || verified.Artifact.Availability != "missing" {
 		t.Fatalf("artifact availability observation = %#v, want changed missing", verified)
 	}
+	assertArtifactMetadata(t, verified.Artifact, retained, "missing")
 
 	archivePath := filepath.Join(t.TempDir(), "unavailable-artifact.zip")
 	if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archivePath}); err != nil {
