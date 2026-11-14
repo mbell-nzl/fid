@@ -1981,6 +1981,13 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
+- From this PR (1.5b1): investigate the full-suite lock failure in unchanged
+  `TestLeanCheckRenewsHoldAndStopsOnTakeover/takeover`. The first `make test`
+  failed at `check_ownership_test.go:117` with `task.takeover: write lock
+  unavailable`; the isolated test then passed in 1.343s. The cause is not
+  established; no ownership code or test was changed in this PR. A complete
+  rerun and the coverage/no-identity CI runner subsequently passed.
+
 - From this PR (1.5b1): Q3 keeps frozen V1 `agent_runs`, `triage_events`
   and `triage_status`; remove them only in separately scoped cleanup.
 - From this PR (1.5b1): Q4 keeps dead config keys
