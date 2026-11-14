@@ -888,12 +888,14 @@ happen before any SQL projection or archive publication.
 orchestrator found about 8,000 leaked test directories (about 1.9 GB) over
 four days. Disposable `-- --check-child <mode>` processes now enter the
 selected helper test before any command-suite setup. The existing check
-launcher and `FID_RUN_AS_FID` shortcuts remain; an audit found no other
-test-binary re-execution path in either command suite.
+launcher and `FID_RUN_AS_FID` shortcuts remain. The retained integration
+suite has no crash-helper re-execution path.
 
 Builder's transactional choices for 1.5e: both suites run the documented
-`go telemetry off` command only after isolating `XDG_CONFIG_HOME`, before
-any other Go command. `GOTELEMETRY` is a read-only `go env` value, not an
+`go telemetry off` command only after isolating `XDG_CONFIG_HOME` and
+verifying that `os.UserConfigDir` points there, before any other Go command.
+Suite setup refuses to change telemetry otherwise. `GOTELEMETRY` is a
+read-only `go env` value, not an
 environment switch. In the installed Go 1.26.2 source, `MaybeParent` starts
 a detached telemetry sidecar even in local mode; the sidecar calls
 `counter.Open` itself, which can recreate an already removed config
@@ -909,9 +911,18 @@ suite cleanup, helper exits, signals and timeout kills; separate assertions
 check Go's actual telemetry mode. Coverage also exercises the fallback with
 `GOCOVERDIR` stripped. Reverting each fix makes its regression fail. The
 integration regression includes its normal binary build; unchanged focused
-and full integration runs left no entries before the fixes, so the origin
-of its historical config/cache pairs remains unestablished (later list).
-No production code or dependency changes.
+and full integration runs left no entries before the fixes.
+
+The historical integration source at `982b4211` exposes the paired-directory
+leak: `TestP22ActivationCrashProcess`, `TestP22BudgetCrashProcess` and
+`TestP22RecoveryCrashProcess` re-executed the integration test binary,
+inheriting `FID_INTEGRATION_BINARY`. Each child allocated new config/cache
+directories, reused that binary, then called `os.Exit(23)` inside its test,
+so `runIntegrationSuite`'s deferred removals never ran. These helpers were
+removed in 1.5c2 (`6124adcc`), before 1.5e's starting commit. No dead-helper
+workaround is added. This source evidence identifies a historical leak
+mechanism; the old machine's individual 761 pairs were not inspected in
+this session. No production code or dependency changes.
 
 ## Products
 
@@ -2171,13 +2182,13 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
-- From this PR (1.5e): establish the origin of the historical 761
-  `fid-integration-config-*` / `fid-integration-cache-*` pairs using their
-  contents, timestamps or failed/cancelled-suite logs. Both unchanged
-  focused and full integration runs measured in this session left zero
-  temp entries, and the integration package has no test-binary helper
-  re-execution path. Its Go telemetry is now disabled in isolated config,
-  but that does not establish why those historical pairs survived.
+- From this PR (1.5e): make the hold-lifecycle text goldens independent of
+  temp-root length. With a long private `TMPDIR`,
+  `TestHeartbeatSetsTheLastSignOfLifeAndRefusesAtExpiry` and
+  `TestHoldLifecycleGolden/park-started` fail because rendering wraps the
+  actual worktree path before `lifecycleGolden` replaces it with `<ROOT>`.
+  The measured full run left zero temp entries despite those failures.
+  Their assertions and goldens were kept unchanged in this task.
 
 - From #73 (1.5d1): audit the retained-table ownership and column guards for
   SQLite case aliases. `validateCurrentEvent` still indexes

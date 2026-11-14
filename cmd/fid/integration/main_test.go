@@ -40,6 +40,10 @@ func runIntegrationSuite(m interface{ Run() int }) int {
 	}
 	// Turn off both counter collection and the detached telemetry sidecar
 	// before go build. This changes only the suite's isolated config.
+	if goConfig, err := os.UserConfigDir(); err != nil || goConfig != configHome {
+		fmt.Fprintf(os.Stderr, "refuse to change Go telemetry outside isolated config: %q, %v\n", goConfig, err)
+		return 1
+	}
 	if output, err := exec.Command("go", "telemetry", "off").CombinedOutput(); err != nil {
 		fmt.Fprintf(os.Stderr, "disable Go telemetry in isolated config: %v\n%s", err, output)
 		return 1
