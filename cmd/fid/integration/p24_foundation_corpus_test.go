@@ -37,11 +37,3 @@ func TestP24FoundationKeyedLeafConflictAndCanonicalRetryCorpus(t *testing.T) {
 	p24AssertFamilyConflict(t, workspace, binary, "envelope.create", captured["envelope.create"], []string{"protected_decisions"})
 	p24AssertRebuildMapParity(t, workspace, binary)
 }
-
-var p24PositionalNames = map[string][]string{"check.execute": {"names"},
-	"task.answer":   {"task", "text"},
-	"task.takeover": {"task"},
-	"issue.update":  {"id"}, "issue.transition": {"id"}, "issue.ac.add": {"issue-id"},
-	"issue.label.add": {"issue-id", "label"}, "issue.label.remove": {"issue-id", "label"},
-	"label.add": {"name"}, "link.add": {"from-id", "relation", "to-id"}, "link.remove": {"from-id", "relation", "to-id"},
-}

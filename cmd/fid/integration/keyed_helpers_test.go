@@ -120,6 +120,16 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 	}
 }
 
+// p24PositionalNames lists the positional arguments each keyed command stores
+// under a field name, for p24AssertStoredFieldNames.
+var p24PositionalNames = map[string][]string{"check.execute": {"names"},
+	"task.answer":   {"task", "text"},
+	"task.takeover": {"task"},
+	"issue.update":  {"id"}, "issue.transition": {"id"}, "issue.ac.add": {"issue-id"},
+	"issue.label.add": {"issue-id", "label"}, "issue.label.remove": {"issue-id", "label"},
+	"label.add": {"name"}, "link.add": {"from-id", "relation", "to-id"}, "link.remove": {"from-id", "relation", "to-id"},
+}
+
 func p24AssertStoredFieldNames(t *testing.T, workspace, operation string, entry p24CapturedKeyedCommand) {
 	t.Helper()
 	key := ""
