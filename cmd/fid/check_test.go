@@ -20,7 +20,7 @@ func leanCheckFixture(t *testing.T) *statusFixture {
 		t.Fatal(err)
 	}
 	runGitForTest(t, f.workspace, "add", ".")
-	runGitForTest(t, f.workspace, "commit", "-m", "Check fixture")
+	runGitForTest(t, f.workspace, "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "-c", "commit.gpgsign=false", "commit", "-m", "Check fixture")
 	return f
 }
 
