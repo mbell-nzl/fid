@@ -72,7 +72,10 @@ fid [--project <path>] [--json] <command> ...
 - Concurrent mutations accept `--expected-revision` where applicable.
 - Project-relative paths are normalized and cannot escape approved roots.
 
-Every supported mutation uses `--actor` for attribution. Work commands use
+Ledger mutations made through the work commands (issues, labels, links, the lean
+task commands and `artifact verify`) take `--actor` for attribution; the
+ledger-level commands `init`, `export create`, `export import`, `backup`,
+`restore` and `rebuild` take none. Work commands use
 built-in actor-type authority: `agent:<id>` and `human:<id>` may work;
 `service:<id>` is refused. A person's decisions require `human:<id>`.
 Complex Artifact verification uses exactly one `--input <path|->` JSON
