@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "invalid-input",
+    "code": "invalid-argument",
+    "details": {
+      "allowed": [
+        "https://github.com/<owner>/<repo>/pull/<n>"
+      ],
+      "argument": "--pr",
+      "value": "https://example.com/owner/repo/pull/63"
+    },
+    "message": "--pr must be a GitHub pull request URL",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "task.handoff"
+}

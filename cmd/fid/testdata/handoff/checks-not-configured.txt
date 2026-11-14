@@ -1,0 +1,3 @@
+error: no checks set for standard in .fid.toml
+reason: checks-not-configured; lane=standard
+next: add checks to [lanes.standard], then merge .fid.toml and git fetch

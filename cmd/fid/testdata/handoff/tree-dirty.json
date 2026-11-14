@@ -1,0 +1,18 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "tree-dirty",
+    "details": {
+      "worktree": "<ROOT>"
+    },
+    "message": "FID-9f13aa has uncommitted changes; commit them before hand-off",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "task.handoff"
+}

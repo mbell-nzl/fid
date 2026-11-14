@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "conflict",
+    "code": "hold-not-current",
+    "details": {
+      "hold_id": "HLD-bbbbbb",
+      "reason": "not-found"
+    },
+    "message": "this hold is no longer current",
+    "retryable": false,
+    "subject": {
+      "id": null,
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "task.handoff"
+}

@@ -1,0 +1,17 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "policy-unavailable",
+    "details": {
+      "commit": "<commit-or-tree>",
+      "problem": "invalid .fid.toml: unknown key checks.empty.unknown",
+      "ref": "origin/trunk"
+    },
+    "message": "invalid .fid.toml: unknown key checks.empty.unknown",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "task.handoff"
+}

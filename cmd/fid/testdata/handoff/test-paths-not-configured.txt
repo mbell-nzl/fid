@@ -1,0 +1,3 @@
+error: no test paths set in .fid.toml
+reason: test-paths-not-configured
+next: add [review] test_adequacy, then merge .fid.toml and git fetch

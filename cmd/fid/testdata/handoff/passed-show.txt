@@ -1,0 +1,10 @@
+╭ FID-9f13aa ──────────────────────────────────────────────────── task ╮
+
+  ● Harden login rate limiting                               in review
+
+  Epic        ◆ FID-e3a1c0  Planned epic                      0/1 done
+  Lane        Standard
+  Checks      ✓ always passed at 22:00 · required · counts on HEAD
+              ✓ empty passed at 22:00 · required · counts on HEAD
+  Hand-off    22:00 · PR #63 · always, empty passed on <head>
+╰──────────────────────────────────────────────────────────────────────╯

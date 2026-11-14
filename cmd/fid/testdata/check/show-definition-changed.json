@@ -103,6 +103,7 @@
         "total": 1
       }
     },
+    "handoff": null,
     "issue": {
       "lane": "standard",
       "id": "FID-9f13aa",

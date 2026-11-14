@@ -615,6 +615,72 @@ It shares status's warning constructors and JSON shape. Named and empty
 requests use one allocator; a deterministic collision test includes a
 secondary start whose ID is absent from the request table.
 
+Mark approved these details for **1.5a7**, on 14 November 2026:
+
+1. **Hand-off (Q3 A).** `fid handoff --hold <id> --actor <a> --pr <url>
+   --idempotency-key <k>` requires the key and a GitHub pull request URL
+   (`https://github.com/<owner>/<repo>/pull/<n>`). It uses recorded check
+   results and makes no network call; 1.6 checks the PR with `gh`. Under
+   one write lock it records the PR, head commit, tree, comparison base,
+   lane, policy snapshot, required check names, their definition digests,
+   counting result IDs and time, moves the task to `in_review`, and ends
+   the builder's hold in one Event.
+2. **Refusals change nothing.** Missing lane checks uses
+   `checks-not-configured`; missing `[review] test_adequacy` uses
+   `test-paths-not-configured` (precondition, exit 4, details `{}`), with
+   `add [review] test_adequacy, then merge .fid.toml and git fetch` as the
+   fix. Uncommitted changes use `tree-dirty` (precondition, exit 4,
+   `{worktree}`), asking the builder to commit before hand-off. A required
+   check without a latest counting pass on HEAD's tree uses
+   `checks-unsatisfied`, suggesting `fid check --hold <id> --actor <a>
+   --idempotency-key <key>`. An unavailable comparison uses
+   `comparison-unavailable`; an invalid PR uses `invalid-argument`.
+   Exact hold checks and `policy-unavailable` apply as to other work
+   commands; a task not `in_progress` uses `transition-not-permitted`.
+3. **Keep the worktree through review (Q4 A).** The task stays kept for
+   its builder worktree with `kept.mode: "review"` until done (1.6) or
+   cancelled. That worktree's `next` returns kind `none`, null hold, task,
+   epic and answer, and `waiting: {kind: "review", task_id: <id>}`, saying
+   `Nothing here: <id> is in review` and suggesting `fid show <id>`.
+   The review reservation takes precedence over an older unanswered
+   question; `fid show` still lists that question.
+   The queue retains its usual contents. Other worktrees carry on. The
+   loop opens a worktree per task (2.5); 2.1 returns rework here as kind
+   `rework`. Cancellation frees it; missing-worktree NEEDS YOU applies.
+4. **Show and status.** Show adds a `Hand-off` row such as
+   `10:10 · PR #63 · lint, test passed on a1b2c3d`, and JSON adds the latest
+   `handoff: {id, pr, head, base, required_checks, result_ids, at}` or null.
+   Status labels the task `in review`. Empty requirements read
+   `no checks required` in show and the hand-off success message.
+5. **Rework and retries.** A later hand-off after rework may name another
+   PR; done uses the latest. A same-key retry returns the original
+   response and Event even after its hold has ended.
+6. **The lean journey.** The integration test goes from issue creation
+   with a lane through next, start, heartbeat, check without names,
+   commit, hand-off and next waiting for review, with interrupted and
+   waiting/answer detours. Its journal contains no kernel record. Both
+   catalogs, replay/import validation, a projection migration and V8
+   cover the new hand-off family. A rework-shaped test belongs to 2.1.
+
+Builder's transactional choices for 1.5a7: migration 26 adds immutable
+`handoffs` receipts with `HOF-` IDs; projection version 8 rebuilds older
+derived caches. The migration extends a kept hold's end reason
+with `review`. The receipt keeps committed changed paths alongside the
+base so replay and import can re-evaluate conditional requirements without
+git or the network. `task.handed-off` carries the receipt, task transition,
+hold reservation and retry response atomically. Snapshot changes are
+recorded only after all hand-off preconditions pass, under that same lock.
+The latest receipt is selected in journal insertion order, never by caller
+timestamps. A review reservation in another worktree uses the existing
+`held-elsewhere` scheduling reason. Rebuilding the referenced holds table
+defers foreign keys, verifies the entire final graph with
+`pragma_foreign_key_check`, then clears SQLite's stale deferred DROP
+counters before commit. Hand-off observes HEAD and cleanliness without
+hashing uncommitted contents; this includes unmerged paths in `tree-dirty`.
+Its git children disable lazy fetching and optional index writes, and it
+retains the guard against hidden tracked changes. The downgrade retains review reservations as
+interrupted reservations with the reason `In review`.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for

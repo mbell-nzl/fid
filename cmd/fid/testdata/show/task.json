@@ -74,6 +74,7 @@
         "total": 7
       }
     },
+    "handoff": null,
     "issue": {
       "lane": null,
       "id": "FID-71a0c2",

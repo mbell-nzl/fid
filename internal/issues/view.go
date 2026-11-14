@@ -2,11 +2,13 @@ package issues
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/checkread"
 	"github.com/mbell-nzl/fid/internal/checkrecord"
+	"github.com/mbell-nzl/fid/internal/handoffrecord"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/questions"
 	"github.com/mbell-nzl/fid/internal/workflow"
@@ -38,6 +40,7 @@ type IssueView struct {
 	OpenHold   *holds.Hold
 	Scheduling *string
 	Checks     []checkrecord.Record
+	Handoff    *handoffrecord.View
 }
 
 // IssueReference names another issue and its state.
@@ -111,6 +114,18 @@ func ReadIssueView(options GetOptions) (IssueView, error) {
 		return IssueView{}, err
 	}
 	if issue.Kind == "task" {
+		var raw string
+		err := conn.QueryRow(`SELECT record_json FROM handoffs WHERE task_id=? ORDER BY rowid DESC LIMIT 1`, issue.ID).Scan(&raw)
+		if err != nil && err != sql.ErrNoRows {
+			return IssueView{}, fmt.Errorf("read hand-off: %w", err)
+		}
+		if err == nil {
+			var record handoffrecord.Record
+			if err := json.Unmarshal([]byte(raw), &record); err != nil {
+				return IssueView{}, fmt.Errorf("decode hand-off: %w", err)
+			}
+			view.Handoff = &record.View
+		}
 		checks, err := checkread.Read(conn, issue.ID)
 		if err != nil {
 			return IssueView{}, err

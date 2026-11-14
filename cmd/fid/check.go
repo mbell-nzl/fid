@@ -75,6 +75,10 @@ func newCheckCommand() *cobra.Command {
 }
 
 func renderCheckFailure(cmd *cobra.Command, cause error) error {
+	return renderCheckOperationFailure(cmd, "check.execute", cause)
+}
+
+func renderCheckOperationFailure(cmd *cobra.Command, operation string, cause error) error {
 	var refused *checkrecord.Refusal
 	var failure cli.Failure
 	var err error
@@ -90,12 +94,12 @@ func renderCheckFailure(cmd *cobra.Command, cause error) error {
 		var source *policy.SourceError
 		var denied *persondecision.DeniedError
 		if errors.As(cause, &holdRefusal) || errors.As(cause, &source) || errors.As(cause, &denied) {
-			return renderHoldFailure(cmd, "check.execute", cause)
+			return renderHoldFailure(cmd, operation, cause)
 		}
 		if refusal := renderRepositoryRefusal(cmd, cause); refusal != nil {
 			return refusal
 		}
-		failure, err = issueMutationFailure(cmd, "check.execute", "", cause)
+		failure, err = issueMutationFailure(cmd, operation, "", cause)
 		if err == nil && failure.Code == cli.CodeInvalidArgument {
 			failure, err = cli.NewFailure(cli.CodeInternalError, cli.BoundedMessage("check failed: "+cause.Error()), nil, map[string]any{})
 		}
@@ -108,12 +112,12 @@ func renderCheckFailure(cmd *cobra.Command, cause error) error {
 		return err
 	}
 	if jsonMode {
-		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "check.execute", failure, cause)
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
 	if failure.Code == cli.CodeAuthorityDenied {
 		failure.Details = map[string]any{"actor_id": failure.Details["actor_id"]}
 	}
-	if err := cli.WriteHumanFailure(cmd.ErrOrStderr(), "check.execute", cmd.CommandPath(), failure, false); err != nil {
+	if err := cli.WriteHumanFailure(cmd.ErrOrStderr(), operation, cmd.CommandPath(), failure, false); err != nil {
 		return err
 	}
 	return cli.NewFailureError(failure, cause)

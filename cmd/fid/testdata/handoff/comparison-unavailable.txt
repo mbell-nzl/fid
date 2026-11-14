@@ -1,0 +1,2 @@
+error: cannot compare this task's committed changes
+reason: comparison-unavailable; problem=HEAD and origin/trunk have no common ancestor in the available history, ref=origin/trunk

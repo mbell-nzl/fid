@@ -1,0 +1,43 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "next.get",
+  "result": {
+    "answer": null,
+    "epic": null,
+    "hold": null,
+    "kind": "none",
+    "queue": [
+      {
+        "id": "FID-9f13aa",
+        "title": "Harden login rate limiting",
+        "status": "in_review",
+        "status_category": "started",
+        "epic_id": "FID-e3a1c0",
+        "sequence": null,
+        "priority": null,
+        "blocked_by": [],
+        "reason": null,
+        "after": null,
+        "working": null,
+        "kept": {
+          "worktree": "<ROOT>",
+          "here": true,
+          "mode": "review",
+          "reason": null,
+          "since": "2026-11-08T09:00:00Z",
+          "hold_id": "HLD-aaaaaa",
+          "actor": "agent:claude-builder"
+        },
+        "epic_blocked_by": []
+      }
+    ],
+    "task": null,
+    "waiting": {
+      "kind": "review",
+      "task_id": "FID-9f13aa"
+    },
+    "worktree": "<ROOT>"
+  }
+}

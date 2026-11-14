@@ -1,0 +1,21 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "checks-unsatisfied",
+    "details": {
+      "checks": [
+        "always"
+      ],
+      "latest_result_ids": []
+    },
+    "message": "required checks have no counting pass on this tree; check them before hand-off",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "task.handoff"
+}

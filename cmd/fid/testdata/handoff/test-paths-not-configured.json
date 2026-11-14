@@ -1,0 +1,16 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "test-paths-not-configured",
+    "details": {},
+    "message": "no test paths set in .fid.toml",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "task.handoff"
+}

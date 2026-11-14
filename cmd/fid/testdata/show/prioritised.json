@@ -53,6 +53,7 @@
       }
     ],
     "epic": null,
+    "handoff": null,
     "issue": {
       "lane": null,
       "id": "FID-e3a1c0",

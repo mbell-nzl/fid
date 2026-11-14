@@ -210,6 +210,9 @@ func p24AssertSingleJournalInventory(t *testing.T, workspace string) {
 		if name == "check" {
 			operation = "check.execute"
 		}
+		if name == "handoff" {
+			operation = "task.handoff"
+		}
 		if name == "start" {
 			operation = "task.start"
 		}
@@ -248,7 +251,7 @@ func p24AssertSingleJournalInventory(t *testing.T, workspace string) {
 	}
 	sort.Strings(got)
 	sort.Strings(want)
-	if len(want) != 54 || !reflect.DeepEqual(got, want) {
-		t.Fatalf("single-journal keyed operation inventory = %v; want exact 54 = %v", got, want)
+	if len(want) != 55 || !reflect.DeepEqual(got, want) {
+		t.Fatalf("single-journal keyed operation inventory = %v; want exact 55 = %v", got, want)
 	}
 }

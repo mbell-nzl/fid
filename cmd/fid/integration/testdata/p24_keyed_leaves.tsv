@@ -52,3 +52,4 @@ stop resolve	stop_id
 takeover	--reason
 workflow assign	--name
 workflow define	--name
+handoff	--pr

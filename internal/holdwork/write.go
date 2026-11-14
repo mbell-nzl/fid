@@ -19,7 +19,7 @@ import (
 
 type Options struct {
 	WorkspaceRoot, MigrationsDir, HoldID, TaskID, Actor, Reason, IdempotencyKey string
-	Question, Answer                                                            string
+	PR, Question, Answer                                                        string
 	Clock                                                                       func() time.Time
 }
 
@@ -139,6 +139,11 @@ func decodeResult(raw, eventID, operation string) (Result, error) {
 			return Result{}, err
 		}
 	}
+	if operation == "task.handoff" {
+		if err := journal.ValidateHandoffResult(raw); err != nil {
+			return Result{}, err
+		}
+	}
 	var stored struct {
 		Fields     map[string]any `json:"fields"`
 		OccurredAt string         `json:"occurred_at"`
@@ -160,7 +165,7 @@ func idempotencyRequest(options Options, operation string) (journal.IdempotencyR
 		request["reason"] = options.Reason
 	}
 	names := map[string]string{"reason": "--reason", "hold": "--hold", "task": "task"}
-	if operation == "hold.park" || operation == "task.start" {
+	if operation == "hold.park" || operation == "task.start" || operation == "task.handoff" {
 		request["hold"] = options.HoldID
 		if operation == "hold.park" {
 			request["mode"] = "interrupted"
@@ -177,6 +182,9 @@ func idempotencyRequest(options Options, operation string) (journal.IdempotencyR
 	if operation == "task.answer" {
 		request["answer"] = options.Answer
 		names["answer"] = "text"
+	}
+	if operation == "task.handoff" {
+		request["pr"], names["pr"] = options.PR, "--pr"
 	}
 	digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": options.Actor, "operation": operation, "project_id": cfg.ProjectID, "request": request}, options.Actor, names)
 	return journal.IdempotencyRequest{OperationScope: operation + ":" + cfg.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}, err

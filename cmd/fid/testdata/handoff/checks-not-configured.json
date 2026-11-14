@@ -1,0 +1,18 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "checks-not-configured",
+    "details": {
+      "lane": "standard"
+    },
+    "message": "no checks set for standard in .fid.toml",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "task.handoff"
+}

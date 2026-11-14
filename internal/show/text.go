@@ -8,6 +8,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/display"
+	"github.com/mbell-nzl/fid/internal/handoffrecord"
 	"github.com/mbell-nzl/fid/internal/issues"
 )
 
@@ -138,6 +139,13 @@ func (text textWriter) rows(result Result) []string {
 		lines = append(lines, text.value("Lane", lane)...)
 	}
 	lines = append(lines, text.checks(result)...)
+	if handoff := result.Handoff; handoff != nil {
+		checks := "no checks required"
+		if len(handoff.RequiredChecks) > 0 {
+			checks = strings.Join(handoff.RequiredChecks, ", ") + " passed"
+		}
+		lines = append(lines, text.value("Hand-off", display.Clock(handoff.At, result.Now)+" · PR #"+handoffrecord.PRNumber(handoff.PR)+" · "+checks+" on "+handoff.Head[:8])...)
+	}
 	if hold := result.Working; hold != nil {
 		clock := func(stamp string) string { return display.Clock(stamp, result.Now) }
 		value := fmt.Sprintf("here, since %s, until %s", clock(hold.Since), clock(hold.ExpiresAt))

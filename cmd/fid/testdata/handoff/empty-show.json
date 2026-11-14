@@ -1,0 +1,67 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [],
+    "blocks": [],
+    "checks": [],
+    "checks_base": null,
+    "children": [],
+    "epic": {
+      "id": "FID-e3a1c0",
+      "kind": "epic",
+      "title": "Planned epic",
+      "status": "todo",
+      "status_category": "unstarted",
+      "progress": {
+        "done": 0,
+        "total": 1
+      }
+    },
+    "handoff": {
+      "id": "HOF-<new>",
+      "pr": "https://github.com/mbell-nzl/fid/pull/63",
+      "head": "<commit-or-tree>",
+      "base": "<commit-or-tree>",
+      "required_checks": [],
+      "result_ids": [],
+      "at": "2026-11-08T09:00:00Z"
+    },
+    "issue": {
+      "lane": "standard",
+      "id": "FID-9f13aa",
+      "kind": "task",
+      "title": "Harden login rate limiting",
+      "status": "in_review",
+      "status_category": "started",
+      "workflow_id": "task-default",
+      "parent_id": "FID-e3a1c0",
+      "priority": null,
+      "sequence": null,
+      "spec_md_path": null,
+      "revision": 2,
+      "labels": [],
+      "created_at": "2026-10-31T02:00:00Z",
+      "updated_at": "2026-11-08T09:00:00Z",
+      "acceptance_criteria": []
+    },
+    "kept": {
+      "worktree": "<ROOT>",
+      "here": true,
+      "mode": "review",
+      "reason": null,
+      "since": "2026-11-08T09:00:00Z",
+      "hold_id": "HLD-aaaaaa",
+      "actor": "agent:claude-builder"
+    },
+    "progress": null,
+    "questions": [],
+    "scheduling": null,
+    "state": null,
+    "task": null,
+    "warnings": [],
+    "working": null
+  }
+}

@@ -66,7 +66,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 	if err != nil || stderr != "" {
 		t.Fatalf("%s canonical retry = %v stderr=%q", operation, err, stderr)
 	}
-	exactResponse := operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
+	exactResponse := operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
 	byteWant := strings.Replace(entry.stdout, `"replayed":false`, `"replayed":true`, 1)
 	if exactResponse {
 		byteWant = entry.stdout
@@ -113,6 +113,9 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 			for i, arg := range changed {
 				if arg == name {
 					changed[i+1] += "-changed"
+					if operation == "task.handoff" && name == "--pr" {
+						changed[i+1] = "https://github.com/mbell-nzl/fid/pull/64"
+					}
 				}
 			}
 		} else {

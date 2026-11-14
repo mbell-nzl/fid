@@ -27,6 +27,8 @@ const (
 	CodeChecksNotConfigured         Code = "checks-not-configured"
 	CodeComparisonUnavailable       Code = "comparison-unavailable"
 	CodeChecksUnsatisfied           Code = "checks-unsatisfied"
+	CodeTreeDirty                   Code = "tree-dirty"
+	CodeTestPathsNotConfigured      Code = "test-paths-not-configured"
 	CodeCheckUnsuccessful           Code = "check-unsuccessful"
 	CodeCheckNotQualified           Code = "check-not-qualified"
 	CodeCheckStillRunning           Code = "check-still-running"
@@ -247,19 +249,21 @@ func definition(category Category, retryable bool, subjects []SubjectType, detai
 }
 
 var failureCodeDefinitions = map[Code]reasonDefinition{
-	CodeChecksNotConfigured:   definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringField("lane")),
-	CodeComparisonUnavailable: definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, nullableStringField("ref"), stringField("problem")),
-	CodeChecksUnsatisfied:     definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringsField("checks"), stringsField("latest_result_ids")),
-	CodeCheckUnsuccessful:     definition(CategoryGateUnsuccessful, false, []SubjectType{SubjectIssue}, stringsField("check_ids"), stringsField("outcomes")),
-	CodeCheckNotQualified:     definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringsField("check_ids"), stringsField("reasons")),
-	CodeCheckStillRunning:     definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("check_id"), integerField("pid")),
-	CodeCheckIncomplete:       definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringsField("check_ids")),
-	CodeHoldNotCurrent:        definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id"), stringField("reason")),
-	CodeWorktreeBusy:          definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id"), stringField("worktree")),
-	CodeLaneNotSet:            definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringField("task_id")),
-	CodeNotWaiting:            definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id")),
-	CodeAlreadyHeld:           definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id")),
-	CodePolicyUnavailable:     definition(CategoryPrecondition, false, nil, stringField("problem"), nullableStringField("ref"), nullableStringField("commit")),
+	CodeTreeDirty:              definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringField("worktree")),
+	CodeTestPathsNotConfigured: definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}),
+	CodeChecksNotConfigured:    definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringField("lane")),
+	CodeComparisonUnavailable:  definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, nullableStringField("ref"), stringField("problem")),
+	CodeChecksUnsatisfied:      definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringsField("checks"), stringsField("latest_result_ids")),
+	CodeCheckUnsuccessful:      definition(CategoryGateUnsuccessful, false, []SubjectType{SubjectIssue}, stringsField("check_ids"), stringsField("outcomes")),
+	CodeCheckNotQualified:      definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringsField("check_ids"), stringsField("reasons")),
+	CodeCheckStillRunning:      definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("check_id"), integerField("pid")),
+	CodeCheckIncomplete:        definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringsField("check_ids")),
+	CodeHoldNotCurrent:         definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id"), stringField("reason")),
+	CodeWorktreeBusy:           definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id"), stringField("worktree")),
+	CodeLaneNotSet:             definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringField("task_id")),
+	CodeNotWaiting:             definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id")),
+	CodeAlreadyHeld:            definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id")),
+	CodePolicyUnavailable:      definition(CategoryPrecondition, false, nil, stringField("problem"), nullableStringField("ref"), nullableStringField("commit")),
 	CodeOperationUnavailable: definition(CategoryInvalidInput, false, nil,
 		stringField("argument"), nullableStringField("value"), stringsField("allowed")),
 	CodeReviewNotIndependent: definition(CategoryPrecondition, false, nil,
@@ -393,7 +397,7 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 		stringField("target_root"), stringField("reason")),
 }
 
-var registeredCodes = []Code{CodeComparisonUnavailable, CodeChecksUnsatisfied, CodeChecksNotConfigured, CodeCheckUnsuccessful, CodeCheckNotQualified, CodeCheckStillRunning, CodeCheckIncomplete, CodeLaneNotSet, CodeNotWaiting, CodeHoldNotCurrent, CodeWorktreeBusy, CodeAlreadyHeld,
+var registeredCodes = []Code{CodeTreeDirty, CodeTestPathsNotConfigured, CodeComparisonUnavailable, CodeChecksUnsatisfied, CodeChecksNotConfigured, CodeCheckUnsuccessful, CodeCheckNotQualified, CodeCheckStillRunning, CodeCheckIncomplete, CodeLaneNotSet, CodeNotWaiting, CodeHoldNotCurrent, CodeWorktreeBusy, CodeAlreadyHeld,
 	CodeInvalidArgument, CodePolicyUnavailable, CodeOperationUnavailable, CodeUnsupportedKind, CodeUnsupportedRelation, CodeProjectNotFound, CodeProjectAlreadyInit,
 	CodeIssueNotFound, CodeRequirementNotFound, CodeLabelNotFound, CodeLinkNotFound, CodeWorkflowNotFound,
 	CodeDuplicateEntity, CodeStateConflict, CodeLockUnavailable, CodeHierarchyInvalid, CodeDependencyCycle,

@@ -65,6 +65,9 @@ func (result Result) readyVerdict(task issues.OverviewTask) (string, display.Rol
 
 func (result Result) startedVerdict(task issues.OverviewTask) string {
 	if kept := result.entries[task.ID].Kept; kept != nil {
+		if kept.Mode == "review" {
+			return "in review"
+		}
 		if kept.Mode == "waiting" {
 			return "waiting for you"
 		}

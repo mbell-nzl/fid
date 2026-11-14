@@ -103,6 +103,7 @@ var retainedCurrentRules = map[string]currentEventRule{
 	"check.hold-renewed":             currentRule("check", currentStage(1, currentEffectKey("holds", "update"))),
 	"check.artifact-kept":            currentRule("check", currentStage(0, currentEffectKey("referenced_artifacts", "insert"), currentEffectKey("referenced_artifacts", "update")), currentStage(1, currentEffectKey("check_files", "insert"))),
 	"check.artifact-refused":         currentRule("check", currentStage(1, currentEffectKey("check_files", "insert"))),
+	"task.handed-off":                currentRule("task", currentStage(1, currentEffectKey("handoffs", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("holds", "update")), currentStage(1, currentEffectKey("idempotency_results", "insert"))),
 	"task.started":                   currentRule("task", currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("idempotency_results", "insert"))),
 	"policy.snapshotted":             currentRule("policy", currentStage(1, currentEffectKey("policy_snapshots", "insert"))),
 	"hold.heartbeat":                 currentRule("hold", currentStage(1, currentEffectKey("holds", "update"))),
@@ -139,4 +140,4 @@ var retainedCurrentRules = map[string]currentEventRule{
 // leanEventFamilies are the lean core's families. Every Effect they carry
 // is checked against their stages, in order, not only those on a domain
 // table another family owns.
-var leanEventFamilies = map[string]bool{"task.started": true, "hold.waiting": true, "task.answered": true, "hold.heartbeat": true, "hold.parked": true, "task.taken-over": true, "hold.taken": true, "policy.snapshotted": true}
+var leanEventFamilies = map[string]bool{"task.handed-off": true, "task.started": true, "hold.waiting": true, "task.answered": true, "hold.heartbeat": true, "hold.parked": true, "task.taken-over": true, "hold.taken": true, "policy.snapshotted": true}
