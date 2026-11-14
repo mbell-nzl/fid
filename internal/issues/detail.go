@@ -8,16 +8,6 @@ import (
 	"time"
 )
 
-type IssueConcern struct {
-	ID          string `json:"id"`
-	SubjectType string `json:"subject_type"`
-	SubjectID   string `json:"subject_id"`
-	ActorID     string `json:"actor_id"`
-	Summary     string `json:"summary"`
-	Status      string `json:"status"`
-	CreatedAt   string `json:"created_at"`
-}
-
 type IssueLink struct {
 	Relation    string  `json:"relation"`
 	TargetType  string  `json:"target_type"`
@@ -86,26 +76,6 @@ func issueAcceptanceCriteria(conn *sql.DB, issueID string) ([]AcceptanceCriterio
 		return nil, fmt.Errorf("iterate acceptance criteria for %q: %w", issueID, err)
 	}
 	return criteria, nil
-}
-
-func issueConcerns(conn *sql.DB, issueID string) ([]IssueConcern, error) {
-	rows, err := conn.Query(`SELECT id, subject_type, subject_id, actor_id, summary, status, created_at FROM concerns WHERE subject_type='issue' AND subject_id=? ORDER BY created_at, id`, issueID)
-	if err != nil {
-		return nil, fmt.Errorf("query concerns for %q: %w", issueID, err)
-	}
-	defer closeIssueRows(rows)
-	concerns := []IssueConcern{}
-	for rows.Next() {
-		var concern IssueConcern
-		if err := rows.Scan(&concern.ID, &concern.SubjectType, &concern.SubjectID, &concern.ActorID, &concern.Summary, &concern.Status, &concern.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan concern for %q: %w", issueID, err)
-		}
-		concerns = append(concerns, concern)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate concerns for %q: %w", issueID, err)
-	}
-	return concerns, nil
 }
 
 func issueLinks(conn *sql.DB, issueID string) ([]IssueLink, error) {

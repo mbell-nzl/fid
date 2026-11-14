@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
-	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
@@ -69,7 +68,7 @@ func writeExampleConflict(cmd *cobra.Command, operation, spelling string, value 
 	if err != nil {
 		return err
 	}
-	return writeStopFailure(cmd, jsonMode, operation, fmt.Errorf("%s", message), cli.CodeInvalidArgument, message, nil,
+	return writeFailure(cmd, jsonMode, operation, fmt.Errorf("%s", message), cli.CodeInvalidArgument, message, nil,
 		map[string]any{"argument": spelling, "value": value, "allowed": []string{"--example"}})
 }
 
@@ -89,11 +88,6 @@ func readDescriptorInput(stdin io.Reader, path string, descriptor cli.InputDescr
 	}
 	if err := json.Unmarshal(payload, target); err != nil {
 		return fmt.Errorf("decode %s input: %w", descriptor.Operation, err)
-	}
-	if request, ok := target.(*workflow.EnvelopeCreateRequest); ok {
-		if err := json.Unmarshal(payload, &request.InputAsWritten); err != nil {
-			return fmt.Errorf("decode %s input members: %w", descriptor.Operation, err)
-		}
 	}
 	return nil
 }

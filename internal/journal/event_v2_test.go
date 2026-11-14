@@ -27,7 +27,7 @@ func TestAppendEventRejectsV2AggregateSequenceGap(t *testing.T) {
 	if err == nil {
 		t.Fatal("AppendEvent() error = nil, want aggregate sequence gap rejection")
 	}
-	if !strings.Contains(err.Error(), "aggregate activation/ACT-1 sequence 2, want 1") {
+	if !strings.Contains(err.Error(), "aggregate label/ledger sequence 2, want 1") {
 		t.Fatalf("AppendEvent() error = %q, want aggregate sequence rejection", err)
 	}
 }
@@ -51,7 +51,7 @@ func TestReplayJournalRejectsOutOfOrderV2AggregateSequence(t *testing.T) {
 	if !errors.As(err, &corrupt) {
 		t.Fatalf("ReplayJournal() error = %T %v, want *CorruptJournalError", err, err)
 	}
-	if corrupt.Line != 2 || !strings.Contains(corrupt.Error(), "aggregate activation/ACT-1 sequence 3, want 2") {
+	if corrupt.Line != 2 || !strings.Contains(corrupt.Error(), "aggregate label/ledger sequence 3, want 2") {
 		t.Fatalf("ReplayJournal() error = %v, want second-line aggregate sequence rejection", corrupt)
 	}
 }
@@ -66,11 +66,13 @@ func TestEventV2RejectsUnknownTopLevelKey(t *testing.T) {
 }
 
 func eventV2ForSequence(sequence int) Event {
-	event := testIdempotentActivationEvent()
+	event := testIdempotentLabelEvent()
 	event.EventID = "EVT-20260822-000001"
 	event.OccurredAt = time.Date(2026, time.August, 22, 0, 0, 0, 0, time.UTC)
 	event.Aggregate.Sequence = sequence
-	event = currentProjectionIdempotency(event, "ACT-1")
-	event.Effects[len(event.Effects)-1].Values["result_json"] = testActivationResultJSON("projection-fixture", false)
+	request := testIdempotencyRequest()
+	request.IdempotencyKey = "projection-fixture"
+	event.Idempotency = &EventIdempotency{Key: request.IdempotencyKey, RequestDigest: request.RequestDigest, Scope: request.OperationScope}
+	event.Effects = append(event.Effects, idempotencyResultEffect(request, event, "ledger", testLabelResultJSON(request.IdempotencyKey, false)))
 	return event
 }

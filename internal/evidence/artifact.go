@@ -3,7 +3,6 @@ package evidence
 import (
 	"crypto/sha256"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io"
 	"mime"
@@ -15,46 +14,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/mbell-nzl/fid/internal/artifactstore"
+	"github.com/mbell-nzl/fid/internal/artifactverify"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
-	fidproject "github.com/mbell-nzl/fid/internal/project"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
-type ArtifactVerifyRequest struct {
-	ArtifactID string `json:"artifact_id"`
-}
-
-type ArtifactVerifyOptions struct {
-	WorkspaceRoot  string
-	MigrationsDir  string
-	ActorID        string
-	IdempotencyKey string
-	Request        ArtifactVerifyRequest
-}
-
-type ArtifactVerifyResult struct {
-	Artifact        Artifact `json:"artifact"`
-	Changed         bool     `json:"changed"`
-	IdempotencyKey  string   `json:"idempotency_key"`
-	Replayed        bool     `json:"replayed"`
-	EventID         string
-	EventOccurredAt string
-}
-
-// Artifact is immutable content-addressed material retained from a Gate run.
-type Artifact struct {
-	ID             string  `json:"id"`
-	Digest         string  `json:"digest"`
-	MediaType      string  `json:"media_type"`
-	SizeBytes      int64   `json:"size_bytes"`
-	RetentionClass string  `json:"retention_class"`
-	Availability   string  `json:"availability"`
-	LocationPolicy string  `json:"location_policy"`
-	CreatedAt      string  `json:"created_at"`
-	ExpiresAt      *string `json:"expires_at"`
-	DeclaredPath   string  `json:"-"`
-}
+type Artifact = artifactverify.Artifact
 
 type retainedArtifact struct {
 	Artifact
@@ -100,19 +65,7 @@ func retainArtifacts(workspaceRoot string, definition GateDefinition) ([]retaine
 }
 
 func artifactStoreRoot(workspaceRoot, root string) (string, error) {
-	fidRoot, err := filepath.EvalSymlinks(config.LedgerDir(workspaceRoot))
-	if err != nil {
-		return "", fmt.Errorf("retain Artifacts: resolve fid root: %w", err)
-	}
-	store := filepath.Join(fidRoot, root)
-	if err := os.MkdirAll(store, 0o700); err != nil {
-		return "", fmt.Errorf("retain Artifacts: create store: %w", err)
-	}
-	resolved, err := filepath.EvalSymlinks(store)
-	if err != nil || !containedResolvedPath(fidRoot, resolved) {
-		return "", fmt.Errorf("retain Artifacts: configured store escapes fid root")
-	}
-	return resolved, nil
+	return artifactstore.Root(config.LedgerDir(workspaceRoot), root)
 }
 
 func artifactCandidatePath(workspaceRoot, cwd, declaredPath string) (string, string) {
@@ -244,7 +197,6 @@ func writeSanitizedArtifactChunk(writer io.Writer, redactor *liveRedactor, data 
 func publishArtifactFile(stagingPath, destination, digest string) error {
 	return artifactstore.Publish(stagingPath, destination, digest)
 }
-func verifyArtifactDigest(path, digest string) error { return artifactstore.Verify(path, digest) }
 func containedResolvedPath(root, candidate string) bool {
 	return artifactstore.Contained(root, candidate)
 }
@@ -332,167 +284,4 @@ func containsArtifactRejection(values []ArtifactRejection, target ArtifactReject
 		}
 	}
 	return false
-}
-
-func VerifyArtifact(options ArtifactVerifyOptions) (ArtifactVerifyResult, error) {
-	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" || strings.TrimSpace(options.ActorID) == "" || strings.TrimSpace(options.Request.ArtifactID) == "" {
-		return ArtifactVerifyResult{}, fmt.Errorf("verify Artifact: workspace root, migrations directory, actor, and Artifact are required")
-	}
-	var result ArtifactVerifyResult
-	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "fid artifact verify"}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
-			return err
-		}
-		conn, err := openEvidenceDB(options.WorkspaceRoot)
-		if err != nil {
-			return err
-		}
-		defer func() { _ = conn.Close() }()
-		project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
-		if err != nil {
-			return fmt.Errorf("verify Artifact: read project config: %w", err)
-		}
-		digest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor_id": options.ActorID, "artifact_id": options.Request.ArtifactID, "project_id": project.ProjectID, "request": options.Request}, options.ActorID, nil)
-		if err != nil {
-			return err
-		}
-		idempotency := journal.IdempotencyRequest{OperationScope: "artifact.verify:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest, RequestFieldDigests: fields}
-		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
-			return err
-		} else if found {
-			if err := json.Unmarshal([]byte(outcome.ResultJSON), &result); err != nil {
-				return fmt.Errorf("verify Artifact: decode replay: %w", err)
-			}
-			result.EventID = outcome.EventID
-			result.IdempotencyKey = options.IdempotencyKey
-			result.Replayed = true
-			return nil
-		}
-		_, actor, err := loadActiveActor(conn, options.ActorID)
-		if err != nil {
-			return err
-		}
-		if !hasCapability(actor.Capabilities, "artifact.verify") {
-			return &AuthorityDeniedError{ActorID: options.ActorID}
-		}
-		artifact, found, err := loadArtifactByID(conn, options.Request.ArtifactID)
-		if err != nil {
-			return err
-		}
-		if !found {
-			return fmt.Errorf("verify Artifact: Artifact %q was not found", options.Request.ArtifactID)
-		}
-
-		storeRoot, err := artifactStoreRoot(options.WorkspaceRoot, project.ArtifactRoot)
-		if err != nil {
-			return err
-		}
-		available := verifyArtifactDigest(filepath.Join(storeRoot, strings.TrimPrefix(artifact.Digest, "sha256:")), artifact.Digest) == nil
-		observed := "missing"
-		if available {
-			observed = "available"
-		}
-		priorAvailability := artifact.Availability
-		changed := priorAvailability != observed
-		artifact.Availability = observed
-		sequence, err := journal.NextAggregateSequence(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.JournalDirName), journal.Aggregate{ID: artifact.ID, Type: "artifact"})
-		if err != nil {
-			return err
-		}
-		effects := []journal.Effect{}
-		if changed {
-			effects = append(effects, journal.Effect{Op: "update", Table: "referenced_artifacts", PK: map[string]any{"id": artifact.ID}, Values: map[string]any{"availability": observed}, Preconditions: map[string]any{"availability": priorAvailability}})
-		}
-		if changed && observed == "available" {
-			targets, err := artifactEnvelopeTargets(conn, artifact.ID)
-			if err != nil {
-				return err
-			}
-			if len(targets) > 0 {
-				observation, err := fidproject.ObserveRepository(options.WorkspaceRoot)
-				if err != nil {
-					return fmt.Errorf("verify Artifact: observe repository: %w", err)
-				}
-				head := observation.HeadOID
-				repository := workflow.Repository{BaseOID: &head, CaptureSource: "git", Dirty: observation.Dirty, DirtyDigest: observation.DirtyDigest, HeadOID: observation.HeadOID, ProjectID: project.ProjectID, TreeOID: observation.TreeOID, WorktreeID: observation.WorktreeID}
-				for _, target := range targets {
-					overrides, err := workflow.ArtifactAvailabilityOverrides(conn, target.EnvelopeID, target.Revision, artifact.ID, repository)
-					if err != nil {
-						return err
-					}
-					readinessEffects, _, _, err := workflow.HumanOutcomeReadinessStopEffects(conn, target.EnvelopeID, target.Revision, actor.ActorID, repository, overrides)
-					if err != nil {
-						return err
-					}
-					effects = append(effects, readinessEffects...)
-				}
-			}
-		}
-		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "artifact.availability-observed", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: artifact.ID, Sequence: sequence, Type: "artifact"}, CommandName: "artifact.verify", Effects: effects}
-		result = ArtifactVerifyResult{Artifact: artifact, Changed: changed, IdempotencyKey: options.IdempotencyKey, Replayed: false}
-		resultJSON, err := journal.MarshalCanonicalJSON(result)
-		if err != nil {
-			return err
-		}
-		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
-			substituteEvidenceEventPlaceholders(prepared.Effects, prepared)
-			return journal.IdempotencyMutation{EntityID: artifact.ID, ResultJSON: string(resultJSON)}, nil
-		})
-		if err != nil {
-			return err
-		}
-		result.EventID = outcome.EventID
-		return nil
-	})
-	if err != nil {
-		return ArtifactVerifyResult{}, err
-	}
-	if result.EventID != "" {
-		occurredAt, err := gateEventOccurredAt(options.WorkspaceRoot, result.EventID)
-		if err != nil {
-			return ArtifactVerifyResult{}, err
-		}
-		result.EventOccurredAt = occurredAt
-	}
-	return result, nil
-}
-
-type artifactEnvelopeTarget struct {
-	EnvelopeID string
-	Revision   int
-}
-
-// artifactEnvelopeTargets finds every Envelope revision whose linked Evidence
-// requires this Artifact, so a missing-to-available flip can re-evaluate each
-// one for the human-outcome-required readiness Stop (DEC-224).
-func artifactEnvelopeTargets(conn *sql.DB, artifactID string) ([]artifactEnvelopeTarget, error) {
-	rows, err := conn.Query(`SELECT DISTINCT o.envelope_id,o.revision FROM evidence_artifact_links l JOIN evidence_records e ON e.id=l.evidence_id JOIN envelope_obligations o ON o.id=e.obligation_id WHERE l.artifact_id=? AND l.required_material=1 ORDER BY o.envelope_id,o.revision`, artifactID)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-	targets := []artifactEnvelopeTarget{}
-	for rows.Next() {
-		var target artifactEnvelopeTarget
-		if err := rows.Scan(&target.EnvelopeID, &target.Revision); err != nil {
-			return nil, err
-		}
-		targets = append(targets, target)
-	}
-	return targets, rows.Err()
-}
-
-func loadArtifactByID(conn *sql.DB, id string) (Artifact, bool, error) {
-	var artifact Artifact
-	err := conn.QueryRow(`SELECT id, digest, media_type, size_bytes, retention_class, availability, location_policy, created_at, expires_at FROM referenced_artifacts WHERE id = ?`, id).Scan(
-		&artifact.ID, &artifact.Digest, &artifact.MediaType, &artifact.SizeBytes, &artifact.RetentionClass,
-		&artifact.Availability, &artifact.LocationPolicy, &artifact.CreatedAt, &artifact.ExpiresAt,
-	)
-	if err == sql.ErrNoRows {
-		return Artifact{}, false, nil
-	}
-	if err != nil {
-		return Artifact{}, false, fmt.Errorf("load Artifact: %w", err)
-	}
-	return artifact, true, nil
 }

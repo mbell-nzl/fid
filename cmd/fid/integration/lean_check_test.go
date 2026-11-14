@@ -5,7 +5,6 @@ package integration
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/mbell-nzl/fid/internal/config"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +13,8 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/config"
 
 	"github.com/mbell-nzl/fid/internal/gittest"
 )

@@ -23,18 +23,6 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	_, initEvent := p20JourneyMutation(t, workspace, "init", "--prefix", "P20")
 	p20RememberEvent(t, eventIDs, initEvent)
 
-	_, workflowEvent := p20JourneyMutation(t, workspace,
-		"workflow", "define", "--name", "p20-task", "--applies-to", "subtask",
-		"--states", "todo,in_progress,cancelled",
-		"--categories", "unstarted,started,cancelled",
-		"--transitions", "todo->in_progress,in_progress->cancelled", "--by", "tl",
-	)
-	p20RememberEvent(t, eventIDs, workflowEvent)
-	_, assignmentEvent := p20JourneyMutation(t, workspace,
-		"workflow", "assign", "--name", "p20-task", "--kind", "subtask", "--by", "tl",
-	)
-	p20RememberEvent(t, eventIDs, assignmentEvent)
-
 	epicResult, epicEvent := p20JourneyMutation(t, workspace,
 		"issue", "create", "--kind", "epic", "--title", "Phase 20 journey", "--scheduling", "sequential", "--actor", "agent:tl", "--idempotency-key", "p20-issue-create-epic",
 	)
@@ -114,14 +102,20 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	p20AssertRelations(t, p20Objects(t, linkList["links"]), []string{"discovered_from", "relates_to", "relates_to"})
 	p20AssertCount(t, linkList, 3)
 
-	ready := p20JourneyRead(t, workspace, "ready", "--epic", epicID)
+	ready := p20JourneyRead(t, workspace, "next")
 	if got := p20Object(t, ready["task"])["id"]; got != taskID {
-		t.Fatalf("ready task id = %q, want %q", got, taskID)
+		t.Fatalf("next task id = %q, want %q", got, taskID)
 	}
 
-	workflowList := p20JourneyRead(t, workspace, "workflow", "list", "--kind", "subtask")
-	if !p20ContainsName(p20Objects(t, workflowList["workflows"]), "p20-task") {
-		t.Fatalf("workflow list = %#v, want p20-task", workflowList)
+	for _, id := range []string{taskID, followUpID, subtaskID} {
+		issue := p20Object(t, p20JourneyRead(t, workspace, "issue", "get", id)["issue"])
+		wantWorkflow := "task-default"
+		if id == subtaskID {
+			wantWorkflow = "subtask-default"
+		}
+		if issue["workflow_id"] != wantWorkflow || issue["status_category"] != "unstarted" {
+			t.Fatalf("fixed workflow/category=%v", issue)
+		}
 	}
 
 	beforeUpdate := p20IssueGet(t, workspace, taskID)
@@ -152,6 +146,7 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 		t.Fatalf("maintenance check status = %q, want pass or warn without a divergence failure", status)
 	}
 
+	assertLeanIntegrationJournal(t, workspace)
 	beforeRebuild := map[string]string{}
 	for _, issueID := range []string{epicID, taskID, followUpID, subtaskID} {
 		beforeRebuild[issueID] = p20IssueGet(t, workspace, issueID)
@@ -450,13 +445,4 @@ func p20AssertCount(t *testing.T, result map[string]any, want int) {
 	if got := p20Integer(t, result["count"]); got != want {
 		t.Fatalf("collection count = %d, want %d", got, want)
 	}
-}
-
-func p20ContainsName(objects []map[string]any, name string) bool {
-	for _, object := range objects {
-		if object["name"] == name {
-			return true
-		}
-	}
-	return false
 }

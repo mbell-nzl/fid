@@ -1,12 +1,13 @@
 package main
 
 import (
-	"database/sql"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestIssueListFiltersAndOrdering(t *testing.T) {
@@ -20,7 +21,7 @@ func TestIssueListFiltersAndOrdering(t *testing.T) {
 	}
 	defer closeCommandDB(t, conn)
 
-	seedIssueListCommandFixture(t, conn)
+	seedIssueListCommandFixture(t, workspace)
 
 	tests := []struct {
 		name    string
@@ -44,7 +45,6 @@ func TestIssueListFiltersAndOrdering(t *testing.T) {
 				"--epic", "FID-epic01",
 				"--label", "core",
 				"--priority", "1",
-				"--has-concerns",
 			},
 			wantIDs: []string{"FID-task01"},
 		},
@@ -83,169 +83,114 @@ func TestIssueListRejectsRetiredFormatFlag(t *testing.T) {
 	}
 }
 
-func seedIssueListCommandFixture(t *testing.T, conn *sql.DB) {
+func seedIssueListCommandFixture(t *testing.T, workspace string) {
 	t.Helper()
-
-	statements := []struct {
-		query string
-		args  []any
+	rows := []struct {
+		table            string
+		columns, primary []string
+		values           []any
 	}{
-		{
-			query: `
-				INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"FID-epic01",
-				"epic",
-				"Phase 4 discovery",
-				"todo",
-				"epic-default",
-				"tl",
-				"2026-06-09T09:00:00Z",
-				"2026-06-09T09:00:00Z",
-			},
-		},
-		{
-			query: `INSERT INTO epic_metadata (issue_id, scheduling) VALUES (?, ?)`,
-			args:  []any{"FID-epic01", "sequential"},
-		},
-		{
-			query: `INSERT INTO labels (name) VALUES (?), (?), (?)`,
-			args:  []any{"backend", "core", "docs"},
-		},
-		{
-			query: `
-				INSERT INTO issues (
-					id, kind, parent_id, title, status, workflow_id, priority, sequence, owner_role, created_at, updated_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"FID-task01",
-				"task",
-				"FID-epic01",
-				"Inbox task",
-				"todo",
-				"task-default",
-				1,
-				2,
-				"developer",
-				"2026-06-09T09:01:00Z",
-				"2026-06-09T09:03:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO issues (
-					id, kind, parent_id, title, status, workflow_id, priority, sequence, owner_role, created_at, updated_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"FID-task02",
-				"task",
-				"FID-epic01",
-				"Started task",
-				"in_progress",
-				"task-default",
-				0,
-				1,
-				"developer",
-				"2026-06-09T09:02:00Z",
-				"2026-06-09T09:01:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO issues (
-					id, kind, parent_id, title, status, workflow_id, priority, sequence, owner_role, created_at, updated_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"FID-task03",
-				"task",
-				"FID-epic01",
-				"Completed task",
-				"done",
-				"task-default",
-				2,
-				3,
-				"developer",
-				"2026-06-09T09:03:00Z",
-				"2026-06-09T09:02:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO issues (
-					id, kind, title, status, workflow_id, priority, owner_role, created_at, updated_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"FID-task04",
-				"task",
-				"Backlog task",
-				"done",
-				"task-default",
-				1,
-				"developer",
-				"2026-06-09T09:01:00Z",
-				"2026-06-09T09:03:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO issues (
-					id, kind, parent_id, title, status, workflow_id, owner_role, created_at, updated_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"FID-sub01",
-				"subtask",
-				"FID-task02",
-				"Cancelled subtask",
-				"cancelled",
-				"subtask-default",
-				"developer",
-				"2026-06-09T09:04:00Z",
-				"2026-06-09T09:04:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO issue_labels (issue_id, label)
-				VALUES (?, ?), (?, ?), (?, ?), (?, ?)
-			`,
-			args: []any{
-				"FID-task01", "backend",
-				"FID-task01", "core",
-				"FID-task03", "core",
-				"FID-sub01", "docs",
-			},
-		},
-		{
-			query: `INSERT INTO concerns
-				(id, subject_type, subject_id, actor_id, scope_json, severity, summary, reasoning, references_json,
-				 status, created_at, created_event_id)
-				VALUES (?, 'issue', ?, 'developer', '{"paths":[]}', 'major', ?, 'Needs review', '[]',
-				        'open', ?, ?)`,
-			args: []any{"CON-open01", "FID-task01", "Needs triage", "2026-06-09T09:05:00Z", "EVT-open01"},
-		},
-		{
-			query: `INSERT INTO concerns
-				(id, subject_type, subject_id, actor_id, scope_json, severity, summary, reasoning, references_json,
-				 status, disposition_action, disposition_reason, disposed_actor_id, disposed_at,
-				 disposed_event_id, created_at, created_event_id)
-				VALUES (?, 'issue', ?, 'developer', '{"paths":[]}', 'major', ?, 'Needs review', '[]',
-				        'disposed', 'rejected', 'Addressed', 'qa_lead', ?, ?, ?, ?)`,
-			args: []any{"CON-addressed01", "FID-task03", "Already addressed", "2026-06-09T09:06:00Z",
-				"EVT-dispose01", "2026-06-09T09:06:00Z", "EVT-addressed01"},
-		},
+		{table: "issues", columns: strings.Fields("id kind title status workflow_id owner_role created_at updated_at"), primary: strings.Fields("id"), values: []any{
+			"FID-epic01",
+			"epic",
+			"Phase 4 discovery",
+			"todo",
+			"epic-default",
+			"tl",
+			"2026-06-09T09:00:00Z",
+			"2026-06-09T09:00:00Z",
+		}},
+		{table: "epic_metadata", columns: strings.Fields("issue_id scheduling"), primary: strings.Fields("issue_id"), values: []any{"FID-epic01", "sequential"}},
+		{table: "labels", columns: strings.Fields("name"), primary: strings.Fields("name"), values: []any{"backend", "core", "docs"}},
+		{table: "issues", columns: strings.Fields("id kind parent_id title status workflow_id priority sequence owner_role created_at updated_at"), primary: strings.Fields("id"), values: []any{
+			"FID-task01",
+			"task",
+			"FID-epic01",
+			"Inbox task",
+			"todo",
+			"task-default",
+			1,
+			2,
+			"developer",
+			"2026-06-09T09:01:00Z",
+			"2026-06-09T09:03:00Z",
+		}},
+		{table: "issues", columns: strings.Fields("id kind parent_id title status workflow_id priority sequence owner_role created_at updated_at"), primary: strings.Fields("id"), values: []any{
+			"FID-task02",
+			"task",
+			"FID-epic01",
+			"Started task",
+			"in_progress",
+			"task-default",
+			0,
+			1,
+			"developer",
+			"2026-06-09T09:02:00Z",
+			"2026-06-09T09:01:00Z",
+		}},
+		{table: "issues", columns: strings.Fields("id kind parent_id title status workflow_id priority sequence owner_role created_at updated_at"), primary: strings.Fields("id"), values: []any{
+			"FID-task03",
+			"task",
+			"FID-epic01",
+			"Completed task",
+			"done",
+			"task-default",
+			2,
+			3,
+			"developer",
+			"2026-06-09T09:03:00Z",
+			"2026-06-09T09:02:00Z",
+		}},
+		{table: "issues", columns: strings.Fields("id kind title status workflow_id priority owner_role created_at updated_at"), primary: strings.Fields("id"), values: []any{
+			"FID-task04",
+			"task",
+			"Backlog task",
+			"done",
+			"task-default",
+			1,
+			"developer",
+			"2026-06-09T09:01:00Z",
+			"2026-06-09T09:03:00Z",
+		}},
+		{table: "issues", columns: strings.Fields("id kind parent_id title status workflow_id owner_role created_at updated_at"), primary: strings.Fields("id"), values: []any{
+			"FID-sub01",
+			"subtask",
+			"FID-task02",
+			"Cancelled subtask",
+			"cancelled",
+			"subtask-default",
+			"developer",
+			"2026-06-09T09:04:00Z",
+			"2026-06-09T09:04:00Z",
+		}},
+		{table: "issue_labels", columns: strings.Fields("issue_id label"), primary: strings.Fields("issue_id label"), values: []any{
+			"FID-task01", "backend",
+			"FID-task01", "core",
+			"FID-task03", "core",
+			"FID-sub01", "docs",
+		}},
 	}
-
-	for _, statement := range statements {
-		if _, err := conn.Exec(statement.query, statement.args...); err != nil {
-			t.Fatalf("seed issue list command fixture exec error = %v\nquery=%s", err, statement.query)
+	effects := []journal.Effect{}
+	for _, row := range rows {
+		for offset := 0; offset < len(row.values); offset += len(row.columns) {
+			effect := journal.Effect{Op: "insert", Table: row.table, PK: map[string]any{}, Values: map[string]any{}}
+			for i, column := range row.columns {
+				primary := false
+				for _, key := range row.primary {
+					primary = primary || key == column
+				}
+				if primary {
+					effect.PK[column] = row.values[offset+i]
+				} else {
+					effect.Values[column] = row.values[offset+i]
+				}
+			}
+			effects = append(effects, effect)
 		}
+	}
+	appendCommandIssueEvent(t, workspace, journal.Event{EventSchema: journal.EventSchemaV1, EventType: "issue.read-fixture", Actor: journal.Actor{Role: "developer"}, Command: journal.Command{Argv: []string{"fid", "test"}, CWD: ".", FIDVersion: "test"}, Effects: effects})
+	if _, err := journal.EnsureProjectionFresh(workspace, issueMigrationsDir()); err != nil {
+		t.Fatal(err)
 	}
 }
 

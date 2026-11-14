@@ -1,5 +1,0 @@
-{
-  "operation": "receipt.list",
-  "command": "fid receipt list",
-  "kind": "accepted"
-}

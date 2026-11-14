@@ -9,10 +9,10 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/holds"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/persondecision"
 	"github.com/mbell-nzl/fid/internal/policy"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 type TransitionOptions struct {
@@ -61,20 +61,8 @@ type BlockedTransitionError struct {
 	IssueID        string
 	CurrentState   string
 	RequestedState string
-	Unmet          []workflow.UnmetCondition
+	Unmet          []issuestate.UnmetCondition
 	Cause          error
-}
-
-// ExecutionBoundTransitionError preserves every failed generic predicate.
-type ExecutionBoundTransitionError struct {
-	IssueID        string
-	CurrentState   string
-	RequestedState string
-	Reasons        []workflow.EvaluationReason
-}
-
-func (err *ExecutionBoundTransitionError) Error() string {
-	return fmt.Sprintf("execution-bound transition for issue %q is not permitted", err.IssueID)
 }
 
 func (err *BlockedTransitionError) Unwrap() error {
@@ -189,7 +177,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		if err != nil {
 			return err
 		}
-		registry, err := workflow.Load(conn)
+		registry, err := issuestate.Load(conn)
 		if err != nil {
 			return err
 		}
@@ -210,44 +198,18 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 			return err
 		}
 		rules, allowed := registry.RulesForEdge(current.WorkflowID, current.Status, toState)
-		var execution workflow.ExecutionTransitionEvaluation
-		if !cancelling {
-			execution, err = workflow.EvaluateExecutionTransition(options.WorkspaceRoot, options.MigrationsDir, workflow.ExecutionTransitionRequest{
-				IssueID: current.ID, ActorID: actor.id, ExpectedIssueRevision: options.ExpectedRevision,
-				ActualIssueRevision: current.Revision, WorkflowEdgeValid: known && allowed,
-				TerminalSuccess: toCategory == "completed",
-			})
+		if !known || !allowed {
+			return &InvalidTransitionError{IssueID: current.ID, CurrentState: current.Status, RequestedState: toState}
 		}
+		if options.ExpectedRevision != nil && *options.ExpectedRevision != current.Revision {
+			return &StateConflictError{IssueID: current.ID, ExpectedRevision: *options.ExpectedRevision, ActualRevision: current.Revision}
+		}
+		unmet, err := evaluateTransitionRules(conn, current, rules)
 		if err != nil {
 			return err
 		}
-		if execution.Bound {
-			if len(execution.Reasons) > 0 {
-				return &ExecutionBoundTransitionError{IssueID: current.ID, CurrentState: current.Status, RequestedState: toState, Reasons: execution.Reasons}
-			}
-		} else if !known || !allowed {
-			return &InvalidTransitionError{
-				IssueID:        current.ID,
-				CurrentState:   current.Status,
-				RequestedState: toState,
-			}
-		}
-		if !execution.Bound {
-			if options.ExpectedRevision != nil && *options.ExpectedRevision != current.Revision {
-				return &StateConflictError{IssueID: current.ID, ExpectedRevision: *options.ExpectedRevision, ActualRevision: current.Revision}
-			}
-			unmet, err := evaluateTransitionRules(conn, current, rules)
-			if err != nil {
-				return err
-			}
-			if len(unmet) > 0 {
-				return &BlockedTransitionError{
-					IssueID:        current.ID,
-					CurrentState:   current.Status,
-					RequestedState: toState,
-					Unmet:          unmet,
-				}
-			}
+		if len(unmet) > 0 {
+			return &BlockedTransitionError{IssueID: current.ID, CurrentState: current.Status, RequestedState: toState, Unmet: unmet}
 		}
 
 		activityID, err := nextIssueActivityID(conn)
