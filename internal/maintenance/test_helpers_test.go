@@ -218,28 +218,6 @@ func seedAcceptanceCriterion(t *testing.T, db *sql.DB, id, issueID string) {
 	}
 }
 
-func seedRequirementRef(t *testing.T, db *sql.DB, requirementID string) {
-	t.Helper()
-	_, err := db.Exec(`INSERT INTO requirement_refs
-		(id,requirement_id,source_json,status,created_at,created_event_id)
-		VALUES (?,?,'{}','active','2026-07-15T00:00:00Z',?)`,
-		"RREF-"+requirementID, requirementID, "EVT-"+requirementID)
-	if err != nil {
-		t.Fatalf("insert requirement ref %q: %v", requirementID, err)
-	}
-}
-
-func seedDecisionRef(t *testing.T, db *sql.DB, decisionID, issueID string) {
-	t.Helper()
-	_, err := db.Exec(`INSERT INTO decision_refs
-		(id,class,source_json,authority_actor_id,authority_capabilities_json,outcome,scope_issue_id,created_at,created_event_id)
-		VALUES (?,'product','{}','actor-tl','[]','approved',?,'2026-07-15T00:00:00Z',?)`,
-		decisionID, issueID, "EVT-"+decisionID)
-	if err != nil {
-		t.Fatalf("insert decision ref %q: %v", decisionID, err)
-	}
-}
-
 func seedTriageEvent(t *testing.T, db *sql.DB, id, epicID, issueID string) {
 	t.Helper()
 	if _, err := db.Exec(`
@@ -357,33 +335,6 @@ func stringPtr(value string) *string { return &value }
 
 func intPtr(value int) *int { return &value }
 
-func newWarningFixture(t *testing.T, now time.Time) structuralFixture {
-	t.Helper()
-
-	fixture := newMaintenanceFixture(t)
-	seedJournalEvent(t, fixture.journalPath, "EVT-20260715-000001")
-	seedIssueAt(t, fixture.db, "FID-stale-claim", "task", "todo", now)
-	seedIssueAt(t, fixture.db, "FID-live-claim", "task", "todo", now)
-	seedIssueAt(t, fixture.db, "FID-start-live", "task", "in_progress", now.Add(-time.Hour))
-	seedIssueAt(t, fixture.db, "FID-start-before", "task", "in_progress", now.Add(-299*time.Second))
-	seedIssueAt(t, fixture.db, "FID-start-at", "task", "in_progress", now)
-	seedIssueAt(t, fixture.db, "FID-start-after", "task", "in_progress", now)
-	seedIssueAt(t, fixture.db, "FID-start-fallback", "task", "in_progress", now.Add(-300*time.Second))
-	seedIssueAt(t, fixture.db, "FID-start-non-status-update", "task", "in_progress", now.Add(-time.Hour))
-	seedIssueAt(t, fixture.db, "FID-start-zero", "task", "in_progress", now)
-	seedIssueAt(t, fixture.db, "FID-completion", "task", "todo", now)
-
-	seedClaimAt(t, fixture.db, "FID-stale-claim", now.Add(-300*time.Second), 300)
-	seedClaimAt(t, fixture.db, "FID-live-claim", now.Add(-time.Second), 300)
-	seedClaimAt(t, fixture.db, "FID-start-live", now.Add(-time.Second), 300)
-	seedActivityAt(t, fixture.db, "ACT-start-at", "FID-start-at", "status_changed", now.Add(-300*time.Second))
-	seedActivityAt(t, fixture.db, "ACT-start-after", "FID-start-after", "status_changed", now.Add(-301*time.Second))
-	seedActivityAt(t, fixture.db, "ACT-start-update", "FID-start-non-status-update", "status_changed", now.Add(-300*time.Second))
-	seedActivityAt(t, fixture.db, "ACT-non-status-update", "FID-start-non-status-update", "issue_updated", now.Add(-time.Second))
-
-	return fixture
-}
-
 func newInfoFixture(t *testing.T, now time.Time) structuralFixture {
 	t.Helper()
 
@@ -410,34 +361,6 @@ func seedIssueAt(t *testing.T, db *sql.DB, id, kind, status string, createdAt ti
 	}
 }
 
-func seedClaimAt(t *testing.T, db *sql.DB, issueID string, claimedAt time.Time, ttlSeconds int) {
-	t.Helper()
-	envelopeID := "ENV-" + issueID
-	if _, err := db.Exec(`
-		INSERT INTO work_envelopes (id, current_revision, status, created_at)
-		VALUES (?, 1, 'active', ?)
-	`, envelopeID, claimedAt.Format(time.RFC3339)); err != nil {
-		t.Fatalf("insert claim envelope %q: %v", envelopeID, err)
-	}
-	if _, err := db.Exec(`
-		INSERT INTO envelope_revisions (
-			envelope_id, revision, outcome, non_goals_json, risk_result_json,
-			repository_scope_json, status, created_actor_id, approved_actor_id,
-			created_at, activated_at
-		) VALUES (?, 1, 'maintenance claim fixture', '[]', '{}', '{}', 'active', 'agent:developer', 'agent:developer', ?, ?)
-	`, envelopeID, claimedAt.Format(time.RFC3339), claimedAt.Format(time.RFC3339)); err != nil {
-		t.Fatalf("insert claim envelope revision %q: %v", envelopeID, err)
-	}
-	if _, err := db.Exec(`
-		INSERT INTO claims (
-			id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id,
-			scope_json, mode, version, status, acquired_at, expires_at
-		) VALUES (?, ?, ?, 1, 'agent:developer', 'maintenance', '{}', 'mutation', 1, 'active', ?, ?)
-	`, "CLM-"+issueID, issueID, envelopeID, claimedAt.Format(time.RFC3339), claimedAt.Add(time.Duration(ttlSeconds)*time.Second).Format(time.RFC3339)); err != nil {
-		t.Fatalf("insert dated claim %q: %v", issueID, err)
-	}
-}
-
 func seedActivityAt(t *testing.T, db *sql.DB, id, issueID, event string, occurredAt time.Time) {
 	t.Helper()
 	if _, err := db.Exec(`
@@ -446,12 +369,4 @@ func seedActivityAt(t *testing.T, db *sql.DB, id, issueID, event string, occurre
 	`, id, issueID, event, occurredAt.Format(time.RFC3339)); err != nil {
 		t.Fatalf("insert activity %q: %v", id, err)
 	}
-}
-
-func findingEntityIDs(findings []Finding) []string {
-	ids := make([]string, len(findings))
-	for index, finding := range findings {
-		ids[index] = finding.EntityID
-	}
-	return ids
 }

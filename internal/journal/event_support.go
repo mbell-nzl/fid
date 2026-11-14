@@ -19,7 +19,7 @@ func (err *SchemaUnsupportedError) Error() string {
 }
 
 // ValidateEventSupport is shared by journal projection and archive validation.
-// Physical tables remain until RESET 1.5d2; they do not authorize old Effects.
+// Retired table Effects stay unsupported after their physical tables are dropped.
 func ValidateEventSupport(event Event) error {
 	if removedEventFamilies[event.EventType] {
 		return &SchemaUnsupportedError{EventID: event.EventID, EventType: event.EventType}

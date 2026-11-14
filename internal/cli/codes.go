@@ -233,7 +233,7 @@ func findingFields() []detailField {
 }
 
 func infoFields() []detailField {
-	return []detailField{integerField("issue_count"), integerField("claim_count_live"), integerField("recent_activity_7d")}
+	return []detailField{integerField("issue_count"), integerField("recent_activity_7d")}
 }
 
 func RegisteredCodes() []Code { return append([]Code(nil), registeredCodes...) }

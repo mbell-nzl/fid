@@ -11,13 +11,13 @@ func TestCheckInfoCountsAndResultAreDeterministic(t *testing.T) {
 
 	now := time.Date(2026, time.July, 15, 12, 0, 0, 0, time.UTC)
 	fixture := newInfoFixture(t, now)
-	options := CheckOptions{DB: fixture.db, JournalDir: fixture.journalDir, Now: now, StartedWithoutClaimGraceSeconds: 300}
+	options := CheckOptions{DB: fixture.db, JournalDir: fixture.journalDir, Now: now}
 
 	got, err := Check(options)
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
-	if want := (Info{IssueCount: 3, ClaimCountLive: 0, RecentActivity: 2}); got.Info != want {
+	if want := (Info{IssueCount: 3, RecentActivity: 2}); got.Info != want {
 		t.Fatalf("Check().Info = %#v, want %#v", got.Info, want)
 	}
 
