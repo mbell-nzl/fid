@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -94,19 +95,21 @@ func TestMergeCommitCI(t *testing.T) {
 		pages   [][]byte
 		verdict Verdict
 		ignored IgnoreReason
+		runs    []WorkflowRun
+		failed  []WorkflowRun
 	}{
-		{"captured sample", [][]byte{fixture(t, "rest-runs-merge74.json")}, Green, ""},
-		{"none", [][]byte{ciPage(t, 0, nil)}, Waiting, ""},
-		{"queued", [][]byte{ciPage(t, 1, []WorkflowRun{queued})}, Waiting, ""},
-		{"in progress", [][]byte{ciPage(t, 1, []WorkflowRun{progress})}, Waiting, ""},
-		{"skipped only", [][]byte{ciPage(t, 1, []WorkflowRun{skipped})}, Waiting, Skipped},
-		{"mixed workflows", [][]byte{ciPage(t, 2, []WorkflowRun{failure, other})}, NotGreen, ""},
-		{"multiple passing workflows", [][]byte{ciPage(t, 2, []WorkflowRun{success, other})}, Green, ""},
-		{"pending without conclusion", [][]byte{ciMutate(t, queued, func(v map[string]any) { v["conclusion"] = nil })}, Waiting, ""},
-		{"rerun failed", [][]byte{ciPage(t, 2, []WorkflowRun{success, secondFailure})}, NotGreen, Superseded},
-		{"rerun passed", [][]byte{ciPage(t, 2, []WorkflowRun{failure, secondSuccess})}, Green, Superseded},
-		{"wrong head", [][]byte{ciPage(t, 1, []WorkflowRun{wrongHead})}, Waiting, WrongHead},
-		{"PR event", [][]byte{ciPage(t, 1, []WorkflowRun{wrongEvent})}, Waiting, WrongEvent},
+		{"captured sample", [][]byte{fixture(t, "rest-runs-merge74.json")}, Green, "", []WorkflowRun{success}, nil},
+		{"none", [][]byte{ciPage(t, 0, nil)}, Waiting, "", nil, nil},
+		{"queued", [][]byte{ciPage(t, 1, []WorkflowRun{queued})}, Waiting, "", []WorkflowRun{queued}, nil},
+		{"in progress", [][]byte{ciPage(t, 1, []WorkflowRun{progress})}, Waiting, "", []WorkflowRun{progress}, nil},
+		{"skipped only", [][]byte{ciPage(t, 1, []WorkflowRun{skipped})}, Waiting, Skipped, []WorkflowRun{ignoredRun(skipped, Skipped)}, nil},
+		{"mixed workflows", [][]byte{ciPage(t, 2, []WorkflowRun{failure, other})}, NotGreen, "", []WorkflowRun{failure, other}, []WorkflowRun{failure}},
+		{"multiple passing workflows", [][]byte{ciPage(t, 2, []WorkflowRun{success, other})}, Green, "", []WorkflowRun{success, other}, nil},
+		{"pending without conclusion", [][]byte{ciMutate(t, queued, func(v map[string]any) { v["conclusion"] = nil })}, Waiting, "", []WorkflowRun{queued}, nil},
+		{"rerun failed", [][]byte{ciPage(t, 2, []WorkflowRun{success, secondFailure})}, NotGreen, Superseded, []WorkflowRun{ignoredRun(success, Superseded), secondFailure}, []WorkflowRun{secondFailure}},
+		{"rerun passed", [][]byte{ciPage(t, 2, []WorkflowRun{failure, secondSuccess})}, Green, Superseded, []WorkflowRun{ignoredRun(failure, Superseded), secondSuccess}, nil},
+		{"wrong head", [][]byte{ciPage(t, 1, []WorkflowRun{wrongHead})}, Waiting, WrongHead, []WorkflowRun{ignoredRun(wrongHead, WrongHead)}, nil},
+		{"PR event", [][]byte{ciPage(t, 1, []WorkflowRun{wrongEvent})}, Waiting, WrongEvent, []WorkflowRun{ignoredRun(wrongEvent, WrongEvent)}, nil},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
@@ -127,8 +130,19 @@ func TestMergeCommitCI(t *testing.T) {
 			if tt.ignored != "" && got.Runs[0].Ignored != tt.ignored {
 				t.Fatalf("ignored = %#v", got.Runs)
 			}
+			if !slices.Equal(got.Runs, tt.runs) {
+				t.Errorf("workflows = %#v, want %#v", got.Runs, tt.runs)
+			}
+			if !slices.Equal(got.NotGreen, tt.failed) {
+				t.Errorf("not green = %#v, want %#v", got.NotGreen, tt.failed)
+			}
 		})
 	}
+}
+
+func ignoredRun(run WorkflowRun, reason IgnoreReason) WorkflowRun {
+	run.Ignored = reason
+	return run
 }
 
 func TestCIPagination(t *testing.T) {
@@ -184,6 +198,9 @@ func TestCIPagination(t *testing.T) {
 			}
 			if err != nil || got.Verdict != tt.want || len(got.Runs) != 101 || len(got.NotGreen) != 1 || got.NotGreen[0].ID != 101 {
 				t.Fatalf("CI = %#v, %v", got, err)
+			}
+			if !slices.Equal(got.Runs, append(slices.Clone(first), failed)) || !slices.Equal(got.NotGreen, []WorkflowRun{failed}) {
+				t.Fatalf("workflow facts changed across pages: CI = %#v", got)
 			}
 		})
 	}

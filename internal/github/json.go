@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
+	"unicode"
 )
 
-// encoding/json accepts duplicate keys by keeping the last value. At this
-// boundary that could hide a failure, so require one unambiguous JSON value.
+// encoding/json accepts duplicate keys and matches struct fields without regard
+// to case. Either can hide a failure, so reject duplicate names under the same
+// Unicode case folding before decoding into structs.
 func validateJSON(data []byte) error {
 	if !json.Valid(data) {
 		return fmt.Errorf("invalid JSON")
@@ -41,6 +44,7 @@ func jsonValue(decoder *json.Decoder) error {
 				return fmt.Errorf("read JSON key: %w", err)
 			}
 			key, ok := token.(string)
+			key = foldedJSONKey(key)
 			if !ok || keys[key] {
 				return fmt.Errorf("invalid or duplicate JSON key")
 			}
@@ -54,4 +58,16 @@ func jsonValue(decoder *json.Decoder) error {
 		return fmt.Errorf("close JSON: %w", err)
 	}
 	return nil
+}
+
+func foldedJSONKey(key string) string {
+	return strings.Map(func(r rune) rune {
+		for {
+			next := unicode.SimpleFold(r)
+			if next <= r {
+				return next
+			}
+			r = next
+		}
+	}, key)
 }
