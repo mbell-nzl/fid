@@ -41,6 +41,10 @@ func humanKeyDetail(failure Failure) string {
 	details := failure.Details
 	switch failure.Code {
 
+	case CodeJournalReplayStopped:
+		if details["reason"] == "schema-unsupported" {
+			return "schema-unsupported; this journal contains unsupported history"
+		}
 	case CodeIdempotencyConflict:
 		return "differing fields: " + strings.Join(humanStrings(details["differing_fields"]), ",")
 	case CodeTransitionNotPermitted:

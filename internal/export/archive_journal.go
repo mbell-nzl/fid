@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -33,9 +34,15 @@ func journalArchiveEntries(workspaceRoot, scratch string) ([]archiveEntry, int, 
 		if err != nil {
 			return nil, 0, "", fmt.Errorf("create export: open journal: %w", err)
 		}
+		lineNumber := 0
 		err = readEventLines(input, func(line []byte) error {
+			lineNumber++
 			hash, err := validateJournalLine(line, tracker)
 			if err != nil {
+				var unsupported *journal.SchemaUnsupportedError
+				if errors.As(err, &unsupported) {
+					return &journal.CorruptJournalError{File: filepath.ToSlash(filepath.Join(journalDir, file.Name())), Line: lineNumber, Err: err}
+				}
 				return err
 			}
 			if err := chunks.append(line); err != nil {
@@ -122,6 +129,9 @@ func (w *journalChunkWriter) close() {
 func validateJournalLine(line []byte, tracker *journalTracker) (string, error) {
 	var event journal.Event
 	if err := event.UnmarshalJSON(line); err != nil {
+		return "", err
+	}
+	if err := journal.ValidateEventSupport(event); err != nil {
 		return "", err
 	}
 	if err := tracker.add(event); err != nil {

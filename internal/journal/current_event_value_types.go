@@ -36,31 +36,12 @@ func validateCurrentValue(kind string, value any) error {
 		}
 		return nil
 	}
-	if kind == "Condition" {
-		object, ok := value.(map[string]any)
-		if !ok {
-			return fmt.Errorf("%s requires an object", kind)
-		}
-		conditionType, ok := object["type"].(string)
-		if !ok {
-			return fmt.Errorf("%s: type: invalid closed enum", kind)
-		}
-		shape, ok := currentConditionShapes[conditionType]
-		if !ok {
-			return fmt.Errorf("%s: type: invalid closed enum", kind)
-		}
-		object, err := validateCurrentShape(value, shape)
-		if err != nil {
-			return fmt.Errorf("%s: %w", kind, err)
-		}
-		return validateCurrentValueRelations("Condition", object)
-	}
 	if shape, ok := currentValueShapes[kind]; ok {
-		object, err := validateCurrentShape(value, shape)
+		_, err := validateCurrentShape(value, shape)
 		if err != nil {
 			return fmt.Errorf("%s: %w", kind, err)
 		}
-		return validateCurrentValueRelations(kind, object)
+		return nil
 	}
 	valid := false
 	text, stringValue := value.(string)
@@ -103,17 +84,6 @@ func validateCurrentValue(kind string, value any) error {
 		valid = value == "." || currentPath(value)
 	case "EnvironmentName":
 		valid = stringValue && currentEnvironmentName.MatchString(text)
-	case "ResourceComponent":
-		valid = currentEnum(value, "kit", "overlay", "provider", "project", "backend")
-	case "StopCode":
-		_, valid = currentStopDetailShapes[text]
-		valid = valid && stringValue
-	case "StopDetails":
-		_, valid = value.(map[string]any) // Selected by its enclosing Stop's code below.
-	case "BlockedActions":
-		return validateCurrentBlockedActions(value)
-	case "AdoptedPaths":
-		return validateCurrentAdoptedPaths(value)
 	default:
 		return fmt.Errorf("unregistered current value type %q", kind)
 	}

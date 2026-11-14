@@ -14,7 +14,6 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
-	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func supplementalArchiveFacts(workspaceRoot, artifactRoot string) ([]json.RawMessage, []archiveEntry, error) {
@@ -23,48 +22,11 @@ func supplementalArchiveFacts(workspaceRoot, artifactRoot string) ([]json.RawMes
 		return nil, nil, fmt.Errorf("create export: open projection: %w", err)
 	}
 	defer func() { _ = conn.Close() }()
-	sources, err := loadSources(conn)
-	if err != nil {
-		return nil, nil, err
-	}
 	artifacts, err := loadAvailableArtifacts(conn, workspaceRoot, artifactRoot)
 	if err != nil {
 		return nil, nil, err
 	}
-	return sources, artifacts, nil
-}
-
-func loadSources(conn *sql.DB) ([]json.RawMessage, error) {
-	rows, err := conn.Query(`SELECT source_json FROM envelope_sources ORDER BY envelope_id, revision, ordinal`)
-	if err != nil {
-		return nil, fmt.Errorf("create export: query sources: %w", err)
-	}
-	defer func() { _ = rows.Close() }()
-	sources := make([]json.RawMessage, 0)
-	var sourceBytes int64 = 2
-	for rows.Next() {
-		var raw string
-		if err := rows.Scan(&raw); err != nil {
-			return nil, fmt.Errorf("create export: scan source: %w", err)
-		}
-		var decoded any
-		if err := json.Unmarshal([]byte(raw), &decoded); err != nil {
-			return nil, fmt.Errorf("create export: decode source: %w", err)
-		}
-		canonical, err := journal.MarshalCanonicalJSON(decoded)
-		if err != nil {
-			return nil, fmt.Errorf("create export: canonicalize source: %w", err)
-		}
-		sourceBytes += int64(len(canonical)) + 1
-		if sourceBytes > maxArchiveNonArtifactBytes {
-			return nil, errArchiveResourceLimit
-		}
-		sources = append(sources, json.RawMessage(canonical))
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("create export: iterate sources: %w", err)
-	}
-	return sources, nil
+	return []json.RawMessage{}, artifacts, nil
 }
 
 func loadAvailableArtifacts(conn *sql.DB, workspaceRoot, artifactRoot string) ([]archiveEntry, error) {

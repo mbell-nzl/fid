@@ -69,7 +69,7 @@ func TestCreateRecoveryManifestV2ConfigAndOrdinalJournal(t *testing.T) {
 	}
 }
 
-func TestValidateRetainsPinnedV1Profile(t *testing.T) {
+func TestValidateRefusesPinnedV1Profile(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
@@ -82,7 +82,7 @@ func TestValidateRetainsPinnedV1Profile(t *testing.T) {
 	contents := archiveContents(t, archive)
 	m := decodeManifestMap(t, contents["manifest.json"])
 	m["schema"], m["projection_schema"] = "fid.export-manifest.v1", 14
-	m["capabilities"] = legacyCapabilitySnapshot()
+	m["capabilities"] = retiredV1CapabilityFixture()
 	delete(m, "project_config")
 	contents["journal/2026-08-30.jsonl"] = contents["journal/00000001.jsonl"]
 	delete(contents, "journal/00000001.jsonl")
@@ -90,25 +90,12 @@ func TestValidateRetainsPinnedV1Profile(t *testing.T) {
 	contents["manifest.json"] = encodeManifestMap(t, m)
 	writeTestArchive(t, archive, contents)
 	before := workspaceTreeDigest(t, workspace)
-	if _, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)}); err != nil {
-		t.Fatalf("retained v1 profile rejected: %v", err)
-	}
-	if workspaceTreeDigest(t, workspace) != before {
-		t.Fatal("v1 validation mutated project")
-	}
-	tampered := decodeManifestMap(t, contents["manifest.json"])
-	tamperedCapabilities := tampered["capabilities"].([]any)
-	tamperedCapabilities[0].(map[string]any)["available"] = true
-	tampered["capabilities"] = tamperedCapabilities
-	contents["manifest.json"] = encodeManifestMap(t, tampered)
-	writeTestArchive(t, archive, contents)
+	archiveBefore := workspaceTreeDigest(t, filepath.Dir(archive))
 	_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
-	assertArchiveCheck(t, err, "capability-snapshot-mismatch")
-	if workspaceTreeDigest(t, workspace) != before {
-		t.Fatal("tampered v1 validation mutated project")
+	assertArchiveCheck(t, err, "schema-unsupported")
+	if workspaceTreeDigest(t, workspace) != before || workspaceTreeDigest(t, filepath.Dir(archive)) != archiveBefore {
+		t.Fatal("v1 refusal mutated project or archive")
 	}
-	contents["manifest.json"] = encodeManifestMap(t, m)
-	writeTestArchive(t, archive, contents)
 	target := gittest.NewWorkspace(t)
 	targetBefore := treeListing(t, target)
 	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "v1-rejected"})
@@ -167,5 +154,23 @@ func TestValidateRecoveryManifestClosedConfigurationAndInventory(t *testing.T) {
 				t.Fatal("invalid archive validation changed project")
 			}
 		})
+	}
+}
+
+// Retired profile bytes are input only: even this formerly accepted archive is refused.
+func retiredV1CapabilityFixture() []capability {
+	return []capability{
+		{false, "attention.v1", map[string]any{"state": false}, 1, 1, "phase-22-unavailable"},
+		{true, "evidence.freshness.v1", map[string]any{"branch_labels": false, "target": "repository-tree"}, 1, 1, "fid-git-observation"},
+		{true, "evidence.gate-definitions.v1", map[string]any{"executor_policy": "standard-library", "network": "allowed", "sandbox": "none", "write": "allowed"}, 1, 1, "active-kit-activation"},
+		{true, "evidence.receipts.v1", map[string]any{"attestation": false, "producer": "fid", "terminal_receipts": true}, 1, 1, "fid-executed"},
+		{false, "export.portable.v1", map[string]any{"create": true, "import": false, "validate": true}, 1, 1, "phase-22-unavailable"},
+		{false, "human.outcomes.v1", map[string]any{"record": false}, 1, 1, "phase-23-unavailable"},
+		{false, "kit.activation.v1", map[string]any{"abort_before_commit": true, "automatic_respawn": false, "finalize": true, "recover": false}, 1, 1, "phase-22-unavailable"},
+		{false, "reviews.coverage.v1", map[string]any{"record": false}, 1, 1, "phase-23-unavailable"},
+		{false, "telemetry.trajectory.v1", map[string]any{"ingest": false}, 1, 1, "phase-25-unavailable"},
+		{false, "work.claims.v1", map[string]any{"max_active_per_issue": 1, "parallelism": false, "recover": false}, 1, 1, "phase-22-unavailable"},
+		{true, "workflow.state.v1", map[string]any{"max_envelope_revisions": 1, "max_primary_issues": 1, "related_issues": false}, 1, 1, "fid-journal"},
+		{true, "workflow.transitions.v1", map[string]any{"execution_bound": true, "terminal_evidence_guard": true}, 1, 1, "fid-journal"},
 	}
 }

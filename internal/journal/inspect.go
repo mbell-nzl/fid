@@ -181,6 +181,10 @@ func inspectCheckpointLine(path string, lineNumber int, offset int64, lineBytes 
 		}
 	}
 
+	if err := ValidateEventSupport(stored); err != nil {
+		return checkpointLine{}, false, &CorruptJournalError{File: filepath.ToSlash(path), Line: lineNumber, Err: err}
+	}
+
 	eventHash, err := HashEvent(stored)
 	if err != nil {
 		return checkpointLine{}, false, fmt.Errorf("hash event %q from %s:%d: %w", stored.EventID, filepath.Base(path), lineNumber, err)

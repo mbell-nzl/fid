@@ -210,21 +210,7 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 			wantFrom:        "todo",
 			wantUnsatisfied: []string{},
 			setup: func(t *testing.T, workspace, _ string) {
-				appendCommandIssueEvent(t, workspace, journal.Event{
-					EventSchema: journal.CurrentEventSchema,
-					EventType:   "workflow.transition.removed",
-					Actor:       journal.Actor{Role: "tl"},
-					Command:     journal.Command{Argv: []string{"fid", "maintenance", "seed"}, CWD: ".", FIDVersion: "0.1.0"},
-					Effects: []journal.Effect{{
-						Op:    "delete",
-						Table: "workflow_transitions",
-						PK: map[string]any{
-							"workflow_id": "subtask-default",
-							"from_state":  "todo",
-							"to_state":    "cancelled",
-						},
-					}},
-				})
+				seedTransitionCorruption(t, workspace, `DELETE FROM workflow_transitions WHERE workflow_id='subtask-default' AND from_state='todo' AND to_state='cancelled'`)
 			},
 		},
 		{
@@ -234,23 +220,7 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 			wantFrom:        "todo",
 			wantUnsatisfied: []string{"unknown_rule"},
 			setup: func(t *testing.T, workspace, _ string) {
-				appendCommandIssueEvent(t, workspace, journal.Event{
-					EventSchema: journal.CurrentEventSchema,
-					EventType:   "workflow.precondition.seeded",
-					Actor:       journal.Actor{Role: "tl"},
-					Command:     journal.Command{Argv: []string{"fid", "maintenance", "seed"}, CWD: ".", FIDVersion: "0.1.0"},
-					Effects: []journal.Effect{{
-						Op:    "insert",
-						Table: "workflow_transition_requires",
-						PK: map[string]any{
-							"workflow_id": "subtask-default",
-							"from_state":  "todo",
-							"to_state":    "in_progress",
-							"rule":        "unknown_rule",
-						},
-						Values: map[string]any{"params_json": nil},
-					}},
-				})
+				seedTransitionCorruption(t, workspace, `INSERT INTO workflow_transition_requires (workflow_id,from_state,to_state,rule,params_json) VALUES ('subtask-default','todo','in_progress','unknown_rule',NULL)`)
 			},
 		},
 		{
@@ -728,4 +698,17 @@ func transitionParent(t *testing.T, workspace string) string {
 	result := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Transition parent", "--actor", "human:mark")
 	fields, _ := lifecycleResult(t, result, "issue.create")
 	return fields["issue"].(map[string]any)["id"].(string)
+}
+
+// Malformed seeded state is a projection-corruption fixture, not an authoring Event.
+func seedTransitionCorruption(t *testing.T, workspace, statement string) {
+	t.Helper()
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeTransitionCommandDB(t, conn)
+	if _, err := conn.Exec(statement); err != nil {
+		t.Fatal(err)
+	}
 }

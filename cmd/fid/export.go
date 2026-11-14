@@ -108,6 +108,14 @@ func renderExportError(cmd *cobra.Command, operation, archivePath string, cause 
 	if err != nil {
 		return err
 	}
+	if failure, handled, err := journalReplayStoppedFailure(cause); err != nil {
+		return err
+	} else if handled {
+		if jsonMode {
+			return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
+		}
+		return writeHumanFailure(cmd, operation, failure, cause)
+	}
 	var invalid *export.InvalidArchiveError
 	if errors.As(cause, &invalid) {
 		failure, err := cli.NewFailure(cli.CodeArchiveInvalid, "export archive is invalid", &cli.Subject{Type: cli.SubjectExport, ID: archivePath}, map[string]any{"archive_path": archivePath, "checks": archiveChecks(invalid)})

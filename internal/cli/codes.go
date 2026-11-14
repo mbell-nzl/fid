@@ -269,7 +269,16 @@ func validateFailure(failure Failure, definition reasonDefinition) error {
 	if err := validateSubject(failure.Subject, definition.spec.SubjectTypes); err != nil {
 		return err
 	}
-	if err := validateDetails(failure.Details, definition.details); err != nil {
+	fields := definition.details
+	// Removed history adds a closed schema-refusal variant. Existing corruption
+	// and precondition failures retain their original three-field details.
+	if failure.Code == CodeJournalReplayStopped && failure.Details["reason"] != nil {
+		if failure.Details["reason"] != "schema-unsupported" || failure.Details["event_type"] == "" {
+			return fmt.Errorf("invalid journal schema refusal")
+		}
+		fields = append(append([]detailField{}, fields...), stringField("reason"), stringField("event_type"))
+	}
+	if err := validateDetails(failure.Details, fields); err != nil {
 		return err
 	}
 	if failure.Code == CodeHoldNotCurrent {

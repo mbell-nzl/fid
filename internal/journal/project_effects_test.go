@@ -48,21 +48,6 @@ func TestProjectEventFenceRejectsMalformedPhase23EventsWithoutProjectionChange(t
 	}
 }
 
-// The progressive fence is now the strict current-Event registry. Every
-// implemented family remains registered, including the final requirement pair.
-func TestConcernDeviationFenceConvergencePreservesEveryRemainingEvent(t *testing.T) {
-	t.Parallel()
-	for _, eventType := range []string{
-		"review.recorded", "finding.addressed", "concern.recorded", "concern.disposed",
-		"deviation.recorded", "decision.referenced", "human-outcome.recorded",
-		"requirement.referenced", "requirement.linked",
-	} {
-		if _, ok := currentEventRules[eventType]; !ok {
-			t.Errorf("Phase 23 Event %q lost its strict current-Event rule", eventType)
-		}
-	}
-}
-
 func fencedProjectionState(t *testing.T, conn interface{ QueryRow(string, ...any) *sql.Row }) string {
 	t.Helper()
 	var labelCount, metaCount int

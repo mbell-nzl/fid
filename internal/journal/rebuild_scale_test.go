@@ -421,7 +421,7 @@ func snapshotScaleProjectionState(t *testing.T, conn *sql.DB) string {
 
 	parts := make([]string, 0, len(queries))
 	for _, spec := range queries {
-		parts = append(parts, dumpPhaseTwoQuery(t, conn, spec.name, spec.query))
+		parts = append(parts, dumpProjectionQuery(t, conn, spec.name, spec.query))
 	}
 
 	return strings.Join(parts, "\n")

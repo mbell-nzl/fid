@@ -78,10 +78,6 @@ func Import(options ImportOptions) (ImportResult, error) {
 	if err != nil {
 		return ImportResult{}, err
 	}
-	if validation.ManifestSchema != manifestSchema {
-		entry := "manifest.json"
-		return ImportResult{}, &InvalidArchiveError{ArchivePath: options.ArchivePath, Checks: []Check{{Code: "schema-unsupported", Entry: &entry, Detail: "import requires recovery archive schema"}}}
-	}
 	if validation.ArchiveDigest != digestBefore {
 		return ImportResult{}, fmt.Errorf("import: archive changed during validation")
 	}

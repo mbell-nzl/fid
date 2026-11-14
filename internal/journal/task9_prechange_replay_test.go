@@ -61,8 +61,8 @@ func TestTask9PrechangeBudgetObservedJournalFailsClosedWithoutMutation(t *testin
 	}
 	_, err = RebuildWorkspace(workspace, testProjectMigrationsDir(t))
 	var corrupt *CorruptJournalError
-	if !errors.As(err, &corrupt) || corrupt.Line != 2 || !strings.Contains(err.Error(), "request_field_digests_json") {
-		t.Fatalf("rebuild pre-change journal = %v, want line-2 missing field-digests refusal", err)
+	if !errors.As(err, &corrupt) || corrupt.Line != 3 || !strings.Contains(err.Error(), "schema-unsupported") {
+		t.Fatalf("rebuild pre-change journal = %v, want line-3 unsupported-family refusal", err)
 	}
 	after, err := os.ReadFile(journalPath)
 	if err != nil {

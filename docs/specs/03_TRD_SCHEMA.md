@@ -852,4 +852,31 @@ still contains the new Events. To run a previous fid, restore the
 pre-upgrade backup with that version; a projection downgrade alone does
 not make its journal compatible.
 
-*Last updated: 2026-10-04 (Phase 24 task 1 storage baseline; DEC-275/278)*
+### Reset 1.5d1 - closed lean Event and archive catalogs
+
+ADR-0014 and the delegated decisions Q2/Q5 supersede the kernel Event catalog
+above. All Activation, Envelope, Claim, Run, Attempt, Receipt, Evidence,
+Stop, Attention, old Review/Finding, Concern, Deviation, Human Outcome,
+requirement/decision-reference and configurable-workflow Events are unsupported.
+Effects on their tables are unsupported even when relabeled as a retained
+family. Their physical tables remain until 1.5d2; fixed seeded Issue states
+remain readable and their authoring Events are unsupported.
+
+Journal replay and freshness inspection refuse this history before changing
+any projection state. The failure is `journal-replay-stopped` (integrity,
+exit 6), with `journal_file`, `line`, `event_id`, `reason: "schema-unsupported"`
+and `event_type`. Other replay failures retain their existing three fields.
+Generic version-1 Issue history is not rejected solely for its wire version.
+
+Archives keep manifest v2 and require the active projection schema. Manifest
+v1 is refused by validation and import with `archive-invalid` and its
+`schema-unsupported` check. A removed Event or table Effect gets that same
+check, naming its family and archive journal member. Refusals publish nothing.
+The source inventory must be exactly `[]`, and the capability profile retains
+only `export.portable.v1`. Artifacts, file bodies, cached results, references,
+ordered Effects and all generic integrity checks keep their existing guards.
+`artifact.availability-observed` requires Event-v2, retains the nine-field
+Artifact metadata and only updates availability; no kernel side effects are
+admitted.
+
+*Last updated: 2026-11-15 (RESET 1.5d1 closed catalogs)*

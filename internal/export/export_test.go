@@ -311,26 +311,43 @@ func TestValidateRejectsJournalAggregateSequenceCollisionWithoutMutation(t *test
 	assertArchiveCheck(t, err, "journal-invalid")
 }
 
-// This retained negative covers malformed Source metadata; the real Recovery
-// Event-reference regression is separate.
-func TestArchiveRejectsUnresolvedSourceMetadata(t *testing.T) {
+func TestArchiveRequiresEmptySourceInventory(t *testing.T) {
 	t.Parallel()
-	workspace := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: workspace, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
-		t.Fatal(err)
+	fixture := newExportSourceFixture(t, nil)
+	original := archiveContents(t, fixture.archive)
+	for _, tc := range []struct {
+		name    string
+		sources any
+		valid   bool
+	}{
+		{"empty", []any{}, true}, {"null", nil, false},
+		{"legacy", []any{map[string]any{"recovery_id": "REC-missing"}}, false},
+		{"scalar", []any{"unsupported"}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			entries := make(map[string][]byte, len(original))
+			for path, data := range original {
+				entries[path] = data
+			}
+			manifest := decodeManifestMap(t, entries["manifest.json"])
+			manifest["sources"] = tc.sources
+			entries["manifest.json"] = encodeManifestMap(t, manifest)
+			archive := filepath.Join(t.TempDir(), "sources.zip")
+			writeTestArchive(t, archive, entries)
+			before := workspaceTreeDigest(t, fixture.workspace)
+			_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+			if tc.valid {
+				if err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				assertArchiveCheck(t, err, "reference-invalid")
+			}
+			if workspaceTreeDigest(t, fixture.workspace) != before {
+				t.Fatal("validation mutated source")
+			}
+		})
 	}
-	archivePath := filepath.Join(t.TempDir(), "reference.zip")
-	if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archivePath}); err != nil {
-		t.Fatal(err)
-	}
-	entries := archiveContents(t, archivePath)
-	manifest := decodeManifestMap(t, entries["manifest.json"])
-	manifest["sources"] = []any{map[string]any{"recovery_id": "REC-missing"}}
-	entries["manifest.json"] = encodeManifestMap(t, manifest)
-	writeTestArchive(t, archivePath, entries)
-	// A Source inventory must match the journal-backed Source facts.
-	_, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)})
-	assertArchiveCheck(t, err, "reference-invalid")
 }
 
 func TestValidateRejectsEveryArchiveInvalidCheckWithoutMutation(t *testing.T) {
