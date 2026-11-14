@@ -72,7 +72,7 @@ func write(options Options, operation string, build func(writeContext) (journal.
 				return err
 			}
 			if found {
-				result, err = decodeResult(outcome.ResultJSON, outcome.EventID)
+				result, err = decodeResult(outcome.ResultJSON, outcome.EventID, operation)
 				return err
 			}
 		}
@@ -122,7 +122,7 @@ func write(options Options, operation string, build func(writeContext) (journal.
 		if err != nil {
 			return err
 		}
-		result, err = decodeResult(outcome.ResultJSON, outcome.EventID)
+		result, err = decodeResult(outcome.ResultJSON, outcome.EventID, operation)
 		return err
 	})
 	if err != nil {
@@ -133,7 +133,12 @@ func write(options Options, operation string, build func(writeContext) (journal.
 
 func holdsTimestamp(now time.Time) string { return now.UTC().Format(time.RFC3339) }
 
-func decodeResult(raw, eventID string) (Result, error) {
+func decodeResult(raw, eventID, operation string) (Result, error) {
+	if operation == "task.start" {
+		if err := journal.ValidateTaskStartResult(raw); err != nil {
+			return Result{}, err
+		}
+	}
 	var stored struct {
 		Fields     map[string]any `json:"fields"`
 		OccurredAt string         `json:"occurred_at"`

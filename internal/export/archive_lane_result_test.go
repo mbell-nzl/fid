@@ -15,9 +15,11 @@ func TestLaneUpdateReplayAndArchiveRejectMalformedRetryResult(t *testing.T) {
 		name  string
 		value any
 		valid bool
+		from  bool
 	}{
-		{"valid", "assured", true}, {"null", nil, false}, {"number", 42, false},
-		{"empty", "", false}, {"unknown", "urgent", false}, {"missing", nil, false},
+		{"valid", "assured", true, false}, {"null", nil, false, false}, {"number", 42, false, false},
+		{"empty", "", false, false}, {"unknown", "urgent", false, false}, {"missing", nil, false, false},
+		{"from-number", 42, false, true}, {"from-empty", "", false, true}, {"from-unknown", "urgent", false, true}, {"from-unset", nil, true, true},
 	} {
 		for _, mode := range []string{"replay", "archive"} {
 			t.Run(row.name+"/"+mode, func(t *testing.T) {
@@ -32,6 +34,9 @@ func TestLaneUpdateReplayAndArchiveRejectMalformedRetryResult(t *testing.T) {
 				last := &event.Effects[len(event.Effects)-1]
 				last.PK["operation_scope"] = event.Idempotency.Scope
 				change := map[string]any{"field": "lane", "from": "standard", "to": row.value}
+				if row.from {
+					change["from"], change["to"] = row.value, "assured"
+				}
 				if row.name == "missing" {
 					delete(change, "to")
 				}

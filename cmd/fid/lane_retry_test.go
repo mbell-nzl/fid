@@ -27,8 +27,10 @@ func TestLaneUpdateRetryRejectsMalformedResult(t *testing.T) {
 	for _, row := range []struct {
 		name  string
 		value any
+		from  bool
 	}{
-		{"null", nil}, {"number", 42}, {"empty", ""}, {"unknown", "urgent"}, {"missing", nil},
+		{"null", nil, false}, {"number", 42, false}, {"empty", "", false}, {"unknown", "urgent", false}, {"missing", nil, false},
+		{"from-number", 42, true}, {"from-empty", "", true}, {"from-unknown", "urgent", true},
 	} {
 		for _, mode := range []string{"text", "json"} {
 			t.Run(row.name+"/"+mode, func(t *testing.T) {
@@ -53,7 +55,11 @@ func TestLaneUpdateRetryRejectsMalformedResult(t *testing.T) {
 					t.Fatal(err)
 				}
 				change := result["changes"].([]any)[0].(map[string]any)
-				change["To"] = row.value
+				field := "To"
+				if row.from {
+					field = "From"
+				}
+				change[field] = row.value
 				if row.name == "missing" {
 					delete(change, "To")
 				}

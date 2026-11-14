@@ -18,6 +18,9 @@ func createResultJSON(result CreateResult) (string, error) {
 }
 
 func createResultFromJSON(raw string, eventID string, replayed bool) (CreateResult, error) {
+	if err := journal.ValidateIssueCreateResult(raw); err != nil {
+		return CreateResult{}, err
+	}
 	var value struct {
 		EventOccurredAt string `json:"event_occurred_at"`
 		IdempotencyKey  string `json:"idempotency_key"`

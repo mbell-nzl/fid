@@ -4,8 +4,34 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 )
+
+// ValidateTaskStartResult checks every field consumed by the start renderer,
+// including when an original result is read back without replaying its Event.
+func ValidateTaskStartResult(raw string) error {
+	var stored struct {
+		Fields     map[string]any `json:"fields"`
+		OccurredAt string         `json:"occurred_at"`
+	}
+	if err := json.Unmarshal([]byte(raw), &stored); err != nil {
+		return fmt.Errorf("decode task start result: %w", err)
+	}
+	if len(stored.Fields) != 4 || stored.Fields["status"] != "in_progress" || !validTaskLane(stored.Fields["lane"]) {
+		return fmt.Errorf("invalid task start result: requires task_id, hold_id, in_progress status and a planned lane")
+	}
+	for _, field := range []string{"task_id", "hold_id"} {
+		value, ok := stored.Fields[field].(string)
+		if !ok || strings.TrimSpace(value) == "" {
+			return fmt.Errorf("invalid task start result: %s must be a nonempty string", field)
+		}
+	}
+	if _, err := time.Parse(time.RFC3339, stored.OccurredAt); err != nil {
+		return fmt.Errorf("invalid task start result time: %w", err)
+	}
+	return nil
+}
 
 func validateTaskStart(tx *sql.Tx, event Event) error {
 	if event.EventType != "task.started" {
@@ -25,6 +51,9 @@ func validateTaskStart(tx *sql.Tx, event Event) error {
 	raw, ok := last.Values["result_json"].(string)
 	if !ok || json.Unmarshal([]byte(raw), &stored) != nil {
 		return fmt.Errorf("invalid task start result")
+	}
+	if err := ValidateTaskStartResult(raw); err != nil {
+		return err
 	}
 	var parent, lane sql.NullString
 	var kind, status string
