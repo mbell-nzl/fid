@@ -152,8 +152,15 @@ fid maintenance check
 fid journal inspect <event-id>
 ```
 
+RESET 1.5d2: `maintenance check` returns `{status, errors, warnings, info}`,
+with `info: {issue_count, recent_activity_7d}`. The removed kernel count and
+warnings are absent. Started tasks need no kernel ownership record to pass
+maintenance. `warnings` remains an array and `--warn-as-error` retains its
+generic promotion behavior. Structural, journal/retry-binding and Artifact
+integrity checks still report divergence without repairing data.
+
 Maintenance reports journal/projection divergence, structural integrity and
-Artifact state. Its kernel checks remain until RESET 1.5d2.
+Artifact state. RESET 1.5d2 removes its kernel checks.
 
 `fid init [--prefix <prefix>]` creates the ledger and a committed project
 identity file at `<root>/.fid.toml`. It uses an existing valid identity
