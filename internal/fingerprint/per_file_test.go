@@ -74,21 +74,81 @@ func perFileFingerprint(t *testing.T, root, base, head string, names []string) s
 	t.Helper()
 	var ids []string
 	for _, name := range names {
-		patch := git(t, root, "-c", "core.quotePath=true", "diff", "--binary", "--full-index", base, head, "--", name) + "\n"
-		command := exec.Command("git", "patch-id", "--verbatim")
-		command.Stdin = strings.NewReader(patch)
-		output, err := command.CombinedOutput()
-		if err != nil {
-			t.Fatalf("reference patch-id: %v: %s", err, output)
-		}
-		fields := strings.Fields(string(output))
+		patch := referenceFilePatch(t, root, base, head, name)
+		fields := strings.Fields(referenceGit(t, root, patch, "patch-id", "--verbatim"))
 		if len(fields) != 2 {
-			t.Fatalf("reference patch-id: %q", output)
+			t.Fatalf("reference patch-id: %q", fields)
 		}
 		ids = append(ids, fields[0])
 	}
 	slices.Sort(ids)
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("%d\n", len(ids))+strings.Join(ids, "\n")+"\n")))
+}
+
+// Pin the reference renderer independently of production's aggregate diff.
+// Fixtures use the same renderer so injected sections obey that contract too.
+func referenceFilePatch(t *testing.T, root, base, head, name string) string {
+	t.Helper()
+	return referenceGit(t, root, "", "diff", "--patch", "--no-color", "--no-ext-diff", "--no-textconv",
+		"--no-relative", "--src-prefix=a/", "--dst-prefix=b/", "--line-prefix=", "--unified=3", "--inter-hunk-context=0",
+		"--diff-algorithm=myers", "--indent-heuristic", "--find-renames=50%", "-l0", "--full-index", "--binary",
+		"--ignore-submodules=none", "--submodule=short", "--output-indicator-new=+", "--output-indicator-old=-",
+		"--output-indicator-context= ", "-O"+os.DevNull, base, head, "--", name)
+}
+
+func referenceGit(t *testing.T, root, input string, args ...string) string {
+	t.Helper()
+	argv := []string{"--no-pager", "--no-replace-objects", "-C", root, "-c", "core.quotePath=true",
+		"-c", "core.attributesFile=" + os.DevNull, "-c", "diff.suppressBlankEmpty=false"}
+	command := exec.Command("git", append(argv, args...)...)
+	for _, entry := range os.Environ() {
+		if !strings.HasPrefix(entry, "GIT_") || strings.HasPrefix(entry, "GIT_CEILING_DIRECTORIES=") {
+			command.Env = append(command.Env, entry)
+		}
+	}
+	command.Env = append(command.Env, "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL="+os.DevNull,
+		"GIT_ATTR_NOSYSTEM=1", "GIT_NO_LAZY_FETCH=1", "GIT_OPTIONAL_LOCKS=0", "GIT_TERMINAL_PROMPT=0", "LC_ALL=C")
+	command.Stdin = strings.NewReader(input)
+	output, err := command.CombinedOutput()
+	if err != nil {
+		t.Fatalf("reference git %v: %v: %s", args, err, output)
+	}
+	return string(output)
+}
+
+//nolint:paralleltest // Changes the rendering configuration inherited by git.
+func TestPerFileReferenceIgnoresHostileConfig(t *testing.T) {
+	root, _ := fixture(t)
+	original := strings.Repeat("before\n", 20)
+	write(t, root, "file", original)
+	base := commit(t, root)
+	write(t, root, "file", strings.Repeat("before\n", 10)+"after\n"+strings.Repeat("before\n", 9))
+	head := commit(t, root)
+	names := []string{"file"}
+	want := perFileFingerprint(t, root, base, head, names)
+	for _, scope := range []string{"global", "environment", "repository"} {
+		t.Run(scope, func(t *testing.T) {
+			switch scope {
+			case "global":
+				dir := t.TempDir()
+				write(t, dir, "gitconfig", "[diff]\n\tcontext = 0\n")
+				t.Setenv("GIT_CONFIG_GLOBAL", filepath.Join(dir, "gitconfig"))
+			case "environment":
+				t.Setenv("GIT_CONFIG_COUNT", "1")
+				t.Setenv("GIT_CONFIG_KEY_0", "diff.context")
+				t.Setenv("GIT_CONFIG_VALUE_0", "0")
+				t.Setenv("GIT_DIFF_OPTS", "--unified=0")
+			case "repository":
+				git(t, root, "config", "diff.context", "0")
+			}
+			if got := perFileFingerprint(t, root, base, head, names); got != want {
+				t.Fatalf("hostile %s config changed reference: %s != %s", scope, got, want)
+			}
+			if got := compute(t, root, base, head); got.Fingerprint != want {
+				t.Fatalf("reference differs from Compute: %s != %s", want, got.Fingerprint)
+			}
+		})
+	}
 }
 
 //nolint:paralleltest // Installs a git shim and supplies reordered producer output.
@@ -101,7 +161,7 @@ func TestComputePerFileOrderAndCompleteSections(t *testing.T) {
 	want := perFileFingerprint(t, root, base, head, names)
 	var sections []string
 	for _, name := range names {
-		sections = append(sections, git(t, root, "diff", "--binary", "--full-index", base, head, "--", name)+"\n")
+		sections = append(sections, referenceFilePatch(t, root, base, head, name))
 	}
 	installGitShim(t)
 	dir := t.TempDir()

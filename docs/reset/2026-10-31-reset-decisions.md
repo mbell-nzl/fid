@@ -1011,7 +1011,13 @@ caller. Local check storage, readers and evaluation are unchanged.
     D10's patch-id is therefore applied separately to every file section,
     and the fingerprint combines the sorted per-file IDs with their count
     using SHA-256 (orchestrator, 2026-11-15, under Mark's delegation;
-    Mark reviews this later).
+    Mark reviews this later). Review round 2 reproduced an edited rename's
+    similarity changing from 97% to 99% on a clean rebase over distant
+    upstream additions. Before hashing each section, drop its `similarity
+    index` and `dissimilarity index` extended headers: they depend on file
+    size and add no change content beyond the paths and hunks. Keep rename
+    paths, modes and all other lines (orchestrator, 2026-11-15, under the
+    same delegation).
 14. **A hand-off comes first.** A review round or an approval needs the
     task's latest hand-off. A changed delivery needs a new hand-off; a clean
     rebase gives a new hand-off with the same fingerprint, so an approval
@@ -1034,10 +1040,19 @@ indicators; quoted paths; no blank-context suppression or order file.
 tests distinguish two binary contents. Context changes adjacent to a hunk
 may still change the ID, as D10 permits.
 
-The complete aggregate is split at lines beginning `diff --git ` and each
-file section alone goes through `git patch-id --verbatim`. This avoids the
-Git 2.53 parser skipping the next file header after a binary patch, as
-reproduced in #79 review round 1; D10's patch-id is applied per file. Text
+The complete aggregate is split at lines beginning `diff --git `. Drop each
+section's `similarity index NN%` and `dissimilarity index NN%` lines only
+within its extended header, before the first `---`/`+++`, `@@` or `GIT binary
+patch` line, then pass that section alone to `git patch-id --verbatim`.
+These percentages can change on a clean rebase when distant upstream edits
+change file size, while rename paths and hunks remain the same. Rename
+detection stays enabled; retain `rename from`/`rename to`, mode lines and
+everything else. The `patch-id-verbatim-per-file-v1` name includes this
+normalization; no fingerprint has been recorded yet.
+
+Per-file hashing avoids the Git 2.53 parser skipping the next file header
+after a binary patch, as reproduced in #79 review round 1; D10's patch-id
+is applied per file. Text
 content retains its pinned `+`, `-` or space prefix, paths quote newlines,
 and base85 binary data contains no spaces, so content cannot forge a file
 boundary. Sort the per-file 40-hex IDs lexicographically, retaining every
@@ -1045,6 +1060,15 @@ occurrence. The SHA-256 input is the decimal section count and LF, followed
 by each sorted ID and LF (including the last). File order has no effect.
 No fingerprint has been recorded using the earlier aggregate recipe, whose
 algorithm tag is dropped.
+
+The round-2 extended-header audit checked Git's documented old/new,
+new-file/deleted-file modes, copy/rename paths, similarity/dissimilarity
+and index lines. Mode and path metadata describe the change itself; copying
+and rewrite breaking are not enabled by the pinned renderer. Text `index`
+object IDs also change on rebase, but patch-id already ignores them, as the
+edited-rename regression verifies with different index headers. Binary
+index IDs remain necessary to distinguish binary contents. No further
+extended-header normalization was needed.
 
 A disposable private git view borrows only the repository's existing
 object store, including alternates, and materializes committed attribute

@@ -104,7 +104,7 @@ func fingerprintDiff(root string, diff []byte) (string, error) {
 		if next := bytes.Index(diff, []byte("\ndiff --git ")); next >= 0 {
 			end = next + 1
 		}
-		output, err := runGit(root, diff[:end], 4096, "patch-id", "--verbatim")
+		output, err := runGit(root, withoutSimilarity(diff[:end]), 4096, "patch-id", "--verbatim")
 		if err != nil {
 			return "", err
 		}
@@ -120,6 +120,29 @@ func fingerprintDiff(root string, diff []byte) (string, error) {
 	// then every sorted 40-hex ID followed by LF, including the last one.
 	input := fmt.Sprintf("%d\n", len(ids)) + strings.Join(ids, "\n") + "\n"
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(input))), nil
+}
+
+// Similarity scores depend on the size of the upstream file, so a clean rebase
+// can change them without changing rename paths or hunks. Algorithm omits these
+// redundant extended headers, retaining all content from the first patch line.
+func withoutSimilarity(section []byte) []byte {
+	var normalized bytes.Buffer
+	for len(section) > 0 {
+		line, rest, found := bytes.Cut(section, []byte("\n"))
+		if bytes.HasPrefix(line, []byte("--- ")) || bytes.HasPrefix(line, []byte("+++ ")) ||
+			bytes.HasPrefix(line, []byte("@@")) || bytes.Equal(line, []byte("GIT binary patch")) {
+			normalized.Write(section)
+			break
+		}
+		if !bytes.HasPrefix(line, []byte("similarity index ")) && !bytes.HasPrefix(line, []byte("dissimilarity index ")) {
+			normalized.Write(line)
+			if found {
+				normalized.WriteByte('\n')
+			}
+		}
+		section = rest
+	}
+	return normalized.Bytes()
 }
 
 // Materialize only committed attribute files, using a private index. git diff
