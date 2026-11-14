@@ -62,7 +62,7 @@ func readOverview(t *testing.T, workspace string) Overview {
 }
 
 // describeSection writes a section as one line per epic and task:
-// "E1 in-progress 1/4: T1 in_progress, T2 qa_review" and "T9 todo".
+// "E1 in-progress 1/4: T1 in_progress, T2 in_review" and "T9 todo".
 func describeSection(section OverviewSection) []string {
 	tasks := func(list []OverviewTask) string {
 		parts := []string{}
@@ -98,7 +98,7 @@ func TestReadOverviewSortsWorkIntoInProgressAndToDo(t *testing.T) {
 	rows := []overviewRow{
 		{"E1", "epic", "", "in_progress", n(1), nil, 1},
 		{"T1", "task", "E1", "in_progress", n(1), nil, 2},
-		{"T2", "task", "E1", "qa_review", n(2), nil, 3},
+		{"T2", "task", "E1", "in_review", n(2), nil, 3},
 		{"T3", "task", "E1", "todo", n(3), nil, 4},
 		{"T4", "task", "E1", "done", n(4), nil, 5},
 		{"T5", "task", "E1", "cancelled", n(5), nil, 6},
@@ -106,19 +106,19 @@ func TestReadOverviewSortsWorkIntoInProgressAndToDo(t *testing.T) {
 		{"E2", "epic", "", "todo", n(2), nil, 8},
 		{"T6", "task", "E2", "in_progress", n(1), nil, 9},
 		{"E3", "epic", "", "todo", n(3), nil, 10},
-		{"T7", "task", "E3", "qa_pass", n(1), nil, 11},
+		{"T7", "task", "E3", "done", n(1), nil, 11},
 		{"T8", "task", "E3", "todo", n(2), nil, 12},
 		{"E4", "epic", "", "todo", n(4), nil, 13},
 		{"T9", "task", "E4", "todo", n(1), nil, 14},
 		{"T10", "task", "E4", "todo", n(2), nil, 15},
 		{"E5", "epic", "", "todo", n(5), nil, 16},
-		{"E6", "epic", "", "closed", n(6), nil, 17},
+		{"E6", "epic", "", "done", n(6), nil, 17},
 		{"T11", "task", "E6", "in_progress", n(1), nil, 18},
 		{"T12", "task", "E6", "todo", n(2), nil, 19},
 		{"E7", "epic", "", "cancelled", n(7), nil, 20},
 		{"T13", "task", "E7", "todo", n(1), nil, 21},
-		{"E8", "epic", "", "wrapped", n(8), nil, 22},
-		{"S1", "task", "", "failed_gate", nil, nil, 23},
+		{"E8", "epic", "", "in_progress", n(8), nil, 22},
+		{"S1", "task", "", "in_progress", nil, nil, 23},
 		{"S2", "task", "", "todo", nil, nil, 24},
 		{"S3", "task", "", "done", nil, nil, 25},
 		{"S4", "task", "", "cancelled", nil, nil, 26},
@@ -128,12 +128,12 @@ func TestReadOverviewSortsWorkIntoInProgressAndToDo(t *testing.T) {
 		t.Fatal("overview is empty, want work")
 	}
 	assertSection(t, "in progress", overview.InProgress, []string{
-		"E1 in-progress 1/4: T1 in_progress, T2 qa_review",
+		"E1 in-progress 1/4: T1 in_progress, T2 in_review",
 		"E2 in-progress 0/1: T6 in_progress",
 		"E3 in-progress 1/2: ",
 		"E8 in-progress 0/0: ",
 		"T11 in_progress",
-		"S1 failed_gate",
+		"S1 in_progress",
 	})
 	assertSection(t, "to do", overview.ToDo, []string{
 		"E1 in-progress 1/4: T3 todo",
@@ -224,7 +224,7 @@ func TestReadOverviewIsEmptyOnlyWithNoEpicsOrTasks(t *testing.T) {
 		empty bool
 	}{
 		{"a new project", nil, true},
-		{"a closed epic", []overviewRow{{"E1", "epic", "", "closed", nil, nil, 1}}, false},
+		{"a closed epic", []overviewRow{{"E1", "epic", "", "done", nil, nil, 1}}, false},
 		{"a done task", []overviewRow{{"T1", "task", "", "done", nil, nil, 1}}, false},
 	} {
 		t.Run(test.name, func(t *testing.T) {

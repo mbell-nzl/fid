@@ -1,0 +1,24 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-<new>",
+    "occurred_at": "<TIME>"
+  },
+  "ok": true,
+  "operation": "issue.update",
+  "result": {
+    "changes": [
+      {
+        "field": "lane",
+        "from": null,
+        "to": "standard"
+      }
+    ],
+    "idempotency_key": "k2",
+    "issue": {
+      "id": "FID-9f13aa",
+      "revision": 2
+    },
+    "replayed": false
+  }
+}

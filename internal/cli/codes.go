@@ -24,6 +24,7 @@ const (
 	CodeHoldNotCurrent              Code = "hold-not-current"
 	CodeWorktreeBusy                Code = "worktree-busy"
 	CodeNotWaiting                  Code = "not-waiting"
+	CodeLaneNotSet                  Code = "lane-not-set"
 	CodeAlreadyHeld                 Code = "already-held"
 	CodePolicyUnavailable           Code = "policy-unavailable"
 	CodeOperationUnavailable        Code = "operation-unavailable"
@@ -241,6 +242,7 @@ func definition(category Category, retryable bool, subjects []SubjectType, detai
 var failureCodeDefinitions = map[Code]reasonDefinition{
 	CodeHoldNotCurrent:    definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id"), stringField("reason")),
 	CodeWorktreeBusy:      definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id"), stringField("worktree")),
+	CodeLaneNotSet:        definition(CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringField("task_id")),
 	CodeNotWaiting:        definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id")),
 	CodeAlreadyHeld:       definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id")),
 	CodePolicyUnavailable: definition(CategoryPrecondition, false, nil, stringField("problem"), nullableStringField("ref"), nullableStringField("commit")),
@@ -377,7 +379,7 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 		stringField("target_root"), stringField("reason")),
 }
 
-var registeredCodes = []Code{CodeNotWaiting, CodeHoldNotCurrent, CodeWorktreeBusy, CodeAlreadyHeld,
+var registeredCodes = []Code{CodeLaneNotSet, CodeNotWaiting, CodeHoldNotCurrent, CodeWorktreeBusy, CodeAlreadyHeld,
 	CodeInvalidArgument, CodePolicyUnavailable, CodeOperationUnavailable, CodeUnsupportedKind, CodeUnsupportedRelation, CodeProjectNotFound, CodeProjectAlreadyInit,
 	CodeIssueNotFound, CodeRequirementNotFound, CodeLabelNotFound, CodeLinkNotFound, CodeWorkflowNotFound,
 	CodeDuplicateEntity, CodeStateConflict, CodeLockUnavailable, CodeHierarchyInvalid, CodeDependencyCycle,

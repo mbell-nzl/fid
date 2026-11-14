@@ -27,6 +27,7 @@
       }
     },
     "issue": {
+      "lane": null,
       "id": "FID-c2d4e5",
       "kind": "task",
       "title": "Retry a rejected backup push",

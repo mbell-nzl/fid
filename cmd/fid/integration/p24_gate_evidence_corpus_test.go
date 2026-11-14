@@ -56,7 +56,7 @@ func TestP24GateEvidenceAndEnvelopeKeyedLeafCorpus(t *testing.T) {
 	if linked.ExitCode != 0 || linked.Stderr != "" {
 		t.Fatalf("evidence.link = %d %q", linked.ExitCode, linked.Stderr)
 	}
-	for i, state := range []string{"in_progress", "dev_complete", "qa_review", "qa_pass"} {
+	for i, state := range []string{"building", "dev_complete", "qa_review", "qa_pass"} {
 		p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "transition", a.issueID, "--to", state, "--actor", "agent:"+a.actor, "--expected-revision", strconv.Itoa(i+1), "--idempotency-key", "p24-gate-issue-"+state)
 	}
 	p23CloseAndRelease(t, a, a.actor, a.runID, a.claimID, "p24-gate-evidence")

@@ -172,6 +172,8 @@ func leafOperation(cmd *cobra.Command) string {
 		return "capabilities.get"
 	case "ready":
 		return "ready.get"
+	case "start":
+		return "task.start"
 	case "heartbeat":
 		return "hold.heartbeat"
 	case "park":

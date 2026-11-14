@@ -261,7 +261,7 @@ func p23PortableAssertPriorSchemaRejected(t *testing.T, binary, workspace string
 	entries := p22ArchiveEntries(t, archive)
 	var manifest map[string]any
 	p22FaultOK(t, json.Unmarshal(entries["manifest.json"], &manifest))
-	if manifest["schema"] != "fid.export-manifest.v2" || manifest["projection_schema"] != float64(23) {
+	if manifest["schema"] != "fid.export-manifest.v2" || manifest["projection_schema"] != float64(24) {
 		t.Fatalf("current manifest profile = %#v", manifest)
 	}
 	manifest["projection_schema"] = 17
@@ -322,7 +322,7 @@ func p23PortableRoundTrip(t *testing.T, binary, workspace string) map[string][]s
 	target := filepath.Join(t.TempDir(), "imported")
 	closureRun(t, filepath.Dir(target), "git", "clone", "-q", workspace, target)
 	imported := p21Run(t, binary, target, "--json", "export", "import", archive, "--repository", target, "--idempotency-key", "p23-portable")
-	if got := p21Path(t, imported, "result", "import", "projection_schema"); got != float64(23) {
+	if got := p21Path(t, imported, "result", "import", "projection_schema"); got != float64(24) {
 		t.Fatalf("imported schema = %v", got)
 	}
 	p23PortableAssertRows(t, "imported", live, p23PortableRows(t, target))

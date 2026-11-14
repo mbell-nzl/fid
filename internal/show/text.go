@@ -117,6 +117,7 @@ func (text textWriter) rows(result Result) []string {
 		}
 		lines = append(lines, text.value("Scheduling", scheduling)...)
 	}
+
 	if issue.Priority != nil {
 		lines = append(lines, text.label("Priority")+"P"+strconv.Itoa(*issue.Priority))
 	}
@@ -127,6 +128,14 @@ func (text textWriter) rows(result Result) []string {
 	}
 	if issue.SpecMDPath != nil {
 		lines = append(lines, text.value("Spec", *issue.SpecMDPath)...)
+	}
+	if issue.Kind == "task" {
+		lane := "not set"
+		if issue.Lane != nil {
+			lane = display.StateText(*issue.Lane)
+			lane = strings.ToUpper(lane[:1]) + lane[1:]
+		}
+		lines = append(lines, text.value("Lane", lane)...)
 	}
 	if hold := result.Working; hold != nil {
 		clock := func(stamp string) string { return display.Clock(stamp, result.Now) }

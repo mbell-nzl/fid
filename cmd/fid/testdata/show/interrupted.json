@@ -19,6 +19,7 @@
       }
     },
     "issue": {
+      "lane": null,
       "id": "FID-1f2e3d",
       "kind": "task",
       "title": "Contract fields and exit codes",

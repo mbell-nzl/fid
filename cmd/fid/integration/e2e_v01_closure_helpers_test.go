@@ -239,7 +239,11 @@ func closureCreateIssue(t *testing.T, binary, workspace, kind, title string, sch
 		args = append(args, "--scheduling", *scheduling)
 	}
 	if epicID != nil {
-		args = append(args, "--epic", *epicID)
+		flag := "--epic"
+		if kind == "subtask" {
+			flag = "--parent"
+		}
+		args = append(args, flag, *epicID)
 	}
 	if sequence != nil {
 		args = append(args, "--sequence", fmt.Sprintf("%d", *sequence))

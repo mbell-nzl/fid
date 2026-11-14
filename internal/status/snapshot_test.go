@@ -10,6 +10,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/gittest"
+	"github.com/mbell-nzl/fid/internal/holdwork"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/next"
 )
@@ -22,9 +23,20 @@ func TestStatusReadyTransitionBetweenReads(t *testing.T) {
 			options, tasks := snapshotWorkspace(t)
 			other := gittest.AddWorktree(t, options.WorkspaceRoot)
 			result, err := build(options, func() {
-				_, err := issues.Transition(issues.TransitionOptions{WorkspaceRoot: other,
-					MigrationsDir: options.MigrationsDir, ID: tasks[0].ID, ToState: state, Reason: "Snapshot transition",
-					Actor: "human:mark", IdempotencyKey: "transition-during-status"})
+				var err error
+				if state == "in_progress" {
+					work := holdwork.Options{WorkspaceRoot: other, MigrationsDir: options.MigrationsDir, TaskID: tasks[0].ID, Actor: "human:mark", Reason: "Snapshot start", IdempotencyKey: "snapshot-takeover"}
+					taken, takeErr := holdwork.Takeover(work)
+					err = takeErr
+					if err == nil {
+						work.HoldID = taken.Fields["hold_id"].(string)
+						work.IdempotencyKey = "snapshot-start"
+						_, err = holdwork.Start(work)
+					}
+				} else {
+					_, err = issues.Transition(issues.TransitionOptions{WorkspaceRoot: other, MigrationsDir: options.MigrationsDir, ID: tasks[0].ID, ToState: state, Reason: "Snapshot transition", Actor: "human:mark", IdempotencyKey: "transition-during-status"})
+				}
+
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -71,7 +83,7 @@ func snapshotWorkspace(t *testing.T) (Options, []issues.CreateResult) {
 	tasks := []issues.CreateResult{}
 	for priority, title := range []string{"First task", "Second task"} {
 		created, err := issues.Create(issues.CreateOptions{WorkspaceRoot: root, MigrationsDir: migrations, Kind: "task",
-			Title: title, Priority: &priority, Actor: "human:mark", IdempotencyKey: title})
+			Title: title, Priority: &priority, Lane: snapshotLane(), Actor: "human:mark", IdempotencyKey: title})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -109,3 +121,5 @@ func snapshotReady(t *testing.T, result Result) readySnapshot {
 	}
 	return ready
 }
+
+func snapshotLane() *string { lane := "standard"; return &lane }

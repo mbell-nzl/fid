@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var p24LifecycleFields = map[string]string{"hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text"}
+var p24LifecycleFields = map[string]string{"hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text", "task.start": "--hold"}
 
 func TestHoldLifecycleKeyedCorpus(t *testing.T) {
 	t.Parallel()
@@ -40,11 +40,12 @@ func p24LifecycleCommands(t *testing.T, binary, workspace string) {
 		t.Helper()
 		return p21Run(t, binary, workspace, append([]string{"--project", workspace, "--json"}, args...)...)
 	}
-	created := call("issue", "create", "--kind", "task", "--title", "Lifecycle corpus", "--actor", "human:mark", "--idempotency-key", "lifecycle-create")
+	created := call("issue", "create", "--kind", "task", "--title", "Lifecycle corpus", "--lane", "standard", "--actor", "human:mark", "--idempotency-key", "lifecycle-create")
 	task := p21PathString(t, created, "result", "issue", "id")
 	taken := call("takeover", task, "--actor", "human:mark", "--reason", "Resume task", "--idempotency-key", "lifecycle-takeover")
 	hold := p21PathString(t, taken, "result", "hold_id")
 	call("heartbeat", "--hold", hold, "--actor", "human:mark")
+	call("start", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "lifecycle-start")
 	call("park", "--hold", hold, "--actor", "human:mark", "--waiting", "Include authentication failures?", "--idempotency-key", "lifecycle-park")
 	call("answer", task, "Exclude authentication failures.", "--actor", "human:mark", "--idempotency-key", "lifecycle-answer")
 }
@@ -80,7 +81,11 @@ func p24LifecycleCodePair(t *testing.T, code string) p24CodePair {
 	if code == "already-held" {
 		return p24CodePair{root, "task.takeover", takeover(task)}
 	}
-	call("issue", "transition", task, "--to", "in_progress", "--actor", "human:mark", "--idempotency-key", "start-first")
+	if code == "lane-not-set" {
+		return p24CodePair{root, "task.start", []string{"start", "--hold", p21PathString(t, taken, "result", "hold_id"), "--actor", "human:mark", "--idempotency-key", "unset-start"}}
+	}
+	call("issue", "update", task, "--lane", "standard", "--actor", "human:mark", "--idempotency-key", "lane-first")
+	call("start", "--hold", p21PathString(t, taken, "result", "hold_id"), "--actor", "human:mark", "--idempotency-key", "start-first")
 	call("park", "--hold", p21PathString(t, taken, "result", "hold_id"), "--actor", "human:mark", "--interrupted", "--reason", "Usage limit", "--idempotency-key", "park-first")
 	second := call("issue", "create", "--kind", "task", "--title", "Other work", "--actor", "human:mark", "--idempotency-key", "create-second")
 	return p24CodePair{root, "task.takeover", takeover(p21PathString(t, second, "result", "issue", "id"))}

@@ -72,9 +72,9 @@ func showWork(fixture *statusFixture) {
 	fixture.seed([]readyCommandRow{
 		epic,
 		statusTask("FID-1a2b3c", "Escape controls in status", "done", ops, n(1), nil),
-		statusTask("FID-2b3c4d", "Port the display package", "qa_pass", ops, n(2), nil),
+		statusTask("FID-2b3c4d", "Port the display package", "done", ops, n(2), nil),
 		statusTask("FID-71a0c2", "Export validation", "in_progress", ops, n(3), n(1)),
-		statusTask("FID-3b9e01", "Tidy resume output", "qa_review", ops, n(4), nil),
+		statusTask("FID-3b9e01", "Tidy resume output", "in_review", ops, n(4), nil),
 		statusTask("FID-9f13aa", "Harden login rate limiting", "todo", ops, n(5), nil),
 		statusTask("FID-c2d4e5", "Retry a rejected backup push", "todo", ops, n(6), n(2)),
 		statusTask("FID-0d4e8b", "Document backup age", "todo", ops, n(7), nil),

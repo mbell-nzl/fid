@@ -49,7 +49,11 @@ func humanKeyDetail(failure Failure) string {
 	case CodeIdempotencyConflict:
 		return "differing fields: " + strings.Join(humanStrings(details["differing_fields"]), ",")
 	case CodeTransitionNotPermitted:
-		return strings.Join(humanStrings(details["unsatisfied"]), ",")
+		rules := strings.Join(humanStrings(details["unsatisfied"]), ",")
+		if rules == "use-start" || rules == "use-hand-off" || rules == "task-already-started" {
+			return fmt.Sprintf("from_state=%v, to_state=%v, unsatisfied=%s", details["from_state"], details["to_state"], rules)
+		}
+		return rules
 	case CodeObligationUnsatisfied, CodeStopUnresolved, CodeResolutionInvalid:
 		return strings.Join(humanReasonCodes(details["reasons"]), ",")
 	case CodeInvalidArgument:
@@ -157,6 +161,10 @@ func humanRepository(value any) string {
 
 func humanNext(failure Failure, operation, leaf string, hasInput bool) string {
 	switch failure.Code {
+	case CodeTransitionNotPermitted:
+		return failure.NextAction
+	case CodeLaneNotSet:
+		return "fid issue update " + fmt.Sprint(failure.Details["task_id"]) + " --lane <routine|standard|assured> --actor <actor>"
 	case CodeHoldNotCurrent:
 		return "fid next"
 	case CodePolicyUnavailable:

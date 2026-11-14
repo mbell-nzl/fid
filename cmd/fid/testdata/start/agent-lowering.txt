@@ -1,0 +1,2 @@
+error: only a person can make this decision
+reason: authority-denied; actor_id=agent:claude-builder, operation=issue.update, required_actions=issue.update, required_capabilities=issue.update

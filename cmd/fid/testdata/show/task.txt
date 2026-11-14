@@ -8,6 +8,7 @@
               ○ FID-0d4e8b  Document backup age                  to do
   Labels      backup, export
   Spec        docs/specs/02_TRD.md
+  Lane        not set
 
   ACCEPTANCE CRITERIA
   1  fid export validate refuses an archive whose member digests don't

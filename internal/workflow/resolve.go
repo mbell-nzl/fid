@@ -63,6 +63,9 @@ func ResolveIssueWorkflow(conn *sql.DB, kind string) (ResolvedIssueWorkflow, err
 }
 
 func assignedWorkflowID(conn *sql.DB, kind string) (string, error) {
+	if kind == "task" || kind == "epic" {
+		return defaultIssueWorkflowID(kind), nil
+	}
 	for _, scope := range []struct {
 		query string
 		args  []any

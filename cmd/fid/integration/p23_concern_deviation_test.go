@@ -120,7 +120,7 @@ func TestP23ConcernDeviationRealProcessJourney(t *testing.T) {
 	}
 	linked := p23RunInput(t, a, "evidence", "link", a.actor, "task8-proof-link", map[string]any{"obligation_id": "OBL-p22-corpus", "evidence_type": "receipt", "receipt_id": gate.Receipt.ID, "review_id": nil, "human_outcome_id": nil, "required_artifact_ids": []string{}})
 	p23AssertReviewSuccess(t, "link qualifying proof", linked)
-	p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "transition", a.issueID, "--to", "in_progress", "--actor", "agent:"+a.actor, "--expected-revision", "1", "--idempotency-key", "task8-in-progress")
+	p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "transition", a.issueID, "--to", "building", "--actor", "agent:"+a.actor, "--expected-revision", "1", "--idempotency-key", "task8-in-progress")
 	p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "transition", a.issueID, "--to", "dev_complete", "--actor", "agent:"+a.actor, "--expected-revision", "2", "--idempotency-key", "task8-dev-complete")
 	p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "transition", a.issueID, "--to", "qa_review", "--actor", "agent:"+a.actor, "--expected-revision", "3", "--idempotency-key", "task8-qa-review")
 	p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "issue", "transition", a.issueID, "--to", "qa_pass", "--actor", "agent:"+a.actor, "--expected-revision", "4", "--idempotency-key", "task8-qa-pass")

@@ -21,7 +21,7 @@ func TestJournalInspectCommandUsesDirectLegacyJSONWithoutRevert(t *testing.T) {
 		t,
 		workspace,
 		"issue", "create",
-		"--kind", "task",
+		"--kind", "subtask", "--parent", transitionParent(t, workspace),
 		"--title", "Inspect journal event",
 		"--actor", "agent:developer",
 	)

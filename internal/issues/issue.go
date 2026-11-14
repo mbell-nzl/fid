@@ -16,6 +16,7 @@ const fidVersion = "0.1.0"
 type CreateOptions struct {
 	WorkspaceRoot  string
 	MigrationsDir  string
+	Lane           *string
 	Kind           string
 	Title          string
 	Actor          string
@@ -31,6 +32,7 @@ type CreateOptions struct {
 
 type CreateResult struct {
 	ID             string
+	Lane           *string
 	Kind           string
 	Title          string
 	Status         string
@@ -108,6 +110,7 @@ func (err *HierarchyInvalidError) Error() string {
 }
 
 type Issue struct {
+	Lane               *string               `json:"lane"`
 	ID                 string                `json:"id"`
 	Kind               string                `json:"kind"`
 	Title              string                `json:"title"`

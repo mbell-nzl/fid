@@ -109,7 +109,7 @@ func TestP24ReceiptFreshnessRealGuardedActions(t *testing.T) {
 				}
 			}
 			evaluate("fresh")
-			for i, state := range []string{"in_progress", "dev_complete", "qa_review"} {
+			for i, state := range []string{"building", "dev_complete", "qa_review"} {
 				p21Run(t, a.binary, a.workspace, "--json", "issue", "transition", a.issueID, "--to", state, "--actor", "agent:"+a.actor, "--expected-revision", strconv.Itoa(i+1), "--idempotency-key", state)
 			}
 			transition := func(key string) p22ConformanceResponse {

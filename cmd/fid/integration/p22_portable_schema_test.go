@@ -34,7 +34,7 @@ var p22PortableColumns = map[string]string{
 	"holds":                        "id task_id worktree_id worktree_root actor since expires_at replaces_hold_id ended_at end_reason",
 	"idempotency_results":          "operation_scope idempotency_key request_digest result_entity_id result_event_id aggregate_sequence result_json created_at request_field_digests_json",
 	"issue_labels":                 "issue_id label",
-	"issues":                       "id kind parent_id title workflow_id status priority sequence spec_md_path owner_role owner_actor created_at updated_at revision",
+	"issues":                       "id kind parent_id title workflow_id status priority sequence spec_md_path owner_role owner_actor created_at updated_at revision lane",
 	"kit_activations":              "id prior_activation_id kit_identity backend_identity phase status point_of_no_return direction created_at updated_at version",
 	"labels":                       "name colour description",
 	"links":                        "from_type from_id relation to_type to_id created_at",

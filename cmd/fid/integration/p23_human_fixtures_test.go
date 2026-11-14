@@ -268,7 +268,7 @@ func p23ProtectedDecisionFixture(t *testing.T, binary, root string) p23HumanChec
 	decisions := []any{map[string]any{"ordinal": 0, "decision_class": "security", "required_capabilities": []string{"decision.record-reference"}, "affected_actions": []string{"issue.transition-terminal-success"}}}
 	a := p22NewFIDRecoveryAdapterAt(t, binary, workspace, "agent", 3600, []string{}, actions, p22ExecutionFixture{ProtectedDecisions: decisions})
 	source := p24SeedJudgmentSource(t, a)
-	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
+	for revision, state := range []string{"building", "dev_complete", "qa_review"} {
 		assertP23DecisionCommandSuccess(t, "fixture transition "+state, p23IssueTransition(t, a, state, revision+1, "fixture-"+state))
 	}
 	p22AcceptedCall(t, a, "fixture-budget", "run.observe-budget", map[string]any{"value": 0})

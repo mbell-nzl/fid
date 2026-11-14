@@ -1,0 +1,22 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "authority",
+    "code": "authority-denied",
+    "details": {
+      "actor_id": "agent:claude-builder",
+      "operation": "issue.update",
+      "required_actions": [
+        "issue.update"
+      ],
+      "required_capabilities": [
+        "issue.update"
+      ]
+    },
+    "message": "only a person can make this decision",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "issue.update"
+}

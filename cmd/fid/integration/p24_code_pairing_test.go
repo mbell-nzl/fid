@@ -26,6 +26,7 @@ type p24CodeFactory func(*testing.T, string) p24CodePair
 // The corpus is enumerated against RegisteredCodes below. A row invokes the
 // real fid binary, with no injected mapper errors or simulated responses.
 var p24CodeRows = map[string]p24CodeFactory{
+	"lane-not-set":                  p24LifecycleCodePair,
 	"not-waiting":                   p24SimplePair("task.answer", "answer", "FID-missing", "Yes", "--actor", "human:mark"),
 	"hold-not-current":              p24LifecycleCodePair,
 	"worktree-busy":                 p24LifecycleCodePair,
@@ -453,6 +454,7 @@ func p24ExpectedFailureText(t *testing.T, payload map[string]any, operation stri
 		text += "blocked by: " + strings.Join(ids, ",") + "\n"
 	}
 	next := map[string]string{
+		"lane-not-set":                "fid issue update " + fmt.Sprint(d["task_id"]) + " --lane <routine|standard|assured> --actor <actor>",
 		"hold-not-current":            "fid next",
 		"repository-mismatch":         "check HEAD and uncommitted changes, then correct expected_repository",
 		"source-digest-mismatch":      "correct or omit digest for " + fmt.Sprint(d["display_label"]),

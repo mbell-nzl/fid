@@ -34,6 +34,12 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 			return fmt.Errorf("project event %q: unsupported effect op %q", event.EventID, effect.Op)
 		}
 	}
+	if err := validateTaskStart(tx, event); err != nil {
+		return err
+	}
+	if err := validateTaskLane(tx, event); err != nil {
+		return err
+	}
 	rule, current := currentEventRules[event.EventType]
 	if !current {
 		retained, found := retainedCurrentRules[event.EventType]

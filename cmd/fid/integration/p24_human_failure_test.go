@@ -16,7 +16,7 @@ func TestP24HumanProtectedDecisionFailure(t *testing.T) {
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "agent", 3600, []string{},
 		[]string{"claim.acquire", "envelope.activate", "envelope.create", "gate.register", "issue.transition", "run.start"},
 		p22ExecutionFixture{ProtectedDecisions: []any{map[string]any{"ordinal": 0, "decision_class": "security", "required_capabilities": []string{"decision.record-reference"}, "affected_actions": []string{"issue.transition-terminal-success"}}}})
-	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
+	for revision, state := range []string{"building", "dev_complete", "qa_review"} {
 		assertP23DecisionCommandSuccess(t, state, p23IssueTransition(t, a, state, revision+1, "p24-"+state))
 	}
 	denial := p23IssueTransition(t, a, "qa_pass", 4, "p24-denial")

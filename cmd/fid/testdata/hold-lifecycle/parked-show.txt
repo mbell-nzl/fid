@@ -5,6 +5,7 @@
   Epic        ◆ FID-e3a1c0  Operating experience              0/4 done
   Priority    P1
   Blocks      ○ FID-c2d4e5  Retry a rejected backup push         to do
+  Lane        not set
   Working     ⚠ interrupted in <ROOT> by
               agent:claude-builder: parked at 22:00: Usage limit
 ╰──────────────────────────────────────────────────────────────────────╯

@@ -1,0 +1,12 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "task.start",
+  "result": {
+    "hold_id": "HLD-aaaaaa",
+    "lane": "standard",
+    "status": "in_progress",
+    "task_id": "FID-9f13aa"
+  }
+}

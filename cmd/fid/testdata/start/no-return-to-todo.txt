@@ -1,0 +1,2 @@
+error: FID-9f13aa cannot move back to to do
+reason: transition-not-permitted; from_state=in_progress, to_state=todo, unsatisfied=task-already-started

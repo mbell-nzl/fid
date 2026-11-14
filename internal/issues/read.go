@@ -5,6 +5,7 @@ import "fmt"
 const ReadCollectionLimit = 10000
 
 type IssueSummary struct {
+	Lane           *string  `json:"lane"`
 	ID             string   `json:"id"`
 	Kind           string   `json:"kind"`
 	Title          string   `json:"title"`
@@ -87,6 +88,7 @@ func issueDetailFromIssue(issue Issue) IssueDetail {
 	}
 	return IssueDetail{
 		IssueSummary: IssueSummary{
+			Lane:           issue.Lane,
 			ID:             issue.ID,
 			Kind:           issue.Kind,
 			Title:          issue.Title,

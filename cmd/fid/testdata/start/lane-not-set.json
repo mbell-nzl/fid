@@ -1,0 +1,18 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "lane-not-set",
+    "details": {
+      "task_id": "FID-9f13aa"
+    },
+    "message": "FID-9f13aa has no lane",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "task.start"
+}

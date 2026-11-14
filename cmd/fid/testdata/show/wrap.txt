@@ -6,6 +6,7 @@
   Priority    P3
   Labels      display, documentation, golden-tests, human-output,
               status, wrapping
+  Lane        not set
 
   ACCEPTANCE CRITERIA
   1  A title too long for one line wraps at spaces, its continuation

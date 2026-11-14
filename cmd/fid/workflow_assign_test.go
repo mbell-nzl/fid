@@ -17,11 +17,11 @@ func TestWorkflowAssignJSONPrecedenceAndScopedReplacement(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	defineWorkflowForTest(t, workspace, "project-flow", "any")
-	defineWorkflowForTest(t, workspace, "task-flow", "task")
+	defineWorkflowForTest(t, workspace, "task-flow", "subtask")
 	if result := executeCommandForTest(workspace, "--json", "workflow", "assign", "--name", "project-flow", "--project-wide", "--by", "tl"); result.err != nil {
 		t.Fatalf("project assignment = %#v", result)
 	}
-	result := executeCommandForTest(workspace, "--json", "workflow", "assign", "--name", "task-flow", "--kind", "task", "--by", "tl")
+	result := executeCommandForTest(workspace, "--json", "workflow", "assign", "--name", "task-flow", "--kind", "subtask", "--by", "tl")
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("kind assignment = %#v", result)
 	}
@@ -38,7 +38,7 @@ func TestWorkflowAssignJSONPrecedenceAndScopedReplacement(t *testing.T) {
 			OccurredAt string `json:"occurred_at"`
 		} `json:"event"`
 	}
-	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil || envelope.Result.Assignment.ScopeType != "kind" || envelope.Result.Assignment.ScopeValue != "task" || envelope.Result.Assignment.WorkflowID != "task-flow" || envelope.Event == nil || envelope.Event.ID == "" || envelope.Event.OccurredAt == "" {
+	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil || envelope.Result.Assignment.ScopeType != "kind" || envelope.Result.Assignment.ScopeValue != "subtask" || envelope.Result.Assignment.WorkflowID != "task-flow" || envelope.Event == nil || envelope.Event.ID == "" || envelope.Event.OccurredAt == "" {
 		t.Fatalf("assignment response = %+v, err = %v", envelope, err)
 	}
 	tail := mustReadLastJournalEvent(t, mustJournalPath(t, workspace))
@@ -47,7 +47,7 @@ func TestWorkflowAssignJSONPrecedenceAndScopedReplacement(t *testing.T) {
 	}
 	conn := openWorkflowCommandDB(t, workspace)
 	defer closeCommandDB(t, conn)
-	resolved, err := workflow.ResolveIssueWorkflow(conn, "task")
+	resolved, err := workflow.ResolveIssueWorkflow(conn, "subtask")
 	if err != nil || resolved.ID != "task-flow" {
 		t.Fatalf("ResolveIssueWorkflow = %+v, %v; want kind assignment precedence", resolved, err)
 	}
@@ -66,7 +66,7 @@ func TestWorkflowAssignRequiresExactlyOneScopeAndMapsUnknownWorkflow(t *testing.
 	clonePristineWorkspaceInto(t, workspace)
 	journal := mustJournalPath(t, workspace)
 	before := mustReadCommandFile(t, journal)
-	for _, args := range [][]string{{"--json", "workflow", "assign", "--name", "missing", "--by", "tl"}, {"--json", "workflow", "assign", "--name", "missing", "--kind", "task", "--project-wide", "--by", "tl"}, {"--json", "workflow", "assign", "--name", "missing", "--kind", "qa_review", "--by", "tl"}} {
+	for _, args := range [][]string{{"--json", "workflow", "assign", "--name", "missing", "--by", "tl"}, {"--json", "workflow", "assign", "--name", "missing", "--kind", "subtask", "--project-wide", "--by", "tl"}, {"--json", "workflow", "assign", "--name", "missing", "--kind", "qa_review", "--by", "tl"}} {
 		result := executeCommandForTest(workspace, args...)
 		if result.err == nil || result.stdout != "" {
 			t.Fatalf("scope rejection = %#v", result)
@@ -76,7 +76,7 @@ func TestWorkflowAssignRequiresExactlyOneScopeAndMapsUnknownWorkflow(t *testing.
 			t.Fatal("rejected assignment appended an event")
 		}
 	}
-	result := executeCommandForTest(workspace, "--json", "workflow", "assign", "--name", "missing", "--kind", "task", "--by", "tl")
+	result := executeCommandForTest(workspace, "--json", "workflow", "assign", "--name", "missing", "--kind", "subtask", "--by", "tl")
 	var failure struct {
 		Error struct {
 			Code    string `json:"code"`

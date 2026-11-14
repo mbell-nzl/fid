@@ -19,6 +19,7 @@
       }
     },
     "issue": {
+      "lane": null,
       "id": "FID-aa02b3",
       "kind": "subtask",
       "title": "Validate member digests",

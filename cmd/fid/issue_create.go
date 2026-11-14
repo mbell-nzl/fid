@@ -10,6 +10,7 @@ func init() {
 }
 
 func newIssueCreateCommand() *cobra.Command {
+	var lane string
 	var kind string
 	var title string
 	var actor string
@@ -48,9 +49,9 @@ func newIssueCreateCommand() *cobra.Command {
 			}
 
 			result, err := issues.Create(issues.CreateOptions{
-				WorkspaceRoot:  workspaceRoot,
-				MigrationsDir:  issueMigrationsDir(),
-				Kind:           kind,
+				WorkspaceRoot: workspaceRoot,
+				MigrationsDir: issueMigrationsDir(),
+				Kind:          kind, Lane: issueCreateOptionalString(cmd, "lane", lane),
 				Title:          title,
 				Actor:          actor,
 				IdempotencyKey: idempotencyKey,
@@ -69,6 +70,7 @@ func newIssueCreateCommand() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringVar(&lane, "lane", "", "Task lane: routine, standard or assured")
 	cmd.Flags().StringVar(&kind, "kind", "", "Issue kind")
 	cmd.Flags().StringVar(&title, "title", "", "Issue title")
 	cmd.Flags().StringVar(&epicID, "epic", "", "Parent epic ID")

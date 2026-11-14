@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/kerneltest"
 	"github.com/mbell-nzl/fid/internal/project"
 )
 
@@ -75,7 +76,7 @@ func TestP24ChangedFakeFIDAssembly(t *testing.T) {
 			} else if operation == "envelope.complete" {
 				p22AcceptedCall(t, a, "assembly-budget", "run.observe-budget", map[string]any{"value": 0})
 				p22JourneyProof(t, a, "assembly-proof")
-				for i, state := range []string{"in_progress", "dev_complete", "qa_review", "qa_pass"} {
+				for i, state := range []string{"building", "dev_complete", "qa_review", "qa_pass"} {
 					p21Run(t, a.binary, a.workspace, "--json", "issue", "transition", a.issueID, "--to", state, "--actor", "agent:"+a.actor, "--expected-revision", strconv.Itoa(i+1), "--idempotency-key", "assembly-"+state)
 				}
 				input = map[string]any{"envelope_id": p23EnvelopeID(t, a), "expected_revision": 1}
@@ -432,6 +433,9 @@ func p22NewFIDRecoveryAdapterWithClaimModeAt(t *testing.T, binary, workspace, ac
 	projectID := p21PathString(t, init, "result", "project", "id")
 	issue := p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Phase 22 conformance", "--actor", "agent:developer", "--idempotency-key", "p22-corpus-issue")
 	issueID := p21PathString(t, issue, "result", "issue", "id")
+	if err := kerneltest.Bind(workspace, filepath.Join("..", "..", "..", "migrations"), issueID); err != nil {
+		t.Fatal(err)
+	}
 	actor := "actor-recovery"
 	capabilities := []string{"artifact.verify", "attention.resolve", "claim.acquire", "claim.expire", "envelope.activate", "envelope.create", "gate.register", "gate.run", "run.abandon", "run.checkpoint", "run.close", "run.observe", "run.observe-budget", "run.recover", "run.start", "stop.raise", "stop.resolve"}
 	if actorType == "human" {

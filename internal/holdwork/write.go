@@ -85,6 +85,10 @@ func write(options Options, operation string, build func(writeContext) (journal.
 		if err != nil {
 			return err
 		}
+		if event.EventType == "" {
+			result = Result{Fields: fields}
+			return nil
+		}
 		actorType, actorID, _ := strings.Cut(options.Actor, ":")
 		event.EventSchema = journal.EventSchemaV2
 		event.CommandName = operation
@@ -151,9 +155,11 @@ func idempotencyRequest(options Options, operation string) (journal.IdempotencyR
 		request["reason"] = options.Reason
 	}
 	names := map[string]string{"reason": "--reason", "hold": "--hold", "task": "task"}
-	if operation == "hold.park" {
+	if operation == "hold.park" || operation == "task.start" {
 		request["hold"] = options.HoldID
-		request["mode"] = "interrupted"
+		if operation == "hold.park" {
+			request["mode"] = "interrupted"
+		}
 		if options.Question != "" {
 			delete(request, "mode")
 			request["question"] = options.Question

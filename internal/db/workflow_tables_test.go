@@ -22,17 +22,8 @@ func TestMigrateUpSeedsTaskDefaultWorkflowStates(t *testing.T) {
 	}
 	defer closeDB(t, conn)
 
-	want := map[string]string{
-		"todo":         "unstarted",
-		"in_progress":  "started",
-		"dev_complete": "started",
-		"qa_review":    "started",
-		"qa_block":     "started",
-		"failed_gate":  "started",
-		"qa_pass":      "completed",
-		"done":         "completed",
-		"cancelled":    "cancelled",
-	}
+	want := map[string]string{"todo": "unstarted", "in_progress": "started", "in_review": "started", "done": "completed", "cancelled": "cancelled"}
+
 	got := make(map[string]string, len(want))
 	rows, err := conn.Query(`
 		SELECT state, category

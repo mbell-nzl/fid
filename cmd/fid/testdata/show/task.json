@@ -73,6 +73,7 @@
       }
     },
     "issue": {
+      "lane": null,
       "id": "FID-71a0c2",
       "kind": "task",
       "title": "Export validation",

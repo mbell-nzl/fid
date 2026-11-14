@@ -5,5 +5,6 @@
   Epic        ◆ FID-e3a1c0  Operating experience              0/4 done
   Priority    P1
   Blocks      ○ FID-c2d4e5  Retry a rejected backup push         to do
+  Lane        not set
   Question    Should retries include authentication failures?
 ╰──────────────────────────────────────────────────────────────────────╯

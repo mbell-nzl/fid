@@ -1,0 +1,2 @@
+error: Issue transition is not permitted
+reason: transition-not-permitted; lane-lowering-requires-waiver

@@ -1,0 +1,22 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "transition-not-permitted",
+    "details": {
+      "from_state": "in_review",
+      "to_state": "in_progress",
+      "unsatisfied": [
+        "task-todo"
+      ]
+    },
+    "message": "FID-9f13aa cannot start from in review",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "task.start"
+}

@@ -4,6 +4,7 @@
 
   Epic        ◆ FID-e3a1c0  Operating experience              0/4 done
   Priority    P2
+  Lane        not set
   Working     in /home/mark/projects/fid-wt3 by agent:claude-builder,
               since 21:40, until 22:40
 ╰──────────────────────────────────────────────────────────────────────╯

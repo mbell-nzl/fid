@@ -114,9 +114,10 @@ func TestLifecycleRebuildAndExport(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	runFIDCommand(t, workspace, "init", "--prefix", "FID")
-	_, created := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Lifecycle replay", "--actor", "human:mark")
+	_, created := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Lifecycle replay", "--lane", "standard", "--actor", "human:mark")
 	task := parseCreatedIssueID(t, created)
-	runFIDCommand(t, workspace, "issue", "transition", task, "--to", "in_progress", "--actor", "agent:builder")
+	takenBefore, _ := lifecycleResult(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:builder"), "next.claim")
+	runFIDCommand(t, workspace, "start", "--hold", takenBefore["hold"].(map[string]any)["id"].(string), "--actor", "agent:builder", "--idempotency-key", "lifecycle-start")
 	// Takeover also starts holds for already-started tasks with no earlier hold.
 	taken, _ := lifecycleResult(t, executeCommandForTest(workspace, "--json", "takeover", task, "--actor", "human:mark", "--reason", "Resume task", "--idempotency-key", "take"), "task.takeover")
 	hold := fmt.Sprint(taken["hold_id"])

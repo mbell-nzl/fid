@@ -252,6 +252,9 @@ func TestIssueCreateUsesAssignedWorkflowAndItsInitialState(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Get() error = %v", err)
 			}
+			if fixture.kind == "task" {
+				fixture.workflowID, fixture.wantStatus = "task-default", "todo"
+			}
 			if got.WorkflowID != fixture.workflowID {
 				t.Fatalf("workflow_id = %q, want %q", got.WorkflowID, fixture.workflowID)
 			}
@@ -312,8 +315,8 @@ func TestIssueCreateResolvesKindAssignmentBeforeProjectAssignment(t *testing.T) 
 		wantWorkflowID string
 		wantStatus     string
 	}{
-		{id: projectFallback.ID, wantWorkflowID: "project-flow", wantStatus: "project_start"},
-		{id: kindOverride.ID, wantWorkflowID: "task-flow", wantStatus: "task_start"},
+		{id: projectFallback.ID, wantWorkflowID: "epic-default", wantStatus: "todo"},
+		{id: kindOverride.ID, wantWorkflowID: "task-default", wantStatus: "todo"},
 	} {
 		got, err := Get(GetOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), ID: fixture.id})
 		if err != nil {
@@ -1291,7 +1294,7 @@ func TestGetMapsPopulatedNullableFields(t *testing.T) {
 		"FID-populated",
 		"task",
 		"Populated values",
-		"qa_pass",
+		"done",
 		"task-default",
 		"FID-parent",
 		5,

@@ -356,6 +356,62 @@ that session lapses or is parked as interrupted. That worktree stays busy;
 replay refuses another task releasing its unanswered reservation. This
 follows the always-kept rule, without another workflow state or flag.
 
+Mark approved these details for **1.5a4**, on 14 November 2026:
+
+1. **Fixed states.** Tasks use `todo → in_progress → in_review → done`,
+   plus `cancelled`. Review-driven rework returns from `in_review` to
+   `in_progress` in 2.1. Epics use `todo`, `in_progress`, `done` and
+   `cancelled`; subtasks are unchanged. The retired task states and epic
+   `wrapped` / `closed` go, without conversion: no real ledger exists.
+   `workflow assign` refuses tasks and epics, whose states are fixed.
+2. **Planning lanes.** `issue create --lane` and `issue update --lane`
+   accept `routine`, `standard` and `assured` on tasks only. A missing lane
+   stays null. Agents may set a missing lane or raise one, never lower it
+   (`authority-denied`). A person may lower a lane while the task is `todo`,
+   as a planning correction; after starting, lowering requires 2.2b's
+   `waive` and is refused with `transition-not-permitted` until then.
+   `show` gains its Lane row; issue read/create JSON carries `lane`.
+3. **Starting.** `fid start --hold <id> --actor <a> --idempotency-key <k>`
+   checks the exact current hold as the other session commands do. It needs
+   a lane and a task in `todo`, then moves it to `in_progress`. A missing
+   lane gives `lane-not-set` (precondition, exit 4, subject the task,
+   details `{task_id}`). `in_review` cannot be resumed through `start`:
+   rework belongs to 2.1. Start needs readable trusted policy and records a
+   snapshot when its effective digest changes. It neither changes git nor
+   requires a clean tree.
+4. **Epic movement is atomic.** The first task's start moves its todo epic
+   to `in_progress` in the same write. A person cancels an epic; `done`
+   closes it in 1.6. Nobody manually starts an epic.
+5. **Generic transitions cannot replace the commands.** Tasks cannot start
+   by `issue transition`, move to review that way, or move from a started
+   state back to `todo`. The refusal is `transition-not-permitted`, naming
+   `use-start`, `use-hand-off` or `task-already-started`. Epics cannot be
+   manually moved to `in_progress`. The completion refusal lands in 1.6;
+   cancellation keeps 1.5a2's person-only rule. Subtasks keep plain
+   transitions.
+6. **No change base at start.** The `when_changed` base is recomputed for
+   each check and hand-off (1.5a6/1.5a7); start records no base.
+
+**Harmless start retry keys** (orchestrator's decision under Mark's
+delegation for the 1.5a series, 14 November 2026): starting a task already
+in progress with a current hold succeeds without a new Event. A fresh
+retry key on that harmless repeat is deliberately left **unbound**. The
+repeat is idempotent by state: while the task stays in progress it returns
+"already started" with `event: null`; once the task moves on, that same key
+gets whatever the state then gives. No retry storage or Event is added for
+this no-op. The key of an Event-producing start still replays its recorded
+response and original Event as usual.
+
+Builder's storage choices for 1.5a4: migration 24 adds the nullable lane and
+replaces the task/epic workflow seeds. Lane set and raise use the existing
+`issue.created` and `issue.updated` families. One `task.started` Event
+carries the task and, when needed, its epic's state and revision updates;
+both catalogs register it from schema 24. The retry response binds it to
+the exact hold and lane. Replay and import check that binding and enforce
+the planning lane authority rule. Kernel tests attach an isolated legacy
+test workflow through the journal; its first started state is `building`.
+There is no production bypass or new dependency.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -1494,6 +1550,9 @@ for confirmation".
   with the lane floor. A waiver binds to the change's fingerprint, so an edit
   returns the task to its floor. Hard floors, such as `.fid.toml` and CI
   workflows, can't be waived.)
+  (Amended 14 November 2026, 1.5a4: a person may correct a todo task's
+  planning lane downward with `issue update --lane`. After starting,
+  lowering still requires `waive`.)
 - Up to 10 validations per epic (soft cap; more means split the epic). Each
   names a verifier (`check:`, `review:` or human); human ones need a fixture
   recipe.

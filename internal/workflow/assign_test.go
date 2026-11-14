@@ -18,7 +18,7 @@ func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
 		name      string
 		appliesTo string
 	}{
-		{name: "second-task", appliesTo: "task"},
+		{name: "second-task", appliesTo: "subtask"},
 		{name: "first-project", appliesTo: "any"},
 		{name: "second-project", appliesTo: "any"},
 	} {
@@ -48,11 +48,11 @@ func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
 	}{
 		{
 			name:    "kind",
-			first:   AssignmentRequest{Name: "task-default", Kind: "task"},
-			second:  AssignmentRequest{Name: "second-task", Kind: "task"},
-			firstID: "task-default",
+			first:   AssignmentRequest{Name: "subtask-default", Kind: "subtask"},
+			second:  AssignmentRequest{Name: "second-task", Kind: "subtask"},
+			firstID: "subtask-default",
 			lastID:  "second-task",
-			delete:  map[string]any{"scope": "kind", "kind": "task"},
+			delete:  map[string]any{"scope": "kind", "kind": "subtask"},
 		},
 		{
 			name:    "project",

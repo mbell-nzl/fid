@@ -3,9 +3,9 @@
   IN PROGRESS
   ◆ FID-e3a1c0  Operating experience              ██░░░░░░░░  2/7 done
       ● FID-71a0c2  Export validation                      in progress
-      ● FID-3b9e01  Tidy resume output                       qa review
+      ● FID-3b9e01  Tidy resume output                       in review
   ● FID-5d2f77  Fix journal replay line                    in progress
-  ● FID-d1d1d1  Leftover started task                     dev complete
+  ● FID-d1d1d1  Leftover started task                      in progress
 
   READY
   ◆ FID-e3a1c0  Operating experience                           3 to do

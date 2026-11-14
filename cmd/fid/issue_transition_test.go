@@ -19,7 +19,7 @@ func TestIssueTransitionJSONAllowsStandaloneActorWithoutGenericClaim(t *testing.
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	create := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Claim precondition", "--actor", "agent:developer")
+	create := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "subtask", "--parent", transitionParent(t, workspace), "--title", "Claim precondition", "--actor", "agent:developer")
 	if create.err != nil {
 		t.Fatalf("issue create error = %v, stderr = %q", create.err, create.stderr)
 	}
@@ -88,7 +88,7 @@ func TestIssueTransitionExpectedRevisionMatrix(t *testing.T) {
 			workspace := t.TempDir()
 			clonePristineWorkspaceInto(t, workspace)
 
-			created := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Expected revision "+name, "--actor", "agent:developer")
+			created := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "subtask", "--parent", transitionParent(t, workspace), "--title", "Expected revision "+name, "--actor", "agent:developer")
 			if created.err != nil || created.stderr != "" {
 				t.Fatalf("issue create = %#v, want stdout-only success", created)
 			}
@@ -219,7 +219,7 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 						Op:    "delete",
 						Table: "workflow_transitions",
 						PK: map[string]any{
-							"workflow_id": "task-default",
+							"workflow_id": "subtask-default",
 							"from_state":  "todo",
 							"to_state":    "cancelled",
 						},
@@ -243,7 +243,7 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 						Op:    "insert",
 						Table: "workflow_transition_requires",
 						PK: map[string]any{
-							"workflow_id": "task-default",
+							"workflow_id": "subtask-default",
 							"from_state":  "todo",
 							"to_state":    "in_progress",
 							"rule":        "unknown_rule",
@@ -255,7 +255,7 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 		},
 		{
 			name:        "retired completion precondition is absent",
-			toState:     "dev_complete",
+			toState:     "done",
 			actor:       "developer",
 			wantSuccess: true,
 			wantFrom:    "in_progress",
@@ -272,7 +272,7 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			workspace := t.TempDir()
 			clonePristineWorkspaceInto(t, workspace)
-			created := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Transition "+tt.name, "--actor", "agent:developer")
+			created := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "subtask", "--parent", transitionParent(t, workspace), "--title", "Transition "+tt.name, "--actor", "agent:developer")
 			if created.err != nil || created.stderr != "" {
 				t.Fatalf("issue create = %#v, want stdout-only success", created)
 			}
@@ -461,7 +461,7 @@ func TestIssueMutationCanonicalAttributionAvoidsProtectedEffects(t *testing.T) {
 
 func createAttributionIssue(t *testing.T, workspace, title string) string {
 	t.Helper()
-	result := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", title, "--actor", "agent:developer")
+	result := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "subtask", "--parent", transitionParent(t, workspace), "--title", title, "--actor", "agent:developer")
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("issue create = %#v, want stdout-only success", result)
 	}
@@ -574,7 +574,7 @@ func TestIssueTransitionChangesStateAndPrintsConfirmation(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI transition", "--actor", "agent:developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--parent", transitionParent(t, workspace), "--title", "CLI transition", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 	_, transitionStderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:developer")
 	if !strings.Contains(transitionStderr, "transitioned "+issueID+": todo → in_progress") {
@@ -603,7 +603,7 @@ func TestIssueTransitionRejectsInvalidEdgeAndLeavesStateUnchanged(t *testing.T) 
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI invalid transition", "--actor", "agent:developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--parent", transitionParent(t, workspace), "--title", "CLI invalid transition", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	beforeStdout := mustGetIssueJSON(t, workspace, issueID)
@@ -643,13 +643,13 @@ func TestIssueTransitionDoesNotEnforceRetiredV1Rules(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI rule failure", "--actor", "agent:developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--parent", transitionParent(t, workspace), "--title", "CLI rule failure", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:developer")
 
-	stdout, stderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "dev_complete", "--actor", "agent:developer")
-	if stdout != "" || !strings.Contains(stderr, "transitioned "+issueID+": in_progress → dev_complete") {
+	stdout, stderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "done", "--actor", "agent:developer")
+	if stdout != "" || !strings.Contains(stderr, "transitioned "+issueID+": in_progress → done") {
 		t.Fatalf("retired-requirement transition stdout/stderr = %q/%q, want successful transition", stdout, stderr)
 	}
 }
@@ -659,7 +659,7 @@ func TestIssueTransitionRequiresTargetStateAndKnownByRole(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI role validation", "--actor", "agent:developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--parent", transitionParent(t, workspace), "--title", "CLI role validation", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	t.Run("missing to", func(t *testing.T) {
@@ -701,7 +701,7 @@ func TestIssueTransitionUsesStandaloneActorAttribution(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI state permissions", "--actor", "agent:developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--parent", transitionParent(t, workspace), "--title", "CLI state permissions", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 	stdout, stderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:qa_reviewer")
 	if stdout != "" {
@@ -721,4 +721,11 @@ func closeTransitionCommandDB(t *testing.T, conn *sql.DB) {
 	if err := conn.Close(); err != nil {
 		t.Fatalf("close db: %v", err)
 	}
+}
+
+func transitionParent(t *testing.T, workspace string) string {
+	t.Helper()
+	result := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Transition parent", "--actor", "human:mark")
+	fields, _ := lifecycleResult(t, result, "issue.create")
+	return fields["issue"].(map[string]any)["id"].(string)
 }

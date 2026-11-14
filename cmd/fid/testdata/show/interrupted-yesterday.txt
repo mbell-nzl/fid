@@ -3,6 +3,7 @@
   ● Contract fields and exit codes                         in progress
 
   Epic        ◆ FID-8a1b2c  Loop contract                     0/3 done
+  Lane        not set
   Working     ⚠ interrupted in /home/mark/projects/fid-wt2 by
               agent:claude-builder: work stopped at 2026-11-07 20:00
               without a park
