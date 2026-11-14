@@ -87,6 +87,7 @@ you build, not in the PR afterwards.
   exceptions carry `//nolint:paralleltest // <reason>`.
 - Functions around 60 lines and files around 400 lines are guides.
 - Use Conventional Commits, with a `Refs: RESET <task>` footer.
+- Write dates as YYYY-MM-DD in records, tables and done marks.
 - In Codex's sandbox, `.codex/config.toml` points the Go caches at gitignored
   repo directories, so don't ask for unsandboxed runs just to write caches.
 

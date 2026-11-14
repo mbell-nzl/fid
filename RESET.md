@@ -16,6 +16,10 @@ criteria below.
 - **Budgets.**
   - Product Go code grows by at most 10% net before the trial (46.6k lines
     today, so at most about 51k).
+    - ADR-0014 lets product Go exceed this cap until the kernel's removal
+      (1.5b–1.5d), which cuts about 18–20k lines. The cap applies again
+      from then, before the trial. On 2026-11-14, after 1.5a2, product Go
+      was 54,547 lines (non-test `.go` files under `cmd/` and `internal/`).
   - The loop stays under 150 lines.
   - The kit install script stays under 80 lines.
 - **One task = one PR = one session.** Use TDD; `make test` must pass. The PR
@@ -51,7 +55,7 @@ criteria below.
 |---|---|---|---|
 | **0.1** | Accept ADR-0013; approve this plan | Mark | Signed off (done 31 October 2026) |
 | **0.2** | Write a one-page AGENTS.md; slim CLAUDE.md; archive the V1 role agents and phase skills | Routine | A fresh session learns the working method from AGENTS.md alone (done 31 October 2026) |
-| **0.3** | Add a `push: main` CI trigger. Branch protection is deferred: GitHub Free doesn't offer it on private repos | Assured | A merge to `main` runs CI (done 31 October 2026) |
+| **0.3** | Add a `push: main` CI trigger. Branch protection is deferred: GitHub Free doesn't offer it on private repos (since 2026-11-14 the repository is public and `main` has a ruleset) | Assured | A merge to `main` runs CI (done 31 October 2026) |
 | **0.4** | Move the CI scripts and conformance fixtures out of `project-docs/` | Assured | CI passes with `project-docs/` deleted locally (done 31 October 2026) |
 | **0.5** | Archive fid's V1 docs: tag `v1-workflow-final`, copy them to the archive repo, keep the reset documents in `docs/reset/` | Routine | `project-docs/` is gone from `main`; CI passes (done 1 November 2026) |
 | **0.6** | Kit repo with the reviewer agent (code and test-adequacy profiles) | kit | It reviews this reset's first PR (done 2 November 2026) |
@@ -162,7 +166,12 @@ stop building fid as a product.
 | Date | Task | Friction | Fix or later |
 |---|---|---|---|
 | 31 Oct | 0.2, 0.3 | The agent's shell has no SSH key loaded, so pushes go through `gh` over HTTPS, and `gh`'s token lacks the `workflow` scope needed to push CI changes | Mark grants the scope (`gh auth refresh -s workflow`) or loads the SSH key for agent shells |
-| 31 Oct | 0.3 | GitHub Free has no branch protection on private repos | Deferred until `auto_merge` (decisions record, later list) |
+| 31 Oct | 0.3 | GitHub Free has no branch protection on private repos | Deferred until `auto_merge` (decisions record, later list). Since 2026-11-14 the repository is public, and a `main` ruleset requires a pull request and blocks force pushes and deletion; required status checks aren't set yet |
 | 2 Nov | 0.6 | The first review's `make test` timed out in `cmd/fid` (`panic: test timed out after 10m0s`) while the integration suite ran alongside it. The V1 developer profile said not to overlap long checks; the one-page AGENTS.md dropped the rule | AGENTS.md step 5 says to run the checks one at a time |
 | 4 Nov | 1.1c1 | CI shard 0 timed out in `cmd/fid` (`panic: test timed out after 10m0s`, 604 s) twice. Three new test names reshuffled the shards (they're assigned by name position), and main's shards already took up to 586 s. Total test time didn't change | `ci_tests.py` passes `-timeout 20m`. Balancing shards by measured time, and reviewing whether every test earns its run time, are on the later list |
 | 7 Nov | 1.1c1–1.1d5 | CI used about 1,650 of the 2,000 billed minutes GitHub Free gives Mark's private repos each month in one week: 40 runs at about 41 minutes each, mostly the race detector | 0.7 |
+| 2026-11-12 | 1.4b, 2.2a | GitHub Actions minutes ran out: CI jobs were refused within 2-3 seconds ("recent account payments have failed or your spending limit needs to be increased"), so PRs #57 and #58 couldn't get CI | Mark made the repository public on 2026-11-14, so standard runners are free; "Require approval for all external contributors" is set |
+| 2026-11-14 | 1.5a2 | WSL ran out of memory and crashed while a Codex builder and a Claude reviewer ran side by side (WSL capped at 8 GB, with Firefox using 3-4 GB in Windows). Both sessions were lost; the builder resumed from its saved session | Keep at most two heavy sessions at a time and leave Windows for development; lower WSL's memory cap in `.wslconfig` if it happens again |
+| 2026-11-14 | 1.5a1-1.5a4 | Codex's sandbox made the worktree's git metadata (`.git/worktrees/<task>`) read-only partway through sessions, so builders couldn't commit | The orchestrator commits the builder's work with the builder's own message; the cause isn't known yet |
+| 2026-11-14 | 1.5a3 | Tests that snapshot the ledger expected exactly one journal file, so they failed when a test ran across UTC midnight (13:00 NZDT) | Fixed in PR #61: the snapshots cover every dated journal file |
+| 2026-11-14 | 1.5a | GitHub's line count for a stacked PR includes the earlier PR's commits until that PR merges (#61 showed +10,641; its own change is about 3,800 lines). Golden files are about 35–70% of the lines each 1.5a PR adds (#59: 71%, #60: 36%, #61: 50%), and about 4,000 lines per PR is too much for Mark to read in full | Later: Mark to decide on collapsing golden files in GitHub's diffs and a "what to read" section in PR descriptions |
