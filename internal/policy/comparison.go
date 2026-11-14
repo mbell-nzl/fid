@@ -3,6 +3,7 @@ package policy
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"slices"
 	"strings"
@@ -56,7 +57,11 @@ func Compare(root, task string) (Comparison, error) {
 		return fail(strings.TrimSpace(err.Error()))
 	}
 	comparison.Base = strings.TrimSpace(string(base))
-	paths, err := gitPolicy(root, "diff", "--no-ext-diff", "--no-renames", "--name-only", "-z", comparison.Base, comparison.Head, "--")
+	// This is evidence, so local display settings must not filter, rewrite or
+	// replace paths. In particular, include committed gitlinks even when git
+	// config or .gitmodules asks to hide them. Ignore optional order files too.
+	paths, err := gitPolicy(root, "diff", "--no-relative", "--no-ext-diff", "--no-textconv",
+		"--no-renames", "--ignore-submodules=none", "-O"+os.DevNull, "--name-only", "-z", comparison.Base, comparison.Head, "--")
 	if err != nil {
 		return fail(err.Error())
 	}
@@ -69,6 +74,8 @@ func Compare(root, task string) (Comparison, error) {
 
 // Required selects the lane's configured checks against a freshly computed
 // comparison. An omitted or empty when_changed always requires the check.
+// Paths outside the matcher grammar conservatively require every conditional
+// check: unsupported must never be mistaken for an evaluated nonmatch.
 func Required(effective Effective, lane, task string, paths []string) ([]string, error) {
 	configured := effective.Lanes[lane]
 	if !configured.ChecksSet {
@@ -84,7 +91,7 @@ func Required(effective Effective, lane, task string, paths []string) ([]string,
 				return nil, fmt.Errorf("required check %s: %w", name, err)
 			}
 			for _, path := range paths {
-				required = required || glob.Match(path)
+				required = required || !pathglob.ValidPath(path) || glob.Match(path)
 			}
 		}
 		if required {

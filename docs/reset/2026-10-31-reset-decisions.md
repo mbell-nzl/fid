@@ -589,6 +589,13 @@ on 14 November 2026:
    both existing starts and requests, with a regression test.
 4. **Empty completion accepted.** The `check.completed` family for a
    successful empty request is accepted, with both catalogs and V8 coverage.
+5. **Unsupported changed paths require all conditional checks (review round
+   1).** A committed Git path that `pathglob` cannot evaluate, including
+   control characters, backslashes or invalid UTF-8, counts as matching every
+   conditional check. It must never become a nonmatch or a comparison refusal
+   that blocks checking the task while that file exists. `fid show` uses the
+   same rule when marking current requirements. This choice was decided by
+   the orchestrator on Mark's behalf under the 1.5a delegation.
 
 Builder's transactional choices for 1.5a6: `policy.Compare` uses local git
 plumbing with lazy fetching disabled; `git diff --no-renames --name-only -z`

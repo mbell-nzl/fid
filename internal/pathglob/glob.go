@@ -13,7 +13,7 @@ import (
 type Glob struct{ expression *regexp.Regexp }
 
 func Compile(pattern string) (Glob, error) {
-	if !validPath(pattern) || strings.ContainsAny(pattern, `\?[]{}`) || strings.Contains(pattern, "***") {
+	if !ValidPath(pattern) || strings.ContainsAny(pattern, `\?[]{}`) || strings.Contains(pattern, "***") {
 		return Glob{}, fmt.Errorf("invalid repository glob %q: use a relative path with * or **", pattern)
 	}
 	var expression strings.Builder
@@ -41,10 +41,12 @@ func Compile(pattern string) (Glob, error) {
 }
 
 func (glob Glob) Match(path string) bool {
-	return glob.expression != nil && validPath(path) && glob.expression.MatchString(path)
+	return glob.expression != nil && ValidPath(path) && glob.expression.MatchString(path)
 }
 
-func validPath(path string) bool {
+// ValidPath reports whether the matcher supports path. Git also permits names
+// outside this grammar; callers must distinguish those from a known nonmatch.
+func ValidPath(path string) bool {
 	if !utf8.ValidString(path) || strings.ContainsRune(path, '\\') || strings.ContainsFunc(path, unicode.IsControl) {
 		return false
 	}
