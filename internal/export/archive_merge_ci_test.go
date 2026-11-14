@@ -66,7 +66,9 @@ func acceptMergeArchiveEvent(t *testing.T, v *semanticValidator, event journal.E
 func mutateObservationJSON(t *testing.T, e *journal.Event, name string, value any) {
 	t.Helper()
 	var fields map[string]any
-	if err := json.Unmarshal([]byte(e.Effects[0].Values["record_json"].(string)), &fields); err != nil {
+	decoder := json.NewDecoder(strings.NewReader(e.Effects[0].Values["record_json"].(string)))
+	decoder.UseNumber()
+	if err := decoder.Decode(&fields); err != nil {
 		t.Fatal(err)
 	}
 	fields[name] = value
@@ -235,5 +237,28 @@ func TestMergeAndCIArchiveAndReplayBindings(t *testing.T) {
 				})
 			}
 		}
+	}
+}
+
+func TestCIIdentityIntegersSurviveWireReplay(t *testing.T) {
+	t.Parallel()
+	v, merge, ci := mergeArchiveFixture(t)
+	acceptMergeArchiveEvent(t, v, merge)
+	// GitHub identities are integers. Values beyond float64's exact range
+	// must retain their complete decimal spelling in both JSON and Effects.
+	const identity int64 = 9007199254740993
+	mutateObservationJSON(t, &ci, "run_id", identity)
+	mutateObservationJSON(t, &ci, "attempt", identity)
+	mutateObservationJSON(t, &ci, "workflow_id", identity)
+	mutateObservationJSON(t, &ci, "url", fmt.Sprintf("https://github.com/owner/repo/actions/runs/%d", identity))
+	ci.Effects[0].Values["run_id"] = identity
+	ci.Effects[0].Values["attempt"] = identity
+	acceptMergeArchiveEvent(t, v, ci)
+	var run, attempt int64
+	if err := v.conn.QueryRow(`SELECT run_id,attempt FROM ci_results`).Scan(&run, &attempt); err != nil {
+		t.Fatal(err)
+	}
+	if run != identity || attempt != identity {
+		t.Fatalf("replayed identities=%d/%d", run, attempt)
 	}
 }

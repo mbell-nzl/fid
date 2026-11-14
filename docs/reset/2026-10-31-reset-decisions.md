@@ -948,7 +948,8 @@ covers refresh, validation and append. The caller supplies only CI facts
 on this merge commit; a differing head is refused. All completed events
 are retained, including skipped, superseded and non-push observations;
 the later evaluator selects which count. Latest-merge and CI history
-readers use journal insertion order. `fid done` (1.6i) is the first public
+readers use journal insertion order. CI Event decoding preserves integer
+identities without a floating-point conversion. `fid done` (1.6i) is the first public
 caller. Local check storage, readers and evaluation are unchanged.
 
 **The `done` command**

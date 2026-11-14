@@ -94,6 +94,12 @@ func validateSemanticValue(kind string, value any) error {
 		return fmt.Errorf("requires boolean JSON value or zero/one")
 	}
 	if strings.Contains(kind, "INT") {
+		if number, ok := value.(json.Number); ok {
+			if _, err := number.Int64(); err != nil {
+				return fmt.Errorf("requires integer JSON value")
+			}
+			return nil
+		}
 		if _, ok := value.(bool); ok {
 			return nil
 		}

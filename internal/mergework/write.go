@@ -19,9 +19,8 @@ type Options struct {
 }
 
 type writeContext struct {
-	conn    *sql.DB
-	options Options
-	at      string
+	conn *sql.DB
+	at   string
 }
 
 // withWrite holds the ledger lock only for refreshing, validating and appending
@@ -44,7 +43,7 @@ func withWrite(options Options, build func(writeContext) (journal.Event, error))
 			now = options.Clock()
 		}
 		now = now.UTC().Truncate(time.Second)
-		event, err := build(writeContext{conn, options, now.Format(time.RFC3339)})
+		event, err := build(writeContext{conn, now.Format(time.RFC3339)})
 		if err != nil {
 			return err
 		}

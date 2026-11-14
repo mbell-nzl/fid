@@ -55,7 +55,8 @@ func RecordCI(options Options, mergeID string, repo github.Repository, facts git
 			}
 			var raw string
 			err := ctx.conn.QueryRow(`SELECT record_json FROM ci_results WHERE repository=? AND run_id=? AND attempt=? AND merge_id=?`, repo.String(), run.ID, run.Attempt, mergeID).Scan(&raw)
-			if err == nil {
+			switch err {
+			case nil:
 				var existing mergerecord.CIResult
 				if err := json.Unmarshal([]byte(raw), &existing); err != nil {
 					return journal.Event{}, err
@@ -67,7 +68,7 @@ func RecordCI(options Options, mergeID string, repo github.Repository, facts git
 				if !reflect.DeepEqual(existing, record) {
 					return journal.Event{}, fmt.Errorf("CI attempt retry differs from original")
 				}
-			} else if err == sql.ErrNoRows {
+			case sql.ErrNoRows:
 				record.ID, err = ctx.id("CIR", "ci_results")
 				if err != nil {
 					return journal.Event{}, err
@@ -77,7 +78,7 @@ func RecordCI(options Options, mergeID string, repo github.Repository, facts git
 					return journal.Event{}, err
 				}
 				effects = append(effects, journal.Effect{Op: "insert", Table: "ci_results", PK: map[string]any{"id": record.ID}, Values: map[string]any{"task_id": record.TaskID, "merge_id": record.MergeID, "repository": record.Repository, "run_id": record.RunID, "attempt": record.Attempt, "record_json": string(encoded)}})
-			} else {
+			default:
 				return journal.Event{}, err
 			}
 			seen[key] = record

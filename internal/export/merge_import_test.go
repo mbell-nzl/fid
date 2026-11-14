@@ -74,7 +74,7 @@ func addMergeExportFacts(t *testing.T, root string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	run := github.WorkflowRun{ID: 10, Attempt: 1, WorkflowID: 20, Name: "CI", Path: ".github/workflows/ci.yml", Event: "push", HeadSHA: m.MergeCommit, Status: "completed", Conclusion: "failure", URL: "https://github.com/owner/repo/actions/runs/10"}
+	run := github.WorkflowRun{ID: 9007199254740993, Attempt: 1, WorkflowID: 20, Name: "CI", Path: ".github/workflows/ci.yml", Event: "push", HeadSHA: m.MergeCommit, Status: "completed", Conclusion: "failure", URL: "https://github.com/owner/repo/actions/runs/9007199254740993"}
 	if _, err := mergework.RecordCI(options, m.ID, repo, github.CI{Commit: m.MergeCommit, Runs: []github.WorkflowRun{run}}); err != nil {
 		t.Fatal(err)
 	}
