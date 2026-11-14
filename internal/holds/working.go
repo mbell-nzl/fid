@@ -24,7 +24,7 @@ func Describe(hold Hold, worktreeID string, now time.Time) *Working {
 		Since: Timestamp(hold.Since), ExpiresAt: Timestamp(hold.ExpiresAt), Lapsed: hold.Lapsed(now), LastHeartbeatAt: Timestamp(hold.LastHeartbeat())}
 }
 
-// Kept describes interrupted work reserved for a worktree with no live hold.
+// Kept describes interrupted or waiting work reserved for a worktree with no live hold.
 type Kept struct {
 	Worktree string  `json:"worktree"`
 	Here     bool    `json:"here"`
@@ -33,6 +33,7 @@ type Kept struct {
 	Since    string  `json:"since"`
 	HoldID   string  `json:"hold_id"`
 	Actor    string  `json:"actor"`
+	Question *string `json:"question,omitempty"`
 }
 
 func DescribeKept(hold Hold, worktreeID string, now time.Time) *Kept {
@@ -43,5 +44,11 @@ func DescribeKept(hold Hold, worktreeID string, now time.Time) *Kept {
 	if hold.EndedAt != nil {
 		since = *hold.EndedAt
 	}
-	return &Kept{Worktree: hold.Worktree, Here: hold.WorktreeID == worktreeID, Mode: "interrupted", Reason: hold.ParkReason, Since: since, HoldID: hold.ID, Actor: hold.Actor}
+	kept := &Kept{Worktree: hold.Worktree, Here: hold.WorktreeID == worktreeID, Mode: "interrupted", Reason: hold.ParkReason, Since: since, HoldID: hold.ID, Actor: hold.Actor}
+	if hold.Waiting() || (hold.Question != nil && hold.Kept && hold.ParkReason == nil) {
+		kept.Mode = "waiting"
+		kept.Question = &hold.Question.Text
+		kept.Reason = nil
+	}
+	return kept
 }

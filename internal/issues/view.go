@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/holds"
+	"github.com/mbell-nzl/fid/internal/questions"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -31,6 +32,7 @@ type IssueView struct {
 	// Children are an epic's tasks or a task's subtasks, in fid status's
 	// order.
 	Children   []ChildIssue
+	Questions  []questions.Question
 	OpenHold   *holds.Hold
 	Scheduling *string
 }
@@ -100,6 +102,10 @@ func ReadIssueView(options GetOptions) (IssueView, error) {
 	if issue.Kind == "epic" {
 		state := epicState(issue.StatusCategory, begun)
 		view.State = &state
+	}
+	view.Questions, err = questions.Read(conn, issue.ID)
+	if err != nil {
+		return IssueView{}, err
 	}
 	if issue.Kind == "task" {
 		open, err := holds.Open(conn)

@@ -4,11 +4,13 @@
   "ok": true,
   "operation": "next.claim",
   "result": {
+    "answer": null,
     "epic": null,
     "hold": null,
     "kind": "none",
     "queue": [],
     "task": null,
+    "waiting": null,
     "worktree": "<ROOT>"
   }
 }

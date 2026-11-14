@@ -139,6 +139,12 @@ func (text textWriter) rows(result Result) []string {
 		}
 		lines = append(lines, text.value("Working", value)...)
 	}
+	for _, q := range result.Questions {
+		if q.ResolvedAt == nil {
+			lines = append(lines, text.value("Question", q.Text)...)
+			return lines
+		}
+	}
 	if kept := result.Kept; kept != nil && kept.Reason != nil {
 		lines = append(lines, text.value("Working", fmt.Sprintf("⚠ interrupted in %s by %s: parked at %s: %s", kept.Worktree, kept.Actor, display.Clock(kept.Since, result.Now), *kept.Reason))...)
 	}

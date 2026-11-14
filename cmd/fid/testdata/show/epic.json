@@ -117,6 +117,7 @@
       "done": 2,
       "total": 7
     },
+    "questions": [],
     "scheduling": "sequential",
     "state": "in-progress",
     "task": null,

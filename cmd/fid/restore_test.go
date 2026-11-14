@@ -148,6 +148,17 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	other := gittest.AddWorktree(t, workspace)
 	took, _ := decodeNext(t, executeCommandForTest(other, "--json", "takeover", keptTask, "--actor", "human:mark", "--reason", "Keep this worktree"), "task.takeover")
 	runFIDCommand(t, other, "park", "--hold", took["hold_id"].(string), "--actor", "human:mark", "--interrupted", "--reason", "Usage limit", "--idempotency-key", "v8-kept")
+	// A waiting task retains the first answer and the next open question.
+	resumedWaiting, _ := decodeNext(t, executeCommandForTest(other, "--json", "next", "--claim", "--actor", "human:mark"), "next.claim")
+	waitingHold := resumedWaiting["hold"].(map[string]any)["id"].(string)
+	runFIDCommand(t, other, "park", "--hold", waitingHold, "--actor", "human:mark", "--waiting", "Include authentication failures?", "--idempotency-key", "v8-question-1")
+	runFIDCommand(t, workspace, "answer", keptTask, "Exclude them.", "--actor", "human:mark", "--idempotency-key", "v8-answer")
+	resumedWaiting, _ = decodeNext(t, executeCommandForTest(other, "--json", "next", "--claim", "--actor", "human:mark"), "next.claim")
+	if resumedWaiting["answer"] == nil {
+		t.Fatal("V8 resume lost answer")
+	}
+	waitingHold = resumedWaiting["hold"].(map[string]any)["id"].(string)
+	runFIDCommand(t, other, "park", "--hold", waitingHold, "--actor", "human:mark", "--waiting", "Include timeouts?", "--idempotency-key", "v8-question-2")
 	// Record missing and explicitly empty test paths, so backup, export,
 	// replay and restore must preserve their different digests and setup state.
 	appendPolicy(t, workspace, "\n[review]\ntest_adequacy = []\n")
@@ -228,6 +239,11 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql person decisions = %#v", decisions)
 	}
 	state.reads["person decisions"] = decisions.stdout
+	questions := executeCommandForTest(workspace, "sql", "SELECT * FROM questions ORDER BY rowid")
+	if questions.err != nil || questions.stderr != "" {
+		t.Fatalf("fid sql questions = %#v", questions)
+	}
+	state.reads["questions"] = questions.stdout
 	// Policy snapshots are journal-backed too. Compare all their projected
 	// fields, so a restore cannot silently lose the policy fid trusted.
 	snapshots := executeCommandForTest(workspace, "sql", "SELECT * FROM policy_snapshots ORDER BY sequence")
@@ -418,6 +434,9 @@ func assertV8SameState(t *testing.T, before, after v8State) {
 	}
 	if strings.Count(before.reads["holds"], `"end_reason":"task-cancelled"`) != 1 || strings.Count(before.reads["holds"], `"end_reason":null`) != 1 {
 		t.Fatalf("original holds = %s, want one its task's cancellation ended and one open", before.reads["holds"])
+	}
+	if strings.Count(before.reads["questions"], `"resolution":"answered"`) != 1 || strings.Count(before.reads["questions"], `"resolution":null`) != 1 || strings.Count(before.reads["person decisions"], `"kind":"answer"`) != 1 {
+		t.Fatalf("V8 waiting history missing: %s", before.reads["questions"])
 	}
 	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 2 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 1 {
 		t.Fatalf("V8 lifecycle missing: holds=%s decisions=%s", before.reads["holds"], before.reads["person decisions"])

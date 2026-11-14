@@ -341,8 +341,7 @@ writes nothing. Text output is a rounded box 72 columns wide, headed
 ```
 
 - **NEEDS YOU** lists what waits on a person, each item a summary and its
-  next step. Only the backup adds an item so far; later tasks add their
-  own kinds.
+  next step. Kinds include backup, waiting-for-you and worktree-missing (below).
 - **Epics and tasks** appear; subtasks never do. An epic whose own state is
   completed or cancelled is hidden. An epic is in progress when its own
   state's category is `started`, or any of its tasks is started or
@@ -512,8 +511,8 @@ capped, with or without `--all`. `event` is null.
 
   `ref` and `commit` are strings when known, null otherwise. `lanes` uses
   lowercase names in the text's order.
-- A NEEDS YOU item is `{kind, summary, next_action, subject}`. `kind` is
-  `backup` so far; `subject` is null for it, and `{type, id}` for later
+- A NEEDS YOU item is `{kind, summary, next_action, subject}`. `kind` includes
+  `backup`, `waiting-for-you` and `worktree-missing`; `subject` is null for it, and `{type, id}` for later
   kinds about an issue.
 - An epic is
   `{id, title, status, status_category, state, sequence, priority, progress: {done, total}, tasks}`,
@@ -904,8 +903,9 @@ fid issue transition <task|epic> --to cancelled --actor human:<name> --reason "<
 - Heartbeat and park validate the exact hold under the write lock: it must
   exist, be open, be unexpired (at expiry is too late), belong to the given
   actor and belong to this worktree. They never substitute another hold.
-- Park (`hold.park`) requires `--interrupted --reason`; bare park gives
-  `invalid-argument` naming those flags. `--waiting` arrives in 1.5a3.
+- The interrupted form of park (`hold.park`) requires `--interrupted
+  --reason`; bare park gives
+  `invalid-argument` naming both forms. The waiting form is described below.
   Text for started work: `✓ Parked FID-9f13aa · kept for this worktree`;
   unstarted: `✓ Parked FID-9f13aa · back in the queue`. JSON result:
   `{task_id, hold_id, mode: "interrupted", reason, kept_for_worktree}`.
@@ -959,6 +959,100 @@ fid issue transition <task|epic> --to cancelled --actor human:<name> --reason "<
   now using the last heartbeat. Status and READY use
   `interrupted in <dir>`. Status reads these from its one projection
   snapshot; next and READY share one planner.
+
+**Waiting and answers (RESET 1.5a3; Mark, 14 November 2026).**
+
+```text
+fid park --hold <id> --actor <actor> --waiting "<question>" --idempotency-key <k>
+fid answer <task> "<text>" --actor human:<name> [--idempotency-key <k>]
+```
+
+Park requires exactly one of `--interrupted --reason <text>` or
+`--waiting <question>`. The waiting form ends the hold and always keeps
+its task for its worktree, started or not. It inserts one question with
+its own ID (`QST-` and six hex digits), text, asker and time. A task has
+at most one open question. Text: `✓ Parked FID-9f13aa · waiting for a
+person's answer`. Its `hold.park` JSON result is
+`{task_id, hold_id, mode: "waiting", question_id, question, kept_for_worktree: true}`.
+A retry key is required and a same-key repeat returns its original result.
+
+Answer binds to the task's one open question; there is no `--question`
+flag. It takes no hold and changes no workflow state. It records an
+`answer` decision (`PDN-` ID) whose subject is the task and whose binding
+is the question. Text: `✓ Answered FID-9f13aa · it resumes in /w/fid-wt2`.
+The `task.answer` JSON result has exactly
+`{task_id, question_id, decision_id, answer}`. The answer and question
+text are nonempty, at most 4096 bytes, like the existing free-text reasons.
+A retry key is optional; with one, a repeat replays its original answer
+and Event, even after resume or cancellation. Without one, a second answer
+is refused as `not-waiting`. Agents and services get `authority-denied`.
+
+While the question is open, this worktree's next result is kind `none`,
+with null `task`, `hold` and `epic`, and a new `waiting` field:
+
+```json
+{"kind": "waiting-for-you", "task_id": "FID-9f13aa", "question_id": "QST-100001",
+ "question": "Should retries include authentication failures?"}
+```
+
+Other worktrees skip the task as `waiting-for-you` and carry on. A
+sequential epic keeps waiting for that task too. Next here says:
+
+```text
+  ○ Nothing here until you answer FID-9f13aa: Should retries include
+    authentication failures?
+      → fid show FID-9f13aa
+```
+
+After the answer, this worktree resumes the task first (kind `resume`),
+under a new hold linked to the parked one. Next's new `answer` field is:
+
+```json
+{"question_id": "QST-100001", "question": "Should retries include authentication failures?",
+ "text": "Exclude authentication failures.", "decision_id": "PDN-100001"}
+```
+
+It stays on repeated next results, including the live hold returned after
+resume, until the next question replaces it. `waiting` and `answer` are
+always present and null otherwise. `kept.mode` is `waiting` for a waiting
+reservation, with its `question` text; it remains kept after answering
+until resumed. The extra `kept.question` is omitted for interruptions.
+Text's resume message is `Answer: <text>`, then `fid show <task>`.
+
+Status adds a `waiting-for-you` NEEDS YOU item, subject `{type: "task",
+id: <task>}`, with summary `<task> is waiting for you: <question>` and
+next action `fid answer <task> "<answer>" --actor human:<name>`. It shows
+`waiting for you` in the task's row. Show adds a `Question` row for an open
+question and a `questions` JSON array (`[]` with none), in journal order:
+`{id, task_id, hold_id, question, asker, asked_at, resolved_at, resolution, answer}`.
+Unresolved times, resolution and answer are null. Resolution is `answered`
+or `cancelled`; an answer has the shape above. Questions and answers stay
+in history. Takeover retains the open question and gives the person a
+hold; the person may answer. Cancellation resolves the question in the
+same Event and releases its hold or kept reservation.
+
+For every kept task, including a started task whose hold lapsed, status
+checks git's local worktree registration and the worktree's common
+directory. It never fetches or releases kept work. Confirmed absence or
+replacement adds NEEDS YOU kind `worktree-missing`, subject the task:
+
+```text
+  ✗ FID-9f13aa is kept for a worktree that no longer exists: /w/old
+      → fid takeover FID-9f13aa --actor human:<name> --reason "<why>"
+```
+
+A check that cannot finish (permissions or git errors) adds warning kind
+`worktree-unverified`, with `task_id` and `worktree` besides the standard
+`kind`, `summary` and `next_action`:
+
+```text
+  ⚠ Couldn't check the worktree kept for FID-9f13aa: /w/old
+      → look at /w/old, then fid status
+```
+
+These warnings follow policy warnings. Waiting and missing worktree items
+precede backup NEEDS YOU items, in hold/planner order respectively. Status
+reads the question, work and hold state from its one projection snapshot.
 
 ### Requirement references
 
@@ -1391,6 +1485,11 @@ RESET 1.5a2 adds these closed conflict codes, exit 4, all
 | `hold-not-current` | `hold_id`, `reason` (`not-found`, `ended`, `expired`, `actor-mismatch`, `worktree-mismatch`) |
 | `worktree-busy` | `task_id`, `worktree` |
 | `already-held` | `hold_id` |
+| `not-waiting` (1.5a3) | `task_id` |
+
+`not-waiting` text is `error: FID-77aa01 isn't waiting for an answer`,
+then `reason: not-waiting; task_id=FID-77aa01`. It shares the conflict
+category, exit 4, non-retryable status and task subject above.
 
 An unknown hold cannot name its task, so its subject's ID is null. A
 `hold-not-current` human failure adds `next: fid next`. The old session's

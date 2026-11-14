@@ -7,6 +7,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/project"
+	"github.com/mbell-nzl/fid/internal/questions"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -51,11 +52,21 @@ func Park(options Options) (Result, error) {
 		if err != nil {
 			return journal.Event{}, nil, err
 		}
+		if options.Question != "" {
+			return ctx.parkWaiting(hold)
+		}
 		category, err := taskCategory(ctx.conn, hold.TaskID)
 		if err != nil {
 			return journal.Event{}, nil, err
 		}
 		kept := category == "started"
+		history, err := questions.Read(ctx.conn, hold.TaskID)
+		if err != nil {
+			return journal.Event{}, nil, err
+		}
+		for _, q := range history {
+			kept = kept || q.ResolvedAt == nil
+		}
 		effect := holds.End(hold.ID, "interrupted", ctx.now)
 		effect.Values["kept"] = kept
 		effect.Values["park_reason"] = options.Reason

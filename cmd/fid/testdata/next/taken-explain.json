@@ -7,6 +7,7 @@
   "ok": true,
   "operation": "next.claim",
   "result": {
+    "answer": null,
     "epic": {
       "id": "FID-e3a1c0",
       "progress": {
@@ -162,6 +163,7 @@
       "priority": 1,
       "blocked_by": []
     },
+    "waiting": null,
     "worktree": "<ROOT>"
   }
 }

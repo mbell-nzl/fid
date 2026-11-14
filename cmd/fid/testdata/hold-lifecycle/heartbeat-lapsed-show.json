@@ -35,6 +35,7 @@
       "actor": "agent:claude-builder"
     },
     "progress": null,
+    "questions": [],
     "scheduling": null,
     "state": null,
     "task": null,

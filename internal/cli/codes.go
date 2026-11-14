@@ -23,6 +23,7 @@ const (
 	CodeInvalidArgument             Code = "invalid-argument"
 	CodeHoldNotCurrent              Code = "hold-not-current"
 	CodeWorktreeBusy                Code = "worktree-busy"
+	CodeNotWaiting                  Code = "not-waiting"
 	CodeAlreadyHeld                 Code = "already-held"
 	CodePolicyUnavailable           Code = "policy-unavailable"
 	CodeOperationUnavailable        Code = "operation-unavailable"
@@ -240,6 +241,7 @@ func definition(category Category, retryable bool, subjects []SubjectType, detai
 var failureCodeDefinitions = map[Code]reasonDefinition{
 	CodeHoldNotCurrent:    definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id"), stringField("reason")),
 	CodeWorktreeBusy:      definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id"), stringField("worktree")),
+	CodeNotWaiting:        definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id")),
 	CodeAlreadyHeld:       definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id")),
 	CodePolicyUnavailable: definition(CategoryPrecondition, false, nil, stringField("problem"), nullableStringField("ref"), nullableStringField("commit")),
 	CodeOperationUnavailable: definition(CategoryInvalidInput, false, nil,
@@ -375,7 +377,7 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 		stringField("target_root"), stringField("reason")),
 }
 
-var registeredCodes = []Code{CodeHoldNotCurrent, CodeWorktreeBusy, CodeAlreadyHeld,
+var registeredCodes = []Code{CodeNotWaiting, CodeHoldNotCurrent, CodeWorktreeBusy, CodeAlreadyHeld,
 	CodeInvalidArgument, CodePolicyUnavailable, CodeOperationUnavailable, CodeUnsupportedKind, CodeUnsupportedRelation, CodeProjectNotFound, CodeProjectAlreadyInit,
 	CodeIssueNotFound, CodeRequirementNotFound, CodeLabelNotFound, CodeLinkNotFound, CodeWorkflowNotFound,
 	CodeDuplicateEntity, CodeStateConflict, CodeLockUnavailable, CodeHierarchyInvalid, CodeDependencyCycle,

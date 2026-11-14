@@ -1,0 +1,9 @@
+╭ FID-71a0c2 ──────────────────────────────────────────────────── task ╮
+
+  ● Export validation                                      in progress
+
+  Epic        ◆ FID-e3a1c0  Operating experience              0/4 done
+  Priority    P1
+  Blocks      ○ FID-c2d4e5  Retry a rejected backup push         to do
+  Question    Should retries include authentication failures?
+╰──────────────────────────────────────────────────────────────────────╯

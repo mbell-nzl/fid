@@ -128,6 +128,7 @@ func phase21AttentionUnavailableSurfaceMatches(t *testing.T) []string {
 func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	t.Parallel()
 	retained := []string{
+		"answer",
 		"capabilities",
 		"activation prepare",
 		"activation component",
@@ -229,8 +230,8 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	}
 	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 101 || len(legacy) != 2 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 101 and 2", len(retained), len(legacy))
+	if len(retained) != 102 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 102 and 2", len(retained), len(legacy))
 	}
 	want := append([]string{}, retained...)
 	want = append(want, legacy...)

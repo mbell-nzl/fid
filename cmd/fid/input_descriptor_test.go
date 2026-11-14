@@ -2616,7 +2616,7 @@ func TestP24ActivationPrepareIdentityScalarBoundaries(t *testing.T) {
 						if exit != 0 || failure != "" || out == "" {
 							t.Fatalf("accepted identity rejected: exit=%d stdout=%q stderr=%q", exit, out, failure)
 						}
-						journal := snapshotWorkspacePersistence(t, root).journal
+						journal := snapshotWorkspacePersistence(t, root).journalBytes()
 						if !bytes.Contains(journal, []byte(boundary.value)) || reflect.DeepEqual(snapshotWorkspace(t, root), before) {
 							t.Fatalf("accepted identity was not persisted: %s", journal)
 						}

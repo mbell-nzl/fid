@@ -1,0 +1,31 @@
+╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
+
+  NEEDS YOU
+  ✗ FID-71a0c2 is waiting for you: Should retries include
+    authentication failures?
+      → fid answer FID-71a0c2 "<answer>" --actor human:<name>
+  ✗ FID-71a0c2 is kept for a worktree that no longer exists:
+    /w/old
+      → fid takeover FID-71a0c2 --actor human:<name> --reason "<why>"
+  ✗ No backup for 4 days: none since the ledger began
+    2026-11-04 18:00; no backup target is set
+      → add [backup] target to
+        <CONFIG>/fid/config.toml,
+        then fid backup
+
+  IN PROGRESS
+  ◆ FID-e3a1c0  Operating experience              ░░░░░░░░░░  0/4 done
+      ● FID-71a0c2  Export validation                  waiting for you
+  ◆ FID-8a1b2c  Loop contract                     ░░░░░░░░░░  0/3 done
+      ● FID-1f2e3d  Contract fields and exit codes         in progress
+
+  READY
+  ◆ FID-e3a1c0  Operating experience                           3 to do
+      ○ FID-c2d4e5  Retry a rejected backup pu…  blocked by FID-71a0c2
+      ○ FID-9f13aa  Harden login rate limiting                    next
+      ○ FID-0d4e8b  Document backup age
+  ◆ FID-8a1b2c  Loop contract                                  2 to do
+      ○ FID-2f2e3d  Golden tests for the contract     after FID-1f2e3d
+      ○ FID-3f2e3d  Scenario test for rework          after FID-1f2e3d
+  ○ FID-77aa01  Tidy help text
+╰──────────────────────────────────────────────────────────────────────╯

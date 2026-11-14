@@ -1,0 +1,75 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [],
+    "blocks": [
+      {
+        "id": "FID-c2d4e5",
+        "kind": "task",
+        "title": "Retry a rejected backup push",
+        "status": "todo",
+        "status_category": "unstarted"
+      }
+    ],
+    "children": [],
+    "epic": {
+      "id": "FID-e3a1c0",
+      "kind": "epic",
+      "title": "Operating experience",
+      "status": "in_progress",
+      "status_category": "started",
+      "progress": {
+        "done": 0,
+        "total": 4
+      }
+    },
+    "issue": {
+      "id": "FID-71a0c2",
+      "kind": "task",
+      "title": "Export validation",
+      "status": "in_progress",
+      "status_category": "started",
+      "workflow_id": "task-default",
+      "parent_id": "FID-e3a1c0",
+      "priority": 1,
+      "sequence": null,
+      "spec_md_path": null,
+      "revision": 1,
+      "labels": [],
+      "created_at": "2026-10-31T02:00:00Z",
+      "updated_at": "2026-10-31T02:00:00Z",
+      "acceptance_criteria": []
+    },
+    "kept": {
+      "worktree": "<ROOT>",
+      "here": true,
+      "mode": "waiting",
+      "reason": null,
+      "since": "2026-11-08T09:00:00Z",
+      "hold_id": "HLD-aaaaaa",
+      "actor": "agent:claude-builder",
+      "question": "Should retries include authentication failures?"
+    },
+    "progress": null,
+    "questions": [
+      {
+        "id": "QST-<new>",
+        "task_id": "FID-71a0c2",
+        "hold_id": "HLD-aaaaaa",
+        "question": "Should retries include authentication failures?",
+        "asker": "agent:claude-builder",
+        "asked_at": "2026-11-08T09:00:00Z",
+        "resolved_at": null,
+        "resolution": null,
+        "answer": null
+      }
+    ],
+    "scheduling": null,
+    "state": null,
+    "task": null,
+    "working": null
+  }
+}

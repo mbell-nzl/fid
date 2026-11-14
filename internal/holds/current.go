@@ -60,3 +60,7 @@ func CurrentByID(conn *sql.DB, id string) (Hold, error) {
 	}
 	return hold, nil
 }
+
+// Waiting reports whether a person's answer is still needed, including while
+// a person holds the task after takeover.
+func (hold Hold) Waiting() bool { return hold.Question != nil && hold.Question.ResolvedAt == nil }

@@ -50,6 +50,7 @@
     },
     "kept": null,
     "progress": null,
+    "questions": [],
     "scheduling": null,
     "state": null,
     "task": null,

@@ -8,7 +8,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/policy"
 )
 
-// Warning describes policy health without turning it into a NEEDS YOU item.
+// Warning describes a problem fid could not confirm needs a person.
 // details holds only the fields belonging to this warning's kind.
 type Warning struct {
 	Kind       string

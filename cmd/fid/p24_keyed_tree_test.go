@@ -38,7 +38,7 @@ func TestP24EveryLiveKeyedLeafHasExecutableCorpusRow(t *testing.T) {
 		planned = append(planned, strings.SplitN(row, "\t", 2)[0])
 	}
 	sort.Strings(planned)
-	if len(live) != 51 || !reflect.DeepEqual(live, planned) {
+	if len(live) != 52 || !reflect.DeepEqual(live, planned) {
 		t.Fatalf("live keyed leaves = %q, executable corpus = %q", live, planned)
 	}
 }

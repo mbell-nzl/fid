@@ -66,7 +66,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 	if err != nil || stderr != "" {
 		t.Fatalf("%s canonical retry = %v stderr=%q", operation, err, stderr)
 	}
-	exactResponse := operation == "hold.park" || operation == "task.takeover"
+	exactResponse := operation == "hold.park" || operation == "task.takeover" || operation == "task.answer"
 	byteWant := strings.Replace(entry.stdout, `"replayed":false`, `"replayed":true`, 1)
 	if exactResponse {
 		byteWant = entry.stdout
@@ -117,6 +117,9 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 			}
 		} else {
 			for i, arg := range changed {
+				if operation == "task.answer" && arg == "answer" && name == "text" {
+					changed[i+2] += "-changed"
+				}
 				if arg == "link" && i+3 < len(changed) && (changed[i+1] == "add" || changed[i+1] == "remove") && name == "relation" {
 					changed[i+3] = "relates_to"
 				}
@@ -198,6 +201,7 @@ func p24AssertStoredFieldNames(t *testing.T, workspace, operation string, entry 
 }
 
 var p24PositionalNames = map[string][]string{
+	"task.answer":   {"task", "text"},
 	"task.takeover": {"task"},
 	"issue.update":  {"id"}, "issue.transition": {"id"}, "issue.ac.add": {"issue-id"},
 	"issue.label.add": {"issue-id", "label"}, "issue.label.remove": {"issue-id", "label"},
@@ -347,6 +351,10 @@ func p24AssertFamilyConflict(t *testing.T, workspace, binary, operation string, 
 func p24ChangeFlagOrPositional(t *testing.T, operation string, args []string, name string) []string {
 	t.Helper()
 	for i, arg := range args {
+		if operation == "task.answer" && arg == "answer" && name == "text" {
+			args[i+2] += "-changed"
+			return args
+		}
 		if arg == name && strings.HasPrefix(name, "--") && i+1 < len(args) {
 			if name == "--expected-revision" {
 				value, err := strconv.Atoi(args[i+1])

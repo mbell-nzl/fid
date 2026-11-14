@@ -701,15 +701,23 @@ func containsArgument(args []string, value string) bool {
 
 func mustJournalPath(t *testing.T, workspace string) string {
 	t.Helper()
-
-	matches, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
-	if err != nil {
-		t.Fatalf("Glob() error = %v", err)
-	}
+	matches := mustJournalPaths(t, workspace)
 	if len(matches) != 1 {
 		t.Fatalf("journal files = %d, want %d", len(matches), 1)
 	}
 	return matches[0]
+}
+
+func mustJournalPaths(t *testing.T, workspace string) []string {
+	t.Helper()
+	matches, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
+	if err != nil {
+		t.Fatalf("Glob() error = %v", err)
+	}
+	if len(matches) == 0 {
+		t.Fatal("journal files = 0, want at least one")
+	}
+	return matches
 }
 
 func splitJournalLines(payload []byte) []string {
