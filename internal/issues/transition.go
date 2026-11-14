@@ -9,6 +9,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/holds"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/persondecision"
 	"github.com/mbell-nzl/fid/internal/policy"
@@ -61,7 +62,7 @@ type BlockedTransitionError struct {
 	IssueID        string
 	CurrentState   string
 	RequestedState string
-	Unmet          []workflow.UnmetCondition
+	Unmet          []issuestate.UnmetCondition
 	Cause          error
 }
 
@@ -189,7 +190,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		if err != nil {
 			return err
 		}
-		registry, err := workflow.Load(conn)
+		registry, err := issuestate.Load(conn)
 		if err != nil {
 			return err
 		}

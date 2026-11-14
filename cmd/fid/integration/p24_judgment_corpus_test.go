@@ -3,7 +3,6 @@
 package integration
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -138,19 +137,4 @@ func TestP24JudgmentKeyedLeafConflictAndCanonicalRetryCorpus(t *testing.T) {
 		t.Fatalf("judgment corpus covered %v, want %v", seen, p24JudgmentFields)
 	}
 	p24AssertRebuildMapParity(t, pairs[0].CWD, binary)
-}
-
-func p24ReverseJSON(request map[string]any) []byte {
-	keys := make([]string, 0, len(request))
-	for key := range request {
-		keys = append(keys, key)
-	}
-	sort.Sort(sort.Reverse(sort.StringSlice(keys)))
-	parts := make([]string, 0, len(keys))
-	for _, key := range keys {
-		name, _ := json.Marshal(key)
-		value, _ := json.Marshal(request[key])
-		parts = append(parts, string(name)+" : "+string(value))
-	}
-	return []byte("{\n  " + strings.Join(parts, ",\n  ") + "\n}\n")
 }

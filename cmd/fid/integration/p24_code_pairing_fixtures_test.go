@@ -53,8 +53,10 @@ func p24LockPair(t *testing.T, _ string) p24CodePair {
 
 func p24ProjectionPair(t *testing.T, _ string) p24CodePair {
 	t.Helper()
-	a := p24RunAdapter(t)
-	conn := p22FaultDB(t, a.workspace)
+	root := gittest.NewWorkspace(t)
+	binary := integrationFIDBinary(t)
+	p21Run(t, binary, root, "init", "--prefix", "FID", "--json")
+	conn := p22FaultDB(t, root)
 	conn.SetMaxOpenConns(1)
 	_, err := conn.Exec("PRAGMA foreign_keys=OFF")
 	p22FaultOK(t, err)
@@ -67,15 +69,17 @@ func p24ProjectionPair(t *testing.T, _ string) p24CodePair {
 	_, err = conn.Exec("PRAGMA foreign_keys=ON")
 	p22FaultOK(t, err)
 	p22FaultOK(t, conn.Close())
-	return p24CodePair{a.workspace, "maintenance.check", []string{"maintenance", "check"}}
+	return p24CodePair{root, "maintenance.check", []string{"maintenance", "check"}}
 }
 
 func p24ImportPair(t *testing.T, _ string) p24CodePair {
 	t.Helper()
-	a := p24RunAdapter(t)
+	root := gittest.NewWorkspace(t)
+	binary := integrationFIDBinary(t)
+	p21Run(t, binary, root, "init", "--prefix", "FID", "--json")
 	archive := filepath.Join(t.TempDir(), "history.zip")
-	p21Run(t, a.binary, a.workspace, "--json", "export", "create", archive)
-	return p24CodePair{a.workspace, "export.import", []string{"export", "import", archive, "--repository", a.workspace, "--idempotency-key", "code-pair"}}
+	p21Run(t, binary, root, "--json", "export", "create", archive)
+	return p24CodePair{root, "export.import", []string{"export", "import", archive, "--repository", root, "--idempotency-key", "code-pair"}}
 }
 
 func p24ActivationCodePair(t *testing.T, code string) p24CodePair {

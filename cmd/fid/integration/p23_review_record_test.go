@@ -795,16 +795,6 @@ func p23ConflictInput(operation string, input map[string]any) map[string]any {
 	return mutated
 }
 
-func p23NumberValue(value any) int {
-	switch n := value.(type) {
-	case int:
-		return n
-	case float64:
-		return int(n)
-	}
-	return 0
-}
-
 func p23AcquireClaim(t *testing.T, a *p22FIDRecoveryAdapter, actor, mode, key string) map[string]any {
 	t.Helper()
 	response := p23RunInput(t, a, "claim", "acquire", actor, key, map[string]any{"issue_id": a.issueID, "envelope_id": p23EnvelopeID(t, a), "envelope_revision": 1, "scope": map[string]any{"paths": []string{"base.txt"}}, "mode": mode, "ttl_seconds": 3600})
@@ -845,15 +835,6 @@ func p23ReviewFromResponse(t *testing.T, response p22ConformanceResponse) map[st
 	return p21Path(t, p23Envelope(t, response.Stdout), "result", "review").(map[string]any)
 }
 
-func p23Envelope(t *testing.T, stdout string) map[string]any {
-	t.Helper()
-	var result map[string]any
-	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
-		t.Fatalf("decode Review response: %v; stdout=%q", err, stdout)
-	}
-	return result
-}
-
 func p23AssertReviewSuccess(t *testing.T, operation string, response p22ConformanceResponse) {
 	t.Helper()
 	if response.ExitCode != 0 || response.Stderr != "" {
@@ -865,25 +846,4 @@ func p23EnvelopeID(t *testing.T, a *p22FIDRecoveryAdapter) string {
 	t.Helper()
 	run := p21Run(t, a.binary, a.workspace, "--project", a.workspace, "--json", "run", "get", a.runID)
 	return p21PathString(t, run, "result", "run", "envelope_id")
-}
-
-func p23Number(t *testing.T, value any) int {
-	t.Helper()
-	number, ok := value.(float64)
-	if !ok {
-		t.Fatalf("number = %#v, want float64 JSON number", value)
-	}
-	return int(number)
-}
-
-func p23Clone(value map[string]any) map[string]any {
-	payload, err := json.Marshal(value)
-	if err != nil {
-		panic(err)
-	}
-	var clone map[string]any
-	if err := json.Unmarshal(payload, &clone); err != nil {
-		panic(err)
-	}
-	return clone
 }
