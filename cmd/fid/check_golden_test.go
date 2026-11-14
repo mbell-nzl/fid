@@ -103,7 +103,7 @@ func TestLeanCheckGolden(t *testing.T) {
 
 func TestLeanCheckRefusalGolden(t *testing.T) {
 	t.Parallel()
-	for _, name := range []string{"no-names", "unknown", "checks-not-configured", "check-incomplete", "check-still-running", "missing-key", "not-started", "policy-unavailable", "service-actor"} {
+	for _, name := range []string{"unknown", "checks-not-configured", "check-incomplete", "check-still-running", "missing-key", "not-started", "policy-unavailable", "service-actor"} {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			f := leanJourneyFixture(t, leanHelperDefinition(t, "pass", "1m", nil))
@@ -111,8 +111,6 @@ func TestLeanCheckRefusalGolden(t *testing.T) {
 			switch name {
 			case "service-actor":
 				args[5] = "service:runner"
-			case "no-names":
-				args = append(args[:1], args[2:]...)
 			case "unknown":
 				args[1] = "unknown"
 			case "missing-key":

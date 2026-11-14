@@ -51,6 +51,9 @@ func validateLeanCheck(tx *sql.Tx, event Event) error {
 			}
 		}
 	}
+	if event.EventType == "check.completed" {
+		return validateEmptyCheck(tx, event)
+	}
 	if event.EventType == "check.stopped" {
 		return validateCheckStopped(tx, event)
 	}

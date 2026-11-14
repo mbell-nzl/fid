@@ -56,6 +56,9 @@ func addLeanExportFacts(t *testing.T, root string) string {
 	if _, err := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), HoldID: options.HoldID, Actor: options.Actor, Names: []string{"test"}, IdempotencyKey: "lean-check", Version: "test"}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: root, MigrationsDir: testMigrationsDir(t), HoldID: options.HoldID, Actor: options.Actor, IdempotencyKey: "empty-check", Version: "test"}); err != nil {
+		t.Fatal(err)
+	}
 	return task.ID
 }
 
@@ -154,6 +157,12 @@ func TestLeanCheckReplayAndImportRejectForgedObservations(t *testing.T) {
 			e.Effects[0].Values["result_json"] = encodedLean(value)
 		}},
 		{"artifact binding", "check.artifact-kept", func(e *journal.Event) { e.Effects[len(e.Effects)-1].PK["path"] = "not-listed" }},
+		{"empty request lane", "check.completed", func(e *journal.Event) {
+			var value map[string]any
+			_ = json.Unmarshal([]byte(e.Effects[0].Values["response_json"].(string)), &value)
+			value["lane"] = "assured"
+			e.Effects[0].Values["response_json"] = encodedLean(value)
+		}},
 	} {
 		t.Run(row.name, func(t *testing.T) {
 			t.Parallel()

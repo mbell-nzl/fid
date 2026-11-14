@@ -147,7 +147,6 @@ func grammarClassRows(t *testing.T) []grammarRow {
 			message = strings.TrimPrefix(cmd.CommandPath(), "fid ") + " accepts no arguments"
 		}
 		if cmd.CommandPath() == "fid check" {
-			rows = append(rows, grammarRow{name: "fid check positional", operation: "check.execute", code: "invalid-argument", message: "name the checks to execute", argument: "names", allowed: []string{"defined check names"}, args: args})
 			continue
 		}
 		rows = append(rows, grammarRow{name: cmd.CommandPath() + " positional", operation: grammarOperation(cmd), code: "invalid-argument", message: message, argument: "arguments", value: value, allowed: allowed, args: args})

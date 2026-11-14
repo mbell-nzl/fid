@@ -1,9 +1,10 @@
 package checkrecord
 
-// Response is retained under the retry key from the first start. Complete is
-// set only with the final observed result. Unstarted names never get results.
+// Response is retained under the retry key from the first start, or from an
+// empty request's completion. Unstarted names never get results.
 type Response struct {
 	TaskID     string    `json:"task_id"`
+	Lane       string    `json:"lane,omitempty"`
 	Names      []string  `json:"names"`
 	CheckIDs   []string  `json:"check_ids"`
 	Checks     []Summary `json:"checks"`

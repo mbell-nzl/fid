@@ -1,19 +1,13 @@
 {
   "contract_version": "fid-cli.v1",
-  "error": {
-    "category": "invalid-input",
-    "code": "invalid-argument",
-    "details": {
-      "allowed": [
-        "defined check names"
-      ],
-      "argument": "names",
-      "value": null
-    },
-    "message": "name the checks to execute",
-    "retryable": false,
-    "subject": null
+  "event": {
+    "id": "EVT-<new>",
+    "occurred_at": "2026-11-08T09:00:00Z"
   },
-  "ok": false,
-  "operation": "check.execute"
+  "ok": true,
+  "operation": "check.execute",
+  "result": {
+    "checks": [],
+    "task_id": "FID-9f13aa"
+  }
 }

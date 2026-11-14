@@ -24,7 +24,7 @@ func init() { rootFlagCapabilities["check"] = rootFlagCapability{Project: true, 
 
 func newCheckCommand() *cobra.Command {
 	var hold, actor, key string
-	cmd := &cobra.Command{Use: "check <name>...", Short: "Execute named checks for the held task.", RunE: func(cmd *cobra.Command, args []string) error {
+	cmd := &cobra.Command{Use: "check [name]...", Short: "Execute checks for the held task; defaults to the lane's required checks.", RunE: func(cmd *cobra.Command, args []string) error {
 		for _, flag := range []string{"hold", "actor", "idempotency-key"} {
 			if err := requireCanonicalFlag(cmd, "check.execute", flag); err != nil {
 				return err
@@ -61,6 +61,10 @@ func newCheckCommand() *cobra.Command {
 		}
 		if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), "check.execute", map[string]any{"task_id": response.TaskID, "checks": response.Checks}, &cli.Event{ID: response.EventID, OccurredAt: response.OccurredAt})
+		}
+		if len(response.Checks) == 0 {
+			_, err := fmt.Fprintf(cmd.OutOrStdout(), "✓ No checks required for %s\n", strings.ToUpper(response.Lane[:1])+response.Lane[1:])
+			return err
 		}
 		return nil
 	}}

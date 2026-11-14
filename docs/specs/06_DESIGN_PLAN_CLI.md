@@ -1521,21 +1521,28 @@ appends no Event.
 Validation failure appends nothing. A projection failure after append is a
 detectable catch-up state and never a reason to append a duplicate Event.
 
-### Named checks (RESET 1.5a5)
+### Checks (RESET 1.5a5–1.5a6)
 
 `fid check <name>... --hold <id> --actor <a> --idempotency-key <k>` executes
 trusted `[checks.<name>]` definitions at the worktree root, in name order,
-dropping duplicates. Names are required in this slice; no names gives
-`invalid-argument`, `argument: "names"`, null `value`,
-`allowed: ["defined check names"]`, asking to name the checks. Unknown names
+dropping duplicates. With no names it selects the lane's required checks,
+filtering `when_changed` against committed files since the freshly computed
+merge-base with local `origin/<default>`. Deletions and both rename paths
+count; absent or empty `when_changed` always requires the check. Unknown names
 are refused before execution, with the unknown name as `value` and the sorted
 defined names in `allowed`. A named check executes even if the lane does not
-require it. 1.5a6 adds the required-set default.
+require it. Explicit names do not need a comparison. An unavailable base
+refuses as `comparison-unavailable`; fid never fetches.
 
 The task must be `in_progress`, with a lane and this actor's exact current hold
 in this worktree. Missing lane checks refuse as `checks-not-configured`; an
 explicit empty set permits named checks. Unreadable policy gives
 `policy-unavailable`. A changed effective digest records a policy snapshot.
+Missing `[review] test_adequacy` does not stop check. An empty required set
+records a completed request with no starts or results; text says
+`✓ No checks required for Standard` (using the task's lane), JSON has
+`{task_id, checks: []}` and the completion Event, and the exit is 0. Retry
+returns that same recorded response even if policy or the comparison changes.
 The start is durable before spawning. The write lock is released while the
 child executes; process identity is recorded as soon as known. Every five
 minutes the command renews its exact hold, one Event each. A refused renewal
@@ -1589,6 +1596,8 @@ The old start remains unfinished in either case.
 | Code | Category / exit | Exact detail keys |
 |---|---|---|
 | `checks-not-configured` | precondition / 4 | `lane` (string) |
+| `comparison-unavailable` | precondition / 4 | `ref` (nullable string), `problem` (string) |
+| `checks-unsatisfied` | precondition / 4 | `checks`, `latest_result_ids` (string arrays; used by hand-off from 1.5a7) |
 | `check-unsuccessful` | gate-unsuccessful / 8 | `check_ids`, `outcomes` (string arrays, unsuccessful checks only) |
 | `check-not-qualified` | precondition / 4 | `check_ids`, `reasons` (string arrays) |
 | `check-still-running` | conflict / 4 | `check_id` (string), `pid` (integer) |
@@ -1598,6 +1607,17 @@ All are non-retryable and have an issue subject naming the task.
 `checks-not-configured` suggests `add checks to [lanes.<lane>], then merge
 .fid.toml and git fetch`. `check-still-running` suggests `wait for it to finish,
 or stop pid <pid>, then check again`.
+
+The shared required-check evaluator chooses the latest finished result in
+journal order for each task, tree and definition digest. A later failure
+replaces an earlier pass; a newer unfinished start does not. Other tasks'
+results never count. Hand-off and done use this same evaluator with their
+respective required sets and policy definitions. For example:
+
+```text
+error: test failed on this tree after passing; check it again before hand-off
+reason: checks-unsatisfied; checks=test, latest_result_ids=CHK-100002
+```
 
 ## 5. Typed Failure Codes
 

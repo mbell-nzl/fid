@@ -55,8 +55,12 @@ func validateCheckResponse(tx *sql.Tx, event Event) error {
 		return err
 	}
 	var requestID string
-	if err := tx.QueryRow(`SELECT request_id FROM check_starts WHERE id=?`, event.Aggregate.ID).Scan(&requestID); err != nil {
-		return err
+	if event.EventType == "check.completed" {
+		requestID = event.Aggregate.ID
+	} else {
+		if err := tx.QueryRow(`SELECT request_id FROM check_starts WHERE id=?`, event.Aggregate.ID).Scan(&requestID); err != nil {
+			return err
+		}
 	}
 	var task, hold, namesJSON string
 	var final sql.NullString

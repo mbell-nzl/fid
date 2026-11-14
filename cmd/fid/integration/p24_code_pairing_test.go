@@ -116,10 +116,13 @@ var p24CodeRows = map[string]p24CodeFactory{
 
 // Only exclusions proven by a current producer/caller audit belong here.
 // Missing executable rows are failures, never silently classified unreachable.
-var p24CodeExclusions = map[string]string{}
+var p24CodeExclusions = map[string]string{
+	"checks-unsatisfied": "RESET 1.5a6 adds checkread.Evaluation.Refusal; its first command caller is hand-off in 1.5a7, followed by done in 1.6. No current CLI command asks for this gate verdict.",
+}
 
 var p24SpecialCodePairs = map[string]func(*testing.T){
-	"checks-not-configured": p24LeanPairName("checks-not-configured"), "check-unsuccessful": p24LeanPairName("check-unsuccessful"), "check-not-qualified": p24LeanPairName("check-not-qualified"), "check-still-running": p24LeanPairName("check-still-running"), "check-incomplete": p24LeanPairName("check-incomplete"),
+	"comparison-unavailable": p24LeanPairName("comparison-unavailable"),
+	"checks-not-configured":  p24LeanPairName("checks-not-configured"), "check-unsuccessful": p24LeanPairName("check-unsuccessful"), "check-not-qualified": p24LeanPairName("check-not-qualified"), "check-still-running": p24LeanPairName("check-still-running"), "check-incomplete": p24LeanPairName("check-incomplete"),
 	"policy-unavailable":          TestPolicyUnavailableHumanAndJSON,
 	"gate-unsuccessful":           TestP24HumanGateTerminalFailure,
 	"budget-data-unavailable":     p24BudgetTerminalPair,
