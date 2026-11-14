@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mbell-nzl/fid/internal/workflow"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 )
 
 const fidVersion = "0.1.0"
@@ -198,7 +198,7 @@ func trimmedOptionalString(value *string) *string {
 	return &trimmed
 }
 
-func registryStatusCategory(registry *workflow.Registry, workflowID, status string) (string, error) {
+func registryStatusCategory(registry *issuestate.Registry, workflowID, status string) (string, error) {
 	category, ok := registry.CategoryForState(workflowID, status)
 	if !ok {
 		return "", fmt.Errorf("workflow %q does not define state %q", workflowID, status)

@@ -35,12 +35,6 @@ type Requirement struct {
 	ParamsJSON string
 }
 
-// State preserves a workflow state's declared order for initial-state resolution.
-type State struct {
-	Name     string
-	Category string
-}
-
 // ValidateDefinitionRequest checks a parsed definition without mutating the projection.
 func ValidateDefinitionRequest(conn *sql.DB, request DefinitionRequest) error {
 	if !workflowSlugPattern.MatchString(request.Name) {
@@ -144,17 +138,4 @@ func isIssueApplicable(appliesTo string) bool {
 
 func transitionKeyFor(from, to string) string {
 	return from + "\x00" + to
-}
-
-// InitialState returns the first unstarted state, or the first declared state.
-func InitialState(states []State) string {
-	for _, state := range states {
-		if state.Category == "unstarted" {
-			return state.Name
-		}
-	}
-	if len(states) == 0 {
-		return ""
-	}
-	return states[0].Name
 }

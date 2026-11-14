@@ -3,13 +3,6 @@ package workflow
 import "strings"
 
 const (
-	RuleAllChildTasksDoneOrCanceled = "all_child_tasks_done_or_cancelled"
-	// RuleRequiredGatesCurrent is reserved for the v0.2b trusted-gate path.
-	// It has no evaluator in this phase.
-	RuleRequiredGatesCurrent = "required_gates_current"
-	// RuleHasCompletion is reserved for structured completion requirements.
-	// It has no evaluator in this phase.
-	RuleHasCompletion    = "has_completion"
 	RuleLinkedToDecision = "linked_to_decision"
 )
 
@@ -19,48 +12,12 @@ func IsImplementedRule(name string) bool {
 		name == RuleLinkedToDecision
 }
 
-type RuleResult struct {
-	Satisfied bool
-	Unmet     []UnmetCondition
-}
-
-type UnmetCondition struct {
-	Rule         string
-	EntityIDs    []string
-	MissingRoles []string
-}
-
-type ChildTaskStatus struct {
-	IssueID string
-	State   string
-}
-
 func LinkedToDecision(issueID string, decisionReferenceIDs []string) RuleResult {
 	ids := uniqueNonEmpty(decisionReferenceIDs)
 	if len(ids) > 0 {
 		return RuleResult{Satisfied: true}
 	}
 	return newRuleResult([]UnmetCondition{{Rule: RuleLinkedToDecision, EntityIDs: singleEntityID(issueID)}})
-}
-
-func AllChildTasksDoneOrCancelled(children []ChildTaskStatus) RuleResult {
-	blockingChildIDs := make([]string, 0)
-	for _, child := range children {
-		state := strings.TrimSpace(child.State)
-		if state == "done" || state == "cancelled" {
-			continue
-		}
-		if issueID := strings.TrimSpace(child.IssueID); issueID != "" {
-			blockingChildIDs = append(blockingChildIDs, issueID)
-		}
-	}
-	if len(blockingChildIDs) == 0 {
-		return RuleResult{Satisfied: true}
-	}
-	return newRuleResult([]UnmetCondition{{
-		Rule:      RuleAllChildTasksDoneOrCanceled,
-		EntityIDs: blockingChildIDs,
-	}})
 }
 
 func newRuleResult(unmet []UnmetCondition) RuleResult {

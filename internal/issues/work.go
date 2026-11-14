@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
-	"github.com/mbell-nzl/fid/internal/workflow"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 )
 
 // Work is what fid next orders: every epic, and the open tasks in fid
@@ -40,7 +40,7 @@ type WorkTask struct {
 
 // ReadWork reads the epics and open tasks from the projection on conn.
 func ReadWork(conn fiddb.Queryer) (Work, error) {
-	registry, err := workflow.LoadFrom(conn)
+	registry, err := issuestate.LoadFrom(conn)
 	if err != nil {
 		return Work{}, fmt.Errorf("read work: load workflow registry: %w", err)
 	}

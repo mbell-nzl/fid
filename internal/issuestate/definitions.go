@@ -1,7 +1,6 @@
-package workflow
+package issuestate
 
-// definitions is the fixed reset workflow reference used by the existing
-// transition engine and later migration-parity tests.
+// definitions is the fixed reset state graph mirrored by the migration seeds.
 var definitions = map[string]Definition{
 	"task-default": {
 		ID:          "task-default",

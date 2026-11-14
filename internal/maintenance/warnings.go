@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mbell-nzl/fid/internal/workflow"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 )
 
 type claimRecord struct {
@@ -78,7 +78,7 @@ func (claim claimRecord) liveAt(now time.Time) (bool, time.Time, error) {
 }
 
 func startedWithoutClaimFindings(db *sql.DB, claims []claimRecord, now time.Time, graceSeconds int) ([]Finding, error) {
-	registry, err := workflow.Load(db)
+	registry, err := issuestate.Load(db)
 	if err != nil {
 		return nil, fmt.Errorf("check started-without-claim: load registry: %w", err)
 	}

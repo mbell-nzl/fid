@@ -9,8 +9,8 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func Get(options GetOptions) (Issue, error) {
@@ -25,7 +25,7 @@ func Get(options GetOptions) (Issue, error) {
 // openIssueRead checks a read of one issue, refreshes the projection as
 // every read does, and opens it with its workflow registry. The caller
 // closes conn.
-func openIssueRead(options GetOptions, operation string) (*sql.DB, *workflow.Registry, error) {
+func openIssueRead(options GetOptions, operation string) (*sql.DB, *issuestate.Registry, error) {
 	switch {
 	case strings.TrimSpace(options.WorkspaceRoot) == "":
 		return nil, nil, fmt.Errorf("%s: workspace root is required", operation)
@@ -41,7 +41,7 @@ func openIssueRead(options GetOptions, operation string) (*sql.DB, *workflow.Reg
 	if err != nil {
 		return nil, nil, err
 	}
-	registry, err := workflow.Load(conn)
+	registry, err := issuestate.Load(conn)
 	if err != nil {
 		closeIssueDB(conn)
 		return nil, nil, fmt.Errorf("%s: load workflow registry: %w", operation, err)
@@ -50,7 +50,7 @@ func openIssueRead(options GetOptions, operation string) (*sql.DB, *workflow.Reg
 }
 
 // readIssue reads the issue whose ID is exactly id.
-func readIssue(conn *sql.DB, registry *workflow.Registry, id string) (Issue, error) {
+func readIssue(conn *sql.DB, registry *issuestate.Registry, id string) (Issue, error) {
 	row := conn.QueryRow(`
 		SELECT id, kind, title, status, workflow_id, parent_id, priority, sequence,
 		       spec_md_path, revision, owner_role, owner_actor,

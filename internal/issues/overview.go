@@ -7,8 +7,8 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 // Epic states in the overview.
@@ -118,7 +118,7 @@ func ReadOverview(options OverviewOptions) (Overview, error) {
 
 // ReadOverviewFrom groups work using the caller's projection snapshot.
 func ReadOverviewFrom(conn fiddb.Queryer) (Overview, error) {
-	registry, err := workflow.LoadFrom(conn)
+	registry, err := issuestate.LoadFrom(conn)
 	if err != nil {
 		return Overview{}, fmt.Errorf("read overview: load workflow registry: %w", err)
 	}
@@ -188,7 +188,7 @@ func (epic *overviewEpic) with(tasks []OverviewTask) OverviewEpic {
 	return listed
 }
 
-func overviewRows(conn fiddb.Queryer, registry *workflow.Registry, blockers map[string][]string) ([]*overviewEpic, []OverviewTask, error) {
+func overviewRows(conn fiddb.Queryer, registry *issuestate.Registry, blockers map[string][]string) ([]*overviewEpic, []OverviewTask, error) {
 	rows, err := conn.Query(`
 		SELECT id, kind, parent_id, title, status, workflow_id, sequence, priority
 		FROM issues
@@ -231,7 +231,7 @@ func overviewRows(conn fiddb.Queryer, registry *workflow.Registry, blockers map[
 // openBlockers maps each issue to the issues that block it, by ID, leaving
 // out blockers that are completed or cancelled. A dependency is a blocks
 // link from the blocker or a blocked_by link to it.
-func openBlockers(conn fiddb.Queryer, registry *workflow.Registry) (map[string][]string, error) {
+func openBlockers(conn fiddb.Queryer, registry *issuestate.Registry) (map[string][]string, error) {
 	rows, err := conn.Query(`
 		SELECT DISTINCT pair.blocked, blocker.id, blocker.workflow_id, blocker.status
 		FROM (

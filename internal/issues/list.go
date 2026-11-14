@@ -9,8 +9,8 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 type ListOptions struct {
@@ -72,7 +72,7 @@ func List(options ListOptions) ([]ListItem, error) {
 		return nil, err
 	}
 	defer closeIssueDB(conn)
-	registry, err := workflow.Load(conn)
+	registry, err := issuestate.Load(conn)
 	if err != nil {
 		return nil, fmt.Errorf("list issues: load workflow registry: %w", err)
 	}

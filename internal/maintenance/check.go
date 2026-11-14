@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 type CheckOptions struct {
@@ -231,7 +231,7 @@ func validateActivityJournalEvent(journalDir, eventID string) error {
 }
 
 func checkWorkflowStates(db *sql.DB, _ string) ([]Finding, error) {
-	registry, err := workflow.Load(db)
+	registry, err := issuestate.Load(db)
 	if err != nil {
 		return nil, fmt.Errorf("check workflow states: load registry: %w", err)
 	}

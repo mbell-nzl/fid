@@ -9,8 +9,8 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 type createRequest struct {
@@ -90,26 +90,26 @@ func createUnderLock(conn *sql.DB, lock *journal.WriteLock, options CreateOption
 	return commitCreateEvent(conn, lock, project.ProjectID, request, options, event, result)
 }
 
-func createIdentifiers(conn *sql.DB, prefix string, request createRequest) (string, string, workflow.ResolvedIssueWorkflow, error) {
+func createIdentifiers(conn *sql.DB, prefix string, request createRequest) (string, string, issuestate.ResolvedIssueWorkflow, error) {
 	issueID, err := journal.GenerateID(prefix, func(candidate string) (bool, error) { return issueIDExists(conn, candidate) })
 	if err != nil {
-		return "", "", workflow.ResolvedIssueWorkflow{}, err
+		return "", "", issuestate.ResolvedIssueWorkflow{}, err
 	}
 	if err := validateParentConstraint(conn, request.kind, request.parentID); err != nil {
-		return "", "", workflow.ResolvedIssueWorkflow{}, err
+		return "", "", issuestate.ResolvedIssueWorkflow{}, err
 	}
 	if err := requireExistingLabels(conn, request.labels); err != nil {
-		return "", "", workflow.ResolvedIssueWorkflow{}, err
+		return "", "", issuestate.ResolvedIssueWorkflow{}, err
 	}
 	activityID, err := nextIssueActivityID(conn)
 	if err != nil {
-		return "", "", workflow.ResolvedIssueWorkflow{}, err
+		return "", "", issuestate.ResolvedIssueWorkflow{}, err
 	}
-	resolved, err := workflow.ResolveIssueWorkflow(conn, request.kind)
+	resolved, err := issuestate.ResolveIssueWorkflow(conn, request.kind)
 	return issueID, activityID, resolved, err
 }
 
-func createIssueEffects(options CreateOptions, request createRequest, issueID string, resolved workflow.ResolvedIssueWorkflow) (map[string]any, []journal.Effect) {
+func createIssueEffects(options CreateOptions, request createRequest, issueID string, resolved issuestate.ResolvedIssueWorkflow) (map[string]any, []journal.Effect) {
 	timestamp := issueMutationNow(options.now).Format(time.RFC3339)
 	values := map[string]any{"kind": request.kind, "title": options.Title, "workflow_id": resolved.ID, "status": resolved.InitialState, "revision": 1, "owner_role": defaultIssueOwnerRole(request.kind), "created_at": timestamp, "updated_at": timestamp}
 	if options.Lane != nil {

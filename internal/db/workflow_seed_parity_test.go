@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
-	"github.com/mbell-nzl/fid/internal/workflow"
+	"github.com/mbell-nzl/fid/internal/issuestate"
 )
 
 func TestMigration0007SeedsFrozenV01WorkflowDefinitions(t *testing.T) {
@@ -19,7 +19,7 @@ func TestMigration0007SeedsFrozenV01WorkflowDefinitions(t *testing.T) {
 	conn := migratedWorkflowSeedDB(t)
 	defer closeWorkflowSeedDB(t, conn)
 
-	definitions := workflow.FrozenDefinitions()
+	definitions := issuestate.FrozenDefinitions()
 	assertSeededWorkflows(t, conn, definitions)
 	assertSeededStates(t, conn, definitions)
 	assertSeededTransitions(t, conn, definitions)
@@ -32,7 +32,7 @@ func TestMigration0007ReservesGateObligationShapeWithoutSeedingReservedRules(t *
 	conn := migratedWorkflowSeedDB(t)
 	defer closeWorkflowSeedDB(t, conn)
 
-	for _, rule := range []string{workflow.RuleRequiredGatesCurrent, workflow.RuleHasCompletion} {
+	for _, rule := range []string{issuestate.RuleRequiredGatesCurrent, issuestate.RuleHasCompletion} {
 		var count int
 		if err := conn.QueryRow(`
 			SELECT COUNT(*)
@@ -50,7 +50,7 @@ func TestMigration0007ReservesGateObligationShapeWithoutSeedingReservedRules(t *
 	if _, err := conn.Exec(`
 		INSERT INTO workflow_transition_requires (workflow_id, from_state, to_state, rule, params_json)
 		VALUES (?, ?, ?, ?, ?)
-	`, "task-default", "todo", "in_progress", workflow.RuleRequiredGatesCurrent, paramsJSON); err != nil {
+	`, "task-default", "todo", "in_progress", issuestate.RuleRequiredGatesCurrent, paramsJSON); err != nil {
 		t.Fatalf("insert gate-obligation params_json: %v", err)
 	}
 
@@ -59,7 +59,7 @@ func TestMigration0007ReservesGateObligationShapeWithoutSeedingReservedRules(t *
 		SELECT params_json
 		FROM workflow_transition_requires
 		WHERE workflow_id = ? AND from_state = ? AND to_state = ? AND rule = ?
-	`, "task-default", "todo", "in_progress", workflow.RuleRequiredGatesCurrent).Scan(&loaded); err != nil {
+	`, "task-default", "todo", "in_progress", issuestate.RuleRequiredGatesCurrent).Scan(&loaded); err != nil {
 		t.Fatalf("load gate-obligation params_json: %v", err)
 	}
 	if loaded != paramsJSON {
@@ -149,7 +149,7 @@ func closeWorkflowSeedRows(t *testing.T, rows *sql.Rows) {
 	}
 }
 
-func assertSeededWorkflows(t *testing.T, conn *sql.DB, definitions map[string]workflow.Definition) {
+func assertSeededWorkflows(t *testing.T, conn *sql.DB, definitions map[string]issuestate.Definition) {
 	t.Helper()
 
 	rows, err := conn.Query(`SELECT id, applies_to, active FROM workflows ORDER BY id`)
@@ -192,7 +192,7 @@ func assertSeededWorkflows(t *testing.T, conn *sql.DB, definitions map[string]wo
 	}
 }
 
-func assertSeededStates(t *testing.T, conn *sql.DB, definitions map[string]workflow.Definition) {
+func assertSeededStates(t *testing.T, conn *sql.DB, definitions map[string]issuestate.Definition) {
 	t.Helper()
 
 	rows, err := conn.Query(`SELECT workflow_id, state, category FROM workflow_states ORDER BY workflow_id, state`)
@@ -228,7 +228,7 @@ func assertSeededStates(t *testing.T, conn *sql.DB, definitions map[string]workf
 	}
 }
 
-func assertSeededTransitions(t *testing.T, conn *sql.DB, definitions map[string]workflow.Definition) {
+func assertSeededTransitions(t *testing.T, conn *sql.DB, definitions map[string]issuestate.Definition) {
 	t.Helper()
 
 	rows, err := conn.Query(`SELECT workflow_id, from_state, to_state FROM workflow_transitions ORDER BY workflow_id, from_state, to_state`)
@@ -271,7 +271,7 @@ func assertSeededTransitions(t *testing.T, conn *sql.DB, definitions map[string]
 	}
 }
 
-func assertSeededRequirements(t *testing.T, conn *sql.DB, definitions map[string]workflow.Definition) {
+func assertSeededRequirements(t *testing.T, conn *sql.DB, definitions map[string]issuestate.Definition) {
 	t.Helper()
 
 	rows, err := conn.Query(`

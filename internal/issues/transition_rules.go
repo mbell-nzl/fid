@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -33,8 +34,8 @@ func loadIssueTransitionState(conn *sql.DB, issueID string) (issueTransitionStat
 	return state, nil
 }
 
-func evaluateTransitionRules(conn *sql.DB, current issueTransitionState, rules []workflow.RuleReference) ([]workflow.UnmetCondition, error) {
-	unmet := make([]workflow.UnmetCondition, 0)
+func evaluateTransitionRules(conn *sql.DB, current issueTransitionState, rules []issuestate.RuleReference) ([]issuestate.UnmetCondition, error) {
+	unmet := make([]issuestate.UnmetCondition, 0)
 	for _, rule := range rules {
 		result, err := evaluateTransitionRule(conn, current, rule)
 		if err != nil {
@@ -46,22 +47,22 @@ func evaluateTransitionRules(conn *sql.DB, current issueTransitionState, rules [
 	return unmet, nil
 }
 
-func evaluateTransitionRule(conn *sql.DB, current issueTransitionState, rule workflow.RuleReference) (workflow.RuleResult, error) {
+func evaluateTransitionRule(conn *sql.DB, current issueTransitionState, rule issuestate.RuleReference) (issuestate.RuleResult, error) {
 	switch rule.Name {
-	case workflow.RuleAllChildTasksDoneOrCanceled:
+	case issuestate.RuleAllChildTasksDoneOrCanceled:
 		children, err := loadChildTaskStatuses(conn, current.ID)
 		if err != nil {
-			return workflow.RuleResult{}, err
+			return issuestate.RuleResult{}, err
 		}
-		return workflow.AllChildTasksDoneOrCancelled(children), nil
+		return issuestate.AllChildTasksDoneOrCancelled(children), nil
 	case workflow.RuleLinkedToDecision:
 		ids, err := loadApprovedDecisionReferenceIDs(conn, current.ID)
 		if err != nil {
-			return workflow.RuleResult{}, err
+			return issuestate.RuleResult{}, err
 		}
 		return workflow.LinkedToDecision(current.ID, ids), nil
 	default:
-		return workflow.RuleResult{Unmet: []workflow.UnmetCondition{{Rule: rule.Name}}}, nil
+		return issuestate.RuleResult{Unmet: []issuestate.UnmetCondition{{Rule: rule.Name}}}, nil
 	}
 }
 
@@ -82,7 +83,7 @@ func loadApprovedDecisionReferenceIDs(conn *sql.DB, issueID string) ([]string, e
 	return ids, rows.Err()
 }
 
-func loadChildTaskStatuses(conn *sql.DB, issueID string) ([]workflow.ChildTaskStatus, error) {
+func loadChildTaskStatuses(conn *sql.DB, issueID string) ([]issuestate.ChildTaskStatus, error) {
 	rows, err := conn.Query(`
 		SELECT id, status
 		FROM issues
@@ -94,9 +95,9 @@ func loadChildTaskStatuses(conn *sql.DB, issueID string) ([]workflow.ChildTaskSt
 	}
 	defer closeIssueRows(rows)
 
-	children := []workflow.ChildTaskStatus{}
+	children := []issuestate.ChildTaskStatus{}
 	for rows.Next() {
-		var child workflow.ChildTaskStatus
+		var child issuestate.ChildTaskStatus
 		if err := rows.Scan(&child.IssueID, &child.State); err != nil {
 			return nil, fmt.Errorf("scan child task for %q: %w", issueID, err)
 		}

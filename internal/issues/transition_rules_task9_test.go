@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/issuestate"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	_ "modernc.org/sqlite"
 )
@@ -18,7 +19,7 @@ func TestLinkedToDecisionRequiresApprovedReferenceInIssueScope(t *testing.T) {
 	if _, err := conn.Exec(`CREATE TABLE decision_refs (id TEXT PRIMARY KEY,class TEXT,outcome TEXT,scope_issue_id TEXT); INSERT INTO decision_refs VALUES ('DEC-approved','release','approved','ISS-target'),('DEC-rejected','release','rejected','ISS-other')`); err != nil {
 		t.Fatal(err)
 	}
-	rule := workflow.RuleReference{Name: workflow.RuleLinkedToDecision}
+	rule := issuestate.RuleReference{Name: workflow.RuleLinkedToDecision}
 	accepted, err := evaluateTransitionRule(conn, issueTransitionState{ID: "ISS-target"}, rule)
 	if err != nil || !accepted.Satisfied {
 		t.Fatalf("approved scoped Decision result = %#v, error = %v", accepted, err)
