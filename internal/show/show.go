@@ -49,6 +49,7 @@ func Build(options Options) (Result, error) {
 func (result Result) Fields() map[string]any {
 	return map[string]any{
 		"questions":  result.Questions,
+		"checks":     result.Checks,
 		"issue":      result.Issue,
 		"state":      result.State,
 		"epic":       result.Epic,

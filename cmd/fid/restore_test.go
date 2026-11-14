@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -14,8 +15,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/checkrecord"
+	"github.com/mbell-nzl/fid/internal/checkrun"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
+	"github.com/mbell-nzl/fid/internal/holdwork"
 )
 
 type restoredForTest struct {
@@ -165,9 +169,26 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	runFIDCommand(t, other, "park", "--hold", waitingHold, "--actor", "human:mark", "--waiting", "Include timeouts?", "--idempotency-key", "v8-question-2")
 	// Record missing and explicitly empty test paths, so backup, export,
 	// replay and restore must preserve their different digests and setup state.
-	appendPolicy(t, workspace, "\n[review]\ntest_adequacy = []\n")
+	appendPolicy(t, workspace, "\n[review]\ntest_adequacy = []\n[checks.restore]\nrun = ['/bin/sleep', '0.15']\ntimeout = '15m'\nartifacts = ['lean-artifact.txt']\n[checks.missing]\nrun = ['/bin/true']\ntimeout = '1m'\nartifacts = ['missing-artifact.txt']\n[lanes.standard]\nchecks = []\n")
 	policyOrigin(t, workspace)
 	runFIDCommand(t, workspace, "next", "--claim", "--actor", "agent:developer")
+	writeBackupTestFile(t, filepath.Join(workspace, "lean-artifact.txt"), "kept by the lean check\n")
+	identityGit(t, workspace, "add", ".")
+	identityGit(t, workspace, "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-q", "-m", "Lean check files")
+	current, _ := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "human:mark"), "next.claim")
+	_, checkErr := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), HoldID: current["hold"].(map[string]any)["id"].(string), Actor: "human:mark", IdempotencyKey: "v8-lean-check", Names: []string{"restore", "missing"}, Version: checkrun.Version(), RenewInterval: 20 * time.Millisecond})
+	var refusal *checkrecord.Refusal
+	if !errors.As(checkErr, &refusal) || refusal.Code != "check-not-qualified" {
+		t.Fatalf("V8 lean check = %v", checkErr)
+	}
+	_, stoppedErr := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), HoldID: current["hold"].(map[string]any)["id"].(string), Actor: "human:mark", IdempotencyKey: "v8-stopped-check", Names: []string{"missing", "restore"}, Version: checkrun.Version(), After: func(checkrecord.Record) error {
+		_, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), TaskID: ids[3], Actor: "human:operator", Reason: "Stop between checks"})
+		return err
+	}})
+	if !errors.As(stoppedErr, &refusal) || refusal.Code != "hold-not-current" {
+		t.Fatalf("V8 stopped check = %v", stoppedErr)
+	}
+
 	return workspace, v8IDs{issues: ids, envelope: envelopeID, receipt: terminal.Data.ReceiptID}
 }
 
@@ -255,6 +276,13 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql policy snapshots = %#v", snapshots)
 	}
 	state.reads["policy snapshots"] = snapshots.stdout
+	for _, table := range []string{"check_requests", "check_starts", "check_processes", "check_results", "check_files"} {
+		checkRows := executeCommandForTest(workspace, "sql", "SELECT * FROM "+table+" ORDER BY rowid")
+		if checkRows.err != nil || checkRows.stderr != "" || strings.Contains(checkRows.stdout, `"rows":[]`) {
+			t.Fatalf("V8 %s = %#v", table, checkRows)
+		}
+		state.reads[table] = checkRows.stdout
+	}
 	rows := policySnapshots(t, workspace)
 	if len(rows) != 2 || rows[0].Digest == rows[1].Digest {
 		t.Fatalf("V8 policy snapshots = %#v, want distinct missing/empty test paths", rows)
@@ -442,8 +470,11 @@ func assertV8SameState(t *testing.T, before, after v8State) {
 	if strings.Count(before.reads["questions"], `"resolution":"answered"`) != 1 || strings.Count(before.reads["questions"], `"resolution":null`) != 1 || strings.Count(before.reads["person decisions"], `"kind":"answer"`) != 1 {
 		t.Fatalf("V8 waiting history missing: %s", before.reads["questions"])
 	}
-	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 2 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 1 {
+	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 3 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 1 {
 		t.Fatalf("V8 lifecycle missing: holds=%s decisions=%s", before.reads["holds"], before.reads["person decisions"])
+	}
+	if !strings.Contains(before.reads["check_requests"], "hold-not-current") || !strings.Contains(before.reads["check_results"], "artifact-not-kept") {
+		t.Fatalf("V8 is missing its stopped request or refused file: %s", before.reads["check_requests"])
 	}
 	if strings.Count(before.reads["policy snapshots"], `"source_ref":"built-in defaults"`) != 1 {
 		t.Fatalf("original policy snapshots = %s, want one built-in policy", before.reads["policy snapshots"])

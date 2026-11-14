@@ -30,8 +30,8 @@ func TestP24KeyedLeafCorpusMatchesLiveTree(t *testing.T) {
 		rows[parts[0]] = parts[1]
 		families[strings.Fields(parts[0])[0]] = true
 	}
-	if len(rows) != 53 || len(families) != 24 {
-		t.Fatalf("keyed-leaf corpus has %d rows in %d families; want 53/24", len(rows), len(families))
+	if len(rows) != 54 || len(families) != 25 {
+		t.Fatalf("keyed-leaf corpus has %d rows in %d families; want 54/25", len(rows), len(families))
 	}
 	root := newRootCommandAt(t.TempDir())
 	got := make([]string, 0, len(rows))

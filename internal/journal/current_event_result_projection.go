@@ -9,6 +9,9 @@ import (
 // Read only the projection inside the Event transaction, after its Effects but
 // before commit. A mismatching cached response rolls the complete Event back.
 func validateCurrentAppliedResults(tx *sql.Tx, event Event) error {
+	if strings.HasPrefix(event.EventType, "check.") {
+		return validateCheckResponse(tx, event)
+	}
 	if _, current := currentEventRules[event.EventType]; !current || !event.IsV2() {
 		return nil
 	}

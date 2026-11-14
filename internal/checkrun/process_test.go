@@ -2,12 +2,16 @@ package checkrun
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/checkrecord"
 )
 
 //nolint:paralleltest // This entry point is also a disposable child process.
@@ -35,8 +39,58 @@ func TestCheckProcessHelper(t *testing.T) {
 		case "env":
 			fmt.Printf("secret=%s; home=%s", os.Getenv("FID_CHECK_SECRET"), os.Getenv("HOME"))
 			os.Exit(0)
+		case "touch":
+			if err := os.WriteFile("executed", []byte("executed"), 0o600); err != nil {
+				os.Exit(2)
+			}
+			os.Exit(0)
 		}
 		os.Exit(0)
+	}
+}
+
+func TestProcessCannotExecuteBeforeItsIdentityIsRecorded(t *testing.T) {
+	t.Parallel()
+	binary, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	unrecorded := errors.New("process identity was not recorded")
+	_, err = ExecuteProcess(context.Background(), ProcessOptions{Root: root, Definition: Definition{Run: []string{binary, "-test.run=^TestCheckProcessHelper$", "--", "--check-helper", "touch"}, Timeout: time.Minute, Environment: EnvironmentNames(), Artifacts: []string{}}, Started: func(_ checkrecord.Process) error { time.Sleep(100 * time.Millisecond); return unrecorded }})
+	if !errors.Is(err, unrecorded) {
+		t.Fatalf("recording failure=%v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "executed")); !os.IsNotExist(err) {
+		t.Fatalf("child executed without a durable identity: %v", err)
+	}
+}
+
+func TestLaunchPipeClosingWithoutPermissionDoesNotExecuteTheCheck(t *testing.T) {
+	t.Parallel()
+	binary, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	command, pipes, err := launchCommand(binary, []string{binary, "-test.run=^TestCheckProcessHelper$", "--", "--check-helper", "touch"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pipes.close()
+	command.Dir = root
+	if err := command.Start(); err != nil {
+		t.Fatal(err)
+	}
+	pipes.closeChildEnds()
+	if err := pipes.permitWriter.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := command.Wait(); err == nil {
+		t.Fatal("unpermitted child succeeded")
+	}
+	if _, err := os.Stat(filepath.Join(root, "executed")); !os.IsNotExist(err) {
+		t.Fatalf("unpermitted check executed: %v", err)
 	}
 }
 
@@ -94,5 +148,49 @@ func TestProcessEnvironmentAndSpawnFailure(t *testing.T) {
 	got, err = ExecuteProcess(context.Background(), ProcessOptions{Root: t.TempDir(), Definition: definition})
 	if err != nil || got.Outcome != "spawn-failed" {
 		t.Fatalf("spawn=%#v, %v", got, err)
+	}
+	bad := filepath.Join(t.TempDir(), "invalid-executable")
+	if err := os.WriteFile(bad, []byte("not an executable image\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	definition.Run = []string{bad}
+	got, err = ExecuteProcess(context.Background(), ProcessOptions{Root: t.TempDir(), Definition: definition})
+	if err != nil || got.Outcome != "spawn-failed" || got.ExitCode != nil {
+		t.Fatalf("exec failure=%#v/%v", got, err)
+	}
+}
+
+func TestProcessResolvesExecutableWithTheChildPath(t *testing.T) {
+	t.Parallel()
+	binary, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	directory := t.TempDir()
+	if err := os.Symlink(binary, filepath.Join(directory, "check-helper")); err != nil {
+		t.Fatal(err)
+	}
+	got, err := ExecuteProcess(context.Background(), ProcessOptions{Root: t.TempDir(), Definition: Definition{Run: []string{"check-helper", "-test.run=^TestCheckProcessHelper$", "--", "--check-helper", "env"}, Timeout: time.Minute, Environment: EnvironmentNames(), Artifacts: []string{}}, Environment: []string{"PATH=" + directory, "HOME=allowed"}})
+	if err != nil || got.Outcome != "passed" || got.OutputExcerpt != "secret=; home=allowed" || got.Toolchain.Executable != binary {
+		t.Fatalf("PATH=%#v/%v", got, err)
+	}
+}
+
+type checkErrorWriter struct{ err error }
+
+func (writer checkErrorWriter) Write([]byte) (int, error) { return 0, writer.err }
+
+func TestProcessStopsOnAnOutputError(t *testing.T) {
+	t.Parallel()
+	binary, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	sinkError := errors.New("output sink failed")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_, err = ExecuteProcess(ctx, ProcessOptions{Root: t.TempDir(), Definition: Definition{Run: []string{binary, "-test.run=^TestCheckProcessHelper$", "--", "--check-helper", "large"}, Timeout: time.Minute, Environment: EnvironmentNames(), Artifacts: []string{}}, Output: checkErrorWriter{sinkError}})
+	if !errors.Is(err, sinkError) {
+		t.Fatalf("output failure=%v", err)
 	}
 }

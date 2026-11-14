@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/mbell-nzl/fid/internal/checkread"
+	"github.com/mbell-nzl/fid/internal/checkrecord"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/questions"
 	"github.com/mbell-nzl/fid/internal/workflow"
@@ -35,6 +37,7 @@ type IssueView struct {
 	Questions  []questions.Question
 	OpenHold   *holds.Hold
 	Scheduling *string
+	Checks     []checkrecord.Record
 }
 
 // IssueReference names another issue and its state.
@@ -76,7 +79,7 @@ func ReadIssueView(options GetOptions) (IssueView, error) {
 	if err != nil {
 		return IssueView{}, err
 	}
-	view := IssueView{Issue: issueDetailFromIssue(issue), Children: []ChildIssue{}}
+	view := IssueView{Checks: []checkrecord.Record{}, Issue: issueDetailFromIssue(issue), Children: []ChildIssue{}}
 	if view.Epic, view.Task, err = issueParents(conn, registry, issue.ParentID); err != nil {
 		return IssueView{}, err
 	}
@@ -108,6 +111,11 @@ func ReadIssueView(options GetOptions) (IssueView, error) {
 		return IssueView{}, err
 	}
 	if issue.Kind == "task" {
+		checks, err := checkread.Read(conn, issue.ID)
+		if err != nil {
+			return IssueView{}, err
+		}
+		view.Checks = checkread.Latest(checks)
 		open, err := holds.Open(conn)
 		if err != nil {
 			return IssueView{}, err

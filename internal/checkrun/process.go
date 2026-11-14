@@ -4,6 +4,7 @@ package checkrun
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -22,7 +23,7 @@ import (
 type Definition = checkrecord.Definition
 
 func EnvironmentNames() []string {
-	return []string{"CI", "GOCACHE", "GOMODCACHE", "GOPATH", "HOME", "LANG", "LC_ALL", "PATH", "TMPDIR", "XDG_CACHE_HOME"}
+	return checkrecord.EnvironmentNames()
 }
 
 func environment() []string {
@@ -62,39 +63,51 @@ func ExecuteProcess(ctx context.Context, options ProcessOptions) (ProcessResult,
 	}
 	executable, err := resolveExecutable(options.Root, options.Definition.Run[0], env)
 	result.Toolchain = checkrecord.Toolchain{Executable: executable, OS: runtime.GOOS, Arch: runtime.GOARCH, FidVersion: options.Version}
-	output := &boundedOutput{stream: options.Output}
-	defer func() {}()
+	output := &boundedOutput{stream: options.Output, failures: make(chan error, 1)}
+
 	if err != nil {
 		result.finishOutput(output)
 		return result, nil
 	}
-	contents, err := os.ReadFile(executable)
+	result.Toolchain.Digest, err = executableDigest(executable)
 	if err != nil {
 		result.finishOutput(output)
 		return result, nil
 	}
-	result.Toolchain.Digest = checkrecord.BytesDigest(contents)
-	command := exec.Command(executable, options.Definition.Run[1:]...)
+	command, launch, err := launchCommand(executable, options.Definition.Run)
+	if err != nil {
+		return result, err
+	}
+	defer launch.close()
 	command.Dir, command.Env = options.Root, env
 	command.Stdout, command.Stderr = output, output
 	command.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	command.WaitDelay = time.Second
+	processContext, cancelProcess := context.WithTimeout(ctx, options.Definition.Timeout)
+	defer cancelProcess()
 	if err := command.Start(); err != nil {
+		launch.closeChildEnds()
 		result.finishOutput(output)
 		return result, nil
 	}
+	launch.closeChildEnds()
 	stop := func() { _ = syscall.Kill(-command.Process.Pid, syscall.SIGKILL) }
+	cancelStop := context.AfterFunc(processContext, stop)
+	defer cancelStop()
 	process, processErr := processIdentity(command.Process.Pid)
 	if processErr == nil && options.Started != nil {
 		processErr = options.Started(process)
+	}
+	spawnFailed := false
+	if processErr == nil {
+		spawnFailed, processErr = launch.release()
 	}
 	if processErr != nil {
 		stop()
 	}
 	finished := make(chan error, 1)
 	go func() { finished <- command.Wait() }()
-	timer := time.NewTimer(options.Definition.Timeout)
-	defer timer.Stop()
+
 	interval := options.RenewInterval
 	if interval <= 0 {
 		interval = 5 * time.Minute
@@ -108,8 +121,15 @@ func ExecuteProcess(ctx context.Context, options ProcessOptions) (ProcessResult,
 		select {
 		case waitErr = <-finished:
 			waiting = false
-		case <-timer.C:
+		case processErr = <-output.failures:
+			stop()
+			waitErr = <-finished
+			waiting = false
+		case <-processContext.Done():
 			result.Outcome = "timed-out"
+			if errors.Is(processContext.Err(), context.Canceled) {
+				result.Outcome = "cancelled"
+			}
 			stop()
 			waitErr = <-finished
 			waiting = false
@@ -131,8 +151,22 @@ func ExecuteProcess(ctx context.Context, options ProcessOptions) (ProcessResult,
 		}
 	}
 	stop() // A descendant must not outlive its check or retain its pipes.
-	if processErr != nil {
-		return result, fmt.Errorf("record check process: %w", processErr)
+	select {
+	case outputErr := <-output.failures:
+		processErr = outputErr
+	default:
+	}
+	if processErr != nil && processContext.Err() == nil {
+		return result, fmt.Errorf("observe check process: %w", processErr)
+	}
+	if spawnFailed {
+		result.Outcome = "spawn-failed"
+	}
+	if processContext.Err() != nil {
+		result.Outcome = "timed-out"
+		if errors.Is(processContext.Err(), context.Canceled) {
+			result.Outcome = "cancelled"
+		}
 	}
 	if command.ProcessState != nil {
 		code := command.ProcessState.ExitCode()
@@ -151,6 +185,10 @@ func ExecuteProcess(ctx context.Context, options ProcessOptions) (ProcessResult,
 			return result, fmt.Errorf("wait for check: %w", waitErr)
 		}
 		result.Outcome = "failed"
+	}
+	if result.Outcome == "spawn-failed" {
+		result.ExitCode = nil
+		result.Signal = nil
 	}
 	result.finishOutput(output)
 	return result, nil
@@ -189,6 +227,7 @@ type boundedOutput struct {
 	bytes    int64
 	captured bytes.Buffer
 	stream   io.Writer
+	failures chan error
 }
 
 func (output *boundedOutput) Write(data []byte) (int, error) {
@@ -198,7 +237,11 @@ func (output *boundedOutput) Write(data []byte) (int, error) {
 	kept := data[:min(len(data), checkrecord.OutputLimit-output.captured.Len())]
 	_, _ = output.captured.Write(kept)
 	if output.stream != nil {
-		if _, err := output.stream.Write(kept); err != nil {
+		if _, err := output.stream.Write(data); err != nil {
+			select {
+			case output.failures <- err:
+			default:
+			}
 			return 0, err
 		}
 	}
@@ -209,5 +252,23 @@ func (result *ProcessResult) finishOutput(output *boundedOutput) {
 	data := output.captured.Bytes()
 	result.OutputBytes, result.OutputTruncated = output.bytes, output.bytes > checkrecord.OutputLimit
 	result.OutputDigest = checkrecord.BytesDigest(data)
-	result.OutputExcerpt = strings.ToValidUTF8(string(data[:min(len(data), checkrecord.ExcerptLimit)]), "�")
+	excerpt := strings.ToValidUTF8(string(data[:min(len(data), checkrecord.ExcerptLimit)]), "�")
+	if len(excerpt) > checkrecord.ExcerptLimit {
+		excerpt = excerpt[:checkrecord.ExcerptLimit]
+		excerpt = strings.ToValidUTF8(excerpt, "")
+	}
+	result.OutputExcerpt = excerpt
+}
+
+func executableDigest(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = file.Close() }()
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("sha256:%x", hash.Sum(nil)), nil
 }

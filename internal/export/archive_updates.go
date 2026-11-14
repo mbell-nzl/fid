@@ -10,6 +10,7 @@ import (
 // These are the mutable columns in the accepted operational Event families.
 // Physical presence in a table does not authorize rewriting immutable facts.
 var semanticUpdateColumns = map[string]string{
+	"check_requests":        "response_json",
 	"kit_activations":       "status point_of_no_return updated_at version",
 	"activation_components": "status",
 	"activation_resources":  "version observed_identity state evidence_ref error_code",

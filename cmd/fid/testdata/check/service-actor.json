@@ -1,0 +1,22 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "authority",
+    "code": "authority-denied",
+    "details": {
+      "actor_id": "service:runner",
+      "operation": "check.execute",
+      "required_actions": [
+        "check.execute"
+      ],
+      "required_capabilities": [
+        "check.execute"
+      ]
+    },
+    "message": "checks require an agent or a person",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "check.execute"
+}

@@ -3,6 +3,11 @@ package journal
 // Column domains copied from the accepted migration baseline. No per-Event
 // schema introspection is performed. The contract test checks these against DDL.
 var currentEventTables = map[string]currentTable{
+	"check_requests":               currentTableColumns("id", "id:s task_id:s hold_id:s actor:s names_json:s response_json:s?"),
+	"check_starts":                 currentTableColumns("id", "id:s request_id:s task_id:s name:s start_json:s"),
+	"check_processes":              currentTableColumns("check_id", "check_id:s process_json:s"),
+	"check_results":                currentTableColumns("check_id", "check_id:s result_json:s"),
+	"check_files":                  currentTableColumns("check_id path", "check_id:s path:s artifact_id:s? reason:s?"),
 	"questions":                    currentTableColumns("id", "id:s task_id:s hold_id:s text:s asker:s asked_at:s resolved_at:s? resolution:s? decision_id:s?"),
 	"person_decisions":             currentTableColumns("id", "id:s kind:s actor:s subject_type:s subject_id:s reason:s binding_id:s decided_at:s"),
 	"policy_snapshots":             currentTableColumns("sequence", "sequence:i source_ref:s source_commit:s? digest:s effective_json:s"),

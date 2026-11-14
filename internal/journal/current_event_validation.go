@@ -34,6 +34,9 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 			return fmt.Errorf("project event %q: unsupported effect op %q", event.EventID, effect.Op)
 		}
 	}
+	if strings.HasPrefix(event.EventType, "check.") {
+		return validateLeanCheck(tx, event)
+	}
 	if err := validateTaskStart(tx, event); err != nil {
 		return err
 	}

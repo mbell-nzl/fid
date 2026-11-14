@@ -1,0 +1,2 @@
+error: checks require an agent or a person
+reason: authority-denied; actor_id=service:runner

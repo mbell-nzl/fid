@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "invalid-input",
+    "code": "invalid-argument",
+    "details": {
+      "allowed": [
+        "lean"
+      ],
+      "argument": "names",
+      "value": "unknown"
+    },
+    "message": "unknown check: unknown",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "check.execute"
+}

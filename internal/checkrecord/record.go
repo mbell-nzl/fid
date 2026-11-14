@@ -106,6 +106,7 @@ func Qualification(start, end Tree, outcome string, current, allKept bool) []str
 	if start.Dirty {
 		reasons = append(reasons, "tree-dirty")
 	}
+	start.Head, end.Head = "", ""
 	if Digest(start) != Digest(end) {
 		reasons = append(reasons, "tree-changed")
 	}
@@ -116,4 +117,8 @@ func Qualification(start, end Tree, outcome string, current, allKept bool) []str
 		reasons = append(reasons, "artifact-not-kept")
 	}
 	return reasons
+}
+
+func EnvironmentNames() []string {
+	return []string{"CI", "GOCACHE", "GOMODCACHE", "GOPATH", "HOME", "LANG", "LC_ALL", "PATH", "TMPDIR", "XDG_CACHE_HOME"}
 }

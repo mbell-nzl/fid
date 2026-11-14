@@ -113,6 +113,7 @@ run = ["go", "test", "./..."]
 timeout = "15m"
 defined_by = ["Makefile", ".github/scripts/**"]
 when_changed = ["**/*.go"]
+artifacts = ["coverage.out"]
 
 [lanes.routine]
 paths = ["docs/**", "**/*.md"]
@@ -137,6 +138,7 @@ test_adequacy = ["**/*_test.go", "**/testdata/**"]
 | `checks.<name>.run` | Required non-empty string argv list with a non-empty executable; no shell |
 | `checks.<name>.timeout` | Required positive Go-duration string, e.g. `"15m"` |
 | `checks.<name>.defined_by` | Optional glob list; changes to any check-defining path require Assured |
+| `checks.<name>.artifacts` | Optional plain worktree-relative file paths, not globs; retained after successful and unsuccessful execution, at most 64 MB each. Missing or unsafe files are recorded as refused and prevent qualification |
 | `checks.<name>.when_changed` | Optional glob list restricting when the check is required |
 | `lanes.<lane>.paths` | Optional glob list for `routine` and `assured`; refused even when empty under `standard` |
 | `lanes.<lane>.checks` | Defined check names; missing means not set up, explicit `[]` means no checks required |
@@ -166,10 +168,20 @@ literal paths are accepted.
 
 A project with no checks can still use next, status and show. Status warns
 about missing checks or test paths, but explicit empty lists do not warn
-(1.5a1). A missing lane's checks will refuse check (1.5a6), hand-off
+(1.5a1). A missing lane's checks will refuse check (1.5a5), hand-off
 (1.5a7) and done (1.6), naming the fix; missing test paths will refuse
 hand-off and done too. Those refusals are not part of 1.5a1. 2.1 enforces
 the rework cap and 2.6 the token budget.
+
+Lean checks (1.5a5) inherit only set `CI`, `GOCACHE`, `GOMODCACHE`, `GOPATH`,
+`HOME`, `LANG`, `LC_ALL`, `PATH`, `TMPDIR` and `XDG_CACHE_HOME`. There are no
+`env` or `secrets` keys. Only the resolved environment's digest is recorded.
+The working directory is the worktree root; executable lookup uses the inherited
+PATH, argv has no implicit shell, and the per-check timeout has no fid cap.
+The 10 MiB bounded output has a 16 KiB excerpt. `artifacts` joins the effective
+policy digest and recorded snapshots; it does not use the glob grammar above.
+Each check's own definition digest includes argv, timeout, inherited names and
+Artifacts, excluding `defined_by`, `when_changed` and unrelated policy.
 
 Actor trust is built into the policy package, with no actor list in the
 file. A well-formed `agent:*` gets the named `work` action set (take,

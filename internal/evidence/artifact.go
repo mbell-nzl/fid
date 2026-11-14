@@ -14,6 +14,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/mbell-nzl/fid/internal/artifactstore"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
 	fidproject "github.com/mbell-nzl/fid/internal/project"
@@ -241,51 +242,11 @@ func writeSanitizedArtifactChunk(writer io.Writer, redactor *liveRedactor, data 
 }
 
 func publishArtifactFile(stagingPath, destination, digest string) error {
-	info, err := os.Lstat(destination)
-	if err == nil {
-		if !info.Mode().IsRegular() {
-			return fmt.Errorf("retain Artifact: existing digest path is not regular")
-		}
-		return verifyArtifactDigest(destination, digest)
-	}
-	if !os.IsNotExist(err) {
-		return fmt.Errorf("retain Artifact: inspect digest destination: %w", err)
-	}
-	if err := os.Rename(stagingPath, destination); err != nil {
-		if !os.IsExist(err) {
-			return fmt.Errorf("retain Artifact: publish by digest: %w", err)
-		}
-		return verifyArtifactDigest(destination, digest)
-	}
-	return nil
+	return artifactstore.Publish(stagingPath, destination, digest)
 }
-
-func verifyArtifactDigest(path, digest string) error {
-	info, err := os.Lstat(path)
-	if err != nil {
-		return fmt.Errorf("verify Artifact digest: inspect: %w", err)
-	}
-	if !info.Mode().IsRegular() {
-		return fmt.Errorf("verify Artifact digest: stored content is not regular")
-	}
-	file, err := os.Open(path)
-	if err != nil {
-		return fmt.Errorf("verify Artifact digest: open: %w", err)
-	}
-	defer func() { _ = file.Close() }()
-	hash := sha256.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return fmt.Errorf("verify Artifact digest: read: %w", err)
-	}
-	if "sha256:"+fmt.Sprintf("%x", hash.Sum(nil)) != digest {
-		return fmt.Errorf("verify Artifact digest: stored content does not match digest")
-	}
-	return nil
-}
-
+func verifyArtifactDigest(path, digest string) error { return artifactstore.Verify(path, digest) }
 func containedResolvedPath(root, candidate string) bool {
-	relative, err := filepath.Rel(root, candidate)
-	return err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator))
+	return artifactstore.Contained(root, candidate)
 }
 
 func receiptArtifactEffects(conn *sql.DB, retained []retainedArtifact, createdAt time.Time) ([]Artifact, []journal.Effect, error) {

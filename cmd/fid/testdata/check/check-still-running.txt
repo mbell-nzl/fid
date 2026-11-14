@@ -1,0 +1,3 @@
+error: lean is still running from an earlier check (CHK-<new>, pid 10001)
+reason: check-still-running; check_id=CHK-<new>, pid=10001
+next: wait for it to finish, or stop pid 10001, then check again

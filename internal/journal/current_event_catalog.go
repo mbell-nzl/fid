@@ -95,6 +95,13 @@ var currentEventCommands = map[string]string{
 // The lean core's families (ADR-0014) share this grammar, and their Effects
 // are checked against their stages in order too (leanEventFamilies).
 var retainedCurrentRules = map[string]currentEventRule{
+	"check.stopped":                  currentRule("check", currentStage(1, currentEffectKey("check_requests", "update")), currentStage(1, currentEffectKey("idempotency_results", "update"))),
+	"check.started":                  currentRule("check", currentStage(0, currentEffectKey("check_requests", "insert")), currentStage(1, currentEffectKey("check_starts", "insert")), currentStage(1, currentEffectKey("idempotency_results", "insert"), currentEffectKey("idempotency_results", "update"))),
+	"check.process-started":          currentRule("check", currentStage(1, currentEffectKey("check_processes", "insert"))),
+	"check.result-recorded":          currentRule("check", currentStage(1, currentEffectKey("check_results", "insert")), currentStage(0, currentEffectKey("check_requests", "update")), currentStage(1, currentEffectKey("idempotency_results", "update"))),
+	"check.hold-renewed":             currentRule("check", currentStage(1, currentEffectKey("holds", "update"))),
+	"check.artifact-kept":            currentRule("check", currentStage(0, currentEffectKey("referenced_artifacts", "insert"), currentEffectKey("referenced_artifacts", "update")), currentStage(1, currentEffectKey("check_files", "insert"))),
+	"check.artifact-refused":         currentRule("check", currentStage(1, currentEffectKey("check_files", "insert"))),
 	"task.started":                   currentRule("task", currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("idempotency_results", "insert"))),
 	"policy.snapshotted":             currentRule("policy", currentStage(1, currentEffectKey("policy_snapshots", "insert"))),
 	"hold.heartbeat":                 currentRule("hold", currentStage(1, currentEffectKey("holds", "update"))),

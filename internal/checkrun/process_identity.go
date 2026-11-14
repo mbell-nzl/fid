@@ -1,6 +1,7 @@
 package checkrun
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -27,7 +28,11 @@ func processIdentity(pid int) (checkrecord.Process, error) {
 		if err != nil {
 			return process, fmt.Errorf("read process identity: %w", err)
 		}
-		_, fields, ok := strings.Cut(string(stat), ") ")
+		index := strings.LastIndex(string(stat), ") ")
+		fields, ok := "", index >= 0
+		if ok {
+			fields = string(stat)[index+2:]
+		}
 		values := strings.Fields(fields)
 		if !ok || len(values) < 20 {
 			return process, fmt.Errorf("invalid process identity")
@@ -44,7 +49,40 @@ func processIdentity(pid int) (checkrecord.Process, error) {
 	return process, nil
 }
 
-func processAlive(process checkrecord.Process) bool {
+func processAlive(process checkrecord.Process) (bool, error) {
+	self, err := processIdentity(os.Getpid())
+	if err != nil {
+		return false, err
+	}
+	if self.Machine != process.Machine {
+		return false, fmt.Errorf("cannot inspect a check process on another machine")
+	}
 	current, err := processIdentity(process.PID)
-	return err == nil && current == process
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if runtime.GOOS == "linux" {
+		stat, err := os.ReadFile(fmt.Sprintf("/proc/%d/stat", process.PID))
+		if errors.Is(err, os.ErrNotExist) {
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		index := strings.LastIndex(string(stat), ") ")
+		if index < 0 {
+			return false, fmt.Errorf("invalid process state")
+		}
+		fields := strings.Fields(string(stat)[index+2:])
+		if len(fields) == 0 {
+			return false, fmt.Errorf("missing process state")
+		}
+		if fields[0] == "Z" || fields[0] == "X" {
+			return false, nil
+		}
+	}
+	return current == process, nil
 }

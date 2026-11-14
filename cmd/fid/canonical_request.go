@@ -143,6 +143,14 @@ func installLeafGrammar(cmd *cobra.Command) {
 	} // evidence.evaluate parses example-only flags in its handler.
 	count := len(strings.Fields(cmd.Use)) - 1
 	validator := canonicalExactArgs(operation, count)
+	if rootCommandKey(cmd) == "check" {
+		validator = func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return writeGrammarFailure(cmd, operation, cli.CodeInvalidArgument, "name the checks to execute", map[string]any{"argument": "names", "value": nil, "allowed": []string{"defined check names"}})
+			}
+			return nil
+		}
+	}
 	if count == 0 {
 		validator = canonicalNoArgs(operation)
 	}
@@ -172,6 +180,8 @@ func leafOperation(cmd *cobra.Command) string {
 		return "capabilities.get"
 	case "ready":
 		return "ready.get"
+	case "check":
+		return "check.execute"
 	case "start":
 		return "task.start"
 	case "heartbeat":

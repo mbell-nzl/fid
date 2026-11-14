@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "conflict",
+    "code": "check-still-running",
+    "details": {
+      "check_id": "CHK-<new>",
+      "pid": 10001
+    },
+    "message": "lean is still running from an earlier check (CHK-<new>, pid 10001)",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "check.execute"
+}

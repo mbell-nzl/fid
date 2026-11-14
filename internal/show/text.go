@@ -137,6 +137,7 @@ func (text textWriter) rows(result Result) []string {
 		}
 		lines = append(lines, text.value("Lane", lane)...)
 	}
+	lines = append(lines, text.checks(result)...)
 	if hold := result.Working; hold != nil {
 		clock := func(stamp string) string { return display.Clock(stamp, result.Now) }
 		value := fmt.Sprintf("here, since %s, until %s", clock(hold.Since), clock(hold.ExpiresAt))

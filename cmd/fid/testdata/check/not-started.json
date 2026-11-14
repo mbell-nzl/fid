@@ -1,0 +1,22 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "transition-not-permitted",
+    "details": {
+      "from_state": "todo",
+      "to_state": "in_progress",
+      "unsatisfied": [
+        "task-in-progress"
+      ]
+    },
+    "message": "start the task before checking it",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "check.execute"
+}

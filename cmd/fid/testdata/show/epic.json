@@ -6,6 +6,7 @@
   "result": {
     "blocked_by": [],
     "blocks": [],
+    "checks": [],
     "children": [
       {
         "id": "FID-1a2b3c",

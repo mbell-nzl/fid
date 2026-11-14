@@ -1,0 +1,2 @@
+error: --idempotency-key is required
+reason: invalid-argument; argument=--idempotency-key, allowed=--idempotency-key

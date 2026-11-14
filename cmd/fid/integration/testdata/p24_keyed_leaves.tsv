@@ -6,8 +6,10 @@ activation prepare	kit_identity
 activation recover	reason
 activation recover-complete	selected_event_id
 activation resource	evidence_ref
+answer	text
 artifact verify	artifact_id
 attention resolve	expected_version
+check	--hold
 claim acquire	ttl_seconds
 claim expire	expected_version
 claim release	expected_version
@@ -44,10 +46,9 @@ run observe	expected_version
 run observe-budget	value
 run recover	ttl_seconds
 run start	claim_version
+start	--hold
 stop raise	details
 stop resolve	stop_id
 takeover	--reason
 workflow assign	--name
 workflow define	--name
-answer	text
-start	--hold

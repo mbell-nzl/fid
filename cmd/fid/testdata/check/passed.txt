@@ -1,0 +1,3 @@
+● Checking lean…
+✓ lean passed · counts for hand-off
+  Kept coverage.out

@@ -1521,6 +1521,84 @@ appends no Event.
 Validation failure appends nothing. A projection failure after append is a
 detectable catch-up state and never a reason to append a duplicate Event.
 
+### Named checks (RESET 1.5a5)
+
+`fid check <name>... --hold <id> --actor <a> --idempotency-key <k>` executes
+trusted `[checks.<name>]` definitions at the worktree root, in name order,
+dropping duplicates. Names are required in this slice; no names gives
+`invalid-argument`, `argument: "names"`, null `value`,
+`allowed: ["defined check names"]`, asking to name the checks. Unknown names
+are refused before execution, with the unknown name as `value` and the sorted
+defined names in `allowed`. A named check executes even if the lane does not
+require it. 1.5a6 adds the required-set default.
+
+The task must be `in_progress`, with a lane and this actor's exact current hold
+in this worktree. Missing lane checks refuse as `checks-not-configured`; an
+explicit empty set permits named checks. Unreadable policy gives
+`policy-unavailable`. A changed effective digest records a policy snapshot.
+The start is durable before spawning. The write lock is released while the
+child executes; process identity is recorded as soon as known. Every five
+minutes the command renews its exact hold, one Event each. A refused renewal
+kills the process group, records `ownership-lost`, starts no later names, and
+returns `hold-not-current`. Timeout also kills the process group, without the
+old executor's ten-minute cap.
+
+On a terminal, output streams with controls escaped (line feeds retained).
+`--json` captures output and emits exactly one final envelope:
+
+```json
+{"contract_version":"fid-cli.v1","ok":true,"operation":"check.execute","result":{"task_id":"FID-9f13aa","checks":[{"id":"CHK-100001","name":"test","outcome":"passed","exit_code":0,"counts":true,"reasons":[],"artifact_ids":[]}]},"event":{"id":"EVT-100004","occurred_at":"2026-11-14T09:05:00Z"}}
+```
+
+Human output announces `● Checking test…`, then `✓ test passed · counts for
+hand-off`, `✗ test failed`, or `⚠ test passed, but doesn't count: the tree had
+uncommitted changes`. Other reasons read `the tree changed`, `ownership was
+lost` and `a listed file wasn't kept`. Each retained file adds `  Kept <path>`.
+Ordinary unsuccessful checks do not stop later names. All passing and counting
+returns 0; any unsuccessful outcome returns 8; all passed but some do not count
+returns 4. Failure envelopes have no `result`, and name the relevant check IDs.
+
+`show` adds `result.checks` (an array, empty when absent), each `{start, process,
+result}`. Process and result are nullable. It selects each name's latest result
+and every unfinished start. Start contains ID, task, hold, actor, name, resolved
+definition/digest, environment-value digest, policy snapshot sequence, time,
+HEAD/tree/dirty observation and the owning fid process. Process identity has
+machine, PID and start identity. Result contains finish time, outcome (`passed`,
+`failed`, `timed-out`, `cancelled`, `spawn-failed`, `signaled`), nullable exit
+code/signal, second tree observation, bounded output digest/excerpt/total byte
+count/truncation, resolved executable/digest/platform/fid version, kept and
+refused files, `counts` and `reasons`. Qualification requires success, a clean
+unchanged tree, current ownership at completion and every listed file kept.
+Reasons are `tree-dirty`, `tree-changed`, `ownership-lost`, `artifact-not-kept`.
+
+Show's text adds, for example:
+
+```text
+  Checks      ✓ lint passed at 10:05
+              ⚠ test passed at 10:12, doesn't count: the tree changed
+```
+
+A same-key repeat returns the original response without spawning. A keyed
+request cut off before completion gives `check-incomplete` without a result.
+Before a fresh check, unfinished starts on the task are inspected by machine,
+PID and start identity. A stopped process permits execution, with human warning
+`⚠ CHK-100001 never finished; its process has stopped`; a live one refuses as
+`check-still-running`, suggesting waiting or stopping its PID and trying again.
+The old start remains unfinished in either case.
+
+| Code | Category / exit | Exact detail keys |
+|---|---|---|
+| `checks-not-configured` | precondition / 4 | `lane` (string) |
+| `check-unsuccessful` | gate-unsuccessful / 8 | `check_ids`, `outcomes` (string arrays, unsuccessful checks only) |
+| `check-not-qualified` | precondition / 4 | `check_ids`, `reasons` (string arrays) |
+| `check-still-running` | conflict / 4 | `check_id` (string), `pid` (integer) |
+| `check-incomplete` | conflict / 4 | `check_ids` (string array) |
+
+All are non-retryable and have an issue subject naming the task.
+`checks-not-configured` suggests `add checks to [lanes.<lane>], then merge
+.fid.toml and git fetch`. `check-still-running` suggests `wait for it to finish,
+or stop pid <pid>, then check again`.
+
 ## 5. Typed Failure Codes
 
 Initial cross-cutting codes include:

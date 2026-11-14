@@ -1,0 +1,23 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "check-not-qualified",
+    "details": {
+      "check_ids": [
+        "CHK-<new>"
+      ],
+      "reasons": [
+        "tree-dirty"
+      ]
+    },
+    "message": "checks passed, but some don't count for hand-off",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "check.execute"
+}

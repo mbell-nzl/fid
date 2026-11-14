@@ -4,10 +4,12 @@ package integration
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"unicode"
@@ -117,6 +119,7 @@ var p24CodeRows = map[string]p24CodeFactory{
 var p24CodeExclusions = map[string]string{}
 
 var p24SpecialCodePairs = map[string]func(*testing.T){
+	"checks-not-configured": p24LeanPairName("checks-not-configured"), "check-unsuccessful": p24LeanPairName("check-unsuccessful"), "check-not-qualified": p24LeanPairName("check-not-qualified"), "check-still-running": p24LeanPairName("check-still-running"), "check-incomplete": p24LeanPairName("check-incomplete"),
 	"policy-unavailable":          TestPolicyUnavailableHumanAndJSON,
 	"gate-unsuccessful":           TestP24HumanGateTerminalFailure,
 	"budget-data-unavailable":     p24BudgetTerminalPair,
@@ -365,6 +368,12 @@ func p24ExpectedFailureText(t *testing.T, payload map[string]any, operation stri
 	f := payload["error"].(map[string]any)
 	d := f["details"].(map[string]any)
 	code := f["code"].(string)
+	scalar := func(value any) string {
+		if number, ok := value.(float64); ok && math.Trunc(number) == number {
+			return strconv.FormatFloat(number, 'f', 0, 64)
+		}
+		return fmt.Sprint(value)
+	}
 	join := func(key, separator string) string {
 		values, _ := d[key].([]any)
 		parts := []string{}
@@ -436,7 +445,7 @@ func p24ExpectedFailureText(t *testing.T, payload map[string]any, operation stri
 			case nil:
 				text = "null"
 			default:
-				text = fmt.Sprint(value)
+				text = scalar(value)
 			}
 			parts = append(parts, key+"="+text)
 		}
@@ -454,6 +463,8 @@ func p24ExpectedFailureText(t *testing.T, payload map[string]any, operation stri
 		text += "blocked by: " + strings.Join(ids, ",") + "\n"
 	}
 	next := map[string]string{
+		"checks-not-configured":       "add checks to [lanes." + fmt.Sprint(d["lane"]) + "], then merge .fid.toml and git fetch",
+		"check-still-running":         "wait for it to finish, or stop pid " + scalar(d["pid"]) + ", then check again",
 		"lane-not-set":                "fid issue update " + fmt.Sprint(d["task_id"]) + " --lane <routine|standard|assured> --actor <actor>",
 		"hold-not-current":            "fid next",
 		"repository-mismatch":         "check HEAD and uncommitted changes, then correct expected_repository",

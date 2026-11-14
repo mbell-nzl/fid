@@ -1,0 +1,5 @@
+● Checking lean…
+✗ lean signaled
+  Kept coverage.out
+error: 1 of 1 checks failed: lean
+reason: check-unsuccessful; check_ids=CHK-<new>, outcomes=signaled

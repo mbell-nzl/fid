@@ -38,6 +38,11 @@ type failureCodeExpectation struct {
 func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 	t.Parallel()
 	expectations := []failureCodeExpectation{
+		{CodeChecksNotConfigured, CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringDetails("lane")},
+		{CodeCheckUnsuccessful, CategoryGateUnsuccessful, false, []SubjectType{SubjectIssue}, []detailExpectation{stringsDetail("check_ids"), stringsDetail("outcomes")}},
+		{CodeCheckNotQualified, CategoryPrecondition, false, []SubjectType{SubjectIssue}, []detailExpectation{stringsDetail("check_ids"), stringsDetail("reasons")}},
+		{CodeCheckStillRunning, CategoryConflict, false, []SubjectType{SubjectIssue}, []detailExpectation{stringDetail("check_id"), integerDetail("pid")}},
+		{CodeCheckIncomplete, CategoryConflict, false, []SubjectType{SubjectIssue}, []detailExpectation{stringsDetail("check_ids")}},
 		{CodeLaneNotSet, CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringDetails("task_id")},
 		{CodeNotWaiting, CategoryConflict, false, []SubjectType{SubjectIssue}, stringDetails("task_id")},
 		{CodeHoldNotCurrent, CategoryConflict, false, []SubjectType{SubjectIssue}, []detailExpectation{stringDetail("hold_id"), stringDetail("reason")}},
@@ -590,4 +595,8 @@ func assertSerializedDetailValue(t *testing.T, raw json.RawMessage, field detail
 	default:
 		t.Fatalf("unknown detail kind for %q", field.name)
 	}
+}
+
+func stringsDetail(name string) detailExpectation {
+	return detailExpectation{name: name, kind: detailStringsKind}
 }

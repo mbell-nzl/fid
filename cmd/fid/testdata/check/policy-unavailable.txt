@@ -1,0 +1,3 @@
+error: invalid .fid.toml: unknown key checks.lean.unknown
+reason: policy-unavailable; commit=<commit-or-tree>, problem=invalid .fid.toml: unknown key checks.lean.unknown, ref=origin/trunk
+next: fix .fid.toml on the default branch, merge it and git fetch
