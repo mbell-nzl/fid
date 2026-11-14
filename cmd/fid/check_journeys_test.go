@@ -16,12 +16,27 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 )
 
+// quietChildCoverage gives a check child a coverage directory when tests run
+// with coverage. The child is this test binary and exits from inside a test;
+// the check's environment drops GOCOVERDIR, and without it the exit appends a
+// "GOCOVERDIR not set" warning to the output the tests compare.
+func quietChildCoverage() {
+	if testing.CoverMode() == "" || os.Getenv("GOCOVERDIR") != "" {
+		return
+	}
+	dir := filepath.Join(os.TempDir(), "fid-check-child-coverage")
+	if os.MkdirAll(dir, 0o700) == nil {
+		_ = os.Setenv("GOCOVERDIR", dir)
+	}
+}
+
 //nolint:paralleltest // A disposable child process for the named check tests.
 func TestLeanCheckChild(t *testing.T) {
 	for i, arg := range os.Args {
 		if arg != "--check-child" {
 			continue
 		}
+		quietChildCoverage()
 		switch os.Args[i+1] {
 		case "pass":
 			fmt.Println("check output\x1b[31m")
