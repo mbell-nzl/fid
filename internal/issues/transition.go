@@ -206,6 +206,9 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 				return &persondecision.ReasonRequiredError{}
 			}
 		}
+		if err := fixedTransition(current, toState); err != nil {
+			return err
+		}
 		rules, allowed := registry.RulesForEdge(current.WorkflowID, current.Status, toState)
 		var execution workflow.ExecutionTransitionEvaluation
 		if !cancelling {

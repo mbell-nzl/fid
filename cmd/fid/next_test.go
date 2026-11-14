@@ -334,9 +334,7 @@ func TestNextHoldEndsInTheEventThatClosesItsTask(t *testing.T) {
 	t.Parallel()
 	workspace := gittest.NewWorkspace(t)
 	runFIDCommand(t, workspace, "init", "--prefix", "FID")
-	runFIDCommand(t, workspace, "workflow", "define", "--name", "quick", "--applies-to", "task", "--states", "todo,done,cancelled",
-		"--categories", "unstarted,completed,cancelled", "--transitions", "todo->done,todo->cancelled", "--actor", "human:mark")
-	runFIDCommand(t, workspace, "workflow", "assign", "--name", "quick", "--kind", "task", "--actor", "human:mark")
+
 	for _, title := range []string{"Cancelled while held", "Done while held", "Left held"} {
 		runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--actor", "human:mark")
 	}
@@ -350,6 +348,9 @@ func TestNextHoldEndsInTheEventThatClosesItsTask(t *testing.T) {
 	}
 	for _, to := range []string{"cancelled", "done"} {
 		task := take()
+		if to == "done" {
+			seedReviewState(t, workspace, task)
+		}
 		runFIDCommand(t, workspace, "issue", "transition", task, "--to", to, "--actor", "human:mark", "--reason", "Test transition")
 		event := lastJournalEvent(t, workspace)
 		ended := false

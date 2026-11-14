@@ -7,6 +7,7 @@ import (
 )
 
 type normalizedUpdateRequest struct {
+	lane       *string
 	title      *string
 	priority   *int
 	labels     *[]string
@@ -15,7 +16,7 @@ type normalizedUpdateRequest struct {
 
 func normalizeUpdateRequest(options UpdateOptions) (normalizedUpdateRequest, error) {
 	request := normalizedUpdateRequest{
-		priority: options.Priority,
+		priority: options.Priority, lane: options.Lane,
 	}
 
 	if options.Title != nil {
@@ -48,6 +49,9 @@ func normalizeUpdateRequest(options UpdateOptions) (normalizedUpdateRequest, err
 
 func issueUpdateArgv(issueID, actor, idempotencyKey string, request normalizedUpdateRequest, expectedRevision *int) []string {
 	argv := []string{"fid", "issue", "update", issueID}
+	if request.lane != nil {
+		argv = append(argv, "--lane", *request.lane)
+	}
 	if request.title != nil {
 		argv = append(argv, "--title", *request.title)
 	}

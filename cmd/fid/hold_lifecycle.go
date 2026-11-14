@@ -9,6 +9,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/holdwork"
 	"github.com/mbell-nzl/fid/internal/persondecision"
+	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/spf13/cobra"
 )
 
@@ -134,6 +135,12 @@ func renderHoldFailure(cmd *cobra.Command, operation string, cause error) error 
 		return refused
 	}
 	failure, handled, err := personDecisionFailure(operation, cause)
+	var source *policy.SourceError
+	if errors.As(cause, &source) {
+		failure, err = cli.NewFailure(cli.CodePolicyUnavailable, cli.BoundedMessage(source.Error()), nil, source.Details())
+		failure.NextAction = source.NextAction()
+		handled = true
+	}
 	var refusal *holdwork.Refusal
 	if !handled && errors.As(cause, &refusal) {
 		var subject *cli.Subject

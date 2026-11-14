@@ -13,7 +13,7 @@ import (
 
 var issueSummaryKeys = []string{
 	"id", "kind", "title", "status", "status_category", "workflow_id", "parent_id",
-	"priority", "sequence", "spec_md_path", "revision", "labels", "created_at", "updated_at",
+	"priority", "sequence", "spec_md_path", "revision", "labels", "lane", "created_at", "updated_at",
 }
 
 var issueDetailKeys = append(append([]string{}, issueSummaryKeys...), "acceptance_criteria")

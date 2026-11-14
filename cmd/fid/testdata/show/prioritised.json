@@ -52,6 +52,7 @@
     ],
     "epic": null,
     "issue": {
+      "lane": null,
       "id": "FID-e3a1c0",
       "kind": "epic",
       "title": "Operating experience",

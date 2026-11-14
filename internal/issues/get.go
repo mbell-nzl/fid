@@ -54,7 +54,7 @@ func readIssue(conn *sql.DB, registry *workflow.Registry, id string) (Issue, err
 	row := conn.QueryRow(`
 		SELECT id, kind, title, status, workflow_id, parent_id, priority, sequence,
 		       spec_md_path, revision, owner_role, owner_actor,
-		       concerns_raised, open_concerns_count, triage_status, created_at, updated_at
+		       concerns_raised, open_concerns_count, triage_status, created_at, updated_at, lane
 		FROM issues_enriched
 		WHERE id = ?
 	`, id)
@@ -64,6 +64,7 @@ func readIssue(conn *sql.DB, registry *workflow.Registry, id string) (Issue, err
 		parentID, specMDPath, ownerRole                sql.NullString
 		ownerActor, triageStatus, createdAt, updatedAt sql.NullString
 		priority, sequence                             sql.NullInt64
+		lane                                           sql.NullString
 	)
 	if err := row.Scan(
 		&record.ID,
@@ -82,7 +83,7 @@ func readIssue(conn *sql.DB, registry *workflow.Registry, id string) (Issue, err
 		&record.OpenConcernsCount,
 		&triageStatus,
 		&createdAt,
-		&updatedAt,
+		&updatedAt, &lane,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Issue{}, &NotFoundError{IssueID: id}
@@ -100,6 +101,7 @@ func readIssue(conn *sql.DB, registry *workflow.Registry, id string) (Issue, err
 		return Issue{}, err
 	}
 	record.AcceptanceCriteria = []AcceptanceCriterion{}
+	record.Lane = nullStringPointer(lane)
 	record.ParentID = nullStringPointer(parentID)
 	record.SpecMDPath = nullStringPointer(specMDPath)
 	record.OwnerRole = nullStringPointer(ownerRole)

@@ -72,7 +72,7 @@ func write(options Options, operation string, build func(writeContext) (journal.
 				return err
 			}
 			if found {
-				result, err = decodeResult(outcome.ResultJSON, outcome.EventID)
+				result, err = decodeResult(outcome.ResultJSON, outcome.EventID, operation)
 				return err
 			}
 		}
@@ -84,6 +84,10 @@ func write(options Options, operation string, build func(writeContext) (journal.
 		event, fields, err := build(writeContext{options, lock, conn, now})
 		if err != nil {
 			return err
+		}
+		if event.EventType == "" {
+			result = Result{Fields: fields}
+			return nil
 		}
 		actorType, actorID, _ := strings.Cut(options.Actor, ":")
 		event.EventSchema = journal.EventSchemaV2
@@ -118,7 +122,7 @@ func write(options Options, operation string, build func(writeContext) (journal.
 		if err != nil {
 			return err
 		}
-		result, err = decodeResult(outcome.ResultJSON, outcome.EventID)
+		result, err = decodeResult(outcome.ResultJSON, outcome.EventID, operation)
 		return err
 	})
 	if err != nil {
@@ -129,7 +133,12 @@ func write(options Options, operation string, build func(writeContext) (journal.
 
 func holdsTimestamp(now time.Time) string { return now.UTC().Format(time.RFC3339) }
 
-func decodeResult(raw, eventID string) (Result, error) {
+func decodeResult(raw, eventID, operation string) (Result, error) {
+	if operation == "task.start" {
+		if err := journal.ValidateTaskStartResult(raw); err != nil {
+			return Result{}, err
+		}
+	}
 	var stored struct {
 		Fields     map[string]any `json:"fields"`
 		OccurredAt string         `json:"occurred_at"`
@@ -151,9 +160,11 @@ func idempotencyRequest(options Options, operation string) (journal.IdempotencyR
 		request["reason"] = options.Reason
 	}
 	names := map[string]string{"reason": "--reason", "hold": "--hold", "task": "task"}
-	if operation == "hold.park" {
+	if operation == "hold.park" || operation == "task.start" {
 		request["hold"] = options.HoldID
-		request["mode"] = "interrupted"
+		if operation == "hold.park" {
+			request["mode"] = "interrupted"
+		}
 		if options.Question != "" {
 			delete(request, "mode")
 			request["question"] = options.Question

@@ -1,0 +1,22 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "transition-not-permitted",
+    "details": {
+      "from_state": "in_progress",
+      "to_state": "in_review",
+      "unsatisfied": [
+        "use-hand-off"
+      ]
+    },
+    "message": "FID-9f13aa goes to review through the hand-off",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "issue.transition"
+}

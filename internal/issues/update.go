@@ -19,6 +19,7 @@ type UpdateOptions struct {
 	ID               string
 	Actor            string
 	IdempotencyKey   string
+	Lane             *string
 	Title            *string
 	Priority         *int
 	Labels           *[]string
@@ -44,13 +45,15 @@ type FieldChange struct {
 }
 
 type issueUpdateState struct {
-	ID         string
-	Title      string
-	Priority   *int
-	Labels     []string
-	SpecMDPath *string
-	UpdatedAt  string
-	Revision   int
+	Lane         *string
+	Kind, Status string
+	ID           string
+	Title        string
+	Priority     *int
+	Labels       []string
+	SpecMDPath   *string
+	UpdatedAt    string
+	Revision     int
 }
 
 func Update(options UpdateOptions) (UpdateResult, error) {
@@ -80,6 +83,9 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 		return UpdateResult{}, err
 	}
 	input := map[string]any{"id": options.ID}
+	if options.Lane != nil {
+		input["lane"] = *options.Lane
+	}
 	if options.Title != nil {
 		input["title"] = *options.Title
 	}
@@ -95,7 +101,7 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 	if options.ExpectedRevision != nil {
 		input["expected_revision"] = *options.ExpectedRevision
 	}
-	requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "issue.update", "project_id": projectConfig.ProjectID, "request": input}, options.Actor, map[string]string{"id": "id", "title": "--title", "priority": "--priority", "labels": "--labels", "spec_md_path": "--spec-md", "expected_revision": "--expected-revision"})
+	requestDigest, fields, err := journal.ComputeRequestDigest(map[string]any{"actor": actor, "operation": "issue.update", "project_id": projectConfig.ProjectID, "request": input}, options.Actor, map[string]string{"lane": "--lane", "id": "id", "title": "--title", "priority": "--priority", "labels": "--labels", "spec_md_path": "--spec-md", "expected_revision": "--expected-revision"})
 	if err != nil {
 		return UpdateResult{}, err
 	}
@@ -125,6 +131,9 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 		}
 		if options.ExpectedRevision != nil && *options.ExpectedRevision != current.Revision {
 			return &StateConflictError{IssueID: current.ID, ExpectedRevision: *options.ExpectedRevision, ActualRevision: current.Revision}
+		}
+		if err := validateLaneChange(current, request.lane, options.Actor); err != nil {
+			return err
 		}
 		if request.labels != nil {
 			if err := requireExistingLabels(conn, *request.labels); err != nil {
@@ -212,7 +221,7 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 
 func loadIssueUpdateState(conn *sql.DB, issueID string) (issueUpdateState, error) {
 	row := conn.QueryRow(`
-		SELECT id, title, priority, spec_md_path, updated_at, revision
+		SELECT id, title, priority, spec_md_path, updated_at, revision, lane, kind, status
 		FROM issues
 		WHERE id = ?
 	`, issueID)
@@ -222,6 +231,7 @@ func loadIssueUpdateState(conn *sql.DB, issueID string) (issueUpdateState, error
 		priority   sql.NullInt64
 		specMDPath sql.NullString
 		updatedAt  sql.NullString
+		lane       sql.NullString
 	)
 	if err := row.Scan(
 		&state.ID,
@@ -229,13 +239,14 @@ func loadIssueUpdateState(conn *sql.DB, issueID string) (issueUpdateState, error
 		&priority,
 		&specMDPath,
 		&updatedAt,
-		&state.Revision,
+		&state.Revision, &lane, &state.Kind, &state.Status,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return issueUpdateState{}, &NotFoundError{IssueID: issueID}
 		}
 		return issueUpdateState{}, fmt.Errorf("query issue %q: %w", issueID, err)
 	}
+	state.Lane = nullStringPointer(lane)
 	state.Priority = nullIntPointer(priority)
 	state.SpecMDPath = nullStringPointer(specMDPath)
 	if !updatedAt.Valid || strings.TrimSpace(updatedAt.String) == "" {

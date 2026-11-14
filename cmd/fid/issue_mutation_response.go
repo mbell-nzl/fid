@@ -49,12 +49,15 @@ func renderIssueCreateSuccess(cmd *cobra.Command, result issues.CreateResult) er
 	if jsonMode {
 		return cli.WriteSuccess(cmd.OutOrStdout(), "issue.create", map[string]any{
 			"issue": map[string]any{
-				"id": result.ID, "kind": result.Kind, "title": result.Title,
+				"lane": result.Lane, "id": result.ID, "kind": result.Kind, "title": result.Title,
 				"status": result.Status, "revision": result.Revision,
 			},
 			"idempotency_key": result.IdempotencyKey,
 			"replayed":        result.Replayed,
 		}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
+	}
+	if result.Lane != nil {
+		return writeIssueLine(cmd.OutOrStdout(), "created issue %s (%s) %q · %s\n", result.ID, result.Kind, result.Title, laneLabel(*result.Lane))
 	}
 	return writeIssueLine(cmd.OutOrStdout(), "created issue %s (%s) %q\n", result.ID, result.Kind, result.Title)
 }
@@ -75,6 +78,9 @@ func renderIssueUpdateSuccess(cmd *cobra.Command, result issues.UpdateResult) er
 			"idempotency_key": result.IdempotencyKey,
 			"replayed":        result.Replayed,
 		}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
+	}
+	if len(result.Changes) == 1 && result.Changes[0].Field == "lane" {
+		return writeIssueLine(cmd.OutOrStdout(), "updated issue %s · %s\n", result.ID, laneLabel(result.Changes[0].To.(string)))
 	}
 	return writeIssueLine(cmd.OutOrStdout(), "updated %s:\n%s\n", result.ID, issueUpdateSummary(result.Changes))
 }
@@ -147,6 +153,13 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 	if failure, handled, err := personDecisionFailure(operation, mutationErr); handled || err != nil {
 		return failure, err
 	}
+	var laneErr *issues.LaneError
+	if errors.As(mutationErr, &laneErr) {
+		if laneErr.Kind != "task" {
+			return cli.NewFailure(cli.CodeUnsupportedKind, "lanes apply to tasks only", nil, map[string]any{"argument": "kind", "value": laneErr.Kind, "allowed": []string{"task"}})
+		}
+		return cli.NewFailure(cli.CodeInvalidArgument, laneErr.Error(), nil, map[string]any{"argument": "--lane", "value": laneErr.Lane, "allowed": []string{"routine", "standard", "assured"}})
+	}
 	var requiredKey *issues.IdempotencyKeyRequiredError
 	if errors.As(mutationErr, &requiredKey) {
 		return cli.NewFailure(cli.CodeInvalidArgument, requiredKey.Error(), nil, map[string]any{"argument": "--idempotency-key", "value": nil, "allowed": []string{"string"}})
@@ -187,6 +200,12 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 	var hierarchy *issues.HierarchyInvalidError
 	if errors.As(mutationErr, &hierarchy) {
 		return cli.NewFailure(cli.CodeHierarchyInvalid, "issue hierarchy is invalid", &cli.Subject{Type: cli.SubjectIssue, ID: issueID}, map[string]any{"kind": hierarchy.Kind, "parent_id": optionalString(hierarchy.ParentID), "parent_kind": optionalString(hierarchy.ParentKind), "rule": hierarchy.Rule})
+	}
+	var commandTransition *issues.CommandTransitionError
+	if errors.As(mutationErr, &commandTransition) {
+		failure, err := transitionNotPermittedFailure(commandTransition.IssueID, commandTransition.From, commandTransition.To, []string{commandTransition.Rule})
+		failure.Message, failure.NextAction = commandTransition.Message, commandTransition.Next
+		return failure, err
 	}
 	var invalidTransition *issues.InvalidTransitionError
 	if errors.As(mutationErr, &invalidTransition) {
@@ -245,3 +264,5 @@ func optionalString(value *string) any {
 	}
 	return *value
 }
+
+func laneLabel(lane string) string { return strings.ToUpper(lane[:1]) + lane[1:] }

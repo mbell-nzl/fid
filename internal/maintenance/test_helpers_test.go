@@ -285,8 +285,8 @@ func seedAllWorkflowStates(t *testing.T, db *sql.DB) {
 	t.Helper()
 
 	states := map[string][]string{
-		"task-default":    {"todo", "in_progress", "dev_complete", "qa_review", "qa_block", "failed_gate", "qa_pass", "done", "cancelled"},
-		"epic-default":    {"todo", "in_progress", "wrapped", "closed", "cancelled"},
+		"task-default":    {"todo", "in_progress", "in_review", "done", "cancelled"},
+		"epic-default":    {"todo", "in_progress", "done", "cancelled"},
 		"subtask-default": {"todo", "in_progress", "done", "cancelled"},
 	}
 	for workflowID, workflowStates := range states {

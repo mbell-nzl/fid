@@ -18,7 +18,7 @@ func TestExecutionBoundNonterminalTransitionRequiresActiveEnvelopeClaimRunAndRev
 
 	transition := executeCommandForTest(workspace,
 		"--project", workspace, "--json", "issue", "transition", issueID,
-		"--to", "in_progress", "--actor", "agent:actor-builder", "--expected-revision", "1", "--idempotency-key", "execution-transition-1",
+		"--to", "building", "--actor", "agent:actor-builder", "--expected-revision", "1", "--idempotency-key", "execution-transition-1",
 	)
 	if transition.err != nil || transition.stderr != "" {
 		t.Fatalf("qualified nonterminal transition = %#v, want stdout-only success", transition)
@@ -81,7 +81,7 @@ func TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation(t
 	workspace, issueID, _, _ := executionTransitionFixture(t)
 	mutateExecutionTransitionFixture(t, workspace, `UPDATE claims SET worktree_id = 'other-worktree' WHERE issue_id = ?`, issueID)
 	assertExecutionTransitionRejectionWithoutMutation(t, workspace, issueID,
-		"in_progress", "agent:actor-builder", "1", "execution-transition-claim-worktree",
+		"building", "agent:actor-builder", "1", "execution-transition-claim-worktree",
 		[]string{"claim-missing", "run-inactive"},
 	)
 }
@@ -110,7 +110,7 @@ func TestExecutionBoundTransitionRetainsClaimHolderAndExpiryNoMutationGuards(t *
 			workspace, issueID, _, _ := executionTransitionFixture(t)
 			mutateExecutionTransitionFixture(t, workspace, tt.updateClaim, issueID)
 			assertExecutionTransitionRejectionWithoutMutation(t, workspace, issueID,
-				"in_progress", "agent:actor-builder", "1", "execution-transition-claim-"+strings.ReplaceAll(tt.name, " ", "-"), tt.want,
+				"building", "agent:actor-builder", "1", "execution-transition-claim-"+strings.ReplaceAll(tt.name, " ", "-"), tt.want,
 			)
 		})
 	}
@@ -128,14 +128,14 @@ func TestExecutionBoundTransitionPredicateMatrix(t *testing.T) {
 	}{
 		{
 			name:    "qualifying",
-			toState: "in_progress", actor: "agent:actor-builder", revision: "1",
+			toState: "building", actor: "agent:actor-builder", revision: "1",
 		},
 		{
 			name: "envelope inactive",
 			prepare: func(t *testing.T, workspace, _, envelopeID string) {
 				mutateExecutionTransitionFixture(t, workspace, `UPDATE work_envelopes SET status = 'draft' WHERE id = ?`, envelopeID)
 			},
-			toState: "in_progress", actor: "agent:actor-builder", revision: "1",
+			toState: "building", actor: "agent:actor-builder", revision: "1",
 			want: []string{"authority-unavailable", "envelope-inactive"},
 		},
 		{
@@ -143,7 +143,7 @@ func TestExecutionBoundTransitionPredicateMatrix(t *testing.T) {
 			prepare: func(t *testing.T, workspace, _, _ string) {
 				mutateExecutionTransitionFixture(t, workspace, `UPDATE activation_actor_profiles SET capabilities_json = '[]' WHERE actor_id = 'actor-builder'`)
 			},
-			toState: "in_progress", actor: "agent:actor-builder", revision: "1",
+			toState: "building", actor: "agent:actor-builder", revision: "1",
 			want: []string{"authority-unavailable"},
 		},
 		{
@@ -151,7 +151,7 @@ func TestExecutionBoundTransitionPredicateMatrix(t *testing.T) {
 			prepare: func(t *testing.T, workspace, issueID, _ string) {
 				mutateExecutionTransitionFixture(t, workspace, `UPDATE claims SET worktree_id = 'other-worktree' WHERE issue_id = ?`, issueID)
 			},
-			toState: "in_progress", actor: "agent:actor-builder", revision: "1",
+			toState: "building", actor: "agent:actor-builder", revision: "1",
 			want: []string{"claim-missing", "run-inactive"},
 		},
 		{
@@ -159,7 +159,7 @@ func TestExecutionBoundTransitionPredicateMatrix(t *testing.T) {
 			prepare: func(t *testing.T, workspace, issueID, _ string) {
 				mutateExecutionTransitionFixture(t, workspace, `UPDATE runs SET status = 'failed' WHERE issue_id = ?`, issueID)
 			},
-			toState: "in_progress", actor: "agent:actor-builder", revision: "1",
+			toState: "building", actor: "agent:actor-builder", revision: "1",
 			want: []string{"run-inactive"},
 		},
 		{
@@ -167,7 +167,7 @@ func TestExecutionBoundTransitionPredicateMatrix(t *testing.T) {
 			prepare: func(t *testing.T, workspace, issueID, _ string) {
 				mutateExecutionTransitionFixture(t, workspace, `UPDATE runs SET start_repository_json = json_set(start_repository_json, '$.worktree_id', 'other-worktree') WHERE issue_id = ?`, issueID)
 			},
-			toState: "in_progress", actor: "agent:actor-builder", revision: "1",
+			toState: "building", actor: "agent:actor-builder", revision: "1",
 			want: []string{"run-inactive"},
 		},
 		{
@@ -175,12 +175,12 @@ func TestExecutionBoundTransitionPredicateMatrix(t *testing.T) {
 			prepare: func(t *testing.T, workspace, issueID, _ string) {
 				mutateExecutionTransitionFixture(t, workspace, `UPDATE runs SET start_repository_json = json_set(start_repository_json, '$.project_id', 'PRJ-other') WHERE issue_id = ?`, issueID)
 			},
-			toState: "in_progress", actor: "agent:actor-builder", revision: "1",
+			toState: "building", actor: "agent:actor-builder", revision: "1",
 			want: []string{"run-inactive"},
 		},
 		{
 			name:    "Issue revision mismatched",
-			toState: "in_progress", actor: "agent:actor-builder", revision: "2",
+			toState: "building", actor: "agent:actor-builder", revision: "2",
 			want: []string{"issue-revision-conflict"},
 		},
 		{
@@ -208,8 +208,8 @@ func TestExecutionBoundTransitionPredicateMatrix(t *testing.T) {
 					t.Fatalf("qualifying transition = %#v, want stdout-only success", result)
 				}
 				after := executionTransitionIssueSnapshot(t, workspace, issueID)
-				if after.State != "in_progress" || after.Revision != before.Revision+1 {
-					t.Fatalf("qualifying Issue snapshot = %#v, want state in_progress and revision %d", after, before.Revision+1)
+				if after.State != "building" || after.Revision != before.Revision+1 {
+					t.Fatalf("qualifying Issue snapshot = %#v, want state building and revision %d", after, before.Revision+1)
 				}
 				if afterEvents := journalEventCount(t, workspace); afterEvents != beforeEvents+1 {
 					t.Fatalf("qualifying journal event count = %d, want %d", afterEvents, beforeEvents+1)

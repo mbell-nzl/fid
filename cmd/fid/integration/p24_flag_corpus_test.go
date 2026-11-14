@@ -28,7 +28,7 @@ func TestP24FlagAndClaimKeyedLeafCorpus(t *testing.T) {
 	}
 	call("label", "add", "p24-label", "--colour", "red", "--actor", "agent:developer", "--idempotency-key", "p24-label-add")
 	call("label", "add", "p24-other-label", "--colour", "blue", "--actor", "agent:developer", "--idempotency-key", "p24-other-label-add")
-	call("issue", "transition", a.issueID, "--to", "in_progress", "--expected-revision", "1", "--actor", "agent:"+a.actor, "--idempotency-key", "p24-issue-transition")
+	call("issue", "transition", a.issueID, "--to", "building", "--expected-revision", "1", "--actor", "agent:"+a.actor, "--idempotency-key", "p24-issue-transition")
 	call("issue", "ac", "add", a.issueID, "--text", "first criterion", "--ordinal", "1", "--actor", "agent:developer", "--idempotency-key", "p24-ac-add")
 	call("issue", "update", a.issueID, "--title", "Phase 24 updated", "--expected-revision", "3", "--actor", "agent:developer", "--idempotency-key", "p24-issue-update")
 	call("issue", "label", "add", a.issueID, "p24-label", "--actor", "agent:developer", "--idempotency-key", "p24-issue-label-add")

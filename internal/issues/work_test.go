@@ -38,7 +38,7 @@ func TestReadWorkListsOpenTasksInStatusOrder(t *testing.T) {
 		{"T5", "task", "E2", "done", nil, n(1), 7},
 		{"T6", "task", "E2", "cancelled", nil, nil, 8},
 		{"X1", "subtask", "T3", "todo", nil, nil, 9},
-		{"E3", "epic", "", "closed", n(3), nil, 10},
+		{"E3", "epic", "", "done", n(3), nil, 10},
 		{"T7", "task", "E3", "todo", nil, nil, 11},
 		{"T8", "task", "", "todo", nil, n(1), 12},
 		{"T9", "task", "", "in_progress", nil, nil, 13},
@@ -94,7 +94,7 @@ func TestReadWorkListsOpenTasksInStatusOrder(t *testing.T) {
 	for id, want := range map[string]string{
 		"E1": "todo unstarted sequential 0/2 blocked:T3",
 		"E2": "todo unstarted prioritised 1/3 blocked:",
-		"E3": "closed completed prioritised 0/1 blocked:",
+		"E3": "done completed prioritised 0/1 blocked:",
 		"E4": "todo unstarted prioritised 1/1 blocked:T12",
 	} {
 		epic := work.Epics[id]

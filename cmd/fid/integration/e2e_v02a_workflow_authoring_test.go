@@ -21,7 +21,7 @@ func TestV02aWorkflowAuthoringExitScenarioAndRebuildParity(t *testing.T) {
 
 	before := closureReadFile(t, journalPath)
 	_, stderr, err := closureRunFIDExpectError(t, binary, workspace,
-		"workflow", "define", "--name", "rejected-rule", "--applies-to", "task",
+		"workflow", "define", "--name", "rejected-rule", "--applies-to", "subtask",
 		"--states", "todo,done,cancelled", "--categories", "unstarted,completed,cancelled", "--transitions", "todo->done",
 		"--require", "todo->done:concerns_addressed", "--by", "tl",
 	)
@@ -31,13 +31,14 @@ func TestV02aWorkflowAuthoringExitScenarioAndRebuildParity(t *testing.T) {
 	assertClosureJournalBytesEqual(t, journalPath, before, "unregistered workflow requirement")
 
 	closureRunFID(t, binary, workspace,
-		"workflow", "define", "--name", "task-strict", "--applies-to", "task",
+		"workflow", "define", "--name", "task-strict", "--applies-to", "subtask",
 		"--states", "todo,in_progress,done,cancelled",
 		"--categories", "unstarted,started,completed,cancelled",
 		"--transitions", "todo->in_progress,in_progress->done", "--by", "tl",
 	)
-	closureRunFID(t, binary, workspace, "workflow", "assign", "--name", "task-strict", "--kind", "task", "--by", "tl")
-	controlID := closureCreateIssue(t, binary, workspace, "task", "Assigned strict task", nil, nil, nil)
+	closureRunFID(t, binary, workspace, "workflow", "assign", "--name", "task-strict", "--kind", "subtask", "--by", "tl")
+	parentID := closureCreateIssue(t, binary, workspace, "task", "Parent of configurable subtask", nil, nil, nil)
+	controlID := closureCreateIssue(t, binary, workspace, "subtask", "Assigned strict subtask", nil, &parentID, nil)
 	assertIssueWorkflow(t, binary, workspace, controlID, "task-strict", "todo")
 	assertWholeProjectionRebuildParity(t, binary, workspace, journalPath)
 }

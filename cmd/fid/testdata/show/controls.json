@@ -9,6 +9,7 @@
     "children": [],
     "epic": null,
     "issue": {
+      "lane": null,
       "id": "FID-c0c0c0",
       "kind": "task",
       "title": "Title\u001b[2J\nINJECTED",

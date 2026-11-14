@@ -10,7 +10,7 @@ func TestIsAllowedEdge(t *testing.T) {
 	if IsAllowedEdge("task-default", "todo", "done") {
 		t.Fatalf("expected todo -> done to be disallowed for task-default")
 	}
-	if !IsAllowedEdge("task-default", "qa_review", "cancelled") {
+	if !IsAllowedEdge("task-default", "in_review", "cancelled") {
 		t.Fatalf("expected qa_review -> cancelled to be allowed for task-default")
 	}
 	if IsAllowedEdge("task-default", "cancelled", "cancelled") {
@@ -27,10 +27,10 @@ func TestCategoryForStateMatchesDefaultWorkflows(t *testing.T) {
 		want       string
 	}{
 		{workflowID: "task-default", state: "todo", want: "unstarted"},
-		{workflowID: "task-default", state: "qa_pass", want: "completed"},
+		{workflowID: "task-default", state: "done", want: "completed"},
 		{workflowID: "task-default", state: "cancelled", want: "cancelled"},
-		{workflowID: "epic-default", state: "wrapped", want: "started"},
-		{workflowID: "epic-default", state: "closed", want: "completed"},
+		{workflowID: "epic-default", state: "in_progress", want: "started"},
+		{workflowID: "epic-default", state: "done", want: "completed"},
 		{workflowID: "subtask-default", state: "in_progress", want: "started"},
 		{workflowID: "subtask-default", state: "done", want: "completed"},
 	}
@@ -69,24 +69,22 @@ func TestRulesForEdgeMatchesTRDRequirements(t *testing.T) {
 			name:       "task dev complete requires developer ac verification and completion report",
 			workflowID: "task-default",
 			fromState:  "in_progress",
-			toState:    "dev_complete",
+			toState:    "in_review",
 			want:       nil,
 		},
 		{
 			name:       "task qa pass requires qa lead verification",
 			workflowID: "task-default",
-			fromState:  "qa_review",
-			toState:    "qa_pass",
+			fromState:  "in_review",
+			toState:    "done",
 			want:       nil,
 		},
 		{
 			name:       "epic wrapped requires child task rule",
 			workflowID: "epic-default",
 			fromState:  "in_progress",
-			toState:    "wrapped",
-			want: []RuleReference{
-				{Name: "all_child_tasks_done_or_cancelled"},
-			},
+			toState:    "done",
+			want:       nil,
 		},
 		{
 			name:       "cancel edge has no per edge rules",
@@ -133,68 +131,8 @@ func TestWorkflowDefinitionsMatchTRDExactly(t *testing.T) {
 		states      map[string]string
 		transitions map[string]map[string][]RuleReference
 	}{
-		{
-			workflowID: "task-default",
-			states: map[string]string{
-				"todo":         "unstarted",
-				"in_progress":  "started",
-				"dev_complete": "started",
-				"qa_review":    "started",
-				"qa_block":     "started",
-				"failed_gate":  "started",
-				"qa_pass":      "completed",
-				"done":         "completed",
-				"cancelled":    "cancelled",
-			},
-			transitions: map[string]map[string][]RuleReference{
-				"todo": {
-					"in_progress": nil,
-				},
-				"in_progress": {
-					"dev_complete": nil,
-					"failed_gate":  nil,
-				},
-				"failed_gate": {
-					"in_progress": nil,
-				},
-				"dev_complete": {
-					"qa_review": nil,
-				},
-				"qa_review": {
-					"qa_pass":  nil,
-					"qa_block": nil,
-				},
-				"qa_block": {
-					"in_progress": nil,
-				},
-				"qa_pass": {
-					"done": nil,
-				},
-			},
-		},
-		{
-			workflowID: "epic-default",
-			states: map[string]string{
-				"todo":        "unstarted",
-				"in_progress": "started",
-				"wrapped":     "started",
-				"closed":      "completed",
-				"cancelled":   "cancelled",
-			},
-			transitions: map[string]map[string][]RuleReference{
-				"todo": {
-					"in_progress": nil,
-				},
-				"in_progress": {
-					"wrapped": {
-						{Name: RuleAllChildTasksDoneOrCanceled},
-					},
-				},
-				"wrapped": {
-					"closed": nil,
-				},
-			},
-		},
+		{workflowID: "task-default", states: map[string]string{"todo": "unstarted", "in_progress": "started", "in_review": "started", "done": "completed", "cancelled": "cancelled"}, transitions: map[string]map[string][]RuleReference{"todo": {"in_progress": nil}, "in_progress": {"in_review": nil}, "in_review": {"in_progress": nil, "done": nil}}},
+		{workflowID: "epic-default", states: map[string]string{"todo": "unstarted", "in_progress": "started", "done": "completed", "cancelled": "cancelled"}, transitions: map[string]map[string][]RuleReference{"todo": {"in_progress": nil}, "in_progress": {"done": nil}}},
 		{
 			workflowID: "subtask-default",
 			states: map[string]string{

@@ -46,7 +46,7 @@ func p24SingleFlagsAndLinks(t *testing.T, a *p22FIDRecoveryAdapter) {
 		return p21Run(t, a.binary, a.workspace, append([]string{"--project", a.workspace, "--json"}, args...)...)
 	}
 	call("label", "add", "p24-label", "--colour", "red", "--actor", "agent:developer", "--idempotency-key", "p24-single-label")
-	call("issue", "transition", a.issueID, "--to", "in_progress", "--expected-revision", "1", "--actor", "agent:"+a.actor, "--idempotency-key", "p24-single-transition")
+	call("issue", "transition", a.issueID, "--to", "building", "--expected-revision", "1", "--actor", "agent:"+a.actor, "--idempotency-key", "p24-single-transition")
 	call("issue", "ac", "add", a.issueID, "--text", "first criterion", "--ordinal", "1", "--actor", "agent:developer", "--idempotency-key", "p24-single-ac")
 	call("issue", "update", a.issueID, "--title", "Phase 24 updated", "--expected-revision", "3", "--actor", "agent:developer", "--idempotency-key", "p24-single-update")
 	call("issue", "label", "add", a.issueID, "p24-label", "--actor", "agent:developer", "--idempotency-key", "p24-single-label-add")
@@ -171,8 +171,8 @@ func p24SingleActivationInput(t *testing.T, a *p22FIDRecoveryAdapter, leaf, key 
 func p24SingleWorkflow(t *testing.T, a *p22FIDRecoveryAdapter) {
 	t.Helper()
 	for _, args := range [][]string{
-		{"workflow", "define", "--name", "task-p24-single", "--applies-to", "task", "--states", "todo,in_progress,done,cancelled", "--categories", "unstarted,started,completed,cancelled", "--transitions", "todo->in_progress,in_progress->done", "--actor", "agent:developer", "--idempotency-key", "p24-single-workflow-define"},
-		{"workflow", "assign", "--name", "task-p24-single", "--kind", "task", "--actor", "agent:developer", "--idempotency-key", "p24-single-workflow-assign"},
+		{"workflow", "define", "--name", "task-p24-single", "--applies-to", "subtask", "--states", "todo,building,done,cancelled", "--categories", "unstarted,started,completed,cancelled", "--transitions", "todo->building,building->done", "--actor", "agent:developer", "--idempotency-key", "p24-single-workflow-define"},
+		{"workflow", "assign", "--name", "task-p24-single", "--kind", "subtask", "--actor", "agent:developer", "--idempotency-key", "p24-single-workflow-assign"},
 	} {
 		response := p24WorkflowCall(t, a.workspace, a.binary, append([]string{"--project", a.workspace, "--json"}, args...))
 		if response.ExitCode != 0 || response.Stderr != "" {
@@ -207,6 +207,9 @@ func p24AssertSingleJournalInventory(t *testing.T, workspace string) {
 			t.Fatalf("invalid keyed-leaf inventory row %q", line)
 		}
 		operation := strings.ReplaceAll(name, " ", ".")
+		if name == "start" {
+			operation = "task.start"
+		}
 		if name == "park" {
 			operation = "hold.park"
 		}
@@ -242,7 +245,7 @@ func p24AssertSingleJournalInventory(t *testing.T, workspace string) {
 	}
 	sort.Strings(got)
 	sort.Strings(want)
-	if len(want) != 52 || !reflect.DeepEqual(got, want) {
-		t.Fatalf("single-journal keyed operation inventory = %v; want exact 52 = %v", got, want)
+	if len(want) != 53 || !reflect.DeepEqual(got, want) {
+		t.Fatalf("single-journal keyed operation inventory = %v; want exact 53 = %v", got, want)
 	}
 }

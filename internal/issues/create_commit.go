@@ -42,6 +42,11 @@ func normalizeCreateRequest(options CreateOptions) (createRequest, error) {
 	if request.labels, err = normalizedLabels(options.Labels); err != nil {
 		return createRequest{}, err
 	}
+	if options.Lane != nil {
+		if err := validateLaneChange(issueUpdateState{Kind: request.kind}, options.Lane, options.Actor); err != nil {
+			return createRequest{}, err
+		}
+	}
 	return request, validateCreateOptions(request.kind, request.parentID, options.Priority, options.Sequence, request.scheduling)
 }
 
@@ -81,7 +86,7 @@ func createUnderLock(conn *sql.DB, lock *journal.WriteLock, options CreateOption
 	if err != nil {
 		return CreateResult{}, err
 	}
-	result := CreateResult{ID: issueID, Kind: request.kind, Title: options.Title, Status: resolved.InitialState, Revision: 1, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), IdempotencyKey: options.IdempotencyKey}
+	result := CreateResult{Lane: options.Lane, ID: issueID, Kind: request.kind, Title: options.Title, Status: resolved.InitialState, Revision: 1, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), IdempotencyKey: options.IdempotencyKey}
 	return commitCreateEvent(conn, lock, project.ProjectID, request, options, event, result)
 }
 
@@ -107,6 +112,9 @@ func createIdentifiers(conn *sql.DB, prefix string, request createRequest) (stri
 func createIssueEffects(options CreateOptions, request createRequest, issueID string, resolved workflow.ResolvedIssueWorkflow) (map[string]any, []journal.Effect) {
 	timestamp := issueMutationNow(options.now).Format(time.RFC3339)
 	values := map[string]any{"kind": request.kind, "title": options.Title, "workflow_id": resolved.ID, "status": resolved.InitialState, "revision": 1, "owner_role": defaultIssueOwnerRole(request.kind), "created_at": timestamp, "updated_at": timestamp}
+	if options.Lane != nil {
+		values["lane"] = *options.Lane
+	}
 	if request.parentID != nil {
 		values["parent_id"] = *request.parentID
 	}
@@ -167,6 +175,10 @@ func commitCreateEvent(conn *sql.DB, lock *journal.WriteLock, projectID string, 
 	}
 	if options.Labels != nil {
 		input["labels"] = options.Labels
+	}
+	if options.Lane != nil {
+		input["lane"] = *options.Lane
+		aliases["lane"] = "--lane"
 	}
 	if options.Scheduling != "" {
 		input["scheduling"] = options.Scheduling

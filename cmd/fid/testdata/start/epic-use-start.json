@@ -1,0 +1,22 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "transition-not-permitted",
+    "details": {
+      "from_state": "todo",
+      "to_state": "in_progress",
+      "unsatisfied": [
+        "use-start"
+      ]
+    },
+    "message": "FID-e3a1c0 starts with fid start",
+    "retryable": false,
+    "subject": {
+      "id": "FID-e3a1c0",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "issue.transition"
+}

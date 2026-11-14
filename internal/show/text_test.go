@@ -168,7 +168,7 @@ func TestWorkingUsesLocalDatesAndFollowsSpec(t *testing.T) {
 	result.Now = time.Date(2026, 11, 12, 0, 10, 0, 0, time.FixedZone("NZDT", 13*60*60))
 	result.Working = &holds.Working{Here: true, Since: "2026-11-11T10:40:00Z", ExpiresAt: "2026-11-11T11:40:00Z"}
 	text := writeText(t, result, display.Renderer{})
-	want := "  Spec        docs/specs/02_TRD.md\n  Working     here, since 2026-11-11 23:40, until 00:40\n\n  ACCEPTANCE CRITERIA\n"
+	want := "  Spec        docs/specs/02_TRD.md\n  Lane        not set\n  Working     here, since 2026-11-11 23:40, until 00:40\n\n  ACCEPTANCE CRITERIA\n"
 	if !strings.Contains(text, want) {
 		t.Fatalf("working isn't local or isn't in its reserved slot:\n%s", text)
 	}

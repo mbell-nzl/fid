@@ -8,6 +8,12 @@ func buildIssueUpdateChanges(current issueUpdateState, request normalizedUpdateR
 	prior := make(map[string]any)
 	changes := make([]FieldChange, 0, 8)
 
+	if request.lane != nil && !sameOptionalString(current.Lane, request.lane) {
+		values["lane"] = *request.lane
+		preconditions["lane"] = stringPointerValue(current.Lane)
+		prior["lane"] = stringPointerValue(current.Lane)
+		changes = append(changes, FieldChange{Field: "lane", From: stringPointerValue(current.Lane), To: *request.lane})
+	}
 	if request.title != nil && current.Title != *request.title {
 		values["title"] = *request.title
 		preconditions["title"] = current.Title

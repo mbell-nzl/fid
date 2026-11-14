@@ -41,6 +41,9 @@ func Assign(options AssignOptions) (AssignResult, error) {
 	if strings.TrimSpace(options.MigrationsDir) == "" {
 		return AssignResult{}, fmt.Errorf("assign workflow: migrations dir is required")
 	}
+	if options.Request.Kind == "task" || options.Request.Kind == "epic" {
+		return AssignResult{}, fmt.Errorf("%s states are fixed; workflows cannot be assigned", options.Request.Kind)
+	}
 	actor, err := standaloneActorForOptions(options.Actor)
 	if err != nil {
 		return AssignResult{}, err

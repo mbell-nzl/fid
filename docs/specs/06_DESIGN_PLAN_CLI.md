@@ -95,7 +95,7 @@ Success:
   "contract_version": "fid-cli.v1",
   "ok": true,
   "operation": "issue.get",
-  "result": {"issue": {"id": "FID-123", "kind": "task", "title": "Example", "status": "todo", "status_category": "unstarted", "workflow_id": "task-default", "parent_id": null, "priority": null, "sequence": null, "spec_md_path": null, "revision": 1, "labels": [], "created_at": "2026-08-22T00:00:00Z", "updated_at": "2026-08-22T00:00:00Z", "acceptance_criteria": []}},
+  "result": {"issue": {"id": "FID-123", "kind": "task", "title": "Example", "status": "todo", "status_category": "unstarted", "workflow_id": "task-default", "parent_id": null, "priority": null, "sequence": null, "spec_md_path": null, "revision": 1, "labels": [], "lane": null, "created_at": "2026-08-22T00:00:00Z", "updated_at": "2026-08-22T00:00:00Z", "acceptance_criteria": []}},
   "event": null
 }
 ```
@@ -596,7 +596,7 @@ every read, records no Event and makes no network calls. Text output is
   of its own beneath. An epic reads as `status` reads it: `in progress`
   once its own state's category is `started` or any of its tasks has
   started or completed, `to do` before then, and its own workflow state,
-  such as `closed`, once it is completed or cancelled.
+  such as `done`, once it is completed or cancelled.
 - **Marks.** `✓` completed, `●` started, `○` unstarted, `◆` an epic, and
   `✗` cancelled, muted rather than red, since cancelled isn't an error.
 - **Rows**, each only when it has something to show, in this order:
@@ -610,6 +610,7 @@ every read, records no Event and makes no network calls. Text output is
   - `Blocked by` and `Blocks`, each issue on its own line under the value
     column, with its state;
   - `Labels`, comma-separated, and `Spec`, `spec_md_path` as stored;
+  - `Lane`: on a task, `Routine`, `Standard`, `Assured`, or `not set`;
   - `Working`: on a held task, `here, since 09:02, until 10:02`, or
     `in <full path> by <actor>, since 08:40, until 09:40` elsewhere. An
     interrupted task reads `⚠ interrupted in <full path> by <actor>: work
@@ -618,8 +619,8 @@ every read, records no Event and makes no network calls. Text output is
     so it has no Working row.
 
   Labels are 10 columns wide after the two-space indent, so values begin
-  at column 14. Later tasks add rows after `Spec` (lane,
-  checks, reviews, approval, and next as the last), a NEEDS YOU block
+  at column 14. Later tasks add rows after `Lane` (checks, reviews,
+  approval, and next as the last), a NEEDS YOU block
   under the heading, and an epic's plan and validations.
 - **Reference lines**, in rows and lists, follow `status`'s row rules: a
   mark, the ID, two spaces, the title cut with `…`, and the right-hand
@@ -885,6 +886,81 @@ name `next.get`. A `service:*` actor's human refusal names the actor alone
 (`reason: authority-denied; actor_id=service:ci`); its JSON keeps
 `authority-denied`'s details, the operation names included. Journal replay failures keep their codes; anything else
 is `internal-error` (exit 7).
+
+**Fixed states, task lanes and start (RESET 1.5a4; Mark, 14 November 2026).**
+
+Tasks have `todo → in_progress → in_review → done`, plus `cancelled`.
+Epics have `todo`, `in_progress`, `done`, `cancelled`; subtasks keep their
+existing transitions. Human state labels are “to do”, “in progress”, “in
+review”, “done”, “cancelled”. The retired task states and epic `wrapped`
+and `closed` are removed, without data conversion. `workflow assign`
+refuses task and epic assignments; project-wide assignments affect only
+subtasks. Task and epic creation always uses the fixed default workflow.
+
+```text
+fid issue create --kind task --title <title> [--lane <routine|standard|assured>] --actor <actor> --idempotency-key <key>
+fid issue update <task> --lane <routine|standard|assured> --actor <actor> --idempotency-key <key>
+fid start --hold <id> --actor <actor> --idempotency-key <key>
+```
+
+Lanes apply only to tasks. Creation, issue reads and show's issue JSON carry
+`lane` (`null` when unset). A task's show text has `Lane` after `Spec`, with
+`Routine`, `Standard`, `Assured`, or `not set`. Create text adds ` · Standard`
+(for that lane): `created issue FID-c2d4e5 (task) "Retry a rejected backup
+push" · Standard`. A lane-only update reads `updated issue FID-c2d4e5 ·
+Assured`. Agents may set or raise a lane, never lower it (`authority-denied`).
+A person may lower a todo task's lane as a planning correction. Otherwise
+lowering is refused as `transition-not-permitted`, unsatisfied
+`lane-lowering-requires-waiver`, until `waive` in 2.2b.
+
+Start (`task.start`) validates the exact live hold under the write lock:
+existence, open/unexpired status, actor, and current worktree. It needs a
+task in `todo` with a lane, moves it to `in_progress`, and moves a todo
+epic to `in_progress` in the same Event. It requires readable trusted
+policy (`policy-unavailable` otherwise), records a changed effective policy
+snapshot, requires no clean tree, and neither changes git nor records a
+`when_changed` base. The latter is recomputed at checks and hand-off.
+
+Text: `✓ Started FID-9f13aa · Standard`. JSON:
+
+```json
+{"contract_version":"fid-cli.v1","ok":true,"operation":"task.start","result":{"task_id":"FID-9f13aa","status":"in_progress","hold_id":"HLD-4c1e9a","lane":"standard"},"event":{"id":"EVT-100001","occurred_at":"2026-11-14T09:00:00Z"}}
+```
+
+With a current hold on a task already `in_progress`, start succeeds without
+a new start Event: `✓ FID-9f13aa is already started · Standard`, the same
+JSON result and `event: null`. A fresh retry key on this harmless repeat is
+**left unbound**: while the task remains in progress, reuse returns the
+same already-started response; after it moves on, reuse gets the current
+state's result. No retry storage or Event is added for this no-op. The key
+that recorded the original start still replays that recorded response and
+Event. This no-op key rule is the orchestrator's decision under Mark's
+delegation for the 1.5a series, 14 November 2026.
+
+A missing lane refuses with `lane-not-set` (precondition, exit 4,
+not retryable, subject type `issue` naming the task, exact details
+`{task_id}`):
+
+```text
+error: FID-c2d4e5 has no lane
+reason: lane-not-set; task_id=FID-c2d4e5
+next: fid issue update FID-c2d4e5 --lane <routine|standard|assured> --actor <actor>
+```
+
+Start from `in_review` is `transition-not-permitted`, unsatisfied
+`task-todo`: review-driven rework belongs to 2.1. Generic transitions refuse
+task start (`use-start`), hand-off (`use-hand-off`), and moving a started
+task back to todo (`task-already-started`). Epics also refuse manual start.
+For example:
+
+```text
+error: FID-9f13aa starts with fid start
+reason: transition-not-permitted; from_state=todo, to_state=in_progress, unsatisfied=use-start
+next: fid start --hold <hold> --actor <actor> --idempotency-key <key>
+```
+
+Cancellation stays person-only. Completion refusal belongs to `done` in
+1.6; subtasks retain their existing behavior.
 
 **Hold lifecycle (RESET 1.5a2; Mark, 14 November 2026).**
 
@@ -1495,6 +1571,11 @@ An unknown hold cannot name its task, so its subject's ID is null. A
 `hold-not-current` human failure adds `next: fid next`. The old session's
 heartbeat and park after takeover refuse with reason `ended`. None of
 these refusals appends an Event.
+
+RESET 1.5a4 adds `lane-not-set`: precondition, exit 4, not retryable,
+subject type `issue` naming the task, exact detail key `task_id` (string).
+Its repair command is `fid issue update <task> --lane
+<routine|standard|assured> --actor <actor>`, as shown with `fid start` above.
 
 RESET 1.5a1 adds the following closed code (Mark, 14 November 2026):
 

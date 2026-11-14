@@ -24,14 +24,14 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	p20RememberEvent(t, eventIDs, initEvent)
 
 	_, workflowEvent := p20JourneyMutation(t, workspace,
-		"workflow", "define", "--name", "p20-task", "--applies-to", "task",
+		"workflow", "define", "--name", "p20-task", "--applies-to", "subtask",
 		"--states", "todo,in_progress,cancelled",
 		"--categories", "unstarted,started,cancelled",
 		"--transitions", "todo->in_progress,in_progress->cancelled", "--by", "tl",
 	)
 	p20RememberEvent(t, eventIDs, workflowEvent)
 	_, assignmentEvent := p20JourneyMutation(t, workspace,
-		"workflow", "assign", "--name", "p20-task", "--kind", "task", "--by", "tl",
+		"workflow", "assign", "--name", "p20-task", "--kind", "subtask", "--by", "tl",
 	)
 	p20RememberEvent(t, eventIDs, assignmentEvent)
 
@@ -119,7 +119,7 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 		t.Fatalf("ready task id = %q, want %q", got, taskID)
 	}
 
-	workflowList := p20JourneyRead(t, workspace, "workflow", "list", "--kind", "task")
+	workflowList := p20JourneyRead(t, workspace, "workflow", "list", "--kind", "subtask")
 	if !p20ContainsName(p20Objects(t, workflowList["workflows"]), "p20-task") {
 		t.Fatalf("workflow list = %#v, want p20-task", workflowList)
 	}

@@ -53,8 +53,10 @@ func subjectDomain(citation string, members ...string) flagDomain {
 // Only the newest accepted row is cited. Generic pflag domains are registered
 // mechanically below; these declarations supply the stronger row constraints.
 var declaredStringDomains = map[string]map[string]flagDomain{
-	"init": {"prefix": patternDomain("P21 §4.1 project.init", "^[A-Z][A-Z0-9]{0,15}$")},
+	"init":         {"prefix": patternDomain("P21 §4.1 project.init", "^[A-Z][A-Z0-9]{0,15}$")},
+	"issue update": {"lane": enumDomain("RESET 1.5a4 planning lane", "routine", "standard", "assured")},
 	"issue create": {
+		"lane":       enumDomain("RESET 1.5a4 planning lane", "routine", "standard", "assured"),
 		"kind":       enumDomain("P21 §4.1 issue.create", "epic", "subtask", "task"),
 		"scheduling": enumDomain("P21 §4.1 issue.create", "prioritised", "sequential"),
 	},

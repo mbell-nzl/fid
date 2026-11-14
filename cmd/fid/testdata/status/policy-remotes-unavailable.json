@@ -63,7 +63,7 @@
             {
               "id": "FID-3b9e01",
               "title": "Tidy resume output",
-              "status": "qa_review",
+              "status": "in_review",
               "status_category": "started",
               "epic_id": "FID-e3a1c0",
               "sequence": 2,
@@ -91,7 +91,7 @@
         {
           "id": "FID-d1d1d1",
           "title": "Leftover started task",
-          "status": "dev_complete",
+          "status": "in_progress",
           "status_category": "started",
           "epic_id": "FID-d0d0d0",
           "sequence": null,

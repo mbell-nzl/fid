@@ -32,6 +32,7 @@
     ],
     "epic": null,
     "issue": {
+      "lane": null,
       "id": "FID-8a1b2c",
       "kind": "epic",
       "title": "Loop contract",

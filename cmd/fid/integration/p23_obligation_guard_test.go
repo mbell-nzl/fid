@@ -90,7 +90,7 @@ func TestP23UnsatisfiedObligationBlocksOnlyTheActionItGuardsRealProcess(t *testi
 // Nonterminal transitions evaluate no Obligation.
 func p23AdvanceToQAReview(t *testing.T, a *p22FIDRecoveryAdapter, key string) {
 	t.Helper()
-	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
+	for revision, state := range []string{"building", "dev_complete", "qa_review"} {
 		assertP23HumanOutcomeCommandSuccess(t, "transition Issue to "+state, p23IssueTransition(t, a, state, revision+1, key+"-"+state))
 	}
 }

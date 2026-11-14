@@ -18,7 +18,7 @@ func TestRegistryNextStates(t *testing.T) {
 		state string
 		want  []NextState
 	}{
-		{"qa_review", []NextState{{"cancelled", "cancelled"}, {"qa_block", "started"}, {"qa_pass", "completed"}}},
+		{"in_review", []NextState{{"cancelled", "cancelled"}, {"done", "completed"}, {"in_progress", "started"}}},
 		{"cancelled", []NextState{}},
 		{"missing", []NextState{}},
 	} {
@@ -47,7 +47,7 @@ func TestRegistryNextStates(t *testing.T) {
 			}
 		})
 	}
-	if got := registry.NextStates("unknown", "qa_review"); got == nil || len(got) != 0 {
+	if got := registry.NextStates("unknown", "in_review"); got == nil || len(got) != 0 {
 		t.Fatalf("unknown workflow = %#v", got)
 	}
 }

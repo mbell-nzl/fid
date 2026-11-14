@@ -136,7 +136,7 @@ func TestStatusReadyGolden(t *testing.T) {
 					statusTask("FID-999999", "Another blocker", "in_progress", nil, nil, nil),
 					statusEpic("FID-eeeeee", "Waiting epic", "todo", intPointer(3)),
 					statusTask("FID-aaaaaa", "Waiting on the epic", "todo", stringPointer("FID-eeeeee"), nil, nil),
-					statusEpic("FID-ffffff", "Closed epic", "closed", intPointer(4)),
+					statusEpic("FID-ffffff", "Closed epic", "done", intPointer(4)),
 					statusTask("FID-bbbbbb", "Left in a closed epic", "todo", stringPointer("FID-ffffff"), nil, nil),
 				}, [][3]string{{"FID-eeeeee", "blocked_by", "FID-71a0c2"}, {"FID-eeeeee", "blocked_by", "FID-c2d4e5"}, {"FID-c2d4e5", "blocked_by", "FID-999999"}})
 				fixture.hold("HLD-0a0a0a", "FID-0d4e8b", "/home/mark/projects/fid-wt3", time.Minute)

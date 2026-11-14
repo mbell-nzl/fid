@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/kerneltest"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -86,13 +87,16 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	p22Git(t, workspace, "commit", "-qm", "fixture")
 	init := p21Run(t, binary, workspace, "--json", "init", "--prefix", "P21")
 	projectID := p21PathString(t, init, "result", "project", "id")
-	p21Run(t, binary, workspace, "--project", workspace, "--json", "workflow", "define", "--name", "p21-journey", "--applies-to", "task",
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "workflow", "define", "--name", "p21-journey", "--applies-to", "any",
 		"--states", "unstarted,started,completed,cancelled",
 		"--categories", "unstarted,started,completed,cancelled",
 		"--transitions", "unstarted->started,started->completed", "--actor", "agent:developer", "--idempotency-key", "p21-workflow-define")
-	p21Run(t, binary, workspace, "--project", workspace, "--json", "workflow", "assign", "--name", "p21-journey", "--kind", "task", "--actor", "agent:developer", "--idempotency-key", "p21-workflow-assign")
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "workflow", "assign", "--name", "p21-journey", "--project-wide", "--actor", "agent:developer", "--idempotency-key", "p21-workflow-assign")
 	issue := p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Phase 21 conformance journey", "--actor", "agent:developer", "--idempotency-key", "p21-issue")
 	issueID := p21PathString(t, issue, "result", "issue", "id")
+	if err := kerneltest.BindTo(workspace, filepath.Join("..", "..", "..", "migrations"), issueID, "p21-journey", "unstarted"); err != nil {
+		t.Fatal(err)
+	}
 
 	activationID := p21Activation(t, binary, workspace, "prepare", "p21-activation-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "p21", "phase": 21})
 	capabilities := []string{"artifact.verify", "claim.acquire", "claim.release", "claim.renew", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.close", "run.start"}
@@ -168,7 +172,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "complete", "--actor", "actor-builder", "--input", completeInput, "--idempotency-key", "p21-envelope-complete")
 
 	p21AssertJournalTypes(t, workspace, []string{
-		"project.initialized", "workflow.defined", "workflow.assigned", "issue.created",
+		"project.initialized", "workflow.defined", "workflow.assigned", "issue.created", "issue.updated",
 		"activation.prepared", "activation.component-staged", "activation.component-staged",
 		"activation.resource-observed", "activation.resource-observed", "activation.resource-observed", "activation.resource-observed", "activation.resource-observed",
 		"activation.committed", "activation.finalized", "gate.registered", "envelope.created",
@@ -208,7 +212,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	}
 	p21AssertUndeclaredTransitionRejected(t, binary, workspace, issueID, "started", 3, "p21-transition-undeclared-after-rebuild")
 	p21AssertJournalTypes(t, workspace, []string{
-		"project.initialized", "workflow.defined", "workflow.assigned", "issue.created",
+		"project.initialized", "workflow.defined", "workflow.assigned", "issue.created", "issue.updated",
 		"activation.prepared", "activation.component-staged", "activation.component-staged",
 		"activation.resource-observed", "activation.resource-observed", "activation.resource-observed", "activation.resource-observed", "activation.resource-observed",
 		"activation.committed", "activation.finalized", "gate.registered", "envelope.created",

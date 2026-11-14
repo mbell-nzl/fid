@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/kerneltest"
 )
 
 // Setup creates the accepted stuck state. Its values are never available to
@@ -36,6 +38,9 @@ func p24NewTakeControlStart(t *testing.T, binary, root string) p24TakeControlSta
 	p22Git(t, workspace, "commit", "-qm", "project identity")
 	issue := p21Run(t, binary, workspace, "--json", "issue", "create", "--kind", "task", "--title", "Human takes control", "--actor", "agent:builder", "--idempotency-key", "start-issue")
 	issueID := p21PathString(t, issue, "result", "issue", "id")
+	if err := kerneltest.Bind(workspace, filepath.Join("..", "..", "..", "migrations"), issueID); err != nil {
+		t.Fatal(err)
+	}
 	actions := []string{"claim.acquire", "claim.release", "concern.record", "decision.record-reference", "deviation.record", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.start"}
 	activationID := p21Activation(t, binary, workspace, "prepare", "start-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "p24", "phase": 21})
 	profiles := []any{}
@@ -61,7 +66,7 @@ func p24NewTakeControlStart(t *testing.T, binary, root string) p24TakeControlSta
 	claim := p21Run(t, binary, workspace, "--json", "claim", "acquire", "--actor", "builder", "--input", p21Input(t, t.TempDir(), "claim", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "scope": map[string]any{"paths": []string{"decision.md"}}, "mode": "mutation", "ttl_seconds": 86400}), "--idempotency-key", "start-claim")
 	repository := p22CorpusRepository(t, workspace, p21PathString(t, initialized, "result", "project", "id"))
 	p21Run(t, binary, workspace, "--json", "run", "start", "--actor", "builder", "--input", p21Input(t, t.TempDir(), "run", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": p21PathString(t, claim, "result", "claim", "id"), "claim_version": 1, "executor": map[string]any{"id": "builder-executor", "source": "activated-harness"}, "obligation_id": nil, "expected_repository": p24ExpectedRepository(repository)}), "--idempotency-key", "start-run")
-	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
+	for revision, state := range []string{"building", "dev_complete", "qa_review"} {
 		out, stderr, exit := p24GetRunExit(t, binary, workspace, "issue", "transition", issueID, "--to", state, "--actor", "agent:builder", "--expected-revision", fmt.Sprint(revision+1), "--idempotency-key", "start-"+state)
 		if exit != 0 || stderr != "" || out == "" {
 			t.Fatalf("start transition: exit=%d stdout=%q stderr=%q", exit, out, stderr)

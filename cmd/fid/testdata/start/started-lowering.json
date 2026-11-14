@@ -1,0 +1,22 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "transition-not-permitted",
+    "details": {
+      "from_state": "in_progress",
+      "to_state": "in_progress",
+      "unsatisfied": [
+        "lane-lowering-requires-waiver"
+      ]
+    },
+    "message": "Issue transition is not permitted",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "issue.update"
+}

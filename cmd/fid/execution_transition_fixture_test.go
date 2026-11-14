@@ -9,7 +9,7 @@ func TestExecutionTransitionFixtureDoesNotInheritExpiredClaim(t *testing.T) {
 	mutateExecutionTransitionFixture(t, priorWorkspace,
 		`UPDATE claims SET expires_at = '2000-01-01T00:00:00Z'`)
 	assertExecutionTransitionRejectionWithoutMutation(t, priorWorkspace, priorIssueID,
-		"in_progress", "agent:actor-builder", "1", "fixture-expired-prior-transition",
+		"building", "agent:actor-builder", "1", "fixture-expired-prior-transition",
 		[]string{"claim-expired", "run-inactive"},
 	)
 

@@ -79,7 +79,7 @@ func TestP23HumanOutcomeAuthorityAndCompatibilityMatrixRealProcess(t *testing.T)
 	// never used as a disposable probe once the gate is satisfied (stages 2 and 3
 	// use the non-committing domain evaluator instead). The non-terminal states
 	// below do not evaluate Obligations at all.
-	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
+	for revision, state := range []string{"building", "dev_complete", "qa_review"} {
 		response := p23IssueTransition(t, a, state, revision+1, "human-outcome-"+state)
 		assertP23HumanOutcomeCommandSuccess(t, "transition Issue to "+state, response)
 	}

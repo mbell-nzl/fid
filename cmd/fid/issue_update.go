@@ -11,6 +11,7 @@ func init() {
 
 func newIssueUpdateCommand() *cobra.Command {
 	var (
+		lane             string
 		title            string
 		priority         int
 		labels           []string
@@ -46,6 +47,7 @@ func newIssueUpdateCommand() *cobra.Command {
 				ID:               args[0],
 				Actor:            actor,
 				IdempotencyKey:   idempotencyKey,
+				Lane:             issueCreateOptionalString(cmd, "lane", lane),
 				Title:            issueCreateOptionalString(cmd, "title", title),
 				Priority:         issueCreateOptionalInt(cmd, "priority", priority),
 				Labels:           issueOptionalStringSlice(cmd, "labels", labels),
@@ -60,6 +62,7 @@ func newIssueUpdateCommand() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringVar(&lane, "lane", "", "Task lane: routine, standard or assured")
 	cmd.Flags().StringVar(&title, "title", "", "New title")
 	cmd.Flags().IntVar(&priority, "priority", 0, "New priority")
 	cmd.Flags().StringSliceVar(&labels, "labels", nil, "Replacement issue labels")

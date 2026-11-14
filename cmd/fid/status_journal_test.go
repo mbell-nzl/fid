@@ -35,7 +35,9 @@ func (fixture *statusFixture) createTask(title string) string {
 
 func (fixture *statusFixture) start(id string) {
 	fixture.t.Helper()
-	runFIDCommand(fixture.t, fixture.workspace, "issue", "transition", id, "--to", "in_progress", "--actor", "human:mark")
+	runFIDCommand(fixture.t, fixture.workspace, "issue", "update", id, "--lane", "standard", "--actor", "human:mark")
+	taken, _ := lifecycleResult(fixture.t, executeCommandForTest(fixture.workspace, "--json", "takeover", id, "--actor", "human:mark", "--reason", "Journal fixture"), "task.takeover")
+	runFIDCommand(fixture.t, fixture.workspace, "start", "--hold", taken["hold_id"].(string), "--actor", "human:mark", "--idempotency-key", "start-"+id)
 }
 
 // snapshotProjection copies the projection's files aside, and returns a

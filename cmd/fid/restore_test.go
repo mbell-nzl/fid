@@ -120,7 +120,7 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	// held tasks block the second task, so fid next takes them first.
 	ids := []string{issueID, second}
 	for _, priority := range []string{"0", "1"} {
-		_, created := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Held "+priority, "--priority", priority, "--actor", "human:mark")
+		_, created := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Held "+priority, "--lane", "routine", "--priority", priority, "--actor", "human:mark")
 		ids = append(ids, parseCreatedIssueID(t, created))
 		runFIDCommand(t, workspace, "link", "add", ids[len(ids)-1], "blocks", second, "--from-type", "issue", "--to-type", "issue", "--actor", "human:mark")
 	}
@@ -132,7 +132,8 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	answer, _ := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:developer"), "next.claim")
 	originalHold := answer["hold"].(map[string]any)["id"].(string)
 	runFIDCommand(t, workspace, "heartbeat", "--hold", originalHold, "--actor", "agent:developer")
-	runFIDCommand(t, workspace, "issue", "transition", ids[3], "--to", "in_progress", "--actor", "agent:developer")
+	runFIDCommand(t, workspace, "issue", "update", ids[3], "--lane", "standard", "--actor", "agent:developer")
+	runFIDCommand(t, workspace, "start", "--hold", originalHold, "--actor", "agent:developer", "--idempotency-key", "v8-start")
 	runFIDCommand(t, workspace, "park", "--hold", originalHold, "--actor", "agent:developer", "--interrupted", "--reason", "Usage limit", "--idempotency-key", "v8-park-resume")
 	resumed, _ := decodeNext(t, executeCommandForTest(workspace, "--json", "next", "--claim", "--actor", "agent:developer"), "next.claim")
 	if resumed["hold"].(map[string]any)["replaces"] != originalHold {
@@ -141,12 +142,15 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	runFIDCommand(t, workspace, "takeover", ids[3], "--actor", "human:mark", "--reason", "Agent stuck")
 	// Another worktree keeps a parked task, so a restore must preserve an
 	// ended hold's reservation and the worktree path it belongs to.
-	_, created = runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Kept during backup", "--actor", "human:mark")
+	_, epicCreated := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Started through its task", "--scheduling", "prioritised", "--actor", "human:mark")
+	epicID := parseCreatedIssueID(t, epicCreated)
+	ids = append(ids, epicID)
+	_, created = runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--epic", epicID, "--lane", "assured", "--title", "Kept during backup", "--actor", "human:mark")
 	keptTask := parseCreatedIssueID(t, created)
 	ids = append(ids, keptTask)
-	runFIDCommand(t, workspace, "issue", "transition", keptTask, "--to", "in_progress", "--actor", "agent:developer")
 	other := gittest.AddWorktree(t, workspace)
 	took, _ := decodeNext(t, executeCommandForTest(other, "--json", "takeover", keptTask, "--actor", "human:mark", "--reason", "Keep this worktree"), "task.takeover")
+	runFIDCommand(t, other, "start", "--hold", took["hold_id"].(string), "--actor", "human:mark", "--idempotency-key", "v8-epic-start")
 	runFIDCommand(t, other, "park", "--hold", took["hold_id"].(string), "--actor", "human:mark", "--interrupted", "--reason", "Usage limit", "--idempotency-key", "v8-kept")
 	// A waiting task retains the first answer and the next open question.
 	resumedWaiting, _ := decodeNext(t, executeCommandForTest(other, "--json", "next", "--claim", "--actor", "human:mark"), "next.claim")

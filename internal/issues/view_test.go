@@ -83,7 +83,7 @@ func viewWork(t *testing.T) string {
 		{"T7", "task", "E2", "in_progress", nil, nil, 13},
 		{"E3", "epic", "", "todo", n(3), nil, 14},
 		{"T8", "task", "E3", "todo", nil, nil, 15},
-		{"E4", "epic", "", "closed", n(4), nil, 16},
+		{"E4", "epic", "", "done", n(4), nil, 16},
 		{"E5", "epic", "", "cancelled", n(5), nil, 17},
 		{"E6", "epic", "", "in_progress", n(6), nil, 18},
 	}, [][3]string{

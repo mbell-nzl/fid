@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "invalid-input",
+    "code": "unsupported-kind",
+    "details": {
+      "allowed": [
+        "task"
+      ],
+      "argument": "kind",
+      "value": "epic"
+    },
+    "message": "lanes apply to tasks only",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "issue.update"
+}

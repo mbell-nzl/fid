@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "invalid-input",
+    "code": "invalid-argument",
+    "details": {
+      "allowed": [
+        "--idempotency-key"
+      ],
+      "argument": "--idempotency-key",
+      "value": null
+    },
+    "message": "--idempotency-key is required",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "task.start"
+}

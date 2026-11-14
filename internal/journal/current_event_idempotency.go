@@ -58,7 +58,8 @@ func validateCurrentIdempotency(event Event) error {
 		}
 	}
 	var body map[string]any
-	if json.Unmarshal([]byte(row["result_json"].(string)), &body) != nil || body["replayed"] != false {
+	resultJSON, ok := row["result_json"].(string)
+	if !ok || json.Unmarshal([]byte(resultJSON), &body) != nil || body["replayed"] != false {
 		return fmt.Errorf("current Event: invalid original idempotency result")
 	}
 	return nil

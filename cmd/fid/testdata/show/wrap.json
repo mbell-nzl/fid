@@ -9,6 +9,7 @@
     "children": [],
     "epic": null,
     "issue": {
+      "lane": null,
       "id": "FID-5d2f77",
       "kind": "task",
       "title": "Wrap the heading of fid show when an issue's title is far too long for one line",

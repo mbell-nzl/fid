@@ -34,13 +34,13 @@ func addJournalBackedExportFixtureFacts(t *testing.T, workspace string) string {
 
 	if _, err := workflow.Define(workflow.DefineOptions{
 		WorkspaceRoot: workspace, MigrationsDir: migrationsDir, Actor: "agent:fixture", IdempotencyKey: "fixture-workflow-define",
-		Request: workflow.DefinitionRequest{Name: "fixture-export", AppliesTo: "task", States: []string{"unstarted", "started", "completed", "cancelled"}, Categories: []string{"unstarted", "started", "completed", "cancelled"}, Transitions: []workflow.Transition{{From: "unstarted", To: "started"}, {From: "started", To: "completed"}}},
+		Request: workflow.DefinitionRequest{Name: "fixture-export", AppliesTo: "any", States: []string{"unstarted", "started", "completed", "cancelled"}, Categories: []string{"unstarted", "started", "completed", "cancelled"}, Transitions: []workflow.Transition{{From: "unstarted", To: "started"}, {From: "started", To: "completed"}}},
 	}); err != nil {
 		t.Fatalf("define fixture workflow: %v", err)
 	}
 	if _, err := workflow.Assign(workflow.AssignOptions{
 		WorkspaceRoot: workspace, MigrationsDir: migrationsDir, Actor: "agent:fixture", IdempotencyKey: "fixture-workflow-assign",
-		Request: workflow.AssignmentRequest{Name: "fixture-export", Kind: "task"},
+		Request: workflow.AssignmentRequest{Name: "fixture-export", Project: true},
 	}); err != nil {
 		t.Fatalf("assign fixture workflow: %v", err)
 	}

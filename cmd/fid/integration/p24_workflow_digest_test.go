@@ -18,14 +18,14 @@ func TestP24WorkflowInputAsWrittenAndTwoFieldConflict(t *testing.T) {
 	binary := integrationFIDBinary(t)
 	workspace := gittest.NewWorkspace(t)
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "init", "--prefix", "P24")
-	define := []string{"--project", workspace, "--json", "workflow", "define", "--name", "task-p24", "--applies-to", "task", "--states", "todo,in_progress,done,cancelled", "--categories", "unstarted,started,completed,cancelled", "--transitions", "todo->in_progress,in_progress->done", "--actor", "agent:developer", "--idempotency-key", "p24-workflow-define"}
+	define := []string{"--project", workspace, "--json", "workflow", "define", "--name", "task-p24", "--applies-to", "subtask", "--states", "todo,building,done,cancelled", "--categories", "unstarted,started,completed,cancelled", "--transitions", "todo->building,building->done", "--actor", "agent:developer", "--idempotency-key", "p24-workflow-define"}
 	first := p24WorkflowCall(t, workspace, binary, define)
 	if first.ExitCode != 0 || first.Stderr != "" {
 		t.Fatalf("workflow.define first = %d %q", first.ExitCode, first.Stderr)
 	}
 	p24AssertWorkflowFields(t, workspace, "p24-workflow-define", []string{"--name", "--applies-to", "--states", "--categories", "--transitions", "--actor"})
 	defineEvents := p21JournalEventCount(t, workspace)
-	definePermuted := []string{"--project", workspace, "--json", "workflow", "define", "--actor", "agent:developer", "--transitions", "todo->in_progress,in_progress->done", "--categories", "unstarted,started,completed,cancelled", "--states", "todo,in_progress,done,cancelled", "--applies-to", "task", "--idempotency-key", "p24-workflow-define", "--name", "task-p24"}
+	definePermuted := []string{"--project", workspace, "--json", "workflow", "define", "--actor", "agent:developer", "--transitions", "todo->building,building->done", "--categories", "unstarted,started,completed,cancelled", "--states", "todo,building,done,cancelled", "--applies-to", "subtask", "--idempotency-key", "p24-workflow-define", "--name", "task-p24"}
 	defineReplay := p24WorkflowCall(t, workspace, binary, definePermuted)
 	if defineReplay.ExitCode != 0 || defineReplay.Stderr != "" {
 		t.Fatalf("workflow.define replay = %d %q", defineReplay.ExitCode, defineReplay.Stderr)
@@ -52,14 +52,14 @@ func TestP24WorkflowInputAsWrittenAndTwoFieldConflict(t *testing.T) {
 	if after := p21JournalEventCount(t, workspace); after != defineEvents {
 		t.Fatalf("workflow.define replay/conflict appended Events: %d -> %d", defineEvents, after)
 	}
-	assign := []string{"--project", workspace, "--json", "workflow", "assign", "--name", "task-p24", "--kind", "task", "--actor", "agent:developer", "--idempotency-key", "p24-workflow-assign"}
+	assign := []string{"--project", workspace, "--json", "workflow", "assign", "--name", "task-p24", "--kind", "subtask", "--actor", "agent:developer", "--idempotency-key", "p24-workflow-assign"}
 	assigned := p24WorkflowCall(t, workspace, binary, assign)
 	if assigned.ExitCode != 0 || assigned.Stderr != "" {
 		t.Fatalf("workflow.assign first = %d %q", assigned.ExitCode, assigned.Stderr)
 	}
 	p24AssertWorkflowFields(t, workspace, "p24-workflow-assign", []string{"--name", "--kind", "--actor"})
 	before := p21JournalEventCount(t, workspace)
-	permuted := []string{"--project", workspace, "--json", "workflow", "assign", "--actor", "agent:developer", "--kind", "task", "--idempotency-key", "p24-workflow-assign", "--name", "task-p24"}
+	permuted := []string{"--project", workspace, "--json", "workflow", "assign", "--actor", "agent:developer", "--kind", "subtask", "--idempotency-key", "p24-workflow-assign", "--name", "task-p24"}
 	replay := p24WorkflowCall(t, workspace, binary, permuted)
 	if replay.ExitCode != 0 || replay.Stderr != "" {
 		t.Fatalf("workflow.assign replay = %d %q", replay.ExitCode, replay.Stderr)
@@ -94,7 +94,7 @@ func TestP24WorkflowInputAsWrittenAndTwoFieldConflict(t *testing.T) {
 	if got := p21Path(t, p23Envelope(t, actorConflict.Stderr), "error", "details", "differing_fields"); !reflect.DeepEqual(got, []any{"--actor"}) {
 		t.Fatalf("workflow.assign Actor differing_fields = %#v", got)
 	}
-	changed := []string{"--project", workspace, "--json", "workflow", "assign", "--name", "task-other", "--kind", "task", "--actor", "agent:reviewer", "--idempotency-key", "p24-workflow-assign"}
+	changed := []string{"--project", workspace, "--json", "workflow", "assign", "--name", "task-other", "--kind", "subtask", "--actor", "agent:reviewer", "--idempotency-key", "p24-workflow-assign"}
 	conflict := p24WorkflowCall(t, workspace, binary, changed)
 	assertP22ProcessFailure(t, "workflow.assign", "idempotency-conflict", 4, conflict)
 	if got := p21Path(t, p23Envelope(t, conflict.Stderr), "error", "details", "differing_fields"); !reflect.DeepEqual(got, []any{"--actor", "--name"}) {

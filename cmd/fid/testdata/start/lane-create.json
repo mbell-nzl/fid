@@ -1,0 +1,21 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-<new>",
+    "occurred_at": "<TIME>"
+  },
+  "ok": true,
+  "operation": "issue.create",
+  "result": {
+    "idempotency_key": "k1",
+    "issue": {
+      "id": "FID-<new>",
+      "kind": "task",
+      "lane": "standard",
+      "revision": 1,
+      "status": "todo",
+      "title": "Retry a rejected backup push"
+    },
+    "replayed": false
+  }
+}

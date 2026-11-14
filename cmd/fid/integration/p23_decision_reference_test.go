@@ -39,7 +39,7 @@ func TestP23DecisionReferenceProtectedLifecycleRealProcess(t *testing.T) {
 	if !foundOutcomeAction {
 		t.Fatal("resume omits Human Outcome recording action")
 	}
-	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
+	for revision, state := range []string{"building", "dev_complete", "qa_review"} {
 		response := p23IssueTransition(t, a, state, revision+1, "task9-"+state)
 		assertP23DecisionCommandSuccess(t, "transition Issue to "+state, response)
 	}

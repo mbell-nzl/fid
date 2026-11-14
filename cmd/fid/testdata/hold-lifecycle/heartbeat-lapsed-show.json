@@ -9,6 +9,7 @@
     "children": [],
     "epic": null,
     "issue": {
+      "lane": null,
       "id": "FID-aaaaaa",
       "kind": "task",
       "title": "Interrupted work",

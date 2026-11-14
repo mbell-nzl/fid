@@ -130,7 +130,7 @@ func TestP23AttentionResolutionHumanOutcomeReadinessRejectsWrongClassAndWrongRes
 	t.Parallel()
 	actions := []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "human-outcome.record", "issue.transition", "run.close", "run.observe", "run.observe-budget", "run.start", "stop.raise", "stop.resolve"}
 	a := p22NewFIDRecoveryAdapterAt(t, integrationFIDBinary(t), t.TempDir(), "human", 3600, []string{}, actions, p22ExecutionFixture{HumanObligations: true})
-	for revision, state := range []string{"in_progress", "dev_complete", "qa_review"} {
+	for revision, state := range []string{"building", "dev_complete", "qa_review"} {
 		assertP23HumanOutcomeCommandSuccess(t, "transition Issue to "+state, p23IssueTransition(t, a, state, revision+1, "attn-human-outcome-"+state))
 	}
 	release := p23RecordHumanOutcome(t, a, "attn-release-approved", a.actor, "release", "approved")

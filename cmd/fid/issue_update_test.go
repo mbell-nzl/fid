@@ -463,7 +463,7 @@ func TestIssueMutationHumanSuccessUsesStdoutOnly(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	created := executeCommandForTest(workspace, "issue", "create", "--kind", "task", "--title", "Human mutation channels", "--actor", "agent:developer")
+	created := executeCommandForTest(workspace, "issue", "create", "--kind", "subtask", "--parent", transitionParent(t, workspace), "--title", "Human mutation channels", "--actor", "agent:developer")
 	if created.err != nil || created.stderr != "" || !strings.Contains(created.stdout, "created issue ") {
 		t.Fatalf("create = %#v, want stdout-only success", created)
 	}

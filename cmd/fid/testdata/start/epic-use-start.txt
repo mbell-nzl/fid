@@ -1,0 +1,3 @@
+error: FID-e3a1c0 starts with fid start
+reason: transition-not-permitted; from_state=todo, to_state=in_progress, unsatisfied=use-start
+next: fid start --hold <hold> --actor <actor> --idempotency-key <key>

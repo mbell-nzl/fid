@@ -11,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/mbell-nzl/fid/internal/kerneltest"
 )
 
 func TestP22ResumeReadyCandidatesExecuteTheirActualOperations(t *testing.T) {
@@ -119,6 +121,9 @@ func p22NewResumeActionAdapter(t *testing.T, producer string) *p22FIDRecoveryAda
 	projectID := p21PathString(t, init, "result", "project", "id")
 	issue := p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Phase 22 conformance", "--actor", "agent:developer", "--idempotency-key", "p22-corpus-issue")
 	issueID := p21PathString(t, issue, "result", "issue", "id")
+	if err := kerneltest.Bind(workspace, filepath.Join("..", "..", "..", "migrations"), issueID); err != nil {
+		t.Fatal(err)
+	}
 	actor := "actor-recovery"
 	capabilities := []string{"artifact.verify", "attention.resolve", "claim.acquire", "claim.expire", "envelope.activate", "envelope.complete", "envelope.create", "gate.register", "gate.run", "issue.transition", "run.abandon", "run.checkpoint", "run.close", "run.observe", "run.observe-budget", "run.recover", "run.start", "stop.raise", "stop.resolve"}
 	capabilities = append(capabilities, "claim.renew", "claim.release", "evidence.link")

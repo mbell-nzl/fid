@@ -38,7 +38,7 @@ func TestTerminalSuccessTransitionRejectsUnsuccessfulReceiptEvidence(t *testing.
 		state    string
 		revision string
 	}{
-		{state: "in_progress", revision: "1"},
+		{state: "building", revision: "1"},
 		{state: "dev_complete", revision: "2"},
 		{state: "qa_review", revision: "3"},
 	} {
@@ -142,7 +142,7 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 		state    string
 		revision string
 	}{
-		{state: "in_progress", revision: "1"},
+		{state: "building", revision: "1"},
 		{state: "dev_complete", revision: "2"},
 		{state: "qa_review", revision: "3"},
 		{state: "qa_pass", revision: "4"},
@@ -453,7 +453,7 @@ func task18AdvanceToTerminalGuard(t *testing.T, workspace, issueID string) {
 		state    string
 		revision string
 	}{
-		{state: "in_progress", revision: "1"},
+		{state: "building", revision: "1"},
 		{state: "dev_complete", revision: "2"},
 		{state: "qa_review", revision: "3"},
 	} {

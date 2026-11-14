@@ -439,7 +439,7 @@ func seedIssueListFixture(t *testing.T, conn *sql.DB) {
 				"FID-task04",
 				"task",
 				"Backlog task",
-				"qa_pass",
+				"done",
 				"task-default",
 				1,
 				"developer",

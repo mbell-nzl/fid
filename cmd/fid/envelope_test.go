@@ -17,6 +17,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/kerneltest"
 	"github.com/mbell-nzl/fid/internal/project"
 )
 
@@ -199,7 +200,7 @@ func p24BindingReplayFixture(t *testing.T, leaf string) (string, map[string]any,
 		return workspace, input, control
 	}
 	workspace, issueID, envelopeID, _, _ := task18QualifiedEvidenceFixture(t, false, true)
-	for index, state := range []string{"in_progress", "dev_complete", "qa_review", "qa_pass"} {
+	for index, state := range []string{"building", "dev_complete", "qa_review", "qa_pass"} {
 		result := executeCommandForTest(workspace, "--json", "issue", "transition", issueID, "--to", state, "--actor", "agent:actor-builder", "--expected-revision", fmt.Sprint(index+1), "--idempotency-key", "p24-"+state)
 		if result.err != nil {
 			t.Fatalf("terminal fixture: %#v", result)
@@ -1028,6 +1029,9 @@ func buildUnregisteredEnvelopeWorkspace(t *testing.T, definitions []any) (string
 		}
 		if err := json.Unmarshal([]byte(created.stdout), &issue); err != nil || issue.Result.Issue.ID == "" {
 			t.Fatalf("decode created issue: %v; stdout=%q", err, created.stdout)
+		}
+		if err := kerneltest.Bind(workspace, issueMigrationsDir(), issue.Result.Issue.ID); err != nil {
+			t.Fatal(err)
 		}
 		activationID := prepareActivationForTest(t, workspace)
 		profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "envelope-builders", []any{map[string]any{

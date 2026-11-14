@@ -10,9 +10,9 @@
 
   TASKS
   ✓ FID-1a2b3c  Escape controls in status                         done
-  ✓ FID-2b3c4d  Port the display package                       qa pass
+  ✓ FID-2b3c4d  Port the display package                          done
   ● FID-71a0c2  Export validation                          in progress
-  ● FID-3b9e01  Tidy resume output                           qa review
+  ● FID-3b9e01  Tidy resume output                           in review
   ○ FID-9f13aa  Harden login rate limiting                       to do
   ○ FID-c2d4e5  Retry a rejected backup push     blocked by FID-71a0c2
   ○ FID-0d4e8b  Document backup age              blocked by FID-71a0c2

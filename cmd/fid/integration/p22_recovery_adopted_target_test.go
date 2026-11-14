@@ -106,7 +106,7 @@ func TestP22RecoveryAdoptedTargetPermitsTerminalTransitionWithFreshSuccessorProo
 	run := p21Run(t, adapter.binary, adapter.workspace, "--project", adapter.workspace, "--json", "run", "get", successorRunID)
 	issueID := p21PathString(t, run, "result", "run", "issue_id")
 	for _, step := range []struct{ state, revision string }{
-		{state: "in_progress", revision: "1"},
+		{state: "building", revision: "1"},
 		{state: "dev_complete", revision: "2"},
 		{state: "qa_review", revision: "3"},
 		{state: "qa_pass", revision: "4"},

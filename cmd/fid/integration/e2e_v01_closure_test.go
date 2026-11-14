@@ -27,13 +27,14 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	closureWriteRequirementFixture(t, workspace)
 	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, journalPath, []string{"requirement", "sync", "--source-doc", "project-docs/specs/closure.md", "--id", "PRD-LINK-002", "--by", "tl"})
 
-	mainIssueID := closureCreateIssue(t, binary, workspace, "task", "Closure lifecycle task", nil, nil, nil)
+	parentID := closureCreateIssue(t, binary, workspace, "task", "Closure lifecycle parent", nil, nil, nil)
+	mainIssueID := closureCreateIssue(t, binary, workspace, "subtask", "Closure lifecycle subtask", nil, &parentID, nil)
 	peerIssueID := closureCreateIssue(t, binary, workspace, "task", "Closure linked peer", nil, nil, nil)
 	closureRunFID(t, binary, workspace, "issue", "label", "add", mainIssueID, "release", "--by", "developer")
 
 	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "in_progress", "--actor", "agent:qa_reviewer")
 	acID := closureAddAcceptanceCriterion(t, binary, workspace, mainIssueID)
-	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "dev_complete", "--actor", "agent:developer")
+	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "done", "--actor", "agent:developer")
 	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, journalPath,
 		[]string{"issue", "ac", "verify"})
 	_ = acID

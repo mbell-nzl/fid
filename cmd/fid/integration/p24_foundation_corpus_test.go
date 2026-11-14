@@ -66,7 +66,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 	if err != nil || stderr != "" {
 		t.Fatalf("%s canonical retry = %v stderr=%q", operation, err, stderr)
 	}
-	exactResponse := operation == "hold.park" || operation == "task.takeover" || operation == "task.answer"
+	exactResponse := operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
 	byteWant := strings.Replace(entry.stdout, `"replayed":false`, `"replayed":true`, 1)
 	if exactResponse {
 		byteWant = entry.stdout

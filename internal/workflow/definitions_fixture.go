@@ -1,69 +1,17 @@
 package workflow
 
-// definitions is the frozen v0.1 workflow reference used by the existing
+// definitions is the fixed reset workflow reference used by the existing
 // transition engine and later migration-parity tests.
 var definitions = map[string]Definition{
 	"task-default": {
-		ID: "task-default",
-		States: map[string]string{
-			"todo":         "unstarted",
-			"in_progress":  "started",
-			"dev_complete": "started",
-			"qa_review":    "started",
-			"qa_block":     "started",
-			"failed_gate":  "started",
-			"qa_pass":      "completed",
-			"done":         "completed",
-			"cancelled":    "cancelled",
-		},
-		Transitions: map[string]map[string][]RuleReference{
-			"todo": {
-				"in_progress": nil,
-			},
-			"in_progress": {
-				"dev_complete": nil,
-				"failed_gate":  nil,
-			},
-			"failed_gate": {
-				"in_progress": nil,
-			},
-			"dev_complete": {
-				"qa_review": nil,
-			},
-			"qa_review": {
-				"qa_pass":  nil,
-				"qa_block": nil,
-			},
-			"qa_block": {
-				"in_progress": nil,
-			},
-			"qa_pass": {
-				"done": nil,
-			},
-		},
+		ID:          "task-default",
+		States:      map[string]string{"todo": "unstarted", "in_progress": "started", "in_review": "started", "done": "completed", "cancelled": "cancelled"},
+		Transitions: map[string]map[string][]RuleReference{"todo": {"in_progress": nil}, "in_progress": {"in_review": nil}, "in_review": {"in_progress": nil, "done": nil}},
 	},
 	"epic-default": {
-		ID: "epic-default",
-		States: map[string]string{
-			"todo":        "unstarted",
-			"in_progress": "started",
-			"wrapped":     "started",
-			"closed":      "completed",
-			"cancelled":   "cancelled",
-		},
-		Transitions: map[string]map[string][]RuleReference{
-			"todo": {
-				"in_progress": nil,
-			},
-			"in_progress": {
-				"wrapped": {
-					{Name: RuleAllChildTasksDoneOrCanceled},
-				},
-			},
-			"wrapped": {
-				"closed": nil,
-			},
-		},
+		ID:          "epic-default",
+		States:      map[string]string{"todo": "unstarted", "in_progress": "started", "done": "completed", "cancelled": "cancelled"},
+		Transitions: map[string]map[string][]RuleReference{"todo": {"in_progress": nil}, "in_progress": {"done": nil}},
 	},
 	"subtask-default": {
 		ID: "subtask-default",
@@ -84,7 +32,7 @@ var definitions = map[string]Definition{
 	},
 }
 
-// Workflow returns an isolated frozen v0.1 fixture definition.
+// Workflow returns an isolated fixed reset fixture definition.
 func Workflow(workflowID string) (Definition, bool) {
 	definition, ok := definitions[workflowID]
 	if !ok {
@@ -93,7 +41,7 @@ func Workflow(workflowID string) (Definition, bool) {
 	return cloneDefinition(definition), true
 }
 
-// CategoryForState returns a category from the frozen v0.1 fixture.
+// CategoryForState returns a category from the fixed reset fixture.
 func CategoryForState(workflowID, state string) (string, bool) {
 	definition, ok := definitions[workflowID]
 	if !ok {
@@ -102,13 +50,13 @@ func CategoryForState(workflowID, state string) (string, bool) {
 	return definition.CategoryForState(state)
 }
 
-// IsAllowedEdge reports whether an edge exists in the frozen v0.1 fixture.
+// IsAllowedEdge reports whether an edge exists in the fixed reset fixture.
 func IsAllowedEdge(workflowID, fromState, toState string) bool {
 	definition, ok := definitions[workflowID]
 	return ok && definition.IsAllowedEdge(fromState, toState)
 }
 
-// RulesForEdge returns the ordered frozen v0.1 fixture rules for an edge.
+// RulesForEdge returns the ordered fixed reset fixture rules for an edge.
 func RulesForEdge(workflowID, fromState, toState string) ([]RuleReference, bool) {
 	definition, ok := definitions[workflowID]
 	if !ok {
@@ -117,7 +65,7 @@ func RulesForEdge(workflowID, fromState, toState string) ([]RuleReference, bool)
 	return definition.RulesForEdge(fromState, toState)
 }
 
-// FrozenDefinitions returns an isolated copy of the v0.1 workflow reference.
+// FrozenDefinitions returns an isolated copy of the reset workflow reference.
 func FrozenDefinitions() map[string]Definition {
 	fixtures := make(map[string]Definition, len(definitions))
 	for workflowID, definition := range definitions {
