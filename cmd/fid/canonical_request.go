@@ -144,12 +144,7 @@ func installLeafGrammar(cmd *cobra.Command) {
 	count := len(strings.Fields(cmd.Use)) - 1
 	validator := canonicalExactArgs(operation, count)
 	if rootCommandKey(cmd) == "check" {
-		validator = func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				return writeGrammarFailure(cmd, operation, cli.CodeInvalidArgument, "name the checks to execute", map[string]any{"argument": "names", "value": nil, "allowed": []string{"defined check names"}})
-			}
-			return nil
-		}
+		validator = cobra.ArbitraryArgs
 	}
 	if count == 0 {
 		validator = canonicalNoArgs(operation)

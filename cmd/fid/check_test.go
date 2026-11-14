@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/mbell-nzl/fid/internal/cli"
 )
 
 func leanCheckFixture(t *testing.T) *statusFixture {
@@ -62,11 +60,17 @@ func TestLeanCheckRecordsResultAndReplaysWithoutSpawning(t *testing.T) {
 	}
 }
 
-func TestLeanCheckRequiresNames(t *testing.T) {
+func TestLeanCheckDefaultsToAnEmptyRequiredSetAndRecordsTheRetry(t *testing.T) {
 	t.Parallel()
 	f := plannedStartFixture(t, "in_progress", stringPointer("standard"))
 	got := f.run("--json", "check", "--hold", "HLD-aaaaaa", "--actor", "agent:claude-builder", "--idempotency-key", "check-1")
-	if cli.ExitCode(got.err) != 2 || !strings.Contains(got.stderr, "name the checks") {
-		t.Fatalf("no names=%#v", got)
+	if got.err != nil || !strings.Contains(got.stdout, `"checks":[]`) || !strings.Contains(got.stdout, `"event":{"id":`) {
+		t.Fatalf("empty check=%#v", got)
+	}
+	before := startEventCount(t, f.workspace)
+	identityGit(t, f.workspace, "remote", "remove", "origin")
+	repeat := f.run("--json", "check", "--hold", "HLD-aaaaaa", "--actor", "agent:claude-builder", "--idempotency-key", "check-1")
+	if repeat.err != nil || repeat.stdout != got.stdout || startEventCount(t, f.workspace) != before {
+		t.Fatalf("empty retry=%#v, original=%#v", repeat, got)
 	}
 }

@@ -166,10 +166,32 @@ backslashes, control characters, `***` and unsupported glob operators
 (`?`, character classes and braces) are refused. Spaces and Unicode in
 literal paths are accepted.
 
+A check with omitted or empty `when_changed` is always required when its
+name is in the lane's `checks`. Otherwise it is required only if a pattern
+matches a committed path between HEAD and its merge-base with the local
+`origin/<default>` ref. The base is recomputed at each check and hand-off,
+never fetched. Deleted paths and both names of renames count; uncommitted
+paths are excluded from this comparison. An unavailable comparison refuses
+as `comparison-unavailable` (precondition / exit 4), with the task subject
+and `{ref, problem}` details (`ref` nullable). Explicitly named checks do
+not need the comparison.
+
+Local Git diff settings cannot hide committed paths from this comparison,
+including changed submodule commits. A committed Git path outside the glob
+matcher's supported path grammar (for example a control character, backslash
+or invalid UTF-8) conservatively requires every conditional check. Show uses
+the same requirement rule.
+
+Show keeps working when policy, lane checks or the comparison is unavailable,
+with warnings and nullable required/satisfied fields instead of a refusal.
+Its `checks_base` is null when no comparison is needed or the base is missing.
+An unavailable base leaves unconditional lane checks required and conditional
+ones unknown. A missing current definition makes satisfaction unknown.
+
 A project with no checks can still use next, status and show. Status warns
 about missing checks or test paths, but explicit empty lists do not warn
 (1.5a1). A missing lane's checks will refuse check (1.5a5), hand-off
-(1.5a7) and done (1.6), naming the fix; missing test paths will refuse
+(1.5a7) and done (1.6), naming the fix; missing test paths do not stop check, but refuse
 hand-off and done too. Those refusals are not part of 1.5a1. 2.1 enforces
 the rework cap and 2.6 the token budget.
 

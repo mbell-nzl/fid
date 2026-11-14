@@ -56,6 +56,9 @@ func p24LeanPair(t *testing.T, code string) p24CodePair {
 	call("start", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "start")
 	args := []string{"check", "pass", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "check"}
 	switch code {
+	case "comparison-unavailable":
+		closureRun(t, root, "git", "remote", "remove", "origin")
+		args = append(args[:1], args[2:]...)
 	case "check-unsuccessful":
 		args[1] = "fail"
 	case "check-not-qualified":
@@ -159,7 +162,7 @@ func p24LeanCodePair(t *testing.T, code string) {
 
 func TestLeanCheckFailureCodePairs(t *testing.T) {
 	t.Parallel()
-	for _, code := range []string{"checks-not-configured", "check-unsuccessful", "check-not-qualified", "check-still-running", "check-incomplete"} {
+	for _, code := range []string{"comparison-unavailable", "checks-not-configured", "check-unsuccessful", "check-not-qualified", "check-still-running", "check-incomplete"} {
 		t.Run(code, func(t *testing.T) { t.Parallel(); p24LeanCodePair(t, code) })
 	}
 }

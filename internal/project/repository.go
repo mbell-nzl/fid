@@ -309,7 +309,9 @@ func operationMarker(root string) (string, error) {
 }
 
 func trackedFlags(root string) (bool, error) {
-	records, err := gitNUL(root, "ls-files", "-v", "-z")
+	// Only the flag byte is needed here. Clean committed paths are not encoded
+	// in an observation, so their arbitrary Git filename bytes are safe to keep.
+	records, err := gitNULBytes(root, "ls-files", "-v", "-z")
 	if err != nil {
 		return false, unsafeRepository("list tracked flags: %v", err)
 	}
@@ -322,19 +324,9 @@ func trackedFlags(root string) (bool, error) {
 }
 
 func gitNUL(root string, arguments ...string) ([]string, error) {
-	output, err := gitOutput(root, arguments...)
+	parts, err := gitNULBytes(root, arguments...)
 	if err != nil {
 		return nil, err
-	}
-	if len(output) == 0 {
-		return []string{}, nil
-	}
-	if output[len(output)-1] != 0 {
-		return nil, unsafeRepository("Git NUL output was incomplete")
-	}
-	parts := bytes.Split(output[:len(output)-1], []byte{0})
-	if len(parts) > maxRepositoryPaths {
-		return nil, unsafeRepositoryReason("unsafe-path", "path count exceeds %d", maxRepositoryPaths)
 	}
 	result := make([]string, 0, len(parts))
 	for _, part := range parts {
@@ -344,6 +336,24 @@ func gitNUL(root string, arguments ...string) ([]string, error) {
 		result = append(result, string(part))
 	}
 	return result, nil
+}
+
+func gitNULBytes(root string, arguments ...string) ([][]byte, error) {
+	output, err := gitOutput(root, arguments...)
+	if err != nil {
+		return nil, err
+	}
+	if len(output) == 0 {
+		return [][]byte{}, nil
+	}
+	if output[len(output)-1] != 0 {
+		return nil, unsafeRepository("Git NUL output was incomplete")
+	}
+	parts := bytes.Split(output[:len(output)-1], []byte{0})
+	if len(parts) > maxRepositoryPaths {
+		return nil, unsafeRepositoryReason("unsafe-path", "path count exceeds %d", maxRepositoryPaths)
+	}
+	return parts, nil
 }
 
 func gitText(root string, arguments ...string) (string, error) {

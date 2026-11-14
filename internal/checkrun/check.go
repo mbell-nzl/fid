@@ -49,9 +49,6 @@ func Run(ctx context.Context, options Options) (checkrecord.Response, error) {
 	options.Names = append([]string{}, options.Names...)
 	slices.Sort(options.Names)
 	options.Names = slices.Compact(options.Names)
-	if len(options.Names) == 0 {
-		return checkrecord.Response{}, &checkrecord.Refusal{Code: "invalid-argument", Message: "name the checks to execute", Details: map[string]any{"argument": "names", "value": nil, "allowed": []string{"defined check names"}}}
-	}
 	if options.IdempotencyKey == "" {
 		return checkrecord.Response{}, fmt.Errorf("check requires an idempotency key")
 	}
@@ -101,6 +98,13 @@ func Run(ctx context.Context, options Options) (checkrecord.Response, error) {
 			return err
 		}
 		ex.response.TaskID = hold.TaskID
+		var comparison policy.Comparison
+		if len(options.Names) == 0 {
+			comparison, err = policy.Compare(options.WorkspaceRoot, hold.TaskID)
+			if err != nil {
+				return err
+			}
+		}
 		ex.policy, err = policy.Load(options.WorkspaceRoot)
 		if err != nil {
 			return err
@@ -108,15 +112,25 @@ func Run(ctx context.Context, options Options) (checkrecord.Response, error) {
 		if err := ex.validateTask(db); err != nil {
 			return err
 		}
+		if len(options.Names) == 0 {
+			ex.options.Names, err = policy.Required(ex.policy.Effective, ex.response.Lane, hold.TaskID, comparison.Paths)
+			if err != nil {
+				return err
+			}
+			ex.response.Names = ex.options.Names
+		}
 		if err := policysnapshot.Ensure(db.lock, db.conn, ex.policy, db.now); err != nil {
 			return err
+		}
+		if len(ex.options.Names) == 0 {
+			return ex.empty(db)
 		}
 		if err := ex.previous(db); err != nil {
 			return err
 		}
 		// Reserve the key before releasing the lock used for retry lookup.
 		// A competing invocation can only replay or observe an incomplete request.
-		first.Start, err = ex.start(db, options.Names[0])
+		first.Start, err = ex.start(db, ex.options.Names[0])
 		return err
 	})
 	if err != nil {
@@ -137,7 +151,7 @@ func Run(ctx context.Context, options Options) (checkrecord.Response, error) {
 		}
 		return ex.response, responseError(ex.response)
 	}
-	for index, name := range options.Names {
+	for index, name := range ex.options.Names {
 		record := first
 		if index > 0 {
 			stopped := false
@@ -204,10 +218,10 @@ func Run(ctx context.Context, options Options) (checkrecord.Response, error) {
 			result.Counts = result.Outcome == "passed" && len(result.Reasons) == 0
 			record.Result = &result
 			ex.response.Checks = append(ex.response.Checks, summary(record))
-			complete := index == len(options.Names)-1 || process.StopError != nil || ctx.Err() != nil
+			complete := index == len(ex.options.Names)-1 || process.StopError != nil || ctx.Err() != nil
 			if complete {
 				ex.response.Complete = true
-				ex.response.NotStarted = append([]string{}, options.Names[index+1:]...)
+				ex.response.NotStarted = append([]string{}, ex.options.Names[index+1:]...)
 				ex.response.Failure = aggregateFailure(ex.response)
 				if process.StopError != nil {
 					var refused *holdwork.Refusal
@@ -257,6 +271,7 @@ func (ex *execution) validateTask(db store) error {
 	if !lane.Valid {
 		return &holdwork.Refusal{Code: "lane-not-set", TaskID: ex.response.TaskID, Message: "the task has no lane", Details: map[string]any{"task_id": ex.response.TaskID}}
 	}
+	ex.response.Lane = lane.String
 	if !ex.policy.Effective.Lanes[lane.String].ChecksSet {
 		return &checkrecord.Refusal{Code: "checks-not-configured", TaskID: ex.response.TaskID, Message: "no checks set for " + lane.String + " in .fid.toml", Details: map[string]any{"lane": lane.String}, Next: "add checks to [lanes." + lane.String + "], then merge .fid.toml and git fetch"}
 	}
@@ -297,11 +312,7 @@ func tree(observation project.Observation) checkrecord.Tree {
 }
 
 func (ex *execution) start(db store, name string) (checkrecord.Start, error) {
-	id, err := journal.GenerateID("CHK", func(candidate string) (bool, error) {
-		var n int
-		err := db.conn.QueryRow(`SELECT count(*) FROM check_starts WHERE id=?`, candidate).Scan(&n)
-		return n > 0, err
-	})
+	id, err := db.newCheckID(journal.GenerateID)
 	if err != nil {
 		return checkrecord.Start{}, err
 	}
@@ -314,7 +325,7 @@ func (ex *execution) start(db store, name string) (checkrecord.Start, error) {
 		return checkrecord.Start{}, err
 	}
 	check := ex.policy.Effective.Checks[name]
-	definition := Definition{Run: check.Run, Timeout: check.Timeout, Environment: EnvironmentNames(), Artifacts: append([]string{}, check.Artifacts...)}
+	definition := checkrecord.DefinitionFor(check)
 	start := checkrecord.Start{ID: id, TaskID: ex.response.TaskID, HoldID: ex.options.HoldID, Actor: ex.options.Actor, Name: name, Definition: definition, DefinitionDigest: checkrecord.Digest(definition), EnvironmentDigest: checkrecord.Digest(ex.env), StartedAt: db.now.Format(time.RFC3339Nano), Tree: tree(observation), Owner: owner}
 	if err := db.conn.QueryRow(`SELECT sequence FROM policy_snapshots WHERE digest=? ORDER BY sequence DESC LIMIT 1`, ex.policy.Effective.Digest()).Scan(&start.PolicySnapshot); err != nil {
 		return start, err

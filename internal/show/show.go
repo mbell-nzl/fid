@@ -10,6 +10,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/project"
+	"github.com/mbell-nzl/fid/internal/status"
 )
 
 type Options struct {
@@ -23,9 +24,12 @@ type Options struct {
 // reviews, approval, what needs a person, and what's next.
 type Result struct {
 	issues.IssueView
-	Working *holds.Working
-	Kept    *holds.Kept
-	Now     time.Time
+	Working    *holds.Working
+	Kept       *holds.Kept
+	Now        time.Time
+	Checks     []Check
+	ChecksBase *string
+	Warnings   []status.Warning
 }
 
 // Build reads the issue whose ID is exactly options.ID.
@@ -35,6 +39,7 @@ func Build(options Options) (Result, error) {
 		return Result{}, fmt.Errorf("read show: %w", err)
 	}
 	result := Result{IssueView: view, Now: options.Now}
+	result.readChecks(options.WorkspaceRoot)
 	if hold := view.OpenHold; hold != nil && (hold.Kept || hold.Waiting() || !hold.Lapsed(options.Now) || view.Issue.StatusCategory == "started") {
 		result.Working = holds.Describe(*hold, project.WorktreeID(options.WorkspaceRoot), options.Now)
 		if hold.Kept || hold.Waiting() || view.Issue.StatusCategory == "started" {
@@ -48,18 +53,20 @@ func Build(options Options) (Result, error) {
 // include those whose other end is completed or cancelled.
 func (result Result) Fields() map[string]any {
 	return map[string]any{
-		"questions":  result.Questions,
-		"checks":     result.Checks,
-		"issue":      result.Issue,
-		"state":      result.State,
-		"epic":       result.Epic,
-		"task":       result.Task,
-		"blocked_by": result.BlockedBy,
-		"blocks":     result.Blocks,
-		"progress":   result.Progress,
-		"children":   result.Children,
-		"working":    result.Working,
-		"kept":       result.Kept,
-		"scheduling": result.Scheduling,
+		"questions":   result.Questions,
+		"checks":      result.Checks,
+		"checks_base": result.ChecksBase,
+		"warnings":    result.Warnings,
+		"issue":       result.Issue,
+		"state":       result.State,
+		"epic":        result.Epic,
+		"task":        result.Task,
+		"blocked_by":  result.BlockedBy,
+		"blocks":      result.Blocks,
+		"progress":    result.Progress,
+		"children":    result.Children,
+		"working":     result.Working,
+		"kept":        result.Kept,
+		"scheduling":  result.Scheduling,
 	}
 }

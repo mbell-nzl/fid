@@ -526,6 +526,95 @@ old executor into `artifactstore`; lean checks do not import the old executor.
 An omitted or empty Artifact list has the same meaning; its optional effective
 encoding preserves snapshots recorded before this schema addition.
 
+Mark approved these details for **1.5a6**, on 14 November 2026:
+
+1. **No names means the lane's required checks.** `fid check --hold <id>
+   --actor <a> --idempotency-key <k>` selects the task lane's `checks`, minus
+   conditional checks whose `when_changed` paths the change does not touch.
+   Execution, output and exit rules stay those of 1.5a5, in name order. A
+   missing lane `checks` key gives `checks-not-configured`; `checks = []`
+   records a successful empty request, with `✓ No checks required for
+   Standard` (for that lane) and exit 0.
+2. **Changed paths (Q2 A).** Compare committed files between HEAD and its
+   merge-base with the local `origin/<default>` ref, the same default used
+   by policy. Never fetch. Recompute the base at every check and hand-off,
+   so after merging the default branch only the task's own files count.
+   Include deletions and both names of renames. Missing or empty
+   `when_changed` always requires the check. An unavailable base (missing
+   origin ref, insufficient shallow history or no common ancestor) refuses
+   as `comparison-unavailable`, precondition / exit 4, subject the task,
+   details `{ref, problem}` with nullable `ref`. Explicit names do not need
+   a comparison. Uncommitted files already prevent a result counting.
+3. **Latest finished result (Q5 A).** For the same task, tree and
+   check-definition digest, choose the latest finished result in journal
+   order, never by caller times. A later failure requires another pass;
+   an unfinished newer start preserves the earlier finished verdict.
+   Another task's pass on the same tree does not count. One shared
+   evaluator serves hand-off (1.5a7) and done (1.6), returning required
+   names, chosen result IDs and missing names. Its `checks-unsatisfied`
+   refusal is precondition / exit 4, subject the task, with
+   `{checks, latest_result_ids}`; hand-off will use it.
+4. **Missing test paths do not stop checks.** Missing `[review]
+   test_adequacy` does not affect check; hand-off refuses it in 1.5a7.
+5. **Show the current requirements and satisfaction.** The Checks row
+   marks which checks the lane currently requires and whether each has a
+   counting pass on HEAD's tree. JSON adds `required` and `satisfied` per
+   check, plus the base commit used. Keep this display to those additions.
+
+The orchestrator (**Claude Opus 5.5**, acting on Mark's behalf under his
+delegation for the 1.5a series) decided these clarifications for **1.5a6**
+on 14 November 2026:
+
+1. **Show's check entries.** Each JSON `checks` entry is
+   `{name, start, process, result, required, satisfied}`, in name order.
+   A required check without a task record has null start, process and
+   result. Text marks required checks and whether each counts on HEAD's
+   tree; an unstarted required check reads, for example,
+   `○ test required · not checked yet`. Keep labels plain, without kernel
+   words.
+2. **Show keeps working (Q16 A).** The Checks row never refuses the read.
+   Unavailable policy makes required and satisfied null for every check.
+   Missing lane checks makes required null. An unavailable base makes
+   required null only for conditional lane checks; unconditional ones
+   remain required. Unknown never means not required. Satisfied is null
+   whenever the current definition is unknown, including a removed name.
+   `checks_base` is the comparison's base commit, null if unavailable or
+   unnecessary. JSON adds `warnings`, empty when healthy, using status's
+   warning shape: kind, summary, next_action and the kind's details.
+   Kinds are policy-unavailable, checks-not-configured and
+   comparison-unavailable; comparison details are nullable ref and problem.
+   Text adds one warning line under Checks explaining why fid cannot tell.
+   Reuse status's warning code where simple.
+3. **Allocator correction.** Empty-request IDs must be checked against
+   both existing starts and requests, with a regression test.
+4. **Empty completion accepted.** The `check.completed` family for a
+   successful empty request is accepted, with both catalogs and V8 coverage.
+5. **Unsupported changed paths require all conditional checks (review round
+   1).** A committed Git path that `pathglob` cannot evaluate, including
+   control characters, backslashes or invalid UTF-8, counts as matching every
+   conditional check. It must never become a nonmatch or a comparison refusal
+   that blocks checking the task while that file exists. `fid show` uses the
+   same rule when marking current requirements. This choice was decided by
+   the orchestrator on Mark's behalf under the 1.5a delegation.
+
+Builder's transactional choices for 1.5a6: `policy.Compare` uses local git
+plumbing with lazy fetching disabled; `git diff --no-renames --name-only -z`
+includes both rename paths without git's quoting. `checkread.Read` returns
+finished results in result insertion order (preserved by journal replay),
+then unfinished starts. `checkread.Evaluate` takes the required set and its
+definitions explicitly, so done can supply the hand-off policy. Execution
+and evaluation share `checkrecord.DefinitionFor` for the definition digest.
+An empty selection uses `check.completed`, a completed `check_requests` row
+and its retry response, with no invented start or result. Both Event
+catalogs, replay/import validation and V8 cover it; it needs no migration.
+The `checks-unsatisfied` code has no CLI producer before hand-off in 1.5a7;
+the process-pair inventory records that audited exclusion until then.
+Show retains the full task check history until evaluating the current tree
+and definition, falling back to the latest historical result for display.
+It shares status's warning constructors and JSON shape. Named and empty
+requests use one allocator; a deterministic collision test includes a
+secondary start whose ID is absent from the request table.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for

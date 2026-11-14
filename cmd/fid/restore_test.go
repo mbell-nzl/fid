@@ -182,6 +182,9 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	if !errors.As(checkErr, &refusal) || refusal.Code != "check-not-qualified" {
 		t.Fatalf("V8 lean check = %v", checkErr)
 	}
+	if _, err := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), HoldID: current["hold"].(map[string]any)["id"].(string), Actor: "human:mark", IdempotencyKey: "v8-empty-check"}); err != nil {
+		t.Fatalf("V8 empty check = %v", err)
+	}
 	_, stoppedErr := checkrun.Run(context.Background(), checkrun.Options{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), HoldID: current["hold"].(map[string]any)["id"].(string), Actor: "human:mark", IdempotencyKey: "v8-stopped-check", Names: []string{"missing", "restore"}, Version: checkrun.Version(), After: func(checkrecord.Record) error {
 		_, err := holdwork.Takeover(holdwork.Options{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), TaskID: ids[3], Actor: "human:operator", Reason: "Stop between checks"})
 		return err
@@ -485,6 +488,9 @@ func assertV8SameState(t *testing.T, before, after v8State) {
 	}
 	if !strings.Contains(before.reads["check_requests"], "hold-not-current") || !strings.Contains(before.reads["check_results"], "artifact-not-kept") {
 		t.Fatalf("V8 is missing its stopped request or refused file: %s", before.reads["check_requests"])
+	}
+	if !bytes.Contains(before.events, []byte(`"event_type":"check.completed"`)) {
+		t.Fatal("V8 is missing its completed empty check")
 	}
 	if strings.Count(before.reads["policy snapshots"], `"source_ref":"built-in defaults"`) != 1 {
 		t.Fatalf("original policy snapshots = %s, want one built-in policy", before.reads["policy snapshots"])

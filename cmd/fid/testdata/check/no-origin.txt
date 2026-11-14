@@ -1,0 +1,2 @@
+error: cannot compare this task's committed changes
+reason: comparison-unavailable; problem=origin's default branch is unknown, ref=null

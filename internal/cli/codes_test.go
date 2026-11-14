@@ -38,6 +38,8 @@ type failureCodeExpectation struct {
 func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 	t.Parallel()
 	expectations := []failureCodeExpectation{
+		{CodeComparisonUnavailable, CategoryPrecondition, false, []SubjectType{SubjectIssue}, []detailExpectation{nullableStringDetail("ref"), stringDetail("problem")}},
+		{CodeChecksUnsatisfied, CategoryPrecondition, false, []SubjectType{SubjectIssue}, []detailExpectation{stringsDetail("checks"), stringsDetail("latest_result_ids")}},
 		{CodeChecksNotConfigured, CategoryPrecondition, false, []SubjectType{SubjectIssue}, stringDetails("lane")},
 		{CodeCheckUnsuccessful, CategoryGateUnsuccessful, false, []SubjectType{SubjectIssue}, []detailExpectation{stringsDetail("check_ids"), stringsDetail("outcomes")}},
 		{CodeCheckNotQualified, CategoryPrecondition, false, []SubjectType{SubjectIssue}, []detailExpectation{stringsDetail("check_ids"), stringsDetail("reasons")}},

@@ -36,6 +36,7 @@ func (stage semanticEffectStage) accepts(table, operation string) bool {
 // the accepted projection order while allowing the documented optional and
 // repeated rows within a stage. An idempotency result, where present, is last.
 var semanticEventRules = map[string]semanticEventRule{
+	"check.completed":                semanticRule("check", semanticStage(1, semanticEffectKey("check_requests", "insert")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
 	"check.stopped":                  semanticRule("check", semanticStage(1, semanticEffectKey("check_requests", "update")), semanticStage(1, semanticEffectKey("idempotency_results", "update"))),
 	"check.started":                  semanticRule("check", semanticStage(0, semanticEffectKey("check_requests", "insert")), semanticStage(1, semanticEffectKey("check_starts", "insert")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"), semanticEffectKey("idempotency_results", "update"))),
 	"check.process-started":          semanticRule("check", semanticStage(1, semanticEffectKey("check_processes", "insert"))),
@@ -107,7 +108,7 @@ var semanticEventRules = map[string]semanticEventRule{
 
 // semanticFirstProfile is the first projection schema that holds each
 // family added since schema 19. An archive of an earlier schema holds none.
-var semanticFirstProfile = map[string]int{"check.stopped": 25, "check.started": 25, "check.process-started": 25, "check.result-recorded": 25, "check.hold-renewed": 25, "check.artifact-kept": 25, "check.artifact-refused": 25, "task.started": 24, "hold.waiting": 23, "task.answered": 23, "hold.heartbeat": 22, "hold.parked": 22, "task.taken-over": 22, "hold.taken": 20, "policy.snapshotted": 21}
+var semanticFirstProfile = map[string]int{"check.completed": 25, "check.stopped": 25, "check.started": 25, "check.process-started": 25, "check.result-recorded": 25, "check.hold-renewed": 25, "check.artifact-kept": 25, "check.artifact-refused": 25, "task.started": 24, "hold.waiting": 23, "task.answered": 23, "hold.heartbeat": 22, "hold.parked": 22, "task.taken-over": 22, "hold.taken": 20, "policy.snapshotted": 21}
 
 var semanticPost14Events = map[string]bool{
 	"activation.resource-observed": true, "activation.recovery-selected": true, "activation.recovery-completed": true,

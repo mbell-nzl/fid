@@ -15,6 +15,7 @@
       }
     ],
     "checks": [],
+    "checks_base": null,
     "children": [],
     "epic": {
       "id": "FID-e3a1c0",
@@ -77,6 +78,7 @@
     "scheduling": null,
     "state": null,
     "task": null,
+    "warnings": [],
     "working": null
   }
 }

@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "comparison-unavailable",
+    "details": {
+      "problem": "origin's default branch is unknown",
+      "ref": null
+    },
+    "message": "cannot compare this task's committed changes",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "check.execute"
+}

@@ -8,6 +8,7 @@
     "blocks": [],
     "checks": [
       {
+        "name": "lean",
         "start": {
           "id": "CHK-<new>",
           "task_id": "FID-9f13aa",
@@ -95,9 +96,12 @@
           "refused_artifacts": [],
           "counts": true,
           "reasons": []
-        }
+        },
+        "required": false,
+        "satisfied": true
       },
       {
+        "name": "lean",
         "start": {
           "id": "CHK-<new>",
           "task_id": "FID-9f13aa",
@@ -147,9 +151,12 @@
           }
         },
         "process": null,
-        "result": null
+        "result": null,
+        "required": false,
+        "satisfied": true
       }
     ],
+    "checks_base": null,
     "children": [],
     "epic": {
       "id": "FID-e3a1c0",
@@ -186,6 +193,7 @@
     "scheduling": null,
     "state": null,
     "task": null,
+    "warnings": [],
     "working": {
       "hold_id": "HLD-aaaaaa",
       "worktree": "<ROOT>",

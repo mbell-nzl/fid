@@ -115,7 +115,7 @@ func ReadIssueView(options GetOptions) (IssueView, error) {
 		if err != nil {
 			return IssueView{}, err
 		}
-		view.Checks = checkread.Latest(checks)
+		view.Checks = checks
 		open, err := holds.Open(conn)
 		if err != nil {
 			return IssueView{}, err

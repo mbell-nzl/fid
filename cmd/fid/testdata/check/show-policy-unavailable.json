@@ -1,0 +1,149 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": null,
+  "ok": true,
+  "operation": "issue.show",
+  "result": {
+    "blocked_by": [],
+    "blocks": [],
+    "checks": [
+      {
+        "name": "always",
+        "start": {
+          "id": "CHK-<new>",
+          "task_id": "FID-9f13aa",
+          "hold_id": "HLD-aaaaaa",
+          "actor": "agent:claude-builder",
+          "name": "always",
+          "definition": {
+            "run": [
+              "true"
+            ],
+            "timeout_ns": 60000000000,
+            "environment": [
+              "CI",
+              "GOCACHE",
+              "GOMODCACHE",
+              "GOPATH",
+              "HOME",
+              "LANG",
+              "LC_ALL",
+              "PATH",
+              "TMPDIR",
+              "XDG_CACHE_HOME"
+            ],
+            "artifacts": []
+          },
+          "definition_digest": "sha256:<digest>",
+          "policy_snapshot": 1,
+          "environment_digest": "sha256:<digest>",
+          "started_at": "2026-11-08T09:00:00Z",
+          "tree": {
+            "head": "<commit-or-tree>",
+            "tree": "<commit-or-tree>",
+            "dirty": false,
+            "dirty_digest": null
+          },
+          "owner": {
+            "machine": "<machine>",
+            "boot_id": "<boot_id>",
+            "pid": 10001,
+            "start_time": "<start_time>"
+          }
+        },
+        "process": {
+          "machine": "<machine>",
+          "boot_id": "<boot_id>",
+          "pid": 10001,
+          "start_time": "<start_time>"
+        },
+        "result": {
+          "finished_at": "2026-11-08T09:00:00Z",
+          "outcome": "passed",
+          "exit_code": 0,
+          "signal": null,
+          "tree": {
+            "head": "<commit-or-tree>",
+            "tree": "<commit-or-tree>",
+            "dirty": false,
+            "dirty_digest": null
+          },
+          "output_digest": "sha256:<digest>",
+          "output_excerpt": "",
+          "output_bytes": 0,
+          "output_truncated": false,
+          "toolchain": {
+            "executable": "<executable>",
+            "digest": "sha256:<digest>",
+            "os": "<os>",
+            "arch": "<arch>",
+            "fid_version": "(devel)"
+          },
+          "artifacts": [],
+          "refused_artifacts": [],
+          "counts": true,
+          "reasons": []
+        },
+        "required": null,
+        "satisfied": null
+      }
+    ],
+    "checks_base": null,
+    "children": [],
+    "epic": {
+      "id": "FID-e3a1c0",
+      "kind": "epic",
+      "title": "Planned epic",
+      "status": "todo",
+      "status_category": "unstarted",
+      "progress": {
+        "done": 0,
+        "total": 1
+      }
+    },
+    "issue": {
+      "lane": "standard",
+      "id": "FID-9f13aa",
+      "kind": "task",
+      "title": "Harden login rate limiting",
+      "status": "in_progress",
+      "status_category": "started",
+      "workflow_id": "task-default",
+      "parent_id": "FID-e3a1c0",
+      "priority": null,
+      "sequence": null,
+      "spec_md_path": null,
+      "revision": 1,
+      "labels": [],
+      "created_at": "2026-10-31T02:00:00Z",
+      "updated_at": "2026-10-31T02:00:00Z",
+      "acceptance_criteria": []
+    },
+    "kept": null,
+    "progress": null,
+    "questions": [],
+    "scheduling": null,
+    "state": null,
+    "task": null,
+    "warnings": [
+      {
+        "commit": "<commit-or-tree>",
+        "kind": "policy-unavailable",
+        "next_action": "fix .fid.toml on the default branch, merge it and git fetch",
+        "problem": "invalid .fid.toml: unknown key checks.empty.unknown",
+        "ref": "origin/trunk",
+        "summary": "Policy unavailable: invalid .fid.toml: unknown key checks.empty.unknown"
+      }
+    ],
+    "working": {
+      "hold_id": "HLD-aaaaaa",
+      "worktree": "<ROOT>",
+      "here": true,
+      "actor": "agent:claude-builder",
+      "since": "2026-11-08T08:59:00Z",
+      "expires_at": "2026-11-08T09:59:00Z",
+      "last_heartbeat_at": "2026-11-08T08:59:00Z",
+      "lapsed": false
+    }
+  }
+}
