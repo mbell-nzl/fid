@@ -59,7 +59,7 @@ func TestPolicyUnavailableHumanAndJSON(t *testing.T) {
 				git("update-ref", "-d", "refs/remotes/origin/trunk")
 				ref, problem = "origin/trunk", "origin's default branch origin/trunk does not exist"
 			}
-			args := []string{"next", "--claim", "--actor", "agent:builder"}
+			args := []string{"next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"}
 			out, stderr, err := closureRunCommand(root, binary, append([]string{"--json"}, args...)...)
 			if err == nil || processExitCode(t, err) != 4 || out != "" {
 				t.Fatalf("JSON policy refusal: %v %q %q", err, out, stderr)

@@ -71,7 +71,7 @@ func TestLeanCheckStartNamesThePolicyItActuallyResolved(t *testing.T) {
 		appendPolicy(t, f.workspace, "defined_by=['Makefile']\n")
 		policyCommit(t, f.workspace)
 		identityGit(t, f.workspace, "push", "-q", "origin", "trunk")
-		got := f.run("--json", "next", "--claim", "--actor", "agent:claude-builder")
+		got := f.run("--json", "next", "--claim", "--actor", "agent:claude-builder", "--model", "codex/gpt-6.1-sol")
 		return got.err
 	}
 	if _, err := checkrun.Run(context.Background(), options); err != nil {

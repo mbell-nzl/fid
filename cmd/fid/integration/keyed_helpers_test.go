@@ -35,7 +35,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 	if err != nil || stderr != "" {
 		t.Fatalf("%s canonical retry = %v stderr=%q", operation, err, stderr)
 	}
-	exactResponse := operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
+	exactResponse := operation == "review.record" || operation == "task.handoff" || operation == "check.execute" || operation == "hold.park" || operation == "task.takeover" || operation == "task.answer" || operation == "task.start"
 	byteWant := strings.Replace(entry.stdout, `"replayed":false`, `"replayed":true`, 1)
 	if exactResponse {
 		byteWant = entry.stdout
@@ -123,6 +123,7 @@ func p24ExerciseCapturedLeaf(t *testing.T, workspace, binary, operation, name st
 // p24PositionalNames lists the positional arguments each keyed command stores
 // under a field name, for p24AssertStoredFieldNames.
 var p24PositionalNames = map[string][]string{"check.execute": {"names"},
+	"review.record": {"task"},
 	"task.answer":   {"task", "text"},
 	"task.takeover": {"task"},
 	"issue.update":  {"id"}, "issue.transition": {"id"}, "issue.ac.add": {"issue-id"},
@@ -156,9 +157,9 @@ func p24AssertStoredFieldNames(t *testing.T, workspace, operation string, entry 
 				want[arg] = true
 			}
 		}
-		for _, name := range p24PositionalNames[operation] {
-			want[name] = true
-		}
+	}
+	for _, name := range p24PositionalNames[operation] {
+		want[name] = true
 	}
 	conn := p22FaultDB(t, workspace)
 	defer func() { p22FaultOK(t, conn.Close()) }()

@@ -17,6 +17,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/modelid"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/policysnapshot"
 	"github.com/mbell-nzl/fid/internal/project"
@@ -33,6 +34,7 @@ type Options struct {
 	Clock func() time.Time
 	// Actor takes the task, as agent:<id> or human:<id>; fid next --claim.
 	Actor string
+	Model string
 }
 
 // Result is what fid next shows. Hold and Event are set only when --claim
@@ -111,6 +113,9 @@ func Read(options Options) (Result, error) {
 func Claim(options Options) (Result, error) {
 	if err := CheckActor(options.Actor); err != nil {
 		return Result{}, err
+	}
+	if options.Model != "" && !modelid.Valid(options.Model) || strings.HasPrefix(options.Actor, "agent:") && options.Model == "" {
+		return Result{}, fmt.Errorf("a model as <family>/<model> is required for an agent taking work")
 	}
 	var result Result
 	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "fid next --claim --actor " + options.Actor}, func(lock *journal.WriteLock) error {
@@ -229,6 +234,7 @@ func take(lock *journal.WriteLock, conn *sql.DB, options Options, result *Result
 		return err
 	}
 	hold := holds.New(id, result.Task.ID, project.WorktreeID(options.WorkspaceRoot), options.WorkspaceRoot, options.Actor, result.Now, replaces)
+	hold.Model = options.Model
 	effects := []journal.Effect{}
 	for _, previous := range sortedKeys(ended) {
 		current, err := holds.CurrentByID(conn, previous)
@@ -271,7 +277,7 @@ func sortedKeys(set map[string]bool) []string {
 func (result Result) Fields() map[string]any {
 	var hold, epic any
 	if result.Hold != nil {
-		hold = map[string]any{"id": result.Hold.ID, "task_id": result.Hold.TaskID, "actor": result.Hold.Actor,
+		hold = map[string]any{"id": result.Hold.ID, "task_id": result.Hold.TaskID, "actor": result.Hold.Actor, "model": result.Hold.Model,
 			"since": holds.Timestamp(result.Hold.Since), "last_heartbeat_at": holds.Timestamp(result.Hold.LastHeartbeat()), "expires_at": holds.Timestamp(result.Hold.ExpiresAt), "replaces": result.Hold.Replaces}
 	}
 	if result.Epic != nil {

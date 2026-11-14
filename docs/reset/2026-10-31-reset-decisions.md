@@ -1087,6 +1087,48 @@ supported. There is no prefix or empty binding.
     scheduling (kind `review`), the rework cap, discovered work, answering
     or deferring findings and posting rounds to the PR stay in 2.1.
 
+**1.6d's choices (2026-11-15).** Model tokens use lowercase ASCII
+letters/digits with dots, underscores and hyphens, at most 64 characters
+per side of `/`; an empty model records manual or historical unknown
+attribution. New agent work requires a model. Old model-less journal holds
+remain valid, and a repeated next request preserves its existing hold's
+model. Only validated Event-v2 hold inserts may record a model; it is
+immutable thereafter. Migration 29 adds `holds.model`, migration 30 adds
+`review_rounds` and `round_findings`, and projection cache version 12 makes
+caught-up projections rebuild. The event is `review.round-recorded`, on a
+`review` aggregate; retired kernel names remain refused.
+
+The closed JSON input carries reviewer actor/model/effort/session, stream,
+profiles, verdict, claim, findings (profile, severity, summary, nullable
+file/positive line, evidence, fix), verification and optional prompt,
+command and raw-output provenance. The CLI spec defines the exact schema
+and includes an example adapted from the real 1.6b first-round review.
+Round IDs are `RND-<six-hex>`; stable finding IDs append their one-based
+position. All findings remain open until 1.6e. Session reuse across streams
+is refused in either recording order. Rounds do not change task state.
+The full encoded Event, including duplicated retry and finding JSON, must
+fit below the existing scanners' 1 MiB line budget; oversize refuses before
+append. Retry payloads must match the immutable stored round, and request
+field digests preserve integer line numbers exactly.
+
+`review list` returns full rounds with derived other-model/current flags
+and finding open state; text uses the shared box, wrapping and escaping.
+A previously computed binding for the latest hand-off's exact base/head
+can be read from its round, keeping restored history readable without git
+objects. New endpoints require the same local fingerprint computation;
+reads never fetch. Required profiles live in one shared reader of the
+hand-off's frozen lane, changed paths and policy snapshot.
+
+**1.6d's staging (2026-11-15, orchestrator under Mark's delegation).**
+V8 records both streams, all three finding severities and build holds with
+and without models through public commands. Its public-command stale-round
+journey moves to 1.6f, whose rework makes a second hand-off possible. This
+PR tests freshness at the domain level using second hand-offs written as
+journal Events through the existing hand-off writer, without raw SQL:
+edits stale earlier rounds and a clean rebase with the same fingerprint
+keeps them current. No repeat hand-off command or transition bypass joins
+1.6d.
+
 **Approval** (moved from 2.3)
 
 21. **`fid approve <task> --actor human:<name> --reason <text>`.** Standard
@@ -2356,6 +2398,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   renderer.
 
 ## Later list
+
+- From this PR (1.6d): V8's public-command stale round lands with 1.6f's rework.
+- From this PR (1.6d): audit older writers for Events at or above 1 MiB.
+  The journal's aggregate and sequence scanners cap lines there, while
+  replay reads complete lines. New review Events refuse before append
+  when their full encoding reaches that existing budget.
 
 - From this PR (1.6b): the broader retained-table ownership audit from
   #73 remains, including the pre-existing Event-v1 early-return path in

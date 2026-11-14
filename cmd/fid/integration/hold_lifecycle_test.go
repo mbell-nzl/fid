@@ -11,7 +11,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
-var p24LifecycleFields = map[string]string{"task.handoff": "--pr", "check.execute": "--hold", "hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text", "task.start": "--hold"}
+var p24LifecycleFields = map[string]string{"review.record": "claim", "task.handoff": "--pr", "check.execute": "--hold", "hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text", "task.start": "--hold"}
 
 func TestHoldLifecycleKeyedCorpus(t *testing.T) {
 	t.Parallel()
@@ -61,12 +61,19 @@ func p24LifecycleCommands(t *testing.T, binary, workspace string) {
 	hold := p21PathString(t, taken, "result", "hold_id")
 	call("heartbeat", "--hold", hold, "--actor", "human:mark")
 	call("start", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "lifecycle-start")
+	if err := os.WriteFile(filepath.Join(workspace, "review-change.txt"), []byte("change for review\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	closureRun(t, workspace, "git", "add", ".")
+	closureRun(t, workspace, "git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-qm", "Task change")
 	call("check", "pass", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "lifecycle-check")
 	call("park", "--hold", hold, "--actor", "human:mark", "--waiting", "Include authentication failures?", "--idempotency-key", "lifecycle-park")
 	call("answer", task, "Exclude authentication failures.", "--actor", "human:mark", "--idempotency-key", "lifecycle-answer")
 	resumed := call("next", "--claim", "--actor", "human:mark")
 	hold = p21PathString(t, resumed, "result", "hold", "id")
 	call("handoff", "--hold", hold, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "lifecycle-handoff")
+	input := p21Input(t, workspace, "review", map[string]any{"reviewer": map[string]any{"actor": "agent:reviewer", "model": "codex/gpt-6.1-sol", "session_id": "keyed-review"}, "stream": "primary", "profiles": []string{"code"}, "verdict": "APPROVE", "claim": "Record held work through hand-off.", "findings": []any{}, "verification": "The checks passed."})
+	call("review", "record", task, "--input", input, "--actor", "human:courier", "--idempotency-key", "lifecycle-review")
 }
 
 func p24LifecycleCodePair(t *testing.T, code string) p24CodePair {

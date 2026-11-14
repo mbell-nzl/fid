@@ -32,6 +32,7 @@
           "worktree": "<ROOT>",
           "here": true,
           "actor": "agent:claude-builder",
+          "model": "",
           "since": "2026-11-08T07:45:00Z",
           "expires_at": "2026-11-08T08:45:00Z",
           "last_heartbeat_at": "2026-11-08T07:45:00Z",
@@ -44,7 +45,8 @@
           "reason": null,
           "since": "2026-11-08T07:45:00Z",
           "hold_id": "HLD-0b0b0b",
-          "actor": "agent:claude-builder"
+          "actor": "agent:claude-builder",
+          "model": ""
         },
         "epic_blocked_by": []
       },
@@ -111,6 +113,7 @@
           "worktree": "/home/mark/projects/fid-wt2",
           "here": false,
           "actor": "agent:claude-builder",
+          "model": "",
           "since": "2026-11-08T08:40:00Z",
           "expires_at": "2026-11-08T09:40:00Z",
           "last_heartbeat_at": "2026-11-08T08:40:00Z",

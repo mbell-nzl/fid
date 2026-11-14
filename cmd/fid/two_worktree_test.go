@@ -26,7 +26,7 @@ type v3Answer struct {
 
 func v3Next(t *testing.T, binary, worktree, actor string) v3Answer {
 	t.Helper()
-	stdout, stderr, exit := runAdoptedFID(t, binary, worktree, "--json", "next", "--claim", "--actor", actor)
+	stdout, stderr, exit := runAdoptedFID(t, binary, worktree, "--json", "next", "--claim", "--actor", actor, "--model", "codex/gpt-6.1-sol")
 	var envelope struct {
 		Result struct {
 			Kind string `json:"kind"`

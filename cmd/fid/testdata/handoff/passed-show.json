@@ -221,7 +221,8 @@
       "reason": null,
       "since": "2026-11-08T09:00:00Z",
       "hold_id": "HLD-aaaaaa",
-      "actor": "agent:claude-builder"
+      "actor": "agent:claude-builder",
+      "model": ""
     },
     "progress": null,
     "questions": [],

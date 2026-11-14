@@ -50,12 +50,12 @@ func TestLeanTaskJourneyFromNextThroughHandoff(t *testing.T) {
 	}
 	created := call("issue", "create", "--kind", "task", "--title", "Complete lean task", "--lane", "standard", "--actor", "agent:builder", "--idempotency-key", "create")
 	task := p21PathString(t, created, "result", "issue", "id")
-	taken := call("next", "--claim", "--actor", "agent:builder")
+	taken := call("next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 	hold := p21PathString(t, taken, "result", "hold", "id")
 	call("start", "--hold", hold, "--actor", "agent:builder", "--idempotency-key", "start")
 	call("heartbeat", "--hold", hold, "--actor", "agent:builder")
 	call("park", "--hold", hold, "--actor", "agent:builder", "--interrupted", "--reason", "Usage limit", "--idempotency-key", "interrupted")
-	taken = call("next", "--claim", "--actor", "agent:builder")
+	taken = call("next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 	if p21PathString(t, taken, "result", "kind") != "resume" || p21PathString(t, taken, "result", "hold", "replaces") != hold {
 		t.Fatalf("resume=%v", taken)
 	}
@@ -66,7 +66,7 @@ func TestLeanTaskJourneyFromNextThroughHandoff(t *testing.T) {
 		t.Fatalf("waiting=%v", waiting)
 	}
 	call("answer", task, "Include them.", "--actor", "human:mark")
-	taken = call("next", "--claim", "--actor", "agent:builder")
+	taken = call("next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 	if p21PathString(t, taken, "result", "answer", "text") != "Include them." {
 		t.Fatalf("answer=%v", taken)
 	}
@@ -83,7 +83,7 @@ func TestLeanTaskJourneyFromNextThroughHandoff(t *testing.T) {
 	if p21PathString(t, handed, "result", "status") != "in_review" {
 		t.Fatalf("handoff=%v", handed)
 	}
-	waiting = call("next", "--claim", "--actor", "agent:builder")
+	waiting = call("next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 	if p21PathString(t, waiting, "result", "kind") != "none" || p21PathString(t, waiting, "result", "waiting", "kind") != "review" {
 		t.Fatalf("review=%v", waiting)
 	}
@@ -135,7 +135,7 @@ func handoffCodePair(code string) func(*testing.T) {
 		root, binary := handoffJourneyRepo(t, code != "test-paths-not-configured")
 		created := p21Run(t, binary, root, "--json", "issue", "create", "--kind", "task", "--title", "Hand-off refusal", "--lane", "standard", "--actor", "agent:builder", "--idempotency-key", "create")
 		task := p21PathString(t, created, "result", "issue", "id")
-		taken := p21Run(t, binary, root, "--json", "next", "--claim", "--actor", "agent:builder")
+		taken := p21Run(t, binary, root, "--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 		hold := p21PathString(t, taken, "result", "hold", "id")
 		p21Run(t, binary, root, "--json", "start", "--hold", hold, "--actor", "agent:builder", "--idempotency-key", "start")
 		if code == "tree-dirty" {

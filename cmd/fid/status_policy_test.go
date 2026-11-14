@@ -154,7 +154,7 @@ func TestNextPolicyUnavailable(t *testing.T) {
 			}
 			before := readAllPolicyJournal(t, root)
 			for _, format := range []string{"json", "txt"} {
-				args := []string{"next", "--claim", "--actor", "agent:builder"}
+				args := []string{"next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"}
 				if format == "json" {
 					args = append([]string{"--json"}, args...)
 				}

@@ -102,7 +102,7 @@ func TestV7WorkingTreeEditsToPolicyChangeNothingUntilMerged(t *testing.T) {
 	}
 	claim := func() {
 		t.Helper()
-		decodeNext(t, executeCommandForTest(root, "--json", "next", "--claim", "--actor", "agent:builder"), "next.claim")
+		decodeNext(t, executeCommandForTest(root, "--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 	}
 	claim()
 	first := policySnapshots(t, root)
@@ -227,7 +227,7 @@ func TestPolicySourceDefaultsAndRefusals(t *testing.T) {
 				}
 			}
 			before := readAllPolicyJournal(t, root)
-			result := executeCommandForTest(root, "--json", "next", "--claim", "--actor", "agent:builder")
+			result := executeCommandForTest(root, "--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol")
 			if name == "missing origin HEAD" || name == "invalid origin policy" {
 				want := "origin's default branch is unknown"
 				if name == "invalid origin policy" {
@@ -310,7 +310,7 @@ func TestNextClaimUpgradesAFreshPrePolicyProjection(t *testing.T) {
 		}
 	}
 	closeCommandDB(t, conn)
-	result, _ := decodeNext(t, executeCommandForTest(root, "--json", "next", "--claim", "--actor", "agent:builder"), "next.claim")
+	result, _ := decodeNext(t, executeCommandForTest(root, "--json", "next", "--claim", "--actor", "agent:builder", "--model", "codex/gpt-6.1-sol"), "next.claim")
 	if result["task"].(map[string]any)["id"] != task || len(policySnapshots(t, root)) != 1 {
 		t.Fatalf("upgraded next = %#v, want the original task and its policy snapshot", result)
 	}

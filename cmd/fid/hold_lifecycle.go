@@ -20,7 +20,7 @@ func init() {
 }
 
 func newHoldCommand(name string) *cobra.Command {
-	var hold, actor, reason, key, waiting string
+	var hold, actor, reason, key, waiting, model string
 	var interrupted bool
 	operation := "hold.heartbeat"
 	if name == "park" {
@@ -59,7 +59,7 @@ func newHoldCommand(name string) *cobra.Command {
 		if err != nil {
 			return renderHoldFailure(cmd, operation, err)
 		}
-		options := holdwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), HoldID: hold, Actor: actor, Reason: reason, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now, Question: waiting}
+		options := holdwork.Options{WorkspaceRoot: root, MigrationsDir: issueMigrationsDir(), HoldID: hold, Actor: actor, Reason: reason, IdempotencyKey: key, Clock: commandDisplayEnvironment(cmd).now, Question: waiting, Model: model}
 		action := holdwork.Heartbeat
 		if name == "park" {
 			action = holdwork.Park
@@ -100,6 +100,7 @@ func newHoldCommand(name string) *cobra.Command {
 	}}
 	if name == "takeover" {
 		cmd.Args = cobra.ExactArgs(1)
+		cmd.Flags().StringVar(&model, "model", "", "Builder model as <family>/<model>; omit for work by hand")
 	} else {
 		cmd.Args = cobra.NoArgs
 		cmd.Flags().StringVar(&hold, "hold", "", "The hold ID for this session")

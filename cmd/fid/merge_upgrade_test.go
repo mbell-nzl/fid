@@ -54,7 +54,7 @@ func TestCaughtUpVersion9ProjectionGainsMergeCIStorage(t *testing.T) {
 	if err := conn.QueryRow(`SELECT version FROM schema_migrations`).Scan(&migration); err != nil {
 		t.Fatal(err)
 	}
-	if cache != 10 || migration != 28 {
+	if cache != fiddb.ProjectionSchemaVersion || migration != fiddb.ActiveMigrationVersion {
 		t.Fatalf("upgraded cache/migration=%d/%d", cache, migration)
 	}
 }

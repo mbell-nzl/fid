@@ -114,7 +114,7 @@ func grammarClassRows(t *testing.T) []grammarRow {
 	t.Helper()
 	root := newRootCommandAt(t.TempDir())
 	leaves, groups := grammarCommands(root)
-	if len(leaves) != 35 || len(groups) != 11 {
+	if len(leaves) != 37 || len(groups) != 12 {
 		t.Fatalf("live registry = %d leaves / %d groups", len(leaves), len(groups))
 	}
 	rows := []grammarRow{}
@@ -488,8 +488,8 @@ func grammarDomainRows(t *testing.T) []grammarRow {
 			}
 		})
 	}
-	if typed != 11 {
-		t.Fatalf("R18 corpus = %d want 11", typed)
+	if typed != 12 {
+		t.Fatalf("R18 corpus = %d want 12", typed)
 	}
 	return rows
 }

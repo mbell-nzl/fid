@@ -55,7 +55,7 @@ func TestP24ExecutedKeyedCorpusMatchesRemainingLeafInventory(t *testing.T) {
 		}
 		planned[parts[0]] = parts[1]
 	}
-	if len(rows) != 16 || !reflect.DeepEqual(rows, planned) {
+	if len(rows) != 17 || !reflect.DeepEqual(rows, planned) {
 		t.Fatalf("executable rows = %v; planned inventory = %v", rows, planned)
 	}
 }
