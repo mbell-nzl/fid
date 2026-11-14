@@ -540,15 +540,7 @@ func p24IndependentBindingRepository(t *testing.T, workspace string) map[string]
 
 func p24BindingPersistenceSnapshot(t *testing.T, workspace string) workspacePersistenceSnapshot {
 	t.Helper()
-	paths, err := filepath.Glob(filepath.Join(config.LedgerDir(workspace), "journal", "*.jsonl"))
-	if err != nil || len(paths) == 0 {
-		t.Fatalf("journal inventory: %v / %v", paths, err)
-	}
-	snapshot := workspacePersistenceSnapshot{database: mustReadCommandFile(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))}
-	for _, path := range paths {
-		snapshot.journal = append(snapshot.journal, mustReadCommandFile(t, path)...)
-	}
-	return snapshot
+	return snapshotWorkspacePersistence(t, workspace)
 }
 
 func p24AssertBindingEventRepository(t *testing.T, workspace string, repository map[string]any) {
@@ -1272,5 +1264,9 @@ func anyStrings(t *testing.T, value any) []string {
 
 func journalEventCount(t *testing.T, workspace string) int {
 	t.Helper()
-	return len(splitJournalLines(mustReadCommandFile(t, mustJournalPath(t, workspace))))
+	count := 0
+	for _, path := range mustJournalPaths(t, workspace) {
+		count += len(splitJournalLines(mustReadCommandFile(t, path)))
+	}
+	return count
 }

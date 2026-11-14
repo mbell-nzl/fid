@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -338,23 +339,44 @@ type workspaceSnapshotEntry struct {
 
 type workspacePersistenceSnapshot struct {
 	database []byte
-	journal  []byte
+	journal  map[string][]byte
 }
 
 func snapshotWorkspacePersistence(t *testing.T, workspace string) workspacePersistenceSnapshot {
 	t.Helper()
+	files := make(map[string][]byte)
+	for _, path := range mustJournalPaths(t, workspace) {
+		files[filepath.Base(path)] = mustReadCommandFile(t, path)
+	}
 	return workspacePersistenceSnapshot{
 		database: mustReadCommandFile(t, config.WorkspacePathsForRoot(workspace).DatabasePath),
-		journal:  mustReadCommandFile(t, mustJournalPath(t, workspace)),
+		journal:  files,
 	}
 }
 
 func (snapshot workspacePersistenceSnapshot) equal(other workspacePersistenceSnapshot) bool {
-	return bytes.Equal(snapshot.database, other.database) && bytes.Equal(snapshot.journal, other.journal)
+	return bytes.Equal(snapshot.database, other.database) && reflect.DeepEqual(snapshot.journal, other.journal)
 }
 
 func (snapshot workspacePersistenceSnapshot) eventCount() int {
-	return len(splitJournalLines(snapshot.journal))
+	count := 0
+	for _, data := range snapshot.journal {
+		count += len(splitJournalLines(data))
+	}
+	return count
+}
+
+func (snapshot workspacePersistenceSnapshot) journalBytes() []byte {
+	names := make([]string, 0, len(snapshot.journal))
+	for name := range snapshot.journal {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	var data []byte
+	for _, name := range names {
+		data = append(data, snapshot.journal[name]...)
+	}
+	return data
 }
 
 type commandExecutionResult struct {
@@ -534,7 +556,7 @@ func TestConcurrentClonedWorkspaceCommandsRemainIsolated(t *testing.T) {
 	}
 
 	for index, item := range fixtures {
-		journal := string(readWorkspaceFixtureFile(t, mustJournalPath(t, item.workspace)))
+		journal := string(snapshotWorkspacePersistence(t, item.workspace).journalBytes())
 		if !strings.Contains(journal, item.title) {
 			t.Fatalf("workspace %d journal does not contain own title %q", index, item.title)
 		}
