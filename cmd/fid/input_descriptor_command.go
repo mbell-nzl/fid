@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
-	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
@@ -89,11 +88,6 @@ func readDescriptorInput(stdin io.Reader, path string, descriptor cli.InputDescr
 	}
 	if err := json.Unmarshal(payload, target); err != nil {
 		return fmt.Errorf("decode %s input: %w", descriptor.Operation, err)
-	}
-	if request, ok := target.(*workflow.EnvelopeCreateRequest); ok {
-		if err := json.Unmarshal(payload, &request.InputAsWritten); err != nil {
-			return fmt.Errorf("decode %s input members: %w", descriptor.Operation, err)
-		}
 	}
 	return nil
 }

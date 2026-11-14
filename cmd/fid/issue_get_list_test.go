@@ -215,32 +215,3 @@ func TestReadCollectionLimitRejectsOnlyOverLimit(t *testing.T) {
 		t.Fatal("over limit error = nil")
 	}
 }
-
-func TestReadyJSONSequentialBlockerUsesClosedExplanation(t *testing.T) {
-	t.Parallel()
-	workspace := clonePristineWorkspace(t)
-	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("Open() error = %v", err)
-	}
-	defer closeCommandDB(t, conn)
-	seedReadyCommandRows(t, conn, []readyCommandRow{
-		{id: "FID-seq-epic", kind: "epic", title: "Sequential", status: "todo", workflowID: "epic-default", ownerRole: "tl", createdAt: "2026-06-14T10:00:00Z", updatedAt: "2026-06-14T10:00:00Z", scheduling: stringPointer("sequential")},
-		{id: "FID-seq-current", kind: "task", parentID: stringPointer("FID-seq-epic"), title: "Current", status: "in_progress", workflowID: "task-default", ownerRole: "developer", sequence: intPointer(1), createdAt: "2026-06-14T10:01:00Z", updatedAt: "2026-06-14T10:01:00Z"},
-		{id: "FID-seq-later", kind: "task", parentID: stringPointer("FID-seq-epic"), title: "Later", status: "todo", workflowID: "task-default", ownerRole: "developer", sequence: intPointer(2), createdAt: "2026-06-14T10:02:00Z", updatedAt: "2026-06-14T10:02:00Z"},
-	})
-
-	result := executeCommandForTest(workspace, "--json", "ready", "--epic", "FID-seq-epic")
-	if result.err != nil || result.stderr != "" {
-		t.Fatalf("ready result = %#v, want JSON success on stdout only", result)
-	}
-	explanation := requireObject(t, decodeReadEnvelope(t, result.stdout, "ready.get").Result, "explanation")
-	if explanation["code"] != "sequential_current_not_actionable" || explanation["scope"] != "epic" {
-		t.Fatalf("explanation = %#v, want sequential epic blocker", explanation)
-	}
-	for key, want := range map[string]any{"epic_id": "FID-seq-epic", "blocking_task_id": "FID-seq-current", "blocking_task_title": "Current", "blocking_task_status": "in_progress"} {
-		if explanation[key] != want {
-			t.Fatalf("explanation[%q] = %#v, want %#v", key, explanation[key], want)
-		}
-	}
-}

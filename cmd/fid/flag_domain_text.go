@@ -11,27 +11,17 @@ import (
 // Retained text domains are inherited by P21 §4.1 from P20 §3.2.1.
 // Opaque IDs and states use the newer P21 §2 / §4.1 scalar domain.
 var declaredTextDomains = map[string]map[string]flagDomain{
-	"park":               {"hold": opaqueFlagDomain("RESET 1.5a2"), "reason": textDomain(4096), "waiting": textDomain(4096)},
-	"heartbeat":          {"hold": opaqueFlagDomain("RESET 1.5a2")},
-	"takeover":           {"reason": textDomain(4096)},
-	"issue create":       {"title": textDomain(512), "epic": opaqueFlagDomain("P21 §4.1 issue.create / §2 ID"), "parent": opaqueFlagDomain("P21 §4.1 issue.create / §2 ID"), "label": labelListDomain(false)},
-	"issue update":       {"title": textDomain(512), "labels": labelListDomain(true)},
-	"issue ac add":       {"text": textDomain(4096)},
-	"label add":          {"colour": textDomain(64), "description": textDomain(4096)},
-	"issue list":         {"status": opaqueFlagDomain("P21 §4.1 issue.list opaque state"), "epic": opaqueFlagDomain("P21 §4.1 issue.list / §2 ID"), "label": textDomain(255)},
-	"issue transition":   {"to": opaqueFlagDomain("P21 §4.1 issue.transition opaque state"), "reason": textDomain(4096)},
-	"ready":              {"epic": opaqueFlagDomain("P21 §4.1 ready.get / §2 ID")},
-	"next":               {"actor": nextActorDomain},
-	"stats cost":         {"epic": opaqueFlagDomain("P21 §4.1 stats.cost / §2 ID")},
-	"stats tokens":       {"epic": opaqueFlagDomain("P21 §4.1 stats.tokens / §2 ID")},
-	"claim list":         {"issue": opaqueFlagDomain("P21 §4.2 claim.list / §2 ID"), "envelope": opaqueFlagDomain("P21 §4.2 claim.list / §2 ID")},
-	"run list":           {"issue": opaqueFlagDomain("P22 §4 run.list / P21 §2 ID"), "envelope": opaqueFlagDomain("P22 §4 run.list / P21 §2 ID")},
-	"receipt list":       {"run": opaqueFlagDomain("P21 §4.2 receipt.list / §2 ID"), "obligation": opaqueFlagDomain("P21 §4.2 receipt.list / §2 ID")},
-	"review list":        {"issue": opaqueFlagDomain("P23 §4 review.list / §2 Review"), "envelope": opaqueFlagDomain("P23 §4 review.list / §2 Review")},
-	"finding list":       {"issue": opaqueFlagDomain("P23 §4 finding.list / §2 Finding"), "review": opaqueFlagDomain("P23 §4 finding.list / §2 Finding")},
-	"decision list":      {"issue": opaqueFlagDomain("P23 §4 decision.list / §2 DecisionRef"), "class": opaqueFlagDomain("P23 §4 decision.list / §2 DecisionRef")},
-	"human-outcome list": {"issue": opaqueFlagDomain("P23 §4 human-outcome.list / §2 HumanOutcome"), "class": opaqueFlagDomain("P23 §4 human-outcome.list / §2 HumanOutcome")},
-	"requirement list":   {"issue": opaqueFlagDomain("P23 §4 requirement.list / §2 RequirementRef")},
+	"park":             {"hold": opaqueFlagDomain("RESET 1.5a2"), "reason": textDomain(4096), "waiting": textDomain(4096)},
+	"heartbeat":        {"hold": opaqueFlagDomain("RESET 1.5a2")},
+	"takeover":         {"reason": textDomain(4096)},
+	"issue create":     {"title": textDomain(512), "epic": opaqueFlagDomain("P21 §4.1 issue.create / §2 ID"), "parent": opaqueFlagDomain("P21 §4.1 issue.create / §2 ID"), "label": labelListDomain(false)},
+	"issue update":     {"title": textDomain(512), "labels": labelListDomain(true)},
+	"issue ac add":     {"text": textDomain(4096)},
+	"label add":        {"colour": textDomain(64), "description": textDomain(4096)},
+	"issue list":       {"status": opaqueFlagDomain("P21 §4.1 issue.list opaque state"), "epic": opaqueFlagDomain("P21 §4.1 issue.list / §2 ID"), "label": textDomain(255)},
+	"issue transition": {"to": opaqueFlagDomain("P21 §4.1 issue.transition opaque state"), "reason": textDomain(4096)},
+
+	"next": {"actor": nextActorDomain},
 }
 
 func textDomain(maximumBytes int) flagDomain {

@@ -54,7 +54,7 @@ func readIssue(conn *sql.DB, registry *issuestate.Registry, id string) (Issue, e
 	row := conn.QueryRow(`
 		SELECT id, kind, title, status, workflow_id, parent_id, priority, sequence,
 		       spec_md_path, revision, owner_role, owner_actor,
-		       concerns_raised, open_concerns_count, triage_status, created_at, updated_at, lane
+		       triage_status, created_at, updated_at, lane
 		FROM issues_enriched
 		WHERE id = ?
 	`, id)
@@ -79,8 +79,6 @@ func readIssue(conn *sql.DB, registry *issuestate.Registry, id string) (Issue, e
 		&record.Revision,
 		&ownerRole,
 		&ownerActor,
-		&record.ConcernsRaised,
-		&record.OpenConcernsCount,
 		&triageStatus,
 		&createdAt,
 		&updatedAt, &lane,
@@ -116,10 +114,6 @@ func readIssue(conn *sql.DB, registry *issuestate.Registry, id string) (Issue, e
 		return Issue{}, err
 	}
 	record.AcceptanceCriteria, err = issueAcceptanceCriteria(conn, record.ID)
-	if err != nil {
-		return Issue{}, err
-	}
-	record.Concerns, err = issueConcerns(conn, record.ID)
 	if err != nil {
 		return Issue{}, err
 	}

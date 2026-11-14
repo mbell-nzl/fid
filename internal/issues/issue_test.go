@@ -965,136 +965,6 @@ func TestCreateAppendsIssueCreatedActivityInSameEvent(t *testing.T) {
 	}
 }
 
-func TestGetReturnsEnrichedConcernFields(t *testing.T) {
-	t.Parallel()
-
-	workspace := newIssueWorkspace(t)
-
-	created, err := Create(CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		Kind:          "task",
-		Title:         "Surface open concerns",
-		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
-	})
-	if err != nil {
-		t.Fatalf("Create() error = %v", err)
-	}
-
-	seedGenericIssueConcern(t, workspace, "CON-000201", created.ID, "open", "Need triage before closing", "2026-06-07T12:01:00Z")
-
-	got, err := Get(GetOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            created.ID,
-	})
-	if err != nil {
-		t.Fatalf("Get() error = %v", err)
-	}
-
-	if !got.ConcernsRaised {
-		t.Fatal("Get() concerns_raised = false, want true")
-	}
-	if got.OpenConcernsCount != 1 {
-		t.Fatalf("Get() open_concerns_count = %d, want 1", got.OpenConcernsCount)
-	}
-	if len(got.Concerns) != 1 {
-		t.Fatalf("Get() concerns len = %d, want 1", len(got.Concerns))
-	}
-	if got.Concerns[0].ID != "CON-000201" {
-		t.Fatalf("Get() concern id = %q, want CON-000201", got.Concerns[0].ID)
-	}
-	if got.Concerns[0].Status != "open" || got.Concerns[0].SubjectType != "issue" || got.Concerns[0].SubjectID != created.ID {
-		t.Fatalf("Get() concern = %#v, want open Issue subject", got.Concerns[0])
-	}
-	if got.TriageStatus != nil {
-		t.Fatalf("Get() triage_status = %#v, want nil", got.TriageStatus)
-	}
-}
-
-func TestGetTreatsAddressedConcernsAsNotOpen(t *testing.T) {
-	t.Parallel()
-
-	workspace := newIssueWorkspace(t)
-
-	created, err := Create(CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		Kind:          "task",
-		Title:         "Ignore addressed concerns",
-		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
-	})
-	if err != nil {
-		t.Fatalf("Create() error = %v", err)
-	}
-
-	seedGenericIssueConcern(t, workspace, "CON-000301", created.ID, "disposed", "Resolved concern", "2026-06-07T12:11:00Z")
-
-	got, err := Get(GetOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            created.ID,
-	})
-	if err != nil {
-		t.Fatalf("Get() error = %v", err)
-	}
-
-	if got.ConcernsRaised {
-		t.Fatal("Get() concerns_raised = true, want false")
-	}
-	if got.OpenConcernsCount != 0 {
-		t.Fatalf("Get() open_concerns_count = %d, want 0", got.OpenConcernsCount)
-	}
-	if len(got.Concerns) != 1 {
-		t.Fatalf("Get() concerns len = %d, want 1", len(got.Concerns))
-	}
-	if got.Concerns[0].ID != "CON-000301" {
-		t.Fatalf("Get() concern id = %q, want CON-000301", got.Concerns[0].ID)
-	}
-	if got.Concerns[0].Status != "disposed" {
-		t.Fatalf("Get() concern status = %q, want disposed", got.Concerns[0].Status)
-	}
-}
-
-func TestGetConcernsOrderSameSecondRowsByAppendOrder(t *testing.T) {
-	t.Parallel()
-
-	workspace := newIssueWorkspace(t)
-	issueID := seedConcernIssue(t, workspace)
-
-	conn := openIssueDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
-	defer closeIssueTestDB(t, conn)
-
-	const createdAt = "2026-06-20T12:00:00Z"
-	if _, err := conn.Exec(`
-		INSERT INTO concerns (id, subject_type, subject_id, actor_id, scope_json, severity, summary, reasoning, references_json, status, created_at, created_event_id)
-		VALUES (?, 'issue', ?, 'developer', '{"paths":[]}', 'major', 'Older append', 'Needs review', '[]', 'open', ?, 'EVT-concern-older')
-	`, "CON-zzzzzz", issueID, createdAt); err != nil {
-		t.Fatalf("insert older concern: %v", err)
-	}
-	if _, err := conn.Exec(`
-		INSERT INTO concerns (id, subject_type, subject_id, actor_id, scope_json, severity, summary, reasoning, references_json, status, created_at, created_event_id)
-		VALUES (?, 'issue', ?, 'developer', '{"paths":[]}', 'major', 'Newer append', 'Needs review', '[]', 'open', ?, 'EVT-concern-newer')
-	`, "CON-aaaaaa", issueID, createdAt); err != nil {
-		t.Fatalf("insert newer concern: %v", err)
-	}
-
-	got, err := Get(GetOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            issueID,
-	})
-	if err != nil {
-		t.Fatalf("Get() error = %v", err)
-	}
-	if len(got.Concerns) != 2 {
-		t.Fatalf("Get() concerns len = %d, want 2", len(got.Concerns))
-	}
-	if got.Concerns[0].ID != "CON-aaaaaa" || got.Concerns[1].ID != "CON-zzzzzz" {
-		t.Fatalf("Get() concerns order = [%q %q], want [CON-aaaaaa CON-zzzzzz]", got.Concerns[0].ID, got.Concerns[1].ID)
-	}
-}
-
 func seedConcernIssue(t *testing.T, workspace string) string {
 	t.Helper()
 	created, err := Create(CreateOptions{
@@ -1527,8 +1397,8 @@ func assertIssuesEqual(t *testing.T, got, want Issue) {
 		got.Status != want.Status ||
 		got.StatusCategory != want.StatusCategory ||
 		got.WorkflowID != want.WorkflowID ||
-		got.ConcernsRaised != want.ConcernsRaised ||
-		got.OpenConcernsCount != want.OpenConcernsCount {
+
+		false {
 		t.Fatalf("issue mismatch = %#v, want %#v", got, want)
 	}
 	if !equalStringPointers(got.ParentID, want.ParentID) ||

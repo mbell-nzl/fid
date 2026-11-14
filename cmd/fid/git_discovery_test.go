@@ -206,9 +206,6 @@ func projectCommandFlags(key, outside string) []string {
 // placeholders made structurally valid.
 func projectCommandInput(t *testing.T, key string) map[string]any {
 	t.Helper()
-	if key == "activation prepare" {
-		return activationPrepareInput("kit-refusal")
-	}
 	descriptor, ok := inputDescriptorRegistry[key]
 	if !ok {
 		t.Fatalf("%s has --input but no descriptor", key)
@@ -294,7 +291,6 @@ func TestCommandsThatTouchNoProjectWorkOutsideAGitRepository(t *testing.T) {
 		{"--help"},
 		{"issue", "create", "--help"},
 		{"completion", "bash"},
-		{"claim", "acquire", "--example"},
 		{"--json", "export", "validate", archive},
 	} {
 		result := grammarExecute(outside, args...)

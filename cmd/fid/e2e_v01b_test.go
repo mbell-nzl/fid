@@ -338,48 +338,6 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 	}
 }
 
-func TestV01BReadyReturnsEmptyAfterAllTasksFinishedEndToEnd(t *testing.T) {
-	t.Parallel()
-	workspace := gittest.NewWorkspace(t)
-	runInitCommand(t, workspace, "init")
-
-	_, createStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "create",
-		"--kind", "task",
-		"--title", "Only actionable task",
-		"--priority", "1",
-		"--actor", "agent:developer",
-	)
-	issueID := parseCreatedIssueID(t, createStderr)
-
-	beforeReadyStdout, beforeReadyStderr := runFIDCommand(t, workspace, "--json", "ready")
-	if beforeReadyStderr != "" {
-		t.Fatalf("ready before completion stderr = %q, want empty", beforeReadyStderr)
-	}
-	assertReadyTaskID(t, beforeReadyStdout, issueID)
-
-	_, transitionStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "transition", issueID,
-		"--to", "cancelled", "--reason", "Test cancellation",
-		"--actor", "human:mark",
-	)
-	if !strings.Contains(transitionStderr, "✓ Cancelled "+issueID) {
-		t.Fatalf("transition stderr = %q, want cancellation confirmation", transitionStderr)
-	}
-
-	emptyReadyStdout, emptyReadyStderr := runFIDCommand(t, workspace, "--json", "ready")
-	if decodeCanonicalResult(t, emptyReadyStdout)["task"] != nil {
-		t.Fatalf("empty ready stdout = %q, want exact null payload", emptyReadyStdout)
-	}
-	if emptyReadyStderr != "" {
-		t.Fatalf("empty ready stderr = %q, want empty", emptyReadyStderr)
-	}
-}
-
 type issueReadBack struct {
 	Kind           string
 	ParentID       string

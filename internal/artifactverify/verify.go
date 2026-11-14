@@ -70,34 +70,9 @@ func Verify(options Options) (Result, error) {
 	if !policy.Allows(options.ActorID, policy.WorkSet) {
 		return Result{}, &DeniedActorError{Actor: options.ActorID}
 	}
-	kind, id, _ := strings.Cut(options.ActorID, ":")
-	return VerifyWithHooks(options, Hooks{Authorize: func(*sql.DB) (journal.EventActor, error) {
-		return journal.EventActor{ActorID: id, ActorType: kind, Producer: "fid-standalone", ProvenanceRef: "project-local-attribution"}, nil
-	}})
-}
 
-// Hooks isolates the legacy authority and readiness effects until the kernel's
-// removal in RESET 1.5c2. Lean callers use Verify.
-type Hooks struct {
-	Authorize func(*sql.DB) (journal.EventActor, error)
-	Restored  func(*sql.DB, string, journal.EventActor) ([]journal.Effect, error)
-	Prepare   func(journal.Event)
-}
-
-func eventOccurredAt(root, id string) (string, error) {
-	found, err := journal.FindEvent(filepath.Join(config.LedgerDir(root), config.JournalDirName), id)
-	if err != nil {
-		return "", fmt.Errorf("verify Artifact: read Event: %w", err)
-	}
-	return found.Event.OccurredAt.UTC().Format(time.RFC3339Nano), nil
-}
-
-func VerifyWithHooks(options Options, hooks Hooks) (Result, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" || strings.TrimSpace(options.ActorID) == "" || strings.TrimSpace(options.Request.ArtifactID) == "" {
 		return Result{}, fmt.Errorf("verify Artifact: workspace root, migrations directory, actor, and Artifact are required")
-	}
-	if hooks.Authorize == nil {
-		return Result{}, fmt.Errorf("verify Artifact: authority is required")
 	}
 	var result Result
 	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "fid artifact verify"}, func(lock *journal.WriteLock) error {
@@ -129,10 +104,9 @@ func VerifyWithHooks(options Options, hooks Hooks) (Result, error) {
 			result.Replayed = true
 			return nil
 		}
-		actor, err := hooks.Authorize(conn)
-		if err != nil {
-			return err
-		}
+		kind, id, _ := strings.Cut(options.ActorID, ":")
+		actor := journal.EventActor{ActorID: id, ActorType: kind, Producer: "fid-standalone", ProvenanceRef: "project-local-attribution"}
+
 		artifact, found, err := loadArtifactByID(conn, options.Request.ArtifactID)
 		if err != nil {
 			return err
@@ -161,13 +135,6 @@ func VerifyWithHooks(options Options, hooks Hooks) (Result, error) {
 		if changed {
 			effects = append(effects, journal.Effect{Op: "update", Table: "referenced_artifacts", PK: map[string]any{"id": artifact.ID}, Values: map[string]any{"availability": observed}, Preconditions: map[string]any{"availability": priorAvailability}})
 		}
-		if changed && observed == "available" && hooks.Restored != nil {
-			extra, err := hooks.Restored(conn, artifact.ID, actor)
-			if err != nil {
-				return err
-			}
-			effects = append(effects, extra...)
-		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "artifact.availability-observed", ActorV2: actor, Aggregate: journal.Aggregate{ID: artifact.ID, Sequence: sequence, Type: "artifact"}, CommandName: "artifact.verify", Effects: effects}
 		result = Result{Artifact: artifact, Changed: changed, IdempotencyKey: options.IdempotencyKey, Replayed: false}
 		resultJSON, err := journal.MarshalCanonicalJSON(result)
@@ -175,9 +142,6 @@ func VerifyWithHooks(options Options, hooks Hooks) (Result, error) {
 			return err
 		}
 		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
-			if hooks.Prepare != nil {
-				hooks.Prepare(prepared)
-			}
 			return journal.IdempotencyMutation{EntityID: artifact.ID, ResultJSON: string(resultJSON)}, nil
 		})
 		if err != nil {
@@ -212,4 +176,12 @@ func loadArtifactByID(conn *sql.DB, id string) (Artifact, bool, error) {
 		return Artifact{}, false, fmt.Errorf("load Artifact: %w", err)
 	}
 	return artifact, true, nil
+}
+
+func eventOccurredAt(root, id string) (string, error) {
+	found, err := journal.FindEvent(filepath.Join(config.LedgerDir(root), config.JournalDirName), id)
+	if err != nil {
+		return "", fmt.Errorf("verify Artifact: read Event: %w", err)
+	}
+	return found.Event.OccurredAt.UTC().Format(time.RFC3339Nano), nil
 }

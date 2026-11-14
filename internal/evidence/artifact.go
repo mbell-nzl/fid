@@ -17,13 +17,8 @@ import (
 	"github.com/mbell-nzl/fid/internal/artifactverify"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
-	fidproject "github.com/mbell-nzl/fid/internal/project"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
-type ArtifactVerifyRequest = artifactverify.Request
-type ArtifactVerifyOptions = artifactverify.Options
-type ArtifactVerifyResult = artifactverify.Result
 type Artifact = artifactverify.Artifact
 
 type retainedArtifact struct {
@@ -289,76 +284,4 @@ func containsArtifactRejection(values []ArtifactRejection, target ArtifactReject
 		}
 	}
 	return false
-}
-
-// VerifyArtifact preserves kernel authority and readiness until RESET 1.5c2
-// switches the command adapter to the lean verifier.
-func VerifyArtifact(options ArtifactVerifyOptions) (ArtifactVerifyResult, error) {
-	return artifactverify.VerifyWithHooks(options, artifactverify.Hooks{
-		Authorize: func(conn *sql.DB) (journal.EventActor, error) {
-			_, actor, err := loadActiveActor(conn, options.ActorID)
-			if err != nil {
-				return journal.EventActor{}, err
-			}
-			if !hasCapability(actor.Capabilities, "artifact.verify") {
-				return journal.EventActor{}, &AuthorityDeniedError{ActorID: options.ActorID}
-			}
-			return journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, nil
-		},
-		Restored: func(conn *sql.DB, artifactID string, actor journal.EventActor) ([]journal.Effect, error) {
-			targets, err := artifactEnvelopeTargets(conn, artifactID)
-			if err != nil || len(targets) == 0 {
-				return nil, err
-			}
-			project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(options.WorkspaceRoot), config.ConfigFileName))
-			if err != nil {
-				return nil, err
-			}
-			observation, err := fidproject.ObserveRepository(options.WorkspaceRoot)
-			if err != nil {
-				return nil, fmt.Errorf("verify Artifact: observe repository: %w", err)
-			}
-			head := observation.HeadOID
-			repository := workflow.Repository{BaseOID: &head, CaptureSource: "git", Dirty: observation.Dirty, DirtyDigest: observation.DirtyDigest, HeadOID: observation.HeadOID, ProjectID: project.ProjectID, TreeOID: observation.TreeOID, WorktreeID: observation.WorktreeID}
-			effects := []journal.Effect{}
-			for _, target := range targets {
-				overrides, err := workflow.ArtifactAvailabilityOverrides(conn, target.EnvelopeID, target.Revision, artifactID, repository)
-				if err != nil {
-					return nil, err
-				}
-				readiness, _, _, err := workflow.HumanOutcomeReadinessStopEffects(conn, target.EnvelopeID, target.Revision, actor.ActorID, repository, overrides)
-				if err != nil {
-					return nil, err
-				}
-				effects = append(effects, readiness...)
-			}
-			return effects, nil
-		},
-		Prepare: func(event journal.Event) { substituteEvidenceEventPlaceholders(event.Effects, event) },
-	})
-}
-
-type artifactEnvelopeTarget struct {
-	EnvelopeID string
-	Revision   int
-}
-
-// artifactEnvelopeTargets finds every Envelope revision whose linked Evidence
-// requires this Artifact, so a missing-to-available flip can re-evaluate each
-// one for the human-outcome-required readiness Stop (DEC-224).
-func artifactEnvelopeTargets(conn *sql.DB, artifactID string) ([]artifactEnvelopeTarget, error) {
-	rows, err := conn.Query(`SELECT DISTINCT o.envelope_id,o.revision FROM evidence_artifact_links l JOIN evidence_records e ON e.id=l.evidence_id JOIN envelope_obligations o ON o.id=e.obligation_id WHERE l.artifact_id=? AND l.required_material=1 ORDER BY o.envelope_id,o.revision`, artifactID)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-	targets := []artifactEnvelopeTarget{}
-	for rows.Next() {
-		var target artifactEnvelopeTarget
-		if err := rows.Scan(&target.EnvelopeID, &target.Revision); err != nil {
-			return nil, err
-		}
-		targets = append(targets, target)
-	}
-	return targets, rows.Err()
 }

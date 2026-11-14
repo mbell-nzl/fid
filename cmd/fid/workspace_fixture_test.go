@@ -489,7 +489,6 @@ func TestTask9RetainedMutationFixtureArgumentsUseActorAndIdempotency(t *testing.
 func TestTask9FixtureAdapterLeavesJudgmentAndPolicyCommandsUntouched(t *testing.T) {
 	t.Parallel()
 	for _, args := range [][]string{
-		{"concern", "raise", "--by", "developer"},
 		{"policy", "show"},
 	} {
 		got := withIssueMutationTestKey(args)

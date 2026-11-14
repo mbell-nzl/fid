@@ -42,14 +42,6 @@ func patternDomain(citation, pattern string) flagDomain {
 	return flagDomain{[]string{pattern}, citation, compiled.MatchString}
 }
 
-func subjectDomain(citation string, members ...string) flagDomain {
-	domain := enumDomain(citation, members...)
-	return flagDomain{[]string{"<type>:<id>"}, citation, func(value string) bool {
-		parts := strings.Split(value, ":")
-		return len(parts) == 2 && domain.Accept(parts[0]) && opaqueFlagDomain(citation).Accept(parts[1])
-	}}
-}
-
 // Only the newest accepted row is cited. Generic pflag domains are registered
 // mechanically below; these declarations supply the stronger row constraints.
 var declaredStringDomains = map[string]map[string]flagDomain{
@@ -66,57 +58,19 @@ var declaredStringDomains = map[string]map[string]flagDomain{
 		"order":           enumDomain("P21 §4.1 issue.list", "created", "priority", "sequence", "updated"),
 		"priority":        {[]string{"0..5"}, "P21 §4.1 issue.list; P20 §3.2.1", validPrioritySet},
 	},
-	"workflow define": {
-		"name":        patternDomain("P21 §4.1 workflow.define", "^[a-z][a-z0-9-]{0,63}$"),
-		"applies-to":  enumDomain("P21 §4.1 workflow.define", "any", "epic", "subtask", "task"),
-		"states":      {[]string{"string"}, "P21 §4.1 workflow.define", validStateList},
-		"transitions": {[]string{"string"}, "P21 §4.1 workflow.define", validTransitionList},
-		"categories":  {[]string{"cancelled", "completed", "started", "unstarted"}, "P21 §4.1 workflow.define", validCategoryList},
-	},
-	"workflow assign": {"name": patternDomain("P21 §4.1 workflow.define, workflow.assign", "^[a-z][a-z0-9-]{0,63}$"), "kind": enumDomain("P21 §4.1 workflow.assign", "epic", "subtask", "task")},
-	"workflow list":   {"kind": enumDomain("P21 §4.1 workflow.list", "epic", "subtask", "task")},
+
 	"link add": {
-		"from-type": enumDomain("P21 §4.1 link.add", "issue", "requirement"),
-		"to-type":   enumDomain("P21 §4.1 link.add", "issue", "requirement"),
+		"from-type": enumDomain("P21 §4.1 link.add", "issue"),
+		"to-type":   enumDomain("P21 §4.1 link.add", "issue"),
 	},
 	"link remove": {
-		"from-type": enumDomain("P21 §4.1 link.remove", "issue", "requirement"),
-		"to-type":   enumDomain("P21 §4.1 link.remove", "issue", "requirement"),
+		"from-type": enumDomain("P21 §4.1 link.remove", "issue"),
+		"to-type":   enumDomain("P21 §4.1 link.remove", "issue"),
 	},
-	"link list":    {"type": enumDomain("P21 §4.1 link.list", "issue", "requirement")},
-	"stats cost":   {"group-by": enumDomain("P21 §4.1 stats.cost", "actor", "epic", "model")},
-	"stats tokens": {"group-by": enumDomain("P21 §4.1 stats.tokens", "actor", "epic", "model")},
-	"claim list":   {"status": enumDomain("P22 §2 Claim (amends P21 §4.2 claim.list)", "active", "expired", "released", "superseded")},
-	"run list":     {"status": enumDomain("P22 §2 Run status / §4 (amends P21 §4.2)", "abandoned", "active", "failed", "interrupted", "succeeded")},
-	"receipt list": {"outcome": enumDomain("P22 §5 cancellation / schema §1 (amends P21 §4.2 receipt.list)", "cancelled", "failed", "signaled", "spawn-failed", "succeeded", "timed-out")},
-	"stop list": {
-		"status":  enumDomain("P22 §4 stop.list", "open", "resolved"),
-		"subject": subjectDomain("P22 §4 stop.list", "run", "envelope", "activation"),
-	},
-	"attention list": {
-		"status":  enumDomain("P22 §4 attention.list", "open", "resolved"),
-		"subject": subjectDomain("P22 §4 attention.list", "run", "envelope", "activation"),
-	},
-	"review list": {"verdict": enumDomain("P23 §4 review.list / §2 Review", "blocked", "changes-required", "pass")},
-	"finding list": {
-		"state":    enumDomain("P23 §4 finding.list / §2 Finding", "addressed", "inapplicable", "open", "resolved"),
-		"severity": enumDomain("P23 §4 finding.list / §2 Finding", "blocker", "major", "minor", "nit"),
-	},
-	"concern list": {
-		"status":   enumDomain("P23 §4 concern.list / §2 Concern", "disposed", "open"),
-		"severity": enumDomain("P23 §4 concern.list / §2 Concern", "blocker", "major", "minor", "nit"),
-		"subject":  subjectDomain("P23 §4 concern.list / §2 JudgmentSubject", "issue", "envelope", "run", "review", "finding", "requirement"),
-	},
-	"deviation list": {
-		"disposition": enumDomain("P23 §4 deviation.list / §2 Deviation", "accepted", "pending-decision", "rejected"),
-		"subject":     subjectDomain("P23 §4 deviation.list / §2 JudgmentSubject", "issue", "envelope", "run", "review", "finding", "requirement"),
-	},
-	"decision list":      {"outcome": enumDomain("P23 §4 decision.list / §2 DecisionRef", "approved", "deferred", "rejected")},
-	"human-outcome list": {"result": enumDomain("P23 §4 human-outcome.list / §2 HumanOutcome", "acknowledged", "approved", "changes-required", "rejected")},
-	"requirement list":   {"status": enumDomain("P23 §4 requirement.list / §2 RequirementRef", "active", "superseded", "withdrawn")},
+	"link list": {"type": enumDomain("P21 §4.1 link.list", "issue")},
+
 	"activity list": {"event": enumDomain("P21 §3 ActivityEvent amended by P23 §2 ActivityEvent",
-		"ac-added", "claim-released", "claim-renewed", "claim-superseded", "comment-added", "gate-recorded", "issue-created", "issue-label-added", "issue-label-removed", "issue-updated", "link-added", "link-removed", "status-changed",
-		"concern-recorded", "concern-disposed", "review-recorded", "finding-addressed", "finding-resolved", "deviation-recorded", "decision-referenced", "human-outcome-recorded", "requirement-referenced", "requirement-linked")},
+		"ac-added", "comment-added", "issue-created", "issue-label-added", "issue-label-removed", "issue-updated", "link-added", "link-removed", "status-changed")},
 }
 
 var declaredIntegerDomains = map[string]map[string]flagDomain{
@@ -126,7 +80,6 @@ var declaredIntegerDomains = map[string]map[string]flagDomain{
 	},
 	"issue update": {"priority": integerDomain("P21 §4.1; P20 §3.2.1", 0, 5)},
 	"issue ac add": {"ordinal": integerDomain("P21 §4.1; P20 §3.2.1", 1, 2147483647)},
-	"gate resolve": {"version": integerDomain("P21 §4.2 gate.resolve", 1, 9223372036854775807)},
 }
 
 func validPrioritySet(value string) bool {
@@ -145,30 +98,14 @@ func validPrioritySet(value string) bool {
 	return true
 }
 
-func validCategoryList(value string) bool {
-	parts := strings.Split(value, ",")
-	if len(parts) > 64 {
-		return false
-	}
-	domain := enumDomain("P21 §4.1 workflow.define", "cancelled", "completed", "started", "unstarted")
-	for _, part := range parts {
-		if !domain.Accept(strings.TrimSpace(part)) {
-			return false
-		}
-	}
-	return true
-}
-
 // declaredBooleanFlags names each leaf's boolean flags, separated by spaces.
 var declaredBooleanFlags = map[string]string{
-	"issue list":        "has-concerns",
+
 	"maintenance check": "warn-as-error",
 	"next":              "claim explain",
 	"park":              "interrupted",
 	"rebuild":           "verbose",
 	"status":            "all",
-	"workflow assign":   "project-wide",
-	"workflow list":     "active",
 }
 
 func flagDomainFor(cmd *cobra.Command, flag *pflag.Flag) flagDomain {
@@ -204,10 +141,10 @@ func flagDomainFor(cmd *cobra.Command, flag *pflag.Flag) flagDomain {
 	if flag.Name == "idempotency-key" {
 		return flagDomain{[]string{"string"}, "P21 §2 idempotency key", validIdempotencyKey}
 	}
-	if flag.Name == "actor" && !strings.HasPrefix(key, "activation ") && cmd.Flags().Lookup("input") != nil {
+	if flag.Name == "actor" && false {
 		return opaqueFlagDomain("P21 §2 activated Actor / §4.2 mutation row")
 	}
-	if flag.Name == "actor" && !strings.HasPrefix(key, "activation ") && cmd.Flags().Lookup("input") == nil {
+	if flag.Name == "actor" {
 		return patternDomain("P21 §2 standalone Actor", `^(agent|human|service):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`)
 	}
 	return flagDomain{[]string{flag.Value.Type()}, "pflag type; P24 §8 for --example", func(string) bool { return true }}
@@ -269,40 +206,4 @@ func validOpaqueState(value string) bool {
 		count++
 	}
 	return count >= 1 && count <= 128
-}
-
-func validStateList(value string) bool {
-	parts := strings.Split(value, ",")
-	if len(parts) > 64 {
-		return false
-	}
-	seen := map[string]bool{}
-	for _, part := range parts {
-		part = strings.TrimSpace(part)
-		if !validOpaqueState(part) || seen[part] {
-			return false
-		}
-		seen[part] = true
-	}
-	return true
-}
-
-func validTransitionList(value string) bool {
-	parts := strings.Split(value, ",")
-	if len(parts) > 4096 {
-		return false
-	}
-	seen := map[string]bool{}
-	for _, part := range parts {
-		endpoints := strings.Split(part, "->")
-		if len(endpoints) != 2 {
-			return false
-		}
-		from, to := strings.TrimSpace(endpoints[0]), strings.TrimSpace(endpoints[1])
-		if !validOpaqueState(from) || !validOpaqueState(to) || seen[from+"->"+to] {
-			return false
-		}
-		seen[from+"->"+to] = true
-	}
-	return true
 }

@@ -1,134 +1,106 @@
 package main
 
-// RESET 1.5b2 exception: these own-command tests keep Activation authority
-// unchanged until 1.5c2 switches the adapter and converts their fixtures.
 import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
+	"reflect"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
-	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *testing.T) {
 	t.Parallel()
-	// Task 10's readiness-Stop re-evaluation (DEC-224) makes artifact.verify
-	// observe the current repository whenever a flip to available reaches an
-	// Obligation with linked Evidence, so this journey needs a real Git
-	// worktree rather than the cheaper unobserved fixture's synthetic OIDs.
-	content := []byte("Artifact verification content\n")
-	workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeWithSourceForTest(t, "artifact.txt", content, func(definition map[string]any) {
-		definition["argv"] = []string{"/bin/true"}
-		definition["artifact_paths"] = []string{"artifact.txt"}
-	})
-	terminal, result := executeGateRunForTest(t, workspace, issueID, envelopeID, "artifact-verify-source")
-	if result.err != nil || terminal.Data.ReceiptID == "" {
-		t.Fatalf("gate run = %#v, terminal=%#v, want successful Receipt", result, terminal)
+	f := leanJourneyFixture(t, leanHelperDefinition(t, "pass", "1m", []string{"coverage.out"}))
+	checked := f.run("--json", "check", "lean", "--hold", "HLD-aaaaaa", "--actor", "agent:claude-builder", "--idempotency-key", "artifact-source")
+	if checked.err != nil {
+		t.Fatalf("check: %#v", checked)
 	}
-
-	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
+	before := latestLeanRecord(t, f)
+	artifact := before.Result.Artifacts[0]
+	path := filepath.Join(config.LedgerDir(f.workspace), "artifacts", artifact.Digest[len("sha256:"):])
+	body, err := os.ReadFile(path)
 	if err != nil {
-		t.Fatalf("open database: %v", err)
+		t.Fatal(err)
 	}
-	defer func() { _ = conn.Close() }()
-	artifactID, digest, receiptID := receiptArtifactIdentity(t, conn)
-	repository := runRepositoryForTest(t, workspace)
-	obligationID := testEvidenceObligationID
-	linkPath := filepath.Join(workspace, "artifact-lifecycle-evidence.json")
-	writeActivationInput(t, linkPath, map[string]any{
-		"obligation_id": obligationID, "evidence_type": "receipt", "receipt_id": receiptID, "review_id": nil, "human_outcome_id": nil,
-		"required_artifact_ids": []string{artifactID},
-	})
-	linked := executeCommandForTest(workspace,
-		"--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder",
-		"--input", linkPath, "--idempotency-key", "artifact-lifecycle-evidence-link",
-	)
-	if linked.err != nil || linked.stderr != "" {
-		t.Fatalf("link lifecycle Evidence = %#v, want qualifying Evidence", linked)
+	input := filepath.Join(t.TempDir(), "verify.json")
+	writeActivationInput(t, input, map[string]any{"artifact_id": artifact.ID})
+	var identity map[string]any
+	for _, row := range []struct {
+		key, actor, availability string
+		changed                  bool
+	}{
+		{"missing", "agent:builder", "missing", true}, {"restored", "human:mark", "available", true}, {"unchanged", "agent:builder", "available", false},
+	} {
+		if row.key == "missing" {
+			if err := os.Remove(path); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if row.key == "restored" {
+			if err := os.WriteFile(path, body, 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		args := []string{"--json", "artifact", "verify", "--actor", row.actor, "--input", input, "--idempotency-key", row.key}
+		count := startEventCount(t, f.workspace)
+		got := f.run(args...)
+		if got.err != nil || got.stderr != "" {
+			t.Fatalf("%s: %#v", row.key, got)
+		}
+		result := decodeCanonicalResult(t, got.stdout)
+		metadata := result["artifact"].(map[string]any)
+		assertExactKeys(t, metadata, []string{"id", "digest", "media_type", "size_bytes", "retention_class", "availability", "location_policy", "created_at", "expires_at"})
+		if metadata["availability"] != row.availability || result["changed"] != row.changed || result["replayed"] != false {
+			t.Fatalf("%s: %s", row.key, got.stdout)
+		}
+		delete(metadata, "availability")
+		if identity == nil {
+			identity = metadata
+		} else if !reflect.DeepEqual(identity, metadata) {
+			t.Fatalf("identity changed: %v / %v", identity, metadata)
+		}
+		if after := latestLeanRecord(t, f); !reflect.DeepEqual(before, after) {
+			t.Fatalf("check result changed: %#v / %#v", before, after)
+		}
+		if startEventCount(t, f.workspace) != count+1 {
+			t.Fatal("observation must write exactly one Event")
+		}
+		var envelope struct {
+			Event struct {
+				ID string `json:"id"`
+			} `json:"event"`
+		}
+		if err := json.Unmarshal([]byte(got.stdout), &envelope); err != nil {
+			t.Fatal(err)
+		}
+		event, err := journal.FindEvent(filepath.Join(config.LedgerDir(f.workspace), "journal"), envelope.Event.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if event.Event.EventType != "artifact.availability-observed" {
+			t.Fatalf("event=%#v", event.Event)
+		}
+		for _, effect := range event.Event.Effects {
+			if effect.Table != "referenced_artifacts" && effect.Table != "idempotency_results" {
+				t.Fatalf("kernel side effect: %#v", effect)
+			}
+		}
+		if !row.changed && (len(event.Event.Effects) != 1 || event.Event.Effects[0].Table != "idempotency_results") {
+			t.Fatalf("unchanged event=%#v", event.Event)
+		}
+		replay := f.run(args...)
+		if replay.err != nil {
+			t.Fatalf("replay=%#v", replay)
+		}
+		if !decodeCanonicalResult(t, replay.stdout)["replayed"].(bool) || startEventCount(t, f.workspace) != count+1 {
+			t.Fatal("retry did not replay without a write")
+		}
 	}
-	linkedResult := decodeCanonicalResult(t, linked.stdout)
-	evidenceID := linkedResult["evidence"].(map[string]any)["id"].(string)
-	assertEvaluation(t, linkedResult["evaluation"].(map[string]any), "valid", "fresh", "available", []string{})
-	before := artifactIdentitySnapshot(t, conn, artifactID, receiptID)
-	if before.EvidenceID != evidenceID || before.EvidenceReceiptID != receiptID {
-		t.Fatalf("initial Artifact/Receipt/Evidence snapshot = %#v, want Evidence %q bound to Receipt %q", before, evidenceID, receiptID)
-	}
-	path := filepath.Join(config.LedgerDir(workspace), "artifacts", digest[len("sha256:"):])
-	if err := os.Remove(path); err != nil {
-		t.Fatalf("remove stored Artifact: %v", err)
-	}
-
-	inputPath := filepath.Join(workspace, "artifact-verify.json")
-	writeActivationInput(t, inputPath, map[string]any{"artifact_id": artifactID})
-	missing := executeCommandForTest(workspace,
-		"--project", workspace, "--json", "artifact", "verify", "--actor", "actor-builder",
-		"--input", inputPath, "--idempotency-key", "artifact-verify-missing",
-	)
-	if missing.err != nil || missing.stderr != "" {
-		t.Fatalf("missing Artifact verify = %#v, want availability observation", missing)
-	}
-	assertArtifactVerifyResult(t, missing.stdout, "missing", true)
-	assertEvaluation(t, evaluateEvidenceForArtifactTest(t, workspace, obligationID, repository), "valid", "fresh", "missing", []string{"artifact-unavailable"})
-	wantMissing := before
-	wantMissing.Availability = "missing"
-	if afterMissing := artifactIdentitySnapshot(t, conn, artifactID, receiptID); afterMissing != wantMissing {
-		t.Fatalf("missing observation snapshot = %#v, want %#v", afterMissing, wantMissing)
-	}
-
-	if err := os.WriteFile(path, content, 0o600); err != nil {
-		t.Fatalf("restore stored Artifact: %v", err)
-	}
-	restored := executeCommandForTest(workspace,
-		"--project", workspace, "--json", "artifact", "verify", "--actor", "actor-builder",
-		"--input", inputPath, "--idempotency-key", "artifact-verify-restored",
-	)
-	if restored.err != nil || restored.stderr != "" {
-		t.Fatalf("restored Artifact verify = %#v, want availability observation", restored)
-	}
-	assertArtifactVerifyResult(t, restored.stdout, "available", true)
-	assertEvaluation(t, evaluateEvidenceForArtifactTest(t, workspace, obligationID, repository), "valid", "fresh", "available", []string{})
-	if afterRestored := artifactIdentitySnapshot(t, conn, artifactID, receiptID); afterRestored != before {
-		t.Fatalf("restored observation snapshot = %#v, want %#v", afterRestored, before)
-	}
-	unchanged := executeCommandForTest(workspace,
-		"--project", workspace, "--json", "artifact", "verify", "--actor", "actor-builder",
-		"--input", inputPath, "--idempotency-key", "artifact-verify-unchanged",
-	)
-	if unchanged.err != nil || unchanged.stderr != "" {
-		t.Fatalf("unchanged Artifact verify = %#v, want idempotent observation Event", unchanged)
-	}
-	assertArtifactVerifyResult(t, unchanged.stdout, "available", false)
-	var unchangedEnvelope struct {
-		Event struct {
-			ID string `json:"id"`
-		} `json:"event"`
-	}
-	if err := json.Unmarshal([]byte(unchanged.stdout), &unchangedEnvelope); err != nil {
-		t.Fatalf("decode unchanged Artifact Event: %v", err)
-	}
-	event, err := journal.FindEvent(filepath.Join(config.LedgerDir(workspace), "journal"), unchangedEnvelope.Event.ID)
-	if err != nil {
-		t.Fatalf("read unchanged Artifact Event: %v", err)
-	}
-	if event.Event.EventType != "artifact.availability-observed" || len(event.Event.Effects) != 1 || event.Event.Effects[0].Table != "idempotency_results" {
-		t.Fatalf("unchanged Artifact Event = %#v, want only idempotency observation effect", event.Event)
-	}
-}
-
-func TestArtifactVerifyAuthorityFailureNamesArtifactVerify(t *testing.T) {
-	t.Parallel()
-	workspace := clonePristineWorkspace(t)
-	inputPath := filepath.Join(workspace, "artifact-verify.json")
-	writeActivationInput(t, inputPath, map[string]any{"artifact_id": "ART-missing"})
-	result := executeCommandForTest(workspace,
-		"--project", workspace, "--json", "artifact", "verify", "--actor", "actor-builder",
-		"--input", inputPath, "--idempotency-key", "artifact-verify-authority",
-	)
-	if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"operation":"artifact.verify"`) || !strings.Contains(result.stderr, `"required_capabilities":["artifact.verify"]`) {
-		t.Fatalf("Artifact verify authority failure = %#v, want artifact.verify capability metadata", result)
+	human := f.run("artifact", "verify", "--input", input, "--actor", "human:mark", "--idempotency-key", "text")
+	if human.err != nil || human.stdout != artifact.ID+"\tavailable\n" || human.stderr != "" {
+		t.Fatalf("text=%#v", human)
 	}
 }

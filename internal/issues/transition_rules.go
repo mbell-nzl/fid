@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/issuestate"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func loadIssueTransitionState(conn *sql.DB, issueID string) (issueTransitionState, error) {
@@ -55,32 +54,9 @@ func evaluateTransitionRule(conn *sql.DB, current issueTransitionState, rule iss
 			return issuestate.RuleResult{}, err
 		}
 		return issuestate.AllChildTasksDoneOrCancelled(children), nil
-	case workflow.RuleLinkedToDecision:
-		ids, err := loadApprovedDecisionReferenceIDs(conn, current.ID)
-		if err != nil {
-			return issuestate.RuleResult{}, err
-		}
-		return workflow.LinkedToDecision(current.ID, ids), nil
 	default:
 		return issuestate.RuleResult{Unmet: []issuestate.UnmetCondition{{Rule: rule.Name}}}, nil
 	}
-}
-
-func loadApprovedDecisionReferenceIDs(conn *sql.DB, issueID string) ([]string, error) {
-	rows, err := conn.Query(`SELECT id FROM decision_refs WHERE scope_issue_id=? AND outcome='approved' ORDER BY id`, issueID)
-	if err != nil {
-		return nil, fmt.Errorf("query approved Decision References for %q: %w", issueID, err)
-	}
-	defer func() { _ = rows.Close() }()
-	ids := []string{}
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return ids, rows.Err()
 }
 
 func loadChildTaskStatuses(conn *sql.DB, issueID string) ([]issuestate.ChildTaskStatus, error) {

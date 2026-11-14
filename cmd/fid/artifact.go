@@ -1,10 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/mbell-nzl/fid/internal/artifactverify"
 	"github.com/mbell-nzl/fid/internal/cli"
-	"github.com/mbell-nzl/fid/internal/evidence"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +14,7 @@ func init() {
 }
 
 func newArtifactCommand() *cobra.Command {
-	cmd := &cobra.Command{Use: "artifact", Short: "Inspect retained gate Artifacts."}
+	cmd := &cobra.Command{Use: "artifact", Short: "Inspect retained check Artifacts."}
 	cmd.AddCommand(newArtifactVerifyCommand())
 	return cmd
 }
@@ -26,17 +27,17 @@ func newArtifactVerifyCommand() *cobra.Command {
 				return err
 			}
 		}
-		var request evidence.ArtifactVerifyRequest
+		var request artifactverify.Request
 		if err := readDescriptorInput(cmd.InOrStdin(), inputPath, inputDescriptorRegistry["artifact verify"], &request); err != nil {
-			return renderGateError(cmd, "artifact.verify", err)
+			return renderArtifactError(cmd, "artifact.verify", err)
 		}
 		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
-			return renderGateError(cmd, "artifact.verify", err)
+			return renderArtifactError(cmd, "artifact.verify", err)
 		}
-		result, err := evidence.VerifyArtifact(evidence.ArtifactVerifyOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key, Request: request})
+		result, err := artifactverify.Verify(artifactverify.Options{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key, Request: request})
 		if err != nil {
-			return renderGateError(cmd, "artifact.verify", err)
+			return renderArtifactError(cmd, "artifact.verify", err)
 		}
 		jsonMode, err := readJSONMode(cmd)
 		if err != nil {
@@ -49,9 +50,21 @@ func newArtifactVerifyCommand() *cobra.Command {
 		return err
 	}}
 	cmd.Flags().StringVar(&inputPath, "input", "", "Artifact verify JSON input")
-	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
+	cmd.Flags().StringVar(&actor, "actor", "", "Who verifies, agent:<id> or human:<id>")
 	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("artifact.verify"))
 	installInputDescriptor(cmd, inputDescriptorRegistry["artifact verify"])
 	return cmd
+}
+
+func renderArtifactError(cmd *cobra.Command, operation string, cause error) error {
+	var denied *artifactverify.DeniedActorError
+	if errors.As(cause, &denied) {
+		jsonMode, err := readJSONMode(cmd)
+		if err != nil {
+			return err
+		}
+		return writeStopFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, denied.Error(), nil, map[string]any{"actor_id": denied.Actor, "operation": operation, "required_actions": []string{operation}, "required_capabilities": []string{operation}})
+	}
+	return renderIssueMutationError(cmd, operation, "", cause)
 }

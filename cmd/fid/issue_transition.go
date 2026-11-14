@@ -62,8 +62,8 @@ func newIssueTransitionCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&reason, "reason", "", "Why a person cancels this task or epic")
-	cmd.Flags().StringVar(&toState, "to", "", "Target workflow state; fid resume <issue-id> lists the Issue's next states")
-	cmd.Flags().StringVar(&expectedRevision, "expected-revision", "", "Required current Issue revision; fid resume <issue-id> shows it")
+	cmd.Flags().StringVar(&toState, "to", "", "Target workflow state")
+	cmd.Flags().StringVar(&expectedRevision, "expected-revision", "", "Required current Issue revision; fid issue get <issue-id> shows it")
 	cmd.Flags().StringVar(&actor, "actor", "", "Standalone actor attribution")
 	cmd.Flags().StringVar(&idempotencyKey, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(issueMutationFlagError("issue.transition"))

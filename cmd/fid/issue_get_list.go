@@ -43,7 +43,6 @@ func newIssueGetCommand() *cobra.Command {
 
 func newIssueListCommand() *cobra.Command {
 	var kind, status, statusCategory, epicID, label, priorityFilter, order string
-	var hasConcerns bool
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List issues.",
@@ -62,9 +61,6 @@ func newIssueListCommand() *cobra.Command {
 				return renderIssueReadError(cmd, jsonMode, "issue.list", err)
 			}
 			options := issues.ListOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), Kind: kind, Status: status, StatusCategory: statusCategory, EpicID: epicID, Label: label, Priorities: priorities, Order: order}
-			if cmd.Flags().Changed("has-concerns") {
-				options.HasOpenConcerns = &hasConcerns
-			}
 			items, err := issues.ListIssueSummaries(options)
 			if err != nil {
 				return renderIssueReadError(cmd, jsonMode, "issue.list", err)
@@ -86,7 +82,6 @@ func newIssueListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&epicID, "epic", "", "Filter by parent epic ID")
 	cmd.Flags().StringVar(&label, "label", "", "Filter by label")
 	cmd.Flags().StringVar(&priorityFilter, "priority", "", "Filter by priority list")
-	cmd.Flags().BoolVar(&hasConcerns, "has-concerns", false, "Show only issues with open concerns")
 	cmd.Flags().StringVar(&order, "order", "", "Ordering")
 	return cmd
 }
