@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"testing"
@@ -282,6 +283,15 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 			t.Fatalf("V8 %s = %#v", table, checkRows)
 		}
 		state.reads[table] = checkRows.stdout
+		if runtime.GOOS == "linux" && (table == "check_starts" || table == "check_processes") {
+			boot, err := os.ReadFile("/proc/sys/kernel/random/boot_id")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(checkRows.stdout, `\"boot_id\":\"`+strings.TrimSpace(string(boot))+`\"`) {
+				t.Fatalf("V8 %s lost the separate boot identity: %s", table, checkRows.stdout)
+			}
+		}
 	}
 	rows := policySnapshots(t, workspace)
 	if len(rows) != 2 || rows[0].Digest == rows[1].Digest {

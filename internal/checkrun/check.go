@@ -29,6 +29,8 @@ type Options struct {
 	After                                                                func(checkrecord.Record) error
 	Warning                                                              func(string) error
 	RenewInterval                                                        time.Duration
+	// beforeWrite lets package tests schedule a competitor between lock acquisitions.
+	beforeWrite func()
 }
 
 type execution struct {
@@ -59,6 +61,7 @@ func Run(ctx context.Context, options Options) (checkrecord.Response, error) {
 	ex := execution{options: options, env: environment(), response: checkrecord.Response{Names: options.Names, CheckIDs: []string{}, Checks: []checkrecord.Summary{}, NotStarted: []string{}}}
 	replayed := false
 	replayRecords := []checkrecord.Record{}
+	var first checkrecord.Record
 	err := options.write(func(db store) error {
 		var err error
 		ex.request, err = db.request()
@@ -108,7 +111,13 @@ func Run(ctx context.Context, options Options) (checkrecord.Response, error) {
 		if err := policysnapshot.Ensure(db.lock, db.conn, ex.policy, db.now); err != nil {
 			return err
 		}
-		return nil
+		if err := ex.previous(db); err != nil {
+			return err
+		}
+		// Reserve the key before releasing the lock used for retry lookup.
+		// A competing invocation can only replay or observe an incomplete request.
+		first.Start, err = ex.start(db, options.Names[0])
+		return err
 	})
 	if err != nil {
 		return ex.response, err
@@ -129,29 +138,29 @@ func Run(ctx context.Context, options Options) (checkrecord.Response, error) {
 		return ex.response, responseError(ex.response)
 	}
 	for index, name := range options.Names {
-		var record checkrecord.Record
-		admissionFailure := false
-		err := options.write(func(db store) error {
-			if err := db.current(); err != nil {
-				admissionFailure = true
-				return err
-			}
-			if err := ex.previous(db); err != nil {
-				admissionFailure = true
-				return err
-			}
-			var err error
-			record.Start, err = ex.start(db, name)
-			return err
-		})
-		if err != nil {
-			if admissionFailure && ex.requestID != "" {
-				if stopErr := ex.stop(index, err); stopErr != nil {
-					return ex.response, stopErr
+		record := first
+		if index > 0 {
+			stopped := false
+			err := options.write(func(db store) error {
+				admission := db.current()
+				if admission == nil {
+					admission = ex.previous(db)
 				}
+				if admission != nil {
+					stopped = true
+					return ex.stop(db, index, admission)
+				}
+				var err error
+				record = checkrecord.Record{}
+				record.Start, err = ex.start(db, name)
+				return err
+			})
+			if err != nil {
+				return ex.response, err
+			}
+			if stopped {
 				return ex.response, responseError(ex.response)
 			}
-			return ex.response, err
 		}
 		if options.Before != nil {
 			if err := options.Before(name); err != nil {

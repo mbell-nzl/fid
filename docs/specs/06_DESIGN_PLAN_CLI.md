@@ -1563,7 +1563,9 @@ result}`. Process and result are nullable. It selects each name's latest result
 and every unfinished start. Start contains ID, task, hold, actor, name, resolved
 definition/digest, environment-value digest, policy snapshot sequence, time,
 HEAD/tree/dirty observation and the owning fid process. Process identity has
-machine, PID and start identity. Result contains finish time, outcome (`passed`,
+machine, separate boot ID (empty on other Unix systems), PID and start identity.
+Linux machine identity uses `/etc/machine-id`, falling back to the hostname.
+Result contains finish time, outcome (`passed`,
 `failed`, `timed-out`, `cancelled`, `spawn-failed`, `signaled`), nullable exit
 code/signal, second tree observation, bounded output digest/excerpt/total byte
 count/truncation, resolved executable/digest/platform/fid version, kept and
@@ -1581,7 +1583,9 @@ Show's text adds, for example:
 A same-key repeat returns the original response without spawning. A keyed
 request cut off before completion gives `check-incomplete` without a result.
 Before a fresh check, unfinished starts on the task are inspected by machine,
-PID and start identity. A stopped process permits execution, with human warning
+boot, PID and start identity. On the same machine, an earlier Linux boot proves
+the process stopped. A different or uninspectable machine still refuses.
+A stopped process permits execution, with human warning
 `⚠ CHK-100001 never finished; its process has stopped`; a live one refuses as
 `check-still-running`, suggesting waiting or stopping its PID and trying again.
 The old start remains unfinished in either case.

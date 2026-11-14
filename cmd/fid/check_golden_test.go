@@ -53,7 +53,7 @@ func TestLeanShowGolden(t *testing.T) {
 		output = strings.ReplaceAll(output, binary, "<helper>")
 		output = regexp.MustCompile(`sha256:[0-9a-f]{64}`).ReplaceAllString(output, "sha256:<digest>")
 		output = regexp.MustCompile(`"[0-9a-f]{40}"`).ReplaceAllString(output, `"<commit-or-tree>"`)
-		for _, field := range []string{"machine", "start_time", "os", "arch"} {
+		for _, field := range []string{"machine", "boot_id", "start_time", "os", "arch"} {
 			output = regexp.MustCompile(`"`+field+`":"[^"]*"`).ReplaceAllString(output, `"`+field+`":"<`+field+`>"`)
 		}
 		checkGolden(t, f, "show"+ext, output)

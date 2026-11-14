@@ -147,6 +147,28 @@ func TestLeanCheckReplayAndImportRejectForgedObservations(t *testing.T) {
 		{"process identity", "check.process-started", func(e *journal.Event) {
 			e.Effects[0].Values["process_json"] = `{"machine":"local","pid":0,"start_time":"0"}`
 		}},
+		{"process boot identity", "check.process-started", func(e *journal.Event) {
+			var value map[string]any
+			_ = json.Unmarshal([]byte(e.Effects[0].Values["process_json"].(string)), &value)
+			value["boot_id"] = "not-a-boot-id"
+			e.Effects[0].Values["process_json"] = encodedLean(value)
+		}},
+		{"process boot differs from owner", "check.process-started", func(e *journal.Event) {
+			var value map[string]any
+			_ = json.Unmarshal([]byte(e.Effects[0].Values["process_json"].(string)), &value)
+			value["boot_id"] = "00000000-0000-0000-0000-000000000000"
+			e.Effects[0].Values["process_json"] = encodedLean(value)
+		}},
+		{"owner boot identity", "check.started", func(e *journal.Event) {
+			for i := range e.Effects {
+				if e.Effects[i].Table == "check_starts" {
+					var value map[string]any
+					_ = json.Unmarshal([]byte(e.Effects[i].Values["start_json"].(string)), &value)
+					value["owner"].(map[string]any)["boot_id"] = "not-a-boot-id"
+					e.Effects[i].Values["start_json"] = encodedLean(value)
+				}
+			}
+		}},
 		{"result qualification", "check.result-recorded", func(e *journal.Event) {
 			var value map[string]any
 			_ = json.Unmarshal([]byte(e.Effects[0].Values["result_json"].(string)), &value)

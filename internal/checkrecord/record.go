@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"time"
 )
 
@@ -38,8 +39,22 @@ type Tree struct {
 
 type Process struct {
 	Machine   string `json:"machine"`
+	BootID    string `json:"boot_id"`
 	PID       int    `json:"pid"`
 	StartTime string `json:"start_time"`
+}
+
+var bootIDPattern = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+
+func (process Process) Validate() error {
+	if process.PID <= 0 || process.Machine == "" || process.StartTime == "" {
+		return fmt.Errorf("incomplete check process identity")
+	}
+	// Other Unix systems use ps start times and have no Linux boot ID.
+	if process.BootID != "" && !bootIDPattern.MatchString(process.BootID) {
+		return fmt.Errorf("invalid check boot identity")
+	}
+	return nil
 }
 
 type Start struct {

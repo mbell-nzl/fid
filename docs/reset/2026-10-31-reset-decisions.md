@@ -508,8 +508,16 @@ keeps the child from executing the check until its PID/start identity is
 journaled. If fid dies before granting permission, pipe EOF ends the launcher
 without executing the check, so an unrecorded child identity cannot hide
 continuing work. The private descriptors close before exec, which preserves
-the recorded PID and start identity. Linux process identity includes its boot
-ID and process start ticks; other Unix systems use the process start time. An
+the recorded PID and start identity. Machine identity uses `/etc/machine-id`
+on Linux, falling back to the hostname (with distinct `machine-id:` and
+`hostname:` prefixes). Linux records its boot ID separately from machine
+identity and records process start ticks; other Unix systems use the hostname
+and process start time, with an empty boot ID. An unfinished start on this
+machine from a different boot has stopped and permits a fresh check with the
+usual warning; a different or uninspectable machine still refuses. The retry
+lookup and first-start admission share one lock acquisition. A refusal between
+checks is recorded under the lock that observes it; the result and its retry
+response are committed together. An
 inspection error is a fid error, never evidence that a process stopped.
 `check.started`, `check.process-started`, `check.result-recorded`,
 `check.hold-renewed`, `check.artifact-kept`, `check.artifact-refused` and
