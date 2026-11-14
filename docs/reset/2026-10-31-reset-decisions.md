@@ -2109,6 +2109,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
+- From #73 (1.5d1): audit the retained-table ownership and column guards for
+  SQLite case aliases. `validateCurrentEvent` still indexes
+  `currentEventTables` using the raw `Effect.Table`, while SQLite resolves
+  bare identifiers without regard to ASCII case. Round 1 fixes the retired
+  catalogs; changing retained-domain validation is outside its findings.
+
 - From #71 (1.5c2): `fid artifact verify`'s missing-Artifact failure still
   says `allowed: ["accepted gate registration input"]`; 1.5c2 kept it so
   the failure contract didn't change during removal. Reword it when that

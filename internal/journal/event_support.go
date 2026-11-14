@@ -1,6 +1,9 @@
 package journal
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // SchemaUnsupportedError identifies retired history before any Effects land.
 // Generic version-1 issue history remains supported; wire version alone is not
@@ -21,11 +24,18 @@ func (err *SchemaUnsupportedError) Error() string {
 // ValidateEventSupport is shared by journal projection and archive validation.
 // Physical tables remain until RESET 1.5d2; they do not authorize old Effects.
 func ValidateEventSupport(event Event) error {
-	if removedEventFamilies[event.EventType] {
+	if removedEventFamilies[strings.ToLower(event.EventType)] {
 		return &SchemaUnsupportedError{EventID: event.EventID, EventType: event.EventType}
 	}
 	for _, effect := range event.Effects {
-		if removedEffectTables[effect.Table] {
+		// The SQL executor accepts only bare ASCII identifiers. Validate here
+		// too, so replay cannot apply a prefix before reaching invalid syntax.
+		// Within this grammar, SQLite folds ASCII case for table resolution.
+		table, err := validatedIdentifier(effect.Table)
+		if err != nil {
+			return fmt.Errorf("project event %q: %w", event.EventID, err)
+		}
+		if removedEffectTables[strings.ToLower(table)] {
 			return &SchemaUnsupportedError{EventID: event.EventID, EventType: event.EventType, Table: effect.Table}
 		}
 	}

@@ -15,6 +15,10 @@ import (
 
 func TestRemovedFamiliesRefusedWithoutMutation(t *testing.T) {
 	t.Parallel()
+	prefix := removedFamilyEvent("project.initialized", EventSchemaV2)
+	prefix.EventID, prefix.Aggregate.ID = "EVT-prefix", "PRJ-prefix"
+	prefix.Aggregate.Type = "project"
+	assertReplayPrefix(t, prefix)
 	raw, err := os.ReadFile("testdata/removed-families.txt")
 	if err != nil {
 		t.Fatal(err)
@@ -28,8 +32,6 @@ func TestRemovedFamiliesRefusedWithoutMutation(t *testing.T) {
 				path := filepath.Join(dir, "2026-11-15.jsonl")
 				event := removedFamilyEvent(family, schema)
 				// A valid prefix must not land when a later family is unsupported.
-				prefix := removedFamilyEvent("project.initialized", EventSchemaV2)
-				prefix.EventID, prefix.Aggregate.ID = "EVT-prefix", "PRJ-prefix"
 				writeReplayEvents(t, path, prefix, event)
 				beforeBytes, err := os.ReadFile(path)
 				if err != nil {
@@ -71,6 +73,22 @@ func TestRemovedFamiliesRefusedWithoutMutation(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func assertReplayPrefix(t *testing.T, prefix Event) {
+	t.Helper()
+	dir := t.TempDir()
+	writeReplayEvents(t, filepath.Join(dir, "2026-11-15.jsonl"), prefix)
+	conn := openReplayDB(t, filepath.Join(t.TempDir(), "prefix.sqlite"))
+	defer closeProjectDB(t, conn)
+	before := currentProjectionSnapshot(t, conn)
+	stats, err := ReplayJournal(conn, dir, nil)
+	if err != nil || stats.EventsReplayed != 1 {
+		t.Fatalf("replay prefix alone = %+v, %v; want one accepted Event", stats, err)
+	}
+	if reflect.DeepEqual(before, currentProjectionSnapshot(t, conn)) {
+		t.Fatal("prefix alone did not change projection")
 	}
 }
 

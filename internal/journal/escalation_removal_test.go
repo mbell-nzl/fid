@@ -18,7 +18,9 @@ func TestLatestProjectionRejectsRetiredEscalationEffects(t *testing.T) {
 	}{
 		{"table", "no such", Effect{Op: "insert", Table: "escalations", PK: map[string]any{"id": "ESC-retired"}, Values: map[string]any{"status": "open"}}},
 		{"triage column", "no such", Effect{Op: "update", Table: "triage_events", PK: map[string]any{"id": "TRI-retired"}, Values: map[string]any{"esc_id": "ESC-retired"}}},
+		{"triage column case", "no such", Effect{Op: "update", Table: "TRIAGE_EVENTS", PK: map[string]any{"ID": "TRI-retired"}, Values: map[string]any{"ESC_ID": "ESC-retired"}}},
 		{"concern column", "schema-unsupported", Effect{Op: "update", Table: "concerns", PK: map[string]any{"id": "CON-retired"}, Values: map[string]any{"escalated_to_esc_id": "ESC-retired"}}},
+		{"concern column case", "schema-unsupported", Effect{Op: "update", Table: "CoNcErNs", PK: map[string]any{"ID": "CON-retired"}, Values: map[string]any{"ESCALATED_TO_ESC_ID": "ESC-retired"}}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			workspace := newReplayWorkspace(t)

@@ -111,3 +111,75 @@ func TestCreateRefusesRemovedJournalBeforePublication(t *testing.T) {
 		t.Fatal("refused create changed source or published archive")
 	}
 }
+
+func TestRetiredTableAliasesRefusedByArchivesWithoutMutation(t *testing.T) {
+	t.Parallel()
+	for _, schema := range []int{journal.EventSchemaV1, journal.EventSchemaV2} {
+		for _, table := range []string{"WORKFLOWS", "WoRkFlOwS"} {
+			t.Run(fmt.Sprintf("%s/v%d", table, schema), func(t *testing.T) {
+				t.Parallel()
+				fixture := newExportSourceFixture(t, nil)
+				entries := archiveContents(t, fixture.archive)
+				path := archivePathWithPrefix(t, entries, "journal/")
+				event := journal.Event{EventID: "EVT-retired-table", EventSchema: schema, EventType: "issue.updated",
+					OccurredAt: time.Date(2026, 11, 15, 0, 0, 0, 0, time.UTC),
+					Actor:      journal.Actor{Role: "human"}, Command: journal.Command{Argv: []string{"fid", "test"}, CWD: "/test", FIDVersion: "test"},
+					ActorV2:   journal.EventActor{ActorID: "test", ActorType: "human", Producer: "fid", ProvenanceRef: "test:removed"},
+					Aggregate: journal.Aggregate{ID: "retired", Type: "issue", Sequence: 1}, CommandName: "issue.update",
+					Effects: []journal.Effect{{Op: "insert", Table: table, PK: map[string]any{"ID": "retired"}, Values: map[string]any{"NaMe": "retired"}}}}
+				encoded, err := journal.MarshalCanonicalJSON(event)
+				if err != nil {
+					t.Fatal(err)
+				}
+				entries[path] = append(entries[path], append(encoded, '\n')...)
+				manifest := decodeManifestMap(t, entries["manifest.json"])
+				manifest["terminal_event_hash"], err = journal.HashEvent(event)
+				if err != nil {
+					t.Fatal(err)
+				}
+				manifest["event_count"] = json.Number("2")
+				updateManifestEntry(t, manifest, path, entries[path])
+				entries["manifest.json"] = encodeManifestMap(t, manifest)
+				archive := filepath.Join(t.TempDir(), "retired-table.zip")
+				writeTestArchive(t, archive, entries)
+				target := gittest.NewWorkspace(t)
+				sourceBefore, targetBefore := workspaceTreeDigest(t, fixture.workspace), workspaceTreeDigest(t, target)
+				archiveBefore := workspaceTreeDigest(t, filepath.Dir(archive))
+				for _, operation := range []string{"validate", "import"} {
+					var err error
+					if operation == "validate" {
+						_, err = Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+					} else {
+						_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "retired-table"})
+					}
+					assertArchiveCheck(t, err, "schema-unsupported")
+					var invalid *InvalidArchiveError
+					if !errors.As(err, &invalid) || len(invalid.Checks) != 1 || invalid.Checks[0].Entry == nil || *invalid.Checks[0].Entry != path || !strings.Contains(invalid.Checks[0].Detail, table) {
+						t.Fatalf("%s = %#v, want located refusal naming %s", operation, err, table)
+					}
+					if workspaceTreeDigest(t, fixture.workspace) != sourceBefore || workspaceTreeDigest(t, target) != targetBefore || workspaceTreeDigest(t, filepath.Dir(archive)) != archiveBefore {
+						t.Fatalf("%s changed files", operation)
+					}
+				}
+				files, err := filepath.Glob(filepath.Join(config.LedgerDir(fixture.workspace), "journal", "*.jsonl"))
+				if err != nil || len(files) != 1 {
+					t.Fatalf("source journal=%v/%v", files, err)
+				}
+				if err := os.WriteFile(files[0], entries[path], 0o600); err != nil {
+					t.Fatal(err)
+				}
+				sourceBefore = workspaceTreeDigest(t, fixture.workspace)
+				publishedBefore := workspaceTreeDigest(t, filepath.Dir(fixture.archive))
+				_, err = Create(CreateOptions{WorkspaceRoot: fixture.workspace, ArchivePath: fixture.archive})
+				var unsupported *journal.SchemaUnsupportedError
+				var corrupt *journal.CorruptJournalError
+				if !errors.As(err, &unsupported) || unsupported.Table != table || !errors.As(err, &corrupt) || corrupt.Line != 2 || corrupt.File != filepath.ToSlash(files[0]) {
+					t.Fatalf("create=%v, want located schema refusal naming %s", err, table)
+				}
+				if workspaceTreeDigest(t, fixture.workspace) != sourceBefore || workspaceTreeDigest(t, filepath.Dir(fixture.archive)) != publishedBefore {
+					t.Fatal("refused create changed source or destination")
+				}
+			})
+		}
+	}
+}
