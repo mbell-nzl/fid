@@ -62,8 +62,8 @@ type Result struct {
 type Waiting struct {
 	Kind       string `json:"kind"`
 	TaskID     string `json:"task_id"`
-	QuestionID string `json:"question_id"`
-	Question   string `json:"question"`
+	QuestionID string `json:"question_id,omitempty"`
+	Question   string `json:"question,omitempty"`
 }
 
 // Event is the Event a hold was taken in.
@@ -188,6 +188,9 @@ func assemble(conn fiddb.Queryer, options Options, now time.Time) (Result, order
 		if epic, found := work.Epics[epicOf(task)]; found {
 			result.Epic = &epic
 		}
+	}
+	if planned.own != nil && planned.own.InReview() {
+		result.Waiting = &Waiting{Kind: "review", TaskID: planned.own.TaskID}
 	}
 	if planned.own != nil && planned.own.Question != nil {
 		q := planned.own.Question

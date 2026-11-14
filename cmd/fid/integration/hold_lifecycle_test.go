@@ -4,10 +4,12 @@ package integration
 
 import (
 	"github.com/mbell-nzl/fid/internal/gittest"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
-var p24LifecycleFields = map[string]string{"check.execute": "--hold", "hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text", "task.start": "--hold"}
+var p24LifecycleFields = map[string]string{"task.handoff": "--pr", "check.execute": "--hold", "hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text", "task.start": "--hold"}
 
 func TestHoldLifecycleKeyedCorpus(t *testing.T) {
 	t.Parallel()
@@ -37,6 +39,17 @@ func p24SingleLifecycle(t *testing.T, a *p22FIDRecoveryAdapter) {
 func p24LifecycleCommands(t *testing.T, binary, workspace string) {
 	t.Helper()
 	p24InstallLeanPolicy(t, workspace, true)
+	file := filepath.Join(workspace, ".fid.toml")
+	raw, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(file, append(raw, []byte("\n[review]\ntest_adequacy=[]\n")...), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	closureRun(t, workspace, "git", "add", ".")
+	closureRun(t, workspace, "git", "-c", "user.name=fid test", "-c", "user.email=fid@example.test", "commit", "-qm", "Test paths")
+	closureRun(t, workspace, "git", "update-ref", "refs/remotes/origin/trunk", "HEAD")
 	call := func(args ...string) map[string]any {
 		t.Helper()
 		return p21Run(t, binary, workspace, append([]string{"--project", workspace, "--json"}, args...)...)
@@ -50,6 +63,9 @@ func p24LifecycleCommands(t *testing.T, binary, workspace string) {
 	call("check", "pass", "--hold", hold, "--actor", "human:mark", "--idempotency-key", "lifecycle-check")
 	call("park", "--hold", hold, "--actor", "human:mark", "--waiting", "Include authentication failures?", "--idempotency-key", "lifecycle-park")
 	call("answer", task, "Exclude authentication failures.", "--actor", "human:mark", "--idempotency-key", "lifecycle-answer")
+	resumed := call("next", "--claim", "--actor", "human:mark")
+	hold = p21PathString(t, resumed, "result", "hold", "id")
+	call("handoff", "--hold", hold, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "lifecycle-handoff")
 }
 
 func p24LifecycleCodePair(t *testing.T, code string) p24CodePair {

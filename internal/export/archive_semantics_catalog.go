@@ -44,6 +44,7 @@ var semanticEventRules = map[string]semanticEventRule{
 	"check.hold-renewed":             semanticRule("check", semanticStage(1, semanticEffectKey("holds", "update"))),
 	"check.artifact-kept":            semanticRule("check", semanticStage(0, semanticEffectKey("referenced_artifacts", "insert"), semanticEffectKey("referenced_artifacts", "update")), semanticStage(1, semanticEffectKey("check_files", "insert"))),
 	"check.artifact-refused":         semanticRule("check", semanticStage(1, semanticEffectKey("check_files", "insert"))),
+	"task.handed-off":                semanticRule("task", semanticStage(1, semanticEffectKey("handoffs", "insert")), semanticStage(1, semanticEffectKey("issues", "update")), semanticStage(1, semanticEffectKey("holds", "update")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
 	"task.started":                   semanticRule("task", semanticStage(1, semanticEffectKey("issues", "update")), semanticStage(1, semanticEffectKey("idempotency_results", "insert"))),
 	"policy.snapshotted":             semanticRule("policy", semanticStage(1, semanticEffectKey("policy_snapshots", "insert"))),
 	"review.recorded":                semanticRule("review", semanticStage(1, semanticEffectKey("review_records", "insert")), semanticStage(0, semanticEffectKey("review_findings", "insert"), semanticEffectKey("finding_dispositions", "insert"), semanticEffectKey("budget_samples", "insert"), semanticEffectKey("stops", "insert"), semanticEffectKey("attention_items", "insert"), semanticEffectKey("attention_stop_links", "insert"), semanticEffectKey("stop_resolutions", "insert"), semanticEffectKey("attention_items", "update"), semanticEffectKey("activity_log", "activity"), semanticEffectKey("idempotency_results", "insert"))),
@@ -108,7 +109,7 @@ var semanticEventRules = map[string]semanticEventRule{
 
 // semanticFirstProfile is the first projection schema that holds each
 // family added since schema 19. An archive of an earlier schema holds none.
-var semanticFirstProfile = map[string]int{"check.completed": 25, "check.stopped": 25, "check.started": 25, "check.process-started": 25, "check.result-recorded": 25, "check.hold-renewed": 25, "check.artifact-kept": 25, "check.artifact-refused": 25, "task.started": 24, "hold.waiting": 23, "task.answered": 23, "hold.heartbeat": 22, "hold.parked": 22, "task.taken-over": 22, "hold.taken": 20, "policy.snapshotted": 21}
+var semanticFirstProfile = map[string]int{"task.handed-off": 26, "check.completed": 25, "check.stopped": 25, "check.started": 25, "check.process-started": 25, "check.result-recorded": 25, "check.hold-renewed": 25, "check.artifact-kept": 25, "check.artifact-refused": 25, "task.started": 24, "hold.waiting": 23, "task.answered": 23, "hold.heartbeat": 22, "hold.parked": 22, "task.taken-over": 22, "hold.taken": 20, "policy.snapshotted": 21}
 
 var semanticPost14Events = map[string]bool{
 	"activation.resource-observed": true, "activation.recovery-selected": true, "activation.recovery-completed": true,

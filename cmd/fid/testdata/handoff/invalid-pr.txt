@@ -1,0 +1,2 @@
+error: --pr must be a GitHub pull request URL
+reason: invalid-argument; argument=--pr, allowed=https://github.com/<owner>/<repo>/pull/<n>

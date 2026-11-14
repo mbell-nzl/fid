@@ -121,6 +121,9 @@ func (text textWriter) message(result Result, explain bool) []string {
 // the order each kind first appears.
 func (text textWriter) nothing(result Result, explain bool) []string {
 	if waiting := result.Waiting; waiting != nil {
+		if waiting.Kind == "review" {
+			return append(text.item(display.RoleNormal, display.SymbolUnstarted, "Nothing here: "+waiting.TaskID+" is in review"), text.step("fid show "+waiting.TaskID)...)
+		}
 		return append(text.item(display.RoleNormal, display.SymbolUnstarted, "Nothing here until you answer "+waiting.TaskID+": "+waiting.Question), text.step("fid show "+waiting.TaskID)...)
 	}
 	if len(result.Queue) == 0 {
@@ -166,6 +169,9 @@ func (text textWriter) nothing(result Result, explain bool) []string {
 // stoppedBy is what stops entry, as a kind to count: its reason, with the
 // worktree directory for work held elsewhere.
 func stoppedBy(entry Entry) string {
+	if entry.Kept != nil && entry.Kept.Mode == "review" {
+		return "review"
+	}
 	reason := *entry.Reason
 	if entry.Kept != nil && reason == ReasonInterruptedElsewhere {
 		return reason + " " + filepath.Base(entry.Kept.Worktree)
@@ -179,6 +185,8 @@ func stoppedBy(entry Entry) string {
 func countText(kind string, count int) string {
 	reason, directory, _ := strings.Cut(kind, " ")
 	switch reason {
+	case "review":
+		return plural(count, "in review", "in review")
 	case ReasonWaitingForYou:
 		return plural(count, "waiting for you", "waiting for you")
 	case ReasonHeldElsewhere:
@@ -220,6 +228,9 @@ func (text textWriter) inOrder(result Result) []string {
 // it hands out, ready for any other that nothing stops, and otherwise what
 // stops it. A held task names the worktree's directory.
 func Verdict(entry Entry, served bool) (string, display.Role) {
+	if entry.Kept != nil && entry.Kept.Mode == "review" {
+		return "in review", display.RoleMuted
+	}
 	switch {
 	case served:
 		return "next", display.RoleSuccess

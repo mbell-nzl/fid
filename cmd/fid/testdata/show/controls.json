@@ -10,6 +10,7 @@
     "checks_base": null,
     "children": [],
     "epic": null,
+    "handoff": null,
     "issue": {
       "lane": null,
       "id": "FID-c0c0c0",

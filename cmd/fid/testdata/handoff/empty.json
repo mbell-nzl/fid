@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-<new>",
+    "occurred_at": "2026-11-08T09:00:00Z"
+  },
+  "ok": true,
+  "operation": "task.handoff",
+  "result": {
+    "base": "<commit-or-tree>",
+    "handoff_id": "HOF-<new>",
+    "head": "<commit-or-tree>",
+    "pr": "https://github.com/mbell-nzl/fid/pull/63",
+    "required_checks": [],
+    "result_ids": [],
+    "status": "in_review",
+    "task_id": "FID-9f13aa"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "precondition",
+    "code": "comparison-unavailable",
+    "details": {
+      "problem": "HEAD and origin/trunk have no common ancestor in the available history",
+      "ref": "origin/trunk"
+    },
+    "message": "cannot compare this task's committed changes",
+    "retryable": false,
+    "subject": {
+      "id": "FID-9f13aa",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "task.handoff"
+}

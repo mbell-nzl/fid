@@ -100,7 +100,9 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 			}
 		}
 		if task.ID != resume || (planned.own != nil && planned.own.Waiting()) {
-			if hold, ok := planned.held[task.ID]; ok && hold.Waiting() {
+			if hold, ok := planned.held[task.ID]; ok && hold.InReview() {
+				entry.Reason = pointer(ReasonHeldElsewhere)
+			} else if ok && hold.Waiting() {
 				entry.Reason = pointer(ReasonWaitingForYou)
 			} else {
 				entry.Reason, entry.After = skip(work, task, entry.Working, entry.Kept, after)
@@ -111,7 +113,7 @@ func plan(work issues.Work, open []holds.Hold, worktreeID string, now time.Time)
 		}
 		planned.queue = append(planned.queue, entry)
 	}
-	if planned.own != nil && planned.own.Waiting() {
+	if planned.own != nil && (planned.own.Waiting() || planned.own.InReview()) {
 		planned.kind, planned.served = KindNone, -1
 		return planned
 	}

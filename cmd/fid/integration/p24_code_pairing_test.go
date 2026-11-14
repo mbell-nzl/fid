@@ -116,13 +116,14 @@ var p24CodeRows = map[string]p24CodeFactory{
 
 // Only exclusions proven by a current producer/caller audit belong here.
 // Missing executable rows are failures, never silently classified unreachable.
-var p24CodeExclusions = map[string]string{
-	"checks-unsatisfied": "RESET 1.5a6 adds checkread.Evaluation.Refusal; its first command caller is hand-off in 1.5a7, followed by done in 1.6. No current CLI command asks for this gate verdict.",
-}
+var p24CodeExclusions = map[string]string{}
 
 var p24SpecialCodePairs = map[string]func(*testing.T){
-	"comparison-unavailable": p24LeanPairName("comparison-unavailable"),
-	"checks-not-configured":  p24LeanPairName("checks-not-configured"), "check-unsuccessful": p24LeanPairName("check-unsuccessful"), "check-not-qualified": p24LeanPairName("check-not-qualified"), "check-still-running": p24LeanPairName("check-still-running"), "check-incomplete": p24LeanPairName("check-incomplete"),
+	"checks-unsatisfied":        handoffCodePair("checks-unsatisfied"),
+	"test-paths-not-configured": handoffCodePair("test-paths-not-configured"),
+	"tree-dirty":                handoffCodePair("tree-dirty"),
+	"comparison-unavailable":    p24LeanPairName("comparison-unavailable"),
+	"checks-not-configured":     p24LeanPairName("checks-not-configured"), "check-unsuccessful": p24LeanPairName("check-unsuccessful"), "check-not-qualified": p24LeanPairName("check-not-qualified"), "check-still-running": p24LeanPairName("check-still-running"), "check-incomplete": p24LeanPairName("check-incomplete"),
 	"policy-unavailable":          TestPolicyUnavailableHumanAndJSON,
 	"gate-unsuccessful":           TestP24HumanGateTerminalFailure,
 	"budget-data-unavailable":     p24BudgetTerminalPair,
@@ -466,6 +467,7 @@ func p24ExpectedFailureText(t *testing.T, payload map[string]any, operation stri
 		text += "blocked by: " + strings.Join(ids, ",") + "\n"
 	}
 	next := map[string]string{
+		"test-paths-not-configured":   "add [review] test_adequacy, then merge .fid.toml and git fetch",
 		"checks-not-configured":       "add checks to [lanes." + fmt.Sprint(d["lane"]) + "], then merge .fid.toml and git fetch",
 		"check-still-running":         "wait for it to finish, or stop pid " + scalar(d["pid"]) + ", then check again",
 		"lane-not-set":                "fid issue update " + fmt.Sprint(d["task_id"]) + " --lane <routine|standard|assured> --actor <actor>",

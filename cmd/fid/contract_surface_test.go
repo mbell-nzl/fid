@@ -180,7 +180,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"restore",
 		"status",
 		"show",
-		"check", "start", "next", "heartbeat", "park", "takeover",
+		"handoff", "check", "start", "next", "heartbeat", "park", "takeover",
 		"rebuild",
 		"resume",
 		"issue create",

@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "invalid-input",
+    "code": "invalid-argument",
+    "details": {
+      "allowed": [
+        "--pr"
+      ],
+      "argument": "--pr",
+      "value": null
+    },
+    "message": "--pr is required",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "task.handoff"
+}

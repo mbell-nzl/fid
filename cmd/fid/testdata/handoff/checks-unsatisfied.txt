@@ -1,0 +1,3 @@
+error: required checks have no counting pass on this tree; check them before hand-off
+reason: checks-unsatisfied; checks=always, latest_result_ids=
+next: fid check --hold HLD-aaaaaa --actor agent:claude-builder --idempotency-key <key>

@@ -210,6 +210,9 @@ func p24AssertSingleJournalInventory(t *testing.T, workspace string) {
 		if name == "check" {
 			operation = "check.execute"
 		}
+		if name == "handoff" {
+			operation = "task.handoff"
+		}
 		if name == "start" {
 			operation = "task.start"
 		}

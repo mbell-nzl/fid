@@ -53,6 +53,7 @@ func Build(options Options) (Result, error) {
 // include those whose other end is completed or cancelled.
 func (result Result) Fields() map[string]any {
 	return map[string]any{
+		"handoff":     result.Handoff,
 		"questions":   result.Questions,
 		"checks":      result.Checks,
 		"checks_base": result.ChecksBase,

@@ -193,6 +193,15 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 		t.Fatalf("V8 stopped check = %v", stoppedErr)
 	}
 
+	// A third worktree keeps its task through review, with an immutable hand-off.
+	_, handoffCreated := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "In review during backup", "--lane", "standard", "--actor", "human:mark")
+	handoffTask := parseCreatedIssueID(t, handoffCreated)
+	ids = append(ids, handoffTask)
+	reviewTree := gittest.AddWorktree(t, workspace)
+	reviewHold, _ := decodeNext(t, executeCommandForTest(reviewTree, "--json", "takeover", handoffTask, "--actor", "human:mark", "--reason", "Build in this worktree"), "task.takeover")
+	reviewID := reviewHold["hold_id"].(string)
+	runFIDCommand(t, reviewTree, "start", "--hold", reviewID, "--actor", "human:mark", "--idempotency-key", "v8-review-start")
+	runFIDCommand(t, reviewTree, "handoff", "--hold", reviewID, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "v8-handoff")
 	return workspace, v8IDs{issues: ids, envelope: envelopeID, receipt: terminal.Data.ReceiptID}
 }
 
@@ -280,7 +289,7 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql policy snapshots = %#v", snapshots)
 	}
 	state.reads["policy snapshots"] = snapshots.stdout
-	for _, table := range []string{"check_requests", "check_starts", "check_processes", "check_results", "check_files"} {
+	for _, table := range []string{"handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files"} {
 		checkRows := executeCommandForTest(workspace, "sql", "SELECT * FROM "+table+" ORDER BY rowid")
 		if checkRows.err != nil || checkRows.stderr != "" || strings.Contains(checkRows.stdout, `"rows":[]`) {
 			t.Fatalf("V8 %s = %#v", table, checkRows)
@@ -483,11 +492,14 @@ func assertV8SameState(t *testing.T, before, after v8State) {
 	if strings.Count(before.reads["questions"], `"resolution":"answered"`) != 1 || strings.Count(before.reads["questions"], `"resolution":null`) != 1 || strings.Count(before.reads["person decisions"], `"kind":"answer"`) != 1 {
 		t.Fatalf("V8 waiting history missing: %s", before.reads["questions"])
 	}
-	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 3 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 1 {
+	if strings.Count(before.reads["person decisions"], `"kind":"takeover"`) != 4 || strings.Count(before.reads["person decisions"], `"kind":"cancel"`) != 1 || strings.Count(before.reads["holds"], `"kept":1`) != 2 {
 		t.Fatalf("V8 lifecycle missing: holds=%s decisions=%s", before.reads["holds"], before.reads["person decisions"])
 	}
 	if !strings.Contains(before.reads["check_requests"], "hold-not-current") || !strings.Contains(before.reads["check_results"], "artifact-not-kept") {
 		t.Fatalf("V8 is missing its stopped request or refused file: %s", before.reads["check_requests"])
+	}
+	if !bytes.Contains(before.events, []byte(`"event_type":"task.handed-off"`)) || !strings.Contains(before.reads["holds"], `"end_reason":"review"`) || !strings.Contains(before.reads["handoffs"], "https://github.com/mbell-nzl/fid/pull/63") {
+		t.Fatal("V8 is missing the hand-off and review reservation")
 	}
 	if !bytes.Contains(before.events, []byte(`"event_type":"check.completed"`)) {
 		t.Fatal("V8 is missing its completed empty check")

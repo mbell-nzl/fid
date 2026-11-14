@@ -33,11 +33,11 @@ func (hold Hold) Release(reason string, at time.Time) journal.Effect {
 // from missing without ever substituting another session's hold.
 func CurrentByID(conn *sql.DB, id string) (Hold, error) {
 	var hold Hold
-	var ended, reason, replaces sql.NullString
+	var ended, reason, replaces, endReason sql.NullString
 	var since, expires, heartbeat string
 	err := conn.QueryRow(`SELECT id, task_id, worktree_id, worktree_root, actor, since, expires_at,
- COALESCE(last_heartbeat_at, since), ended_at, park_reason, kept, replaces_hold_id FROM holds WHERE id = ?`, id).
-		Scan(&hold.ID, &hold.TaskID, &hold.WorktreeID, &hold.Worktree, &hold.Actor, &since, &expires, &heartbeat, &ended, &reason, &hold.Kept, &replaces)
+ COALESCE(last_heartbeat_at, since), ended_at, park_reason, kept, replaces_hold_id, end_reason FROM holds WHERE id = ?`, id).
+		Scan(&hold.ID, &hold.TaskID, &hold.WorktreeID, &hold.Worktree, &hold.Actor, &since, &expires, &heartbeat, &ended, &reason, &hold.Kept, &replaces, &endReason)
 	if err != nil {
 		return Hold{}, err
 	}
@@ -48,6 +48,9 @@ func CurrentByID(conn *sql.DB, id string) (Hold, error) {
 		if *stamp.target, err = time.Parse(time.RFC3339, stamp.raw); err != nil {
 			return Hold{}, fmt.Errorf("read hold time: %w", err)
 		}
+	}
+	if endReason.Valid {
+		hold.EndReason = &endReason.String
 	}
 	if ended.Valid {
 		hold.EndedAt = &ended.String
@@ -64,3 +67,8 @@ func CurrentByID(conn *sql.DB, id string) (Hold, error) {
 // Waiting reports whether a person's answer is still needed, including while
 // a person holds the task after takeover.
 func (hold Hold) Waiting() bool { return hold.Question != nil && hold.Question.ResolvedAt == nil }
+
+// InReview identifies the builder worktree reservation after hand-off.
+func (hold Hold) InReview() bool {
+	return hold.Kept && hold.EndReason != nil && *hold.EndReason == "review"
+}

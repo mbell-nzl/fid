@@ -20,6 +20,7 @@
         "total": 4
       }
     },
+    "handoff": null,
     "issue": {
       "lane": null,
       "id": "FID-0d4e8b",

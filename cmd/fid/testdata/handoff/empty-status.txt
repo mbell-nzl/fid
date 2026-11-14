@@ -1,0 +1,13 @@
+╭ fid status ────────────────────────────────────────────── 2026-11-08 ╮
+
+  NEEDS YOU
+  ✗ No backup for 4 days: none since the ledger began
+    2026-11-04 18:00; no backup target is set
+      → add [backup] target to
+        <CONFIG>/fid/config.toml,
+        then fid backup
+
+  IN PROGRESS
+  ◆ FID-e3a1c0  Planned epic                      ░░░░░░░░░░  0/1 done
+      ● FID-9f13aa  Harden login rate limiting               in review
+╰──────────────────────────────────────────────────────────────────────╯
