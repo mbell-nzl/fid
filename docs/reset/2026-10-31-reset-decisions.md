@@ -752,6 +752,20 @@ exception above covers the two own-command tests in
 `cmd/fid/artifact_compatibility_test.go` and
 `TestP24ArtifactVerifyKeyedLeafCorpus`; their bodies are unchanged.
 
+Builder's transactional choices for **1.5c1**: `internal/issuestate` owns
+the retained task, epic and subtask state definitions, projection registry,
+`NextStates`, initial-state and creation lookup, and child-state rule types
+and evaluation. Staying Issue, hold and maintenance callers and seed-parity
+tests import it directly; next, status and show reach it through Issues.
+`internal/workflow/issue_states.go` keeps aliases and forwarding functions
+for kernel APIs until 1.5c3 removes that package. Only the kernel execution
+transition and linked-decision rule paths in Issues still import workflow.
+Creation retains subtask kind/project assignment precedence in this
+behaviour-preserving slice; configurable resolution leaves with authoring
+in 1.5c2. The graph, foreign keys, workflow IDs, category JSON and error text
+are unchanged. Existing state, registry, initial-state and child-rule tests
+move with their implementation, keeping their assertions.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
