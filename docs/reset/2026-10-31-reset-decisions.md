@@ -795,6 +795,25 @@ only its embedded historical Gate CLI assertion and helper retired here.
 The modern status/show/next/hold/start/check/handoff goldens stay unchanged;
 only retired workflow-assignment goldens leave.
 
+Builder's transactional choices for **1.5c3** (2026-11-15): delete the
+now-unreferenced `claims`, `workflow`, `evidence`, `review`, `stats` and
+`kerneltest` packages, their tests, and `policy/envelope_authority.go`.
+The fixed-state implementation and tests stay in `issuestate`; the lean
+Artifact verifier and store stay in their own packages. Both source import
+searches and `go list -deps -test` verify that retained code has no incoming
+edge to a retiring package before directory deletion.
+
+The export fixture that invokes kernel domain writers leaves with its
+Source/recovery/runtime acceptance tests. Handwritten archive recovery
+reference and Effect-family tests, and journal, schema and maintenance
+table-only tests stay until 1.5d. The mixed import boundary tests keep their
+shared-ledger, moved-ledger and removed-worktree binding checks through
+`config.ReadImportBinding`; only kernel recovery admission assertions go.
+Import replay after later local Events remains covered by the existing
+lean import test. No replacement helper, stub, dependency or public
+behavior is added. Event catalogs, archive profiles, tables and maintenance
+queries remain for 1.5d1/1.5d2.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
