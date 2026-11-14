@@ -51,7 +51,7 @@ var p24CodeRows = map[string]p24CodeFactory{
 	"authority-unknown-actor":       p24GateCodePair,
 	"authority-unavailable":         p24GateCodePair,
 	"executor-policy-unsupported":   p24GateCodePair,
-	"repository-unavailable":        p24GateCodePair,
+	"repository-unavailable":        p24RetainedCodePair,
 
 	"claim-mode-invalid":         p24ReviewClaimPair,
 	"obligation-unsatisfied":     p24ObligationCodePair,
@@ -69,9 +69,9 @@ var p24CodeRows = map[string]p24CodeFactory{
 	"review-changes-required":    p24ReviewCodePair,
 	"evidence-type-not-accepted": p24ReviewCodePair,
 	"finding-already-disposed":   p24ReviewCodePair,
-	"result-limit-exceeded":      p24JudgmentCodePair,
+	"result-limit-exceeded":      p24RetainedCodePair,
 
-	"invalid-argument":      p24SimplePair("stop.raise", "stop", "raise", "--bogus"),
+	"invalid-argument":      p24SimplePair("issue.create", "issue", "create", "--bogus"),
 	"operation-unavailable": p24SimplePair("fid", "isue"),
 	"project-not-found": func(t *testing.T, _ string) p24CodePair {
 		return p24CodePair{gittest.NewWorkspace(t), "activity.list", []string{"activity", "list"}}
@@ -96,14 +96,14 @@ var p24CodeRows = map[string]p24CodeFactory{
 	"review-not-found":            p24SimplePair("review.get", "review", "get", "REV-missing"),
 	"archive-invalid":             p24ArchivePair,
 	"claim-not-found":             p24RecoveryCodePair,
-	"authority-denied":            p24RecoveryCodePair,
+	"authority-denied":            p24RetainedCodePair,
 	"run-version-conflict":        p24RecoveryCodePair,
 	"executor-liveness-unknown":   p24RecoveryCodePair,
 	"executor-still-live":         p24RecoveryCodePair,
 	"recovery-state-conflict":     p24RecoveryCodePair,
 	"observation-not-found":       p24RecoveryCodePair,
 	"recovery-already-linked":     p24RecoveryCodePair,
-	"duplicate-entity":            p24RecoveryCodePair,
+	"duplicate-entity":            p24RetainedCodePair,
 	"stop-not-found":              p24RecoveryCodePair,
 	"attention-not-found":         p24RecoveryCodePair,
 	"attention-version-conflict":  p24RecoveryCodePair,
@@ -135,7 +135,7 @@ var p24SpecialCodePairs = map[string]func(*testing.T){
 // idempotency-conflict is a defined, reachable code that RegisteredCodes does
 // not enumerate today. Keep its next-table process coverage explicitly, without
 // changing that protected inventory or pretending it is a registry member.
-var p24SupplementalPairs = map[string]p24CodeFactory{"idempotency-conflict": p24RecoveryCodePair}
+var p24SupplementalPairs = map[string]p24CodeFactory{"idempotency-conflict": p24RetainedCodePair}
 
 func TestP24RegisteredCodePairingCompleteness(t *testing.T) {
 	t.Parallel()
@@ -454,6 +454,9 @@ func p24ExpectedFailureText(t *testing.T, payload map[string]any, operation stri
 			parts = append(parts, key+"="+text)
 		}
 		detail = strings.Join(parts, ", ")
+	}
+	if code == "authority-denied" && operation == "next.claim" {
+		detail = "actor_id=" + fmt.Sprint(d["actor_id"])
 	}
 	reason := "reason: " + code
 	if detail != "" {

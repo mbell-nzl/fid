@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -20,11 +19,11 @@ import (
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
-// addJournalBackedExportFixtureFacts creates exportable source and artifact
+// addKernelExportFacts creates exportable source and artifact
 // facts through the normal journal writers.  In particular, the artifact is a
 // retained gate-run receipt artifact, never a row inserted into the derived
 // SQLite projection.
-func addJournalBackedExportFixtureFacts(t *testing.T, workspace string) string {
+func addKernelExportFacts(t *testing.T, workspace string) string {
 	t.Helper()
 	migrationsDir := testMigrationsDir(t)
 	project, err := config.ReadProjectConfig(filepath.Join(config.LedgerDir(workspace), "config.toml"))
@@ -105,13 +104,13 @@ func addJournalBackedExportFixtureFacts(t *testing.T, workspace string) string {
 	return "artifacts/" + strings.TrimPrefix(artifact.Digest, "sha256:")
 }
 
-// addRecoveredExportFixtureFacts extends the ordinary archive fixture through
+// addRecoveredKernelExportFacts extends the ordinary archive fixture through
 // a genuine terminated observation, released predecessor Claim, read-only
 // reconciliation, and ordinary Run recovery.  It leaves the complete Event
 // reference chain available to archive semantic tests.
-func addRecoveredExportFixtureFacts(t *testing.T, workspace string) string {
+func addRecoveredKernelExportFacts(t *testing.T, workspace string) string {
 	t.Helper()
-	artifactEntry := addJournalBackedExportFixtureFacts(t, workspace)
+	artifactEntry := addKernelExportFacts(t, workspace)
 	migrationsDir := testMigrationsDir(t)
 	runs, err := workflow.ListRuns(workflow.RunListOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, Status: "active", Limit: 1})
 	if err != nil || len(runs) != 1 {
@@ -239,15 +238,6 @@ func fixtureRepository(t *testing.T, workspace, projectID string) workflow.Repos
 	}
 	base := observed.HeadOID
 	return workflow.Repository{BaseOID: &base, CaptureSource: "git", Dirty: observed.Dirty, DirtyDigest: observed.DirtyDigest, HeadOID: observed.HeadOID, ProjectID: projectID, TreeOID: observed.TreeOID, WorktreeID: observed.WorktreeID}
-}
-
-func fixtureGit(t *testing.T, workspace string, arguments ...string) {
-	t.Helper()
-	command := exec.Command("git", arguments...)
-	command.Dir = workspace
-	if output, err := command.CombinedOutput(); err != nil {
-		t.Fatalf("git %s: %v: %s", strings.Join(arguments, " "), err, output)
-	}
 }
 
 func fixtureSource(t *testing.T, workspace string, repository workflow.Repository) workflow.Source {

@@ -38,7 +38,7 @@ func TestP24ExecutedKeyedCorpusMatches51LeafInventory(t *testing.T) {
 		}
 		rows[name] = field
 	}
-	for _, group := range []map[string]string{p24LifecycleFields, p24FoundationFields, p24RecoveryFields, p24FlagFields, p24ActivationRecoveryFields, p24ActivationAbortFields, p24GateEvidenceFields, p24ArtifactFields, p24WorkflowFields} {
+	for _, group := range []map[string]string{p24LifecycleFields, p24FoundationFields, p24RecoveryFields, p24KernelFlagFields, p24ActivationRecoveryFields, p24ActivationAbortFields, p24GateEvidenceFields, p24ArtifactFields, p24WorkflowFields} {
 		for operation, field := range group {
 			add(operation, field)
 		}

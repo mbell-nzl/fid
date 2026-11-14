@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 )
@@ -22,7 +23,7 @@ func TestLatestProjectionRejectsRetiredEscalationEffects(t *testing.T) {
 			workspace := newReplayWorkspace(t)
 			conn := openReplayDB(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 			defer closeProjectDB(t, conn)
-			event := phaseTwoFullSchemaEvent()
+			event := Event{EventID: "EVT-20260607-000902", EventSchema: EventSchemaV1, EventType: "retired.effect.probe", OccurredAt: time.Date(2026, 6, 7, 16, 0, 0, 0, time.UTC), Actor: Actor{Role: "developer"}, Command: Command{Argv: []string{"fid", "test"}, CWD: ".", FIDVersion: "test"}}
 			event.Effects = []Effect{{Op: "insert", Table: "labels", PK: map[string]any{"name": "must-rollback"}}, test.effect}
 			hash, err := HashEvent(event)
 			if err != nil {

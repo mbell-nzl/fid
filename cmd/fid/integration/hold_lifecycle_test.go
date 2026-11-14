@@ -3,10 +3,11 @@
 package integration
 
 import (
-	"github.com/mbell-nzl/fid/internal/gittest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 var p24LifecycleFields = map[string]string{"task.handoff": "--pr", "check.execute": "--hold", "hold.park": "--waiting", "task.takeover": "--reason", "task.answer": "text", "task.start": "--hold"}
@@ -29,11 +30,6 @@ func TestHoldLifecycleKeyedCorpus(t *testing.T) {
 		p24AssertFamilyConflict(t, workspace, binary, operation, entry, []string{"--actor"})
 	}
 	p24AssertRebuildMapParity(t, workspace, binary)
-}
-
-func p24SingleLifecycle(t *testing.T, a *p22FIDRecoveryAdapter) {
-	t.Helper()
-	p24LifecycleCommands(t, a.binary, a.workspace)
 }
 
 func p24LifecycleCommands(t *testing.T, binary, workspace string) {

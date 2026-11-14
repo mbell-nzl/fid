@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestP24All51KeyedLeavesRebuildInOneJournal(t *testing.T) {
+func TestKernelAll55KeyedLeavesRebuildInOneJournal(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()

@@ -140,13 +140,3 @@ func projectionActivation(event Event) map[string]any {
 	}
 	return v
 }
-
-// Complete expected snapshot for the activation used by sequence/idempotency tests.
-func testActivationResultJSON(key string, replayed bool) string {
-	activation := map[string]any{"id": "ACT-1", "prior_activation_id": nil,
-		"kit_identity": "kit-1", "backend_identity": "fid-1", "phase": 1,
-		"status": "prepared", "point_of_no_return": false, "direction": "activate",
-		"created_at": "2026-08-22T00:00:00Z", "updated_at": "2026-08-22T00:00:00Z",
-		"version": 1, "component_digests": []any{}, "resources": projectionResources(Event{}), "recovery": nil}
-	return projectionFixtureJSON(map[string]any{"activation": activation, "idempotency_key": key, "replayed": replayed})
-}
