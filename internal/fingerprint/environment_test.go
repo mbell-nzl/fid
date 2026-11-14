@@ -12,11 +12,11 @@ import (
 
 //nolint:paralleltest // Changes the git environment inherited by child processes.
 func TestComputeIgnoresHostileConfig(t *testing.T) {
-	root, base := fixture(t)
+	root, _ := fixture(t)
 	write(t, root, "file", strings.Repeat("before\n\n", 20))
 	write(t, root, "renamed", "rename contents\n")
 	submoduleBase(t, root)
-	base = commit(t, root)
+	base := commit(t, root)
 	write(t, root, "file", strings.Repeat("before\n\n", 10)+"after\n\n"+strings.Repeat("before\n\n", 9))
 	git(t, root, "mv", "renamed", "new-name")
 	write(t, filepath.Join(root, "module"), "file", "submodule edit\n")
