@@ -75,6 +75,11 @@ func Compute(root, base, head string) (Result, error) {
 	if len(diff) == 0 {
 		return Result{}, &Failure{Kind: EmptyChange, Err: fmt.Errorf("base and head have no change")}
 	}
+	// Committed attributes may force binary data into text hunks. patch-id
+	// silently truncates such lines at NUL, including in --verbatim mode.
+	if bytes.IndexByte(diff, 0) >= 0 {
+		return Result{}, &Failure{Kind: GitFailure, Err: fmt.Errorf("diff contains NUL text that patch-id cannot hash completely")}
+	}
 	output, err := runGit(root, diff, 4096, "patch-id", "--verbatim")
 	if err != nil {
 		return Result{}, &Failure{Kind: GitFailure, Err: err}

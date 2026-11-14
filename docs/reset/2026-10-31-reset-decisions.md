@@ -1044,7 +1044,10 @@ must exit successfully before those bytes reach `patch-id --verbatim`.
 Exactly one patch-ID line with a zero source-commit field is required; the
 consumer's exit status is checked too. Typed failures distinguish missing
 base/head objects, empty changes, oversized diffs and git/output failures
-(including unavailable trees/blobs). There is no prefix or empty binding.
+(including unavailable trees/blobs). Raw NUL text patches are refused too:
+committed attributes can force binary data into text hunks, where even
+`--verbatim` silently ignores bytes after NUL. Normal binary patches remain
+supported. There is no prefix or empty binding.
 
 **Reviews and findings** (moved from 2.1)
 

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/fingerprint"
 	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
@@ -90,5 +91,18 @@ func TestComputeObjectStorageLayouts(t *testing.T) {
 	}
 	if got := compute(t, clone, base, head); got != want {
 		t.Fatalf("alternates changed fingerprint: %+v != %+v", got, want)
+	}
+}
+
+func TestComputeRefusesNULTextPatches(t *testing.T) {
+	t.Parallel()
+	root, _ := fixture(t)
+	// A committed attribute can force NUL-containing data into a text hunk.
+	// patch-id silently ignores bytes after NUL, even in --verbatim mode.
+	write(t, root, ".gitattributes", "file diff\n")
+	base := commit(t, root)
+	for _, content := range []string{"after\x00A\n", "after\x00B\n"} {
+		write(t, root, "file", content)
+		refuse(t, root, base, commit(t, root), fingerprint.GitFailure)
 	}
 }
