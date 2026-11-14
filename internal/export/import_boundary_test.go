@@ -12,7 +12,6 @@ import (
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/gittest"
-	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func TestImportProcessExitAtPublicationBoundaries(t *testing.T) {
@@ -189,7 +188,7 @@ func TestImportBindingReadsFromEveryWorktreeThatSharesTheLedger(t *testing.T) {
 	t.Parallel()
 	archive, target := boundaryImportFixture(t)
 	target = gittest.ResolvedPath(t, target)
-	result, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "binding"})
+	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "binding"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -208,17 +207,11 @@ func TestImportBindingReadsFromEveryWorktreeThatSharesTheLedger(t *testing.T) {
 	if moved, err := config.ReadImportBinding(other); err != nil || moved.TargetRoot != target {
 		t.Fatalf("binding of the moved ledger = %#v, %v; want the import's target %q", moved, err, target)
 	}
-	recorded := workflow.Repository{ProjectID: result.ProjectID, WorktreeID: "sha256:recorded"}
-	observed := workflow.Repository{ProjectID: result.ProjectID, WorktreeID: "sha256:observed"}
-	if workflow.SameWorktree(other, recorded, observed) {
-		t.Error("another repository's root stands in for the import's worktree")
-	}
 }
 
 // The ledger outlives the worktree an archive was imported into, and so does
 // its provenance: after that worktree is removed, the main worktree still
-// reads the binding and labels the imported history. Admission stays exact:
-// only the import's own root may stand in for another worktree.
+// reads the binding, still naming the import's original destination.
 func TestImportProvenanceSurvivesRemovingTheImportWorktree(t *testing.T) {
 	t.Parallel()
 	archive, mainWorktree := boundaryImportFixture(t)
@@ -228,26 +221,18 @@ func TestImportProvenanceSurvivesRemovingTheImportWorktree(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	recorded := workflow.Repository{ProjectID: result.ProjectID, WorktreeID: "sha256:recorded"}
-	observed := workflow.Repository{ProjectID: result.ProjectID, WorktreeID: "sha256:observed"}
-	if !workflow.SameWorktree(linked, recorded, observed) {
-		t.Fatal("the import's own root does not stand in for the recorded worktree")
-	}
 	if output, err := exec.Command("git", "-C", mainWorktree, "worktree", "remove", linked).CombinedOutput(); err != nil {
 		t.Fatalf("git worktree remove: %v: %s", err, output)
 	}
 	if _, err := os.Stat(config.LedgerDir(mainWorktree)); err != nil {
 		t.Fatalf("shared ledger after removing the import worktree: %v", err)
 	}
-	context, err := workflow.ReadRecoveryContext(mainWorktree, "")
+	binding, err := config.ReadImportBinding(mainWorktree)
 	if err != nil {
-		t.Fatalf("read recovery provenance from the main worktree: %v", err)
+		t.Fatalf("read import binding from the main worktree: %v", err)
 	}
-	if context.Import == nil || context.Import.Destination != linked || context.Import.ProjectID != result.ProjectID || context.Import.EventCount == 0 {
-		t.Fatalf("recovery provenance = %#v, want the import into %q", context.Import, linked)
-	}
-	if workflow.SameWorktree(mainWorktree, recorded, observed) {
-		t.Error("another worktree of the ledger stands in for the recorded worktree")
+	if binding.TargetRoot != linked || binding.ProjectID != result.ProjectID || len(binding.ImportedEventIDs) == 0 {
+		t.Fatalf("import binding = %#v, want the import into %q", binding, linked)
 	}
 }
 

@@ -28,8 +28,7 @@ func actorRules() map[string][]ActionSet {
 	return map[string][]ActionSet{"agent": {WorkSet}, "human": {WorkSet, PersonDecisions}, "service": {}}
 }
 
-// Allows is the lean core's built-in trust by actor type. The kernel's
-// Envelope authority remains independent until its removal in 1.5c/1.5d.
+// Allows is the lean core's built-in trust by actor type.
 func Allows(actor string, set ActionSet) bool {
 	if !actorPattern.MatchString(actor) {
 		return false

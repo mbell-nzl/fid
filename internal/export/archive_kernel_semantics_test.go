@@ -1,95 +1,15 @@
 package export
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/mbell-nzl/fid/internal/bootstrap"
-	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
-
-func TestArchiveWithValidHashesButInvalidRecoveryReferenceRejects(t *testing.T) {
-	t.Parallel()
-	workspace := gittest.NewWorkspace(t)
-	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testMigrationsDir(t),
-		Prefix:        "FID",
-	}); err != nil {
-		t.Fatalf("initialize workspace: %v", err)
-	}
-	addRecoveredKernelExportFacts(t, workspace)
-	archivePath := filepath.Join(t.TempDir(), "invalid-recovery-reference.zip")
-	if _, err := Create(CreateOptions{WorkspaceRoot: workspace, ArchivePath: archivePath}); err != nil {
-		t.Fatalf("create archive: %v", err)
-	}
-	if _, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)}); err != nil {
-		t.Fatalf("valid recovered-history control: %#v", err)
-	}
-
-	entries := archiveContents(t, archivePath)
-	journalPath := archivePathWithPrefix(t, entries, "journal/")
-	var terminalHash string
-	entries[journalPath], terminalHash = replaceRecoveredObservationReference(t, entries[journalPath])
-
-	manifest := decodeManifestMap(t, entries["manifest.json"])
-	manifest["terminal_event_hash"] = terminalHash
-	updateManifestEntry(t, manifest, journalPath, entries[journalPath])
-	entries["manifest.json"] = encodeManifestMap(t, manifest)
-	writeTestArchive(t, archivePath, entries)
-
-	_, err := Validate(ValidateOptions{ArchivePath: archivePath, MigrationsDir: testMigrationsDir(t)})
-	if err == nil {
-		t.Fatal("Validate() accepted valid-hash recovery Event with a missing observation reference")
-	}
-	assertArchiveCheck(t, err, "reference-invalid")
-}
-
-func replaceRecoveredObservationReference(t *testing.T, data []byte) ([]byte, string) {
-	t.Helper()
-	lines := bytes.Split(bytes.TrimSuffix(data, []byte{'\n'}), []byte{'\n'})
-	changed := false
-	for index, line := range lines {
-		var event journal.Event
-		if err := event.UnmarshalJSON(line); err != nil {
-			t.Fatalf("decode journal Event %d: %v", index+1, err)
-		}
-		if event.EventType != "run.recovered" {
-			continue
-		}
-		for effectIndex := range event.Effects {
-			effect := &event.Effects[effectIndex]
-			if effect.Table == "run_recoveries" && effect.Op == "insert" {
-				effect.Values["observation_id"] = "OBS-missing"
-				changed = true
-			}
-		}
-		encoded, err := journal.MarshalCanonicalJSON(event)
-		if err != nil {
-			t.Fatalf("encode tampered Recovery Event: %v", err)
-		}
-		lines[index] = encoded
-	}
-	if !changed {
-		t.Fatal("recovered journal Event was absent")
-	}
-	var terminal journal.Event
-	if err := terminal.UnmarshalJSON(lines[len(lines)-1]); err != nil {
-		t.Fatalf("decode terminal Event: %v", err)
-	}
-	terminalHash, err := journal.HashEvent(terminal)
-	if err != nil {
-		t.Fatalf("hash terminal Event: %v", err)
-	}
-	return append(bytes.Join(lines, []byte{'\n'}), '\n'), terminalHash
-}
 
 func recoveryEventWithMissingReference() journal.Event {
 	encode := func(value any) string {

@@ -795,6 +795,25 @@ only its embedded historical Gate CLI assertion and helper retired here.
 The modern status/show/next/hold/start/check/handoff goldens stay unchanged;
 only retired workflow-assignment goldens leave.
 
+Builder's transactional choices for **1.5c3** (2026-11-15): delete the
+now-unreferenced `claims`, `workflow`, `evidence`, `review`, `stats` and
+`kerneltest` packages, their tests, and `policy/envelope_authority.go`.
+The fixed-state implementation and tests stay in `issuestate`; the lean
+Artifact verifier and store stay in their own packages. Both source import
+searches and `go list -deps -test` verify that retained code has no incoming
+edge to a retiring package before directory deletion.
+
+The export fixture that invokes kernel domain writers leaves with its
+Source/recovery/runtime acceptance tests. Handwritten archive recovery
+reference and Effect-family tests, and journal, schema and maintenance
+table-only tests stay until 1.5d. The mixed import boundary tests keep their
+shared-ledger, moved-ledger and removed-worktree binding checks through
+`config.ReadImportBinding`; only kernel recovery admission assertions go.
+Import replay after later local Events remains covered by the existing
+lean import test. No replacement helper, stub, dependency or public
+behavior is added. Event catalogs, archive profiles, tables and maintenance
+queries remain for 1.5d1/1.5d2.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -2245,6 +2264,12 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
     a non-empty fragment at the end of the file at once. Not seen in about
     3,600 concurrent reads; telling a live append from a damaged tail needs
     a design, not a one-line fix.
+- From #72 (1.5c3): deleting the kernel's domains left these `internal/project`
+  helpers with no production caller, only their own tests:
+  `ObserveRecordedRepository` and `ResolveSourceInput` (`source.go`),
+  `ExpectedRepository` and `MatchesRecordedRepository`
+  (`expected_repository.go`) and `IsAncestor` (`repository.go`). Delete
+  them, with their tests, unless 1.6 or 2.1 turns out to need them.
 - CHANGELOG: it hasn't been kept up during the reset. Catch it up in 3.2,
   with the v0.2.0 release.
 
