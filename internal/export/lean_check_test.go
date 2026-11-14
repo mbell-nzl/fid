@@ -180,10 +180,12 @@ func TestLeanCheckReplayAndImportRejectForgedObservations(t *testing.T) {
 		}},
 		{"artifact binding", "check.artifact-kept", func(e *journal.Event) { e.Effects[len(e.Effects)-1].PK["path"] = "not-listed" }},
 		{"empty request lane", "check.completed", func(e *journal.Event) {
-			var value map[string]any
-			_ = json.Unmarshal([]byte(e.Effects[0].Values["response_json"].(string)), &value)
-			value["lane"] = "assured"
-			e.Effects[0].Values["response_json"] = encodedLean(value)
+			for i, field := range []string{"response_json", "result_json"} {
+				var value map[string]any
+				_ = json.Unmarshal([]byte(e.Effects[i].Values[field].(string)), &value)
+				value["lane"] = "assured"
+				e.Effects[i].Values[field] = encodedLean(value)
+			}
 		}},
 	} {
 		t.Run(row.name, func(t *testing.T) {

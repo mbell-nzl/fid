@@ -176,6 +176,12 @@ as `comparison-unavailable` (precondition / exit 4), with the task subject
 and `{ref, problem}` details (`ref` nullable). Explicitly named checks do
 not need the comparison.
 
+Local Git diff settings cannot hide committed paths from this comparison,
+including changed submodule commits. A committed Git path outside the glob
+matcher's supported path grammar (for example a control character, backslash
+or invalid UTF-8) conservatively requires every conditional check. Show uses
+the same requirement rule.
+
 Show keeps working when policy, lane checks or the comparison is unavailable,
 with warnings and nullable required/satisfied fields instead of a refusal.
 Its `checks_base` is null when no comparison is needed or the base is missing.
