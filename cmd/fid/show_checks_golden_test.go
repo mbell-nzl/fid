@@ -99,7 +99,7 @@ func TestShowCheckGolden(t *testing.T) {
 					t.Fatalf("read-only show=%#v", got)
 				}
 				output := regexp.MustCompile(`sha256:[0-9a-f]{64}`).ReplaceAllString(got.stdout, "sha256:<digest>")
-				for _, field := range []string{"machine", "start_time", "executable", "os", "arch"} {
+				for _, field := range []string{"machine", "boot_id", "start_time", "executable", "os", "arch"} {
 					output = regexp.MustCompile(`"`+field+`":"[^"]*"`).ReplaceAllString(output, `"`+field+`":"<`+field+`>"`)
 				}
 				checkGolden(t, f, "show-"+mode+ext, output)
