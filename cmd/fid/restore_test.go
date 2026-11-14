@@ -19,6 +19,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/checkrecord"
 	"github.com/mbell-nzl/fid/internal/checkrun"
 	"github.com/mbell-nzl/fid/internal/config"
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/gittest"
 	"github.com/mbell-nzl/fid/internal/holdwork"
 )
@@ -97,25 +98,20 @@ func decodeRestoreSuccess(t *testing.T, result commandExecutionResult) (restored
 
 // v8IDs names what the V8 fixture's read commands take.
 type v8IDs struct {
-	issues            []string
-	envelope, receipt string
+	issues []string
+	now    time.Time
 }
 
-// v8Ledger builds a ledger holding issues, a label, a link, and a gate run
-// whose receipt keeps an Artifact, with the project's .fid.toml committed.
+// v8Ledger builds only lean journal records, including retained check files,
+// lifecycle history, policy snapshots and a hand-off.
 func v8Ledger(t *testing.T) (string, v8IDs) {
 	t.Helper()
-	workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {
-		definition["argv"] = []string{"/bin/true"}
-		definition["artifact_paths"] = []string{"artifact.txt"}
-	})
-	if err := os.WriteFile(filepath.Join(workspace, "artifact.txt"), []byte("kept by the receipt\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	terminal, result := executeGateRunForTest(t, workspace, issueID, envelopeID, "v8-gate")
-	if result.err != nil || terminal.Data.ReceiptID == "" {
-		t.Fatalf("gate run = %#v", result)
-	}
+	workspace := gittest.NewWorkspace(t)
+	runFIDCommand(t, workspace, "init", "--prefix", "FID")
+	_, first := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Restore checks", "--actor", "human:mark")
+	issueID := parseCreatedIssueID(t, first)
+	runGitForTest(t, workspace, "add", ".fid.toml")
+	runGitForTest(t, workspace, "commit", "-qm", "Project identity")
 	runFIDCommand(t, workspace, "label", "add", "restore", "--by", "developer")
 	_, created := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Restored with the ledger",
 		"--label", "restore", "--actor", "agent:developer")
@@ -202,7 +198,8 @@ func v8Ledger(t *testing.T) (string, v8IDs) {
 	reviewID := reviewHold["hold_id"].(string)
 	runFIDCommand(t, reviewTree, "start", "--hold", reviewID, "--actor", "human:mark", "--idempotency-key", "v8-review-start")
 	runFIDCommand(t, reviewTree, "handoff", "--hold", reviewID, "--actor", "human:mark", "--pr", "https://github.com/mbell-nzl/fid/pull/63", "--idempotency-key", "v8-handoff")
-	return workspace, v8IDs{issues: ids, envelope: envelopeID, receipt: terminal.Data.ReceiptID}
+	assertV8HasNoKernelRecords(t, workspace)
+	return workspace, v8IDs{issues: ids, now: time.Now()}
 }
 
 // v8State is everything V8 compares in a ledger, apart from its projection.
@@ -250,15 +247,19 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		}
 		state.events = append(state.events, data...)
 	}
-	reads := [][]string{{"issue", "list"}, {"label", "list"}, {"ready"}, {"workflow", "list"}, {"activity", "list"},
-		{"claim", "list"}, {"run", "list"}, {"receipt", "list"}, {"receipt", "get", ids.receipt}, {"envelope", "get", ids.envelope},
-		{"stop", "list"}, {"attention", "list"}, {"concern", "list"}, {"deviation", "list"}, {"decision", "list"},
-		{"human-outcome", "list"}, {"review", "list"}, {"finding", "list"}, {"requirement", "list"}, {"maintenance", "check"}}
+	reads := [][]string{{"issue", "list"}, {"label", "list"}, {"next"}, {"activity", "list"}, {"maintenance", "check"}}
 	for _, id := range ids.issues {
 		reads = append(reads, []string{"issue", "get", id}, []string{"issue", "ac", "list", id}, []string{"link", "list", id, "--type", "issue"})
 	}
 	for _, args := range reads {
-		result := executeCommandForTest(workspace, append([]string{"--json"}, args...)...)
+		root := newRootCommandAt(workspace)
+		root.SetContext(context.WithValue(root.Context(), displayEnvironmentKey{}, displayEnvironment{now: func() time.Time { return ids.now }}))
+		stdout, stderr := &bytes.Buffer{}, &bytes.Buffer{}
+		root.SetOut(stdout)
+		root.SetErr(stderr)
+		root.SetArgs(append([]string{"--json"}, args...))
+		err := root.Execute()
+		result := commandExecutionResult{stdout: stdout.String(), stderr: stderr.String(), err: err}
 		if result.err != nil || result.stderr != "" {
 			t.Fatalf("fid %v = %#v", args, result)
 		}
@@ -289,7 +290,7 @@ func captureV8State(t *testing.T, workspace string, ids v8IDs) v8State {
 		t.Fatalf("fid sql policy snapshots = %#v", snapshots)
 	}
 	state.reads["policy snapshots"] = snapshots.stdout
-	for _, table := range []string{"handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files"} {
+	for _, table := range []string{"handoffs", "check_requests", "check_starts", "check_processes", "check_results", "check_files", "referenced_artifacts"} {
 		checkRows := executeCommandForTest(workspace, "sql", "SELECT * FROM "+table+" ORDER BY rowid")
 		if checkRows.err != nil || checkRows.stderr != "" || strings.Contains(checkRows.stdout, `"rows":[]`) {
 			t.Fatalf("V8 %s = %#v", table, checkRows)
@@ -359,14 +360,26 @@ func TestV8BackupWipeRestoreYieldsIdenticalState(t *testing.T) {
 		wipe func(t *testing.T, fixture *backupFixture, original string) (string, []string)
 	}{
 		{"new machine", func(t *testing.T, fixture *backupFixture, original string) (string, []string) {
-			workspace := gittest.NewWorkspace(t)
+			// A fresh machine at the same checkout path has the same worktree
+			// binding. Replace the entire repository, not just its ledger, keeping
+			// only committed identity. Historical worktree IDs stay untouched.
 			identity, err := os.ReadFile(filepath.Join(original, config.ProjectIdentityFileName))
 			if err != nil {
 				t.Fatal(err)
 			}
+			if err := os.RemoveAll(original); err != nil {
+				t.Fatal(err)
+			}
+			workspace := original
+			if err := os.MkdirAll(workspace, 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := gittest.InitRepository(workspace); err != nil {
+				t.Fatal(err)
+			}
 			writeBackupTestFile(t, filepath.Join(workspace, config.ProjectIdentityFileName), string(identity))
-			fixture.git("-C", workspace, "add", config.ProjectIdentityFileName)
-			fixture.git("-C", workspace, "-c", "user.name=human", "-c", "user.email=human@example.test", "commit", "-q", "-m", "identity")
+			runGitForTest(t, workspace, "add", config.ProjectIdentityFileName)
+			runGitForTest(t, workspace, "commit", "-qm", "identity")
 			return workspace, backupTestEnvironment(fixture.home, fixture.configHome, filepath.Join(fixture.base, "new-machine-cache"))
 		}},
 		{"in place", func(t *testing.T, fixture *backupFixture, original string) (string, []string) {
@@ -476,6 +489,9 @@ func assertV8SameState(t *testing.T, before, after v8State) {
 		}
 		if strings.HasPrefix(name, "artifacts/") {
 			artifacts++
+			if string(data) != "kept by the lean check\n" {
+				t.Errorf("unexpected retained Artifact body: %q", data)
+			}
 		}
 	}
 	if len(after.files) != len(before.files) || artifacts == 0 || before.files[config.ConfigFileName] == nil {
@@ -595,5 +611,21 @@ func TestRestoreFromALinkedWorktreeRestoresTheSharedLedger(t *testing.T) {
 	refused := decodeRestoreFailure(t, fixture.restore(linked, "--json"), 4)
 	if refused.Code != "project-already-initialized" {
 		t.Fatalf("restore with the shared ledger present = %+v, want project-already-initialized", refused)
+	}
+}
+
+// Keep the portable restore fixture independent of every retiring domain.
+func assertV8HasNoKernelRecords(t *testing.T, workspace string) {
+	t.Helper()
+	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), config.DatabaseFileName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = conn.Close() }()
+	for _, table := range []string{"kit_activations", "work_envelopes", "claims", "runs", "gate_registrations", "execution_attempts", "execution_receipts", "evidence_records", "stops", "attention_items", "review_records", "concerns", "decision_refs", "requirement_refs"} {
+		var count int
+		if err := conn.QueryRow("SELECT count(*) FROM " + table).Scan(&count); err != nil || count != 0 {
+			t.Fatalf("V8 creates kernel records: %s=%d/%v", table, count, err)
+		}
 	}
 }
