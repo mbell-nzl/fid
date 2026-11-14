@@ -91,7 +91,9 @@ func TestMaintenanceCheckStartedTaskNeedsNoKernelWarnings(t *testing.T) {
 	}
 }
 
-func TestMaintenanceCheckRejectsFormat(t *testing.T) {
+// Keep the historical test identity registered by the universal-format audit.
+// The grace warning retired in 1.5d2; the format-refusal assertion stays.
+func TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)

@@ -61,7 +61,7 @@ func TestV01DLinkFlowAndRebuildParity(t *testing.T) {
 	}
 
 	beforeLinks := mustSnapshotE2ELinks(t, workspace)
-	beforeRequirements := mustSnapshotE2ERequirements(t, workspace)
+	assertE2ERequirementsAbsent(t, workspace)
 
 	dbPath := filepath.Join(config.LedgerDir(workspace), "fid.sqlite")
 	if err := os.Remove(dbPath); err != nil {
@@ -76,9 +76,7 @@ func TestV01DLinkFlowAndRebuildParity(t *testing.T) {
 	if got := mustSnapshotE2ELinks(t, workspace); !reflect.DeepEqual(got, beforeLinks) {
 		t.Fatalf("links after rebuild = %#v, want %#v", got, beforeLinks)
 	}
-	if got := mustSnapshotE2ERequirements(t, workspace); !reflect.DeepEqual(got, beforeRequirements) {
-		t.Fatalf("requirements after rebuild = %#v, want %#v", got, beforeRequirements)
-	}
+	assertE2ERequirementsAbsent(t, workspace)
 }
 
 type e2eLinkRow struct {
@@ -87,13 +85,6 @@ type e2eLinkRow struct {
 	Relation string
 	ToType   string
 	ToID     string
-}
-
-type e2eRequirementRow struct {
-	ID            string
-	RequirementID string
-	SourceJSON    string
-	Status        string
 }
 
 func assertNoNestedLockFailure(t *testing.T, stderr string) {
@@ -161,37 +152,17 @@ func mustSnapshotE2ELinks(t *testing.T, workspace string) []e2eLinkRow {
 	return snapshot
 }
 
-func mustSnapshotE2ERequirements(t *testing.T, workspace string) []e2eRequirementRow {
+func assertE2ERequirementsAbsent(t *testing.T, workspace string) {
 	t.Helper()
-
 	conn, err := fiddb.Open(filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 	if err != nil {
-		t.Fatalf("Open() error = %v", err)
+		t.Fatal(err)
 	}
 	defer closeCommandDB(t, conn)
-
-	rows, err := conn.Query(`
-		SELECT id, requirement_id, source_json, status
-		FROM requirement_refs
-		ORDER BY id
-	`)
-	if err != nil {
-		t.Fatalf("query requirement refs snapshot: %v", err)
+	var count int
+	if err := conn.QueryRow(`SELECT count(*) FROM sqlite_schema WHERE type='table' AND name='requirement_refs'`).Scan(&count); err != nil || count != 0 {
+		t.Fatalf("requirement table count = %d, %v; want absent", count, err)
 	}
-	defer closeE2ERows(t, rows)
-
-	var snapshot []e2eRequirementRow
-	for rows.Next() {
-		var row e2eRequirementRow
-		if err := rows.Scan(&row.ID, &row.RequirementID, &row.SourceJSON, &row.Status); err != nil {
-			t.Fatalf("scan requirement refs snapshot: %v", err)
-		}
-		snapshot = append(snapshot, row)
-	}
-	if err := rows.Err(); err != nil {
-		t.Fatalf("iterate requirements snapshot: %v", err)
-	}
-	return snapshot
 }
 
 func closeE2ERows(t *testing.T, rows *sql.Rows) {
