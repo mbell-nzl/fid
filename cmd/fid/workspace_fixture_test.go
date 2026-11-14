@@ -76,12 +76,8 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 	// recreate configHome after cleanup. This documented command writes only
 	// the suite's isolated config; GOTELEMETRY is not a settable environment
 	// variable. The off command itself opens no counters or sidecar.
-	if goConfig, err := os.UserConfigDir(); err != nil || goConfig != configHome {
-		fmt.Fprintf(os.Stderr, "refuse to change Go telemetry outside isolated config: %q, %v\n", goConfig, err)
-		return 1
-	}
-	if output, err := exec.Command("go", "telemetry", "off").CombinedOutput(); err != nil {
-		fmt.Fprintf(os.Stderr, "disable Go telemetry in isolated config: %v\n%s", err, output)
+	if err := disableGoTelemetry(configHome, os.UserConfigDir); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 	// fid backup keeps its clone in the user cache, so no test may use ~/.cache.
@@ -138,6 +134,17 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 		}
 	}
 	return exitCode
+}
+
+// The resolver seam lets tests exercise config failures without the real home.
+func disableGoTelemetry(configHome string, userConfigDir func() (string, error)) error {
+	if goConfig, err := userConfigDir(); err != nil || goConfig != configHome {
+		return fmt.Errorf("refuse to change Go telemetry outside isolated config: %q, %v", goConfig, err)
+	}
+	if output, err := exec.Command("go", "telemetry", "off").CombinedOutput(); err != nil {
+		return fmt.Errorf("disable Go telemetry in isolated config: %w\n%s", err, output)
+	}
+	return nil
 }
 
 // The suite isolates XDG_CACHE_HOME, and Go's build cache defaults to a

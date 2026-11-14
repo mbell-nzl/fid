@@ -913,6 +913,12 @@ check Go's actual telemetry mode. Coverage also exercises the fallback with
 integration regression includes its normal binary build; unchanged focused
 and full integration runs left no entries before the fixes.
 
+Round 1 adds a test-only config resolver seam to both telemetry guards.
+Each suite tests a resolution error (including one returned with a matching
+path), a location outside the fixture, and successful isolated setup. The
+negative cases assert refusal and preserve a seeded simulated user's mode
+file byte for byte; removing either suite's guard fails both assertions.
+
 The historical integration source at `982b4211` exposes the paired-directory
 leak: `TestP22ActivationCrashProcess`, `TestP22BudgetCrashProcess` and
 `TestP22RecoveryCrashProcess` re-executed the integration test binary,
@@ -2182,7 +2188,7 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
 
 ## Later list
 
-- From this PR (1.5e): make the hold-lifecycle text goldens independent of
+- From #76 (1.5e): make the hold-lifecycle text goldens independent of
   temp-root length. With a long private `TMPDIR`,
   `TestHeartbeatSetsTheLastSignOfLifeAndRefusesAtExpiry` and
   `TestHoldLifecycleGolden/park-started` fail because rendering wraps the
