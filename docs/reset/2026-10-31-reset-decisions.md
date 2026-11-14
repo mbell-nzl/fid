@@ -893,8 +893,10 @@ table order; 1.7 does not use or change 1.6's code. 1.7's brief, written
 by the orchestrator, permits plain human-text repairs and raises the lane
 to Standard if any are needed.
 V2 found three help leaks: backup's "attempt", next's "run again" and SQL's
-"Run". Their wording is repaired, so 1.7 is **Standard**. The Makefile's
-new verification target is within the brief's approved scope.
+"Run". Their wording is repaired. The lane is **Assured**: the PR adds a
+Makefile target (`check-leak-test`), and RESET.md puts Makefile changes in
+Assured. The brief had called the task Routine, overlooking that rule; the
+review caught it and the orchestrator raised the lane.
 
 Builder's transactional choices:
 
