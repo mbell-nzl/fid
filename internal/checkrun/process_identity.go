@@ -12,18 +12,39 @@ import (
 	"github.com/mbell-nzl/fid/internal/checkrecord"
 )
 
-func processIdentity(pid int) (checkrecord.Process, error) {
+func machineIdentity() (string, error) {
+	if runtime.GOOS == "linux" {
+		if raw, err := os.ReadFile("/etc/machine-id"); err == nil {
+			if id := strings.TrimSpace(string(raw)); id != "" {
+				return "machine-id:" + id, nil
+			}
+		}
+	}
 	host, err := os.Hostname()
 	if err != nil {
-		return checkrecord.Process{}, fmt.Errorf("read machine: %w", err)
+		return "", fmt.Errorf("read machine: %w", err)
 	}
-	process := checkrecord.Process{Machine: host, PID: pid}
+	if host == "" {
+		return "", fmt.Errorf("read machine: empty hostname")
+	}
+	return "hostname:" + host, nil
+}
+
+func processIdentity(pid int) (checkrecord.Process, error) {
+	machine, err := machineIdentity()
+	if err != nil {
+		return checkrecord.Process{}, err
+	}
+	process := checkrecord.Process{Machine: machine, PID: pid}
 	if runtime.GOOS == "linux" {
 		boot, err := os.ReadFile("/proc/sys/kernel/random/boot_id")
 		if err != nil {
 			return process, fmt.Errorf("read boot identity: %w", err)
 		}
-		process.Machine += ":" + strings.TrimSpace(string(boot))
+		process.BootID = strings.TrimSpace(string(boot))
+		if process.BootID == "" {
+			return process, fmt.Errorf("read boot identity: empty boot ID")
+		}
 		stat, err := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
 		if err != nil {
 			return process, fmt.Errorf("read process identity: %w", err)
@@ -50,12 +71,26 @@ func processIdentity(pid int) (checkrecord.Process, error) {
 }
 
 func processAlive(process checkrecord.Process) (bool, error) {
+	if err := process.Validate(); err != nil {
+		return false, err
+	}
 	self, err := processIdentity(os.Getpid())
 	if err != nil {
 		return false, err
 	}
 	if self.Machine != process.Machine {
 		return false, fmt.Errorf("cannot inspect a check process on another machine")
+	}
+	if self.BootID == "" && process.BootID != "" {
+		return false, fmt.Errorf("cannot inspect a check process with a different boot identity scheme")
+	}
+	if self.BootID != "" {
+		if process.BootID == "" {
+			return false, fmt.Errorf("cannot inspect a check process without its boot identity")
+		}
+		if self.BootID != process.BootID {
+			return false, nil
+		}
 	}
 	current, err := processIdentity(process.PID)
 	if errors.Is(err, os.ErrNotExist) {

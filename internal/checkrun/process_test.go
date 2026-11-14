@@ -2,6 +2,7 @@ package checkrun
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"os"
@@ -32,9 +33,10 @@ func TestCheckProcessHelper(t *testing.T) {
 			_ = syscall.Kill(os.Getpid(), syscall.SIGTERM)
 			time.Sleep(time.Hour)
 		case "large":
-			for j := 0; j < 11; j++ {
+			for j := 0; j < 10; j++ {
 				fmt.Print(strings.Repeat("x", 1<<20))
 			}
+			fmt.Print(strings.Repeat("y", 1<<20))
 			os.Exit(0)
 		case "env":
 			fmt.Printf("secret=%s; home=%s", os.Getenv("FID_CHECK_SECRET"), os.Getenv("HOME"))
@@ -127,6 +129,19 @@ func TestProcessOutcomesAndBoundedOutput(t *testing.T) {
 			}
 			if row.mode == "large" && (!got.OutputTruncated || got.OutputBytes != 11<<20 || len(got.OutputExcerpt) != 16<<10) {
 				t.Fatalf("output=%d/%d/%v", got.OutputBytes, len(got.OutputExcerpt), got.OutputTruncated)
+			}
+			if row.mode == "pass" && (got.OutputBytes != int64(len("hello\x1b[31m\n")) || got.OutputExcerpt != "hello\x1b[31m\n" || got.OutputTruncated) {
+				t.Fatalf("raw output=%#v", got.Result)
+			}
+			if row.mode == "pass" || row.mode == "large" {
+				raw := "hello\x1b[31m\n"
+				if row.mode == "large" {
+					raw = strings.Repeat("x", 10<<20)
+				}
+				want := fmt.Sprintf("sha256:%x", sha256.Sum256([]byte(raw)))
+				if got.OutputDigest != want {
+					t.Fatalf("raw output digest=%s, want %s", got.OutputDigest, want)
+				}
 			}
 		})
 	}

@@ -52,12 +52,14 @@
           },
           "owner": {
             "machine": "<machine>",
+            "boot_id": "<boot_id>",
             "pid": 10001,
             "start_time": "<start_time>"
           }
         },
         "process": {
           "machine": "<machine>",
+          "boot_id": "<boot_id>",
           "pid": 10001,
           "start_time": "<start_time>"
         },
@@ -143,6 +145,7 @@
           },
           "owner": {
             "machine": "<machine>",
+            "boot_id": "<boot_id>",
             "pid": 10001,
             "start_time": "<start_time>"
           }

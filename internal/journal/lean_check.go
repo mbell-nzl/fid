@@ -95,6 +95,9 @@ func validateLeanCheck(tx *sql.Tx, event Event) error {
 		if err := decodeCheckJSON(event.Effects[0].Values["process_json"], &process); err != nil {
 			return err
 		}
+		if process.Machine != start.Owner.Machine || process.BootID != start.Owner.BootID {
+			return fmt.Errorf("check child machine or boot differs from its owner")
+		}
 		return validateCheckProcess(process)
 	case "check.hold-renewed":
 		return validateCheckRenewal(tx, event, start)
@@ -107,10 +110,7 @@ func validateLeanCheck(tx *sql.Tx, event Event) error {
 }
 
 func validateCheckProcess(process checkrecord.Process) error {
-	if process.PID <= 0 || process.Machine == "" || process.StartTime == "" {
-		return fmt.Errorf("incomplete check process identity")
-	}
-	return nil
+	return process.Validate()
 }
 
 func validateCheckTree(tree checkrecord.Tree) error {

@@ -21,6 +21,9 @@ type store struct {
 }
 
 func (options Options) write(action func(store) error) error {
+	if options.beforeWrite != nil {
+		options.beforeWrite()
+	}
 	return journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "fid check"}, func(lock *journal.WriteLock) error {
 		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 			return err

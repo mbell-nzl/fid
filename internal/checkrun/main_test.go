@@ -3,6 +3,8 @@ package checkrun
 import (
 	"os"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/gittest"
 )
 
 func TestMain(m *testing.M) {
@@ -12,5 +14,5 @@ func TestMain(m *testing.M) {
 		}
 		os.Exit(0)
 	}
-	os.Exit(m.Run())
+	os.Exit(gittest.Main(m))
 }
