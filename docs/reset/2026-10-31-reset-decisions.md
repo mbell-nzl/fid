@@ -884,6 +884,44 @@ historical identifier registered by the unchanged format audit.
 This completes the physical removal for 1.5b-1.5d; old-family refusals still
 happen before any SQL projection or archive publication.
 
+## RESET 1.7 implementation (2026-11-15)
+
+Mark approved building 1.7 alongside 1.6 from `origin/main` at `4517e22d`,
+so it may merge before 1.6. This is a small deviation from table order;
+1.7 does not use or change 1.6's code. The approved Routine brief permits
+plain human-text repairs and raises the lane to Standard if any are needed.
+V2 found three help leaks: backup's "attempt", next's "run again" and SQL's
+"Run". Their wording is repaired, so 1.7 is **Standard**. The Makefile's
+new verification target is within the brief's approved scope.
+
+Builder's transactional choices:
+
+- `internal/leaktest` owns the unchanged kernel-word pattern and assertion.
+  Only `_test.go` files import it. The assertion's small testing interface
+  allows its rejection diagnostics to be tested without a child process.
+- `TestV2HumanOutputNamesNoKernelWords` recursively scans every `.txt` under
+  `cmd/fid/testdata`, including files with no current golden-test caller.
+  It walks the full Cobra tree, including generated help and completion,
+  checking Use, Short, Long, Example, local/inherited flag usages and actual
+  `--help` output. Only help masks the exact `--claim` token; surrounding
+  prose and other flag spellings remain subject to the unchanged pattern.
+- The live journey initializes a ledger and creates, takes, starts, checks,
+  interrupts, resumes, parks waiting, answers, takes over and hands off a
+  task, reading status and show along the way. Every action uses text mode;
+  JSON show reads supply only the hold IDs that human text omits. It uses
+  the existing check child and its coverage-directory guard. A separate
+  V2 refusal matrix checks both streams, as does every journey action.
+  `done` is absent at this base and remains 1.6's work.
+- A blanket assertion was considered for `executeCommandForTest` and left
+  out: it has no test handle, and its callers deliberately supply arbitrary
+  echoed data and diagnostic JSON. Broad input masking could hide fid's own
+  text. The scoped journey and existing golden/refusal assertions need no
+  such exemptions. `--json` and verbose diagnostics remain outside V2.
+- `make check-leak-test` selects both V2 tests with a fresh execution;
+  ordinary `make test` and CI discover them too. Temporary help, orphan
+  golden and refusal leaks each failed with the shared diagnostic, then
+  were restored.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
