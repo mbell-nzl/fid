@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -142,7 +141,7 @@ func VerifyWithHooks(options Options, hooks Hooks) (Result, error) {
 			return fmt.Errorf("verify Artifact: Artifact %q was not found", options.Request.ArtifactID)
 		}
 
-		storeRoot, err := artifactStoreRoot(options.WorkspaceRoot, project.ArtifactRoot)
+		storeRoot, err := artifactstore.Root(config.LedgerDir(options.WorkspaceRoot), project.ArtifactRoot)
 		if err != nil {
 			return err
 		}
@@ -213,19 +212,4 @@ func loadArtifactByID(conn *sql.DB, id string) (Artifact, bool, error) {
 		return Artifact{}, false, fmt.Errorf("load Artifact: %w", err)
 	}
 	return artifact, true, nil
-}
-func artifactStoreRoot(workspaceRoot, root string) (string, error) {
-	fidRoot, err := filepath.EvalSymlinks(config.LedgerDir(workspaceRoot))
-	if err != nil {
-		return "", fmt.Errorf("retain Artifacts: resolve fid root: %w", err)
-	}
-	store := filepath.Join(fidRoot, root)
-	if err := os.MkdirAll(store, 0o700); err != nil {
-		return "", fmt.Errorf("retain Artifacts: create store: %w", err)
-	}
-	resolved, err := filepath.EvalSymlinks(store)
-	if err != nil || !artifactstore.Contained(fidRoot, resolved) {
-		return "", fmt.Errorf("retain Artifacts: configured store escapes fid root")
-	}
-	return resolved, nil
 }

@@ -70,19 +70,7 @@ func retainArtifacts(workspaceRoot string, definition GateDefinition) ([]retaine
 }
 
 func artifactStoreRoot(workspaceRoot, root string) (string, error) {
-	fidRoot, err := filepath.EvalSymlinks(config.LedgerDir(workspaceRoot))
-	if err != nil {
-		return "", fmt.Errorf("retain Artifacts: resolve fid root: %w", err)
-	}
-	store := filepath.Join(fidRoot, root)
-	if err := os.MkdirAll(store, 0o700); err != nil {
-		return "", fmt.Errorf("retain Artifacts: create store: %w", err)
-	}
-	resolved, err := filepath.EvalSymlinks(store)
-	if err != nil || !containedResolvedPath(fidRoot, resolved) {
-		return "", fmt.Errorf("retain Artifacts: configured store escapes fid root")
-	}
-	return resolved, nil
+	return artifactstore.Root(config.LedgerDir(workspaceRoot), root)
 }
 
 func artifactCandidatePath(workspaceRoot, cwd, declaredPath string) (string, string) {
@@ -214,7 +202,6 @@ func writeSanitizedArtifactChunk(writer io.Writer, redactor *liveRedactor, data 
 func publishArtifactFile(stagingPath, destination, digest string) error {
 	return artifactstore.Publish(stagingPath, destination, digest)
 }
-func verifyArtifactDigest(path, digest string) error { return artifactstore.Verify(path, digest) }
 func containedResolvedPath(root, candidate string) bool {
 	return artifactstore.Contained(root, candidate)
 }
