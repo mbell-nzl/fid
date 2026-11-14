@@ -29,12 +29,14 @@ func TestGHRunnerChild(t *testing.T) {
 		ctx, cancel = context.WithTimeout(ctx, 150*time.Millisecond)
 		defer cancel()
 	}
+	began := time.Now()
 	result := RunGH(ctx, []string{"pr", "view", "74", "--repo", "mbell-nzl/fid"}, os.Environ())
 	output := struct {
 		Result                      Result
+		Elapsed                     time.Duration
 		Oversized, Timeout, Missing bool
 	}{
-		Result: result, Oversized: errors.Is(result.Err, ErrOutputLimit),
+		Result: result, Elapsed: time.Since(began), Oversized: errors.Is(result.Err, ErrOutputLimit),
 		Timeout: errors.Is(result.Err, context.DeadlineExceeded), Missing: errors.Is(result.Err, exec.ErrNotFound),
 	}
 	// Errors are inspected above, before JSON replaces the concrete error type.
@@ -71,13 +73,13 @@ esac
 			command := exec.Command(os.Args[0], "-test.run=^TestGHRunnerChild$")
 			command.Env = append(os.Environ(), "FID_GH_RUNNER_CHILD=1", "FID_GH_TEST_MODE="+mode, "PATH="+bin,
 				"GH_PROMPT_DISABLED=0", "GH_PAGER=bad", "PAGER=bad", "NO_COLOR=0", "GH_HOST=wrong.example", "GH_FORCE_TTY=1", "GH_DEBUG=api", "DEBUG=1", "CLICOLOR_FORCE=1")
-			began := time.Now()
 			data, err := command.CombinedOutput()
 			if err != nil {
 				t.Fatalf("runner child: %v: %s", err, data)
 			}
 			var got struct {
 				Result                      Result
+				Elapsed                     time.Duration
 				Oversized, Timeout, Missing bool
 			}
 			if err := json.Unmarshal(data, &got); err != nil {
@@ -102,8 +104,8 @@ esac
 					}
 				}
 			case "timeout":
-				if !got.Timeout || time.Since(began) > 3*time.Second {
-					t.Fatalf("timeout = %#v after %s", got, time.Since(began))
+				if !got.Timeout || got.Elapsed > 3*time.Second {
+					t.Fatalf("timeout = %#v after %s", got, got.Elapsed)
 				}
 			case "stdout", "stderr", "combined":
 				if !got.Oversized || len(got.Result.Stdout)+len(got.Result.Stderr) > DefaultOutputLimit {
@@ -118,8 +120,8 @@ esac
 					t.Fatalf("exit = %#v", got)
 				}
 			case "inherited-pipe":
-				if time.Since(began) > time.Second {
-					t.Fatalf("inherited pipe blocked exit for %s", time.Since(began))
+				if got.Elapsed > time.Second {
+					t.Fatalf("inherited pipe blocked exit for %s", got.Elapsed)
 				}
 			}
 		})

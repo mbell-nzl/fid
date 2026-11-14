@@ -1,6 +1,7 @@
 package github
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -9,7 +10,7 @@ const headSHA = "14b530c9ac45f9fdd705b1bef3ede2ccf9e1297c"
 const treeSHA = "3ceee6a1141c0f7d49839bc2ff81e14b325c523f"
 
 func sampleRun(id, attempt, workflow int64, status, conclusion string) WorkflowRun {
-	return WorkflowRun{ID: id, Attempt: attempt, WorkflowID: workflow, Name: "ci", Path: ".github/workflows/ci.yml", Event: "push", HeadSHA: mergeSHA, Status: status, Conclusion: conclusion, URL: "https://github.com/mbell-nzl/fid/actions/runs/43626136158"}
+	return WorkflowRun{ID: id, Attempt: attempt, WorkflowID: workflow, Name: "ci", Path: ".github/workflows/ci.yml", Event: "push", HeadSHA: mergeSHA, Status: status, Conclusion: conclusion, URL: fmt.Sprintf("https://github.com/mbell-nzl/fid/actions/runs/%d", id)}
 }
 
 func TestCIVerdict(t *testing.T) {
