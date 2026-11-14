@@ -19,8 +19,10 @@ type Options struct {
 }
 
 type writeContext struct {
-	conn *sql.DB
-	at   string
+	conn       *sql.DB
+	at         string
+	generateID func(string, journal.IDExistsFunc) (string, error)
+	reserved   map[string]struct{}
 }
 
 // withWrite holds the ledger lock only for refreshing, validating and appending
@@ -43,7 +45,7 @@ func withWrite(options Options, build func(writeContext) (journal.Event, error))
 			now = options.Clock()
 		}
 		now = now.UTC().Truncate(time.Second)
-		event, err := build(writeContext{conn, now.Format(time.RFC3339)})
+		event, err := build(writeContext{conn: conn, at: now.Format(time.RFC3339)})
 		if err != nil {
 			return err
 		}
@@ -63,10 +65,26 @@ func withWrite(options Options, build func(writeContext) (journal.Event, error))
 	})
 }
 
-func (ctx writeContext) id(prefix, table string) (string, error) {
-	return journal.GenerateID(prefix, func(id string) (bool, error) {
+func (ctx *writeContext) id(prefix, table string) (string, error) {
+	generate := ctx.generateID
+	if generate == nil {
+		generate = journal.GenerateID
+	}
+	id, err := generate(prefix, func(id string) (bool, error) {
+		if _, taken := ctx.reserved[id]; taken {
+			return true, nil
+		}
 		var count int
 		err := ctx.conn.QueryRow("SELECT count(*) FROM "+table+" WHERE id=?", id).Scan(&count)
 		return count > 0, err
 	})
+	if err != nil {
+		return "", err
+	}
+	// CI allocates every ID before the batch is projected into SQLite.
+	if ctx.reserved == nil {
+		ctx.reserved = make(map[string]struct{})
+	}
+	ctx.reserved[id] = struct{}{}
+	return id, nil
 }
