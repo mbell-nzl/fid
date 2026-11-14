@@ -999,14 +999,19 @@ caller. Local check storage, readers and evaluation are unchanged.
     fetch is disabled). `done` compares against the same computation, which
     is sound because item 2 ties the merged head's tree to the hand-off's.
     `gh pr diff` isn't used: it fails for PRs over 300 files (HTTP 406).
-13. **Which patch-id.** D10's `git patch-id`, as `--verbatim`, over a diff
-    rendered with pinned settings (no external diff or textconv; fixed
+13. **Which patch-id.** D10's `git patch-id`, as `--verbatim`, per file of a
+    diff rendered with pinned settings (no external diff or textconv; fixed
     context, algorithm, prefixes and rename detection; full index; binary
     changes included; independent of user config). Whitespace edits change
     the fingerprint, as D10's "any edit" says; the line shifts of a clean
     rebase don't. The algorithm is recorded with each fingerprint. Empty,
     partial, oversized or unavailable input refuses; there is no empty
-    fingerprint.
+    fingerprint. Review round 1 of #79 reproduced Git 2.53 skipping the
+    next file header after a binary patch, losing that change's path.
+    D10's patch-id is therefore applied separately to every file section,
+    and the fingerprint combines the sorted per-file IDs with their count
+    using SHA-256 (orchestrator, 2026-11-15, under Mark's delegation;
+    Mark reviews this later).
 14. **A hand-off comes first.** A review round or an approval needs the
     task's latest hand-off. A changed delivery needs a new hand-off; a clean
     rebase gives a new hand-off with the same fingerprint, so an approval
@@ -1014,10 +1019,10 @@ caller. Local check storage, readers and evaluation are unchanged.
 
 **1.6c's choices (2026-11-15).** `internal/fingerprint.Compute` accepts the
 recorded base and head as full lowercase 40-hex commit IDs and returns
-`patch-id-verbatim-v1`, the patch ID and both covered commits. It has no
-consumer yet: review rounds (1.6d), approval (1.6g) and done (1.6h) call it
-in their own slices. No command, record, migration, Event or dependency is
-added here.
+`patch-id-verbatim-per-file-v1`, a SHA-256 fingerprint and both covered
+commits. It has no consumer yet: review rounds (1.6d), approval (1.6g) and
+done (1.6h) call it in their own slices. No command, record, migration,
+Event or dependency is added here.
 
 The algorithm renders one aggregate diff with patch output, no color,
 external diff, textconv or relative paths; `a/` and `b/` prefixes; no line
@@ -1028,6 +1033,18 @@ indicators; quoted paths; no blank-context suppression or order file.
 `--binary` preserves binary identities and contents; real add/change/delete
 tests distinguish two binary contents. Context changes adjacent to a hunk
 may still change the ID, as D10 permits.
+
+The complete aggregate is split at lines beginning `diff --git ` and each
+file section alone goes through `git patch-id --verbatim`. This avoids the
+Git 2.53 parser skipping the next file header after a binary patch, as
+reproduced in #79 review round 1; D10's patch-id is applied per file. Text
+content retains its pinned `+`, `-` or space prefix, paths quote newlines,
+and base85 binary data contains no spaces, so content cannot forge a file
+boundary. Sort the per-file 40-hex IDs lexicographically, retaining every
+occurrence. The SHA-256 input is the decimal section count and LF, followed
+by each sorted ID and LF (including the last). File order has no effect.
+No fingerprint has been recorded using the earlier aggregate recipe, whose
+algorithm tag is dropped.
 
 A disposable private git view borrows only the repository's existing
 object store, including alternates, and materializes committed attribute
@@ -1040,9 +1057,10 @@ and every git child sets `GIT_NO_LAZY_FETCH=1` and `GIT_OPTIONAL_LOCKS=0`.
 No remote is configured in the private view.
 
 The complete diff must fit within 10 MiB (10,485,760 bytes), and its producer
-must exit successfully before those bytes reach `patch-id --verbatim`.
-Exactly one patch-ID line with a zero source-commit field is required; the
-consumer's exit status is checked too. Typed failures distinguish missing
+must exit successfully before any section reaches `patch-id --verbatim`.
+Each section must yield exactly one patch-ID line with a zero source-commit
+field; every consumer's exit status is checked and its stdout is bounded
+to 4 KiB (diagnostics to 8 KiB). Typed failures distinguish missing
 base/head objects, empty changes, oversized diffs and git/output failures
 (including unavailable trees/blobs). Raw NUL text patches are refused too:
 committed attributes can force binary data into text hunks, where even

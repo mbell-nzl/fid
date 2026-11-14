@@ -53,7 +53,7 @@ func compute(t *testing.T, root, base, head string) fingerprint.Result {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Algorithm != "patch-id-verbatim-v1" || !regexp.MustCompile(`^[0-9a-f]{40}$`).MatchString(got.Fingerprint) || got.Base != base || got.Head != head {
+	if got.Algorithm != "patch-id-verbatim-per-file-v1" || !regexp.MustCompile(`^[0-9a-f]{64}$`).MatchString(got.Fingerprint) || got.Base != base || got.Head != head {
 		t.Fatalf("incomplete binding: %+v", got)
 	}
 	return got

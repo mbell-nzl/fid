@@ -90,13 +90,22 @@ func installGitShim(t *testing.T) {
 	dir := t.TempDir()
 	script := `#!/bin/sh
 for arg do
+  if [ "$arg" = patch-id ] && [ -n "$FID_TEST_LATER_SECTION" ]; then
+    input=$(cat)
+    case "$input" in
+      *'diff --git a/z b/z'*) ;;
+      *) printf '%s\n' "$input" | "$FID_TEST_REAL_GIT" "$@"; exit $? ;;
+    esac
+  fi
   case "$arg:$FID_TEST_GIT_MODE" in
+    diff:fixture-diff) cat "$FID_TEST_DIFF"; exit 0 ;;
     diff:producer-failed) "$FID_TEST_REAL_GIT" "$@"; exit 17 ;;
     patch-id:consumer-failed) cat >/dev/null; printf '%040d %040d\n' 1 0; exit 18 ;;
     patch-id:no-id) cat >/dev/null; exit 0 ;;
     patch-id:two-ids) cat >/dev/null; printf '%040d %040d\n%040d %040d\n' 1 0 2 0; exit 0 ;;
     patch-id:malformed-id) cat >/dev/null; printf 'not a patch id\n'; exit 0 ;;
     patch-id:wrong-source) cat >/dev/null; printf '%040d %040d\n' 1 2; exit 0 ;;
+    patch-id:oversized-id) cat >/dev/null; head -c 8192 /dev/zero; exit 0 ;;
   esac
 done
 exec "$FID_TEST_REAL_GIT" "$@"

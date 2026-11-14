@@ -5,17 +5,19 @@ package fingerprint
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 )
 
 const (
-	Algorithm    = "patch-id-verbatim-v1"
+	Algorithm    = "patch-id-verbatim-per-file-v1"
 	MaxDiffBytes = 10 << 20
 )
 
@@ -80,15 +82,44 @@ func Compute(root, base, head string) (Result, error) {
 	if bytes.IndexByte(diff, 0) >= 0 {
 		return Result{}, &Failure{Kind: GitFailure, Err: fmt.Errorf("diff contains NUL text that patch-id cannot hash completely")}
 	}
-	output, err := runGit(root, diff, 4096, "patch-id", "--verbatim")
+	id, err := fingerprintDiff(root, diff)
 	if err != nil {
 		return Result{}, &Failure{Kind: GitFailure, Err: err}
 	}
-	match := patchID.FindSubmatch(output)
-	if match == nil {
-		return Result{}, &Failure{Kind: GitFailure, Err: fmt.Errorf("patch-id did not return exactly one aggregate ID")}
+	return Result{Algorithm: Algorithm, Fingerprint: id, Base: base, Head: head}, nil
+}
+
+// Git's patch-id can skip the next file header after a binary patch (observed
+// with Git 2.53). Give each file its own process so every path is hashed.
+func fingerprintDiff(root string, diff []byte) (string, error) {
+	if !bytes.HasPrefix(diff, []byte("diff --git ")) {
+		return "", fmt.Errorf("diff does not start with a file section")
 	}
-	return Result{Algorithm: Algorithm, Fingerprint: string(match[1]), Base: base, Head: head}, nil
+	var ids []string
+	for len(diff) > 0 {
+		// Pinned text indicators prefix content with +, - or space; quoted
+		// paths escape newlines and base85 binary data contains no spaces.
+		// Only a real file header can start a line with this exact marker.
+		end := len(diff)
+		if next := bytes.Index(diff, []byte("\ndiff --git ")); next >= 0 {
+			end = next + 1
+		}
+		output, err := runGit(root, diff[:end], 4096, "patch-id", "--verbatim")
+		if err != nil {
+			return "", err
+		}
+		match := patchID.FindSubmatch(output)
+		if match == nil {
+			return "", fmt.Errorf("patch-id did not return exactly one ID for file section %d", len(ids)+1)
+		}
+		ids = append(ids, string(match[1]))
+		diff = diff[end:]
+	}
+	slices.Sort(ids)
+	// Algorithm's SHA-256 input is the decimal section count followed by LF,
+	// then every sorted 40-hex ID followed by LF, including the last one.
+	input := fmt.Sprintf("%d\n", len(ids)) + strings.Join(ids, "\n") + "\n"
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(input))), nil
 }
 
 // Materialize only committed attribute files, using a private index. git diff
