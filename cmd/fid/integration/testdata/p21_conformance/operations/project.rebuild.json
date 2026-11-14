@@ -1,5 +1,5 @@
 {
-  "operation": "project.rebuild",
   "command": "fid rebuild",
-  "kind": "accepted"
+  "kind": "accepted",
+  "operation": "project.rebuild"
 }

@@ -1,5 +1,0 @@
-{
-  "operation": "gate.resolve",
-  "command": "fid gate resolve \u003cregistration-id\u003e",
-  "kind": "accepted"
-}

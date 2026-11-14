@@ -106,22 +106,6 @@ func requireCanonicalFlag(cmd *cobra.Command, operation, name string) error {
 // are not parser, positional, required-flag or flag-domain failures.
 const flagCombinationArgument = "request"
 
-func renderCanonicalRequestError(cmd *cobra.Command, operation string, cause error) error {
-	jsonMode, err := readJSONMode(cmd)
-	if err != nil {
-		return err
-	}
-	failure, err := cli.NewFailure(cli.CodeInvalidArgument, "invalid command request", nil,
-		map[string]any{"argument": flagCombinationArgument, "value": nil, "allowed": []string{"accepted " + operation + " input"}})
-	if err != nil {
-		return err
-	}
-	if jsonMode {
-		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
-	}
-	return writeHumanFailure(cmd, operation, failure, cause)
-}
-
 // Every stable leaf gets grammar validation before its workspace-aware handler.
 // Descriptor examples retain their own ordered exclusivity checks.
 func installLeafGrammar(cmd *cobra.Command) {
@@ -140,7 +124,7 @@ func installLeafGrammar(cmd *cobra.Command) {
 	installFlagDomains(cmd)
 	if cmd.DisableFlagParsing {
 		return
-	} // evidence.evaluate parses example-only flags in its handler.
+	}
 	count := len(strings.Fields(cmd.Use)) - 1
 	validator := canonicalExactArgs(operation, count)
 	if rootCommandKey(cmd) == "check" {
@@ -171,10 +155,6 @@ func leafOperation(cmd *cobra.Command) string {
 		return "project.status"
 	case "show":
 		return "issue.show"
-	case "capabilities":
-		return "capabilities.get"
-	case "ready":
-		return "ready.get"
 	case "check":
 		return "check.execute"
 	case "handoff":
@@ -196,8 +176,6 @@ func leafOperation(cmd *cobra.Command) string {
 			return "next.claim"
 		}
 		return "next.get"
-	case "resume":
-		return "projection.resume"
 	}
 	return rootCommandOperation(cmd)
 }

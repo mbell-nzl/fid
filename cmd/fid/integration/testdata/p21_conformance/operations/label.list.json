@@ -1,5 +1,5 @@
 {
-  "operation": "label.list",
   "command": "fid label list",
-  "kind": "accepted"
+  "kind": "accepted",
+  "operation": "label.list"
 }

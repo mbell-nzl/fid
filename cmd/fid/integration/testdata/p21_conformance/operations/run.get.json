@@ -1,5 +1,0 @@
-{
-  "operation": "run.get",
-  "command": "fid run get \u003crun-id\u003e",
-  "kind": "accepted"
-}

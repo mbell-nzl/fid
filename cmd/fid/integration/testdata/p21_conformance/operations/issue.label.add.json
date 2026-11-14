@@ -1,5 +1,5 @@
 {
-  "operation": "issue.label.add",
   "command": "fid issue label add \u003cissue-id\u003e \u003clabel\u003e",
-  "kind": "accepted"
+  "kind": "accepted",
+  "operation": "issue.label.add"
 }

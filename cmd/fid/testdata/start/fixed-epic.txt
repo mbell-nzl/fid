@@ -1,2 +1,0 @@
-error: epic states are fixed; workflows cannot be assigned
-reason: invalid-argument; argument=request, allowed=accepted workflow.assign input

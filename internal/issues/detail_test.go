@@ -45,17 +45,8 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 		if got.AcceptanceCriteria == nil || len(got.AcceptanceCriteria) != 0 {
 			t.Fatalf("Get() acceptance_criteria = %#v, want empty array", got.AcceptanceCriteria)
 		}
-		if got.Concerns == nil || len(got.Concerns) != 0 {
-			t.Fatalf("Get() concerns = %#v, want empty array", got.Concerns)
-		}
 		if got.Links == nil || len(got.Links) != 0 {
 			t.Fatalf("Get() links = %#v, want empty array", got.Links)
-		}
-		if got.ConcernsRaised {
-			t.Fatal("Get() concerns_raised = true, want false")
-		}
-		if got.OpenConcernsCount != 0 {
-			t.Fatalf("Get() open_concerns_count = %d, want 0", got.OpenConcernsCount)
 		}
 		if got.TriageStatus != nil {
 			t.Fatalf("Get() triage_status = %#v, want nil", got.TriageStatus)

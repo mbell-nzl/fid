@@ -1,9 +1,0 @@
-{
-  "name": "stop-resolve-unknown",
-  "operation": "stop.resolve",
-  "kind": "unknown-field",
-  "result_fields": [],
-  "event": false,
-  "exit_code": 2,
-  "failure_code": "invalid-argument"
-}

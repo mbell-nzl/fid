@@ -4,8 +4,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"testing"
-
-	"github.com/mbell-nzl/fid/internal/cli"
 )
 
 func TestLaneMutationGolden(t *testing.T) {
@@ -48,33 +46,4 @@ func TestShowTaskLaneGolden(t *testing.T) {
 	f := plannedStartFixture(t, "todo", stringPointer("standard"))
 	f.golden(filepath.Join("start", "show-standard.txt"), "show", "FID-9f13aa")
 	f.golden(filepath.Join("start", "show-standard.json"), "--json", "show", "FID-9f13aa")
-}
-
-func TestFixedWorkflowAssignmentGolden(t *testing.T) {
-	t.Parallel()
-	for _, kind := range []string{"task", "epic"} {
-		t.Run(kind, func(t *testing.T) {
-			f := plannedStartFixture(t, "todo", nil)
-			before := startEventCount(t, f.workspace)
-			for _, jsonMode := range []bool{false, true} {
-				args := []string{"workflow", "assign", "--name", kind + "-default", "--kind", kind, "--actor", "human:mark", "--idempotency-key", "assign"}
-				ext := ".txt"
-				if jsonMode {
-					args = append([]string{"--json"}, args...)
-					ext = ".json"
-				}
-				result := f.run(args...)
-				if cli.ExitCode(result.err) != 2 || result.stdout != "" {
-					t.Fatalf("fixed workflow assignment = %#v", result)
-				}
-				if jsonMode {
-					assertJSONFailureCode(t, result.stderr, "workflow.assign", "invalid-argument")
-				}
-				lifecycleGolden(t, f, filepath.Join("..", "start", "fixed-"+kind+ext), result.stderr)
-			}
-			if startEventCount(t, f.workspace) != before {
-				t.Fatal("fixed workflow assignment wrote an Event")
-			}
-		})
-	}
 }

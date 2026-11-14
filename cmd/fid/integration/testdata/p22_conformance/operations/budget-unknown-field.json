@@ -1,9 +1,0 @@
-{
-  "name": "budget-unknown-field",
-  "operation": "run.observe-budget",
-  "kind": "unknown-field",
-  "result_fields": [],
-  "event": false,
-  "exit_code": 2,
-  "failure_code": "invalid-argument"
-}

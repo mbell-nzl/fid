@@ -105,9 +105,6 @@ func isTask9IntegrationMutation(args []string) bool {
 		if index+1 < len(args) && args[index] == "requirement" && args[index+1] == "sync" {
 			return true
 		}
-		if index+1 < len(args) && args[index] == "workflow" && (args[index+1] == "define" || args[index+1] == "assign") {
-			return true
-		}
 	}
 	return false
 }
@@ -115,8 +112,6 @@ func isTask9IntegrationMutation(args []string) bool {
 func TestTask9IntegrationMutationRequestsUseActorAndIdempotency(t *testing.T) {
 	t.Parallel()
 	for _, args := range [][]string{
-		{"workflow", "define", "--by", "tl"},
-		{"workflow", "assign", "--by", "tl"},
 		{"issue", "ac", "add", "FID-1", "--by", "developer"},
 		{"issue", "label", "add", "FID-1", "core", "--by", "developer"},
 		{"label", "add", "core", "--by", "developer"},

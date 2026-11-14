@@ -125,14 +125,11 @@ type Issue struct {
 	OwnerRole          *string               `json:"owner_role"`
 	OwnerActor         *string               `json:"owner_actor"`
 	Labels             []string              `json:"labels"`
-	ConcernsRaised     bool                  `json:"concerns_raised"`
-	OpenConcernsCount  int                   `json:"open_concerns_count"`
 	TriageStatus       *string               `json:"triage_status"`
 	AcceptanceCriteria []AcceptanceCriterion `json:"acceptance_criteria"`
 	CreatedAt          *string               `json:"created_at"`
 	UpdatedAt          *string               `json:"updated_at"`
 	ParentTitle        *string               `json:"-"`
-	Concerns           []IssueConcern        `json:"-"`
 	Links              []IssueLink           `json:"-"`
 }
 

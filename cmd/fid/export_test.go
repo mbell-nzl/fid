@@ -35,10 +35,6 @@ func TestExportCreateValidateAndImportUsesClosedTargetConflict(t *testing.T) {
 	if conflict.err == nil || conflict.stdout != "" || !strings.Contains(conflict.stderr, `"code":"import-target-conflict"`) || !strings.Contains(conflict.stderr, `"category":"conflict"`) || !strings.Contains(conflict.stderr, `"retryable":false`) || !strings.Contains(conflict.stderr, `"reason":"different-import"`) {
 		t.Fatalf("export import target conflict = %#v, want closed non-retryable conflict", conflict)
 	}
-	capabilities := executeCommandForTest(workspace, "capabilities", "--json")
-	if capabilities.err != nil || !strings.Contains(capabilities.stdout, `"capability_id":"export.portable.v1","limits":{"create":true,"import":true,"import_mode":"empty-target","validate":true},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"`) {
-		t.Fatalf("export capability = %#v, want exact qualified row", capabilities)
-	}
 }
 
 func TestExportValidateRendersInvalidArchiveChecks(t *testing.T) {

@@ -24,27 +24,13 @@ type p24FallbackRow struct {
 // Each site is the final R20 mapper, not a grammar or typed invalid-argument.
 // Missing-project rows reach real project-domain failures with valid grammar.
 var p24FallbackRows = []p24FallbackRow{
+	{"artifact.go:renderArtifactError", "artifact.verify", "input", "accepted gate registration input", "verify Artifact: Artifact \"ART-missing\" was not found", []string{"artifact", "verify", "--actor", "agent:builder", "--idempotency-key", "fallback"}, true},
 	{"issue_mutation_response.go:issueMutationFailure", "issue.create", "request", "accepted issue.create input", "create issue: epic scheduling is required", []string{"issue", "create", "--kind", "epic", "--title", "test", "--actor", "agent:a", "--idempotency-key", "fallback"}, true},
 	{"link_response.go:linkFailure", "link.list", "request", "accepted link.list input", "link list: entity id is required", []string{"link", "list", " ", "--type", "issue"}, true},
-	{"activation.go:activationFailure", "activation.status", "input", "accepted activation input", "project not found: $ROOT", []string{"activation", "status", "ACT-missing"}, false},
-	{"claim.go:renderClaimError", "claim.list", "input", "accepted claim.list input", "project not found: $ROOT", []string{"claim", "list"}, false},
-	{"concern.go:renderConcernError", "concern.list", "input", "accepted concern.list input", "acquire lock \"$ROOT/.git/fid/write.lock\": mkdir $ROOT/.git/fid/write.lock: no such file or directory", []string{"concern", "list"}, false},
-	{"decision.go:renderDecisionError", "decision.list", "input", "accepted decision.list input", "project not found: $ROOT", []string{"decision", "list"}, false},
-	{"deviation.go:renderDeviationError", "deviation.list", "input", "accepted deviation.list input", "project not found: $ROOT", []string{"deviation", "list"}, false},
-	{"envelope.go:renderEnvelopeError", "envelope.get", "input", "accepted envelope.get input", "project not found: $ROOT", []string{"envelope", "get", "ENV-missing"}, false},
-	{"evidence.go:renderEvidenceError", "evidence.get", "input", "accepted evidence.get input", "project not found: $ROOT", []string{"evidence", "get", "EVD-missing"}, false},
-	{"finding.go:renderFindingError", "finding.list", "input", "accepted finding.list input", "project not found: $ROOT", []string{"finding", "list"}, false},
-	{"gate.go:renderGateError", "gate.resolve", "input", "accepted gate registration input", "project not found: $ROOT", []string{"gate", "resolve", "REG-missing", "--version", "1"}, false},
-	{"human_outcome.go:renderHumanOutcomeError", "human-outcome.list", "input", "accepted human-outcome.list input", "project not found: $ROOT", []string{"human-outcome", "list"}, false},
 	{"issue_get_list.go:issueReadFailure", "activity.list", "request", "accepted issue read input", "activity list: --since must be YYYY-MM-DD or RFC3339", []string{"activity", "list", "--since", "invalid"}, true},
-	{"receipt.go:renderReceiptError", "receipt.list", "request", "accepted receipt.list input", "project not found: $ROOT", []string{"receipt", "list"}, false},
-	{"review.go:renderReviewListError", "review.list", "filter", "accepted review.list filters", "project not found: $ROOT", []string{"review", "list"}, false},
-	{"review.go:renderReviewError", "review.record", "input", "accepted review.record input", "project not found: $ROOT", []string{"review", "get", "REV-missing"}, false},
-	{"run.go:renderRunError", "run.list", "input", "accepted run.list input", "project not found: $ROOT", []string{"run", "list"}, false},
-	{"stop.go:renderStopError", "stop.list", "input", "accepted stop.list input", "project not found: $ROOT", []string{"stop", "list"}, false},
 }
 
-// Empty: all 18 current final fallbacks have reachable process rows. An
+// Empty: all current final fallbacks have reachable process rows. An
 // exclusion must name a specific site and explain why the CLI cannot reach it.
 var p24FallbackExclusions = map[string]string{}
 
@@ -124,6 +110,9 @@ func TestP24GenericFallbackDomainPairs(t *testing.T) {
 				p21Run(t, binary, root, "init", "--prefix", "P24", "--json")
 			}
 			args := append([]string{"--project", root}, row.args...)
+			if row.operation == "artifact.verify" {
+				args = append(args, "--input", p21Input(t, root, "missing-artifact", map[string]any{"artifact_id": "ART-missing"}))
+			}
 			before := p24FailureFilesystem(t, root)
 			out, stderr, err := closureRunCommand(root, binary, append([]string{"--json"}, args...)...)
 			if err == nil || processExitCode(t, err) != 2 || out != "" {
@@ -145,6 +134,9 @@ func TestP24GenericFallbackDomainPairs(t *testing.T) {
 			}
 			out, stderr, err = closureRunCommand(root, binary, args...)
 			want := "error: " + message + "\nreason: invalid-argument; argument=" + row.argument + ", allowed=" + row.allowed + "\n"
+			if row.operation == "artifact.verify" {
+				want += "next: see fid artifact verify --help; template: fid artifact verify --example\n"
+			}
 			if err == nil || processExitCode(t, err) != 2 || out != "" || stderr != want {
 				t.Fatalf("Human domain refusal: %v %q %q want %q", err, out, stderr, want)
 			}

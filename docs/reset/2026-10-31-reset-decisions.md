@@ -766,6 +766,35 @@ in 1.5c2. The graph, foreign keys, workflow IDs, category JSON and error text
 are unchanged. Existing state, registry, initial-state and child-rule tests
 move with their implementation, keeping their assertions.
 
+Builder's transactional choices for **1.5c2** (2026-11-15): the remaining
+command tree has 37 executable leaves (35 with the Response Envelope and
+two diagnostics; Cobra help/completion are additional), and 16 keyed leaves in 10 families, excluding export
+import under the existing inventory convention. Generic failure writing,
+JSON and fixture helpers move out of retiring adapters. Artifact
+verification calls `artifactverify.Verify` directly; its temporary Hooks and
+Evidence readiness wrapper are removed. Typed actors retain the established
+`authority-denied` details; malformed actors fail in flag validation. The
+missing-Artifact failure keeps its existing `invalid-argument` code and
+legacy `accepted gate registration input` allowed-text to preserve Q6's
+failure contract. No check result is rewritten by an availability change.
+The descriptor's seeded mismatch test copies its field slice before changing
+it, so the live registry remains immutable during parallel tests.
+
+Issue creation always selects its kind's fixed built-in workflow, including
+subtasks, and ignores retired assignments. Concern fields/filtering,
+linked-decision rules and execution-chain transition guards leave staying
+callers. Domain packages and their unit tests remain for 1.5c3; the
+kernel-only policy grant helper still serves those domains and leaves with
+them. Journal/archive catalogs, tables and maintenance checks remain for
+1.5d. The retained conformance fixtures use the exact remaining operation
+inventory and live failure registry; all 16 keyed leaves execute and rebuild
+in one lean journal. Historical Issue JSON captures are regenerated with the
+current CLI and their capture recipe uses the git-common-directory ledger.
+The export import/recovery domain test remains until the domain cut, with
+only its embedded historical Gate CLI assertion and helper retired here.
+The modern status/show/next/hold/start/check/handoff goldens stay unchanged;
+only retired workflow-assignment goldens leave.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for
@@ -2023,6 +2052,11 @@ the builder habit, then `verify-app`; each is tried on the next reset task.
   renderer.
 
 ## Later list
+
+- From this PR (1.5c2): `cli.RegisteredCodes` still omits the existing,
+  reachable `idempotency-conflict` code. Its established supplemental process
+  pair remains; decide separately whether the public enumeration should
+  include it. This PR only removes codes whose producers have retired.
 
 - From this PR (1.5b1): investigate the full-suite lock failure in unchanged
   `TestLeanCheckRenewsHoldAndStopsOnTakeover/takeover`. The first `make test`

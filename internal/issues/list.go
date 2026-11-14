@@ -14,28 +14,25 @@ import (
 )
 
 type ListOptions struct {
-	WorkspaceRoot   string
-	MigrationsDir   string
-	Kind            string
-	Status          string
-	StatusCategory  string
-	EpicID          string
-	Label           string
-	Priorities      []int
-	HasOpenConcerns *bool
-	Order           string
+	WorkspaceRoot  string
+	MigrationsDir  string
+	Kind           string
+	Status         string
+	StatusCategory string
+	EpicID         string
+	Label          string
+	Priorities     []int
+	Order          string
 }
 
 type ListItem struct {
-	ID                string  `json:"id"`
-	Kind              string  `json:"kind"`
-	Title             string  `json:"title"`
-	Status            string  `json:"status"`
-	StatusCategory    string  `json:"status_category"`
-	ParentID          *string `json:"parent_id"`
-	Priority          *int    `json:"priority"`
-	ConcernsRaised    bool    `json:"concerns_raised"`
-	OpenConcernsCount int     `json:"open_concerns_count"`
+	ID             string  `json:"id"`
+	Kind           string  `json:"kind"`
+	Title          string  `json:"title"`
+	Status         string  `json:"status"`
+	StatusCategory string  `json:"status_category"`
+	ParentID       *string `json:"parent_id"`
+	Priority       *int    `json:"priority"`
 }
 
 type UnsupportedListOrderError struct {
@@ -104,8 +101,6 @@ func List(options ListOptions) ([]ListItem, error) {
 			&workflowID,
 			&parentID,
 			&priority,
-			&item.ConcernsRaised,
-			&item.OpenConcernsCount,
 		); err != nil {
 			return nil, fmt.Errorf("scan issue list row: %w", err)
 		}
@@ -164,14 +159,6 @@ func issueListQuery(options ListOptions) (string, []any, error) {
 		}
 		whereParts = append(whereParts, "ie.priority IN ("+strings.Join(priorityPlaceholders, ", ")+")")
 	}
-	if options.HasOpenConcerns != nil {
-		if *options.HasOpenConcerns {
-			whereParts = append(whereParts, "ie.open_concerns_count > 0")
-		} else {
-			whereParts = append(whereParts, "ie.open_concerns_count = 0")
-		}
-	}
-
 	query := strings.Builder{}
 	query.WriteString(`
 		SELECT
@@ -181,9 +168,7 @@ func issueListQuery(options ListOptions) (string, []any, error) {
 			ie.status,
 			ie.workflow_id,
 			ie.parent_id,
-			ie.priority,
-			ie.concerns_raised,
-			ie.open_concerns_count
+			ie.priority
 		FROM issues_enriched ie
 	`)
 	if len(whereParts) > 0 {

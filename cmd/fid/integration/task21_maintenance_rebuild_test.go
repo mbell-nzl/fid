@@ -25,15 +25,15 @@ func TestFinalBinaryInitAndRebuildRemainRoleFree(t *testing.T) {
 	assertRoleFreeBootstrap(t, bootstrap)
 	assertRolesTableAbsent(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))
 
-	capabilitiesBefore, _ := closureRun(t, workspace, binary, "--json", "capabilities")
+	issuesBefore, _ := closureRun(t, workspace, binary, "--json", "issue", "list")
 	if err := os.Remove(filepath.Join(config.LedgerDir(workspace), "fid.sqlite")); err != nil {
 		t.Fatalf("delete projection: %v", err)
 	}
 	closureRun(t, workspace, binary, "--json", "rebuild")
-	capabilitiesAfter, _ := closureRun(t, workspace, binary, "--json", "capabilities")
+	issuesAfter, _ := closureRun(t, workspace, binary, "--json", "issue", "list")
 
-	if capabilitiesAfter != capabilitiesBefore {
-		t.Fatalf("capabilities after rebuild = %s, want %s", capabilitiesAfter, capabilitiesBefore)
+	if issuesAfter != issuesBefore {
+		t.Fatalf("issues after rebuild = %s, want %s", issuesAfter, issuesBefore)
 	}
 	assertRoleFreeBootstrap(t, onlyJournalEvent(t, journalPath))
 	assertRolesTableAbsent(t, filepath.Join(config.LedgerDir(workspace), "fid.sqlite"))

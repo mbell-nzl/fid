@@ -1,524 +1,156 @@
 {
-  "closed_values": [
-    "abandoned",
-    "aborted",
-    "absolute",
-    "ac-added",
-    "ac-verified",
-    "activate",
-    "activation",
-    "active",
-    "active-kit-activation",
-    "actor",
-    "agent",
-    "allowed",
-    "artifact",
-    "artifact-reference-invalid",
-    "artifact-rejected",
-    "artifact-unavailable",
-    "authority-unavailable",
-    "available",
-    "blocked-by",
-    "blocks",
-    "capability-snapshot-mismatch",
-    "caused-by",
-    "causes",
-    "changed-during-copy",
-    "claim",
-    "claim-expired",
-    "claim-missing",
-    "claim-released",
-    "claim-renewed",
-    "claim-superseded",
-    "comment-added",
-    "committed",
-    "complete",
-    "completed",
-    "component-duplicate",
-    "component-missing",
-    "concern-addressed",
-    "concern-raised",
-    "content-addressed",
-    "control",
-    "definition-digest",
-    "digest-mismatch",
-    "directory",
-    "discovered",
-    "discovered-from",
-    "draft",
-    "duplicate-entry",
-    "duplicated-by",
-    "duplicates",
-    "entry-extra",
-    "entry-missing",
-    "envelope",
-    "envelope-inactive",
-    "evidence",
-    "evidence-invalid",
-    "evidence-stale",
-    "expired",
-    "fail",
-    "failed",
-    "fid",
-    "fid-error",
-    "fid-executed",
-    "fid-git-observation",
-    "fid-journal",
-    "finalized",
-    "fresh",
-    "gate-recorded",
-    "human",
-    "implemented-by",
-    "implements",
-    "incomplete",
-    "invalid",
-    "issue",
-    "issue-created",
-    "issue-label-added",
-    "issue-label-removed",
-    "issue-not-terminal-success",
-    "issue-revision-conflict",
-    "issue-updated",
-    "journal-invalid",
-    "link-added",
-    "link-removed",
-    "manifest-invalid",
-    "missing",
-    "mutation",
-    "non-regular",
-    "none",
-    "obligation",
-    "obligation-evidence-absent",
-    "operator-released",
-    "output-truncated",
-    "outside-cwd",
-    "outside-project",
-    "oversized",
-    "pass",
-    "path-unsafe",
-    "phase-22-unavailable",
-    "phase-23-unavailable",
-    "phase-25-unavailable",
-    "prd",
-    "prepared",
-    "project",
-    "receipt",
-    "receipt-unsuccessful",
-    "redaction-applied",
-    "relates-to",
-    "released",
-    "repository",
-    "run",
-    "run-inactive",
-    "satisfied",
-    "schema-invalid",
-    "scope",
-    "service",
-    "signaled",
-    "size-mismatch",
-    "spawn-failed",
-    "staged",
-    "stale",
-    "status-changed",
-    "status-invalid",
-    "stderr",
-    "stdout",
-    "succeeded",
-    "superseded-by",
-    "supersedes",
-    "symlink",
-    "task-completed",
-    "terminal",
-    "terminal-hash-mismatch",
-    "timed-out",
-    "traversal",
-    "trd",
-    "unsatisfied",
-    "utf-8",
-    "valid",
-    "version",
-    "version-conflict",
-    "warn",
-    "workflow-transition",
-    "workflow-transition-invalid",
-    "worktree"
-  ],
   "failures": [
+    "already-held",
+    "archive-invalid",
+    "authority-denied",
+    "capability-unavailable",
+    "check-incomplete",
+    "check-not-qualified",
+    "check-still-running",
+    "check-unsuccessful",
+    "checks-not-configured",
+    "checks-unsatisfied",
+    "comparison-unavailable",
+    "dependency-cycle",
+    "duplicate-entity",
+    "hierarchy-invalid",
+    "hold-not-current",
+    "idempotency-conflict",
+    "import-target-conflict",
+    "internal-error",
     "invalid-argument",
+    "issue-not-found",
+    "journal-replay-stopped",
+    "label-not-found",
+    "lane-not-set",
+    "link-not-found",
+    "lock-unavailable",
+    "not-waiting",
+    "operation-unavailable",
+    "policy-unavailable",
+    "project-already-initialized",
+    "project-not-found",
+    "projection-divergence",
+    "repository-unavailable",
+    "result-limit-exceeded",
+    "state-conflict",
+    "test-paths-not-configured",
+    "transition-not-permitted",
+    "tree-dirty",
     "unsupported-kind",
     "unsupported-relation",
-    "operation-unavailable",
-    "project-not-found",
-    "project-already-initialized",
-    "issue-not-found",
-    "label-not-found",
-    "workflow-not-found",
-    "requirement-not-found",
-    "link-not-found",
-    "activation-not-found",
-    "registration-not-found",
-    "envelope-not-found",
-    "claim-not-found",
-    "run-not-found",
-    "receipt-not-found",
-    "evidence-not-found",
-    "artifact-not-found",
-    "duplicate-entity",
-    "state-conflict",
-    "idempotency-conflict",
-    "lock-unavailable",
-    "activation-conflict",
-    "activation-invalid",
-    "activation-recovery-unavailable",
-    "hierarchy-invalid",
-    "dependency-cycle",
-    "transition-not-permitted",
-    "authority-missing",
-    "authority-unknown-actor",
-    "authority-denied",
-    "authority-unavailable",
-    "capability-unavailable",
-    "registration-mismatch",
-    "repository-unavailable",
-    "executor-policy-unsupported",
-    "unsafe-path",
-    "envelope-inactive",
-    "claim-conflict",
-    "claim-expired",
-    "claim-stale",
-    "run-inactive",
-    "credential-unavailable",
-    "obligation-unsatisfied",
-    "evidence-invalid",
-    "evidence-stale",
-    "artifact-unavailable",
-    "gate-unsuccessful",
-    "journal-replay-stopped",
-    "projection-divergence",
-    "result-limit-exceeded",
-    "archive-invalid",
-    "internal-error"
-  ],
-  "live": [
-    "stdout",
-    "stderr",
-    "control-output-truncated",
-    "control-redaction-applied",
-    "control-artifact-rejected",
-    "terminal-failed",
-    "terminal-fid-error",
-    "terminal-signaled",
-    "terminal-spawn-failed",
-    "terminal-succeeded",
-    "terminal-timed-out",
-    "replay-succeeded",
-    "replay-gate-unsuccessful"
+    "worktree-busy"
   ],
   "operations": [
     {
-      "operation": "project.init",
-      "command": "fid init",
-      "kind": "accepted"
-    },
-    {
-      "operation": "project.rebuild",
-      "command": "fid rebuild",
-      "kind": "accepted"
-    },
-    {
-      "operation": "issue.create",
-      "command": "fid issue create",
-      "kind": "accepted"
-    },
-    {
-      "operation": "issue.get",
-      "command": "fid issue get \u003cid\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "issue.list",
-      "command": "fid issue list",
-      "kind": "accepted"
-    },
-    {
-      "operation": "issue.update",
-      "command": "fid issue update \u003cid\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "issue.transition",
-      "command": "fid issue transition \u003cid\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "issue.ac.add",
-      "command": "fid issue ac add \u003cissue-id\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "issue.ac.list",
-      "command": "fid issue ac list \u003cissue-id\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "issue.label.add",
-      "command": "fid issue label add \u003cissue-id\u003e \u003clabel\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "issue.label.remove",
-      "command": "fid issue label remove \u003cissue-id\u003e \u003clabel\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "label.add",
-      "command": "fid label add \u003cname\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "label.list",
-      "command": "fid label list",
-      "kind": "accepted"
-    },
-    {
-      "operation": "link.add",
-      "command": "fid link add \u003cfrom-id\u003e \u003cLinkRelation\u003e \u003cto-id\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "link.remove",
-      "command": "fid link remove \u003cfrom-id\u003e \u003cLinkRelation\u003e \u003cto-id\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "link.list",
-      "command": "fid link list \u003cid\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "ready.get",
-      "command": "fid ready",
-      "kind": "accepted"
-    },
-    {
-      "operation": "workflow.define",
-      "command": "fid workflow define",
-      "kind": "accepted"
-    },
-    {
-      "operation": "workflow.assign",
-      "command": "fid workflow assign",
-      "kind": "accepted"
-    },
-    {
-      "operation": "workflow.list",
-      "command": "fid workflow list",
-      "kind": "accepted"
-    },
-    {
-      "operation": "requirement.sync",
-      "command": "fid requirement sync",
-      "kind": "accepted"
-    },
-    {
-      "operation": "activity.list",
       "command": "fid activity list",
-      "kind": "accepted"
+      "kind": "accepted",
+      "operation": "activity.list"
     },
     {
-      "operation": "concern.list",
-      "command": "fid concern list",
-      "kind": "accepted"
-    },
-    {
-      "operation": "stats.tokens",
-      "command": "fid stats tokens",
-      "kind": "accepted"
-    },
-    {
-      "operation": "stats.cost",
-      "command": "fid stats cost",
-      "kind": "accepted"
-    },
-    {
-      "operation": "maintenance.check",
-      "command": "fid maintenance check",
-      "kind": "accepted"
-    },
-    {
-      "operation": "capabilities.get",
-      "command": "fid capabilities",
-      "kind": "accepted"
-    },
-    {
-      "operation": "activation.prepare",
-      "command": "fid activation prepare",
-      "kind": "accepted"
-    },
-    {
-      "operation": "activation.component",
-      "command": "fid activation component",
-      "kind": "accepted"
-    },
-    {
-      "operation": "activation.commit",
-      "command": "fid activation commit",
-      "kind": "accepted"
-    },
-    {
-      "operation": "activation.abort",
-      "command": "fid activation abort",
-      "kind": "accepted"
-    },
-    {
-      "operation": "activation.finalize",
-      "command": "fid activation finalize",
-      "kind": "accepted"
-    },
-    {
-      "operation": "activation.status",
-      "command": "fid activation status \u003cactivation-id\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "gate.register",
-      "command": "fid gate register",
-      "kind": "accepted"
-    },
-    {
-      "operation": "gate.resolve",
-      "command": "fid gate resolve \u003cregistration-id\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "gate.run",
-      "command": "fid gate run",
-      "kind": "accepted"
-    },
-    {
-      "operation": "envelope.create",
-      "command": "fid envelope create",
-      "kind": "accepted"
-    },
-    {
-      "operation": "envelope.get",
-      "command": "fid envelope get \u003cenvelope-id\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "envelope.activate",
-      "command": "fid envelope activate",
-      "kind": "accepted"
-    },
-    {
-      "operation": "envelope.complete",
-      "command": "fid envelope complete",
-      "kind": "accepted"
-    },
-    {
-      "operation": "claim.acquire",
-      "command": "fid claim acquire",
-      "kind": "accepted"
-    },
-    {
-      "operation": "claim.renew",
-      "command": "fid claim renew",
-      "kind": "accepted"
-    },
-    {
-      "operation": "claim.release",
-      "command": "fid claim release",
-      "kind": "accepted"
-    },
-    {
-      "operation": "claim.list",
-      "command": "fid claim list",
-      "kind": "accepted"
-    },
-    {
-      "operation": "run.start",
-      "command": "fid run start",
-      "kind": "accepted"
-    },
-    {
-      "operation": "run.finish",
-      "command": "fid run finish",
-      "kind": "accepted"
-    },
-    {
-      "operation": "run.get",
-      "command": "fid run get \u003crun-id\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "run.list",
-      "command": "fid run list",
-      "kind": "accepted"
-    },
-    {
-      "operation": "receipt.get",
-      "command": "fid receipt get \u003creceipt-id\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "receipt.list",
-      "command": "fid receipt list",
-      "kind": "accepted"
-    },
-    {
-      "operation": "evidence.link",
-      "command": "fid evidence link",
-      "kind": "accepted"
-    },
-    {
-      "operation": "evidence.get",
-      "command": "fid evidence get \u003cevidence-id\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "evidence.evaluate",
-      "command": "fid evidence evaluate",
-      "kind": "accepted"
-    },
-    {
-      "operation": "artifact.verify",
       "command": "fid artifact verify",
-      "kind": "accepted"
+      "kind": "accepted",
+      "operation": "artifact.verify"
     },
     {
-      "operation": "projection.resume",
-      "command": "fid resume \u003cissue-id\u003e",
-      "kind": "accepted"
-    },
-    {
-      "operation": "export.create",
       "command": "fid export create \u003carchive-path\u003e",
-      "kind": "accepted"
+      "kind": "accepted",
+      "operation": "export.create"
     },
     {
-      "operation": "export.validate",
       "command": "fid export validate \u003carchive-path\u003e",
-      "kind": "accepted"
+      "kind": "accepted",
+      "operation": "export.validate"
     },
     {
-      "operation": "issue.ac.verify",
-      "command": "fid issue ac verify",
-      "kind": "fail-closed"
+      "command": "fid issue ac add \u003cissue-id\u003e",
+      "kind": "accepted",
+      "operation": "issue.ac.add"
     },
     {
-      "operation": "concern.raise",
-      "command": "fid concern raise",
-      "kind": "fail-closed"
+      "command": "fid issue ac list \u003cissue-id\u003e",
+      "kind": "accepted",
+      "operation": "issue.ac.list"
     },
     {
-      "operation": "concern.address",
-      "command": "fid concern address",
-      "kind": "fail-closed"
+      "command": "fid issue create",
+      "kind": "accepted",
+      "operation": "issue.create"
     },
     {
-      "operation": "maintenance.vacuum",
+      "command": "fid issue get \u003cid\u003e",
+      "kind": "accepted",
+      "operation": "issue.get"
+    },
+    {
+      "command": "fid issue label add \u003cissue-id\u003e \u003clabel\u003e",
+      "kind": "accepted",
+      "operation": "issue.label.add"
+    },
+    {
+      "command": "fid issue label remove \u003cissue-id\u003e \u003clabel\u003e",
+      "kind": "accepted",
+      "operation": "issue.label.remove"
+    },
+    {
+      "command": "fid issue list",
+      "kind": "accepted",
+      "operation": "issue.list"
+    },
+    {
+      "command": "fid issue transition \u003cid\u003e",
+      "kind": "accepted",
+      "operation": "issue.transition"
+    },
+    {
+      "command": "fid issue update \u003cid\u003e",
+      "kind": "accepted",
+      "operation": "issue.update"
+    },
+    {
+      "command": "fid label add \u003cname\u003e",
+      "kind": "accepted",
+      "operation": "label.add"
+    },
+    {
+      "command": "fid label list",
+      "kind": "accepted",
+      "operation": "label.list"
+    },
+    {
+      "command": "fid link add \u003cfrom-id\u003e \u003cLinkRelation\u003e \u003cto-id\u003e",
+      "kind": "accepted",
+      "operation": "link.add"
+    },
+    {
+      "command": "fid link list \u003cid\u003e",
+      "kind": "accepted",
+      "operation": "link.list"
+    },
+    {
+      "command": "fid link remove \u003cfrom-id\u003e \u003cLinkRelation\u003e \u003cto-id\u003e",
+      "kind": "accepted",
+      "operation": "link.remove"
+    },
+    {
+      "command": "fid maintenance check",
+      "kind": "accepted",
+      "operation": "maintenance.check"
+    },
+    {
       "command": "fid maintenance vacuum",
-      "kind": "fail-closed"
+      "kind": "fail-closed",
+      "operation": "maintenance.vacuum"
+    },
+    {
+      "command": "fid init",
+      "kind": "accepted",
+      "operation": "project.init"
+    },
+    {
+      "command": "fid rebuild",
+      "kind": "accepted",
+      "operation": "project.rebuild"
     }
   ]
 }

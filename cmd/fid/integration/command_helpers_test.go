@@ -9,6 +9,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -232,4 +234,14 @@ func p22GitOutput(t *testing.T, root string, args ...string) string {
 		t.Fatalf("git %v: %v %s", args, err, output)
 	}
 	return strings.TrimSpace(string(output))
+}
+
+func p22SameMembers(t *testing.T, name string, got, want []string) {
+	t.Helper()
+	got, want = append([]string{}, got...), append([]string{}, want...)
+	sort.Strings(got)
+	sort.Strings(want)
+	if len(got) == 0 || !reflect.DeepEqual(got, want) {
+		t.Fatalf("%s = %v, want exact %v", name, got, want)
+	}
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 )
 
-func TestGetListAndReadyUseProjectedWorkflowCategories(t *testing.T) {
+func TestGetAndListUseProjectedWorkflowCategories(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
@@ -56,14 +56,4 @@ func TestGetListAndReadyUseProjectedWorkflowCategories(t *testing.T) {
 		t.Fatalf("List() = %#v, want projected-category issue %q", listed, created.ID)
 	}
 
-	ready, err := Ready(ReadyOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-	})
-	if err != nil {
-		t.Fatalf("Ready() error = %v", err)
-	}
-	if ready.Task != nil {
-		t.Fatalf("Ready().Task = %#v, want no task after projected category change", ready.Task)
-	}
 }

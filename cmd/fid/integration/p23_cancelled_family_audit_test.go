@@ -21,9 +21,10 @@ type p23ProductSurface struct {
 // the built command tree and migrated SQLite catalog, including command aliases.
 func TestP23CancelledFamiliesAbsentFromProduct(t *testing.T) {
 	t.Parallel()
-	a := p22NewFIDRecoveryAdapter(t)
+	binary, workspace := integrationFIDBinary(t), t.TempDir()
+	leanFlagFixture(t, binary, workspace)
 	actual := p23ProductSurface{}
-	for name := range p22FaultProjection(t, a.workspace) {
+	for name := range p22FaultProjection(t, workspace) {
 		actual.Tables = append(actual.Tables, name)
 		if p23CancelledFamilyName(name) {
 			t.Fatalf("cancelled product table %q", name)
@@ -42,7 +43,7 @@ func TestP23CancelledFamiliesAbsentFromProduct(t *testing.T) {
 		}
 		seen[key] = true
 		args := append(append([]string{}, path...), "--help")
-		stdout, stderr, err := closureRunCommand(a.workspace, a.binary, args...)
+		stdout, stderr, err := closureRunCommand(workspace, binary, args...)
 		if err != nil || stderr != "" {
 			t.Fatalf("fid %v --help: %v %q", path, err, stderr)
 		}
@@ -80,7 +81,7 @@ func TestP23CancelledFamiliesAbsentFromProduct(t *testing.T) {
 	}
 	p22SameMembers(t, "latest product table names", actual.Tables, pinned.Tables)
 	p22SameMembers(t, "real command-tree paths", actual.Commands, pinned.Commands)
-	t.Logf("inspected %d real commands and %d product tables", commands, len(p22FaultProjection(t, a.workspace)))
+	t.Logf("inspected %d real commands and %d product tables", commands, len(p22FaultProjection(t, workspace)))
 }
 
 func p23HelpCommandNames(help string) []string {

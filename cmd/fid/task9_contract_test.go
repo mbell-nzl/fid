@@ -22,11 +22,6 @@ func TestTask9RetainedInventorySurface(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "workflow define accepts standalone actor and idempotency",
-			args: []string{"--project", workspace, "--json", "workflow", "define", "--name", "task-9", "--applies-to", "task", "--states", "todo,done,cancelled", "--categories", "unstarted,completed,cancelled", "--transitions", "todo->done", "--actor", "agent:task-9", "--idempotency-key", "task-9-workflow"},
-			want: `"idempotency_key":"task-9-workflow"`,
-		},
-		{
 			name: "AC add accepts standalone actor and idempotency",
 			args: func() []string {
 				issueID := createTask8Issue(t, workspace, "Task 9 acceptance criterion")
@@ -59,7 +54,7 @@ func TestTask9RetainedInventorySurface(t *testing.T) {
 		{
 			name:    "requirement sync is removed",
 			args:    []string{"--project", workspace, "--json", "requirement", "sync"},
-			want:    "unknown flag: --idempotency-key",
+			want:    `unknown command "requirement"`,
 			wantErr: true,
 		},
 		{
@@ -71,7 +66,7 @@ func TestTask9RetainedInventorySurface(t *testing.T) {
 		{
 			name:    "concern raise leaf is removed",
 			args:    []string{"concern", "raise"},
-			want:    `unknown command "raise"`,
+			want:    `unknown command "concern"`,
 			wantErr: true,
 		},
 		{
@@ -79,11 +74,6 @@ func TestTask9RetainedInventorySurface(t *testing.T) {
 			args:    []string{"--project", workspace, "--json", "maintenance", "vacuum", "--actor", "agent:task-9"},
 			want:    `"code":"capability-unavailable"`,
 			wantErr: true,
-		},
-		{
-			name: "stats groups by historical actor attribution",
-			args: []string{"--project", workspace, "--json", "stats", "tokens", "--group-by", "actor"},
-			want: `"items"`,
 		},
 		{
 			name: "activity normalizes retained event names",

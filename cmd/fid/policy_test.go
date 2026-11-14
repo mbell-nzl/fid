@@ -30,13 +30,10 @@ func TestRemainingLegacyJSONReadsDoNotDeclareFormatFlags(t *testing.T) {
 	t.Parallel()
 
 	commands := map[string]*cobra.Command{
-		"activity list":   newActivityListCommand(),
-		"claim list":      newClaimListCommand(),
-		"concern list":    newConcernListCommand(),
+		"activity list": newActivityListCommand(),
+
 		"journal inspect": newJournalInspectCommand(),
 		"sql":             newSQLCommand(),
-		"stats cost":      newStatsCostCommand(),
-		"stats tokens":    newStatsTokensCommand(),
 	}
 	for name, command := range commands {
 		if flag := command.Flags().Lookup("format"); flag != nil {

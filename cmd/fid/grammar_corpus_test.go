@@ -19,9 +19,9 @@ import (
 	"github.com/mbell-nzl/fid/internal/cli"
 )
 
-func TestGrammarUnknownActivationCommand(t *testing.T) {
+func TestGrammarUnknownArtifactCommand(t *testing.T) {
 	t.Parallel()
-	result := executeCommandForTest(t.TempDir(), "--json", "activation", "bogus")
+	result := executeCommandForTest(t.TempDir(), "--json", "artifact", "bogus")
 	if cli.ExitCode(result.err) != 2 || result.stdout != "" {
 		t.Fatalf("activation bogus = %#v, want stderr failure, exit 2", result)
 	}
@@ -32,7 +32,7 @@ func TestGrammarUnknownActivationCommand(t *testing.T) {
 	if err := json.Unmarshal([]byte(result.stderr), &response); err != nil {
 		t.Fatal(err)
 	}
-	if response.Operation != "activation" || response.Error.Code != cli.Code("operation-unavailable") || response.Error.Message != `unknown command "bogus" for "fid activation"` {
+	if response.Operation != "artifact" || response.Error.Code != cli.Code("operation-unavailable") || response.Error.Message != `unknown command "bogus" for "fid artifact"` {
 		t.Fatalf("response = %#v", response)
 	}
 }
@@ -77,10 +77,6 @@ func grammarOperation(cmd *cobra.Command) string {
 		return "project.status"
 	case "fid show":
 		return "issue.show"
-	case "fid capabilities":
-		return "capabilities.get"
-	case "fid ready":
-		return "ready.get"
 	case "fid check":
 		return "check.execute"
 	case "fid handoff":
@@ -97,8 +93,6 @@ func grammarOperation(cmd *cobra.Command) string {
 		return "task.takeover"
 	case "fid next":
 		return "next.get"
-	case "fid resume":
-		return "projection.resume"
 	}
 	return strings.ReplaceAll(strings.TrimPrefix(cmd.CommandPath(), "fid "), " ", ".")
 }
@@ -120,7 +114,7 @@ func grammarClassRows(t *testing.T) []grammarRow {
 	t.Helper()
 	root := newRootCommandAt(t.TempDir())
 	leaves, groups := grammarCommands(root)
-	if len(leaves) != 105 || len(groups) != 29 {
+	if len(leaves) != 35 || len(groups) != 11 {
 		t.Fatalf("live registry = %d leaves / %d groups", len(leaves), len(groups))
 	}
 	rows := []grammarRow{}
@@ -164,7 +158,7 @@ func grammarClassRows(t *testing.T) []grammarRow {
 		// Existing checks are exhaustive for input leaves; bootstrap Actor is optional.
 		if cmd.Flags().Lookup("input") != nil {
 			required = append(required, "input")
-			if cmd.Flags().Lookup("actor") != nil && !strings.HasPrefix(cmd.CommandPath(), "fid activation ") {
+			if cmd.Flags().Lookup("actor") != nil {
 				required = append(required, "actor")
 			}
 			if cmd.Flags().Lookup("idempotency-key") != nil {
@@ -184,14 +178,8 @@ func grammarClassRows(t *testing.T) []grammarRow {
 				required = []string{"actor", "idempotency-key", "from-type", "to-type"}
 			case "link list":
 				required = []string{"type"}
-			case "gate resolve":
-				required = []string{"version"}
 			case "export import":
 				required = []string{"repository", "idempotency-key"}
-			case "workflow define":
-				required = []string{"name", "applies-to", "states", "categories", "transitions", "actor", "idempotency-key"}
-			case "workflow assign":
-				required = []string{"name", "actor", "idempotency-key"}
 			}
 		}
 		for i, name := range required {
@@ -343,11 +331,11 @@ func grammarMessageRows() []grammarRow {
 		add := func(name, value, expected string) {
 			row := grammarRow{name: kind + "/" + name, operation: "fid", code: "operation-unavailable", message: expected, argument: "command", value: value, allowed: []string{}, args: []string{value}}
 			if kind == "flag" {
-				row.operation = "stop.raise"
+				row.operation = "artifact.verify"
 				row.code = "invalid-argument"
 				row.argument = "--" + value
 				row.value = "--" + value
-				row.args = []string{"stop", "raise", "--" + value}
+				row.args = []string{"artifact", "verify", "--" + value}
 				row.allowed = []string{"--actor", "--example", "--idempotency-key", "--input"}
 			}
 			rows = append(rows, row)
@@ -417,11 +405,10 @@ func TestGrammarMessageBoundaries(t *testing.T) {
 func TestGrammarFlagDomainBeforeWorkspace(t *testing.T) {
 	t.Parallel()
 	rows := []grammarRow{
-		{name: "limit", operation: "claim.list", code: "invalid-argument", args: []string{"claim", "list", "--limit", "0"}, argument: "--limit", value: "0", allowed: []string{"1..10000"}, message: `invalid argument "0" for "--limit" flag`},
-		{name: "status", operation: "run.list", code: "invalid-argument", args: []string{"run", "list", "--status", "bogus"}, argument: "--status", value: "bogus", allowed: []string{"abandoned", "active", "failed", "interrupted", "succeeded"}, message: `invalid argument "bogus" for "--status" flag`},
-		{name: "outcome", operation: "receipt.list", code: "invalid-argument", args: []string{"receipt", "list", "--outcome", "bogus"}, argument: "--outcome", value: "bogus", allowed: []string{"cancelled", "failed", "signaled", "spawn-failed", "succeeded", "timed-out"}, message: `invalid argument "bogus" for "--outcome" flag`},
-		{name: "bool", operation: "issue.list", code: "invalid-argument", args: []string{"issue", "list", "--has-concerns=maybe"}, argument: "--has-concerns", value: "maybe", allowed: []string{"bool"}, message: `invalid argument "maybe" for "--has-concerns" flag: strconv.ParseBool: parsing "maybe": invalid syntax`},
-		{name: "missing limit", operation: "claim.list", code: "invalid-argument", args: []string{"claim", "list", "--limit"}, argument: "--limit", value: nil, allowed: []string{"1..10000"}, message: `flag needs an argument: --limit`},
+		{name: "limit", operation: "issue.ac.add", code: "invalid-argument", args: []string{"issue", "ac", "add", "--ordinal", "0"}, argument: "--ordinal", value: "0", allowed: []string{"1..2147483647"}, message: `invalid argument "0" for "--ordinal" flag`},
+		{name: "status", operation: "issue.list", code: "invalid-argument", args: []string{"issue", "list", "--status-category", "bogus"}, argument: "--status-category", value: "bogus", allowed: []string{"cancelled", "completed", "started", "unstarted"}, message: `invalid argument "bogus" for "--status-category" flag`},
+		{name: "bool", operation: "project.status", code: "invalid-argument", args: []string{"status", "--all=maybe"}, argument: "--all", value: "maybe", allowed: []string{"bool"}, message: `invalid argument "maybe" for "--all" flag: strconv.ParseBool: parsing "maybe": invalid syntax`},
+		{name: "missing limit", operation: "issue.ac.add", code: "invalid-argument", args: []string{"issue", "ac", "add", "--ordinal"}, argument: "--ordinal", value: nil, allowed: []string{"1..2147483647"}, message: `flag needs an argument: --ordinal`},
 	}
 	for _, row := range rows {
 		t.Run(row.name, func(t *testing.T) {
@@ -501,8 +488,8 @@ func grammarDomainRows(t *testing.T) []grammarRow {
 			}
 		})
 	}
-	if typed != 65 {
-		t.Fatalf("R18 corpus = %d want 65", typed)
+	if typed != 11 {
+		t.Fatalf("R18 corpus = %d want 11", typed)
 	}
 	return rows
 }
@@ -607,12 +594,12 @@ func TestGrammarFlagDomainRegistryCompleteness(t *testing.T) {
 	if missing := grammarUndeclaredTyped(root); len(missing) > 0 {
 		t.Fatalf("R18 flags without declarations: %v", missing)
 	}
-	cmd, _, err := root.Find([]string{"claim", "list"})
+	cmd, _, err := root.Find([]string{"issue", "create"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	cmd.Flags().Int("seeded-unregistered", 1, "seeded mismatch")
-	if missing := grammarUndeclaredTyped(root); !reflect.DeepEqual(missing, []string{"fid claim list --seeded-unregistered"}) {
+	if missing := grammarUndeclaredTyped(root); !reflect.DeepEqual(missing, []string{"fid issue create --seeded-unregistered"}) {
 		t.Fatalf("seeded declaration gap = %v", missing)
 	}
 	leaves, _ := grammarCommands(root)
@@ -631,9 +618,6 @@ func TestGrammarFlagDomainRegistryCompleteness(t *testing.T) {
 func TestGrammarCSVAndKeyDomains(t *testing.T) {
 	t.Parallel()
 	rows := []grammarRow{
-		{name: "blank state", operation: "workflow.define", code: "invalid-argument", args: []string{"workflow", "define", "--states="}, argument: "--states", value: "", allowed: []string{"string"}, message: `invalid argument "" for "--states" flag`},
-		{name: "duplicate states", operation: "workflow.define", code: "invalid-argument", args: []string{"workflow", "define", "--states=todo,todo"}, argument: "--states", value: "todo,todo", allowed: []string{"string"}, message: `invalid argument "todo,todo" for "--states" flag`},
-		{name: "malformed edge", operation: "workflow.define", code: "invalid-argument", args: []string{"workflow", "define", "--transitions=todo"}, argument: "--transitions", value: "todo", allowed: []string{"string"}, message: `invalid argument "todo" for "--transitions" flag`},
 		{name: "key control", operation: "issue.create", code: "invalid-argument", args: []string{"issue", "create", "--idempotency-key=a\n"}, argument: "--idempotency-key", value: "a\n", allowed: []string{"string"}, message: `invalid argument "a\n" for "--idempotency-key" flag`},
 	}
 	grammarRunRows(t, rows, false)
@@ -642,33 +626,13 @@ func TestGrammarCSVAndKeyDomains(t *testing.T) {
 func TestGrammarIntegerDomainsPreservePflagValues(t *testing.T) {
 	t.Parallel()
 	root := newRootCommandAt(t.TempDir())
-	cmd, _, err := root.Find([]string{"claim", "list"})
+	cmd, _, err := root.Find([]string{"issue", "create"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, raw := range []string{"1", "0x1", "01", "+1", "10000"} {
-		if err := cmd.Flags().Set("limit", raw); err != nil {
+	for _, raw := range []string{"1", "0x1", "01", "+1", "5"} {
+		if err := cmd.Flags().Set("priority", raw); err != nil {
 			t.Errorf("in-range pflag integer %q rejected: %v", raw, err)
-		}
-	}
-}
-
-func TestGrammarAmendedFlagDomains(t *testing.T) {
-	t.Parallel()
-	root := newRootCommandAt(t.TempDir())
-	for _, row := range []struct {
-		path        []string
-		flag, value string
-	}{
-		{[]string{"claim", "list"}, "status", "superseded"},
-		{[]string{"receipt", "list"}, "outcome", "cancelled"},
-	} {
-		cmd, _, err := root.Find(row.path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if err := cmd.Flags().Set(row.flag, row.value); err != nil {
-			t.Errorf("accepted amended domain %s --%s=%s: %v", cmd.CommandPath(), row.flag, row.value, err)
 		}
 	}
 }
@@ -686,8 +650,7 @@ func TestGrammarInheritedStringDomains(t *testing.T) {
 		{[]string{"issue", "list"}, "label", "bad\nlabel"},
 		{[]string{"issue", "list"}, "status", "bad\nstate"},
 		{[]string{"issue", "transition", "ID-1"}, "to", "bad\nstate"},
-		{[]string{"claim", "list"}, "issue", "bad\nid"},
-		{[]string{"decision", "list"}, "class", ""},
+		{[]string{"issue", "list"}, "epic", "bad\nid"},
 	} {
 		path := entry.path
 		operation := strings.Join(path, ".")
@@ -719,7 +682,7 @@ func allDeclaredStringDomains(t *testing.T, cmd *cobra.Command) map[string]flagD
 
 func TestGrammarOpaqueStateUTF8Domain(t *testing.T) {
 	t.Parallel()
-	if declaredStringDomains["workflow define"]["states"].Accept(string([]byte{0xff})) {
+	if validOpaqueState(string([]byte{0xff})) {
 		t.Fatal("invalid UTF-8 state accepted")
 	}
 }

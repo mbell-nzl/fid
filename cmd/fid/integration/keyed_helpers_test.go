@@ -147,10 +147,7 @@ func p24AssertStoredFieldNames(t *testing.T, workspace, operation string, entry 
 		if err := json.Unmarshal(entry.input, &members); err != nil {
 			t.Fatal(err)
 		}
-		for name, raw := range members {
-			if operation == "review.record" && name == "inapplicable_findings" && string(raw) == "[]" {
-				continue
-			}
+		for name := range members {
 			want[name] = true
 		}
 	} else {
@@ -226,50 +223,12 @@ func p24PermuteFlagPairs(args []string) []string {
 
 func p24ChangeFoundationValue(t *testing.T, request map[string]any, name string) {
 	t.Helper()
-	if _, found := request[name]; !found && name == "protected_decisions" {
-		request[name] = []any{}
-		return
-	}
-	switch value := request[name].(type) {
-	case string:
-		if name == "mode" {
-			request[name] = "review"
-		} else if name == "reconciliation_digest" {
-			request[name] = "sha256:" + p22Zeros(64)
-		} else {
-			request[name] = value + "-p24-changed"
-		}
-	case float64:
-		request[name] = value + 1
-	case map[string]any:
-		if reason, ok := value["reason"].(string); ok {
-			value["reason"] = reason + "-p24-changed"
-			return
-		}
-		if id, ok := value["id"].(string); ok {
-			value["id"] = id + "-p24-changed"
-			return
-		}
-		t.Fatalf("%s has no reason field: %#v", name, value)
-	case []any:
-		if len(value) == 0 {
-			request[name] = []any{"phase 24 non-goal"}
-			return
-		}
-		first, ok := value[0].(map[string]any)
-		if !ok {
-			t.Fatalf("%s first member = %#v", name, value[0])
-		}
-		for _, member := range []string{"provenance_ref", "definition_id", "actor_id", "new_identity"} {
-			if text, ok := first[member].(string); ok {
-				first[member] = text + "-p24-changed"
-				return
-			}
-		}
-		t.Fatalf("%s has no safe text member: %#v", name, first)
-	default:
+	value, ok := request[name].(string)
+	if !ok {
 		t.Fatalf("%s cannot be changed: %#v", name, request[name])
 	}
+	request[name] = value + "-p24-changed"
+
 }
 
 func p24AssertFamilyConflict(t *testing.T, workspace, binary, operation string, entry p24CapturedKeyedCommand, changedNames []string) {

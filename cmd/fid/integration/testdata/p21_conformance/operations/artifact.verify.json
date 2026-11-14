@@ -1,5 +1,5 @@
 {
-  "operation": "artifact.verify",
   "command": "fid artifact verify",
-  "kind": "accepted"
+  "kind": "accepted",
+  "operation": "artifact.verify"
 }
