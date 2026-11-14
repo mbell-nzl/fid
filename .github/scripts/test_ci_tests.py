@@ -523,7 +523,7 @@ class RacePackagesTests(unittest.TestCase):
 
     def test_fids_race_set_is_derived_from_its_own_source(self):
         repository = Path(__file__).resolve().parents[2]
-        self.assertIn("github.com/mbell-nzl/fid/internal/evidence", ci.race_packages(repository))
+        self.assertIn("github.com/mbell-nzl/fid/internal/checkrun", ci.race_packages(repository))
 
 
 class LocalTestCommandTests(unittest.TestCase):
