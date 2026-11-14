@@ -96,6 +96,17 @@ func TestLaunchPipeClosingWithoutPermissionDoesNotExecuteTheCheck(t *testing.T) 
 	}
 }
 
+// coverEnvironment gives the helper child a coverage directory when tests run
+// with coverage. The child is this test binary; without GOCOVERDIR its exit
+// adds a "GOCOVERDIR not set" warning to the output these tests compare.
+func coverEnvironment(t *testing.T, env []string) []string {
+	t.Helper()
+	if testing.CoverMode() == "" {
+		return env
+	}
+	return append(env, "GOCOVERDIR="+t.TempDir())
+}
+
 func TestProcessOutcomesAndBoundedOutput(t *testing.T) {
 	t.Parallel()
 	for _, row := range []struct {
@@ -114,7 +125,7 @@ func TestProcessOutcomesAndBoundedOutput(t *testing.T) {
 				t.Fatal(err)
 			}
 			definition := Definition{Run: []string{executable, "-test.run=^TestCheckProcessHelper$", "--", "--check-helper", row.mode}, Timeout: row.timeout, Environment: EnvironmentNames(), Artifacts: []string{}}
-			got, err := ExecuteProcess(context.Background(), ProcessOptions{Root: t.TempDir(), Definition: definition})
+			got, err := ExecuteProcess(context.Background(), ProcessOptions{Root: t.TempDir(), Definition: definition, Environment: coverEnvironment(t, environment())})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -185,7 +196,7 @@ func TestProcessResolvesExecutableWithTheChildPath(t *testing.T) {
 	if err := os.Symlink(binary, filepath.Join(directory, "check-helper")); err != nil {
 		t.Fatal(err)
 	}
-	got, err := ExecuteProcess(context.Background(), ProcessOptions{Root: t.TempDir(), Definition: Definition{Run: []string{"check-helper", "-test.run=^TestCheckProcessHelper$", "--", "--check-helper", "env"}, Timeout: time.Minute, Environment: EnvironmentNames(), Artifacts: []string{}}, Environment: []string{"PATH=" + directory, "HOME=allowed"}})
+	got, err := ExecuteProcess(context.Background(), ProcessOptions{Root: t.TempDir(), Definition: Definition{Run: []string{"check-helper", "-test.run=^TestCheckProcessHelper$", "--", "--check-helper", "env"}, Timeout: time.Minute, Environment: EnvironmentNames(), Artifacts: []string{}}, Environment: coverEnvironment(t, []string{"PATH=" + directory, "HOME=allowed"})})
 	if err != nil || got.Outcome != "passed" || got.OutputExcerpt != "secret=; home=allowed" || got.Toolchain.Executable != binary {
 		t.Fatalf("PATH=%#v/%v", got, err)
 	}
