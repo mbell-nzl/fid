@@ -1,4 +1,4 @@
-package workflow
+package issuestate
 
 import (
 	"encoding/json"

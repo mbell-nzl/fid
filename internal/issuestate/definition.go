@@ -1,4 +1,6 @@
-package workflow
+// Package issuestate provides the retained Issue state graph and projection
+// lookups, independently of the workflow execution kernel.
+package issuestate
 
 type RuleReference struct {
 	Name          string
