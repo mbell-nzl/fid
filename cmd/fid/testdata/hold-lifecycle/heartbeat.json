@@ -1,0 +1,16 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-<new>",
+    "occurred_at": "2026-11-08T09:00:00Z"
+  },
+  "ok": true,
+  "operation": "hold.heartbeat",
+  "result": {
+    "expires_at": "2026-11-08T10:00:00Z",
+    "heartbeat_interval_seconds": 300,
+    "hold_id": "HLD-aaaaaa",
+    "last_heartbeat_at": "2026-11-08T09:00:00Z",
+    "task_id": "FID-71a0c2"
+  }
+}

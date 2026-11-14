@@ -101,7 +101,7 @@ func (result Result) Fields() map[string]any {
 		"needs_you":    result.NeedsYou,
 		"warnings":     result.Warnings,
 		"in_progress": mapSection(result.InProgress, func(task issues.OverviewTask) workingTask {
-			return workingTask{OverviewTask: task, Working: result.entries[task.ID].Working}
+			return workingTask{OverviewTask: task, Working: result.entries[task.ID].Working, Kept: result.entries[task.ID].Kept}
 		}),
 		"ready": result.readyFields(),
 		"hint":  result.Hint,

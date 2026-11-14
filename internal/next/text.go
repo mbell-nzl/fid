@@ -100,7 +100,11 @@ func (text textWriter) message(result Result, explain bool) []string {
 	id := result.Queue[result.Served].ID
 	switch {
 	case result.Kind == KindResume && result.Interrupted != nil:
-		lines := text.item(display.RoleWarning, display.SymbolWarning, "Interrupted here: work stopped at "+text.clock(result.Interrupted.Since)+" without a park.")
+		detail := "work stopped at " + text.clock(result.Interrupted.Since) + " without a park"
+		if result.Interrupted.Reason != nil {
+			detail = "parked at " + text.clock(result.Interrupted.Since) + ": " + *result.Interrupted.Reason
+		}
+		lines := text.item(display.RoleWarning, display.SymbolWarning, "Interrupted here: "+detail+".")
 		lines = append(lines, text.prose(proseIndent, "Carry on from what's in this worktree.")...)
 		return append(lines, text.step("fid show "+id)...)
 	case result.Kind == KindResume:
@@ -158,6 +162,9 @@ func (text textWriter) nothing(result Result, explain bool) []string {
 // worktree directory for work held elsewhere.
 func stoppedBy(entry Entry) string {
 	reason := *entry.Reason
+	if entry.Kept != nil && reason == ReasonInterruptedElsewhere {
+		return reason + " " + filepath.Base(entry.Kept.Worktree)
+	}
 	if entry.Working != nil && (reason == ReasonHeldElsewhere || reason == ReasonInterruptedElsewhere) {
 		return reason + " " + filepath.Base(entry.Working.Worktree)
 	}
@@ -216,7 +223,7 @@ func Verdict(entry Entry, served bool) (string, display.Role) {
 	case ReasonHeldElsewhere:
 		return "working in " + filepath.Base(entry.Working.Worktree), display.RoleMuted
 	case ReasonInterruptedElsewhere:
-		return "interrupted in " + filepath.Base(entry.Working.Worktree), display.RoleWarning
+		return "interrupted in " + interruptedDirectory(entry), display.RoleWarning
 	case ReasonNotNextInSequence:
 		return "after " + *entry.After, display.RoleMuted
 	case ReasonEpicBlocked:
@@ -297,4 +304,11 @@ func (text textWriter) markedRow(prefix string, symbol display.Symbol, task issu
 	}
 	return []string{line + cli.CutEscapedText(title, width),
 		strings.Repeat(" ", max(rowWidth-rightWidth, 0)) + text.renderer.Colorize(role, right)}
+}
+
+func interruptedDirectory(entry Entry) string {
+	if entry.Kept != nil {
+		return filepath.Base(entry.Kept.Worktree)
+	}
+	return filepath.Base(entry.Working.Worktree)
 }

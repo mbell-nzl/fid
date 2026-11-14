@@ -3,6 +3,7 @@ package journal
 // Column domains copied from the accepted migration baseline. No per-Event
 // schema introspection is performed. The contract test checks these against DDL.
 var currentEventTables = map[string]currentTable{
+	"person_decisions":             currentTableColumns("id", "id:s kind:s actor:s subject_type:s subject_id:s reason:s binding_id:s decided_at:s"),
 	"policy_snapshots":             currentTableColumns("sequence", "sequence:i source_ref:s source_commit:s? digest:s effective_json:s"),
 	"activity_log":                 currentTableColumns("id", "id:s journal_event_id:s ref_type:s ref_id:s event:s details:s? actor:s? occurred_at:s?"),
 	"activation_actor_profiles":    currentTableColumns("activation_id actor_id", "activation_id:s actor_id:s actor_type:s producer:s provenance_ref:s session_ref:s? capabilities_json:s"),
@@ -14,7 +15,7 @@ var currentEventTables = map[string]currentTable{
 	"attention_stop_links":         currentTableColumns("attention_id stop_id", "attention_id:s stop_id:s"),
 	"budget_samples":               currentTableColumns("id", "id:s envelope_id:s envelope_revision:i budget_name:s run_id:s actor_id:s source:s source_sample_id:s sample_kind:s previous_sample_id:s? value:i? measurement_ref_json:s? observed_at:s created_event_id:s"),
 	"claims":                       currentTableColumns("id", "id:s issue_id:s envelope_id:s envelope_revision:i actor_id:s worktree_id:s scope_json:s mode:s version:i status:s acquired_at:s expires_at:s released_at:s? release_reason:s?"),
-	"holds":                        currentTableColumns("id", "id:s task_id:s worktree_id:s worktree_root:s actor:s since:s expires_at:s replaces_hold_id:s? ended_at:s? end_reason:s?"),
+	"holds":                        currentTableColumns("id", "id:s task_id:s worktree_id:s worktree_root:s actor:s since:s expires_at:s replaces_hold_id:s? ended_at:s? end_reason:s? last_heartbeat_at:s? kept:b park_reason:s?"),
 	"execution_attempts":           currentTableColumns("id", "id:s registration_id:s registration_version:i obligation_id:s run_id:s actor_id:s start_repository_json:s resolved_policy_digest:s producer:s started_at:s"),
 	"execution_receipts":           currentTableColumns("id", "id:s attempt_id:s trust_source:s terminal_status:s exit_code:i? signal:s? timed_out:b started_at:s ended_at:s terminal_repository_json:s toolchain_json:s output_excerpt:s output_digest:s output_bytes:i output_truncated:b redaction_applied:b rejected_artifacts_json:s"),
 	"review_records":               currentTableColumns("id", "id:s run_id:s issue_id:s envelope_id:s envelope_revision:i actor_id:s profile:s repository_json:s coverage_json:s verdict:s evidence_refs_json:s receipt_ids_json:s independence:s recorded_at:s created_event_id:s"),

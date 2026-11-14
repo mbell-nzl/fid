@@ -218,6 +218,80 @@ recorded under F3 as decisions, replacing the pending proposals.
   action. Status shows the same warning and fix. This is its own source
   error case, distinct from an unknown default or an unreadable policy file.
 
+Mark also approved these details for **1.5a2**, the same day:
+
+1. **Retry keys (Q18 B).** The agent's new commands require
+   `--idempotency-key`: `park` now, `start`, `check` and hand-off later.
+   A person's `takeover`, `answer` and cancellation accept an optional key.
+   A same-key repeat returns the recorded response and original Event.
+   Without a key a person's repeat is refused by state, in plain words.
+   Heartbeats take no key. Suggested commands for a person omit the key.
+2. **Commands name the hold.** `heartbeat` and `park` take `--hold <id>
+   --actor <actor>` and find the task from that exact hold. Under the write
+   lock it must exist, be open and unexpired, belong to that actor, and
+   name the command's current worktree. A refusal never substitutes a
+   different hold. Takeover names the task instead.
+3. **Heartbeat every five minutes.** Every accepted heartbeat records one
+   Event, sets `last_heartbeat_at` to its time and `expires_at` to an hour
+   later. Initially the last heartbeat is `since`; `since` never changes.
+   At or after expiry the heartbeat is refused. The worktree resumes a
+   started task with `next --claim`, under a linked new hold. A lapse's
+   "work stopped at" time in show and next is now the last heartbeat.
+4. **Parking needs an explicit mode.** Exactly one of `--interrupted
+   --reason "<text>"` or, from 1.5a3, `--waiting "<question>"`. In 1.5a2,
+   bare park refuses with `invalid-argument` naming `--interrupted
+   --reason`. The free-text reason is required. An interrupted park ends
+   the hold. Started work stays kept for that worktree, which resumes it
+   first under a linked hold; other worktrees skip it as
+   `interrupted-elsewhere`. Unstarted work goes back to anyone. Show says
+   "interrupted in <worktree> by <actor>: parked at 20:00: Usage limit";
+   next says "Interrupted here: parked at 20:00: Usage limit." A lapse
+   keeps "work stopped at 20:00 without a park".
+5. **Takeover is one atomic write.** `fid takeover <task> --actor
+   human:<name> --reason "<why>" [--idempotency-key <k>]` ends the old
+   hold, records a person's `takeover` decision bound to the task, and
+   gives that person a linked hold in their current worktree. A live,
+   lapsed, parked or absent old hold is allowed. Workflow state is kept;
+   git changes stay in the old worktree. A worktree already holding or
+   keeping another task refuses with `worktree-busy`; a person already
+   holding the task here gets `already-held`. Closed tasks refuse with
+   `transition-not-permitted`, unsatisfied `task-open`; other issue kinds
+   use `unsupported-kind`. Agents and services get `authority-denied`.
+   The old session's heartbeat or park gets `hold-not-current`, `ended`.
+6. **Kept work is explicit in JSON.** Show, next queue entries and status
+   wherever it has `working` also carry `kept` (null otherwise):
+   `{worktree, here, mode, reason, since, hold_id, actor}`. With no live
+   hold, a started task's lapse or interrupted park produces mode
+   `interrupted`; reason is null for a lapse, and since is its last
+   heartbeat or its park time. Working still describes an open hold,
+   including a lapse. Text reuses "interrupted in <dir>" in status and
+   READY. Waiting and review modes belong to later tasks.
+7. **Separate conflict codes, exit 4, not retryable.** `hold-not-current`
+   has exactly `hold_id` and `reason` (`not-found`, `ended`, `expired`,
+   `actor-mismatch`, `worktree-mismatch`) and suggests `fid next` in human
+   output. `worktree-busy` has `task_id` and `worktree`; `already-held`
+   has `hold_id`. Their subject is the task.
+8. **Cancellation stays on issue transition.** For tasks and epics,
+   `fid issue transition <id> --to cancelled --actor human:<name>
+   --reason "<why>" [--idempotency-key <k>]` requires a person and a
+   reason, records a `cancel` decision bound to the subject, and ends
+   its hold or releases its kept worktree in the same write. JSON adds
+   `decision_id` to the existing result. Subtasks keep their current
+   behavior. The decision record has an ID, kind, actor, subject, reason,
+   binding and time; agents and services cannot write any kind. Takeover
+   and cancel land now; other kinds land with their commands.
+
+Builder's storage choices for 1.5a2: migration 22 extends `holds` with the
+last heartbeat, an interrupted park's reason, and a `kept` flag. The same
+unique indexes cover open holds and kept reservations. Releasing a parked
+reservation keeps its ended hold as history. A lapse stays derived from
+the clock. `person_decisions` uses `PDN-` IDs. `hold.heartbeat`,
+`hold.parked` and `task.taken-over` join both Event catalogs; takeover and
+`issue.transitioned` carry the decision Effect in the same Event as their
+other Effects. No separate decision Event splits the transaction. The
+built-in policy records `cancel` in the person-decisions action set, with
+rules version 2, so snapshots retain the new authority rule.
+
 ## Products
 
 **D1 Kit V2: frozen.** Tag and archive the `v2` branch; `v1.0.0` stays for

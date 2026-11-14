@@ -1,0 +1,20 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-<new>",
+    "occurred_at": "<TIME>"
+  },
+  "ok": true,
+  "operation": "issue.transition",
+  "result": {
+    "decision_id": "PDN-<new>",
+    "from_state": "in_progress",
+    "idempotency_key": "cancel-1",
+    "issue": {
+      "id": "FID-71a0c2",
+      "revision": 2
+    },
+    "replayed": false,
+    "to_state": "cancelled"
+  }
+}

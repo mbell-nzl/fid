@@ -76,7 +76,7 @@ func (fixture *statusFixture) retimeHold(task string, ago time.Duration) {
 	}
 	defer closeCommandDB(fixture.t, conn)
 	since := statusNow.Add(-ago)
-	if _, err := conn.Exec(`UPDATE holds SET since = ?, expires_at = ? WHERE task_id = ?`, holds.Timestamp(since), holds.Timestamp(since.Add(holds.Lifetime)), task); err != nil {
+	if _, err := conn.Exec(`UPDATE holds SET since = ?, expires_at = ?, last_heartbeat_at = ? WHERE task_id = ?`, holds.Timestamp(since), holds.Timestamp(since.Add(holds.Lifetime)), holds.Timestamp(since), task); err != nil {
 		fixture.t.Fatal(err)
 	}
 }

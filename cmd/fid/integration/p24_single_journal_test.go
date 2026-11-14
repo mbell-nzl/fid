@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func TestP24All49KeyedLeavesRebuildInOneJournal(t *testing.T) {
+func TestP24All51KeyedLeavesRebuildInOneJournal(t *testing.T) {
 	t.Parallel()
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
@@ -34,6 +34,7 @@ func TestP24All49KeyedLeavesRebuildInOneJournal(t *testing.T) {
 	p24SingleCompletion(t, a)
 	p24SingleActivationRecovery(t, a)
 	p24SingleWorkflow(t, a)
+	p24SingleLifecycle(t, a)
 	p24AssertSingleJournalInventory(t, workspace)
 	p24AssertRebuildMapParity(t, workspace, binary)
 }
@@ -205,7 +206,14 @@ func p24AssertSingleJournalInventory(t *testing.T, workspace string) {
 		if !ok {
 			t.Fatalf("invalid keyed-leaf inventory row %q", line)
 		}
-		want = append(want, strings.ReplaceAll(name, " ", "."))
+		operation := strings.ReplaceAll(name, " ", ".")
+		if name == "park" {
+			operation = "hold.park"
+		}
+		if name == "takeover" {
+			operation = "task.takeover"
+		}
+		want = append(want, operation)
 	}
 	conn := p22FaultDB(t, workspace)
 	defer func() { p22FaultOK(t, conn.Close()) }()
@@ -230,7 +238,8 @@ func p24AssertSingleJournalInventory(t *testing.T, workspace string) {
 		t.Fatal(err)
 	}
 	sort.Strings(got)
-	if len(want) != 49 || !reflect.DeepEqual(got, want) {
-		t.Fatalf("single-journal keyed operation inventory = %v; want exact 49 = %v", got, want)
+	sort.Strings(want)
+	if len(want) != 51 || !reflect.DeepEqual(got, want) {
+		t.Fatalf("single-journal keyed operation inventory = %v; want exact 51 = %v", got, want)
 	}
 }

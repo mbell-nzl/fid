@@ -37,7 +37,7 @@ func TestReadyApprovedMock(t *testing.T) {
 		InProgress: issues.OverviewSection{Epics: []issues.OverviewEpic{ops, loop}},
 		Ready:      issues.OverviewSection{Epics: []issues.OverviewEpic{opsReady, loopReady}, Tasks: []issues.OverviewTask{task("FID-77aa01", "Tidy help text")}},
 		Next:       &login.ID, entries: map[string]next.Entry{
-			contract.ID:  {Working: &holds.Working{Worktree: "/home/mark/projects/fid-wt2", Lapsed: true}},
+			contract.ID:  {Working: &holds.Working{Worktree: "/home/mark/projects/fid-wt2", Lapsed: true}, Kept: &holds.Kept{Worktree: "/home/mark/projects/fid-wt2"}},
 			retry.ID:     {OverviewTask: issues.OverviewTask{BlockedBy: []string{export.ID}}, Reason: &blocked},
 			backupAge.ID: {Reason: stringPtr(next.ReasonHeldElsewhere), Working: &holds.Working{Worktree: "/home/mark/projects/fid-wt3"}},
 			golden.ID:    {Reason: &after, After: &contract.ID}, rework.ID: {Reason: &after, After: &contract.ID}, version.ID: {Reason: &after, After: &contract.ID},

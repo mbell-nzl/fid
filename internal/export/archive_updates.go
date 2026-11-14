@@ -22,7 +22,7 @@ var semanticUpdateColumns = map[string]string{
 	"attention_items":       "status version resolution_event_id",
 	"referenced_artifacts":  "availability",
 	"idempotency_results":   "result_entity_id result_event_id aggregate_sequence result_json",
-	"holds":                 "ended_at end_reason",
+	"holds":                 "ended_at end_reason last_heartbeat_at expires_at kept park_reason",
 }
 
 func validateSemanticUpdate(effect journal.Effect) error {

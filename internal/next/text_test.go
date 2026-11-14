@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/display"
+	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
 )
 
@@ -118,7 +119,7 @@ func TestWriteTextMatchesTheApprovedMockUps(t *testing.T) {
       → fid show FID-1f2e3d
 ╰──────────────────────────────────────────────────────────────────────╯
 `},
-		{"interrupted", Result{Kind: KindResume, Queue: resume(resumed), Served: 0, Epic: loop, Now: at("11:15:00"), Claimed: true, Interrupted: interrupted}, false, `
+		{"interrupted", Result{Kind: KindResume, Queue: resume(resumed), Served: 0, Epic: loop, Now: at("11:15:00"), Claimed: true, Interrupted: &holds.Kept{Since: interrupted.Since}}, false, `
 ╭ fid next ──────────────────────────────────────────────── 2026-11-10 ╮
 
   ● FID-1f2e3d  Contract fields and exit codes             in progress

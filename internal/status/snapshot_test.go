@@ -23,7 +23,7 @@ func TestStatusReadyTransitionBetweenReads(t *testing.T) {
 			other := gittest.AddWorktree(t, options.WorkspaceRoot)
 			result, err := build(options, func() {
 				_, err := issues.Transition(issues.TransitionOptions{WorkspaceRoot: other,
-					MigrationsDir: options.MigrationsDir, ID: tasks[0].ID, ToState: state,
+					MigrationsDir: options.MigrationsDir, ID: tasks[0].ID, ToState: state, Reason: "Snapshot transition",
 					Actor: "human:mark", IdempotencyKey: "transition-during-status"})
 				if err != nil {
 					t.Fatal(err)

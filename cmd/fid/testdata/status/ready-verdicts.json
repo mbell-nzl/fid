@@ -53,7 +53,17 @@
                 "actor": "agent:claude-builder",
                 "since": "2026-11-08T07:00:00Z",
                 "expires_at": "2026-11-08T08:00:00Z",
+                "last_heartbeat_at": "2026-11-08T07:00:00Z",
                 "lapsed": true
+              },
+              "kept": {
+                "worktree": "/home/mark/projects/fid-wt4",
+                "here": false,
+                "mode": "interrupted",
+                "reason": null,
+                "since": "2026-11-08T07:00:00Z",
+                "hold_id": "HLD-0b0b0b",
+                "actor": "agent:claude-builder"
               }
             }
           ]
@@ -87,8 +97,10 @@
                 "actor": "agent:claude-builder",
                 "since": "2026-11-08T08:40:00Z",
                 "expires_at": "2026-11-08T09:40:00Z",
+                "last_heartbeat_at": "2026-11-08T08:40:00Z",
                 "lapsed": false
-              }
+              },
+              "kept": null
             }
           ]
         }
@@ -103,7 +115,8 @@
           "sequence": null,
           "priority": null,
           "blocked_by": [],
-          "working": null
+          "working": null,
+          "kept": null
         }
       ]
     },
@@ -139,6 +152,7 @@
               "reason": "blocked",
               "after": null,
               "working": null,
+              "kept": null,
               "epic_blocked_by": []
             },
             {
@@ -153,6 +167,7 @@
               "reason": null,
               "after": null,
               "working": null,
+              "kept": null,
               "epic_blocked_by": []
             },
             {
@@ -173,8 +188,10 @@
                 "actor": "agent:claude-builder",
                 "since": "2026-11-08T08:59:00Z",
                 "expires_at": "2026-11-08T09:59:00Z",
+                "last_heartbeat_at": "2026-11-08T08:59:00Z",
                 "lapsed": false
               },
+              "kept": null,
               "epic_blocked_by": []
             }
           ]
@@ -204,6 +221,7 @@
               "reason": "not-next-in-sequence",
               "after": "FID-1f2e3d",
               "working": null,
+              "kept": null,
               "epic_blocked_by": []
             },
             {
@@ -218,6 +236,7 @@
               "reason": "not-next-in-sequence",
               "after": "FID-1f2e3d",
               "working": null,
+              "kept": null,
               "epic_blocked_by": []
             }
           ]
@@ -247,6 +266,7 @@
               "reason": "epic-blocked",
               "after": null,
               "working": null,
+              "kept": null,
               "epic_blocked_by": [
                 "FID-71a0c2",
                 "FID-c2d4e5"
@@ -268,6 +288,7 @@
           "reason": null,
           "after": null,
           "working": null,
+          "kept": null,
           "epic_blocked_by": []
         },
         {
@@ -282,6 +303,7 @@
           "reason": "epic-closed",
           "after": null,
           "working": null,
+          "kept": null,
           "epic_blocked_by": []
         }
       ]

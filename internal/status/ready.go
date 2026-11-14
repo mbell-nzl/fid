@@ -12,6 +12,7 @@ import (
 type workingTask struct {
 	issues.OverviewTask
 	Working *holds.Working `json:"working"`
+	Kept    *holds.Kept    `json:"kept"`
 }
 
 type section[T any] struct {
@@ -63,8 +64,8 @@ func (result Result) readyVerdict(task issues.OverviewTask) (string, display.Rol
 }
 
 func (result Result) startedVerdict(task issues.OverviewTask) string {
-	if hold := result.entries[task.ID].Working; hold != nil && hold.Lapsed {
-		return "interrupted in " + filepath.Base(hold.Worktree)
+	if kept := result.entries[task.ID].Kept; kept != nil {
+		return "interrupted in " + filepath.Base(kept.Worktree)
 	}
 	return display.StateText(task.Status)
 }

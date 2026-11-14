@@ -118,3 +118,25 @@ func TestTestAdequacyPresenceChangesEffectiveDigest(t *testing.T) {
 		t.Error("test paths do not change digest")
 	}
 }
+
+func TestPolicyRecordsCancellationAsAPersonsDecision(t *testing.T) {
+	t.Parallel()
+	effective := Resolve(config.ProjectFile{})
+	found := false
+	for _, action := range effective.ActionSets[PersonDecisions] {
+		if action == "cancel" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("effective policy omits the person's cancellation action")
+	}
+	if effective.RulesVersion < 2 {
+		t.Fatal("changed cancellation authority must advance built-in rules version")
+	}
+	for _, action := range effective.ActionSets[WorkSet] {
+		if action == "cancel" {
+			t.Fatal("cancellation is in the work set")
+		}
+	}
+}

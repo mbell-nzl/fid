@@ -137,7 +137,7 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	p20AssertJournalEventAttribution(t, workspace, updateEvent, "developer")
 
 	transitionResult, transitionEvent := p20JourneyMutation(t, workspace,
-		"issue", "transition", taskID, "--to", "cancelled", "--expected-revision", strconv.Itoa(updatedRevision), "--actor", "agent:tl",
+		"issue", "transition", taskID, "--to", "cancelled", "--reason", "Test cancellation", "--expected-revision", strconv.Itoa(updatedRevision), "--actor", "human:mark",
 	)
 	p20RememberEvent(t, eventIDs, transitionEvent)
 	transitionedRevision := p20Integer(t, p20Object(t, transitionResult["issue"])["revision"])

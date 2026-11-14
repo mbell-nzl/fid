@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "invalid-input",
+    "code": "unsupported-kind",
+    "details": {
+      "allowed": [
+        "task"
+      ],
+      "argument": "task",
+      "value": "epic"
+    },
+    "message": "takeover requires a task",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "task.takeover"
+}

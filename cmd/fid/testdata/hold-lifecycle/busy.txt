@@ -1,0 +1,2 @@
+error: this worktree already has FID-c2d4e5
+reason: worktree-busy; task_id=FID-c2d4e5, worktree=<ROOT>

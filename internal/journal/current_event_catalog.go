@@ -96,6 +96,9 @@ var currentEventCommands = map[string]string{
 // are checked against their stages in order too (leanEventFamilies).
 var retainedCurrentRules = map[string]currentEventRule{
 	"policy.snapshotted":             currentRule("policy", currentStage(1, currentEffectKey("policy_snapshots", "insert"))),
+	"hold.heartbeat":                 currentRule("hold", currentStage(1, currentEffectKey("holds", "update"))),
+	"hold.parked":                    currentRule("hold", currentStage(1, currentEffectKey("holds", "update")), currentStage(1, currentEffectKey("idempotency_results", "insert"))),
+	"task.taken-over":                currentRule("task", currentStage(0, currentEffectKey("holds", "update")), currentStage(1, currentEffectKey("person_decisions", "insert")), currentStage(1, currentEffectKey("holds", "insert")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"hold.taken":                     currentRule("hold", currentStage(0, currentEffectKey("holds", "update")), currentStage(1, currentEffectKey("holds", "insert"))),
 	"issue.label.added":              currentRule("issue", currentStage(1, currentEffectKey("issue_labels", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.label.removed":            currentRule("issue", currentStage(1, currentEffectKey("issue_labels", "delete")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
@@ -111,7 +114,7 @@ var retainedCurrentRules = map[string]currentEventRule{
 	"artifact.availability-observed": currentRule("artifact", currentStage(0, currentEffectKey("referenced_artifacts", "update")), currentStage(0, currentEffectKey("stops", "insert"), currentEffectKey("attention_items", "insert"), currentEffectKey("attention_stop_links", "insert")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.created":                  currentRule("issue", currentStage(1, currentEffectKey("issues", "insert")), currentStage(0, currentEffectKey("issue_labels", "insert")), currentStage(0, currentEffectKey("epic_metadata", "insert")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.updated":                  currentRule("issue", currentStage(1, currentEffectKey("issues", "update")), currentStage(0, currentEffectKey("issue_labels", "insert"), currentEffectKey("issue_labels", "delete")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
-	"issue.transitioned":             currentRule("issue", currentStage(1, currentEffectKey("issues", "update")), currentStage(0, currentEffectKey("holds", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
+	"issue.transitioned":             currentRule("issue", currentStage(1, currentEffectKey("issues", "update")), currentStage(0, currentEffectKey("holds", "update")), currentStage(0, currentEffectKey("person_decisions", "insert")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.ac-added":                 currentRule("issue", currentStage(1, currentEffectKey("acceptance_criteria", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.label-added":              currentRule("issue", currentStage(1, currentEffectKey("issue_labels", "insert")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
 	"issue.label-removed":            currentRule("issue", currentStage(1, currentEffectKey("issue_labels", "delete")), currentStage(1, currentEffectKey("issues", "update")), currentStage(1, currentEffectKey("activity_log", "activity")), currentStage(0, currentEffectKey("idempotency_results", "insert"))),
@@ -125,4 +128,4 @@ var retainedCurrentRules = map[string]currentEventRule{
 // leanEventFamilies are the lean core's families. Every Effect they carry
 // is checked against their stages, in order, not only those on a domain
 // table another family owns.
-var leanEventFamilies = map[string]bool{"hold.taken": true, "policy.snapshotted": true}
+var leanEventFamilies = map[string]bool{"hold.heartbeat": true, "hold.parked": true, "task.taken-over": true, "hold.taken": true, "policy.snapshotted": true}

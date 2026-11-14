@@ -9,18 +9,24 @@ import (
 	"testing"
 )
 
-func TestP24ExecutedKeyedCorpusMatches49LeafInventory(t *testing.T) {
+func TestP24ExecutedKeyedCorpusMatches51LeafInventory(t *testing.T) {
 	t.Parallel()
 	rows := map[string]string{}
 	add := func(operation, field string) {
 		t.Helper()
 		name := strings.ReplaceAll(operation, ".", " ")
+		if operation == "hold.park" {
+			name = "park"
+		}
+		if operation == "task.takeover" {
+			name = "takeover"
+		}
 		if prior, found := rows[name]; found {
 			t.Fatalf("duplicate executable row %s: %s and %s", name, prior, field)
 		}
 		rows[name] = field
 	}
-	for _, group := range []map[string]string{p24FoundationFields, p24RecoveryFields, p24FlagFields, p24ActivationRecoveryFields, p24ActivationAbortFields, p24GateEvidenceFields, p24ArtifactFields, p24WorkflowFields} {
+	for _, group := range []map[string]string{p24LifecycleFields, p24FoundationFields, p24RecoveryFields, p24FlagFields, p24ActivationRecoveryFields, p24ActivationAbortFields, p24GateEvidenceFields, p24ArtifactFields, p24WorkflowFields} {
 		for operation, field := range group {
 			add(operation, field)
 		}
@@ -40,7 +46,7 @@ func TestP24ExecutedKeyedCorpusMatches49LeafInventory(t *testing.T) {
 		}
 		planned[parts[0]] = parts[1]
 	}
-	if len(rows) != 49 || !reflect.DeepEqual(rows, planned) {
+	if len(rows) != 51 || !reflect.DeepEqual(rows, planned) {
 		t.Fatalf("executable rows = %v; planned inventory = %v", rows, planned)
 	}
 }

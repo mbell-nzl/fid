@@ -50,7 +50,13 @@ func validateCurrentEvent(tx *sql.Tx, event Event) error {
 			if err := validateCurrentStages(event, retained); err != nil {
 				return err
 			}
+			if err := validateHoldLifecycle(tx, event); err != nil {
+				return err
+			}
 			return validatePolicySnapshot(tx, event)
+		}
+		if err := validateHoldLifecycle(tx, event); err != nil {
+			return err
 		}
 		// Retained historical writers are not assigned new generic semantics by
 		// Phase 22. They still cannot smuggle a current domain table under an

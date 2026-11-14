@@ -35,6 +35,15 @@
       "updated_at": "2026-10-31T07:00:00Z",
       "acceptance_criteria": []
     },
+    "kept": {
+      "worktree": "/home/mark/projects/fid-wt2",
+      "here": false,
+      "mode": "interrupted",
+      "reason": null,
+      "since": "2026-11-07T07:00:00Z",
+      "hold_id": "HLD-77b2c0",
+      "actor": "agent:claude-builder"
+    },
     "progress": null,
     "scheduling": null,
     "state": null,
@@ -46,6 +55,7 @@
       "actor": "agent:claude-builder",
       "since": "2026-11-07T07:00:00Z",
       "expires_at": "2026-11-07T08:00:00Z",
+      "last_heartbeat_at": "2026-11-07T07:00:00Z",
       "lapsed": true
     }
   }

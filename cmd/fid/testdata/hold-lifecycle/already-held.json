@@ -1,0 +1,18 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "conflict",
+    "code": "already-held",
+    "details": {
+      "hold_id": "HLD-<new>"
+    },
+    "message": "FID-71a0c2 is already yours in this worktree",
+    "retryable": false,
+    "subject": {
+      "id": "FID-71a0c2",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "task.takeover"
+}

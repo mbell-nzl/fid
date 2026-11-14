@@ -24,6 +24,7 @@ type Options struct {
 type Result struct {
 	issues.IssueView
 	Working *holds.Working
+	Kept    *holds.Kept
 	Now     time.Time
 }
 
@@ -36,6 +37,9 @@ func Build(options Options) (Result, error) {
 	result := Result{IssueView: view, Now: options.Now}
 	if hold := view.OpenHold; hold != nil && (!hold.Lapsed(options.Now) || view.Issue.StatusCategory == "started") {
 		result.Working = holds.Describe(*hold, project.WorktreeID(options.WorkspaceRoot), options.Now)
+		if view.Issue.StatusCategory == "started" {
+			result.Kept = holds.DescribeKept(*hold, project.WorktreeID(options.WorkspaceRoot), options.Now)
+		}
 	}
 	return result, nil
 }
@@ -53,6 +57,7 @@ func (result Result) Fields() map[string]any {
 		"progress":   result.Progress,
 		"children":   result.Children,
 		"working":    result.Working,
+		"kept":       result.Kept,
 		"scheduling": result.Scheduling,
 	}
 }

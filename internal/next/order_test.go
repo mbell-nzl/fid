@@ -173,7 +173,7 @@ func TestPlanShowsEachHoldAsWorking(t *testing.T) {
 	work := issues.Work{Epics: map[string]issues.WorkEpic{}, Tasks: []issues.WorkTask{task("T1", "", "unstarted", false)}}
 	taken := hold("HLD-1", "T1", "sha256:wt2", 90*time.Second+500*time.Millisecond)
 	planned := plan(work, []holds.Hold{taken}, here, orderNow)
-	want := Working{HoldID: "HLD-1", Worktree: "/w/wt2", Here: false, Actor: "agent:builder", Since: "2026-11-10T08:58:29Z", ExpiresAt: "2026-11-10T09:58:29Z", Lapsed: false}
+	want := Working{HoldID: "HLD-1", Worktree: "/w/wt2", Here: false, Actor: "agent:builder", Since: "2026-11-10T08:58:29Z", ExpiresAt: "2026-11-10T09:58:29Z", LastHeartbeatAt: "2026-11-10T08:58:29Z", Lapsed: false}
 	if got := planned.queue[0].Working; got == nil || *got != want {
 		t.Fatalf("working = %s, want %+v", fmt.Sprint(got), want)
 	}

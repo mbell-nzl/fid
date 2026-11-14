@@ -1,0 +1,8 @@
+╭ FID-aaaaaa ──────────────────────────────────────────────────── task ╮
+
+  ● Interrupted work                                       in progress
+
+  Working     ⚠ interrupted in <ROOT> by
+              agent:claude-builder: work stopped at 22:00 without a
+              park
+╰──────────────────────────────────────────────────────────────────────╯

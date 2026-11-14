@@ -1,0 +1,16 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-<new>",
+    "occurred_at": "2026-11-08T09:00:00Z"
+  },
+  "ok": true,
+  "operation": "hold.park",
+  "result": {
+    "hold_id": "HLD-aaaaaa",
+    "kept_for_worktree": true,
+    "mode": "interrupted",
+    "reason": "Usage limit",
+    "task_id": "FID-71a0c2"
+  }
+}

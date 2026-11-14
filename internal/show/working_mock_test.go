@@ -19,7 +19,7 @@ func TestWorkingApprovedMocks(t *testing.T) {
 	}{
 		{"here", "FID-9f13aa", "Harden login rate limiting", "todo", "FID-e3a1c0", "Operating experience", &holds.Working{Here: true, Since: "2026-11-11T09:02:00Z", ExpiresAt: "2026-11-11T10:02:00Z"}},
 		{"elsewhere", "FID-0d4e8b", "Document backup age", "todo", "FID-e3a1c0", "Operating experience", &holds.Working{Worktree: "/home/mark/projects/fid-wt3", Actor: "agent:codex", Since: "2026-11-11T08:40:00Z", ExpiresAt: "2026-11-11T09:40:00Z"}},
-		{"interrupted", "FID-1f2e3d", "Contract fields and exit codes", "in_progress", "FID-8a1b2c", "Loop contract", &holds.Working{Worktree: "/home/mark/projects/fid-wt2", Actor: "agent:claude", Since: "2026-11-11T07:15:00Z", Lapsed: true}},
+		{"interrupted", "FID-1f2e3d", "Contract fields and exit codes", "in_progress", "FID-8a1b2c", "Loop contract", &holds.Working{Worktree: "/home/mark/projects/fid-wt2", Actor: "agent:claude", Since: "2026-11-11T07:15:00Z", LastHeartbeatAt: "2026-11-11T07:15:00Z", Lapsed: true}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()

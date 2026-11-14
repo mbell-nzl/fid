@@ -294,7 +294,11 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 			before := canonicalIssueForTest(t, workspace, issueID)
 			journalPath := mustJournalPath(t, workspace)
 			linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
-			result := executeCommandForTest(workspace, "--json", "issue", "transition", issueID, "--to", tt.toState, "--actor", "agent:"+tt.actor)
+			args := []string{"--json", "issue", "transition", issueID, "--to", tt.toState, "--actor", "agent:" + tt.actor}
+			if tt.toState == "cancelled" {
+				args = []string{"--json", "issue", "transition", issueID, "--to", tt.toState, "--actor", "human:mark", "--reason", "Test cancellation"}
+			}
+			result := executeCommandForTest(workspace, args...)
 
 			if tt.wantSuccess {
 				if result.err != nil || result.stderr != "" {

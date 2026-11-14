@@ -103,6 +103,7 @@
         }
       ]
     },
+    "kept": null,
     "progress": {
       "done": 1,
       "total": 3

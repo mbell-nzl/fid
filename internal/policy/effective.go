@@ -12,7 +12,7 @@ import (
 )
 
 // BuiltInRulesVersion changes whenever built-in policy semantics change.
-const BuiltInRulesVersion = 1
+const BuiltInRulesVersion = 2
 
 type ActionSet string
 
@@ -55,7 +55,7 @@ func Resolve(file config.ProjectFile) Effective {
 	result := Effective{RulesVersion: BuiltInRulesVersion, HardAssured: []string{".fid.toml", ".github/workflows/**"},
 		ActorRules: actorRules(), ActionSets: map[ActionSet][]string{
 			WorkSet:         {"take", "start", "check", "park", "finish", "review"},
-			PersonDecisions: {"approve", "waive", "takeover", "allow-rework", "close-finding", "accept-work", "approve-epic", "answer", "close-epic"},
+			PersonDecisions: {"cancel", "approve", "waive", "takeover", "allow-rework", "close-finding", "accept-work", "approve-epic", "answer", "close-epic"},
 		}, Checks: map[string]config.Check{}, Lanes: map[string]config.Lane{}, TestAdequacy: canonicalSet(file.TestAdequacy), TestAdequacySet: file.TestAdequacySet}
 	for name, check := range file.Checks {
 		check.Run = slices.Clone(check.Run)

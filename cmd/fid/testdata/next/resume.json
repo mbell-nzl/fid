@@ -16,6 +16,7 @@
       "actor": "agent:claude-builder",
       "expires_at": "2026-11-08T09:40:00Z",
       "id": "HLD-0a0a0a",
+      "last_heartbeat_at": "2026-11-08T08:40:00Z",
       "replaces": null,
       "since": "2026-11-08T08:40:00Z",
       "task_id": "FID-9f13aa"
@@ -40,8 +41,10 @@
           "actor": "agent:claude-builder",
           "since": "2026-11-08T08:40:00Z",
           "expires_at": "2026-11-08T09:40:00Z",
+          "last_heartbeat_at": "2026-11-08T08:40:00Z",
           "lapsed": false
         },
+        "kept": null,
         "epic_blocked_by": []
       },
       {
@@ -58,6 +61,7 @@
         "reason": "blocked",
         "after": null,
         "working": null,
+        "kept": null,
         "epic_blocked_by": []
       },
       {
@@ -72,6 +76,7 @@
         "reason": null,
         "after": null,
         "working": null,
+        "kept": null,
         "epic_blocked_by": []
       },
       {
@@ -92,8 +97,10 @@
           "actor": "agent:claude-builder",
           "since": "2026-11-08T08:40:00Z",
           "expires_at": "2026-11-08T09:40:00Z",
+          "last_heartbeat_at": "2026-11-08T08:40:00Z",
           "lapsed": false
         },
+        "kept": null,
         "epic_blocked_by": []
       },
       {
@@ -108,6 +115,7 @@
         "reason": "not-next-in-sequence",
         "after": "FID-1f2e3d",
         "working": null,
+        "kept": null,
         "epic_blocked_by": []
       },
       {
@@ -122,6 +130,7 @@
         "reason": "not-next-in-sequence",
         "after": "FID-1f2e3d",
         "working": null,
+        "kept": null,
         "epic_blocked_by": []
       },
       {
@@ -136,6 +145,7 @@
         "reason": null,
         "after": null,
         "working": null,
+        "kept": null,
         "epic_blocked_by": []
       }
     ],

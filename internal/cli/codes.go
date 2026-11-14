@@ -21,6 +21,9 @@ const (
 
 const (
 	CodeInvalidArgument             Code = "invalid-argument"
+	CodeHoldNotCurrent              Code = "hold-not-current"
+	CodeWorktreeBusy                Code = "worktree-busy"
+	CodeAlreadyHeld                 Code = "already-held"
 	CodePolicyUnavailable           Code = "policy-unavailable"
 	CodeOperationUnavailable        Code = "operation-unavailable"
 	CodeUnsupportedKind             Code = "unsupported-kind"
@@ -235,6 +238,9 @@ func definition(category Category, retryable bool, subjects []SubjectType, detai
 }
 
 var failureCodeDefinitions = map[Code]reasonDefinition{
+	CodeHoldNotCurrent:    definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id"), stringField("reason")),
+	CodeWorktreeBusy:      definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("task_id"), stringField("worktree")),
+	CodeAlreadyHeld:       definition(CategoryConflict, false, []SubjectType{SubjectIssue}, stringField("hold_id")),
 	CodePolicyUnavailable: definition(CategoryPrecondition, false, nil, stringField("problem"), nullableStringField("ref"), nullableStringField("commit")),
 	CodeOperationUnavailable: definition(CategoryInvalidInput, false, nil,
 		stringField("argument"), nullableStringField("value"), stringsField("allowed")),
@@ -369,7 +375,7 @@ var failureCodeDefinitions = map[Code]reasonDefinition{
 		stringField("target_root"), stringField("reason")),
 }
 
-var registeredCodes = []Code{
+var registeredCodes = []Code{CodeHoldNotCurrent, CodeWorktreeBusy, CodeAlreadyHeld,
 	CodeInvalidArgument, CodePolicyUnavailable, CodeOperationUnavailable, CodeUnsupportedKind, CodeUnsupportedRelation, CodeProjectNotFound, CodeProjectAlreadyInit,
 	CodeIssueNotFound, CodeRequirementNotFound, CodeLabelNotFound, CodeLinkNotFound, CodeWorkflowNotFound,
 	CodeDuplicateEntity, CodeStateConflict, CodeLockUnavailable, CodeHierarchyInvalid, CodeDependencyCycle,
@@ -441,6 +447,13 @@ func validateFailure(failure Failure, definition reasonDefinition) error {
 	}
 	if err := validateDetails(failure.Details, definition.details); err != nil {
 		return err
+	}
+	if failure.Code == CodeHoldNotCurrent {
+		switch failure.Details["reason"] {
+		case "not-found", "ended", "expired", "actor-mismatch", "worktree-mismatch":
+		default:
+			return fmt.Errorf("unknown hold-not-current reason")
+		}
 	}
 	if failure.Code == CodeDuplicateEntity {
 		return validateDuplicateEntityIdentity(failure.Details)

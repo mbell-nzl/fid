@@ -1,0 +1,15 @@
+{
+  "contract_version": "fid-cli.v1",
+  "event": {
+    "id": "EVT-<new>",
+    "occurred_at": "2026-11-08T09:00:00Z"
+  },
+  "ok": true,
+  "operation": "task.takeover",
+  "result": {
+    "decision_id": "PDN-<new>",
+    "hold_id": "HLD-<new>",
+    "previous_hold_id": "HLD-aaaaaa",
+    "task_id": "FID-71a0c2"
+  }
+}

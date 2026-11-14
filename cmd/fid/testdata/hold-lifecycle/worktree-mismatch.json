@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "conflict",
+    "code": "hold-not-current",
+    "details": {
+      "hold_id": "HLD-aaaaaa",
+      "reason": "worktree-mismatch"
+    },
+    "message": "this hold is no longer current",
+    "retryable": false,
+    "subject": {
+      "id": "FID-71a0c2",
+      "type": "issue"
+    }
+  },
+  "ok": false,
+  "operation": "hold.heartbeat"
+}

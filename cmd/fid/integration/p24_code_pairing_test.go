@@ -26,6 +26,10 @@ type p24CodeFactory func(*testing.T, string) p24CodePair
 // The corpus is enumerated against RegisteredCodes below. A row invokes the
 // real fid binary, with no injected mapper errors or simulated responses.
 var p24CodeRows = map[string]p24CodeFactory{
+	"hold-not-current":              p24LifecycleCodePair,
+	"worktree-busy":                 p24LifecycleCodePair,
+	"already-held":                  p24LifecycleCodePair,
+	"unsupported-kind":              p24LifecycleCodePair,
 	"internal-error":                p24InternalPair,
 	"journal-replay-stopped":        p24JournalPair,
 	"lock-unavailable":              p24LockPair,
@@ -108,9 +112,7 @@ var p24CodeRows = map[string]p24CodeFactory{
 
 // Only exclusions proven by a current producer/caller audit belong here.
 // Missing executable rows are failures, never silently classified unreachable.
-var p24CodeExclusions = map[string]string{
-	"unsupported-kind": "The only domain producer is internal/issues/create_commit.go validateCreateRequest. The issue.create --kind domain rejects unsupported values as invalid-argument before Create is called; no other CLI path can construct UnsupportedKindError (flag_domains.go).",
-}
+var p24CodeExclusions = map[string]string{}
 
 var p24SpecialCodePairs = map[string]func(*testing.T){
 	"policy-unavailable":          TestPolicyUnavailableHumanAndJSON,
@@ -450,6 +452,7 @@ func p24ExpectedFailureText(t *testing.T, payload map[string]any, operation stri
 		text += "blocked by: " + strings.Join(ids, ",") + "\n"
 	}
 	next := map[string]string{
+		"hold-not-current":            "fid next",
 		"repository-mismatch":         "check HEAD and uncommitted changes, then correct expected_repository",
 		"source-digest-mismatch":      "correct or omit digest for " + fmt.Sprint(d["display_label"]),
 		"idempotency-conflict":        "resend the original input, or use a new --idempotency-key",

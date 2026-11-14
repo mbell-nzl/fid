@@ -1,0 +1,2 @@
+error: only a person can make this decision
+reason: authority-denied; actor_id=agent:builder, operation=issue.transition, required_actions=issue.transition, required_capabilities=issue.transition

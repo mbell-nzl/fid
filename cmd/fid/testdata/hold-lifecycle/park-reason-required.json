@@ -1,0 +1,19 @@
+{
+  "contract_version": "fid-cli.v1",
+  "error": {
+    "category": "invalid-input",
+    "code": "invalid-argument",
+    "details": {
+      "allowed": [
+        "--reason"
+      ],
+      "argument": "--reason",
+      "value": null
+    },
+    "message": "--reason is required",
+    "retryable": false,
+    "subject": null
+  },
+  "ok": false,
+  "operation": "hold.park"
+}

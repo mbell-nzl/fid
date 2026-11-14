@@ -521,10 +521,10 @@ capped, with or without `--all`. `event` is null.
 - A task is
   `{id, title, status, status_category, epic_id, sequence, priority, blocked_by}`,
   `blocked_by` listing its open blockers' IDs in order. IN PROGRESS tasks
-  also have `working`, null when they have no open hold. READY tasks add
-  exactly `next`'s queue entry fields: `reason`, `after`, `working` and
+  also have `working` and `kept`, null when absent. READY tasks add
+  exactly `next`'s queue entry fields: `reason`, `after`, `working`, `kept` and
   `epic_blocked_by` (below). `working` is
-  `{hold_id, worktree, here, actor, since, expires_at, lapsed}` or null;
+  `{hold_id, worktree, here, actor, since, expires_at, last_heartbeat_at, lapsed}` or null;
   times are UTC RFC 3339 and `lapsed` is true for interrupted work.
 - `ready.next` is the ID `fid next` would hand out here, or null when
   nothing can be handed out or this worktree already holds a task. READY
@@ -614,8 +614,7 @@ every read, records no Event and makes no network calls. Text output is
   - `Working`: on a held task, `here, since 09:02, until 10:02`, or
     `in <full path> by <actor>, since 08:40, until 09:40` elsewhere. An
     interrupted task reads `⚠ interrupted in <full path> by <actor>: work
-    stopped at 07:15 without a park`, using the hold's `since` (1.5a
-    switches to the last heartbeat). Times are local `HH:MM`, adding the
+    stopped at 07:15 without a park`, using the hold's last heartbeat. Times are local `HH:MM`, adding the
     date when it isn't today. A lapsed hold on an unstarted task frees it,
     so it has no Working row.
 
@@ -655,6 +654,7 @@ The `issue.show` JSON result holds everything, with a null `event`:
           "status": "in_progress", "status_category": "started", "progress": {"done": 2, "total": 7}},
  "task": null,
  "working": null,
+ "kept": null,
  "scheduling": null,
  "blocked_by": [{"id": "FID-1a2b3c", "kind": "task", "title": "Escape controls in status",
                  "status": "done", "status_category": "completed"}],
@@ -670,7 +670,7 @@ The `issue.show` JSON result holds everything, with a null `event`:
   `cancelled` by its own state's category.
 - `epic` is the issue's epic and `task` a subtask's task, or null.
 - `working` is the task's live or interrupted hold, in `next`'s
-  `{hold_id, worktree, here, actor, since, expires_at, lapsed}` shape,
+  `{hold_id, worktree, here, actor, since, expires_at, last_heartbeat_at, lapsed}` shape,
   or null when nobody holds it (including a lapsed unstarted task).
 - `scheduling` is `"sequential"` or `"prioritised"` on an epic with
   scheduling, null otherwise.
@@ -720,8 +720,9 @@ or `--project-wide`. The latter spelling avoids collision with global
 Standalone inventory mutations record Actor attribution without claiming
 protected Human authority. Execution-bound transitions additionally require
 Envelope revision, expected Issue revision, Actor authority, and active Claim.
-An `issue transition` that moves a task into a completed or cancelled state
-ends the task's open hold (below) in the same `issue.transitioned` Event.
+An `issue transition` that completes a task ends its hold in the same
+`issue.transitioned` Event. Cancelling tasks and epics is a person's
+decision, with the contract below.
 
 **`fid next`** (task 1.4a; decisions record, D8's 1.4 details) hands a
 worktree its next task. It walks one order and serves the first task
@@ -742,8 +743,8 @@ nothing stops:
    sequence, priority (lower first), creation and ID, a missing sequence or
    priority last.
 
-The order holds every unstarted task and every task with an open hold; a
-started task with no hold is never handed out. A sequential epic serves one
+The order holds every unstarted task and every task with an open hold or kept work; a
+started task with neither a hold nor kept work is never handed out. A sequential epic serves one
 task at a time, across worktrees. While one of its tasks is held (a live
 hold, or a lapsed hold on a started task), it serves no other. Otherwise it
 serves its next unfinished task in sequence or, links beating sequence, the
@@ -755,7 +756,7 @@ passed over with a typed reason, the first that applies:
 | Reason | When |
 |---|---|
 | `held-elsewhere` | another worktree's live hold |
-| `interrupted-elsewhere` | another worktree's lapsed hold on a started task |
+| `interrupted-elsewhere` | another worktree's lapsed or parked started work |
 | `epic-closed` | the task's epic is completed or cancelled |
 | `epic-blocked` | the task's epic has a blocker that isn't completed or cancelled |
 | `not-next-in-sequence` | its sequential epic serves another task first; `after` names the task the epic holds or serves, or, when it can serve none, its next task |
@@ -781,14 +782,15 @@ on them, only on `kind`.
 
 A hold records its ID (`HLD-` and 6 hex digits), the task, the worktree
 (the SHA-256 of its root path, and the path), the actor, `since` and
-`expires_at`, an hour later (D8; heartbeats renew it from task 1.5a), and,
+`expires_at`, an hour later (D8), `last_heartbeat_at` (initially `since`), and,
 for a resume, the hold it replaces. Whether a hold has lapsed is read from
 the clock, never stored. `fid next` reads the clock once, just before it
 walks the order: after refreshing the projection and, with `--claim`, under
 the write lock, so a hold that lapses while it waits for the lock counts as
 lapsed. A hold ends when a new hold replaces it, or its
-task is completed or cancelled; park, `done` and takeover come with tasks
-1.5a and 1.6. A worktree is identified by its root path, so a moved
+task is completed or cancelled, parked as interrupted, or taken over. A
+parked started task keeps its worktree reservation after the hold ends.
+`done` arrives in 1.6. A worktree is identified by its root path, so a moved
 worktree is another worktree.
 
 The JSON result, with exit 0 for every kind:
@@ -854,8 +856,7 @@ included, and doesn't page:
 - A live hold re-run adds `Already yours in this worktree: carry on with
   it`. A resume after a lapse adds `⚠ Interrupted here: work stopped at
   <HH:MM> without a park.` and `Carry on from what's in this worktree.`,
-  the time being the lapsed hold's last sign of life: its `since`, and its
-  last heartbeat from task 1.5a.
+  the time being the lapsed hold's last heartbeat.
 - When nothing is ready: `○ Nothing ready here:` and a count for each kind
   of reason, in the order each first appears (`1 blocked`, `1 being worked
   in fid-wt2`, `1 interrupted in fid-wt2`, `2 not next in their epic's
@@ -885,6 +886,79 @@ name `next.get`. A `service:*` actor's human refusal names the actor alone
 (`reason: authority-denied; actor_id=service:ci`); its JSON keeps
 `authority-denied`'s details, the operation names included. Journal replay failures keep their codes; anything else
 is `internal-error` (exit 7).
+
+**Hold lifecycle (RESET 1.5a2; Mark, 14 November 2026).**
+
+```text
+fid heartbeat --hold <id> --actor <actor>
+fid park --hold <id> --actor <actor> --interrupted --reason "<text>" --idempotency-key <k>
+fid takeover <task> --actor human:<name> --reason "<why>" [--idempotency-key <k>]
+fid issue transition <task|epic> --to cancelled --actor human:<name> --reason "<why>" [--idempotency-key <k>]
+```
+
+- Heartbeat (`hold.heartbeat`) takes no retry key. Every accepted heartbeat
+  records one Event, renews expiry to an hour after it and records
+  `last_heartbeat_at`; `since` stays fixed. The loop sends it every 300
+  seconds. Text: `✓ Held FID-9f13aa until 10:05`. JSON result:
+  `{task_id, hold_id, last_heartbeat_at, expires_at, heartbeat_interval_seconds: 300}`.
+- Heartbeat and park validate the exact hold under the write lock: it must
+  exist, be open, be unexpired (at expiry is too late), belong to the given
+  actor and belong to this worktree. They never substitute another hold.
+- Park (`hold.park`) requires `--interrupted --reason`; bare park gives
+  `invalid-argument` naming those flags. `--waiting` arrives in 1.5a3.
+  Text for started work: `✓ Parked FID-9f13aa · kept for this worktree`;
+  unstarted: `✓ Parked FID-9f13aa · back in the queue`. JSON result:
+  `{task_id, hold_id, mode: "interrupted", reason, kept_for_worktree}`.
+  It ends the hold; started work resumes first here under a new linked
+  hold and is skipped elsewhere as `interrupted-elsewhere`. Unstarted
+  work is available to anyone. Its retry key is required; a same-key
+  repeat returns the original result and Event, even after resume.
+- Takeover (`task.takeover`) is for a person; agents and services get
+  `authority-denied`. One atomic Event ends the old hold or releases kept
+  work, records the person's decision and takes a new linked hold in the
+  person's current worktree. The old hold can be live, lapsed, parked or
+  absent. Workflow state is preserved, and git changes stay where they
+  are. Text: `✓ Took over FID-9f13aa · it's yours in this worktree`.
+  JSON result: `{task_id, hold_id, previous_hold_id, decision_id}`;
+  `previous_hold_id` is null with no previous hold. Closed tasks get
+  `transition-not-permitted` with `unsatisfied: ["task-open"]`; epics
+  and subtasks get `unsupported-kind`.
+- A worktree holding or keeping a different task refuses takeover with
+  `worktree-busy`: `error: this worktree already has FID-c2d4e5` and
+  `reason: worktree-busy; task_id=FID-c2d4e5, worktree=/w/fid`.
+  The person already holding this task here gets `already-held`:
+  `error: FID-9f13aa is already yours in this worktree` and
+  `reason: already-held; hold_id=HLD-7b2e10`. With a retry key, the
+  same request returns the recorded response and original Event instead.
+- A person's cancellation requires `--reason`, accepts an optional retry
+  key and records a decision, ending any hold and releasing any kept
+  worktree in the same `issue.transitioned` Event. Agents and services get
+  `authority-denied`. Text: `✓ Cancelled FID-9f13aa`. The existing JSON
+  result gains `decision_id` (null for other transitions). Subtasks keep
+  their existing transitions and retry-key requirements.
+- A person's decision is immutable: ID (`PDN-` and six hex digits), kind
+  (`takeover` or `cancel` so far), actor, subject type and ID, reason,
+  binding ID and time. These two kinds bind to their subject. Replay and
+  import refuse decisions from agents or services.
+- `working` retains an open hold's record, including a lapse, and gains
+  `last_heartbeat_at`. `show`, next queue entries and status wherever it
+  has `working` also carry `kept` (null otherwise). With no live hold,
+  started work's lapse or interrupted park produces:
+
+  ```json
+  {"worktree": "/w/fid-wt2", "here": false, "mode": "interrupted",
+   "reason": "Usage limit", "since": "2026-11-14T07:00:00Z",
+   "hold_id": "HLD-77b2c0", "actor": "agent:builder"}
+  ```
+
+  Reason is null for a lapse. Since is the park time or the last
+  heartbeat. An explicitly parked hold has `working: null`. Show's
+  Working row reads `⚠ interrupted in <worktree> by <actor>: parked at
+  20:00: Usage limit`; next reads `⚠ Interrupted here: parked at 20:00:
+  Usage limit.` A lapse keeps `work stopped at 20:00 without a park`,
+  now using the last heartbeat. Status and READY use
+  `interrupted in <dir>`. Status reads these from its one projection
+  snapshot; next and READY share one planner.
 
 ### Requirement references
 
@@ -1308,6 +1382,20 @@ retry-exhausted
 ```
 
 Owning slices may add closed codes through versioned contract changes.
+
+RESET 1.5a2 adds these closed conflict codes, exit 4, all
+`retryable: false`, with subject type `issue` naming the task:
+
+| Code | Exact detail keys |
+|---|---|
+| `hold-not-current` | `hold_id`, `reason` (`not-found`, `ended`, `expired`, `actor-mismatch`, `worktree-mismatch`) |
+| `worktree-busy` | `task_id`, `worktree` |
+| `already-held` | `hold_id` |
+
+An unknown hold cannot name its task, so its subject's ID is null. A
+`hold-not-current` human failure adds `next: fid next`. The old session's
+heartbeat and park after takeover refuse with reason `ended`. None of
+these refusals appends an Event.
 
 RESET 1.5a1 adds the following closed code (Mark, 14 November 2026):
 
