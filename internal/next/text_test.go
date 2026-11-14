@@ -1,7 +1,6 @@
 package next
 
 import (
-	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -9,11 +8,8 @@ import (
 	"github.com/mbell-nzl/fid/internal/display"
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/leaktest"
 )
-
-// kernelWords are the kernel nouns and IDs that human output never names
-// (RESET 1.7).
-var kernelWords = regexp.MustCompile(`(?i)\b(envelopes?|activations?|obligations?|attempts?|attention items?|runs?|claims?)\b|ENV-|STP-|ATT-`)
 
 // mockTask is a task as the approved mock-ups show it.
 func mockTask(id, title, category, epic string, priority int, reason, after string, held *Working, blockedBy ...string) Entry {
@@ -168,14 +164,7 @@ func TestWriteTextMatchesTheApprovedMockUps(t *testing.T) {
 			if got := text.String(); got != strings.TrimPrefix(test.want, "\n") {
 				t.Fatalf("text =\n%s\nwant\n%s", got, strings.TrimPrefix(test.want, "\n"))
 			}
-			assertNoKernelWords(t, text.String())
+			leaktest.AssertNoKernelWords(t, text.String())
 		})
-	}
-}
-
-func assertNoKernelWords(t *testing.T, text string) {
-	t.Helper()
-	if found := kernelWords.FindAllString(text, -1); len(found) > 0 {
-		t.Fatalf("human output names kernel words %q:\n%s", found, text)
 	}
 }
