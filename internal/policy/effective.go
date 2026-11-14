@@ -60,6 +60,7 @@ func Resolve(file config.ProjectFile) Effective {
 	for name, check := range file.Checks {
 		check.Run = slices.Clone(check.Run)
 		check.DefinedBy, check.WhenChanged = canonicalSet(check.DefinedBy), canonicalSet(check.WhenChanged)
+		check.Artifacts = canonicalSet(check.Artifacts)
 		result.Checks[name] = check
 	}
 	for name, lane := range file.Lanes {

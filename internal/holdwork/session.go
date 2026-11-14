@@ -3,6 +3,7 @@ package holdwork
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/holds"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -12,7 +13,12 @@ import (
 )
 
 func (ctx writeContext) current() (holds.Hold, error) {
-	hold, err := holds.CurrentByID(ctx.conn, ctx.options.HoldID)
+	return Current(ctx.conn, ctx.options, ctx.now)
+}
+
+// Current checks the exact hold for session commands sharing a caller's lock.
+func Current(conn *sql.DB, options Options, now time.Time) (holds.Hold, error) {
+	hold, err := holds.CurrentByID(conn, options.HoldID)
 	reason := ""
 	switch {
 	case err == sql.ErrNoRows:
@@ -21,15 +27,15 @@ func (ctx writeContext) current() (holds.Hold, error) {
 		return holds.Hold{}, err
 	case hold.EndedAt != nil:
 		reason = "ended"
-	case hold.Lapsed(ctx.now):
+	case hold.Lapsed(now):
 		reason = "expired"
-	case hold.Actor != ctx.options.Actor:
+	case hold.Actor != options.Actor:
 		reason = "actor-mismatch"
-	case hold.WorktreeID != project.WorktreeID(ctx.options.WorkspaceRoot):
+	case hold.WorktreeID != project.WorktreeID(options.WorkspaceRoot):
 		reason = "worktree-mismatch"
 	}
 	if reason != "" {
-		return holds.Hold{}, &Refusal{Code: "hold-not-current", TaskID: hold.TaskID, Message: "this hold is no longer current", Details: map[string]any{"hold_id": ctx.options.HoldID, "reason": reason}}
+		return holds.Hold{}, &Refusal{Code: "hold-not-current", TaskID: hold.TaskID, Message: "this hold is no longer current", Details: map[string]any{"hold_id": options.HoldID, "reason": reason}}
 	}
 	return hold, nil
 }
